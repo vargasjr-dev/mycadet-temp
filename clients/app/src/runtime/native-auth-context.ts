@@ -1,9 +1,8 @@
 import { readReturningUser } from "@app/assistant/returning-user";
-import { composedAccountSession } from "@app/runtime/composed-account-session";
 import { checkoutHandoff } from "@app/lib/billing/checkout-intent-storage";
 import type { NativePostAuthContext } from "@app/runtime/native-post-auth-destination";
 
-/** Assistant facts, checkout storage, and web reconciliation for the composed client. */
+/** Account-owned checkout handoff and assistant facts for native login. */
 export const nativeAuthContext = {
   checkout: checkoutHandoff,
   async read(): Promise<NativePostAuthContext> {
@@ -12,7 +11,4 @@ export const nativeAuthContext = {
       checkout: checkoutHandoff,
     };
   },
-  beginComposedOAuth: composedAccountSession.beginOAuth,
-  primeComposedSession: composedAccountSession.primeSessionToken,
-  waitComposedSession: composedAccountSession.waitSessionSettled,
 };

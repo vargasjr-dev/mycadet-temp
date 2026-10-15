@@ -6,7 +6,6 @@ const calls: string[] = [];
 let contextPending: Promise<NativePostAuthContext> | undefined;
 let response: unknown = { sessionToken: "session-token" };
 let available = true;
-let composedActive = 0;
 let returningUser = false;
 const startOAuth = mock(async (_options: unknown): Promise<unknown> => {
   calls.push("host");
@@ -16,14 +15,8 @@ const refreshSession = mock(async () => {
   calls.push("refresh");
   return true;
 });
-const waitComposedSession = mock(async () => {
-  calls.push("wait");
-});
 const setMenu = mock(async () => {
   calls.push("menu");
-});
-const prime = mock((_token: string) => {
-  calls.push("prime");
 });
 mock.module("@app/runtime/electron-bridge", () => ({
   getElectronBridge: () =>
@@ -35,14 +28,6 @@ mock.module("@app/stores/auth-store", () => ({
 mock.module("@app/runtime/menu", () => ({ setMenuCloudSession: setMenu }));
 mock.module("@app/runtime/native-auth-context", () => ({
   nativeAuthContext: {
-    beginComposedOAuth: () => {
-      composedActive++;
-      return () => {
-        composedActive--;
-      };
-    },
-    primeComposedSession: prime,
-    waitComposedSession,
     read: async () => {
       calls.push("context");
       return (
@@ -75,12 +60,10 @@ afterEach(() => {
     Object.defineProperty(window, "location", originalLocation);
   }
   expect(isOAuthFlowInFlight()).toBe(false);
-  expect(composedActive).toBe(0);
 });
-test("desktop login reconciles both clients before choosing the post-auth destination", async () => {
+test("desktop login refreshes the account before choosing the post-auth destination", async () => {
   refreshSession.mockImplementationOnce(async () => {
     expect(isOAuthFlowInFlight()).toBe(true);
-    expect(composedActive).toBe(1);
     returningUser = true;
     calls.push("refresh");
     return true;
@@ -94,16 +77,8 @@ test("desktop login reconciles both clients before choosing the post-auth destin
     intent: "signup",
     loginHint: "person@example.com",
   });
-  expect(prime).toHaveBeenCalledWith("session-token");
   expect(setMenu).toHaveBeenCalledWith(true);
-  expect(calls).toEqual([
-    "host",
-    "prime",
-    "refresh",
-    "wait",
-    "menu",
-    "context",
-  ]);
+  expect(calls).toEqual(["host", "refresh", "menu", "context"]);
   expect(location.href).toBe("/assistant");
 });
 test("host exchange keeps resume probes suspended until it completes", async () => {
@@ -116,7 +91,6 @@ test("host exchange keeps resume probes suspended until it completes", async () 
   );
   const pending = startDesktopLogin({ returnTo: "/assistant/identity" });
   expect(isOAuthFlowInFlight()).toBe(true);
-  expect(composedActive).toBe(1);
   expect(refreshSession).not.toHaveBeenCalled();
   resolve({ sessionToken: "session-token" });
   await pending;
@@ -132,25 +106,23 @@ test("missing host capability reports the desktop update error without starting 
   expect(location.href).toBe("");
 });
 for (const invalid of [null, {}, { sessionToken: "" }, { sessionToken: 123 }]) {
-  test(`invalid IPC session ${JSON.stringify(invalid)} cannot prime or navigate`, async () => {
+  test(`invalid IPC session ${JSON.stringify(invalid)} cannot refresh or navigate`, async () => {
     response = invalid;
     await expect(startDesktopLogin()).rejects.toThrow("invalid session");
-    expect(prime).not.toHaveBeenCalled();
     expect(refreshSession).not.toHaveBeenCalled();
     expect(location.href).toBe("");
   });
 }
-test("host cancellation reaches the caller and clears both OAuth scopes", async () => {
+test("host cancellation reaches the caller and clears the account OAuth scope", async () => {
   const cancelled = Object.assign(new Error("cancelled"), {
     code: "USER_CANCELLED",
   });
   startOAuth.mockRejectedValueOnce(cancelled);
   await expect(startDesktopLogin()).rejects.toBe(cancelled);
-  expect(prime).not.toHaveBeenCalled();
   expect(location.href).toBe("");
 });
-test("reconciliation errors clear both scopes without navigation", async () => {
-  waitComposedSession.mockRejectedValueOnce(new Error("refresh failed"));
+test("account refresh errors release OAuth without navigation", async () => {
+  refreshSession.mockRejectedValueOnce(new Error("refresh failed"));
   await expect(startDesktopLogin()).rejects.toThrow("refresh failed");
   expect(location.href).toBe("");
 });
@@ -174,7 +146,6 @@ test("desktop keeps OAuth guards active and waits for app facts before navigatin
   expect(calls).toContain("context");
   expect(location.href).toBe("");
   expect(isOAuthFlowInFlight()).toBe(true);
-  expect(composedActive).toBe(1);
   resolve({
     returningUser: true,
     checkout: { save: () => {}, clear: () => {} },

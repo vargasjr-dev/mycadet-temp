@@ -28,7 +28,6 @@ export async function startDesktopLogin(
     );
   }
   const finish = beginOAuthFlow();
-  const finishComposed = nativeAuthContext.beginComposedOAuth();
   try {
     const response: unknown = await auth.startOAuth({
       loginHint: options.loginHint,
@@ -38,10 +37,7 @@ export async function startDesktopLogin(
     if (!parsed.success) {
       throw new Error("The desktop auth bridge returned an invalid session.");
     }
-    // App reads the main-process token directly; web still caches it per page.
-    nativeAuthContext.primeComposedSession(parsed.data.sessionToken);
     await useAuthStore.getState().refreshSession();
-    await nativeAuthContext.waitComposedSession();
     await setMenuCloudSession(true);
     const destination = sanitizeReturnTo(
       resolveNativePostAuthDestination(
@@ -53,7 +49,6 @@ export async function startDesktopLogin(
     );
     window.location.href = destination;
   } finally {
-    finishComposed();
     finish();
   }
 }

@@ -17,7 +17,6 @@ function makeSource() {
   return createAccountSessionSource({
     getSession,
     snapshot: { read: () => null, write: () => {}, clear: () => {} },
-    synchronizeAssistant: async () => true,
     logout,
   });
 }

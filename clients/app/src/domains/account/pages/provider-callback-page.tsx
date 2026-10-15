@@ -9,7 +9,6 @@ import { readAuthCallbackIntent } from "@app/domains/account/provider-callback";
 import { AccountHeading } from "@app/components/account/account-form";
 import { AccountShell } from "@app/components/account/account-shell";
 import { listAssistants } from "@app/assistant/api";
-import { refreshCloudAssistantsIfStale } from "@web/assistant/cloud-assistants-sync";
 import { getSession } from "@app/lib/auth/session-client";
 import { resolvePostAuthDestination } from "@app/domains/account/post-auth-destination";
 import { classifyCallbackFlows } from "@app/domains/account/callback-flows";
@@ -64,9 +63,6 @@ export function ProviderCallbackPage() {
         switch (outcome.kind) {
           case "authenticated": {
             await refreshSession();
-            // Wait for the assistants list so post-auth can skip privacy and
-            // research when the assistant is already onboarded.
-            await refreshCloudAssistantsIfStale();
 
             if (isLocalClient()) {
               try {

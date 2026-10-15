@@ -38,10 +38,6 @@ mock.module("@app/lib/auth/provider-signup-client", () => ({
   isConflict: () => false,
 }));
 
-mock.module("@web/assistant/cloud-assistants-sync", () => ({
-  refreshCloudAssistantsIfStale: async () => {},
-}));
-
 const refreshSession = mock(async () => true);
 
 mock.module("@app/stores/auth-store", () => ({

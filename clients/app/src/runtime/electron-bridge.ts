@@ -4,7 +4,10 @@ import type { CadetBridge, CadetCommand } from "@mycadet/ipc-contract";
 export interface AppElectronBridge {
   platform: "electron";
   auth?: Partial<
-    Pick<CadetBridge["auth"], "getSessionToken" | "cancelOAuth" | "startOAuth">
+    Pick<
+      CadetBridge["auth"],
+      "getSessionToken" | "cancelOAuth" | "startOAuth" | "signOut"
+    >
   >;
   localMode?: Pick<CadetBridge["localMode"], "readLockfile">;
   menu: { setCloudSession(has: boolean): Promise<void> };

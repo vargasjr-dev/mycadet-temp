@@ -24,15 +24,13 @@ function setup(cached: AccountUser | null = null) {
   const getSession = mock(async (): Promise<Result> => success);
   const write = mock((_user: AccountUser) => {});
   const clear = mock(() => {});
-  const synchronizeAssistant = mock(async () => true);
   const logout = mock(async () => {});
   const source = createAccountSessionSource({
     getSession,
     snapshot: { read: () => cached, write, clear },
-    synchronizeAssistant,
     logout,
   });
-  return { source, getSession, write, clear, synchronizeAssistant, logout };
+  return { source, getSession, write, clear, logout };
 }
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -42,7 +40,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 test("post-auth refresh supersedes the boot probe, deduplicates explicit refreshes, and maps user fields", async () => {
-  const { source, getSession, write, synchronizeAssistant } = setup();
+  const { source, getSession, write } = setup();
   const probe = deferred<Result>();
   getSession.mockImplementationOnce(() => probe.promise);
   getSession.mockImplementationOnce(async () => success);
@@ -60,7 +58,6 @@ test("post-auth refresh supersedes the boot probe, deduplicates explicit refresh
     cloudSession: "present",
   });
   expect(write).toHaveBeenCalledWith(user);
-  expect(synchronizeAssistant).toHaveBeenCalledTimes(1);
 });
 for (const status of [401, 403, 410])
   test(`authoritative ${status} clears the offline account`, async () => {
@@ -117,17 +114,6 @@ test("logout supersedes an in-flight success and blocks probes during cleanup", 
   expect(source.getSnapshot().user).toBeNull();
   expect(await source.observeSession()).toBe(true);
 });
-test("a logout during web synchronization cannot return an authenticated result", async () => {
-  const { source, synchronizeAssistant } = setup();
-  const sync = deferred<boolean>();
-  synchronizeAssistant.mockImplementationOnce(() => sync.promise);
-  const refresh = source.getSnapshot().refreshSession();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  await source.getSnapshot().logout();
-  sync.resolve(true);
-  expect(await refresh).toBe(false);
-  expect(source.getSnapshot().sessionStatus).toBe("unauthenticated");
-});
 
 test("a successful anonymous response clears a cached cloud account", async () => {
   const { source, getSession, clear } = setup(user);
@@ -152,7 +138,6 @@ test("stalled account probes abort and restore only a last-known cloud account",
         });
       }),
     snapshot: { read: () => user, write: () => {}, clear: () => {} },
-    synchronizeAssistant: async () => {},
     logout: async () => {},
     probeTimeoutMs: 5,
   });
@@ -163,33 +148,4 @@ test("stalled account probes abort and restore only a last-known cloud account",
     sessionStatus: "authenticated",
     cloudSession: "present",
   });
-});
-
-test("shared cloud logout invalidates pending app probes until every cleanup scope finishes", async () => {
-  const { source, getSession, write } = setup();
-  const probe = deferred<Result>();
-  getSession.mockImplementationOnce(() => probe.promise);
-  const initial = source.getSnapshot().initSession();
-  const first = source.beginExternalLogout();
-  const second = source.beginExternalLogout();
-  probe.resolve(success);
-  await initial;
-  expect(write).not.toHaveBeenCalled();
-  first();
-  first();
-  expect(await source.observeSession()).toBe(false);
-  second();
-  expect(await source.observeSession()).toBe(true);
-});
-
-test("a newer account rejection wins while legacy synchronization is pending", async () => {
-  const { source, getSession, synchronizeAssistant } = setup();
-  const sync = deferred<boolean>();
-  synchronizeAssistant.mockImplementationOnce(() => sync.promise);
-  const refresh = source.getSnapshot().refreshSession();
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  getSession.mockResolvedValueOnce({ ok: false, status: 401, errors: [] });
-  await source.observeSession();
-  sync.resolve(true);
-  expect(await refresh).toBe(false);
 });

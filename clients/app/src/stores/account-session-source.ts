@@ -17,7 +17,6 @@ interface Dependencies {
     write(user: AccountUser): void;
     clear(): void;
   };
-  synchronizeAssistant(): Promise<unknown>;
   logout(): Promise<void>;
   probeTimeoutMs?: number;
 }
@@ -27,7 +26,6 @@ export function createAccountSessionSource(
   deps: Dependencies,
 ): AccountAuthSource & {
   observeSession(): Promise<boolean>;
-  beginExternalLogout(): () => void;
 } {
   const listeners = new Set<() => void>();
   let initialization: Promise<void> | undefined;
@@ -141,8 +139,6 @@ export function createAccountSessionSource(
       const request = (async () => {
         await observeSession(true);
         if (current !== generation || logoutLocks > 0) return false;
-        // The assistant session reconciles consent and its runtime identity.
-        await deps.synchronizeAssistant();
         return (
           current === generation && state.sessionStatus === "authenticated"
         );
@@ -172,6 +168,5 @@ export function createAccountSessionSource(
       };
     },
     observeSession,
-    beginExternalLogout: beginLogout,
   };
 }
