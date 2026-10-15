@@ -9,123 +9,129 @@ import {
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { AppShell } from "./index";
-import type { ResolveAssistant } from "./assistant/resolution-contract";
+
 const origin = "https://site.example.com";
-const ready = (id = "assistant-1") => ({
-  status: "ready",
-  assistant: {
-    id,
-    ui: {
-      version: "1.2.3",
-      entryUrl: "https://runtime.example.com/web/1.2.3/assistant/",
-    },
-    runtime: { baseUrl: `/runtime/${id}/v1/` },
+const detail = (id = "assistant-1") => ({
+  id,
+  status: "active",
+  ui: {
+    version: "1.2.3",
+    entryUrl: "https://runtime.example.com/web/1.2.3/assistant/",
   },
+  runtime: { baseUrl: `https://runtime.example.com/runtime/${id}/v1/` },
 });
+const request = spyOn(globalThis, "fetch");
+function respond(
+  implementation: (
+    ...args: Parameters<typeof fetch>
+  ) => ReturnType<typeof fetch>,
+) {
+  request.mockImplementation(
+    Object.assign(implementation, { preconnect: fetch.preconnect }),
+  );
+}
 const navigate = mock((_path: string, _options: { replace: boolean }) => {});
 afterEach(() => {
   cleanup();
+  request.mockReset();
   navigate.mockClear();
 });
-function show(
-  resolveAssistant: ResolveAssistant,
-  location = "/admin/assistant/conversations/123?tab=files#last",
-) {
-  return render(
-    <AppShell
-      resolveAssistant={resolveAssistant}
-      location={location}
-      mountPath="/admin/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
-  );
+function json(value: unknown) {
+  return new Response(JSON.stringify(value));
+}
+function props(id: string | undefined = "assistant-1") {
+  return {
+    assistantId: id,
+    location: "/admin/assistant/conversations/123?tab=files#last",
+    mountPath: "/admin/assistant",
+    origin,
+    onNavigate: navigate,
+  };
 }
 function iframe(): HTMLIFrameElement {
   const frame = screen.getByTitle("Assistant");
   if (!(frame instanceof HTMLIFrameElement)) {
-    throw new Error("Expected iframe");
+    throw new Error("Missing frame");
   }
   return frame;
 }
 function message(
   frame: HTMLIFrameElement,
   path: string,
-  options: { origin?: string; source?: Window; nav?: string } = {},
+  extra: { origin?: string; source?: Window; nav?: string } = {},
 ) {
   window.dispatchEvent(
     new MessageEvent("message", {
-      source: options.source ?? frame.contentWindow,
-      origin: options.origin ?? "https://runtime.example.com",
-      data: { source: "mycadet-web-nav", nav: options.nav ?? "push", path },
+      source: extra.source ?? frame.contentWindow,
+      origin: extra.origin ?? "https://runtime.example.com",
+      data: { source: "mycadet-web-nav", nav: extra.nav ?? "push", path },
     }),
   );
 }
-test("public entry server-renders without fetching or mounting a browser router", () => {
-  const resolve = mock(async () => ready());
-  expect(
-    renderToString(
-      <AppShell
-        resolveAssistant={resolve}
-        location="/assistant"
-        origin={origin}
-        onNavigate={navigate}
-      />,
-    ),
-  ).toContain("Loading assistant");
-  expect(resolve).not.toHaveBeenCalled();
-});
-test("mounts at the admin prefix and accepts navigation only from its active frame and exact origin", async () => {
-  show(async () => ready());
+async function mounted() {
+  request.mockResolvedValue(json(detail()));
+  const view = render(<AppShell {...props()} />);
   await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
   await act(async () => {});
+  return view;
+}
+
+test("server rendering never fetches or mounts a browser router", () => {
+  expect(renderToString(<AppShell {...props()} />)).toContain(
+    "Loading assistant",
+  );
+  expect(request).not.toHaveBeenCalled();
+});
+
+test("admin deep links and active-frame navigation preserve the host prefix", async () => {
+  await mounted();
   const frame = iframe();
   expect(frame.src).toBe(
     "https://runtime.example.com/web/1.2.3/assistant/conversations/123?tab=files#last",
   );
-  message(frame, "/assistant/settings", {
-    origin: "https://other.example.com",
-  });
-  message(frame, "/assistant/settings", { source: window });
-  message(frame, "/assistant-other");
-  message(frame, "/assistant/%2e%2e/account");
-  expect(navigate).not.toHaveBeenCalled();
-  message(frame, "/web/1.2.3/assistant/settings?section=voice#input");
-  expect(navigate).toHaveBeenLastCalledWith(
-    "/admin/assistant/settings?section=voice#input",
+  message(frame, "/assistant/settings?tab=profile#name");
+  expect(navigate).toHaveBeenCalledWith(
+    "/admin/assistant/settings?tab=profile#name",
     { replace: false },
   );
-  message(frame, "/assistant/settings?section=voice#input");
-  expect(navigate).toHaveBeenCalledTimes(1);
-  message(frame, "/assistant/identity", { nav: "pop" });
-  expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/identity", {
+  message(frame, "/web/1.2.3/assistant/files", { nav: "pop" });
+  expect(navigate).toHaveBeenLastCalledWith("/admin/assistant/files", {
     replace: true,
   });
 });
-test("host back and forward update the frame over the navigation protocol without remounting it", async () => {
-  const resolve = mock(async () => ready());
-  const view = show(resolve);
-  await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
-  await act(async () => {});
+
+test("rejects messages from other origins, windows, versions, or paths", async () => {
+  await mounted();
   const frame = iframe();
-  const content = frame.contentWindow;
-  if (!content) {
-    throw new Error("Expected frame window");
+  message(frame, "/assistant/settings", {
+    origin: "https://elsewhere.example",
+  });
+  message(frame, "/assistant/settings", { source: window });
+  for (const path of [
+    "/account/login",
+    "/web/2.0.0/assistant/settings",
+    "/assistant/../account",
+    "//elsewhere.example/assistant",
+  ]) {
+    message(frame, path);
   }
-  const post = spyOn(content, "postMessage");
+  expect(navigate).not.toHaveBeenCalled();
+});
+
+test("host navigation updates the active frame without another API lookup", async () => {
+  const view = await mounted();
+  const frame = iframe();
+  if (!frame.contentWindow) {
+    throw new Error("No frame window");
+  }
+  const post = spyOn(frame.contentWindow, "postMessage");
   const src = frame.src;
   view.rerender(
-    <AppShell
-      resolveAssistant={resolve}
-      location="/admin/assistant/identity?edit=1#name"
-      mountPath="/admin/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+    <AppShell {...props()} location="/admin/assistant/identity?edit=1#name" />,
   );
   expect(iframe()).toBe(frame);
   expect(frame.src).toBe(src);
-  expect(resolve).toHaveBeenCalledTimes(1);
+  expect(request).toHaveBeenCalledTimes(1);
   expect(post).toHaveBeenCalledWith(
     {
       source: "mycadet-web-parent-nav",
@@ -135,155 +141,109 @@ test("host back and forward update the frame over the navigation protocol withou
   );
   post.mockRestore();
 });
-for (const result of [
-  { status: "unauthenticated" },
-  { status: "empty" },
-  { status: "starting" },
-  { status: "ready", assistant: {} },
-]) {
-  test(`does not mount assistant UI for ${JSON.stringify(result)}`, async () => {
-    show(async () => result);
+
+for (const [payload, status] of [
+  [detail(), 401],
+  [{ ...detail(), status: "initializing", ui: null, runtime: null }, 200],
+  [{}, 200],
+] as const) {
+  test(`does not mount unauthorized, starting, or malformed UI ${status}/${JSON.stringify(payload)}`, async () => {
+    request.mockResolvedValue(json(payload));
+    if (status === 401) {
+      request.mockResolvedValue(new Response(null, { status }));
+    }
+    render(<AppShell {...props()} />);
     await waitFor(() =>
       expect(screen.queryByText("Loading assistant…")).toBeNull(),
     );
     expect(screen.queryByTitle("Assistant")).toBeNull();
-    expect(screen.getByRole("status")).toBeDefined();
   });
 }
-test("a failed resolution can be retried without any account auth store", async () => {
-  const resolve = mock(async (): Promise<unknown> => {
-    throw new Error("Unavailable");
-  });
-  resolve.mockImplementationOnce(async () => {
-    throw new Error("Unavailable");
-  });
-  resolve.mockImplementationOnce(async () => ready());
-  show(resolve);
-  await waitFor(() =>
-    expect(screen.queryByText("Unable to load assistant.")).not.toBeNull(),
-  );
+
+test("retries an API failure without account session probes", async () => {
+  request
+    .mockResolvedValueOnce(new Response(null, { status: 503 }))
+    .mockResolvedValueOnce(json(detail()));
+  render(<AppShell {...props()} />);
+  await screen.findByText("Unable to load assistant.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
-  expect(resolve).toHaveBeenCalledTimes(2);
+  await screen.findByTitle("Assistant");
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(
+    request.mock.calls.every(([url]) =>
+      String(url).endsWith("/v1/assistants/assistant-1/"),
+    ),
+  ).toBe(true);
 });
-test("unmount aborts resolution and ignores a late result", async () => {
-  let finish!: (value: unknown) => void;
-  let signal: AbortSignal | undefined;
-  const resolve: ResolveAssistant = (request) => {
-    signal = request.signal;
-    return new Promise((done) => {
-      finish = done;
-    });
-  };
-  const view = show(resolve);
+
+test("unmount aborts requests and ignores late replies", async () => {
+  let finish!: (value: Response) => void;
+  respond(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
+  const view = render(<AppShell {...props()} />);
   await act(async () => {});
+  const signal = request.mock.calls[0][1]?.signal;
   view.unmount();
   expect(signal?.aborted).toBe(true);
   await act(async () => {
-    finish(ready());
+    finish(json(detail()));
   });
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
-test("changing assistant identity hides the old frame immediately and rejects a mismatched resolution", async () => {
-  const resolve = mock(async () => ready());
-  const view = show(resolve);
-  await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
+
+test("changing assistant or API base immediately hides the previous frame", async () => {
+  const view = await mounted();
+  let finish!: (value: Response) => void;
+  respond(
+    () =>
+      new Promise((done) => {
+        finish = done;
+      }),
+  );
   view.rerender(
-    <AppShell
-      resolveAssistant={resolve}
-      assistantId="assistant-2"
-      location="/admin/assistant"
-      mountPath="/admin/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+    <AppShell {...props("assistant-2")} apiBaseUrl="/admin/api/" />,
   );
   expect(screen.queryByTitle("Assistant")).toBeNull();
-  await waitFor(() =>
-    expect(screen.queryByText("Unable to load assistant.")).not.toBeNull(),
-  );
-});
-
-test("late results for a previous selection cannot mount that assistant", async () => {
-  const pending = new Map<string, (value: unknown) => void>();
-  const resolve: ResolveAssistant = ({ assistantId }) =>
-    new Promise((done) => {
-      pending.set(assistantId ?? "assistant-1", done);
-    });
-  const view = show(resolve);
   await act(async () => {});
-  view.rerender(
-    <AppShell
-      resolveAssistant={resolve}
-      assistantId="assistant-2"
-      location="/admin/assistant"
-      mountPath="/admin/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+  expect(String(request.mock.calls.at(-1)?.[0])).toBe(
+    "https://site.example.com/admin/api/v1/assistants/assistant-2/",
   );
-  await act(async () => {});
   await act(async () => {
-    pending.get("assistant-1")?.(ready());
+    finish(json(detail("assistant-2")));
   });
-  expect(screen.queryByTitle("Assistant")).toBeNull();
-  await act(async () => {
-    pending.get("assistant-2")?.(ready("assistant-2"));
-  });
-  expect(screen.queryByTitle("Assistant")).not.toBeNull();
+  await screen.findByTitle("Assistant");
 });
 
-test("frame load receives the latest host path when navigation changes before loading finishes", async () => {
-  const resolve = mock(async () => ready());
-  const view = show(resolve);
-  await waitFor(() => expect(screen.queryByTitle("Assistant")).not.toBeNull());
-  await act(async () => {});
-  const frame = iframe();
-  const content = frame.contentWindow;
-  if (!content) {
-    throw new Error("Expected frame window");
-  }
-  const post = spyOn(content, "postMessage");
-  view.rerender(
-    <AppShell
-      resolveAssistant={resolve}
-      location="/admin/assistant/identity#name"
-      mountPath="/admin/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+test("without an ID the shell offers choices and fetches only the selected assistant", async () => {
+  request
+    .mockResolvedValueOnce(
+      json({
+        results: [
+          { id: "assistant-1", name: "One" },
+          { id: "assistant-2", name: "Two" },
+        ],
+      }),
+    )
+    .mockResolvedValueOnce(json(detail("assistant-2")));
+  render(<AppShell {...props()} assistantId={undefined} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Two" }));
+  await screen.findByTitle("Assistant");
+  expect(String(request.mock.calls[1][0])).toBe(
+    "https://site.example.com/v1/assistants/assistant-2/",
   );
-  post.mockClear();
-  fireEvent.load(frame);
-  expect(post).toHaveBeenCalledWith(
-    {
-      source: "mycadet-web-parent-nav",
-      path: "/web/1.2.3/assistant/identity#name",
-    },
-    "https://runtime.example.com",
-  );
-  post.mockRestore();
 });
 
-test("embedded shells keep independent locales and update translated status and title", async () => {
-  const resolve = async () => ({ status: "empty" });
+test("embedded shells maintain independent translated statuses", async () => {
+  respond(async () => json({ results: [] }));
   const first = render(
-    <AppShell
-      resolveAssistant={resolve}
-      locale="es"
-      location="/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+    <AppShell {...props()} assistantId={undefined} locale="es" />,
   );
   const second = render(
-    <AppShell
-      resolveAssistant={resolve}
-      locale="ru"
-      location="/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+    <AppShell {...props()} assistantId={undefined} locale="ru" />,
   );
   await waitFor(() => {
     expect(first.container.textContent).toContain(
@@ -293,32 +253,58 @@ test("embedded shells keep independent locales and update translated status and 
       "Нет доступных ассистентов.",
     );
   });
-  first.rerender(
-    <AppShell
-      resolveAssistant={resolve}
-      locale="en"
-      location="/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+});
+
+test("a late reply for a previous assistant cannot replace the current selection", async () => {
+  const replies = new Map<string, (response: Response) => void>();
+  respond(
+    (url) =>
+      new Promise((done) => {
+        replies.set(String(url), done);
+      }),
   );
-  await waitFor(() => {
-    expect(first.container.textContent).toContain("No assistant is available.");
-    expect(second.container.textContent).toContain(
-      "Нет доступных ассистентов.",
+  const view = render(<AppShell {...props()} />);
+  await act(async () => {});
+  view.rerender(<AppShell {...props("assistant-2")} />);
+  await act(async () => {});
+  await act(async () => {
+    replies.get(`${origin}/v1/assistants/assistant-1/`)?.(json(detail()));
+  });
+  expect(screen.queryByTitle("Assistant")).toBeNull();
+  await act(async () => {
+    replies.get(`${origin}/v1/assistants/assistant-2/`)?.(
+      json(detail("assistant-2")),
     );
   });
-  second.unmount();
-  first.rerender(
-    <AppShell
-      resolveAssistant={async () => ready()}
-      locale="es"
-      location="/assistant"
-      origin={origin}
-      onNavigate={navigate}
-    />,
+  await screen.findByTitle("Assistant");
+});
+
+test("frame navigation echoes do not create duplicate host history entries", async () => {
+  await mounted();
+  const frame = iframe();
+  message(frame, "/assistant/files");
+  message(frame, "/assistant/files");
+  expect(navigate).toHaveBeenCalledTimes(1);
+});
+
+test("a frame that loads late receives the latest host route", async () => {
+  const view = await mounted();
+  const frame = iframe();
+  if (!frame.contentWindow) {
+    throw new Error("Missing frame window");
+  }
+  const post = spyOn(frame.contentWindow, "postMessage");
+  view.rerender(
+    <AppShell {...props()} location="/admin/assistant/files?view=grid#last" />,
   );
-  await waitFor(() => {
-    expect(screen.getByTitle("Asistente")).toBeTruthy();
-  });
+  post.mockClear();
+  fireEvent.load(frame);
+  expect(post).toHaveBeenCalledWith(
+    {
+      source: "mycadet-web-parent-nav",
+      path: "/web/1.2.3/assistant/files?view=grid#last",
+    },
+    "https://runtime.example.com",
+  );
+  post.mockRestore();
 });

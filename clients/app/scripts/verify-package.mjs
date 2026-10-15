@@ -17,12 +17,13 @@ if (
 }
 AssistantResolutionSchema.parse({ status: "empty" });
 let requested = false;
+const originalFetch = globalThis.fetch;
+globalThis.fetch = () => {
+  requested = true;
+  throw new Error("SSR must not fetch.");
+};
 const html = renderToString(
   createElement(AppShell, {
-    resolveAssistant: async () => {
-      requested = true;
-      return { status: "empty" };
-    },
     location: "/admin/assistant",
     mountPath: "/admin/assistant",
     origin: "https://site.example.com",
@@ -34,4 +35,5 @@ const html = renderToString(
 if (requested || !html.includes("Loading assistant")) {
   throw new Error("SSR must render the shell without starting resolution.");
 }
+globalThis.fetch = originalFetch;
 console.log("Portable app package passed server-render verification.");

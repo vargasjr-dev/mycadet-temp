@@ -100,6 +100,9 @@
     "empty": "No hay ningún asistente disponible.",
     "unauthenticated": "Inicia sesión para continuar.",
     "retry": "Reintentar",
-    "title": "Asistente"
+    "title": "Asistente",
+    "selection": "Elige un asistente.",
+    "unavailable": "Este asistente no está disponible.",
+    "chooseAnother": "Elegir otro asistente"
   }
 }

@@ -307,7 +307,7 @@ describe("buildIngressNginxConfig", () => {
     ).toEqual([]);
   });
 
-  test("revalidates the shell and forbids storing only the inline config", () => {
+  test("revalidates the shell and forbids storing inline config", () => {
     const blocks = locationBlocks(remoteConf);
     const cacheControlOf = (matcher: string) =>
       blocks
@@ -318,11 +318,8 @@ describe("buildIngressNginxConfig", () => {
     expect(cacheControlOf("^~ /assistant/assets/")).toBe(
       "public, max-age=31536000, immutable",
     );
-    // Only the inline __config return, which nginx gives no validator, still
-    // refuses storage. A second no-store means a revalidating location
-    // regressed to re-sending its whole body on every load.
+    // Inline config has no validator and must not be stored.
     expect(cacheControlOf("= /assistant/__config")).toBe("no-store");
-    expect(remoteConf.match(/no-store/g)).toHaveLength(1);
   });
 
   test("serves remote web config for the SPA", () => {
@@ -2259,5 +2256,86 @@ describe("stopContainerTunnelEdge", () => {
     process.env.CADET_WORKSPACE_DIR = ws;
 
     expect(await stopContainerTunnelEdge(containerEntry(7930))).toBe(false);
+  });
+});
+
+describe("assistant metadata API", () => {
+  function config(id = "assistant-1") {
+    return buildIngressNginxConfig({
+      gatewayPort: 7830,
+      listenPort: 7840,
+      remoteWebIngress: {
+        webDistDir: "/tmp/web",
+        uiVersion: "bundle-hash",
+        assistantId: id,
+        assistantName: "My assistant",
+        config: { appAllowedOrigins: ["https://parent.example"] },
+      },
+    });
+  }
+  function body(conf: string, path: string): unknown {
+    const location = conf
+      .split(`location = "${path}" {`)[1]
+      ?.split("\n    }")[0];
+    const value = location?.match(/return 200 ("(?:\\.|[^"\\])*");/)?.[1];
+    if (!value) {
+      throw new Error(`Missing metadata for ${path}`);
+    }
+    return JSON.parse(JSON.parse(value));
+  }
+  test("lists only this host's assistant and returns its actual UI and gateway paths", () => {
+    const conf = config();
+    expect(body(conf, "/v1/assistants/")).toEqual({
+      results: [{ id: "assistant-1", name: "My assistant" }],
+      next: null,
+    });
+    expect(body(conf, "/v1/assistants/assistant-1/")).toEqual({
+      id: "assistant-1",
+      name: "My assistant",
+      status: "active",
+      ui: { version: "bundle-hash", entryUrl: "assistant/" },
+      runtime: { baseUrl: "v1/" },
+    });
+    expect(conf).not.toContain('location = "/v1/assistants/other/"');
+  });
+  test("metadata supports both slash forms and only read methods", () => {
+    const conf = config();
+    for (const path of [
+      "/v1/assistants",
+      "/v1/assistants/",
+      "/v1/assistants/assistant-1",
+      "/v1/assistants/assistant-1/",
+    ]) {
+      expect(body(conf, path)).toBeDefined();
+    }
+    expect(conf).toContain(
+      "if ($request_method !~ ^(GET|HEAD)$) { return 405; }",
+    );
+    expect(conf).toContain(
+      '"https://parent.example" "https://parent.example";',
+    );
+    expect(conf).toContain(
+      "add_header Access-Control-Allow-Origin $cadet_app_origin always;",
+    );
+  });
+  test("unknown identity yields an empty list without inventing an assistant ID", () => {
+    const conf = buildIngressNginxConfig({
+      gatewayPort: 7830,
+      listenPort: 7840,
+      remoteWebIngress: { webDistDir: "/tmp/web" },
+    });
+    expect(body(conf, "/v1/assistants/")).toEqual({ results: [], next: null });
+  });
+  test("invalid browser origins fail before nginx starts", () => {
+    expect(() =>
+      buildIngressNginxConfig({
+        gatewayPort: 7830,
+        listenPort: 7840,
+        remoteWebIngress: {
+          webDistDir: "/tmp/web",
+          config: { appAllowedOrigins: ["https://parent.example/path"] },
+        },
+      }),
+    ).toThrow("App origins");
   });
 });

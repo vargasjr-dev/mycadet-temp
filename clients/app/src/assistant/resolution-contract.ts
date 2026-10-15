@@ -4,7 +4,12 @@ function publicUrl(value: string): boolean {
   if (/[\\\u0000-\u0020]/.test(value) || value.startsWith("//")) {
     return false;
   }
-  if (!value.startsWith("/") && !/^https?:\/\//i.test(value)) {
+  if (
+    (!value.startsWith("/") &&
+      !/^https?:\/\//i.test(value) &&
+      value.includes(":")) ||
+    /(?:^|\/)(?:\.|%2e){1,2}(?:\/|$)/i.test(value)
+  ) {
     return false;
   }
   try {
@@ -23,7 +28,7 @@ function publicUrl(value: string): boolean {
   }
 }
 
-const PublicUrlSchema = z
+export const PublicUrlSchema = z
   .string()
   .min(1)
   .refine(
@@ -46,19 +51,37 @@ export const ResolvedAssistantSchema = z.object({
   runtime: z.object({ baseUrl: PublicUrlSchema }),
 });
 
+export const AssistantDetailSchema = ResolvedAssistantSchema.extend({
+  status: z.enum([
+    "initializing",
+    "active",
+    "to_be_deleted",
+    "archiving",
+    "archived",
+    "restoring",
+  ]),
+  ui: ResolvedAssistantSchema.shape.ui.nullable(),
+  runtime: ResolvedAssistantSchema.shape.runtime.nullable(),
+});
+
+export const AssistantChoiceSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().optional(),
+});
+
 export const AssistantResolutionSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("ready"), assistant: ResolvedAssistantSchema }),
   z.object({ status: z.literal("starting") }),
+  z.object({ status: z.literal("unavailable") }),
+  z.object({
+    status: z.literal("selection"),
+    assistants: z.array(AssistantChoiceSchema),
+  }),
   z.object({ status: z.literal("empty") }),
   z.object({ status: z.literal("unauthenticated") }),
 ]);
 export type ResolvedAssistant = z.infer<typeof ResolvedAssistantSchema>;
 export type AssistantResolution = z.infer<typeof AssistantResolutionSchema>;
-export type ResolveAssistant = (request: {
-  assistantId?: string;
-  signal: AbortSignal;
-}) => Promise<unknown>;
-
 export const AssistantNavigationSchema = z.object({
   source: z.literal("mycadet-web-nav"),
   nav: z.enum(["push", "replace", "pop"]),

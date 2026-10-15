@@ -13,20 +13,18 @@ import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { currentLocale, useTranslation } from "@app/i18n";
 import { accountRoute } from "@app/domains/account/account-route";
-import { createHttpAssistantResolver } from "@mycadet/app/contracts";
-
-const resolveAssistant = createHttpAssistantResolver(
-  import.meta.env.VITE_ASSISTANT_RESOLVE_URL ?? "",
-  window.location.origin,
-);
+import { readInjectedConfig } from "@app/lib/injected-config";
 
 function AssistantPage() {
   useTranslation();
+  const config = readInjectedConfig();
   const location = useLocation();
   const navigate = useNavigate();
   return (
     <AppShell
-      resolveAssistant={resolveAssistant}
+      apiBaseUrl={config.cloudUrl}
+      assistantId={config.assistantId}
+      organizationId={config.organizationId}
       location={`${location.pathname}${location.search}${location.hash}`}
       origin={window.location.origin}
       locale={currentLocale()}

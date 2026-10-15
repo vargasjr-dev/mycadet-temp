@@ -17,6 +17,8 @@ import { createServer } from "node:net";
 import { networkInterfaces } from "node:os";
 import { join } from "node:path";
 
+import { z } from "zod";
+
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import {
@@ -141,6 +143,7 @@ const DENYLIST_LOCATIONS = `    location = /auth/token { return 404; }
 export interface RemoteWebIngressOptions {
   webDistDir: string;
   indexHtmlPath?: string;
+  uiVersion?: string;
   config?: Record<string, unknown>;
   /** Serving assistant's display name, stamped into the served config so
    *  remote clients can label this origin. Absent in older served configs. */
@@ -196,6 +199,13 @@ function remoteWebIngressConfig(
       opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
     ),
     apiBaseUrl: "/v1",
+    ...(process.env.CADET_APP_ALLOWED_ORIGINS
+      ? {
+          appAllowedOrigins: process.env.CADET_APP_ALLOWED_ORIGINS.split(",")
+            .map((origin) => origin.trim())
+            .filter(Boolean),
+        }
+      : {}),
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
@@ -208,7 +218,7 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 10;
+export const EDGE_TEMPLATE_VERSION = 11;
 
 /**
  * Stable fingerprint of the injected SPA config, its source bundle, and
@@ -345,9 +355,88 @@ export async function findAvailableIngressPort(
   return null;
 }
 
-/**
- * Build the nginx config that forwards tunnel web traffic to the gateway.
- */
+const AssistantHostConfigSchema = z.object({
+  assistantId: z.string().min(1).optional(),
+  assistantName: z.string().optional(),
+  uiVersion: z.string().min(1).optional(),
+  hubUrl: z.string().url().optional(),
+  appAllowedOrigins: z.array(z.string().url()).default([]),
+});
+
+function appOrigins(config: Record<string, unknown>): string[] {
+  const metadata = AssistantHostConfigSchema.parse(config);
+  const origins = [
+    ...metadata.appAllowedOrigins,
+    ...(metadata.hubUrl ? [new URL(metadata.hubUrl).origin] : []),
+  ];
+  return [...new Set(origins)].map((origin) => {
+    const url = new URL(origin);
+    if (
+      (url.protocol !== "https:" &&
+        !(
+          url.protocol === "http:" &&
+          ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)
+        )) ||
+      url.origin !== origin.replace(/\/$/, "")
+    ) {
+      throw new Error(
+        "App origins must be HTTPS origins or loopback HTTP origins.",
+      );
+    }
+    return url.origin;
+  });
+}
+
+function assistantMetadataLocations(config: Record<string, unknown>): string {
+  const metadata = AssistantHostConfigSchema.parse(config);
+  const id = metadata.assistantId;
+  const choice = id
+    ? {
+        id,
+        ...(metadata.assistantName ? { name: metadata.assistantName } : {}),
+      }
+    : undefined;
+  const detail = choice
+    ? {
+        ...choice,
+        status: metadata.uiVersion ? "active" : "initializing",
+        ui: metadata.uiVersion
+          ? { version: metadata.uiVersion, entryUrl: "assistant/" }
+          : null,
+        runtime: metadata.uiVersion ? { baseUrl: "v1/" } : null,
+      }
+    : undefined;
+  const responses = [
+    {
+      path: "/v1/assistants",
+      body: { results: choice ? [choice] : [], next: null },
+    },
+    ...(detail && id
+      ? [{ path: `/v1/assistants/${encodeURIComponent(id)}`, body: detail }]
+      : []),
+  ];
+  return responses
+    .flatMap(({ path, body }) =>
+      [path, `${path}/`].map(
+        (route) => `
+    location = ${nginxQuoted(route, "assistant API path")} {
+      default_type application/json;
+      add_header Cache-Control "no-store" always;
+      add_header Access-Control-Allow-Origin $cadet_app_origin always;
+      add_header Access-Control-Allow-Credentials "true" always;
+      add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+      add_header Access-Control-Allow-Headers "Accept, Cadet-Organization-Id" always;
+      add_header Vary "Origin" always;
+      if ($request_method = OPTIONS) { return 204; }
+      if ($request_method !~ ^(GET|HEAD)$) { return 405; }
+      return 200 ${nginxQuoted(JSON.stringify(body), "assistant metadata")};
+    }`,
+      ),
+    )
+    .join("\n");
+}
+
+/** Build the nginx config for the tunnel edge and its public assistant metadata. */
 export function buildIngressNginxConfig(opts: {
   gatewayPort: number;
   listenPort: number;
@@ -363,12 +452,16 @@ export function buildIngressNginxConfig(opts: {
     ? `    listen [::1]:${opts.listenPort};\n`
     : "";
   const remoteWebIngress = opts.remoteWebIngress;
+  const allowedOrigins = remoteWebIngress
+    ? appOrigins(remoteWebIngressConfig(remoteWebIngress))
+    : [];
   const serverLocations = remoteWebIngress
     ? buildRemoteWebIngressLocations({
         gatewayPort: opts.gatewayPort,
         webDistDir: remoteWebIngress.webDistDir,
         indexHtmlPath: remoteWebIngress.indexHtmlPath,
         config: remoteWebIngressConfig(remoteWebIngress),
+        uiVersion: remoteWebIngress.uiVersion,
       })
     : `${DENYLIST_LOCATIONS}
 
@@ -417,6 +510,11 @@ http {
     text/plain txt;
   }
 
+  map $http_origin $cadet_app_origin {
+    default "";
+${allowedOrigins.map((origin) => `    ${nginxQuoted(origin, "app origin")} ${nginxQuoted(origin, "app origin")};`).join("\n")}
+  }
+
   map $http_upgrade $connection_upgrade {
     default upgrade;
     "" close;
@@ -457,6 +555,7 @@ function buildRemoteWebIngressLocations(opts: {
   webDistDir: string;
   indexHtmlPath?: string;
   config: Record<string, unknown>;
+  uiVersion?: string;
 }): string {
   const proxyBlock = gatewayProxyBlock(opts.gatewayPort);
   const webDistDir = nginxDirPath(opts.webDistDir);
@@ -466,6 +565,8 @@ function buildRemoteWebIngressLocations(opts: {
   const configJson = JSON.stringify(opts.config);
 
   return `${DENYLIST_LOCATIONS}
+
+${assistantMetadataLocations({ ...opts.config, uiVersion: opts.uiVersion })}
 
     location = /healthz {
 ${proxyBlock}
@@ -724,6 +825,9 @@ export function startIngressNginx(opts: {
       join(remoteWebIngress.webDistDir, "index.html"),
       "utf-8",
     );
+    remoteWebIngress.uiVersion = createHash("sha256")
+      .update(rawIndexHtml)
+      .digest("hex");
     writeFileSync(
       remoteWebIngress.indexHtmlPath,
       buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
