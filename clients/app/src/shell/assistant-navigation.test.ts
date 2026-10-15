@@ -69,8 +69,8 @@ for (const value of [
         status: "ready",
         assistant: {
           id: "assistant-1",
-          ui: { version: "1.2.3", entryUrl: value },
-          runtime: { baseUrl: "/runtime/assistant-1/v1/" },
+          version: "1.2.3",
+          url: value,
         },
       }).success,
     ).toBe(false);
@@ -85,8 +85,8 @@ test("a public ready descriptor and readiness outcomes share one contract", () =
       status: "ready",
       assistant: {
         id: "assistant-1",
-        ui: { version: "1.2.3", entryUrl: entry },
-        runtime: { baseUrl: "/runtime/assistant-1/v1/" },
+        version: "1.2.3",
+        url: entry,
       },
     }).success,
   ).toBe(true);

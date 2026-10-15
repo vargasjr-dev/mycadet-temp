@@ -26,10 +26,10 @@ export function AssistantFrame({
 }: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [src] = useState(() =>
-    frameUrl(location, mountPath, assistant.ui.entryUrl, origin),
+    frameUrl(location, mountPath, assistant.url, origin),
   );
   const currentPath = useRef(
-    framePath(location, mountPath, assistant.ui.entryUrl, origin),
+    framePath(location, mountPath, assistant.url, origin),
   );
   const frameOrigin = new URL(src).origin;
   useEffect(() => {
@@ -48,13 +48,13 @@ export function AssistantFrame({
         const target = hostPath(
           message.data.path,
           mountPath,
-          assistant.ui.entryUrl,
+          assistant.url,
           origin,
         );
         const targetFramePath = framePath(
           target,
           mountPath,
-          assistant.ui.entryUrl,
+          assistant.url,
           origin,
         );
         if (targetFramePath === currentPath.current) {
@@ -68,10 +68,10 @@ export function AssistantFrame({
     };
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [frameOrigin, mountPath, assistant.ui.entryUrl, origin, onNavigate]);
+  }, [frameOrigin, mountPath, assistant.url, origin, onNavigate]);
 
   useEffect(() => {
-    const next = framePath(location, mountPath, assistant.ui.entryUrl, origin);
+    const next = framePath(location, mountPath, assistant.url, origin);
     if (next !== currentPath.current) {
       currentPath.current = next;
       ref.current?.contentWindow?.postMessage(
@@ -79,7 +79,7 @@ export function AssistantFrame({
         frameOrigin,
       );
     }
-  }, [location, mountPath, assistant.ui.entryUrl, origin, frameOrigin]);
+  }, [location, mountPath, assistant.url, origin, frameOrigin]);
 
   return (
     <iframe

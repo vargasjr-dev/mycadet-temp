@@ -8,8 +8,8 @@ afterEach(() => {
 const detail = {
   id: "assistant-1",
   status: "active",
-  ui: { version: "1.2.3", entryUrl: "/web/1.2.3/assistant/" },
-  runtime: { baseUrl: "/runtime/assistant-1/v1/" },
+  version: "1.2.3",
+  url: "/web/1.2.3/assistant/",
 };
 const options = () => ({
   origin: "https://site.example.com",
@@ -32,13 +32,8 @@ test("gets a single assistant under the configured API prefix with cookies and o
     status: "ready",
     assistant: {
       id: detail.id,
-      ui: {
-        ...detail.ui,
-        entryUrl: "https://assistant.example.com/web/1.2.3/assistant/",
-      },
-      runtime: {
-        baseUrl: "https://assistant.example.com/runtime/assistant-1/v1/",
-      },
+      version: detail.version,
+      url: "https://assistant.example.com/web/1.2.3/assistant/",
     },
   });
   const [url, init] = request.mock.calls[0];
@@ -108,7 +103,12 @@ test("401 is unauthenticated; forbidden and server failures remain errors", asyn
 test("validates identities, response fields, and API URL configuration", async () => {
   for (const payload of [
     { ...detail, id: "other" },
-    { ...detail, ui: { version: "1", entryUrl: "javascript:alert(1)" } },
+    { ...detail, url: "javascript:alert(1)" },
+    { ...detail, url: null },
+    { ...detail, version: null },
+    { ...detail, version: "" },
+    { ...detail, status: "initializing" },
+    { ...detail, status: "archived" },
     {},
     null,
   ]) {
@@ -130,27 +130,29 @@ test("validates identities, response fields, and API URL configuration", async (
   expect(request).not.toHaveBeenCalled();
 });
 
-test("non-running assistants do not mount a stale UI", async () => {
-  request.mockResolvedValueOnce(
-    json({ ...detail, status: "initializing", ui: null, runtime: null }),
-  );
-  expect(
-    await resolveAssistant({ ...options(), assistantId: detail.id }),
-  ).toEqual({ status: "starting" });
-  request.mockResolvedValueOnce(json({ ...detail, status: "archived" }));
-  expect(
-    await resolveAssistant({ ...options(), assistantId: detail.id }),
-  ).toEqual({ status: "unavailable" });
+test("409 and 410 detail responses never mount a stale UI, regardless of body", async () => {
+  for (const [code, status] of [
+    [409, "starting"],
+    [410, "unavailable"],
+  ] as const) {
+    for (const body of [null, JSON.stringify(detail), "not JSON"]) {
+      request.mockResolvedValueOnce(new Response(body, { status: code }));
+      expect(
+        await resolveAssistant({ ...options(), assistantId: detail.id }),
+      ).toEqual({ status });
+    }
+  }
 });
 
-test("relative iframe and runtime URLs retain the host's API prefix", async () => {
-  request.mockResolvedValue(
-    json({
-      ...detail,
-      ui: { ...detail.ui, entryUrl: "web/1.2.3/assistant/" },
-      runtime: { baseUrl: "v1/assistants/assistant-1/" },
-    }),
-  );
+test("409 and 410 on the list remain errors", async () => {
+  for (const status of [409, 410]) {
+    request.mockResolvedValueOnce(new Response(null, { status }));
+    await expect(resolveAssistant(options())).rejects.toThrow(String(status));
+  }
+});
+
+test("relative iframe URLs retain the host's API prefix", async () => {
+  request.mockResolvedValue(json({ ...detail, url: "web/1.2.3/assistant/" }));
   expect(
     await resolveAssistant({
       ...options(),
@@ -161,15 +163,8 @@ test("relative iframe and runtime URLs retain the host's API prefix", async () =
     status: "ready",
     assistant: {
       id: detail.id,
-      ui: {
-        version: "1.2.3",
-        entryUrl:
-          "https://assistant.example.com/admin/proxy/web/1.2.3/assistant/",
-      },
-      runtime: {
-        baseUrl:
-          "https://assistant.example.com/admin/proxy/v1/assistants/assistant-1/",
-      },
+      version: "1.2.3",
+      url: "https://assistant.example.com/admin/proxy/web/1.2.3/assistant/",
     },
   });
 });

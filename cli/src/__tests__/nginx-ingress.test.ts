@@ -2273,17 +2273,18 @@ describe("assistant metadata API", () => {
       },
     });
   }
-  function body(conf: string, path: string): unknown {
+  function body(conf: string, path: string, status = 200): unknown {
     const location = conf
       .split(`location = "${path}" {`)[1]
       ?.split("\n    }")[0];
-    const value = location?.match(/return 200 ("(?:\\.|[^"\\])*");/)?.[1];
+    const value = location?.match(/return (200|409) ("(?:\\.|[^"\\])*");/);
+    expect(Number(value?.[1])).toBe(status);
     if (!value) {
       throw new Error(`Missing metadata for ${path}`);
     }
-    return JSON.parse(JSON.parse(value));
+    return JSON.parse(JSON.parse(value[2]));
   }
-  test("lists only this host's assistant and returns its actual UI and gateway paths", () => {
+  test("lists only this host's assistant and returns its actual UI version and URL", () => {
     const conf = config();
     expect(body(conf, "/v1/assistants/")).toEqual({
       results: [{ id: "assistant-1", name: "My assistant" }],
@@ -2293,8 +2294,8 @@ describe("assistant metadata API", () => {
       id: "assistant-1",
       name: "My assistant",
       status: "active",
-      ui: { version: "bundle-hash", entryUrl: "assistant/" },
-      runtime: { baseUrl: "v1/" },
+      version: "bundle-hash",
+      url: "assistant/",
     });
     expect(conf).not.toContain('location = "/v1/assistants/other/"');
   });
@@ -2325,6 +2326,25 @@ describe("assistant metadata API", () => {
       remoteWebIngress: { webDistDir: "/tmp/web" },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({ results: [], next: null });
+  });
+  test("a known assistant without a UI bundle returns 409 on both detail paths", () => {
+    const conf = buildIngressNginxConfig({
+      gatewayPort: 7830,
+      listenPort: 7840,
+      remoteWebIngress: { webDistDir: "/tmp/web", assistantId: "assistant-1" },
+    });
+    expect(body(conf, "/v1/assistants/")).toEqual({
+      results: [{ id: "assistant-1" }],
+      next: null,
+    });
+    for (const path of [
+      "/v1/assistants/assistant-1",
+      "/v1/assistants/assistant-1/",
+    ]) {
+      expect(body(conf, path, 409)).toEqual({
+        detail: "assistant is not ready",
+      });
+    }
   });
   test("invalid browser origins fail before nginx starts", () => {
     expect(() =>

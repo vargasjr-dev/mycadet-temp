@@ -172,7 +172,7 @@ function AssistantShell({
   const assistant = state.assistant;
   return (
     <AssistantFrame
-      key={`${assistant.id}:${assistant.ui.version}:${assistant.ui.entryUrl}:${assistant.runtime.baseUrl}:${mountPath}:${origin}`}
+      key={`${assistant.id}:${assistant.version}:${assistant.url}:${mountPath}:${origin}`}
       assistant={assistant}
       location={location}
       origin={origin}

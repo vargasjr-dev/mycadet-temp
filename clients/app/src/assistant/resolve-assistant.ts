@@ -40,15 +40,24 @@ export async function resolveAssistant({
     headers.set("Cadet-Organization-Id", organizationId);
   }
   const unauthenticated = Symbol("unauthenticated");
-  async function get(path: string) {
+  const starting = Symbol("starting");
+  const unavailable = Symbol("unavailable");
+  async function get(path: string, detail = false) {
     signal.throwIfAborted();
     const response = await fetch(new URL(path, base), {
       headers,
       signal,
       credentials: "include",
     });
+    signal.throwIfAborted();
     if (response.status === 401) {
       return unauthenticated;
+    }
+    if (detail && response.status === 409) {
+      return starting;
+    }
+    if (detail && response.status === 410) {
+      return unavailable;
     }
     if (!response.ok) {
       throw new Error(`Assistant request failed: ${response.status}`);
@@ -88,26 +97,27 @@ export async function resolveAssistant({
   }
   const payload = await get(
     `v1/assistants/${encodeURIComponent(assistantId)}/`,
+    true,
   );
   if (payload === unauthenticated) {
     return { status: "unauthenticated" };
+  }
+  if (payload === starting) {
+    return { status: "starting" };
+  }
+  if (payload === unavailable) {
+    return { status: "unavailable" };
   }
   const detail = decode(AssistantDetailSchema, payload);
   if (detail.id !== assistantId) {
     throw new Error("Assistant identity does not match the request.");
   }
-  if (["archived", "archiving", "to_be_deleted"].includes(detail.status)) {
-    return { status: "unavailable" };
-  }
-  if (detail.status !== "active" || !detail.ui || !detail.runtime) {
-    return { status: "starting" };
-  }
   return {
     status: "ready",
     assistant: {
       id: detail.id,
-      ui: { ...detail.ui, entryUrl: new URL(detail.ui.entryUrl, base).href },
-      runtime: { baseUrl: new URL(detail.runtime.baseUrl, base).href },
+      version: detail.version,
+      url: new URL(detail.url, base).href,
     },
   };
 }

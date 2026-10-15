@@ -14,11 +14,8 @@ const origin = "https://site.example.com";
 const detail = (id = "assistant-1") => ({
   id,
   status: "active",
-  ui: {
-    version: "1.2.3",
-    entryUrl: "https://runtime.example.com/web/1.2.3/assistant/",
-  },
-  runtime: { baseUrl: `https://runtime.example.com/runtime/${id}/v1/` },
+  version: "1.2.3",
+  url: "https://runtime.example.com/web/1.2.3/assistant/",
 });
 const request = spyOn(globalThis, "fetch");
 function respond(
@@ -142,23 +139,30 @@ test("host navigation updates the active frame without another API lookup", asyn
   post.mockRestore();
 });
 
-for (const [payload, status] of [
-  [detail(), 401],
-  [{ ...detail(), status: "initializing", ui: null, runtime: null }, 200],
-  [{}, 200],
+for (const [status, message] of [
+  [401, "Please sign in to continue."],
+  [409, "Your assistant is starting."],
+  [410, "This assistant is unavailable."],
+  [200, "Unable to load assistant."],
 ] as const) {
-  test(`does not mount unauthorized, starting, or malformed UI ${status}/${JSON.stringify(payload)}`, async () => {
-    request.mockResolvedValue(json(payload));
-    if (status === 401) {
-      request.mockResolvedValue(new Response(null, { status }));
-    }
+  test(`does not mount an iframe for HTTP ${status}`, async () => {
+    request.mockResolvedValue(new Response("{}", { status }));
     render(<AppShell {...props()} />);
-    await waitFor(() =>
-      expect(screen.queryByText("Loading assistant…")).toBeNull(),
-    );
+    await screen.findByText(message);
     expect(screen.queryByTitle("Assistant")).toBeNull();
   });
 }
+
+test("retries a starting assistant and mounts it once ready", async () => {
+  request
+    .mockResolvedValueOnce(new Response(null, { status: 409 }))
+    .mockResolvedValueOnce(json(detail()));
+  render(<AppShell {...props()} />);
+  await screen.findByText("Your assistant is starting.");
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  await screen.findByTitle("Assistant");
+  expect(request).toHaveBeenCalledTimes(2);
+});
 
 test("retries an API failure without account session probes", async () => {
   request

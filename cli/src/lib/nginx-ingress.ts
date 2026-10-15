@@ -404,27 +404,31 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
         ...(metadata.assistantName ? { name: metadata.assistantName } : {}),
       }
     : undefined;
-  const detail = choice
-    ? {
-        ...choice,
-        status: metadata.uiVersion ? "active" : "initializing",
-        ui: metadata.uiVersion
-          ? { version: metadata.uiVersion, entryUrl: "assistant/" }
-          : null,
-        runtime: metadata.uiVersion ? { baseUrl: "v1/" } : null,
-      }
-    : undefined;
   const responses = [
     {
       path: "/v1/assistants",
+      status: 200,
       body: { results: choice ? [choice] : [], next: null },
     },
-    ...(detail && id
-      ? [{ path: `/v1/assistants/${encodeURIComponent(id)}`, body: detail }]
+    ...(choice && id
+      ? [
+          {
+            path: `/v1/assistants/${encodeURIComponent(id)}`,
+            status: metadata.uiVersion ? 200 : 409,
+            body: metadata.uiVersion
+              ? {
+                  ...choice,
+                  status: "active",
+                  version: metadata.uiVersion,
+                  url: "assistant/",
+                }
+              : { detail: "assistant is not ready" },
+          },
+        ]
       : []),
   ];
   return responses
-    .flatMap(({ path, body }) =>
+    .flatMap(({ path, status, body }) =>
       [path, `${path}/`].map(
         (route) => `
     location = ${nginxQuoted(route, "assistant API path")} {
@@ -437,7 +441,7 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
       add_header Vary "Origin" always;
       if ($request_method = OPTIONS) { return 204; }
       if ($request_method !~ ^(GET|HEAD)$) { return 405; }
-      return 200 ${nginxQuoted(JSON.stringify(body), "assistant metadata")};
+      return ${status} ${nginxQuoted(JSON.stringify(body), "assistant metadata")};
     }`,
       ),
     )

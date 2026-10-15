@@ -37,31 +37,19 @@ export const PublicUrlSchema = z
   );
 export const ResolvedAssistantSchema = z.object({
   id: z.string().min(1),
-  ui: z.object({
-    version: z.string().min(1),
-    entryUrl: PublicUrlSchema.refine((value) => {
-      if (!publicUrl(value)) {
-        return false;
-      }
-      return new URL(value, "https://app.example").pathname
-        .replace(/\/$/, "")
-        .endsWith("/assistant");
-    }, "UI entry must end at /assistant/."),
-  }),
-  runtime: z.object({ baseUrl: PublicUrlSchema }),
+  version: z.string().min(1),
+  url: PublicUrlSchema.refine((value) => {
+    if (!publicUrl(value)) {
+      return false;
+    }
+    return new URL(value, "https://app.example").pathname
+      .replace(/\/$/, "")
+      .endsWith("/assistant");
+  }, "UI entry must end at /assistant/."),
 });
 
 export const AssistantDetailSchema = ResolvedAssistantSchema.extend({
-  status: z.enum([
-    "initializing",
-    "active",
-    "to_be_deleted",
-    "archiving",
-    "archived",
-    "restoring",
-  ]),
-  ui: ResolvedAssistantSchema.shape.ui.nullable(),
-  runtime: ResolvedAssistantSchema.shape.runtime.nullable(),
+  status: z.literal("active"),
 });
 
 export const AssistantChoiceSchema = z.object({
