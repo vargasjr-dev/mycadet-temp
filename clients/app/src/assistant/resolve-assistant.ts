@@ -10,6 +10,14 @@ const PageSchema = z.object({
   results: z.array(AssistantChoiceSchema),
   next: z.string().nullable().optional(),
 });
+function decode<T>(schema: z.ZodType<T>, payload: unknown): T {
+  const result = schema.safeParse(payload);
+  if (!result.success) {
+    throw new Error("Invalid assistant API data.");
+  }
+  return result.data;
+}
+
 export interface AssistantRequest {
   apiBaseUrl?: string;
   origin: string;
@@ -25,12 +33,13 @@ export async function resolveAssistant({
   organizationId,
   signal,
 }: AssistantRequest): Promise<AssistantResolution> {
-  const base = new URL(PublicUrlSchema.parse(apiBaseUrl), origin);
+  const base = new URL(decode(PublicUrlSchema, apiBaseUrl), origin);
   base.pathname = base.pathname.replace(/\/*$/, "/");
   const headers = new Headers({ Accept: "application/json" });
   if (organizationId) {
     headers.set("Cadet-Organization-Id", organizationId);
   }
+  const unauthenticated = Symbol("unauthenticated");
   async function get(path: string) {
     signal.throwIfAborted();
     const response = await fetch(new URL(path, base), {
@@ -39,7 +48,7 @@ export async function resolveAssistant({
       credentials: "include",
     });
     if (response.status === 401) {
-      return null;
+      return unauthenticated;
     }
     if (!response.ok) {
       throw new Error(`Assistant request failed: ${response.status}`);
@@ -54,10 +63,10 @@ export async function resolveAssistant({
       const payload = await get(
         `v1/assistants/?limit=100&offset=${assistants.length}`,
       );
-      if (payload === null) {
+      if (payload === unauthenticated) {
         return { status: "unauthenticated" };
       }
-      const data = PageSchema.parse(payload);
+      const data = decode(PageSchema, payload);
       assistants.push(...data.results);
       if (!data.next) {
         if (assistants.length === 0) {
@@ -80,10 +89,10 @@ export async function resolveAssistant({
   const payload = await get(
     `v1/assistants/${encodeURIComponent(assistantId)}/`,
   );
-  if (payload === null) {
+  if (payload === unauthenticated) {
     return { status: "unauthenticated" };
   }
-  const detail = AssistantDetailSchema.parse(payload);
+  const detail = decode(AssistantDetailSchema, payload);
   if (detail.id !== assistantId) {
     throw new Error("Assistant identity does not match the request.");
   }

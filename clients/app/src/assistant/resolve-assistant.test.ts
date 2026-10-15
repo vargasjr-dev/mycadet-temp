@@ -110,6 +110,7 @@ test("validates identities, response fields, and API URL configuration", async (
     { ...detail, id: "other" },
     { ...detail, ui: { version: "1", entryUrl: "javascript:alert(1)" } },
     {},
+    null,
   ]) {
     request.mockResolvedValueOnce(json(payload));
     await expect(

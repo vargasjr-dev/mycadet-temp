@@ -363,8 +363,16 @@ const AssistantHostConfigSchema = z.object({
   appAllowedOrigins: z.array(z.string().url()).default([]),
 });
 
+function assistantHostConfig(config: Record<string, unknown>) {
+  const result = AssistantHostConfigSchema.safeParse(config);
+  if (!result.success) {
+    throw new Error("Invalid assistant host configuration.");
+  }
+  return result.data;
+}
+
 function appOrigins(config: Record<string, unknown>): string[] {
-  const metadata = AssistantHostConfigSchema.parse(config);
+  const metadata = assistantHostConfig(config);
   const origins = [
     ...metadata.appAllowedOrigins,
     ...(metadata.hubUrl ? [new URL(metadata.hubUrl).origin] : []),
@@ -388,7 +396,7 @@ function appOrigins(config: Record<string, unknown>): string[] {
 }
 
 function assistantMetadataLocations(config: Record<string, unknown>): string {
-  const metadata = AssistantHostConfigSchema.parse(config);
+  const metadata = assistantHostConfig(config);
   const id = metadata.assistantId;
   const choice = id
     ? {
