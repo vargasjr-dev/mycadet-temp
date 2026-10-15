@@ -172,7 +172,6 @@ export interface ChatBodyProps {
    * (kept mounted) so the composer, not the plugin row, docks to the
    * keyboard edge.
    */
-  pluginPillsSlot?: ReactNode;
 
   /**
    * Below-the-fold content rendered after the first viewport on the empty
@@ -237,7 +236,6 @@ export function ChatBody({
   queuedDrawerSlot,
   channelFooterSlot,
   startersSlot,
-  pluginPillsSlot,
   belowFoldSlot,
   dockStartersToBottom = false,
   startersDockCollapsed = false,
@@ -407,13 +405,6 @@ export function ChatBody({
         <ChannelReferenceChip />
         <StagedQuotesStrip />
         {composerSlot}
-        {!showingDocument &&
-          pluginPillsSlot &&
-          renderCollapse(
-            "new-chat-plugins",
-            keyboardOpen,
-            <div className="mt-4">{pluginPillsSlot}</div>,
-          )}
         {trailingStarters}
       </ChatColumn>
     </div>

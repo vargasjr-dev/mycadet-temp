@@ -484,7 +484,6 @@ export type PostChatMessageOptions = Pick<
   | "clientMessageId"
   | "inferenceProfile"
   | "riskThreshold"
-  | "enabledPlugins"
   | "hidden"
   | "bypassSecretCheck"
   | "scripted"
@@ -526,7 +525,6 @@ export async function postChatMessage(
     clientMessageId,
     inferenceProfile,
     riskThreshold,
-    enabledPlugins,
     hidden,
     bypassSecretCheck,
     scripted,
@@ -606,9 +604,6 @@ export async function postChatMessage(
   // `null`/`undefined` so the conversation inherits the default set. The caller
   // gates attachment on daemon support + an explicit selection (see
   // `use-send-message.ts`); an empty array is a valid "no plugins" selection.
-  if (enabledPlugins != null) {
-    body.enabledPlugins = enabledPlugins;
-  }
   // Persist the message but suppress it from the transcript (it still drives
   // the turn LLM-side). Used for client-initiated machine signals the user
   // never typed: the research-onboarding "Let's chat" greeting kickoff and

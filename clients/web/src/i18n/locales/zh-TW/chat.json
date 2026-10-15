@@ -1505,10 +1505,6 @@
     "unpin": "取消釘選",
     "unpinAria": "取消釘選 {name}"
   },
-  "pluginPill": {
-    "disableAria": "停用此聊天中的 {name}",
-    "enableAria": "啟用此聊天中的 {name}"
-  },
   "preferencesMenu": {
     "admin": "管理員",
     "preferences": "偏好設定",

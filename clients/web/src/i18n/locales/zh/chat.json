@@ -1505,10 +1505,6 @@
     "unpin": "取消固定",
     "unpinAria": "取消固定 {name}"
   },
-  "pluginPill": {
-    "disableAria": "为此聊天禁用 {name}",
-    "enableAria": "为此聊天启用 {name}"
-  },
   "preferencesMenu": {
     "admin": "管理",
     "preferences": "偏好设置",

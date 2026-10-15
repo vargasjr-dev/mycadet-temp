@@ -90,9 +90,6 @@ describe("clearUserScopedStorage", () => {
     useConversationStore
       .getState()
       .setPendingDraftProfile("conv-1", "profile-1");
-    useConversationStore
-      .getState()
-      .setPendingDraftPlugins("conv-1", new Set(["plugin-1"]));
     useComposerStore.getState().loadAssistantDrafts("assistant-1");
     useComposerStore.getState().setInput("Private draft");
     useComposerStore.getState().saveDraft("conv-1", "Private persisted draft");
@@ -143,7 +140,6 @@ describe("clearUserScopedStorage", () => {
     expect(useTurnStore.getState().phase).toBe("idle");
     expect(useInteractionStore.getState().pendingAcpConnect).toBeNull();
     expect(useConversationStore.getState().pendingDraftProfiles.size).toBe(0);
-    expect(useConversationStore.getState().pendingDraftPlugins.size).toBe(0);
   });
 
   test("removes all cadet: prefixed keys from localStorage", () => {

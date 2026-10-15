@@ -151,49 +151,6 @@ describe("postChatMessage — clientMessageId wire format", () => {
   });
 });
 
-describe("postChatMessage — enabledPlugins wire format", () => {
-  test("includes an explicit plugin selection verbatim", async () => {
-    await postChatMessage("assistant-1", "conv-key", "Hello", {
-      enabledPlugins: ["alpha", "zeta"],
-    });
-
-    expect((capturedBody as Record<string, unknown>).enabledPlugins).toEqual([
-      "alpha",
-      "zeta",
-    ]);
-  });
-
-  test("includes an explicit empty selection (user disabled every plugin)", async () => {
-    await postChatMessage("assistant-1", "conv-key", "Hello", {
-      enabledPlugins: [],
-    });
-
-    // An empty array is a genuine "no plugins for this chat" selection, not a
-    // missing one — it must reach the daemon, unlike the omitted-default case.
-    expect((capturedBody as Record<string, unknown>).enabledPlugins).toEqual(
-      [],
-    );
-  });
-
-  test("omits enabledPlugins when undefined (untouched default)", async () => {
-    await postChatMessage("assistant-1", "conv-key", "Hello");
-
-    expect(
-      (capturedBody as Record<string, unknown>).enabledPlugins,
-    ).toBeUndefined();
-  });
-
-  test("omits enabledPlugins when null", async () => {
-    await postChatMessage("assistant-1", "conv-key", "Hello", {
-      enabledPlugins: null,
-    });
-
-    expect(
-      (capturedBody as Record<string, unknown>).enabledPlugins,
-    ).toBeUndefined();
-  });
-});
-
 describe("postChatMessage — bypassSecretCheck wire format", () => {
   test("includes bypassSecretCheck: true for an explicit Send-anyway override", async () => {
     await postChatMessage("assistant-1", "conv-key", "user-approved content", {

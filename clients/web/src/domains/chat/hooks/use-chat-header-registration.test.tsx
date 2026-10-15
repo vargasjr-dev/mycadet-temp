@@ -1,8 +1,7 @@
 /**
  * Tests the top-right slot registration in `useChatHeaderRegistration`:
- * specifically that `InChatPluginPill` is mounted next to `ConversationAssetsPill`
- * only when the daemon supports per-chat plugin state. The hook's many store
- * dependencies are stubbed; the two pills are rendered as identifiable markers so
+ * the pills mounted into the chat header's top-right slot. The hook's many store
+ * dependencies are stubbed; the pills are rendered as identifiable markers so
  * the captured slot node can be asserted.
  */
 
@@ -52,23 +51,10 @@ mock.module("@/domains/chat/hooks/use-slack-conversation-display", () => ({
   useSlackConversationDisplay: () => slackDisplayRef.value,
 }));
 
-const supportsRef = { value: true };
-mock.module("@/lib/backwards-compat/use-supports-inchat-plugin-edit", () => ({
-  useSupportsInchatPluginEdit: () => supportsRef.value,
-}));
-
 mock.module("@/domains/chat/components/conversation-assets-pill", () => ({
   ConversationAssetsPill: () =>
     createElement("div", { "data-testid": "assets-pill" }),
 }));
-
-mock.module(
-  "@/domains/chat/components/inchat-plugin-pill/inchat-plugin-pill",
-  () => ({
-    InChatPluginPill: () =>
-      createElement("div", { "data-testid": "plugin-pill" }),
-  }),
-);
 
 mock.module("@/domains/chat/components/channel-source-link-pill", () => ({
   ChannelSourceLinkPill: ({ href }: { href: string }) =>
@@ -95,7 +81,6 @@ function renderRegistration() {
 }
 
 beforeEach(() => {
-  supportsRef.value = true;
   slotRef.value = null;
   activeConversationRef.value = { conversationId: "conv-1" };
   slackDisplayRef.value = null;
@@ -107,25 +92,7 @@ afterEach(() => {
 });
 
 describe("useChatHeaderRegistration top-right slot", () => {
-  test("mounts the plugin pill beside the assets pill when supported", () => {
-    supportsRef.value = true;
-    renderRegistration();
-
-    const { queryByTestId } = render(<>{slotRef.value}</>);
-    expect(queryByTestId("assets-pill")).not.toBeNull();
-    expect(queryByTestId("plugin-pill")).not.toBeNull();
-  });
-
-  test("omits the plugin pill on daemons that don't support it", () => {
-    supportsRef.value = false;
-    renderRegistration();
-
-    const { queryByTestId } = render(<>{slotRef.value}</>);
-    expect(queryByTestId("plugin-pill")).toBeNull();
-  });
-
   test("mounts the assets pill", () => {
-    supportsRef.value = true;
     renderRegistration();
 
     const { queryByTestId } = render(<>{slotRef.value}</>);

@@ -1467,10 +1467,6 @@
     "unpin": "Dejar de fijar",
     "unpinAria": "Dejar de fijar {name}"
   },
-  "pluginPill": {
-    "disableAria": "Desactivar {name} para este chat",
-    "enableAria": "Activar {name} para este chat"
-  },
   "preferencesMenu": {
     "admin": "Admin",
     "preferences": "Preferencias",

@@ -619,9 +619,6 @@ describe("useSendMessage: a switch during the POST", () => {
       useConversationStore
         .getState()
         .setPendingDraftProfile(SEND_CONVERSATION, "new-profile");
-      useConversationStore
-        .getState()
-        .setPendingDraftPlugins(SEND_CONVERSATION, new Set(["new-plugin"]));
       useChatSessionStore.getState().switchToConversation({
         assistantId: "assistant-1",
         activeConversationId: SEND_CONVERSATION,
@@ -646,9 +643,6 @@ describe("useSendMessage: a switch during the POST", () => {
     expect(
       useConversationStore.getState().pendingDraftProfiles.get(SEND_CONVERSATION),
     ).toBe("new-profile");
-    expect(
-      useConversationStore.getState().pendingDraftPlugins.get(SEND_CONVERSATION),
-    ).toEqual(new Set(["new-plugin"]));
     expect(currentLocation).toBe(START_LOCATION);
   });
 
@@ -695,12 +689,6 @@ describe("useSendMessage: a switch during the POST", () => {
       useConversationStore
         .getState()
         .setPendingDraftProfile(SEND_CONVERSATION, "shared-profile");
-      useConversationStore
-        .getState()
-        .setPendingDraftPlugins(
-          SEND_CONVERSATION,
-          new Set(["shared-plugin"]),
-        );
       useChatSessionStore.getState().switchToConversation({
         assistantId: "assistant-1",
         activeConversationId: SEND_CONVERSATION,
@@ -724,9 +712,6 @@ describe("useSendMessage: a switch during the POST", () => {
     expect(
       useConversationStore.getState().pendingDraftProfiles.get(SEND_CONVERSATION),
     ).toBe("shared-profile");
-    expect(
-      useConversationStore.getState().pendingDraftPlugins.get(SEND_CONVERSATION),
-    ).toEqual(new Set(["shared-plugin"]));
     expect(useConversationStore.getState().processingConversationIds.size).toBe(
       0,
     );

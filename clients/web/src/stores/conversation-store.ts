@@ -31,9 +31,6 @@ import type { GlobalThresholds } from "@/lib/threshold-api";
  * - `pendingDraftProfiles` — model profiles picked in the composer for
  *   conversations whose row isn't loaded yet (drafts, or URL-opened
  *   conversations mid-load), keyed by conversation id (see field doc below)
- * - `pendingDraftPlugins` — plugins picked in the composer for the same
- *   not-yet-loaded conversations, keyed by conversation id → selected plugin
- *   ids (see field doc below)
  * - `draftReplacements`: draft ids the server re-keyed on their first send,
  *   mapped to the id it assigned, so a history entry naming the retired draft
  *   can be redirected onto the row (see field doc below)
@@ -67,16 +64,6 @@ function removeFromSet<T>(prev: Set<T>, key: T): Set<T> {
   }
   const next = new Set(prev);
   next.delete(key);
-  return next;
-}
-
-function addOrRemoveFromSet<T>(prev: Set<T> | undefined, key: T): Set<T> {
-  const next = new Set(prev);
-  if (next.has(key)) {
-    next.delete(key);
-  } else {
-    next.add(key);
-  }
   return next;
 }
 
@@ -220,16 +207,6 @@ export interface ConversationListState {
   pendingDraftAutonomy: Map<string, GlobalThresholds["interactive"]>;
   initializedDraftComposerIds: Set<string>;
   /**
-   * Plugins picked in the composer for conversations that have no server row
-   * loaded yet, keyed by conversation id → the set of selected plugin ids.
-   * Mirrors `pendingDraftProfiles`: the composer's `conversationId` prop is
-   * undefined until a row materializes, so an in-draft plugin selection is
-   * stashed here (keyed by id, a Map of Sets, so several unsent drafts each
-   * keep their own selection) and attached to the first message. Entries are
-   * removed once applied and on reset.
-   */
-  pendingDraftPlugins: Map<string, Set<string>>;
-  /**
    * Draft ids a first send re-keyed, mapped to the id the server assigned.
    *
    * History entries pushed while the conversation was still a draft go on
@@ -310,16 +287,6 @@ export interface ConversationListActions {
   clearPendingDraftAutonomy: (id: string) => void;
   clearPendingDraftProfile: (conversationId: string) => void;
 
-  // --- Pending draft plugins ---
-  setPendingDraftPlugins: (
-    conversationId: string,
-    plugins: Set<string>,
-  ) => void;
-  /** Add/remove a plugin id from the draft's set, creating it if absent. */
-  togglePendingDraftPlugin: (conversationId: string, name: string) => void;
-  /** Remove the stash for a single conversation id (no-op when absent). */
-  clearPendingDraftPlugins: (conversationId: string) => void;
-
   // --- Compound ---
   graduateProcessingConversationId: (
     conversationId: string,
@@ -342,7 +309,6 @@ const INITIAL_STATE: ConversationListState = {
   pendingDraftProfiles: new Map(),
   pendingDraftAutonomy: new Map(),
   initializedDraftComposerIds: new Set(),
-  pendingDraftPlugins: new Map(),
   draftReplacements: readStoredDraftReplacements(),
 };
 
@@ -550,40 +516,6 @@ export const useConversationStore = createSelectors(
       set({ pendingDraftProfiles: next });
     },
 
-    // --- Pending draft plugins ---
-
-    setPendingDraftPlugins: (conversationId, plugins) => {
-      set({
-        pendingDraftPlugins: new Map(get().pendingDraftPlugins).set(
-          conversationId,
-          plugins,
-        ),
-      });
-    },
-
-    togglePendingDraftPlugin: (conversationId, name) => {
-      const current = get().pendingDraftPlugins;
-      const next = new Map(current);
-      next.set(
-        conversationId,
-        addOrRemoveFromSet(current.get(conversationId), name),
-      );
-      set({ pendingDraftPlugins: next });
-    },
-
-    clearPendingDraftPlugins: (conversationId) => {
-      const current = get().pendingDraftPlugins;
-      // No-op when absent so subscribers don't re-render needlessly. Scoped to
-      // a single id so a send that resolves after the user moved to another
-      // draft can't wipe the newer draft's selection.
-      if (!current.has(conversationId)) {
-        return;
-      }
-      const next = new Map(current);
-      next.delete(conversationId);
-      set({ pendingDraftPlugins: next });
-    },
-
     // --- Compound ---
 
     graduateProcessingConversationId: (
@@ -618,7 +550,6 @@ export const useConversationStore = createSelectors(
         pendingDraftProfiles: new Map(),
         pendingDraftAutonomy: new Map(),
         initializedDraftComposerIds: new Set(),
-        pendingDraftPlugins: new Map(),
         draftReplacements: new Map(),
       });
     },

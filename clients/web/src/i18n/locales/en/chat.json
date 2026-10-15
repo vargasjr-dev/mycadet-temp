@@ -1522,10 +1522,6 @@
     "unpin": "Unpin",
     "unpinAria": "Unpin {name}"
   },
-  "pluginPill": {
-    "disableAria": "Disable {name} for this chat",
-    "enableAria": "Enable {name} for this chat"
-  },
   "preferencesMenu": {
     "admin": "Admin",
     "preferences": "Preferences",

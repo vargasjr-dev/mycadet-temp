@@ -6,7 +6,7 @@
  * Owns:
  * - `headerSupplements` computation and slot registration
  * - `topBarRightSlot` (ChannelThreadControl or ChannelSourceLinkPill, plus
- *   the ConversationAssetsPill Chat Info trigger + InChatPluginPill)
+ *   the ConversationAssetsPill Chat Info trigger)
  *   computation and registration
  * - Slack conversation display derivation for the header label and the
  *   source-thread link
@@ -32,8 +32,7 @@ import { ChannelSourceLinkPill } from "@/domains/chat/components/channel-source-
 import { ChannelThreadControl } from "@/domains/chat/channel-sidecar/channel-thread-control";
 import { useChannelSidecar } from "@/domains/chat/channel-sidecar/use-channel-sidecar";
 import { ConversationAssetsPill } from "@/domains/chat/components/conversation-assets-pill";
-import { InChatPluginPill } from "@/domains/chat/components/inchat-plugin-pill/inchat-plugin-pill";
-import { useSupportsInchatPluginEdit } from "@/lib/backwards-compat/use-supports-inchat-plugin-edit";
+
 import { useViewerStore } from "@/stores/viewer-store";
 import type { Conversation } from "@/types/conversation-types";
 
@@ -62,9 +61,6 @@ export function useChatHeaderRegistration({
   const setTopBarRightSlot = useChatLayoutSlotsStore.use.setTopBarRightSlot();
   const setHeaderSupplements =
     useChatLayoutSlotsStore.use.setHeaderSupplements();
-  // Older daemons omit `enabledPlugins` on the conversation GET, so the pill
-  // can't reflect per-chat state there — hide it until the daemon supports it.
-  const supportsPluginPill = useSupportsInchatPluginEdit();
 
   const activeConversation = useActiveConversation(
     assistantId,
@@ -205,19 +201,12 @@ export function useChatHeaderRegistration({
           conversationId={activeConversation.conversationId}
           refreshKey={assetsRefreshKey}
         />
-        {supportsPluginPill ? (
-          <InChatPluginPill
-            assistantId={assistantId}
-            conversationId={activeConversation.conversationId}
-          />
-        ) : null}
       </>
     );
   }, [
     activeConversation?.conversationId,
     assistantId,
     assetsRefreshKey,
-    supportsPluginPill,
     channelSourceLinkHref,
     channelHeaderChannelId,
     channelSidecarTarget,
