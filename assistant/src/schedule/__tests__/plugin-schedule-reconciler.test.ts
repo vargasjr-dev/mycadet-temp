@@ -3,18 +3,12 @@
  *
  * Fixture plugin directories are written under the (per-test-process)
  * workspace plugins dir and converged against the real schedule store; the
- * only stubs are the notification emitter (recorded for assertions) and the
- * background-wake publisher (kept out for hermeticity, mirroring
- * schedule-store.test.ts).
+ * only stub is the notification emitter (recorded for assertions).
  */
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-
-mock.module("../../background-wake/publisher.js", () => ({
-  refreshBackgroundWakeIntent: () => {},
-}));
 
 const emittedSignals: Array<Record<string, unknown>> = [];
 

@@ -124,34 +124,12 @@ function recordReengagementTimestamp(): void {
   }
 }
 
-function refreshBackgroundWakeIntentSoon(reason: string): void {
-  void import("../background-wake/publisher.js")
-    .then(({ refreshBackgroundWakeIntent }) =>
-      refreshBackgroundWakeIntent(reason),
-    )
-    .catch((err) =>
-      log.warn({ err, reason }, "Failed to queue background wake refresh"),
-    );
-}
 
 export interface HeartbeatDeps {
   /** Override for current hour (0-23), for testing. Used when no timezone is resolved. */
   getCurrentHour?: () => number;
   /** Override for "now", for testing timezone-aware active hours. */
   now?: () => Date;
-}
-
-export interface ManagedWakeHeartbeatRunOptions {
-  now?: number;
-  toleranceMs?: number;
-  assumeDue?: boolean;
-  scheduledFor?: number;
-}
-
-export interface ManagedWakeHeartbeatRunResult {
-  due: boolean;
-  completed: number;
-  skipped: number;
 }
 
 export class HeartbeatService {
@@ -236,47 +214,12 @@ export class HeartbeatService {
     return countCompletedRunsToday() >= config.maxDailyRuns;
   }
 
-  async runCloudWakeIfDue(
-    options: ManagedWakeHeartbeatRunOptions = {},
-  ): Promise<ManagedWakeHeartbeatRunResult> {
-    const now = options.now ?? Date.now();
-    const toleranceMs = options.toleranceMs ?? 0;
-    const dueByLocalTimer =
-      this._nextRunAt != null && this._nextRunAt <= now + toleranceMs;
-
-    if (!dueByLocalTimer && options.assumeDue !== true) {
-      return { due: false, completed: 0, skipped: 0 };
-    }
-
-    if (!dueByLocalTimer) {
-      if (this._pendingRunId) {
-        supersedePendingRun(this._pendingRunId);
-        this._pendingRunId = null;
-      }
-      this._nextRunAt = options.scheduledFor ?? now;
-      this._pendingRunId = insertPendingHeartbeatRun(this._nextRunAt);
-    }
-
-    const completed = await this.runOnce({ force: false });
-
-    if (this.cronMode && !this.stopped) {
-      this.scheduleNextCronRun(getConfig().heartbeat);
-    }
-
-    return {
-      due: true,
-      completed: completed ? 1 : 0,
-      skipped: completed ? 0 : 1,
-    };
-  }
-
   start(): void {
     this.stopped = false;
     const config = getConfig().heartbeat;
     if (!config.enabled) {
       log.info("Heartbeat disabled by config");
       this._nextRunAt = null;
-      refreshBackgroundWakeIntentSoon("heartbeat-disabled");
       return;
     }
     if (this.timer) {
@@ -405,7 +348,6 @@ export class HeartbeatService {
         { nextRunAt: new Date(nextRunAt).toISOString(), delayMs },
         "Heartbeat cron run scheduled",
       );
-      refreshBackgroundWakeIntentSoon("heartbeat-cron-scheduled");
     } catch (err) {
       log.warn(
         { err },
@@ -432,7 +374,6 @@ export class HeartbeatService {
     this._nextRunAt = null;
     this.cronMode = false;
     this.start();
-    refreshBackgroundWakeIntentSoon("heartbeat-reconfigured");
   }
 
   /**
@@ -449,7 +390,6 @@ export class HeartbeatService {
       supersedePendingRun(this._pendingRunId);
       this._pendingRunId = null;
     }
-    refreshBackgroundWakeIntentSoon("heartbeat-counter-reset");
     if (!this.timer) {
       return;
     }
@@ -519,7 +459,6 @@ export class HeartbeatService {
       if (runId) {
         skipHeartbeatRun(runId, "disabled");
       }
-      refreshBackgroundWakeIntentSoon("heartbeat-disabled");
       return false;
     }
 
@@ -680,7 +619,6 @@ export class HeartbeatService {
       if (!this.cronMode) {
         this.scheduleNextRun(getConfig().heartbeat.intervalMs);
       }
-      refreshBackgroundWakeIntentSoon("heartbeat-run-complete");
     }
     return true;
   }
@@ -691,7 +629,6 @@ export class HeartbeatService {
     }
     this._nextRunAt = Date.now() + intervalMs;
     this._pendingRunId = insertPendingHeartbeatRun(this._nextRunAt);
-    refreshBackgroundWakeIntentSoon("heartbeat-interval-scheduled");
   }
 
   /**
@@ -964,8 +901,7 @@ This is one of your first heartbeats. Your user hasn't heard from you yet and ma
 }
 
 /**
- * Construct and start the heartbeat service singleton, returning it so callers
- * can wire it into the background-wake runtime. start() self-gates on
+ * Construct and start the heartbeat service singleton. start() self-gates on
  * `heartbeat.enabled` and logs its own status.
  */
 export function startHeartbeatService(): HeartbeatService {

@@ -27,7 +27,6 @@ import { ROUTES as AUDIT_ROUTES } from "./audit-routes.js";
 import { ROUTES as AUTH_ROUTES } from "./auth-routes.js";
 import { ROUTES as AVATAR_ROUTES } from "./avatar-routes.js";
 import { ROUTES as BACKGROUND_TOOL_ROUTES } from "./background-tool-routes.js";
-import { ROUTES as BACKGROUND_WAKE_ROUTES } from "./background-wake-routes.js";
 import { ROUTES as BOOKMARK_ROUTES } from "./bookmark-routes.js";
 import { ROUTES as BRAIN_GRAPH_ROUTES } from "./brain-graph-routes.js";
 import { ROUTES as BROWSER_ROUTES } from "./browser-routes.js";
@@ -179,7 +178,6 @@ export const ROUTES: RouteDefinition[] = [
   ...AUDIT_ROUTES,
   ...AUTH_ROUTES,
   ...AVATAR_ROUTES,
-  ...BACKGROUND_WAKE_ROUTES,
   ...BACKGROUND_TOOL_ROUTES,
   ...BOOKMARK_ROUTES,
   ...CACHE_ROUTES,

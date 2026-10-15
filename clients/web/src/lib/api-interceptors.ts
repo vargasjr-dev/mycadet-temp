@@ -398,7 +398,6 @@ const NON_SERVING_DAEMON_PATHS = new Set([
   ...FLATTENED_FIRST_SEGMENTS,
   ...PLATFORM_PUSH_FIRST_SEGMENTS,
   "audio",
-  "background-wake",
   "backups",
   "brain-graph",
   "brain-graph-ui",

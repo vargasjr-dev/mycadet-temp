@@ -2718,7 +2718,6 @@ describe("daemon request activity", () => {
     [daemonClient, "healthz", false],
     [daemonClient, "health", false],
     [daemonClient, "events", false],
-    [daemonClient, "background-wake/prepare-sleep", false],
     [gatewayClient, "future-gateway-route", false],
     [cloudClient, "operational/status/", false],
     [cloudClient, "conversations", true],

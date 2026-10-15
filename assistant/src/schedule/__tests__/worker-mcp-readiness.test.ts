@@ -32,10 +32,6 @@ mock.module("../../daemon/process-message.js", () => ({
   processMessageInBackground: async () => {},
 }));
 
-mock.module("../../background-wake/publisher.js", () => ({
-  refreshBackgroundWakeIntent: () => {},
-}));
-
 mock.module("../../daemon/disk-pressure-background-gate.js", () => ({
   checkDiskPressureBackgroundGate: () => ({
     action: "allow",

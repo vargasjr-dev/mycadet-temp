@@ -144,7 +144,7 @@ async function main(): Promise<void> {
   // standalone process must do it itself so getCloudBaseUrl() resolves to
   // the persisted platform environment instead of the CADET_ENVIRONMENT
   // default — otherwise valid credentials are sent to the wrong platform and
-  // rejected for both inference and background-wake requests.
+  // rejected for inference requests.
   await ensureCloudIdentityIds();
 
   // This process is the sole runner of schedule execution and hosts real agent
