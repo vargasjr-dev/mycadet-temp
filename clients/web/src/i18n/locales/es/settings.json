@@ -109,7 +109,7 @@
     "exportDownloading": "Descargando…",
     "exportExporting": "Exportando…",
     "exportFailedToast": "No se pudo exportar el asistente.",
-    "exportMessage": "Descarga una copia del estado actual de este asistente como archivo .vbundle. Prepararla puede tardar unos minutos.\n\nLas credenciales no se incluyen, así que tendrás que volver a conectar tus integraciones después de importarla en otro lugar.",
+    "exportMessage": "Descarga un archivo .tar.gz de toda la instalación, incluidas las credenciales cifradas y las claves necesarias para leerlas. Mantén este archivo privado.",
     "exportPreparing": "Preparando…",
     "exportTitle": "Exportar asistente",
     "loadFailed": "No se pudieron cargar las copias de seguridad.",
@@ -126,7 +126,8 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "Punto en el tiempo",
     "typePreview": "Vista previa",
-    "typeScheduled": "Programada"
+    "typeScheduled": "Programada",
+    "cliOnly": "Usa cadet backup y cadet restore en una terminal para instalaciones locales o Docker."
   },
   "assistantPicker": {
     "active": "Activo",
@@ -644,7 +645,7 @@
     "toggleSubtitle": "El límite diario solo se aplica a los créditos de uso adicional"
   },
   "debugBundleExport": {
-    "description": "El personal de Cadet no puede acceder a este equipo. Para que puedan revisarlo, exporta un paquete de depuración: el espacio de trabajo de tu asistente, sus registros y la base de datos de la pasarela, sin credenciales. Se conserva 7 días.",
+    "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
     "export": "Exportar paquete de depuración",
     "exporting": "Exportando…",
     "sentAt": "Enviado a Cadet a las {time}.",
@@ -1888,7 +1889,8 @@
     "tryAgain": "Intentar de nuevo",
     "unsupportedDestination": "Destino de teleportación no compatible.",
     "verifyMessage": "Verifica que tu nuevo asistente funciona y luego confirma para cambiar a él.",
-    "verifyTitle": "Transferencia completa"
+    "verifyTitle": "Transferencia completa",
+    "cliOnly": "Usa cadet teleport en una terminal para mover toda la instalación entre local y Docker. La transferencia con la nube no está disponible hasta que se admita la transferencia de archivos raíz."
   },
   "textToSpeechCard": {
     "subtitle": "Configura cómo habla tu asistente",

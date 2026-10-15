@@ -49,7 +49,6 @@ import {
   startRuntimeHttpServerBackgroundSweeps,
 } from "../runtime/http-server.js";
 import { warmLocalGuardianPrincipalCache } from "../runtime/local-actor-identity.js";
-import { recoverInterruptedImport } from "../runtime/migrations/vbundle-streaming-importer.js";
 import { markCurrentProcessAsMainDaemon } from "../runtime/process-role.js";
 import { publishConfigChanged } from "../runtime/sync/resource-sync-events.js";
 import { reconcilePluginSchedules } from "../schedule/plugin-schedule-reconciler.js";
@@ -84,6 +83,7 @@ import { startEventLoopWatchdog } from "./event-loop-watchdog.js";
 import { initializePlugins } from "./external-plugins-bootstrap.js";
 import { backfillSlackInjectionTemplates } from "./handlers/config-slack-channel.js";
 import { installAssistantCommand } from "./install-assistant-command.js";
+import { recoverInterruptedImport } from "./interrupted-import-recovery.js";
 import {
   type InterruptedResumeTarget,
   MAX_RESUME_ATTEMPTS,
@@ -148,15 +148,7 @@ export async function runDaemon(): Promise<void> {
   // after it.
   recordDaemonBootTime(startupStartedAt);
 
-  // Recover from any streaming `.vbundle` import that was interrupted by a
-  // crash or SIGKILL. If the previous process died between
-  // `carryOverPreservedPaths` and the atomic workspace swap, the live
-  // workspace may be missing `data/db` / `data/qdrant` / etc. The marker
-  // at `<workspaceDir>.import-marker.json` (persisted before any rename
-  // runs) tells us where the orphaned preserved paths landed; the
-  // recovery helper moves them back into the live workspace and cleans
-  // up the temp tree. Running this BEFORE `initializeDb()` ensures the
-  // DB singleton opens against the fully-restored `assistant.db`.
+  // Restore crash-interrupted workspace swaps before opening the database.
   try {
     const recoveryResult = await recoverInterruptedImport(getWorkspaceDir());
     if (!recoveryResult.ok) {

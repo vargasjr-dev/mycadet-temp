@@ -18,7 +18,7 @@ mock.module("@/hooks/use-cloud-gate", () => ({
 }));
 
 mock.module("@/domains/settings/teleport/cloud-export", () => ({
-  exportBundleFilename: (label: string) => `${label}-2026-10-02.vbundle`,
+  exportBundleFilename: (label: string) => `${label}-2026-10-02.tar.gz`,
   exportManagedBundle: async (
     assistantId: string,
     { onStep }: { onStep?: (step: string) => void } = {},
@@ -26,12 +26,10 @@ mock.module("@/domains/settings/teleport/cloud-export", () => ({
     calls.push(`export:${assistantId}`);
     onStep?.("exporting");
     if (exportFails) {
-      const { TeleportError } =
-        await import("@/domains/settings/teleport/teleport-types");
-      throw new TeleportError("export_failed", "Export failed (HTTP 500).");
+      throw new Error("Export failed (HTTP 500).");
     }
     return {
-      bundleKey: "uploads/org-abc/bundle.vbundle",
+      bundleKey: "uploads/org-abc/bundle.tar.gz",
       runtimeVersion: "1.2.3",
     };
   },
@@ -82,7 +80,7 @@ import {
 async function confirmExport() {
   fireEvent.click(await screen.findByRole("button", { name: "Export" }));
   const dialog = await screen.findByRole("dialog");
-  within(dialog).getByText(/credentials aren't included/i);
+  within(dialog).getByText(/including encrypted credentials and the keys/i);
   fireEvent.click(within(dialog).getByRole("button", { name: "Export" }));
 }
 
@@ -104,8 +102,8 @@ describe("AssistantBackups export", () => {
     await waitFor(() =>
       expect(calls).toEqual([
         "export:ast-1",
-        "download-url:uploads/org-abc/bundle.vbundle:1.2.3:ast-1-2026-10-02.vbundle",
-        "save:https://storage.example.com/download:ast-1-2026-10-02.vbundle",
+        "download-url:uploads/org-abc/bundle.tar.gz:1.2.3:ast-1-2026-10-02.tar.gz",
+        "save:https://storage.example.com/download:ast-1-2026-10-02.tar.gz",
       ]),
     );
     expect(toastErrors).toEqual([]);
@@ -142,8 +140,8 @@ describe("AssistantBackups export", () => {
     cloudHosted = false;
     render(<AssistantBackups assistantId="ast-1" />);
 
-    await screen.findByRole("button", { name: "Create Backup" });
-    expect(screen.queryByRole("button", { name: "Export" })).toBeNull();
+    await screen.findByText(/cadet backup/);
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   test("without a cloud session there is no Export button", async () => {

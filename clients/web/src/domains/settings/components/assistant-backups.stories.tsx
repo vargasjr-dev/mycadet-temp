@@ -3,12 +3,11 @@
  * its name and a copy button, a type tag, a ready or pending tag, the creation
  * time, and a restore button that stays disabled until the snapshot is ready.
  * A cloud-hosted assistant also gets an Export button beside "Create
- * Backup". The component fetches its own rows from both the daemon and the
- * platform, so `beforeEach` answers those two reads from fixtures through each
- * generated client's `fetch` and marks the active assistant cloud-hosted.
+ * Backup". The component fetches cloud backup rows through the API client.
+ * `beforeEach` supplies fixtures and marks the active assistant cloud-hosted.
  * The stories cover a populated list, with enough point-in-time backups to
  * show the rotation notice, an assistant with no backups yet, and a
- * self-hosted assistant, which has no Export button.
+ * self-hosted assistant, which displays CLI backup instructions.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
@@ -16,7 +15,6 @@ import type { AssistantBackup } from "@/assistant/api";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { client as cloudClient } from "@/generated/api/client.gen";
-import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { fixtureNotFound, stubClientFetch } from "@/lib/stub-client-fetch";
 
 const ASSISTANT_IDS = {
@@ -69,17 +67,6 @@ const BACKUPS: AssistantBackup[] = [
   },
 ];
 
-/** The gateway's list response, with nothing stored locally or offsite. */
-const DAEMON_BACKUPS = {
-  local: { directory: "/tmp/none", snapshots: [] },
-  offsite: [] as Array<{ directory: string; encrypted: boolean; snapshots: unknown[] }>,
-} satisfies GatewayBackupsList;
-
-type GatewayBackupsList = {
-  local: { directory: string; snapshots: unknown[] };
-  offsite: Array<{ directory: string; encrypted: boolean; snapshots: unknown[] }>;
-};
-
 function backupsFor(pathname: string): AssistantBackup[] {
   return pathname.startsWith(`/v1/assistants/${ASSISTANT_IDS.fresh}/`)
     ? []
@@ -91,15 +78,6 @@ async function platformFetch(request: Request): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname.endsWith("/backups/") && request.method === "GET") {
     return Response.json({ backups: backupsFor(pathname) });
-  }
-  return fixtureNotFound();
-}
-
-/** Answers the daemon's `GET /v1/assistants/{id}/backups`. */
-async function daemonFetch(request: Request): Promise<Response> {
-  const { pathname } = new URL(request.url);
-  if (pathname.endsWith("/backups") && request.method === "GET") {
-    return Response.json(DAEMON_BACKUPS satisfies GatewayBackupsList);
   }
   return fixtureNotFound();
 }
@@ -121,7 +99,6 @@ const meta = {
   },
   beforeEach: () => {
     const restorePlatform = stubClientFetch(cloudClient, platformFetch);
-    const restoreDaemon = stubClientFetch(daemonClient, daemonFetch);
     const previousLifecycle =
       useAssistantLifecycleStore.getState().assistantState;
     useAssistantLifecycleStore.setState({
@@ -129,8 +106,9 @@ const meta = {
     });
     return () => {
       restorePlatform();
-      restoreDaemon();
-      useAssistantLifecycleStore.setState({ assistantState: previousLifecycle });
+      useAssistantLifecycleStore.setState({
+        assistantState: previousLifecycle,
+      });
     };
   },
   decorators: [

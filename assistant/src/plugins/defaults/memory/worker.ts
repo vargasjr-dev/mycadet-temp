@@ -60,9 +60,9 @@ async function main(): Promise<void> {
   // standalone process must do it itself so getCloudBaseUrl() resolves to
   // the persisted platform environment instead of the CADET_ENVIRONMENT
   // default. Retrospective and consolidation passes wake real agent
-  // conversations whose inference and background-wake requests go through the
-  // cloud proxy — without rehydration those requests hit the wrong platform
-  // and are rejected.
+  // conversations whose inference requests go through the cloud proxy —
+  // without rehydration those requests hit the wrong platform and are
+  // rejected.
   await ensureCloudIdentityIds();
 
   // Jobs in this process wake real agent conversations, so it registers the

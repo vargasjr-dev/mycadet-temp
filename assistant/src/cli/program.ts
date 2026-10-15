@@ -10,7 +10,6 @@ import { registerAttachmentCommand } from "./commands/attachment.js";
 import { registerAuditCommand } from "./commands/audit.js";
 import { registerAuthCommand } from "./commands/auth.js";
 import { registerAvatarCommand } from "./commands/avatar.js";
-import { registerBackupCommand } from "./commands/backup.js";
 import { registerBashCommand } from "./commands/bash.js";
 import { registerBrowserCommand } from "./commands/browser.js";
 import { registerCacheCommand } from "./commands/cache.js";
@@ -108,7 +107,6 @@ Examples:
   registerAuditCommand(program);
   registerAuthCommand(program);
   registerAvatarCommand(program);
-  registerBackupCommand(program);
   registerBashCommand(program);
   registerBrowserCommand(program);
   registerCacheCommand(program);

@@ -41,7 +41,6 @@ mock.module("../prompts/persona-resolver.js", () => ({
   }),
   resolveUserSlug: () => null,
   ensureGuardianPersonaFile: () => {},
-  isGuardianPersonaCustomized: () => false,
   GUARDIAN_PERSONA_TEMPLATE: "",
 }));
 

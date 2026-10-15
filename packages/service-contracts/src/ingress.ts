@@ -1,7 +1,7 @@
 /**
  * Map a Cadet Cloud host onto its environment's tunnel host, following the
  * deployment naming convention (`cloud.mycadet.ai` → `tunnel.mycadet.ai`,
- * `{env}-cloud.mycadet.ai` → `tunnel-{env}.mycadet.ai`). Returns null for
+ * `{env}-cloud.mycadet.ai` → `{env}-tunnel.mycadet.ai`). Returns null for
  * hosts outside that convention (localhost, custom domains). Shared by the
  * gateway speech relay and the web live-voice client so the two ends of the
  * cloud-speech transport can't drift.
@@ -11,7 +11,7 @@ export function tunnelHostForCloudHost(host: string): string | null {
     return "tunnel.mycadet.ai";
   }
   const match = /^([a-z0-9-]+)-cloud\.mycadet\.ai$/.exec(host);
-  return match ? `tunnel-${match[1]}.mycadet.ai` : null;
+  return match ? `${match[1]}-tunnel.mycadet.ai` : null;
 }
 
 export function normalizePublicBaseUrl(value: unknown): string | undefined {

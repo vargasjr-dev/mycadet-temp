@@ -58,7 +58,6 @@ mock.module("../../prompts/persona-resolver.js", () => ({
   resolveGuardianPersona: () => null,
   resolveGuardianPersonaPath: () => null,
   resolveGuardianPersonaStrict: () => null,
-  isGuardianPersonaCustomized: () => false,
   resolveUserSlug: () => null,
   resolveUserPersona: () => null,
   resolveChannelPersona: () => null,

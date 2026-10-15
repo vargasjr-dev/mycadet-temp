@@ -98,7 +98,6 @@ import { resolveUserName } from "../daemon/identity-helpers.js";
 import type { TrustContext } from "../daemon/trust-context-types.js";
 import {
   ensureGuardianPersonaFile,
-  isGuardianPersonaCustomized,
   resolveGuardianPersona,
   resolveGuardianPersonaPath,
   resolveGuardianPersonaStrict,
@@ -239,56 +238,6 @@ describe("resolveGuardianPersonaStrict", () => {
     );
 
     expect(resolveGuardianPersonaStrict()).toContain("Alice");
-  });
-});
-
-// ── isGuardianPersonaCustomized ────────────────────────────────────
-
-describe("isGuardianPersonaCustomized", () => {
-  test("returns false when the file does not exist", () => {
-    const filePath = join(mockWorkspaceDir, "users", "nobody.md");
-    expect(isGuardianPersonaCustomized(filePath)).toBe(false);
-  });
-
-  test("returns false for the bare scaffold template (no user edits)", () => {
-    const userFile = "alice.md";
-    const filePath = join(mockWorkspaceDir, "users", userFile);
-
-    // ensureGuardianPersonaFile writes the canonical template — the
-    // exact bytes that "not customized" accepts.
-    ensureGuardianPersonaFile(userFile);
-
-    expect(isGuardianPersonaCustomized(filePath)).toBe(false);
-  });
-
-  test("returns false when the file contains only comment lines", () => {
-    const userFile = "alice.md";
-    const dir = join(mockWorkspaceDir, "users");
-    const filePath = join(dir, userFile);
-
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      filePath,
-      "_ only comments here\n_ nothing meaningful\n",
-      "utf-8",
-    );
-
-    expect(isGuardianPersonaCustomized(filePath)).toBe(false);
-  });
-
-  test("returns true when the file has user-authored content", () => {
-    const userFile = "alice.md";
-    const dir = join(mockWorkspaceDir, "users");
-    const filePath = join(dir, userFile);
-
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      filePath,
-      "# My profile\n\n- Preferred name/reference: Real User\n",
-      "utf-8",
-    );
-
-    expect(isGuardianPersonaCustomized(filePath)).toBe(true);
   });
 });
 

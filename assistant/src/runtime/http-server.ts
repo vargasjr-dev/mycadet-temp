@@ -122,7 +122,7 @@ const log = getLogger("runtime-http");
 const DEFAULT_PORT = 7821;
 const DEFAULT_HOSTNAME = "127.0.0.1";
 
-/** Global hard cap on request body size (512 MB — accommodates large .vbundle backup imports). */
+/** Global hard cap on request body size (512 MB, accommodates app package uploads). */
 const MAX_REQUEST_BODY_BYTES = 512 * 1024 * 1024;
 
 function dbMigrationUnavailableForEndpoint(endpoint: string): Response | null {

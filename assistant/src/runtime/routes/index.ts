@@ -27,7 +27,6 @@ import { ROUTES as AUDIT_ROUTES } from "./audit-routes.js";
 import { ROUTES as AUTH_ROUTES } from "./auth-routes.js";
 import { ROUTES as AVATAR_ROUTES } from "./avatar-routes.js";
 import { ROUTES as BACKGROUND_TOOL_ROUTES } from "./background-tool-routes.js";
-import { ROUTES as BACKGROUND_WAKE_ROUTES } from "./background-wake-routes.js";
 import { ROUTES as BOOKMARK_ROUTES } from "./bookmark-routes.js";
 import { ROUTES as BRAIN_GRAPH_ROUTES } from "./brain-graph-routes.js";
 import { ROUTES as BROWSER_ROUTES } from "./browser-routes.js";
@@ -114,7 +113,6 @@ import { ROUTES as LOG_EXPORT_ROUTES } from "./log-export-routes.js";
 import { ROUTES as MCP_AUTH_ROUTES } from "./mcp-auth-routes.js";
 import { ROUTES as MESSAGES_LEXICAL_ROUTES } from "./messages-lexical-routes.js";
 import { ROUTES as MIGRATION_ROLLBACK_ROUTES } from "./migration-rollback-routes.js";
-import { ROUTES as MIGRATION_ROUTES } from "./migration-routes.js";
 import { ROUTES as MONITORING_ROUTES } from "./monitoring-routes.js";
 import { ROUTES as NOTIFICATION_ROUTES } from "./notification-routes.js";
 import { ROUTES as OAUTH_APPS_ROUTES } from "./oauth-apps.js";
@@ -179,7 +177,6 @@ export const ROUTES: RouteDefinition[] = [
   ...AUDIT_ROUTES,
   ...AUTH_ROUTES,
   ...AVATAR_ROUTES,
-  ...BACKGROUND_WAKE_ROUTES,
   ...BACKGROUND_TOOL_ROUTES,
   ...BOOKMARK_ROUTES,
   ...CACHE_ROUTES,
@@ -267,7 +264,6 @@ export const ROUTES: RouteDefinition[] = [
   ...MEMORY_WORKER_ROUTES,
   ...MESSAGES_LEXICAL_ROUTES,
   ...MIGRATION_ROLLBACK_ROUTES,
-  ...MIGRATION_ROUTES,
   ...NOTIFICATION_ROUTES,
   ...OAUTH_APPS_ROUTES,
   ...OAUTH_LIFECYCLE_ROUTES,

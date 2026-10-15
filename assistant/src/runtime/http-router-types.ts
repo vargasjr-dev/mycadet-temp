@@ -45,9 +45,7 @@ export type RouteBodySchema = z.ZodType;
 
 /**
  * Description for a non-200 response variant. Used when an endpoint has
- * meaningful alternate response shapes that clients should handle (e.g.
- * 502 `fetch_failed` on POST /v1/migrations/import when the URL body path
- * can't reach the upstream bundle host).
+ * meaningful alternate response shapes that clients should handle.
  */
 export interface RouteAdditionalResponse {
   description: string;

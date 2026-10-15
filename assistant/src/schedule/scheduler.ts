@@ -1,4 +1,3 @@
-import { refreshBackgroundWakeIntent } from "../background-wake/publisher.js";
 import { resolveSingleRouteProfileKey } from "../config/llm-resolver.js";
 import { getConfig } from "../config/loader.js";
 import { findConversationOrSubagent } from "../daemon/conversation-registry.js";
@@ -555,10 +554,6 @@ export function startScheduler(): SchedulerHandle {
       clearInterval(timer);
     },
   };
-
-  // Publish the initial background wake intent now that the scheduler is live
-  // and its schedules are visible to `computeNextBackgroundWakeIntent`.
-  refreshBackgroundWakeIntent("daemon-startup");
 
   return instance;
 }

@@ -1,4 +1,4 @@
-import type { ZodType } from "zod";
+import { z, type ZodType } from "zod";
 
 import {
   type DiskPressureStatusResponse,
@@ -22,7 +22,6 @@ import type {
   Assistant as GeneratedAssistant,
   HatchAssistantRequest,
 } from "@/generated/api/types.gen";
-import { client as daemonClient } from "@/generated/daemon/client.gen";
 import {
   diskpressureAcknowledgePost,
   diskpressureStatusGet,
@@ -332,154 +331,53 @@ export interface AssistantBackup {
   created_at: string;
   ready_to_use: boolean;
   backup_type: string;
-  /** Full path to the snapshot file — used by daemon SDK restore. */
-  path?: string;
 }
 
 export type ListBackupsResult =
   | { ok: true; status: number; data: AssistantBackup[] }
   | { ok: false; status: number; error: Record<string, unknown> };
 
-interface DaemonSnapshot {
-  path: string;
-  filename: string;
-  created_at: string;
-  size_bytes: number;
-  encrypted: boolean;
-}
-
-function parseDaemonBackups(data: unknown): AssistantBackup[] {
-  const raw =
-    data && typeof data === "object" && !Array.isArray(data)
-      ? (data as Record<string, unknown>)
-      : {};
-
-  // Defensive: if the daemon SDK request fell through to Django
-  // (cloud-hosted, no gateway intercept) it returns
-  // `{ backups: BackupItem[] }` instead of the daemon format.
-  if (Array.isArray(raw.backups)) {
-    return raw.backups as AssistantBackup[];
-  }
-
-  const body = raw as {
-    local?: { snapshots?: DaemonSnapshot[] };
-    offsite?: Array<{ snapshots?: DaemonSnapshot[] }>;
-  };
-
-  const snapshots: AssistantBackup[] = [];
-
-  const localSnapshots = body.local?.snapshots;
-  if (Array.isArray(localSnapshots)) {
-    for (const s of localSnapshots) {
-      snapshots.push({
-        snapshot_name: s.filename,
-        pvc: "",
-        created_at: s.created_at,
-        ready_to_use: true,
-        backup_type: "scheduled",
-        path: s.path,
-      });
-    }
-  }
-
-  if (Array.isArray(body.offsite)) {
-    for (const dest of body.offsite) {
-      if (Array.isArray(dest.snapshots)) {
-        for (const s of dest.snapshots) {
-          snapshots.push({
-            snapshot_name: s.filename,
-            pvc: "",
-            created_at: s.created_at,
-            ready_to_use: !s.encrypted,
-            backup_type: "scheduled",
-            path: s.path,
-          });
-        }
-      }
-    }
-  }
-
-  return snapshots;
-}
-
-function parsePlatformBackups(data: unknown): AssistantBackup[] {
-  const raw =
-    data && typeof data === "object" && !Array.isArray(data)
-      ? (data as Record<string, unknown>)
-      : {};
-
-  if (Array.isArray(raw.backups)) {
-    return raw.backups as AssistantBackup[];
-  }
-
-  return [];
-}
-
+const PlatformBackupsSchema = z.object({
+  backups: z.array(
+    z.object({
+      snapshot_name: z.string(),
+      pvc: z.string().default(""),
+      created_at: z.string(),
+      ready_to_use: z.boolean(),
+      backup_type: z.string().default("point_in_time"),
+    }),
+  ),
+});
+const CLI_BACKUP_ERROR = {
+  ok: false,
+  status: 409,
+  error: {
+    detail:
+      "Use cadet backup and cadet restore for local or Docker installations.",
+  },
+} as const;
 export async function listAssistantBackups(
   assistantId: string,
 ): Promise<ListBackupsResult> {
-  // For cloud-hosted assistants the K8s PVC backups are managed by
-  // the cloud (vembda), not the daemon. Fetch both in parallel when
-  // no self-hosted ingress is configured.
-  const needsPlatform = !getSelfHostedIngressUrl();
-
-  const [daemonResult, platformResult] = await Promise.all([
-    // Backups are not an assistant-container concern — the daemon client's
-    // interceptor rewrites this assistant-scoped URL to the gateway, which
-    // owns the backup system.
-    daemonClient.get({
-      url: `/v1/assistants/${assistantId}/backups`,
-      throwOnError: false,
-    }),
-    needsPlatform
-      ? assistantsBackupsRetrieve({
-          path: { assistant_id: assistantId },
-          throwOnError: false,
-        })
-      : null,
-  ]);
-
-  assertHasResponse(
-    daemonResult.response,
-    daemonResult.error,
-    "Failed to list assistant backups.",
-  );
-
-  if (!daemonResult.response.ok) {
+  if (getSelfHostedIngressUrl()) {
+    return CLI_BACKUP_ERROR;
+  }
+  const { data, error, response } = await assistantsBackupsRetrieve({
+    path: { assistant_id: assistantId },
+    throwOnError: false,
+  });
+  assertHasResponse(response, error, "Failed to list assistant backups.");
+  if (!response.ok) {
     return {
       ok: false,
-      status: daemonResult.response.status,
-      error: toErrorObject(daemonResult.error, daemonResult.response),
+      status: response.status,
+      error: toErrorObject(error, response),
     };
   }
-
-  const daemonSnapshots = parseDaemonBackups(daemonResult.data);
-
-  if (platformResult) {
-    if (platformResult.response?.ok) {
-      const platformSnapshots = parsePlatformBackups(platformResult.data);
-      return {
-        ok: true,
-        status: daemonResult.response.status,
-        data: [...platformSnapshots, ...daemonSnapshots],
-      };
-    }
-
-    // Platform call failed. If the daemon also returned nothing, surface
-    // the cloud error so the user doesn't see a silent empty list.
-    if (daemonSnapshots.length === 0 && platformResult.response) {
-      return {
-        ok: false,
-        status: platformResult.response.status,
-        error: toErrorObject(platformResult.error, platformResult.response),
-      };
-    }
-  }
-
   return {
     ok: true,
-    status: daemonResult.response.status,
-    data: daemonSnapshots,
+    status: response.status,
+    data: PlatformBackupsSchema.parse(data).backups,
   };
 }
 
@@ -490,25 +388,13 @@ export type CreateBackupResult =
 export async function createAssistantBackup(
   assistantId: string,
 ): Promise<CreateBackupResult> {
-  // When a self-hosted ingress URL is set, the daemon SDK client's
-  // request interceptor rewrites the URL to the assistant's gateway
-  // (skipSegmentAllowlist=true). The cloud SDK client does NOT
-  // rewrite "backups" paths, so we must use the daemon SDK for any
-  // self-hosted assistant — whether accessed locally or via the
-  // platform web app. For pure cloud-hosted assistants (no ingress
-  // URL), backup creation goes through Django → vembda.
-  // Same ownership note as listAssistantBackups: self-hosted create is
-  // served by the gateway's assistant-scoped mirror, platform create by
-  // Django → vembda.
-  const { data, error, response } = getSelfHostedIngressUrl()
-    ? await daemonClient.post({
-        url: `/v1/assistants/${assistantId}/backups/create`,
-        throwOnError: false,
-      })
-    : await assistantsBackupsCreate({
-        path: { assistant_id: assistantId },
-        throwOnError: false,
-      });
+  if (getSelfHostedIngressUrl()) {
+    return CLI_BACKUP_ERROR;
+  }
+  const { data, error, response } = await assistantsBackupsCreate({
+    path: { assistant_id: assistantId },
+    throwOnError: false,
+  });
 
   assertHasResponse(response, error, "Failed to create assistant backup.");
 
@@ -536,24 +422,13 @@ export async function restoreAssistantBackup(
   assistantId: string,
   backup: AssistantBackup,
 ): Promise<RestoreBackupResult> {
-  // Same routing split as createAssistantBackup. NOTE: the gateway does not
-  // yet expose a restore route (the assistant daemon's restore endpoint was
-  // removed with its backup routes), so self-hosted restore surfaces the
-  // runtime error from this request until restore moves to the gateway.
-  const { data, error, response } = getSelfHostedIngressUrl()
-    ? await daemonClient.post({
-        url: `/v1/assistants/${assistantId}/backups/restore`,
-        body: { path: backup.path ?? backup.snapshot_name },
-        headers: { "Content-Type": "application/json" },
-        throwOnError: false,
-      })
-    : await assistantsBackupsRestoreCreate({
-        path: {
-          assistant_id: assistantId,
-          snapshot_name: backup.snapshot_name,
-        },
-        throwOnError: false,
-      });
+  if (getSelfHostedIngressUrl()) {
+    return CLI_BACKUP_ERROR;
+  }
+  const { data, error, response } = await assistantsBackupsRestoreCreate({
+    path: { assistant_id: assistantId, snapshot_name: backup.snapshot_name },
+    throwOnError: false,
+  });
 
   assertHasResponse(response, error, "Failed to restore assistant backup.");
 
@@ -604,8 +479,7 @@ export async function restartAssistant(
 }
 
 export type RetireResult =
-  | { ok: true }
-  | { ok: false; status: number; error: Record<string, unknown> };
+  { ok: true } | { ok: false; status: number; error: Record<string, unknown> };
 
 export interface RetireAssistantOptions {
   /**

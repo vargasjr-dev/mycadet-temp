@@ -23,7 +23,7 @@ describe("tunnelHostForCloudUrl", () => {
       "tunnel.mycadet.ai",
     );
     expect(tunnelHostForCloudUrl("https://dev-cloud.mycadet.ai")).toBe(
-      "tunnel-dev.mycadet.ai",
+      "dev-tunnel.mycadet.ai",
     );
   });
 

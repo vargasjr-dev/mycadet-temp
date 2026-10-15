@@ -334,7 +334,7 @@ export class AssistantClient {
 
     // A stale cached Cadet-Organization-Id is the usual cause of a 401 on the
     // platform path (e.g. the user switched orgs elsewhere). Drop it and retry
-    // once. Mirrors localRuntimeIdentity in local-runtime-client.ts.
+    // once.
     if (response.status === 401 && this.authMode === "platform" && this.token) {
       invalidateOrgIdCache(this.token, this.runtimeUrl);
       this.platformHeaders = undefined;

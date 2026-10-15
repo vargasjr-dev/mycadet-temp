@@ -525,8 +525,8 @@ describe("command-registry", () => {
         expect(assistantSubs.platform.baseRisk).toBe("low");
       });
 
-      test("assistant backup is low risk", () => {
-        expect(assistantSubs.backup.baseRisk).toBe("low");
+      test("assistant backup is not registered", () => {
+        expect(assistantSubs.backup).toBeUndefined();
       });
 
       test("assistant help is low risk", () => {
@@ -585,7 +585,6 @@ describe("command-registry", () => {
         "audit",
         "auth",
         "avatar",
-        "backup",
         "bash",
         "browser",
         "cache",
@@ -649,7 +648,6 @@ describe("command-registry", () => {
       expect(getAssistantPath("email send").baseRisk).toBe("high");
       expect(getAssistantPath("domain register").baseRisk).toBe("medium");
       expect(getAssistantPath("conversations clear").baseRisk).toBe("medium");
-      expect(getAssistantPath("backup restore").baseRisk).toBe("high");
       expect(getAssistantPath("inference session open").baseRisk).toBe("low");
       expect(getAssistantPath("inference session close").baseRisk).toBe("low");
       expect(getAssistantPath("inference session list").baseRisk).toBe("low");

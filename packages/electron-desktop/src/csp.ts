@@ -24,11 +24,9 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // self-hosted ingress (e.g. an ngrok wss:// URL) still can't be — those
 // connections need the planned proxy-through-main follow-up.
 //
-// https://storage.googleapis.com (+ wildcard) in connect-src: teleport streams
-// assistant `.vbundle` bytes directly to/from GCS via cloud-issued signed
-// URLs (PUT on export-to-cloud, GET on import-to-local). Those requests leave
-// the renderer for Google's storage host, which isn't a Cadet origin, so the
-// transfer is CSP-blocked without an explicit allowlist. Both the path-style
+// Signed cloud archive downloads and diagnostic uploads use Google storage
+// hosts directly. Their URLs carry storage authorization.
+
 // (`storage.googleapis.com/<bucket>/...`) and virtual-hosted
 // (`<bucket>.storage.googleapis.com/...`) URL shapes are covered.
 //

@@ -831,7 +831,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     );
 
     const handler = createTwilioVoiceWebhookHandler(
-      makeConfig({ tunnelBaseUrl: "https://tunnel-staging.mycadet.ai" }),
+      makeConfig({ tunnelBaseUrl: "https://staging-tunnel.mycadet.ai" }),
       makeCaches(),
     );
 
@@ -856,7 +856,7 @@ describe("Twilio webhook signature with canonical ingress base URL", () => {
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain(
-      `url="wss://tunnel-staging.mycadet.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
+      `url="wss://staging-tunnel.mycadet.ai/${assistantId}/webhooks/twilio/media-stream/sess-1/`,
     );
     expect(body).not.toContain("__CADET_PUBLIC_BASE_URL__");
     expect(body).not.toContain("staging-cloud.mycadet.ai");

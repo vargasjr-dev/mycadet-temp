@@ -109,7 +109,7 @@
     "exportDownloading": "正在下载…",
     "exportExporting": "正在导出…",
     "exportFailedToast": "导出助手失败。",
-    "exportMessage": "将此助手的当前状态下载为 .vbundle 文件。准备过程可能需要几分钟。\n\n导出内容不包含凭据，在其他位置导入后需要重新连接你的集成。",
+    "exportMessage": "下载整个安装的 .tar.gz 归档，包括加密凭据及其解密密钥。请妥善保管此归档。",
     "exportPreparing": "正在准备…",
     "exportTitle": "导出助手",
     "loadFailed": "加载备份失败。",
@@ -126,7 +126,8 @@
     "typeDoctor": "诊断",
     "typePointInTime": "时间点",
     "typePreview": "预览",
-    "typeScheduled": "计划"
+    "typeScheduled": "计划",
+    "cliOnly": "对于本地或 Docker 安装，请在终端中使用 cadet backup 和 cadet restore。"
   },
   "assistantPicker": {
     "active": "活跃",
@@ -644,7 +645,7 @@
     "toggleSubtitle": "每日限额仅适用于额外用量积分"
   },
   "debugBundleExport": {
-    "description": "Cadet 工作人员无法访问这台电脑。如需他们协助排查，请导出调试包：助手的工作区、日志和网关自身的数据库，不含任何凭据。调试包保留 7 天。",
+    "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
     "export": "导出调试包",
     "exporting": "正在导出…",
     "sentAt": "已于 {time} 发送给 Cadet。",
@@ -1874,7 +1875,8 @@
     "confirmWarning": "传送完成前将无法聊天。",
     "transferringNote": "这可能需要一些时间。请保持应用打开，直到传送完成。",
     "transferringTitle": "正在传送助手...",
-    "verifyMessage": "请验证您的新助手是否正常工作，然后确认切换。"
+    "verifyMessage": "请验证您的新助手是否正常工作，然后确认切换。",
+    "cliOnly": "在终端中使用 cadet teleport，在本地与 Docker 之间迁移整个安装。云端迁移将在支持根目录归档传输后提供。"
   },
   "textToSpeechCard": {
     "subtitle": "配置您的助手如何说话",

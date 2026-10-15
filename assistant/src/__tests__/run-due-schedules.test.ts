@@ -9,10 +9,6 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-mock.module("../background-wake/publisher.js", () => ({
-  refreshBackgroundWakeIntent: () => {},
-}));
-
 mock.module("../daemon/disk-pressure-background-gate.js", () => ({
   checkDiskPressureBackgroundGate: () => ({
     action: "allow",
