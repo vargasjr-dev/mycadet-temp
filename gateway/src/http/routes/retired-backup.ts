@@ -10,4 +10,4 @@ export function retiredBackupResponse(): Response {
 }
 
 export const RETIRED_BACKUP_PATH =
-  /^\/v1\/(?:migrations(?:\/.*)?|(?:assistants\/[^/]+\/)?backups(?:\/.*)?)\/?$/;
+  /^\/v1\/(?:assistants\/[^/]+\/)?(?:migrations(?:\/.*)?|backups(?:\/.*)?)\/?$/;

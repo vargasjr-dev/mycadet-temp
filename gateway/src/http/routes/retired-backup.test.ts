@@ -9,6 +9,7 @@ test("legacy backup and migration URLs stop at the gateway", async () => {
     "/v1/backups/create",
     "/v1/assistants/self/backups/restore/",
     "/v1/migrations/export",
+    "/v1/assistants/assistant-1/migrations/export",
     "/v1/migrations/import-from-gcs",
     "/v1/migrations/jobs/job-1",
   ]) {
