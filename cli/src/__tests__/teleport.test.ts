@@ -706,10 +706,10 @@ describe("teleport arg parsing", () => {
     expect(result.targetName).toBe("my-name");
   });
 
-  test("--platform sets targetEnv to 'platform'", () => {
-    const result = parseArgs(["--from", "source", "--platform"]);
+  test("--cloud sets targetEnv to 'platform'", () => {
+    const result = parseArgs(["--from", "source", "--cloud"]);
     expect(result.from).toBe("source");
-    expect(result.targetEnv).toBe("platform");
+    expect(result.targetEnv).toBe("cloud");
     expect(result.targetName).toBeUndefined();
   });
 
@@ -782,14 +782,14 @@ describe("same-environment rejection", () => {
   });
 
   test("source cadet, target platform -> error", async () => {
-    setArgv("--from", "src", "--platform", "dst");
+    setArgv("--from", "src", "--cloud", "dst");
 
     const srcEntry = makeEntry("src", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const dstEntry = makeEntry("dst", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
 
@@ -802,7 +802,7 @@ describe("same-environment rejection", () => {
     await expect(teleport()).rejects.toThrow("process.exit:1");
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Cannot teleport between two platform assistants",
+        "Cannot teleport between two cloud assistants",
       ),
     );
   });
@@ -828,7 +828,7 @@ describe("same-environment rejection", () => {
   test("flag says docker but resolved target is local -> rejects cloud mismatch", async () => {
     setArgv("--from", "src", "--docker", "misidentified");
 
-    const srcEntry = makeEntry("src", { cloud: "cadet" });
+    const srcEntry = makeEntry("src", { cloud: "cloud" });
     const dstEntry = makeEntry("misidentified", { cloud: "local" });
 
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -896,7 +896,7 @@ describe("resolveOrHatchTarget", () => {
 
   test("platform with existing ID -> returns existing without hatching", async () => {
     const cloudEntry = makeEntry("uuid-123", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     findAssistantByNameMock.mockImplementation((name: string) => {
@@ -904,7 +904,7 @@ describe("resolveOrHatchTarget", () => {
       return null;
     });
 
-    const result = await resolveOrHatchTarget("platform", "uuid-123");
+    const result = await resolveOrHatchTarget("cloud", "uuid-123");
     expect(result).toBe(cloudEntry);
     expect(hatchAssistantMock).not.toHaveBeenCalled();
   });
@@ -912,7 +912,7 @@ describe("resolveOrHatchTarget", () => {
   test("platform with unknown name -> hatches via hatchAssistant", async () => {
     findAssistantByNameMock.mockReturnValue(null);
 
-    const result = await resolveOrHatchTarget("platform", "nonexistent");
+    const result = await resolveOrHatchTarget("cloud", "nonexistent");
     expect(hatchAssistantMock).toHaveBeenCalledWith("platform-token");
     expect(result.assistantId).toBe("platform-new-id");
   });
@@ -928,7 +928,7 @@ describe("resolveOrHatchTarget", () => {
       reusedExisting: true,
     });
 
-    await expect(resolveOrHatchTarget("platform", undefined)).rejects.toThrow(
+    await expect(resolveOrHatchTarget("cloud", undefined)).rejects.toThrow(
       "process.exit:1",
     );
     expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -970,7 +970,7 @@ describe("resolveOrHatchTarget", () => {
 
 describe("cloud migration flow", () => {
   test("local → platform: requests upload URL, drives local runtime export, imports from GCS", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -1032,7 +1032,7 @@ describe("cloud migration flow", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", {
@@ -1088,7 +1088,7 @@ describe("cloud migration flow", () => {
       // sends platform-token auth — no guardian-token bootstrap.
       expect(localRuntimeExportToGcsMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "https://cloud.mycadet.ai",
           assistantId: "my-platform",
         }),
@@ -1104,7 +1104,7 @@ describe("cloud migration flow", () => {
       // ImportJob records and would 404 on runtime-created job IDs.
       expect(localRuntimePollJobStatusMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "https://cloud.mycadet.ai",
         }),
         "platform-token",
@@ -1163,13 +1163,13 @@ describe("cloud migration flow", () => {
 
 describe("signed-URL request targets the bundle-owning platform", () => {
   test("local → existing platform target with non-default runtimeUrl: upload URL pinned to target's runtimeUrl", async () => {
-    setArgv("--from", "my-local", "--platform", "existing-platform");
+    setArgv("--from", "my-local", "--cloud", "existing-platform");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     // Crucially, the target's runtimeUrl is NOT the default getCloudUrl()
     // return value — this is the regression case Codex flagged.
     const cloudEntry = makeEntry("existing-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://staging-cloud.mycadet.ai",
     });
 
@@ -1216,7 +1216,7 @@ describe("signed-URL request targets the bundle-owning platform", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://dev-cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1286,7 +1286,7 @@ describe("CLI never buffers bundle bytes", () => {
   }
 
   test("local → platform: no fetch call carries a bundle-sized body", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -1309,7 +1309,7 @@ describe("CLI never buffers bundle bytes", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1346,7 +1346,7 @@ describe("CLI never buffers bundle bytes", () => {
 
 describe("polling", () => {
   test("local-runtime export poll continues until complete", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -1383,7 +1383,7 @@ describe("polling", () => {
   });
 
   test("local-runtime export failure → teleport exits 1", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -1412,7 +1412,7 @@ describe("polling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1467,7 +1467,7 @@ describe("polling", () => {
 
 describe("MigrationInProgressError handling", () => {
   test("local-runtime export already in flight → fail fast with existing job id", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -1509,7 +1509,7 @@ describe("MigrationInProgressError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1567,7 +1567,7 @@ describe("VersionMismatchError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1626,7 +1626,7 @@ describe("VersionMismatchError handling", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1675,7 +1675,7 @@ describe("target runtime version fetch", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1727,7 +1727,7 @@ describe("target runtime version fetch", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1786,14 +1786,14 @@ describe("dry-run", () => {
     setArgv(
       "--from",
       "my-local",
-      "--platform",
+      "--cloud",
       "existing-platform",
       "--dry-run",
     );
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     const cloudEntry = makeEntry("existing-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
 
@@ -1821,7 +1821,7 @@ describe("dry-run", () => {
     setArgv("--from", "my-platform", "--local", "my-local", "--dry-run");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1862,7 +1862,7 @@ describe("dry-run", () => {
 
 describe("pre-export source backup", () => {
   test("local source with no recent backup: exports a host-side backup before exporting", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
       name === "my-local" ? localEntry : null,
@@ -1901,7 +1901,7 @@ describe("pre-export source backup", () => {
   });
 
   test("local source with a recent backup: reuses it and skips the export", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
       name === "my-local" ? localEntry : null,
@@ -1922,7 +1922,7 @@ describe("pre-export source backup", () => {
   });
 
   test("local source with only stale backups: takes a fresh one", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
       name === "my-local" ? localEntry : null,
@@ -1944,7 +1944,7 @@ describe("pre-export source backup", () => {
   test("platform source: takes a PVC snapshot through the source platform before exporting", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -1988,7 +1988,7 @@ describe("pre-export source backup", () => {
   test("platform source with a recent ready snapshot: reuses it", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2013,7 +2013,7 @@ describe("pre-export source backup", () => {
   });
 
   test("host-side backup failure aborts before export and before hatching", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
       name === "my-local" ? localEntry : null,
@@ -2038,7 +2038,7 @@ describe("pre-export source backup", () => {
   test("platform snapshot failure (never ready) aborts too", async () => {
     setArgv("--from", "my-platform", "--local", "my-local");
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2065,7 +2065,7 @@ describe("pre-export source backup", () => {
   });
 
   test("dry-run never backs up the source", async () => {
-    setArgv("--from", "my-local", "--platform", "--dry-run");
+    setArgv("--from", "my-local", "--cloud", "--dry-run");
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
       name === "my-local" ? localEntry : null,
@@ -2080,7 +2080,7 @@ describe("pre-export source backup", () => {
 
 describe("pre-check: existing platform assistant", () => {
   test("blocks before any work when pre-check finds existing assistant", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2119,7 +2119,7 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2150,7 +2150,7 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2184,7 +2184,7 @@ describe("version guard", () => {
     setArgv("--from", "my-platform", "--local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const newLocalEntry = makeEntry("new-local", { cloud: "local" });
@@ -2230,7 +2230,7 @@ describe("version guard", () => {
 
 describe("credential import display", () => {
   test("prints credential counts when credentialsImported is present (platform target)", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2267,7 +2267,7 @@ describe("credential import display", () => {
   });
 
   test("does not print credential line when absent", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2298,7 +2298,7 @@ describe("platform credential injection", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", {
@@ -2361,7 +2361,7 @@ describe("platform credential injection", () => {
 
 describe("auth + transient-error resilience", () => {
   test("runtime 401 on export kickoff triggers token refresh and retry", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2405,7 +2405,7 @@ describe("auth + transient-error resilience", () => {
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2451,7 +2451,7 @@ describe("auth + transient-error resilience", () => {
   });
 
   test("runtime non-401 errors do NOT trigger token refresh", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2475,7 +2475,7 @@ describe("auth + transient-error resilience", () => {
   });
 
   test("runtime poll 401 mid-migration triggers forceRefresh lease and completes", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2532,7 +2532,7 @@ describe("auth + transient-error resilience", () => {
   });
 
   test("transient poll error does not abort teleport (job completes after retry)", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2581,7 +2581,7 @@ describe("auth + transient-error resilience", () => {
 
 describe("upload signed-URL records source runtime version (not CLI version)", () => {
   test("local source: identity is fetched BEFORE the upload signed-URL request", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2630,7 +2630,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
   });
 
   test("local source: identity fetch failure aborts before signed-URL request", async () => {
-    setArgv("--from", "my-local", "--platform");
+    setArgv("--from", "my-local", "--cloud");
 
     const localEntry = makeEntry("my-local", { cloud: "local" });
     findAssistantByNameMock.mockImplementation((name: string) =>
@@ -2661,7 +2661,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2686,10 +2686,10 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
       await teleport();
 
       // Identity was fetched against the cloud-managed runtime entry
-      // (cloud=cadet) with the cloud token — not via guardian token.
+      // (cloud=cloud) with the cloud token — not via guardian token.
       expect(localRuntimeIdentityMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "https://cloud.mycadet.ai",
           assistantId: "my-platform",
         }),
@@ -2715,7 +2715,7 @@ describe("upload signed-URL records source runtime version (not CLI version)", (
     setArgv("--from", "my-platform", "--local", "my-local");
 
     const cloudEntry = makeEntry("my-platform", {
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     });
     const localEntry = makeEntry("my-local", { cloud: "local" });
@@ -2783,10 +2783,10 @@ for (const [sourceCloud, targetFlag] of [
   );
 }
 
-test("cloud home alias cannot teleport into the same platform environment", async () => {
+test("cloud home cannot teleport into the same cloud environment", async () => {
   const entry = makeEntry("my-cloud", { cloud: "cloud" });
   findAssistantByNameMock.mockReturnValue(entry);
-  setArgv("--from", "my-cloud", "--platform");
+  setArgv("--from", "my-cloud", "--cloud");
   await expect(teleport()).rejects.toThrow("process.exit:1");
   expect(hatchAssistantMock).not.toHaveBeenCalled();
   expect(cloudRequestSignedUrlMock).not.toHaveBeenCalled();

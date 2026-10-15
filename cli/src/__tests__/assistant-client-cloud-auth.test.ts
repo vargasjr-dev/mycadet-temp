@@ -1,5 +1,5 @@
 /**
- * Tests for AssistantClient's cloud-managed (`cloud: "cadet"`) auth path.
+ * Tests for AssistantClient's cloud-managed (`cloud: "cloud"`) auth path.
  * These entries have no guardian token on disk, so the client must authenticate
  * with the stored platform credential instead of sending an anonymous request
  * (which the cloud answers with a bare 403).
@@ -38,7 +38,7 @@ function seedCloud(token?: string): void {
     assistantId: ASSISTANT_ID,
     name: "Credence",
     runtimeUrl: PLATFORM_URL,
-    cloud: "cadet",
+    cloud: "cloud",
   });
   if (token) {
     saveCloudToken(token);

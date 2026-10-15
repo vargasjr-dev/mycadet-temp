@@ -66,18 +66,18 @@ import {
 
 function printHelp(): void {
   console.log(
-    "Usage: cadet teleport --from <assistant> <--local | --docker | --platform> [name] [options]",
+    "Usage: cadet teleport --from <assistant> <--local | --docker | --cloud> [name] [options]",
   );
   console.log("");
   console.log(
-    "Transfer assistant data between local, docker, and platform environments.",
+    "Transfer assistant data between local, docker, and cloud environments.",
   );
   console.log("");
   console.log(
     "The --from flag specifies the source assistant to export data from.",
   );
   console.log(
-    "Exactly one environment flag (--local, --docker, --platform) specifies",
+    "Exactly one environment flag (--local, --docker, --cloud) specifies",
   );
   console.log(
     "the target environment. An optional name after the environment flag",
@@ -96,19 +96,18 @@ function printHelp(): void {
   console.log("transfers such as local to local are not supported.");
   console.log("");
   console.log(
-    "Before exporting, the source assistant is backed up. Platform sources",
+    "Before exporting, the source assistant is backed up. Cloud sources",
   );
   console.log(
     "get a PVC snapshot (waited on until restorable); local and docker",
   );
   console.log(
-    "sources get a root tar archive in the XDG Cadet backups directory on this",
+    "sources get a .vbundle written to ~/.local/share/cadet/backups/ on this",
   );
   console.log(
     `machine. A backup of the source taken within the last ${RECENT_BACKUP_MAX_AGE_MS / 60_000} minutes is`,
   );
-  console.log("reused for cloud transfers. Local/Docker transfers always capture fresh state.");
-  console.log("If the backup fails, the teleport is aborted.");
+  console.log("reused. If the backup fails, the teleport is aborted.");
   console.log("");
   console.log(
     "For local-to-docker and docker-to-local transfers, the source assistant",
@@ -116,12 +115,12 @@ function printHelp(): void {
   console.log(
     "is automatically retired after a successful import to free up ports and",
   );
-  console.log("avoid resource conflicts. Use --keep-source to retain the source, stopped.");
+  console.log("avoid resource conflicts. Use --keep-source to skip this.");
   console.log("");
   console.log("Environment flags:");
   console.log("  --local [name]      Target a local bare-metal assistant");
   console.log("  --docker [name]     Target a docker assistant");
-  console.log("  --platform [name]   Target a Cadet Cloud-hosted assistant");
+  console.log("  --cloud [name]      Target a Cadet Cloud-hosted assistant");
   console.log("");
   console.log("Options:");
   console.log(
@@ -156,19 +155,19 @@ function printHelp(): void {
     "      or hatch a new docker assistant named my-docker if it doesn't exist",
   );
   console.log("");
-  console.log("  cadet teleport --from my-local --platform");
+  console.log("  cadet teleport --from my-local --cloud");
   console.log(
-    "      Hatch a new platform assistant and import data from my-local",
+    "      Hatch a new cloud assistant and import data from my-local",
   );
   console.log("");
   console.log("  cadet teleport --from my-cloud --local my-new-local");
   console.log(
-    "      Import data from platform assistant my-cloud into local assistant",
+    "      Import data from cloud assistant my-cloud into local assistant",
   );
   console.log("");
   console.log("  cadet teleport --from my-docker --local --keep-source");
   console.log(
-    "      Transfer to a new local assistant and retain the stopped Docker source",
+    "      Transfer to a new local assistant but keep the docker source running",
   );
   console.log("");
   console.log(
@@ -179,14 +178,14 @@ function printHelp(): void {
 
 export function parseArgs(argv: string[]): {
   from: string | undefined;
-  targetEnv: "local" | "docker" | "platform" | undefined;
+  targetEnv: "local" | "docker" | "cloud" | undefined;
   targetName: string | undefined;
   keepSource: boolean;
   dryRun: boolean;
   help: boolean;
 } {
   let from: string | undefined;
-  let targetEnv: "local" | "docker" | "platform" | undefined;
+  let targetEnv: "local" | "docker" | "cloud" | undefined;
   let targetName: string | undefined;
   let keepSource = false;
   let dryRun = false;
@@ -204,9 +203,9 @@ export function parseArgs(argv: string[]): {
     } else if (
       arg === "--local" ||
       arg === "--docker" ||
-      arg === "--platform"
+      arg === "--cloud"
     ) {
-      const env = arg.slice(2) as "local" | "docker" | "platform";
+      const env = arg === "--local" ? "local" : arg === "--docker" ? "docker" : "cloud";
       envFlags.push(env);
       targetEnv = env;
       // Peek at next arg for optional target name
@@ -224,7 +223,7 @@ export function parseArgs(argv: string[]): {
 
   if (envFlags.length > 1) {
     console.error(
-      "Error: Only one environment flag (--local, --docker, --platform) may be specified.",
+      "Error: Only one environment flag (--local, --docker, --cloud) may be specified.",
     );
     process.exit(1);
   }
@@ -959,7 +958,7 @@ async function importToAssistant(
 // ---------------------------------------------------------------------------
 
 export async function resolveOrHatchTarget(
-  targetEnv: "local" | "docker" | "platform",
+  targetEnv: "local" | "docker" | "cloud",
   targetName?: string,
 ): Promise<AssistantEntry> {
   // If a name is provided, try to find an existing assistant
@@ -968,12 +967,10 @@ export async function resolveOrHatchTarget(
     if (existing) {
       // Validate the existing assistant's cloud matches the requested env
       const existingCloud = existing.cloud;
-      const normalizedExisting =
-        isCloudHome(existingCloud) ? "platform" : existingCloud;
-      if (normalizedExisting !== targetEnv) {
+      if (existingCloud !== targetEnv) {
         console.error(
-          `Error: Assistant '${targetName}' is a ${normalizedExisting} assistant, not ${targetEnv}. ` +
-            `Use --${normalizedExisting} to target it.`,
+          `Error: Assistant '${targetName}' is a ${existingCloud} assistant, not ${targetEnv}. ` +
+            `Use --${existingCloud} to target it.`,
         );
         process.exit(1);
       }
@@ -982,7 +979,7 @@ export async function resolveOrHatchTarget(
     }
 
     // Name not found — will hatch.
-    if (targetEnv === "platform") {
+    if (targetEnv === "cloud") {
       // Platform API doesn't accept custom names — warn and ignore
       console.log(
         `Note: Platform assistants receive a server-assigned ID. The name '${targetName}' will not be used.`,
@@ -1039,7 +1036,7 @@ export async function resolveOrHatchTarget(
     return entry;
   }
 
-  if (targetEnv === "platform") {
+  if (targetEnv === "cloud") {
     const token = readCloudToken();
     if (!token) {
       console.error("Not logged in. Run 'cadet login' first.");
@@ -1301,8 +1298,7 @@ export const teleport = Object.assign(
 
   // Early same-environment guard — compare source cloud against the CLI flag
   // BEFORE exporting or hatching, to avoid creating orphaned assistants.
-  const normalizedSourceEnv = isCloudHome(fromCloud) ? "platform" : fromCloud;
-  if (normalizedSourceEnv === targetEnv) {
+  if (fromCloud === targetEnv) {
     console.error(
       `Cannot teleport between two ${targetEnv} assistants. Teleport transfers data across different environments.`,
     );
@@ -1330,17 +1326,16 @@ export const teleport = Object.assign(
     if (existingTarget) {
       // Target exists — validate cloud matches the flag, then run preflight
       const toCloud = existingTarget.cloud;
-      const normalizedTargetEnv = isCloudHome(toCloud) ? "platform" : toCloud;
-      if (normalizedTargetEnv !== targetEnv) {
+      if (toCloud !== targetEnv) {
         console.error(
-          `Error: Assistant '${targetName}' is a ${normalizedTargetEnv} assistant, not ${targetEnv}. ` +
-            `Use --${normalizedTargetEnv} to target it.`,
+          `Error: Assistant '${targetName}' is a ${toCloud} assistant, not ${targetEnv}. ` +
+            `Use --${toCloud} to target it.`,
         );
         process.exit(1);
       }
-      if (normalizedSourceEnv === normalizedTargetEnv) {
+      if (fromCloud === toCloud) {
         console.error(
-          `Cannot teleport between two ${normalizedTargetEnv} assistants. Teleport transfers data across different environments.`,
+          `Cannot teleport between two ${toCloud} assistants. Teleport transfers data across different environments.`,
         );
         process.exit(1);
       }
@@ -1412,7 +1407,7 @@ export const teleport = Object.assign(
 
   // Platform target: reordered flow — upload to GCS before hatching so that
   // if export/upload fails, no empty assistant is left dangling on the cloud.
-  if (targetEnv === "platform") {
+  if (targetEnv === "cloud") {
     const token = readCloudToken();
     if (!token) {
       console.error("Not logged in. Run 'cadet login' first.");
@@ -1426,7 +1421,7 @@ export const teleport = Object.assign(
       const existingCloud = existingTarget.cloud;
       if (!isCloudHome(existingCloud)) {
         console.error(
-          `Error: Assistant '${targetName}' is a ${existingCloud} assistant, not platform. ` +
+          `Error: Assistant '${targetName}' is a ${existingCloud} assistant, not cloud. ` +
             `Use --${existingCloud} to target it.`,
         );
         process.exit(1);
@@ -1547,10 +1542,9 @@ export const teleport = Object.assign(
   // Post-hatch same-environment safety net — uses resolved clouds in case
   // the resolved target cloud differs from the CLI flag (e.g., --docker
   // targeting a name that is actually a local entry).
-  const normalizedTargetEnv = isCloudHome(toCloud) ? "platform" : toCloud;
-  if (normalizedSourceEnv === normalizedTargetEnv) {
+  if (fromCloud === toCloud) {
     console.error(
-      `Cannot teleport between two ${normalizedTargetEnv} assistants. Teleport transfers data across different environments.`,
+      `Cannot teleport between two ${toCloud} assistants. Teleport transfers data across different environments.`,
     );
     process.exit(1);
   }

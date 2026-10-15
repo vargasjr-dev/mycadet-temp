@@ -79,7 +79,7 @@ for (const topology of ["local", "docker"] as const) {
 test("cloud backup calls the cloud backup API with session authentication", async () => {
   const entry: config.AssistantEntry = {
     assistantId: "cloud-test",
-    cloud: "cadet",
+    cloud: "cloud",
     runtimeUrl: "https://cloud.mycadet.ai",
   };
   lookup.mockReturnValue(entry);

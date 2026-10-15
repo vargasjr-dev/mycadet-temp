@@ -99,7 +99,7 @@ for (const topology of ["local", "docker"] as const) {
 test("cloud restore uploads tar and calls the cloud API using the assistant's cloud session", async () => {
   const entry: config.AssistantEntry = {
     assistantId: "cloud-test",
-    cloud: "cadet",
+    cloud: "cloud",
     runtimeUrl: "https://cloud.mycadet.ai",
   };
   lookup.mockReturnValue(entry);

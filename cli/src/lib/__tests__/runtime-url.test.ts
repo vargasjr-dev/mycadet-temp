@@ -49,9 +49,9 @@ describe("resolveRuntimeMigrationUrl", () => {
     );
   });
 
-  test("cadet (cloud-managed) cloud uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
+  test("cloud-managed home uses wildcard-proxy /v1/assistants/<id>/migrations/<subpath>", () => {
     const entry = makeEntry({
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
       assistantId: "11111111-2222-3333-4444-555555555555",
     });
@@ -68,7 +68,7 @@ describe("resolveRuntimeMigrationUrl", () => {
 
   test("dev platform URL still routes through the wildcard prefix", () => {
     const entry = makeEntry({
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://dev-cloud.mycadet.ai",
       assistantId: "ast-dev-1",
     });
@@ -77,7 +77,7 @@ describe("resolveRuntimeMigrationUrl", () => {
     );
   });
 
-  test("a non-cadet, non-local cloud (e.g. gcp) uses the local-shape URL", () => {
+  test("a self-hosted cloud (e.g. gcp) uses the local-shape URL", () => {
     const entry = makeEntry({
       cloud: "gcp",
       runtimeUrl: "http://10.0.0.5:7821",
@@ -112,9 +112,9 @@ describe("resolveRuntimeUrl", () => {
     );
   });
 
-  test("cadet cloud uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
+  test("cloud home uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
     const entry = makeEntry({
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
       assistantId: "11111111-2222-3333-4444-555555555555",
     });

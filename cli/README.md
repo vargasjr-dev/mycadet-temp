@@ -27,37 +27,6 @@ cadet restore my-assistant --from backup.tar.gz --version v1.2.3
 Automatic failure recovery during an upgrade or restore uses the images and
 migration checkpoints captured in memory for that operation.
 
-### `teleport`
-
-Move an entire local/Docker installation between environments:
-
-```bash
-cadet teleport --from my-local --docker my-docker
-cadet teleport --from my-docker --local --keep-source
-cadet teleport --from my-local --docker --dry-run
-```
-
-The CLI gracefully stops the source and captures a fresh `.tar.gz` in the XDG
-Cadet backups directory. That same archive supplies all four destination roots:
-`workspace/`, `gateway-security/`, `ces-security/`, and `ces-data/`. CES ciphertext
-and its keys travel together without decryption. These transfers need no cloud
-login or authenticated runtime export.
-
-New targets install the roots before starting services. Existing targets get a
-safety tar before replacement; a failed import or startup restores their original
-state. Standard CLI-created Docker targets are recreated to remove signing-key
-environment overrides, and imported files receive destination container ownership.
-Targets with customized Docker mounts or networking require a new target.
-
-The source is retired only after destination readiness. `--keep-source` retains it
-stopped; avoid running both copies concurrently. `--dry-run` describes the move
-without stopping services or creating archives. Docker data transfer uses the
-active Docker context and streams through the CLI, including remote Docker hosts.
-
-Cloud transfers still use the platform migration API and its existing format.
-Cloud root-tar provisioning needs a companion platform implementation. Convert
-legacy `.vbundle` archives in `vellum-to-cadet` before using root-tar restore.
-
 ### Lifecycle: `ps`, `sleep`, `wake`
 
 Day-to-day process management for the assistant and gateway.

@@ -132,7 +132,7 @@ function makeCloudEntry(assistantId = "cloud-1"): AssistantEntry {
   return {
     assistantId,
     runtimeUrl: `https://runtime.example.com/${assistantId}`,
-    cloud: "cadet",
+    cloud: "cloud",
   };
 }
 

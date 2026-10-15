@@ -230,13 +230,13 @@ describe("cadet ps — platform status line", () => {
         assistantId: "assistant-123",
         name: "Alice",
         runtimeUrl: "https://platform.example",
-        cloud: "cadet",
+        cloud: "cloud",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
         runtimeUrl: "https://platform.example/b",
-        cloud: "cadet",
+        cloud: "cloud",
       },
     ]);
     getActiveAssistantMock.mockReturnValue(null);
@@ -278,7 +278,7 @@ describe("cadet ps — platform status line", () => {
         assistantId: "assistant-123",
         name: "Alice",
         runtimeUrl: "https://platform.example",
-        cloud: "cadet",
+        cloud: "cloud",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");
@@ -287,7 +287,7 @@ describe("cadet ps — platform status line", () => {
 
     const output = stdout.join("\n");
     expect(output).toContain("* Alice");
-    expect(output).toContain("remote: cadet");
+    expect(output).toContain("remote: cloud");
     expect(output).toContain("https://platform.example");
     expect(output).not.toContain("* assistant-123");
   });
@@ -298,13 +298,13 @@ describe("cadet ps — platform status line", () => {
         assistantId: "assistant-123",
         name: "Alice",
         runtimeUrl: "https://platform.example/a",
-        cloud: "cadet",
+        cloud: "cloud",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
         runtimeUrl: "https://platform.example/b",
-        cloud: "cadet",
+        cloud: "cloud",
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");

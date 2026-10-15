@@ -225,7 +225,7 @@ describe("cadet debug", () => {
   test("refuses a Cadet-hosted assistant, which needs no bundle", async () => {
     resolveTargetMock.mockReturnValue({
       ...LOCAL_ENTRY,
-      cloud: "cadet",
+      cloud: "cloud",
     });
     const errorSpy = spyOn(console, "error").mockImplementation(() => {});
     try {

@@ -107,7 +107,7 @@ describe("getKnownPidsFromAssistants", () => {
     const entry: AssistantEntry = {
       assistantId: "managed-1",
       runtimeUrl: "https://cloud.mycadet.ai/foo",
-      cloud: "cadet",
+      cloud: "cloud",
     };
     const pids = getKnownPidsFromAssistants([entry]);
     expect(pids.size).toBe(0);

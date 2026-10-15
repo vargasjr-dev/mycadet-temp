@@ -291,7 +291,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "cadet",
+      cloud: "cloud",
     });
 
     await setup();
@@ -310,7 +310,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "cadet",
+      cloud: "cloud",
     });
     saveGuardianToken(
       "assistant-123",
@@ -339,7 +339,7 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
-      cloud: "cadet",
+      cloud: "cloud",
     });
     saveGuardianToken(
       "assistant-123",

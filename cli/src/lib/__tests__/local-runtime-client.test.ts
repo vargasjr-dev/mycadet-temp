@@ -394,7 +394,7 @@ const CADET_ENTRY: Pick<
   AssistantEntry,
   "cloud" | "runtimeUrl" | "assistantId"
 > = {
-  cloud: "cadet",
+  cloud: "cloud",
   runtimeUrl: "https://cloud.mycadet.ai",
   assistantId: "11111111-2222-3333-4444-555555555555",
 };
@@ -633,7 +633,7 @@ describe("localRuntimeIdentity", () => {
 
     const result = await localRuntimeIdentity(
       {
-        cloud: "cadet",
+        cloud: "cloud",
         runtimeUrl: PLATFORM_URL,
         assistantId: ASSISTANT_ID,
       },
