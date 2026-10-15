@@ -1,12 +1,29 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeAll, expect, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
-import webI18next from "i18next";
+import { createInstance } from "i18next";
 import { I18nextProvider } from "react-i18next";
 
 import { WelcomeScreenCopy } from "@app/components/auth-welcome-screen";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { changeLocale, t, Trans, useTranslation } from "@app/i18n";
 import { i18next } from "@app/i18n/instance";
+
+const webI18next = createInstance();
+beforeAll(async () => {
+  await webI18next.init({
+    lng: "en",
+    fallbackLng: "en",
+    defaultNS: "common",
+    resources: {
+      en: {
+        common: {
+          notFound: { title: "Page not found" },
+          rootHydrateFallback: { loadingAria: "Loading" },
+        },
+      },
+    },
+  });
+});
 
 function AccountCopy() {
   const { t } = useTranslation("account");
