@@ -13,12 +13,6 @@ mock.module("../feature-flag-store.js", () => ({
   getFeatureFlagStorePath: () => join(flagDir, "feature-flags.json"),
 }));
 
-mock.module("../feature-flag-remote-store.js", () => ({
-  refreshRemoteFeatureFlagStoreCache: mock(() => {}),
-  getRemoteFeatureFlagStorePath: () =>
-    join(flagDir, "remote-feature-flags.json"),
-}));
-
 const { FeatureFlagWatcher } = await import("../feature-flag-watcher.js");
 
 describe("FeatureFlagWatcher onChanged callback", () => {
@@ -44,22 +38,6 @@ describe("FeatureFlagWatcher onChanged callback", () => {
     writeFileSync(
       join(flagDir, "feature-flags.json"),
       JSON.stringify({ test: true }),
-    );
-
-    await new Promise((r) => setTimeout(r, 700));
-
-    expect(onChanged).toHaveBeenCalledTimes(1);
-    watcher.stop();
-  });
-
-  test("calls onChanged after debounce fires on remote flag file change", async () => {
-    const onChanged = mock(() => {});
-    const watcher = new FeatureFlagWatcher({ onChanged });
-    watcher.start();
-
-    writeFileSync(
-      join(flagDir, "remote-feature-flags.json"),
-      JSON.stringify({ remote: true }),
     );
 
     await new Promise((r) => setTimeout(r, 700));

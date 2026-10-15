@@ -11,7 +11,6 @@ import { z } from "zod";
 
 import { loadFeatureFlagDefaults } from "../feature-flag-defaults.js";
 import { readEnvFeatureFlagOverrides } from "../feature-flag-env-overrides.js";
-import { readRemoteFeatureFlags } from "../feature-flag-remote-store.js";
 import { readPersistedFeatureFlags } from "../feature-flag-store.js";
 import type { IpcRoute } from "./server.js";
 
@@ -20,24 +19,18 @@ const GetFeatureFlagParamsSchema = z.object({
 });
 
 /**
- * Compute the merged feature flag state: defaults < remote < persisted.
+ * Compute the merged feature flag state: defaults < persisted.
  * Returns a `Record<string, boolean | string>` keyed by flag name.
  */
 export function getMergedFeatureFlags(): FeatureFlagsIpcResponse {
   const defaults = loadFeatureFlagDefaults();
   const persisted = readPersistedFeatureFlags();
-  const remote = readRemoteFeatureFlags();
 
   const result: Record<string, boolean | string> = {};
   for (const [key, def] of Object.entries(defaults)) {
     const persistedValue = persisted[key];
-    const remoteValue = remote[key];
     result[key] =
-      persistedValue !== undefined
-        ? persistedValue
-        : remoteValue !== undefined
-          ? remoteValue
-          : def.defaultEnabled;
+      persistedValue !== undefined ? persistedValue : def.defaultEnabled;
   }
 
   const envOverrides = readEnvFeatureFlagOverrides();

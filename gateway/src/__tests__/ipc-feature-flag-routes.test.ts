@@ -8,10 +8,6 @@ import { connectClient, sendRequest } from "./helpers/ipc-newline-client.js";
 
 const protectedDir = testSecurityDir;
 const featureFlagStorePath = join(protectedDir, "feature-flags.json");
-const remoteFeatureFlagStorePath = join(
-  protectedDir,
-  "feature-flags-remote.json",
-);
 
 // Write the test registry to an isolated temp path
 const defaultsPath = join(protectedDir, "feature-flag-registry.json");
@@ -63,7 +59,6 @@ beforeEach(() => {
   _setRegistryCandidateOverrides([defaultsPath]);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
 });
 
 afterEach(() => {
@@ -76,7 +71,6 @@ afterEach(() => {
   _setRegistryCandidateOverrides(null);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
   delete process.env.CADET_FLAG_A2A_CHANNEL;
 });
@@ -84,8 +78,6 @@ afterEach(() => {
 const { resetFeatureFlagDefaultsCache, _setRegistryCandidateOverrides } =
   await import("../feature-flag-defaults.js");
 const { clearFeatureFlagStoreCache } = await import("../feature-flag-store.js");
-const { clearRemoteFeatureFlagStoreCache } =
-  await import("../feature-flag-remote-store.js");
 const { resetEnvOverridesCache } =
   await import("../feature-flag-env-overrides.js");
 const { GatewayIpcServer } = await import("../ipc/server.js");
@@ -159,54 +151,6 @@ describe("IPC feature flag routes", () => {
     const flags = res.result as Record<string, boolean>;
     expect(flags["browser"]).toBe(false); // overridden from default true
     expect(flags["a2a-channel"]).toBe(false); // still default
-  });
-
-  test("get_feature_flags merges remote values when no local override", async () => {
-    writeFileSync(
-      remoteFeatureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: { "a2a-channel": true },
-      }),
-    );
-    clearRemoteFeatureFlagStoreCache();
-
-    // No local override
-    if (existsSync(featureFlagStorePath)) {
-      rmSync(featureFlagStorePath);
-    }
-    clearFeatureFlagStoreCache();
-
-    await startServerAndConnect();
-    const res = await sendRequest(client, "get_feature_flags");
-
-    expect(res.error).toBeUndefined();
-    const flags = res.result as Record<string, boolean>;
-    expect(flags["a2a-channel"]).toBe(true); // remote overrides default
-  });
-
-  test("get_feature_flags falls back to registry defaults for flags missing from a remote snapshot", async () => {
-    writeFileSync(
-      remoteFeatureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: { "a2a-channel": true },
-      }),
-    );
-    clearRemoteFeatureFlagStoreCache();
-
-    if (existsSync(featureFlagStorePath)) {
-      rmSync(featureFlagStorePath);
-    }
-    clearFeatureFlagStoreCache();
-
-    await startServerAndConnect();
-    const res = await sendRequest(client, "get_feature_flags");
-
-    expect(res.error).toBeUndefined();
-    const flags = res.result as Record<string, boolean>;
-    expect(flags["a2a-channel"]).toBe(true);
-    expect(flags["browser"]).toBe(true);
   });
 
   test("get_feature_flags includes string flag values", async () => {

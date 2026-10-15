@@ -1,13 +1,12 @@
 import { loadFeatureFlagDefaults } from "./feature-flag-defaults.js";
 import { readEnvFeatureFlagOverrides } from "./feature-flag-env-overrides.js";
-import { readRemoteFeatureFlags } from "./feature-flag-remote-store.js";
 import { readPersistedFeatureFlags } from "./feature-flag-store.js";
 
 /**
  * Resolve the raw value for a feature flag.
  *
- * Priority: env override > persisted (user-toggled) > remote (platform-pushed) > registry default.
- * Undeclared keys return `false` (fail closed), even if stale local/remote
+ * Priority: env override > persisted (user-toggled) > registry default.
+ * Undeclared keys return `false` (fail closed), even if stale local
  * state contains a value for them.
  */
 export function getFeatureFlagValue(key: string): boolean | string {
@@ -21,10 +20,6 @@ export function getFeatureFlagValue(key: string): boolean | string {
   const persisted = readPersistedFeatureFlags();
   const persistedValue = persisted[key];
   if (persistedValue !== undefined) return persistedValue;
-
-  const remote = readRemoteFeatureFlags();
-  const remoteValue = remote[key];
-  if (remoteValue !== undefined) return remoteValue;
 
   return defaultDef.defaultEnabled;
 }

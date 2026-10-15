@@ -11,10 +11,6 @@ import { testSecurityDir } from "./test-preload.js";
 
 const protectedDir = testSecurityDir;
 const featureFlagStorePath = join(protectedDir, "feature-flags.json");
-const remoteFeatureFlagStorePath = join(
-  protectedDir,
-  "feature-flags-remote.json",
-);
 
 // Write the test registry to an isolated temp path so we never touch
 // the committed gateway/src/feature-flag-registry.json file.
@@ -65,7 +61,6 @@ beforeEach(() => {
   _setRegistryCandidateOverrides([defaultsPath]);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
 });
 
 afterEach(() => {
@@ -79,7 +74,6 @@ afterEach(() => {
   _setRegistryCandidateOverrides(null);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
   delete process.env.CADET_FLAG_A2A_CHANNEL;
 });
@@ -93,8 +87,6 @@ const {
 } = await import("../feature-flag-defaults.js");
 const { clearFeatureFlagStoreCache, readPersistedFeatureFlags } =
   await import("../feature-flag-store.js");
-const { clearRemoteFeatureFlagStoreCache, writeRemoteFeatureFlags } =
-  await import("../feature-flag-remote-store.js");
 const { resetEnvOverridesCache } =
   await import("../feature-flag-env-overrides.js");
 
@@ -283,132 +275,13 @@ describe("GET /v1/feature-flags handler", () => {
     expect(browserFlag.defaultEnabled).toBe(true);
   });
 
-  test("remote values fill in when no local override exists", async () => {
-    // Write a remote store with a2a-channel enabled (overriding registry default of false)
-    writeFileSync(
-      remoteFeatureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: {
-          "a2a-channel": true,
-        },
-      }),
-    );
-    clearRemoteFeatureFlagStoreCache();
-
-    // No local override for a2a-channel
-    if (existsSync(featureFlagStorePath)) {
-      rmSync(featureFlagStorePath);
-    }
-    clearFeatureFlagStoreCache();
-
-    const handler = createFeatureFlagsGetHandler();
-    const res = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-
-    const a2aFlag = body.flags.find(
-      (f: { key: string }) => f.key === "a2a-channel",
-    );
-    expect(a2aFlag).toBeDefined();
-    // Remote value (true) overrides registry default (false)
-    expect(a2aFlag.enabled).toBe(true);
-  });
-
-  test("local overrides take precedence over remote values", async () => {
-    // Set remote value to true
-    writeFileSync(
-      remoteFeatureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: {
-          "a2a-channel": true,
-        },
-      }),
-    );
-    clearRemoteFeatureFlagStoreCache();
-
-    // Set local override to false
-    writeFileSync(
-      featureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: {
-          "a2a-channel": false,
-        },
-      }),
-    );
-    clearFeatureFlagStoreCache();
-
-    const handler = createFeatureFlagsGetHandler();
-    const res = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-
-    const a2aFlag = body.flags.find(
-      (f: { key: string }) => f.key === "a2a-channel",
-    );
-    expect(a2aFlag).toBeDefined();
-    // Local override (false) takes precedence over remote (true)
-    expect(a2aFlag.enabled).toBe(false);
-  });
-
-  test("reflects updated flags after remote sync writes new values (stale cache regression)", async () => {
-    // Scenario: the remote poller (RemoteFeatureFlagSync) writes
-    // a2a-channel: false, the gateway caches it, then a subsequent
-    // poll writes a2a-channel: true. The GET handler should return
-    // the updated value because writeRemoteFeatureFlags() updates
-    // both disk and the in-memory cache.
-
-    // Step 1: First poll writes a2a-channel: false (simulated via
-    // writeRemoteFeatureFlags, which is what the poller calls internally).
-    writeRemoteFeatureFlags({ "a2a-channel": false });
-
-    const handler = createFeatureFlagsGetHandler();
-    const res1 = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-    const body1 = await res1.json();
-    const a2aFlag1 = body1.flags.find(
-      (f: { key: string }) => f.key === "a2a-channel",
-    );
-    expect(a2aFlag1.enabled).toBe(false);
-
-    // Step 2: Second poll writes a2a-channel: true — the poller
-    // calls writeRemoteFeatureFlags which updates file + cache.
-    writeRemoteFeatureFlags({ "a2a-channel": true });
-
-    // Step 3: The GET handler should immediately reflect the update
-    // without needing a file-watcher round-trip.
-    const res2 = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-    const body2 = await res2.json();
-    const a2aFlag2 = body2.flags.find(
-      (f: { key: string }) => f.key === "a2a-channel",
-    );
-    expect(a2aFlag2.enabled).toBe(true);
-  });
-
-  test("registry default used when neither local nor remote is set", async () => {
+  test("registry default used when no local override is set", async () => {
     // No local override
     if (existsSync(featureFlagStorePath)) {
       rmSync(featureFlagStorePath);
     }
     clearFeatureFlagStoreCache();
 
-    // No remote value (empty remote store)
-    if (existsSync(remoteFeatureFlagStorePath)) {
-      rmSync(remoteFeatureFlagStorePath);
-    }
-    clearRemoteFeatureFlagStoreCache();
-
     const handler = createFeatureFlagsGetHandler();
     const res = await handler(
       new Request("http://gateway.test/v1/feature-flags"),
@@ -417,11 +290,11 @@ describe("GET /v1/feature-flags handler", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
 
-    // a2a-channel has defaultEnabled: false in registry
     const a2aFlag = body.flags.find(
       (f: { key: string }) => f.key === "a2a-channel",
     );
     expect(a2aFlag).toBeDefined();
+    // Registry default (false) applies with no local override
     expect(a2aFlag.enabled).toBe(false);
     expect(a2aFlag.defaultEnabled).toBe(false);
 
@@ -434,51 +307,9 @@ describe("GET /v1/feature-flags handler", () => {
     expect(browserFlag.defaultEnabled).toBe(true);
   });
 
-  test("declared flags missing from a remote snapshot use their registry defaults", async () => {
-    // No local override
-    if (existsSync(featureFlagStorePath)) {
-      rmSync(featureFlagStorePath);
-    }
-    clearFeatureFlagStoreCache();
-
-    // Remote snapshot exists, but browser is absent as it would be when the
-    // platform has no LaunchDarkly value for that key.
-    writeFileSync(
-      remoteFeatureFlagStorePath,
-      JSON.stringify({
-        version: 1,
-        values: { "a2a-channel": true },
-      }),
-    );
-    clearRemoteFeatureFlagStoreCache();
-
-    const handler = createFeatureFlagsGetHandler();
-    const res = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-
-    const a2aFlag = body.flags.find(
-      (f: { key: string }) => f.key === "a2a-channel",
-    );
-    expect(a2aFlag.enabled).toBe(true);
-
-    const browserFlag = body.flags.find(
-      (f: { key: string }) => f.key === "browser",
-    );
-    expect(browserFlag).toBeDefined();
-    expect(browserFlag.enabled).toBe(true);
-    expect(browserFlag.defaultEnabled).toBe(true);
-  });
-
   test("string flag uses registry default when no override exists", async () => {
     if (existsSync(featureFlagStorePath)) rmSync(featureFlagStorePath);
-    if (existsSync(remoteFeatureFlagStorePath))
-      rmSync(remoteFeatureFlagStorePath);
     clearFeatureFlagStoreCache();
-    clearRemoteFeatureFlagStoreCache();
 
     const handler = createFeatureFlagsGetHandler();
     const res = await handler(
@@ -494,26 +325,6 @@ describe("GET /v1/feature-flags handler", () => {
     expect(modelFlag).toBeDefined();
     expect(modelFlag.enabled).toBe("claude-sonnet-4-6");
     expect(modelFlag.defaultEnabled).toBe("claude-sonnet-4-6");
-  });
-
-  test("remote string value overrides registry default for string flag", async () => {
-    writeRemoteFeatureFlags({ "default-model": "gpt-4" });
-    if (existsSync(featureFlagStorePath)) rmSync(featureFlagStorePath);
-    clearFeatureFlagStoreCache();
-
-    const handler = createFeatureFlagsGetHandler();
-    const res = await handler(
-      new Request("http://gateway.test/v1/feature-flags"),
-    );
-
-    expect(res.status).toBe(200);
-    const body = await res.json();
-
-    const modelFlag = body.flags.find(
-      (f: { key: string }) => f.key === "default-model",
-    );
-    expect(modelFlag).toBeDefined();
-    expect(modelFlag.enabled).toBe("gpt-4");
   });
 
   test("env override takes precedence over persisted and default values", async () => {

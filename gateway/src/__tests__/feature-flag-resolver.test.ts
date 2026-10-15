@@ -50,7 +50,6 @@ beforeEach(() => {
   _setRegistryCandidateOverrides([defaultsPath]);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
 });
 
 afterEach(() => {
@@ -63,7 +62,6 @@ afterEach(() => {
   _setRegistryCandidateOverrides(null);
   resetFeatureFlagDefaultsCache();
   clearFeatureFlagStoreCache();
-  clearRemoteFeatureFlagStoreCache();
   resetEnvOverridesCache();
   delete process.env.CADET_FLAG_BROWSER;
   delete process.env.CADET_FLAG_A2A_CHANNEL;
@@ -76,8 +74,6 @@ const { resetFeatureFlagDefaultsCache, _setRegistryCandidateOverrides } =
   await import("../feature-flag-defaults.js");
 const { clearFeatureFlagStoreCache, writeFeatureFlag } =
   await import("../feature-flag-store.js");
-const { clearRemoteFeatureFlagStoreCache, writeRemoteFeatureFlags } =
-  await import("../feature-flag-remote-store.js");
 const { resetEnvOverridesCache } =
   await import("../feature-flag-env-overrides.js");
 
@@ -95,19 +91,8 @@ describe("isFeatureFlagEnabled", () => {
     expect(isFeatureFlagEnabled("a2a-channel")).toBe(true);
   });
 
-  test("uses explicit remote values for declared flags", () => {
-    writeRemoteFeatureFlags({
-      browser: false,
-      "a2a-channel": true,
-    });
-
-    expect(isFeatureFlagEnabled("browser")).toBe(false);
-    expect(isFeatureFlagEnabled("a2a-channel")).toBe(true);
-  });
-
-  test("ignores persisted and remote values for undeclared flags", () => {
+  test("ignores persisted values for undeclared flags", () => {
     writeFeatureFlag("unknown", true);
-    writeRemoteFeatureFlags({ unknown: true });
 
     expect(isFeatureFlagEnabled("unknown")).toBe(false);
   });
@@ -146,19 +131,7 @@ describe("getFeatureFlagValue", () => {
     expect(getFeatureFlagValue("default-model")).toBe("gpt-4");
   });
 
-  test("remote string value overrides default when no persisted value", () => {
-    writeRemoteFeatureFlags({ "default-model": "gpt-4" });
-    expect(getFeatureFlagValue("default-model")).toBe("gpt-4");
-  });
-
-  test("persisted takes precedence over remote for string flags", () => {
-    writeRemoteFeatureFlags({ "default-model": "remote-model" });
-    writeFeatureFlag("default-model", "persisted-model");
-    expect(getFeatureFlagValue("default-model")).toBe("persisted-model");
-  });
-
-  test("env override wins over persisted, remote, and default values", () => {
-    writeRemoteFeatureFlags({ browser: false });
+  test("env override wins over persisted and default values", () => {
     writeFeatureFlag("browser", false);
 
     process.env.CADET_FLAG_BROWSER = "true";
@@ -168,7 +141,6 @@ describe("getFeatureFlagValue", () => {
   });
 
   test("env override wins for string flags", () => {
-    writeRemoteFeatureFlags({ "default-model": "remote-model" });
     writeFeatureFlag("default-model", "persisted-model");
 
     process.env.CADET_FLAG_DEFAULT_MODEL = "env-model";

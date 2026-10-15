@@ -15,10 +15,6 @@ import {
   clearFeatureFlagStoreCache,
   getFeatureFlagStorePath,
 } from "./feature-flag-store.js";
-import {
-  refreshRemoteFeatureFlagStoreCache,
-  getRemoteFeatureFlagStorePath,
-} from "./feature-flag-remote-store.js";
 import { getLogger } from "./logger.js";
 
 const log = getLogger("feature-flag-watcher");
@@ -33,14 +29,12 @@ export class FeatureFlagWatcher {
   private watcher: FSWatcher | null = null;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private localFlagFilename: string;
-  private remoteFlagFilename: string;
   /** Accumulates which files changed during the debounce window. */
   private pendingFilenames = new Set<string>();
   private onChanged?: () => void;
 
   constructor(options?: FeatureFlagWatcherOptions) {
     this.localFlagFilename = basename(getFeatureFlagStorePath());
-    this.remoteFlagFilename = basename(getRemoteFeatureFlagStorePath());
     this.onChanged = options?.onChanged;
   }
 
@@ -55,11 +49,7 @@ export class FeatureFlagWatcher {
 
     try {
       this.watcher = watch(dir, { persistent: false }, (_event, filename) => {
-        if (
-          filename &&
-          filename !== this.localFlagFilename &&
-          filename !== this.remoteFlagFilename
-        ) {
+        if (filename && filename !== this.localFlagFilename) {
           return;
         }
         this.scheduleInvalidation(filename ?? undefined);
@@ -104,9 +94,6 @@ export class FeatureFlagWatcher {
 
       if (filenames.has(this.localFlagFilename)) {
         clearFeatureFlagStoreCache();
-      }
-      if (filenames.has(this.remoteFlagFilename)) {
-        refreshRemoteFeatureFlagStoreCache();
       }
       log.info(
         { filenames: [...filenames] },

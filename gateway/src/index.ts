@@ -20,7 +20,7 @@ import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
 import { FeatureFlagWatcher } from "./feature-flag-watcher.js";
-import { RemoteFeatureFlagSync } from "./remote-feature-flag-sync.js";
+
 import { loadConfig } from "./config.js";
 import { CredentialCache } from "./credential-cache.js";
 import { credentialKey } from "./credential-key.js";
@@ -2858,14 +2858,6 @@ async function main() {
     log.info("Discord Gateway client started");
   }
 
-  // Lazily bound below, once `remoteFeatureFlagSync` is constructed, so the
-  // credential-change callback can trigger an immediate per-assistant flag
-  // re-sync. On a warm-pool claim the `cadet` credentials change to the
-  // newly-assigned identity; without forcing a re-sync, flag values would not
-  // refresh until the next scheduled poll (up to 5 min), so the onboarding
-  // first message evaluates flags against stale values (see JARVIS-1018).
-  let remoteFeatureFlagSyncRef: RemoteFeatureFlagSync | null = null;
-
   /**
    * Fingerprint of the Telegram bot token the dedup cache's watermark belongs
    * to. Null while no token is stored, which is itself a bot change: the next
@@ -2988,21 +2980,6 @@ async function main() {
           );
         });
       }
-
-      // Force an immediate per-assistant feature-flag re-sync. A `cadet`
-      // credential change means a warm-pool claim / key rotation / late
-      // provisioning — the assistant identity the cloud evaluates flags
-      // for just changed. Without this, flags stay at their previous (often
-      // registry-default) values until the next ~5-min poll, which the
-      // onboarding auto-greet beats, so first-message flags read stale
-      // (JARVIS-1018). The ref is null only during the initial credential
-      // poll at startup, which `start()` already covers.
-      remoteFeatureFlagSyncRef?.syncNow().catch((err) => {
-        log.error(
-          { err },
-          "Failed to sync remote feature flags after cadet credential change",
-        );
-      });
     }
   });
 
@@ -3160,18 +3137,6 @@ async function main() {
   });
   featureFlagWatcher.start();
 
-  const remoteFeatureFlagSync = new RemoteFeatureFlagSync({
-    credentials: credentialCache,
-    onChanged: emitFlagChanged,
-  });
-  // Bind the ref so the credential-change callback above can force an
-  // immediate re-sync when the assistant's `cadet` identity changes
-  // (warm-pool claim / key rotation) instead of waiting for the next poll.
-  remoteFeatureFlagSyncRef = remoteFeatureFlagSync;
-  // Intentionally fire-and-forget: remote flag fetch is best-effort;
-  // the gateway continues with registry defaults if it fails.
-  void remoteFeatureFlagSync.start();
-
   // ── Sleep/wake detection ──
   // Detect system sleep/wake transitions and force-reconnect channels
   // that may have stale connections after the OS suspended the process.
@@ -3184,12 +3149,6 @@ async function main() {
     // Invalidate caches so next read picks up any config changes (e.g. a new tunnel URL)
     configFileCache.invalidate();
     credentialCache.invalidate();
-
-    // Immediately refresh remote feature flags so the gateway doesn't run
-    // with stale values until the next scheduled poll (up to 5 min away).
-    remoteFeatureFlagSync.syncNow().catch((err) => {
-      log.error({ err }, "Failed to sync remote feature flags after wake");
-    });
 
     // Re-register Telegram webhook with current ingress URL
     if (telegramReady) {
@@ -3209,7 +3168,6 @@ async function main() {
     credentialWatcher.stop();
     configFileWatcher.stop();
     featureFlagWatcher.stop();
-    remoteFeatureFlagSync.stop();
     const tunnelStop = tunnelClient?.stop();
     if (tunnelStop) shutdownTasks.push(tunnelStop);
     ipcServer.stop();
