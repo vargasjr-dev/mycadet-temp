@@ -39,7 +39,7 @@ const OUTPUT_PATHS = [
  * downstream consumers must opt into. Adding optional fields that older
  * consumers can ignore does NOT require a bump.
  */
-const CLIENT_CATALOG_VERSION = 1;
+const CLIENT_CATALOG_VERSION = 2;
 
 function projectProvider(
   entry: SearchProviderCatalogEntry,
@@ -51,7 +51,6 @@ function projectProvider(
   if (entry.displayNameLong !== undefined) {
     projected.displayNameLong = entry.displayNameLong;
   }
-  projected.kind = entry.kind;
   if (entry.apiKeyPrefix !== undefined) {
     projected.apiKeyPrefix = entry.apiKeyPrefix;
   }

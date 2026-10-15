@@ -1,15 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "providers": [
     {
       "id": "inference-provider-native",
-      "displayName": "Provider Native",
-      "kind": "managed"
+      "displayName": "Provider Native"
     },
     {
       "id": "perplexity",
       "displayName": "Perplexity",
-      "kind": "byok",
       "apiKeyPrefix": "pplx-...",
       "envVar": "PERPLEXITY_API_KEY",
       "secretKey": "perplexity",
@@ -20,7 +18,6 @@
       "id": "brave",
       "displayName": "Brave",
       "displayNameLong": "Brave Search",
-      "kind": "byok",
       "apiKeyPrefix": "BSA...",
       "envVar": "BRAVE_API_KEY",
       "secretKey": "brave",
@@ -30,7 +27,6 @@
     {
       "id": "tavily",
       "displayName": "Tavily",
-      "kind": "byok",
       "apiKeyPrefix": "tvly-...",
       "envVar": "TAVILY_API_KEY",
       "secretKey": "tavily",
@@ -40,7 +36,6 @@
     {
       "id": "firecrawl",
       "displayName": "Firecrawl",
-      "kind": "byok",
       "apiKeyPrefix": "fc-...",
       "envVar": "FIRECRAWL_API_KEY",
       "secretKey": "firecrawl",
@@ -50,7 +45,6 @@
     {
       "id": "keenable",
       "displayName": "Keenable",
-      "kind": "byok",
       "apiKeyPrefix": "keen_... (optional)",
       "envVar": "KEENABLE_API_KEY",
       "secretKey": "keenable",
@@ -60,7 +54,6 @@
     {
       "id": "fastcrw",
       "displayName": "fastCRW",
-      "kind": "byok",
       "apiKeyPrefix": "crw_live_...",
       "envVar": "FASTCRW_API_KEY",
       "secretKey": "fastcrw",
@@ -72,7 +65,6 @@
     {
       "id": "searxng",
       "displayName": "SearXNG",
-      "kind": "byok",
       "apiKeyPrefix": "token (optional)",
       "envVar": "SEARXNG_API_KEY",
       "secretKey": "searxng",
@@ -83,7 +75,6 @@
     {
       "id": "tinyfish",
       "displayName": "TinyFish",
-      "kind": "byok",
       "apiKeyPrefix": "TinyFish API key...",
       "envVar": "TINYFISH_API_KEY",
       "secretKey": "tinyfish",
@@ -95,7 +86,6 @@
     {
       "id": "exa",
       "displayName": "Exa",
-      "kind": "byok",
       "apiKeyPrefix": "Exa API key...",
       "envVar": "EXA_API_KEY",
       "secretKey": "exa",
@@ -105,7 +95,6 @@
     {
       "id": "serply",
       "displayName": "Serply",
-      "kind": "byok",
       "apiKeyPrefix": "Serply API key...",
       "envVar": "SERPLY_API_KEY",
       "secretKey": "serply",

@@ -23,7 +23,6 @@ interface JsonCatalogEntry {
   id: string;
   displayName: string;
   displayNameLong?: string;
-  kind: "managed" | "byok";
   apiKeyPrefix?: string;
   envVar?: string;
   secretKey?: string;
@@ -61,7 +60,6 @@ function entryToPlain(
   if (entry.displayNameLong !== undefined) {
     out.displayNameLong = entry.displayNameLong;
   }
-  out.kind = entry.kind;
   if (entry.apiKeyPrefix !== undefined) {
     out.apiKeyPrefix = entry.apiKeyPrefix;
   }

@@ -1,7 +1,8 @@
 /**
  * Tests for `WebSearchCard`'s provider-only configuration:
  *
- *   1. No mode segmented-control renders in the card header.
+ *   1. No mode segmented-control renders in the card header, and saves
+ *      write the provider only (no mode field).
  *   2. Provider Native and the BYOK providers fill the picker; saving
  *      writes the provider (plus apiBase for providers that take one).
  *   3. BYOK providers still gate Save on a credential.
@@ -158,7 +159,7 @@ describe("WebSearchCard — provider-only configuration", () => {
     ]);
   });
 
-  test("Provider Native needs no key and saves with mode your-own", async () => {
+  test("Provider Native needs no key and saves the provider", async () => {
     // Start from a non-default provider so Save enables on the change.
     daemonConfigData = {
       services: { "web-search": { provider: "brave", mode: "your-own" } },
@@ -177,14 +178,13 @@ describe("WebSearchCard — provider-only configuration", () => {
       services: {
         "web-search": {
           provider: "inference-provider-native",
-          mode: "your-own",
         },
       },
     });
     expect(provisionedKeys).toHaveLength(0);
   });
 
-  test("a BYOK provider gates Save on a key, then saves provider, mode and key", async () => {
+  test("a BYOK provider gates Save on a key, then saves provider and key", async () => {
     renderCard();
 
     fireEvent.click(providerTrigger());
@@ -208,7 +208,7 @@ describe("WebSearchCard — provider-only configuration", () => {
     ]);
     expect(configPatchCalls[0]!.body).toMatchObject({
       services: {
-        "web-search": { provider: "firecrawl", mode: "your-own" },
+        "web-search": { provider: "firecrawl" },
       },
     });
   });
@@ -239,7 +239,6 @@ describe("WebSearchCard — provider-only configuration", () => {
       services: {
         "web-search": {
           provider: "fastcrw",
-          mode: "your-own",
           apiBase: "http://localhost:3000",
         },
       },
@@ -272,7 +271,6 @@ describe("WebSearchCard — provider-only configuration", () => {
       services: {
         "web-search": {
           provider: "searxng",
-          mode: "your-own",
           apiBase: "http://127.0.0.1:8888",
         },
       },

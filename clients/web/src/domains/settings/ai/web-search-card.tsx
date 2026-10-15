@@ -159,11 +159,9 @@ export function WebSearchCard() {
       }
       const webSearchService: {
         provider?: string;
-        mode: "your-own";
         apiBase?: string;
       } = {
         provider: webSearchProvider,
-        mode: "your-own",
         ...(showsApiBase ? { apiBase: trimmedApiBase } : {}),
       };
       await configMutation
