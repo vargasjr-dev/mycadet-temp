@@ -1,62 +1,18 @@
-// Run localStorage migrations before any other app import — the modules
-// below read localStorage at module level.
 import "@app/utils/run-storage-migrations";
-
-import { useState } from "react";
-import { createBrowserRouter, Outlet } from "react-router";
-
-import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
-import { RouteErrorBoundary } from "@app/components/route-error-boundary";
-import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
-import { start } from "@web/boot";
-import { useCadetCommands } from "@app/runtime/cadet-commands";
-import { remoteGatewayPublicPathPrefix } from "@web/lib/auth/remote-gateway-session";
-import { routeTree } from "@web/routes";
-
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { RouterProvider } from "react-router";
 import { initI18n } from "@app/i18n";
-
-import { accountRoute } from "@app/domains/account/account-route";
-
-// The tray "New Assistant…" name-prompt — account-level chrome the desktop
-// shell owns. The web module's served build never mounts it.
-function DesktopChrome() {
-  const [createOpen, setCreateOpen] = useState(false);
-  useCadetCommands({ createAssistant: () => setCreateOpen(true) });
-  return (
-    <>
-      <CreateAssistantDialog
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-      />
-      <Outlet />
-    </>
-  );
-}
-
-const logoutRoute = {
-  path: "/logout",
-  ErrorBoundary: RouteErrorBoundary,
-  HydrateFallback: RootHydrateFallback,
-  lazy: {
-    Component: () =>
-      import("@app/domains/account/pages/logout-page").then(
-        (m) => m.LogoutPage,
-      ),
-  },
-};
-
-const router = createBrowserRouter(
-  [
-    {
-      Component: DesktopChrome,
-      children: [accountRoute, logoutRoute, ...routeTree],
-    },
-  ],
-  {
-    basename: remoteGatewayPublicPathPrefix() || undefined,
-    future: { v8_middleware: true },
-  },
-);
+import { router } from "./standalone";
+import "./index.css";
 
 await initI18n();
-start(router);
+const root = document.getElementById("root");
+if (!root) {
+  throw new Error("App root element is missing.");
+}
+createRoot(root).render(
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>,
+);

@@ -13,7 +13,7 @@ export interface AssistantFrameProps {
   mountPath: string;
   origin: string;
   onNavigate(path: string, options: { replace: boolean }): void;
-  title?: string;
+  title: string;
 }
 
 export function AssistantFrame({
@@ -22,7 +22,7 @@ export function AssistantFrame({
   mountPath,
   origin,
   onNavigate,
-  title = "Assistant",
+  title,
 }: AssistantFrameProps) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [src] = useState(() =>

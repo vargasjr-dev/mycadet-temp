@@ -8,6 +8,13 @@
     "rootDir": "./src",
     "outDir": "./dist/package/types"
   },
-  "include": ["src/index.ts", "src/assistant/resolution-contract.ts"],
-  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+  "include": [
+    "src/index.ts",
+    "src/contracts.ts",
+    "src/i18n/i18next.d.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
 }

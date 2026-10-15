@@ -92,5 +92,14 @@
     "body": "您的專屬智慧助理近在咫尺。",
     "cancel": "取消",
     "logIn": "登入"
+  },
+  "appShell": {
+    "loading": "正在載入助理…",
+    "error": "無法載入助理。",
+    "starting": "你的助理正在啟動。",
+    "empty": "沒有可用的助理。",
+    "unauthenticated": "請登入以繼續。",
+    "retry": "重試",
+    "title": "助理"
   }
 }

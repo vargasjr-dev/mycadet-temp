@@ -47,16 +47,15 @@ const GUARDIAN_TOKEN_PATTERN =
 const LOCAL_STATUS_PATTERN = /^(?:\/assistant)?\/__local\/status\/([^/]+)$/;
 const LOCAL_AVATAR_PATTERN = /^(?:\/assistant)?\/__local\/avatar\/([^/]+)$/;
 const LOCAL_UPGRADE_PATTERN = /^(?:\/assistant)?\/__local\/upgrade$/;
-const PLATFORM_SESSION_PATTERN =
-  /^(?:\/assistant)?\/__local\/cloud-session$/;
+const CLOUD_SESSION_PATTERN = /^(?:\/assistant)?\/__local\/cloud-session$/;
 
-// In-memory loopback platform session token for the dev server. The proxy
+// In-memory loopback cloud session token for the dev server. The proxy
 // (vite.config.ts) and the middleware below run in the same Node process, so
 // this module singleton bridges them. Dev-only and session-scoped; the
 // installed CLI persists the token via its own store.
-let devPlatformToken: string | null = null;
-export function getDevPlatformToken(): string | null {
-  return devPlatformToken;
+let devCloudSessionToken: string | null = null;
+export function getDevCloudSessionToken(): string | null {
+  return devCloudSessionToken;
 }
 
 /**
@@ -228,7 +227,7 @@ function loopbackCallbackMiddleware(): Connect.NextHandleFunction {
 function cloudSessionMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const path = (req.url ?? "").split("?")[0];
-    if (!PLATFORM_SESSION_PATTERN.test(path)) {
+    if (!CLOUD_SESSION_PATTERN.test(path)) {
       return next();
     }
     if (rejectUnlessLocalEndpointRequest(req, res)) {
@@ -236,7 +235,7 @@ function cloudSessionMiddleware(): Connect.NextHandleFunction {
     }
 
     if (req.method === "DELETE") {
-      devPlatformToken = null;
+      devCloudSessionToken = null;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ ok: true }));
       return;
@@ -264,7 +263,7 @@ function cloudSessionMiddleware(): Connect.NextHandleFunction {
         res.end(JSON.stringify({ ok: false, error: "Invalid token" }));
         return;
       }
-      devPlatformToken = token;
+      devCloudSessionToken = token;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify({ ok: true }));
     });
@@ -517,7 +516,7 @@ function retireMiddleware(
       }
 
       void runRetire(invocation, assistantId, {
-        cloudToken: getDevPlatformToken() ?? undefined,
+        cloudToken: getDevCloudSessionToken() ?? undefined,
       }).then((result) => {
         respondJson(
           res,

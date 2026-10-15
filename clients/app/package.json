@@ -4,9 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./contracts": "./src/assistant/resolution-contract.ts",
-    "./*": "./src/*"
+    ".": {
+      "types": "./dist/package/types/index.d.ts",
+      "default": "./dist/package/index.js"
+    },
+    "./contracts": {
+      "types": "./dist/package/types/contracts.d.ts",
+      "default": "./dist/package/contracts.js"
+    }
   },
   "dependencies": {
     "@capacitor/app": "8.1.0",
@@ -39,14 +44,13 @@
     "vite": "8.0.11"
   },
   "scripts": {
-    "predev": "cd ../web && bun run openapi-ts",
+    "predev": "bun run build",
     "dev": "bun --bun vite",
     "prebuild": "cd ../web && bun run openapi-ts && node ../web/scripts/copy-skill-assets.mjs",
-    "build": "bun --bun vite build",
+    "build": "bun scripts/build.ts",
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit",
-    "build:package": "bun scripts/build-package.ts"
+    "typecheck": "bunx tsc --noEmit"
   }
 }

@@ -5,7 +5,7 @@ import path from "node:path";
 import { defineConfig, loadEnv } from "vite";
 import {
   localModePlugin,
-  getDevPlatformToken,
+  getDevCloudSessionToken,
   isSameOriginProxyRequest,
 } from "./vite-plugin-local-mode";
 
@@ -60,7 +60,7 @@ function injectPlatformToken(apiMode: boolean) {
       if (!isSameOriginProxyRequest(req)) {
         return;
       }
-      const token = getDevPlatformToken();
+      const token = getDevCloudSessionToken();
       if (apiMode) {
         // Header-only auth; drop any browser cookie so it can't re-engage the
         // session-cookie (CSRF-enforcing) path.

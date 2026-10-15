@@ -1,7 +1,10 @@
-/* The account bundle's stylesheet: tailwind plus the design library's
- * tokens. Deliberately thinner than web's index.css — no Capacitor
- * variants, no avatar-accent mapping; those are the assistant surface's
- * concerns. Web's build still styles the account tree from ITS index.css
- * when it bundles the subtree for desktop. */
 @import "tailwindcss";
 @import "@mycadet/design-library/tokens.css";
+@source "../../../packages/design-library/src";
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}

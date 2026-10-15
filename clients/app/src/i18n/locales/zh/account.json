@@ -92,5 +92,14 @@
     "body": "您的专属智能助手触手可及。",
     "cancel": "取消",
     "logIn": "登录"
+  },
+  "appShell": {
+    "loading": "正在加载助手…",
+    "error": "无法加载助手。",
+    "starting": "你的助手正在启动。",
+    "empty": "没有可用的助手。",
+    "unauthenticated": "请登录以继续。",
+    "retry": "重试",
+    "title": "助手"
   }
 }

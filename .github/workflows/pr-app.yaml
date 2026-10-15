@@ -48,17 +48,13 @@ jobs:
         working-directory: clients/web
         run: bun run openapi-ts
 
-      - name: Type check
-        working-directory: clients/app
-        run: bun run typecheck
-
       - name: Build
         working-directory: clients/app
         run: bun run build
 
-      - name: Build portable package
+      - name: Type check
         working-directory: clients/app
-        run: bun run build:package
+        run: bun run typecheck
 
       - name: Verify portable package
         working-directory: clients/app

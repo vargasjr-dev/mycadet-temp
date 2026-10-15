@@ -92,5 +92,14 @@
     "body": "Tu propia inteligencia personal está a un paso.",
     "cancel": "Cancelar",
     "logIn": "Iniciar sesión"
+  },
+  "appShell": {
+    "loading": "Cargando asistente…",
+    "error": "No se pudo cargar el asistente.",
+    "starting": "Tu asistente se está iniciando.",
+    "empty": "No hay ningún asistente disponible.",
+    "unauthenticated": "Inicia sesión para continuar.",
+    "retry": "Reintentar",
+    "title": "Asistente"
   }
 }

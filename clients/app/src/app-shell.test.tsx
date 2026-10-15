@@ -264,3 +264,61 @@ test("frame load receives the latest host path when navigation changes before lo
   );
   post.mockRestore();
 });
+
+test("embedded shells keep independent locales and update translated status and title", async () => {
+  const resolve = async () => ({ status: "empty" });
+  const first = render(
+    <AppShell
+      resolveAssistant={resolve}
+      locale="es"
+      location="/assistant"
+      origin={origin}
+      onNavigate={navigate}
+    />,
+  );
+  const second = render(
+    <AppShell
+      resolveAssistant={resolve}
+      locale="ru"
+      location="/assistant"
+      origin={origin}
+      onNavigate={navigate}
+    />,
+  );
+  await waitFor(() => {
+    expect(first.container.textContent).toContain(
+      "No hay ningún asistente disponible.",
+    );
+    expect(second.container.textContent).toContain(
+      "Нет доступных ассистентов.",
+    );
+  });
+  first.rerender(
+    <AppShell
+      resolveAssistant={resolve}
+      locale="en"
+      location="/assistant"
+      origin={origin}
+      onNavigate={navigate}
+    />,
+  );
+  await waitFor(() => {
+    expect(first.container.textContent).toContain("No assistant is available.");
+    expect(second.container.textContent).toContain(
+      "Нет доступных ассистентов.",
+    );
+  });
+  second.unmount();
+  first.rerender(
+    <AppShell
+      resolveAssistant={async () => ready()}
+      locale="es"
+      location="/assistant"
+      origin={origin}
+      onNavigate={navigate}
+    />,
+  );
+  await waitFor(() => {
+    expect(screen.getByTitle("Asistente")).toBeTruthy();
+  });
+});

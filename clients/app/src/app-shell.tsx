@@ -6,6 +6,9 @@ import {
   type AssistantResolution,
   type ResolveAssistant,
 } from "./assistant/resolution-contract";
+import { AppI18nProvider } from "./i18n/provider";
+import { useTranslation } from "./i18n/react";
+import type { SupportedLocale } from "./i18n/supported-locales";
 import { AssistantFrame } from "./shell/assistant-frame";
 
 export type AppShellStatus =
@@ -20,18 +23,19 @@ export interface AppShellProps {
   onNavigate(path: string, options: { replace: boolean }): void;
   renderStatus?: (state: AppShellStatus, retry: () => void) => ReactNode;
   title?: string;
+  locale?: SupportedLocale;
 }
 
-const labels = {
-  loading: "Loading assistant…",
-  error: "Unable to load assistant.",
-  starting: "Your assistant is starting.",
-  empty: "No assistant is available.",
-  unauthenticated: "Please sign in to continue.",
-};
-
 /** Portable React entry. The host supplies transport and owns browser navigation. */
-export function AppShell({
+export function AppShell({ locale, ...props }: AppShellProps) {
+  return (
+    <AppI18nProvider locale={locale}>
+      <AssistantShell {...props} />
+    </AppI18nProvider>
+  );
+}
+
+function AssistantShell({
   resolveAssistant,
   assistantId,
   location,
@@ -41,6 +45,7 @@ export function AppShell({
   renderStatus,
   title,
 }: AppShellProps) {
+  const { t } = useTranslation("account");
   const [result, setResult] = useState<{
     state: AssistantResolution | AppShellStatus;
     resolver: ResolveAssistant;
@@ -106,10 +111,10 @@ export function AppShell({
       renderStatus(state, reload)
     ) : (
       <div role="status">
-        <p>{labels[state.status]}</p>
+        <p>{t(`appShell.${state.status}`)}</p>
         {state.status !== "loading" && (
           <button type="button" onClick={reload}>
-            Retry
+            {t("appShell.retry")}
           </button>
         )}
       </div>
@@ -124,7 +129,7 @@ export function AppShell({
       origin={origin}
       mountPath={mountPath}
       onNavigate={onNavigate}
-      title={title}
+      title={title ?? t("appShell.title")}
     />
   );
 }
