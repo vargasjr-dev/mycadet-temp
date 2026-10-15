@@ -43,7 +43,6 @@ mock.module("@google/genai", () => ({
 // Mock OpenAI SDK to capture OpenAI/Fireworks tool definitions and preserve
 // constructor baseURL assertions. Must be before importing the registry.
 // ---------------------------------------------------------------------------
-let lastOpenAIChatParams: Record<string, unknown> | null = null;
 
 mock.module("openai", () => {
   class FakeAPIError extends Error {
@@ -69,8 +68,7 @@ mock.module("openai", () => {
 
     chat = {
       completions: {
-        create: (params: Record<string, unknown>) => {
-          lastOpenAIChatParams = JSON.parse(JSON.stringify(params));
+        create: (_params: Record<string, unknown>) => {
           return (async function* () {
             yield {
               choices: [
@@ -119,7 +117,7 @@ import {
   initializeProviders,
   listProviders,
 } from "../providers/registry.js";
-import type { Message, ToolDefinition } from "../providers/types.js";
+import type { Message } from "../providers/types.js";
 import { setConfig } from "./helpers/set-config.js";
 
 function makeProvidersConfig(
@@ -151,10 +149,6 @@ function makeProvidersConfig(
 const PLATFORM_BASE = "https://test-cloud.mycadet.ai";
 const MANAGED_API_KEY = "ast-managed-key-123";
 const PLATFORM_ASSISTANT_ID = "assistant-abc123";
-
-const MANAGED_NATIVE_WEB_SEARCH: Services["web-search"] = {
-  provider: "inference-provider-native",
-};
 
 const DIRECT_OR_MANAGED_PROVIDER_KEYS: string[] = [
   "openai",
@@ -226,21 +220,6 @@ function userMsg(text: string): Message {
   return { role: "user", content: [{ type: "text", text }] };
 }
 
-const sampleTools: ToolDefinition[] = [
-  {
-    name: "file_read",
-    description: "Read a file",
-    input_schema: { type: "object", properties: { path: { type: "string" } } },
-  },
-  {
-    name: "web_search",
-    description: "Search the web",
-    input_schema: {
-      type: "object",
-      properties: { query: { type: "string" } },
-    },
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -251,7 +230,6 @@ beforeEach(() => {
   clearUserKeys();
   lastGeminiConstructorOpts = null;
   lastGeminiGenerateContentStreamParams = null;
-  lastOpenAIChatParams = null;
   // Reset the workspace config to pure schema defaults (the default
   // web-search service — your-own / inference-provider-native — IS the
   // schema default, so only divergent tests seed `services`).
@@ -538,91 +516,6 @@ describe("cloud proxy integration — credential precedence", () => {
       expect(registered).not.toContain("openrouter");
       expect(getProviderRoutingSource("openrouter")).toBeUndefined();
     });
-  });
-});
-
-describe("cloud proxy integration — managed web search routing", () => {
-  test("managed Fireworks/Kimi tool call completes through the cloud Brave proxy", async () => {
-    enableCloudProxy();
-    clearUserKeys();
-    setConfig("services", { "web-search": MANAGED_NATIVE_WEB_SEARCH });
-
-    const originalFetch = globalThis.fetch;
-    const fetchUrls: string[] = [];
-    globalThis.fetch = (async (url: URL | RequestInfo) => {
-      fetchUrls.push(String(url));
-      return new Response(
-        JSON.stringify({
-          status: 200,
-          headers: { "content-type": "application/json" },
-          body: {
-            web: {
-              results: [
-                {
-                  title: "Cloud Result",
-                  url: "https://example.com/platform-result",
-                  description: "Returned by the cloud Brave proxy.",
-                  age: "1 day ago",
-                },
-              ],
-            },
-          },
-        }),
-        {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }) as unknown as typeof fetch;
-
-    try {
-      await initializeProviders(
-        makeProvidersConfig(
-          "fireworks",
-          "accounts/fireworks/models/kimi-k2p6",
-          MANAGED_NATIVE_WEB_SEARCH,
-        ),
-      );
-
-      const provider = getProvider("fireworks");
-      await provider.sendMessage([userMsg("Search using managed Brave")], {
-        tools: sampleTools,
-      });
-
-      const tools = lastOpenAIChatParams!.tools as Array<{
-        type: string;
-        function?: { name: string; description?: string };
-      }>;
-      expect(tools).toHaveLength(2);
-      expect(tools[1]).toMatchObject({
-        type: "function",
-        function: {
-          name: "web_search",
-          description: "Search the web",
-        },
-      });
-
-      const { webSearchTool } = await import("../tools/network/web-search.js");
-      const result = await webSearchTool.execute(
-        { query: "managed kimi query", count: 1, offset: 2, freshness: "pw" },
-        {
-          conversationId: "conv-123",
-          workingDir: "/tmp",
-          trustClass: "guardian",
-        },
-      );
-
-      expect(result.isError).toBe(false);
-      expect(result.content).toContain("Cloud Result");
-      expect(result.activityMetadata?.webSearch?.provider).toBe("brave");
-      expect(result.activityMetadata?.webSearch?.resultCount).toBe(1);
-
-      expect(fetchUrls).toEqual([
-        `${PLATFORM_BASE}/v1/assistants/${PLATFORM_ASSISTANT_ID}/cloud-search-proxy/brave/`,
-      ]);
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
   });
 });
 

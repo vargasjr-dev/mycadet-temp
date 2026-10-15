@@ -1097,7 +1097,7 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
       body: {
         services: {
           "image-generation": { provider: "cadet", mode: "managed" },
-          "web-search": { provider: "cadet", mode: "managed" },
+          "web-search": { provider: "brave", mode: "managed" },
         },
       },
     } as never);
@@ -1111,6 +1111,6 @@ describe("PATCH /v1/config — provider-only services scrub legacy mode", () => 
     expect("mode" in raw.services["image-generation"]!).toBe(false);
     expect(raw.services["image-generation"]!.provider).toBe("cadet");
     expect("mode" in raw.services["web-search"]!).toBe(false);
-    expect(raw.services["web-search"]!.provider).toBe("cadet");
+    expect(raw.services["web-search"]!.provider).toBe("brave");
   });
 });

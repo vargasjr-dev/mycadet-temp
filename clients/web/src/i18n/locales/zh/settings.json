@@ -2238,8 +2238,7 @@
     "providerLabel": "提供商",
     "savedToast": "网页搜索设置已保存。",
     "subtitle": "配置您的助手如何进行网页搜索",
-    "title": "网页搜索",
-    "cadetNote": "搜索通过您的 Cadet 账户运行。"
+    "title": "网页搜索"
   },
   "yourOwnOauthTab": {
     "accountFallback": "{name} 账户",

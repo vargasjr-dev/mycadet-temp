@@ -3,7 +3,6 @@
 
 /** Ordered list of provider ids — drives the picker option order. */
 export const WEB_SEARCH_PROVIDER_IDS: readonly string[] = [
-  "cadet",
   "inference-provider-native",
   "perplexity",
   "brave",
@@ -21,7 +20,6 @@ export const WEB_SEARCH_PROVIDER_IDS: readonly string[] = [
 export const WEB_SEARCH_PROVIDER_DISPLAY_NAMES: Readonly<
   Record<string, string>
 > = {
-  cadet: "Cadet",
   "inference-provider-native": "Provider Native",
   perplexity: "Perplexity",
   brave: "Brave",

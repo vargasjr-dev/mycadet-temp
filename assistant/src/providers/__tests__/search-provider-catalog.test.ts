@@ -75,9 +75,8 @@ describe("search-provider-catalog", () => {
     expect(SEARCH_PROVIDER_FALLBACK_ORDER).toEqual(sorted);
   });
 
-  test("cadet is a cloud provider outside the BYOK fallback chain", () => {
-    expect(getSearchProvider("cadet")?.kind).toBe("managed");
-    expect(BYOK_SEARCH_PROVIDERS.map((p) => p.id)).not.toContain("cadet");
+  test("the retired cadet cloud search provider is no longer in the catalog", () => {
+    expect(getSearchProvider("cadet")).toBeUndefined();
     expect(SEARCH_PROVIDER_FALLBACK_ORDER).not.toContain("cadet");
   });
 

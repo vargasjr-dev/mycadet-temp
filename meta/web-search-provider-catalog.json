@@ -2,12 +2,6 @@
   "version": 1,
   "providers": [
     {
-      "id": "cadet",
-      "displayName": "Cadet",
-      "displayNameLong": "Cadet Managed Search",
-      "kind": "managed"
-    },
-    {
       "id": "inference-provider-native",
       "displayName": "Provider Native",
       "kind": "managed"

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { useMemorySecureKeyMap } from "../../../__tests__/helpers/secure-keys.js";
 import { setConfig } from "../../../__tests__/helpers/set-config.js";
@@ -15,14 +15,6 @@ function setKey(provider: string, value: string | undefined): void {
     secureKeys.set(credentialKey(provider, "api_key"), value);
   }
 }
-let mockManagedSearchProxyResult: any;
-let mockManagedSearchAvailable = true;
-let mockManagedSearchProxyCalls: Array<{
-  provider: string;
-  request: Record<string, unknown>;
-  signal?: AbortSignal;
-}> = [];
-
 /**
  * Seed the web-search service into the workspace config. Pass `undefined`
  * for mode to write a post-migration-132 config carrying only `provider`.
@@ -41,18 +33,6 @@ function seedWebSearch(
     "web-search": entry,
   });
 }
-
-mock.module("../cloud-search-proxy.js", () => ({
-  callManagedSearchProxy: async (
-    provider: string,
-    request: Record<string, unknown>,
-    signal?: AbortSignal,
-  ) => {
-    mockManagedSearchProxyCalls.push({ provider, request, signal });
-    return mockManagedSearchProxyResult;
-  },
-  managedSearchAvailable: async () => mockManagedSearchAvailable,
-}));
 
 // Import after the mocks above so the module under test sees them.
 const { webSearchTool } = await import("../web-search.js");
@@ -73,14 +53,6 @@ describe("web_search tool", () => {
     setKey("tinyfish", undefined);
     setKey("exa", undefined);
     setKey("serply", undefined);
-    mockManagedSearchProxyCalls = [];
-    mockManagedSearchAvailable = true;
-    mockManagedSearchProxyResult = {
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      body: { web: { results: [] } },
-    };
   });
 
   afterEach(() => {
@@ -115,58 +87,7 @@ describe("web_search tool", () => {
     expect(result.content).toContain("No web search API key configured");
   });
 
-  // ---- Provider cadet (managed, provider is the only axis) ---------------
-
-  test("provider cadet with no mode routes to the cloud proxy", async () => {
-    seedWebSearch(undefined, "cadet");
-
-    const result = await execute({ query: "cadet managed query" });
-
-    expect(result.isError).toBe(false);
-    expect(mockManagedSearchProxyCalls).toHaveLength(1);
-    expect(mockManagedSearchProxyCalls[0].provider).toBe("brave");
-  });
-
-  test("provider cadet routes managed even under a stale your-own mode", async () => {
-    // The provider choice wins over a leftover legacy mode key.
-    seedWebSearch("your-own", "cadet");
-
-    const result = await execute({ query: "stale mode query" });
-
-    expect(result.isError).toBe(false);
-    expect(mockManagedSearchProxyCalls).toHaveLength(1);
-  });
-
-  test("provider cadet surfaces a 402 hard error and never falls back to BYOK keys", async () => {
-    // Billing rule: an explicit cadet choice must never silently reroute to
-    // a user's paid third-party key (and vice versa).
-    seedWebSearch(undefined, "cadet");
-    setKey("perplexity", "pplx-should-not-be-used");
-    mockManagedSearchProxyResult = {
-      ok: false,
-      kind: "platform-error",
-      status: 402,
-      headers: { "content-type": "application/json" },
-      body: { detail: "Insufficient balance" },
-      message: "Cloud search proxy returned status 402: Insufficient balance",
-    };
-    let byokFetchCalls = 0;
-    globalThis.fetch = (async () => {
-      byokFetchCalls += 1;
-      return new Response("{}", { status: 200 });
-    }) as any;
-
-    const result = await execute({ query: "billing query" });
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("account balance");
-    expect(result.content).toContain("different web search provider");
-    expect(byokFetchCalls).toBe(0);
-  });
-
-  // ---- Provider Native fallback order (keys first, proxy last) ------------
-
-  test("provider native with a BYOK key uses the key, not the proxy", async () => {
+  test("provider native with a BYOK key uses the key", async () => {
     seedWebSearch(undefined, "inference-provider-native");
     setKey("perplexity", "pplx-test-key");
     globalThis.fetch = (async () =>
@@ -182,27 +103,15 @@ describe("web_search tool", () => {
 
     expect(result.isError).toBe(false);
     expect(result.content).toContain("BYOK answer");
-    expect(mockManagedSearchProxyCalls).toHaveLength(0);
   });
 
-  test("provider native with no keys falls back to the cloud proxy", async () => {
+  test("provider native with no keys reports the no-key error", async () => {
     seedWebSearch(undefined, "inference-provider-native");
 
     const result = await execute({ query: "no key native query" });
 
-    expect(result.isError).toBe(false);
-    expect(mockManagedSearchProxyCalls).toHaveLength(1);
-  });
-
-  test("provider native with no keys and no platform reports the no-key error", async () => {
-    seedWebSearch(undefined, "inference-provider-native");
-    mockManagedSearchAvailable = false;
-
-    const result = await execute({ query: "offline native query" });
-
     expect(result.isError).toBe(true);
     expect(result.content).toContain("No web search API key configured");
-    expect(mockManagedSearchProxyCalls).toHaveLength(0);
   });
 
   // ---- Perplexity provider ------------------------------------------------
@@ -471,161 +380,6 @@ describe("web_search tool", () => {
     expect(callCount).toBe(4);
   });
 
-  // ---- Cloud Brave provider -------------------------------------------
-
-  test("provider cadet uses Brave proxy without BYOK provider keys", async () => {
-    seedWebSearch(undefined, "cadet");
-    mockManagedSearchProxyResult = {
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      body: {
-        web: {
-          results: [
-            {
-              title: "Cloud Result",
-              url: "https://example.com/managed",
-              description: "Cloud Brave result",
-            },
-          ],
-        },
-      },
-    };
-
-    const result = await execute({
-      query: "managed query",
-      count: 5,
-      offset: 2,
-      freshness: "pw",
-    });
-
-    expect(result.isError).toBe(false);
-    expect(result.content).toContain("Cloud Result");
-    expect(mockManagedSearchProxyCalls).toHaveLength(1);
-    expect(mockManagedSearchProxyCalls[0]).toMatchObject({
-      provider: "brave",
-      request: {
-        method: "GET",
-        path: "/res/v1/web/search",
-        query: {
-          q: "managed query",
-          count: "5",
-          offset: "2",
-          freshness: "pw",
-        },
-        headers: {
-          Accept: "application/json",
-        },
-        body: null,
-      },
-    });
-  });
-
-  test("managed Brave formats results like direct Brave", async () => {
-    const braveBody = {
-      web: {
-        results: [
-          {
-            title: "Same Result",
-            url: "https://example.com/same",
-            description: "Same description",
-            age: "1 day ago",
-            extra_snippets: ["Same snippet"],
-          },
-        ],
-      },
-    };
-
-    seedWebSearch("your-own", "brave");
-    setKey("brave", "brave-key");
-    globalThis.fetch = (async () => {
-      return new Response(JSON.stringify(braveBody), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }) as any;
-
-    const directResult = await execute({ query: "same query" });
-
-    seedWebSearch(undefined, "cadet");
-    setKey("brave", undefined);
-    mockManagedSearchProxyResult = {
-      ok: true,
-      status: 200,
-      headers: { "content-type": "application/json" },
-      body: braveBody,
-    };
-
-    const managedResult = await execute({ query: "same query" });
-
-    expect(managedResult.isError).toBe(false);
-    expect(managedResult.content).toBe(directResult.content);
-    expect(managedResult.activityMetadata.webSearch.results).toEqual(
-      directResult.activityMetadata.webSearch.results,
-    );
-  });
-
-  test("provider cadet passes abort signal to the cloud proxy", async () => {
-    seedWebSearch(undefined, "cadet");
-    const controller = new AbortController();
-
-    await execute({ query: "abortable query" }, { signal: controller.signal });
-
-    expect(mockManagedSearchProxyCalls).toHaveLength(1);
-    expect(mockManagedSearchProxyCalls[0].signal).toBe(controller.signal);
-  });
-
-  test("provider cadet maps insufficient balance to a cloud usage error", async () => {
-    seedWebSearch(undefined, "cadet");
-    mockManagedSearchProxyResult = {
-      ok: false,
-      kind: "platform-error",
-      status: 402,
-      headers: { "content-type": "application/json" },
-      body: { detail: "Insufficient balance" },
-      message: "Cloud search proxy returned status 402: Insufficient balance",
-    };
-
-    const result = await execute({ query: "billing query" });
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("Managed web search");
-    expect(result.content).toContain("account balance");
-    expect(result.content).toContain("different web search provider");
-  });
-
-  test("provider cadet maps proxied provider errors to a tool error", async () => {
-    seedWebSearch(undefined, "cadet");
-    mockManagedSearchProxyResult = {
-      ok: true,
-      status: 400,
-      headers: { "content-type": "application/json" },
-      body: { error: "Bad upstream request" },
-    };
-
-    const result = await execute({ query: "provider error query" });
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain(
-      "Cloud Brave Search provider returned status 400",
-    );
-  });
-
-  test("provider cadet returns a clear error when platform context is unavailable", async () => {
-    seedWebSearch(undefined, "cadet");
-    mockManagedSearchProxyResult = {
-      ok: false,
-      kind: "unavailable",
-      message: "Cloud search proxy is unavailable in this environment.",
-    };
-
-    const result = await execute({ query: "local managed query" });
-
-    expect(result.isError).toBe(true);
-    expect(result.content).toContain("Cloud search proxy is unavailable");
-    expect(result.content).toContain("Log in to Cadet");
-  });
-
   test("your-own mode keeps direct Brave BYOK behavior unchanged", async () => {
     seedWebSearch("your-own", "brave");
     setKey("brave", "brave-direct-key");
@@ -641,7 +395,6 @@ describe("web_search tool", () => {
     const result = await execute({ query: "direct query" });
 
     expect(result.isError).toBe(false);
-    expect(mockManagedSearchProxyCalls).toHaveLength(0);
     expect(capturedHeaders!.get("X-Subscription-Token")).toBe(
       "brave-direct-key",
     );

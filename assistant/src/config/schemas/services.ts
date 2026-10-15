@@ -71,12 +71,11 @@ const ImageGenerationServiceSchema = z.object({
 });
 
 /**
- * Web-search carries no `mode`: `provider` is the only axis. `"cadet"`
- * searches through the Cadet Cloud search proxy, billed to Cadet
- * credits; `"inference-provider-native"` prefers the inference model's own
- * hosted search, falling back to the user's keys and then the cloud
- * proxy; any other provider uses the user's own API key. A `mode` key sent
- * by an older client is stripped at parse.
+ * Web-search carries no `mode`: `provider` is the only axis.
+ * `"inference-provider-native"` prefers the inference model's own hosted
+ * search, falling back to the user's own keys; any other provider uses the
+ * user's own API key. A `mode` key sent by an older client is stripped at
+ * parse.
  */
 const WebSearchServiceSchema = z.object({
   provider: z

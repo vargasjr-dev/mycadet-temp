@@ -44,8 +44,6 @@ import {
   credentialPresenceQueryKey,
   useStoredCredentialPresence,
 } from "@/domains/settings/ai/use-stored-credential-presence";
-import { supportsWebSearchCadetProvider } from "@/lib/backwards-compat/use-supports-web-search-cadet-provider";
-import { whenAssistantVersionKnown } from "@/lib/backwards-compat/utils";
 
 export function WebSearchCard() {
   const { t } = useTranslation("settings");
@@ -81,19 +79,10 @@ export function WebSearchCard() {
       );
     }
     const wsService = daemonConfig.services?.["web-search"] as
-      | { provider?: string; mode?: string; apiBase?: string }
+      | { provider?: string; apiBase?: string }
       | undefined;
-    // A config written by the legacy mode toggle marks managed via `mode`
-    // while `provider` holds the BYOK restore value — the daemon routes it to
-    // Cadet, so the card must render it as Cadet too. Provider Native is
-    // exempt: it stays itself under managed mode (see migration 132).
-    const daemonProvider =
-      wsService?.mode === "managed" &&
-      wsService?.provider !== "inference-provider-native"
-        ? "cadet"
-        : wsService?.provider;
     return (
-      daemonProvider ||
+      wsService?.provider ||
       getLocalSetting(LS_WEB_SEARCH_PROVIDER, "inference-provider-native")
     );
   }, [daemonConfig]);
@@ -168,27 +157,15 @@ export function WebSearchCard() {
       if (hasUserKey) {
         await provisionProviderKey(webSearchProvider, trimmed);
       }
-      // The provider is written as a pair with `mode`: a stale
-      // `mode: "managed"` from the legacy toggle would win over a BYOK
-      // choice unless reset. Daemons older than the cadet catalog entry
-      // reject the provider value outright, so for them a Cadet selection
-      // writes only the legacy managed mode and lets the deep-merge keep the
-      // stored provider — the read bridge renders that pair as Cadet again.
-      await whenAssistantVersionKnown();
       const webSearchService: {
         provider?: string;
-        mode: "managed" | "your-own";
+        mode: "your-own";
         apiBase?: string;
-      } =
-        webSearchProvider === "cadet"
-          ? supportsWebSearchCadetProvider()
-            ? { provider: "cadet", mode: "managed" }
-            : { mode: "managed" }
-          : {
-              provider: webSearchProvider,
-              mode: "your-own",
-              ...(showsApiBase ? { apiBase: trimmedApiBase } : {}),
-            };
+      } = {
+        provider: webSearchProvider,
+        mode: "your-own",
+        ...(showsApiBase ? { apiBase: trimmedApiBase } : {}),
+      };
       await configMutation
         .mutateAsync({
           path: { assistant_id: assistantId },
@@ -274,12 +251,6 @@ export function WebSearchCard() {
             }))}
           />
         </div>
-
-        {webSearchProvider === "cadet" && (
-          <p className="text-body-medium-lighter text-[var(--content-tertiary)]">
-            {t("webSearchCard.cadetNote")}
-          </p>
-        )}
 
         {showsApiBase && (
           <div className="space-y-1">

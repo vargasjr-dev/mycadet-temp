@@ -1,13 +1,10 @@
 /**
- * Tests for `WebSearchCard`'s provider-only configuration (the Managed /
- * Your Own mode toggle is gone — Cadet is a provider like any other):
+ * Tests for `WebSearchCard`'s provider-only configuration:
  *
  *   1. No mode segmented-control renders in the card header.
- *   2. Cadet is selectable, needs no API key, and saves as a
- *      provider+mode pair for old-daemon compatibility.
+ *   2. Provider Native and the BYOK providers fill the picker; saving
+ *      writes the provider (plus apiBase for providers that take one).
  *   3. BYOK providers still gate Save on a credential.
- *   4. Legacy managed-mode daemon configs render as Cadet — except
- *      Provider Native, which stays itself (mirrors migration 132).
  *
  * The design-library Select is real, driven via its combobox trigger like
  * `speech-to-text-card.test.tsx`.
@@ -76,22 +73,7 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => false,
 }));
 
-// Version gate for `provider: "cadet"` — supported by default; the
-// old-daemon test flips it off.
-let daemonSupportsCadetProvider = true;
-mock.module(
-  "@/lib/backwards-compat/use-supports-web-search-cadet-provider",
-  () => ({
-    MIN_VERSION: "0.13.0",
-    supportsWebSearchCadetProvider: () => daemonSupportsCadetProvider,
-  }),
-);
-mock.module("@/lib/backwards-compat/utils", () => ({
-  whenAssistantVersionKnown: () => Promise.resolve(),
-}));
-
 const { WebSearchCard } = await import("@/domains/settings/ai/web-search-card");
-const { LS_WEB_SEARCH_PROVIDER } = await import("@/utils/local-settings-keys");
 
 function renderCard() {
   const queryClient = new QueryClient({
@@ -139,7 +121,6 @@ describe("WebSearchCard — provider-only configuration", () => {
     configPatchCalls.length = 0;
     provisionedKeys.length = 0;
     hasStoredCredential = false;
-    daemonSupportsCadetProvider = true;
     daemonConfigData = { services: {} };
   });
 
@@ -157,13 +138,12 @@ describe("WebSearchCard — provider-only configuration", () => {
     expect(providerTrigger()).toBeTruthy();
   });
 
-  test("Cadet and Provider Native are offered alongside the BYOK providers", () => {
+  test("Provider Native and the BYOK providers fill the picker", () => {
     renderCard();
 
     fireEvent.click(providerTrigger());
     const options = visibleOptions();
     expect(options).toEqual([
-      "Cadet",
       "Provider Native",
       "Perplexity",
       "Brave",
@@ -176,31 +156,6 @@ describe("WebSearchCard — provider-only configuration", () => {
       "Exa",
       "Serply",
     ]);
-  });
-
-  test("selecting Cadet hides the API key field and saves the provider+mode pair", async () => {
-    renderCard();
-
-    fireEvent.click(providerTrigger());
-    selectOption("Cadet");
-
-    expect(screen.queryByText("API Key")).toBeNull();
-    expect(
-      screen.getByText(/Search runs through your Cadet account/),
-    ).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(configPatchCalls.length).toBe(1));
-    // Written as a pair so the save stays valid on daemons whose schema
-    // still couples provider "cadet" to mode "managed".
-    expect(configPatchCalls[0]!.body).toMatchObject({
-      services: {
-        "web-search": { provider: "cadet", mode: "managed" },
-      },
-    });
-    expect(provisionedKeys).toHaveLength(0);
-    expect(localStorage.getItem(LS_WEB_SEARCH_PROVIDER)).toBe("cadet");
   });
 
   test("Provider Native needs no key and saves with mode your-own", async () => {
@@ -345,74 +300,5 @@ describe("WebSearchCard — provider-only configuration", () => {
     const keyInput = screen.getByPlaceholderText("TinyFish API key...");
     fireEvent.change(keyInput, { target: { value: "tinyfish-secret" } });
     expect(saveButton.disabled).toBe(false);
-  });
-
-  test("a daemon predating the cadet provider gets the legacy managed write", async () => {
-    // Old daemon schemas reject provider "cadet" outright; the Cadet
-    // selection must degrade to the legacy Managed representation — mode
-    // only, letting the deep-merge keep the stored provider so the read
-    // bridge renders the pair as Cadet again.
-    daemonSupportsCadetProvider = false;
-    renderCard();
-
-    fireEvent.click(providerTrigger());
-    selectOption("Cadet");
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(configPatchCalls.length).toBe(1));
-    const body = configPatchCalls[0]!.body as {
-      services: { "web-search": Record<string, unknown> };
-    };
-    expect(body.services["web-search"]).toEqual({ mode: "managed" });
-  });
-
-  // A config written by the legacy mode toggle marks managed via `mode`
-  // while `provider` holds the BYOK restore value.
-  test("a legacy managed-mode daemon renders as Cadet", () => {
-    daemonConfigData = {
-      services: { "web-search": { mode: "managed", provider: "brave" } },
-    };
-    renderCard();
-
-    expect(providerTrigger().textContent).toContain("Cadet");
-    expect(screen.queryByText("API Key")).toBeNull();
-  });
-
-  test("a legacy managed-mode Provider Native daemon stays Provider Native", () => {
-    // The cloud default config: managed mode never meant "Cadet search"
-    // for Provider Native — migration 132 preserves it, so must the card.
-    daemonConfigData = {
-      services: {
-        "web-search": {
-          mode: "managed",
-          provider: "inference-provider-native",
-        },
-      },
-    };
-    renderCard();
-
-    expect(providerTrigger().textContent).toContain("Provider Native");
-    expect(providerTrigger().textContent).not.toContain("Cadet");
-  });
-
-  test("escaping a legacy managed-mode daemon resets mode alongside the provider", async () => {
-    // Without the mode reset, the stale `mode: "managed"` would win over the
-    // BYOK provider choice and the user would silently stay on Cadet.
-    daemonConfigData = {
-      services: { "web-search": { mode: "managed", provider: "brave" } },
-    };
-    hasStoredCredential = true;
-    renderCard();
-
-    fireEvent.click(providerTrigger());
-    selectOption("Brave");
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-
-    await waitFor(() => expect(configPatchCalls.length).toBe(1));
-    expect(configPatchCalls[0]!.body).toMatchObject({
-      services: {
-        "web-search": { provider: "brave", mode: "your-own" },
-      },
-    });
   });
 });

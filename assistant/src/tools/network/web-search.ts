@@ -21,7 +21,6 @@ import type {
   ToolDefinition,
   ToolExecutionResult,
 } from "../types.js";
-import type { ManagedSearchProxyResult } from "./cloud-search-proxy.js";
 import { extractDomain } from "./domain-normalize.js";
 import {
   extractFirecrawlCompatSearchResults,
@@ -242,10 +241,8 @@ function getWebSearchProvider(): WebSearchProvider {
   // In Your Own mode, `inference-provider-native` is only executable when the
   // inference provider swaps this tool for a native hosted-search definition.
   // If this app-executed tool is still invoked, fall back to the existing BYOK
-  // provider chain. `cadet` short-circuits into the cloud branch before
-  // this function runs, so its coercion here only satisfies the return type
-  // and keeps an undefined WEB_SEARCH_ADAPTERS lookup unreachable.
-  if (configured === "inference-provider-native" || configured === "cadet") {
+  // provider chain.
+  if (configured === "inference-provider-native") {
     return "perplexity";
   }
   return configured as WebSearchProvider;
@@ -1179,110 +1176,6 @@ async function executeBraveSearch(
     { statusCode: 429 },
     "Brave Search rate limit exceeded after retries. Try again shortly.",
   );
-}
-
-async function executeManagedBraveSearch(
-  query: string,
-  count: number,
-  offset: number,
-  freshness: string | undefined,
-  signal?: AbortSignal,
-): Promise<ToolExecutionResult> {
-  const { callManagedSearchProxy } = await import("./cloud-search-proxy.js");
-  const startedAt = Date.now();
-  const proxyResult = await callManagedSearchProxy(
-    "brave",
-    {
-      method: "GET",
-      path: BRAVE_SEARCH_PATH,
-      query: braveQueryParams(query, count, offset, freshness),
-      headers: {
-        Accept: "application/json",
-      },
-      body: null,
-    },
-    signal,
-  );
-
-  if (!proxyResult.ok) {
-    // Keep billing/auth/unavailable mapping as specific copy; route genuine
-    // platform 5xx (transport-level failures) to the friendly backend helper.
-    if (proxyResult.kind === "platform-error" && proxyResult.status >= 500) {
-      return backendFailureResult(
-        query,
-        "brave",
-        startedAt,
-        {
-          statusCode: proxyResult.status,
-          error: rawBodyDetail(proxyResult.body),
-        },
-        managedSearchProxyErrorMessage(proxyResult),
-      );
-    }
-    return errorResult(
-      query,
-      "brave",
-      startedAt,
-      managedSearchProxyErrorMessage(proxyResult),
-    );
-  }
-
-  if (proxyResult.status >= 200 && proxyResult.status < 300) {
-    return successfulBraveResult(
-      proxyResult.body as BraveSearchResponse,
-      query,
-      startedAt,
-    );
-  }
-
-  if (proxyResult.status === 401 || proxyResult.status === 403) {
-    return errorResult(
-      query,
-      "brave",
-      startedAt,
-      "Cloud Brave Search is not authenticated correctly. This is a Cadet Cloud configuration issue.",
-    );
-  }
-
-  if (proxyResult.status === 429 || proxyResult.status >= 500) {
-    return backendFailureResult(
-      query,
-      "brave",
-      startedAt,
-      {
-        statusCode: proxyResult.status,
-        error: rawBodyDetail(proxyResult.body),
-      },
-      proxyResult.status === 429
-        ? "Cloud Brave Search rate limit exceeded. Try again shortly."
-        : `Cloud Brave Search provider returned status ${proxyResult.status}`,
-    );
-  }
-
-  return errorResult(
-    query,
-    "brave",
-    startedAt,
-    `Cloud Brave Search provider returned status ${proxyResult.status}`,
-  );
-}
-
-function managedSearchProxyErrorMessage(
-  result: Exclude<ManagedSearchProxyResult, { ok: true }>,
-): string {
-  if (result.kind === "unavailable") {
-    return `${result.message} Log in to Cadet or choose a different web search provider in Settings.`;
-  }
-
-  if (result.kind === "platform-error" && result.status === 402) {
-    return "Managed web search is unavailable because your Cadet account balance is too low. Add funds or choose a different web search provider in Settings.";
-  }
-
-  if (result.kind === "platform-error") {
-    return `Managed web search platform request failed: ${result.message}`;
-  }
-
-  return result.message;
 }
 
 async function executePerplexitySearch(
@@ -2264,14 +2157,6 @@ const braveSearchAdapter: WebSearchAdapter = {
     executeBraveSearch(query, count, offset, freshness, apiKey, signal),
 };
 
-const managedBraveSearchAdapter: WebSearchAdapter = {
-  id: "brave",
-  providerKeyName: "brave",
-  fallbackOrder: 2,
-  execute: ({ query, count, offset, freshness, signal }) =>
-    executeManagedBraveSearch(query, count, offset, freshness, signal),
-};
-
 const tavilySearchAdapter: WebSearchAdapter = {
   id: "tavily",
   providerKeyName: "tavily",
@@ -2414,12 +2299,6 @@ export const webSearchTool = {
     }
 
     const startedAt = Date.now();
-    // An explicit Cadet choice is unconditionally managed: proxy errors
-    // (including 402) surface to the user and never fall back to BYOK keys.
-    // The config schema normalizes the legacy `cadet` id to `cadet` on
-    // parse, so this is the only spelling that survives here.
-    const managedSearch =
-      getConfig().services["web-search"].provider === "cadet";
 
     const count =
       typeof input.count === "number"
@@ -2431,33 +2310,6 @@ export const webSearchTool = {
         : 0;
     const freshness =
       typeof input.freshness === "string" ? input.freshness : undefined;
-
-    const executeManagedSearch = async (): Promise<ToolExecutionResult> => {
-      try {
-        log.debug({ query, provider: "brave" }, "Executing managed web search");
-        return await managedBraveSearchAdapter.execute({
-          query,
-          count,
-          offset,
-          freshness,
-          apiKey: "",
-          signal: context.signal,
-        });
-      } catch (err) {
-        log.error({ err }, "Managed web search failed");
-        return networkFailureResult(
-          query,
-          "brave",
-          startedAt,
-          err,
-          context.signal,
-        );
-      }
-    };
-
-    if (managedSearch) {
-      return executeManagedSearch();
-    }
 
     let provider = getWebSearchProvider();
     let apiKey = await getApiKey(provider);
@@ -2496,21 +2348,8 @@ export const webSearchTool = {
 
       if (!apiKey) {
         // Provider Native reaches this app-executed path only when the
-        // inference model had no hosted search of its own. The user's own keys
-        // win above; the cloud proxy is the last resort, which is what
-        // `mode: "managed"` did for installs that never configured a search
-        // key. Read the configured provider off config — the local `provider`
-        // has already been coerced to "perplexity".
-        if (
-          getConfig().services["web-search"].provider ===
-          "inference-provider-native"
-        ) {
-          const { managedSearchAvailable } =
-            await import("./cloud-search-proxy.js");
-          if (await managedSearchAvailable()) {
-            return executeManagedSearch();
-          }
-        }
+        // inference model had no hosted search of its own. The user's own
+        // keys win above; without one the run fails with the setup hint.
         return errorResult(
           query,
           provider,

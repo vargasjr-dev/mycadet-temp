@@ -8056,7 +8056,6 @@ paths:
                             default: inference-provider-native
                             type: string
                             enum:
-                              - cadet
                               - inference-provider-native
                               - perplexity
                               - brave
@@ -11241,7 +11240,6 @@ paths:
                             default: inference-provider-native
                             type: string
                             enum:
-                              - cadet
                               - inference-provider-native
                               - perplexity
                               - brave

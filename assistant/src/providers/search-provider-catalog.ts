@@ -45,14 +45,11 @@ export interface SearchProviderCatalogEntry {
   /**
    * Authentication style for the search provider choice.
    *
-   * `managed` means the choice does not require a user-supplied search API key.
-   * `cadet` searches through the Cadet Cloud search proxy, billed to
-   * Cadet credits; the cloud connection is the credential. For
-   * `inference-provider-native`, the daemon uses the inference API's native
-   * hosted web-search tool only when the selected inference provider/model
-   * supports it; otherwise the app-executed `web_search` tool runs, falling
-   * back to the cloud search proxy only when no user search key is
-   * configured.
+   * `managed` means the choice does not require a user-supplied search API key:
+   * for `inference-provider-native`, the daemon uses the inference API's native
+   * hosted web-search tool when the selected inference provider/model supports
+   * it, falling back to the user's own keys when the app-executed `web_search`
+   * tool runs and the model has no hosted search of its own.
    *
    * `byok` providers require a user-supplied API key.
    */
@@ -87,14 +84,6 @@ export interface SearchProviderCatalogEntry {
 }
 
 export const SEARCH_PROVIDER_CATALOG: readonly SearchProviderCatalogEntry[] = [
-  // cadet leads: it is the cloud option, selected like any other provider.
-  // Legacy configs carrying the pre-rebrand id `cadet` normalize on parse.
-  {
-    id: "cadet",
-    displayName: "Cadet",
-    displayNameLong: "Cadet Managed Search",
-    kind: "managed",
-  },
   {
     id: "inference-provider-native",
     displayName: "Provider Native",

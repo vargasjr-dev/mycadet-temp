@@ -2228,8 +2228,7 @@
     "providerLabel": "Провайдер",
     "savedToast": "Настройки веб-поиска сохранены.",
     "subtitle": "Настройка веб-поиска ассистента",
-    "title": "Веб-поиск",
-    "cadetNote": "Поиск идёт через аккаунт Cadet."
+    "title": "Веб-поиск"
   },
   "yourOwnOauthTab": {
     "accountFallback": "Аккаунт {name}",
