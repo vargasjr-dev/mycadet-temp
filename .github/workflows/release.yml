@@ -1069,6 +1069,7 @@ jobs:
         env:
           VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
+          VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
         run: bun run build
 
       - name: Rewrite package.json for publish
