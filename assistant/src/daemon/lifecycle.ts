@@ -83,7 +83,6 @@ import { startEventLoopWatchdog } from "./event-loop-watchdog.js";
 import { initializePlugins } from "./external-plugins-bootstrap.js";
 import { backfillSlackInjectionTemplates } from "./handlers/config-slack-channel.js";
 import { installAssistantCommand } from "./install-assistant-command.js";
-import { recoverInterruptedImport } from "./interrupted-import-recovery.js";
 import {
   type InterruptedResumeTarget,
   MAX_RESUME_ATTEMPTS,
@@ -147,23 +146,6 @@ export async function runDaemon(): Promise<void> {
   // a live turn. Recorded before any turn can start so every live flag is at or
   // after it.
   recordDaemonBootTime(startupStartedAt);
-
-  // Restore crash-interrupted workspace swaps before opening the database.
-  try {
-    const recoveryResult = await recoverInterruptedImport(getWorkspaceDir());
-    if (!recoveryResult.ok) {
-      // Preserve unresolved recovery files and allow startup for diagnostics.
-      log.error(
-        { failedCount: recoveryResult.failedCount },
-        "Interrupted-import recovery is INCOMPLETE; leftover .pre-import-* / .import-* scratch dirs remain in the workspace. Manual recovery may be required.",
-      );
-    }
-  } catch (err) {
-    log.warn(
-      { err },
-      "recoverInterruptedImport threw during daemon startup; continuing",
-    );
-  }
 
   // Load (or generate + persist) the auth signing key so tokens survive
   // daemon restarts.
