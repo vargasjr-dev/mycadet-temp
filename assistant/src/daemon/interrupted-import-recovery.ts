@@ -1,3 +1,9 @@
+/**
+ * Replays an existing .import-marker.json before the database opens. A pending
+ * workspace swap can leave live data in .import-* or .pre-import-* directories;
+ * recovery restores an incomplete swap or cleans up a completed one. This module
+ * only consumes the on-disk journal, without reading or converting archives.
+ */
 import {
   copyFile,
   cp,

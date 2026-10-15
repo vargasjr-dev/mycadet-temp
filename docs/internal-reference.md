@@ -78,26 +78,6 @@ bun run src/index.ts assistant start
 
 > **Note:** Some dependencies (`agentmail`) are optional at runtime but required for full `tsc --noEmit` type-checking to pass. They are installed automatically by `bun install`.
 
-## Installation backups
-
-The `cadet` CLI owns local and Docker backup/restore through host storage access.
-Cloud backups and restores use the cloud API and session authentication. Assistant
-and gateway processes do not create installation backups or decrypt credentials
-for archives. A root tar archive includes the workspace, gateway security, CES
-security and CES data roots, preserving encrypted credentials and their keys.
-
-Runtime `/v1/migrations/*` and `/v1/backups*` APIs return HTTP 410 at the gateway.
-Use `cadet backup` / `cadet restore` or the cloud backup API. Legacy `.vbundle`
-conversion belongs in the separate `vellum-to-cadet` repository. Existing archive
-files and historical data migrations are preserved. Startup can recover an
-interrupted workspace import journal without accepting new legacy imports.
-
-`cadet teleport` supports local-to-Docker and Docker-to-local installation moves.
-Cloud teleport and the browser transfer workflow are unavailable pending cloud
-root archive transfer. Unsupported transfers fail before changing installations.
-Support diagnostics use the sanitized multi-service `/v1/logs/export` tar archive,
-which is distinct from an installation backup and excludes credential stores.
-
 ## Security & Permissions
 
 ### Sandbox and Host Access Model

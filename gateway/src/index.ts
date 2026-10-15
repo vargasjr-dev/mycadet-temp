@@ -132,10 +132,6 @@ import { createMigrationRollbackProxyHandler } from "./http/routes/migration-rol
 import { createWorkspaceCommitProxyHandler } from "./http/routes/workspace-commit-proxy.js";
 import { createDesktopSetupProxyHandler } from "./http/routes/desktop-setup-proxy.js";
 import { createBrainGraphProxyHandler } from "./http/routes/brain-graph-proxy.js";
-import {
-  retiredBackupResponse,
-  RETIRED_BACKUP_PATH,
-} from "./http/routes/retired-backup.js";
 import { createLogExportHandler } from "./http/routes/log-export.js";
 import { createLogTailHandler } from "./http/routes/log-tail.js";
 import {
@@ -1305,14 +1301,6 @@ async function main() {
       scope: "admin.write",
       handler: (req) => upgradeBroadcastProxy(req),
     },
-
-    ...(["GET", "POST"] as const).map((method): RouteDefinition => ({
-      path: RETIRED_BACKUP_PATH,
-      method,
-      auth: "edge-scoped" as const,
-      scope: method === "GET" ? "settings.read" : "settings.write",
-      handler: retiredBackupResponse,
-    })),
 
     // ── Workspace commit ──
     {

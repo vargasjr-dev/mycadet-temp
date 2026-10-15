@@ -152,15 +152,10 @@ export async function runDaemon(): Promise<void> {
   try {
     const recoveryResult = await recoverInterruptedImport(getWorkspaceDir());
     if (!recoveryResult.ok) {
-      // Rollback is intentionally unresolved — backup/temp/marker are
-      // preserved on disk so an operator (or a later retry) can finish
-      // the recovery. Log loudly so ops sees it, but don't block start-up:
-      // the daemon still needs to come up for diagnostics. The next
-      // `streamCommitImport` will refuse to start a new import until the
-      // marker is resolved.
+      // Preserve unresolved recovery files and allow startup for diagnostics.
       log.error(
         { failedCount: recoveryResult.failedCount },
-        "Interrupted-import recovery is INCOMPLETE; leftover .pre-import-* / .import-* scratch dirs remain in the workspace. Manual intervention may be required before the next import can run.",
+        "Interrupted-import recovery is INCOMPLETE; leftover .pre-import-* / .import-* scratch dirs remain in the workspace. Manual recovery may be required.",
       );
     }
   } catch (err) {
