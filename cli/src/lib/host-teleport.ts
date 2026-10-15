@@ -27,7 +27,8 @@ import {
 } from "./root-backup.js";
 import { DOCKER_STATEFUL_SET_SPEC } from "./statefulset.js";
 import { execOutput } from "./step-runner.js";
-import { buildReplayState, fetchCurrentVersion } from "./upgrade-lifecycle.js";
+import { buildReplayState } from "./upgrade-lifecycle.js";
+import { fetchCurrentVersion } from "./http-client.js";
 import { compareVersions } from "./version-compat.js";
 import { sleepAssistant } from "../commands/sleep.js";
 import { generateInstanceName } from "./random-name.js";

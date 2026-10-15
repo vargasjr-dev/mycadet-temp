@@ -30,10 +30,6 @@ import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
 import { z } from "zod";
 
-const GatewayHealthSchema = z.object({
-  version: z.string().optional(),
-});
-
 const MigrationGateBodySchema = z.object({
   status: z.string().optional(),
   reason: z.string().optional(),
@@ -289,28 +285,6 @@ export async function captureReplayState(
     `   Captured ${Object.keys(capturedEnv).length} env var(s) from ${res.assistantContainer}\n`,
   );
   return buildReplayState(capturedEnv, gatewayEnv);
-}
-
-/**
- * Best-effort fetch of the running service group version from the gateway
- * `/healthz` endpoint.  Returns `undefined` when the endpoint is
- * unreachable or does not include a version field.
- */
-export async function fetchCurrentVersion(
-  runtimeUrl: string,
-): Promise<string | undefined> {
-  try {
-    const resp = await loopbackSafeFetch(`${runtimeUrl}/healthz`, {
-      signal: AbortSignal.timeout(5000),
-    });
-    if (resp.ok) {
-      const parsed = GatewayHealthSchema.safeParse(await resp.json());
-      return parsed.success ? parsed.data.version : undefined;
-    }
-  } catch {
-    // Best-effort
-  }
-  return undefined;
 }
 
 /**

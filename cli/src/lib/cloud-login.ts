@@ -28,7 +28,8 @@ import {
   readCloudToken,
   saveCloudToken,
 } from "./cloud-client.js";
-import { fetchAssistantIngressUrl, fetchCurrentVersion } from "./upgrade-lifecycle.js";
+import { fetchAssistantIngressUrl } from "./upgrade-lifecycle.js";
+import { fetchCurrentVersion } from "./http-client.js";
 import {
   CALLBACK_PATH,
   buildAuthorizeUrl,

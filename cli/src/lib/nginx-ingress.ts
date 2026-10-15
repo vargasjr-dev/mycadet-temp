@@ -30,7 +30,7 @@ import {
 } from "./assistant-config.js";
 import type { RemoteHost } from "./constants.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
-import { waitForDaemonReady } from "./http-client.js";
+import { fetchCurrentVersion, waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
@@ -38,7 +38,8 @@ import {
   parseGatewayPortFromEntryUrls,
   saveRawConfig,
 } from "./ingress-config.js";
-import { findWebDistDir } from "./web-dist.js";
+import { stripVersionPrefix } from "./version-compat.js";
+import { findWebDistDir, readWebReleaseVersion } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
 
@@ -143,7 +144,8 @@ const DENYLIST_LOCATIONS = `    location = /auth/token { return 404; }
 export interface RemoteWebIngressOptions {
   webDistDir: string;
   indexHtmlPath?: string;
-  uiVersion?: string;
+  /** Assistant release verified against the served UI artifact. */
+  version?: string;
   config?: Record<string, unknown>;
   /** Serving assistant's display name, stamped into the served config so
    *  remote clients can label this origin. Absent in older served configs. */
@@ -153,17 +155,8 @@ export interface RemoteWebIngressOptions {
    *  configs. */
   assistantId?: string;
   /** Cloud web SPA base the remote client can hand this origin to (see
-   *  `cloudWebHubUrl`). Absent in older served configs. */
+   *  `cloudAssistantHubUrl`). Absent in older served configs. */
   hubUrl?: string;
-}
-
-/**
- * Cloud web SPA base URL for a build environment. The mapping lives in
- * `@mycadet/environments` (`cloudAssistantHubUrl`) and is shared with the
- * Capacitor shell's `server.url`, so the two consumers cannot drift.
- */
-export function cloudWebHubUrl(env: string | undefined): string {
-  return cloudAssistantHubUrl(env);
 }
 
 // The edge serves remote browsers, so the bundle's remote-gateway machinery
@@ -199,13 +192,6 @@ function remoteWebIngressConfig(
       opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
     ),
     apiBaseUrl: "/v1",
-    ...(process.env.CADET_APP_ALLOWED_ORIGINS
-      ? {
-          appAllowedOrigins: process.env.CADET_APP_ALLOWED_ORIGINS.split(",")
-            .map((origin) => origin.trim())
-            .filter(Boolean),
-        }
-      : {}),
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
@@ -218,7 +204,7 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 11;
+export const EDGE_TEMPLATE_VERSION = 12;
 
 /**
  * Stable fingerprint of the injected SPA config, its source bundle, and
@@ -229,6 +215,7 @@ export const EDGE_TEMPLATE_VERSION = 11;
 function remoteWebConfigFingerprint(
   config: Record<string, unknown>,
   webDistDir: string,
+  version?: string,
 ): string {
   return createHash("sha256")
     .update(
@@ -236,6 +223,7 @@ function remoteWebConfigFingerprint(
         template: EDGE_TEMPLATE_VERSION,
         config,
         webDistDir,
+        version,
         indexHtml: readFileSync(join(webDistDir, "index.html"), "utf-8"),
       }),
     )
@@ -358,7 +346,7 @@ export async function findAvailableIngressPort(
 const AssistantHostConfigSchema = z.object({
   assistantId: z.string().min(1).optional(),
   assistantName: z.string().optional(),
-  uiVersion: z.string().min(1).optional(),
+  version: z.string().min(1).optional(),
   hubUrl: z.string().url().optional(),
   appAllowedOrigins: z.array(z.string().url()).default([]),
 });
@@ -414,12 +402,12 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
       ? [
           {
             path: `/v1/assistants/${encodeURIComponent(id)}`,
-            status: metadata.uiVersion ? 200 : 409,
-            body: metadata.uiVersion
+            status: metadata.version ? 200 : 409,
+            body: metadata.version
               ? {
                   ...choice,
                   status: "active",
-                  version: metadata.uiVersion,
+                  version: metadata.version,
                   url: "assistant/",
                 }
               : { detail: "assistant is not ready" },
@@ -473,7 +461,7 @@ export function buildIngressNginxConfig(opts: {
         webDistDir: remoteWebIngress.webDistDir,
         indexHtmlPath: remoteWebIngress.indexHtmlPath,
         config: remoteWebIngressConfig(remoteWebIngress),
-        uiVersion: remoteWebIngress.uiVersion,
+        version: remoteWebIngress.version,
       })
     : `${DENYLIST_LOCATIONS}
 
@@ -567,7 +555,7 @@ function buildRemoteWebIngressLocations(opts: {
   webDistDir: string;
   indexHtmlPath?: string;
   config: Record<string, unknown>;
-  uiVersion?: string;
+  version?: string;
 }): string {
   const proxyBlock = gatewayProxyBlock(opts.gatewayPort);
   const webDistDir = nginxDirPath(opts.webDistDir);
@@ -578,7 +566,7 @@ function buildRemoteWebIngressLocations(opts: {
 
   return `${DENYLIST_LOCATIONS}
 
-${assistantMetadataLocations({ ...opts.config, uiVersion: opts.uiVersion })}
+${assistantMetadataLocations({ ...opts.config, version: opts.version })}
 
     location = /healthz {
 ${proxyBlock}
@@ -837,9 +825,6 @@ export function startIngressNginx(opts: {
       join(remoteWebIngress.webDistDir, "index.html"),
       "utf-8",
     );
-    remoteWebIngress.uiVersion = createHash("sha256")
-      .update(rawIndexHtml)
-      .digest("hex");
     writeFileSync(
       remoteWebIngress.indexHtmlPath,
       buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
@@ -872,6 +857,7 @@ export function startIngressNginx(opts: {
           remoteWebConfigHash: remoteWebConfigFingerprint(
             remoteWebIngress.config,
             remoteWebIngress.webDistDir,
+            remoteWebIngress.version,
           ),
         }
       : {}),
@@ -1063,7 +1049,7 @@ export async function startRemoteWebIngress(opts: {
   // reuse decision and the actual spawn share one value and cannot drift.
   const spaOptions = includeWebApp
     ? {
-        hubUrl: cloudWebHubUrl(getCurrentEnvironment().name),
+        hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
         ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
       }
@@ -1072,11 +1058,23 @@ export async function startRemoteWebIngress(opts: {
   if (includeWebApp && !webDistDir) {
     return { status: "web-dist-missing" };
   }
+  const runtimeVersion = webDistDir
+    ? await fetchCurrentVersion(`http://127.0.0.1:${opts.gatewayPort}`)
+    : undefined;
+  const webVersion = webDistDir ? readWebReleaseVersion(webDistDir) : undefined;
+  const assistantVersion = runtimeVersion
+    ? stripVersionPrefix(runtimeVersion)
+    : undefined;
+  const matchedVersion =
+    assistantVersion && webVersion === assistantVersion
+      ? assistantVersion
+      : undefined;
   const requestedConfigHash =
     spaOptions && webDistDir
       ? remoteWebConfigFingerprint(
           remoteWebIngressConfig(spaOptions),
           webDistDir,
+          matchedVersion,
         )
       : undefined;
   // Both sides are undefined in webhooks-only mode; an SPA record without a
@@ -1140,7 +1138,9 @@ export async function startRemoteWebIngress(opts: {
     workspaceDir: opts.workspaceDir,
     gatewayPort: opts.gatewayPort,
     listenPort,
-    remoteWebIngress: webDistDir ? { webDistDir, ...spaOptions } : undefined,
+    remoteWebIngress: webDistDir
+      ? { webDistDir, ...spaOptions, version: matchedVersion }
+      : undefined,
   });
   let exited = false;
   child.once("exit", () => {

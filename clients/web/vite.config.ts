@@ -1,8 +1,9 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import webPackage from "./package.json";
 import type http from "node:http";
 import path from "node:path";
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import {
   localModePlugin,
   getDevCloudSessionToken,
@@ -105,6 +106,18 @@ export default defineConfig(({ mode }) => {
     plugins: [
       tailwindcss(),
       react(),
+      {
+        name: "assistant-release",
+        generateBundle() {
+          this.emitFile({
+            type: "asset",
+            fileName: "release.json",
+            source: JSON.stringify({
+              version: env.VITE_APP_VERSION || webPackage.version,
+            }),
+          });
+        },
+      } satisfies Plugin,
       isCloudServedBuild(env.VITE_CLOUD_MODE) ? null : localModePlugin(env),
     ].filter(Boolean),
     resolve: {

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 export type HttpProbeEndpoint = "healthz" | "readyz";
@@ -140,4 +141,28 @@ export async function waitForDaemonMigrationsReady(
     if (Date.now() >= deadlineMs) return last;
     await new Promise((r) => setTimeout(r, 250));
   }
+}
+
+const GatewayHealthSchema = z.object({ version: z.string().min(1).optional() });
+
+/**
+ * Best-effort fetch of the running service group version from the gateway
+ * `/healthz` endpoint.  Returns `undefined` when the endpoint is
+ * unreachable or does not include a version field.
+ */
+export async function fetchCurrentVersion(
+  runtimeUrl: string,
+): Promise<string | undefined> {
+  try {
+    const resp = await loopbackSafeFetch(`${runtimeUrl}/healthz`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (resp.ok) {
+      const parsed = GatewayHealthSchema.safeParse(await resp.json());
+      return parsed.success ? parsed.data.version : undefined;
+    }
+  } catch {
+    // Best-effort
+  }
+  return undefined;
 }

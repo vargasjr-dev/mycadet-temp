@@ -57,7 +57,6 @@ import {
   buildUpgradeCommitMessage,
   captureReplayState,
   captureUpgradeFailureLogs,
-  fetchCurrentVersion,
   commitWorkspaceViaGateway,
   rollbackMigrations,
   UPGRADE_PROGRESS,
@@ -69,6 +68,7 @@ import {
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";
+import { fetchCurrentVersion } from "../lib/http-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
   generateLocalSigningKey,

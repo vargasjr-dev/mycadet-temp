@@ -51,6 +51,10 @@ mock.module("node:fs", () => ({
   readFileSync: readFileSyncMock,
 }));
 
+const fetchCurrentVersionMock = mock<typeof httpClient.fetchCurrentVersion>(
+  async () => "1.2.3",
+);
+
 const waitForDaemonReadyMock = mock<typeof httpClient.waitForDaemonReady>(
   async () => true,
 );
@@ -58,6 +62,7 @@ const waitForDaemonReadyMock = mock<typeof httpClient.waitForDaemonReady>(
 mock.module("../lib/http-client.js", () => ({
   ...httpClient,
   waitForDaemonReady: waitForDaemonReadyMock,
+  fetchCurrentVersion: fetchCurrentVersionMock,
 }));
 
 // Restore the real modules once this file finishes so the mocks do not leak
@@ -72,7 +77,6 @@ import {
   buildIngressNginxConfig,
   hasIpv6Loopback,
   buildRemoteWebIndexHtml,
-  cloudWebHubUrl,
   MAX_PRESERVED_MODULE_PRELOADS,
   ensureTunnelEdge,
   EDGE_TEMPLATE_VERSION,
@@ -124,6 +128,8 @@ afterEach(() => {
   existsSyncMock.mockImplementation(realFs.existsSync);
   readFileSyncMock.mockReset();
   readFileSyncMock.mockImplementation(realFs.readFileSync);
+  fetchCurrentVersionMock.mockReset();
+  fetchCurrentVersionMock.mockImplementation(async () => "1.2.3");
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   for (const dir of workspaces.splice(0)) {
@@ -524,18 +530,6 @@ describe("buildRemoteWebIndexHtml", () => {
   });
 });
 
-describe("cloudWebHubUrl", () => {
-  test("maps build environments to their cloud SPA base", () => {
-    expect(cloudWebHubUrl("production")).toBe("https://mycadet.ai/assistant");
-    expect(cloudWebHubUrl("staging")).toBe(
-      "https://staging.mycadet.ai/assistant",
-    );
-    expect(cloudWebHubUrl("dev")).toBe("https://dev.mycadet.ai/assistant");
-    expect(cloudWebHubUrl("local")).toBe("https://dev.mycadet.ai/assistant");
-    expect(cloudWebHubUrl(undefined)).toBe("https://dev.mycadet.ai/assistant");
-  });
-});
-
 describe("nginx ingress process state", () => {
   function writeIngressState(workspaceDir: string, listenPort: number): void {
     writeFileSync(
@@ -743,17 +737,19 @@ function mockWebDistMissing(): void {
 }
 
 /** Force findWebDistDir() to resolve a dist dir, regardless of checkout state. */
-function mockWebDistPresent(): void {
+function mockWebDistPresent(version: string | null = "1.2.3"): void {
   existsSyncMock.mockImplementation((path) =>
     String(path).endsWith(WEB_INDEX_SUFFIX) ? true : realFs.existsSync(path),
   );
   readFileSyncMock.mockImplementation(((path, options) =>
     String(path).endsWith(WEB_INDEX_SUFFIX)
       ? FAKE_INDEX_HTML
-      : realFs.readFileSync(
-          path as never,
-          options as never,
-        )) as typeof readFileSync);
+      : String(path).endsWith("release.json")
+        ? JSON.stringify(version === null ? {} : { version })
+        : realFs.readFileSync(
+            path as never,
+            options as never,
+          )) as typeof readFileSync);
 }
 
 /** Record a running edge: ingress state, live pidfile, matching ps output. */
@@ -860,6 +856,7 @@ function spaConfigHash(
           hubUrl: PRODUCTION_HUB_URL,
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
+        version: "1.2.3",
         indexHtml: opts.indexHtml ?? FAKE_INDEX_HTML,
       }),
     )
@@ -884,6 +881,70 @@ function pinProductionEnvironment(): void {
 
 describe("startRemoteWebIngress", () => {
   pinProductionEnvironment();
+
+  for (const [webVersion, runtimeVersion, ready] of [
+    ["1.2.3", "1.2.3", true],
+    ["1.2.3", "v1.2.3", true],
+    ["1.2.2", "1.2.3", false],
+    ["1.2.3", undefined, false],
+    [null, "1.2.3", false],
+  ] as const) {
+    test(`release resolution: UI ${webVersion}, assistant ${runtimeVersion}`, async () => {
+      const ws = makeWorkspace();
+      mockNginxInstalled();
+      mockNginxSpawn();
+      mockWebDistPresent(webVersion);
+      fetchCurrentVersionMock.mockResolvedValue(runtimeVersion);
+      const result = await startRemoteWebIngress({
+        workspaceDir: ws,
+        gatewayPort: 7830,
+        listenPort: 7845,
+        assistantId: "assistant-1",
+      });
+      expect(result.status).toBe("started");
+      expect(fetchCurrentVersionMock).toHaveBeenCalledWith(
+        "http://127.0.0.1:7830",
+      );
+      const conf = realFs.readFileSync(ingressConfPath(ws), "utf8");
+      const detail = conf
+        .split('location = "/v1/assistants/assistant-1/" {')[1]
+        ?.split("\n    }")[0];
+      expect(detail).toContain(`return ${ready ? 200 : 409} `);
+      if (ready) {
+        expect(detail).toContain('\\"version\\":\\"1.2.3\\"');
+      } else {
+        expect(detail).not.toContain('\\"url\\"');
+      }
+    });
+  }
+
+  test("restarts an edge when its verified assistant/UI release changes", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent("1.2.3");
+    fetchCurrentVersionMock.mockResolvedValue("1.2.4");
+    const pid = mockRunningEdge(ws, {
+      listenPort: 7845,
+      includeWebApp: true,
+      gatewayPort: 7830,
+      remoteWebConfigHash: spaConfigHash({ assistantId: "assistant-1" }),
+    });
+    const edge = mockKillableNginx(pid);
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      assistantId: "assistant-1",
+    });
+    expect(result.status).toBe("started");
+    expect(edge.killed()).toBe(true);
+    const conf = realFs.readFileSync(ingressConfPath(ws), "utf8");
+    const detail = conf
+      .split('location = "/v1/assistants/assistant-1/" {')[1]
+      ?.split("\n    }")[0];
+    expect(detail).toContain("return 409 ");
+  });
 
   test("webhooks-only mode starts the denylist+proxy edge without a web dist", async () => {
     const ws = makeWorkspace();
@@ -2266,7 +2327,7 @@ describe("assistant metadata API", () => {
       listenPort: 7840,
       remoteWebIngress: {
         webDistDir: "/tmp/web",
-        uiVersion: "bundle-hash",
+        version: "1.2.3",
         assistantId: id,
         assistantName: "My assistant",
         config: { appAllowedOrigins: ["https://parent.example"] },
@@ -2294,7 +2355,7 @@ describe("assistant metadata API", () => {
       id: "assistant-1",
       name: "My assistant",
       status: "active",
-      version: "bundle-hash",
+      version: "1.2.3",
       url: "assistant/",
     });
     expect(conf).not.toContain('location = "/v1/assistants/other/"');
