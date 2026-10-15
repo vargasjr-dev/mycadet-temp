@@ -31,13 +31,10 @@ import {
   platformImportBundleFromGcs,
   platformPollJobStatus,
 } from "../lib/cloud-client.js";
-import { performDockerRollback } from "../lib/upgrade-lifecycle.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
 
 function printUsage(): void {
-  console.log(
-    "Usage: cadet restore <name> [--from <path>] [--version <version>] [--dry-run]",
-  );
+  console.log("Usage: cadet restore <name> [--from <path>] [--dry-run]");
   console.log("");
   console.log(
     "Restore all persistent roots from a tar archive into an assistant.",
@@ -46,16 +43,12 @@ function printUsage(): void {
     "Without --from, recovers a retired assistant from its archive in",
   );
   console.log("$XDG_DATA_HOME/cadet/retired/ and starts it again.");
-  console.log(
-    "With --version, restore Docker data and runtime version together.",
-  );
   console.log("");
   console.log("Arguments:");
   console.log("  <name>               Name of the assistant to restore into");
   console.log("");
   console.log("Options:");
   console.log("  --from <path>        Path to the .tar.gz file (required)");
-  console.log("  --version <version>  Docker runtime version to restore");
   console.log(
     "  --dry-run            Show what would change without applying (data-only)",
   );
@@ -70,7 +63,6 @@ function printUsage(): void {
 function parseArgs(argv: string[]): {
   name: string | undefined;
   fromPath: string | undefined;
-  version: string | undefined;
   dryRun: boolean;
   help: boolean;
 } {
@@ -80,14 +72,12 @@ function parseArgs(argv: string[]): {
     return {
       name: undefined,
       fromPath: undefined,
-      version: undefined,
       dryRun: false,
       help: true,
     };
   }
 
   let fromPath: string | undefined;
-  let version: string | undefined;
   const dryRun = args.includes("--dry-run");
   const positionals: string[] = [];
 
@@ -95,22 +85,16 @@ function parseArgs(argv: string[]): {
     if (args[i] === "--from" && args[i + 1]) {
       fromPath = args[i + 1];
       i++; // skip the value
-    } else if (args[i] === "--version") {
-      const next = args[i + 1];
-      if (!next || next.startsWith("-")) {
-        console.error("Error: --version requires a value");
-        process.exit(1);
-      }
-      version = next;
-      i++; // skip the value
     } else if (args[i] === "--dry-run") {
       // already handled above
-    } else if (!args[i].startsWith("-")) {
+    } else if (args[i].startsWith("-")) {
+      throw new Error(`Unknown restore option: ${args[i]}`);
+    } else {
       positionals.push(args[i]);
     }
   }
 
-  return { name: positionals[0], fromPath, version, dryRun, help: false };
+  return { name: positionals[0], fromPath, dryRun, help: false };
 }
 
 interface PreflightFileEntry {
@@ -538,27 +522,11 @@ async function recoverFromArchive(name: string): Promise<void> {
 
 export const restore = Object.assign(
   async function restore(): Promise<void> {
-    const { name, fromPath, version, dryRun, help } = parseArgs(process.argv);
+    const { name, fromPath, dryRun, help } = parseArgs(process.argv);
 
     if (help) {
       printUsage();
       process.exit(0);
-    }
-
-    // --version requires --from
-    if (version && !fromPath) {
-      console.error(
-        "A backup file is required for restore. Use --from <path> to specify the .tar.gz file.",
-      );
-      process.exit(1);
-    }
-
-    // --dry-run is not supported with --version
-    if (version && dryRun) {
-      console.error(
-        "Dry-run is not supported with --version. Use `cadet restore --from <path> --dry-run` for data-only preflight.",
-      );
-      process.exit(1);
     }
 
     if (!name) {
@@ -610,11 +578,6 @@ export const restore = Object.assign(
     }
 
     if (isCloudHome(cloud)) {
-      if (version) {
-        throw new Error(
-          "Cloud runtime version restore is not supported yet. Restore data without --version.",
-        );
-      }
       await validateRootArchive(fromPath);
       const bundleData = readFileSync(fromPath);
       await restorePlatform(entry, name, bundleData, { dryRun });
@@ -623,19 +586,6 @@ export const restore = Object.assign(
 
     if (cloud !== "local" && cloud !== "docker") {
       throw new Error(`Restore for '${cloud}' must run on its host.`);
-    }
-    if (version) {
-      if (cloud !== "docker")
-        throw new Error(
-          "Version restore is supported for Docker and cloud assistants.",
-        );
-      await validateRootArchive(fromPath);
-      await performDockerRollback(entry, {
-        targetVersion: version,
-        backupPath: fromPath,
-      });
-      console.log("Version and root backup restored.");
-      return;
     }
     const recoveryPath = await restoreRootBackup(entry, fromPath, { dryRun });
     if (dryRun)

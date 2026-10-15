@@ -124,51 +124,24 @@ test("cloud restore uploads tar and calls the cloud API using the assistant's cl
   expect(guardianRead).not.toHaveBeenCalled();
 });
 
-test("Docker version restore passes the archive to the version switch as one operation", async () => {
-  const entry: config.AssistantEntry = {
-    assistantId: "docker-test",
-    cloud: "docker",
-    runtimeUrl: "http://127.0.0.1:1",
-  };
-  lookup.mockReturnValue(entry);
-  process.argv = [
-    "bun",
-    "cadet",
-    "restore",
-    "docker-test",
-    "--from",
-    file,
-    "--version",
-    "0.12.10",
-  ];
-  await restore();
-  expect(versionRestore).toHaveBeenCalledWith(entry, {
-    targetVersion: "0.12.10",
-    backupPath: file,
+for (const topology of ["local", "docker", "cloud"] as const) {
+  test(`${topology} rejects removed --version before lookup or mutation`, async () => {
+    process.argv = [
+      "bun",
+      "cadet",
+      "restore",
+      "test",
+      "--from",
+      file,
+      "--version",
+      "0.12.10",
+    ];
+    await expect(restore()).rejects.toThrow(
+      "Unknown restore option: --version",
+    );
+    expect(lookup).not.toHaveBeenCalled();
+    expect(signedUrl).not.toHaveBeenCalled();
+    expect(importCloud).not.toHaveBeenCalled();
+    expect(versionRestore).not.toHaveBeenCalled();
   });
-  expect(hostRestore).not.toHaveBeenCalled();
-});
-
-test("cloud version restore fails before upload or mutation", async () => {
-  lookup.mockReturnValue({
-    assistantId: "cloud-test",
-    cloud: "cloud",
-    runtimeUrl: "https://cloud.mycadet.ai",
-  });
-  process.argv = [
-    "bun",
-    "cadet",
-    "restore",
-    "cloud-test",
-    "--from",
-    file,
-    "--version",
-    "0.12.10",
-  ];
-  await expect(restore()).rejects.toThrow(
-    "Cloud runtime version restore is not supported yet",
-  );
-  expect(signedUrl).not.toHaveBeenCalled();
-  expect(importCloud).not.toHaveBeenCalled();
-  expect(versionRestore).not.toHaveBeenCalled();
-});
+}
