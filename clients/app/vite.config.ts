@@ -64,9 +64,6 @@ export default defineConfig(({ mode, command }) => {
       ],
       dedupe: ["react", "react-dom"],
     },
-    optimizeDeps: {
-      include: ["rehype-katex", "remark-math", "remark-parse", "unified"],
-    },
     server: {
       port: Number(env.PORT || "3001"),
       strictPort: true,
