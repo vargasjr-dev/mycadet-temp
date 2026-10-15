@@ -1,0 +1,66 @@
+import { z } from "zod";
+
+function publicUrl(value: string): boolean {
+  if (/[\\\u0000-\u0020]/.test(value) || value.startsWith("//")) {
+    return false;
+  }
+  if (!value.startsWith("/") && !/^https?:\/\//i.test(value)) {
+    return false;
+  }
+  try {
+    const url = new URL(value, "https://app.example");
+    if (url.username || url.password || url.search || url.hash) {
+      return false;
+    }
+    return (
+      value.startsWith("/") ||
+      url.protocol === "https:" ||
+      (url.protocol === "http:" &&
+        ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))
+    );
+  } catch {
+    return false;
+  }
+}
+
+const PublicUrlSchema = z
+  .string()
+  .min(1)
+  .refine(
+    publicUrl,
+    "Expected a public host URL without credentials or query parameters.",
+  );
+export const ResolvedAssistantSchema = z.object({
+  id: z.string().min(1),
+  ui: z.object({
+    version: z.string().min(1),
+    entryUrl: PublicUrlSchema.refine((value) => {
+      if (!publicUrl(value)) {
+        return false;
+      }
+      return new URL(value, "https://app.example").pathname
+        .replace(/\/$/, "")
+        .endsWith("/assistant");
+    }, "UI entry must end at /assistant/."),
+  }),
+  runtime: z.object({ baseUrl: PublicUrlSchema }),
+});
+
+export const AssistantResolutionSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal("ready"), assistant: ResolvedAssistantSchema }),
+  z.object({ status: z.literal("starting") }),
+  z.object({ status: z.literal("empty") }),
+  z.object({ status: z.literal("unauthenticated") }),
+]);
+export type ResolvedAssistant = z.infer<typeof ResolvedAssistantSchema>;
+export type AssistantResolution = z.infer<typeof AssistantResolutionSchema>;
+export type ResolveAssistant = (request: {
+  assistantId?: string;
+  signal: AbortSignal;
+}) => Promise<unknown>;
+
+export const AssistantNavigationSchema = z.object({
+  source: z.literal("mycadet-web-nav"),
+  nav: z.enum(["push", "replace", "pop"]),
+  path: z.string(),
+});

@@ -56,6 +56,16 @@ jobs:
         working-directory: clients/app
         run: bun run build
 
+      - name: Build portable package
+        working-directory: clients/app
+        run: bun run build:package
+
+      - name: Verify portable package
+        working-directory: clients/app
+        env:
+          NODE_ENV: production
+        run: node scripts/verify-package.mjs
+
       - name: Test
         working-directory: clients/app
         env:

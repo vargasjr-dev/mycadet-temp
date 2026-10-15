@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type http from "node:http";
-import { injectPlatformToken } from "./platform-proxy";
+import { injectCloudSessionToken } from "./cloud-proxy";
 function forward(
   api: boolean,
   headers: http.IncomingHttpHeaders,
@@ -9,10 +9,10 @@ function forward(
   const values = new Map<string, string>([["Cookie", "browser-cookie"]]);
   const read = mock(() => token);
   type Callback = Parameters<
-    Parameters<ReturnType<typeof injectPlatformToken>>[0]["on"]
+    Parameters<ReturnType<typeof injectCloudSessionToken>>[0]["on"]
   >[1];
   let callback!: Callback;
-  injectPlatformToken(
+  injectCloudSessionToken(
     api,
     read,
   )({

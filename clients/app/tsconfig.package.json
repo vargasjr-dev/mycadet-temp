@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "rootDir": "./src",
+    "outDir": "./dist/package/types"
+  },
+  "include": ["src/index.ts", "src/assistant/resolution-contract.ts"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
+}

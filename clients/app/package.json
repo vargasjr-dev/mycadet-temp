@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
+    ".": "./src/index.ts",
+    "./contracts": "./src/assistant/resolution-contract.ts",
     "./*": "./src/*"
   },
   "dependencies": {
@@ -33,6 +35,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",
     "tailwindcss": "4.1.8",
+    "typescript": "5.9.3",
     "vite": "8.0.11"
   },
   "scripts": {
@@ -43,6 +46,7 @@
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "build:package": "bun scripts/build-package.ts"
   }
 }

@@ -6,7 +6,7 @@ function header(value: string | string[] | undefined): string | undefined {
 }
 
 /** A dev-host token is forwarded only on browser-proven loopback requests. */
-export function injectPlatformToken(
+export function injectCloudSessionToken(
   apiMode: boolean,
   readToken: () => string | null,
 ) {
