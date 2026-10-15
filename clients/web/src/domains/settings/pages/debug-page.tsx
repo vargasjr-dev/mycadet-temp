@@ -4,7 +4,6 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { AllConversationsView } from "@/domains/settings/components/all-conversations-view";
-import { AssistantTerminalPanel } from "@/domains/settings/components/panels/assistant-terminal-panel";
 import { DatabaseDebugPanel } from "@/domains/settings/components/panels/database-debug-panel";
 import { DebugControlsPanel } from "@/domains/settings/components/panels/debug-controls-panel";
 import { DoctorPanel } from "@/domains/settings/components/panels/doctor-panel";
@@ -20,11 +19,6 @@ const ALL_TABS = [
     id: "general",
     labelKey: "debugPage.tabs.general",
     defaultLabel: "General",
-  },
-  {
-    id: "terminal",
-    labelKey: "debugPage.tabs.terminal",
-    defaultLabel: "Terminal",
   },
   { id: "doctor", labelKey: "debugPage.tabs.doctor", defaultLabel: "Doctor" },
   {
@@ -56,19 +50,16 @@ export function DebugPage() {
     },
     [navigate],
   );
-  // Terminal and Doctor are platform-routed and must be hidden when the active
+  // Doctor is platform-routed and must be hidden when the active
   // assistant is self-hosted — `cloudHostedOnly: true` is the correct
   // variant. The standard gate still resolves to "full" on a cloud-mode app
-  // pointed at a self-hosted assistant, leaving the tabs visible and letting the
-  // user land on a doomed terminal/doctor connection.
+  // pointed at a self-hosted assistant, leaving the tab visible and letting the
+  // user land on a doomed doctor connection.
   const cloudGate = useCloudGate({ cloudHostedOnly: true });
 
   const tabs = useMemo(
     () =>
       ALL_TABS.filter((tab) => {
-        if (tab.id === "terminal" && cloudGate === "gated") {
-          return false;
-        }
         if (tab.id === "doctor" && cloudGate === "gated") {
           return false;
         }
@@ -120,14 +111,6 @@ export function DebugPage() {
         <Tabs.Panel value="general" className="pt-4">
           <DebugControlsPanel />
         </Tabs.Panel>
-        {tabs.some((tab) => tab.id === "terminal") && (
-          <Tabs.Panel
-            value="terminal"
-            className="flex min-h-0 flex-1 flex-col pt-4"
-          >
-            <AssistantTerminalPanel />
-          </Tabs.Panel>
-        )}
         {tabs.some((tab) => tab.id === "doctor") && (
           <Tabs.Panel
             value="doctor"

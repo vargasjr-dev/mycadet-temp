@@ -15,12 +15,10 @@ This is the **default mode** for any work that doesn't require access to the use
 3. The user can observe any session in real time by running:
 
    ```
-   cadet terminal attach <session-name>
+   tmux attach -t <session-name>
    ```
 
-   > **Note:** `cadet terminal attach` requires a cloud (cloud-hosted) assistant. For local/Docker setups, use `tmux attach -t <session-name>` directly.
-
-   This opens a live, read-write terminal view of that session in the Cadet UI.
+   > **Note:** `tmux attach` runs on the machine hosting the sandbox (via the assistant host's shell). This opens a live, read-write terminal view of that session.
 
 ## Benefits
 
@@ -39,8 +37,8 @@ tmux send-keys -t frontend 'npm run dev' Enter
 # Check on it after a few turns
 tmux capture-pane -t frontend -p -S -50
 
-# User attaches to watch live output in Cadet terminal:
-# cadet terminal attach frontend
+# User attaches to watch live output (on the sandbox host's terminal):
+# tmux attach -t frontend
 ```
 
 ## When to Use Sandbox Mode

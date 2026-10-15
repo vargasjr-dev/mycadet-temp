@@ -802,9 +802,6 @@
     "shopifyLabel": "Dominio de la tienda",
     "shopifyPlaceholder": "tu-tienda.myshopify.com"
   },
-  "terminalPanel": {
-    "recoveryModeBanner": "Modo de recuperación activo: esta sesión está conectada al terminal de depuración."
-  },
   "themeStagePage": {
     "accentFill": "Relleno de acento",
     "activeBorder": "Borde activo",

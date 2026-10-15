@@ -186,15 +186,6 @@
     "usedOf": "{used} used of {total}",
     "version": "Version"
   },
-  "assistantTerminalPanel": {
-    "loadErrorToast": "Failed to load assistant info",
-    "loading": "Loading terminal...",
-    "loginNotice": "Log in to Cadet Cloud to open a terminal session.",
-    "noAssistant": "No assistant found. Hatch an assistant to use the terminal.",
-    "subtitle": "Interactive shell session on your assistant machine",
-    "targetContainer": "Target container",
-    "title": "Terminal"
-  },
   "assistantUpgrades": {
     "alreadyOnVersion": "You are already on this version.",
     "confirmPreviewMessage": "Update to preview version {version}? The assistant will be briefly unavailable during the update.",
@@ -2440,7 +2431,6 @@
   "debugPage": {
     "tabs": {
       "general": "General",
-      "terminal": "Terminal",
       "doctor": "Doctor",
       "database": "Database",
       "conversations": "Conversations",

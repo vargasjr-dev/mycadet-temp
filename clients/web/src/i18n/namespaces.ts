@@ -47,7 +47,6 @@ export const NAMESPACES = [
   "channels",
   "settings",
   "workspace",
-  "terminal",
   "remote-web",
   "credential-requests",
   "logs",

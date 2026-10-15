@@ -804,9 +804,6 @@
     "shopifyLabel": "店铺域名",
     "shopifyPlaceholder": "your-store.myshopify.com"
   },
-  "terminalPanel": {
-    "recoveryModeBanner": "恢复模式已激活：此会话已连接到调试终端。"
-  },
   "themeStagePage": {
     "accentFill": "强调色填充",
     "activeBorder": "活动边框",

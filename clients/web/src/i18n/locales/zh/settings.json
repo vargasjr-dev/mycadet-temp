@@ -186,15 +186,6 @@
     "usedOf": "已用 {used} / 总计 {total}",
     "version": "版本"
   },
-  "assistantTerminalPanel": {
-    "loadErrorToast": "加载助手信息失败",
-    "loading": "正在加载终端...",
-    "loginNotice": "登录 Cadet 平台以打开终端会话。",
-    "noAssistant": "未找到助手。孵化一个助手以使用终端。",
-    "subtitle": "助手机器上的交互式 shell 会话",
-    "targetContainer": "目标容器",
-    "title": "终端"
-  },
   "assistantUpgrades": {
     "alreadyOnVersion": "您已是此版本。",
     "confirmPreviewMessage": "更新到预览版本 {version}？更新期间助手将暂时不可用。",
@@ -2334,7 +2325,6 @@
   "debugPage": {
     "tabs": {
       "general": "常规",
-      "terminal": "终端",
       "doctor": "诊断",
       "database": "数据库",
       "conversations": "会话",

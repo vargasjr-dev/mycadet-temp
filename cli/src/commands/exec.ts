@@ -1,7 +1,6 @@
 import { existsSync } from "fs";
 import { join } from "path";
 
-import { isCloudHome } from "../lib/cloud-values.js";
 import { spawn } from "child_process";
 import { red } from "../lib/color";
 
@@ -9,13 +8,7 @@ import { resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import type { ServiceName } from "../lib/docker";
 import { execAppleContainer } from "../lib/exec-apple-container";
-import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/ssh-apple-container";
-import {
-  interactiveSession,
-  nonInteractiveExec,
-  shellEscapeArgs,
-} from "../lib/terminal-session";
 
 const SERVICE_ALIASES: Record<string, ServiceName> = {
   assistant: "assistant",
@@ -86,12 +79,6 @@ export const exec = Object.assign(
     console.log(
       "  -it                 Interactive mode with TTY (like docker exec -it)",
     );
-    console.log(
-      "  --timeout <secs>    Timeout in seconds — default 30, 0 = no timeout",
-    );
-    console.log(
-      "  --verbose           Show debug output",
-    );
     console.log("");
     console.log("Services:");
     console.log("  assistant");
@@ -126,23 +113,12 @@ export const exec = Object.assign(
   let nameArg: string | undefined;
   let serviceRaw = "assistant";
   let interactive = false;
-  let verbose = false;
-  let timeoutMs = 30_000;
 
   for (let i = 0; i < preArgs.length; i++) {
     if (preArgs[i] === "--service" && preArgs[i + 1]) {
       serviceRaw = preArgs[++i];
     } else if (preArgs[i] === "-it" || preArgs[i] === "-ti") {
       interactive = true;
-    } else if (preArgs[i] === "--timeout" && preArgs[i + 1]) {
-      const secs = Number(preArgs[++i]);
-      if (!Number.isFinite(secs) || secs < 0) {
-        console.error(red("Error: --timeout must be a non-negative number."));
-        process.exit(1);
-      }
-      timeoutMs = secs === 0 ? 0 : secs * 1000;
-    } else if (preArgs[i] === "--verbose") {
-      verbose = true;
     } else if (!preArgs[i].startsWith("-")) {
       nameArg = preArgs[i];
     }
@@ -239,42 +215,6 @@ export const exec = Object.assign(
         }
       });
       child.on("error", reject);
-    });
-    return;
-  }
-
-  if (isCloudHome(cloud)) {
-    const token = readCloudToken();
-    if (!token) {
-      console.error(
-        red("Not logged in. Run `cadet login` first to authenticate with Cadet Cloud."),
-      );
-      process.exit(1);
-    }
-
-    const assistant = {
-      assistantId: entry.assistantId,
-      token,
-      cloudUrl: getCloudUrl(),
-    };
-
-    const serviceParam = service === "assistant" ? undefined : service;
-
-    if (interactive) {
-      // Interactive mode: shell-escape argv and delegate to full terminal
-      await interactiveSession(
-        assistant,
-        shellEscapeArgs(command),
-        serviceParam,
-      );
-      return;
-    }
-
-    // Non-interactive: sentinel-based output capture with exit code
-    await nonInteractiveExec(assistant, command, {
-      verbose,
-      timeoutMs,
-      service: serviceParam,
     });
     return;
   }

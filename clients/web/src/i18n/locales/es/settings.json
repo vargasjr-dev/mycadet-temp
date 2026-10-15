@@ -186,15 +186,6 @@
     "usedOf": "{used} usados de {total}",
     "version": "Versión"
   },
-  "assistantTerminalPanel": {
-    "loadErrorToast": "No se pudo cargar la información del asistente",
-    "loading": "Cargando terminal...",
-    "loginNotice": "Inicia sesión en la plataforma Cadet para abrir una sesión de terminal.",
-    "noAssistant": "No se encontró ningún asistente. Crea un asistente para usar la terminal.",
-    "subtitle": "Sesión de shell interactiva en la máquina de tu asistente",
-    "targetContainer": "Contenedor de destino",
-    "title": "Terminal"
-  },
   "assistantUpgrades": {
     "alreadyOnVersion": "Ya estás en esta versión.",
     "confirmPreviewMessage": "¿Actualizar a la versión de vista previa {version}? El asistente no estará disponible por un momento durante la actualización.",

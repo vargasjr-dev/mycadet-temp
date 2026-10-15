@@ -96,23 +96,11 @@ To self-host on a cloud VM (AWS, GCP, or any other provider), SSH into the machi
 
 ### `terminal`
 
-Open an interactive shell into a cloud assistant container. Useful for debugging, inspecting state, or working alongside the assistant in a shared `tmux` session.
+Open an interactive shell into an assistant's container or machine. Dispatches by cloud type: `docker exec` for docker assistants, `gcloud compute ssh` for GCP assistants, raw `ssh` for custom hosts, and the container management socket for apple-container assistants.
 
 ```bash
 cadet terminal [name] [options]
-cadet terminal attach <session> [name] [options]
-cadet terminal list [name] [options]
 ```
-
-Only available for cloud assistants (those running in a Cadet Cloud container). Local assistants don't have a container to terminal into.
-
-#### Subcommands
-
-| Subcommand         | Description                                                        |
-| ------------------ | ------------------------------------------------------------------ |
-| _(none)_           | Open an interactive shell session inside the container.            |
-| `attach <session>` | Attach to an existing `tmux` session by name inside the container. |
-| `list`             | List the `tmux` sessions currently running inside the container.   |
 
 #### Options
 
@@ -121,27 +109,18 @@ Only available for cloud assistants (those running in a Cadet Cloud container). 
 | `[name]`             | Positional. Name of the assistant to target. Defaults to the active assistant set via `cadet use`. |
 | `--assistant <name>` | Explicit form of the assistant name. Equivalent to the positional argument.                        |
 
-If no assistant is named and no active assistant is set, the CLI uses the only managed assistant in the lockfile -- or errors out if there's more than one. Use `cadet ps` to see your assistants and `cadet use <name>` to set the active one.
+If no assistant is named and no active assistant is set, the CLI uses the only assistant in the lockfile -- or errors out if there's more than one. Use `cadet ps` to see your assistants and `cadet use <name>` to set the active one.
 
 #### Examples
 
 ```bash
-# Open a shell in the active managed assistant
+# Open a shell in the active assistant
 cadet terminal
 
 # Target a specific assistant by name
 cadet terminal my-assistant
 cadet terminal --assistant my-assistant
-
-# List running tmux sessions inside the container
-cadet terminal list
-
-# Attach to a named tmux session
-cadet terminal attach my-session
-cadet terminal attach my-session my-assistant
 ```
-
-This pairs well with the [`terminal-sessions` skill](https://github.com/vargasjr-dev/mycadet/tree/main/skills/terminal-sessions), which lets the assistant create and manage its own `tmux` sessions. You can `cadet terminal attach` into one of those sessions to watch the assistant work in real time -- for example, pairing on a long-running Claude Code run.
 
 ### `retire`
 

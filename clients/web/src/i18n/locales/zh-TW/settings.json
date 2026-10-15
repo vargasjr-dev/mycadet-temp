@@ -186,15 +186,6 @@
     "usedOf": "已使用 {used} / 共 {total}",
     "version": "版本"
   },
-  "assistantTerminalPanel": {
-    "loadErrorToast": "載入助理資訊失敗",
-    "loading": "正在載入終端機...",
-    "loginNotice": "請登入 Cadet 平台以開啟終端機工作階段。",
-    "noAssistant": "找不到助理。孵化一個助理以使用終端機。",
-    "subtitle": "助理機器上的互動式 shell 工作階段",
-    "targetContainer": "目標容器",
-    "title": "終端機"
-  },
   "assistantUpgrades": {
     "alreadyOnVersion": "您已是此版本。",
     "confirmPreviewMessage": "更新至預覽版本 {version}？更新期間助理將暫時無法使用。",
@@ -2334,7 +2325,6 @@
   "debugPage": {
     "tabs": {
       "general": "一般",
-      "terminal": "終端機",
       "doctor": "診斷",
       "database": "資料庫",
       "conversations": "對話",

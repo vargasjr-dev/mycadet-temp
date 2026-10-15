@@ -1,6 +1,6 @@
 /**
  * Pure `?tab=` resolution for the Debug page, split out so the legacy-archive
- * mapping is testable without mounting the page's terminal/doctor panels.
+ * mapping is testable without mounting the page's doctor panel.
  */
 
 import type { ConversationFilter } from "@/domains/settings/hooks/use-all-conversations-data.helpers";
