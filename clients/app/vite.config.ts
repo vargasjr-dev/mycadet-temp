@@ -16,7 +16,7 @@ const DESIGN_SRC = path.resolve(
   "../../packages/design-library/src",
 );
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const library = process.env.APP_BUILD_TARGET === "package";
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
@@ -45,6 +45,18 @@ export default defineConfig(({ mode }) => {
     publicDir: library ? false : "../web/public",
     resolve: {
       alias: [
+        ...(command === "serve"
+          ? [
+              {
+                find: "@mycadet/app/contracts",
+                replacement: path.resolve(APP_SRC, "contracts.ts"),
+              },
+              {
+                find: "@mycadet/app",
+                replacement: path.resolve(APP_SRC, "index.ts"),
+              },
+            ]
+          : []),
         { find: /^@design\//, replacement: DESIGN_SRC + "/" },
         { find: /^@app\//, replacement: APP_SRC + "/" },
         { find: /^@web\//, replacement: WEB_SRC + "/" },
