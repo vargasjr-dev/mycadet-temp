@@ -983,13 +983,6 @@
     "showMeAround": "Muéstrame cómo funciona",
     "skipTour": "Omitir recorrido"
   },
-  "inChatPluginPill": {
-    "ariaLabel": "Plugins del chat, {count} activos",
-    "costCaption": "Cambiar la configuración de plugins puede generar costes altos.",
-    "countLabel": "{count, plural, one {# plugin} other {# plugins}}",
-    "manage": "Administrar",
-    "plugins": "Plugins"
-  },
   "inlineProcessCard": {
     "stop": "Detener"
   },
@@ -1370,16 +1363,6 @@
     "icon": "Icono",
     "name": "Nombre",
     "noIcon": "Sin icono"
-  },
-  "newChatPluginsPicker": {
-    "heading": "Añadir plugins para el chat nuevo",
-    "managePlugins": "Administrar plugins",
-    "showAll": "Mostrar todos (+{count})",
-    "showLess": "Mostrar menos",
-    "tooltip": "Elige qué plugins puede usar este chat. Tu selección se aplica al enviar el primer mensaje y permanece con esta conversación."
-  },
-  "newChatPluginsSection": {
-    "managePlugins": "Gestionar plugins"
   },
   "oauthConnectSurface": {
     "approvalAria": "Acerca de la aprobación del asistente",

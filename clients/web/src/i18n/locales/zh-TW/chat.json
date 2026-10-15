@@ -1020,13 +1020,6 @@
     "showMeAround": "帶我看看",
     "skipTour": "跳過導覽"
   },
-  "inChatPluginPill": {
-    "ariaLabel": "聊天外掛程式，{count} 個啟用中",
-    "costCaption": "變更外掛程式設定可能會產生高額費用。",
-    "countLabel": "{count, plural, other {# 個外掛程式}}",
-    "manage": "管理",
-    "plugins": "外掛程式"
-  },
   "inlineProcessCard": {
     "stop": "停止"
   },
@@ -1408,16 +1401,6 @@
     "icon": "圖示",
     "name": "名稱",
     "noIcon": "無圖示"
-  },
-  "newChatPluginsPicker": {
-    "heading": "為新聊天新增外掛程式",
-    "managePlugins": "管理外掛程式",
-    "showAll": "顯示全部 (+{count})",
-    "showLess": "顯示較少",
-    "tooltip": "選擇此聊天可使用的外掛程式。您的選擇將在您傳送第一則訊息時套用，並保留在此對話中。"
-  },
-  "newChatPluginsSection": {
-    "managePlugins": "管理外掛程式"
   },
   "oauthConnectSurface": {
     "approvalAria": "關於助理核准",

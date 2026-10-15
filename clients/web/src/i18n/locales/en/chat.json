@@ -1037,13 +1037,6 @@
     "showMeAround": "Show me around",
     "skipTour": "Skip tour"
   },
-  "inChatPluginPill": {
-    "ariaLabel": "Chat plugins, {count} active",
-    "costCaption": "Changing plugin settings can incur high costs.",
-    "countLabel": "{count, plural, one {# plugin} other {# plugins}}",
-    "manage": "Manage",
-    "plugins": "Plugins"
-  },
   "inlineProcessCard": {
     "stop": "Stop"
   },
@@ -1425,16 +1418,6 @@
     "icon": "Icon",
     "name": "Name",
     "noIcon": "No icon"
-  },
-  "newChatPluginsPicker": {
-    "heading": "Add plugins for new chat",
-    "managePlugins": "Manage Plugins",
-    "showAll": "Show all (+{count})",
-    "showLess": "Show less",
-    "tooltip": "Choose which plugins this chat can use. Your selection is applied when you send your first message and stays with this conversation."
-  },
-  "newChatPluginsSection": {
-    "managePlugins": "Manage Plugins"
   },
   "oauthConnectSurface": {
     "approvalAria": "About assistant approval",

@@ -1020,13 +1020,6 @@
     "showMeAround": "带我看看",
     "skipTour": "跳过导览"
   },
-  "inChatPluginPill": {
-    "ariaLabel": "聊天插件，{count} 个活跃",
-    "costCaption": "更改插件设置可能会产生高额费用。",
-    "countLabel": "{count, plural, other {# 个插件}}",
-    "manage": "管理",
-    "plugins": "插件"
-  },
   "inlineProcessCard": {
     "stop": "停止"
   },
@@ -1408,16 +1401,6 @@
     "icon": "图标",
     "name": "名称",
     "noIcon": "无图标"
-  },
-  "newChatPluginsPicker": {
-    "heading": "为新聊天添加插件",
-    "managePlugins": "管理插件",
-    "showAll": "显示全部 (+{count})",
-    "showLess": "显示更少",
-    "tooltip": "选择此聊天可使用的插件。您的选择将在您发送第一条消息时应用，并保留在此对话中。"
-  },
-  "newChatPluginsSection": {
-    "managePlugins": "管理插件"
   },
   "oauthConnectSurface": {
     "approvalAria": "关于助手批准",
