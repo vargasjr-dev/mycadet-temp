@@ -18,7 +18,6 @@ process.env.CADET_LOCKFILE_DIR = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
-import * as localRuntimeClient from "../lib/local-runtime-client.js";
 import * as cloudClient from "../lib/cloud-client.js";
 import { withPreconnect } from "./helpers/http.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
@@ -29,26 +28,9 @@ const resolveTargetMock = spyOn(
 ).mockImplementation(() => {
   throw new Error("process.exit:1");
 });
-const readCloudTokenMock = spyOn(
-  cloudClient,
-  "readCloudToken",
-).mockReturnValue("platform-token");
-const exportMock = spyOn(
-  localRuntimeClient,
-  "localRuntimeExportToGcs",
-).mockResolvedValue({ jobId: "job-1" });
-const identityMock = spyOn(
-  localRuntimeClient,
-  "localRuntimeIdentity",
-).mockResolvedValue({ version: "0.12.3" });
-const pollMock = spyOn(
-  localRuntimeClient,
-  "localRuntimePollJobStatus",
-).mockResolvedValue({
-  jobId: "job-1",
-  type: "export",
-  status: "complete",
-});
+const readCloudTokenMock = spyOn(cloudClient, "readCloudToken").mockReturnValue(
+  "platform-token",
+);
 const loadGuardianTokenSpy = spyOn(
   guardianToken,
   "loadGuardianToken",
@@ -109,13 +91,9 @@ beforeEach(() => {
   );
   resolveTargetMock.mockReset();
   resolveTargetMock.mockReturnValue(LOCAL_ENTRY);
-  identityMock.mockReset();
-  identityMock.mockResolvedValue({ version: "0.12.3" });
   leaseGuardianTokenSpy.mockClear();
   readCloudTokenMock.mockReset();
   readCloudTokenMock.mockReturnValue("platform-token");
-  exportMock.mockClear();
-  pollMock.mockClear();
 });
 
 afterEach(() => {
@@ -125,86 +103,35 @@ afterEach(() => {
 
 afterAll(() => {
   resolveTargetMock.mockRestore();
-  identityMock.mockRestore();
   leaseGuardianTokenSpy.mockRestore();
   readCloudTokenMock.mockRestore();
-  exportMock.mockRestore();
-  pollMock.mockRestore();
   loadGuardianTokenSpy.mockRestore();
   rmSync(testDir, { recursive: true, force: true });
 });
 
 describe("cadet debug", () => {
-  test("mints the URL on the cloud, exports with the debug profile, and waits", async () => {
+  test("requests sanitized logs and uploads them without runtime export jobs", async () => {
     await debug();
-
-    expect(fetchCalls).toHaveLength(1);
-    expect(fetchCalls[0].url).toBe(
+    expect(fetchCalls.map((call) => call.url)).toEqual([
       "https://cloud.mycadet.ai/v1/assistants/11111111-2222-3333-4444-555555555555/debug-bundle-upload-url/",
+      "http://127.0.0.1:7821/v1/logs/export",
+      "https://storage.googleapis.com/b/signed",
+    ]);
+    expect(fetchCalls[1].init?.method).toBe("POST");
+    expect(new Headers(fetchCalls[1].init?.headers).get("Authorization")).toBe(
+      "Bearer local-token",
     );
-    expect(fetchCalls[0].init?.method).toBe("POST");
-    expect(
-      new Headers(fetchCalls[0].init?.headers).get("Cadet-Organization-Id"),
-    ).toBe("org-1");
-
-    expect(exportMock).toHaveBeenCalledTimes(1);
-    const [entry, token, params] = exportMock.mock.calls[0];
-    expect(entry).toBe(LOCAL_ENTRY);
-    expect(token).toBe("local-token");
-    expect(params).toEqual({
-      uploadUrl: "https://storage.googleapis.com/b/signed",
-      description: "debug bundle for Cadet staff",
-      profile: "debug",
-    });
-    expect(pollMock).toHaveBeenCalled();
-    // The daemon was checked for the debug profile before the cloud call.
-    expect(identityMock).toHaveBeenCalledTimes(1);
+    expect(fetchCalls[2].init?.method).toBe("PUT");
+    expect(new Headers(fetchCalls[2].init?.headers).has("Authorization")).toBe(
+      false,
+    );
+    expect(fetchCalls[2].init?.body).toBeInstanceOf(Blob);
   });
 
   test("passes an unquoted multi-word display name through to the shared resolver", async () => {
     process.argv = ["bun", "cadet", "debug", "Support", "Bot"];
     await debug();
     expect(resolveTargetMock).toHaveBeenCalledWith("Support Bot");
-  });
-
-  test("refuses a daemon older than the debug profile before any URL is minted", async () => {
-    // Such a daemon strips `profile` and would upload the owner's
-    // credentials to the staff bucket.
-    identityMock.mockResolvedValue({ version: "0.12.2" });
-    const errors: string[] = [];
-    const errorSpy = spyOn(console, "error").mockImplementation((msg) => {
-      errors.push(String(msg));
-    });
-    try {
-      await expect(debug()).rejects.toThrow("process.exit:1");
-    } finally {
-      errorSpy.mockRestore();
-    }
-    expect(errors.join("\n")).toContain("0.12.3");
-    expect(fetchCalls).toHaveLength(0);
-    expect(exportMock).not.toHaveBeenCalled();
-  });
-
-  test("re-leases the guardian token when the daemon answers 401 mid-poll", async () => {
-    pollMock.mockReset();
-    let polls = 0;
-    pollMock.mockImplementation(async (_entry, token) => {
-      polls += 1;
-      if (polls === 1) {
-        throw new Error("Local job status check failed: 401 Unauthorized");
-      }
-      expect(token).toBe("leased-token");
-      return {
-        jobId: "job-1",
-        type: "export",
-        status: "complete",
-      };
-    });
-
-    await debug();
-
-    expect(leaseGuardianTokenSpy).toHaveBeenCalledTimes(1);
-    expect(polls).toBe(2);
   });
 
   test("explains what to turn on when the cloud refuses", async () => {
@@ -219,7 +146,6 @@ describe("cadet debug", () => {
       errorSpy.mockRestore();
     }
     expect(errors.join("\n")).toContain("Allow Staff Access");
-    expect(exportMock).not.toHaveBeenCalled();
   });
 
   test("refuses a Cadet-hosted assistant, which needs no bundle", async () => {

@@ -114,7 +114,6 @@ import { ROUTES as LOG_EXPORT_ROUTES } from "./log-export-routes.js";
 import { ROUTES as MCP_AUTH_ROUTES } from "./mcp-auth-routes.js";
 import { ROUTES as MESSAGES_LEXICAL_ROUTES } from "./messages-lexical-routes.js";
 import { ROUTES as MIGRATION_ROLLBACK_ROUTES } from "./migration-rollback-routes.js";
-import { ROUTES as MIGRATION_ROUTES } from "./migration-routes.js";
 import { ROUTES as MONITORING_ROUTES } from "./monitoring-routes.js";
 import { ROUTES as NOTIFICATION_ROUTES } from "./notification-routes.js";
 import { ROUTES as OAUTH_APPS_ROUTES } from "./oauth-apps.js";
@@ -267,7 +266,6 @@ export const ROUTES: RouteDefinition[] = [
   ...MEMORY_WORKER_ROUTES,
   ...MESSAGES_LEXICAL_ROUTES,
   ...MIGRATION_ROLLBACK_ROUTES,
-  ...MIGRATION_ROUTES,
   ...NOTIFICATION_ROUTES,
   ...OAUTH_APPS_ROUTES,
   ...OAUTH_LIFECYCLE_ROUTES,

@@ -78,6 +78,26 @@ bun run src/index.ts assistant start
 
 > **Note:** Some dependencies (`agentmail`) are optional at runtime but required for full `tsc --noEmit` type-checking to pass. They are installed automatically by `bun install`.
 
+## Installation backups
+
+The `cadet` CLI owns local and Docker backup/restore through host storage access.
+Cloud backups and restores use the cloud API and session authentication. Assistant
+and gateway processes do not create installation backups or decrypt credentials
+for archives. A root tar archive includes the workspace, gateway security, CES
+security and CES data roots, preserving encrypted credentials and their keys.
+
+Runtime `/v1/migrations/*` and `/v1/backups*` APIs return HTTP 410 at the gateway.
+Use `cadet backup` / `cadet restore` or the cloud backup API. Legacy `.vbundle`
+conversion belongs in the separate `vellum-to-cadet` repository. Existing archive
+files and historical data migrations are preserved. Startup can recover an
+interrupted workspace import journal without accepting new legacy imports.
+
+`cadet teleport` supports local-to-Docker and Docker-to-local installation moves.
+Cloud teleport and the browser transfer workflow are unavailable pending cloud
+root archive transfer. Unsupported transfers fail before changing installations.
+Support diagnostics use the sanitized multi-service `/v1/logs/export` tar archive,
+which is distinct from an installation backup and excludes credential stores.
+
 ## Security & Permissions
 
 ### Sandbox and Host Access Model
@@ -234,10 +254,10 @@ Installed managed skills are discovered from valid directories under `$CADET_WOR
 
 #### Tools
 
-| Tool                     | Risk Level | Description                                                                                                                                         |
-| ------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tool                   | Risk Level | Description                                                                                                                                      |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `scaffold_cloud_skill` | High       | Write a cloud skill to `$CADET_WORKSPACE_DIR/skills/<id>/`. Creates `SKILL.md` with frontmatter, including optional `includes` for child skills. |
-| `delete_cloud_skill`   | High       | Remove a cloud skill directory.                                                                                                                   |
+| `delete_cloud_skill`   | High       | Remove a cloud skill directory.                                                                                                                  |
 
 Both tools require explicit user approval before execution (Risk Level = High).
 
@@ -398,10 +418,10 @@ GET /v1/events?conversationId=<id>
 
 **Query params**:
 
-| Parameter         | Required | Description                                                                                                                                                                                                                                                        |
-| ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Parameter         | Required | Description                                                                                                                                                                                                                                                     |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `conversationId`  | No       | The assistant-minted internal conversation UUID. Preferred for cadet-cloud conversations. When supplied, looks up the conversation directly; 404 if it doesn't exist. When omitted (along with `conversationKey`), subscribes to events from all conversations. |
-| `conversationKey` | No       | The external key used by non-cadet channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.     |
+| `conversationKey` | No       | The external key used by non-cadet channel adapters (Telegram, WhatsApp, etc.) — same key used for `POST /v1/assistants/:id/runs`. Legacy alias on this endpoint; supported indefinitely for external clients. When both are supplied, `conversationId` wins.   |
 
 **Response**: `200 OK` with `Content-Type: text/event-stream`. Each frame is a standard SSE event:
 
@@ -518,12 +538,12 @@ CADET_DAEMON_URL=http://localhost:8741 open -a Cadet
 
 #### Troubleshooting
 
-| Symptom                                               | Check                                                    |
-| ----------------------------------------------------- | -------------------------------------------------------- |
+| Symptom                                               | Check                                                   |
+| ----------------------------------------------------- | ------------------------------------------------------- |
 | CLI: "could not connect to assistant"                 | Is the SSH port tunnel active? Check `CADET_DAEMON_URL` |
 | CLI: assistant starts locally despite remote override | Check that `CADET_DAEMON_AUTOSTART` is not set to `1`   |
-| macOS: not connecting                                 | Verify the assistant URL is reachable                    |
-| Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote)  |
+| macOS: not connecting                                 | Verify the assistant URL is reachable                   |
+| Any: "connection refused"                             | Is the remote assistant running? (`cadet ps` on remote) |
 
 ## Development Workflow
 

@@ -64,32 +64,13 @@ export const DB_MIGRATION_READINESS_EXEMPT_OPERATIONS: ReadonlySet<string> =
 /**
  * The migration-repair surface: operations additionally allowed while DB
  * migrations are in the terminal FAILED state — and only then, never while
- * they are still running. Rolling back migrations and importing a backup are
- * exactly the remedies for a failed migration (the upgrade CLI's
- * rollback/restore path), so gating them in that state would make recovery
- * impossible. Contains both the HTTP endpoint form and the IPC operationId
+ * they are still running. Rollback repairs a failed migration without racing
+ * an active migration runner. Contains both the HTTP endpoint form and the IPC operationId
  * form of each route. Bypasses only the migration gate — route policies
  * (gateway-principal scopes, guardian auth) still apply.
  */
 export const DB_MIGRATION_FAILED_STATE_EXEMPT_OPERATIONS: ReadonlySet<string> =
-  new Set([
-    "admin/rollback-migrations",
-    "admin_rollbackmigrations_post",
-    "migrations/import",
-    "migrations_import_post",
-    // Restore has three transports; all must stay repair-capable. The
-    // preflights are read-only analysis; the GCS import is the cloud
-    // platform's restore path and is job-based, so its job-status GET (a
-    // parameterized route, matched by prefix in isDbMigrationGateBypassed)
-    // must answer too.
-    "migrations/import-preflight",
-    "migrations_importpreflight_post",
-    "migrations/import-from-gcs",
-    "migrations_importfromgcs_post",
-    "migrations/preflight-from-gcs",
-    "migrations_preflightfromgcs_post",
-    "migrations_jobs_by_job_id_get",
-  ]);
+  new Set(["admin/rollback-migrations", "admin_rollbackmigrations_post"]);
 
 /**
  * Whether an operation may proceed despite unready DB migrations: always for
@@ -103,13 +84,7 @@ export function isDbMigrationGateBypassed(operation: string): boolean {
   if (dbMigrationReadiness.state !== "failed") {
     return false;
   }
-  // The HTTP gate passes the raw path after /v1/, so the parameterized
-  // job-status route (migrations/jobs/:job_id) is matched by prefix; the
-  // IPC form is the exact operationId in the set above.
-  return (
-    DB_MIGRATION_FAILED_STATE_EXEMPT_OPERATIONS.has(operation) ||
-    operation.startsWith("migrations/jobs/")
-  );
+  return DB_MIGRATION_FAILED_STATE_EXEMPT_OPERATIONS.has(operation);
 }
 
 export function setDbReady(v: boolean): void {

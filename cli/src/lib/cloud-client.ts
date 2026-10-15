@@ -146,13 +146,10 @@ const ORG_ID_CACHE_TTL_MS = 60_000; // 60 seconds
  * orgs in another tab). Clearing the entry forces the next `authHeaders`
  * call to refetch the org ID from the cloud.
  *
- * Exported so other modules (e.g. local-runtime-client) can implement the
+ * Exported so cloud API consumers can implement the
  * same retry pattern without needing direct access to the cache map.
  */
-export function invalidateOrgIdCache(
-  token: string,
-  cloudUrl?: string,
-): void {
+export function invalidateOrgIdCache(token: string, cloudUrl?: string): void {
   orgIdCache.delete(`${token}::${cloudUrl ?? ""}`);
 }
 
@@ -658,9 +655,9 @@ export async function hatchAssistant(
   }
 
   if (response.status === 401 || response.status === 403) {
-    const detail = CloudErrorDetailSchema
-      .catch({})
-      .parse(await response.json().catch(() => ({})));
+    const detail = CloudErrorDetailSchema.catch({}).parse(
+      await response.json().catch(() => ({})),
+    );
     throw new Error(
       detail.detail ??
         "Invalid or expired token. Run `cadet login` to re-authenticate.",
@@ -671,9 +668,9 @@ export async function hatchAssistant(
     throw new Error("Insufficient balance to hatch a new assistant.");
   }
 
-  const errorBody = CloudErrorDetailSchema
-    .catch({})
-    .parse(await response.json().catch(() => ({})));
+  const errorBody = CloudErrorDetailSchema.catch({}).parse(
+    await response.json().catch(() => ({})),
+  );
   throw new Error(
     errorBody.detail ??
       `Platform API error: ${response.status} ${response.statusText}`,

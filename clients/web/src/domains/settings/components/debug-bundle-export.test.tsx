@@ -7,12 +7,6 @@ let gatewayPath: string | null = "/assistant/__gateway/7830";
 const calls: string[] = [];
 let exportFails = false;
 let toastErrors: string[] = [];
-let supportsProfile = true;
-
-mock.module("@/lib/backwards-compat/use-supports-debug-export-profile", () => ({
-  MIN_VERSION: "0.12.3",
-  useSupportsDebugExportProfile: () => supportsProfile,
-}));
 
 mock.module("@/lib/local-mode", () => ({
   getSelectedAssistant: () => selected,
@@ -30,7 +24,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
   },
 }));
 
-mock.module("@/domains/settings/teleport/teleport-gateway-client", () => ({
+mock.module("@/domains/settings/components/diagnostic-export", () => ({
   exportLocalDebugBundle: async (
     assistant: { assistantId: string },
     uploadUrl: string,
@@ -40,10 +34,6 @@ mock.module("@/domains/settings/teleport/teleport-gateway-client", () => ({
       throw new Error("gateway socket missing");
     }
     return "job-1";
-  },
-  pollLocalExportJob: async (_a: unknown, jobId: string) => {
-    calls.push(`poll:${jobId}`);
-    return "complete";
   },
 }));
 
@@ -71,7 +61,7 @@ function renderRow() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <DebugBundleExport assistantId="asst-1" pollIntervalMs={10} />
+      <DebugBundleExport assistantId="asst-1" />
     </QueryClientProvider>,
   );
 }
@@ -83,11 +73,10 @@ describe("DebugBundleExport", () => {
     calls.length = 0;
     exportFails = false;
     toastErrors = [];
-    supportsProfile = true;
   });
   afterEach(() => cleanup());
 
-  test("asks the cloud for the URL, then the daemon for the export, then waits for the job", async () => {
+  test("uploads diagnostic logs after requesting the signed URL", async () => {
     renderRow();
     fireEvent.click(
       screen.getByRole("button", { name: "Export debug bundle" }),
@@ -97,7 +86,6 @@ describe("DebugBundleExport", () => {
     expect(calls).toEqual([
       "platform:asst-1",
       "export:local-1:https://bucket/signed",
-      "poll:job-1",
     ]);
   });
 
@@ -114,16 +102,6 @@ describe("DebugBundleExport", () => {
     expect(
       screen.getByRole("button", { name: "Export debug bundle" }),
     ).toBeTruthy();
-  });
-
-  test("a daemon older than the debug profile gets an update note, never the button", () => {
-    // Such a daemon would strip `profile` and upload a bundle with
-    // credentials to the staff URL.
-    supportsProfile = false;
-    renderRow();
-    expect(screen.queryByRole("button")).toBeNull();
-    screen.getByText(/update the assistant to 0\.12\.3/i);
-    expect(calls).toEqual([]);
   });
 
   test("without a local daemon it points at the desktop app instead of a button", () => {

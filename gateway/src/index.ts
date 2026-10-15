@@ -128,23 +128,14 @@ import { createPsHandler } from "./http/routes/ps.js";
 import { createTunnelStatusHandler } from "./http/routes/tunnel-status.js";
 import { createRuntimeHealthProxyHandler } from "./http/routes/runtime-health-proxy.js";
 import { createUpgradeBroadcastProxyHandler } from "./http/routes/upgrade-broadcast-proxy.js";
-import {
-  createMigrationExportProxyHandler,
-  createMigrationExportToGcsProxyHandler,
-  createMigrationImportFromGcsProxyHandler,
-  createMigrationImportProxyHandler,
-  createMigrationImportStatusProxyHandler,
-  createMigrationJobStatusProxyHandler,
-} from "./http/routes/migration-proxy.js";
 import { createMigrationRollbackProxyHandler } from "./http/routes/migration-rollback-proxy.js";
-import {
-  createListBackupsHandler,
-  createBackupSnapshotHandler,
-} from "./backup/backup-routes.js";
-import { startBackupWorker } from "./backup/backup-worker.js";
 import { createWorkspaceCommitProxyHandler } from "./http/routes/workspace-commit-proxy.js";
 import { createDesktopSetupProxyHandler } from "./http/routes/desktop-setup-proxy.js";
 import { createBrainGraphProxyHandler } from "./http/routes/brain-graph-proxy.js";
+import {
+  retiredBackupResponse,
+  RETIRED_BACKUP_PATH,
+} from "./http/routes/retired-backup.js";
 import { createLogExportHandler } from "./http/routes/log-export.js";
 import { createLogTailHandler } from "./http/routes/log-tail.js";
 import {
@@ -255,7 +246,6 @@ import { admissionPolicyRoutes } from "./ipc/admission-policy-handlers.js";
 import { channelPermissionRoutes } from "./ipc/channel-permission-handlers.js";
 import { trustVerdictRoutes } from "./ipc/trust-verdict-handlers.js";
 import { guardianDeliveryRoutes } from "./ipc/guardian-delivery-handlers.js";
-import { createDebugExportRoutes } from "./ipc/debug-export-handlers.js";
 import { createLogTailRoutes } from "./ipc/log-tail-handlers.js";
 import { createChannelSocketHealthRoutes } from "./ipc/channel-socket-health-handlers.js";
 import { createCredentialRequestIpcRoutes } from "./ipc/credential-request-handlers.js";
@@ -674,15 +664,6 @@ async function main() {
   const tunnelStatusHandler = createTunnelStatusHandler(tunnelClient);
   const runtimeHealthProxy = createRuntimeHealthProxyHandler(config);
   const upgradeBroadcastProxy = createUpgradeBroadcastProxyHandler(config);
-  const migrationExportProxy = createMigrationExportProxyHandler(config);
-  const migrationImportProxy = createMigrationImportProxyHandler(config);
-  const migrationImportStatusProxy =
-    createMigrationImportStatusProxyHandler(config);
-  const migrationExportToGcsProxy =
-    createMigrationExportToGcsProxyHandler(config);
-  const migrationImportFromGcsProxy =
-    createMigrationImportFromGcsProxyHandler(config);
-  const migrationJobStatusProxy = createMigrationJobStatusProxyHandler(config);
   const migrationRollbackProxy = createMigrationRollbackProxyHandler(config);
   const workspaceCommitProxy = createWorkspaceCommitProxyHandler(config);
   const desktopSetupProxy = createDesktopSetupProxyHandler(config);
@@ -741,12 +722,6 @@ async function main() {
   const handleAgentCard = createAgentCardHandler(configFileCache);
 
   const audioProxy = createAudioProxyHandler(config);
-
-  const backupDeps = {
-    assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
-  };
-  const handleListBackups = createListBackupsHandler(backupDeps);
-  const handleCreateBackup = createBackupSnapshotHandler(backupDeps);
 
   const handleRuntimeProxy = createRuntimeProxyHandler(config);
 
@@ -1331,72 +1306,13 @@ async function main() {
       handler: (req) => upgradeBroadcastProxy(req),
     },
 
-    // ── Migration export/import ──
-    {
-      path: "/v1/migrations/export",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => migrationExportProxy(req),
-    },
-    {
-      path: "/v1/migrations/import",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => migrationImportProxy(req),
-    },
-    {
-      // Async-job status endpoint for URL-based imports. The gateway keeps
-      // an in-memory job map keyed by the jobId it handed back in the
-      // 202 response; this lets callers poll for progress without holding
-      // an HTTP connection open for the full import duration.
-      //
-      // Trailing slash is optional to preserve compatibility with existing
-      // pollers. PlatformMigrationClient.pollImportStatus (macOS) and
-      // cli/src/lib/cloud-client.ts both hit `.../status/` against the
-      // platform API today; other callers may follow the bare-path
-      // convention (`.../status`). Regex routes in the gateway router are
-      // NOT trailing-slash-normalized, so the optionality is encoded here.
-      path: /^\/v1\/migrations\/import\/([^/]+)\/status\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      // Read-only polling endpoint — read scope, not write. Matches the
-      // convention used for other GET endpoints in this router (OAuth
-      // providers GET, OAuth apps GET) so a token
-      // profile with `settings.read` only (e.g. the `ui_page_v1`
-      // profile) can still poll import progress.
-      scope: "settings.read",
-      handler: (req, params) =>
-        migrationImportStatusProxy(req, params[0] ?? ""),
-    },
-
-    // ── Teleport-GCS migration (unified daemon-async flow) ──
-    // Registered as explicit routes (not via the runtime-proxy catch-all)
-    // for dedicated auth and timeout handling. The daemon returns 202
-    // { job_id } on POST and cheap JSON on GET, so the gateway just
-    // transparently forwards without wrapping.
-    {
-      path: "/v1/migrations/export-to-gcs",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => migrationExportToGcsProxy(req),
-    },
-    {
-      path: "/v1/migrations/import-from-gcs",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => migrationImportFromGcsProxy(req),
-    },
-    {
-      path: /^\/v1\/migrations\/jobs\/([^/]+)\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req, params) => migrationJobStatusProxy(req, params[0] ?? ""),
-    },
+    ...(["GET", "POST"] as const).map((method): RouteDefinition => ({
+      path: RETIRED_BACKUP_PATH,
+      method,
+      auth: "edge-scoped" as const,
+      scope: method === "GET" ? "settings.read" : "settings.write",
+      handler: retiredBackupResponse,
+    })),
 
     // ── Workspace commit ──
     {
@@ -1414,45 +1330,6 @@ async function main() {
       auth: "edge-scoped",
       scope: "admin.write",
       handler: (req) => migrationRollbackProxy(req),
-    },
-
-    // ── Backups ──
-    {
-      path: "/v1/backups",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleListBackups(req),
-    },
-    {
-      path: "/v1/backups/create",
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleCreateBackup(req),
-    },
-
-    // ── Backups — assistant-scoped variants ──
-    // Mirror the flat /v1/backups routes for clients that use the daemon
-    // SDK's assistant-scoped URLs (/v1/assistants/<id>/backups/...).
-    // Without these, the request falls through to the runtime-proxy
-    // catch-all and the daemon rejects create ("moved to gateway").
-    // Backups are gateway-global, so the assistant id is matched and
-    // discarded. Same precedent as the trust-rules assistant-scoped
-    // variants below.
-    {
-      path: /^\/v1\/assistants\/[^/]+\/backups\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "settings.read",
-      handler: (req) => handleListBackups(req),
-    },
-    {
-      path: /^\/v1\/assistants\/[^/]+\/backups\/create\/?$/,
-      method: "POST",
-      auth: "edge-scoped",
-      scope: "settings.write",
-      handler: (req) => handleCreateBackup(req),
     },
 
     // ── Platform push / Live Activity tokens ──
@@ -2029,7 +1906,7 @@ async function main() {
     port: config.port,
     idleTimeout: 0,
     // Match the daemon's 512 MB limit (assistant/src/runtime/http-server.ts)
-    // so large .vbundle imports proxied through the gateway aren't rejected.
+    // to accommodate large app package uploads.
     maxRequestBodySize: 512 * 1024 * 1024,
     websocket: {
       open(ws) {
@@ -3109,7 +2986,6 @@ async function main() {
     ...guardianDeliveryRoutes,
     ...riskClassificationRoutes,
     ...createLogTailRoutes(config),
-    ...createDebugExportRoutes(config),
     ...createChannelSocketHealthRoutes({
       slack: () => slackSocketClient,
       discord: () => discordGatewayClient,
@@ -3126,11 +3002,6 @@ async function main() {
   ipcServer.start();
 
   void refreshRouteSchema();
-
-  // ── Backup worker ──
-  const backupWorkerHandle = startBackupWorker({
-    assistantRuntimeBaseUrl: config.assistantRuntimeBaseUrl,
-  });
 
   let tunnelWebhooksEnabled = isFeatureFlagEnabled("tunnel-webhooks");
   emitFlagChanged = () => {
@@ -3205,7 +3076,6 @@ async function main() {
     draining = true;
     const shutdownTasks: Promise<void>[] = [];
     sleepWakeDetector.stop();
-    backupWorkerHandle.stop();
     credentialWatcher.stop();
     configFileWatcher.stop();
     featureFlagWatcher.stop();

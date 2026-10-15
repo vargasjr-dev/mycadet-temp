@@ -262,7 +262,8 @@ export function buildReplayState(
     cesServiceToken:
       capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
     signingKey:
-      gatewayEnv["ACTOR_TOKEN_SIGNING_KEY"] || capturedEnv["ACTOR_TOKEN_SIGNING_KEY"],
+      gatewayEnv["ACTOR_TOKEN_SIGNING_KEY"] ||
+      capturedEnv["ACTOR_TOKEN_SIGNING_KEY"],
     extraAssistantEnv,
     extraGatewayEnv,
   };
@@ -545,12 +546,8 @@ export async function rollbackMigrations(
 }
 
 /**
- * Recovery step for a reverted stack that reports terminally failed
- * migrations: import the backup (the failed-state migrations/import
- * exemption admits it, and the import replaces the DB wholesale), then
- * restart the containers — the failed readiness latch only clears on
- * restart — and re-check readiness. Shared by the upgrade failure branch
- * and performDockerRollback's auto-rollback.
+ * Restore the host root archive for a reverted stack with failed migrations,
+ * restart its containers, and check readiness before resuming the installation.
  */
 export async function attemptFailedStateRestore(opts: {
   runtimeUrl: string;
@@ -710,7 +707,9 @@ export async function performDockerRollback(
     console.log(`   Backup saved: ${preRollbackBackupPath}\n`);
     pruneOldBackups(entry.assistantId, 3, "pre-rollback");
   } else {
-    throw new Error("Pre-rollback root backup failed; rollback aborted before replacing services.");
+    throw new Error(
+      "Pre-rollback root backup failed; rollback aborted before replacing services.",
+    );
   }
 
   const {
@@ -793,13 +792,35 @@ export async function performDockerRollback(
   let ready = false;
   try {
     console.log("Creating stopped containers with the target version...");
-    await startContainers({ signingKey, bootstrapSecret, cesServiceToken, extraAssistantEnv, extraGatewayEnv, gatewayPort, assistantPort, imageTags: targetImageTags, instanceName, res, createOnly: true }, (msg) => console.log(msg));
-    if (!await restoreBackup(entry.runtimeUrl, entry.assistantId, backupPath, { resume: false })) throw new Error("Target backup roots could not be restored.");
+    await startContainers(
+      {
+        signingKey,
+        bootstrapSecret,
+        cesServiceToken,
+        extraAssistantEnv,
+        extraGatewayEnv,
+        gatewayPort,
+        assistantPort,
+        imageTags: targetImageTags,
+        instanceName,
+        res,
+        createOnly: true,
+      },
+      (msg) => console.log(msg),
+    );
+    if (
+      !(await restoreBackup(entry.runtimeUrl, entry.assistantId, backupPath, {
+        resume: false,
+      }))
+    )
+      throw new Error("Target backup roots could not be restored.");
     await wakeContainers(res);
     console.log("Waiting for restored assistant to become ready...");
     ready = await waitForReady(entry.runtimeUrl);
   } catch (error) {
-    console.error(`Versioned restore failed: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `Versioned restore failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   if (ready) {
@@ -949,7 +970,9 @@ export async function performDockerRollback(
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {
-              throw new Error(`Root restore failed; rollback recovery is incomplete. Backup: ${preRollbackBackupPath}`);
+              throw new Error(
+                `Root restore failed; rollback recovery is incomplete. Backup: ${preRollbackBackupPath}`,
+              );
             }
           }
 

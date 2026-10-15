@@ -16,7 +16,6 @@ import { attachmentHelp } from "./commands/attachment.help.js";
 import { auditHelp } from "./commands/audit.help.js";
 import { authHelp } from "./commands/auth.help.js";
 import { avatarHelp } from "./commands/avatar.help.js";
-import { backupHelp } from "./commands/backup.help.js";
 import { bashHelp } from "./commands/bash.help.js";
 import { browserHelp } from "./commands/browser.help.js";
 import { cacheHelp } from "./commands/cache.help.js";
@@ -67,7 +66,6 @@ export const CLI_COMMAND_HELP: readonly CliCommandHelp[] = [
   auditHelp,
   authHelp,
   avatarHelp,
-  backupHelp,
   bashHelp,
   browserHelp,
   cacheHelp,

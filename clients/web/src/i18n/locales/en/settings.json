@@ -109,7 +109,7 @@
     "exportDownloading": "Downloading…",
     "exportExporting": "Exporting…",
     "exportFailedToast": "Failed to export the assistant.",
-    "exportMessage": "Download a copy of this assistant's current state as a .vbundle file. Preparing it can take a few minutes.\n\nCredentials aren't included, so you'll need to reconnect your integrations after importing it elsewhere.",
+    "exportMessage": "Download a .tar.gz archive of the whole installation, including encrypted credentials and the keys needed to read them. Keep this archive private.",
     "exportPreparing": "Preparing…",
     "exportTitle": "Export Assistant",
     "loadFailed": "Failed to load backups.",
@@ -126,7 +126,8 @@
     "typeDoctor": "Doctor",
     "typePointInTime": "Point-in-time",
     "typePreview": "Preview",
-    "typeScheduled": "Scheduled"
+    "typeScheduled": "Scheduled",
+    "cliOnly": "Use cadet backup and cadet restore in a terminal for local or Docker installations."
   },
   "assistantPicker": {
     "active": "Active",
@@ -651,7 +652,7 @@
     "toggleSubtitle": "Daily limit only applies to extra usage credits"
   },
   "debugBundleExport": {
-    "description": "Cadet staff can't reach this computer. To let them look, export a debug bundle: your assistant's workspace, its logs, and the gateway's own database, with no credentials. It is kept for 7 days.",
+    "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
     "exporting": "Exporting…",
     "sentAt": "Sent to Cadet at {time}.",
@@ -1980,7 +1981,8 @@
     "tryAgain": "Try Again",
     "unsupportedDestination": "Unsupported teleport destination.",
     "verifyMessage": "Verify your new assistant is working, then confirm to switch to it.",
-    "verifyTitle": "Transfer complete"
+    "verifyTitle": "Transfer complete",
+    "cliOnly": "Use cadet teleport in a terminal to move the whole installation between local and Docker. Cloud teleport is unavailable until cloud root archive transfer is supported."
   },
   "textToSpeechCard": {
     "subtitle": "Configure how your assistant speaks",

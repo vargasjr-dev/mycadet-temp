@@ -21,7 +21,6 @@ import {
   type ManagedExportStep,
 } from "@/domains/settings/teleport/cloud-export";
 import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
-import { TeleportError } from "@/domains/settings/teleport/teleport-types";
 import {
   useActiveAssistantIsCloudHosted,
   useCloudGate,
@@ -83,6 +82,15 @@ function formatTimestamp(value: unknown): string {
 }
 
 export function AssistantBackups({ assistantId }: { assistantId: string }) {
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
+  const { t } = useTranslation("settings");
+  if (!isCloudHosted) {
+    return <p>{t("assistantBackups.cliOnly")}</p>;
+  }
+  return <CloudAssistantBackups assistantId={assistantId} />;
+}
+
+function CloudAssistantBackups({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const [resolvedId, setResolvedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -227,7 +235,7 @@ export function AssistantBackups({ assistantId }: { assistantId: string }) {
     } catch (err) {
       captureError(err, { context: "assistant-backups-export" });
       toast.error(t("assistantBackups.exportFailedToast"), {
-        description: err instanceof TeleportError ? err.message : undefined,
+        description: err instanceof Error ? err.message : undefined,
       });
     } finally {
       setExportStep(null);
