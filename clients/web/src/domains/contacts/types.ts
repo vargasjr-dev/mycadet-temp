@@ -22,6 +22,6 @@ export interface ContactSummary extends Pick<
 > {
   contactType?: ContactPayload["contactType"] | null;
   channelTypes?: string[]; // client-only display labels, not on the wire
-  /** Any usable channel is verified (or a connected A2A peer). */
+  /** Any usable channel is verified. */
   verified?: boolean;
 }

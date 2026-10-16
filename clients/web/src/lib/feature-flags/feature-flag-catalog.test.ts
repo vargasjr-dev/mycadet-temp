@@ -47,18 +47,6 @@ describe("feature flag catalog", () => {
     );
   });
 
-  test("exposes the activation flow experiment as a client string flag", () => {
-    expect(CLIENT_STRING_FLAG_DEFAULTS.experimentActivationFlow20260603).toBe(
-      "control",
-    );
-    expect("experimentActivationFlow20260603" in CLIENT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect("experimentActivationFlow20260603" in ASSISTANT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-  });
-
   test("exposes the activation checklist as a client string flag defaulted off", () => {
     expect(
       CLIENT_STRING_FLAG_DEFAULTS.experimentActivationChecklist20260910,
@@ -190,14 +178,14 @@ describe("getEnvFlagOverridesForScope", () => {
         // assistant-only flag (boolean) — should be excluded from client scope
         "settings-developer-nav": true,
         // client-visible flag (string)
-        "experiment-activation-flow-2026-06-03": "variant-a",
+        "experiment-activation-checklist-2026-09-10": "variant-a",
       },
     };
 
     const result = getEnvFlagOverridesForScope("client");
     expect(result.bool).toEqual({ velvet: true });
     expect(result.str).toEqual({
-      experimentActivationFlow20260603: "variant-a",
+      experimentActivationChecklist20260910: "variant-a",
     });
     expect(result.bool).not.toHaveProperty("settingsDeveloperNav");
   });

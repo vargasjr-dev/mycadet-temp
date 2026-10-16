@@ -7,5 +7,4 @@ export type {
   WhatsAppInboundEvent,
   SlackInboundEvent,
   EmailInboundEvent,
-  A2aInboundEvent,
 } from "./channels/inbound-event.js";

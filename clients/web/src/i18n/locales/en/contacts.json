@@ -18,7 +18,6 @@
     "slack": "Slack",
     "telegram": "Telegram",
     "whatsapp": "WhatsApp",
-    "a2a": "A2A",
     "phone": "Phone",
     "email": "Email",
     "discord": "Discord"
@@ -93,20 +92,6 @@
   "accountLink": {
     "linked": "Linked as @{username}",
     "linkFailed": "Failed to link account"
-  },
-  "connectPage": {
-    "invalidTitle": "Invalid invite link",
-    "invalidBody": "The link you followed is missing required parameters and cannot be used.",
-    "goToContacts": "Go to Contacts",
-    "title": "Connect assistants",
-    "body": "Accepting this link will create a trusted A2A connection between your assistant and the sender's.",
-    "alreadyConnected": "Already connected",
-    "connected": "Connected!",
-    "errorExpired": "This invite link has expired or already been used.",
-    "errorAlreadyRedeemed": "This invite has already been claimed by someone else.",
-    "errorSenderNotFound": "The sender's assistant could not be found.",
-    "errorNotPlatformManaged": "A2A invite links are only supported for cloud-hosted assistants.",
-    "errorGeneric": "Something went wrong. Please try again."
   },
   "channelStatus": {
     "connected": "Connected",

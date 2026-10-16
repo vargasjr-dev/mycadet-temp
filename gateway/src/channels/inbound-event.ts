@@ -17,7 +17,7 @@ import type { ChannelId } from "./types.js";
 
 export type InboundChannelId = Extract<
   ChannelId,
-  "telegram" | "whatsapp" | "slack" | "email" | "a2a" | "discord" | "plugin"
+  "telegram" | "whatsapp" | "slack" | "email" | "discord" | "plugin"
 >;
 
 export type GatewayInboundAttachment = {
@@ -161,7 +161,6 @@ export type TelegramInboundEvent = InboundEventBase<"telegram">;
 export type WhatsAppInboundEvent = InboundEventBase<"whatsapp">;
 export type SlackInboundEvent = InboundEventBase<"slack">;
 export type EmailInboundEvent = InboundEventBase<"email">;
-export type A2aInboundEvent = InboundEventBase<"a2a">;
 /**
  * Constructed by `discord/normalize.ts`. `conversationExternalId` is the
  * channel snowflake (the parent channel when the message is in a thread, the
@@ -185,7 +184,6 @@ export type GatewayInboundEvent =
   | WhatsAppInboundEvent
   | SlackInboundEvent
   | EmailInboundEvent
-  | A2aInboundEvent
   | DiscordInboundEvent
   | PluginInboundEvent;
 

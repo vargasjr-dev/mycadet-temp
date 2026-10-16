@@ -50,8 +50,6 @@ export function setOverridesForTesting(
 export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
-  "assistant-initiated-threads",
-  "experiment-activation-flow-2026-06-03",
   "channel-trust-floors",
   "schedule-result-notify",
   "assistant-reply-push",
@@ -73,12 +71,8 @@ export function setAllFlagsOffForTesting(): void {
 
 /** Every key declared in the feature-flag registry. */
 export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
-  "interrupt-on-send",
   "in-chat-onboarding-tour",
   "vision-mode",
-  "assistant-initiated-threads",
-  "experiment-activation-flow-2026-06-03",
-  "a2a-channel",
   "settings-developer-nav",
   "cadet-hosted-inference",
   "developer-menu-items",

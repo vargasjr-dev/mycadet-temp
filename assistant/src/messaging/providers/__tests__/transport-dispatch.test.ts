@@ -51,9 +51,6 @@ const whatsapp = {
     Promise.resolve({ allFailed: false, failureCount: 0 }),
   ),
 };
-const a2a = {
-  deliverA2AReply: mock((..._args: unknown[]) => Promise.resolve({ ok: true })),
-};
 const discord = {
   sendDiscordReply: mock((..._args: unknown[]) =>
     Promise.resolve({
@@ -79,7 +76,6 @@ const actualSlackSend = await import("../slack/send.js");
 mock.module("../slack/send.js", () => ({ ...actualSlackSend, ...slack }));
 mock.module("../telegram-bot/send.js", () => telegram);
 mock.module("../whatsapp/send.js", () => whatsapp);
-mock.module("../a2a/deliver.js", () => a2a);
 const actualDiscordSend = await import("../discord/send.js");
 mock.module("../discord/send.js", () => ({ ...actualDiscordSend, ...discord }));
 
@@ -104,7 +100,7 @@ function payload(
 }
 
 beforeEach(() => {
-  for (const group of [slack, telegram, whatsapp, a2a, discord]) {
+  for (const group of [slack, telegram, whatsapp, discord]) {
     for (const value of Object.values(group)) {
       // A group spreads its real module so a stub cannot fall behind the
       // exports a transport imports, which means it also carries constants
@@ -126,9 +122,6 @@ describe("routing", () => {
     expect(getTransportForCallback(`${BASE}/deliver/whatsapp`)?.channel).toBe(
       "whatsapp",
     );
-    expect(
-      getTransportForCallback(`${BASE}/deliver/a2a?taskId=t1`)?.channel,
-    ).toBe("a2a");
     expect(getTransportForCallback(`${BASE}/deliver/discord`)?.channel).toBe(
       "discord",
     );
@@ -136,7 +129,6 @@ describe("routing", () => {
 
   test("isDirectDelivery is true for owned paths, false otherwise", () => {
     expect(isDirectDelivery(`${BASE}/deliver/slack`)).toBe(true);
-    expect(isDirectDelivery(`${BASE}/deliver/a2a?taskId=t1`)).toBe(true);
     expect(isDirectDelivery(`${BASE}/deliver/discord`)).toBe(true);
     expect(isDirectDelivery(`${BASE}/v1/messages`)).toBe(false);
     expect(
@@ -453,12 +445,6 @@ describe("capability gating across channels", () => {
     expect(whatsapp.sendWhatsAppReply).toHaveBeenCalledTimes(1);
   });
 
-  test("A2A routes to deliverA2AReply with the callback URL", async () => {
-    const url = `${BASE}/deliver/a2a?taskId=t1`;
-    await deliverDirect(url, payload({ text: "hi" }));
-    expect(a2a.deliverA2AReply).toHaveBeenCalledTimes(1);
-    expect(a2a.deliverA2AReply.mock.calls[0][0]).toBe(url);
-  });
 
   test("Discord text routes to sendDiscordReply, targeting the channel", async () => {
     await deliverDirect(`${BASE}/deliver/discord`, payload({ text: "hi" }));

@@ -39,7 +39,6 @@ export const CHANNEL_IDS = [
   "slack",
   "email",
   "platform",
-  "a2a",
   "discord",
   "plugin",
   // Internal id for conversations a guardian shares with a contact. It has no

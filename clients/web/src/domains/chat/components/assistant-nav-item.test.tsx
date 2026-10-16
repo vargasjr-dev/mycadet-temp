@@ -155,45 +155,10 @@ describe("AssistantNavItem switcher slots", () => {
     expect(html).not.toContain("gap-[12px]");
   });
 
-  const ASIDE = createElement(
-    "button",
-    { "data-testid": "section-toggle" },
-    "t",
-  );
-  const BENEATH = createElement(
-    "div",
-    { "data-testid": "section-card" },
-    "card",
-  );
-
-  test("an aside stands on the pill's row and a beneath slot under it", () => {
-    const html = renderWithSlots({ aside: ASIDE, beneath: BENEATH });
-    expect(html).toContain('data-testid="section-toggle"');
-    expect(html).toContain('data-testid="section-card"');
-    // The aside sits after the pill inside one row, not inside the pill.
-    const pillEnd = html.indexOf('data-tour-id="assistant-page"');
-    const asideAt = html.indexOf('data-testid="section-toggle"');
-    expect(asideAt).toBeGreaterThan(pillEnd);
-  });
-
-  test("the collapsed rail stands the aside between the assistant's tile and New Chat's, and drops the beneath slot", () => {
-    const html = renderWithSlots({
-      aside: ASIDE,
-      beneath: BENEATH,
-      collapsed: true,
-    });
-    const tileAt = html.indexOf('data-tour-id="assistant-page"');
-    const asideAt = html.indexOf('data-testid="section-toggle"');
-    const newChatAt = html.indexOf('data-tour-id="new-chat"');
-    expect(asideAt).toBeGreaterThan(tileAt);
-    expect(newChatAt).toBeGreaterThan(asideAt);
-    expect(html).not.toContain('data-testid="section-card"');
-  });
-
-  test("an expansion takes the row from the aside", () => {
-    const html = renderWithSlots({ aside: ASIDE, expansion: EXPANSION });
+  test("an expansion takes the row from the pill", () => {
+    const html = renderWithSlots({ expansion: EXPANSION });
     expect(html).toContain('data-testid="switcher-card"');
-    expect(html).not.toContain('data-testid="section-toggle"');
+    expect(html).not.toContain('data-tour-id="assistant-page"');
   });
 
   test("the collapsed tile has no slot for the trailing action", () => {
@@ -208,15 +173,13 @@ describe("AssistantNavItem switcher slots", () => {
     expect(html).not.toContain('data-tour-id="new-chat"');
   });
 
-  test("the New Chat button stands on the row after the aside", () => {
-    const html = renderWithSlots({ aside: ASIDE });
+  test("the New Chat button stands on the row after the pill", () => {
+    const html = renderWithSlots({});
     const pillAt = html.indexOf('data-tour-id="assistant-page"');
-    const asideAt = html.indexOf('data-testid="section-toggle"');
     const newChatAt = html.indexOf('data-tour-id="new-chat"');
     expect(pillAt).toBeGreaterThanOrEqual(0);
-    expect(asideAt).toBeGreaterThan(pillAt);
-    expect(newChatAt).toBeGreaterThan(asideAt);
-    // One row holds all three: no stack wrapper opens between the pill
+    expect(newChatAt).toBeGreaterThan(pillAt);
+    // One row holds both: no stack wrapper opens between the pill
     // and the button.
     expect(html.slice(pillAt, newChatAt)).not.toContain("flex-col");
   });

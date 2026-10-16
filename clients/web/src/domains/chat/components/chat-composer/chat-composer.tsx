@@ -29,7 +29,6 @@ import {
 } from "@/domains/chat/composer-store";
 import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
-import { useInterruptOnSend } from "@/domains/chat/hooks/use-interrupt-on-send";
 import { ComposerDraftNotices } from "@/domains/chat/components/composer-draft-notices";
 import { nativeAttachmentPickersAvailable } from "@/domains/chat/components/chat-attachments/native-attachment-pickers";
 import { AddToChatSheet } from "@/domains/chat/components/chat-composer/add-to-chat-sheet";
@@ -672,12 +671,7 @@ export function ChatComposer({
   }, [startLiveVoiceSession]);
 
   const pointerCoarse = useMemo(() => isPointerCoarse(), []);
-  // `shouldSubmitOnEnter` ignores Enter under a coarse primary pointer, since a
-  // soft keyboard's Enter inserts a newline. Anything that stands in for
-  // keyboard submit reads this, never the viewport width: the two disagree on a
-  // roomy tablet and on a narrowed desktop window, and the substitute belongs to
-  // the absence of the thing it replaces. See `docs/CLOUD_ADAPTATION.md`.
-  const keyboardCanSubmit = !pointerCoarse;
+
   // The compact row and everything in it follow the window's width; what the
   // plus opens follows the input. A narrowed desktop or Electron window keeps
   // the row, and still wants the picker a mouse can drive. See
@@ -796,15 +790,12 @@ export function ChatComposer({
   const hasStagedContext = hasStagedQuotes || hasStagedChannelReference;
   const canSendMessageContent =
     Boolean(input.trim()) || canSendAttachments || hasStagedContext;
-  // Under `interrupt-on-send` a turn in flight keeps the row in its resting
-  // shape (attach, dictation, voice, Send): the message the user types stops
-  // that turn and is answered at once, so Send stays where it is and pressing
-  // it interrupts and sends in one move. The send slot is the exception, since
-  // a Send that cannot be pressed is no such gesture: it holds Stop there
-  // (`showStopInSendSlot`), which is the only way to end a turn without
-  // sending something.
-  const interruptOnSend = useInterruptOnSend();
-  const busyRowActive = isAssistantBusy && !interruptOnSend;
+  // A turn in flight keeps the row in its resting shape (attach, dictation,
+  // voice, Send): the message the user types stops that turn and is answered
+  // at once, so Send stays where it is and pressing it interrupts and sends in
+  // one move. The send slot is the exception, since a Send that cannot be
+  // pressed is no such gesture: it holds Stop there (`showStopInSendSlot`),
+  // which is the only way to end a turn without sending something.
   // Words already spoken are content the composer does not hold yet, so the
   // composer's own dictation session makes the send slot pressable on its
   // own: Send there means "finish, then send", and `useComposerSubmit`
@@ -820,28 +811,15 @@ export function ChatComposer({
   // is no press to make.
   const sendBlocked =
     sendDisabled || attachmentsUploadingCount > 0 || !canSendOrFinishDictation;
-  // Under `interrupt-on-send` a pressable Send is the interrupt, so Stop takes
-  // the send slot exactly while there is no press to make: an empty composer,
-  // an attachment still uploading, a prompt holding the send. Without it those
-  // rows leave a running turn with no end the user can reach.
+  // A pressable Send is the interrupt, so Stop takes the send slot exactly
+  // while there is no press to make: an empty composer, an attachment still
+  // uploading, a prompt holding the send. Without it those rows leave a
+  // running turn with no end the user can reach.
   //
   // A live-voice session this composer owns keeps the slot as it rests: the bar
   // above the card owns that session and the turn it is speaking.
   const showStopInSendSlot =
-    interruptOnSend && isAssistantBusy && !isLiveVoiceActive && sendBlocked;
-  // The busy row holds exactly one control, and stop is the default: it is the
-  // only escape from a turn already running. Send takes the slot only where it
-  // is strictly better, which is where the keyboard cannot submit AND pressing
-  // it would actually queue the draft. Those are the same three conditions
-  // `shouldSubmitOnEnter` requires before it answers "submit", so the two paths
-  // to sending open and close together, and a draft that cannot go anywhere yet
-  // (an attachment still uploading, a prompt holding the send) leaves stop in
-  // place rather than a send nobody can press.
-  const sendReplacesStop =
-    !keyboardCanSubmit &&
-    canSendMessageContent &&
-    !sendDisabled &&
-    attachmentsUploadingCount === 0;
+    isAssistantBusy && !isLiveVoiceActive && sendBlocked;
   // Voice mode occupies the send slot while there is nothing to send: the
   // send arrow only earns that spot once the message has content. Eligibility
   // is a voice-enabled composer + a bound assistant new enough to serve live
@@ -1133,9 +1111,9 @@ export function ChatComposer({
     />
   ) : null;
 
-  // The row's one Stop, in the chrome the slot it stands in wears: the busy
-  // row's default control with the flag off, and the send slot's occupant
-  // while `interrupt-on-send` leaves no send to press.
+  // The row's one Stop, in the chrome the send slot wears while the turn's
+  // own Send has nothing to press: the only way to end a turn without
+  // sending something.
   const stopControl = (
     <Button
       variant="primary"
@@ -1195,25 +1173,6 @@ export function ChatComposer({
       aria-label={t("chatComposer.sendMessage")}
       className={isMobile ? MOBILE_CONTROL_CLASS : undefined}
     />
-  );
-
-  // The busy row's single control wears the same chrome as the resting slot it
-  // stands in for, so a turn starting does not shrink the row's right end back
-  // to a desktop control.
-  const busyRowControl = sendReplacesStop ? (
-    <Button
-      variant="accent"
-      iconOnly={<ArrowUp className="h-4 w-4" strokeWidth={2.5} />}
-      iconOnlyGlyphClassName={isMobile ? MOBILE_GLYPH_CLASS : undefined}
-      expandOnMobile={!isMobile}
-      type="submit"
-      onMouseDown={rowPressGuard}
-      title={t("chatComposer.sendMessage")}
-      aria-label={t("chatComposer.sendMessage")}
-      className={isMobile ? MOBILE_CONTROL_CLASS : undefined}
-    />
-  ) : (
-    stopControl
   );
 
   const inlineVoicePreview = showInlineVoicePreview ? (
@@ -1692,13 +1651,11 @@ export function ChatComposer({
                               {contextWindowIndicatorSlot}
                             </div>
                           ) : null}
-                          {(!busyRowActive || configuration) && attachControl}
-                          {!busyRowActive && (
-                            <div
-                              aria-hidden="true"
-                              className="-ml-0.5 mb-2 h-6 w-px shrink-0 bg-[var(--border-hover)]"
-                            />
-                          )}
+                          {attachControl}
+                          <div
+                            aria-hidden="true"
+                            className="-ml-0.5 mb-2 h-6 w-px shrink-0 bg-[var(--border-hover)]"
+                          />
                         </div>
                         {textFieldBlock}
                         {/* The mic's 40x40 box carries 10px of slack around its
@@ -1713,14 +1670,8 @@ export function ChatComposer({
                           data-slot="composer-inline-actions-end"
                           className="ml-auto flex shrink-0 items-end gap-1.5"
                         >
-                          {busyRowActive ? (
-                            busyRowControl
-                          ) : (
-                            <>
-                              {dictationButton}
-                              {sendSlot}
-                            </>
-                          )}
+                          {dictationButton}
+                          {sendSlot}
                         </div>
                       </div>
                     </>
@@ -1733,17 +1684,11 @@ export function ChatComposer({
                       <div className="flex items-center justify-between gap-1 px-2 pb-2">
                         <div className="flex min-w-0 items-center gap-2">
                           {contextWindowIndicatorSlot}
-                          {(!busyRowActive || configuration) && attachControl}
+                          {attachControl}
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
-                          {busyRowActive ? (
-                            busyRowControl
-                          ) : (
-                            <>
-                              {dictationButton}
-                              {sendSlot}
-                            </>
-                          )}
+                          {dictationButton}
+                          {sendSlot}
                         </div>
                       </div>
                     </>

@@ -52,7 +52,7 @@ export const ADMISSION_FLOOR: Record<AdmissionPolicy, number> = {
  * Hard-exempt internal channels — never subject to PUT policy, omitted from
  * GET list, runtime admission stage short-circuits without floor check.
  *
- * `platform` / `a2a` are peer/internal channels with no human-trust model.
+ * `platform` is the peer/internal channel with no human-trust model.
  *
  * `phone` is NOT exempt — voice ingress enforces the admission floor.
  *
@@ -62,7 +62,6 @@ export const ADMISSION_FLOOR: Record<AdmissionPolicy, number> = {
  */
 export const ADMISSION_POLICY_EXEMPT_CHANNELS: ReadonlySet<string> = new Set([
   "platform",
-  "a2a",
 ]);
 
 export function isAdmissionPolicyExemptChannel(channelType: string): boolean {

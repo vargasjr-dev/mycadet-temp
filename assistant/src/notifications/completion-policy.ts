@@ -62,14 +62,9 @@ export function notificationConversationId(
   return readCompletionContext(event)?.conversationId ?? event.sourceContextId;
 }
 
-export interface NotificationPresentationContext {
-  assistantInitiatedThreadCreated?: boolean;
-}
-
-/** Presentation is independent of urgency and channel routing. */
+/** Silent-decision is independent of urgency and channel routing. */
 export function isLocalNotificationSilent(
   event: CompletionEvent & { urgency: Urgency },
-  presentation?: NotificationPresentationContext,
 ): boolean {
   if (
     event.contextPayload?.quiet === true ||
@@ -78,7 +73,6 @@ export function isLocalNotificationSilent(
     return true;
   }
   return (
-    !presentation?.assistantInitiatedThreadCreated &&
     !isCompletionNotification(event) &&
     event.urgency !== "high" &&
     event.urgency !== "critical"

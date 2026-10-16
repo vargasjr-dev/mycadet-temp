@@ -885,7 +885,7 @@ export async function handleChannelInbound({
   // re-verification challenge — §8.2). The gateway kill switch already
   // dropped `no_one` upstream, but the stage handles it defensively.
   //
-  // Exempt channels (`platform`, `a2a`) short-circuit admit inside
+  // The exempt channel (`platform`) short-circuit admits inside
   // `enforceAdmissionPolicy`: defense in depth alongside the gateway's
   // exempt-channel skip and the PUT-handler's 403. `cadet` is hidden, not
   // exempt: its floor is evaluated like any enforced channel's.
@@ -1392,7 +1392,7 @@ export async function handleChannelInbound({
       // not depend on a denial; fire-and-forget, the turn proceeds
       // regardless (LUM-2742). Runs after the secret ingress check so the
       // persisted messagePreview can never carry a blocked secret. Exempt
-      // channels (`a2a`, `platform`) are outside the human-trust model, and
+      // channels (`platform`) are outside the human-trust model, and
       // a validated bootstrap session is already mid-verification.
       if (
         channelTrustFloorsEnabled &&

@@ -187,10 +187,9 @@ interface AssistantNavItemProps {
   collapsed?: boolean;
   onSelect?: () => void;
   /**
-   * Renders the New Chat button: on the assistant row after the `aside`, or
-   * as its own tile beneath the `aside`'s on the collapsed rail. It stays
-   * through the tour, which lands a beat on it; it leaves the row with the
-   * `aside` while an `expansion` holds it.
+   * Renders the New Chat button: on the assistant's row when expanded, as
+   * its own tile on the collapsed rail. It stays through the tour, which
+   * lands a beat on it; it leaves the row while an `expansion` holds it.
    */
   onNewConversation?: () => void;
   /**
@@ -201,26 +200,10 @@ interface AssistantNavItemProps {
   trailingAction?: ReactNode;
   /**
    * Replaces the assistant row entirely (the switcher's expanded card), the
-   * `aside` and the New Chat button with it. Ignored on the collapsed rail
-   * and while the tour owns the nav.
+   * New Chat button with it. Ignored on the collapsed rail and while the
+   * tour owns the nav.
    */
   expansion?: ReactNode;
-  /**
-   * Stands beside the pill on its own row, a step after the name (the
-   * toggle for the assistant's own section), with the New Chat button a
-   * step after it. On the collapsed rail, whose tile has no row, it stands
-   * in the column between the assistant's tile and New Chat's, so the
-   * caller hands in the rail's form of the control there. Out of the tour's
-   * drained nav, like `trailingAction`; and gone while an `expansion` holds
-   * the row.
-   */
-  aside?: ReactNode;
-  /**
-   * Rendered directly beneath the assistant row (the assistant's own
-   * section, when the `aside` has opened it). Ignored on the collapsed rail
-   * and while the tour owns the nav.
-   */
-  beneath?: ReactNode;
 }
 
 export function AssistantNavItem({
@@ -232,8 +215,6 @@ export function AssistantNavItem({
   onNewConversation,
   trailingAction,
   expansion,
-  aside,
-  beneath,
 }: AssistantNavItemProps) {
   const {
     components,
@@ -351,9 +332,8 @@ export function AssistantNavItem({
       drained={navTourActive}
     />
   ) : null;
-  /* Where the button stands: on the collapsed rail as its own tile beneath
-     the aside's, since a tile has no row to share; expanded, on the
-     assistant's row after the aside. */
+  /* Where the button stands: on the collapsed rail as its own tile, since a
+     tile has no row to share; expanded, on the assistant's row. */
   const railNewChat = collapsed ? newChatButton : null;
   const rowNewChat = collapsed ? null : newChatButton;
 
@@ -382,17 +362,13 @@ export function AssistantNavItem({
   const activeExpansion =
     !collapsed && !navTourActive ? (expansion ?? null) : null;
   const pillGapClass = pillTrailingAction ? "gap-[12px]" : undefined;
-  const rowAside = !collapsed && !navTourActive ? aside : undefined;
-  const railAside = collapsed && !navTourActive ? aside : undefined;
-  const rowBeneath = !collapsed && !navTourActive ? beneath : undefined;
-  /* The pill keeps hugging its label and the aside and the New Chat button
-     follow it at the stack's own gap, so the three read as one cluster
-     rather than a pill and buttons at opposite ends of the rail. */
+  /* The pill keeps hugging its label with the New Chat button following it
+     at the stack's own gap, so the two read as one cluster rather than a
+     pill and a button at opposite ends of the rail. */
   const withCompanions = (row: ReactNode): ReactNode =>
-    rowAside || rowNewChat ? (
+    rowNewChat ? (
       <div className={cn("flex items-center", SIDEBAR_STACK_GAP)}>
         {row}
-        {rowAside}
         {rowNewChat}
       </div>
     ) : (
@@ -513,8 +489,6 @@ export function AssistantNavItem({
             />,
           ))
         )}
-        {rowBeneath}
-        {railAside}
         {railNewChat}
       </div>
     );
@@ -700,8 +674,6 @@ export function AssistantNavItem({
   return (
     <div className={cn("flex flex-col", SIDEBAR_STACK_GAP)}>
       {activeExpansion ?? withCompanions(assistantRow)}
-      {rowBeneath}
-      {railAside}
       {railNewChat}
     </div>
   );

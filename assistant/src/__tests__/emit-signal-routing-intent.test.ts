@@ -1,25 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { saveRawConfig } from "../config/loader.js";
-import type { NotificationSignal } from "../notifications/signal.js";
 import type { NotificationChannel } from "../notifications/types.js";
-
-let assistantInitiatedCandidate = false;
-const resolveAssistantInitiatedThreadMock = mock(
-  (signal: NotificationSignal) => ({
-    isCandidate: assistantInitiatedCandidate,
-    cadetSignal: assistantInitiatedCandidate
-      ? {
-          ...signal,
-          requiresConversation: true,
-          conversationMetadata: { source: "assistant_initiated" },
-        }
-      : signal,
-  }),
-);
-mock.module("../notifications/assistant-initiated-thread.js", () => ({
-  resolveAssistantInitiatedThread: resolveAssistantInitiatedThreadMock,
-}));
 
 const evaluateSignalMock = mock();
 const enforceRoutingIntentMock = mock();
@@ -131,8 +113,6 @@ import {
 
 beforeEach(() => {
   saveRawConfig({});
-  assistantInitiatedCandidate = false;
-  resolveAssistantInitiatedThreadMock.mockClear();
   writeHomeFeedItemForSignalMock.mockClear();
   evaluateSignalMock.mockReset();
   enforceRoutingIntentMock.mockReset();
@@ -1039,141 +1019,4 @@ describe("classifyNotificationReceipt", () => {
       ]),
     ).toBe("unknown");
   });
-});
-
-describe("emitNotificationSignal From me push defaults", () => {
-  const params = {
-    sourceEventName: "assistant.share",
-    sourceChannel: "assistant_tool" as const,
-    sourceContextId: "conv-background",
-    attentionHints: {
-      urgency: "low" as const,
-      requiresAction: false,
-      isAsyncBackground: true,
-      visibleInSourceNow: false,
-    },
-  };
-  const decision = (selectedChannels: NotificationChannel[] = ["cadet"]) => ({
-    shouldNotify: true,
-    selectedChannels,
-    reasoningSummary: "Assistant-authored share",
-    renderedCopy: { cadet: { title: "An update", body: "A useful result." } },
-    dedupeKey: "share-1",
-    confidence: 1,
-    fallbackUsed: false,
-    persistedDecisionId: "decision-share",
-  });
-
-  beforeEach(() => {
-    assistantInitiatedCandidate = true;
-    evaluateSignalMock.mockResolvedValue(decision());
-  });
-
-  test("adds configured platform after routing and persists the final decision", async () => {
-    const result = await emitNotificationSignal(params);
-    expect(result.selectedChannels).toEqual(["cadet", "platform"]);
-    expect(resolveAssistantInitiatedThreadMock).toHaveBeenCalledTimes(1);
-    expect(updateDecisionMock).toHaveBeenCalledWith(
-      "decision-share",
-      expect.objectContaining({
-        selectedChannels: ["cadet", "platform"],
-      }),
-    );
-    expect(dispatchDecisionMock.mock.calls[0]?.[0]).toMatchObject({
-      attentionHints: { urgency: "low" },
-    });
-    expect(dispatchDecisionMock.mock.calls[0]?.[3]).toMatchObject({
-      assistantInitiatedThread: {
-        platformAdded: true,
-        resolution: {
-          isCandidate: true,
-          cadetSignal: {
-            requiresConversation: true,
-            conversationMetadata: { source: "assistant_initiated" },
-          },
-        },
-      },
-    });
-  });
-
-  test.each([
-    "quiet",
-    "unconfigured",
-    "noncandidate",
-    "suppressed",
-    "single_channel",
-    "external_only",
-    "cadet_allowlist",
-  ])("respects %s policy without adding platform", async (scenario) => {
-    assistantInitiatedCandidate = scenario !== "noncandidate";
-    isCloudClientConfiguredMock.mockResolvedValue(scenario !== "unconfigured");
-    evaluateSignalMock.mockResolvedValue({
-      ...decision(scenario === "external_only" ? ["telegram"] : ["cadet"]),
-      shouldNotify: scenario !== "suppressed",
-    });
-    const result = await emitNotificationSignal({
-      ...params,
-      routingIntent:
-        scenario === "single_channel" ? "single_channel" : undefined,
-      contextPayload: {
-        quiet: scenario === "quiet",
-        ...(scenario === "cadet_allowlist"
-          ? { channelAllowlist: ["cadet"] }
-          : {}),
-      },
-    });
-    expect(result.selectedChannels).not.toContain("platform");
-    expect(dispatchDecisionMock.mock.calls[0]?.[3]).toMatchObject({
-      assistantInitiatedThread: { platformAdded: false },
-    });
-  });
-
-  test("keeps existing platform and external selections independent of this feature", async () => {
-    evaluateSignalMock.mockResolvedValue(
-      decision(["cadet", "platform", "telegram"]),
-    );
-    const result = await emitNotificationSignal({
-      ...params,
-      contextPayload: { quiet: true },
-    });
-    expect(result.selectedChannels).toEqual(["cadet", "platform", "telegram"]);
-    expect(isCloudClientConfiguredMock).not.toHaveBeenCalled();
-    expect(dispatchDecisionMock.mock.calls[0]?.[3]).toMatchObject({
-      assistantInitiatedThread: { platformAdded: false },
-    });
-  });
-
-  test("probes an unbound platform once across urgency and From me policy", async () => {
-    isCloudClientConfiguredMock.mockResolvedValue(false);
-    const result = await emitNotificationSignal({
-      ...params,
-      attentionHints: { ...params.attentionHints, urgency: "high" },
-    });
-    expect(result.selectedChannels).toEqual(["cadet"]);
-    expect(isCloudClientConfiguredMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("preserves preferred external selections while adding the cloud default", async () => {
-    evaluateSignalMock.mockResolvedValue(decision(["cadet", "telegram"]));
-    const result = await emitNotificationSignal(params);
-    expect(result.selectedChannels).toEqual(["cadet", "telegram", "platform"]);
-  });
-
-  test.each(["deduplicated", "source_active"])(
-    "does not resolve candidates for %s signals",
-    async (scenario) => {
-      if (scenario === "deduplicated") {
-        createEventMock.mockReturnValue(null);
-      }
-      await emitNotificationSignal({
-        ...params,
-        attentionHints: {
-          ...params.attentionHints,
-          visibleInSourceNow: scenario === "source_active",
-        },
-      });
-      expect(resolveAssistantInitiatedThreadMock).not.toHaveBeenCalled();
-      expect(dispatchDecisionMock).not.toHaveBeenCalled();
-    },
-  );
 });

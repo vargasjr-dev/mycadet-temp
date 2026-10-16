@@ -1056,15 +1056,6 @@ export const routeTree = [
                             ),
                         },
                       },
-                      {
-                        path: "connect",
-                        lazy: {
-                          Component: () =>
-                            import("@/domains/contacts/connect-page").then(
-                              (m) => m.ConnectPage,
-                            ),
-                        },
-                      },
                       // All chats draws its own page chrome and keeps the
                       // sidebar beside it, so it sits here rather than under
                       // IntelligenceLayout: it is not an About Assistant

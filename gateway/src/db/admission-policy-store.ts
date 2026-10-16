@@ -65,7 +65,7 @@ export interface AdmissionPolicyRow {
  * still enforced at runtime, but they are hidden from the configurable UI (see
  * ADMISSION_POLICY_HIDDEN_CHANNELS), so they are intentionally absent here.
  */
-export const EXEMPT_CHANNEL_TYPES = new Set<string>(["platform", "a2a"]);
+export const EXEMPT_CHANNEL_TYPES = new Set<string>(["platform"]);
 
 export function isExemptChannelType(channelType: string): boolean {
   return EXEMPT_CHANNEL_TYPES.has(channelType);

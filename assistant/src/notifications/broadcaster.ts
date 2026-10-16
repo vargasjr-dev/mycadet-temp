@@ -24,11 +24,6 @@ import {
 import { isGuardianSensitiveEvent } from "./adapters/macos.js";
 import { resolveMessageText } from "./adapters/shared.js";
 import {
-  type AssistantInitiatedThreadResolution,
-  isPersistedAssistantInitiatedThread,
-  resolveAssistantInitiatedThread,
-} from "./assistant-initiated-thread.js";
-import {
   areChatReplyAlertsDisabled,
   CHAT_REPLY_ALERTS_DISABLED,
 } from "./chat-reply-policy.js";
@@ -37,7 +32,6 @@ import {
   isCompletionRecipientUnavailable,
   isLocalNotificationSilent,
   notificationConversationId,
-  type NotificationPresentationContext,
   resolveCompletionRecipient,
 } from "./completion-policy.js";
 import {
@@ -270,10 +264,6 @@ export type OnConversationCreatedFn = (
 ) => void | Promise<void>;
 export interface BroadcastDecisionOptions {
   onConversationCreated?: OnConversationCreatedFn;
-  assistantInitiatedThread?: {
-    resolution: AssistantInitiatedThreadResolution;
-    platformAdded: boolean;
-  };
   /** Deadline override for tests; defaults to PLATFORM_OUTCOME_DEADLINE_MS. */
   platformOutcomeDeadlineMs?: number;
   /**
@@ -304,7 +294,6 @@ interface PendingChannelDispatch {
   destinationLabel: string;
   pairing: PairingResult;
   hasPersistedDecision: boolean;
-  presentation: NotificationPresentationContext;
 }
 
 /**
@@ -370,15 +359,11 @@ export class NotificationBroadcaster {
       decision.selectedChannels,
       guardians,
     );
-    const assistantInitiatedThread =
-      options?.assistantInitiatedThread?.resolution ??
-      resolveAssistantInitiatedThread(signal);
-    const presentation: NotificationPresentationContext = {};
     const resolveSilent = () =>
-      isLocalNotificationSilent(
-        { ...signal, urgency: signal.attentionHints.urgency },
-        presentation,
-      );
+      isLocalNotificationSilent({
+        ...signal,
+        urgency: signal.attentionHints.urgency,
+      });
 
     // Ensure cadet is processed first so the notification_conversation_created
     // event fires immediately, before slower channel sends (e.g. Telegram 30s
@@ -455,20 +440,6 @@ export class NotificationBroadcaster {
           await flushDeferredCadetSend();
         }
 
-        if (
-          channel === "platform" &&
-          options?.assistantInitiatedThread?.platformAdded &&
-          (!presentation.assistantInitiatedThreadCreated ||
-            signal.contextPayload.quiet === true)
-        ) {
-          results.push({
-            channel,
-            destination: destinations.get(channel)?.endpoint ?? channel,
-            status: "skipped",
-            errorMessage: "No newly persisted From me conversation for push",
-          });
-          continue;
-        }
 
         const adapter = this.adapters.get(channel);
         if (!adapter) {
@@ -599,17 +570,6 @@ export class NotificationBroadcaster {
                 conversationId: existingDelivery.conversationId,
                 messageId: existingDelivery.messageId,
               };
-              presentation.assistantInitiatedThreadCreated =
-                assistantInitiatedThread.isCandidate &&
-                existingDelivery.conversationStrategy ===
-                  "start_new_conversation" &&
-                (existingDelivery.conversationAction === "start_new" ||
-                  (existingDelivery.conversationAction === "reuse_existing" &&
-                    existingDelivery.conversationFallbackUsed === 1)) &&
-                isPersistedAssistantInitiatedThread(
-                  existingDelivery.conversationId,
-                  existingDelivery.messageId,
-                );
             }
             log.info(
               {
@@ -642,8 +602,6 @@ export class NotificationBroadcaster {
           {
             conversationAction,
             bindingContext: destination.bindingContext,
-            assistantInitiatedThread:
-              channel === "cadet" ? assistantInitiatedThread : undefined,
           },
         );
 
@@ -652,14 +610,6 @@ export class NotificationBroadcaster {
             conversationId: pairing.conversationId,
             messageId: pairing.messageId,
           };
-          presentation.assistantInitiatedThreadCreated =
-            assistantInitiatedThread.isCandidate &&
-            pairing.createdNewConversation &&
-            pairing.strategy === "start_new_conversation" &&
-            isPersistedAssistantInitiatedThread(
-              pairing.conversationId,
-              pairing.messageId,
-            );
         }
 
         // For the cadet and platform channels, merge the conversationId into
@@ -716,11 +666,8 @@ export class NotificationBroadcaster {
             title: conversationTitle,
             sourceEventName: signal.sourceEventName,
             targetGuardianPrincipalId,
-            groupId:
-              assistantInitiatedThread.cadetSignal.conversationMetadata
-                ?.groupId,
-            source:
-              assistantInitiatedThread.cadetSignal.conversationMetadata?.source,
+            groupId: signal.conversationMetadata?.groupId,
+            source: signal.conversationMetadata?.source,
             silent: resolveSilent(),
           };
 
@@ -789,7 +736,6 @@ export class NotificationBroadcaster {
           destinationLabel,
           pairing,
           hasPersistedDecision,
-          presentation,
         };
 
         // Compute conversation decision audit fields for the delivery record
@@ -977,10 +923,7 @@ export class NotificationBroadcaster {
     } = dispatch;
     try {
       if (channel === "cadet") {
-        payload.silent = isLocalNotificationSilent(
-          payload,
-          dispatch.presentation,
-        );
+        payload.silent = isLocalNotificationSilent(payload);
       }
       const adapterResult: DeliveryResult =
         channel === "platform" &&

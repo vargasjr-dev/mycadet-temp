@@ -161,11 +161,7 @@ export function adjustSectionUnreadCache(
     return false;
   }
 
-  const assistantSplitActive =
-    index.some((row) => row.kind === "assistant") === true;
-  const at = index.findIndex((row) =>
-    matchesIndexBucket(conversation, row, { assistantSplitActive }),
-  );
+  const at = index.findIndex((row) => matchesIndexBucket(conversation, row));
   if (at === -1) {
     return false;
   }

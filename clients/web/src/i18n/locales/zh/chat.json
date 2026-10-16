@@ -2155,10 +2155,6 @@
     "failedUnconfirmed": "新凭据已保存，但无法与 Cadet 确认。它可能很快就会生效。",
     "failedGeneric": "无法恢复访问。请稍后重试。"
   },
-  "assistantSection": {
-    "emptyBody": "我随时都在思考。当有值得您关注的事情时，我会在这里发起对话。",
-    "emptyTitle": "目前还没有任何想法。"
-  },
   "chatsSection": {
     "doneEmptyBody": "标记为已完成的聊天会保留在“所有聊天”中。",
     "doneEmptyTitle": "全部处理完毕。",
@@ -2168,10 +2164,6 @@
   "sidebarExpandRow": {
     "expand": "展开",
     "collapse": "收起"
-  },
-  "assistantSectionToggle": {
-    "hide": "隐藏来自 {name} 的对话",
-    "show": "显示来自 {name} 的对话"
   },
   "coachmarkPress": {
     "turn": "我点击了 {label}。接下来呢？"

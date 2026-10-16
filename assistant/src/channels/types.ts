@@ -179,18 +179,6 @@ export const CHANNEL_METADATA: Partial<Record<ChannelId, ChannelInfo>> = {
         "I'd like to verify a contact's WhatsApp identity. Can you walk me through it?",
     },
   },
-  a2a: {
-    id: "a2a",
-    label: "A2A",
-    subtitle: "Agent-to-Agent protocol",
-    icon: "bot",
-    supportsVerification: false,
-    setupMessages: {
-      guardian: "Connect with other Cadet assistants via the A2A protocol.",
-      contact:
-        "I'd like to connect with another assistant via A2A. Can you help me set that up?",
-    },
-  },
 };
 
 export const INTERFACE_IDS = [
@@ -206,7 +194,6 @@ export const INTERFACE_IDS = [
   "slack",
   "email",
   "chrome-extension",
-  "a2a",
   "discord",
   // Turns injected by workspace custom routes (webhook receivers, cron jobs,
   // device/service callbacks). Non-interactive — permission prompts route

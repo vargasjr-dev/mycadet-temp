@@ -128,7 +128,7 @@ export async function admitInbound(
   // a `no_one` lockout would upgrade an actor on a channel the guardian has
   // explicitly turned off.
   //
-  // Defense in depth: the §8.1 exempt set (platform/a2a) skips this check.
+  // Defense in depth: the §8.1 exempt set (platform) skips this check.
   // The same exemption is enforced PUT-side in channel-admission-policy.ts
   // and at the runtime admission stage. `cadet` is hidden, not exempt: its
   // floor stays enforced, and a guardian cannot lock themselves out of the

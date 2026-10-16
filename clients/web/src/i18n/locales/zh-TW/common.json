@@ -452,15 +452,6 @@
     "modeAria": "如何顯示此檔案",
     "source": "原始碼"
   },
-  "generateInviteLinkDialog": {
-    "copyAriaLabel": "複製邀請連結",
-    "createFailed": "建立邀請連結失敗。請確認您的助理已啟用 A2A。",
-    "creating": "正在建立邀請連結…",
-    "done": "完成",
-    "shareHint": "與另一位助理擁有者分享此連結以建立連線。",
-    "title": "分享連線連結",
-    "tryAgain": "再試一次"
-  },
   "githubNudgeBanner": {
     "ariaLabel": "Cadet 在 GitHub 上是開放原始碼",
     "ctaAriaLabel": "在 GitHub 上為 Cadet 加星",
@@ -590,9 +581,6 @@
   "serviceFormControls": {
     "reset": "重設",
     "save": "儲存"
-  },
-  "shareConnectionLinkButton": {
-    "label": "分享連線連結"
   },
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "關於診斷資訊",

@@ -53,10 +53,6 @@ import {
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import {
-  type AssistantInitiatedThreadResolution,
-  resolveAssistantInitiatedThread,
-} from "./assistant-initiated-thread.js";
-import {
   hasPersistedCompletionResult,
   notificationConversationId,
 } from "./completion-policy.js";
@@ -103,8 +99,6 @@ export interface PairingOptions {
   conversationAction?: ConversationAction;
   /** Destination binding data for channel-scoped conversation continuation. */
   bindingContext?: DestinationBindingContext;
-  /** Reuse the resolution made before delivery policy selects channels. */
-  assistantInitiatedThread?: AssistantInitiatedThreadResolution;
 }
 
 /**
@@ -138,13 +132,7 @@ export async function pairDeliveryWithConversation(
   options?: PairingOptions,
 ): Promise<PairingResult> {
   try {
-    const signal =
-      channel === "cadet"
-        ? (
-            options?.assistantInitiatedThread ??
-            resolveAssistantInitiatedThread(rawSignal)
-          ).cadetSignal
-        : rawSignal;
+    const signal = rawSignal;
     const strategy = getConversationStrategy(channel as ChannelId);
 
     if (strategy === "not_deliverable" || strategy === "push_only") {

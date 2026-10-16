@@ -18,11 +18,10 @@ export const ADMISSION_POLICY_DEFAULT: AdmissionPolicy = "trusted_contacts";
 
 /**
  * Channels the user cannot configure at all. `platform` is the vembda-managed
- * control plane, `a2a` is peer-to-peer assistant traffic — neither has a
- * human-trust model. (`cadet` is enforced at runtime but hidden from the UI;
- * see {@link HIDDEN_CHANNELS}.)
+ * control plane — it has no human-trust model. (`cadet` is enforced at runtime
+ * but hidden from the UI; see {@link HIDDEN_CHANNELS}.)
  */
-export const INTERNAL_CHANNELS = new Set<string>(["platform", "a2a"]);
+export const INTERNAL_CHANNELS = new Set<string>(["platform"]);
 
 /**
  * Channels that are still enforced at runtime but intentionally hidden from the

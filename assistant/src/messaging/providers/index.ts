@@ -18,7 +18,6 @@ import {
   type ReactionEmojiIdentity,
 } from "@mycadet/service-contracts/reactions";
 
-import { a2aTransport } from "./a2a/transport.js";
 import type { DirectDeliveryChannel } from "./callback-routing.js";
 import { channelForCallback } from "./callback-routing.js";
 import type {
@@ -41,7 +40,6 @@ const TRANSPORTS: Record<DirectDeliveryChannel, ChannelTransport> = {
   slack: slackTransport,
   telegram: telegramTransport,
   whatsapp: whatsappTransport,
-  a2a: a2aTransport,
   discord: discordTransport,
 };
 

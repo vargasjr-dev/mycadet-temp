@@ -178,15 +178,12 @@ interface CollapsibleNavSectionSectionProps extends Omit<
   value: string;
   icon?: LucideIcon;
   /**
-   * Leading glyph for sections whose mark is not a Lucide icon — currently
-   * the assistant-initiated section, which carries the assistant's own eyes.
-   * Takes the same slot as {@link icon} (same box, same axis, both header
-   * branches) and wins when both are given, so a section states its glyph
-   * once whichever kind it is.
+   * Leading glyph for sections whose mark is not a Lucide icon. Takes the
+   * same slot as {@link icon} (same box, same axis, both header branches)
+   * and wins when both are given, so a section states its glyph once
+   * whichever kind it is.
    *
-   * Sized by the caller: the slot hugs its content rather than scaling it,
-   * because the eye sprite has its own aspect ratio and a forced 12px square
-   * would distort it.
+   * Sized by the caller: the slot hugs its content rather than scaling it.
    */
   iconNode?: ReactNode;
   label: string;
@@ -199,11 +196,10 @@ interface CollapsibleNavSectionSectionProps extends Omit<
   labelClassName?: string;
   /**
    * Extra classes for the whole header row - for a section that draws its
-   * header on its own surface (the assistant-initiated section's
-   * accent-tinted pill, which spans disc, label, indicator, and chevron).
-   * The title's horizontal geometry is inline style from
-   * `sidebar-nav-geometry`, so a header surface that needs different insets
-   * overrides them with `!` utilities against the title slot.
+   * header on its own surface. The title's horizontal geometry is inline
+   * style from `sidebar-nav-geometry`, so a header surface that needs
+   * different insets overrides them with `!` utilities against the title
+   * slot.
    */
   headerClassName?: string;
   trailing?: ReactNode;

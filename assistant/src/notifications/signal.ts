@@ -24,7 +24,6 @@ export const NOTIFICATION_SOURCE_CHANNELS = [
   { id: "slack", description: "Slack channel" },
   { id: "email", description: "Email channel" },
   { id: "platform", description: "Platform-managed channel" },
-  { id: "a2a", description: "Agent-to-agent protocol channel" },
   { id: "discord", description: "Discord channel" },
   { id: "plugin", description: "Channel brought by an installed plugin" },
   {

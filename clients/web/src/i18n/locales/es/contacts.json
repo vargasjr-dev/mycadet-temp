@@ -18,7 +18,6 @@
     "slack": "Slack",
     "telegram": "Telegram",
     "whatsapp": "WhatsApp",
-    "a2a": "A2A",
     "phone": "Teléfono",
     "email": "Correo",
     "discord": "Discord"
@@ -93,20 +92,6 @@
   "accountLink": {
     "linked": "Vinculado como @{username}",
     "linkFailed": "No se pudo vincular la cuenta"
-  },
-  "connectPage": {
-    "invalidTitle": "Enlace de invitación no válido",
-    "invalidBody": "Al enlace que has seguido le faltan parámetros obligatorios y no se puede usar.",
-    "goToContacts": "Ir a Contactos",
-    "title": "Conectar asistentes",
-    "body": "Aceptar este enlace creará una conexión A2A de confianza entre tu asistente y el del remitente.",
-    "alreadyConnected": "Ya está conectado",
-    "connected": "¡Conectado!",
-    "errorExpired": "Este enlace de invitación ha caducado o ya se ha usado.",
-    "errorAlreadyRedeemed": "Otra persona ya ha reclamado esta invitación.",
-    "errorSenderNotFound": "No se ha encontrado el asistente del remitente.",
-    "errorNotPlatformManaged": "Los enlaces de invitación A2A solo se admiten en asistentes alojados en la plataforma.",
-    "errorGeneric": "Algo ha salido mal. Vuelve a intentarlo."
   },
   "channelStatus": {
     "connected": "Conectado",

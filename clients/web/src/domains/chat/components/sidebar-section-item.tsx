@@ -28,9 +28,7 @@ import type { ReactNode } from "react";
 import { useNavigate } from "react-router";
 
 import type { CollapsibleNavSectionDrag } from "@/components/collapsible-nav-section";
-import { AssistantSectionEmptyState } from "@/domains/chat/components/assistant-section-empty-state";
 import { ChatsSectionEmptyState } from "@/domains/chat/components/chats-section-empty-state";
-import { useConversationListContext } from "@/domains/chat/components/conversation-list-context";
 import { SectionViewAllLink } from "@/domains/chat/components/section-view-all-link";
 import {
   saveExpandedSections,
@@ -52,21 +50,11 @@ import { sectionIcon } from "@/domains/chat/utils/sidebar-section-icon";
 import { useShowsHoverAffordance } from "@/hooks/use-hover-affordance";
 import type { Conversation } from "@/types/conversation-types";
 import { routes } from "@/utils/routes";
-import { cn } from "@mycadet/design-library";
-
-/**
- * The assistant section shows at most five realizations before scrolling
- * within itself: 5 rows at 30px plus the 4px gaps between them. A glanceable
- * stack rather than a feed - the section is a person's short list, not
- * another Chats.
- */
-const ASSISTANT_SECTION_MAX_HEIGHT = 5 * 30 + 4 * 4;
 
 /**
  * Where a section's "View all chats" goes: the All chats page, narrowed to
- * that section. `pinned` and `assistant` get none. Pinned is the user's own
- * curation rather than a slice of the history, and the assistant's section is
- * a byline, not a bucket, so neither names a view of the page.
+ * that section. `pinned` gets none — it is the user's own curation rather
+ * than a slice of the history, so it names no view of the page.
  */
 export function viewAllHrefFor(section: SidebarSection): string | null {
   const filter = ((): AllChatsFilter | null => {
@@ -107,8 +95,7 @@ export interface SidebarSectionItemProps {
   /**
    * Whether the header collapses the section. Defaults to `true`; `false`
    * drops the chevron and the header's toggle, for a section something
-   * outside it opens and closes (the assistant's, from the toggle beside
-   * her pill).
+   * outside it opens and closes.
    */
   collapsible?: boolean;
   /** Activity dot shown in the header only while the section is collapsed. */
@@ -138,8 +125,6 @@ export function SidebarSectionItem({
 }: SidebarSectionItemProps) {
   const { conversations, hasMore, resolved, loadMore, getAllRows } =
     useSectionConversations(assistantId, section);
-  const isAssistantSection = section.type === "assistant";
-  const { overlayCards } = useConversationListContext();
   const sidebarDone = useSidebarDoneEnabled();
   const navigate = useNavigate();
 
@@ -181,101 +166,13 @@ export function SidebarSectionItem({
   return (
     <SidebarSectionCard
       value={section.key}
-      /* No glyph on the assistant's header: it opens directly under her
-         pill, which already carries her eyes, and the header is a byline in
-         her voice ("From me") rather than a category that needs a mark. The
-         collapsed rail, which draws no pill, keeps the section's Inbox tile
-         through `sectionIcon`. */
-      icon={isAssistantSection ? undefined : sectionIcon(section)}
+      icon={sectionIcon(section)}
       label={section.label}
       /* The name in the emphasised ink rather than the shared header
          classes' tertiary gray: this header sits on its own tinted surface,
          where the section-family gray reads as disabled instead of quiet.
          Set on the label span, so it overrides by inheritance rather than
          specificity. */
-      labelClassName={
-        isAssistantSection ? "text-[var(--content-emphasised)]" : undefined
-      }
-      /* On the rail, the whole header on its own surface: the New Chat
-         button's exact wash (PANEL_ITEM_WASH rest = a 15% accent mix into
-         --surface-lift), spanning glyph, label, unread dot, and chevron
-         edge to edge - one pill, not a pill with the controls stranded
-         outside it. 36px stands it at the height of a collapsed side-menu
-         item, whose full roundness is likewise half of 36. The glyph keeps
-         the pill's own inset, not the flat headers': as a pill standing
-         beside the Preferences PanelItem (p-[8px]), its glyph has to start
-         the same 8px from the rounded edge, so the shared 12px title inset
-         is overridden down to pl-2. The title's vertical padding is zeroed
-         so the 36px is this class's to state.
-
-         Not on the overlay. There every section is a card that already
-         owns its inset and its 20px header row, and this card is tinted
-         edge to edge (`cardClassName` below), so a pill of the same wash
-         inside it is invisible - all that survived of it was the `pl-2`,
-         which pushed this one header 8px right of every other section's,
-         and the 36px height, which stood it taller than theirs. */
-      headerClassName={
-        isAssistantSection && !overlayCards
-          ? "h-9 rounded-full bg-[color-mix(in_srgb,var(--avatar-accent,var(--surface-lift))_15%,var(--surface-lift))] [&_[data-slot=collapsible-nav-section-title]]:py-0! [&_[data-slot=collapsible-nav-section-title]]:pl-2!"
-          : undefined
-      }
-      /* The one section painted in the assistant's own color, so it reads as
-         coming from someone rather than as another bucket. `--avatar-accent`
-         is published on `<html>` by `useAvatarAccentVar` and is *absent* for
-         custom-image and still-loading avatars, so the fallback has to be the
-         surface itself: mixing a percentage of `--surface-lift` into
-         `--surface-lift` is exactly `--surface-lift`, which is what every
-         other card paints. A `transparent` fallback would instead punch a
-         hole in the card. The mix is the same 15% the header pill wears
-         (the New Chat wash), so header and content share one surface and
-         the card reads as a single tinted object rather than a pill on a
-         deeper slab; still short of reading as selected, so the rows on
-         top read as ordinary rows.
-
-         Declared as the card's `--sidebar-card-surface` rather than as a
-         background of its own, so the swipe layer backing each row on a
-         touch screen takes the same tint: painted only as a background, the
-         rows sat in white cells on the wash.
-
-         `mt-auto` is the anchor half of the section's bottom pin. The order
-         pin (`pinAssistantSectionLast`) makes it the last card, but only the
-         last *space-claiming* section grows to fill the rail, and when that
-         section is collapsed nothing does - the leftover height would open
-         below this card and float it mid-rail. Auto margin sends that
-         leftover above it instead, so the card sits against the Preferences
-         footer whatever the sections above are doing; when a grown section
-         has already consumed the leftover, there is no free space and the
-         margin is inert. */
-      cardClassName={
-        isAssistantSection
-          ? cn(
-              "mt-auto [--sidebar-card-surface:color-mix(in_srgb,var(--avatar-accent,var(--surface-lift))_15%,var(--surface-lift))]",
-              /* A row hovered or selected on this card raises to the same
-                 wash the New Chat button raises to (`PANEL_ITEM_WASH.raised`,
-                 24% of the accent into the lift), rather than the neutral
-                 gray every other card's rows hover in, so the card reads as
-                 one tinted object under the pointer and around the open
-                 thread as well as at rest. Every row is a `PanelItem`, and
-                 these are the properties its hover and current-page states
-                 read; active is stated alongside hover, as
-                 `panelItemWashStyle` does, because without it the current
-                 row falls back to `--surface-active` and sits as a white
-                 cell on the tint.
-
-                 The raised wash is derived from `--avatar-accent` with NO
-                 fallback, on purpose: when the accent is absent (custom
-                 image, still loading) the derived property is invalid at
-                 computed-value time and so counts as unset, and each
-                 consumer's own fallback stands - the neutral hover and
-                 active surfaces every other card's rows use. Mixing a
-                 fallback surface into itself would instead paint both
-                 states in the card's own colour and hide them. */
-              "[--assistant-row-raised:color-mix(in_srgb,var(--avatar-accent)_24%,var(--surface-lift))]",
-              "[--panel-item-hover:var(--assistant-row-raised,var(--surface-hover))]",
-              "[--panel-item-active:var(--assistant-row-raised,var(--surface-active))]",
-            )
-          : undefined
-      }
       /* The "…" button and the header's right-click menu both render from
          `groupMenu`. Every section carries it: a section's actions should not
          depend on which kind it is, and Chats and the channels have their own
@@ -298,7 +195,6 @@ export function SidebarSectionItem({
       // it grows to fit its own rows instead.
       unbounded={section.type === "pinned"}
       isLast={isLast}
-      maxHeight={isAssistantSection ? ASSISTANT_SECTION_MAX_HEIGHT : undefined}
       /* Which sections rest at the mid height, whatever the flag: the cap is
          the section's shape, and only the control that grows past it goes
          away under `sidebar-done` (see `ConversationRowList`). */
@@ -315,9 +211,7 @@ export function SidebarSectionItem({
          an empty node. Passed as a prop rather than as a JSX child for that
          reason: it keeps the absent case unambiguous. */
       children={
-        conversations.length > 0 ? undefined : isAssistantSection ? (
-          <AssistantSectionEmptyState />
-        ) : section.type === "recents" && resolved ? (
+        conversations.length > 0 ? undefined : section.type === "recents" && resolved ? (
           <ChatsSectionEmptyState viewAllHref={viewAllHref} />
         ) : undefined
       }

@@ -16,7 +16,6 @@ import { AcpConfigSchema } from "./acp-schema.js";
 import { ApiRateLimitConfigSchema } from "./schemas/api-rate-limit.js";
 import { CallsConfigSchema } from "./schemas/calls.js";
 import {
-  A2AConfigSchema,
   DiscordConfigSchema,
   SlackConfigSchema,
   TelegramConfigSchema,
@@ -120,7 +119,6 @@ export const AssistantConfigSchema = z.object({
   telegram: TelegramConfigSchema.default(TelegramConfigSchema.parse({})),
   slack: SlackConfigSchema.default(SlackConfigSchema.parse({})),
   discord: DiscordConfigSchema.default(DiscordConfigSchema.parse({})),
-  a2a: A2AConfigSchema.default(A2AConfigSchema.parse({})),
   ingress: IngressConfigSchema,
   cloud: CloudConfigSchema.default(CloudConfigSchema.parse({})),
   daemon: DaemonConfigSchema.default(DaemonConfigSchema.parse({})),

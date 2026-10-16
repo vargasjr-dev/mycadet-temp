@@ -27,12 +27,14 @@ import type { PostMessageResult } from "@/domains/chat/api/messages";
 // ---------------------------------------------------------------------------
 const realMessages = await import("@/domains/chat/api/messages");
 
-let postChatMessageMock = mock(async (): Promise<PostMessageResult> => ({
-  ok: true as const,
-  assistantId: "asst-1",
-  conversationId: "conv-A",
-  messageId: "user-msg-1",
-}));
+let postChatMessageMock = mock(
+  async (): Promise<PostMessageResult> => ({
+    ok: true as const,
+    assistantId: "asst-1",
+    conversationId: "conv-A",
+    messageId: "user-msg-1",
+  }),
+);
 let deleteQueuedMessageMock = mock(async () => true);
 
 mock.module("@/domains/chat/api/messages", () => ({
@@ -107,12 +109,14 @@ function renderSend(startReconciliationLoop: () => void) {
 }
 
 beforeEach(() => {
-  postChatMessageMock = mock(async (): Promise<PostMessageResult> => ({
-    ok: true as const,
-    assistantId: "asst-1",
-    conversationId: "conv-A",
-    messageId: "user-msg-1",
-  }));
+  postChatMessageMock = mock(
+    async (): Promise<PostMessageResult> => ({
+      ok: true as const,
+      assistantId: "asst-1",
+      conversationId: "conv-A",
+      messageId: "user-msg-1",
+    }),
+  );
   deleteQueuedMessageMock = mock(async () => true);
   // Scope check: the send's assistant/conversation must be the active ones so
   // the fallback branch is reached (not short-circuited as inactive).
@@ -167,83 +171,5 @@ describe("useSendMessage — SSE + reconciliation own delivery (no poll)", () =>
 
     expect(startReconciliationLoop).toHaveBeenCalledTimes(1);
     expect(useChatSessionStore.getState().error).toBeNull();
-  });
-
-  test("an early queue cancellation deletes after the POST supplies its request id", async () => {
-    let resolvePost: (result: PostMessageResult) => void = () => {};
-    postChatMessageMock = mock(
-      () =>
-        new Promise<PostMessageResult>((resolve) => {
-          resolvePost = resolve;
-        }),
-    );
-    useTurnStore.setState({
-      phase: "streaming",
-      activeTurnId: "turn-1",
-    });
-    const { result } = renderSend(() => {});
-    let sendPromise: Promise<void> = Promise.resolve();
-
-    await act(async () => {
-      sendPromise = result.current.sendMessage("cancel this queued message");
-      await Promise.resolve();
-    });
-    const messageId = useChatSessionStore.getState().optimisticSends[0]?.id;
-    if (!messageId) {
-      throw new Error("Expected an optimistic queued message");
-    }
-
-    act(() => {
-      result.current.handleCancelQueuedMessage(messageId);
-    });
-
-    expect(useChatSessionStore.getState().optimisticSends).toHaveLength(1);
-    expect(
-      useChatSessionStore.getState().pendingLocalDeletions.has(messageId),
-    ).toBe(true);
-
-    await act(async () => {
-      resolvePost({
-        ok: true,
-        queued: true,
-        assistantId: "asst-1",
-        conversationId: "conv-A",
-        requestId: "request-1",
-      });
-      await sendPromise;
-    });
-
-    expect(deleteQueuedMessageMock).toHaveBeenCalledWith(
-      "asst-1",
-      "conv-A",
-      "request-1",
-    );
-    expect(useChatSessionStore.getState().optimisticSends).toHaveLength(0);
-    expect(useChatSessionStore.getState().requestIdToMessageId.size).toBe(0);
-  });
-
-  test("a hidden send on the queue path leaves the pending FIFO untouched", async () => {
-    // A hidden send renders no row and receives no queued ack, so tracking
-    // it would park a dead FIFO entry that the next visible send's ack
-    // would bind to instead of its own row.
-    postChatMessageMock = mock(async (): Promise<PostMessageResult> => ({
-      ok: true as const,
-      queued: true,
-      assistantId: "asst-1",
-      conversationId: "conv-A",
-      requestId: "request-hidden",
-    }));
-    useTurnStore.setState({
-      phase: "streaming",
-      activeTurnId: "turn-1",
-    });
-    const { result } = renderSend(() => {});
-
-    await act(async () => {
-      await result.current.sendMessage("machine signal", [], { hidden: true });
-    });
-
-    expect(useChatSessionStore.getState().pendingQueuedMessageIds).toEqual([]);
-    expect(useChatSessionStore.getState().optimisticSends).toHaveLength(0);
   });
 });

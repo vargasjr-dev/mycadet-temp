@@ -18,7 +18,6 @@
     "slack": "Slack",
     "telegram": "Telegram",
     "whatsapp": "WhatsApp",
-    "a2a": "A2A",
     "phone": "电话",
     "email": "电子邮件",
     "discord": "Discord"
@@ -93,20 +92,6 @@
   "accountLink": {
     "linked": "已关联为 @{username}",
     "linkFailed": "关联账户失败"
-  },
-  "connectPage": {
-    "invalidTitle": "无效的邀请链接",
-    "invalidBody": "您访问的链接缺少必要的参数，无法使用。",
-    "goToContacts": "前往联系人",
-    "title": "连接助手",
-    "body": "接受此链接将在您的助手与发送者的助手之间建立受信任的 A2A 连接。",
-    "alreadyConnected": "已连接",
-    "connected": "已连接！",
-    "errorExpired": "此邀请链接已过期或已被使用。",
-    "errorAlreadyRedeemed": "此邀请已被其他人领取。",
-    "errorSenderNotFound": "找不到发送者的助手。",
-    "errorNotPlatformManaged": "A2A 邀请链接仅支持平台托管的助手。",
-    "errorGeneric": "发生了一些错误。请重试。"
   },
   "channelStatus": {
     "connected": "已连接",

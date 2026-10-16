@@ -27,18 +27,13 @@ import {
   useBackgroundConversationListQuery,
   useConversationListQuery,
   useScheduledConversationListQuery,
-  useSectionConversationListQuery,
 } from "@/hooks/conversation-queries";
-import { useSupportsGroupFilter } from "@/lib/backwards-compat/use-supports-group-filter";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import type { Conversation } from "@/types/conversation-types";
 import { ApiError } from "@/utils/api-errors";
 import { mergeConversationLists } from "@/utils/conversation-cache";
 import { loadMoreConversations } from "@/utils/conversation-cache-mutations";
-import {
-  MessageOrderedHistoryError,
-  SYSTEM_ASSISTANT_GROUP_ID,
-} from "@/utils/conversation-list-fetchers";
+import { MessageOrderedHistoryError } from "@/utils/conversation-list-fetchers";
 import {
   ALL_HISTORY_FILTER,
   type ConversationListFilter,
@@ -46,14 +41,6 @@ import {
 import { compareByRecency } from "@/utils/conversation-order";
 
 function noop(): void {}
-
-/**
- * The threads the assistant started on its own, as the sidebar's own section
- * asks for them. Module scope so the query key is stable across renders.
- */
-const ASSISTANT_INITIATED_FILTER: ConversationListFilter = {
-  groupId: SYSTEM_ASSISTANT_GROUP_ID,
-};
 
 /**
  * Whether this error is the assistant saying it cannot serve the combined
@@ -127,24 +114,6 @@ export function useAllChatsData(
   );
   const archived = useArchivedConversationListQuery(assistantId, fetchBuckets);
 
-  /* A fifth source, and not an optional one: under `assistant-initiated-
-     threads` the daemon withholds the threads the assistant started from
-     every standard active read, so the foreground bucket above does not
-     contain them and nothing else would. It withholds them only from the
-     `standard` type, which is why the combined read needs no equivalent.
-
-     Gated on the group filter the sidebar's sections already gate on: an
-     assistant that ignores `groupId` answers 200 with the whole unfiltered
-     list, and such an assistant also predates the split, so it has nothing
-     to contribute here anyway. Unlike the four buckets this one is windowed
-     rather than drained, and it is what the degraded path pages. */
-  const supportsGroupFilter = useSupportsGroupFilter(assistantId);
-  const assistantThreads = useSectionConversationListQuery(
-    assistantId,
-    ASSISTANT_INITIATED_FILTER,
-    fetchBuckets && supportsGroupFilter,
-  );
-
   const fallbackRows = useMemo(
     () =>
       [
@@ -153,7 +122,6 @@ export function useAllChatsData(
           background.conversations,
           scheduled.conversations,
           archived.conversations,
-          assistantThreads.conversations,
         ),
       ].sort(compareByRecency),
     [
@@ -161,7 +129,6 @@ export function useAllChatsData(
       background.conversations,
       scheduled.conversations,
       archived.conversations,
-      assistantThreads.conversations,
     ],
   );
 
@@ -197,36 +164,29 @@ export function useAllChatsData(
     extendList(ALL_HISTORY_FILTER);
   }, [extendList]);
 
-  const loadMoreAssistantThreads = useCallback(() => {
-    extendList(ASSISTANT_INITIATED_FILTER);
-  }, [extendList]);
 
   const refetchForeground = foreground.refetch;
   const refetchBackground = background.refetch;
   const refetchScheduled = scheduled.refetch;
   const refetchArchived = archived.refetch;
-  const refetchAssistantThreads = assistantThreads.refetch;
   const retryDegraded = useCallback(() => {
     refetchForeground();
     refetchBackground();
     refetchScheduled();
     refetchArchived();
-    refetchAssistantThreads();
   }, [
     refetchForeground,
     refetchBackground,
     refetchScheduled,
     refetchArchived,
-    refetchAssistantThreads,
   ]);
 
   if (degraded) {
     return {
       conversations: fallbackRows,
-      /* The four buckets drain, so the only source with pages left is the
-         assistant-initiated section. */
-      hasMore: assistantThreads.hasMore,
-      loadMore: assistantThreads.hasMore ? loadMoreAssistantThreads : noop,
+      /* The buckets drain fully, so the degraded path has no pages left. */
+      hasMore: false,
+      loadMore: noop,
       /* Every source is part of the answer, so the view waits on all of them
          and fails if any of them fails: a missing source is missing rows the
          page claims to hold, which reads as "you have none". */
@@ -234,8 +194,7 @@ export function useAllChatsData(
         foreground.isLoading ||
         background.isLoading ||
         scheduled.isLoading ||
-        archived.isLoading ||
-        assistantThreads.isLoading,
+        archived.isLoading,
       /* Guarded by `hasData` for the same reason the combined path below is:
          React Query keeps the last successful page, so a transient failure on
          a refetch must not replace a complete history with an error panel. */
@@ -243,8 +202,7 @@ export function useAllChatsData(
         (foreground.isError && !foreground.hasData) ||
         (background.isError && !background.hasData) ||
         (scheduled.isError && !scheduled.hasData) ||
-        (archived.isError && !archived.hasData) ||
-        (assistantThreads.isError && !assistantThreads.hasData),
+        (archived.isError && !archived.hasData),
       retry: retryDegraded,
     };
   }

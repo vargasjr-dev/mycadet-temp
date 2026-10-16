@@ -15,7 +15,6 @@ export const CHANNEL_IDS = [
   "whatsapp",
   "slack",
   "email",
-  "a2a",
   "discord",
   "plugin",
   "cadet-shared",
@@ -40,7 +39,6 @@ export const INTERFACE_IDS = [
   "whatsapp",
   "slack",
   "email",
-  "a2a",
   "plugin",
 ] as const;
 

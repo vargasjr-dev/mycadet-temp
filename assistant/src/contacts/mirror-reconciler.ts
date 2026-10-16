@@ -13,8 +13,8 @@
  * reconstruct:
  *
  * - It never deletes a mirror row. Mirror-only contacts and channels are
- *   legitimate (a2a peers are written daemon-side only), and absence from
- *   the gateway is indistinguishable from "the gateway never had it".
+ *   legitimate, and absence from the gateway is indistinguishable from
+ *   "the gateway never had it".
  *   Delete propagation stays on the explicit delete ops.
  * - It never touches assistant-authored fields (notes, contactType,
  *   userFile) or an existing contact's displayName (the mirror name tracks

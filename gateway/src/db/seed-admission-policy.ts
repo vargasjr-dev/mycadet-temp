@@ -52,7 +52,7 @@ export const CHANNEL_ADMISSION_DEFAULTS: Partial<
 
 /**
  * Insert a default row for every enforced channel that has none. Exempt
- * channels (`platform`/`a2a`) are skipped — they carry no floor.
+ * channels (`platform`) are skipped — they carry no floor.
  *
  * Hidden channels (`cadet`/`cadet-shared`/`whatsapp`) are not surfaced in
  * the Channel Trust Floors UI, so a legacy or stale row would strand the

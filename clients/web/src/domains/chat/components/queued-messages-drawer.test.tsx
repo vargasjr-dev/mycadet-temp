@@ -13,7 +13,6 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { QueuedMessagesDrawer } from "@/domains/chat/components/queued-messages-drawer";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 /** The steer button is version-gated, so hydrate an assistant that has it. */
@@ -176,22 +175,15 @@ describe("QueuedMessagesDrawer: coarse pointer", () => {
 });
 
 /**
- * A send can still be queued while `interrupt-on-send` is on: another actor
- * owns the running turn, the interrupt times out, or the lock belongs to a
- * `/compact` rather than an abortable turn. Those rows are excluded from the
- * transcript because this drawer owns their rendering, so the drawer keeps
- * showing them and their controls whatever the flag says.
+ * A send can still be queued by the daemon: another actor owns the running
+ * turn, the interrupt times out, or the lock belongs to a `/compact` rather
+ * than an abortable turn. Those rows are excluded from the transcript because
+ * this drawer owns their rendering, so the drawer shows them and their
+ * controls exactly as it shows any queued row.
  */
-describe("QueuedMessagesDrawer: interrupt-on-send", () => {
+describe("QueuedMessagesDrawer: fallback-queued rows", () => {
   beforeEach(() => {
     setPointer(false);
-    useAssistantFeatureFlagStore.getState().setFlags({ interruptOnSend: true });
-  });
-
-  afterEach(() => {
-    useAssistantFeatureFlagStore
-      .getState()
-      .setFlags({ interruptOnSend: false });
   });
 
   test("renders fallback-queued rows and their controls", () => {

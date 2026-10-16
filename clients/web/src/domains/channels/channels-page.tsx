@@ -1,12 +1,8 @@
 import { assistantDisplayName } from "@/utils/assistant-display-name";
 import { AssistantChannelsList } from "@/domains/channels/components/assistant-channels-list";
-import { GenerateInviteLinkDialog } from "@/components/generate-invite-link-dialog";
-import { ShareConnectionLinkButton } from "@/components/share-connection-link-button";
 import { usePluginChannels } from "@/domains/channels/hooks/use-plugin-channels";
 import { useAssistantChannels } from "@/hooks/use-assistant-channels";
-import { useInviteLinkDialog } from "@/hooks/use-invite-link-dialog";
 import { useSetupChannelParam } from "@/domains/channels/hooks/use-setup-channel-param";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 export interface ChannelsPageProps {
@@ -28,10 +24,8 @@ export function ChannelsPage({
   assistantId,
   onStartSetupConversation,
 }: ChannelsPageProps) {
-  const a2aChannel = useAssistantFeatureFlagStore.use.a2aChannel();
   const identityName = useAssistantIdentityStore.use.name();
   const setupChannel = useSetupChannelParam();
-  const inviteDialog = useInviteLinkDialog(assistantId);
 
   const displayName = assistantDisplayName(identityName);
 
@@ -51,15 +45,6 @@ export function ChannelsPage({
         {...channelsController}
       />
 
-      {a2aChannel ? (
-        <ShareConnectionLinkButton onClick={inviteDialog.open} />
-      ) : null}
-
-      <GenerateInviteLinkDialog
-        open={inviteDialog.isOpen}
-        assistantId={assistantId}
-        onClose={inviteDialog.close}
-      />
     </div>
   );
 }

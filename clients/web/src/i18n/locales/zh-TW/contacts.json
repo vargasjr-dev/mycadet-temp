@@ -18,7 +18,6 @@
     "slack": "Slack",
     "telegram": "Telegram",
     "whatsapp": "WhatsApp",
-    "a2a": "A2A",
     "phone": "電話",
     "email": "電子郵件",
     "discord": "Discord"
@@ -93,20 +92,6 @@
   "accountLink": {
     "linked": "已連結為 @{username}",
     "linkFailed": "連結帳號失敗"
-  },
-  "connectPage": {
-    "invalidTitle": "無效的邀請連結",
-    "invalidBody": "您所使用的連結缺少必要的參數，因此無法使用。",
-    "goToContacts": "前往聯絡人",
-    "title": "連結助理",
-    "body": "接受此連結將在您的助理與寄件者的助理之間建立受信任的 A2A 連線。",
-    "alreadyConnected": "已連線",
-    "connected": "已連線！",
-    "errorExpired": "此邀請連結已過期或已被使用。",
-    "errorAlreadyRedeemed": "此邀請已被其他人領取。",
-    "errorSenderNotFound": "找不到寄件者的助理。",
-    "errorNotPlatformManaged": "A2A 邀請連結僅支援平台託管的助理。",
-    "errorGeneric": "發生錯誤。請再試一次。"
   },
   "channelStatus": {
     "connected": "已連線",

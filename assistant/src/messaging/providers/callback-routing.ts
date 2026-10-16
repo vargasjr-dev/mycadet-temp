@@ -15,7 +15,6 @@ const DIRECT_DELIVERY_CHANNELS = [
   "slack",
   "telegram",
   "whatsapp",
-  "a2a",
   "discord",
 ] as const satisfies readonly ChannelId[];
 

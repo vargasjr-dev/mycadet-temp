@@ -315,10 +315,10 @@ describe("useSendMessage: a send whose thread is no longer open", () => {
 });
 
 /**
- * The queue branch is reachable for a stale send because `willQueue` reads the
- * OPEN thread's phase: a thread answering on screen sends every message written
- * anywhere down this path, including one whose own conversation was idle. Its
- * responses then carry writes that describe the thread on screen.
+ * A daemon-queued answer (another actor owns the running turn) describes the
+ * thread the message was written into: a thread answering on screen receives
+ * these writes for sends made anywhere, so a stale send's queued response
+ * still carries writes that describe the thread on screen.
  */
 describe("useSendMessage: a stale send through the queue branch", () => {
   /** The open thread is mid-answer, which is what puts a send on this path. */
@@ -495,20 +495,6 @@ describe("useSendMessage: a switch during the POST", () => {
     useConversationStore.getState().setActiveConversationId(SEND_CONVERSATION);
   });
 
-  test("a directly-processed response does not claim the newly opened turn", async () => {
-    // `willQueue` is read pre-POST, so a streaming thread puts this send on the
-    // queue path; the daemon then reports it ran the message straight away.
-    useTurnStore.setState(OPEN_THREAD_TURN);
-    switchWhileAnswering(ACCEPTED_DIRECTLY);
-    const { result } = renderSendFor(SEND_CONVERSATION);
-
-    await act(async () => {
-      await result.current.sendMessage("what am I holding?");
-    });
-
-    expect(turnState()).toEqual(OPEN_THREAD_TURN);
-  });
-
   test("a failure raises no banner and parks the text instead", async () => {
     daemonClient.post = mock(async () => {
       useConversationStore
@@ -556,9 +542,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore
-        .getState()
-        .setActiveAssistantId("assistant-1");
+      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -610,9 +594,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore
-        .getState()
-        .setActiveAssistantId("assistant-1");
+      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -641,7 +623,9 @@ describe("useSendMessage: a switch during the POST", () => {
       0,
     );
     expect(
-      useConversationStore.getState().pendingDraftProfiles.get(SEND_CONVERSATION),
+      useConversationStore
+        .getState()
+        .pendingDraftProfiles.get(SEND_CONVERSATION),
     ).toBe("new-profile");
     expect(currentLocation).toBe(START_LOCATION);
   });
@@ -677,9 +661,7 @@ describe("useSendMessage: a switch during the POST", () => {
 
     act(() => {
       useChatSessionStore.getState().resetForLogout();
-      useResolvedAssistantsStore
-        .getState()
-        .setActiveAssistantId("assistant-1");
+      useResolvedAssistantsStore.getState().setActiveAssistantId("assistant-1");
       useConversationStore
         .getState()
         .setActiveConversationId(SEND_CONVERSATION);
@@ -707,10 +689,14 @@ describe("useSendMessage: a switch during the POST", () => {
 
     expect(useComposerStore.getState().input).toBe("new session draft");
     expect(
-      useConversationStore.getState().draftConversationIds.has(SEND_CONVERSATION),
+      useConversationStore
+        .getState()
+        .draftConversationIds.has(SEND_CONVERSATION),
     ).toBe(true);
     expect(
-      useConversationStore.getState().pendingDraftProfiles.get(SEND_CONVERSATION),
+      useConversationStore
+        .getState()
+        .pendingDraftProfiles.get(SEND_CONVERSATION),
     ).toBe("shared-profile");
     expect(useConversationStore.getState().processingConversationIds.size).toBe(
       0,
@@ -719,9 +705,8 @@ describe("useSendMessage: a switch during the POST", () => {
   });
 
   test("a queue-branch failure banners nowhere and parks the text", async () => {
-    // The same window on the path that posts for itself: `willQueue` was read
-    // before the POST, so this send is on the queue branch when the switch
-    // lands and its own failure handling has to notice.
+    // The same window on the path that posts for itself: a queued answer can
+    // land after the switch, and its own failure handling has to notice.
     useTurnStore.setState(OPEN_THREAD_TURN);
     daemonClient.post = mock(async () => {
       useConversationStore
@@ -799,28 +784,33 @@ describe("useSendMessage: a local command answering after a switch", () => {
  * its own conversation otherwise.
  */
 describe("useSendMessage: a send whose POST throws", () => {
-  test.todo("restores off-screen attachment payloads with their failed draft", async () => {
-    useConversationStore.getState().setActiveConversationId(SEND_CONVERSATION);
-    useComposerStore.getState().resetAttachments();
-    throwWhileAnswering({ switchFirst: true });
-    const { result } = renderSendFor(SEND_CONVERSATION);
-    const attachment = {
-      id: "attachment-1",
-      filename: "notes.txt",
-      mimeType: "text/plain",
-      sizeBytes: 12,
-      previewUrl: null,
-    };
+  test.todo(
+    "restores off-screen attachment payloads with their failed draft",
+    async () => {
+      useConversationStore
+        .getState()
+        .setActiveConversationId(SEND_CONVERSATION);
+      useComposerStore.getState().resetAttachments();
+      throwWhileAnswering({ switchFirst: true });
+      const { result } = renderSendFor(SEND_CONVERSATION);
+      const attachment = {
+        id: "attachment-1",
+        filename: "notes.txt",
+        mimeType: "text/plain",
+        sizeBytes: 12,
+        previewUrl: null,
+      };
 
-    await act(async () => {
-      await result.current.sendMessage("read these notes", [attachment]);
-    });
+      await act(async () => {
+        await result.current.sendMessage("read these notes", [attachment]);
+      });
 
-    expect(draftFor(SEND_CONVERSATION)).toBe("read these notes");
-    expect(useComposerStore.getState().attachments).toEqual([
-      expect.objectContaining(attachment),
-    ]);
-  });
+      expect(draftFor(SEND_CONVERSATION)).toBe("read these notes");
+      expect(useComposerStore.getState().attachments).toEqual([
+        expect.objectContaining(attachment),
+      ]);
+    },
+  );
 
   test("off screen it idles no turn, banners nothing, and parks the text", async () => {
     useConversationStore.getState().setActiveConversationId(SEND_CONVERSATION);
@@ -854,7 +844,7 @@ describe("useSendMessage: a send whose POST throws", () => {
   });
 
   test("the queue branch's own catch parks it too", async () => {
-    // `willQueue` is read pre-POST, so a thread already answering puts this
+    // A thread already answering can queue the message daemon-side, so this
     // send on the queue path; its catch is a separate handler from the one
     // above and needs the same split.
     useConversationStore.getState().setActiveConversationId(SEND_CONVERSATION);

@@ -452,15 +452,6 @@
     "modeAria": "如何显示此文件",
     "source": "源码"
   },
-  "generateInviteLinkDialog": {
-    "copyAriaLabel": "复制邀请链接",
-    "createFailed": "创建邀请链接失败。请确保您的助手已启用 A2A。",
-    "creating": "正在创建邀请链接…",
-    "done": "完成",
-    "shareHint": "与另一位助手所有者分享此链接以建立连接。",
-    "title": "分享连接链接",
-    "tryAgain": "重试"
-  },
   "githubNudgeBanner": {
     "ariaLabel": "Cadet 在 GitHub 上开源",
     "ctaAriaLabel": "在 GitHub 上为 Cadet 点赞",
@@ -590,9 +581,6 @@
   "serviceFormControls": {
     "reset": "重置",
     "save": "保存"
-  },
-  "shareConnectionLinkButton": {
-    "label": "分享连接链接"
   },
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "关于诊断信息",

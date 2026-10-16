@@ -67,12 +67,6 @@ const CHANNEL_POLICIES = {
       conversationStrategy: "not_deliverable",
     },
   },
-  a2a: {
-    notification: {
-      deliveryEnabled: false,
-      conversationStrategy: "continue_existing_conversation",
-    },
-  },
   discord: {
     notification: {
       // Replies to an inbound Discord message do not read this flag: they

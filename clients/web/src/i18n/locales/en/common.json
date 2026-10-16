@@ -452,15 +452,6 @@
     "modeAria": "How to show this file",
     "source": "Source"
   },
-  "generateInviteLinkDialog": {
-    "copyAriaLabel": "Copy invite link",
-    "createFailed": "Failed to create invite link. Make sure A2A is enabled for your assistant.",
-    "creating": "Creating invite link…",
-    "done": "Done",
-    "shareHint": "Share this link with another assistant owner to establish a connection.",
-    "title": "Share Connection Link",
-    "tryAgain": "Try Again"
-  },
   "githubNudgeBanner": {
     "ariaLabel": "Cadet is open source on GitHub",
     "ctaAriaLabel": "Star Cadet on GitHub",
@@ -590,9 +581,6 @@
   "serviceFormControls": {
     "reset": "Reset",
     "save": "Save"
-  },
-  "shareConnectionLinkButton": {
-    "label": "Share Connection Link"
   },
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "About diagnostics",

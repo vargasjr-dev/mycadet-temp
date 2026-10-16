@@ -7,7 +7,6 @@ import { Input } from "@mycadet/design-library/components/input";
 import { DetailCard } from "@/components/detail-card";
 import { ContactChannelsSection } from "@/domains/contacts/components/contact-channels-section";
 import { ContactTypeBadge } from "@/domains/contacts/components/contact-type-badge";
-import { ShareConnectionLinkButton } from "@/components/share-connection-link-button";
 import type { ChannelInfo, ContactPayload } from "@/domains/contacts/types";
 import { useTranslation } from "@/i18n";
 
@@ -19,13 +18,11 @@ interface GuardianDetailViewProps {
   canMerge?: boolean;
   availableChannels?: ChannelInfo[];
   channelsLoadFailed?: boolean;
-  a2aEnabled?: boolean;
   onSave: (patch: { displayName: string; notes: string }) => void;
   onMerge?: () => void;
   onSetupChannel?: (type: string) => void;
   onVerifyChannel?: (type: string, address?: string) => void;
   onRevokeChannel?: (channelId: string, type: string) => void;
-  onGenerateInviteLink?: () => void;
 }
 
 export function GuardianDetailView(props: GuardianDetailViewProps) {
@@ -40,13 +37,11 @@ function GuardianDetailViewInner({
   canMerge = false,
   availableChannels,
   channelsLoadFailed,
-  a2aEnabled,
   onSave,
   onMerge,
   onSetupChannel,
   onVerifyChannel,
   onRevokeChannel,
-  onGenerateInviteLink,
 }: GuardianDetailViewProps) {
   const { t } = useTranslation("contacts");
   const principalId = isGeneratedPrincipalName(contact.displayName);
@@ -140,7 +135,6 @@ function GuardianDetailViewInner({
           contactChannels={contact.channels}
           availableChannels={availableChannels}
           channelsLoadFailed={channelsLoadFailed}
-          a2aEnabled={a2aEnabled}
           setupLabel={t("guardianDetailView.setupLabel")}
           verifyLoading={verifyPending}
           onSetupChannel={onSetupChannel}
@@ -149,9 +143,6 @@ function GuardianDetailViewInner({
         />
       </DetailCard>
 
-      {onGenerateInviteLink ? (
-        <ShareConnectionLinkButton onClick={onGenerateInviteLink} />
-      ) : null}
     </div>
   );
 }

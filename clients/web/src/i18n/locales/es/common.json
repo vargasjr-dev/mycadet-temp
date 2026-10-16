@@ -450,15 +450,6 @@
     "modeAria": "Cómo mostrar este archivo",
     "source": "Fuente"
   },
-  "generateInviteLinkDialog": {
-    "copyAriaLabel": "Copiar enlace de invitación",
-    "createFailed": "No se pudo crear el enlace de invitación. Asegúrate de que A2A esté habilitado para tu asistente.",
-    "creating": "Creando enlace de invitación…",
-    "done": "Listo",
-    "shareHint": "Comparte este enlace con otro propietario de asistente para establecer una conexión.",
-    "title": "Compartir enlace de conexión",
-    "tryAgain": "Reintentar"
-  },
   "githubNudgeBanner": {
     "ariaLabel": "Cadet es de código abierto en GitHub",
     "ctaAriaLabel": "Dar una estrella a Cadet en GitHub",
@@ -588,9 +579,6 @@
   "serviceFormControls": {
     "reset": "Restablecer",
     "save": "Guardar"
-  },
-  "shareConnectionLinkButton": {
-    "label": "Compartir enlace de conexión"
   },
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "Acerca de los diagnósticos",

@@ -23,17 +23,10 @@ import { parseStringArray } from "@/domains/chat/utils/storage-validators";
 import { createKeyedStorageAccessor } from "@/utils/typed-storage";
 
 /**
- * The always-present primary sections (Pinned, Chats, and the
- * assistant-initiated threads). Unlike the built-in categories and custom
- * groups, these default to OPEN.
- *
- * `assistant` is listed here even though the section renders only under its
- * feature flag: the key has to survive a load either way, or collapsing the
- * section in one session and reloading would silently reopen it. A key for a
- * section that is not rendering is inert, which is the same thing that
- * happens to `pinned` when nothing is pinned.
+ * The always-present primary sections (Pinned and Chats). Unlike the built-in
+ * categories and custom groups, these default to OPEN.
  */
-export const PRIMARY_SECTION_KEYS = ["pinned", "recents", "assistant"] as const;
+export const PRIMARY_SECTION_KEYS = ["pinned", "recents"] as const;
 
 /**
  * True for the primary sections. The sidebar renders primary
@@ -101,7 +94,7 @@ const primaryStorage = createKeyedStorageAccessor<string[]>({
   scope: "user",
   parse: parseStringArray,
   serialize: JSON.stringify,
-  fallback: [...PRIMARY_SECTION_KEYS],
+  fallback: ["pinned", "recents"],
 });
 
 /* Sections expanded past their mid height. Defaults to none: a section rests

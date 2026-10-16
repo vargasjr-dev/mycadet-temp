@@ -56,7 +56,6 @@ const RENDERED_CHANNELS = [
   "whatsapp",
   "phone",
   "email",
-  "a2a",
 ] as const satisfies readonly ChannelId[];
 
 type RenderedChannel = (typeof RENDERED_CHANNELS)[number];
@@ -80,7 +79,6 @@ const CHANNEL_LABELS: Record<RenderedChannel, string> = {
   whatsapp: "WhatsApp",
   phone: "Phone",
   email: "Email",
-  a2a: "Assistant",
 };
 
 const CHANNEL_ICONS: Record<RenderedChannel, LucideIcon> = {
@@ -94,7 +92,6 @@ const CHANNEL_ICONS: Record<RenderedChannel, LucideIcon> = {
   whatsapp: MessageCircle,
   phone: Phone,
   email: Mail,
-  a2a: Bot,
 };
 
 /**

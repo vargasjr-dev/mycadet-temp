@@ -22,8 +22,6 @@ function channelTypeKey(type: string) {
       return "channelType.discord";
     case "whatsapp":
       return "channelType.whatsapp";
-    case "a2a":
-      return "channelType.a2a";
     case "phone":
       return "channelType.phone";
     case "email":

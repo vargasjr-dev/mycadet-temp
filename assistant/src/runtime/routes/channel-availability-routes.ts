@@ -17,7 +17,6 @@
 
 import { z } from "zod";
 
-import { isA2AEnabled } from "../../a2a/feature-gate.js";
 import { discoverPluginChannels } from "../../channels/plugin-channel-declarations.js";
 import {
   type AvailableChannel,
@@ -25,7 +24,6 @@ import {
   type ChannelId,
   type ChannelInfo,
 } from "../../channels/types.js";
-import { getConfig } from "../../config/loader.js";
 import { resolveConfiguredByoEmailService } from "../../email/byo-email-credential.js";
 import { resolveRegisteredInbox } from "../../email/registered-inbox.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
@@ -66,9 +64,6 @@ async function handleGetChannelAvailability(
   const ids: ChannelId[] = [...BASE_AVAILABLE_CHANNELS];
   if (await hasConfiguredEmail()) {
     ids.push("email");
-  }
-  if (isA2AEnabled(getConfig())) {
-    ids.push("a2a");
   }
   // CHANNEL_METADATA is `Partial<Record<ChannelId, ChannelInfo>>` because
   // unsurfaced channels deliberately have no metadata. `ids` only ever

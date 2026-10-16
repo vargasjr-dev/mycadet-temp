@@ -1,11 +1,10 @@
 /**
- * `interrupt-on-send` on the client: a message sent into a busy turn is not
- * queued, and the stream it produces (the interrupted turn's cancel, then the
- * new turn) folds into a live turn rather than an idle one.
+ * Sending into a busy turn on the client: the message is not queued, and the
+ * stream it produces (the interrupted turn's cancel, then the new turn) folds
+ * into a live turn rather than an idle one.
  */
 import { describe, expect, test } from "bun:test";
 
-import { getInterruptOnSend } from "@/domains/chat/hooks/use-interrupt-on-send";
 import { applyEvent } from "@/domains/chat/transcript/rolling-snapshot";
 import type { PaginatedHistoryResult } from "@/domains/chat/transcript/types";
 import { endTurn } from "@/domains/chat/turn-coordinator";
@@ -16,44 +15,11 @@ import {
   type TurnState,
 } from "@/domains/chat/turn-store";
 import { mapRuntimeToDisplayMessage } from "@/domains/chat/utils/map-runtime-message";
-import { shouldQueueSend } from "@/domains/chat/utils/send-message-utils";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import type { AssistantEvent } from "@/types/event-types";
 import type {
   AssistantEventEnvelope,
   ConversationMessage,
 } from "@mycadet/assistant-api";
-
-describe("shouldQueueSend", () => {
-  test("a send into a busy turn does not queue when the flag is on", () => {
-    expect(shouldQueueSend("thinking", true)).toBe(false);
-    expect(shouldQueueSend("streaming", true)).toBe(false);
-    expect(shouldQueueSend("awaiting_user_input", true)).toBe(false);
-  });
-
-  test("a send into a busy turn queues when the flag is off", () => {
-    expect(shouldQueueSend("thinking", false)).toBe(true);
-    expect(shouldQueueSend("streaming", false)).toBe(true);
-  });
-
-  test("a send into an idle turn never queues either way", () => {
-    expect(shouldQueueSend("idle", false)).toBe(false);
-    expect(shouldQueueSend("idle", true)).toBe(false);
-    expect(shouldQueueSend("errored", true)).toBe(false);
-  });
-});
-
-describe("getInterruptOnSend", () => {
-  test("reads the assistant flag store, defaulting to the daemon's queueing behaviour", () => {
-    expect(getInterruptOnSend()).toBe(false);
-    useAssistantFeatureFlagStore.getState().setFlags({ interruptOnSend: true });
-    expect(getInterruptOnSend()).toBe(true);
-    useAssistantFeatureFlagStore
-      .getState()
-      .setFlags({ interruptOnSend: false });
-    expect(getInterruptOnSend()).toBe(false);
-  });
-});
 
 describe("interrupt event order", () => {
   function fold(state: TurnState, events: Parameters<typeof turnReducer>[1][]) {

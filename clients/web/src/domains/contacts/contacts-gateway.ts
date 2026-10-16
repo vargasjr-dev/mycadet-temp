@@ -9,7 +9,6 @@
  * cloud-hosted assistants.
  */
 
-import { client } from "@/generated/api/client.gen";
 import {
   assistantContactDelete,
   assistantContactsUpsert,
@@ -127,50 +126,3 @@ export async function linkContactChannelAccount(
   await verifyContactChannel(assistantId, linked.id);
 }
 
-/**
- * Redeem an A2A invite through the cloud broker (Django endpoint).
- * This is a cloud-only operation — not proxied through the daemon.
- */
-export async function redeemA2AInvite(
-  receiverAssistantId: string,
-  input: { senderAssistantId: string; token: string },
-): Promise<{
-  success: boolean;
-  alreadyConnected?: boolean;
-  error?: string;
-  errorCode?: string;
-}> {
-  const { data, error, response } = await client.post<
-    {
-      200: {
-        success?: boolean;
-        already_connected?: boolean;
-        error?: string;
-        error_code?: string;
-      };
-    },
-    unknown
-  >({
-    url: "/v1/assistants/{assistant_id}/a2a/invites/redeem/",
-    path: { assistant_id: receiverAssistantId },
-    body: {
-      sender_assistant_id: input.senderAssistantId,
-      token: input.token,
-    },
-    headers: { "Content-Type": "application/json" },
-    throwOnError: false,
-  });
-  assertHasResponse(response, error, "Failed to redeem A2A invite");
-  if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      extractErrorMessage(error, response, "Failed to redeem A2A invite"),
-    );
-  }
-  return {
-    success: data?.success ?? true,
-    alreadyConnected: data?.already_connected,
-    error: data?.error,
-    errorCode: data?.error_code,
-  };
-}

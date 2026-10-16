@@ -36,7 +36,6 @@ const KNOWN_CHANNEL_IDS: ReadonlySet<string> = new Set<ChannelInfo["id"]>([
   "slack",
   "email",
   "platform",
-  "a2a",
 ]);
 
 function isKnownChannelId(value: string): value is ChannelInfo["id"] {
@@ -76,15 +75,6 @@ export function getChannelActionState(
   info: ChannelInfo,
   existing: ContactChannelPayload | undefined,
 ): ChannelActionState {
-  const isA2A = info.id === "a2a";
-
-  if (isA2A) {
-    if (existing && existing.status !== "revoked") {
-      return { kind: "connected" };
-    }
-    return { kind: "setup" };
-  }
-
   const verified = existing != null && isVerifiedContactChannel(existing);
 
   if (verified) {
@@ -108,24 +98,17 @@ export function getChannelActionState(
 export function buildVisibleChannels(
   availableChannels: ChannelInfo[] | undefined,
   contactChannels: ContactChannelPayload[],
-  a2aEnabled?: boolean,
 ): ChannelInfo[] {
   const visibleChannels: ChannelInfo[] = [];
   const seen = new Set<string>();
   if (availableChannels) {
     for (const info of availableChannels) {
-      if (info.id === "a2a" && !a2aEnabled) {
-        continue;
-      }
       visibleChannels.push(info);
       seen.add(info.id);
     }
   }
   for (const ch of contactChannels) {
     if (ch.status === "revoked" || seen.has(ch.type)) {
-      continue;
-    }
-    if (ch.type === "a2a" && !a2aEnabled) {
       continue;
     }
     if (!isKnownChannelId(ch.type)) {
@@ -154,7 +137,6 @@ interface ContactChannelsSectionProps {
    * otherwise and only one of them is the assistant's fault.
    */
   channelsLoadFailed?: boolean;
-  a2aEnabled?: boolean;
   setupLabel?: string;
   verifyLoading?: boolean;
   /**
@@ -220,7 +202,6 @@ export function ContactChannelsSection({
   contactChannels,
   availableChannels,
   channelsLoadFailed,
-  a2aEnabled,
   setupLabel,
   verifyLoading,
   actionsDisabled,
@@ -261,7 +242,6 @@ export function ContactChannelsSection({
   const visibleChannels = buildVisibleChannels(
     availableChannels,
     contactChannels,
-    a2aEnabled,
   );
 
   return (
@@ -445,23 +425,21 @@ function ChannelRow({
             {verifyLoading ? t("actions.verifying") : t("actions.verify")}
           </Button>
         ) : actionState.kind === "setup" ? (
-          info.id === "a2a" ? null : (
-            <>
-              {onLinkAccount ? (
-                <Button onClick={onLinkAccount} disabled={actionsDisabled}>
-                  <Link2 className="h-3.5 w-3.5" />
-                  {t("contactChannelsSection.linkAccount")}
-                </Button>
-              ) : null}
-              <Button
-                variant="outlined"
-                onClick={onSetup}
-                disabled={!onSetup || actionsDisabled}
-              >
-                {setupLabel}
+          <>
+            {onLinkAccount ? (
+              <Button onClick={onLinkAccount} disabled={actionsDisabled}>
+                <Link2 className="h-3.5 w-3.5" />
+                {t("contactChannelsSection.linkAccount")}
               </Button>
-            </>
-          )
+            ) : null}
+            <Button
+              variant="outlined"
+              onClick={onSetup}
+              disabled={!onSetup || actionsDisabled}
+            >
+              {setupLabel}
+            </Button>
+          </>
         ) : null}
       </div>
     </div>

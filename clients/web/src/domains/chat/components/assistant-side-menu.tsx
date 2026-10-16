@@ -25,10 +25,6 @@ import {
 } from "@/domains/chat/components/conversation-list-context";
 import { SidebarListContextMenu } from "@/domains/chat/components/sidebar-list-context-menu";
 import type { GroupMenuItemsProps } from "@/domains/chat/components/group-actions-menu";
-import {
-  AssistantSectionRailToggle,
-  AssistantSectionToggle,
-} from "@/domains/chat/components/assistant-section-toggle";
 import { SidebarSectionItem } from "@/domains/chat/components/sidebar-section-item";
 import { SideMenuBuiltInNav } from "@/domains/chat/components/side-menu-built-in-nav";
 import { SideMenuOverlayBottomColumn } from "@/domains/chat/components/side-menu-overlay-bottom-column";
@@ -43,7 +39,6 @@ import {
   type UseSidebarStateParams,
 } from "@/domains/chat/use-sidebar-state";
 import { copyIdToClipboard } from "@/domains/chat/utils/copy-id-to-clipboard";
-import { ASSISTANT_SECTION_KEY } from "@/domains/chat/utils/sidebar-section-order";
 import { useCommandShortcut } from "@/hooks/use-command-shortcut";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -493,33 +488,10 @@ export function AssistantSideMenu({
     });
   };
 
-  /* The assistant's own section is lifted out of the list: it opens beneath
-     the assistant pill from a round toggle beside it, rather than standing
-     as a card pinned to the foot of the list, so the threads the assistant
-     started read as hers, hanging off her row. The collapsed rail keeps the
-     toggle as a tile beneath the assistant's, so there too the section
-     stays out of the list. */
-  const assistantSection = sidebar.sections.find((s) => s.type === "assistant");
-  const listSections = sidebar.sections.filter((s) => s.type !== "assistant");
-
-  /* The section's open state is the same persisted bucket every other
-     section's is, so it survives a reload. The toggle beside the pill is
-     its one control: the card draws no chevron, and a second press on the
-     toggle is what closes it. */
-  const assistantSectionOpen =
-    assistantSection !== undefined &&
-    sidebar.effectiveOpenSections.includes(ASSISTANT_SECTION_KEY);
-  const setAssistantSectionOpen = (open: boolean) => {
-    const rest = sidebar.effectiveOpenSections.filter(
-      (key) => key !== ASSISTANT_SECTION_KEY,
-    );
-    sidebar.onOpenSectionsChange(
-      open ? [...rest, ASSISTANT_SECTION_KEY] : rest,
-    );
-  };
 
   /* Index of the last listed section, the one that may claim the rail's
      leftover space. -1 when the list is empty, so nothing fills. */
+  const listSections = sidebar.sections;
   const lastFillIndex = listSections.length - 1;
 
   const renderSection = (section: SidebarSection, index: number) => (
@@ -544,45 +516,6 @@ export function AssistantSideMenu({
     />
   );
 
-  const assistantSectionToggle =
-    !assistantSection ? undefined : isCollapsedRail ? (
-      <AssistantSectionRailToggle
-        assistantId={assistantId ?? null}
-        section={assistantSection}
-      />
-    ) : (
-      <AssistantSectionToggle
-        assistantId={assistantId ?? null}
-        section={assistantSection}
-        assistantName={assistantName || t("sideMenuBuiltInNav.yourAssistant")}
-        open={assistantSectionOpen}
-        onToggle={() => setAssistantSectionOpen(!assistantSectionOpen)}
-      />
-    );
-
-  /* Mounted only while open: closed, the toggle is the section's whole
-     presence, so nothing of the card (not even a collapsed header) is drawn
-     beneath the pill. Its own accordion root, because the card is not in the
-     list's, held open; the card is not collapsible from its header, since
-     the toggle that opened it is what closes it. Not draggable and never
-     the fill section: it hangs off the pill, not the list. */
-  const assistantSectionCard =
-    assistantSection && !isCollapsedRail && assistantSectionOpen ? (
-      <CollapsibleNavSection.Root
-        type="multiple"
-        value={[ASSISTANT_SECTION_KEY]}
-      >
-        <SidebarSectionItem
-          section={assistantSection}
-          assistantId={assistantId ?? null}
-          groupMenu={(conversations, getAllRows) =>
-            sectionMenu(assistantSection, conversations, getAllRows)
-          }
-          collapsible={false}
-          collapsedIndicator={collapsedActivityDot}
-        />
-      </CollapsibleNavSection.Root>
-    ) : undefined;
 
   // Rendered in the rail's non-scrolling header, or at the top of the
   // overlay's body so the whole menu scrolls as one surface; the block's
@@ -599,8 +532,6 @@ export function AssistantSideMenu({
       activeAppId={activeAppId}
       onOpenApp={onOpenApp}
       onClose={onClose}
-      assistantAside={assistantSectionToggle}
-      assistantBeneath={assistantSectionCard}
     />
   );
 

@@ -248,8 +248,6 @@ export const routes = {
 
   document: (surfaceId: string) => dyn(r("/assistant/documents"), surfaceId),
 
-  connect: r("/assistant/connect"),
-
   channels: r("/assistant/channels"),
   /**
    * The Assistant Inbox: the mail the assistant has received and sent at

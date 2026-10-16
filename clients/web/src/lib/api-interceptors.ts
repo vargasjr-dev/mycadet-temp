@@ -128,7 +128,7 @@ const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
   // to the generated gateway SDK, whose client forwards all
   // assistant-scoped requests without this list: that is the paved road
   // for new endpoints. Deliberately NOT listed: `artifacts` (no
-  // gateway/daemon route exists), `a2a` (platform broker route), and
+  // gateway/daemon route exists) and
   // `push-tokens` / `live-activity` (Django-owned token registration).
   // Those stay on the cloud in cloud and local-with-ingress. Remote
   // gateway authorizes the last two via

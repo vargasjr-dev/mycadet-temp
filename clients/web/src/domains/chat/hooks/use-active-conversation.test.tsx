@@ -18,7 +18,6 @@ let foregroundImpl: Conversation[] = [];
 let backgroundImpl: Conversation[] = [];
 let scheduledImpl: Conversation[] = [];
 let archivedImpl: Conversation[] = [];
-let assistantInitiatedImpl: Conversation[] = [];
 let isOrgReadyImpl = true;
 const refreshConversationRowCalls: Array<{
   assistantId: string | null;
@@ -30,9 +29,6 @@ mock.module("@/hooks/conversation-queries", () => ({
   useBackgroundConversationListQuery: () => ({ conversations: backgroundImpl }),
   useScheduledConversationListQuery: () => ({ conversations: scheduledImpl }),
   useArchivedConversationListQuery: () => ({ conversations: archivedImpl }),
-  useSectionConversationListQuery: () => ({
-    conversations: assistantInitiatedImpl,
-  }),
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -72,7 +68,6 @@ beforeEach(() => {
   backgroundImpl = [];
   scheduledImpl = [];
   archivedImpl = [];
-  assistantInitiatedImpl = [];
   isOrgReadyImpl = true;
   refreshConversationRowCalls.length = 0;
   useConversationStore.setState({ draftConversationIds: new Set() });
@@ -144,22 +139,6 @@ describe("useActiveConversation", () => {
     expect(refreshConversationRowCalls).toHaveLength(0);
   });
 
-  test("returns an assistant-initiated section row without fetching", () => {
-    // GIVEN the active conversation is a thread the assistant started, which
-    // the daemon withholds from the foreground list and serves only through
-    // its own section's cache
-    assistantInitiatedImpl = [makeConversation("ai-1")];
-
-    // WHEN the hook resolves the active conversation
-    const { result } = renderHook(
-      () => useActiveConversation("asst-1", "ai-1", true),
-      { wrapper },
-    );
-
-    // THEN it returns the section row and never fetches a single row
-    expect(result.current?.conversationId).toBe("ai-1");
-    expect(refreshConversationRowCalls).toHaveLength(0);
-  });
 
   test("fetches the single row when the active thread is in neither list", async () => {
     // GIVEN neither list holds the open background/scheduled thread

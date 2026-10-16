@@ -6,10 +6,6 @@ import {
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
 } from "@mycadet/service-contracts/twilio-ingress";
-import {
-  A2A_AGENT_CARD_PATH,
-  buildAgentCard,
-} from "../http/routes/a2a-routes.js";
 import { buildSchema } from "../schema.js";
 import { buildMarkedContactRoutes } from "./helpers/contact-route-table.js";
 
@@ -20,7 +16,6 @@ interface ExtractedRoute {
 }
 
 const ROUTE_PATH_CONSTANTS: Record<string, string> = {
-  A2A_AGENT_CARD_PATH,
   TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
   TWILIO_STATUS_WEBHOOK_PATH,
   TWILIO_VOICE_WEBHOOK_PATH,
@@ -216,8 +211,6 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   // Loopback-only device management — not part of the public gateway API
   "/v1/devices",
   "/v1/devices/revoke",
-  // A2A agent card discovery — read-only, unauthenticated per spec
-  "/.well-known/agent-card.json",
   // Internal-only: reachable only via vembda's trusted gateway-query proxy
   "/v1/contacts/guardian/channel",
   // BFF token auth — loopback-only, not part of the public gateway API
@@ -355,18 +348,6 @@ describe("route-schema sync guard", () => {
     );
 
     expect(stale).toEqual([]);
-  });
-
-  // The agent card is fetched by peers, so every interface URL it advertises
-  // is a promise that the gateway serves that path. Falling through to the
-  // runtime-proxy catch-all does not count: the daemon serves no A2A protocol
-  // route, so an unregistered path reaches the peer as a 404.
-  test("agent card advertises only interface URLs the gateway serves", () => {
-    const card = buildAgentCard("Alice");
-
-    expect(
-      unservedInterfacePaths(card.supported_interfaces, routePaths),
-    ).toEqual([]);
   });
 
   test("advertised-interface check flags a URL with no registered route", () => {

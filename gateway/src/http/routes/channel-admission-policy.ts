@@ -81,7 +81,7 @@ export function createChannelAdmissionPolicyListHandler() {
         rows.map((r) => [r.channelType, r]),
       );
 
-      // §8.1: exempt channels (`platform`, `a2a`) are not policy-configurable.
+      // §8.1: exempt channels (`platform`) are not policy-configurable.
       // Omit them from the client-facing list so the UI never surfaces a
       // control that would 403 on PUT anyway.
       //
@@ -204,7 +204,7 @@ export function createChannelAdmissionPolicyDeleteHandler() {
     if (isExemptChannelType(channelType)) {
       return Response.json(
         {
-          error: `Channel "${channelType}" is internal (platform/a2a) and is not user-configurable.`,
+          error: `Channel "${channelType}" is internal (platform) and is not user-configurable.`,
         },
         { status: 403 },
       );

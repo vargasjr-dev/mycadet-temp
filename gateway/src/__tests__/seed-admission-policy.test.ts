@@ -42,12 +42,6 @@ describe("seedAdmissionPolicyDefaults", () => {
     expect(byChannel.get("phone")).toBe("trusted_contacts");
   });
 
-  test("skips exempt channels (a2a)", () => {
-    seedAdmissionPolicyDefaults(store);
-
-    const seen = new Set(store.list().map((r) => r.channelType));
-    expect(seen.has("a2a")).toBe(false);
-  });
 
   test("is idempotent and never overwrites a configurable channel's row", () => {
     store.set("slack", "strangers", "user choice");

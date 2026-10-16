@@ -32,7 +32,6 @@ import { ContactDetailView } from "@/domains/contacts/components/contact-detail-
 import { isPluginChannel } from "@/domains/contacts/components/contact-channels-section";
 import { ContactMergeDialog } from "@/domains/contacts/components/contact-merge-dialog";
 import { ContactsList } from "@/domains/contacts/components/contacts-list";
-import { GenerateInviteLinkDialog } from "@/components/generate-invite-link-dialog";
 import { GuardianDetailView } from "@/domains/contacts/components/guardian-detail-view";
 import { LinkAccountDialog } from "@/domains/contacts/components/link-account-dialog";
 import { slackRosterOptions } from "@/domains/contacts/slack-users-query";
@@ -60,10 +59,8 @@ import { channelsAvailableGet } from "@/generated/daemon/sdk.gen";
 import type { ChannelsAvailableGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
 import { useSlackConfigured } from "@/hooks/use-slack-configured";
-import { useInviteLinkDialog } from "@/hooks/use-invite-link-dialog";
 import { useAccountLink } from "@/domains/contacts/hooks/use-account-link";
 import { usePendingContactIds } from "@/domains/contacts/hooks/use-pending-contact-ids";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import {
   PUSHED_FROM_LIST_STATE,
   returnToList,
@@ -135,7 +132,6 @@ export function ContactsPage({
   onStartSetupConversation,
 }: ContactsPageProps) {
   const { t } = useTranslation("contacts");
-  const a2aChannel = useAssistantFeatureFlagStore.use.a2aChannel();
   const queryClient = useQueryClient();
   // Legacy `?setup=<channel>` deep link. The credential forms live only on
   // the Channels tab, so the param is forwarded there (see the redirect
@@ -149,7 +145,6 @@ export function ContactsPage({
   const navigate = useNavigate();
   const { pathname, state: locationState } = useLocation();
 
-  const inviteDialog = useInviteLinkDialog(assistantId);
   const isMobile = useIsMobile();
   const { paneRef, hasRoomForList, drawerOpen, openDrawer, closeDrawer } =
     useSideListRoom();
@@ -770,7 +765,7 @@ export function ContactsPage({
             ? ""
             : guardian.displayName,
           role: guardian.role,
-          channelTypes: channelTypeLabels(guardian.channels, a2aChannel),
+          channelTypes: channelTypeLabels(guardian.channels),
         }
       : null,
     regularContacts: regularContacts
@@ -780,7 +775,7 @@ export function ContactsPage({
         displayName: c.displayName,
         role: c.role,
         contactType: c.contactType,
-        channelTypes: channelTypeLabels(c.channels, a2aChannel),
+        channelTypes: channelTypeLabels(c.channels),
         verified: isVerifiedContact(c.channels),
       })),
     selectedContactId,
@@ -844,7 +839,6 @@ export function ContactsPage({
               canMerge={canMerge}
               availableChannels={availableChannels}
               channelsLoadFailed={channelsLoadFailed}
-              a2aEnabled={a2aChannel}
               onSave={(patch) => {
                 updateMutation.mutate({
                   contactId: optimisticContact.id,
@@ -859,7 +853,6 @@ export function ContactsPage({
               }
               onVerifyChannel={handleVerifyChannel}
               onRevokeChannel={handleRevokeChannel}
-              onGenerateInviteLink={a2aChannel ? inviteDialog.open : undefined}
             />
           ) : (
             <ContactDetailView
@@ -876,7 +869,6 @@ export function ContactsPage({
               canMerge={canMerge}
               availableChannels={availableChannels}
               channelsLoadFailed={channelsLoadFailed}
-              a2aEnabled={a2aChannel}
               onSave={(patch) => {
                 updateMutation.mutate({
                   contactId: optimisticContact.id,
@@ -960,11 +952,6 @@ export function ContactsPage({
         }
       />
 
-      <GenerateInviteLinkDialog
-        open={inviteDialog.isOpen}
-        assistantId={assistantId}
-        onClose={inviteDialog.close}
-      />
     </div>
   );
 }
@@ -992,21 +979,13 @@ function ContactsPaneSpinner() {
 }
 
 /**
- * A contact reads as verified when any non-revoked channel is verified, or is
- * a connected A2A peer (A2A channels never carry a verification handshake).
+ * A contact reads as verified when any non-revoked channel is verified.
  */
 function isVerifiedContact(channels: ContactChannelPayload[]): boolean {
-  return channels.some(
-    (ch) =>
-      ch.status !== "revoked" &&
-      (ch.type === "a2a" || isVerifiedContactChannel(ch)),
-  );
+  return channels.some((ch) => ch.status !== "revoked" && isVerifiedContactChannel(ch));
 }
 
-function channelTypeLabels(
-  channels: ContactChannelPayload[],
-  a2aEnabled?: boolean,
-): string[] {
+function channelTypeLabels(channels: ContactChannelPayload[]): string[] {
   const seen = new Set<string>();
   const labels: string[] = [];
   for (const ch of channels) {
@@ -1015,9 +994,6 @@ function channelTypeLabels(
     }
     const key = ch.type.toLowerCase();
     if (seen.has(key)) {
-      continue;
-    }
-    if (key === "a2a" && !a2aEnabled) {
       continue;
     }
     seen.add(key);

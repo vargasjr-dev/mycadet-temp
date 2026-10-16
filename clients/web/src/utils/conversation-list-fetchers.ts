@@ -104,7 +104,6 @@ export const ORIGIN_CHANNELS = [
   "slack",
   "email",
   "platform",
-  "a2a",
   "discord",
 ] as const satisfies readonly NonNullable<OriginChannel>[];
 
@@ -480,7 +479,6 @@ export async function fetchNewestForegroundConversation(
  */
 export const SYSTEM_PINNED_GROUP_ID = "system:pinned";
 export const SYSTEM_ALL_GROUP_ID = "system:all";
-export const SYSTEM_ASSISTANT_GROUP_ID = "system:assistant";
 
 /**
  * The `originChannel` value for a conversation started in Cadet rather than

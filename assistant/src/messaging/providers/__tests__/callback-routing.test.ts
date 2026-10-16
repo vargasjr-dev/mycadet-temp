@@ -9,7 +9,6 @@ describe("channelForCallback", () => {
     );
     expect(channelForCallback("http://gw/deliver/telegram")).toBe("telegram");
     expect(channelForCallback("http://gw/deliver/whatsapp")).toBe("whatsapp");
-    expect(channelForCallback("http://gw/deliver/a2a?taskId=t1")).toBe("a2a");
     expect(channelForCallback("http://gw/deliver/discord?threadId=T1")).toBe(
       "discord",
     );

@@ -3684,7 +3684,7 @@ export function buildSchema(): Record<string, unknown> {
         delete: {
           summary: "Delete a channel admission policy",
           description:
-            "Authenticated gateway endpoint that removes the admission policy for a single channel from the SQLite-backed store and invalidates the in-memory admission-policy cache. Exempt channels (platform, a2a) and hidden channels (cadet, whatsapp) refuse deletion per §8.1.",
+            "Authenticated gateway endpoint that removes the admission policy for a single channel from the SQLite-backed store and invalidates the in-memory admission-policy cache. Exempt channels (platform) and hidden channels (cadet, whatsapp) refuse deletion per §8.1.",
           operationId: "channelAdmissionPolicyDelete",
           security: [{ BearerAuth: [] }],
           parameters: [

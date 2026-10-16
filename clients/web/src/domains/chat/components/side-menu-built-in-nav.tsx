@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 
 import { SIDEBAR_STACK_GAP } from "@/components/sidebar-nav-geometry";
 import { useNavigate } from "react-router";
@@ -24,10 +23,6 @@ export interface SideMenuBuiltInNavProps {
   activeAppId?: string;
   onOpenApp?: (appId: string) => void;
   onClose?: () => void;
-  /** The assistant section's toggle, beside the assistant pill. */
-  assistantAside?: ReactNode;
-  /** The assistant's own section, opened beneath the assistant row. */
-  assistantBeneath?: ReactNode;
 }
 
 /**
@@ -52,8 +47,6 @@ export function SideMenuBuiltInNav({
   activeAppId,
   onOpenApp,
   onClose,
-  assistantAside,
-  assistantBeneath,
 }: SideMenuBuiltInNavProps) {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
@@ -103,8 +96,6 @@ export function SideMenuBuiltInNav({
               : undefined
           }
           onSwitched={onClose}
-          aside={assistantAside}
-          beneath={assistantBeneath}
         />
       </div>
       {pinnedApps.length > 0 || showsEmailPin ? (

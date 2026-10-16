@@ -123,9 +123,8 @@ export interface ConversationRowListProps {
   /**
    * Caps this section's rows shorter than the shared
    * {@link SIDEBAR_SECTION_MAX_HEIGHT}, scrolling within itself past the
-   * cap. The assistant-initiated section passes five rows' worth so its
-   * realizations stay a glanceable stack. Ignored by `unbounded` and
-   * ancestor-scrolled lists, which have no cap of their own to shrink.
+   * cap. Ignored by `unbounded` and ancestor-scrolled lists, which have no
+   * cap of their own to shrink.
    */
   maxHeight?: number;
   /**

@@ -125,12 +125,10 @@ describe("GET /v1/channel-admission-policy", () => {
     expect(phone?.policy).toBe(ADMISSION_POLICY_DEFAULT);
   });
 
-  test("omits exempt `a2a` and hidden `cadet`/`whatsapp` but includes enforced `phone`", async () => {
-    // a2a stays exempt (no runtime admission model). cadet/whatsapp are still
-    // enforced at runtime but hidden from the Channel Trust Floors UI, so they
-    // must not surface even when a row is persisted. phone is now enforced and
-    // visible, so it must surface.
-    store.set("a2a", "guardian_only");
+  test("omits hidden `cadet`/`whatsapp` but includes enforced `phone`", async () => {
+    // cadet/whatsapp are still enforced at runtime but hidden from the
+    // Channel Trust Floors UI, so they must not surface even when a row is
+    // persisted. phone is now enforced and visible, so it must surface.
     store.set("cadet", "guardian_only");
     store.set("whatsapp", "guardian_only");
     store.set("cadet-shared", "guardian_only");
@@ -263,17 +261,6 @@ describe("PUT /v1/channel-admission-policy/:channelType", () => {
     }
   });
 
-  test("§8.1: rejects PUT for exempt channel `a2a` with 403", async () => {
-    const handler = createChannelAdmissionPolicySetHandler();
-    const res = await handler(
-      jsonRequest("http://localhost/v1/channel-admission-policy/a2a", "PUT", {
-        policy: "guardian_only",
-      }),
-      "a2a",
-    );
-    expect(res.status).toBe(403);
-    expect(store.get("a2a")).toBe(ADMISSION_POLICY_DEFAULT);
-  });
 
   test("upserts `phone` like any enforced channel (voice ingress wired)", async () => {
     const handler = createChannelAdmissionPolicySetHandler();

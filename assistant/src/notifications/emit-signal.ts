@@ -27,7 +27,6 @@ import { DiscordAdapter } from "./adapters/discord.js";
 import { CadetAdapter } from "./adapters/macos.js";
 import { SlackAdapter } from "./adapters/slack.js";
 import { TelegramAdapter } from "./adapters/telegram.js";
-import { resolveAssistantInitiatedThread } from "./assistant-initiated-thread.js";
 import {
   type ConversationCreatedInfo,
   NotificationBroadcaster,
@@ -429,8 +428,6 @@ export async function emitNotificationSignal<TEventName extends string>(
       });
     }
 
-    const assistantInitiatedThread = resolveAssistantInitiatedThread(signal);
-
     // Step 2: Evaluate the signal through the decision engine
     const connectedChannels = await getConnectedChannels();
 
@@ -565,26 +562,6 @@ export async function emitNotificationSignal<TEventName extends string>(
       };
     }
 
-    let assistantInitiatedPlatformAdded = false;
-    if (
-      assistantInitiatedThread.isCandidate &&
-      decision.shouldNotify &&
-      decision.selectedChannels.includes("cadet") &&
-      !decision.selectedChannels.includes("platform") &&
-      !(
-        "quiet" in signal.contextPayload && signal.contextPayload.quiet === true
-      ) &&
-      signal.routingIntent !== "single_channel" &&
-      !exclusiveAllowlist &&
-      (await platformIsConfigured())
-    ) {
-      assistantInitiatedPlatformAdded = true;
-      decision = {
-        ...decision,
-        selectedChannels: [...decision.selectedChannels, "platform"],
-        reasoningSummary: `${decision.reasoningSummary} (platform added: assistant-initiated thread candidate)`,
-      };
-    }
 
     // Re-persist the decision if any policy step changed it (urgency channel
     // forcing, routing intent enforcement, the access-request cadet floor,
@@ -661,10 +638,6 @@ export async function emitNotificationSignal<TEventName extends string>(
       {
         onConversationCreated: params.onConversationCreated,
         resultsSink: channelResults,
-        assistantInitiatedThread: {
-          resolution: assistantInitiatedThread,
-          platformAdded: assistantInitiatedPlatformAdded,
-        },
       },
     );
 

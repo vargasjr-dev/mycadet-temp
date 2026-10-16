@@ -142,15 +142,7 @@ describe("saveOpenCategories", () => {
 
 describe("loadOpenPrimary", () => {
   test("defaults to every primary section open when nothing is stored", () => {
-    // `assistant` is a primary key even though its section renders only under
-    // the assistant-initiated-threads flag: an open key for a section that is
-    // not rendering is inert, and it has to survive a load either way or a
-    // collapse would silently reopen (see PRIMARY_SECTION_KEYS).
-    expect(loadOpenPrimary(ASSISTANT_ID)).toEqual([
-      "pinned",
-      "recents",
-      "assistant",
-    ]);
+    expect(loadOpenPrimary(ASSISTANT_ID)).toEqual(["pinned", "recents"]);
   });
 
   test("returns an empty array when the user has collapsed both", () => {

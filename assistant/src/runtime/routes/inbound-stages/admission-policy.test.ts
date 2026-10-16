@@ -33,17 +33,7 @@ function makeInput(
 // ---------------------------------------------------------------------------
 
 describe("enforceAdmissionPolicy — exempt channels", () => {
-  test("a2a short-circuits to admitted regardless of policy", () => {
-    const result = enforceAdmissionPolicy(
-      makeInput({
-        sourceChannel: "a2a",
-        trustClass: "unknown",
-        policy: "no_one",
-      }),
-    );
-    expect(result.admitted).toBe(true);
-  });
-
+  
   test("phone is enforced (not exempt): the floor applies", () => {
     // Voice ingress is wired, so `phone` is no longer exempt — an `unknown`
     // caller is denied under `no_one`.

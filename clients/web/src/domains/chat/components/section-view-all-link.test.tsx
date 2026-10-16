@@ -64,9 +64,8 @@ describe("viewAllHrefFor", () => {
     expect(href).toContain("grp-reviews");
   });
 
-  test("Pinned and the assistant's own section name no destination", () => {
+  test("Pinned names no destination", () => {
     expect(viewAllHrefFor(section({ type: "pinned" }))).toBeNull();
-    expect(viewAllHrefFor(section({ type: "assistant" }))).toBeNull();
   });
 });
 

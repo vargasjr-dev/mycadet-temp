@@ -24,7 +24,6 @@ interface ContactDetailViewProps {
   canMerge?: boolean;
   availableChannels?: ChannelInfo[];
   channelsLoadFailed?: boolean;
-  a2aEnabled?: boolean;
   onSave: (patch: { displayName: string; notes: string }) => void;
   onDelete: () => void;
   onMerge?: () => void;
@@ -52,7 +51,6 @@ function ContactDetailViewInner({
   canMerge = false,
   availableChannels,
   channelsLoadFailed,
-  a2aEnabled,
   onSave,
   onDelete,
   onMerge,
@@ -194,7 +192,6 @@ function ContactDetailViewInner({
           contactChannels={contact.channels}
           availableChannels={availableChannels}
           channelsLoadFailed={channelsLoadFailed}
-          a2aEnabled={a2aEnabled}
           verifyLoading={verifyPending}
           actionsDisabled={deletePending}
           verifySubject="contact"
