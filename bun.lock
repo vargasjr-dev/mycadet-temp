@@ -7,7 +7,7 @@
     },
     "assistant": {
       "name": "@mycadet/assistant",
-      "version": "0.12.9",
+      "version": "0.12.11",
       "bin": {
         "assistant": "./src/index.ts",
       },
@@ -99,7 +99,7 @@
     },
     "cli": {
       "name": "@mycadet/cli",
-      "version": "0.12.9",
+      "version": "0.12.11",
       "bin": {
         "cadet": "./src/index.ts",
       },
@@ -261,7 +261,7 @@
     },
     "clients/web": {
       "name": "@mycadet/web",
-      "version": "0.12.9",
+      "version": "0.12.11",
       "dependencies": {
         "@capacitor-community/camera-preview": "8.0.1",
         "@capacitor/android": "8.3.4",
@@ -409,7 +409,7 @@
     },
     "credential-executor": {
       "name": "@mycadet/credential-executor",
-      "version": "0.12.9",
+      "version": "0.12.11",
       "bin": {
         "credential-executor": "./src/main.ts",
         "ces": "./src/cli.ts",
@@ -432,7 +432,7 @@
     },
     "gateway": {
       "name": "@mycadet/gateway",
-      "version": "0.12.9",
+      "version": "0.12.11",
       "bin": {
         "gateway": "./src/cli/index.ts",
       },
