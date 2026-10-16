@@ -54,6 +54,6 @@
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsgo --noEmit"
+    "typecheck": "bunx tsc --noEmit"
   }
 }

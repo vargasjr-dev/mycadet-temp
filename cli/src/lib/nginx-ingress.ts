@@ -712,7 +712,6 @@ function buildRemoteWebIngressLocations(opts: {
   version?: string;
 }): string {
   const webDistDir = nginxDirPath(opts.webDistDir);
-  const webAssetsDir = join(opts.webDistDir, "assets");
   const indexHtmlPath =
     opts.indexHtmlPath ?? join(opts.webDistDir, "index.html");
 
