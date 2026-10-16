@@ -26,6 +26,7 @@ import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
+import { saveShellMode } from "../lib/ingress-config.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
@@ -2431,7 +2432,8 @@ describe("assistant metadata API", () => {
 });
 
 const APP_INDEX_SUFFIX = join("standalone", "index.html");
-const FAKE_APP_INDEX_HTML = "<!doctype html><html><head><title>app</title></head><body>app-shell</body></html>";
+const FAKE_APP_INDEX_HTML =
+  "<!doctype html><html><head><title>app</title></head><body>app-shell</body></html>";
 
 /**
  * Force findAppDistDir() to resolve a standalone bundle. The web-dist mock
@@ -2452,7 +2454,10 @@ function mockAppDistPresent(): void {
       ? FAKE_APP_INDEX_HTML
       : previousRead
         ? previousRead(path as never, options as never)
-        : realFs.readFileSync(path as never, options as never)) as typeof readFileSync);
+        : realFs.readFileSync(
+            path as never,
+            options as never,
+          )) as typeof readFileSync);
 }
 
 /** The fingerprint the edge must record for an app-mode SPA config. */
@@ -2512,16 +2517,24 @@ describe("app shell mode", () => {
     expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/index.html"');
     expect(conf).toContain("location @cadet_app_shell {");
     expect(conf).toContain("rewrite ^ /__cadet-app-index.html last;");
-    expect(conf).toContain("location = / {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
+    expect(conf).toContain(
+      "location = / {\n      rewrite ^ /__cadet-app-index.html last;\n    }",
+    );
     expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/assets/";');
     expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/";');
     // The shell owns the /assistant/* host routes; the exact mounts load the
     // app document rather than the web SPA.
-    expect(conf).toContain("location = /assistant {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
-    expect(conf).toContain("location = /assistant/ {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
+    expect(conf).toContain(
+      "location = /assistant {\n      rewrite ^ /__cadet-app-index.html last;\n    }",
+    );
+    expect(conf).toContain(
+      "location = /assistant/ {\n      rewrite ^ /__cadet-app-index.html last;\n    }",
+    );
     expect(conf).toContain("try_files $uri @cadet_app_shell;");
     // No recursive loading: the web SPA's exact mount is gone from the shell.
-    expect(conf).not.toContain("location = /assistant/ {\n      rewrite ^ /assistant/__remote-index.html last;\n    }");
+    expect(conf).not.toContain(
+      "location = /assistant/ {\n      rewrite ^ /assistant/__remote-index.html last;\n    }",
+    );
   });
 
   test("iframes the web UI from the distinct /web/assistant namespace", () => {
@@ -2529,14 +2542,20 @@ describe("app shell mode", () => {
     expect(conf).toContain('location = "/v1/assistants/assistant-1/"');
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
     expect(conf).toContain('\\"version\\":\\"1.2.3\\"');
-    expect(conf).toContain("location = /web/assistant/ {\n      rewrite ^ /web/assistant/__remote-index.html last;\n    }");
+    expect(conf).toContain(
+      "location = /web/assistant/ {\n      rewrite ^ /web/assistant/__remote-index.html last;\n    }",
+    );
     expect(conf).toContain("location = /web/assistant/__remote-index.html {");
     expect(conf).toContain('alias "/tmp/cadet web/dist/index.html"');
     expect(conf).toContain("location = /web/assistant/__config {");
     expect(conf).toContain("location ^~ /web/assistant/ {");
-    expect(conf).toContain("try_files $uri $uri/ /web/assistant/__remote-index.html;");
+    expect(conf).toContain(
+      "try_files $uri $uri/ /web/assistant/__remote-index.html;",
+    );
     // The web bundle's asset URLs keep their baked /assistant/ base.
-    expect(conf).toContain('location ^~ /assistant/assets/ {\n      gzip on;\n      alias "/tmp/cadet web/dist/assets/"');
+    expect(conf).toContain(
+      'location ^~ /assistant/assets/ {\n      gzip on;\n      alias "/tmp/cadet web/dist/assets/"',
+    );
     // Prefixed API paths the web UI builds from its serving prefix.
     expect(conf).toContain("location ^~ /web/v1/ {");
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830/v1/;");
@@ -2551,14 +2570,22 @@ describe("app shell mode", () => {
       expect(conf).toContain(`location = ${route} { return 404; }`);
       expect(conf).toContain(`location = /web${route} { return 404; }`);
     }
-    expect(conf).toContain("location ^~ /web/assistant/__local/ { return 404; }");
+    expect(conf).toContain(
+      "location ^~ /web/assistant/__local/ { return 404; }",
+    );
   });
 
   test("proxies runtime API paths verbatim for both surfaces", () => {
     const conf = appConf();
-    expect(conf).toContain("location ^~ /v1/ {\n      proxy_pass http://127.0.0.1:7830;");
-    expect(conf).toContain("location ^~ /webhooks/ {\n      proxy_pass http://127.0.0.1:7830;");
-    expect(conf).toContain("location = /healthz {\n      proxy_pass http://127.0.0.1:7830;");
+    expect(conf).toContain(
+      "location ^~ /v1/ {\n      proxy_pass http://127.0.0.1:7830;",
+    );
+    expect(conf).toContain(
+      "location ^~ /webhooks/ {\n      proxy_pass http://127.0.0.1:7830;",
+    );
+    expect(conf).toContain(
+      "location = /healthz {\n      proxy_pass http://127.0.0.1:7830;",
+    );
   });
 
   test("app mode starts, injects both documents, and records the app fingerprint", async () => {
@@ -2579,7 +2606,10 @@ describe("app shell mode", () => {
 
     expect(result.status).toBe("started");
     const ingressDir = join(ws, "data", "ingress");
-    const appIndex = realFs.readFileSync(join(ingressDir, "app-index.html"), "utf-8");
+    const appIndex = realFs.readFileSync(
+      join(ingressDir, "app-index.html"),
+      "utf-8",
+    );
     expect(appIndex).toContain("__CADET_CONFIG__");
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
@@ -2673,29 +2703,41 @@ describe("app shell mode", () => {
       assistantId: "assistant-1",
     });
 
-    expect(result).toMatchObject({ status: "already-running", listenPort: 7845 });
+    expect(result).toMatchObject({
+      status: "already-running",
+      listenPort: 7845,
+    });
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
-  test("ensureTunnelEdge reads the persisted shell mode from the workspace config", async () => {
+  test("ensureTunnelEdge reads the persisted shell mode from the lockfile", async () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
     mockAppDistPresent();
-    realFs.writeFileSync(
-      join(ws, "config.json"),
-      JSON.stringify({ ingress: { shell: "app" } }) + "\n",
-    );
+    const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+    const lockfileDir = join(ws, "lockfile");
+    mkdirSync(lockfileDir, { recursive: true });
+    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    try {
+      saveShellMode("app");
 
-    const result = await ensureTunnelEdge({
-      assistantId: "assistant-1",
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+      const result = await ensureTunnelEdge({
+        assistantId: "assistant-1",
+        workspaceDir: ws,
+        gatewayPort: 7830,
+      });
 
-    expect(result.shellMode).toBe("app");
+      expect(result.shellMode).toBe("app");
+    } finally {
+      if (originalLockfileDir === undefined) {
+        delete process.env.CADET_LOCKFILE_DIR;
+      } else {
+        process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      }
+    }
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
@@ -2706,14 +2748,27 @@ describe("app shell mode", () => {
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
+    // Hermetic lockfile dir: no edgeShell key means the web default, even if
+    // the machine running the tests has its own shell selection persisted.
+    const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+    const lockfileDir = join(ws, "lockfile");
+    mkdirSync(lockfileDir, { recursive: true });
+    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    try {
+      const result = await ensureTunnelEdge({
+        assistantId: "assistant-1",
+        workspaceDir: ws,
+        gatewayPort: 7830,
+      });
 
-    const result = await ensureTunnelEdge({
-      assistantId: "assistant-1",
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
-
-    expect(result.shellMode).toBe("web");
+      expect(result.shellMode).toBe("web");
+    } finally {
+      if (originalLockfileDir === undefined) {
+        delete process.env.CADET_LOCKFILE_DIR;
+      } else {
+        process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      }
+    }
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).not.toContain("__cadet-app-index");
     expect(conf).toContain('\\"url\\":\\"assistant/\\"');

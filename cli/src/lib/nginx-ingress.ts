@@ -40,7 +40,11 @@ import {
   saveRawConfig,
 } from "./ingress-config.js";
 import { stripVersionPrefix } from "./version-compat.js";
-import { findAppDistDir, findWebDistDir, readWebReleaseVersion } from "./web-dist.js";
+import {
+  findAppDistDir,
+  findWebDistDir,
+  readWebReleaseVersion,
+} from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
 export { findAppDistDir } from "./web-dist.js";
@@ -98,10 +102,7 @@ function nginxDirPath(dir: string): string {
   return dir.endsWith("/") ? dir : `${dir}/`;
 }
 
-function gatewayProxyBlock(
-  gatewayPort: number,
-  upstreamPath = "",
-): string {
+function gatewayProxyBlock(gatewayPort: number, upstreamPath = ""): string {
   return `      proxy_pass http://127.0.0.1:${gatewayPort}${upstreamPath};
       proxy_http_version 1.1;
       proxy_request_buffering off;
@@ -199,9 +200,7 @@ export interface RemoteWebIngressOptions {
  * serves it from the distinct /web/assistant/ iframe namespace so the shell's
  * own /assistant/* host routes can never load the shell recursively.
  */
-export function assistantEntryUrl(
-  appDistDir: string | undefined,
-): string {
+export function assistantEntryUrl(appDistDir: string | undefined): string {
   return appDistDir ? "web/assistant/" : "assistant/";
 }
 
@@ -271,14 +270,17 @@ function remoteWebConfigFingerprint(
         config,
         webDistDir,
         version,
-        // The shell mode is part of edge identity: flipping ingress.shell
-        // must rotate a running edge onto the requested shell even though
-        // every other fingerprint input may be unchanged.
+        // The shell mode is part of edge identity: flipping the persisted
+        // shell mode must rotate a running edge onto the requested shell
+        // even though every other fingerprint input may be unchanged.
         shellMode: appDistDir ? "app" : "web",
         ...(appDistDir
           ? {
               appDistDir,
-              appIndexHtml: readFileSync(join(appDistDir, "index.html"), "utf-8"),
+              appIndexHtml: readFileSync(
+                join(appDistDir, "index.html"),
+                "utf-8",
+              ),
             }
           : {}),
         indexHtml: readFileSync(join(webDistDir, "index.html"), "utf-8"),
@@ -443,7 +445,8 @@ function appOrigins(config: Record<string, unknown>): string[] {
 function assistantMetadataLocations(config: Record<string, unknown>): string {
   const metadata = assistantHostConfig(config);
   const id = metadata.assistantId;
-  const entryUrl = typeof config.entryUrl === "string" ? config.entryUrl : undefined;
+  const entryUrl =
+    typeof config.entryUrl === "string" ? config.entryUrl : undefined;
   const choice = id
     ? {
         id,
@@ -830,10 +833,7 @@ ${webAssetsLocations(opts.webDistDir)}
 
     location / {
       gzip on;
-      alias ${nginxQuoted(
-        nginxDirPath(opts.appDistDir),
-        "app dist path",
-      )};
+      alias ${nginxQuoted(nginxDirPath(opts.appDistDir), "app dist path")};
       try_files $uri @cadet_app_shell;
       add_header Cache-Control "no-cache";
     }`;
@@ -1284,7 +1284,9 @@ export async function startRemoteWebIngress(opts: {
     return { status: "web-dist-missing" };
   }
   const appDistDir =
-    includeWebApp && shellMode === "app" ? (findAppDistDir() ?? undefined) : undefined;
+    includeWebApp && shellMode === "app"
+      ? (findAppDistDir() ?? undefined)
+      : undefined;
   if (includeWebApp && shellMode === "app" && !appDistDir) {
     return { status: "app-dist-missing" };
   }
@@ -1511,7 +1513,7 @@ function stampAppProcessEntry(
   /** True when this call started the edge, false when a running one was reused. */
   started: boolean;
   includesWebApp: boolean;
-  /** The shell mode the edge serves (the persisted workspace setting). */
+  /** The shell mode the edge serves (the persisted lockfile setting). */
   shellMode: "web" | "app";
 }
 
@@ -1559,10 +1561,10 @@ export async function ensureTunnelEdge(opts: {
   const assistantName = opts.assistantId
     ? lockfileAssistantName(opts.assistantId)
     : undefined;
-  // The persisted workspace setting owns the shell choice; every edge caller
+  // The persisted lockfile setting owns the shell choice; every edge caller
   // (tunnel, wake restore, upgrade restore) reads it through here so a mode
   // flip only needs `cadet tunnel --shell` once.
-  const shellMode = readShellMode(opts.workspaceDir);
+  const shellMode = readShellMode();
   const result = await startRemoteWebIngress({
     workspaceDir: opts.workspaceDir,
     gatewayPort: opts.gatewayPort,
@@ -1640,7 +1642,7 @@ export async function ensureTunnelEdge(opts: {
       );
     case "app-dist-missing":
       throw new Error(
-        "The app shell edge mode is selected (ingress.shell = \"app\") but no " +
+        "The app shell edge mode is selected but no " +
           "built app bundle is available. Build it with `cd clients/app && bun run build`, " +
           "or install @mycadet/app so its packaged standalone directory is available. " +
           "Switch back to the web shell with `cadet tunnel --shell web`.",

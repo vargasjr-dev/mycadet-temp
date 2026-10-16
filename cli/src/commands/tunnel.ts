@@ -504,10 +504,11 @@ export const tunnel = Object.assign(
       provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
 
     // Persist the shell mode like the reserved domain: parsed once, saved to
-    // the workspace config, and read back by every later edge restore
-    // (wake/upgrade), so the choice outlives the command that made it.
+    // the CLI lockfile beside the nginx edge record it configures, and read
+    // back by every later edge restore (wake/upgrade), so the choice outlives
+    // the command that made it.
     if (shell) {
-      saveShellMode(workspaceDir, shell);
+      saveShellMode(shell);
       console.log(`Shell mode saved: ${shell}.`);
     }
 

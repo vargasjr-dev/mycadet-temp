@@ -1,84 +1,83 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 
+import {
+  readRootProcesses,
+  stampRootProcess,
+} from "../lib/assistant-config.js";
 import {
   DEFAULT_SHELL_MODE,
   readShellMode,
   saveShellMode,
 } from "../lib/ingress-config.js";
 
+// Create a temp directory and set CADET_LOCKFILE_DIR so the real lockfile
+// helpers resolve inside it (the root-process-lockfile.test.ts pattern).
+let testDir: string;
+
+beforeEach(() => {
+  testDir = mkdtempSync(join(tmpdir(), "cadet-shell-mode-test-"));
+  mkdirSync(join(testDir, "config"), { recursive: true });
+  process.env.CADET_LOCKFILE_DIR = join(testDir, "config");
+});
+
+afterEach(() => {
+  delete process.env.CADET_LOCKFILE_DIR;
+  rmSync(testDir, { recursive: true, force: true });
+});
+
+function lockfile(): Record<string, unknown> {
+  return JSON.parse(
+    readFileSync(join(testDir, "config", "lockfile.json"), "utf-8"),
+  ) as Record<string, unknown>;
+}
+
 describe("ingress shell mode setting", () => {
-  const dirs: string[] = [];
-
-  function workspace(): string {
-    const dir = mkdtempSync(join(tmpdir(), "cadet-shell-mode-test-"));
-    dirs.push(dir);
-    return dir;
-  }
-
-  afterEach(() => {
-    for (const dir of dirs.splice(0)) {
-      rmSync(dir, { recursive: true, force: true });
-    }
+  test("an absent lockfile reads as the web default", () => {
+    expect(readShellMode()).toBe("web");
   });
 
-  test("an absent config reads as the web default", () => {
-    expect(readShellMode(workspace())).toBe("web");
-  });
-
-  test("a config without the key reads as the web default", () => {
-    const ws = workspace();
-    mkdirSync(join(ws, "data"), { recursive: true });
-    writeFileSync(
-      join(ws, "config.json"),
-      JSON.stringify({ ingress: { publicBaseUrl: "https://edge.example" } }),
-    );
-    expect(readShellMode(ws)).toBe(DEFAULT_SHELL_MODE);
-    expect(readShellMode(ws)).toBe("web");
+  test("a lockfile without the key reads as the web default", () => {
+    stampRootProcess("app", {
+      pid: 7840,
+      startedAt: "2026-10-16T00:00:00.000Z",
+    });
+    expect(readShellMode()).toBe(DEFAULT_SHELL_MODE);
+    expect(readShellMode()).toBe("web");
   });
 
   test("saves and reads back the app mode", () => {
-    const ws = workspace();
-    saveShellMode(ws, "app");
-    expect(readShellMode(ws)).toBe("app");
-    saveShellMode(ws, "web");
-    expect(readShellMode(ws)).toBe("web");
+    saveShellMode("app");
+    expect(readShellMode()).toBe("app");
+    saveShellMode("web");
+    expect(readShellMode()).toBe("web");
   });
 
-  test("saving preserves the rest of the config", () => {
-    const ws = workspace();
-    mkdirSync(join(ws, "data"), { recursive: true });
-    writeFileSync(
-      join(ws, "config.json"),
-      JSON.stringify({
-        ingress: {
-          enabled: true,
-          publicBaseUrl: "https://edge.example",
-          nginx: { listenPort: 7840 },
-        },
-        llm: { default: { provider: "anthropic" } },
-      }),
-    );
-    saveShellMode(ws, "app");
-    const saved = JSON.parse(
-      readFileSync(join(ws, "config.json"), "utf-8"),
-    ) as Record<string, any>;
-    expect(saved.ingress.shell).toBe("app");
-    expect(saved.ingress.publicBaseUrl).toBe("https://edge.example");
-    expect(saved.ingress.enabled).toBe(true);
-    expect(saved.ingress.nginx).toEqual({ listenPort: 7840 });
-    expect(saved.llm).toEqual({ default: { provider: "anthropic" } });
+  test("saving lands at the lockfile root beside the app record", () => {
+    stampRootProcess("app", {
+      pid: 7840,
+      startedAt: "2026-10-16T00:00:00.000Z",
+    });
+    saveShellMode("app");
+    const saved = lockfile();
+    expect(saved.edgeShell).toBe("app");
+    // The lifecycle-scoped nginx record the setting configures survives.
+    expect(readRootProcesses().app?.pid).toBe(7840);
   });
 
   test("an unrecognized value fails loudly instead of defaulting", () => {
-    const ws = workspace();
-    mkdirSync(join(ws, "data"), { recursive: true });
     writeFileSync(
-      join(ws, "config.json"),
-      JSON.stringify({ ingress: { shell: "aps" } }),
+      join(testDir, "config", "lockfile.json"),
+      JSON.stringify({ edgeShell: "aps" }) + "\n",
     );
-    expect(() => readShellMode(ws)).toThrow('must be "web" or "app"');
+    expect(() => readShellMode()).toThrow('must be "web" or "app"');
   });
 });

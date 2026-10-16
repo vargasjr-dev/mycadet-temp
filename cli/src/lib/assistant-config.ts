@@ -136,6 +136,8 @@ interface LockfileData {
   cloudBaseUrl?: string;
   tunnel?: RootProcessRecord;
   app?: RootProcessRecord;
+  /** The nginx edge's shell selection; see readEdgeShellSelection. */
+  edgeShell?: unknown;
   [key: string]: unknown;
 }
 
@@ -262,6 +264,27 @@ export function readRootProcesses(): {
 } {
   const data = readLockfile();
   return { tunnel: data.tunnel, app: data.app };
+}
+
+/**
+ * The nginx edge's shell selection, persisted at the lockfile root beside the
+ * `app` record that tracks the edge's process. The edge is a CLI-managed
+ * server rather than a per-cadet setting, and that record is lifecycle-scoped
+ * (cleared when the edge stops), so the selection lives on its own root key
+ * to survive restarts. Read raw: the lockfile is user-editable disk state,
+ * so the shape check lives with the readers.
+ */
+export function readEdgeShellSelection(): unknown {
+  return readLockfile().edgeShell;
+}
+
+/** Persist the nginx edge's shell selection under the lockfile lock. */
+export function saveEdgeShellSelection(shell: "web" | "app"): void {
+  withCliLockfileLock(() => {
+    const data = readLockfile();
+    data.edgeShell = shell;
+    writeLockfileUnlocked(data);
+  });
 }
 
 /**

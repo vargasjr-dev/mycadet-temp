@@ -11,7 +11,9 @@ import {
 
 import {
   lookupAssistantByIdentifier,
+  readEdgeShellSelection,
   saveAssistantEntry,
+  saveEdgeShellSelection,
   type AssistantEntry,
 } from "./assistant-config.js";
 import { getStateDir } from "./environments/paths.js";
@@ -74,52 +76,27 @@ export type ShellMode = "web" | "app";
 export const DEFAULT_SHELL_MODE: ShellMode = "web";
 
 /**
- * The workspace `config.json` key selecting the shell mode, under `ingress`
- * beside the edge state it configures. Set through `cadet tunnel --shell`;
- * `web` (the default) keeps serving the web SPA directly, `app` serves the
- * app bundle as the outer shell with the web UI iframed from `/web/assistant/`.
+ * Read the persisted shell mode from the CLI lockfile. The nginx edge is a
+ * CLI-managed server — the lockfile's `app` record — not a per-cadet
+ * setting, so its shell lives beside that record there rather than in any
+ * one cadet's workspace config. Unset records read as the default so the
+ * edge's behavior never depends on config files that predate the setting;
+ * an unrecognized value fails loudly rather than silently serving a shell
+ * the user did not ask for.
  */
-export const SHELL_MODE_CONFIG_KEY = "shell";
-
-function ingressRecord(config: Record<string, unknown>): {
-  ingress: Record<string, unknown>;
-  exists: boolean;
-} {
-  const ingress = config.ingress;
-  return {
-    ingress:
-      ingress && typeof ingress === "object" && !Array.isArray(ingress)
-        ? (ingress as Record<string, unknown>)
-        : {},
-    exists: Boolean(ingress),
-  };
-}
-
-/**
- * Read the persisted shell mode from the workspace config. Unset records
- * read as the default so the edge's behavior never depends on config files
- * that predate the setting; an unrecognized value fails loudly rather than
- * silently serving a shell the user did not ask for.
- */
-export function readShellMode(workspaceDir: string): ShellMode {
-  const config = loadRawConfig(workspaceDir);
-  const { ingress } = ingressRecord(config);
-  const raw = ingress[SHELL_MODE_CONFIG_KEY];
+export function readShellMode(): ShellMode {
+  const raw = readEdgeShellSelection();
   if (raw === undefined) return DEFAULT_SHELL_MODE;
   if (raw === "web" || raw === "app") return raw;
   throw new Error(
-    `ingress.${SHELL_MODE_CONFIG_KEY} must be "web" or "app" (got ${JSON.stringify(raw)}). ` +
-      "Fix it in the workspace config.json or run `cadet tunnel --shell <web|app>`.",
+    `The nginx edge shell mode must be "web" or "app" (got ${JSON.stringify(raw)}). ` +
+      "Fix it in the CLI lockfile or run `cadet tunnel --shell <web|app>`.",
   );
 }
 
-/** Persist the shell mode to the workspace config. */
-export function saveShellMode(workspaceDir: string, mode: ShellMode): void {
-  const config = loadRawConfig(workspaceDir);
-  const { ingress } = ingressRecord(config);
-  ingress[SHELL_MODE_CONFIG_KEY] = mode;
-  config.ingress = ingress;
-  saveRawConfig(workspaceDir, config);
+/** Persist the shell mode to the CLI lockfile beside the nginx edge record. */
+export function saveShellMode(mode: ShellMode): void {
+  saveEdgeShellSelection(mode);
 }
 
 function getConfigPath(workspaceDir: string): string {
