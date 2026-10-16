@@ -445,7 +445,6 @@ describe("capability gating across channels", () => {
     expect(whatsapp.sendWhatsAppReply).toHaveBeenCalledTimes(1);
   });
 
-
   test("Discord text routes to sendDiscordReply, targeting the channel", async () => {
     await deliverDirect(`${BASE}/deliver/discord`, payload({ text: "hi" }));
     expect(discord.sendDiscordReply).toHaveBeenCalledTimes(1);

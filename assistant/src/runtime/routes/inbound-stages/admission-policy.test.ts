@@ -33,7 +33,6 @@ function makeInput(
 // ---------------------------------------------------------------------------
 
 describe("enforceAdmissionPolicy — exempt channels", () => {
-  
   test("phone is enforced (not exempt): the floor applies", () => {
     // Voice ingress is wired, so `phone` is no longer exempt — an `unknown`
     // caller is denied under `no_one`.

@@ -440,7 +440,6 @@ export class NotificationBroadcaster {
           await flushDeferredCadetSend();
         }
 
-
         const adapter = this.adapters.get(channel);
         if (!adapter) {
           log.warn(

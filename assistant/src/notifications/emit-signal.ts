@@ -562,7 +562,6 @@ export async function emitNotificationSignal<TEventName extends string>(
       };
     }
 
-
     // Re-persist the decision if any policy step changed it (urgency channel
     // forcing, routing intent enforcement, the access-request cadet floor,
     // or the From me push default), so the audit matches the dispatch.

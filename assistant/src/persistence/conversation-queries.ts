@@ -820,7 +820,6 @@ export function countConversationSections(): ConversationSectionCounts {
     .groupBy(effectiveChannel)
     .all();
 
-
   return { groups, channels };
 }
 
