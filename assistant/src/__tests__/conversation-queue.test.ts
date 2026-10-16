@@ -372,6 +372,11 @@ type ConversationWithWorkspaceDeps = Conversation & {
     provider?: unknown,
     deadlineMs?: number,
   ) => Promise<void>;
+  turnCommitLog?: Array<{
+    workspaceDir: string;
+    conversationId: string;
+    turnNumber: number;
+  }>;
 };
 
 function makeConversation(
@@ -401,12 +406,24 @@ function makeConversation(
   conversationWithWorkspaceDeps.getWorkspaceGitService = () => ({
     ensureInitialized: async () => {},
   });
+  // Per-instance commit log: the shared turnCommitCalls counter also catches
+  // commits from stale turns of EARLIER tests (an abort watchdog that fired
+  // late under CI worker starvation drives the dead conversation's turn into
+  // commitTurnChanges). Assertions scoped to this log stay race-free.
+  const turnCommitLog: Array<{
+    workspaceDir: string;
+    conversationId: string;
+    turnNumber: number;
+  }> = [];
+  conversationWithWorkspaceDeps.turnCommitLog = turnCommitLog;
   conversationWithWorkspaceDeps.commitTurnChanges = async (
     workspaceDir: string,
     conversationId: string,
     turnNumber: number,
   ) => {
-    turnCommitCalls.push({ workspaceDir, conversationId, turnNumber });
+    const entry = { workspaceDir, conversationId, turnNumber };
+    turnCommitCalls.push(entry);
+    turnCommitLog.push(entry);
     if (turnCommitHangForever) {
       // Simulate a commit that never resolves within the timeout budget
       await new Promise<void>(() => {});
@@ -2717,6 +2734,15 @@ describe("Batched drain correctness fixes", () => {
     expect(events4.filter((e) => e.type === "message_dequeued")).toHaveLength(
       0,
     );
+    // Settle any run the aborted drain started (run 0 was resolved mid-test)
+    // so its abort watchdog clears the real-time timer it armed. A leaked
+    // ~5s timer otherwise fires during a later test and drives this stale
+    // turn into commitTurnChanges, inflating the shared turnCommitCalls
+    // counter that other tests assert against.
+    for (let i = 1; i < pendingRuns.length; i++) {
+      await resolveRun(i);
+    }
+    await new Promise((r) => setTimeout(r, 10));
   });
 
   test("failed tail persist uses last-successful requestId", async () => {
@@ -3926,9 +3952,16 @@ describe("Regression: cancel semantics and error channel split", () => {
     await run.onEvent({ type: "message_complete", message: assistantMsg });
     run.resolve([...run.messages, assistantMsg]);
     await p1;
-
-    expect(turnCommitCalls).toHaveLength(1);
-    expect(turnCommitCalls[0]).toEqual({
+    // The turn commit should have been called — scoped to this test's
+    // conversation instance (see the turnCommitLog note in makeConversation:
+    // the shared counter also catches stale turns whose abort watchdog fired
+    // late under CI worker starvation).
+    expect(
+      (conversation as ConversationWithWorkspaceDeps).turnCommitLog,
+    ).toHaveLength(1);
+    expect(
+      (conversation as ConversationWithWorkspaceDeps).turnCommitLog?.[0],
+    ).toEqual({
       workspaceDir: "/tmp",
       conversationId: "conv-1",
       turnNumber: 1,
@@ -4062,8 +4095,14 @@ describe("Regression: cancel semantics and error channel split", () => {
       const dequeued = events2.find((e) => e.type === "message_dequeued");
       expect(dequeued).toBeDefined();
 
-      // The turn commit should have been called
-      expect(turnCommitCalls).toHaveLength(1);
+      // The turn commit should have been called — scoped to this test's
+      // conversation instance (see the turnCommitLog note in
+      // makeConversation: the shared counter also catches stale turns from
+      // earlier tests whose abort watchdog fired late under CI worker
+      // starvation).
+      expect(
+        (conversation as ConversationWithWorkspaceDeps).turnCommitLog,
+      ).toHaveLength(1);
 
       // Complete the second run so the test can clean up
       turnCommitHangForever = false;
