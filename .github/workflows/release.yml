@@ -1652,38 +1652,51 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write # direct-push fast path + rebase-fallback force-push of the release branch
+      pull-requests: write # GITHUB_TOKEN PR fallback (auto-merge lands on the code-owner's approval)
     steps:
-      # Only used by the PR fallback: GITHUB_TOKEN can't create PRs
-      # ("Allow GitHub Actions to create and approve pull requests" is off and
-      # only a user admin can flip it), so the cadet-automation app token is
-      # the automation identity for PR operations.
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        id: app-token
-        with:
-          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
-          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
-
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
 
       - name: Merge release branch back to main
         env:
-          APP_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ needs.extract-version.outputs.version }}
         run: |
           BRANCH="release/v$VERSION"
 
-          git config user.name "cadet-automation[bot]"
-          git config user.email "192048195+cadet-automation[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git fetch origin main
 
-          # ── Fast path: the #349 direct merge+push, kept as primary ──────────
-          # Works only while the `main` ruleset bypass list covers GITHUB_TOKEN
-          # (Repository role: Write). The local merge runs first either way; a
-          # conflict (cherry-picks already on main) resolves via `rebase -X
-          # ours` — during a rebase, ours is the new base, so `-X ours` keeps
+          # Idempotent on re-runs: once a landing for this version is on main
+          # (the direct merge commit, a PR squash like "[skip ci] Release vX
+          # (#N)", or a manual rescue like #351), this job is a no-op. -i so
+          # the direct merge's lowercase "(release vX)" also matches; -F so
+          # the version is never read as a regex.
+          landed=$(git rev-list --max-count=1 -i -F --grep="Release v$VERSION" origin/main)
+          if [ -n "$landed" ]; then
+            echo "::notice::release v$VERSION is already merged to main — nothing to do"
+            exit 0
+          fi
+
+          # A vanished branch with no landing is the confusing 0.13.0 state —
+          # fail loud instead of guessing.
+          if [ -z "$(git ls-remote origin "refs/heads/$BRANCH")" ]; then
+            echo "::error::$BRANCH is gone from origin and its landing is not on main — land the version bump via a manual PR (like #351) or re-cut the release"
+            exit 1
+          fi
+
+          # The workflow checks out the release branch (it triggers on pushes
+          # to release/v*), but the merge-back has to happen ON main — without
+          # this checkout the fast-path merge below is a hollow no-op and the
+          # push has no local main to push.
+          git checkout -B main origin/main
+
+          # Fast path: the #349 direct merge+push. Works only while the main
+          # ruleset bypass list covers GITHUB_TOKEN (Repository role: Write).
+          # A conflict (cherry-picks already on main) resolves via rebase -X
+          # ours — during a rebase, ours is the new base, so -X ours keeps
           # main's side — then force-pushes the branch and merges again.
           if ! git merge --no-ff "origin/$BRANCH" -m "Merge $BRANCH (release v$VERSION)" 2>/dev/null; then
             echo "::notice::release branch conflicts with main — rebasing with -X ours to keep main's side"
@@ -1698,43 +1711,102 @@ jobs:
             git merge --no-ff "$BRANCH" -m "Merge $BRANCH (release v$VERSION)"
           fi
 
-          if git push origin main 2>/tmp/push-err.txt; then
-            git push origin --delete "$BRANCH"
-            echo "::notice::merge-back pushed directly to main"
+          # Push with retries for transient failures; a ruleset rejection is
+          # deterministic, so it skips the retries and goes to the PR fallback.
+          pushed=0
+          ruleset_rejected=0
+          for attempt in 1 2 3; do
+            if git push origin main 2>/tmp/push-err.txt; then
+              pushed=1
+              break
+            fi
+            if grep -qiE "GH013|GH006|ruleset|must be made through a pull request|protected branch" /tmp/push-err.txt; then
+              ruleset_rejected=1
+              cat /tmp/push-err.txt >&2
+              break
+            fi
+            echo "::warning::push attempt $attempt failed (transient?) — backing off"
+            cat /tmp/push-err.txt >&2
+            if [ "$attempt" -lt 3 ]; then sleep $((attempt * 5)); fi
+          done
+
+          if [ "$pushed" -eq 1 ]; then
+            # Only delete the release branch once the landing is confirmed.
+            if [ "$(git ls-remote origin refs/heads/main | awk '{print $1}')" = "$(git rev-parse HEAD)" ]; then
+              git push origin --delete "$BRANCH" || echo "::warning::could not delete $BRANCH — the merge-back already landed, delete it manually"
+              echo "::notice::merge-back merged directly to main"
+            else
+              echo "::warning::push reported success but origin/main's tip did not confirm the merge — leaving $BRANCH in place"
+            fi
             exit 0
           fi
 
-          # ── PR fallback: don't die on the ruleset — self-heal ───────────────
-          # The 0.13.0 failure mode: the `main` ruleset rejects bare pushes
-          # (GH013 "Changes must be made through a pull request"). Undo the
-          # local merge and land the bump through a PR instead: open it, merge
-          # it if the app may satisfy the ruleset, otherwise arm auto-merge so
-          # the squash lands the instant the code-owner approval arrives.
-          cat /tmp/push-err.txt >&2
-          echo "::notice::direct push rejected by the main ruleset — falling back to the PR flow"
-          git reset --hard origin/main
+          if [ "$ruleset_rejected" -ne 1 ]; then
+            echo "::error::could not push the merge-back to main after 3 attempts — the version bump is still on $BRANCH; land it via a manual PR (like #351)"
+            exit 1
+          fi
 
-          export GH_TOKEN="$APP_TOKEN"
-          if gh pr view "$BRANCH" --json state --jq .state >/tmp/pr-state.txt 2>/dev/null; then
-            # Idempotent on re-runs: reuse an open PR, no-op a merged one
-            if [ "$(cat /tmp/pr-state.txt)" = "MERGED" ]; then
-              echo "Release PR for v$VERSION already merged — nothing to do"
+          # PR fallback: the main ruleset rejects bare pushes (GH013 "Changes
+          # must be made through a pull request"), so land the bump through a
+          # PR instead. GITHUB_TOKEN can only open it once the org setting
+          # "Allow GitHub Actions to create and approve pull requests" is on —
+          # until then this job fails loud with the one-time unlocks below
+          # instead of dying quietly.
+          export GH_TOKEN="${{ github.token }}"
+
+          pr_state=$(gh pr view "$BRANCH" --json state --jq .state 2>/dev/null || true)
+          case "$pr_state" in
+            MERGED)
+              echo "::notice::release PR for v$VERSION already merged — nothing to do"
               exit 0
+              ;;
+            CLOSED)
+              echo "::error::release PR for $BRANCH exists but is CLOSED without merging — reopen it or land the bump via a fresh PR"
+              exit 1
+              ;;
+          esac
+
+          if [ -z "$pr_state" ]; then
+            echo "::notice::opening the merge-back PR with GITHUB_TOKEN"
+            if ! gh pr create --head "$BRANCH" --base main \
+                --title "[skip ci] Release v$VERSION" \
+                --body "Automated merge-back of the release branch: lands the version bump on main. Opened by the release workflow because the direct push was rejected by the launch ruleset. Squash-merging deletes the branch." \
+                2>/tmp/pr-create-err.txt; then
+              cat /tmp/pr-create-err.txt >&2
+              if grep -qiE "403|not permitted|Resource not accessible|forbidden" /tmp/pr-create-err.txt; then
+                branch_state="intact on origin"
+                if [ -z "$(git ls-remote origin "refs/heads/$BRANCH")" ]; then
+                  branch_state="MISSING from origin — land the version bump via a manual PR (like #351)"
+                fi
+                {
+                  echo "### Release merge-back needs a one-time unlock"
+                  echo ""
+                  echo "The direct push to main was rejected by the launch ruleset (GH013: changes must be made through a pull request), and GITHUB_TOKEN cannot open the fallback PR: the org setting 'Allow GitHub Actions to create and approve pull requests' is off. The release itself succeeded — only the merge-back to main is blocked."
+                  echo ""
+                  echo "Release branch $BRANCH: $branch_state"
+                  echo ""
+                  echo "Pick one unlock (both are one-time):"
+                  echo ""
+                  echo "1. Zero-click releases: add the Repository role: Write role to the main ruleset bypass list (Settings > Rules > Rulesets > main). The direct push then works and this job lands the merge and deletes the branch automatically."
+                  echo "2. One approval per release: flip the org setting 'Allow GitHub Actions to create and approve pull requests'. This job then opens the merge-back PR and arms auto-merge; approve it and the squash lands."
+                  echo ""
+                  echo "Until one of those lands, rescue the release by merging $BRANCH into main via a PR (like #351)."
+                } >> "$GITHUB_STEP_SUMMARY"
+                echo "::error::GITHUB_TOKEN cannot create the merge-back PR (org Actions-PR setting off) — see the job summary for the two one-time unlocks"
+                exit 1
+              fi
+              echo "::error::could not open the merge-back PR — the version bump is still on $BRANCH; land it via a manual PR (like #351)"
+              exit 1
             fi
-            PR_NUM=$(gh pr view "$BRANCH" --json number --jq .number)
-          else
-            PR_NUM=$(gh pr create --head "$BRANCH" --base main \
-              --title "[skip ci] Release v$VERSION" \
-              --body "Automated merge-back of \`$BRANCH\` (PR fallback — the direct push was rejected by the \`main\` ruleset). Squash-merge lands the version bump and deletes the branch.")
           fi
 
-          if ! gh pr merge "$BRANCH" --squash --delete-branch 2>/tmp/merge-err.txt; then
-            cat /tmp/merge-err.txt >&2 || true
-            gh pr merge "$BRANCH" --auto --squash --delete-branch
-            echo "::notice::Release PR #$PR_NUM armed for auto-merge — the merge-back lands as soon as a code-owner approves it"
-          else
-            echo "::notice::Release PR #$PR_NUM merged"
+          if ! gh pr merge "$BRANCH" --auto --squash --delete-branch 2>/tmp/pr-merge-err.txt; then
+            cat /tmp/pr-merge-err.txt >&2
+            echo "::warning::could not arm auto-merge on the merge-back PR — approve and merge it manually (one click)"
+            exit 0
           fi
+          echo "::notice::merge-back PR armed for auto-merge — it lands as soon as the code-owner approval arrives"
+          exit 0
   release-ios:
     needs: [extract-version, build-chrome-extension]
     if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
