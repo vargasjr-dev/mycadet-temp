@@ -433,11 +433,6 @@
     "tasksProgress": "已完成 {completed} / 共 {total} 个任务",
     "viewDetails": "查看详情"
   },
-  "channelReferenceChip": {
-    "heading": "引用 {channel} 消息",
-    "headingWithSender": "引用 {channel} 上的 {sender}",
-    "removeAria": "移除引用的消息"
-  },
   "channelSetupPanel": {
     "accountSid": "账户 SID",
     "accountSidPlaceholder": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -457,31 +452,6 @@
     "telegramConnected": "您的助手已准备好在 Telegram 上接收消息。",
     "twilioIntro": "从 <consoleLink>Twilio 控制台</consoleLink> 输入您的 Twilio 凭据。保存后，返回聊天。您的助手将完成电话号码和 Webhook 的配置。",
     "discordConnected": "Discord 已连接。将机器人添加到服务器后，它将开始在那里回复。"
-  },
-  "channelThreadControl": {
-    "closeAria": "关闭 {channel} 线程",
-    "label": "{channel} 线程",
-    "openAria": "打开 {channel} 线程"
-  },
-  "channelTranscriptPanel": {
-    "assistantSender": "助手",
-    "closeAria": "关闭渠道线程",
-    "closeTooltip": "关闭",
-    "emptyNoMessageDetail": "{channel} 不会向 Cadet 发送此视图所需的每条消息详细信息，因此此处没有可列出的内容。请在 {channel} 中打开对话以阅读完整内容。",
-    "emptyThread": "此对话中尚无 {channel} 消息。",
-    "namedTitle": "{channel} · {thread}",
-    "noText": "无文本内容",
-    "openInChannel": "在 {channel} 中打开",
-    "reactionAdded": "使用 {emoji} 表情回应",
-    "reactionRemoved": "移除了 {emoji} 表情回应",
-    "readOnly": "只读",
-    "readOnlyNote": "这是 {channel} 中的对话现状。Cadet 的编辑器是您唯一可以写入的地方。",
-    "reference": "在 Cadet 中引用",
-    "referenceAria": "在 Cadet 中引用此 {channel} 消息",
-    "referenced": "已引用",
-    "removeReferenceAria": "从 Cadet 编辑器中移除此引用",
-    "title": "{channel} 线程",
-    "unknownSender": "未知发件人"
   },
   "chatAttachments": {
     "attachFileAria": "附加文件",

@@ -21,8 +21,6 @@
  * - `activeAcpRunId` — ACP run detail panel
  * - `activeBackgroundTaskId` — background-task detail panel
  * - `activeSkillDetailId` — skill detail panel
- * - `activeChannelTranscript`: read-only external-channel transcript drawer
- *   (identity only; the panel re-derives its rows from the live transcript)
  *
  * App share/deploy lifecycle lives in `domains/chat/deploy-store.ts`.
  *
@@ -68,7 +66,6 @@ type OverlayView =
   | "skill-detail"
   | "wake-detail"
   | "channel-setup"
-  | "channel-transcript"
   | "chat-info";
 
 /**
@@ -146,7 +143,6 @@ const VIEW_BEFORE_FIELDS = [
   "viewBeforeSkillDetail",
   "viewBeforeWakeDetail",
   "viewBeforeChannelSetup",
-  "viewBeforeChannelTranscript",
   "viewBeforeChatInfo",
 ] as const;
 
@@ -169,7 +165,6 @@ function resolveViewBefore(
     mv === "skill-detail" ||
     mv === "wake-detail" ||
     mv === "channel-setup" ||
-    mv === "channel-transcript" ||
     mv === "chat-info"
   ) {
     return state[field];
@@ -196,7 +191,6 @@ export type MainView =
   | "skill-detail"
   | "wake-detail"
   | "channel-setup"
-  | "channel-transcript"
   | "chat-info";
 
 export type IntelligenceTab = "identity" | "skills" | "workspace" | "contacts";
@@ -356,30 +350,6 @@ export interface ChannelSetupPayload {
    * replaces this payload wholesale.
    */
   outcome?: ChannelSetupOutcome;
-}
-
-/**
- * Identity of the thread the channel-transcript drawer is showing.
- *
- * Held as an identity rather than a payload of rows: entries stream, and a
- * store that owned them would keep a previous conversation's rows alive after
- * a switch. The panel re-derives entries from the live transcript and matches
- * them against this, so a stale thread has nothing to render.
- */
-export interface ChannelSidecarRef {
-  conversationId: string;
-  channelId: string;
-}
-
-/** Whether a stored drawer reference still addresses the conversation on screen. */
-export function isSameChannelSidecarRef(
-  a: ChannelSidecarRef | null | undefined,
-  b: ChannelSidecarRef | null | undefined,
-): boolean {
-  if (!a || !b) {
-    return false;
-  }
-  return a.conversationId === b.conversationId && a.channelId === b.channelId;
 }
 
 export interface ToolDetailPayload {
@@ -660,12 +630,6 @@ export interface ViewerState {
   activeChannelSetup: ChannelSetupPayload | null;
   viewBeforeChannelSetup: Exclude<MainView, OverlayView>;
   /**
-   * Which external-channel thread the read-only channel drawer is showing.
-   * See {@link ChannelSidecarRef} for why this is an identity, not rows.
-   */
-  activeChannelTranscript: ChannelSidecarRef | null;
-  viewBeforeChannelTranscript: Exclude<MainView, OverlayView>;
-  /**
    * Monotonic counter bumped when a viewer (a tool-detail drawer or the
    * activity-steps drill-in, which may live in a separate portal subtree)
    * asks to open the trust rule editor for `ruleEditorRequestToolCallId`.
@@ -820,31 +784,6 @@ export interface ViewerActions {
   markChannelSetupOutcome: (outcome: ChannelSetupOutcome) => void;
   closeChannelSetup: () => void;
 
-  // --- Channel transcript (external-channel sidecar) ---
-  openChannelTranscript: (ref: ChannelSidecarRef) => void;
-  /**
-   * Open the channel drawer for `ref`, or close it when the drawer is already
-   * showing that thread. Powers the header's channel-thread control, which is
-   * a toggle rather than a link.
-   */
-  toggleChannelTranscript: (ref: ChannelSidecarRef) => void;
-  /**
-   * Drop the drawer's thread identity. `mainView` is restored to the
-   * pre-drawer view only when the drawer itself is the active view; an
-   * overlay opened on top of the drawer (tool detail, activity steps, skill
-   * detail, ...) keeps exclusive ownership of `mainView`.
-   */
-  closeChannelTranscript: () => void;
-  /**
-   * Close the drawer unless it is still showing `ref`. Called as the sidecar
-   * re-resolves, so a conversation switch, a lost binding, or the flag going
-   * off settles the drawer instead of stranding `mainView` on a thread with
-   * nothing behind it. Passing `null` closes any open channel drawer. A stale
-   * identity is cleared even while another overlay owns `mainView`; that
-   * overlay stays put.
-   */
-  reconcileChannelTranscript: (ref: ChannelSidecarRef | null) => void;
-
   // --- Document viewer ---
   openDocument: () => void;
   loadDocument: (
@@ -919,8 +858,6 @@ const INITIAL_STATE: ViewerState = {
   viewBeforeWakeDetail: "chat",
   activeChannelSetup: null,
   viewBeforeChannelSetup: "chat",
-  activeChannelTranscript: null,
-  viewBeforeChannelTranscript: "chat",
   ruleEditorRequestSeq: 0,
   ruleEditorRequestToolCallId: null,
 };
@@ -1251,9 +1188,6 @@ const useViewerStoreBase = create<ViewerStore>()((set, get) => ({
       case "channel-setup":
         get().closeChannelSetup();
         return true;
-      case "channel-transcript":
-        get().closeChannelTranscript();
-        return true;
       case "chat-info":
         // Alone among the overlays, this one's second level lives in the
         // store, so Escape and Android Back pop the drill-in before the panel.
@@ -1294,58 +1228,6 @@ const useViewerStoreBase = create<ViewerStore>()((set, get) => ({
       mainView: get().viewBeforeChannelSetup,
       activeChannelSetup: null,
     });
-  },
-
-  // --- Channel transcript (external-channel sidecar) ---
-
-  openChannelTranscript: (ref) => {
-    set({
-      mainView: "channel-transcript",
-      activeChannelTranscript: ref,
-      viewBeforeChannelTranscript: resolveViewBefore(
-        get(),
-        "viewBeforeChannelTranscript",
-      ),
-    });
-  },
-
-  toggleChannelTranscript: (ref) => {
-    const state = get();
-    const isOpenOnSameThread =
-      state.mainView === "channel-transcript" &&
-      isSameChannelSidecarRef(state.activeChannelTranscript, ref);
-    if (isOpenOnSameThread) {
-      get().closeChannelTranscript();
-    } else {
-      get().openChannelTranscript(ref);
-    }
-  },
-
-  closeChannelTranscript: () => {
-    const state = get();
-    // Restore `mainView` only when the drawer is what is on screen: a caller
-    // reaching here while another overlay sits on top (reconciliation after a
-    // conversation switch) must not replace that overlay with the drawer's
-    // remembered pre-open view.
-    set(
-      state.mainView === "channel-transcript"
-        ? {
-            mainView: state.viewBeforeChannelTranscript,
-            activeChannelTranscript: null,
-          }
-        : { activeChannelTranscript: null },
-    );
-  },
-
-  reconcileChannelTranscript: (ref) => {
-    const state = get();
-    if (state.activeChannelTranscript === null) {
-      return;
-    }
-    if (isSameChannelSidecarRef(state.activeChannelTranscript, ref)) {
-      return;
-    }
-    get().closeChannelTranscript();
   },
 
   // --- Tool detail ---

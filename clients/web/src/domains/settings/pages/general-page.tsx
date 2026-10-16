@@ -30,7 +30,6 @@ import { RetireAssistant } from "@/domains/settings/components/retire-assistant"
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
 import { ThisDeviceSection } from "@/domains/settings/components/this-device-section";
 import { UpdateWindowModal } from "@/domains/settings/components/update-window-modal";
-import { TwoFactorSection } from "@/domains/settings/security/two-factor-section";
 import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
@@ -68,7 +67,6 @@ export function GeneralPage() {
   } = useAssistantWithHealthz();
   const multiCloudAssistant =
     useClientFeatureFlagStore.use.multiCloudAssistant();
-  const accountMfaEnabled = useClientFeatureFlagStore.use.accountMfa();
   const settingsSleepPolicy =
     useAssistantFeatureFlagStore.use.settingsSleepPolicy();
   const isAuthenticated = useIsAuthenticated();
@@ -195,28 +193,6 @@ export function GeneralPage() {
       >
         <TimezoneSection />
         <ThisDeviceSection />
-        {accountMfaEnabled && cloudGate !== "gated" && (
-          <>
-            <div className="border-t border-[var(--border-subtle)]" />
-            <section className="flex flex-col gap-2">
-              <h3 className="text-title-small text-[var(--content-emphasised)]">
-                {t("generalPage.twoFactorTitle")}
-              </h3>
-              <p className="text-body-medium-default text-[var(--content-tertiary)]">
-                {t("generalPage.twoFactorDescription")}
-              </p>
-              <div className="mt-1">
-                {cloudGate === "disabled" ? (
-                  <CloudLoginNotice>
-                    {t("generalPage.twoFactorLoginNotice")}
-                  </CloudLoginNotice>
-                ) : (
-                  <TwoFactorSection />
-                )}
-              </div>
-            </section>
-          </>
-        )}
       </ProfileCard>
 
       <DetailCard

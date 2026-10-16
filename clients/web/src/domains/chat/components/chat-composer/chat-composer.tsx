@@ -27,7 +27,6 @@ import {
   selectUploadingCount,
   useComposerStore,
 } from "@/domains/chat/composer-store";
-import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import { ComposerDraftNotices } from "@/domains/chat/components/composer-draft-notices";
 import { nativeAttachmentPickersAvailable } from "@/domains/chat/components/chat-attachments/native-attachment-pickers";
@@ -781,13 +780,7 @@ export function ChatComposer({
   // button, the Enter policy, and `useComposerSubmit`'s own guard all answer
   // "is there something to send" from the same state.
   const hasStagedQuotes = useQuoteReplyStore.use.stagedQuotes().length > 0;
-  // Derived boolean selector: swapping which row is staged replaces the
-  // reference object without changing sendability, so this subscribes to the
-  // flip alone rather than re-rendering the composer on every swap.
-  const hasStagedChannelReference = useChannelReferenceStore(
-    (s) => s.reference !== null,
-  );
-  const hasStagedContext = hasStagedQuotes || hasStagedChannelReference;
+  const hasStagedContext = hasStagedQuotes;
   const canSendMessageContent =
     Boolean(input.trim()) || canSendAttachments || hasStagedContext;
   // A turn in flight keeps the row in its resting shape (attach, dictation,

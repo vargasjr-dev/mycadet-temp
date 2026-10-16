@@ -284,7 +284,6 @@ const i18nEnforcedPaths = ["src/**/*.{ts,tsx}"];
 const emDashEnforcedPaths = [
   "src/i18n/**/*.{ts,tsx}",
   "src/domains/terminal/**/*.{ts,tsx}",
-  "src/domains/chat/channel-sidecar/**/*.{ts,tsx}",
   // File-scoped rather than the whole `surfaces/` directory, which carries
   // pre-existing em dashes that must not be swept retroactively.
   "src/domains/chat/components/surfaces/watch-retro-surface.tsx",

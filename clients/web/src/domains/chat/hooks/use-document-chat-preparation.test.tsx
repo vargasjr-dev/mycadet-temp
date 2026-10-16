@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import { useComposerStore, type UploadedAttachment } from "@/domains/chat/composer-store";
 import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import type { DocumentViewerContainerHandle } from "@/domains/chat/components/document-viewer-container";
@@ -105,7 +104,6 @@ beforeEach(() => {
   selectOwner();
   useComposerStore.setState({ input: "Revise this paragraph", attachments: [ATTACHMENT] });
   useQuoteReplyStore.getState().clearStagedQuotes();
-  useChannelReferenceStore.getState().clearReference();
 });
 
 afterEach(() => {

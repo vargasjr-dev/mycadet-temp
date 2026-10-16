@@ -30,9 +30,7 @@ import {
   selectUploadingCount,
   useComposerStore,
 } from "@/domains/chat/composer-store";
-import { prependChannelReference } from "@/domains/chat/channel-sidecar/channel-reference";
 import { prependEmailReferences } from "@/domains/chat/email-reference";
-import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import {
   useQuoteReplyStore,
   type StagedQuote,
@@ -203,22 +201,18 @@ export function useComposerSubmit({
       const emailReferences = selectEmailReferences(chatAttachments);
 
       const stagedQuotes = useQuoteReplyStore.getState().stagedQuotes;
-      const channelReference = useChannelReferenceStore.getState().reference;
       const trimmed = (inputOverride ?? input).trim();
       if (sendDisabledRef.current || preparingRef.current) {
         return;
       }
-      // A staged channel reference is content in its own right: "look at this
-      // message" is a complete instruction, so it makes an otherwise empty
-      // composer sendable exactly as a staged quote does. Staged emails are
-      // the same kind of thing.
+      // A staged email is content in its own right: it makes an otherwise
+      // empty composer sendable exactly as a staged quote does.
       if (
         !trimmed &&
         uploadedIds.length === 0 &&
         pathReferences.length === 0 &&
         emailReferences.length === 0 &&
-        stagedQuotes.length === 0 &&
-        channelReference === null
+        stagedQuotes.length === 0
       ) {
         return;
       }
@@ -229,16 +223,9 @@ export function useComposerSubmit({
       // Assemble the outgoing content before touching any state so the gate
       // below can veto the send with the draft/attachments/quotes intact.
       const contentWithQuotes = buildContentWithQuotes(stagedQuotes, trimmed);
-      // The channel reference leads the message: it is the thing being talked
-      // about, and everything the user typed is their remark on it.
-      const contentWithReference = prependChannelReference(
-        contentWithQuotes,
-        channelReference,
-      );
-      // Staged emails lead for the same reason, ahead of a channel reference
-      // when both are present, in the order they were picked.
+      // Staged emails lead the message, in the order they were picked.
       const contentWithEmails = prependEmailReferences(
-        contentWithReference,
+        contentWithQuotes,
         emailReferences,
       );
       const finalContent = appendPathReferences(
@@ -275,8 +262,7 @@ export function useComposerSubmit({
             owner.activeConversationId !== activeConversationId ||
             useComposerStore.getState().input !== input ||
             useComposerStore.getState().attachments !== chatAttachments ||
-            useQuoteReplyStore.getState().stagedQuotes !== stagedQuotes ||
-            useChannelReferenceStore.getState().reference !== channelReference
+            useQuoteReplyStore.getState().stagedQuotes !== stagedQuotes
           ) {
             return;
           }
@@ -305,7 +291,6 @@ export function useComposerSubmit({
         }
         useComposerStore.getState().resetAttachments();
         useQuoteReplyStore.getState().clearStagedQuotes();
-        useChannelReferenceStore.getState().clearReference();
 
         if (!isPointerCoarse()) {
           shouldFocusInputRef.current = true;

@@ -22,7 +22,6 @@ import { useSubagentStore } from "@/domains/chat/subagent-store";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import { type ChatInfoCategory, useViewerStore } from "@/stores/viewer-store";
 
-import { MobileChannelTranscriptOverlay } from "@/domains/chat/channel-sidecar/mobile-channel-transcript-overlay";
 import { MobileAcpRunDetailOverlay } from "@/domains/chat/components/mobile-acp-run-detail-overlay";
 import { MobileActivityStepsOverlay } from "@/domains/chat/components/mobile-activity-steps-overlay";
 import { MobileAppOverlay } from "@/domains/chat/components/mobile-app-overlay";
@@ -57,7 +56,6 @@ export function MobileChatOverlays() {
   const activeWorkflowRunId = useViewerStore.use.activeWorkflowRunId();
   const activeAcpRunId = useViewerStore.use.activeAcpRunId();
   const activeBackgroundTaskId = useViewerStore.use.activeBackgroundTaskId();
-  const activeChannelTranscript = useViewerStore.use.activeChannelTranscript();
   const subagentById = useSubagentStore.use.byId();
   const workflowById = useWorkflowStore.use.byId();
   const acpRunById = useAcpRunStore.use.byId();
@@ -167,10 +165,6 @@ export function MobileChatOverlays() {
     [],
   );
 
-  const handleCloseChannelTranscript = useCallback(() => {
-    useViewerStore.getState().closeChannelTranscript();
-  }, []);
-
   const handleCloseWakeDetail = useCallback(() => {
     useViewerStore.getState().closeWakeDetail();
   }, []);
@@ -266,12 +260,6 @@ export function MobileChatOverlays() {
         payload={mainView === "chat-info" ? activeChatInfo : null}
         onClose={handleCloseChatInfo}
         onSelectCategory={handleSelectChatInfoCategory}
-      />
-      <MobileChannelTranscriptOverlay
-        sidecarRef={
-          mainView === "channel-transcript" ? activeChannelTranscript : null
-        }
-        onClose={handleCloseChannelTranscript}
       />
     </PortalContainerProvider>,
     overlayTarget,

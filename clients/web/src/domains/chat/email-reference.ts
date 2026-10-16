@@ -2,9 +2,8 @@
  * How emails staged from the assistant's inbox reach the assistant.
  *
  * The wire has no seam for structured context beyond `content` and uploaded
- * `attachmentIds` (see the module note in `channel-sidecar/channel-reference`),
- * so each staged email is encoded into the outgoing message body as a
- * delimited block, the same way a channel reference and staged quotes are.
+ * `attachmentIds`, so each staged email is encoded into the outgoing message
+ * body as a delimited block, the same way staged quotes are.
  * The block carries the header only: the message id is what the assistant's
  * own email tooling takes (`assistant email download <id>`), so the body is
  * fetched on its side rather than pasted into the user's turn.

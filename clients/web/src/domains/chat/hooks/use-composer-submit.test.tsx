@@ -7,7 +7,7 @@
  * send), and the mid-dictation send path (LUM-3432: a send pressed while
  * words are still being spoken finishes dictation and sends the finished
  * transcript, never the draft that was sitting there). Uses the real
- * composer, quote-reply, channel-reference, and voice-recording stores,
+ * composer, quote-reply, and voice-recording stores,
  * reset between tests. The token below is a synthetic value invented for
  * these tests.
  */
@@ -15,8 +15,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
-import type { ChannelReference } from "@/domains/chat/channel-sidecar/channel-reference";
-import { useChannelReferenceStore } from "@/domains/chat/channel-sidecar/channel-reference-store";
 import {
   useComposerStore,
   type UploadedAttachment,
@@ -87,23 +85,12 @@ async function submit(result: {
   });
 }
 
-const stagedChannelReference: ChannelReference = {
-  messageId: "msg-ext-1",
-  conversationId: "conv-1",
-  channelId: "slack",
-  channelLabel: "Slack",
-  senderName: "Alice",
-  snippet: "deploy went red on the last step",
-  isTruncated: false,
-};
-
 let unregisterVoiceTarget: (() => void) | null = null;
 
 beforeEach(() => {
   useComposerStore.getState().setInput("");
   useComposerStore.getState().resetAttachments();
   useQuoteReplyStore.getState().clearStagedQuotes();
-  useChannelReferenceStore.setState({ reference: null });
 });
 
 afterEach(() => {
@@ -337,9 +324,8 @@ describe("useComposerSubmit staged emails", () => {
     expect(useComposerStore.getState().attachments).toHaveLength(0);
   });
 
-  test("emails lead a channel reference and the typed remark trails", async () => {
+  test("emails lead and the typed remark trails", async () => {
     useComposerStore.getState().addEmailReferences([stagedEmail]);
-    useChannelReferenceStore.getState().setReference(stagedChannelReference);
     useComposerStore.getState().setInput("compare these");
 
     const { result, sendMessage } = renderSubmit();
@@ -347,9 +333,6 @@ describe("useComposerSubmit staged emails", () => {
 
     const sent = sendMessage.mock.calls[0]?.[0] ?? "";
     expect(sent.startsWith("> [cadet:email-reference]")).toBe(true);
-    expect(sent.indexOf("[cadet:channel-reference]")).toBeGreaterThan(
-      sent.indexOf("[/cadet:email-reference]"),
-    );
     expect(sent.endsWith("compare these")).toBe(true);
   });
 
@@ -362,49 +345,6 @@ describe("useComposerSubmit staged emails", () => {
 
     expect(sendMessage).not.toHaveBeenCalled();
     expect(useComposerStore.getState().attachments).toHaveLength(1);
-  });
-});
-
-describe("useComposerSubmit staged channel reference", () => {
-  test("a staged reference alone is sendable, leads the content, and clears on send", async () => {
-    useChannelReferenceStore.getState().setReference(stagedChannelReference);
-
-    const { result, sendMessage } = renderSubmit();
-    await submit(result);
-
-    expect(sendMessage).toHaveBeenCalledTimes(1);
-    const sent = sendMessage.mock.calls[0]?.[0];
-    expect(sent?.startsWith("> [cadet:channel-reference]")).toBe(true);
-    expect(sent).toContain("deploy went red on the last step");
-    expect(useChannelReferenceStore.getState().reference).toBeNull();
-  });
-
-  test("reference plus typed text sends the reference block first, then the remark", async () => {
-    useChannelReferenceStore.getState().setReference(stagedChannelReference);
-    useComposerStore.getState().setInput("what broke here?");
-
-    const { result, sendMessage } = renderSubmit();
-    await submit(result);
-
-    const sent = sendMessage.mock.calls[0]?.[0];
-    expect(sent?.startsWith("> [cadet:channel-reference]")).toBe(true);
-    expect(sent?.endsWith("what broke here?")).toBe(true);
-    expect(useChannelReferenceStore.getState().reference).toBeNull();
-    expect(useComposerStore.getState().input).toBe("");
-  });
-
-  test("a blocking gate leaves the staged reference intact", async () => {
-    useChannelReferenceStore.getState().setReference(stagedChannelReference);
-
-    const beforeSend = mock((_content: string) => false);
-    const { result, sendMessage } = renderSubmit({ beforeSend });
-    await submit(result);
-
-    expect(beforeSend).toHaveBeenCalledTimes(1);
-    expect(sendMessage).not.toHaveBeenCalled();
-    expect(useChannelReferenceStore.getState().reference).toEqual(
-      stagedChannelReference,
-    );
   });
 });
 

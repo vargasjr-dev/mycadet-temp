@@ -82,8 +82,6 @@ const importSkillDetailPanel = () =>
   import("@/domains/chat/components/skill-detail-panel");
 const importWakeDetailPanel = () =>
   import("@/domains/chat/components/wake-detail-panel");
-const importChannelTranscriptPanel = () =>
-  import("@/domains/chat/channel-sidecar/channel-transcript-panel");
 
 const SubagentDetailPanel = lazy(() =>
   importSubagentDetailPanel().then((m) => ({ default: m.SubagentDetailPanel })),
@@ -116,11 +114,6 @@ const SkillDetailPanel = lazy(() =>
 );
 const WakeDetailPanel = lazy(() =>
   importWakeDetailPanel().then((m) => ({ default: m.WakeDetailPanel })),
-);
-const ChannelTranscriptPanel = lazy(() =>
-  importChannelTranscriptPanel().then((m) => ({
-    default: m.ChannelTranscriptPanel,
-  })),
 );
 
 export interface RightDrawerWidthProfile {
@@ -195,7 +188,6 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
   const activeSkillDetailId = useViewerStore.use.activeSkillDetailId();
   const activeWakeDetail = useViewerStore.use.activeWakeDetail();
   const activeChannelSetup = useViewerStore.use.activeChannelSetup();
-  const activeChannelTranscript = useViewerStore.use.activeChannelTranscript();
 
   const isSharing = useDeployStore.use.isSharing();
   const isDeploying = useDeployStore.use.isDeploying();
@@ -339,10 +331,6 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
 
   const onCloseChannelSetup = useCallback(() => {
     useViewerStore.getState().closeChannelSetup();
-  }, []);
-
-  const onCloseChannelTranscript = useCallback(() => {
-    useViewerStore.getState().closeChannelTranscript();
   }, []);
 
   // -------------------------------------------------------------------------
@@ -753,19 +741,6 @@ export function ChatContentLayout(props: ChatMainPanelProps) {
           payload={activeChannelSetup}
           onClose={onCloseChannelSetup}
         />
-      );
-    } else if (mainView === "channel-transcript" && activeChannelTranscript) {
-      rightPanel = (
-        <LazyBoundary>
-          {/* Re-key per thread so switching conversations remounts the panel
-              rather than reusing one whose scroll position belongs to the
-              previous thread. */}
-          <ChannelTranscriptPanel
-            key={`${activeChannelTranscript.conversationId}:${activeChannelTranscript.channelId}`}
-            sidecarRef={activeChannelTranscript}
-            onClose={onCloseChannelTranscript}
-          />
-        </LazyBoundary>
       );
     }
   }

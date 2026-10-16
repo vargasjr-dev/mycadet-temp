@@ -433,11 +433,6 @@
     "tasksProgress": "{completed} / {total} tareas",
     "viewDetails": "Ver detalles"
   },
-  "channelReferenceChip": {
-    "heading": "Haciendo referencia a un mensaje de {channel}",
-    "headingWithSender": "Haciendo referencia a {sender} en {channel}",
-    "removeAria": "Quitar el mensaje referenciado"
-  },
   "channelSetupPanel": {
     "accountSid": "SID de la cuenta",
     "accountSidPlaceholder": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
@@ -457,31 +452,6 @@
     "telegramConnected": "Tu asistente ya puede recibir mensajes en Telegram.",
     "twilioIntro": "Introduce tus credenciales de Twilio desde la <consoleLink>consola de Twilio</consoleLink>. Después de guardar, vuelve al chat. Tu asistente terminará de configurar tu número de teléfono y los webhooks.",
     "discordConnected": "Discord esta conectado. Anade el bot a un servidor y empezara a responder alli."
-  },
-  "channelThreadControl": {
-    "closeAria": "Cerrar el hilo de {channel}",
-    "label": "Hilo de {channel}",
-    "openAria": "Abrir el hilo de {channel}"
-  },
-  "channelTranscriptPanel": {
-    "assistantSender": "Asistente",
-    "closeAria": "Cerrar el hilo del canal",
-    "closeTooltip": "Cerrar",
-    "emptyNoMessageDetail": "{channel} no envía a Cadet los detalles por mensaje que necesita esta vista, así que no hay nada que mostrar aquí. Abre la conversación en {channel} para leerla completa.",
-    "emptyThread": "Todavía no hay mensajes de {channel} en esta conversación.",
-    "namedTitle": "{channel} · {thread}",
-    "noText": "Sin contenido de texto",
-    "openInChannel": "Abrir en {channel}",
-    "reactionAdded": "Reaccionó con {emoji}",
-    "reactionRemoved": "Quitó la reacción {emoji}",
-    "readOnly": "Solo lectura",
-    "readOnlyNote": "Esta es la conversación tal como está en {channel}. El campo de escritura de Cadet es el único lugar donde puedes escribir.",
-    "reference": "Referenciar en Cadet",
-    "referenceAria": "Referenciar este mensaje de {channel} en Cadet",
-    "referenced": "Referenciado",
-    "removeReferenceAria": "Quitar esta referencia del campo de escritura de Cadet",
-    "title": "Hilo de {channel}",
-    "unknownSender": "Remitente desconocido"
   },
   "chatAttachments": {
     "attachFileAria": "Adjuntar archivo",
