@@ -42,7 +42,10 @@ export default defineConfig(({ mode, command }) => {
       react(),
       ...(library ? [appPackage()] : cloud ? [] : [localModePlugin(env)]),
     ],
-    publicDir: library ? false : "../web/public",
+    // The app owns its public assets (favicon, the signup media) — the
+    // standalone bundle must be self-contained so a published @mycadet/app
+    // package carries everything the edge-served shell needs.
+    publicDir: true,
     resolve: {
       alias: [
         ...(command === "serve"

@@ -387,6 +387,7 @@ export async function restoreTunnelEdge(
   console.log(
     `   Tunnel edge ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (${formatEdgeMode(
       edge.includesWebApp,
+      edge.shellMode,
     )}).`,
   );
   return edge.port;

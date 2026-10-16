@@ -80,6 +80,7 @@ import {
   MAX_PRESERVED_MODULE_PRELOADS,
   ensureTunnelEdge,
   EDGE_TEMPLATE_VERSION,
+  findAppDistDir,
   findWebDistDir,
   startRemoteWebIngress,
   stopContainerTunnelEdge,
@@ -857,6 +858,9 @@ function spaConfigHash(
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
         version: "1.2.3",
+        // Web mode is the default shell; the fingerprint covers the mode so
+        // an edge built for the other shell is never mistaken for this one.
+        shellMode: "web",
         indexHtml: opts.indexHtml ?? FAKE_INDEX_HTML,
       }),
     )
@@ -1915,6 +1919,7 @@ describe("ensureTunnelEdge", () => {
       port: 7845,
       started: false,
       includesWebApp: true,
+      shellMode: "web",
     });
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
@@ -2068,6 +2073,7 @@ describe("ensureTunnelEdge", () => {
       port: REQUESTED_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
     expect(edge.killed()).toBe(true);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
@@ -2092,6 +2098,7 @@ describe("ensureTunnelEdge", () => {
       port: REQUESTED_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
     expect(edge.killed()).toBe(true);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
@@ -2114,6 +2121,7 @@ describe("ensureTunnelEdge", () => {
       port: REQUESTED_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
@@ -2169,6 +2177,7 @@ describe("ensureTunnelEdge", () => {
       port: REQUESTED_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
@@ -2418,5 +2427,295 @@ describe("assistant metadata API", () => {
         },
       }),
     ).toThrow("App origins");
+  });
+});
+
+const APP_INDEX_SUFFIX = join("standalone", "index.html");
+const FAKE_APP_INDEX_HTML = "<!doctype html><html><head><title>app</title></head><body>app-shell</body></html>";
+
+/**
+ * Force findAppDistDir() to resolve a standalone bundle. The web-dist mock
+ * below always pairs with it: app mode serves both bundles.
+ */
+function mockAppDistPresent(): void {
+  const previousExists = existsSyncMock.getMockImplementation();
+  existsSyncMock.mockImplementation((path) =>
+    String(path).endsWith(APP_INDEX_SUFFIX)
+      ? true
+      : previousExists
+        ? previousExists(path)
+        : realFs.existsSync(path),
+  );
+  const previousRead = readFileSyncMock.getMockImplementation();
+  readFileSyncMock.mockImplementation(((path, options) =>
+    String(path).endsWith(APP_INDEX_SUFFIX)
+      ? FAKE_APP_INDEX_HTML
+      : previousRead
+        ? previousRead(path as never, options as never)
+        : realFs.readFileSync(path as never, options as never)) as typeof readFileSync);
+}
+
+/** The fingerprint the edge must record for an app-mode SPA config. */
+function appConfigHash(
+  opts: {
+    assistantName?: string;
+    assistantId?: string;
+  } = {},
+): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        template: EDGE_TEMPLATE_VERSION,
+        config: {
+          remote: "custom",
+          apiBaseUrl: "/v1",
+          ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
+          ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
+          hubUrl: PRODUCTION_HUB_URL,
+        },
+        webDistDir: findWebDistDir(),
+        version: "1.2.3",
+        shellMode: "app",
+        appDistDir: findAppDistDir(),
+        appIndexHtml: FAKE_APP_INDEX_HTML,
+        indexHtml: FAKE_INDEX_HTML,
+      }),
+    )
+    .digest("hex");
+}
+
+describe("app shell mode", () => {
+  pinProductionEnvironment();
+
+  function appConf() {
+    return buildIngressNginxConfig({
+      gatewayPort: 7830,
+      listenPort: 7840,
+      remoteWebIngress: {
+        webDistDir: "/tmp/cadet web/dist",
+        appDistDir: "/tmp/cadet app/dist/standalone",
+        version: "1.2.3",
+        assistantId: "assistant-1",
+        config: {},
+      },
+    });
+  }
+
+  test("serves the app bundle as the outer shell from the origin root", () => {
+    const conf = appConf();
+    // The injected app document is internal-only and every shell route
+    // (/, /account/*, /logout, and the /assistant/* host routes) falls back
+    // to it through the named location.
+    expect(conf).toContain("location = /__cadet-app-index.html {");
+    // Without an explicit app index path, the config aliases the bundle's own
+    // index; the edge start path points this at the ingress dir (below).
+    expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/index.html"');
+    expect(conf).toContain("location @cadet_app_shell {");
+    expect(conf).toContain("rewrite ^ /__cadet-app-index.html last;");
+    expect(conf).toContain("location = / {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
+    expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/assets/";');
+    expect(conf).toContain('alias "/tmp/cadet app/dist/standalone/";');
+    // The shell owns the /assistant/* host routes; the exact mounts load the
+    // app document rather than the web SPA.
+    expect(conf).toContain("location = /assistant {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
+    expect(conf).toContain("location = /assistant/ {\n      rewrite ^ /__cadet-app-index.html last;\n    }");
+    expect(conf).toContain("try_files $uri @cadet_app_shell;");
+    // No recursive loading: the web SPA's exact mount is gone from the shell.
+    expect(conf).not.toContain("location = /assistant/ {\n      rewrite ^ /assistant/__remote-index.html last;\n    }");
+  });
+
+  test("iframes the web UI from the distinct /web/assistant namespace", () => {
+    const conf = appConf();
+    expect(conf).toContain('location = "/v1/assistants/assistant-1/"');
+    expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
+    expect(conf).toContain('\\"version\\":\\"1.2.3\\"');
+    expect(conf).toContain("location = /web/assistant/ {\n      rewrite ^ /web/assistant/__remote-index.html last;\n    }");
+    expect(conf).toContain("location = /web/assistant/__remote-index.html {");
+    expect(conf).toContain('alias "/tmp/cadet web/dist/index.html"');
+    expect(conf).toContain("location = /web/assistant/__config {");
+    expect(conf).toContain("location ^~ /web/assistant/ {");
+    expect(conf).toContain("try_files $uri $uri/ /web/assistant/__remote-index.html;");
+    // The web bundle's asset URLs keep their baked /assistant/ base.
+    expect(conf).toContain('location ^~ /assistant/assets/ {\n      gzip on;\n      alias "/tmp/cadet web/dist/assets/"');
+    // Prefixed API paths the web UI builds from its serving prefix.
+    expect(conf).toContain("location ^~ /web/v1/ {");
+    expect(conf).toContain("proxy_pass http://127.0.0.1:7830/v1/;");
+    // Nothing else under /web exists, so the namespace cannot serve the shell
+    // (or anything else) recursively.
+    expect(conf).toContain("location ^~ /web/ {\n      return 404;\n    }");
+  });
+
+  test("blocks the sensitive gateway routes under both prefixes", () => {
+    const conf = appConf();
+    for (const route of ["/v1/pair", "/v1/devices", "/v1/guardian/init"]) {
+      expect(conf).toContain(`location = ${route} { return 404; }`);
+      expect(conf).toContain(`location = /web${route} { return 404; }`);
+    }
+    expect(conf).toContain("location ^~ /web/assistant/__local/ { return 404; }");
+  });
+
+  test("proxies runtime API paths verbatim for both surfaces", () => {
+    const conf = appConf();
+    expect(conf).toContain("location ^~ /v1/ {\n      proxy_pass http://127.0.0.1:7830;");
+    expect(conf).toContain("location ^~ /webhooks/ {\n      proxy_pass http://127.0.0.1:7830;");
+    expect(conf).toContain("location = /healthz {\n      proxy_pass http://127.0.0.1:7830;");
+  });
+
+  test("app mode starts, injects both documents, and records the app fingerprint", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    mockAppDistPresent();
+    fetchCurrentVersionMock.mockResolvedValue("1.2.3");
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      shellMode: "app",
+      assistantId: "assistant-1",
+    });
+
+    expect(result.status).toBe("started");
+    const ingressDir = join(ws, "data", "ingress");
+    const appIndex = realFs.readFileSync(join(ingressDir, "app-index.html"), "utf-8");
+    expect(appIndex).toContain("__CADET_CONFIG__");
+    expect(appIndex).toContain(`"assistantId":"assistant-1"`);
+    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    expect(conf).toContain("location = /__cadet-app-index.html {");
+    expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
+    expect(readConfig(ws).ingress?.nginx).toMatchObject({
+      listenPort: 7845,
+      includeWebApp: true,
+      gatewayPort: 7830,
+      remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
+    });
+  });
+
+  test("fails fast when the app bundle is not built", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    // A real build in the checkout would satisfy the lookup; the failure
+    // path needs the lookup to resolve nothing, regardless of checkout state.
+    // Web dist stays present so the app-dist check is the one that fires.
+    const previousExists = existsSyncMock.getMockImplementation();
+    existsSyncMock.mockImplementation((path) =>
+      String(path).endsWith(APP_INDEX_SUFFIX)
+        ? false
+        : previousExists
+          ? previousExists(path)
+          : realFs.existsSync(path),
+    );
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      shellMode: "app",
+    });
+
+    expect(result).toEqual({ status: "app-dist-missing" });
+    expect(realFs.existsSync(ingressConfPath(ws))).toBe(false);
+  });
+
+  test("restarting an edge between shell modes rotates onto the requested mode", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    mockAppDistPresent();
+    // A running web-mode edge whose fingerprint predates app mode.
+    mockRunningEdge(ws, {
+      listenPort: 7845,
+      includeWebApp: true,
+      gatewayPort: 7830,
+      remoteWebConfigHash: spaConfigHash({ assistantId: "assistant-1" }),
+    });
+    const edge = mockKillableNginx(123_460);
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      shellMode: "app",
+      assistantId: "assistant-1",
+    });
+
+    expect(result.status).toBe("started");
+    expect(edge.killed()).toBe(true);
+    expect(readConfig(ws).ingress?.nginx).toMatchObject({
+      remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
+    });
+  });
+
+  test("reuses an already-running app-mode edge", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    mockAppDistPresent();
+    mockRunningEdge(ws, {
+      listenPort: 7845,
+      includeWebApp: true,
+      gatewayPort: 7830,
+      remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
+    });
+    const edge = mockKillableNginx(123_460);
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      shellMode: "app",
+      assistantId: "assistant-1",
+    });
+
+    expect(result).toMatchObject({ status: "already-running", listenPort: 7845 });
+    expect(edge.killed()).toBe(false);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
+  test("ensureTunnelEdge reads the persisted shell mode from the workspace config", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    mockAppDistPresent();
+    realFs.writeFileSync(
+      join(ws, "config.json"),
+      JSON.stringify({ ingress: { shell: "app" } }) + "\n",
+    );
+
+    const result = await ensureTunnelEdge({
+      assistantId: "assistant-1",
+      workspaceDir: ws,
+      gatewayPort: 7830,
+    });
+
+    expect(result.shellMode).toBe("app");
+    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    expect(conf).toContain("location = /__cadet-app-index.html {");
+    expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
+  });
+
+  test("ensureTunnelEdge defaults to the web shell", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+
+    const result = await ensureTunnelEdge({
+      assistantId: "assistant-1",
+      workspaceDir: ws,
+      gatewayPort: 7830,
+    });
+
+    expect(result.shellMode).toBe("web");
+    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    expect(conf).not.toContain("__cadet-app-index");
+    expect(conf).toContain('\\"url\\":\\"assistant/\\"');
   });
 });

@@ -36,12 +36,14 @@ import {
   isLocalContainerEntry,
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
+  readShellMode,
   saveRawConfig,
 } from "./ingress-config.js";
 import { stripVersionPrefix } from "./version-compat.js";
-import { findWebDistDir, readWebReleaseVersion } from "./web-dist.js";
+import { findAppDistDir, findWebDistDir, readWebReleaseVersion } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
+export { findAppDistDir } from "./web-dist.js";
 
 /**
  * CLI-managed nginx reverse proxy that fronts the gateway as the canonical
@@ -96,8 +98,11 @@ function nginxDirPath(dir: string): string {
   return dir.endsWith("/") ? dir : `${dir}/`;
 }
 
-function gatewayProxyBlock(gatewayPort: number): string {
-  return `      proxy_pass http://127.0.0.1:${gatewayPort};
+function gatewayProxyBlock(
+  gatewayPort: number,
+  upstreamPath = "",
+): string {
+  return `      proxy_pass http://127.0.0.1:${gatewayPort}${upstreamPath};
       proxy_http_version 1.1;
       proxy_request_buffering off;
       proxy_buffering off;
@@ -110,39 +115,68 @@ function gatewayProxyBlock(gatewayPort: number): string {
 }
 
 /**
- * Sensitive local-only routes the edge must never expose to the internet,
- * regardless of whether the SPA is being served.
+ * Sensitive local-only gateway paths the edge must never expose to the
+ * internet, regardless of which client bundles are being served. Each exact
+ * path is blocked with and without its trailing slash.
  */
-const DENYLIST_LOCATIONS = `    location = /auth/token { return 404; }
-    location = /auth/token/ { return 404; }
-    location = /v1/pair { return 404; }
-    location = /v1/pair/ { return 404; }
-    location = /v1/pair/web-init { return 404; }
-    location = /v1/pair/web-init/ { return 404; }
-    location = /v1/devices { return 404; }
-    location = /v1/devices/ { return 404; }
-    location = /v1/devices/revoke { return 404; }
-    location = /v1/devices/revoke/ { return 404; }
-    location = /v1/guardian/init { return 404; }
-    location = /v1/guardian/init/ { return 404; }
-    location = /v1/guardian/reset-bootstrap { return 404; }
-    location = /v1/guardian/reset-bootstrap/ { return 404; }
-    location = /v1/remote-web/pairing-requests { return 404; }
-    location = /v1/remote-web/pairing-requests/ { return 404; }
-    location = /v1/remote-web/pairing-requests/approve { return 404; }
-    location = /v1/remote-web/pairing-requests/approve/ { return 404; }
-    location = /v1/remote-web/pairing-requests/deny { return 404; }
-    location = /v1/remote-web/pairing-requests/deny/ { return 404; }
-    location = /v1/remote-web/pairing-verification { return 404; }
-    location = /v1/remote-web/pairing-verification/ { return 404; }
-    location = /v1/shared/invites/redeem { return 404; }
-    location = /v1/shared/invites/redeem/ { return 404; }
-    location ^~ /assistant/__local/ { return 404; }
-    location ^~ /assistant/__gateway/ { return 404; }
-    location ^~ /assistant/__gateway-paired/ { return 404; }`;
+const SENSITIVE_GATEWAY_ROUTES = [
+  "/auth/token",
+  "/v1/pair",
+  "/v1/pair/web-init",
+  "/v1/devices",
+  "/v1/devices/revoke",
+  "/v1/guardian/init",
+  "/v1/guardian/reset-bootstrap",
+  "/v1/remote-web/pairing-requests",
+  "/v1/remote-web/pairing-requests/approve",
+  "/v1/remote-web/pairing-requests/deny",
+  "/v1/remote-web/pairing-verification",
+  "/v1/shared/invites/redeem",
+] as const;
+
+/** Sensitive path prefixes, blocked with a prefix match. */
+const SENSITIVE_GATEWAY_PREFIXES = [
+  "/assistant/__local/",
+  "/assistant/__gateway/",
+  "/assistant/__gateway-paired/",
+] as const;
+
+/**
+ * Denylist locations for gateway paths under one public prefix. The edge
+ * serves from the origin root (web mode) and — in app mode — from the
+ * `/web` iframe prefix, where the web UI's prefix-aware API paths
+ * (`remoteGatewayApiPath`) put the same gateway routes at `/web/v1/...`;
+ * the sensitive ones must be blocked in both spellings.
+ */
+function denylistLocations(prefix = ""): string {
+  const exact = SENSITIVE_GATEWAY_ROUTES.map((route) => {
+    const block = (path: string) =>
+      `    location = ${prefix}${path} { return 404; }`;
+    return `${block(route)}\n${block(`${route}/`)}`;
+  });
+  const prefixes = SENSITIVE_GATEWAY_PREFIXES.map((route) => {
+    return `    location ^~ ${prefix}${route} { return 404; }`;
+  });
+  return [...exact, ...prefixes].join("\n");
+}
+
+const DENYLIST_LOCATIONS = denylistLocations();
 
 export interface RemoteWebIngressOptions {
   webDistDir: string;
+  /**
+   * Standalone app-shell bundle. Present only in app shell mode: the edge
+   * serves this bundle as the outer account/client shell from the origin
+   * root and iframes the web SPA from /web/assistant/. Absent (web mode)
+   * keeps serving the web SPA directly from /assistant/.
+   */
+  appDistDir?: string;
+  /**
+   * The config-injected app-shell document. Defaults to the app bundle's own
+   * index; the edge start path points this at the ingress dir, where the
+   * injected copy is written.
+   */
+  appIndexHtmlPath?: string;
   indexHtmlPath?: string;
   /** Assistant release verified against the served UI artifact. */
   version?: string;
@@ -157,6 +191,18 @@ export interface RemoteWebIngressOptions {
   /** Cloud web SPA base the remote client can hand this origin to (see
    *  `cloudAssistantHubUrl`). Absent in older served configs. */
   hubUrl?: string;
+}
+
+/**
+ * The web UI entry the assistant detail API hands the shell, relative to the
+ * origin root. Web mode serves the web SPA directly at /assistant/; app mode
+ * serves it from the distinct /web/assistant/ iframe namespace so the shell's
+ * own /assistant/* host routes can never load the shell recursively.
+ */
+export function assistantEntryUrl(
+  appDistDir: string | undefined,
+): string {
+  return appDistDir ? "web/assistant/" : "assistant/";
 }
 
 // The edge serves remote browsers, so the bundle's remote-gateway machinery
@@ -204,11 +250,11 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 12;
+export const EDGE_TEMPLATE_VERSION = 13;
 
 /**
- * Stable fingerprint of the injected SPA config, its source bundle, and
- * the template that renders them. Recorded
+ * Stable fingerprint of the injected SPA config, its source bundles, the
+ * shell mode, and the template that renders them. Recorded
  * alongside the edge state so a reuse decision can tell whether a running edge
  * already serves the requested config (see `IngressState.remoteWebConfigHash`).
  */
@@ -216,6 +262,7 @@ function remoteWebConfigFingerprint(
   config: Record<string, unknown>,
   webDistDir: string,
   version?: string,
+  appDistDir?: string,
 ): string {
   return createHash("sha256")
     .update(
@@ -224,6 +271,16 @@ function remoteWebConfigFingerprint(
         config,
         webDistDir,
         version,
+        // The shell mode is part of edge identity: flipping ingress.shell
+        // must rotate a running edge onto the requested shell even though
+        // every other fingerprint input may be unchanged.
+        shellMode: appDistDir ? "app" : "web",
+        ...(appDistDir
+          ? {
+              appDistDir,
+              appIndexHtml: readFileSync(join(appDistDir, "index.html"), "utf-8"),
+            }
+          : {}),
         indexHtml: readFileSync(join(webDistDir, "index.html"), "utf-8"),
       }),
     )
@@ -386,6 +443,7 @@ function appOrigins(config: Record<string, unknown>): string[] {
 function assistantMetadataLocations(config: Record<string, unknown>): string {
   const metadata = assistantHostConfig(config);
   const id = metadata.assistantId;
+  const entryUrl = typeof config.entryUrl === "string" ? config.entryUrl : undefined;
   const choice = id
     ? {
         id,
@@ -408,7 +466,7 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
                   ...choice,
                   status: "active",
                   version: metadata.version,
-                  url: "assistant/",
+                  url: entryUrl ?? "assistant/",
                 }
               : { detail: "assistant is not ready" },
           },
@@ -459,6 +517,8 @@ export function buildIngressNginxConfig(opts: {
     ? buildRemoteWebIngressLocations({
         gatewayPort: opts.gatewayPort,
         webDistDir: remoteWebIngress.webDistDir,
+        appDistDir: remoteWebIngress.appDistDir,
+        appIndexHtmlPath: remoteWebIngress.appIndexHtmlPath,
         indexHtmlPath: remoteWebIngress.indexHtmlPath,
         config: remoteWebIngressConfig(remoteWebIngress),
         version: remoteWebIngress.version,
@@ -550,25 +610,13 @@ ${serverLocations}
 `;
 }
 
-function buildRemoteWebIngressLocations(opts: {
-  gatewayPort: number;
-  webDistDir: string;
-  indexHtmlPath?: string;
-  config: Record<string, unknown>;
-  version?: string;
-}): string {
-  const proxyBlock = gatewayProxyBlock(opts.gatewayPort);
-  const webDistDir = nginxDirPath(opts.webDistDir);
-  const webAssetsDir = join(opts.webDistDir, "assets");
-  const indexHtmlPath =
-    opts.indexHtmlPath ?? join(opts.webDistDir, "index.html");
-  const configJson = JSON.stringify(opts.config);
-
-  return `${DENYLIST_LOCATIONS}
-
-${assistantMetadataLocations({ ...opts.config, version: opts.version })}
-
-    location = /healthz {
+/**
+ * Gateway-facing locations shared by both shell modes: liveness probes and
+ * the runtime API surface, all proxied verbatim.
+ */
+function gatewayProxyLocations(gatewayPort: number): string {
+  const proxyBlock = gatewayProxyBlock(gatewayPort);
+  return `    location = /healthz {
 ${proxyBlock}
     }
 
@@ -582,18 +630,34 @@ ${proxyBlock}
 
     location ^~ /webhooks/ {
 ${proxyBlock}
+    }`;
+}
+
+/**
+ * Serve the web SPA from one path prefix: the exact-mount rewrites, the
+ * injected index, the inline config, and the SPA fallback. Used for the
+ * /assistant/ mount in web mode and the /web/assistant/ iframe mount in
+ * app mode. `prefix` carries both a leading and trailing slash.
+ */
+function webSpaLocations(opts: {
+  prefix: string;
+  webDistDir: string;
+  indexHtmlPath: string;
+  config: Record<string, unknown>;
+}): string {
+  const indexHtmlPath = opts.indexHtmlPath;
+  const configJson = JSON.stringify(opts.config);
+  const prefix = opts.prefix.replace(/\/+$/, "");
+  return `    location = ${prefix} {
+      return 302 ${prefix}/;
     }
 
-    location = /assistant {
-      return 302 /assistant/;
+    location = ${prefix}/ {
+      rewrite ^ ${prefix}/__remote-index.html last;
     }
 
-    location = /assistant/ {
-      rewrite ^ /assistant/__remote-index.html last;
-    }
-
-    location = /assistant/index.html {
-      rewrite ^ /assistant/__remote-index.html last;
+    location = ${prefix}/index.html {
+      rewrite ^ ${prefix}/__remote-index.html last;
     }
 
     # The shell and the unhashed files beside it revalidate rather than
@@ -601,32 +665,70 @@ ${proxyBlock}
     # disk with a validator, so a repeat load costs a 304 instead of the whole
     # document. __config is the exception below: it is returned inline, so
     # nginx attaches no validator for a revalidation to match against.
-    location = /assistant/__remote-index.html {
+    location = ${prefix}/__remote-index.html {
       internal;
       gzip on;
       alias ${nginxQuoted(indexHtmlPath, "remote web ingress index path")};
       add_header Cache-Control "no-cache";
     }
 
-    location = /assistant/__config {
+    location = ${prefix}/__config {
       default_type application/json;
       add_header Cache-Control "no-store";
       return 200 ${nginxQuoted(configJson, "remote web ingress config")};
     }
 
-    location ^~ /assistant/assets/ {
+    location ^~ ${prefix}/ {
       gzip on;
-      alias ${nginxQuoted(nginxDirPath(webAssetsDir), "web assets path")};
+      alias ${nginxQuoted(nginxDirPath(opts.webDistDir), "web dist path")};
+      try_files $uri $uri/ ${prefix}/__remote-index.html;
+      add_header Cache-Control "no-cache";
+    }`;
+}
+
+/** The web bundle's hashed chunks, cached immutably under its dist root. */
+function webAssetsLocations(webDistDir: string): string {
+  return `    location ^~ /assistant/assets/ {
+      gzip on;
+      alias ${nginxQuoted(
+        nginxDirPath(join(webDistDir, "assets")),
+        "web assets path",
+      )};
       try_files $uri =404;
       add_header Cache-Control "public, max-age=31536000, immutable";
-    }
+    }`;
+}
 
-    location ^~ /assistant/ {
-      gzip on;
-      alias ${nginxQuoted(webDistDir, "web dist path")};
-      try_files $uri $uri/ /assistant/__remote-index.html;
-      add_header Cache-Control "no-cache";
-    }
+function buildRemoteWebIngressLocations(opts: {
+  gatewayPort: number;
+  webDistDir: string;
+  appDistDir?: string;
+  appIndexHtmlPath?: string;
+  indexHtmlPath?: string;
+  config: Record<string, unknown>;
+  version?: string;
+}): string {
+  const webDistDir = nginxDirPath(opts.webDistDir);
+  const webAssetsDir = join(opts.webDistDir, "assets");
+  const indexHtmlPath =
+    opts.indexHtmlPath ?? join(opts.webDistDir, "index.html");
+
+  if (!opts.appDistDir) {
+    // Web mode: the web SPA IS the served surface, at /assistant/.
+    return `${DENYLIST_LOCATIONS}
+
+${assistantMetadataLocations({ ...opts.config, version: opts.version })}
+
+${gatewayProxyLocations(opts.gatewayPort)}
+
+${webAssetsLocations(opts.webDistDir)}
+
+${webSpaLocations({
+  prefix: "/assistant",
+  webDistDir: opts.webDistDir,
+  indexHtmlPath,
+  config: opts.config,
+})}
 
     location = / {
       return 302 /assistant/;
@@ -634,6 +736,106 @@ ${proxyBlock}
 
     location / {
       return 404;
+    }`;
+  }
+
+  // App mode: the app bundle is the outer shell (origin root, including the
+  // app's own /assistant/* host routes) and the web SPA is iframed from the
+  // distinct /web/assistant/ namespace, so neither surface can load the
+  // other recursively. The web bundle's asset URLs keep their baked
+  // /assistant/ base, so its hashed chunks and public files stay served
+  // under that prefix even though the document now mounts from /web/.
+  const appIndexHtmlPath =
+    opts.appIndexHtmlPath ?? join(opts.appDistDir, "index.html");
+  return `${denylistLocations()}
+
+${denylistLocations("/web")}
+
+${assistantMetadataLocations({
+  ...opts.config,
+  version: opts.version,
+  entryUrl: assistantEntryUrl(opts.appDistDir),
+})}
+
+${gatewayProxyLocations(opts.gatewayPort)}
+
+    location ^~ /web/v1/ {
+${gatewayProxyBlock(opts.gatewayPort, "/v1/")}
+    }
+
+${webSpaLocations({
+  prefix: "/web/assistant",
+  webDistDir: opts.webDistDir,
+  indexHtmlPath,
+  config: opts.config,
+})}
+
+    location = /web {
+      return 302 /web/assistant/;
+    }
+
+    # The iframe namespace has no other routes: anything under /web that is
+    # not the assistant mount or its prefixed API path is a probe, not a page.
+    location ^~ /web/ {
+      return 404;
+    }
+
+    # The web bundle's hashed chunks and unhashed public files under its baked
+    # build base. Real files win; anything else falls through to the app
+    # shell, which owns the /assistant/* host routes.
+    location = /assistant {
+      rewrite ^ /__cadet-app-index.html last;
+    }
+
+    location = /assistant/ {
+      rewrite ^ /__cadet-app-index.html last;
+    }
+
+${webAssetsLocations(opts.webDistDir)}
+
+    location ^~ /assistant/ {
+      gzip on;
+      alias ${nginxQuoted(webDistDir, "web dist path")};
+      try_files $uri @cadet_app_shell;
+      add_header Cache-Control "no-cache";
+    }
+
+    # The app shell: its document is the config-injected standalone index, and
+    # every shell route (/, /account/*, /logout, and the /assistant/* host
+    # routes) resolves through the SPA fallback.
+    location = /__cadet-app-index.html {
+      internal;
+      gzip on;
+      alias ${nginxQuoted(appIndexHtmlPath, "app shell ingress index path")};
+      add_header Cache-Control "no-cache";
+    }
+
+    location @cadet_app_shell {
+      rewrite ^ /__cadet-app-index.html last;
+    }
+
+    location = / {
+      rewrite ^ /__cadet-app-index.html last;
+    }
+
+    location ^~ /assets/ {
+      gzip on;
+      alias ${nginxQuoted(
+        nginxDirPath(join(opts.appDistDir, "assets")),
+        "app assets path",
+      )};
+      try_files $uri =404;
+      add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location / {
+      gzip on;
+      alias ${nginxQuoted(
+        nginxDirPath(opts.appDistDir),
+        "app dist path",
+      )};
+      try_files $uri @cadet_app_shell;
+      add_header Cache-Control "no-cache";
     }`;
 }
 
@@ -829,6 +1031,19 @@ export function startIngressNginx(opts: {
       remoteWebIngress.indexHtmlPath,
       buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
     );
+    if (remoteWebIngress.appDistDir) {
+      // The app shell gets its own injected document: same remote-web config
+      // (its readers ignore the web-only apiBaseUrl key), written beside the
+      // web one so the generated locations can alias it internally.
+      const rawAppIndexHtml = readFileSync(
+        join(remoteWebIngress.appDistDir, "index.html"),
+        "utf-8",
+      );
+      writeFileSync(
+        join(paths.dir, "app-index.html"),
+        buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
+      );
+    }
   }
   writeFileSync(
     paths.confPath,
@@ -858,6 +1073,7 @@ export function startIngressNginx(opts: {
             remoteWebIngress.config,
             remoteWebIngress.webDistDir,
             remoteWebIngress.version,
+            remoteWebIngress.appDistDir,
           ),
         }
       : {}),
@@ -970,6 +1186,7 @@ export type StartRemoteWebIngressResult =
     }
   | { status: "nginx-missing" }
   | { status: "web-dist-missing" }
+  | { status: "app-dist-missing" }
   | { status: "unreachable"; listenPort: number; logPath: string }
   | { status: "port-conflict"; listenPort: number; logPath: string };
 
@@ -1003,6 +1220,13 @@ export async function startRemoteWebIngress(opts: {
    */
   includeWebApp?: boolean;
   /**
+   * Which client bundle is the outer shell (default "web"). "app" additionally
+   * serves the standalone app bundle as the outer account/client shell and
+   * hands the shell a /web/assistant/ iframe URL for the web UI; "web" keeps
+   * serving the web SPA directly from /assistant/.
+   */
+  shellMode?: "web" | "app";
+  /**
    * Serving assistant's display name, stamped into the served remote-web
    * config (`__CADET_CONFIG__.assistantName`) so remote clients can label
    * this origin. Omitted when unknown; consumers tolerate its absence.
@@ -1029,6 +1253,7 @@ export async function startRemoteWebIngress(opts: {
 }): Promise<StartRemoteWebIngressResult> {
   let listenPort = opts.listenPort ?? getNginxIngressPort();
   const includeWebApp = opts.includeWebApp ?? true;
+  const shellMode = opts.shellMode ?? "web";
 
   const version = getNginxVersion();
   if (!version) {
@@ -1058,6 +1283,11 @@ export async function startRemoteWebIngress(opts: {
   if (includeWebApp && !webDistDir) {
     return { status: "web-dist-missing" };
   }
+  const appDistDir =
+    includeWebApp && shellMode === "app" ? (findAppDistDir() ?? undefined) : undefined;
+  if (includeWebApp && shellMode === "app" && !appDistDir) {
+    return { status: "app-dist-missing" };
+  }
   const runtimeVersion = webDistDir
     ? await fetchCurrentVersion(`http://127.0.0.1:${opts.gatewayPort}`)
     : undefined;
@@ -1075,6 +1305,7 @@ export async function startRemoteWebIngress(opts: {
           remoteWebIngressConfig(spaOptions),
           webDistDir,
           matchedVersion,
+          appDistDir,
         )
       : undefined;
   // Both sides are undefined in webhooks-only mode; an SPA record without a
@@ -1139,7 +1370,12 @@ export async function startRemoteWebIngress(opts: {
     gatewayPort: opts.gatewayPort,
     listenPort,
     remoteWebIngress: webDistDir
-      ? { webDistDir, ...spaOptions, version: matchedVersion }
+      ? {
+          webDistDir,
+          ...spaOptions,
+          version: matchedVersion,
+          ...(appDistDir ? { appDistDir } : {}),
+        }
       : undefined,
   });
   let exited = false;
@@ -1213,8 +1449,14 @@ function lockfileAssistantName(assistantId: string): string | undefined {
 }
 
 /** User-facing label for the edge mode, shared by every edge status line. */
-export function formatEdgeMode(includesWebApp: boolean): string {
-  return includesWebApp ? "remote web + webhooks" : "webhooks only";
+export function formatEdgeMode(
+  includesWebApp: boolean,
+  shellMode: "web" | "app" = "web",
+): string {
+  if (!includesWebApp) return "webhooks only";
+  return shellMode === "app"
+    ? "app shell + remote web + webhooks"
+    : "remote web + webhooks";
 }
 
 /**
@@ -1269,6 +1511,8 @@ function stampAppProcessEntry(
   /** True when this call started the edge, false when a running one was reused. */
   started: boolean;
   includesWebApp: boolean;
+  /** The shell mode the edge serves (the persisted workspace setting). */
+  shellMode: "web" | "app";
 }
 
 /**
@@ -1315,10 +1559,15 @@ export async function ensureTunnelEdge(opts: {
   const assistantName = opts.assistantId
     ? lockfileAssistantName(opts.assistantId)
     : undefined;
+  // The persisted workspace setting owns the shell choice; every edge caller
+  // (tunnel, wake restore, upgrade restore) reads it through here so a mode
+  // flip only needs `cadet tunnel --shell` once.
+  const shellMode = readShellMode(opts.workspaceDir);
   const result = await startRemoteWebIngress({
     workspaceDir: opts.workspaceDir,
     gatewayPort: opts.gatewayPort,
     includeWebApp: true,
+    shellMode,
     ...(assistantName ? { assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.onStarting ? { onStarting: opts.onStarting } : {}),
@@ -1335,6 +1584,7 @@ export async function ensureTunnelEdge(opts: {
         port: result.listenPort,
         started: true,
         includesWebApp: true,
+        shellMode,
       };
     case "already-running": {
       // `already-running` also covers a drifted edge whose restart failed, so
@@ -1373,6 +1623,7 @@ export async function ensureTunnelEdge(opts: {
         port: result.listenPort,
         started: false,
         includesWebApp: result.includeWebApp,
+        shellMode,
       };
     }
     case "nginx-missing":
@@ -1386,6 +1637,13 @@ export async function ensureTunnelEdge(opts: {
         "Unable to locate built web assets for the remote web edge. " +
           "Build the SPA with `cd clients/web && VITE_CLOUD_MODE=false bun run build`, " +
           "or install @mycadet/web so its packaged dist directory is available.",
+      );
+    case "app-dist-missing":
+      throw new Error(
+        "The app shell edge mode is selected (ingress.shell = \"app\") but no " +
+          "built app bundle is available. Build it with `cd clients/app && bun run build`, " +
+          "or install @mycadet/app so its packaged standalone directory is available. " +
+          "Switch back to the web shell with `cadet tunnel --shell web`.",
       );
     case "unreachable":
       throw new Error(

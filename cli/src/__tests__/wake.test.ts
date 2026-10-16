@@ -173,7 +173,7 @@ mock.module("../lib/ingress-config.js", () => ({
 }));
 
 const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
-  async () => ({ port: 7840, started: true, includesWebApp: true }),
+  async () => ({ port: 7840, started: true, includesWebApp: true, shellMode: "web" }),
 );
 const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
   () => false,
@@ -305,6 +305,7 @@ beforeEach(() => {
     port: 7840,
     started: true,
     includesWebApp: true,
+    shellMode: "web",
   });
   isIngressRunningMock.mockReset();
   isIngressRunningMock.mockReturnValue(false);
@@ -1073,6 +1074,7 @@ describe("cadet wake — tunnel edge restore", () => {
       port: 7840,
       started: false,
       includesWebApp: true,
+      shellMode: "web",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1579,6 +1581,7 @@ describe("cadet wake — tunnel edge restore", () => {
       port: 7841,
       started: false,
       includesWebApp: true,
+      shellMode: "web",
     });
 
     await wake();

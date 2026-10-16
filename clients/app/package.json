@@ -1,8 +1,12 @@
 {
   "name": "@mycadet/app",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "Cadet account/client shell — portable package plus a standalone bundle for self-hosted edges",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/package/types/index.d.ts",
@@ -46,11 +50,10 @@
   "scripts": {
     "predev": "bun run build",
     "dev": "bun --bun vite",
-    "prebuild": "cd ../web && bun run openapi-ts && node ../web/scripts/copy-skill-assets.mjs",
     "build": "bun scripts/build.ts",
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsgo --noEmit"
   }
 }

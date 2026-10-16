@@ -22,6 +22,7 @@
     "@mycadet/cli": "0.13.0",
     "@mycadet/credential-executor": "0.13.0",
     "@mycadet/gateway": "0.13.0",
+    "@mycadet/app": "0.13.0",
     "@mycadet/web": "0.13.0"
   },
   "overrides": {

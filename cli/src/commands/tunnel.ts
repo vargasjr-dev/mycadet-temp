@@ -20,9 +20,11 @@ import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
   parseGatewayPortFromEntryUrls,
+  saveShellMode,
 } from "../lib/ingress-config.js";
 import {
   ensureTunnelEdge,
+  formatEdgeMode,
   getNginxVersion,
   type TunnelEdge,
 } from "../lib/nginx-ingress.js";
@@ -51,9 +53,10 @@ interface TunnelArgs {
   domain: string | null;
   clearDomain: boolean;
   foreground: boolean;
+  shell: "web" | "app" | null;
 }
 
-const FLAGS_WITH_VALUES = ["--provider", "--domain"] as const;
+const FLAGS_WITH_VALUES = ["--provider", "--domain", "--shell"] as const;
 
 function parseArgs(): TunnelArgs {
   const args = process.argv.slice(3);
@@ -61,6 +64,7 @@ function parseArgs(): TunnelArgs {
   let domain: string | null = null;
   let clearDomain = false;
   let foreground = false;
+  let shell: "web" | "app" | null = null;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -70,9 +74,7 @@ function parseArgs(): TunnelArgs {
       );
       console.log("");
       console.log("Front a locally running assistant with an HTTPS tunnel.");
-      console.log(
-        "The tunnel URL is saved to the workspace config as the ingress base URL.",
-      );
+      console.log("The tunnel URL is saved to the workspace config as the ingress base URL.");
       console.log("");
       console.log(
         "How far that URL reaches depends on the provider; omit --provider for",
@@ -114,6 +116,19 @@ function parseArgs(): TunnelArgs {
       console.log(
         "                                tunnel without one. Cannot be combined with --domain.",
       );
+      console.log(
+        "  --shell <web|app>             Which client bundle the edge serves as the outer shell:",
+      );
+      console.log(
+        "                                web (default) serves the web SPA directly; app serves the",
+      );
+      console.log(
+        "                                app bundle as the outer shell and iframes the web UI from",
+      );
+      console.log(
+        "                                /web/assistant/. Saved to the workspace config so `cadet wake`",
+      );
+      console.log("                                restores it; changing it restarts the nginx edge.");
       console.log(
         `  --foreground                  Stream the tunnel's logs to this terminal. By default the tunnel`,
       );
@@ -191,6 +206,20 @@ function parseArgs(): TunnelArgs {
       i++;
     } else if (arg === "--clear-domain") {
       clearDomain = true;
+    } else if (arg === "--shell") {
+      const next = args[i + 1];
+      if (!next || next.startsWith("-")) {
+        console.error("Error: --shell requires a value: web or app.");
+        process.exit(1);
+      }
+      if (next !== "web" && next !== "app") {
+        console.error(
+          `Error: unknown shell '${next}'. Valid shells: web, app.`,
+        );
+        process.exit(1);
+      }
+      shell = next;
+      i++;
     } else if (arg === "--foreground") {
       foreground = true;
     } else if (arg.startsWith("-")) {
@@ -230,7 +259,7 @@ function parseArgs(): TunnelArgs {
     process.exit(1);
   }
 
-  return { assistantName, provider, domain, clearDomain, foreground };
+  return { assistantName, provider, domain, clearDomain, foreground, shell };
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
@@ -456,7 +485,7 @@ export const tunnel = Object.assign(
       );
       return;
     }
-    const { assistantName, provider, domain, clearDomain, foreground } =
+    const { assistantName, provider, domain, clearDomain, foreground, shell } =
       parseArgs();
 
     if (!foreground) {
@@ -473,6 +502,14 @@ export const tunnel = Object.assign(
 
     const preserveIngressUrl =
       provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
+
+    // Persist the shell mode like the reserved domain: parsed once, saved to
+    // the workspace config, and read back by every later edge restore
+    // (wake/upgrade), so the choice outlives the command that made it.
+    if (shell) {
+      saveShellMode(workspaceDir, shell);
+      console.log(`Shell mode saved: ${shell}.`);
+    }
 
     if (clearDomain) {
       clearReservedDomain();
@@ -514,7 +551,10 @@ export const tunnel = Object.assign(
     }
 
     console.log(
-      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port}.`,
+      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port} (${formatEdgeMode(
+        edge.includesWebApp,
+        edge.shellMode,
+      )}).`,
     );
 
     const baseTunnelOpts = {

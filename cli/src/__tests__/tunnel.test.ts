@@ -91,7 +91,12 @@ mock.module("../lib/tunnels/gateway-notify.js", () => ({
 const EDGE_PORT = 18080;
 
 const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
-  async () => ({ port: EDGE_PORT, started: true, includesWebApp: true }),
+  async () => ({
+    port: EDGE_PORT,
+    started: true,
+    includesWebApp: true,
+    shellMode: "web",
+  }),
 );
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
   () => "nginx version (test)",
@@ -289,6 +294,7 @@ describe("tunnel edge targeting", () => {
       port: EDGE_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
   });
 
@@ -803,6 +809,7 @@ describe("tunnel edge targeting", () => {
       port: EDGE_PORT,
       started: false,
       includesWebApp: false,
+      shellMode: "web",
     });
 
     const logs = await runTunnelCapturingLogs();
@@ -1744,6 +1751,7 @@ describe("tunnel background mode", () => {
       port: EDGE_PORT,
       started: true,
       includesWebApp: true,
+      shellMode: "web",
     });
     const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
     tempDirs.push(configHome);
