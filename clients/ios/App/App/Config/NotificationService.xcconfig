@@ -9,4 +9,4 @@ BUNDLE_DISPLAY_NAME = Cadet
 PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.NotificationService
 
 // Exact portal profile name; must equal release-ios.yaml's `nse_profile_name`.
-PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS NotificationService Distribution
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet iOS NotificationService Distribution

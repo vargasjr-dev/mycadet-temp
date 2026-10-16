@@ -834,9 +834,9 @@ provisioning profile` instead. The fix is the portal work below, not a
 | production  | `ai.mycadet.ios.Share`                       | `Cadet Assistant iOS Share Distribution`                       | `IOS_PROVISIONING_PROFILE_SHARE`         |
 | staging     | `ai.mycadet.ios.staging.Share`               | `Cadet Assistant iOS Staging Share Distribution`               | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
 | dev         | `ai.mycadet.ios.dev.Share`                   | `Cadet Assistant iOS Dev Share Distribution`                   | `IOS_PROVISIONING_PROFILE_SHARE_DEV`     |
-| production  | `ai.mycadet.ios.NotificationService`         | `Cadet Assistant iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
+| production  | `ai.mycadet.ios.NotificationService`         | `Cadet iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
 | staging     | `ai.mycadet.ios.staging.NotificationService` | `Cadet Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING`   |
-| dev         | `ai.mycadet.ios.dev.NotificationService`     | `Cadet Assistant iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
+| dev         | `ai.mycadet.ios.dev.NotificationService`     | `Cadet iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
 
 The containing app App IDs already exist, and each one already carries
 the App Group from the VoiceActivity row. A new Share or
@@ -966,7 +966,7 @@ inspect_profile \
 inspect_profile \
   "$app_path/PlugIns/NotificationService Dev.appex" \
   notification-service \
-  "Cadet Assistant iOS Dev NotificationService Distribution" \
+  "Cadet iOS Dev NotificationService Distribution" \
   "7FZDXZR8P5.ai.mycadet.ios.dev.NotificationService"
 
 # Verify signature integrity separately from embedded profile contents.
