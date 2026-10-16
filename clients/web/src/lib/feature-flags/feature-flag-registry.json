@@ -140,14 +140,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "velvet-theme",
-      "scope": "client",
-      "key": "velvet-theme",
-      "label": "Velvet Theme",
-      "description": "Show the Velvet theme option in the macOS appearance settings. Velvet is a dark-mode variant with red/pink accent colors.",
-      "defaultEnabled": false
-    },
-    {
       "id": "chat-pull-to-refresh-enabled",
       "scope": "client",
       "key": "chat-pull-to-refresh-enabled",
@@ -252,27 +244,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "auto-profile",
-      "scope": "assistant",
-      "key": "auto-profile",
-      "label": "Auto Profile",
-      "description": "Enable the Auto model profile, which asks Jev which default profile should answer each message.",
-      "defaultEnabled": false
-    },
-    {
       "id": "new-thread-suggestions",
       "scope": "client",
       "key": "new-thread-suggestions",
       "label": "New-thread suggestions library",
       "description": "Replace the empty-state conversation-starter chips with the scrollable, categorized suggestions library and detail drawer (currently mocked data).",
-      "defaultEnabled": false
-    },
-    {
-      "id": "account-mfa",
-      "scope": "client",
-      "key": "account-mfa",
-      "label": "Account MFA",
-      "description": "Surface the Security settings page where users enroll and manage TOTP two-factor authentication for their Cadet (WorkOS) account. Applies to email/password sign-in only.",
       "defaultEnabled": false
     },
     {
@@ -353,14 +329,6 @@
       "key": "local-notification-avatar",
       "label": "Local Notification Avatar",
       "description": "Shows the assistant name and avatar in notifications posted locally by native clients and supported browsers. Independent of remote push avatar presentation.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "channel-conversation-sidecar",
-      "scope": "client",
-      "key": "channel-conversation-sidecar",
-      "label": "Channel Conversation Sidecar",
-      "description": "Renders a conversation bound to an external channel (Slack, Telegram, Discord, phone, email, and any other channel adapter) as two lanes in web chat: Cadet stays the primary full-width lane, and the canonical external-channel transcript moves into the existing read-only right drawer, opened from a channel-thread control in the chat header. Rows the client can attribute to the external channel are drawn once, in the drawer, instead of being blended into the Cadet lane. The drawer offers an Open in <channel> secondary action and a per-message Reference in Cadet action that stages one quoted reference above the Cadet composer. The Cadet composer stays the only input; nothing about delivery, routing, or permissions changes. Off leaves the header deep-link pill and the blended transcript unchanged.",
       "defaultEnabled": false
     },
     {
