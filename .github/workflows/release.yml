@@ -1651,12 +1651,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read # all branch/PR work happens under the app token below
+      contents: write # direct-push fast path + rebase-fallback force-push of the release branch
     steps:
-      # GITHUB_TOKEN is not permitted to create PRs ("Allow GitHub Actions to
-      # create and approve pull requests" is off), and even with it on, main is
-      # protected by the `main` ruleset (pull_request + 1 code-owner review).
-      # Use the cadet-automation app token for every PR operation instead.
+      # Only used by the PR fallback: GITHUB_TOKEN can't create PRs
+      # ("Allow GitHub Actions to create and approve pull requests" is off and
+      # only a user admin can flip it), so the cadet-automation app token is
+      # the automation identity for PR operations.
       - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         id: app-token
         with:
@@ -1666,11 +1666,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
-          token: ${{ steps.app-token.outputs.token }} # the rebase fallback force-pushes the release branch
 
-      - name: Open release merge-back PR and merge
+      - name: Merge release branch back to main
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ needs.extract-version.outputs.version }}
         run: |
           BRANCH="release/v$VERSION"
@@ -1678,11 +1677,47 @@ jobs:
           git config user.name "cadet-automation[bot]"
           git config user.email "192048195+cadet-automation[bot]@users.noreply.github.com"
 
-          # Idempotent on re-runs: if the PR already exists (or already merged),
-          # reuse it instead of failing.
+          git fetch origin main
+
+          # ── Fast path: the #349 direct merge+push, kept as primary ──────────
+          # Works only while the `main` ruleset bypass list covers GITHUB_TOKEN
+          # (Repository role: Write). The local merge runs first either way; a
+          # conflict (cherry-picks already on main) resolves via `rebase -X
+          # ours` — during a rebase, ours is the new base, so `-X ours` keeps
+          # main's side — then force-pushes the branch and merges again.
+          if ! git merge --no-ff "origin/$BRANCH" -m "Merge $BRANCH (release v$VERSION)" 2>/dev/null; then
+            echo "::notice::release branch conflicts with main — rebasing with -X ours to keep main's side"
+            git merge --abort
+            git checkout "$BRANCH"
+            git rebase -X ours origin/main
+            # Append [skip ci] so the force-push doesn't re-trigger this workflow
+            git commit --allow-empty --amend -m "$(git log -1 --format=%B) [skip ci]"
+            git push --no-verify origin "$BRANCH" --force-with-lease
+            sleep 10
+            git checkout main
+            git merge --no-ff "$BRANCH" -m "Merge $BRANCH (release v$VERSION)"
+          fi
+
+          if git push origin main 2>/tmp/push-err.txt; then
+            git push origin --delete "$BRANCH"
+            echo "::notice::merge-back pushed directly to main"
+            exit 0
+          fi
+
+          # ── PR fallback: don't die on the ruleset — self-heal ───────────────
+          # The 0.13.0 failure mode: the `main` ruleset rejects bare pushes
+          # (GH013 "Changes must be made through a pull request"). Undo the
+          # local merge and land the bump through a PR instead: open it, merge
+          # it if the app may satisfy the ruleset, otherwise arm auto-merge so
+          # the squash lands the instant the code-owner approval arrives.
+          cat /tmp/push-err.txt >&2
+          echo "::notice::direct push rejected by the main ruleset — falling back to the PR flow"
+          git reset --hard origin/main
+
+          export GH_TOKEN="$APP_TOKEN"
           if gh pr view "$BRANCH" --json state --jq .state >/tmp/pr-state.txt 2>/dev/null; then
-            STATE=$(cat /tmp/pr-state.txt)
-            if [ "$STATE" = "MERGED" ]; then
+            # Idempotent on re-runs: reuse an open PR, no-op a merged one
+            if [ "$(cat /tmp/pr-state.txt)" = "MERGED" ]; then
               echo "Release PR for v$VERSION already merged — nothing to do"
               exit 0
             fi
@@ -1690,30 +1725,15 @@ jobs:
           else
             PR_NUM=$(gh pr create --head "$BRANCH" --base main \
               --title "[skip ci] Release v$VERSION" \
-              --body "Automated merge-back of \`$BRANCH\`: the version bump commit produced by create-release-branch.yml. The \`main\` ruleset requires changes through a PR, so this *is* the merge-back — squash-merge lands the bump and deletes the branch (no bare CI pushes to main).")
+              --body "Automated merge-back of \`$BRANCH\` (PR fallback — the direct push was rejected by the \`main\` ruleset). Squash-merge lands the version bump and deletes the branch.")
           fi
 
-          # Merge now if the app may satisfy the ruleset (e.g. it's on the
-          # ruleset bypass list); otherwise arm auto-merge so the squash lands
-          # the instant the code-owner approval arrives. Never bare-push main.
           if ! gh pr merge "$BRANCH" --squash --delete-branch 2>/tmp/merge-err.txt; then
             cat /tmp/merge-err.txt >&2 || true
-
-            if [ "$(gh pr view "$BRANCH" --json mergeable --jq .mergeable)" = "CONFLICTING" ]; then
-              echo "PR conflicts with main — rebasing with -X ours to keep main on conflicts"
-              git checkout "$BRANCH"
-              git fetch origin main
-              git rebase -X ours origin/main
-              # Append [skip ci] so the force-push doesn't re-trigger this workflow
-              git commit --allow-empty --amend -m "$(git log -1 --format=%B) [skip ci]"
-              git push --no-verify origin "$BRANCH" --force-with-lease
-              sleep 10
-            fi
-
             gh pr merge "$BRANCH" --auto --squash --delete-branch
-            echo "::notice::Release PR #$PR_NUM is armed for auto-merge — the merge-back lands as soon as a code-owner approves it"
+            echo "::notice::Release PR #$PR_NUM armed for auto-merge — the merge-back lands as soon as a code-owner approves it"
           else
-            echo "Release PR #$PR_NUM merged"
+            echo "::notice::Release PR #$PR_NUM merged"
           fi
   release-ios:
     needs: [extract-version, build-chrome-extension]
