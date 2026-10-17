@@ -3,10 +3,24 @@ name: Dev Release
 on:
   # The cloud drives releases by dispatching this workflow.
   workflow_dispatch: {}
+  # Daily automated fire at 6:00 AM America/New_York. Cron is pinned to UTC
+  # while Eastern flips between EST (UTC-5) and EDT (UTC-4), so both
+  # wall-clock candidates are scheduled and the should-release gate keeps
+  # whichever firing IS 6 AM in New York on that day (the loser is a green
+  # no-op):
+  #   - 10:00 UTC = 6:00 AM EDT (summer)
+  #   - 11:00 UTC = 6:00 AM EST (winter)
+  schedule:
+    - cron: "0 10 * * *"
+    - cron: "0 11 * * *"
 
 concurrency:
   group: dev-release
-  cancel-in-progress: true
+  # Queue instead of cancel: the scheduled 6 AM fire must not kill an
+  # in-flight manual release mid-publish. A queued scheduled run is cheap —
+  # its gate re-checks freshness and bails as a green no-op if the manual
+  # run already shipped the tip.
+  cancel-in-progress: false
 
 env:
   ASSISTANT_IMAGE_NAME: mycadet-assistant-dev
@@ -14,8 +28,69 @@ env:
   CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
 jobs:
+  should-release:
+    # Gate for the scheduled 6 AM Eastern fire: bail as a green no-op unless
+    # it is actually 6 AM in New York right now AND main has commits the
+    # last successful dev release didn't already ship (a failed release
+    # counts as unshipped, so the next morning retries it). Manual
+    # dispatches skip this job entirely and always release. Every other job
+    # in this workflow needs this one; downstream jobs then skip via the
+    # normal needs cascade.
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      proceed: ${{ steps.gate.outputs.proceed }}
+    steps:
+      - name: Schedule gate (6 AM Eastern + fresh commits on main)
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOW=$(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')
+          echo "Time in New York: ${NOW}"
+          HOUR=$(TZ=America/New_York date +%H)
+          if [ "${HOUR}" != "06" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: not 6:00 AM Eastern — this firing is the DST twin; skipping."
+            exit 0
+          fi
+
+          REPO="${{ github.repository }}"
+          TIP=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
+          echo "main tip: ${TIP}"
+
+          # Only a queued release can overlap this gate (this run is the one
+          # active run in the concurrency group); let it handle the tip.
+          QUEUED=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
+                     --status=queued --json databaseId --jq 'length')
+          if [ "${QUEUED}" != "0" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: ${QUEUED} dev release run(s) already queued; letting them handle it."
+            exit 0
+          fi
+
+          # Ship only when the last successful dev release didn't already
+          # cover this tip.
+          LAST=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
+                   --status=completed --limit=30 --json conclusion,headSha \
+                   --jq '[.[] | select(.conclusion == "success")][0].headSha // ""')
+          if [ -n "${LAST}" ] && [ "${LAST}" = "${TIP}" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: main tip ${TIP} was already shipped by the last successful dev release — nothing new to release."
+            exit 0
+          fi
+
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+          echo "RELEASE: main tip ${TIP} is newer than the last successful dev release (${LAST:-none})."
+
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
   compute-version:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -41,6 +116,8 @@ jobs:
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
   ci-assistant-lint:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -69,6 +146,8 @@ jobs:
         working-directory: assistant
 
   ci-assistant-types:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -99,6 +178,8 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-assistant-tests:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -135,6 +216,8 @@ jobs:
           TEST_SHARD: "${{ matrix.shard }}/8"
 
   ci-gateway:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -164,6 +247,8 @@ jobs:
         working-directory: gateway
 
   ci-credential-executor:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -186,6 +271,8 @@ jobs:
         working-directory: credential-executor
 
   ci-cli:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -208,6 +295,8 @@ jobs:
         working-directory: cli
 
   ci-web-lint:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -230,6 +319,8 @@ jobs:
         working-directory: clients/web
 
   ci-web-types:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -254,6 +345,8 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-web-tests:
+    needs: should-release
+    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
