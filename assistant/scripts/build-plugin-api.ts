@@ -314,7 +314,7 @@ function main(): void {
         publishConfig: { access: "public" },
         repository: {
           type: "git",
-          url: "git+https://github.com/vargasjr-dev/mycadet.git",
+          url: "git+https://github.com/vargasjr-dev/mycadet-temp.git",
           directory: "assistant/src/plugin-api",
         },
       },

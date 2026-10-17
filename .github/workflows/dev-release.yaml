@@ -33,10 +33,14 @@ jobs:
     # it is actually 6 AM in New York right now AND main has commits the
     # last successful dev release didn't already ship (a failed release
     # counts as unshipped, so the next morning retries it). Manual
-    # dispatches skip this job entirely and always release. Every other job
-    # in this workflow needs this one; downstream jobs then skip via the
-    # normal needs cascade.
-    if: github.event_name == 'schedule'
+    # dispatches bypass the freshness checks and always release — but the
+    # JOB itself must still RUN, never skip: a skipped job poisons every
+    # environment:dev job transitively downstream of it (GitHub skips those
+    # even through successful intermediates — runs 53/54/55), which
+    # green-no-ops the whole release. Every other job in this workflow
+    # needs this one; on schedule the proceed=false path still skips them
+    # via their own needs cascade.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -50,6 +54,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "RELEASE: manual dispatch always releases."
+            exit 0
+          fi
+
           NOW=$(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')
           echo "Time in New York: ${NOW}"
           HOUR=$(TZ=America/New_York date +%H)
@@ -1430,7 +1440,7 @@ jobs:
         working-directory: clients/web
         run: |
           VERSION="${{ needs.compute-version.outputs.version }}"
-          jq --arg v "$VERSION" '{name, version: $v, license, type, description, files}' package.json > tmp && mv tmp package.json
+          jq --arg v "$VERSION" '{name, version: $v, license, type, description, files, repository}' package.json > tmp && mv tmp package.json
       - name: Pack tarball
         working-directory: clients/web
         run: |
