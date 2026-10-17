@@ -143,6 +143,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The release/** ruleset (release-branches-push-restriction) blocks
+      # GITHUB_TOKEN pushes — the automation app is on that ruleset's bypass
+      # list instead. Mint its token and repoint origin so every origin
+      # mutation below (branch delete/create/push) runs as the bypassed
+      # actor. An app-token push also triggers release.yml natively, which
+      # replaces the old explicit dispatch (GITHUB_TOKEN pushes never fired
+      # it — GitHub anti-recursion).
+      - name: Mint the automation app token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ secrets.CADET_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.CADET_AUTOMATION_GITHUB_PRIVATE_KEY }}
+          owner: vargasjr-dev
+          repos: mycadet-temp
+
       # Hotfix releases install + generate from the latest release tag's tree,
       # not main HEAD. Check out that commit before installing so lockfiles and
       # node_modules match. For patch/minor/major, base-ref is empty and this is
@@ -184,6 +200,10 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Push as the bypassed automation app (see the mint step above) —
+          # the release/** ruleset rejects workflow-token pushes.
+          git remote set-url origin "https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/vargasjr-dev/mycadet-temp.git"
 
           # Delete existing cherry-pick branch if it exists (must happen before release branch)
           if git ls-remote --exit-code origin "$CHERRY_PICK_BRANCH" >/dev/null 2>&1; then
@@ -253,18 +273,6 @@ jobs:
             git commit -m "$COMMIT_MSG"
           fi
           git push --no-verify origin "$BRANCH"
-
-      # Workflow-token pushes don't start runs (GitHub anti-recursion), so
-      # dispatch the release pipeline explicitly. Hotfix cuts skip it ([skip
-      # ci] semantics).
-      - name: Dispatch the release workflow
-        if: ${{ needs.compute-version.outputs.skip-ci != 'true' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          VERSION="${{ needs.compute-version.outputs.version }}"
-          gh workflow run release.yml --ref "release/v$VERSION"
-          echo "Dispatched release.yml at release/v$VERSION"
 
       # NEXT_RELEASE_BUMP is one-shot: a scheduled cut that consumed a
       # minor/major value resets it to patch so the next tick reverts to the
