@@ -1,9 +1,5 @@
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { getIsCloud, getIsContainerized } from "../config/env-registry.js";
-import type { AssistantConfig } from "../config/schema.js";
 import type { ToolContext } from "../tools/types.js";
-
-const VIRTUAL_DESKTOP_FLAG = "assistant-desktop" as const;
 
 export function isVirtualDesktopCloud(
   containerized: boolean = getIsContainerized(),
@@ -14,14 +10,10 @@ export function isVirtualDesktopCloud(
 
 /** Gates desktop streaming and control to enabled, cloud-hosted containers. */
 export function isVirtualDesktopEnabled(
-  config?: AssistantConfig,
   containerized: boolean = getIsContainerized(),
   cloudHosted: boolean = getIsCloud(),
 ): boolean {
-  return (
-    isVirtualDesktopCloud(containerized, cloudHosted) &&
-    isAssistantFeatureFlagEnabled(VIRTUAL_DESKTOP_FLAG, config)
-  );
+  return isVirtualDesktopCloud(containerized, cloudHosted);
 }
 
 export function canUseVirtualDesktop(

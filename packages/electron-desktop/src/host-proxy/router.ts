@@ -35,7 +35,6 @@ export type HostProxyExecutorKind =
   | "host_transfer"
   | "host_browser"
   | "host_cu"
-  | "host_app_control"
   | "host_ui_snapshot";
 
 export interface HostProxyLogger {
@@ -184,7 +183,6 @@ const EXECUTOR_KINDS: readonly HostProxyExecutorKind[] = [
   "host_transfer",
   "host_browser",
   "host_cu",
-  "host_app_control",
   "host_ui_snapshot",
 ];
 
@@ -282,13 +280,6 @@ function dispatchMessage(
     case "host_cu":
       void poster.postCuResult({
         requestId,
-        executionError: "Executor not yet implemented",
-      });
-      break;
-    case "host_app_control":
-      void poster.postAppControlResult({
-        requestId,
-        state: "missing",
         executionError: "Executor not yet implemented",
       });
       break;

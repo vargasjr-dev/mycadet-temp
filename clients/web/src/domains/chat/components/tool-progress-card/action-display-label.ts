@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 
 import { useTranslation } from "@/i18n";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 export type ActionDisplayKey =
   | "click"
@@ -36,11 +35,7 @@ export function resolveActionDisplayLabel(
     fallback?: string | null;
   },
   translate: (key: ActionDisplayTranslationKey) => string,
-  sessionGroupsEnabled: boolean,
 ): string {
-  if (!sessionGroupsEnabled) {
-    return input.fallback ?? "";
-  }
   if (input.activity) {
     return input.activity;
   }
@@ -52,10 +47,9 @@ export function resolveActionDisplayLabel(
 
 export function useActionDisplayLabel() {
   const { t } = useTranslation("chat");
-  const sessionGroupsEnabled = useAssistantFeatureFlagStore.use.sessionGroups();
   return useCallback(
     (input: Parameters<typeof resolveActionDisplayLabel>[0]) =>
-      resolveActionDisplayLabel(input, t, sessionGroupsEnabled),
-    [sessionGroupsEnabled, t],
+      resolveActionDisplayLabel(input, t),
+    [t],
   );
 }

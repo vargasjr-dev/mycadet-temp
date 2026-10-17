@@ -48,7 +48,7 @@ export const COMMAND_KEYS = ["command", "cmd"] as const;
 /**
  * The key of the status sentence the daemon asks the model to attach to every
  * tool call. Only this key is read as status: other keys, such as
- * `app_control_stop`'s `reason`, are the tool's own arguments.
+ * the tool's own arguments.
  */
 export const ACTIVITY_KEY = "activity";
 

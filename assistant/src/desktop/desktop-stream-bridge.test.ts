@@ -97,7 +97,6 @@ describe("DesktopStreamBridge", () => {
     const b = newBridge(h.manager, async () => {}, isEnabled);
     process.env.IS_CONTAINERIZED = "true";
     process.env.IS_CLOUD = "true";
-    setOverridesForTesting({ "assistant-desktop": true });
     try {
       b.connectNow();
       await b.bridge.start();
@@ -114,7 +113,6 @@ describe("DesktopStreamBridge", () => {
         }
         expect(b.tcp.writes).toHaveLength(100);
         expect(b.ws.sent).toHaveLength(100);
-        setOverridesForTesting({ "assistant-desktop": false });
         b.bridge.handleClientFrame(frame);
         b.tcp.handlers.onData(frame);
         b.tcp.handlers.onDrain();

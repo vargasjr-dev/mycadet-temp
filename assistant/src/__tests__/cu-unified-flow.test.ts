@@ -7,7 +7,6 @@
 
 import { afterEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
 import { ComputerUseModeSessionProducer } from "../daemon/computer-use-mode-session.js";
 import {
   setBroadcastOverrideForTesting,
@@ -348,8 +347,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
   // -------------------------------------------------------------------------
 
   describe("action tools proxy to client", () => {
-    test("dispatches without mode-session side effects while session groups are disabled", async () => {
-      setOverridesForTesting({ "session-groups": false });
+    test("dispatches without mode-session side effects while tracking is disabled", async () => {
       const ctx = setupProxy();
       ctx.currentRequestId = "turn-123";
       const activateSource = mock(() => {
@@ -368,7 +366,7 @@ describe("surfaceProxyResolver — CU tool routing", () => {
           recordActivity: mock(() => false),
           retireSource: mock(() => false),
         },
-        isSessionGroupsEnabled,
+        () => false,
       );
 
       const resultPromise = surfaceProxyResolver(ctx, "computer_use_click", {

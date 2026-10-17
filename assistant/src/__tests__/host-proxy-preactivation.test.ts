@@ -195,45 +195,6 @@ describe("shouldAttachHostProxyForCapability", () => {
       ).toBe(false);
     });
   });
-
-  describe("host_app_control", () => {
-    test("returns true when source interface natively supports host_app_control (macos)", () => {
-      expect(
-        shouldAttachHostProxyForCapability("host_app_control", "macos"),
-      ).toBe(true);
-    });
-
-    test("returns true for web source when a capable client is connected", () => {
-      setCapableClient("host_app_control", true);
-      expect(
-        shouldAttachHostProxyForCapability("host_app_control", "web", "user-1"),
-      ).toBe(true);
-    });
-
-    test("returns false for web source when no capable client is connected", () => {
-      setCapableClient("host_app_control", false);
-      expect(
-        shouldAttachHostProxyForCapability("host_app_control", "web", "user-1"),
-      ).toBe(false);
-    });
-
-    test("returns false for web source when only a different actor is capable", () => {
-      setCapableClient("host_app_control", true, "user-other");
-      expect(
-        shouldAttachHostProxyForCapability("host_app_control", "web", "user-1"),
-      ).toBe(false);
-    });
-
-    test("returns false for chrome-extension source even when a capable client is connected", () => {
-      setCapableClient("host_app_control", true);
-      expect(
-        shouldAttachHostProxyForCapability(
-          "host_app_control",
-          "chrome-extension",
-        ),
-      ).toBe(false);
-    });
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -247,34 +208,28 @@ describe("preactivateHostProxySkills", () => {
     expect(target.preactivatedSkillIds).toEqual([]);
   });
 
-  test("preactivates computer-use and app-control when source is macos (native support)", () => {
+  test("preactivates computer-use when source is macos (native support)", () => {
     const target = makeTarget();
     preactivateHostProxySkills(target, "macos");
     expect(target.preactivatedSkillIds).toContain("computer-use");
-    expect(target.preactivatedSkillIds).toContain("app-control");
   });
 
   test("preactivates skills for web source when capable clients are connected (cross-client)", () => {
     setCapableClient("host_cu", true);
-    setCapableClient("host_app_control", true);
     const target = makeTarget();
     preactivateHostProxySkills(target, "web", "user-1");
     expect(target.preactivatedSkillIds).toContain("computer-use");
-    expect(target.preactivatedSkillIds).toContain("app-control");
   });
 
   test("preactivates only the skill whose capable client is connected", () => {
     setCapableClient("host_cu", true);
-    setCapableClient("host_app_control", false);
     const target = makeTarget();
     preactivateHostProxySkills(target, "web", "user-1");
     expect(target.preactivatedSkillIds).toContain("computer-use");
-    expect(target.preactivatedSkillIds).not.toContain("app-control");
   });
 
   test("preactivates nothing for web source when no capable clients are connected", () => {
     setCapableClient("host_cu", false);
-    setCapableClient("host_app_control", false);
     const target = makeTarget();
     preactivateHostProxySkills(target, "web", "user-1");
     expect(target.preactivatedSkillIds).toEqual([]);
@@ -282,7 +237,6 @@ describe("preactivateHostProxySkills", () => {
 
   test("preactivates nothing for ios source when no capable clients are connected", () => {
     setCapableClient("host_cu", false);
-    setCapableClient("host_app_control", false);
     const target = makeTarget();
     preactivateHostProxySkills(target, "ios", "user-1");
     expect(target.preactivatedSkillIds).toEqual([]);
@@ -290,7 +244,6 @@ describe("preactivateHostProxySkills", () => {
 
   test("does not preactivate for web source when only different-actor clients are connected", () => {
     setCapableClient("host_cu", true, "user-other");
-    setCapableClient("host_app_control", true, "user-other");
     const target = makeTarget();
     preactivateHostProxySkills(target, "web", "user-1");
     expect(target.preactivatedSkillIds).toEqual([]);
@@ -298,7 +251,6 @@ describe("preactivateHostProxySkills", () => {
 
   test("does not preactivate for chrome-extension source even when capable clients are connected", () => {
     setCapableClient("host_cu", true);
-    setCapableClient("host_app_control", true);
     const target = makeTarget();
     preactivateHostProxySkills(target, "chrome-extension");
     expect(target.preactivatedSkillIds).toEqual([]);
@@ -383,12 +335,8 @@ describe("preactivateHostProxySkills logging", () => {
         reason: "denied_no_clients",
         clientCount: 0,
       },
-      host_app_control: { shouldAttach: true, reason: "native_support" },
     });
-    expect(fields.preactivatedSkillIds).toEqual([
-      "computer-use",
-      "app-control",
-    ]);
+    expect(fields.preactivatedSkillIds).toEqual(["computer-use"]);
   });
 
   /**
@@ -425,7 +373,6 @@ describe("preactivateHostProxySkills logging", () => {
         shouldAttach: false,
         reason: "denied_no_interface",
       },
-      host_app_control: { shouldAttach: false, reason: "denied_no_interface" },
     });
     expect(fields.preactivatedSkillIds).toEqual([]);
   });
@@ -444,11 +391,6 @@ describe("preactivateHostProxySkills logging", () => {
       shouldAttach: true,
       reason: "cross_client",
       clientCount: 1,
-    });
-    expect(decisions.host_app_control).toEqual({
-      shouldAttach: false,
-      reason: "denied_no_clients",
-      clientCount: 0,
     });
     // Computer use and nothing else. The marks are drawn in a window the
     // client opens for itself, and a client advertising only the transport

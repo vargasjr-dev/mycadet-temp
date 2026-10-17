@@ -18,7 +18,7 @@ import type { ToolContext, ToolExecutionResult } from "../types.js";
  * has to be added here, and adding it fails until the tool honours the signal.
  *
  * Read-only tools are out of scope, and so are the teardown calls
- * (`app_control_stop`, `computer_use_done`, `ui_dismiss`, `acp_abort`,
+ * (`computer_use_done`, `ui_dismiss`, `acp_abort`,
  * `subagent_abort`, `call_end`, `screen_clear_marks`) whose whole purpose is
  * to stop something: refusing those on a cancelled turn would strand the
  * session they close, or the marks they take down.
@@ -142,14 +142,6 @@ const SKILL_TOOLS: GuardedTool[] = [
     input: { app_id: "app-1" },
     context: proxied("app_open").context,
   },
-
-  proxied("app_control_start"),
-  proxied("app_control_press"),
-  proxied("app_control_combo"),
-  proxied("app_control_sequence"),
-  proxied("app_control_type"),
-  proxied("app_control_click"),
-  proxied("app_control_drag"),
 
   proxied("computer_use_click"),
   proxied("computer_use_type_text"),

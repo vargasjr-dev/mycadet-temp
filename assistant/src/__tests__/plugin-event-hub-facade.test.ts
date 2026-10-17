@@ -49,7 +49,6 @@ describe("plugin-facing assistantEventHub facade", () => {
       "host_transfer_request",
       "host_browser_request",
       "host_cu_request",
-      "host_app_control_request",
     ]) {
       let rejected: unknown;
       try {

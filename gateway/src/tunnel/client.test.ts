@@ -29,7 +29,6 @@ import {
 
 let workspaceDir = "";
 let registeredWebhookPaths: string[] = [];
-let tunnelWebhooksEnabled = false;
 let webhookRouteReadError: Error | undefined;
 let webhookRouteReads = 0;
 
@@ -70,15 +69,11 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
 }));
 
 mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
-const {
-  TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
-  TUNNEL_STATIC_ALLOWED_PATHS,
-  buildTunnelAllowedPathsHeaderValue,
-} = await import("./allowed-paths.js");
+const { TUNNEL_STATIC_ALLOWED_PATHS, buildTunnelAllowedPathsHeaderValue } =
+  await import("./allowed-paths.js");
 const { TunnelClient, createTunnelClient, enablePublicIngress } =
   await import("./client.js");
 const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
@@ -285,7 +280,6 @@ function restoreEnv(name: string, value: string | undefined): void {
 beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "tunnel-client-"));
   registeredWebhookPaths = [];
-  tunnelWebhooksEnabled = false;
   webhookRouteReadError = undefined;
   webhookRouteReads = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
@@ -428,7 +422,9 @@ describe("TunnelClient", () => {
       headers: {
         Authorization: "Api-Key api-key-123",
         "X-Cadet-Tunnel-Binary-WebSocket": "1",
-        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Allowed-Paths": JSON.stringify(
+          TUNNEL_STATIC_ALLOWED_PATHS,
+        ),
       },
     });
 
@@ -765,7 +761,9 @@ describe("TunnelClient", () => {
       headers: {
         Authorization: "Api-Key api-key-123",
         "X-Cadet-Tunnel-Binary-WebSocket": "1",
-        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Allowed-Paths": JSON.stringify(
+          TUNNEL_STATIC_ALLOWED_PATHS,
+        ),
       },
     });
     expect(reconnectDelays).toEqual([10]);
@@ -827,7 +825,9 @@ describe("TunnelClient", () => {
       headers: {
         Authorization: "Api-Key api-key-123",
         "X-Cadet-Tunnel-Binary-WebSocket": "1",
-        "X-Cadet-Tunnel-Allowed-Paths": TUNNEL_ALLOWED_PATHS_HEADER_VALUE,
+        "X-Cadet-Tunnel-Allowed-Paths": JSON.stringify(
+          TUNNEL_STATIC_ALLOWED_PATHS,
+        ),
       },
     });
     expect(reconnectDelays).toEqual([]);
@@ -1696,8 +1696,7 @@ describe("advertised path rules", () => {
       ?.headers["X-Cadet-Tunnel-Allowed-Paths"];
   }
 
-  test("advertises the registered routes on connect while the flag is on", async () => {
-    tunnelWebhooksEnabled = true;
+  test("advertises the registered routes on connect", async () => {
     registeredWebhookPaths = ["/webhooks/telegram"];
     const sockets: FakeWebSocket[] = [];
     const client = makeClient({ sockets });
@@ -1715,21 +1714,7 @@ describe("advertised path rules", () => {
     await client.stop();
   });
 
-  test("does not read the registry on connect while the flag is off", async () => {
-    registeredWebhookPaths = ["/webhooks/telegram"];
-    const sockets: FakeWebSocket[] = [];
-    const client = makeClient({ sockets });
-
-    client.start();
-    await flushPromises();
-
-    expect(headerValue(sockets[0])).toBe(TUNNEL_ALLOWED_PATHS_HEADER_VALUE);
-    expect(webhookRouteReads).toBe(0);
-    await client.stop();
-  });
-
   test("still connects with statics-only rules when the registry read fails", async () => {
-    tunnelWebhooksEnabled = true;
     webhookRouteReadError = new Error("database disk image is malformed");
     const sockets: FakeWebSocket[] = [];
     const client = makeClient({ sockets });
@@ -1764,7 +1749,6 @@ describe("advertised path rules", () => {
     client.requestRulesRefresh("third");
     expect(delays).toEqual([5000]);
 
-    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/telegram"];
     callbacks[0]();
     await flushPromises();
@@ -1828,7 +1812,6 @@ describe("advertised path rules", () => {
     client.requestRulesRefresh("before start");
     expect(delays).toEqual([]);
 
-    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/plugins/example/realtime"];
     client.start();
     await flushPromises();
@@ -1843,7 +1826,6 @@ describe("advertised path rules", () => {
   });
 
   test("refreshes the reconnected tunnel when a reconnect races the debounce", async () => {
-    tunnelWebhooksEnabled = true;
     registeredWebhookPaths = ["/webhooks/telegram"];
     const sockets: FakeWebSocket[] = [];
     const delays: number[] = [];

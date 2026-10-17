@@ -16,7 +16,6 @@ import {
 
 import { resolveCloudCallbackRegistrationContext } from "../inbound/cloud-callback-registration.js";
 import { isPublicIngressDisabled } from "../inbound/public-ingress-urls.js";
-import { isTunnelWebhooksEnabled } from "../inbound/tunnel-webhooks-gate.js";
 import { getIsCloud } from "./env-registry.js";
 import { getConfig, loadRawConfig } from "./loader.js";
 
@@ -68,9 +67,8 @@ function isIngressExplicitlyDisabled(): boolean {
  * reports "no ingress" while `webhooks register` hands back a working callback
  * URL hides a broken registration instead of surfacing it.
  *
- *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
- *      always use managed callbacks. With the flag on, a configured ingress
- *      (the Tunnel-published URL) wins, and managed callbacks remain the
+ *   1. **Cloud pods** (`IS_CLOUD`): a configured ingress (the
+ *      Tunnel-published URL) wins, and managed callbacks remain the
  *      fallback — including when ingress is explicitly disabled, matching
  *      `resolveCallbackUrl`'s pod behavior.
  *   2. **A configured public ingress wins** for everyone else.
@@ -105,10 +103,6 @@ export async function hasWebhookRoutingConfigured(
   usesCloudCallbacks: boolean;
 }> {
   const cloudManaged = allowCloudCallbacks && getIsCloud();
-  if (cloudManaged && !isTunnelWebhooksEnabled()) {
-    return { configured: true, usesCloudCallbacks: true };
-  }
-
   if (hasIngressConfigured(options)) {
     return { configured: true, usesCloudCallbacks: false };
   }

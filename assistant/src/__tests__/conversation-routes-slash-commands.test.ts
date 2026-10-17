@@ -290,7 +290,6 @@ function makeConversation() {
     hasPendingConfirmation: () => false,
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     usageStats: {
       inputTokens: 1000,

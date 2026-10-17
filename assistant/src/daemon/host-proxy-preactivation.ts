@@ -15,7 +15,7 @@
  * The create paths additionally instantiate the proxy itself; that
  * instantiation logic is per-proxy-class and stays inline at each create
  * site (constructors take different argument shapes — `HostCuProxy()` vs
- * `HostAppControlProxy(conversationId)`). This module owns only the
+ * `HostCuProxy()`). This module owns only the
  * capability-to-skill mapping and the preactivation step. Adding a new
  * host-proxy-backed skill is a one-line registry change here instead of
  * touching all four call sites.
@@ -87,7 +87,6 @@ export const HOST_PROXY_SKILL_PREACTIVATIONS: ReadonlyArray<{
   // turns whose executors forward it to a native helper that has no such
   // action.
   { capability: "host_cu_annotate", skillId: "screen-annotation" },
-  { capability: "host_app_control", skillId: "app-control" },
 ];
 
 /**

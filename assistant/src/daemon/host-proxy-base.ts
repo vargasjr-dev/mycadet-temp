@@ -201,10 +201,9 @@ export abstract class HostProxyBase<TRequest, TResultPayload> {
       });
 
       // Register in the global pendingInteractions store so the result-route
-      // handler (e.g. POST /v1/host-app-control-result) can look up the
+      // handler (e.g. POST /v1/host-cu-result) can look up the
       // request by id and route it back to this proxy. Without this the
-      // route silently drops the response — see host-app-control-routes.ts:
-      // `if (!peeked || peeked.kind !== "host_app_control") return ...`.
+      // route silently drops the response.
       // (HostCuProxy bypasses dispatchRequest entirely with its own inline
       //  request method that registers directly, which is why CU works
       //  without this base-level fix.)

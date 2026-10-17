@@ -44,32 +44,19 @@ afterEach(() => {
 
 describe("desktop setup route feature gate", () => {
   for (const route of ROUTES) {
-    for (const flag of [false, undefined]) {
-      test(`${route.method} refuses a disabled or missing flag (${flag}) without touching setup`, () => {
-        setOverridesForTesting(
-          flag === undefined ? {} : { "assistant-desktop": flag },
-        );
-        expect(() => route.handler({})).toThrow(NotFoundError);
-        expect(status).not.toHaveBeenCalled();
-      });
-    }
-
-    test(`${route.method} refuses non-containerized assistants even with the flag enabled`, () => {
+    test(`${route.method} refuses non-containerized assistants`, () => {
       process.env.IS_CONTAINERIZED = "false";
-      setOverridesForTesting({ "assistant-desktop": true });
       expect(() => route.handler({})).toThrow(NotFoundError);
       expect(status).not.toHaveBeenCalled();
     });
 
     test(`${route.method} rejects self-hosted Docker assistants without inspecting dependencies`, () => {
       process.env.IS_CLOUD = "false";
-      setOverridesForTesting({ "assistant-desktop": true });
       expect(() => route.handler({})).toThrow(NotFoundError);
       expect(status).not.toHaveBeenCalled();
     });
 
-    test(`${route.method} serves setup only for enabled platform containers`, () => {
-      setOverridesForTesting({ "assistant-desktop": true });
+    test(`${route.method} serves setup for enabled platform containers`, () => {
       expect(route.handler({})).toEqual({
         state: "ready",
         automationActive: false,

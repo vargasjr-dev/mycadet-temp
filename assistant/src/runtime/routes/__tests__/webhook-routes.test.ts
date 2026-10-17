@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { InternalError, UnprocessableEntityError } from "../errors.js";
 
 let isPlatform = false;
-let tunnelWebhooksEnabled = false;
 let config: Record<string, unknown> = {};
 let cloudContextEnabled = false;
 let registerCallbackRouteError: Error | undefined;
@@ -43,13 +42,6 @@ mock.module("../../../config/loader.js", () => ({
   getConfig: () => config,
 }));
 
-const actualTunnelGate =
-  await import("../../../inbound/tunnel-webhooks-gate.js");
-mock.module("../../../inbound/tunnel-webhooks-gate.js", () => ({
-  ...actualTunnelGate,
-  isTunnelWebhooksEnabled: () => tunnelWebhooksEnabled,
-}));
-
 mock.module("../../../inbound/cloud-callback-registration.js", () => ({
   registerCallbackRoute: registerCallbackRouteMock,
   registerLocalWebhookRoute: registerLocalWebhookRouteMock,
@@ -75,26 +67,12 @@ const register = (body: Record<string, unknown>) =>
 describe("webhooks_register callback URL resolution", () => {
   beforeEach(() => {
     isPlatform = false;
-    tunnelWebhooksEnabled = false;
     config = {};
     cloudContextEnabled = false;
     registerCallbackRouteError = undefined;
     localWebhookRouteRegistered = true;
     registerCallbackRouteMock.mockClear();
     registerLocalWebhookRouteMock.mockClear();
-  });
-
-  test("cloud pods register with the cloud gateway", async () => {
-    isPlatform = true;
-    cloudContextEnabled = true;
-
-    expect(await register({ type: "telegram" })).toEqual({
-      callbackUrl: "https://tunnel.mycadet.ai/assistant-123/webhooks/telegram",
-      type: "telegram",
-      path: "webhooks/telegram",
-      mode: "platform",
-    });
-    expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();
   });
 
   // The bug: a local assistant that IS connected to the cloud used to fall
@@ -115,9 +93,8 @@ describe("webhooks_register callback URL resolution", () => {
     );
   });
 
-  test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
+  test("a pod claims the subpath and uses the published URL", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
     cloudContextEnabled = true;
     config = {
       ingress: { publicBaseUrl: "https://tunnel.mycadet.ai/assistant-123" },
@@ -137,9 +114,8 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerCallbackRouteMock).not.toHaveBeenCalled();
   });
 
-  test("tunnel-webhooks on: a refused claim falls back to the cloud", async () => {
+  test("a refused claim falls back to the cloud", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
     cloudContextEnabled = true;
     localWebhookRouteRegistered = false;
     config = {
@@ -153,9 +129,8 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).toHaveBeenCalled();
   });
 
-  test("tunnel-webhooks on: a pod with no published URL still registers with the cloud", async () => {
+  test("a pod with no published URL still registers with the cloud", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
     cloudContextEnabled = true;
 
     expect(await register({ type: "telegram" })).toMatchObject({
@@ -165,9 +140,8 @@ describe("webhooks_register callback URL resolution", () => {
     expect(registerLocalWebhookRouteMock).not.toHaveBeenCalled();
   });
 
-  test("tunnel-webhooks on: a pod with ingress disabled falls back to the cloud", async () => {
+  test("a pod with ingress disabled falls back to the cloud", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
     cloudContextEnabled = true;
     config = { ingress: { enabled: false } };
 

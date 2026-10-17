@@ -59,7 +59,6 @@ import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { reconcileSubagentStoreFromNotifications } from "@/domains/chat/hooks/reconcile-subagent-hydration";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 import {
   clearConfirmationByRequestId,
@@ -202,8 +201,6 @@ export function useConversationHistory({
   activeConversationId,
 }: UseConversationHistoryParams): ConversationHistoryResult {
   const queryClient = useQueryClient();
-  const sessionGroupsEnabled = useAssistantFeatureFlagStore.use.sessionGroups();
-
   const pagination = useHistoryPagination({
     assistantId,
     conversationId: activeConversationId,
@@ -211,7 +208,7 @@ export function useConversationHistory({
       assistantStateKind === "active" &&
       !!assistantId &&
       !!activeConversationId,
-    sessionGroupsEnabled,
+    sessionGroupsEnabled: true,
   });
 
   /**

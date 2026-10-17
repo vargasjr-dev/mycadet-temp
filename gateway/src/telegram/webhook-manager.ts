@@ -8,7 +8,6 @@ import { registerWebhookIngressRoute } from "../db/webhook-ingress-route-store.j
 import { fetchImpl } from "../fetch.js";
 import {
   areCloudFeaturesEnabled,
-  isFeatureFlagEnabled,
   isCloudServedBuild,
 } from "../feature-flag-resolver.js";
 import { callTelegramApi } from "./api.js";
@@ -59,9 +58,10 @@ async function registerManagedTelegramCallbackRoute(
 
   // The base URL resolves from the environment only — the credential store
   // never carries it.
-  const cloudBaseUrl = (
-    process.env.CADET_CLOUD_URL?.trim() || ""
-  ).replace(/\/+$/, "");
+  const cloudBaseUrl = (process.env.CADET_CLOUD_URL?.trim() || "").replace(
+    /\/+$/,
+    "",
+  );
 
   const assistantCredential =
     assistantApiKeyRaw?.trim() ||
@@ -208,21 +208,18 @@ async function resolveExpectedTelegramWebhookUrl(
   // resolver declines makes setup report success while setWebhook never runs
   // (LUM-2899).
   //
-  //   1. Cloud pods (`IS_CLOUD`) with `tunnel-webhooks` off always use
-  //      the cloud callback route and never consult ingress at all. A pod's
+  //   1. Cloud pods (`IS_CLOUD`) point Telegram at their published Tunnel
+  //      URL and claim that path in the ingress registry first, so the tunnel
+  //      edge and the bridge both admit it. A pod with no published URL, or a
+  //      claim that fails, falls back to the cloud callback route. A pod's
   //      `ingress.publicBaseUrl` is written by the Tunnel client, not by
   //      a user, and that address is only live while the tunnel is:
   //      `clearManagedPublicBaseUrl` wipes the key when the tunnel drops, but
   //      Telegram keeps delivering to whatever was last registered, so a pod
   //      that resolved through the address alone would be pointed at a dead
   //      one. The cloud callback route is the pod's stable inbound address.
-  //   2. With the flag on, a pod points Telegram at its published Tunnel URL
-  //      and claims that path in the ingress registry first, so the tunnel
-  //      edge and the bridge both admit it. A pod with no published URL, or a
-  //      claim that fails, still falls back to the cloud callback route.
-  //      Both the tunnel publishing a URL and the flag flipping re-run this
-  //      reconciliation, so a pod moves between the two addresses in either
-  //      direction without a restart.
+  //      The tunnel publishing a URL re-runs this reconciliation, so a pod
+  //      moves between the two addresses without a restart.
   //   3. An explicit `ingress.enabled: false` is a decision not to accept
   //      inbound webhooks at all; it precedes both tiers below and actively
   //      deregisters, so `reconcileTelegramWebhook` handles it before calling
@@ -235,11 +232,9 @@ async function resolveExpectedTelegramWebhookUrl(
   //      features and credential presence, so a gateway with no platform
   //      context resolves to undefined and reconciliation skips.
   if (isCloudServedBuild()) {
-    if (isFeatureFlagEnabled("tunnel-webhooks")) {
-      const tunnelUrl = resolveTunnelTelegramWebhookUrl(caches);
-      if (tunnelUrl) {
-        return tunnelUrl;
-      }
+    const tunnelUrl = resolveTunnelTelegramWebhookUrl(caches);
+    if (tunnelUrl) {
+      return tunnelUrl;
     }
     return registerManagedTelegramCallbackRoute(caches);
   }

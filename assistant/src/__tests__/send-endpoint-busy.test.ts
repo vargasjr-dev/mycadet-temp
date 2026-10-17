@@ -140,7 +140,6 @@ function makeCompletingConversation(): Conversation {
     replayActivityState: () => {},
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     hasAnyPendingConfirmation: () => false,
     hasPendingConfirmation: () => false,
@@ -191,7 +190,6 @@ function makeHangingConversation(): Conversation {
     replayActivityState: () => {},
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     hasAnyPendingConfirmation: () => false,
     hasPendingConfirmation: () => false,
@@ -273,7 +271,6 @@ function makePendingApprovalConversation(
     replayActivityState: () => {},
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     hasAnyPendingConfirmation: () => pending.size > 0,
     hasPendingConfirmation: (candidateRequestId: string) =>

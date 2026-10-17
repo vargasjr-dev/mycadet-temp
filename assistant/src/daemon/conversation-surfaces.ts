@@ -38,11 +38,6 @@ import {
   assistantEventHub,
   broadcastMessage,
 } from "../runtime/assistant-event-hub.js";
-import {
-  ambiguousSameUserError,
-  enforceSameActorOrErrorResult,
-  pickSameUserAutoResolve,
-} from "../runtime/auth/same-actor.js";
 import { resolveCapabilities } from "../runtime/capabilities.js";
 import type {
   InteractiveUiRequest,
@@ -99,7 +94,6 @@ export {
   type SurfaceStateEntry,
 } from "./conversation-surface-state.js";
 import { safeStringSlice } from "../util/unicode.js";
-import type { HostAppControlInput } from "./message-types/host-app-control.js";
 import type { UserMessageAttachment } from "./message-types/shared.js";
 
 /**
@@ -1948,7 +1942,7 @@ export async function handleSurfaceAction(
   actionId: string,
   data?: Record<string, unknown>,
   // JWT-verified committer principal; threaded so enqueued turns can
-  // reconstruct the same-user binding for host proxies (CU / app-control),
+  // reconstruct the same-user binding for host proxies (CU),
   // mirroring the normal message path.
   sourceActorPrincipalId?: string,
   // Trust of the actor committing this action, resolved by the route from the
@@ -3276,120 +3270,6 @@ export async function surfaceProxyResolver(
             });
           }
         : undefined,
-    );
-  }
-
-  // Route app-control proxy tools (all app_control_* tool variants)
-  if (toolName.startsWith("app_control_")) {
-    // `app_control_stop` resolves immediately: tear down the proxy without
-    // a client round-trip. Mirrors CU's terminal-tool short-circuit
-    // (`computer_use_done` / `computer_use_respond`). Clear the
-    // conversation's reference (setter disposes the existing proxy) so a
-    // later `app_control_observe`/etc. cleanly fails with "unavailable"
-    // instead of dispatching against a torn-down proxy, and so a sibling
-    // conversation can acquire the released singleton lock without the
-    // disposed proxy still being addressable.
-    //
-    // Run this BEFORE the isAvailable() gate so a disconnected client
-    // doesn't strand the singleton lock — stop is local-only.
-    if (toolName === "app_control_stop") {
-      if (ctx.hostAppControlProxy) {
-        if (ctx.setHostAppControlProxy) {
-          ctx.setHostAppControlProxy(undefined);
-        } else {
-          ctx.hostAppControlProxy.dispose();
-        }
-      }
-      return { content: "App control stopped.", isError: false };
-    }
-
-    if (!ctx.hostAppControlProxy || !ctx.hostAppControlProxy.isAvailable()) {
-      return {
-        content: formatDesktopAppRequired("apps"),
-        isError: true,
-      };
-    }
-
-    // Resolve target client. Mirrors the host_cu block above: validate
-    // explicit target_client_id (existence, capability, same-actor), then
-    // multi-client guard when no target is supplied. App-control is
-    // single-client-only at the host (one active session per macOS
-    // machine), so a broadcast across multiple capable clients would fire
-    // the same input on every machine.
-    let targetClientId: string | undefined =
-      typeof input.target_client_id === "string" &&
-      input.target_client_id !== ""
-        ? input.target_client_id
-        : undefined;
-
-    const sourceActorPrincipalId = turnActorPrincipalId(ctx);
-    if (targetClientId != null) {
-      const client = assistantEventHub.getClientById(targetClientId);
-      if (!client) {
-        return {
-          content: `No connected client with id '${targetClientId}'. Run \`assistant clients list --capability host_app_control\` to see available clients.`,
-          isError: true,
-        };
-      }
-      if (!client.capabilities.includes("host_app_control")) {
-        return {
-          content: `Client '${targetClientId}' does not support host_app_control. Run \`assistant clients list --capability host_app_control\` to see available clients.`,
-          isError: true,
-        };
-      }
-      const rejection = enforceSameActorOrErrorResult({
-        hub: assistantEventHub,
-        sourceActorPrincipalId,
-        targetClientId,
-        op: "host_app_control",
-      });
-      if (rejection) {
-        return rejection;
-      }
-    }
-
-    if (targetClientId == null) {
-      const resolved = pickSameUserAutoResolve({
-        hub: assistantEventHub,
-        capability: "host_app_control",
-        sourceActorPrincipalId,
-      });
-      if (resolved.kind === "ambiguous") {
-        return ambiguousSameUserError("host_app_control");
-      }
-      if (resolved.kind === "match") {
-        targetClientId = resolved.clientId;
-      } else if (
-        assistantEventHub.listClientsByCapability("host_app_control").length > 0
-      ) {
-        return {
-          content:
-            "App control is not available for the current actor. Connect a host_app_control-capable client as the same user.",
-          isError: true,
-        };
-      }
-    }
-
-    // The TS `HostAppControlInput` (and the Swift mirror) is a discriminated
-    // union on `tool` ("start" | "observe" | "press" | …). The agent's raw
-    // tool input only carries the action-specific payload (app, x/y, text,
-    // …) — the discriminator is implied by `toolName` (`app_control_<tool>`).
-    // Inject it here so the proxy's session-lock guard (`input.tool ===
-    // "start"`) and the Swift client's discriminated-union decoder both see
-    // the field they require.
-    const tool = toolName.slice("app_control_".length);
-    const inputWithTool = {
-      ...input,
-      tool,
-    } as unknown as HostAppControlInput;
-
-    return ctx.hostAppControlProxy.request(
-      toolName,
-      inputWithTool,
-      ctx.conversationId,
-      signal ?? new AbortController().signal,
-      sourceActorPrincipalId,
-      targetClientId,
     );
   }
 

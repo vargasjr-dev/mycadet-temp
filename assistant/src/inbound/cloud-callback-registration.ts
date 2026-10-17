@@ -31,7 +31,6 @@ import {
   PublicIngressDisabledError,
   tryGetPublicBaseUrl,
 } from "./public-ingress-urls.js";
-import { isTunnelWebhooksEnabled } from "./tunnel-webhooks-gate.js";
 
 const log = getLogger("cloud-callback-registration");
 
@@ -229,15 +228,13 @@ export async function registerLocalWebhookRoute(
  * `runtime/routes/webhook-routes.ts` and `hasWebhookRoutingConfigured` in
  * `config/webhook-routing.ts`:
  *
- *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
- *      always register with the cloud gateway. With the flag on, they try
- *      the direct supplier first — the gateway's Tunnel client publishes the
- *      tunnel URL into `ingress.publicBaseUrl` — and fall back to platform
- *      registration on any failure, including an explicit
- *      `ingress.enabled: false`: a pod owner toggling that flag must not
- *      lose webhooks entirely. The subpath is claimed on the gateway before
- *      the tunnel URL is handed out, and a refused claim falls back the same
- *      way.
+ *   1. **Cloud pods** (`IS_CLOUD`) try the direct supplier first — the
+ *      gateway's Tunnel client publishes the tunnel URL into
+ *      `ingress.publicBaseUrl` — and fall back to platform registration on
+ *      any failure, including an explicit `ingress.enabled: false`: a pod
+ *      owner toggling that flag must not lose webhooks entirely. The
+ *      subpath is claimed on the gateway before the tunnel URL is handed
+ *      out, and a refused claim falls back the same way.
  *   2. **A configured public ingress wins** for everyone else, so the direct
  *      supplier is tried first and its value returned when it resolves.
  *   3. **Platform-connected assistants with no ingress** register with the
@@ -275,13 +272,11 @@ export async function resolveCallbackUrl(
   sourceIdentifier?: string,
 ): Promise<string> {
   if (getIsCloud()) {
-    if (isTunnelWebhooksEnabled()) {
-      const claimed = await resolveClaimedPodWebhookUrl(directUrl, () =>
-        registerLocalWebhookRoute(callbackPath, type, sourceIdentifier),
-      );
-      if (claimed !== undefined) {
-        return claimed;
-      }
+    const claimed = await resolveClaimedPodWebhookUrl(directUrl, () =>
+      registerLocalWebhookRoute(callbackPath, type, sourceIdentifier),
+    );
+    if (claimed !== undefined) {
+      return claimed;
     }
   } else {
     let ingressUrl: string | undefined;

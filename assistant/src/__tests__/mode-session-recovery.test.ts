@@ -5,7 +5,6 @@ import { drizzle } from "drizzle-orm/bun-sqlite";
 
 import {
   isModeSessionRecoveryHealthy,
-  isSessionGroupsEnabled,
   setModeSessionRecoveryHealthy,
 } from "../config/session-groups-gate.js";
 import {
@@ -23,12 +22,10 @@ import {
 } from "../persistence/conversation-mode-sessions.js";
 import { migrateCreateConversationModeSessions } from "../persistence/migrations/381-create-conversation-mode-sessions.js";
 import * as schema from "../persistence/schema.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
 afterEach(() => {
   setDbReady(true);
   setModeSessionRecoveryHealthy(true);
-  setOverridesForTesting({});
 });
 
 function createStore() {
@@ -64,32 +61,25 @@ describe("mode session startup recovery", () => {
     });
   });
 
-  test.each([false, true])(
-    "keeps ordinary work ready after recovery fails with flag %s",
-    (enabled) => {
-      setOverridesForTesting({ "session-groups": enabled });
-      setDbMigrating();
-      const recoveryError = new Error("recovery failed");
-      const result = recoverModeSessionsBeforeDbReady(() => {
-        throw recoveryError;
-      });
-      expect(result).toEqual({ ok: false, error: recoveryError });
-      expect(getDbMigrationReadiness()).toEqual({
-        ready: true,
-        state: "ready",
-      });
-      expect(isModeSessionRecoveryHealthy()).toBe(false);
-      expect(isSessionGroupsEnabled()).toBe(false);
-      setOverridesForTesting({ "session-groups": true });
-      expect(isSessionGroupsEnabled()).toBe(false);
-      setDbMigrating();
-      expect(recoverModeSessionsBeforeDbReady(() => 1)).toEqual({
-        ok: true,
-        interruptedCount: 1,
-      });
-      expect(isSessionGroupsEnabled()).toBe(true);
-    },
-  );
+  test("keeps ordinary work ready after recovery fails", () => {
+    setDbMigrating();
+    const recoveryError = new Error("recovery failed");
+    const result = recoverModeSessionsBeforeDbReady(() => {
+      throw recoveryError;
+    });
+    expect(result).toEqual({ ok: false, error: recoveryError });
+    expect(getDbMigrationReadiness()).toEqual({
+      ready: true,
+      state: "ready",
+    });
+    expect(isModeSessionRecoveryHealthy()).toBe(false);
+    setDbMigrating();
+    expect(recoverModeSessionsBeforeDbReady(() => 1)).toEqual({
+      ok: true,
+      interruptedCount: 1,
+    });
+    expect(isModeSessionRecoveryHealthy()).toBe(true);
+  });
 
   test("interrupts active records without fabricating an end time", () => {
     const { options } = createStore();

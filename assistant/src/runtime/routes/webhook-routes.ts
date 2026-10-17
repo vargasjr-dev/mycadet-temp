@@ -23,7 +23,6 @@ import {
   getPublicBaseUrl,
   isPublicIngressDisabled,
 } from "../../inbound/public-ingress-urls.js";
-import { isTunnelWebhooksEnabled } from "../../inbound/tunnel-webhooks-gate.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
   BadRequestError,
@@ -112,13 +111,12 @@ async function registerWithPlatform(
  * Resolve a stable callback URL for a webhook type.
  *
  * Resolution order:
- *   1. **Cloud pods** (`IS_CLOUD`) with the `tunnel-webhooks` flag off
- *      always register with the cloud gateway. With the flag on, the
- *      Tunnel-published `ingress.publicBaseUrl` wins and platform
- *      registration is the fallback for any failure to resolve it —
- *      including an explicit `ingress.enabled: false`, matching
- *      `resolveCallbackUrl`'s pod behavior. The subpath is claimed on the
- *      gateway first, and a refused claim falls back the same way.
+ *   1. **Cloud pods** (`IS_CLOUD`): the Tunnel-published
+ *      `ingress.publicBaseUrl` wins and platform registration is the
+ *      fallback for any failure to resolve it — including an explicit
+ *      `ingress.enabled: false`, matching `resolveCallbackUrl`'s pod
+ *      behavior. The subpath is claimed on the gateway first, and a refused
+ *      claim falls back the same way.
  *   2. **A configured public ingress wins** for everyone else. That URL is
  *      either the user's own tunnel (ngrok, a custom domain) or the Tunnel
  *      tunnel URL the gateway publishes into `ingress.publicBaseUrl`, so a
@@ -149,19 +147,17 @@ async function handleWebhooksRegister(
   const sourceIdentifier = source as string | undefined;
 
   if (getIsCloud()) {
-    if (isTunnelWebhooksEnabled()) {
-      const callbackUrl = await resolveClaimedPodWebhookUrl(
-        () => `${getPublicBaseUrl(getConfig())}/${webhookPath}`,
-        () => registerLocalWebhookRoute(webhookPath, type, sourceIdentifier),
-      );
-      if (callbackUrl !== undefined) {
-        return {
-          callbackUrl,
-          type,
-          path: webhookPath,
-          mode: "self-hosted",
-        };
-      }
+    const callbackUrl = await resolveClaimedPodWebhookUrl(
+      () => `${getPublicBaseUrl(getConfig())}/${webhookPath}`,
+      () => registerLocalWebhookRoute(webhookPath, type, sourceIdentifier),
+    );
+    if (callbackUrl !== undefined) {
+      return {
+        callbackUrl,
+        type,
+        path: webhookPath,
+        mode: "self-hosted",
+      };
     }
     return registerWithPlatform(webhookPath, type, sourceIdentifier);
   }

@@ -116,14 +116,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "app-control",
-      "scope": "assistant",
-      "key": "app-control",
-      "label": "App Control",
-      "description": "Enable the app-control skill (per-app screenshot + raw input bypassing AX tree)",
-      "defaultEnabled": false
-    },
-    {
       "id": "preview-channel",
       "scope": "client",
       "key": "preview-channel",
@@ -316,14 +308,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "tunnel-webhooks",
-      "scope": "assistant",
-      "key": "tunnel-webhooks",
-      "label": "Tunnel Webhooks",
-      "description": "Cloud pods resolve webhook callback URLs from the Tunnel-published ingress URL instead of registering platform callback routes. Falls back to platform callback registration while no tunnel URL is published.",
-      "defaultEnabled": false
-    },
-    {
       "id": "experiment-activation-checklist-2026-09-10",
       "scope": "client",
       "key": "experiment-activation-checklist-2026-09-10",
@@ -338,22 +322,6 @@
       "key": "send-user-message",
       "label": "Send User Message Tool",
       "description": "Route all user-facing assistant text through the send_user_message tool instead of streamed assistant text",
-      "defaultEnabled": false
-    },
-    {
-      "id": "session-groups",
-      "scope": "both",
-      "key": "session-groups",
-      "label": "Session Groups",
-      "description": "Records eligible computer use, browser, live vision, and ambient runs and presents them as collapsible transcript groups. Off preserves ordinary actions and the flat transcript without new session tracking.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "assistant-desktop",
-      "scope": "assistant",
-      "key": "assistant-desktop",
-      "label": "Virtual desktop",
-      "description": "Streams an interactive virtual desktop from a cloud-hosted, containerized assistant over /v1/desktop/stream. Requires platform hosting; self-hosted assistants are excluded. Off: the virtual desktop is hidden. On: the chat header offers its viewer and controls.",
       "defaultEnabled": false
     },
     {

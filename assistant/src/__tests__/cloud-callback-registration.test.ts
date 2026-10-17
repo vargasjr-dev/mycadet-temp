@@ -8,7 +8,6 @@ import { credentialKey } from "../security/credential-key.js";
 import { useFaultableSecureKeyMap } from "./helpers/secure-keys.js";
 
 let mockIsPlatform = true;
-let mockTunnelWebhooksEnabled = false;
 let mockCloudBaseUrl = "";
 let mockCloudAssistantId = "";
 let mockConfig: { ingress?: { publicBaseUrl?: string; enabled?: boolean } } =
@@ -38,12 +37,6 @@ const actualEnvRegistry = await import("../config/env-registry.js");
 mock.module("../config/env-registry.js", () => ({
   ...actualEnvRegistry,
   getIsCloud: () => mockIsPlatform,
-}));
-
-const actualTunnelGate = await import("../inbound/tunnel-webhooks-gate.js");
-mock.module("../inbound/tunnel-webhooks-gate.js", () => ({
-  ...actualTunnelGate,
-  isTunnelWebhooksEnabled: () => mockTunnelWebhooksEnabled,
 }));
 
 const actualEnv = await import("../config/env.js");
@@ -442,7 +435,6 @@ describe("resolveCallbackUrl resolution order", () => {
 
   beforeEach(() => {
     mockIsPlatform = false;
-    mockTunnelWebhooksEnabled = false;
     mockCloudBaseUrl = "";
     mockCloudAssistantId = "";
     secureKeyStore.clear();
@@ -475,22 +467,8 @@ describe("resolveCallbackUrl resolution order", () => {
     globalThis.fetch = originalFetch;
   });
 
-  test("cloud pods register with the cloud gateway", async () => {
+  test("a pod claims the subpath and uses the published URL", async () => {
     mockIsPlatform = true;
-    seedCloudCredentials();
-
-    // The direct supplier is never evaluated on a pod: there is no ingress of
-    // its own to advertise, and evaluating it would throw.
-    await expect(
-      resolveCallbackUrl(noIngress, "webhooks/twilio/voice", "twilio_voice"),
-    ).resolves.toBe(PLATFORM_URL);
-    expect(registerCalls).toBe(1);
-    expect(ipcRegisterCalls).toEqual([]);
-  });
-
-  test("tunnel-webhooks on: a pod claims the subpath and uses the published URL", async () => {
-    mockIsPlatform = true;
-    mockTunnelWebhooksEnabled = true;
     seedCloudCredentials();
 
     await expect(
@@ -514,9 +492,8 @@ describe("resolveCallbackUrl resolution order", () => {
     ]);
   });
 
-  test("tunnel-webhooks on: a refused claim falls back to the cloud", async () => {
+  test("a refused claim falls back to the cloud", async () => {
     mockIsPlatform = true;
-    mockTunnelWebhooksEnabled = true;
     mockRegisterWebhookRouteResult = { ok: true, disabled: true };
     seedCloudCredentials();
 
@@ -531,9 +508,8 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toHaveLength(1);
   });
 
-  test("tunnel-webhooks on: an unreachable gateway falls back to the cloud", async () => {
+  test("an unreachable gateway falls back to the cloud", async () => {
     mockIsPlatform = true;
-    mockTunnelWebhooksEnabled = true;
     mockRegisterWebhookRouteResult = { ok: false, reason: "no_response" };
     seedCloudCredentials();
 
@@ -548,9 +524,8 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toHaveLength(1);
   });
 
-  test("tunnel-webhooks on: a pod with no published URL still registers with the cloud", async () => {
+  test("a pod with no published URL still registers with the cloud", async () => {
     mockIsPlatform = true;
-    mockTunnelWebhooksEnabled = true;
     seedCloudCredentials();
 
     await expect(
@@ -560,9 +535,8 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("tunnel-webhooks on: a pod with ingress disabled falls back instead of throwing", async () => {
+  test("a pod with ingress disabled falls back instead of throwing", async () => {
     mockIsPlatform = true;
-    mockTunnelWebhooksEnabled = true;
     seedCloudCredentials();
 
     await expect(
@@ -576,8 +550,7 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("tunnel-webhooks on: self-hosted opt-out still surfaces", async () => {
-    mockTunnelWebhooksEnabled = true;
+  test("self-hosted opt-out still surfaces on a pod", async () => {
     seedCloudCredentials();
 
     await expect(
@@ -591,8 +564,7 @@ describe("resolveCallbackUrl resolution order", () => {
     expect(ipcRegisterCalls).toEqual([]);
   });
 
-  test("tunnel-webhooks on: a self-hosted ingress URL is not claimed on the gateway", async () => {
-    mockTunnelWebhooksEnabled = true;
+  test("a self-hosted ingress URL is not claimed on the gateway", async () => {
     seedCloudCredentials();
 
     await expect(

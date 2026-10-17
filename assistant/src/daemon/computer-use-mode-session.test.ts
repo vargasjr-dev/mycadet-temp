@@ -2,7 +2,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { ModeSession } from "../api/mode-session.js";
-import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
+import {
+  isModeSessionRecoveryHealthy,
+  setModeSessionRecoveryHealthy,
+} from "../config/session-groups-gate.js";
 import { ComputerUseModeSessionProducer } from "./computer-use-mode-session.js";
 import type { ModeSessionSourceHandle } from "./conversation-mode-session.js";
 
@@ -108,26 +111,26 @@ describe("ComputerUseModeSessionProducer", () => {
     },
   );
 
-  test("admits new tracking only while the shared feature flag is enabled", () => {
+  test("admits new tracking only while mode-session recovery is healthy", () => {
     const state = createCoordinator();
     const producer = new ComputerUseModeSessionProducer(
       state.coordinator,
-      isSessionGroupsEnabled,
+      isModeSessionRecoveryHealthy,
     );
     const source = { sourceId: "proxy-123", generation: 2 };
 
-    setOverridesForTesting({ "session-groups": false });
+    setModeSessionRecoveryHealthy(false);
     expect(
       producer.recordAction({ turnId: "turn-disabled", source, at: 100 }),
     ).toBeUndefined();
     expect(state.activated).toEqual([]);
 
-    setOverridesForTesting({ "session-groups": true });
+    setModeSessionRecoveryHealthy(true);
     expect(
       producer.recordAction({ turnId: "turn-enabled", source, at: 110 }),
     ).toEqual({ id: "session-1", mode: "computer_use" });
 
-    setOverridesForTesting({ "session-groups": false });
+    setModeSessionRecoveryHealthy(false);
     expect(producer.endTask({ turnId: "turn-enabled", source })).toBe(true);
     expect(state.retired).toHaveLength(1);
     expect(state.draining).toEqual(["turn-enabled"]);

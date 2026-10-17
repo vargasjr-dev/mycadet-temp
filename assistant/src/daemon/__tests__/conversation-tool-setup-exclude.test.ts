@@ -252,7 +252,6 @@ test("managed browser guidance follows each turn without changing native or shar
   const containerized = process.env.IS_CONTAINERIZED;
   process.env.IS_CLOUD = "true";
   process.env.IS_CONTAINERIZED = "true";
-  setOverridesForTesting({ "assistant-desktop": true });
   const bash = def("bash");
   const ctx = makeCtx({
     conversationId: "conv-browser-guidance",
@@ -274,10 +273,9 @@ test("managed browser guidance follows each turn without changing native or shar
       ).toBe("bash");
     }
     ctx.currentTurnClientOs = "web";
-    setOverridesForTesting({ "assistant-desktop": false });
-    expect(resolve([]).find((tool) => tool.name === "bash")?.description).toBe(
-      "bash",
-    );
+    expect(
+      resolve([]).find((tool) => tool.name === "bash")?.description,
+    ).toContain("assistant browser navigate");
   } finally {
     setOverridesForTesting({});
     if (platform === undefined) {

@@ -2,8 +2,7 @@
  * Shared base for host-proxy executors that forward a single request to a
  * native helper via one JSON-RPC method and post the parsed result back.
  *
- * Both the computer-use (`cu.perform`) and app-control (`appControl.perform`)
- * executors are the same shape — validate the request, call the helper, parse
+ * The computer-use (`cu.perform`) executor is the same shape — validate the request, call the helper, parse
  * the result, post it — differing only in the method name, the params they
  * build, the result schema, and which `poster.post*Result` they call. This
  * base captures the common flow, including the cancellation bookkeeping

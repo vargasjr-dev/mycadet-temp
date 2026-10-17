@@ -249,34 +249,6 @@ describe("HostProxyPoster", () => {
     });
   });
 
-  describe("postAppControlResult", () => {
-    test("sends correct URL and body fields", async () => {
-      const { fetchFn, captured } = createMockFetch();
-      const poster = makeLocalPoster(fetchFn);
-
-      const result = await poster.postAppControlResult({
-        requestId: "req-6",
-        state: "running",
-        pngBase64: "base64png",
-        windowBounds: { x: 0, y: 0, width: 800, height: 600 },
-        executionResult: "ok",
-      });
-
-      expect(result).toBe(true);
-      const req = captured[0];
-      expect(req.url).toBe("http://127.0.0.1:9000/v1/host-app-control-result");
-
-      const body = JSON.parse(req.body!);
-      expect(body.requestId).toBe("req-6");
-      expect(body.state).toBe("running");
-      expect(body.windowBounds).toEqual({
-        x: 0,
-        y: 0,
-        width: 800,
-        height: 600,
-      });
-    });
-  });
 
   describe("postPresence", () => {
     test("sends correct URL, method, headers, and body", async () => {

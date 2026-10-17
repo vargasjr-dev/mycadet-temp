@@ -34,7 +34,6 @@ const spies: Array<{ mockRestore(): void }> = [];
 beforeEach(() => {
   process.env.IS_CLOUD = "true";
   process.env.IS_CONTAINERIZED = "true";
-  setOverridesForTesting({ "assistant-desktop": true });
 });
 
 afterEach(() => {
@@ -285,46 +284,3 @@ for (const platform of [true, false]) {
     });
   }
 }
-
-test("desktop revocation between policy and dispatch never falls back to the host", async () => {
-  const { ctx, proxy } = conversation();
-  const skillDir = join(getBundledSkillsDir(), "computer-use");
-  const manifest = JSON.parse(
-    readFileSync(join(skillDir, "TOOLS.json"), "utf8"),
-  ) as SkillToolManifest;
-  const observe = createSkillToolsFromManifest(
-    manifest.tools,
-    skillDir,
-    "",
-    true,
-  ).find((tool) => tool.name === "computer_use_observe")!;
-  const toolContext = {
-    ...context,
-    workingDir: "/tmp",
-    conversationId: "conv-123",
-  };
-  expect(resolveExecutionTarget(observe, {}, toolContext)).toBe("sandbox");
-  setOverridesForTesting({ "assistant-desktop": false });
-  const local = spyOn(computerUse, "executeDesktopComputerUse");
-  const host = spyOn(proxy, "request");
-  spies.push(local, host, spyOn(proxy, "isAvailable").mockReturnValue(true));
-  expect(
-    (await surfaceProxyResolver(ctx, "computer_use_observe", {})).isError,
-  ).toBe(true);
-  expect(host).not.toHaveBeenCalled();
-  expect(local).not.toHaveBeenCalled();
-});
-
-test("a disabled assistant desktop never falls back to a connected computer", async () => {
-  setOverridesForTesting({ "assistant-desktop": false });
-  const { ctx, proxy } = conversation();
-  const local = spyOn(computerUse, "executeDesktopComputerUse");
-  const host = spyOn(proxy, "request");
-  spies.push(local, host, spyOn(proxy, "isAvailable").mockReturnValue(true));
-  const result = await surfaceProxyResolver(ctx, "computer_use_observe", {
-    target: "assistant-desktop",
-  });
-  expect(result.isError).toBe(true);
-  expect(local).not.toHaveBeenCalled();
-  expect(host).not.toHaveBeenCalled();
-});

@@ -62,7 +62,6 @@ import type {
   ConversationCreateOptions,
   SlackInboundMessageMetadata,
 } from "./handlers/shared.js";
-import { HostAppControlProxy } from "./host-app-control-proxy.js";
 import { HostCuProxy } from "./host-cu-proxy.js";
 import {
   preactivateHostProxySkills,
@@ -395,25 +394,6 @@ async function prepareConversationForMessage(
     }
   } else if (!conversation.isProcessing()) {
     conversation.setHostCuProxy(undefined);
-  }
-  // App-control mirrors CU's per-conversation lifecycle. The proxy attaches
-  // unconditionally when the capability is reachable — feature-flag gating
-  // is enforced by the skill-projection layer via SKILL.md frontmatter, so
-  // an attached proxy is harmless when the flag is off.
-  if (
-    shouldAttachHostProxyForCapability(
-      "host_app_control",
-      resolvedInterface,
-      sourceActorPrincipalId,
-    )
-  ) {
-    if (!conversation.isProcessing() || !conversation.hostAppControlProxy) {
-      conversation.setHostAppControlProxy(
-        new HostAppControlProxy(conversationId),
-      );
-    }
-  } else if (!conversation.isProcessing()) {
-    conversation.setHostAppControlProxy(undefined);
   }
   // The early `isProcessing()` throw above guarantees the conversation is
   // idle here, so preactivation is unconditional once the proxies are wired.

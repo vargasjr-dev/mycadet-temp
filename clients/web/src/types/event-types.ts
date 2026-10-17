@@ -50,7 +50,6 @@ export type HostProxyInteractionKind =
   | "host_file"
   | "host_cu"
   | "host_browser"
-  | "host_app_control"
   | "host_transfer";
 
 export type InteractionKind =
