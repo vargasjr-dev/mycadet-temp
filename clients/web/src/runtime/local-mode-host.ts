@@ -157,17 +157,13 @@ const LOCAL_HOST_UNAVAILABLE_ERROR =
  * (`window.__CADET_CONFIG__`): a "local" remote means a host on this device;
  * a served-remote config (a self-hosted gateway edge or the cloud proxy)
  * means none. The cloud web build injects nothing at all and has no host
- * either — which is why absence is checked on the raw window instead of
- * through {@link readInjectedConfig}'s local default.
+ * either — {@link readInjectedConfig} returns `undefined` for that case.
  */
 export function isLocalModeHostAvailable(): boolean {
   if (isElectron()) {
     return true;
   }
-  if (window.__CADET_CONFIG__ === undefined) {
-    return false;
-  }
-  return readInjectedConfig().remote === "local";
+  return readInjectedConfig()?.remote === "local";
 }
 
 /**

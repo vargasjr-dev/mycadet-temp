@@ -13,8 +13,7 @@ export function SelectAssistantScreen() {
   const config = readInjectedConfig();
   const navigate = useNavigate();
   const { state, retry } = useAssistantRequest({
-    apiBaseUrl: config.cloudUrl,
-    organizationId: config.organizationId,
+    apiBaseUrl: config?.cloudUrl,
     origin: window.location.origin,
     listOnly: true,
   });
@@ -35,7 +34,7 @@ export function SelectAssistantScreen() {
               variant="outlined"
               onClick={() => {
                 void navigate(routes.assistant, {
-                  state: assistantSelectionState(assistant.id, config),
+                  state: assistantSelectionState(assistant.id, config ?? {}),
                 });
               }}
             >

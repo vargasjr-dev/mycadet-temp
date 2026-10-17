@@ -8,19 +8,14 @@
  * which validates the state and registers the token with the local server so
  * its cloud proxy can authenticate — no browser session cookie is used.
  */
+import { readInjectedConfig } from "@/lib/injected-config";
 
 const FALLBACK_WEB_URL = "https://www.mycadet.ai";
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
-interface CadetConfig {
-  webUrl?: string;
-  cloudUrl?: string;
-}
-
 function getLocalConfig(): { webUrl: string } {
-  const injected = (window as unknown as { __CADET_CONFIG__?: CadetConfig })
-    .__CADET_CONFIG__;
+  const injected = readInjectedConfig();
   if (injected?.webUrl) {
     return { webUrl: injected.webUrl };
   }

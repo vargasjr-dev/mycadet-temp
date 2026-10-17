@@ -31,9 +31,10 @@ import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 const isLocalClientMock = mock(() => !process.env.VITE_CLOUD_MODE);
 const isCloudDisabledMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
-const servedGatewayRuntimeFromConfig = (): boolean =>
-  window.__CADET_CONFIG__?.remote === "docker" ||
-  window.__CADET_CONFIG__?.remote === "custom";
+const servedGatewayRuntimeFromConfig = (): boolean => {
+  const remote = readInjectedConfig()?.remote;
+  return remote === "docker" || remote === "custom";
+};
 const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
@@ -156,6 +157,7 @@ import {
 import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
 import { useOrganizationStore } from "@/stores/organization-store";
+import { readInjectedConfig } from "@/lib/injected-config";
 
 const TEST_ORG_ID = "org-test-1234";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";

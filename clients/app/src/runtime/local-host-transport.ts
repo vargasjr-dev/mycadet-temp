@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  hasInjectedConfig,
-  readInjectedConfig,
-} from "@app/lib/injected-config";
+import { readInjectedConfig } from "@app/lib/injected-config";
 import { getElectronBridge } from "@app/runtime/electron-bridge";
 
 const commandResultSchema = z.object({ ok: z.boolean() });
@@ -10,8 +7,7 @@ const commandResultSchema = z.object({ ok: z.boolean() });
 /** Only Electron and explicitly injected local hosts expose these endpoints. */
 export function isLocalModeHostAvailable(): boolean {
   return (
-    Boolean(getElectronBridge()) ||
-    (hasInjectedConfig() && readInjectedConfig().remote === "local")
+    Boolean(getElectronBridge()) || readInjectedConfig()?.remote === "local"
   );
 }
 

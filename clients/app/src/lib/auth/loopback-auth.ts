@@ -16,7 +16,7 @@ const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
 function getLocalConfig(): { webUrl: string } {
-  return { webUrl: readInjectedConfig().webUrl || FALLBACK_WEB_URL };
+  return { webUrl: readInjectedConfig()?.webUrl || FALLBACK_WEB_URL };
 }
 
 function generateState(): string {
