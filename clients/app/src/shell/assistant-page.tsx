@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router";
-import { AppShell } from "@mycadet/app";
+import { AppShell } from "@app/app-shell";
 import { currentLocale, useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import {

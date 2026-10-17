@@ -8,7 +8,7 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
-import { AppShell } from "./index";
+import { AppShell } from "@app/app-shell";
 
 const origin = "https://site.example.com";
 const detail = (id = "assistant-1") => ({
