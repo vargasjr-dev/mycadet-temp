@@ -1,0 +1,104 @@
+name: Dev Release Daily
+
+# Fires the dev release once per day at 6:00 AM America/New_York.
+#
+# GitHub cron is pinned to UTC while Eastern time flips between EST (UTC-5)
+# and EDT (UTC-4), so we schedule both wall-clock candidates and let the
+# tz-gate job pick whichever firing IS 6 AM in New York on that day:
+#   - 10:00 UTC = 6:00 AM EDT (summer)
+#   - 11:00 UTC = 6:00 AM EST (winter)
+# The losing twin finishes in seconds as a green no-op, so the run history
+# stays quiet on days without a release.
+#
+# dev-release.yaml keeps its bare workflow_dispatch (humans and the cloud
+# dispatch it directly, unconditionally). This workflow only adds the daily
+# trigger on top, and dispatches a release only when all of these hold:
+#   1. It is actually 6 AM Eastern right now (schedule runs only; manual
+#      runs of this workflow skip the clock gate for on-demand testing),
+#   2. main has commits the last successful dev release didn't already
+#      ship — a failed/aborted release doesn't count as shipped, so the
+#      next morning's run retries it, and
+#   3. no dev release is currently running or queued. dev-release's
+#      cancel-in-progress concurrency group would otherwise cancel an
+#      in-flight manual release mid-publish.
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 10 * * *"
+    - cron: "0 11 * * *"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  tz-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      is-6am: ${{ steps.check.outputs.is-6am }}
+    steps:
+      - name: Is it 6 AM Eastern right now?
+        id: check
+        run: |
+          NOW=$(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')
+          HOUR=$(TZ=America/New_York date +%H)
+          echo "Time in New York: ${NOW}"
+          IS_6AM=false
+          [ "${HOUR}" = "06" ] && IS_6AM=true
+          echo "is-6am=${IS_6AM}" >> "$GITHUB_OUTPUT"
+          if [ "${IS_6AM}" != "true" ]; then
+            echo "Not 6:00 AM Eastern — this firing is the DST twin; skipping." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  daily-release:
+    needs: tz-gate
+    # Scheduled runs must land in the 6 AM Eastern hour. Manual runs of this
+    # workflow are explicit "run the daily check now" requests, so they skip
+    # the clock gate but still get the freshness gate below.
+    if: github.event_name != 'schedule' || needs.tz-gate.outputs.is-6am == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      proceed: ${{ steps.freshness.outputs.proceed }}
+    steps:
+      - name: Only release new commits on main
+        id: freshness
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          REPO="${{ github.repository }}"
+          TIP=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
+          echo "main tip: ${TIP}"
+
+          ACTIVE=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
+                     --status=in_progress --json databaseId --jq 'length')
+          QUEUED=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
+                     --status=queued --json databaseId --jq 'length')
+          if [ "${ACTIVE}" != "0" ] || [ "${QUEUED}" != "0" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: a dev release is already in flight (active=${ACTIVE}, queued=${QUEUED}); letting it finish." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Ship only when the last successful dev release didn't already
+          # cover this tip.
+          LAST=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
+                   --status=completed --limit=30 --json conclusion,headSha \
+                   --jq '[.[] | select(.conclusion == "success")][0].headSha // ""')
+          if [ -n "${LAST}" ] && [ "${LAST}" = "${TIP}" ]; then
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: main tip ${TIP} was already shipped by the last successful dev release — nothing new to release." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "proceed=true" >> "$GITHUB_OUTPUT"
+          echo "RELEASE: main tip ${TIP} is newer than the last successful dev release (${LAST:-none})." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dispatch dev release
+        if: steps.freshness.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run dev-release.yaml --repo "${{ github.repository }}" --ref main
+          echo "Dispatched dev-release on main." >> "$GITHUB_STEP_SUMMARY"
