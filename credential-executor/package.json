@@ -1,6 +1,7 @@
 {
   "name": "@mycadet/credential-executor",
   "version": "0.13.0",
+  "repository": { "type": "git", "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git" },
   "license": "MIT",
   "type": "module",
   "exports": {

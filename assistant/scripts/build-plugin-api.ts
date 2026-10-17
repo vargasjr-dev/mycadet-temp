@@ -144,6 +144,12 @@ function writeContractManifest(srcManifestPath: string, destDir: string): void {
         name: orig.name,
         version: orig.version ?? "0.0.0",
         type: orig.type ?? "module",
+        // npm's auto-provenance validates this against the publishing
+        // repo — without it the publish is rejected with E422.
+        repository: {
+          type: "git",
+          url: "git+https://github.com/vargasjr-dev/mycadet-temp.git",
+        },
         types: "./index.d.ts",
         exports,
       },

@@ -1059,7 +1059,7 @@ jobs:
       - name: Rewrite package.json for publish
         working-directory: clients/app
         run: |
-          jq '{name, version, license, type, description, files, exports}' package.json > tmp && mv tmp package.json
+          jq '{name, version, license, type, description, files, exports, repository}' package.json > tmp && mv tmp package.json
 
       - name: Pack tarball
         working-directory: clients/app
@@ -1143,7 +1143,7 @@ jobs:
       - name: Rewrite package.json for publish
         working-directory: clients/web
         run: |
-          jq '{name, version, license, type, description, files}' package.json > tmp && mv tmp package.json
+          jq '{name, version, license, type, description, files, repository}' package.json > tmp && mv tmp package.json
 
       - name: Pack tarball
         working-directory: clients/web

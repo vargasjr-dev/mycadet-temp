@@ -1,6 +1,7 @@
 {
   "name": "@mycadet/app",
   "version": "0.0.0",
+  "repository": { "type": "git", "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git" },
   "type": "module",
   "description": "Cadet account/client shell — portable package plus a standalone bundle for self-hosted edges",
   "license": "MIT",
