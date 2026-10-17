@@ -503,15 +503,6 @@ describe("capabilityForMessageType — host-prefix routing", () => {
     expect(capabilityForMessageType("host_transfer_cancel")).toBe("host_file");
   });
 
-  test("three-segment host_app_control routes to its own capability (longest-prefix wins)", () => {
-    expect(capabilityForMessageType("host_app_control_request")).toBe(
-      "host_app_control",
-    );
-    expect(capabilityForMessageType("host_app_control_cancel")).toBe(
-      "host_app_control",
-    );
-  });
-
   test("non-host messages return undefined (broadcast)", () => {
     expect(capabilityForMessageType("assistant_text_delta")).toBeUndefined();
     expect(capabilityForMessageType("confirmation_request")).toBeUndefined();
@@ -528,7 +519,7 @@ describe("capabilityForMessageType — host-prefix routing", () => {
 // ── broadcastMessage — pending interaction registration ─────────────────────
 //
 // Host proxy interactions (host_bash, host_cu, host_file, host_browser,
-// host_app_control, host_transfer) are registered in pendingInteractions by
+// host_transfer) are registered in pendingInteractions by
 // the proxy itself (in its request() method), not by the event hub. This
 // avoids overwriting the RPC lifecycle state (rpcResolve/rpcReject/timer)
 // that the proxy stores alongside conversationId/kind.
@@ -572,8 +563,8 @@ describe("broadcastMessage — pending interaction registration", () => {
   });
 
   test("does NOT register host proxy requests — proxies self-register", () => {
-    // host_bash, host_cu, host_file, host_browser, host_app_control, and
-    // host_transfer are registered by the proxy in request(), not here.
+    // host_bash, host_cu, host_file, host_browser, and host_transfer are
+    // registered by the proxy in request(), not here.
     broadcastMessage({
       type: "host_bash_request",
       requestId: "req-bash-1",

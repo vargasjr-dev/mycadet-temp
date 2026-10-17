@@ -135,7 +135,6 @@ describe("supportsHostProxy", () => {
     expect(supportsHostProxy("windows", "host_cu")).toBe(true);
     expect(supportsHostProxy("windows", "host_browser")).toBe(true);
     expect(supportsHostProxy("windows", "host_ui_snapshot")).toBe(true);
-    expect(supportsHostProxy("windows", "host_app_control")).toBe(false);
   });
 
   test("linux exposes the same host capabilities as windows", () => {
@@ -145,7 +144,6 @@ describe("supportsHostProxy", () => {
     expect(supportsHostProxy("linux", "host_cu")).toBe(true);
     expect(supportsHostProxy("linux", "host_browser")).toBe(true);
     expect(supportsHostProxy("linux", "host_ui_snapshot")).toBe(true);
-    expect(supportsHostProxy("linux", "host_app_control")).toBe(false);
   });
 
   // ── chrome-extension: only host_browser. ──

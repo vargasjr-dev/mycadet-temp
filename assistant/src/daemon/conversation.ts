@@ -39,7 +39,7 @@ import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import { getConfig } from "../config/loader.js";
 import type { LLMCallSite, Speed } from "../config/schemas/llm.js";
 import { resolveSendUserMessageActive } from "../config/send-user-message-gate.js";
-import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
+import { isModeSessionRecoveryHealthy } from "../config/session-groups-gate.js";
 import {
   derefToolResultReReads,
   postTurnTruncateToolResults,
@@ -194,7 +194,6 @@ import {
   createWireToolSurfaceRecorder,
 } from "./conversation-tool-setup.js";
 import { canonicalizeTimeZone } from "./date-context.js";
-import { HostAppControlProxy } from "./host-app-control-proxy.js";
 import { HostCuProxy } from "./host-cu-proxy.js";
 import { shouldAttachHostProxyForCapability } from "./host-proxy-preactivation.js";
 import type { SurfaceType, UsageStats } from "./message-protocol.js";
@@ -609,14 +608,6 @@ export class Conversation {
   /** @internal */ taskRunId?: string;
   /** @internal */ callSessionId?: string;
   /** @internal */ hostCuProxy?: HostCuProxy;
-  /**
-   * Per-conversation host app-control proxy. Set via
-   * `setHostAppControlProxy` and disposed in `dispose()`. The
-   * `/v1/host-app-control-result` route forwards result payloads to the
-   * awaiting promise via this reference.
-   * @internal
-   */
-  hostAppControlProxy?: HostAppControlProxy;
   /** @internal */ readonly queue = new MessageQueue();
   /** @internal */ currentActiveSurfaceId?: string;
   /** @internal */ currentPage?: string;
@@ -1005,12 +996,12 @@ export class Conversation {
     this.modeSessions = new ConversationModeSessionCoordinator(conversationId);
     this.computerUseModeSessions = new ComputerUseModeSessionProducer(
       this.modeSessions,
-      isSessionGroupsEnabled,
+      isModeSessionRecoveryHealthy,
     );
     this.browserModeSessions = new BrowserModeSessionProducer(
       this.modeSessions,
       1,
-      isSessionGroupsEnabled,
+      isModeSessionRecoveryHealthy,
     );
     this.parentConversationId = options?.parentConversationId;
     this.systemPrompt = systemPrompt;
@@ -2546,12 +2537,9 @@ export class Conversation {
     // still land in the DB before teardown. Flushing also clears the
     // pending entries, so no separate cancel call is needed.
     flushPendingSurfaceDataPersists(this.conversationId);
-    // Only dispose the per-conversation CU and app-control proxies.
-    // Bash/File/Transfer are singletons — their lifecycle is managed by
-    // static disposeInstance().
+    // Only dispose the per-conversation CU proxy. Bash/File/Transfer are
+    // singletons — their lifecycle is managed by static disposeInstance().
     this.hostCuProxy?.dispose();
-    this.hostAppControlProxy?.dispose();
-    this.hostAppControlProxy = undefined;
     this.activeContextNodeIds = this.graphMemory.tracker.getActiveNodeIds();
     this.graphMemory.persistState();
     this.graphMemory.dispose();
@@ -2758,13 +2746,6 @@ export class Conversation {
     this.hostCuProxy = proxy;
   }
 
-  setHostAppControlProxy(proxy: HostAppControlProxy | undefined): void {
-    if (this.hostAppControlProxy && this.hostAppControlProxy !== proxy) {
-      this.hostAppControlProxy.dispose();
-    }
-    this.hostAppControlProxy = proxy;
-  }
-
   ensureHostProxiesForTurn(
     sourceInterface: import("../channels/types.js").InterfaceId | undefined,
     sourceActorPrincipalId = this.getTurnActorPrincipalId(),
@@ -2778,16 +2759,6 @@ export class Conversation {
       !this.hostCuProxy
     ) {
       this.setHostCuProxy(new HostCuProxy());
-    }
-    if (
-      shouldAttachHostProxyForCapability(
-        "host_app_control",
-        sourceInterface,
-        sourceActorPrincipalId,
-      ) &&
-      !this.hostAppControlProxy
-    ) {
-      this.setHostAppControlProxy(new HostAppControlProxy(this.conversationId));
     }
   }
 

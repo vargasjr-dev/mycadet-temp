@@ -420,7 +420,7 @@ describe("triggerSurfaceAction handler", () => {
     });
 
     // dev-bypass is translated so the surface turn matches the SSE host-proxy
-    // client's registered guardian principal (CU/app-control same-actor check).
+    // client's registered guardian principal (CU same-actor check).
     expect(live.surfaceActionCalls).toEqual([
       {
         surfaceId: "surf-dt",

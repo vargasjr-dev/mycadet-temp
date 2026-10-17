@@ -218,12 +218,6 @@ function createFakeConversation(conversationId: string): Conversation {
     setHostCuProxy(this: { hostCuProxy: unknown }, proxy: unknown) {
       this.hostCuProxy = proxy;
     },
-    setHostAppControlProxy(
-      this: { hostAppControlProxy: unknown },
-      proxy: unknown,
-    ) {
-      this.hostAppControlProxy = proxy;
-    },
     restoreBrowserProxyAvailability: () => {},
     preactivatedSkillIds: undefined as string[] | undefined,
     addPreactivatedSkillId(
@@ -836,8 +830,7 @@ describe("conversationKey send path disk-view regression", () => {
 // setup has to run for whichever turn this send actually drives. Under
 // `interrupt-on-send` that is a replacement turn on a conversation that was busy
 // when the request arrived, and a setup keyed on "was idle on arrival" would
-// hand a host-capable macOS client a turn with no `computer-use` or
-// `app-control` tools.
+// hand a host-capable macOS client a turn with no `computer-use` tool.
 describe("host-proxy preactivation across an interrupt", () => {
   afterEach(() => {
     setOverridesForTesting({});
@@ -896,15 +889,13 @@ describe("host-proxy preactivation across an interrupt", () => {
   }
 
   test("the replacement turn gets the proxies and the skill preactivation", async () => {
-    // `macos` natively supports `host_cu` and `host_app_control`, so the real
-    // attachment gate says yes to those two without a connected client to
-    // stand in for.
+    // `macos` natively supports `host_cu`, so the real attachment gate says
+    // yes to it without a connected client to stand in for.
     setOverridesForTesting({ "interrupt-on-send": true });
     const conversationKey = `macos-interrupt-${crypto.randomUUID()}`;
     const { conversationId } = getOrCreateConversationMapping(conversationKey);
     const conv = busyConversation(conversationId) as Conversation & {
       hostCuProxy?: unknown;
-      hostAppControlProxy?: unknown;
       preactivatedSkillIds?: string[];
     };
 
@@ -928,12 +919,8 @@ describe("host-proxy preactivation across an interrupt", () => {
     // by design: `host_cu_annotate` is negotiated on a client's connection
     // rather than implied by the interface, and this turn has no connected
     // client advertising it.
-    expect(conv.preactivatedSkillIds ?? []).toEqual([
-      "computer-use",
-      "app-control",
-    ]);
+    expect(conv.preactivatedSkillIds ?? []).toEqual(["computer-use"]);
     expect(conv.hostCuProxy).toBeDefined();
-    expect(conv.hostAppControlProxy).toBeDefined();
   });
 
   test("answers the request before the handover settles", async () => {

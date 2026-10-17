@@ -15,7 +15,6 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-let tunnelWebhooksEnabled = false;
 let claimedRoutes: { path: string; type: string }[] = [];
 let claimError: Error | undefined;
 
@@ -38,8 +37,7 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
 const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 const { reconcileTelegramWebhook } =
@@ -49,7 +47,6 @@ const { applyCloudIdentityIds, _resetCloudIdentityForTests } =
 
 afterEach(() => {
   fetchMock = mock(async () => new Response());
-  tunnelWebhooksEnabled = false;
   claimedRoutes = [];
   claimError = undefined;
   delete process.env.IS_CONTAINERIZED;
@@ -483,10 +480,14 @@ describe("reconcileTelegramWebhook", () => {
     expect((calls[2].body as any).secret_token).toBe("test-webhook-secret");
   });
 
-  test("includes callback_base_url when a cloud pod has an ingress URL in config", async () => {
+  test("includes callback_base_url when the cloud callback route is registered", async () => {
     const calls: { method: string; body: unknown }[] = [];
     process.env.IS_CLOUD = "true";
     process.env.IS_CONTAINERIZED = "true";
+    // The tunnel path claim has to fail for a pod with an ingress URL to
+    // land on the callback route at all — a healthy claim points Telegram
+    // at the tunnel URL instead.
+    claimError = new Error("database disk image is malformed");
     const caches = makeCaches({
       ingressUrl: "https://tunnel.example.com",
       cloudBaseUrl: "https://test-cloud.mycadet.ai",
@@ -663,76 +664,8 @@ describe("reconcileTelegramWebhook", () => {
     ]);
   });
 
-  test("prefers the cloud callback route over the Tunnel ingress URL on cloud pods", async () => {
-    const calls: string[] = [];
-    let registeredUrl: string | undefined;
+  test("points a pod at its published Tunnel URL and claims the path first", async () => {
     process.env.IS_CLOUD = "true";
-    // A platform pod always has an `ingress.publicBaseUrl`: the Tunnel
-    // client publishes one at boot. It must not win over the cloud callback
-    // route — the Tunnel address dies with the tunnel, and the daemon's
-    // `hasWebhookRoutingConfigured` reports this pod as managed-callback mode.
-    const caches = makeCaches({
-      ingressUrl:
-        "https://tunnel.mycadet.ai/11111111-2222-4333-8444-555555555555",
-      cloudBaseUrl: "https://test-cloud.mycadet.ai",
-      assistantApiKey: "ast-managed-key",
-      cloudAssistantId: "11111111-2222-4333-8444-555555555555",
-    });
-
-    fetchMock = mock(
-      async (input: string | URL | Request, init?: RequestInit) => {
-        const url =
-          typeof input === "string"
-            ? input
-            : input instanceof URL
-              ? input.toString()
-              : input.url;
-        if (url.includes("/callback-routes/register/")) {
-          calls.push("registerCallbackRoute");
-          return new Response(
-            JSON.stringify({
-              callback_url:
-                "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
-            }),
-            { status: 201, headers: { "content-type": "application/json" } },
-          );
-        }
-        if (url.includes("/getWebhookInfo")) {
-          calls.push("getWebhookInfo");
-          return makeTelegramResponse({
-            url: "",
-            has_custom_certificate: false,
-            pending_update_count: 0,
-          });
-        }
-        if (url.includes("/setWebhook")) {
-          calls.push("setWebhook");
-          const body = init?.body
-            ? (JSON.parse(init.body as string) as { url?: string })
-            : undefined;
-          registeredUrl = body?.url;
-          return makeTelegramResponse(true);
-        }
-        return new Response("Not found", { status: 404 });
-      },
-    );
-
-    await reconcileTelegramWebhook(caches);
-
-    expect(calls).toEqual([
-      "registerCallbackRoute",
-      "getWebhookInfo",
-      "setWebhook",
-    ]);
-    expect(registeredUrl).toBe(
-      "https://test-cloud.mycadet.ai/v1/gateway/callbacks/11111111-2222-4333-8444-555555555555/webhooks/telegram/",
-    );
-    expect(claimedRoutes).toEqual([]);
-  });
-
-  test("points a pod at its published Tunnel URL and claims the path first when the flag is on", async () => {
-    process.env.IS_CLOUD = "true";
-    tunnelWebhooksEnabled = true;
     const { calls, result } = mockReconcileFetch();
 
     await reconcileTelegramWebhook(
@@ -754,7 +687,6 @@ describe("reconcileTelegramWebhook", () => {
 
   test("falls back to the cloud callback route when the path claim fails", async () => {
     process.env.IS_CLOUD = "true";
-    tunnelWebhooksEnabled = true;
     claimError = new Error("database disk image is malformed");
     const { calls, result } = mockReconcileFetch({
       callbackUrl: MANAGED_CALLBACK_URL,
@@ -774,9 +706,8 @@ describe("reconcileTelegramWebhook", () => {
     expect(result.registeredUrl).toBe(MANAGED_CALLBACK_URL);
   });
 
-  test("falls back to the cloud callback route when the flag is on but no URL is published", async () => {
+  test("falls back to the cloud callback route when no URL is published", async () => {
     process.env.IS_CLOUD = "true";
-    tunnelWebhooksEnabled = true;
     const { calls, result } = mockReconcileFetch({
       callbackUrl: MANAGED_CALLBACK_URL,
     });
@@ -793,7 +724,6 @@ describe("reconcileTelegramWebhook", () => {
   });
 
   test("does not claim a path for a self-hosted ingress URL", async () => {
-    tunnelWebhooksEnabled = true;
     const { result } = mockReconcileFetch();
 
     await reconcileTelegramWebhook(makeCaches());
@@ -1064,7 +994,6 @@ async function waitFor(condition: () => boolean): Promise<void> {
 describe("reconcileTelegramWebhook serialization", () => {
   test("a reconcile latched behind a slow one settles on the newer address", async () => {
     process.env.IS_CLOUD = "true";
-    tunnelWebhooksEnabled = true;
 
     // The tunnel clears its published URL and republishes it moments later.
     // The first reconcile sees the cleared state and resolves the cloud

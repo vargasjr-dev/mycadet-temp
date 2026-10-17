@@ -45,9 +45,6 @@ export function getSkillToolHostCapability(
   if (toolName.startsWith("computer_use_")) {
     return "host_cu";
   }
-  if (toolName.startsWith("app_control_")) {
-    return "host_app_control";
-  }
   return undefined;
 }
 

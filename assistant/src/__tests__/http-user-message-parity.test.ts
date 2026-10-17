@@ -193,7 +193,6 @@ function makeConversation(overrides: Record<string, unknown> = {}) {
     replayActivityState: () => {},
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     modeSessions: mockUnownedModeSessions(),
     emitConfirmationStateChanged: () => {},
@@ -825,7 +824,7 @@ describe("HTTP POST /v1/messages trust context from the gateway binding", () => 
   });
 
   // A web turn's "dev-bypass" principal must translate to the real guardian
-  // principal before the CU/app-control same-actor proxy-attachment gate,
+  // principal before the CU same-actor proxy-attachment gate,
   // so it matches the macOS client's SSE-registered principal.
   test("dev-bypass is translated to the guardian principal before the CU proxy attach gate (web turn)", async () => {
     hostProxyAttachCalls.length = 0;

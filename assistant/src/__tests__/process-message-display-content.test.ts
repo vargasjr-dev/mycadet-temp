@@ -124,10 +124,6 @@ mock.module("../daemon/conversation-slash.js", () => ({
   resolveSlash: async (content: string) => resolveSlashForTest(content),
 }));
 
-mock.module("../daemon/host-app-control-proxy.js", () => ({
-  HostAppControlProxy: class {},
-}));
-
 mock.module("../daemon/host-cu-proxy.js", () => ({
   HostCuProxy: class {},
 }));
@@ -219,7 +215,6 @@ function makeTestConversation() {
     ensureActorScopedHistory: async () => {},
     setChannelCapabilities: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     setCommandIntent: () => {},
     emitActivityState: () => {},
     forceCompact: mock(async () => ({

@@ -13,10 +13,10 @@ const TWILIO_ACCOUNT_SID_FIELD = "accountSid";
  * address the tunnel owns and can withdraw. Email callback re-registration
  * stays suppressed on that basis in every configuration.
  *
- * Telegram lifts the suppression while `tunnel-webhooks` is on, because the
- * published Tunnel URL is then the address Telegram is meant to point at and
- * this event is the only signal that it changed. That check lives at the call
- * site so this derivation stays a pure read of the event.
+ * Telegram still reconciles on this event, because the published Tunnel URL
+ * is the address Telegram is meant to point at and this event is the only
+ * signal that it changed. That check lives at the call site so this
+ * derivation stays a pure read of the event.
  */
 export function isOnlyTunnelPublicBaseUrlChange(
   event: ConfigChangeEvent,

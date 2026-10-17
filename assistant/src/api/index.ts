@@ -61,10 +61,6 @@ import { HeartbeatConversationCreatedEventSchema } from "./events/heartbeat-conv
 import { HomeFeedUpdatedEventSchema } from "./events/home-feed-updated.js";
 import { HookEventSchema } from "./events/hook-event.js";
 import {
-  HostAppControlCancelEventSchema,
-  HostAppControlRequestEventSchema,
-} from "./events/host-app-control.js";
-import {
   HostBashCancelEventSchema,
   HostBashRequestEventSchema,
 } from "./events/host-bash.js";
@@ -418,16 +414,6 @@ export {
   HookEventOwnerSchema,
   HookEventSchema,
 } from "./events/hook-event.js";
-export {
-  type HostAppControlCancelEvent,
-  HostAppControlCancelEventSchema,
-  type HostAppControlInput,
-  HostAppControlInputSchema,
-  type HostAppControlRequestEvent,
-  HostAppControlRequestEventSchema,
-  type HostAppControlSequenceStep,
-  HostAppControlSequenceStepSchema,
-} from "./events/host-app-control.js";
 export {
   type HostBashCancelEvent,
   HostBashCancelEventSchema,
@@ -1061,8 +1047,6 @@ export const AssistantEventSchema = z.discriminatedUnion("type", [
   HeartbeatConversationCreatedEventSchema,
   HomeFeedUpdatedEventSchema,
   HookEventSchema,
-  HostAppControlCancelEventSchema,
-  HostAppControlRequestEventSchema,
   HostBashCancelEventSchema,
   HostBashRequestEventSchema,
   HostBrowserCancelEventSchema,

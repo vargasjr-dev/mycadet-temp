@@ -3,7 +3,6 @@ import type { OutgoingHttpHeaders } from "node:http";
 import { buildUpstreamUrl, stripHopByHop } from "@mycadet/assistant-client";
 
 import { hasWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
-import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
 import { isSafeOriginRelativePath, WEBHOOK_PATH_PREFIX } from "./path-utils.js";
 import type { TunnelHeaders } from "./protocol.js";
 
@@ -11,8 +10,8 @@ const MAX_WEBSOCKET_CLOSE_REASON_BYTES = 123;
 
 /**
  * Tunnel admission is decided across three layers. The webhook ingress route
- * registry is authoritative for `/webhooks/*` once the `tunnel-webhooks` flag is
- * on, so an assistant that registers nothing accepts nothing. The static
+ * registry is authoritative for `/webhooks/*`, so an assistant that registers
+ * nothing accepts nothing there. The static
  * prefixes and exact paths below are authoritative for every other route, and
  * they still carry `/webhooks/twilio/` so Twilio keeps working until it
  * registers its own routes. The rules in `allowed-paths.ts` are the coarse
@@ -53,11 +52,7 @@ export const TUNNEL_ALLOWED_WEBSOCKET_EXACT_PATHS = [
 export const TUNNEL_FORWARDED_HEADER = "x-tunnel-forwarded" as const;
 
 export function isAllowedTunnelHttpPath(path: string): boolean {
-  if (
-    path.startsWith(WEBHOOK_PATH_PREFIX) &&
-    isFeatureFlagEnabled("tunnel-webhooks") &&
-    hasWebhookIngressRoute(path)
-  ) {
+  if (path.startsWith(WEBHOOK_PATH_PREFIX) && hasWebhookIngressRoute(path)) {
     return true;
   }
   return (

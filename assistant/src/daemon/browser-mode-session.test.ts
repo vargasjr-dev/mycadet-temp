@@ -2,7 +2,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { ModeSession } from "../api/mode-session.js";
-import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
+import {
+  isModeSessionRecoveryHealthy,
+  setModeSessionRecoveryHealthy,
+} from "../config/session-groups-gate.js";
 import { BrowserModeSessionProducer } from "./browser-mode-session.js";
 import type {
   ModeSessionSourceHandle,
@@ -110,16 +113,15 @@ describe("BrowserModeSessionProducer", () => {
     },
   );
 
-  test("admits new tracking only while the shared feature flag is enabled", () => {
+  test("admits new tracking only while mode-session recovery is healthy", () => {
     const state = createCoordinator();
     const producer = new BrowserModeSessionProducer(
       state.coordinator,
       1,
-      isSessionGroupsEnabled,
+      isModeSessionRecoveryHealthy,
     );
 
-    setOverridesForTesting({});
-    expect(isSessionGroupsEnabled()).toBe(false);
+    setModeSessionRecoveryHealthy(false);
     expect(
       producer.beginOperation({
         turnId: "turn-disabled",
@@ -129,7 +131,7 @@ describe("BrowserModeSessionProducer", () => {
     ).toBeUndefined();
     expect(state.activated).toEqual([]);
 
-    setOverridesForTesting({ "session-groups": true });
+    setModeSessionRecoveryHealthy(true);
     const admitted = producer.beginOperation({
       turnId: "turn-enabled",
       lifecycle: "action",
@@ -137,7 +139,7 @@ describe("BrowserModeSessionProducer", () => {
     });
     expect(admitted?.owner).toEqual({ id: "browser-1", mode: "browser" });
 
-    setOverridesForTesting({ "session-groups": false });
+    setModeSessionRecoveryHealthy(false);
     state.clearOwner();
     const close = producer.beginOperation({
       turnId: "turn-close",

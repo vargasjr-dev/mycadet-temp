@@ -279,7 +279,7 @@ describe("deriveStepLabel", () => {
   test("a tool's own reason argument is not read as its status", () => {
     const result = deriveStepLabel(
       buildToolCall({
-        name: "app_control_stop",
+        name: "computer_use_done",
         input: { reason: "Task complete" },
       }),
     );

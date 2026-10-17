@@ -11,7 +11,7 @@
 
 import { createRequire } from "node:module";
 
-import { isSessionGroupsEnabled } from "../config/session-groups-gate.js";
+import { isModeSessionRecoveryHealthy } from "../config/session-groups-gate.js";
 import type { SubagentParentNotification } from "../subagent/parent-notification.js";
 import { getLogger } from "../util/logger.js";
 import { LiveVoiceSessionManager } from "./live-voice-session-manager.js";
@@ -61,7 +61,7 @@ export function getLiveVoiceSessionManager(): LiveVoiceSessionManager {
           (
             require("./live-voice-session.js") as typeof import("./live-voice-session.js")
           ).createLiveVoiceSession;
-        const modeSessionOptions = isSessionGroupsEnabled()
+        const modeSessionOptions = isModeSessionRecoveryHealthy()
           ? {
               acquireModeSessionResidency: async (conversationId: string) => {
                 const { ensureConversationExists } =

@@ -81,25 +81,9 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
       "Virtual desktop is available only on enabled cloud-hosted assistants",
     );
   });
-  for (const flag of [false, undefined]) {
-    test(`refuses a containerized stream with a disabled or missing flag (${flag})`, async () => {
-      process.env.IS_CONTAINERIZED = "true";
-      setOverridesForTesting(
-        flag === undefined ? {} : { "assistant-desktop": flag },
-      );
-      const ws = new WebSocket(
-        `ws://${baseUrl}/v1/desktop/stream?token=${encodeURIComponent(mintGatewayToken())}`,
-      );
-      const closed = await waitForClose(ws);
-      expect(closed.code).toBe(4008);
-      expect(closed.reason).toBe(
-        "Virtual desktop is available only on enabled cloud-hosted assistants",
-      );
-    });
-  }
 });
 
-test("self-hosted containers cannot stream with the feature flag enabled", async () => {
+test("self-hosted containers cannot stream", async () => {
   const originalPlatform = process.env.IS_CLOUD;
   const originalContainerized = process.env.IS_CONTAINERIZED;
   const restoreAuth = requireHttpAuth();
@@ -108,7 +92,6 @@ test("self-hosted containers cannot stream with the feature flag enabled", async
     await server.start();
     process.env.IS_CLOUD = "false";
     process.env.IS_CONTAINERIZED = "true";
-    setOverridesForTesting({ "assistant-desktop": true });
     const baseUrl = `127.0.0.1:${server.actualPort}`;
     const ws = new WebSocket(
       `ws://${baseUrl}/v1/desktop/stream?token=${encodeURIComponent(mintGatewayToken())}`,
@@ -127,6 +110,5 @@ test("self-hosted containers cannot stream with the feature flag enabled", async
     } else {
       process.env.IS_CONTAINERIZED = originalContainerized;
     }
-    setOverridesForTesting({});
   }
 });

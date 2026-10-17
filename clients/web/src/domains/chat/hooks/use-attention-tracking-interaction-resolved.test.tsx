@@ -96,7 +96,6 @@ function publishInteractionResolved(payload: {
           | "host_file"
           | "host_cu"
           | "host_browser"
-          | "host_app_control"
           | "host_transfer",
       },
     });
@@ -311,7 +310,6 @@ describe("useAttentionTracking — interaction_resolved subscriber", () => {
       "host_file",
       "host_cu",
       "host_browser",
-      "host_app_control",
       "host_transfer",
       "future_intermediate_step",
     ]) {

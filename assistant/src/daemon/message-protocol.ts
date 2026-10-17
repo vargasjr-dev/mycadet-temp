@@ -10,7 +10,6 @@
 export * from "./message-types/computer-use.js";
 export * from "./message-types/conversations.js";
 export * from "./message-types/diagnostics.js";
-export * from "./message-types/host-app-control.js";
 export * from "./message-types/host-browser.js";
 export * from "./message-types/messages.js";
 export * from "./message-types/notifications.js";

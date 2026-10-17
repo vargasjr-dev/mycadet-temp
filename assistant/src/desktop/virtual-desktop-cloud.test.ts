@@ -20,7 +20,6 @@ let status: ReturnType<typeof spyOn<typeof desktopDependencies, "getStatus">>;
 beforeEach(() => {
   process.env.IS_CONTAINERIZED = "true";
   process.env.IS_CLOUD = "false";
-  setOverridesForTesting({ "assistant-desktop": true });
   status = spyOn(desktopDependencies, "getStatus").mockReturnValue({
     state: "ready",
   });

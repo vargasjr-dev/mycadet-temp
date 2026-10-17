@@ -83,7 +83,6 @@ import {
   type HistoryAttachmentRef,
   renderHistoryContent,
 } from "../../daemon/handlers/shared.js";
-import { HostAppControlProxy } from "../../daemon/host-app-control-proxy.js";
 import { HostCuProxy } from "../../daemon/host-cu-proxy.js";
 import {
   preactivateHostProxySkills,
@@ -2636,7 +2635,7 @@ export async function handleSendMessage(
       // turn an interrupt starts gets what an idle send gets. A send that queues
       // has returned above, and the turn it queued behind clears
       // `preactivatedSkillIds` when it ends, so running this before the decision
-      // would leave a released send without the `computer-use` and `app-control`
+      // would leave a released send without the `computer-use`
       // tools its client can service.
       //
       // `isProcessing()` reads false on every path that reaches here, bar the race
@@ -2657,27 +2656,6 @@ export async function handleSendMessage(
         }
       } else if (!conversation.isProcessing()) {
         conversation.setHostCuProxy(undefined);
-      }
-      // App-control mirrors CU's per-conversation lifecycle: the proxy owns a
-      // singleton lock plus per-session loop tracking. Instantiation is
-      // unconditional when the capability is reachable, because feature-flag
-      // gating lives in the skill-projection layer (which reads the `feature-flag:
-      // app-control` declaration in SKILL.md frontmatter), so an attached proxy
-      // is harmless when the flag resolves to off.
-      if (
-        shouldAttachHostProxyForCapability(
-          "host_app_control",
-          sourceInterface,
-          sourceActorPrincipalId,
-        )
-      ) {
-        if (!conversation.isProcessing() || !conversation.hostAppControlProxy) {
-          conversation.setHostAppControlProxy(
-            new HostAppControlProxy(mapping.conversationId),
-          );
-        }
-      } else if (!conversation.isProcessing()) {
-        conversation.setHostAppControlProxy(undefined);
       }
       // Preactivate only while the conversation is idle. A lock that changed hands
       // since the interrupt decision sends this message to the queue instead, and

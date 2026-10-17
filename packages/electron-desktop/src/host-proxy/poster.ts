@@ -80,17 +80,6 @@ export interface HostCuResultPayload {
   timings?: Record<string, number>;
 }
 
-export type HostAppControlState = "running" | "missing" | "minimized";
-
-export interface HostAppControlResultPayload {
-  requestId: string;
-  state: HostAppControlState;
-  pngBase64?: string;
-  windowBounds?: { x: number; y: number; width: number; height: number };
-  executionResult?: string;
-  executionError?: string;
-}
-
 export interface PresencePayload {
   state: PresenceState;
 }
@@ -179,12 +168,6 @@ export class HostProxyPoster {
 
   async postCuResult(result: HostCuResultPayload): Promise<boolean> {
     return this.postJson("/host-cu-result", result);
-  }
-
-  async postAppControlResult(
-    result: HostAppControlResultPayload,
-  ): Promise<boolean> {
-    return this.postJson("/host-app-control-result", result);
   }
 
   async postUiSnapshotResult(

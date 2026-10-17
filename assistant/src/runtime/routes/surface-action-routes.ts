@@ -157,7 +157,7 @@ async function handleSurfaceAction({
     await resolveRequesterTrustContext(actorPrincipalId);
 
   // Translate dev-bypass → real guardian so the surface turn's principal matches
-  // the SSE host-proxy client's registered principal; otherwise CU/app-control
+  // the SSE host-proxy client's registered principal; otherwise CU
   // same-actor checks reject the turn. Real principals pass through unchanged.
   const resolvedActorPrincipalId =
     await resolveActorPrincipalIdForLocalGuardian(

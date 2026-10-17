@@ -32,7 +32,6 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchImpl(...args),
 }));
 
-let tunnelWebhooksEnabled = false;
 let claimedRoutes: { path: string; type: string; source?: string | null }[] =
   [];
 let claimError: Error | undefined;
@@ -56,11 +55,8 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   },
 }));
 
-const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
-  ...actualFlagResolver,
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "tunnel-webhooks" ? tunnelWebhooksEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 const { syncConfiguredTwilioPhoneNumberWebhooks } =
@@ -68,7 +64,6 @@ const { syncConfiguredTwilioPhoneNumberWebhooks } =
 
 afterEach(() => {
   resetMockFetch();
-  tunnelWebhooksEnabled = false;
   claimedRoutes = [];
   claimError = undefined;
 });
@@ -295,8 +290,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
     expect(getMockFetchCalls()).toEqual([]);
   });
 
-  test("claims the voice and status paths before calling Twilio when the flag is on", async () => {
-    tunnelWebhooksEnabled = true;
+  test("claims the voice and status paths before calling Twilio", async () => {
     mockTwilioLookupAndUpdate();
     let claimedBeforeTwilio: number | undefined;
     const realFetchImpl = fetchImpl;
@@ -329,29 +323,7 @@ describe("syncConfiguredTwilioPhoneNumberWebhooks", () => {
     expect(claimedBeforeTwilio).toBe(2);
   });
 
-  test("claims nothing while the flag is off", async () => {
-    mockTwilioLookupAndUpdate();
-
-    await syncConfiguredTwilioPhoneNumberWebhooks(
-      makeCaches({
-        phoneNumber: PHONE_NUMBER,
-        accountSid: ACCOUNT_SID,
-        authToken: AUTH_TOKEN,
-        publicBaseUrl: "https://generic.example.test",
-      }),
-    );
-
-    expect(claimedRoutes).toEqual([]);
-    const calls = getMockFetchCalls();
-    expect(calls).toHaveLength(2);
-    const body = new URLSearchParams(String(calls[1].init.body));
-    expect(body.get("VoiceUrl")).toBe(
-      "https://generic.example.test/webhooks/twilio/voice",
-    );
-  });
-
   test("syncs the provider anyway when a path claim fails", async () => {
-    tunnelWebhooksEnabled = true;
     claimError = new Error("database disk image is malformed");
     mockTwilioLookupAndUpdate();
 

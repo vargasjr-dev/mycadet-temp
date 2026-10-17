@@ -28,8 +28,6 @@
  * the allowlist and the gateway's actual public surface.
  */
 
-import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
-
 /**
  * Public routes outside the webhook namespace:
  *
@@ -67,19 +65,6 @@ const TUNNEL_NON_WEBHOOK_ALLOWED_PATHS: readonly string[] = Object.freeze([
 const TUNNEL_TWILIO_WEBHOOKS_PATH = "^/webhooks/twilio/";
 
 /**
- * Every handler under `/webhooks/*`: Twilio voice, status, voice-verify, the
- * media-stream WebSocket upgrade, Telegram, WhatsApp, email, Resend, Mailgun,
- * the OAuth callback, and plugin-declared webhooks.
- */
-const TUNNEL_WEBHOOKS_WILDCARD_PATH = "^/webhooks/";
-
-/** The rules advertised while `tunnel-webhooks` is off. */
-export const TUNNEL_ALLOWED_PATHS: readonly string[] = Object.freeze([
-  TUNNEL_WEBHOOKS_WILDCARD_PATH,
-  ...TUNNEL_NON_WEBHOOK_ALLOWED_PATHS,
-]);
-
-/**
  * The rules that hold whatever the webhook ingress registry contains.
  * {@link buildTunnelAllowedPathsHeaderValue} appends one exact-match rule per
  * registered webhook path to these.
@@ -96,10 +81,6 @@ export const TUNNEL_STATIC_ALLOWED_PATHS: readonly string[] = Object.freeze([
  */
 export const TUNNEL_ALLOWED_PATHS_HEADER = "X-Cadet-Tunnel-Allowed-Paths";
 
-/** Encoded header value advertised while `tunnel-webhooks` is off. */
-export const TUNNEL_ALLOWED_PATHS_HEADER_VALUE =
-  JSON.stringify(TUNNEL_ALLOWED_PATHS);
-
 const RE2_METACHARACTERS = /[.*+?^${}()|[\]\\]/g;
 
 /** Escape `value` so it matches only itself under both RE2 and JavaScript. */
@@ -111,18 +92,12 @@ function escapeForRe2(value: string): string {
  * The header value to advertise for a tunnel serving the paths
  * `readRegisteredPaths` returns.
  *
- * With `tunnel-webhooks` off this is the wildcard allowlist, and the thunk is
- * never called: the registry has no bearing on those rules, so a flag-off
- * connect does not touch the database. With the flag on the webhook namespace
- * narrows to exactly the registered paths, so Tunnel drops anything else under
- * `/webhooks/` before it reaches the gateway.
+ * The webhook namespace narrows to exactly the registered paths, so Tunnel
+ * drops anything else under `/webhooks/` before it reaches the gateway.
  */
 export function buildTunnelAllowedPathsHeaderValue(
   readRegisteredPaths: () => string[],
 ): string {
-  if (!isFeatureFlagEnabled("tunnel-webhooks")) {
-    return TUNNEL_ALLOWED_PATHS_HEADER_VALUE;
-  }
   return JSON.stringify([
     ...TUNNEL_STATIC_ALLOWED_PATHS,
     ...readRegisteredPaths().map((path) => `^${escapeForRe2(path)}$`),

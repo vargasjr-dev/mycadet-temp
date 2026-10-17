@@ -16,12 +16,10 @@ mock.module("../fetch.js", () => ({
   fetchImpl: (...args: Parameters<FetchFn>) => fetchMock(...args),
 }));
 
-let tunnelWebhooksFlagEnabled = false;
 let registeredWebhookPaths = new Set<string>();
 
 mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (key: string) =>
-    key === "tunnel-webhooks" ? tunnelWebhooksFlagEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 mock.module("../db/webhook-ingress-route-store.js", () => ({
@@ -34,7 +32,6 @@ const TWILIO_EXAMPLE_PATH = "/webhooks/twilio/example";
 
 afterEach(() => {
   fetchMock = mock(async () => new Response());
-  tunnelWebhooksFlagEnabled = false;
   registeredWebhookPaths = new Set();
 });
 
@@ -325,23 +322,7 @@ describe("Tunnel HTTP bridge webhook ingress registry", () => {
     "/v1/credential-requests/submit",
   ];
 
-  test("flag off: a registered webhook path is still rejected", async () => {
-    registeredWebhookPaths = new Set(["/webhooks/telegram"]);
-    fetchMock = mock(async () => {
-      throw new Error("should not fetch");
-    });
-
-    const response = await bridgeTunnelHttpRequest(
-      makeFrame({ path: "/webhooks/telegram" }),
-      "http://127.0.0.1:7830",
-    );
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(response.status_code).toBe(502);
-  });
-
-  test("flag on: a registered webhook path is forwarded and its response relayed", async () => {
-    tunnelWebhooksFlagEnabled = true;
+  test("a registered webhook path is forwarded and its response relayed", async () => {
     registeredWebhookPaths = new Set(["/webhooks/telegram"]);
     const captured: string[] = [];
     fetchMock = mock(async (input: string | URL | Request) => {
@@ -359,8 +340,7 @@ describe("Tunnel HTTP bridge webhook ingress registry", () => {
     expect(decodeBase64(response.body_base64)).toBe("handled");
   });
 
-  test("flag on: an unregistered webhook path is rejected without contacting the loopback listener", async () => {
-    tunnelWebhooksFlagEnabled = true;
+  test("an unregistered webhook path is rejected without contacting the loopback listener", async () => {
     registeredWebhookPaths = new Set(["/webhooks/telegram"]);
     fetchMock = mock(async () => {
       throw new Error("should not fetch");
@@ -380,20 +360,17 @@ describe("Tunnel HTTP bridge webhook ingress registry", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("static allowlist paths are forwarded regardless of the flag", async () => {
-    for (const flagEnabled of [false, true]) {
-      tunnelWebhooksFlagEnabled = flagEnabled;
-      registeredWebhookPaths = new Set();
+  test("static allowlist paths are forwarded", async () => {
+    registeredWebhookPaths = new Set();
 
-      for (const path of STATIC_PATHS) {
-        fetchMock = mock(async () => new Response("ok", { status: 200 }));
-        const response = await bridgeTunnelHttpRequest(
-          makeFrame({ path }),
-          "http://127.0.0.1:7830",
-        );
-        expect(fetchMock).toHaveBeenCalledTimes(1);
-        expect(response.status_code).toBe(200);
-      }
+    for (const path of STATIC_PATHS) {
+      fetchMock = mock(async () => new Response("ok", { status: 200 }));
+      const response = await bridgeTunnelHttpRequest(
+        makeFrame({ path }),
+        "http://127.0.0.1:7830",
+      );
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(response.status_code).toBe(200);
     }
   });
 });

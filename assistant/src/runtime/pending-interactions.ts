@@ -7,7 +7,7 @@
  * (resolve/reject callbacks, timer, abort detach):
  *
  * - Host proxies (host_bash, host_file, host_cu, host_browser,
- *   host_app_control, host_transfer): register in request(), using
+ *   host_transfer): register in request(), using
  *   rpcResolve/rpcReject/timer/detachAbort/metadata.
  *
  * - Prompters (PermissionPrompter, SecretPrompter): register in prompt(),
@@ -97,7 +97,6 @@ export interface PendingInteraction {
     | "host_file"
     | "host_cu"
     | "host_browser"
-    | "host_app_control"
     | "host_transfer"
     | "host_ui_snapshot"
     | "acp_confirmation";
@@ -271,13 +270,12 @@ export function getByConversation(
  * Remove pending confirmation and secret interactions for a given conversation.
  * Used when auto-denying all pending interactions (e.g. new user message).
  *
- * host_bash, host_file, host_cu, host_browser, host_app_control, and
- * host_transfer interactions are intentionally skipped — they represent
+ * host_bash, host_file, host_cu, host_browser, and host_transfer
+ * interactions are intentionally skipped — they represent
  * in-flight tool executions proxied to the client, not confirmations to
  * auto-deny. Removing them would orphan the request: the client would POST to
  * /v1/host-bash-result, /v1/host-file-result, /v1/host-cu-result,
- * /v1/host-browser-result, /v1/host-app-control-result, or
- * /v1/host-transfer-result after completing the operation, get a 404, and the
+ * /v1/host-browser-result, or /v1/host-transfer-result after completing the operation, get a 404, and the
  * proxy timer would fire with a spurious timeout error.
  *
  * `question` interactions are also skipped: a new message settles an open
@@ -301,7 +299,6 @@ export function removeByConversation(
       interaction.kind !== "host_file" &&
       interaction.kind !== "host_cu" &&
       interaction.kind !== "host_browser" &&
-      interaction.kind !== "host_app_control" &&
       interaction.kind !== "host_transfer" &&
       interaction.kind !== "acp_confirmation" &&
       interaction.kind !== "question"

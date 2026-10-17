@@ -12,7 +12,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 let isPlatform = false;
-let tunnelWebhooksEnabled = false;
 let rawConfig: Record<string, unknown> = {};
 let cloudContextEnabled = false;
 
@@ -29,12 +28,6 @@ mock.module("../loader.js", () => ({
   ...actualLoader,
   loadRawConfig: () => rawConfig,
   getConfig: () => rawConfig,
-}));
-
-const actualTunnelGate = await import("../../inbound/tunnel-webhooks-gate.js");
-mock.module("../../inbound/tunnel-webhooks-gate.js", () => ({
-  ...actualTunnelGate,
-  isTunnelWebhooksEnabled: () => tunnelWebhooksEnabled,
 }));
 
 const actualRegistration =
@@ -57,7 +50,6 @@ const { hasIngressConfigured, hasWebhookRoutingConfigured } =
 describe("hasWebhookRoutingConfigured resolution order", () => {
   beforeEach(() => {
     isPlatform = false;
-    tunnelWebhooksEnabled = false;
     rawConfig = {};
     cloudContextEnabled = false;
   });
@@ -73,22 +65,8 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("cloud pods report managed even with an ingress URL configured", async () => {
+  test("a pod with a published ingress URL reports it", async () => {
     isPlatform = true;
-    rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
-
-    // `handleWebhooksRegister` registers with the cloud gateway before it
-    // ever reads the ingress config on a pod, so reporting the ingress URL
-    // here would name a URL no webhook is actually registered against.
-    expect(await hasWebhookRoutingConfigured(true)).toEqual({
-      configured: true,
-      usesCloudCallbacks: true,
-    });
-  });
-
-  test("tunnel-webhooks on: a pod with a published ingress URL reports it", async () => {
-    isPlatform = true;
-    tunnelWebhooksEnabled = true;
     rawConfig = { ingress: { publicBaseUrl: "https://tunnel.example.com" } };
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
@@ -97,9 +75,8 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("tunnel-webhooks on: a pod with no published URL still reports managed", async () => {
+  test("a pod with no published URL still reports managed", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
 
     expect(await hasWebhookRoutingConfigured(true)).toEqual({
       configured: true,
@@ -107,9 +84,8 @@ describe("hasWebhookRoutingConfigured resolution order", () => {
     });
   });
 
-  test("tunnel-webhooks on: a pod with ingress disabled falls back to managed", async () => {
+  test("a pod with ingress disabled falls back to managed", async () => {
     isPlatform = true;
-    tunnelWebhooksEnabled = true;
     rawConfig = { ingress: { enabled: false } };
 
     // Matches `resolveCallbackUrl` on pods: an owner toggling ingress off

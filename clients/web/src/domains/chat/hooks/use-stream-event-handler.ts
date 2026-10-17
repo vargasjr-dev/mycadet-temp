@@ -552,8 +552,6 @@ export function useStreamEventHandler(
         case "host_cu_cancel":
         case "host_ui_snapshot_request":
         case "host_ui_snapshot_cancel":
-        case "host_app_control_request":
-        case "host_app_control_cancel":
         case "host_browser_request":
         case "host_browser_cancel":
         case "host_file_request":

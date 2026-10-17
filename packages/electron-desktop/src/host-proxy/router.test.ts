@@ -93,7 +93,6 @@ const testRuntime: HostProxyRuntime = {
     host_transfer: unavailableExecutor,
     host_browser: unavailableExecutor,
     host_cu: unavailableExecutor,
-    host_app_control: unavailableExecutor,
     host_ui_snapshot: unavailableExecutor,
   },
   logger: { info: noopLog, warn: mockLogWarn, error: noopLog },

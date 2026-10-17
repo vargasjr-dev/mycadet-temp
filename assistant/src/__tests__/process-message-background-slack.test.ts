@@ -94,7 +94,6 @@ interface TestConversation {
   ensureActorScopedHistory: () => Promise<void>;
   setChannelCapabilities: () => void;
   setHostCuProxy: () => void;
-  setHostAppControlProxy: () => void;
   addPreactivatedSkillId: () => void;
   setCommandIntent: () => void;
   setTurnChannelContext: (ctx: TurnChannelContext) => void;
@@ -181,7 +180,6 @@ function makeConversation(): TestConversation {
     ensureActorScopedHistory: async () => {},
     setChannelCapabilities: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     setCommandIntent: () => {},
     setTurnChannelContext: (ctx: TurnChannelContext) => {

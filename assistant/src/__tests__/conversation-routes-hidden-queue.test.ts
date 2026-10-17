@@ -216,7 +216,6 @@ function makeConversationWithPendingConfirmation(
     hasPendingConfirmation: () => false,
     setHostBrowserProxy: () => {},
     setHostCuProxy: () => {},
-    setHostAppControlProxy: () => {},
     addPreactivatedSkillId: () => {},
     usageStats: { inputTokens: 1000, outputTokens: 500, estimatedCost: 0.05 },
   } as unknown as Conversation;

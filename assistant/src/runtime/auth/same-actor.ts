@@ -77,7 +77,6 @@ export type SameActorOp =
   // logged as host_cu would name a capability the caller may well hold.
   | "host_cu_annotate"
   | "host_browser"
-  | "host_app_control"
   | "host_transfer"
   | "host_ui_snapshot";
 

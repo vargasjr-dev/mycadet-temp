@@ -215,10 +215,7 @@ import {
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
-import {
-  areCloudFeaturesEnabled,
-  isFeatureFlagEnabled,
-} from "./feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "./feature-flag-resolver.js";
 import { isNewCommand, handleNewCommand } from "./webhook-pipeline.js";
 import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
@@ -435,14 +432,10 @@ async function main() {
     configFile: configFileCache,
   });
   // Tunnel only sees a webhook route on the next tunnel connect, so a registry
-  // write asks for one. With the flag off the advertised rules are a constant,
-  // so a write changes nothing worth reconnecting for; registry maintenance
-  // must never touch the tunnel in that state. A flag flip re-advertises via
-  // the flag-change handler, which picks up any rows written while off.
+  // write changes the advertised rules, so the tunnel re-advertises them on
+  // its next connect.
   onWebhookIngressRoutesChanged(() => {
-    if (isFeatureFlagEnabled("tunnel-webhooks")) {
-      tunnelClient?.requestRulesRefresh("webhook-routes-changed");
-    }
+    tunnelClient?.requestRulesRefresh("webhook-routes-changed");
   });
 
   // ── Integration readiness flags ──
@@ -710,7 +703,6 @@ async function main() {
     createChannelPermissionOverrideDeleteHandler();
   const handleChannelPermissionResolve =
     createChannelPermissionResolveHandler();
-
 
   const audioProxy = createAudioProxyHandler(config);
 
@@ -2858,15 +2850,11 @@ async function main() {
     configFileCache.invalidate();
 
     // Side effect: reconcile Telegram webhook when ingress URL changes
-    const onlyTunnelPublicBaseUrlChanged =
-      isOnlyTunnelPublicBaseUrlChange(event);
-    // A Tunnel-only publicBaseUrl change is the tunnel registering. While
-    // `tunnel-webhooks` is on that URL is what Telegram must be pointed at, so
-    // the suppression that keeps a tunnel address out of provider config is
-    // exactly what has to lift.
-    const telegramSuppressed =
-      onlyTunnelPublicBaseUrlChanged &&
-      !isFeatureFlagEnabled("tunnel-webhooks");
+    // A Tunnel-only publicBaseUrl change is the tunnel registering. That URL
+    // is what Telegram must be pointed at, so a reconcile on that event is
+    // exactly what lifts the suppression that keeps a tunnel address out of
+    // provider config.
+    const telegramSuppressed = isOnlyTunnelPublicBaseUrlChange(event);
 
     if (
       event.changedKeys.has("ingress") &&
@@ -2904,10 +2892,12 @@ async function main() {
     }
 
     // Side effect: re-register email callback when ingress URL changes so
-    // the cloud callback route points at the new self-hosted URL.
+    // the cloud callback route points at the new self-hosted URL. A
+    // Tunnel-only publicBaseUrl change is the tunnel registering, which
+    // doesn't move the email callback's host.
     if (
       event.changedKeys.has("ingress") &&
-      !onlyTunnelPublicBaseUrlChanged &&
+      !isOnlyTunnelPublicBaseUrlChange(event) &&
       cadetReady
     ) {
       registerEmailCallbackRoute({
@@ -2956,27 +2946,8 @@ async function main() {
 
   void refreshRouteSchema();
 
-  let tunnelWebhooksEnabled = isFeatureFlagEnabled("tunnel-webhooks");
   emitFlagChanged = () => {
     ipcServer.emit("feature_flags_changed");
-    // The flag decides the shape of the advertised rules, so flipping it has
-    // to re-advertise rather than wait out the periodic tunnel refresh.
-    const enabled = isFeatureFlagEnabled("tunnel-webhooks");
-    if (enabled !== tunnelWebhooksEnabled) {
-      tunnelWebhooksEnabled = enabled;
-      tunnelClient?.requestRulesRefresh("tunnel-webhooks-flag-changed");
-      // The flag also decides which address a pod hands Telegram, and nothing
-      // else re-runs the reconcile when it moves. One call covers a flip in
-      // either direction because the resolver reads the new value.
-      if (isTelegramConfigured()) {
-        reconcileTelegramWebhook(telegramCaches).catch((err) => {
-          log.error(
-            { err },
-            "Failed to reconcile Telegram webhook after tunnel-webhooks flag change",
-          );
-        });
-      }
-    }
   };
 
   const featureFlagWatcher = new FeatureFlagWatcher({

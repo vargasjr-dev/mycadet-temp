@@ -138,7 +138,7 @@ Existing sessions and explicit backend/client choices take priority.
 not the user's Chrome. --desktop remains an alias for --virtual-desktop.
 Use --virtual-desktop for Chrome in the Desktop panel.
 Run navigate --url <url> directly to open a page.
-The assistant-desktop feature flag and a desktop-enabled assistant image are required.
+A desktop-enabled assistant image is required.
 Chrome and desktop components are included in the image. The first browser command
 starts Chrome and completes the requested action without downloading or installing
 anything. Missing components require an assistant image update.

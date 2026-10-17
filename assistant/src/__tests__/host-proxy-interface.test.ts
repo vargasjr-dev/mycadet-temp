@@ -66,22 +66,20 @@ describe("supportsHostProxy (runtime)", () => {
     expect(supportsHostProxy("windows", "host_cu")).toBe(true);
   });
 
-  test("capability form withholds unimplemented Windows app control", () => {
+  test("capability form grants desktop host capabilities to windows", () => {
     expect(supportsHostProxy("windows", "host_bash")).toBe(true);
     expect(supportsHostProxy("windows", "host_file")).toBe(true);
     expect(supportsHostProxy("windows", "host_cu")).toBe(true);
     expect(supportsHostProxy("windows", "host_browser")).toBe(true);
     expect(supportsHostProxy("windows", "host_ui_snapshot")).toBe(true);
-    expect(supportsHostProxy("windows", "host_app_control")).toBe(false);
   });
 
-  test("capability form withholds unimplemented Linux app control", () => {
+  test("capability form matches macOS desktop capabilities", () => {
     expect(supportsHostProxy("linux", "host_bash")).toBe(true);
     expect(supportsHostProxy("linux", "host_file")).toBe(true);
     expect(supportsHostProxy("linux", "host_cu")).toBe(true);
     expect(supportsHostProxy("linux", "host_browser")).toBe(true);
     expect(supportsHostProxy("linux", "host_ui_snapshot")).toBe(true);
-    expect(supportsHostProxy("linux", "host_app_control")).toBe(false);
   });
 
   test("capability form rejects everything for non-host-proxy interfaces", () => {

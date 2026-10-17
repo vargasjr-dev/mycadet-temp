@@ -192,7 +192,7 @@ export function useAttentionTracking({
   // signal that the daemon has handed control back to a person and the
   // attention indicator should clear. Every other kind (today, the
   // host-proxy family: `host_bash`, `host_file`, `host_cu`,
-  // `host_browser`, `host_app_control`, `host_transfer`) resolves as
+  // `host_browser`, `host_transfer`) resolves as
   // an intermediate tool step during a turn that is still running, so
   // those must not clear the processing indicator. Filtering by an
   // explicit allowlist — rather than denylisting `host_*` — means

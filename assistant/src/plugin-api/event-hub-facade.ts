@@ -11,7 +11,7 @@
  * Two classes of hub method are withheld:
  *
  * - **`publish` of host-proxy control events** (`host_bash_*`, `host_file_*`,
- *   `host_transfer_*`, `host_browser_*`, `host_cu_*`, `host_app_control_*`).
+ *   `host_transfer_*`, `host_browser_*`, `host_cu_*`).
  *   These drive privileged shell / file / input / browser execution on the
  *   desktop client; the host proxies gate that execution (risk classification,
  *   user approval, same-actor binding, pending-interaction registration) before

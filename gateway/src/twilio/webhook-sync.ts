@@ -10,7 +10,6 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { registerWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
-import { isFeatureFlagEnabled } from "../feature-flag-resolver.js";
 import { fetchImpl } from "../fetch.js";
 import { getLogger } from "../logger.js";
 
@@ -49,9 +48,6 @@ function resolveEffectiveTwilioBaseUrl(
  * that fails is logged and the sync continues.
  */
 function claimTwilioWebhookIngressRoutes(phoneNumber: string): void {
-  if (!isFeatureFlagEnabled("tunnel-webhooks")) {
-    return;
-  }
   for (const claim of TWILIO_WEBHOOK_CLAIMS) {
     try {
       registerWebhookIngressRoute({ ...claim, source: phoneNumber });
