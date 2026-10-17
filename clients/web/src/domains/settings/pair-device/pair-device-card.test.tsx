@@ -28,7 +28,6 @@ import {
 
 let gatewayPath: string | undefined = "/assistant/__gateway/20100";
 let supportsPairingRoutes = true;
-let pairedDevicesUIOn = true;
 let selectedAssistant: {
   assistantId: string;
   cloud: string;
@@ -47,14 +46,6 @@ mock.module("@/lib/local-mode", () => ({
 
 mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({
   useSupportsRemoteWebPairing: () => supportsPairingRoutes,
-}));
-
-mock.module("@/stores/client-feature-flag-store", () => ({
-  useClientFeatureFlagStore: {
-    use: {
-      pairedDevicesUI: () => pairedDevicesUIOn,
-    },
-  },
 }));
 
 mock.module("@/lib/error-reporting/capture-error", () => ({
@@ -249,7 +240,6 @@ function recheckButton(): HTMLElement | null {
 beforeEach(() => {
   gatewayPath = "/assistant/__gateway/20100";
   supportsPairingRoutes = true;
-  pairedDevicesUIOn = true;
   selectedAssistant = { assistantId: "self", cloud: "local" };
   listDevicesResult = { ok: false, error: "unavailable" };
   listDevicesCalls = 0;
@@ -437,35 +427,6 @@ describe("PairDeviceCard", () => {
     expect(
       await screen.findByRole("button", { name: "Paired devices (1)" }),
     ).toBeTruthy();
-  });
-
-  test("hides the paired-devices section when paired-devices-ui is off", async () => {
-    // The rest of the card stays; only the list + revoke section is gated.
-    pairedDevicesUIOn = false;
-    listDevicesResult = {
-      ok: true,
-      devices: [
-        {
-          hashedDeviceId: "aaaabbbbccccdddd0000111122223333",
-          platform: "ios",
-          issuedAt: null,
-          expiresAt: null,
-          lastUsedAt: null,
-        },
-      ],
-    };
-    renderCard();
-
-    expect(screen.getByText("Pair a device")).toBeTruthy();
-    // The mount-time pending-request poll settles; the device list is never
-    // fetched, so the host `cadet devices` spawn never happens.
-    await waitFor(() =>
-      expect(
-        fetchLog.some((r) => r.url.endsWith("/v1/remote-web/pairing-requests")),
-      ).toBe(true),
-    );
-    expect(screen.queryByRole("button", { name: /Paired devices/ })).toBeNull();
-    expect(listDevicesCalls).toBe(0);
   });
 
   test("falls back to generic copy when the assistant has no name", () => {

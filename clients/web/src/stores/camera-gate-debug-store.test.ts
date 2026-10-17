@@ -24,13 +24,23 @@ import {
   syncFrameGateDebugOptions,
 } from "@/lib/camera/frame-gate-debug";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
+import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import {
   clearCameraGateDebug,
   useCameraGateDebugStore,
 } from "@/stores/camera-gate-debug-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 const STORAGE_KEY = "cadet:debug:cameraGateHud";
+
+const STAFF_USER: AuthUser = {
+  kind: "platform",
+  id: "user-1",
+  username: "staffer",
+  email: "staffer@mycadet.ai",
+  isStaff: true,
+  firstName: "Staff",
+  lastName: "Member",
+};
 
 const initialState = useCameraGateDebugStore.getState();
 
@@ -48,9 +58,9 @@ beforeEach(() => {
     true,
   );
   localStorage.removeItem(STORAGE_KEY);
-  // The flag is what makes this session one that may reach the readout, which
-  // is the other half of what the gate is handed.
-  useClientFeatureFlagStore.setState({ cameraGateDebugHud: true });
+  // Staff identity is what lets this session reach the readout, which is the
+  // other half of what the gate is handed.
+  useAuthStore.setState({ user: STAFF_USER });
   stopAccessSync = setupCameraGateHudAccessSync();
 });
 
@@ -62,7 +72,6 @@ afterEach(() => {
     true,
   );
   syncFrameGateDebugOptions(false, defaultFrameGateOverrides());
-  useClientFeatureFlagStore.setState({ cameraGateDebugHud: false });
   localStorage.removeItem(STORAGE_KEY);
 });
 

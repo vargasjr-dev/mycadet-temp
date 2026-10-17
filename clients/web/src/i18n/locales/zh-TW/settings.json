@@ -977,7 +977,6 @@
     "removeDialogConfirm": "移除",
     "removeDialogMessage": "您確定要移除「{serverId}」嗎？這將會中斷此伺服器提供的所有工具。",
     "removeDialogTitle": "移除 MCP 伺服器",
-    "setupPrompt": "協助我設定 MCP 伺服器，以外部工具擴充您。",
     "toastRemoveFailed": "移除 {serverId} 失敗",
     "toastRemoved": "已移除 {serverId}"
   },

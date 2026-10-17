@@ -8,7 +8,6 @@
 
 import { cameraGateHudAvailable } from "@/lib/camera/frame-gate-debug-access";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useAuthStore } from "@/stores/auth-store";
 
 /**
@@ -18,8 +17,7 @@ import { useAuthStore } from "@/stores/auth-store";
  */
 export function useCameraGateHudAvailable(): boolean {
   const user = useAuthStore.use.user();
-  const flagged = useClientFeatureFlagStore.use.cameraGateDebugHud();
-  return cameraGateHudAvailable(user, flagged === true);
+  return cameraGateHudAvailable(user);
 }
 
 /** Whether the panel should be collecting and on screen. */

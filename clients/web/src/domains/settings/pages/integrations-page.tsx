@@ -36,7 +36,6 @@ import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
-import { navigateToNewConversation } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 
 import { IntegrationConnectModal } from "../components/integration-connect-modal";
@@ -135,7 +134,6 @@ function IntegrationsPanelInner({
   const location = useLocation();
   const cloudGate = useCloudGate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const allowAdd = useAssistantFeatureFlagStore.use.mcpAddServer();
   const flagsHydrated = useAssistantFeatureFlagStore.use.hasHydrated();
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(true);
@@ -459,11 +457,7 @@ function IntegrationsPanelInner({
   });
 
   const addCustom = () => {
-    if (allowAdd) {
-      mcp.setAddOpen(true);
-    } else {
-      navigateToNewConversation(navigate, { prompt: t("mcpPage.setupPrompt") });
-    }
+    mcp.setAddOpen(true);
   };
 
   const renderItem = (item: IntegrationItem) => {
@@ -608,7 +602,6 @@ function IntegrationsPanelInner({
       ) : null}
       <McpConnectionDialogs
         connections={mcp}
-        allowAdd={allowAdd}
         attemptReportedElsewhere={inlineAttemptShown}
       />
       {connect.managed && assistant ? (

@@ -62,8 +62,7 @@ import { createSelectors } from "@/utils/create-selectors";
 export interface CameraGateDebugState {
   /**
    * Whether the readout collects and renders. Gated again at every call site
-   * on staff identity or the `camera-gate-debug-hud` flag, so this alone does
-   * not put the panel on screen.
+   * on staff identity, so this alone does not put the panel on screen.
    */
   hudEnabled: boolean;
   /** What the sliders hold. Always a complete set, defaults included. */

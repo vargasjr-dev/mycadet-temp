@@ -39,7 +39,6 @@ let heldPluginRemoval: (() => void) | null = null;
 let holdPluginRemoval = false;
 let assistantAvailable = true;
 let cloudGate = "full";
-let allowAdd = true;
 let hydrated = true;
 let cloudHosted = true;
 let managedStatus: "idle" | "attempting" | "connected" = "attempting";
@@ -78,7 +77,6 @@ mock.module("@/utils/conversation-navigation", () =>
 mock.module("@/stores/assistant-feature-flag-store", () => ({
   useAssistantFeatureFlagStore: {
     use: {
-      mcpAddServer: () => allowAdd,
       hasHydrated: () => hydrated,
     },
   },
@@ -411,7 +409,6 @@ afterEach(() => {
   cloudHosted = true;
   managedStatus = "attempting";
   managedError = null;
-  allowAdd = true;
   hydrated = true;
   installedPluginNames.length = 0;
   removedPluginNames.length = 0;
@@ -1444,16 +1441,6 @@ describe("IntegrationsPage", () => {
     await screen.findByRole("button", { name: "search_pages" });
     screen.getByText("https://mcp.example.com/mcp");
     await settle();
-  });
-
-  test("custom setup preserves the assistant-guided feature fallback", async () => {
-    allowAdd = false;
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-    await screen.findByText("No integrations are available.");
-    fireEvent.click(
-      screen.getByRole("button", { name: "Add custom integration" }),
-    );
-    expect(setupConversation).toHaveBeenCalledTimes(1);
   });
 
   test("custom setup waits for feature hydration", async () => {

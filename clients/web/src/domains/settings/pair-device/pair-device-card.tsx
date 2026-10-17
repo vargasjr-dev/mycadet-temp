@@ -14,7 +14,6 @@ import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { Trans, useTranslation } from "@/i18n";
 import { useSupportsRemoteWebPairing } from "@/lib/backwards-compat/remote-web-pairing-gate";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { docsUrl, routes } from "@/utils/routes";
 
@@ -83,16 +82,14 @@ const PAIRING_DOCS_URL = docsUrl(routes.docs.pairADevice);
  *
  * Rendered only in desktop/local mode against an on-machine gateway (the gate
  * lives in {@link resolvePairDeviceTarget}) whose assistant version serves the
- * pairing routes ({@link useSupportsRemoteWebPairing}). The client-scoped
- * `paired-devices-ui` flag decides only whether the paired-devices list +
- * revoke section renders inside the card; revocation itself stays available
- * via `cadet devices` on the host.
+ * pairing routes ({@link useSupportsRemoteWebPairing}). The paired-devices
+ * list + revoke section renders inside the card; revocation itself stays
+ * available via `cadet devices` on the host.
  */
 export function PairDeviceCard() {
   const { t } = useTranslation("settings");
   const target = resolvePairDeviceTarget();
   const supported = useSupportsRemoteWebPairing();
-  const pairedDevicesUIOn = useClientFeatureFlagStore.use.pairedDevicesUI();
   const tunnel = useTunnelStatus(supported && target !== null);
   // Whether the daemon's verdict is the card's source of truth right now. The
   // hook already folds every way the probe can fail to answer into
@@ -314,15 +311,11 @@ export function PairDeviceCard() {
           onApproved={() => setDevicesRevalidateKey((key) => key + 1)}
         />
 
-        {/* Poll while a code is live so an externally claimed pairing shows up.
-            Gating at the render site also keeps the host `cadet devices`
-            fetch from ever firing while the flag is off. */}
-        {pairedDevicesUIOn && (
-          <PairedDevicesSection
-            pollWhilePairing={isReady && !pair.expired}
-            revalidateKey={devicesRevalidateKey}
-          />
-        )}
+        {/* Poll while a code is live so an externally claimed pairing shows up. */}
+        <PairedDevicesSection
+          pollWhilePairing={isReady && !pair.expired}
+          revalidateKey={devicesRevalidateKey}
+        />
 
         <ExternalAnchor
           href={PAIRING_DOCS_URL}

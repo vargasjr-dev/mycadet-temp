@@ -376,9 +376,6 @@ export function ChatMainPanel({
   );
   const assistantState = useAssistantLifecycleStore.use.assistantState();
   const assistantName = useAssistantIdentityStore.use.name();
-  const chatPullToRefreshEnabled =
-    useClientFeatureFlagStore.use.chatPullToRefreshEnabled();
-
   // -------------------------------------------------------------------------
   // Store reads — per-conversation state
   // -------------------------------------------------------------------------
@@ -1320,7 +1317,7 @@ export function ChatMainPanel({
     onInspectMessage: handleInspectMessage,
     renderAvatar,
     onPullRefresh: handlePullRefresh,
-    pullRefreshEnabled: chatPullToRefreshEnabled && touchSupported,
+    pullRefreshEnabled: touchSupported,
     scrollCoordinatorState: {
       showScrollToLatest: scrollCoordinator.showScrollToLatest,
       shouldLoadOlder: false,

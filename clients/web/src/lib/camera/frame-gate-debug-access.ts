@@ -10,8 +10,8 @@
  *
  * Losing access drops the applied overrides and leaves the persisted switch
  * and the slider values alone. Writing the switch off instead would erase the
- * preference on every launch, because access reads false during boot until the
- * session and the flags land.
+ * preference on every launch, because access reads false during boot until
+ * the session lands.
  *
  * The account is watched from here too. A tuning session belongs to whoever
  * ran it, so the preference is dropped when a different account signs in.
@@ -33,30 +33,17 @@ import {
   useCameraGateDebugStore,
   watchCameraGateDebugStorage,
 } from "@/stores/camera-gate-debug-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 /**
- * Whether a session may reach the readout.
- *
- * Two signals, and the flag is not redundant with the staff check. A local
- * gateway session has no platform identity and is never staff, and a local
- * session is exactly where the gate gets tuned: a developer with a webcam and
- * a dev server. The flag is what lets that session in without widening who
- * counts as staff.
+ * Whether a session may reach the readout: staff only.
  */
-export function cameraGateHudAvailable(
-  user: AuthUser | null,
-  flagged: boolean,
-): boolean {
-  return isCadetStaff(user) || flagged;
+export function cameraGateHudAvailable(user: AuthUser | null): boolean {
+  return isCadetStaff(user);
 }
 
 /** The same answer read outside React, for the subscriptions below. */
 function availableNow(): boolean {
-  return cameraGateHudAvailable(
-    useAuthStore.getState().user,
-    useClientFeatureFlagStore.getState().cameraGateDebugHud === true,
-  );
+  return cameraGateHudAvailable(useAuthStore.getState().user);
 }
 
 /**
@@ -127,7 +114,7 @@ function ownsPersistedPreference(ownerUserId: string | null): boolean {
  * Call once at startup. Returns an unsubscribe for tests.
  *
  * The subscriptions carry no selector: the answer is a function of slices in
- * three stores, and a selectorless subscriber runs on every write to any of
+ * two stores, and a selectorless subscriber runs on every write to any of
  * them, including the persist middleware restoring a switch left on.
  *
  * Another tab's write is picked up here too, gated on
@@ -140,9 +127,6 @@ function ownsPersistedPreference(ownerUserId: string | null): boolean {
 export function setupCameraGateHudAccessSync(): () => void {
   onAuthChange();
   const unsubscribeAuth = useAuthStore.subscribe(onAuthChange);
-  const unsubscribeFlags = useClientFeatureFlagStore.subscribe(
-    applyEffectiveOptions,
-  );
   const unsubscribeDebug = useCameraGateDebugStore.subscribe(
     applyEffectiveOptions,
   );
@@ -152,7 +136,6 @@ export function setupCameraGateHudAccessSync(): () => void {
   );
   return () => {
     unsubscribeAuth();
-    unsubscribeFlags();
     unsubscribeDebug();
     unwatchStorage();
   };

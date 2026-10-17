@@ -1051,7 +1051,6 @@
     "removeDialogConfirm": "Remove",
     "removeDialogMessage": "Are you sure you want to remove \"{serverId}\"? This will disconnect all tools provided by this server.",
     "removeDialogTitle": "Remove MCP Server",
-    "setupPrompt": "Help me set up an MCP server to extend you with external tools.",
     "toastRemoveFailed": "Failed to remove {serverId}",
     "toastRemoved": "Removed {serverId}"
   },

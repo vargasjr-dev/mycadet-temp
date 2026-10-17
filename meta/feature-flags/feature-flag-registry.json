@@ -8,7 +8,10 @@
       "label": "In-Chat Onboarding Tour",
       "description": "Multivariate experiment for the eyes-led in-chat onboarding tour. control = straight to chat after research onboarding (current behavior); tour = the extended tour auto-plays on first workspace entry. Desktop-only: phone-width viewports and the native shell get neither the tour nor its telemetry (not even the exposure event), so the funnel measures desktop sessions exclusively. Targeted via LaunchDarkly (70% tour / 30% control).",
       "defaultEnabled": "control",
-      "values": ["control", "tour"]
+      "values": [
+        "control",
+        "tour"
+      ]
     },
     {
       "id": "vision-mode",
@@ -17,7 +20,10 @@
       "label": "Vision Mode",
       "description": "Gates hold-to-Live ambient frame sampling in the voice room camera. String-valued so future A/B arms can be added as new values.",
       "defaultEnabled": "off",
-      "values": ["off", "on"]
+      "values": [
+        "off",
+        "on"
+      ]
     },
     {
       "id": "settings-developer-nav",
@@ -116,14 +122,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "camera-gate-debug-hud",
-      "scope": "client",
-      "key": "camera-gate-debug-hud",
-      "label": "Camera Gate Debug HUD",
-      "description": "Unlock the camera frame gate's tuning readout: the switch in the camera's view options that turns it on, and the live panel over the composer's sight tile and the voice room's viewfinder showing motion, novelty and detail against their thresholds, the check that decided each frame, and sliders that move those thresholds while the camera runs. Staff sessions get it without the flag; the flag is for local gateway sessions, which carry no platform identity and are where the gate is tuned.",
-      "defaultEnabled": false
-    },
-    {
       "id": "compaction-playground",
       "scope": "assistant",
       "key": "compaction-playground",
@@ -137,14 +135,6 @@
       "key": "app-control",
       "label": "App Control",
       "description": "Enable the app-control skill (per-app screenshot + raw input bypassing AX tree)",
-      "defaultEnabled": false
-    },
-    {
-      "id": "chat-pull-to-refresh-enabled",
-      "scope": "client",
-      "key": "chat-pull-to-refresh-enabled",
-      "label": "Chat Pull to Refresh",
-      "description": "Enable pull-to-refresh gesture in the chat view.",
       "defaultEnabled": false
     },
     {
@@ -169,14 +159,6 @@
       "key": "self-hosted-assistant",
       "label": "Self-Hosted Assistant",
       "description": "Enable self-hosted assistant configuration.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "paired-devices-ui",
-      "scope": "client",
-      "key": "paired-devices-ui",
-      "label": "Paired Devices UI",
-      "description": "Show the paired-devices list and revoke controls inside the pair-a-device settings card. Visibility only; `cadet devices` on the host stays available.",
       "defaultEnabled": false
     },
     {
@@ -218,14 +200,6 @@
       "label": "Channel Trust Floors",
       "description": "Server-side switch for admission-floor enforcement: the gateway kill switch, the runtime floor stage, and enforcement-time policy resolution gate on it. Configuration reads and writes stay available while it is off. On by default. Client UI visibility is version-gated, not flag-gated.",
       "defaultEnabled": true
-    },
-    {
-      "id": "mcp-add-server",
-      "scope": "assistant",
-      "key": "mcp-add-server",
-      "label": "MCP Add Server",
-      "description": "Show the Add Server action on the MCP settings page. The MCP page itself remains visible; this flag gates only creating new Model Context Protocol server connections.",
-      "defaultEnabled": false
     },
     {
       "id": "mcp-catalog-qa-integrations",
@@ -394,7 +368,12 @@
       "label": "Experiment: Activation Checklist (2026-09-10)",
       "description": "A/B test of the post-onboarding activation checklist (welcome modal, suggestions pill, inspiration list). off = control, the standard chat landing with no checklist; smb / parent / general = the checklist with that persona's task list. Any other value hides the checklist. Percentages per arm are set in LaunchDarkly; the readout keys a user on their first-ever assignment, so a new round gets a new key.",
       "defaultEnabled": "off",
-      "values": ["off", "smb", "parent", "general"]
+      "values": [
+        "off",
+        "smb",
+        "parent",
+        "general"
+      ]
     },
     {
       "id": "send-user-message",

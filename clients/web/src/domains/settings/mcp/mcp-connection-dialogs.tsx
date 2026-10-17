@@ -10,11 +10,9 @@ import type { useMcpConnections } from "./use-mcp-connections";
 
 export function McpConnectionDialogs({
   connections,
-  allowAdd,
   attemptReportedElsewhere = false,
 }: {
   connections: ReturnType<typeof useMcpConnections>;
-  allowAdd: boolean;
   /**
    * Set while another surface already draws the sign-in in flight, so the
    * same attempt is not reported twice on one page. The notice stays for
@@ -54,14 +52,12 @@ export function McpConnectionDialogs({
           </div>
         </Notice>
       ) : null}
-      {allowAdd ? (
-        <McpAddServerModal
-          open={connections.addOpen}
-          onClose={() => connections.setAddOpen(false)}
-          onAdd={connections.addCustom}
-          isPending={add.isPending}
-        />
-      ) : null}
+      <McpAddServerModal
+        open={connections.addOpen}
+        onClose={() => connections.setAddOpen(false)}
+        onAdd={connections.addCustom}
+        isPending={add.isPending}
+      />
       <McpServerDetailModal
         server={configureServer}
         readOnly={configureServer?.source === "plugin"}

@@ -210,9 +210,9 @@ function findTouch(touches: TouchList, touchId: number): Touch | null {
  * along with the scroll exactly as `.onDrag` does on a native list.
  *
  * For the same reason the gesture does not claim exclusive ownership of a
- * downward drag. Pull-to-refresh (`usePullToRefresh`, behind
- * `chat-pull-to-refresh-enabled`) reads the same drag when the thread is
- * pinned to its latest message, and commits at 64px against this hook's 40px,
+ * downward drag. Pull-to-refresh (`usePullToRefresh`) reads the same drag
+ * when the thread is pinned to its latest message, and commits at 64px
+ * against this hook's 40px,
  * so a pull with the keyboard up both dismisses and refreshes. That is the
  * native behaviour, not a collision to arbitrate away: pulling Mail's list
  * down with the keyboard up puts the keyboard away and still refreshes. The

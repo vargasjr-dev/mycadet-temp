@@ -977,7 +977,6 @@
     "removeDialogConfirm": "Eliminar",
     "removeDialogMessage": "¿Seguro que quieres eliminar \"{serverId}\"? Esto desconectará todas las herramientas proporcionadas por este servidor.",
     "removeDialogTitle": "Eliminar servidor MCP",
-    "setupPrompt": "Ayúdame a configurar un servidor MCP para ampliarte con herramientas externas.",
     "toastRemoveFailed": "No se pudo eliminar {serverId}",
     "toastRemoved": "Se eliminó {serverId}"
   },

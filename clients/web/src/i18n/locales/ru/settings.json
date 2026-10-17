@@ -963,7 +963,6 @@
     "removeDialogConfirm": "Удалить",
     "removeDialogMessage": "Точно удалить \"{serverId}\"? Это отключит все инструменты этого сервера.",
     "removeDialogTitle": "Удалить MCP-сервер",
-    "setupPrompt": "Помоги настроить MCP-сервер, чтобы расширить тебя внешними инструментами.",
     "toastRemoveFailed": "Не удалось удалить {serverId}",
     "toastRemoved": "Удалён {serverId}"
   },

@@ -18,7 +18,6 @@ import {
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
 import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 const STORAGE_KEY = "cadet:debug:cameraGateHud";
 
@@ -83,7 +82,6 @@ function resetStores(): void {
     },
     true,
   );
-  useClientFeatureFlagStore.setState({ cameraGateDebugHud: false });
   useAuthStore.setState({ user: LOCAL_USER });
 }
 
@@ -103,25 +101,6 @@ afterEach(() => {
 });
 
 describe("camera gate readout access", () => {
-  test("a session that loses the flag stops tuning the gate and keeps its preference", () => {
-    useClientFeatureFlagStore.setState({ cameraGateDebugHud: true });
-    const store = useCameraGateDebugStore.getState();
-    store.setHudEnabled(true);
-    store.setOverride("noveltyThreshold", 1.5);
-    expect(FRAME_GATE_LIVE_OPTIONS.noveltyThreshold).toBe(1.5);
-
-    useClientFeatureFlagStore.setState({ cameraGateDebugHud: false });
-
-    expect({ ...FRAME_GATE_LIVE_OPTIONS }).toEqual({
-      ...DEFAULT_FRAME_GATE_OPTIONS,
-    });
-    expect(useCameraGateDebugStore.getState().hudEnabled).toBe(true);
-    expect(useCameraGateDebugStore.getState().overrides.noveltyThreshold).toBe(
-      1.5,
-    );
-    expect(persistedHudEnabled()).toBe(true);
-  });
-
   test("a session that stops being staff stops tuning the gate", () => {
     useAuthStore.setState({ user: STAFF_USER });
     const store = useCameraGateDebugStore.getState();
