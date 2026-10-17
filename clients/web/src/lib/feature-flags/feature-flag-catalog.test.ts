@@ -173,7 +173,7 @@ describe("getEnvFlagOverridesForScope", () => {
     (globalThis as Record<string, unknown>).window = {
       __CADET_FLAG_OVERRIDES__: {
         // client-only flag (boolean)
-        "velvet": true,
+        velvet: true,
         // assistant-only flag (boolean) — should be excluded from client scope
         "settings-developer-nav": true,
         // client-visible flag (string)
