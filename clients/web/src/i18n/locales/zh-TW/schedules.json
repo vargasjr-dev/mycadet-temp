@@ -67,9 +67,6 @@
     "timezone": "時區"
   },
   "systemTaskDetail": {
-    "openMemorySettings": "開啟記憶體設定",
-    "turnOnMemory": "開啟記憶體",
-    "memorySettings": "記憶體設定",
     "fallbackModelProfile": "預設（系統任務模型）",
     "repeats": "重複",
     "nameHeartbeat": "心跳",

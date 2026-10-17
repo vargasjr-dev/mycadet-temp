@@ -693,15 +693,6 @@ export const routeTree = [
                     },
                   },
                   {
-                    path: "developer",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/developer-page").then(
-                          (m) => m.DeveloperPage,
-                        ),
-                    },
-                  },
-                  {
                     path: "personality",
                     lazy: {
                       Component: () =>

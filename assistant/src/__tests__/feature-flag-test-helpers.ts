@@ -73,7 +73,6 @@ export function setAllFlagsOffForTesting(): void {
 export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
-  "settings-developer-nav",
   "cadet-hosted-inference",
   "developer-menu-items",
   "multi-platform-assistant",
@@ -88,9 +87,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "compaction-playground",
   "app-control",
   "preview-channel",
-  "rollback-enabled",
-  "self-hosted-assistant",
-  "settings-sleep-policy",
   "velvet",
   "memory-router-playground",
   "self-intro-greeting",

@@ -6,15 +6,20 @@ import {
   mkdirSync,
   existsSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { testSecurityDir } from "./test-preload.js";
 
 const protectedDir = testSecurityDir;
 const featureFlagStorePath = join(protectedDir, "feature-flags.json");
+const defaultsDir = join(
+  tmpdir(),
+  `cadet-gateway-test-defaults-${Math.random().toString(36).slice(2)}`,
+);
 
 // Write the test registry to an isolated temp path so we never touch
 // the committed gateway/src/feature-flag-registry.json file.
-const defaultsPath = join(protectedDir, "feature-flag-registry.json");
+const defaultsPath = join(defaultsDir, "feature-flag-registry.json");
 
 const TEST_REGISTRY = {
   version: 1,
@@ -56,6 +61,7 @@ const TEST_REGISTRY = {
 
 beforeEach(() => {
   mkdirSync(protectedDir, { recursive: true });
+  mkdirSync(defaultsDir, { recursive: true });
   writeFileSync(defaultsPath, JSON.stringify(TEST_REGISTRY, null, 2));
   // Point registry resolution at the isolated test file first
   _setRegistryCandidateOverrides([defaultsPath]);
@@ -442,8 +448,8 @@ describe("PATCH /v1/feature-flags/:flagKey handler", () => {
   });
 
   test("creates feature-flags.json and directories when they do not exist", async () => {
-    // Remove the protected dir to test directory creation
-    rmSync(protectedDir, { recursive: true, force: true });
+    // Remove the store's directory (fixture registry lives elsewhere) to
+    // test store + directory creation
 
     const handler = createFeatureFlagsPatchHandler();
     const res = await handler(

@@ -27,8 +27,6 @@ import { SidebarTree, type SidebarItem } from "@/components/sidebar-tree";
  * navigation) and an `<Outlet />` for the active settings tab page.
  */
 export function SettingsLayout() {
-  const settingsDeveloperNav =
-    useAssistantFeatureFlagStore.use.settingsDeveloperNav();
   const cadetHostedInference =
     useAssistantFeatureFlagStore.use.cadetHostedInference();
   // Settings brings its own full-screen chrome; the Windows in-title-bar
@@ -95,8 +93,6 @@ export function SettingsLayout() {
           return t("sidebar.community", "Community");
         case "debug":
           return t("sidebar.debug", "Debug");
-        case "developer":
-          return t("sidebar.developer", "Developer");
         case "personality":
           return t("sidebar.personality", "Personality");
         default:
@@ -121,7 +117,7 @@ export function SettingsLayout() {
         if (item.id === "credentials" && !supportsCredentials) {
           return false;
         }
-        if (item.id === "developer" || item.id === "personality") {
+        if (item.id === "personality") {
           return false;
         }
         return true;
@@ -150,16 +146,6 @@ export function SettingsLayout() {
         ),
       );
     }
-    if (settingsDeveloperNav) {
-      items.push(
-        ...SETTINGS_SIDEBAR.filter((item) => item.id === "developer").map(
-          (item) => ({
-            ...item,
-            label: getSidebarLabel(item.id, item.label),
-          }),
-        ),
-      );
-    }
     // The auth action is pinned to the very bottom of the nav.
     items.push(
       hasCloudSession
@@ -178,7 +164,6 @@ export function SettingsLayout() {
     );
     return items;
   }, [
-    settingsDeveloperNav,
     cadetHostedInference,
     hasCloudSession,
     navigate,

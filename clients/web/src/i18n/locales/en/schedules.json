@@ -67,9 +67,6 @@
     "timezone": "Timezone"
   },
   "systemTaskDetail": {
-    "openMemorySettings": "Open Memory settings",
-    "turnOnMemory": "Turn on Memory",
-    "memorySettings": "Memory settings",
     "fallbackModelProfile": "Default (system task model)",
     "repeats": "Repeats",
     "nameHeartbeat": "Heartbeat",

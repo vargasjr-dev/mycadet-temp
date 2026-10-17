@@ -48,10 +48,9 @@ export function memoryV1UpgradePrompt(): string {
 }
 
 /**
- * Seeds the turn-memory-back-on chat. The Memory toggle lives on the Developer
- * page, which is gated behind the `settingsDeveloperNav` flag and redirects to
- * General Settings without it — so for most users the assistant is the only
- * reachable way to flip `memory.enabled`, not a fallback for one.
+ * Seeds the turn-memory-back-on chat. There is no user-facing Memory toggle
+ * (the Developer page's Memory tab was retired), so the assistant is the only
+ * way to flip `memory.enabled`, not a fallback for one.
  */
 export function memoryEnablePrompt(): string {
   return t("memoryUnavailable.prompts.enable", { ns: "intelligence" });

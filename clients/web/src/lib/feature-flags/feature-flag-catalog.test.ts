@@ -175,7 +175,7 @@ describe("getEnvFlagOverridesForScope", () => {
         // client-only flag (boolean)
         velvet: true,
         // assistant-only flag (boolean) — should be excluded from client scope
-        "settings-developer-nav": true,
+        "cadet-hosted-inference": true,
         // client-visible flag (string)
         "experiment-activation-checklist-2026-09-10": "variant-a",
       },
@@ -186,7 +186,7 @@ describe("getEnvFlagOverridesForScope", () => {
     expect(result.str).toEqual({
       experimentActivationChecklist20260910: "variant-a",
     });
-    expect(result.bool).not.toHaveProperty("settingsDeveloperNav");
+    expect(result.bool).not.toHaveProperty("cadetHostedInference");
   });
 
   test("keeps booleanish Vite env values as strings for string-valued flags", () => {

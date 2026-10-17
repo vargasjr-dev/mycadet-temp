@@ -1,6 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Play, Settings } from "lucide-react";
-import { useNavigate } from "react-router";
+import { Play } from "lucide-react";
 
 import { DetailShellHeader } from "@/components/detail-shell";
 import { InsetDetailCard } from "@/components/inset-detail-card";
@@ -23,7 +22,6 @@ import {
   heartbeatRunsGetInfiniteOptions,
   retrospectiveRunsGetInfiniteOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library";
 import { Notice } from "@mycadet/design-library/components/notice";
 import { Toggle } from "@mycadet/design-library/components/toggle";
@@ -68,7 +66,6 @@ export interface SystemTaskDetailPanelProps {
   kind: SystemTaskKind;
   assistantId: string;
   systemTasks: SystemTasksData;
-  canOpenMemorySettings: boolean;
   onClose: () => void;
 }
 
@@ -82,11 +79,9 @@ export function SystemTaskDetailPanel({
   kind,
   assistantId,
   systemTasks,
-  canOpenMemorySettings,
   onClose,
 }: SystemTaskDetailPanelProps) {
   const { t } = useTranslation("schedules");
-  const navigate = useNavigate();
   const { heartbeatConfig, consolidationConfig, retrospectiveConfig } =
     systemTasks;
   const heartbeatTimezone =
@@ -155,8 +150,6 @@ export function SystemTaskDetailPanel({
     : isRetrospective
       ? t("systemTaskDetail.pausedRetrospective")
       : t("systemTaskDetail.pausedConsolidation");
-  const showMemorySettings =
-    isMemoryManaged && enabled && canOpenMemorySettings;
 
   const opts = {
     path: { assistant_id: assistantId },
@@ -274,25 +267,7 @@ export function SystemTaskDetailPanel({
             </div>
           </InsetDetailCard>
           {isMemoryPaused ? (
-            <Notice
-              tone="warning"
-              className="mt-4"
-              actions={
-                canOpenMemorySettings ? (
-                  <Button
-                    variant="outlined"
-                    size="compact"
-                    onClick={() =>
-                      navigate(`${routes.settings.developer}?tab=memory`)
-                    }
-                  >
-                    {isRetrospectiveSwitchedOff
-                      ? t("systemTaskDetail.openMemorySettings")
-                      : t("systemTaskDetail.turnOnMemory")}
-                  </Button>
-                ) : undefined
-              }
-            >
+            <Notice tone="warning" className="mt-4">
               {pausedNotice}
             </Notice>
           ) : null}
@@ -308,19 +283,8 @@ export function SystemTaskDetailPanel({
       </div>
 
       {/* Footer actions */}
-      {showMemorySettings || onRunNow ? (
+      {onRunNow ? (
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-[var(--border-hover)] p-[var(--app-spacing-lg)]">
-          {showMemorySettings ? (
-            <Button
-              variant="outlined"
-              leftIcon={<Settings className="h-3.5 w-3.5" />}
-              onClick={() =>
-                navigate(`${routes.settings.developer}?tab=memory`)
-              }
-            >
-              {t("systemTaskDetail.memorySettings")}
-            </Button>
-          ) : null}
           {onRunNow ? (
             <Button
               variant="primary"

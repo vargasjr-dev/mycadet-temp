@@ -80,7 +80,6 @@ const meta: Meta<typeof SystemTaskDetailPanel> = {
     kind: "heartbeat",
     assistantId: ASSISTANT_ID,
     systemTasks: makeSystemTasks(),
-    canOpenMemorySettings: true,
     onClose: () => {},
   },
 };

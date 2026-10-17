@@ -12,21 +12,19 @@ import {
 } from "./lifecycle";
 
 describe("assistantStateCanServeChat", () => {
-  test("active always serves chat", () => {
-    expect(assistantStateCanServeChat("active", false)).toBe(true);
-    expect(assistantStateCanServeChat("active", true)).toBe(true);
+  test("active serves chat", () => {
+    expect(assistantStateCanServeChat("active")).toBe(true);
   });
 
-  test("self_hosted serves chat only when the flag is on", () => {
-    expect(assistantStateCanServeChat("self_hosted", true)).toBe(true);
-    expect(assistantStateCanServeChat("self_hosted", false)).toBe(false);
+  test("self_hosted serves chat — the daemon is the runtime", () => {
+    expect(assistantStateCanServeChat("self_hosted")).toBe(true);
   });
 
   test("every other kind is not serving chat", () => {
-    expect(assistantStateCanServeChat("loading", true)).toBe(false);
-    expect(assistantStateCanServeChat("initializing", true)).toBe(false);
-    expect(assistantStateCanServeChat("cleaning_up", true)).toBe(false);
-    expect(assistantStateCanServeChat("error", true)).toBe(false);
+    expect(assistantStateCanServeChat("loading")).toBe(false);
+    expect(assistantStateCanServeChat("initializing")).toBe(false);
+    expect(assistantStateCanServeChat("cleaning_up")).toBe(false);
+    expect(assistantStateCanServeChat("error")).toBe(false);
   });
 });
 

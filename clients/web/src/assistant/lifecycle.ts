@@ -49,16 +49,15 @@ export function isTransportShapedError(
  * Whether this lifecycle kind can serve chat queries and the surfaces
  * that mirror them (sidebar, Home Screen widgets, dock badge).
  *
- * `active` is a running assistant. `self_hosted` is too, once the
- * self-hosted chat flag is on: the cloud record is provisioned and
- * the daemon is the runtime, so the same conversation list that ChatPage
- * already renders must also reach the layout-owned queries.
+ * `active` is a running assistant. `self_hosted` is too: the cloud
+ * record is provisioned and the daemon is the runtime, so the same
+ * conversation list that ChatPage already renders must also reach the
+ * layout-owned queries.
  */
 export function assistantStateCanServeChat(
   kind: AssistantState["kind"],
-  selfHostedChatEnabled: boolean,
 ): boolean {
-  return kind === "active" || (kind === "self_hosted" && selfHostedChatEnabled);
+  return kind === "active" || kind === "self_hosted";
 }
 
 export function resolveAssistantLifecycleState(

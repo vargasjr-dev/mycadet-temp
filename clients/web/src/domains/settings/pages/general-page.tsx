@@ -12,14 +12,12 @@ import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { AssistantPicker } from "@/domains/settings/components/assistant-picker";
-import { AssistantSleepPolicy } from "@/domains/settings/components/assistant-sleep-policy";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
 import {
   AssistantUpgrades,
   LocalAssistantUpgrades,
 } from "@/domains/settings/components/assistant-upgrades";
 import { DeleteAccountSection } from "@/domains/settings/components/delete-account-section";
-import { DevModeVersionUnlock } from "@/domains/settings/components/dev-mode-version-unlock";
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
@@ -48,7 +46,6 @@ import {
 } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useIsAuthenticated } from "@/stores/auth-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useTranslation } from "@/i18n";
@@ -67,8 +64,6 @@ export function GeneralPage() {
   } = useAssistantWithHealthz();
   const multiCloudAssistant =
     useClientFeatureFlagStore.use.multiCloudAssistant();
-  const settingsSleepPolicy =
-    useAssistantFeatureFlagStore.use.settingsSleepPolicy();
   const isAuthenticated = useIsAuthenticated();
   const isNativeMobile = useIsNativeMobile();
   // The card supersedes the in-page picker so the two never render together.
@@ -242,11 +237,15 @@ export function GeneralPage() {
               <span className="text-body-medium-default text-[var(--content-tertiary)]">
                 {t("generalPage.current")}
               </span>
-              <DevModeVersionUnlock
-                version={versionValue}
-                loading={healthzLoading && !assistant.current_release_version}
-                assistantId={assistant.id ?? null}
-              />
+              {healthzLoading && !assistant.current_release_version ? (
+                <span className="text-body-medium-lighter text-[var(--content-tertiary)]">
+                  —
+                </span>
+              ) : (
+                <span className="break-all text-body-medium-lighter text-[var(--content-default)]">
+                  {versionValue ?? "—"}
+                </span>
+              )}
             </div>
           )}
           {infraGate === "disabled" && !canUpgradeLocally && (
@@ -312,24 +311,6 @@ export function GeneralPage() {
 
       <PairDeviceCard />
 
-      {infraGate === "full" && cloudAssistant && settingsSleepPolicy && (
-        <DetailCard
-          title={t("generalPage.sleepPolicyTitle")}
-          subtitle={t("generalPage.sleepPolicySubtitle")}
-        >
-          <AssistantSleepPolicy assistantId={cloudAssistant.id} />
-        </DetailCard>
-      )}
-      {infraGate === "disabled" && settingsSleepPolicy && (
-        <DetailCard
-          title={t("generalPage.sleepPolicyTitle")}
-          subtitle={t("generalPage.sleepPolicySubtitle")}
-        >
-          <CloudLoginNotice>
-            {t("generalPage.sleepPolicyLoginNotice")}
-          </CloudLoginNotice>
-        </DetailCard>
-      )}
 
       {multiCloudAssistant && !showAssistantSwitcherCard && (
         <AssistantPicker />

@@ -8,14 +8,7 @@ import { MemoryRouter } from "react-router";
 
 import { ApiError } from "@/utils/api-errors";
 
-let developerMode = false;
 let ownCredentials: Array<{ service: string; field: string }> = [];
-let cloudCredentials: Array<{
-  handle: string;
-  provider: string;
-  accountInfo: string | null;
-  status: string;
-}> = [];
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-123",
@@ -29,14 +22,6 @@ mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({
   useSupportsCredentialsSettings: () => true,
 }));
 
-mock.module("@/stores/assistant-feature-flag-store", () => {
-  const store = () => null;
-  store.use = {
-    settingsDeveloperNav: () => developerMode,
-  };
-  return { useAssistantFeatureFlagStore: store };
-});
-
 mock.module("@/stores/assistant-identity-store", () => {
   const store = () => null;
   store.use = {
@@ -48,7 +33,7 @@ mock.module("@/stores/assistant-identity-store", () => {
 
 mock.module("@/generated/daemon/sdk.gen", () => ({
   credentialsListPost: async () => ({
-    data: { credentials: ownCredentials, cloudCredentials },
+    data: { credentials: ownCredentials },
   }),
 }));
 
@@ -135,55 +120,13 @@ function Wrapper({ children }: { children: ReactNode }) {
 
 afterEach(() => {
   cleanup();
-  developerMode = false;
   ownCredentials = [];
-  cloudCredentials = [];
   deleteBodies = [];
   deleteError = null;
   capturedErrors.length = 0;
 });
 
 describe("CredentialsPage", () => {
-  test("hides cloud credentials and the source split outside developer mode", async () => {
-    ownCredentials = [{ service: "stripe", field: "api_key" }];
-    cloudCredentials = [
-      {
-        handle: "managed-google",
-        provider: "Google",
-        accountInfo: "user@example.com",
-        status: "connected",
-      },
-    ];
-
-    render(<CredentialsPage />, { wrapper: Wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText("stripe:api_key")).not.toBeNull();
-    });
-    expect(screen.queryByLabelText("Credential source")).toBeNull();
-    expect(screen.queryByText("Google")).toBeNull();
-  });
-
-  test("shows the source split and cloud credentials in developer mode", async () => {
-    developerMode = true;
-    ownCredentials = [{ service: "stripe", field: "api_key" }];
-    cloudCredentials = [
-      {
-        handle: "managed-google",
-        provider: "Google",
-        accountInfo: "user@example.com",
-        status: "connected",
-      },
-    ];
-
-    render(<CredentialsPage />, { wrapper: Wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByLabelText("Credential source")).not.toBeNull();
-    });
-    expect(screen.getByText("stripe:api_key")).not.toBeNull();
-  });
-
   test("deletes without force once the first confirmation is accepted", async () => {
     // GIVEN a stored credential no connection depends on
     ownCredentials = [{ service: "agentrouter", field: "api_key" }];
@@ -269,22 +212,4 @@ describe("CredentialsPage", () => {
     expect(screen.queryByText("Credential is in use")).toBeNull();
   });
 
-  test("shows the empty state instead of cloud credentials outside developer mode", async () => {
-    cloudCredentials = [
-      {
-        handle: "managed-google",
-        provider: "Google",
-        accountInfo: "user@example.com",
-        status: "connected",
-      },
-    ];
-
-    render(<CredentialsPage />, { wrapper: Wrapper });
-
-    await waitFor(() => {
-      expect(screen.getByText("No credentials yet")).not.toBeNull();
-    });
-    expect(screen.queryByLabelText("Credential source")).toBeNull();
-    expect(screen.queryByText("Google")).toBeNull();
-  });
 });

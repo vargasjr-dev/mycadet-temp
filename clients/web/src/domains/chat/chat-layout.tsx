@@ -12,7 +12,6 @@ import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import {
   selectChatFocusActive,
   selectHeaderCenterHidden,
@@ -214,15 +213,10 @@ export function ChatLayout({
   const assistantStateKind = useAssistantLifecycleStore(
     (s) => s.assistantState.kind,
   );
-  const selfHostedChatEnabled =
-    useClientFeatureFlagStore.use.selfHostedAssistant();
-  // `active` and flagged `self_hosted` both serve the conversation list.
+  // `active` and `self_hosted` both serve the conversation list.
   // Gating on `active` alone leaves self-hosted queries pending forever,
   // so the Home Screen widgets never receive a snapshot.
-  const isAssistantActive = assistantStateCanServeChat(
-    assistantStateKind,
-    selfHostedChatEnabled,
-  );
+  const isAssistantActive = assistantStateCanServeChat(assistantStateKind);
 
   // Live-voice session controller. Owned at layout scope — not by the
   // composer — so a session survives every chat-side navigation (thread

@@ -175,7 +175,6 @@
     }
   },
   "memoryUpgradePrompt": {
-    "memorySettings": "记忆设置",
     "tryAgain": "重试",
     "turnMemoryOn": "开启记忆",
     "upgradeMemory": "升级记忆"

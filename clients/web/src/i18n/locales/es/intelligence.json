@@ -175,7 +175,6 @@
     }
   },
   "memoryUpgradePrompt": {
-    "memorySettings": "Ajustes de memoria",
     "tryAgain": "Intentar de nuevo",
     "turnMemoryOn": "Activar la memoria",
     "upgradeMemory": "Actualizar memoria"

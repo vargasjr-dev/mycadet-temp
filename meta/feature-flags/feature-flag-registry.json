@@ -20,14 +20,6 @@
       "values": ["off", "on"]
     },
     {
-      "id": "settings-developer-nav",
-      "scope": "assistant",
-      "key": "settings-developer-nav",
-      "label": "Settings Developer Nav",
-      "description": "Control Developer nav visibility in macOS settings",
-      "defaultEnabled": false
-    },
-    {
       "id": "cadet-hosted-inference",
       "scope": "assistant",
       "key": "cadet-hosted-inference",
@@ -137,30 +129,6 @@
       "key": "preview-channel",
       "label": "Preview Channel",
       "description": "Enable user-facing Preview release channel controls in assistant settings.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "rollback-enabled",
-      "scope": "assistant",
-      "key": "rollback-enabled",
-      "label": "Rollback Enabled",
-      "description": "Show older versions in the version picker, allowing rollback to previous releases.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "self-hosted-assistant",
-      "scope": "client",
-      "key": "self-hosted-assistant",
-      "label": "Self-Hosted Assistant",
-      "description": "Enable self-hosted assistant configuration.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "settings-sleep-policy",
-      "scope": "assistant",
-      "key": "settings-sleep-policy",
-      "label": "Settings Sleep Policy",
-      "description": "Enable sleep policy settings.",
       "defaultEnabled": false
     },
     {

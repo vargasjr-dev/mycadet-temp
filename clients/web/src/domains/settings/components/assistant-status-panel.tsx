@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import { type Assistant, getAssistant } from "@/assistant/api";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { CapacityBar } from "@/domains/settings/components/capacity-bar";
-import { DevModeVersionUnlock } from "@/domains/settings/components/dev-mode-version-unlock";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
@@ -321,11 +320,7 @@ export function AssistantStatusPanel({
       </Value>
 
       <Label>{t("assistantStatusPanel.version")}</Label>
-      <DevModeVersionUnlock
-        version={version ?? null}
-        loading={healthzLoading && !assistant.current_release_version}
-        assistantId={assistant.id ?? null}
-      />
+      <Value>{healthzLoading && !assistant.current_release_version ? "—" : version ?? "—"}</Value>
     </div>
   );
 }

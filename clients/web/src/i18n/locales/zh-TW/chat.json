@@ -1678,11 +1678,6 @@
     "title": "安全憑證",
     "tools": "工具：{list}"
   },
-  "selfHostedScreen": {
-    "body": "自託管助理的對話尚未在網頁端提供。請從設定中管理您的助理。",
-    "openSettings": "開啟設定",
-    "title": "自託管助理"
-  },
   "setupScreen": {
     "settingUp": "正在設定您的助理…"
   },

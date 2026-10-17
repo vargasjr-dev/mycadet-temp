@@ -16,19 +16,14 @@ import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
 import { Button } from "@mycadet/design-library/components/button";
-import { Card } from "@mycadet/design-library/components/card";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { Input } from "@mycadet/design-library/components/input";
 import { Modal } from "@mycadet/design-library/components/modal";
 import {
-  SegmentControl,
-  type SegmentControlItem,
 } from "@mycadet/design-library/components/segment-control";
-import { Tag } from "@mycadet/design-library/components/tag";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import {
@@ -42,12 +37,6 @@ import {
 } from "./credential-requests-api";
 
 /** A cloud credential from the credentials list. Read-only. */
-interface CloudCredentialRow {
-  handle: string;
-  provider: string;
-  accountInfo: string | null;
-  status: string;
-}
 
 /** A freshly minted one-time credential-request link, shown in a modal. */
 interface GeneratedLink {
@@ -62,7 +51,6 @@ interface GeneratedLink {
 const SEARCH_VISIBILITY_THRESHOLD = 6;
 
 /** Which credential group the segment control is showing. */
-type CredentialView = "own" | "managed";
 
 /**
  * A delete the daemon refused because provider connections still dispatch
@@ -112,7 +100,6 @@ function CredentialsPageInner() {
       });
       return {
         credentials: data.credentials as StoredCredential[],
-        cloudCredentials: data.cloudCredentials as CloudCredentialRow[],
       };
     },
     enabled: isOrgReady,
@@ -123,20 +110,9 @@ function CredentialsPageInner() {
     () => listQuery.data?.credentials ?? [],
     [listQuery.data],
   );
-  // Cloud credentials are provisioned by Cadet and can only be read here, so
-  // the list and the cloud/personal split are developer-mode surfaces.
-  // Standard users see just the credentials they can act on.
-  const isDeveloperMode =
-    useAssistantFeatureFlagStore.use.settingsDeveloperNav();
-  const cloudCredentials = useMemo(
-    () => (isDeveloperMode ? (listQuery.data?.cloudCredentials ?? []) : []),
-    [isDeveloperMode, listQuery.data],
-  );
-
   // --- Ephemeral UI state ---
 
   const [isShowingAddForm, setIsShowingAddForm] = useState(false);
-  const [credentialView, setCredentialView] = useState<CredentialView>("own");
   const [searchText, setSearchText] = useState("");
   const [pendingDeletion, setPendingDeletion] =
     useState<StoredCredential | null>(null);
@@ -208,16 +184,6 @@ function CredentialsPageInner() {
       setSearchText("");
     }
   }, [credentials.length]);
-
-  // When the own credential list is empty but cloud credentials exist, default
-  // to the Managed tab so users see their credentials instead of an empty state.
-  // The user can still switch to "Your own" to add one — this only fires when the
-  // data changes, not on every view toggle.
-  useEffect(() => {
-    if (credentials.length === 0 && cloudCredentials.length > 0) {
-      setCredentialView("managed");
-    }
-  }, [credentials.length, cloudCredentials.length]);
 
   // --- Handlers ---
 
@@ -303,79 +269,32 @@ function CredentialsPageInner() {
   }
 
   const hasCredentials = credentials.length > 0;
-  const hasManaged = cloudCredentials.length > 0;
 
   // Search stays hidden for short lists where scanning is faster than typing;
   // it only earns its place once the list is long enough to get unwieldy.
   const showSearch = credentials.length > SEARCH_VISIBILITY_THRESHOLD;
 
-  const showManaged = credentialView === "managed" && hasManaged;
-  const showOwn = !showManaged;
-  const segmentItems: SegmentControlItem<CredentialView>[] = [
-    { value: "own", label: t("credentialsPage.segmentYourOwn") },
-    { value: "managed", label: t("credentialsPage.segmentManaged") },
-  ];
 
   return (
     <div className="space-y-4">
       <DetailCard
         title={t("credentialsPage.title")}
-        subtitle={
-          showManaged
-            ? t("credentialsPage.subtitleManaged")
-            : t("credentialsPage.subtitleOwn")
-        }
+        subtitle={t("credentialsPage.subtitleOwn")}
         accessory={
-          <div className="flex items-center gap-2">
-            {hasManaged ? (
-              <SegmentControl
-                items={segmentItems}
-                value={credentialView}
-                onChange={setCredentialView}
-                ariaLabel={t("credentialsPage.credentialSourceAriaLabel")}
-              />
-            ) : null}
-            {showOwn && hasCredentials ? (
-              <Button
-                type="button"
-                variant="primary"
-                size="regular"
-                onClick={() => setIsShowingAddForm(true)}
-                leftIcon={<Plus aria-hidden />}
-              >
-                {t("credentialsPage.addButton")}
-              </Button>
-            ) : null}
-          </div>
+          hasCredentials ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="regular"
+              onClick={() => setIsShowingAddForm(true)}
+              leftIcon={<Plus aria-hidden />}
+            >
+              {t("credentialsPage.addButton")}
+            </Button>
+          ) : null
         }
       >
-        {showManaged ? (
-          <div className="space-y-2">
-            {cloudCredentials.map((managed) => (
-              <Card.Root key={managed.handle}>
-                <Card.Body
-                  padding="sm"
-                  className="flex items-center gap-4 px-4"
-                >
-                  <KeyRound
-                    className="h-5 w-5 shrink-0 text-[var(--content-secondary)]"
-                    aria-hidden
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-title-small text-[var(--content-default)]">
-                      {managed.provider}
-                    </p>
-                    <p className="truncate text-body-medium-lighter text-[var(--content-tertiary)]">
-                      {managed.accountInfo ?? managed.handle} · {managed.status}
-                    </p>
-                  </div>
-                  <Tag tone="neutral">{t("credentialsPage.managedTag")}</Tag>
-                </Card.Body>
-              </Card.Root>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {hasCredentials ? (
               <div className="space-y-3">
                 {showSearch ? (
@@ -444,7 +363,6 @@ function CredentialsPageInner() {
               </Button>
             )}
           </div>
-        )}
       </DetailCard>
 
       <ConfirmDialog

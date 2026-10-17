@@ -2,14 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
-import { useDevModeVersionTap } from "@/domains/settings/components/dev-mode-version-unlock";
 import {
   assistantsRetrieveOptions,
   assistantsRetrieveQueryKey,
   releasesListOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import {
-  assistantsRollbackDetailCreate,
   assistantsUpgradeDetailCreate,
 } from "@/generated/api/sdk.gen";
 import type {
@@ -24,12 +22,10 @@ import {
   getVisibleReleaseChannel,
   isRuntimeUpgradeAvailable,
 } from "@/lib/local-runtime-upgrade";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { compareParsed, parseSemver } from "@/utils/semver";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
-import { Select } from "@mycadet/design-library/components/select";
 import { toast } from "@mycadet/design-library/components/toast";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
@@ -50,33 +46,16 @@ function releaseLabel(
 
 const POLL_INTERVAL_MS = 3000;
 
-/**
- * The "Current" version value, doubling as the 7-tap developer-mode unlock
- * target (see `useDevModeVersionTap`). Shared by both the cloud and local
- * upgrade panels so the unlock lives on the version label that is on screen.
- */
 function CurrentVersionValue({
   version,
-  assistantId,
 }: {
   version: string | null | undefined;
-  assistantId: string | null;
 }) {
-  const { onTap, message } = useDevModeVersionTap(assistantId);
   return (
     <div className="min-w-0">
-      <button
-        type="button"
-        className="block min-w-0 break-all text-left text-body-medium-lighter text-[var(--content-default)]"
-        onClick={onTap}
-      >
+      <span className="block min-w-0 break-all text-body-medium-lighter text-[var(--content-default)]">
         {version ?? "—"}
-      </button>
-      {message && (
-        <p className="mt-1 text-body-small-default text-[var(--system-positive-strong)]">
-          {message}
-        </p>
-      )}
+      </span>
     </div>
   );
 }
@@ -95,7 +74,6 @@ export function AssistantUpgrades({
   onUpgradeComplete,
 }: AssistantUpgradesProps) {
   const { t } = useTranslation("settings");
-  const rollbackEnabled = useAssistantFeatureFlagStore.use.rollbackEnabled();
   const previewChannel = useClientFeatureFlagStore.use.previewChannel();
   const queryClient = useQueryClient();
   const visibleReleaseChannel = getVisibleReleaseChannel(
@@ -105,9 +83,7 @@ export function AssistantUpgrades({
   const isPreviewReleaseChannel = visibleReleaseChannel === "preview";
   const [isPollingUpgrade, setIsPollingUpgrade] = useState(false);
   const targetVersionRef = useRef<string | null>(null);
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [isPollingRollback, setIsPollingRollback] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const pollRefetchInterval = (version: string | null | undefined) => {
@@ -117,23 +93,16 @@ export function AssistantUpgrades({
       version === targetVersionRef.current
     ) {
       queueMicrotask(() => {
-        const msg = isPollingRollback
-          ? t("assistantUpgrades.successRolledBack", {
-              version: targetVersionRef.current,
-            })
-          : t("assistantUpgrades.successUpdated", {
-              version: targetVersionRef.current,
-            });
+        const msg = t("assistantUpgrades.successUpdated", {
+          version: targetVersionRef.current,
+        });
         setSuccessMessage(msg);
         setIsPollingUpgrade(false);
         targetVersionRef.current = null;
-        setSelectedVersion(null);
-        toast.success(
-          isPollingRollback
-            ? t("assistantUpgrades.toastRollbackComplete")
-            : t("assistantUpgrades.toastUpdateComplete"),
-          { id: "runtime-upgrade-complete", tone: "strong" },
-        );
+        toast.success(t("assistantUpgrades.toastUpdateComplete"), {
+          id: "runtime-upgrade-complete",
+          tone: "strong",
+        });
         onUpgradeComplete?.();
       });
       return false as const;
@@ -157,42 +126,22 @@ export function AssistantUpgrades({
 
   const latestRelease =
     releases?.find((r) => r.is_stable !== false) ?? releases?.[0];
-  const effectiveSelectedVersion =
-    selectedVersion ?? latestRelease?.version ?? null;
-
-  const isRollback = useMemo(() => {
-    if (!rollbackEnabled) {
-      return false;
-    }
-    if (!effectiveSelectedVersion || !currentVersion) {
-      return false;
-    }
-    const target = parseSemver(effectiveSelectedVersion);
-    const current = parseSemver(currentVersion);
-    if (!target || !current) {
-      return false;
-    }
-    return compareParsed(target, current) < 0;
-  }, [rollbackEnabled, effectiveSelectedVersion, currentVersion]);
+  const latestVersion = latestRelease?.version ?? null;
 
   const upgradeAvailable = useMemo(() => {
-    if (!effectiveSelectedVersion) {
+    if (!latestVersion) {
       return false;
     }
     if (!currentVersion) {
       return true;
     }
-    const target = parseSemver(effectiveSelectedVersion);
+    const target = parseSemver(latestVersion);
     const current = parseSemver(currentVersion);
     if (!target || !current) {
-      return effectiveSelectedVersion !== currentVersion;
+      return latestVersion !== currentVersion;
     }
-    const cmp = compareParsed(target, current);
-    if (!rollbackEnabled) {
-      return cmp > 0;
-    }
-    return cmp !== 0;
-  }, [rollbackEnabled, effectiveSelectedVersion, currentVersion]);
+    return compareParsed(target, current) > 0;
+  }, [latestVersion, currentVersion]);
 
   const upgradeCreate = useMutation({
     mutationFn: async (body: { version?: string }) => {
@@ -205,67 +154,29 @@ export function AssistantUpgrades({
     },
   });
 
-  const rollbackCreate = useMutation({
-    mutationFn: async (body: { version?: string }) => {
-      const { data } = await assistantsRollbackDetailCreate({
-        path: { id: assistantId },
-        body,
-        throwOnError: true,
-      });
-      return data;
-    },
-  });
-
   const handleUpgrade = async () => {
     setShowConfirmation(false);
     setSuccessMessage(null);
-    // With the picker rendered, the trigger shows `effectiveSelectedVersion`
-    // even when nothing was chosen, and a selection matching the displayed
-    // value is not reported. Reading the raw selection would install
-    // something other than the version on screen.
-    //
-    // With no picker there is nothing on screen to honour, so the server
-    // resolves latest. That is deliberately not the same as this component's
+    // No picker: nothing is on screen to honour, so the server resolves
+    // latest. That is deliberately not the same as this component's
     // `latestRelease`, which does not filter `local` pre-release builds the
     // way `getLatestRuntimeRelease` does.
-    const targetVersion = rollbackEnabled
-      ? (effectiveSelectedVersion ?? undefined)
-      : undefined;
     try {
-      if (isRollback) {
-        const result = await rollbackCreate.mutateAsync({
-          version: targetVersion,
-        });
-        targetVersionRef.current = result.version ?? targetVersion ?? null;
-        toast.success(
-          result.detail ||
-            t("assistantUpgrades.toastRollbackInitiated", {
-              version: targetVersion,
-            }),
-        );
-      } else {
-        const result = await upgradeCreate.mutateAsync({
-          version: targetVersion,
-        });
-        const isNoOp = result.detail?.includes("Already on the latest");
-        if (isNoOp) {
-          // Not a success — nothing actually happened. Surface a warning so the
-          // user understands why the modal closed without kicking off an update.
-          toast.warning(result.detail);
-          return;
-        }
-        targetVersionRef.current = result.version ?? targetVersion ?? null;
-        toast.success(
-          result.detail ||
-            t("assistantUpgrades.toastUpdateInitiated", {
-              version:
-                result.version ??
-                targetVersion ??
-                t("assistantUpgrades.latest"),
-            }),
-        );
+      const result = await upgradeCreate.mutateAsync({});
+      const isNoOp = result.detail?.includes("Already on the latest");
+      if (isNoOp) {
+        // Not a success — nothing actually happened. Surface a warning so the
+        // user understands why the modal closed without kicking off an update.
+        toast.warning(result.detail);
+        return;
       }
-      setIsPollingRollback(isRollback);
+      targetVersionRef.current = result.version ?? null;
+      toast.success(
+        result.detail ||
+          t("assistantUpgrades.toastUpdateInitiated", {
+            version: result.version ?? t("assistantUpgrades.latest"),
+          }),
+      );
       setIsPollingUpgrade(true);
       queryClient.invalidateQueries({
         queryKey: assistantsRetrieveQueryKey({
@@ -273,11 +184,7 @@ export function AssistantUpgrades({
         }),
       });
     } catch {
-      toast.error(
-        isRollback
-          ? t("assistantUpgrades.toastRollbackFailed")
-          : t("assistantUpgrades.toastUpdateFailed"),
-      );
+      toast.error(t("assistantUpgrades.toastUpdateFailed"));
     }
   };
 
@@ -285,9 +192,7 @@ export function AssistantUpgrades({
     ? t("assistantUpgrades.previewRelease")
     : !upgradeAvailable
       ? t("assistantUpgrades.selected")
-      : isRollback
-        ? t("assistantUpgrades.rollbackTo")
-        : t("assistantUpgrades.updateTo");
+      : t("assistantUpgrades.updateTo");
 
   return (
     <div className="space-y-5">
@@ -296,10 +201,7 @@ export function AssistantUpgrades({
           <span className="text-body-medium-default text-[var(--content-tertiary)]">
             {t("assistantUpgrades.current")}
           </span>
-          <CurrentVersionValue
-            version={currentVersion}
-            assistantId={assistantId}
-          />
+          <CurrentVersionValue version={currentVersion} />
         </div>
 
         <div className="flex flex-col gap-1 md:contents">
@@ -317,71 +219,38 @@ export function AssistantUpgrades({
                   {t("assistantUpgrades.loading")}
                 </span>
               ) : releases && releases.length > 0 ? (
-                rollbackEnabled ? (
-                  <Select
-                    value={effectiveSelectedVersion ?? ""}
-                    onChange={(value) =>
-                      setSelectedVersion(
-                        value === latestRelease?.version ? null : value,
-                      )
-                    }
-                    disabled={
-                      isPollingUpgrade ||
-                      upgradeCreate.isPending ||
-                      rollbackCreate.isPending
-                    }
-                    options={releases.map((r) => ({
-                      value: r.version,
-                      label: releaseLabel(
-                        r,
+                <span className="block min-w-0 break-all text-body-medium-lighter text-[var(--content-default)]">
+                  {latestRelease
+                    ? releaseLabel(
+                        latestRelease,
                         currentVersion,
-                        latestRelease?.version,
-                      ),
-                    }))}
-                  />
-                ) : (
-                  <span className="block min-w-0 break-all text-body-medium-lighter text-[var(--content-default)]">
-                    {latestRelease
-                      ? releaseLabel(
-                          latestRelease,
-                          currentVersion,
-                          latestRelease.version,
-                        )
-                      : "—"}
-                  </span>
-                )
+                        latestRelease.version,
+                      )
+                    : "—"}
+                </span>
               ) : (
                 t("assistantUpgrades.noReleases")
               )}
             </span>
             <Button
-              variant={isRollback ? "outlined" : "primary"}
+              variant="primary"
               className="min-w-[160px] shrink-0"
-              loading={
-                upgradeCreate.isPending ||
-                rollbackCreate.isPending ||
-                isPollingUpgrade
-              }
+              loading={upgradeCreate.isPending || isPollingUpgrade}
               leftIcon={<RefreshCw />}
               onClick={() => setShowConfirmation(true)}
               disabled={
                 !upgradeAvailable ||
                 upgradeCreate.isPending ||
-                rollbackCreate.isPending ||
                 isPollingUpgrade ||
                 releasesLoading ||
                 !releases?.length
               }
             >
               {isPollingUpgrade
-                ? isPollingRollback
-                  ? t("assistantUpgrades.rollingBack")
-                  : t("assistantUpgrades.updating")
-                : isRollback
-                  ? t("assistantUpgrades.rollback")
-                  : isPreviewReleaseChannel
-                    ? t("assistantUpgrades.updatePreview")
-                    : t("assistantUpgrades.update")}
+                ? t("assistantUpgrades.updating")
+                : isPreviewReleaseChannel
+                  ? t("assistantUpgrades.updatePreview")
+                  : t("assistantUpgrades.update")}
             </Button>
           </div>
         </div>
@@ -403,10 +272,7 @@ export function AssistantUpgrades({
           />
         </p>
       )}
-      {!upgradeAvailable &&
-        currentVersion &&
-        effectiveSelectedVersion &&
-        !releasesLoading && (
+      {!upgradeAvailable && currentVersion && !releasesLoading && (
           <p className="text-body-medium-lighter text-[var(--system-positive-strong)]">
             {successMessage ?? t("assistantUpgrades.alreadyOnVersion")}
           </p>
@@ -415,34 +281,23 @@ export function AssistantUpgrades({
       <ConfirmDialog
         open={showConfirmation}
         title={
-          isRollback
-            ? t("assistantUpgrades.confirmRollbackTitle")
-            : isPreviewReleaseChannel
-              ? t("assistantUpgrades.confirmPreviewTitle")
-              : t("assistantUpgrades.confirmUpdateTitle")
+          isPreviewReleaseChannel
+            ? t("assistantUpgrades.confirmPreviewTitle")
+            : t("assistantUpgrades.confirmUpdateTitle")
         }
         message={
-          isRollback
-            ? t("assistantUpgrades.confirmRollbackMessage", {
-                version:
-                  effectiveSelectedVersion ?? t("assistantUpgrades.unknown"),
+          isPreviewReleaseChannel
+            ? t("assistantUpgrades.confirmPreviewMessage", {
+                version: latestVersion ?? t("assistantUpgrades.latest"),
               })
-            : isPreviewReleaseChannel
-              ? t("assistantUpgrades.confirmPreviewMessage", {
-                  version:
-                    effectiveSelectedVersion ?? t("assistantUpgrades.latest"),
-                })
-              : t("assistantUpgrades.confirmUpdateMessage", {
-                  version:
-                    effectiveSelectedVersion ?? t("assistantUpgrades.latest"),
-                })
+            : t("assistantUpgrades.confirmUpdateMessage", {
+                version: latestVersion ?? t("assistantUpgrades.latest"),
+              })
         }
         confirmLabel={
-          isRollback
-            ? t("assistantUpgrades.rollback")
-            : isPreviewReleaseChannel
-              ? t("assistantUpgrades.updatePreview")
-              : t("assistantUpgrades.update")
+          isPreviewReleaseChannel
+            ? t("assistantUpgrades.updatePreview")
+            : t("assistantUpgrades.update")
         }
         onConfirm={handleUpgrade}
         onCancel={() => setShowConfirmation(false)}
@@ -513,10 +368,7 @@ export function LocalAssistantUpgrades({
           <span className="text-body-medium-default text-[var(--content-tertiary)]">
             {t("assistantUpgrades.current")}
           </span>
-          <CurrentVersionValue
-            version={currentVersion}
-            assistantId={assistantId}
-          />
+          <CurrentVersionValue version={currentVersion} />
         </div>
 
         <div className="flex flex-col gap-1 md:contents">

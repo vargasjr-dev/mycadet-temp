@@ -13,7 +13,6 @@ import {
   Bell,
   Bookmark,
   Bug,
-  Code,
   Cpu,
   KeyRound,
   Mic,
@@ -45,7 +44,6 @@ export const PANEL_IDS = [
   "community",
   "assistant-status",
   "debug",
-  "developer",
   "personality",
 ] as const;
 
@@ -139,12 +137,6 @@ export const SETTINGS_SIDEBAR: SidebarItem[] = [
     label: "Personality",
     href: routes.settings.personality,
     icon: Smile,
-  },
-  {
-    id: "developer",
-    label: "Developer",
-    href: routes.settings.developer,
-    icon: Code,
   },
 ];
 

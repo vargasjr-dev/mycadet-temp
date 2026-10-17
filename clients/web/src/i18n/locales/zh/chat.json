@@ -1678,11 +1678,6 @@
     "title": "安全凭据",
     "tools": "工具：{list}"
   },
-  "selfHostedScreen": {
-    "body": "自托管助手的对话尚未在网页端提供。请从设置中管理您的助手。",
-    "openSettings": "打开设置",
-    "title": "自托管助手"
-  },
   "setupScreen": {
     "settingUp": "正在设置您的助手…"
   },

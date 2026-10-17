@@ -1687,11 +1687,6 @@
     "title": "Secure Credential",
     "tools": "Tools: {list}"
   },
-  "selfHostedScreen": {
-    "body": "Conversations for self-hosted assistants aren't available from the web yet. Manage your assistant from settings.",
-    "openSettings": "Open settings",
-    "title": "Self-hosted assistant"
-  },
   "setupScreen": {
     "settingUp": "Setting up your assistant…"
   },

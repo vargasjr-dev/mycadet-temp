@@ -10,9 +10,7 @@ import {
 } from "@/domains/settings/components/schedule-profile-rebase";
 import { SystemTasksSection } from "@/domains/settings/components/system-tasks-section";
 import { useSystemTasks } from "@/domains/settings/hooks/use-system-tasks";
-import { useAssistantCapability } from "@/hooks/use-assistant-capability";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { navigateToNewConversation } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
@@ -43,15 +41,6 @@ export function SchedulesPage() {
   const schedules = useSchedulesData(assistantId);
   const systemTasks = useSystemTasks(assistantId, tz);
 
-  // Gates the consolidation/retrospective "Memory settings" link the same way
-  // the schedules surface always has.
-  const hasMemoryOptOutCapability = useAssistantCapability("memoryOptOut");
-  // The memory toggle lives on the Memory tab of the flag-gated Developer
-  // page, so the link is only offered when that destination is reachable.
-  const settingsDeveloperNav =
-    useAssistantFeatureFlagStore.use.settingsDeveloperNav();
-  const canOpenMemorySettings =
-    hasMemoryOptOutCapability && settingsDeveloperNav === true;
 
   const [createScheduleOpen, setCreateScheduleOpen] = useState(false);
   const selectedScheduleId = scheduleId ?? null;
@@ -181,7 +170,6 @@ export function SchedulesPage() {
         kind={selectedSystemTaskKind}
         assistantId={assistantId}
         systemTasks={systemTasks}
-        canOpenMemorySettings={canOpenMemorySettings}
         onClose={() => setSelectedSystemTaskKind(null)}
       />
     ) : null;

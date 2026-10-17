@@ -11,16 +11,12 @@
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Settings, Sparkles } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
 
 import { memoryStatsOptions } from "@/domains/intelligence/memory-graph/get-memory-stats";
 import { invalidateMemoryQueries } from "@/domains/intelligence/memory-graph/invalidate-memory-queries";
-import { useAssistantCapability } from "@/hooks/use-assistant-capability";
 import { useTranslation } from "@/i18n";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
-import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library";
 
 import { CenteredMessage } from "./centered-message";
@@ -42,7 +38,6 @@ export function MemoryUpgradePrompt({
   onOpenThread,
 }: MemoryUpgradePromptProps) {
   const { t } = useTranslation("intelligence");
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   // Deduped with the Memory page's own stats query by React Query, so this
   // costs no extra request.
@@ -60,16 +55,6 @@ export function MemoryUpgradePrompt({
   useEffect(() => {
     invalidateMemoryQueries(queryClient, assistantId);
   }, [queryClient, assistantId]);
-  // The Memory toggle lives on the Memory tab of the flag-gated Developer
-  // page, which redirects to General Settings when the flag is off — so link
-  // there only when the destination is actually reachable, gated exactly as
-  // the schedules surface gates the same link. Without it the CTA would look
-  // like a way out and land somewhere that can't turn memory on.
-  const hasMemoryOptOut = useAssistantCapability("memoryOptOut");
-  const settingsDeveloperNav =
-    useAssistantFeatureFlagStore.use.settingsDeveloperNav();
-  const canOpenMemorySettings =
-    hasMemoryOptOut && settingsDeveloperNav === true;
 
   // Say nothing until the tier is known: the fallback copy would otherwise
   // flash "isn't available" for a beat before resolving into "upgrade".
@@ -118,20 +103,11 @@ export function MemoryUpgradePrompt({
         {t("memoryUpgradePrompt.tryAgain")}
       </Button>
     );
-  } else if (copy.action === "settings" && canOpenMemorySettings) {
-    action = (
-      <Button
-        variant="outlined"
-        size="compact"
-        leftIcon={<Settings />}
-        onClick={() => navigate(`${routes.settings.developer}?tab=memory`)}
-      >
-        {t("memoryUpgradePrompt.memorySettings")}
-      </Button>
-    );
   } else if (copy.action === "settings" && onOpenThread && seed) {
-    // No reachable toggle, so hand it to the assistant — which can set
-    // `memory.enabled` regardless of which settings pages this user can see.
+    // The Memory toggle used to live on the flag-gated Developer page's
+    // Memory tab; with developer mode retired, hand it to the assistant —
+    // which can set `memory.enabled` regardless of which settings pages
+    // this user can see.
     action = (
       <Button
         variant="primary"

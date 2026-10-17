@@ -175,7 +175,6 @@
     }
   },
   "memoryUpgradePrompt": {
-    "memorySettings": "Настройки памяти",
     "tryAgain": "Повторить",
     "turnMemoryOn": "Включить память",
     "upgradeMemory": "Обновить память"

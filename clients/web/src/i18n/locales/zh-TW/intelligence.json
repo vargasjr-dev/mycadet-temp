@@ -175,7 +175,6 @@
     }
   },
   "memoryUpgradePrompt": {
-    "memorySettings": "記憶設定",
     "tryAgain": "再試一次",
     "turnMemoryOn": "開啟記憶",
     "upgradeMemory": "升級記憶"

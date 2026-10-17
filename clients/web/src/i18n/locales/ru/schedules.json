@@ -66,9 +66,6 @@
     "timezone": "Часовой пояс"
   },
   "systemTaskDetail": {
-    "openMemorySettings": "Открыть настройки Памяти",
-    "turnOnMemory": "Включить Память",
-    "memorySettings": "Настройки Памяти",
     "fallbackModelProfile": "По умолчанию (модель системных задач)",
     "repeats": "Повторяется",
     "nameHeartbeat": "Heartbeat",

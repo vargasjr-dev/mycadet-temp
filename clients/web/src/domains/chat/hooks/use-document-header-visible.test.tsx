@@ -32,7 +32,6 @@ import { DocumentChatContent } from "../components/document-chat-content";
 import type { DocumentViewerContainerHandle } from "../components/document-viewer-container";
 import type * as Setup from "../components/setup-screen";
 import type * as Cleanup from "../components/cleanup-screen";
-import type * as SelfHosted from "../components/self-hosted-screen";
 import {
   getDocumentConversationRoute,
   returnFromDocument,
@@ -67,12 +66,6 @@ mock.module(
   "../components/cleanup-screen",
   (): Partial<typeof Cleanup> => ({
     CleanupScreen: () => <div>Cleaning up</div>,
-  }),
-);
-mock.module(
-  "../components/self-hosted-screen",
-  (): Partial<typeof SelfHosted> => ({
-    SelfHostedScreen: () => <div>Self-hosted setup</div>,
   }),
 );
 mock.module(
@@ -170,7 +163,6 @@ beforeEach(() => {
   });
   useAuthStore.setState({ sessionStatus: "authenticated" });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
-  useClientFeatureFlagStore.setState({ selfHostedAssistant: true });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;
   firstMessageSetup = false;
@@ -215,7 +207,6 @@ describe("document navigation header handoff", () => {
 
   test.each([
     "auth",
-    "self-hosted-disabled",
     "self-hosted-error",
     "first-message",
   ])("keeps navigation before the document host mounts during %s", (guard) => {
@@ -226,9 +217,6 @@ describe("document navigation header handoff", () => {
       useAssistantLifecycleStore.setState({
         assistantState: { kind: "self_hosted" },
       });
-    }
-    if (guard === "self-hosted-disabled") {
-      useClientFeatureFlagStore.setState({ selfHostedAssistant: false });
     }
     if (guard === "self-hosted-error") {
       conversationListError = true;

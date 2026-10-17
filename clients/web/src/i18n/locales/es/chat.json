@@ -1640,11 +1640,6 @@
     "title": "Credencial segura",
     "tools": "Herramientas: {list}"
   },
-  "selfHostedScreen": {
-    "body": "Las conversaciones de asistentes autoalojados aún no están disponibles desde la web. Gestiona tu asistente desde ajustes.",
-    "openSettings": "Abrir ajustes",
-    "title": "Asistente autoalojado"
-  },
   "setupScreen": {
     "settingUp": "Configurando tu asistente…"
   },

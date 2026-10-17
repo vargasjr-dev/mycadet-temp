@@ -16,7 +16,6 @@ let browserHost = false;
 mock.module("@/stores/assistant-feature-flag-store", () => {
   const store = () => null;
   store.use = {
-    settingsDeveloperNav: () => assistantFlags.settingsDeveloperNav ?? false,
     cadetHostedInference: () => assistantFlags.cadetHostedInference ?? false,
   };
   return { useAssistantFeatureFlagStore: store };
@@ -203,17 +202,6 @@ describe("SettingsLayout", () => {
     );
     expect(screen.getByRole("link", { name: "Personality" })).not.toBeNull();
     expect(screen.queryByRole("link", { name: "Developer" })).toBeNull();
-  });
-
-  test("renders Developer only when developer nav is on", () => {
-    assistantFlags.settingsDeveloperNav = true;
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole("link", { name: "Developer" })).not.toBeNull();
-    expect(screen.queryByRole("link", { name: "Personality" })).toBeNull();
   });
 
   test("renders Notifications on Android and browser hosts", () => {
