@@ -26,10 +26,10 @@ replica terraform converges*).
 1. Each secret above exists in Secret Manager (project defaults to
    `mycadet`, override with `-var gcp_project=...`). Same name in the vault
    as the Actions secret.
-2. Binary secrets (profiles, `.p12`) stored as the base64 text from
-   `base64 -i <file>` (the README flow). If instead you uploaded raw file
-   bytes to SM, apply with `-var binary_secrets_stored_base64=false` and
-   terraform encodes them on the way in.
+2. Binary secrets (profiles, `.p12`) stored as raw file bytes (the current
+   state — uploaded via console file-upload). Terraform base64-encodes them
+   on the way into GitHub. If the vault ever holds base64 text instead,
+   apply with `-var binary_secrets_stored_base64=true`.
 3. Credentials at apply time:
    - GCP: `gcloud auth application-default login` (or `GOOGLE_CREDENTIALS`)
    - GitHub: `GITHUB_TOKEN` with repo-secrets write access.

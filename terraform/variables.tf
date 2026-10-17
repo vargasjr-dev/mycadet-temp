@@ -14,11 +14,11 @@ variable "binary_secrets_stored_base64" {
   description = <<-EOT
     Whether the binary secrets (provisioning profiles, the .p12 certificate)
     are stored in Secret Manager as the base64 text produced by
-    `base64 -i <file>` (true — matches the README flow), or as the raw file
-    bytes from a console file-upload (false — terraform base64-encodes them
-    on the way into GitHub). The release workflow requires base64 in the
-    Actions secret either way.
+    `base64 -i <file>`, or as the raw file bytes from a console file-upload
+    (the current state — raw uploads). The release workflow requires base64
+    in the Actions secret either way; with raw uploads in the vault,
+    terraform base64-encodes them on the way into GitHub.
   EOT
   type        = bool
-  default     = true
+  default     = false
 }
