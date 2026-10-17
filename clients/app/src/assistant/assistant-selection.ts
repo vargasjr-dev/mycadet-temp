@@ -5,17 +5,15 @@ const SelectionStateSchema = z.object({
   assistantSelection: z.object({
     id: z.string().min(1),
     apiBaseUrl: z.string(),
-    organizationId: z.string().optional(),
   }),
 });
-type HostConfig = Pick<InjectedConfig, "cloudUrl" | "organizationId">;
+type HostConfig = Pick<InjectedConfig, "cloudUrl">;
 
 export function assistantSelectionState(id: string, config: HostConfig) {
   return {
     assistantSelection: {
       id,
       apiBaseUrl: config.cloudUrl ?? "/",
-      organizationId: config.organizationId,
     },
   };
 }
@@ -29,8 +27,7 @@ export function selectedAssistantId(
     return undefined;
   }
   const selection = parsed.data.assistantSelection;
-  return selection.apiBaseUrl === (config.cloudUrl ?? "/") &&
-    selection.organizationId === config.organizationId
+  return selection.apiBaseUrl === (config.cloudUrl ?? "/")
     ? selection.id
     : undefined;
 }

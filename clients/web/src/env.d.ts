@@ -1,7 +1,5 @@
 /// <reference types="vite/client" />
 
-import type { InjectedConfig } from "@/lib/injected-config";
-
 /**
  * Build-time environment variables exposed to the client bundle.
  *
@@ -48,8 +46,8 @@ declare global {
     /** Feature flag overrides injected by Electron preload or CLI script. */
     __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
     /** Runtime config injected by the shell (Electron preload, CLI, etc.). */
-    __CADET_CONFIG__?: InjectedConfig;
-
+    /** Raw host-injected config; `readInjectedConfig` is the parse boundary. */
+    __CADET_CONFIG__?: unknown;
   }
 }
 

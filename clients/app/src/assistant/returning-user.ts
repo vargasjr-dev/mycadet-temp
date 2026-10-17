@@ -51,7 +51,7 @@ export async function readReturningUser(
 }
 
 async function findReturningUser(signal: AbortSignal): Promise<boolean> {
-  const servingId = readInjectedConfig().assistantId;
+  const servingId = readInjectedConfig()?.assistantId;
   if (servingId && isReturningAssistant({ id: servingId })) {
     return true;
   }

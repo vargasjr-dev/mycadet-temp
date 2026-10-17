@@ -19,12 +19,11 @@ function json(value: unknown) {
   return new Response(JSON.stringify(value));
 }
 
-test("gets a single assistant under the configured API prefix with cookies and organization", async () => {
+test("gets a single assistant under the configured API prefix with cookies", async () => {
   request.mockResolvedValue(json(detail));
   const input = {
     ...options(),
     apiBaseUrl: "https://assistant.example.com/cloud/tenant/",
-    organizationId: "org-1",
     assistantId: "assistant-1",
   };
   const result = await resolveAssistant(input);
@@ -42,7 +41,6 @@ test("gets a single assistant under the configured API prefix with cookies and o
   );
   expect(init?.credentials).toBe("include");
   expect(init?.signal).toBe(input.signal);
-  expect(new Headers(init?.headers).get("Cadet-Organization-Id")).toBe("org-1");
 });
 
 test("uses the existing list to select one assistant and never calls a resolve endpoint", async () => {

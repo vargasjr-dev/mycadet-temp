@@ -77,9 +77,8 @@ const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
 const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
-
 export function isCadetCloudRemote(): boolean {
-  return readInjectedConfig().remote === "cloud";
+  return readInjectedConfig()?.remote === "cloud";
 }
 
 function nonEmptyString(value: string | undefined): string | undefined {
@@ -92,7 +91,7 @@ function nonEmptyString(value: string | undefined): string | undefined {
  * `undefined`.
  */
 export function getRemoteGatewayAssistantName(): string | undefined {
-  return nonEmptyString(readInjectedConfig().assistantName);
+  return nonEmptyString(readInjectedConfig()?.assistantName);
 }
 
 /** Live persona name when hydrated, else the (possibly stale) name the edge injected at tunnel start. */
@@ -107,7 +106,7 @@ export function getRemoteAssistantDisplayName(): string | undefined {
  * callers must tolerate `undefined`.
  */
 export function getRemoteGatewayHubUrl(): string | undefined {
-  return nonEmptyString(readInjectedConfig().hubUrl);
+  return nonEmptyString(readInjectedConfig()?.hubUrl);
 }
 
 /**
@@ -119,7 +118,7 @@ export function getRemoteGatewayHubUrl(): string | undefined {
  * the only place the `remote` value selects a code path.
  */
 export function isServedGatewayRuntime(): boolean {
-  const remote = readInjectedConfig().remote;
+  const remote = readInjectedConfig()?.remote;
   return remote === "docker" || remote === "custom";
 }
 

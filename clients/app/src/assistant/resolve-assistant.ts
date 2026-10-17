@@ -22,7 +22,6 @@ export interface AssistantRequest {
   apiBaseUrl?: string;
   origin: string;
   assistantId?: string;
-  organizationId?: string;
   signal: AbortSignal;
 }
 
@@ -30,18 +29,10 @@ const unauthenticated = Symbol("unauthenticated");
 const starting = Symbol("starting");
 const unavailable = Symbol("unavailable");
 
-function createClient({
-  apiBaseUrl = "/",
-  origin,
-  organizationId,
-  signal,
-}: AssistantRequest) {
+function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
   const base = new URL(decode(PublicUrlSchema, apiBaseUrl), origin);
   base.pathname = base.pathname.replace(/\/*$/, "/");
   const headers = new Headers({ Accept: "application/json" });
-  if (organizationId) {
-    headers.set("Cadet-Organization-Id", organizationId);
-  }
   async function get(path: string, detail = false) {
     signal.throwIfAborted();
     const response = await fetch(new URL(path, base), {

@@ -16,7 +16,6 @@ export type AssistantRequestState =
 export function useAssistantRequest({
   apiBaseUrl = "/",
   origin,
-  organizationId,
   assistantId,
   listOnly = false,
 }: Omit<AssistantRequest, "signal"> & { listOnly?: boolean }) {
@@ -24,7 +23,6 @@ export function useAssistantRequest({
   const key = JSON.stringify([
     apiBaseUrl,
     origin,
-    organizationId,
     assistantId,
     listOnly,
     attempt,
@@ -49,7 +47,6 @@ export function useAssistantRequest({
         const request = {
           apiBaseUrl,
           origin,
-          organizationId,
           assistantId,
           signal: controller.signal,
         };
@@ -86,7 +83,7 @@ export function useAssistantRequest({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [apiBaseUrl, origin, organizationId, assistantId, listOnly, attempt, key]);
+  }, [apiBaseUrl, origin, assistantId, listOnly, attempt, key]);
   const state: AssistantRequestState =
     result?.key === key ? result.state : { status: "loading" };
   return {

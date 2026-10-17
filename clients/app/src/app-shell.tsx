@@ -16,7 +16,6 @@ export type AppShellStatus = Exclude<
 >;
 export interface AppShellProps {
   apiBaseUrl?: string;
-  organizationId?: string;
   assistantId?: string;
   location: string;
   origin: string;
@@ -38,7 +37,6 @@ export function AppShell({ locale, ...props }: AppShellProps) {
 
 function AssistantShell({
   apiBaseUrl = "/",
-  organizationId,
   assistantId,
   location,
   origin,
@@ -52,19 +50,15 @@ function AssistantShell({
     id: string;
     apiBaseUrl: string;
     origin: string;
-    organizationId?: string;
   }>();
   const selectedId =
     assistantId ??
-    (selection?.apiBaseUrl === apiBaseUrl &&
-    selection.origin === origin &&
-    selection.organizationId === organizationId
+    (selection?.apiBaseUrl === apiBaseUrl && selection.origin === origin
       ? selection.id
       : undefined);
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     origin,
-    organizationId,
     assistantId: selectedId,
   });
   if (state.status !== "ready") {
@@ -78,9 +72,7 @@ function AssistantShell({
             <button
               key={assistant.id}
               type="button"
-              onClick={() =>
-                select({ id: assistant.id, apiBaseUrl, origin, organizationId })
-              }
+              onClick={() => select({ id: assistant.id, apiBaseUrl, origin })}
             >
               {assistant.name || assistant.id}
             </button>

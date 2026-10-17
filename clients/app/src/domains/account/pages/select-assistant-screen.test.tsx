@@ -21,7 +21,6 @@ const originalConfig = Object.getOwnPropertyDescriptor(
 const routers: ReturnType<typeof createMemoryRouter>[] = [];
 const host = {
   cloudUrl: "https://host.example/admin/proxy/",
-  organizationId: "org-1",
 };
 const detail = {
   id: "assistant-2",
@@ -93,9 +92,6 @@ test("the account route lists names and IDs, then resolves only the selected ifr
     "https://host.example/admin/proxy/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
-  expect(
-    new Headers(request.mock.calls[0][1]?.headers).get("Cadet-Organization-Id"),
-  ).toBe("org-1");
 });
 
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
