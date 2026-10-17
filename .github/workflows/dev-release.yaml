@@ -89,8 +89,12 @@ jobs:
 
   # ── Skip-if-idle gate ───────────────────────────────────────────────────
   compute-version:
+    # !cancelled() is load-bearing: on manual dispatch should-release SKIPS
+    # (schedule-only gate), and GitHub's default rule skips any job whose
+    # need was skipped — without it the whole run cascades to a green no-op
+    # (runs 53/54 on 10/17).
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -117,7 +121,7 @@ jobs:
 
   ci-assistant-lint:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -147,7 +151,7 @@ jobs:
 
   ci-assistant-types:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -179,7 +183,7 @@ jobs:
 
   ci-assistant-tests:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -217,7 +221,7 @@ jobs:
 
   ci-gateway:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -248,7 +252,7 @@ jobs:
 
   ci-credential-executor:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -272,7 +276,7 @@ jobs:
 
   ci-cli:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -296,7 +300,7 @@ jobs:
 
   ci-web-lint:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -320,7 +324,7 @@ jobs:
 
   ci-web-types:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -346,7 +350,7 @@ jobs:
 
   ci-web-tests:
     needs: should-release
-    if: ${{ github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true' }}
+    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
