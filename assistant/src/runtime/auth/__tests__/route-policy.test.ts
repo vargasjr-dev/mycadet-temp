@@ -520,9 +520,6 @@ describe("ROUTES policy declarations", () => {
     ["integrations_vercel_config_get", "settings.read"],
     ["integrations_vercel_config_post", "settings.write"],
     ["integrations_vercel_config_delete", "settings.write"],
-    ["integrations_a2a_config_get", "settings.read"],
-    ["integrations_a2a_config_post", "settings.write"],
-    ["integrations_a2a_config_delete", "settings.write"],
   ] as const)(
     "%s requires %s and actor principals",
     async (operationId, scope) => {

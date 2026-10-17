@@ -48,23 +48,32 @@ function extractUnprotectedStaticV1Routes(): string[] {
     .sort();
 }
 
-function assertDeniedBeforeV1Proxy(path: string): void {
-  const proxyIndex = nginxIngressSource.indexOf("location ^~ /v1/ {");
-  expect(proxyIndex).toBeGreaterThanOrEqual(0);
+function sensitiveRoutesSource(): string {
+  const start = nginxIngressSource.indexOf("const SENSITIVE_GATEWAY_ROUTES = [");
+  expect(start).toBeGreaterThanOrEqual(0);
+  const end = nginxIngressSource.indexOf("] as const", start);
+  return nginxIngressSource.slice(start, end);
+}
 
-  for (const deniedPath of [path, `${path}/`]) {
-    const location = `location = ${deniedPath} { return 404; }`;
-    const locationIndex = nginxIngressSource.indexOf(location);
-    expect(locationIndex).toBeGreaterThanOrEqual(0);
-    expect(locationIndex).toBeLessThan(proxyIndex);
-  }
+function assertDeniedBeforeV1Proxy(path: string): void {
+  // The denylist is data-driven since the app-shell edge (#354): the
+  // sensitive paths live in SENSITIVE_GATEWAY_ROUTES, and the emitted
+  // config places the 404 blocks ahead of the /v1/ proxy in both shell
+  // modes (web mode emits DENYLIST_LOCATIONS, app mode re-emits the
+  // denylist for the /web iframe prefix too).
+  expect(sensitiveRoutesSource()).toContain(`"${path}"`);
+  const denyEmit = nginxIngressSource.indexOf("${DENYLIST_LOCATIONS}");
+  const appDenyEmit = nginxIngressSource.indexOf("${denylistLocations()}");
+  const proxyEmit = nginxIngressSource.indexOf(
+    "${gatewayProxyLocations(opts.gatewayPort)}",
+  );
+  expect(denyEmit).toBeGreaterThanOrEqual(0);
+  expect(proxyEmit).toBeGreaterThan(denyEmit);
+  expect(appDenyEmit).toBeGreaterThanOrEqual(0);
 }
 
 function assertNotExplicitlyDenied(path: string): void {
-  for (const deniedPath of [path, `${path}/`]) {
-    const location = `location = ${deniedPath} { return 404; }`;
-    expect(nginxIngressSource).not.toContain(location);
-  }
+  expect(sensitiveRoutesSource()).not.toContain(`"${path}"`);
 }
 
 describe("remote web ingress denylist", () => {

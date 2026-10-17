@@ -47,9 +47,8 @@ afterEach(() => {
 });
 
 describe("isInternalChannel", () => {
-  test("flags platform/a2a as internal", () => {
+  test("flags platform as internal", () => {
     expect(isInternalChannel("platform")).toBe(true);
-    expect(isInternalChannel("a2a")).toBe(true);
   });
 
   test("client-controllable channels (incl. cadet) are not internal", () => {
@@ -62,7 +61,7 @@ describe("isInternalChannel", () => {
 
 describe("fetchChannelPolicies", () => {
   test("filters internal and hidden channels out of the gateway response", async () => {
-    // Even if the gateway forgets to omit internal (platform/a2a) or hidden
+    // Even if the gateway forgets to omit internal (platform) or hidden
     // (cadet/whatsapp) channels, the client double-filters so the UI never
     // surfaces them.
     mockGet = mock(async () =>
@@ -88,12 +87,6 @@ describe("fetchChannelPolicies", () => {
           },
           {
             channelType: "platform",
-            policy: "trusted_contacts",
-            note: null,
-            updatedAt: null,
-          },
-          {
-            channelType: "a2a",
             policy: "trusted_contacts",
             note: null,
             updatedAt: null,

@@ -139,12 +139,11 @@ describe("SidebarLayoutStore", () => {
 
   test("openPrimary defaults to every primary section open when nothing is stored", () => {
     useSidebarLayoutStore.getState().setAssistantId("asst-1");
-    // `assistant` is inert until its flag-gated section renders - see
-    // PRIMARY_SECTION_KEYS for why it is a default-open key regardless.
+    // The assistant-initiated-threads section died with its flag (#346),
+    // so the default-open set is just the pinned + recents pair now.
     expect(useSidebarLayoutStore.getState().openPrimary).toEqual([
       "pinned",
       "recents",
-      "assistant",
     ]);
   });
 
