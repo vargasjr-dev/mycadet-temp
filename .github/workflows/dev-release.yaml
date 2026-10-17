@@ -1442,7 +1442,7 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --tag dev --access public
-  publish-app-dev:
+  publish-npm-app-dev:
     # Dev mirror of release.yml's publish-app-prod: the app shell bundle on
     # the dev channel, so `cadet tunnel --shell app` resolves @mycadet/app
     # from installed dev releases the same way it resolves @mycadet/web.
