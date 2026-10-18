@@ -67,7 +67,6 @@ let authUserStub: AuthUserStub | null = {
 };
 let sessionInitializingStub = false;
 let internalActionsFlagStub = true;
-let legacyForkFlagStub = false;
 let flagsHydratedStub = true;
 
 let contextStub: ContextStub = {
@@ -147,7 +146,6 @@ mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {
     use: {
       internalThreadActions: () => internalActionsFlagStub,
-      forkFromMessage: () => legacyForkFlagStub,
       hydrated: () => flagsHydratedStub,
     },
   },

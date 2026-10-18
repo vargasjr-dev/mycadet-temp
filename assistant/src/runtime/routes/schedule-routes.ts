@@ -23,7 +23,6 @@ import { isPluginDisabled } from "../../plugins/disabled-state.js";
 import { isDeferSchedule } from "../../schedule/defer-provenance.js";
 import { validateScheduleInferenceProfile } from "../../schedule/inference-profile.js";
 import { pluginScheduleSourceAvailable } from "../../schedule/plugin-schedule-availability.js";
-import { isPluginSchedulesEnabled } from "../../schedule/plugin-schedules-gate.js";
 import {
   describeRRuleExpression,
   isSingleFireRRule,
@@ -139,13 +138,10 @@ type DisarmReason = (typeof DISARM_REASONS)[number];
  * a declared `enabled: false`, a declaration too broken to arm, or a manifest
  * that no longer parses.
  *
- * Two off states never get a reason, because in neither did the plugin's files
- * turn the schedule off. A row the engine latched (a fired or cancelled
- * one-shot, a bounded recurrence the claim path exhausted) is a schedule that
- * finished, not one that is paused. And when the `plugin-schedules` kill switch
- * is off the reconciler disarms every sourced row regardless of what its
- * declaration says, so no per-row cause is the true one. Both return null, and
- * clients show the row like any other schedule that is off.
+ * One off state never gets a reason: a row the engine latched (a fired or
+ * cancelled one-shot, a bounded recurrence the claim path exhausted) is a
+ * schedule that finished, not one that is paused. It returns null, and clients
+ * show the row like any other schedule that is off.
  */
 function deriveDisarmReason(
   job: Pick<
@@ -164,7 +160,7 @@ function deriveDisarmReason(
   if (job.userEnabled === false) {
     return "user_disabled";
   }
-  if (isEngineLatched(job) || !isPluginSchedulesEnabled()) {
+  if (isEngineLatched(job)) {
     return null;
   }
   const match = /^plugin:([^/]+)\/(.+)$/.exec(job.sourceKey);
@@ -1350,8 +1346,7 @@ async function handleRunScheduleNow(
   // question and use the on-disk probe alone.
   if (
     schedule.sourceKey !== null &&
-    (!isPluginSchedulesEnabled() ||
-      !(await pluginScheduleSourceAvailable(schedule.sourceKey)))
+    !(await pluginScheduleSourceAvailable(schedule.sourceKey))
   ) {
     throw new BadRequestError(
       "This schedule's plugin is disabled or no longer declares it, so it cannot be run.",

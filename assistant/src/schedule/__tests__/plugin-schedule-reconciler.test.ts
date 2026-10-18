@@ -58,7 +58,6 @@ mock.module("../../plugins/mtime-cache.js", () => ({
   },
 }));
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import { getDb } from "../../persistence/db-connection.js";
 import { initializeDb } from "../../persistence/db-init.js";
 import { listInstalledPluginDirs } from "../../plugins/installed-plugin-dirs.js";
@@ -197,9 +196,6 @@ function resetReconcilerFixtures(): void {
 describe("reconcilePluginSchedules", () => {
   beforeEach(() => {
     resetReconcilerFixtures();
-    // The feature ships off, so every case below states the flag it runs
-    // under rather than inheriting the registry default.
-    setOverridesForTesting({ "plugin-schedules": true });
   });
 
   /** Let a released emit's continuation, `.then`, and `.finally` all run. */
@@ -1057,85 +1053,5 @@ describe("reconcilePluginSchedules", () => {
     await reconcilePluginSchedules();
 
     expect(emittedSignals).toHaveLength(1);
-  });
-});
-
-// ── Feature-flag kill switch ────────────────────────────────────────────
-
-describe("reconcilePluginSchedules under the plugin-schedules flag", () => {
-  beforeEach(() => {
-    resetReconcilerFixtures();
-  });
-
-  test("a flag-off pass disarms armed declared rows and creates nothing", async () => {
-    setOverridesForTesting({ "plugin-schedules": true });
-    writePlugin("news", digest());
-    await reconcilePluginSchedules();
-    const armed = listDeclaredSchedules();
-    expect(armed).toHaveLength(1);
-    expect(armed[0]!.enabled).toBe(true);
-    emittedSignals.length = 0;
-
-    setOverridesForTesting({ "plugin-schedules": false });
-    // A second plugin lands while the feature is off, so the pass has both a
-    // row to disarm and a declaration it must refuse to pick up.
-    writePlugin("weather", {
-      "forecast/config.json": JSON.stringify({ expression: "* * * * *" }),
-      "forecast/index.md": "Forecast the day.\n",
-    });
-    await reconcilePluginSchedules();
-
-    const rows = listDeclaredSchedules();
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.id).toBe(armed[0]!.id);
-    expect(rows[0]!.enabled).toBe(false);
-    expect(emittedSignals).toHaveLength(0);
-  });
-
-  test("a flag-off pass emits nothing for a broken declaration", async () => {
-    setOverridesForTesting({ "plugin-schedules": false });
-    writePlugin("news", brokenDigest());
-
-    await reconcilePluginSchedules();
-
-    expect(listDeclaredSchedules()).toHaveLength(0);
-    expect(emittedSignals).toHaveLength(0);
-  });
-
-  test("turning the flag back on re-arms the rows it disarmed", async () => {
-    setOverridesForTesting({ "plugin-schedules": true });
-    writePlugin("news", digest());
-    await reconcilePluginSchedules();
-    const created = listDeclaredSchedules()[0]!;
-
-    setOverridesForTesting({ "plugin-schedules": false });
-    await reconcilePluginSchedules();
-    expect(listDeclaredSchedules()[0]!.enabled).toBe(false);
-
-    setOverridesForTesting({ "plugin-schedules": true });
-    await reconcilePluginSchedules();
-
-    const rearmed = listDeclaredSchedules();
-    expect(rearmed).toHaveLength(1);
-    expect(rearmed[0]!.id).toBe(created.id);
-    expect(rearmed[0]!.enabled).toBe(true);
-    expect(rearmed[0]!.definitionHash).toBe(created.definitionHash);
-  });
-
-  test("a user's off choice survives the flag going off and back on", async () => {
-    setOverridesForTesting({ "plugin-schedules": true });
-    writePlugin("news", digest());
-    await reconcilePluginSchedules();
-    const created = listDeclaredSchedules()[0]!;
-    await setUserEnabled(created.id, false);
-
-    setOverridesForTesting({ "plugin-schedules": false });
-    await reconcilePluginSchedules();
-    setOverridesForTesting({ "plugin-schedules": true });
-    await reconcilePluginSchedules();
-
-    const row = listDeclaredSchedules()[0]!;
-    expect(row.userEnabled).toBe(false);
-    expect(row.enabled).toBe(false);
   });
 });

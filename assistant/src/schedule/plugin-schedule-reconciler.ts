@@ -40,7 +40,6 @@ import {
   parsePluginScheduleDeclarations,
   type ScheduleDeclaration,
 } from "./plugin-schedule-declarations.js";
-import { isPluginSchedulesEnabled } from "./plugin-schedules-gate.js";
 import {
   type DeclaredScheduleDefinition,
   disarmDeclaredSchedule,
@@ -96,14 +95,8 @@ async function runReconcilePass(): Promise<void> {
     return;
   }
 
-  // The feature flag is a kill switch, not just a launch gate. While it is
-  // off nothing is parsed and nothing is emitted, and the desired set is
-  // empty, so the disarm branch below turns every declared row off on the next
-  // pass. Turning the flag back on re-arms them from their declarations.
   const { desired, errors, manifestFailures }: CollectedDeclarations =
-    isPluginSchedulesEnabled()
-      ? await collectDesiredDeclarations()
-      : { desired: new Map(), errors: [], manifestFailures: [] };
+    await collectDesiredDeclarations();
 
   const existingByKey = new Map<string, ScheduleJob>();
   for (const row of listDeclaredSchedules()) {

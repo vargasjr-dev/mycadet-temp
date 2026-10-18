@@ -1,20 +1,15 @@
 /**
  * Tests for the gateway channel admission policy IPC route.
  *
- * The handler is driven directly with a stubbed feature-flag resolver and an
- * injected admission-policy cache, following the existing gateway IPC handler
- * test patterns (see trust-rules-handlers.test.ts).
+ * The handler is driven directly with an injected admission-policy cache,
+ * following the existing gateway IPC handler test patterns (see
+ * trust-rules-handlers.test.ts).
  */
 
 import type { AdmissionPolicy } from "@mycadet/gateway-client";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-let flagEnabled = true;
 const policiesByChannel = new Map<string, AdmissionPolicy>();
-
-mock.module("../../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (_key: string) => flagEnabled,
-}));
 
 mock.module("../../risk/admission-policy-cache.js", () => ({
   getAdmissionPolicyCache: () => ({
@@ -30,7 +25,6 @@ function getPolicy(channelType: string) {
 }
 
 beforeEach(() => {
-  flagEnabled = true;
   policiesByChannel.clear();
 });
 
@@ -44,13 +38,6 @@ describe("admissionPolicyRoutes", () => {
     );
     expect(route.schema?.safeParse({ channelType: "" }).success).toBe(false);
     expect(route.schema?.safeParse({}).success).toBe(false);
-  });
-
-  test("returns null policy when the flag is off", () => {
-    flagEnabled = false;
-    policiesByChannel.set("slack", "strangers");
-
-    expect(getPolicy("slack")).toEqual({ policy: null });
   });
 
   test("returns null policy for exempt channels", () => {

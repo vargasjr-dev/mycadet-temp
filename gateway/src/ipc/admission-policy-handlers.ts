@@ -2,8 +2,8 @@
  * IPC route definitions for gateway-owned channel admission policy reads.
  *
  * Exposes the resolved per-channel admission policy to the assistant daemon
- * over the IPC socket. Returns `null` when the channel-trust-floors flag is
- * off, the channel is exempt, or the channel type is unknown.
+ * over the IPC socket. Returns `null` when the channel is exempt or the
+ * channel type is unknown.
  */
 
 import { z } from "zod";

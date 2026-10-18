@@ -521,7 +521,7 @@ export async function handleSimulateRouter({
   // Validate the requested profile name against the configured profile
   // catalog so the caller gets a structured 400 instead of a silent fall-
   // through (the resolver tolerates missing override-profile references by
-  // design, but the playground wants the user to know they typo'd).
+  // design, but the simulate route wants the user to know they typo'd).
   if (profileOverride !== undefined) {
     const profiles = getUserSelectableProfilesForProvider(liveConfig.llm);
     if (!Object.prototype.hasOwnProperty.call(profiles, profileOverride)) {
@@ -604,7 +604,7 @@ export async function handleSimulateRouter({
   };
 }
 
-// ── Router prompt template (bundled default for the playground editor) ──
+// ── Router prompt template (bundled default) ────────────────────────────
 
 export const MemoryV2RouterPromptTemplateResultSchema = z.object({
   /** The bundled router prompt body, placeholders intact. */
@@ -620,7 +620,7 @@ async function handleGetRouterPromptTemplate(): Promise<MemoryV2RouterPromptTemp
   return { template: ROUTER_PROMPT };
 }
 
-// ── Current `<now>` body (default value for the playground editor) ──────
+// ── Current `<now>` body (default value) ────────────────────────────────
 
 export const MemoryV2NowTextResultSchema = z.object({
   /** The current rendered NOW.md body (autoloaded essentials/threads/recent). */
@@ -839,7 +839,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleGetRouterPromptTemplate,
     summary: "Return the bundled router system-prompt template",
     description:
-      "Returns the bundled `ROUTER_PROMPT` body with placeholders intact (`{{ASSISTANT_NAME}}`, `{{USER_NAME}}`, `{{PAGE_INDEX}}`). Used by the memory router playground's 'Load default' affordance so users have a known-good starting point when authoring an inline prompt override.",
+      "Returns the bundled `ROUTER_PROMPT` body with placeholders intact (`{{ASSISTANT_NAME}}`, `{{USER_NAME}}`, `{{PAGE_INDEX}}`). Gives users a known-good starting point when authoring an inline prompt override.",
     tags: ["memory"],
     responseBody: MemoryV2RouterPromptTemplateResultSchema,
   },
@@ -854,7 +854,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleGetNowText,
     summary: "Return the current rendered `<now>` body",
     description:
-      "Returns the current NOW.md (autoloaded essentials/threads/recent). Used by the memory router playground to seed its `<now>` text area with a production-like default so callers can edit from a realistic baseline.",
+      "Returns the current NOW.md (autoloaded essentials/threads/recent). Provides a production-like default so callers can edit from a realistic baseline.",
     tags: ["memory"],
     responseBody: MemoryV2NowTextResultSchema,
   },

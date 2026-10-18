@@ -61,7 +61,6 @@ import {
 } from "../schedule/schedule-store.js";
 import { runDueSchedulesOnce } from "../schedule/scheduler.js";
 import { getWorkspacePluginsDir } from "../util/layout.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
 await initializeDb();
 
@@ -248,8 +247,6 @@ describe("fire-time source-availability gate", () => {
       manifest,
       JSON.stringify({ name: PLUGIN_NAME, version: "1.0.0" }),
     );
-    // The feature ships off, so the healthy-plugin cases below need it on.
-    setOverridesForTesting({ "plugin-schedules": true });
   });
 
   function skipRunsFor(jobId: string): Array<{
@@ -357,22 +354,6 @@ describe("fire-time source-availability gate", () => {
       .all(job.id) as Array<{ status: string }>;
     expect(runs).toHaveLength(1);
     expect(runs[0].status).toBe("ok");
-  });
-
-  test("does not execute a due sourced row while the feature flag is off", async () => {
-    const job = await seedDueSourcedScript();
-    setOverridesForTesting({ "plugin-schedules": false });
-
-    const result = await runDueSchedulesOnce();
-
-    expect(result.claimed).toBe(1);
-    expect(result.skipped).toBe(1);
-    expect(result.completed).toBe(0);
-    expect(existsSync(marker)).toBe(false);
-    const runs = skipRunsFor(job.id);
-    expect(runs).toHaveLength(1);
-    expect(runs[0].status).toBe("error");
-    expect(runs[0].error).toContain("no longer declares this schedule");
   });
 
   test("a skip spends no retry budget and keeps the row on its normal cadence", async () => {

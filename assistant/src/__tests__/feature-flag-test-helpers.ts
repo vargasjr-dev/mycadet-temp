@@ -50,8 +50,6 @@ export function setOverridesForTesting(
 export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
-  "channel-trust-floors",
-  "plugin-schedules",
 ];
 
 /**
@@ -76,19 +74,14 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "quiet-turn-activity",
   "fast-mode",
   "apple-container",
-  "fork-from-message",
   "internal-thread-actions",
-  "compaction-playground",
   "velvet",
-  "memory-router-playground",
   "self-intro-greeting",
-  "channel-trust-floors",
   "mcp-catalog-qa-integrations",
   "os-beta",
   "new-thread-suggestions",
   "chat-credential-reveal",
   "marketing-pricing-takeover",
-  "plugin-schedules",
   "android-avatar-app-icon",
   "push-avatar-sender",
   "local-notification-avatar",

@@ -42,7 +42,6 @@ import { runWatchersOnce } from "../watcher/engine.js";
 import { normalizeCapabilityManifest } from "../workflows/capabilities.js";
 import { getWorkflowRunManager } from "../workflows/run-manager.js";
 import { declarationExistsOnDisk } from "./plugin-schedule-declarations.js";
-import { isPluginSchedulesEnabled } from "./plugin-schedules-gate.js";
 import { hasSetConstructs } from "./recurrence-engine.js";
 import { applyRetryDecision, decideRetry } from "./retry-policy.js";
 import { runScript, type ScriptResult } from "./run-script.js";
@@ -732,11 +731,7 @@ export async function runDueSchedulesOnce(
     // moment cannot run the plugin's code. The probe costs a stat and a
     // manifest read, paid only when a sourced row fires.
     const sourceKey = job.sourceKey;
-    if (
-      sourceKey !== null &&
-      (!isPluginSchedulesEnabled() ||
-        !(await declarationExistsOnDisk(sourceKey)))
-    ) {
+    if (sourceKey !== null && !(await declarationExistsOnDisk(sourceKey))) {
       const sourcePlugin = describeScheduleSource(sourceKey) ?? sourceKey;
       log.info(
         { jobId: job.id, name: job.name, plugin: sourcePlugin },

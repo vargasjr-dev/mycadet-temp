@@ -14,17 +14,7 @@ import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
  * flag reads as its registry default (`false`) until `/feature-flags`
  * hydrates, so the affordances appear once the real value lands rather than
  * flashing and disappearing.
- *
- * The cloud serves this gate under either `internal-thread-actions` or the
- * legacy `fork-from-message` key, and either one grants access. Both are
- * declared in the registry so the flag mapper keeps whichever the cloud
- * sends (`use-client-feature-flag-sync.ts` drops keys the registry does not
- * declare).
  */
 export function useCanUseInternalThreadActions(): boolean {
-  const internalThreadActionsEnabled =
-    useClientFeatureFlagStore.use.internalThreadActions();
-  const legacyForkFlagEnabled =
-    useClientFeatureFlagStore.use.forkFromMessage();
-  return internalThreadActionsEnabled === true || legacyForkFlagEnabled === true;
+  return useClientFeatureFlagStore.use.internalThreadActions() === true;
 }

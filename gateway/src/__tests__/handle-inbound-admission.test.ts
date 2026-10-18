@@ -55,10 +55,10 @@ mock.module("../verification/text-verification.js", () => ({
   tryTextVerificationIntercept: async () => ({ intercepted: false }),
 }));
 
-// Admission enforcement is gated behind `channel-trust-floors`; enable it so
-// these tests exercise the kill switch + floor-attach path.
+// The feature-flag resolver stays mocked off: nothing in this graph should
+// depend on a registry flag resolving true in tests.
 mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (key: string) => key === "channel-trust-floors",
+  isFeatureFlagEnabled: () => false,
 }));
 
 await import("./test-preload.js");

@@ -110,7 +110,7 @@ export const ROUTES: RouteDefinition[] = [
     handler: handleListProfiles,
     summary: "List defined LLM profiles",
     description:
-      "Returns the sorted list of profile names defined in `llm.profiles` plus the workspace-wide active profile. Used to populate per-call profile dropdowns (e.g. memory router playground) without requiring the caller to type profile names.",
+      "Returns the sorted list of profile names defined in `llm.profiles` plus the workspace-wide active profile. Used to populate per-call profile dropdowns without requiring the caller to type profile names.",
     tags: ["config"],
     responseBody: llmProfilesListResponseSchema,
   },

@@ -11,11 +11,10 @@ import {
 } from "../__tests__/feature-flag-test-helpers.js";
 
 // Real flag cache seeded to mirror the former module mock: every flag off
-// except channel-trust-floors, which gates the admission-policy stage.
-const FLAGS = {
-  ...Object.fromEntries(DEFAULT_ENABLED_FLAG_KEYS.map((k) => [k, false])),
-  "channel-trust-floors": true,
-} as Record<string, boolean>;
+// (the admission floor is unconditional now).
+const FLAGS = Object.fromEntries(
+  DEFAULT_ENABLED_FLAG_KEYS.map((k) => [k, false]),
+) as Record<string, boolean>;
 
 process.env.DISABLE_HTTP_AUTH = "true";
 

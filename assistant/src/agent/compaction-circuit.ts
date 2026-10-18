@@ -17,11 +17,6 @@ export const COMPACTION_CIRCUIT_COOLDOWN_MS = 60 * 60 * 1000;
  * any successful compaction resets the counter. State is in-memory only —
  * resets on process restart, the intended "one free retry after restart"
  * behavior.
- *
- * The dev-only playground routes (`POST /playground/reset-compaction-circuit`,
- * `POST /playground/inject-compaction-failures`) read and mutate
- * `consecutiveCompactionFailures` and `compactionCircuitOpenUntil` directly on
- * this object.
  */
 export class CompactionCircuit {
   readonly conversationId: string;

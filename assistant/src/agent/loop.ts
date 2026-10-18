@@ -1170,8 +1170,8 @@ export class AgentLoop {
    * Loop-held compaction circuit breaker. The loop has a 1:1 lifetime with its
    * conversation, so it is the source of truth for the cross-turn failure
    * counter and cooldown deadline. Non-loop callers (the orchestrator's
-   * compaction paths, `Conversation.forceCompact`, and the dev-only playground
-   * routes) reach it via `agentLoop.compactionCircuit`.
+   * compaction paths, `Conversation.forceCompact`) reach it via
+   * `agentLoop.compactionCircuit`.
    */
   readonly compactionCircuit: CompactionCircuit;
 

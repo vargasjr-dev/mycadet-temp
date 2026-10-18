@@ -58,9 +58,8 @@ const { createTwilioStatusWebhookHandler } =
 const AUTH_TOKEN = "test-twilio-auth-token";
 
 beforeEach(async () => {
-  // The voice webhook resolves the phone admission floor (channel-trust-floors
-  // is on by default); init the cache fresh per test like the other webhook
-  // handler tests.
+  // The voice webhook resolves the phone admission floor; init the cache
+  // fresh per test like the other webhook handler tests.
   resetGatewayDb();
   resetAdmissionPolicyCache();
   await initGatewayDb();

@@ -121,7 +121,6 @@ import { ROUTES as OAUTH_PROVIDERS_ROUTES } from "./oauth-providers.js";
 import { ROUTES as OAUTH_PROXY_GRANT_ROUTES } from "./oauth-proxy-grant-routes.js";
 import { ROUTES as OAUTH_PROXY_ROUTES } from "./oauth-proxy-routes.js";
 import { ROUTES as ONBOARDING_CHECKIN_ROUTES } from "./onboarding-checkin-routes.js";
-import { ROUTES as PLAYGROUND_ROUTES } from "./playground/index.js";
 import { ROUTES as PLUGINS_ROUTES } from "./plugins-routes.js";
 import { ROUTES as PROFILER_ROUTES } from "./profiler-routes.js";
 import { ROUTES as PS_ROUTES } from "./ps-routes.js";
@@ -270,7 +269,6 @@ export const ROUTES: RouteDefinition[] = [
   ...OAUTH_PROVIDERS_ROUTES,
   ...ONBOARDING_CHECKIN_ROUTES,
   ...PLATFORM_ROUTES,
-  ...PLAYGROUND_ROUTES,
   ...PLUGINS_ROUTES,
   ...PROFILER_ROUTES,
   ...PS_ROUTES,

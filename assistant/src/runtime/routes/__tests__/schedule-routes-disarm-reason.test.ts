@@ -11,7 +11,6 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../../__tests__/feature-flag-test-helpers.js";
 import { getDb } from "../../../persistence/db-connection.js";
 import { initializeDb } from "../../../persistence/db-init.js";
 import {
@@ -116,9 +115,6 @@ beforeEach(() => {
   getDb().run("DELETE FROM cron_runs");
   getDb().run("DELETE FROM cron_jobs");
   rmSync(pluginsDir, { recursive: true, force: true });
-  // The feature ships off, so every case states the flag it runs under rather
-  // than inheriting the registry default.
-  setOverridesForTesting({ "plugin-schedules": true });
 });
 
 describe("schedule serialization: disarmReason", () => {
@@ -176,17 +172,6 @@ describe("schedule serialization: disarmReason", () => {
     writePlugin("news", { declaration: "digest" });
     const id = await declaredRow("news", true);
     latchAsCompleted(id);
-
-    const row = await listed(id);
-    expect(row.enabled).toBe(false);
-    expect(row.disarmReason).toBeNull();
-    expect((await fetched(id)).disarmReason).toBeNull();
-  });
-
-  test("the kill switch being off is not a per-row cause", async () => {
-    writePlugin("news", { declaration: "digest" });
-    const id = await declaredRow("news", false);
-    setOverridesForTesting({ "plugin-schedules": false });
 
     const row = await listed(id);
     expect(row.enabled).toBe(false);

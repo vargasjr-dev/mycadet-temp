@@ -67,16 +67,14 @@ mock.module("../../voice/verification.js", () => ({
 }));
 
 // ── Admission-policy mocks (kill switch) ───────────────────────────────
-// Mutable knobs so individual tests can flip the flag / exempt state /
-// resolved policy without re-mocking. Defaults keep the kill switch a no-op
-// (flag off) so the pre-existing routing tests are unaffected.
-let flagEnabled = false;
+// Mutable knobs so individual tests can flip the exempt state / resolved
+// policy without re-mocking. Defaults are permissive so the pre-existing
+// routing tests are unaffected.
 let phoneExempt = false;
 let phonePolicy = "everyone";
 
 mock.module("../../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "channel-trust-floors" ? flagEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 mock.module("@mycadet/gateway-client", () => ({
@@ -155,7 +153,6 @@ describe("twilio voice webhook handler", () => {
     lastForwardedParams = undefined;
     _lastForwardedOriginalUrl = undefined;
     forwardCalled = false;
-    flagEnabled = false;
     phoneExempt = false;
     phonePolicy = "everyone";
   });
@@ -290,8 +287,7 @@ describe("twilio voice webhook handler", () => {
     expect(forwardCalled).toBe(true);
   });
 
-  test("inbound call is rejected when phone admission policy is no_one (flag on, enforced)", async () => {
-    flagEnabled = true;
+  test("inbound call is rejected when phone admission policy is no_one", async () => {
     phoneExempt = false; // phone is enforced
     phonePolicy = "no_one";
 
@@ -313,8 +309,7 @@ describe("twilio voice webhook handler", () => {
     expect(forwardCalled).toBe(false);
   });
 
-  test("inbound call falls through to forwarding when policy is not no_one (flag on, enforced)", async () => {
-    flagEnabled = true;
+  test("inbound call falls through to forwarding when policy is not no_one", async () => {
     phoneExempt = false;
     phonePolicy = "everyone";
 
@@ -334,8 +329,7 @@ describe("twilio voice webhook handler", () => {
     expect(forwardCalled).toBe(true);
   });
 
-  test("kill switch is skipped if a channel is exempt even with policy no_one", async () => {
-    flagEnabled = true;
+  test("the admission floor is skipped when a channel is exempt even with policy no_one", async () => {
     phoneExempt = true; // exercise the defensive exempt branch
     phonePolicy = "no_one";
 
@@ -355,8 +349,7 @@ describe("twilio voice webhook handler", () => {
     expect(forwardCalled).toBe(true);
   });
 
-  test("outbound call (callSessionId present) is never kill-switched", async () => {
-    flagEnabled = true;
+  test("outbound call (callSessionId present) skips the admission floor", async () => {
     phoneExempt = false;
     phonePolicy = "no_one";
 
