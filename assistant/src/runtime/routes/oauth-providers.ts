@@ -6,10 +6,10 @@
  * the standard runtime auth middleware.
  */
 
-import { getConfig } from "../../config/loader.js";
 import { INTEGRATION_CATEGORIES } from "@mycadet/service-contracts/integration-categories";
 import { z } from "zod";
 
+import { getConfig } from "../../config/loader.js";
 import { getOAuthCallbackUrl } from "../../inbound/public-ingress-urls.js";
 import {
   deleteApp,

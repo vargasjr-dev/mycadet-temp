@@ -19,7 +19,6 @@
  * - Running identity verifiers
  */
 
-import { getConfig } from "../config/loader.js";
 import { emitPostConnectNudge } from "../home/post-connect-feed.js";
 import { invalidateAssistantSuggestedPromptsCache } from "../home/suggested-prompts-cache.js";
 import type { TokenEndpointAuthMethod } from "../security/oauth2.js";
