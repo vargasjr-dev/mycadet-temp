@@ -35,20 +35,11 @@ function AssistantShell({
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
-  const [selection, select] = useState<{
-    id: string;
-    apiBaseUrl: string;
-    origin: string;
-  }>();
-  const selectedId =
-    assistantId ??
-    (selection?.apiBaseUrl === apiBaseUrl && selection.origin === origin
-      ? selection.id
-      : undefined);
+  const [selectedId, select] = useState<string>();
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     origin,
-    assistantId: selectedId,
+    assistantId: assistantId ?? selectedId,
   });
   if (state.status !== "ready") {
     return (
@@ -59,7 +50,7 @@ function AssistantShell({
             <button
               key={assistant.id}
               type="button"
-              onClick={() => select({ id: assistant.id, apiBaseUrl, origin })}
+              onClick={() => select(assistant.id)}
             >
               {assistant.name || assistant.id}
             </button>
