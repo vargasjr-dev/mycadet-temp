@@ -36,7 +36,6 @@ import {
   looksLikeGitHubSpec,
   parseGitHubPluginSpec,
 } from "../lib/parse-github-plugin-spec.js";
-import { isPluginCatalogEntryVisible } from "../lib/plugin-catalog-visibility.js";
 import {
   DEFAULT_PLUGIN_REF,
   PLUGIN_UPGRADE_STRATEGIES,
@@ -215,13 +214,6 @@ export function registerPluginsCommand(program: Command): void {
             if (!direct && !usesMarketplaceGit) {
               // Platform-managed install serves a verified tarball from the
               // pinned commit.
-              if (!isPluginCatalogEntryVisible(nameOrUrl)) {
-                console.error(
-                  `Plugin "${nameOrUrl}" is not in the marketplace catalog.`,
-                );
-                process.exitCode = 1;
-                return;
-              }
               let match;
               let catalogResolved = false;
               try {

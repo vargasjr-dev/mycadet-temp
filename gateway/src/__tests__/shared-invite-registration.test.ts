@@ -37,12 +37,10 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-let trustedContactsEnabled = true;
 const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "cadet-trusted-contacts" ? trustedContactsEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 type StoredCredential = { value: string | undefined; unreachable: boolean };
@@ -99,7 +97,6 @@ beforeEach(() => {
   seedContact({ id: CONTACT_ID, displayName: "Alice" });
   fetchMock = mock(async () => new Response(null, { status: 204 }));
   ipcCalls = [];
-  trustedContactsEnabled = true;
   withCloudCredentials();
   delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
@@ -221,17 +218,6 @@ describe("registration is skipped", () => {
     expect(activeInviteRows()).toHaveLength(1);
   });
 
-  test("when the trusted-contacts flag is off", async () => {
-    trustedContactsEnabled = false;
-
-    await createInviteNative({
-      contactId: CONTACT_ID,
-      sourceChannel: "cadet-shared",
-    });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(activeInviteRows()).toHaveLength(1);
-  });
 });
 
 describe("a failed registration leaves no invite", () => {

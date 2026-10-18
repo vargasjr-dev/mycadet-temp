@@ -9,10 +9,7 @@ import { hashInviteToken } from "@mycadet/gateway-client";
 import { credentialKey } from "../credential-key.js";
 import { readCredentialResult } from "../credential-reader.js";
 import { fetchImpl } from "../fetch.js";
-import {
-  areCloudFeaturesEnabled,
-  isFeatureFlagEnabled,
-} from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
 import { getLogger } from "../logger.js";
 
 const log = getLogger("shared-invite-registration");
@@ -20,7 +17,6 @@ const log = getLogger("shared-invite-registration");
 const SHARED_INVITE_CHANNEL = "cadet-shared";
 const SHARED_INVITE_REGISTRATION_PATH = "/v1/internal/shared-invites/";
 
-const TRUSTED_CONTACTS_FLAG = "cadet-trusted-contacts";
 const REGISTRATION_TIMEOUT_MS = 10_000;
 
 export type SharedInviteRegistrationResult =
@@ -51,9 +47,8 @@ async function readCloudCredential(
 /**
  * Register the invite's link-token hash and expiry with the cloud.
  *
- * Skipped for any channel other than `cadet-shared`, while the
- * trusted-contacts flag is off, when platform features are disabled, and when
- * no cloud credentials are configured.
+ * Skipped for any channel other than `cadet-shared`, when platform features
+ * are disabled, and when no cloud credentials are configured.
  */
 export async function registerSharedInvite(params: {
   sourceChannel: string;
@@ -62,7 +57,6 @@ export async function registerSharedInvite(params: {
 }): Promise<SharedInviteRegistrationResult> {
   if (
     params.sourceChannel !== SHARED_INVITE_CHANNEL ||
-    !isFeatureFlagEnabled(TRUSTED_CONTACTS_FLAG) ||
     !areCloudFeaturesEnabled()
   ) {
     return { status: "skipped" };

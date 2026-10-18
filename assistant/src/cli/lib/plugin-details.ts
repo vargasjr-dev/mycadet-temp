@@ -46,7 +46,6 @@ import {
   findCatalogEntry,
   resolveSourceFromMatch,
 } from "./plugin-catalog-resolve.js";
-import { isPluginCatalogEntryVisible } from "./plugin-catalog-visibility.js";
 import { DEFAULT_PLUGIN_REF } from "./plugin-constants.js";
 import { readValidatedPluginIcon } from "./plugin-icon-file.js";
 import {
@@ -412,9 +411,6 @@ async function resolveCatalogEntry(
   fetchFn: FetchLike,
   installed: boolean,
 ): Promise<PluginSearchMatch | null> {
-  if (!isPluginCatalogEntryVisible(name)) {
-    return null;
-  }
   try {
     // Non-default refs named historical revisions of the old local marketplace
     // manifest; with the catalog living in Cadet Cloud there is nothing to

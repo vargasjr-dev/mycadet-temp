@@ -4,14 +4,12 @@
  *
  * Unauthenticated: the link token in the body is the credential. Failed
  * attempts are counted per client IP, and a client over the limit is refused
- * before its body is read. Hidden with a 404 while `cadet-trusted-contacts`
- * is off.
+ * before its body is read.
  */
 
 import { z } from "zod";
 
 import { AuthRateLimiter } from "../../auth-rate-limiter.js";
-import { isFeatureFlagEnabled } from "../../feature-flag-resolver.js";
 import { getLogger } from "../../logger.js";
 import { redeemSharedInvite } from "../../verification/shared-invite-redemption.js";
 import { errorResponse } from "../loopback-guard.js";
@@ -19,7 +17,6 @@ import { readJsonObjectBody } from "../route-helpers.js";
 
 const log = getLogger("shared-invite-redeem");
 
-const TRUSTED_CONTACTS_FLAG = "cadet-trusted-contacts";
 const MAX_REDEEM_BODY_BYTES = 1024;
 const RETRY_AFTER_SECONDS = 60;
 
@@ -73,9 +70,6 @@ export async function handleSharedInviteRedeem(
   req: Request,
   clientIp: string,
 ): Promise<Response> {
-  if (!isFeatureFlagEnabled(TRUSTED_CONTACTS_FLAG)) {
-    return noStore(errorResponse("NOT_FOUND", "not found", 404));
-  }
   if (failureLimiter.isBlocked(clientIp)) {
     return rateLimitedResponse();
   }

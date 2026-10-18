@@ -8,7 +8,6 @@
  */
 
 import { fetchPluginCatalogFromPlatform } from "./plugin-catalog-cloud.js";
-import { filterPluginCatalogByFeatureFlags } from "./plugin-catalog-visibility.js";
 import type { PluginCatalog, SearchPluginsDeps } from "./search-plugins.js";
 
 /** How long a fetched catalog is served before a refresh is attempted. */
@@ -44,18 +43,15 @@ async function loadPluginCatalog(
   return catalog;
 }
 
-/** Installable catalog with feature-flag visibility applied. */
+/** Installable catalog. */
 export async function getPluginCatalog(
   ref: string,
   deps: SearchPluginsDeps,
 ): Promise<PluginCatalog> {
-  return filterPluginCatalogByFeatureFlags(
-    await loadPluginCatalog(ref, deps),
-    deps.featureFlagEnabled,
-  );
+  return loadPluginCatalog(ref, deps);
 }
 
-/** Category metadata for plugins already installed, including hidden entries. */
+/** Category metadata for plugins already installed. */
 export async function getPluginCatalogForInstalledMetadata(
   ref: string,
   deps: PluginCatalogLoadDeps,

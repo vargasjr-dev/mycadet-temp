@@ -68,15 +68,12 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
   "cadet-hosted-inference",
-  "quick-input",
   "teach",
   "quiet-turn-activity",
   "fast-mode",
-  "apple-container",
   "internal-thread-actions",
   "velvet",
   "self-intro-greeting",
-  "mcp-catalog-qa-integrations",
   "os-beta",
   "new-thread-suggestions",
   "chat-credential-reveal",
@@ -88,7 +85,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "model-first-profile-create",
   "send-user-message",
   "sidebar-done",
-  "cadet-trusted-contacts",
 ];
 
 /**

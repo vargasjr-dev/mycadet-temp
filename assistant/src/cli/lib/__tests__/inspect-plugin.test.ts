@@ -329,7 +329,7 @@ describe("inspectPlugin", () => {
     expect(result.remote?.commit).toBe(SHA_B);
   });
 
-  test("hides an uninstalled gated integration without fetching the marketplace", async () => {
+  test("fails fast for a not-installed integration without fetching the marketplace", async () => {
     let fetchCalls = 0;
     const fetch = (async () => {
       fetchCalls += 1;
@@ -345,7 +345,7 @@ describe("inspectPlugin", () => {
     expect(fetchCalls).toBe(0);
   });
 
-  test("keeps an installed gated integration inspectable", async () => {
+  test("keeps an installed integration inspectable", async () => {
     installPlugin(workspace, "gamma", { sidecar: null });
     const fetch = makeFetch({ marketplace: manifestWith("gamma", SHA_B) });
 

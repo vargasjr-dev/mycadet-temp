@@ -479,16 +479,6 @@ describe("plugins install - declared-schedules consent", () => {
     expect(r.exitCode).toBe(0);
   });
 
-  test("does not use the outage fallback for a gated integration", async () => {
-    catalogError = new Error("catalog unavailable");
-
-    const r = await runCommand(["plugins", "install", "gamma"]);
-
-    expect(installPluginCalls).toHaveLength(0);
-    expect(platformInstallCalls).toHaveLength(0);
-    expect(r.stderr).toContain("not in the marketplace catalog");
-    expect(r.exitCode).toBe(1);
-  });
 });
 
 describe("plugins upgrade - declared-schedules consent (local fallback)", () => {

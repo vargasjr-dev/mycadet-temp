@@ -62,12 +62,10 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-let trustedContactsEnabled = true;
 const actualFlagResolver = await import("../feature-flag-resolver.js");
 mock.module("../feature-flag-resolver.js", () => ({
   ...actualFlagResolver,
-  isFeatureFlagEnabled: (flag: string) =>
-    flag === "cadet-trusted-contacts" ? trustedContactsEnabled : false,
+  isFeatureFlagEnabled: () => false,
 }));
 
 // Token minting stays real; a test can make the next mint throw to fail a
@@ -236,7 +234,6 @@ beforeEach(() => {
   });
   seedContact({ id: CONTACT_ID, displayName: "Alice" });
   ipcCalls = [];
-  trustedContactsEnabled = true;
   failNextMint = false;
   resetSharedInviteRedeemRateLimiterForTests();
 });
@@ -430,16 +427,6 @@ describe("creating a cadet-shared invite", () => {
 });
 
 describe("request validation", () => {
-  test("returns 404 while the trusted-contacts flag is off", async () => {
-    const invite = await createInvite();
-    trustedContactsEnabled = false;
-
-    const res = await redeem({ code: invite.token, deviceId: DEVICE_ID });
-
-    expect(res.status).toBe(404);
-    expectInviteUnconsumed(invite.id);
-  });
-
   test("rejects a blank deviceId", async () => {
     const invite = await createInvite();
 

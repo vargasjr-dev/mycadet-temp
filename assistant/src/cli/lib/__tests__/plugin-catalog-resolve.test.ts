@@ -179,21 +179,9 @@ describe("catalog-backed resolvers (cloud catalog)", () => {
     ).toBeNull();
   });
 
-  test("does not resolve a QA integration while its feature flag is off", async () => {
+  test("resolves a QA integration now that the catalog shows them unconditionally", async () => {
     expect(
-      await resolvePluginSourceFromCatalog("gamma", {
-        ...catalogDeps,
-        featureFlagEnabled: () => false,
-      }),
-    ).toBeNull();
-  });
-
-  test("resolves a QA integration while its feature flag is on", async () => {
-    expect(
-      await resolvePluginSourceFromCatalog("gamma", {
-        ...catalogDeps,
-        featureFlagEnabled: () => true,
-      }),
+      await resolvePluginSourceFromCatalog("gamma", catalogDeps),
     ).toMatchObject({
       kind: "github",
       owner: "acme",

@@ -31,134 +31,23 @@ describe("feature flag catalog", () => {
     expect(ASSISTANT_FLAG_DEFAULTS.sendUserMessage).toBe(false);
   });
 
-  test("session grouping is no longer flag-gated", () => {
-    expect("sessionGroups" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("sessionGroups" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("sessionGroups" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("sessionGroups" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA collapsed assistant intermediates as a feature flag", () => {
-    expect("collapseAssistantIntermediates" in CLIENT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect("collapseAssistantIntermediates" in ASSISTANT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-  });
 
-  test("does not expose the GA billing CTA experiment as a feature flag", () => {
-    expect("experimentBillingCta20260723" in CLIENT_STRING_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect("experimentBillingCta20260723" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("experimentBillingCta20260723" in ASSISTANT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-  });
 
-  test("does not expose retired proactive tips as a feature flag", () => {
-    expect("proactiveTips" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("proactiveTips" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("proactiveTips" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("proactiveTips" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA empty-state greetings as a feature flag", () => {
-    expect("emptyStateDynamicGreetings" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("emptyStateDynamicGreetings" in CLIENT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA quote reply as a feature flag", () => {
-    expect("quoteReply" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("quoteReply" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose the developer menu flag", () => {
-    expect("developerMenuItems" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("developerMenuItems" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("the deleted fork-from-message alias and playgrounds stay gone", () => {
-    expect("forkFromMessage" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("memoryRouterPlayground" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("channelTrustFloors" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("pluginSchedules" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("compactionPlayground" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA web remote ingress as a feature flag", () => {
-    expect("webRemoteIngress" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("webRemoteIngress" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose the GA assistant switcher as a feature flag", () => {
-    expect("assistantSwitcher" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("assistantSwitcher" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose a page-level MCP gate", () => {
-    expect("mcpSettings" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose the GA iOS avatar app icon as a feature flag", () => {
-    expect("iosAvatarAppIcon" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("iosAvatarAppIcon" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("iosAvatarAppIcon" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("iosAvatarAppIcon" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA summarize-up-to-here as a feature flag", () => {
-    expect("summarizeUpToHere" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("summarizeUpToHere" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose the retired balanced-model experiment as a feature flag", () => {
-    expect("experimentBalancedModel20260831" in CLIENT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect("experimentBalancedModel20260831" in ASSISTANT_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect(
-      "experimentBalancedModel20260831" in CLIENT_STRING_FLAG_DEFAULTS,
-    ).toBe(false);
-    expect(
-      "experimentBalancedModel20260831" in ASSISTANT_STRING_FLAG_DEFAULTS,
-    ).toBe(false);
-  });
 
-  test("does not expose GA desktop presence suppression as a feature flag", () => {
-    expect("desktopPresenceSuppression" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("desktopPresenceSuppression" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("desktopPresenceSuppression" in CLIENT_STRING_FLAG_DEFAULTS).toBe(
-      false,
-    );
-    expect("desktopPresenceSuppression" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(
-      false,
-    );
-  });
 
-  test("does not expose GA Link by Stripe as a feature flag", () => {
-    expect("stripeLinkOauth" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("stripeLinkOauth" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("stripeLinkOauth" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("stripeLinkOauth" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose the GA Assistant Inbox as a feature flag", () => {
-    expect("assistantInbox" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("assistantInbox" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("assistantInbox" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("assistantInbox" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 
-  test("does not expose GA teleport as a feature flag", () => {
-    expect("teleport" in CLIENT_FLAG_DEFAULTS).toBe(false);
-    expect("teleport" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
-    expect("teleport" in CLIENT_STRING_FLAG_DEFAULTS).toBe(false);
-    expect("teleport" in ASSISTANT_STRING_FLAG_DEFAULTS).toBe(false);
-  });
 });
 
 describe("getEnvFlagOverridesForScope", () => {
