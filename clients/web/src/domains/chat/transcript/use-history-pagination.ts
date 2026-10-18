@@ -37,7 +37,6 @@ import type { BackgroundTaskEntry } from "@/domains/chat/background-task-store";
 import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 
 const EMPTY_MODE_SESSION_DESCRIPTORS: ModeSessionDescriptor[] = [];
-const EMPTY_MODE_SESSION_IDS: string[] = [];
 
 // ---------------------------------------------------------------------------
 // Query key
@@ -126,15 +125,6 @@ export function activeModeSessionIdsForRefresh(
     .map((descriptor) => descriptor.summary.id);
 }
 
-export function modeSessionIdsForRefresh(
-  pages: readonly PaginatedHistoryResult[] | undefined,
-  enabled: boolean,
-): string[] {
-  return enabled
-    ? activeModeSessionIdsForRefresh(pages)
-    : EMPTY_MODE_SESSION_IDS;
-}
-
 /** The shape `useInfiniteQuery` stores under a conversation-history key. */
 export type HistoryCache = InfiniteData<PaginatedHistoryResult>;
 
@@ -179,7 +169,6 @@ interface UseHistoryPaginationParams {
   assistantId: string | null;
   conversationId: string | null;
   enabled: boolean;
-  sessionGroupsEnabled: boolean;
 }
 
 export interface HistoryPaginationResult {
@@ -233,7 +222,6 @@ export function useHistoryPagination({
   assistantId,
   conversationId,
   enabled,
-  sessionGroupsEnabled,
 }: UseHistoryPaginationParams): HistoryPaginationResult {
   const queryClient = useQueryClient();
   const queryKey = useMemo(
@@ -256,7 +244,7 @@ export function useHistoryPagination({
         assistantId,
         conversationId,
         undefined,
-        modeSessionIdsForRefresh(cached?.pages, sessionGroupsEnabled),
+        activeModeSessionIdsForRefresh(cached?.pages),
       );
     },
     initialPageParam: null as number | null,
@@ -328,11 +316,8 @@ export function useHistoryPagination({
     [query.data],
   );
   const modeSessions = useMemo(
-    () =>
-      sessionGroupsEnabled
-        ? aggregateModeSessionDescriptors(query.data?.pages)
-        : EMPTY_MODE_SESSION_DESCRIPTORS,
-    [query.data, sessionGroupsEnabled],
+    () => aggregateModeSessionDescriptors(query.data?.pages),
+    [query.data],
   );
 
   const latestPage = query.data?.pages[0];
@@ -358,7 +343,7 @@ export function useHistoryPagination({
     latestPage,
     subagentNotifications,
     backgroundToolCompletions,
-    modeSessions: sessionGroupsEnabled ? modeSessions : undefined,
+    modeSessions,
     isLoading: query.isLoading,
     isSuccess: query.isSuccess,
     isError: query.isError,

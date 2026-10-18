@@ -208,7 +208,6 @@ export function useConversationHistory({
       assistantStateKind === "active" &&
       !!assistantId &&
       !!activeConversationId,
-    sessionGroupsEnabled: true,
   });
 
   /**

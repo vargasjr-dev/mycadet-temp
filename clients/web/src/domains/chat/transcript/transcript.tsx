@@ -21,7 +21,6 @@ import type { TranscriptItem } from "@/domains/chat/transcript/types";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
 
 import { keepFocusedFieldVisible } from "@/domains/chat/transcript/focused-field";
-import { LatestTurnRow } from "@/domains/chat/transcript/latest-turn-row";
 import { PullRefreshSpinner } from "@/domains/chat/transcript/pull-refresh-spinner";
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 import { TranscriptRow } from "@/domains/chat/transcript/transcript-row";
@@ -36,7 +35,6 @@ import type { ConfirmationDecision } from "@/types/event-types";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import {
   groupSessionItems,
   sameSessionGroupIdentity,
@@ -79,7 +77,6 @@ export interface TranscriptProps {
   modeSessionDescriptors?: ModeSessionDescriptor[];
   sessionDisclosureState?: SessionDisclosureState;
   /** Deterministic story/test override. Production reads the assistant flag. */
-  sessionGroupsEnabled?: boolean;
   sessionClockConnected?: boolean;
   /** Deterministic story/test override for live summary time. */
   sessionClockNow?: number;
@@ -366,18 +363,11 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
       conversationId,
       modeSessionDescriptors = [],
       sessionDisclosureState,
-      sessionGroupsEnabled,
       onPullRefresh,
       pullRefreshEnabled,
       ...rest
     } = props;
-    const configuredSessionGroups =
-      useAssistantFeatureFlagStore.use.sessionGroups();
-    const sessionGroupsOn = sessionGroupsEnabled ?? configuredSessionGroups;
-    const fallbackDisclosure = useSessionDisclosureState(
-      conversationId,
-      sessionGroupsOn,
-    );
+    const fallbackDisclosure = useSessionDisclosureState(conversationId);
     const disclosure = sessionDisclosureState ?? fallbackDisclosure;
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const contentRef = useRef<HTMLDivElement | null>(null);
@@ -431,28 +421,26 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
     });
 
     const partition = useMemo(() => partitionLatestTurn(items), [items]);
-    const descriptorsById = useMemo(() => {
-      if (!sessionGroupsOn) {
-        return new Map<string, ModeSessionDescriptor>();
-      }
-      return new Map(
-        modeSessionDescriptors.map((descriptor) => [
-          descriptor.summary.id,
-          descriptor,
-        ]),
-      );
-    }, [modeSessionDescriptors, sessionGroupsOn]);
-    const summariesById = useMemo(() => {
-      if (!sessionGroupsOn) {
-        return new Map();
-      }
-      return new Map(
-        modeSessionDescriptors.map((descriptor) => [
-          descriptor.summary.id,
-          descriptor.summary,
-        ]),
-      );
-    }, [modeSessionDescriptors, sessionGroupsOn]);
+    const descriptorsById = useMemo(
+      () =>
+        new Map(
+          modeSessionDescriptors.map((descriptor) => [
+            descriptor.summary.id,
+            descriptor,
+          ]),
+        ),
+      [modeSessionDescriptors],
+    );
+    const summariesById = useMemo(
+      () =>
+        new Map(
+          modeSessionDescriptors.map((descriptor) => [
+            descriptor.summary.id,
+            descriptor.summary,
+          ]),
+        ),
+      [modeSessionDescriptors],
+    );
     const [segmentHistory, setSegmentHistory] = useState<SegmentHistory>({
       conversationId,
       segments: [],
@@ -465,7 +453,7 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
       [conversationId, segmentHistory],
     );
     const grouped = useMemo(() => {
-      if (!sessionGroupsOn || !conversationId) {
+      if (!conversationId) {
         return {
           history: partition.historyItems as SessionGroupedTranscriptItem[],
           latest: [
@@ -503,14 +491,7 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
             history: projected.slice(0, latestIndex),
             latest: projected.slice(latestIndex),
           };
-    }, [
-      conversationId,
-      items,
-      partition,
-      previousSegments,
-      sessionGroupsOn,
-      summariesById,
-    ]);
+    }, [conversationId, items, partition, previousSegments, summariesById]);
     const firstLatest = grouped.latest[0];
     const anchorGroup =
       firstLatest?.kind === "sessionGroup" &&
@@ -524,31 +505,20 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
       partition.anchorMessage &&
       (!anchorGroup || disclosure.isSessionOpen(anchorGroup.modeSession.id));
     const avatarFollowsSession =
-      sessionGroupsOn &&
       (grouped.latest.length > 0 ? grouped.latest : grouped.history).findLast(
         (item) => item.kind !== "thinking" || item.active,
       )?.kind === "sessionGroup";
     useEffect(() => {
-      const segments = sessionGroupsOn
-        ? [...grouped.history, ...grouped.latest]
-            .filter(
-              (item): item is SessionGroupSegment =>
-                item.kind === "sessionGroup",
-            )
-            .map(
-              ({
-                key,
-                modeSession,
-                rawMemberMessageIds,
-                memberMessageIds,
-              }) => ({
-                key,
-                modeSession,
-                rawMemberMessageIds,
-                memberMessageIds,
-              }),
-            )
-        : [];
+      const segments = [...grouped.history, ...grouped.latest]
+        .filter(
+          (item): item is SessionGroupSegment => item.kind === "sessionGroup",
+        )
+        .map(({ key, modeSession, rawMemberMessageIds, memberMessageIds }) => ({
+          key,
+          modeSession,
+          rawMemberMessageIds,
+          memberMessageIds,
+        }));
       setSegmentHistory((current) => {
         if (
           current.conversationId === conversationId &&
@@ -558,12 +528,10 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
         }
         return { conversationId, segments };
       });
-    }, [conversationId, grouped, sessionGroupsOn]);
+    }, [conversationId, grouped]);
     const sessionByMemberId = useMemo(() => {
       const result = new Map<string, string>();
-      if (!sessionGroupsOn) {
-        return result;
-      }
+
       for (const item of [...grouped.history, ...grouped.latest]) {
         if (item.kind !== "sessionGroup") {
           continue;
@@ -573,12 +541,10 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
         }
       }
       return result;
-    }, [grouped, sessionGroupsOn]);
+    }, [grouped]);
     const domMessageIdByIdentity = useMemo(() => {
       const result = new Map<string, string>();
-      if (!sessionGroupsOn) {
-        return result;
-      }
+
       for (const item of items) {
         if (item.kind !== "message") {
           continue;
@@ -588,7 +554,7 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
         }
       }
       return result;
-    }, [items, sessionGroupsOn]);
+    }, [items]);
     useLayoutEffect(() => {
       const pending = pendingRevealRef.current;
       if (!pending || !disclosure.isSessionOpen(pending.sessionId)) {
@@ -992,26 +958,12 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
               className="flex flex-col"
               minHeight={anchorVisible ? viewportMinHeight : undefined}
             >
-              {partition.anchorMessage && !sessionGroupsOn && (
-                <LatestTurnRow
-                  anchorMessage={partition.anchorMessage}
-                  responseItems={partition.responseItems}
-                  {...rowProps}
-                  responseArtifactsByKey={responseArtifactsByKey}
-                />
-              )}
-              {partition.anchorMessage && sessionGroupsOn
-                ? renderGroupedLatest()
-                : null}
+              {partition.anchorMessage && renderGroupedLatest()}
               {rest.renderAvatar && (
                 <div
                   data-latest-assistant-avatar="true"
                   data-copy-exclude
-                  className={`flex justify-start pl-1 pb-2 ${avatarFollowsSession ? "pt-0" : "pt-3"} ${
-                    sessionGroupsOn
-                      ? "transition-[padding-top] duration-300 ease-out motion-reduce:transition-none"
-                      : ""
-                  }`}
+                  className={`flex justify-start pl-1 pb-2 ${avatarFollowsSession ? "pt-0" : "pt-3"} transition-[padding-top] duration-300 ease-out motion-reduce:transition-none`}
                 >
                   {rest.renderAvatar()}
                 </div>
@@ -1026,9 +978,8 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
               <div aria-hidden data-latest-edge="true" />
             </TranscriptColumn>
           )}
-          {/* Spinner last = visual bottom in flex-col. Only rendered when
-           *  the gesture is feature-flag-enabled so the flag-off path has
-           *  zero DOM impact. */}
+          {/* Spinner last = visual bottom in flex-col; only rendered when
+           *  the gesture is enabled. */}
           {pullEnabled && (
             <PullRefreshSpinner
               height={pull.pullDistance}

@@ -419,11 +419,7 @@ function setSessionGroupsStoryFlag(enabled: boolean) {
 }
 
 function SessionGroupingStory() {
-  const sessionGroupsEnabled = useAssistantFeatureFlagStore.use.sessionGroups();
-  const disclosure = useSessionDisclosureState(
-    "session-story",
-    sessionGroupsEnabled,
-  );
+  const disclosure = useSessionDisclosureState("session-story");
   const { observeLiveSession } = disclosure;
   useEffect(() => {
     observeLiveSession(ACTIVE_SESSION_ID);
@@ -466,7 +462,6 @@ export const AdjacentSessionGroups: Story = {
     items: ADJACENT_SESSION_ITEMS,
     conversationId: "session-story",
     modeSessionDescriptors: SESSION_DESCRIPTORS,
-    sessionGroupsEnabled: true,
     sessionClockNow: SESSION_NOW,
   },
 };
@@ -588,7 +583,6 @@ export const RepeatedBrowserAndComputerSessions: Story = {
     items: REPEATED_SESSION_ITEMS,
     conversationId: "compact-session-story",
     modeSessionDescriptors: REPEATED_SESSION_DESCRIPTORS,
-    sessionGroupsEnabled: true,
     sessionClockNow: SESSION_NOW,
   },
 };
@@ -647,11 +641,7 @@ const LIVE_DESCRIPTOR: ModeSessionDescriptor = {
 };
 
 function LiveSessionStory() {
-  const sessionGroupsEnabled = useAssistantFeatureFlagStore.use.sessionGroups();
-  const disclosure = useSessionDisclosureState(
-    "live-session-story",
-    sessionGroupsEnabled,
-  );
+  const disclosure = useSessionDisclosureState("live-session-story");
   const { observeLiveSession } = disclosure;
   useEffect(() => {
     observeLiveSession(LIVE_SESSION_ID);

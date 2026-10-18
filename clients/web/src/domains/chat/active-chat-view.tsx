@@ -140,11 +140,8 @@ export function ActiveChatView() {
   // Zustand store selectors
   // -------------------------------------------------------------------------
   const activeConversationId = useConversationStore.use.activeConversationId();
-  const sessionGroupsEnabled = true;
-  const sessionDisclosureState = useSessionDisclosureState(
-    activeConversationId,
-    sessionGroupsEnabled,
-  );
+  const sessionDisclosureState =
+    useSessionDisclosureState(activeConversationId);
   const isTokenDialogOpen = useDeployStore.use.isTokenDialogOpen();
   const complexDeployApp = useDeployStore.use.complexDeployApp();
 

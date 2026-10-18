@@ -713,7 +713,6 @@ export function ChatMainPanel({
     showOnboardingChoice,
     creditsExhausted: balanceStatus.isExhausted,
   });
-  const sessionGroupsEnabled = true;
 
   // --- Ref writes (connect hook outputs to ActiveChatView's debug refs) ---
   useEffect(() => {
@@ -1046,7 +1045,6 @@ export function ChatMainPanel({
   // Scroll coordination
   // -------------------------------------------------------------------------
   const scrollCoordinator = useTranscriptScroll({
-    sessionGroupsEnabled,
     isVisible: !(isMobile && documentRoute.showingDocument),
     transcriptRef,
     items: transcriptItems,
@@ -1292,7 +1290,6 @@ export function ChatMainPanel({
     conversationId: activeConversationId,
     modeSessionDescriptors: historyPagination.modeSessions,
     sessionDisclosureState,
-    sessionGroupsEnabled,
     sessionClockConnected:
       assistantState.kind === "active" &&
       !(isMobile && documentRoute.showingDocument),

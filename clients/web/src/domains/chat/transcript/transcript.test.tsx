@@ -205,7 +205,6 @@ describe("Transcript", () => {
               },
             },
           ]}
-          sessionGroupsEnabled
           sessionDisclosureState={openDisclosure}
           onSurfaceAction={noop}
         />,
@@ -247,16 +246,11 @@ describe("Transcript", () => {
         mode: "live_vision",
       },
     };
-    const view = (
-      items: TranscriptItem[],
-      descriptors = [active],
-      enabled = true,
-    ) => (
+    const view = (items: TranscriptItem[], descriptors = [active]) => (
       <Transcript
         items={items}
         conversationId="conv-1"
         modeSessionDescriptors={descriptors}
-        sessionGroupsEnabled={enabled}
         sessionDisclosureState={openDisclosure}
         onSurfaceAction={noop}
       />
@@ -330,17 +324,6 @@ describe("Transcript", () => {
     expect(headers).toHaveLength(2);
     expect(headers[0]?.textContent).toContain("Ended");
     expect(headers[1]?.textContent).toContain("Working");
-
-    rerender(view(items, [completed], false));
-    expect(queryByText("Live vision session")).toBeNull();
-    for (const text of [
-      "First question",
-      "First answer",
-      "Next question",
-      "Next answer",
-    ]) {
-      expect(getByText(text).closest("[data-session-mode]")).toBeNull();
-    }
   });
 
   test.each(["browser", "computer_use"] as const)(
@@ -363,7 +346,6 @@ describe("Transcript", () => {
           items={items}
           conversationId="conv-1"
           modeSessionDescriptors={[descriptor]}
-          sessionGroupsEnabled
           sessionDisclosureState={openDisclosure}
           onSurfaceAction={noop}
         />
@@ -451,7 +433,6 @@ describe("Transcript", () => {
             },
           },
         ]}
-        sessionGroupsEnabled
         onSurfaceAction={noop}
         renderAvatar={() => <span>Avatar marker</span>}
       />
@@ -532,7 +513,6 @@ describe("Transcript", () => {
       <Transcript
         items={[anchor, response]}
         conversationId="conv-1"
-        sessionGroupsEnabled
         sessionDisclosureState={openDisclosure}
         onSurfaceAction={noop}
       />,
@@ -556,7 +536,6 @@ describe("Transcript", () => {
         items={[anchor, stampedResponse]}
         conversationId="conv-1"
         modeSessionDescriptors={[activeDescriptor("session-1")]}
-        sessionGroupsEnabled
         sessionDisclosureState={openDisclosure}
         onSurfaceAction={noop}
       />,
@@ -582,7 +561,6 @@ describe("Transcript", () => {
         items={[stamped]}
         conversationId="conv-1"
         modeSessionDescriptors={[completedDescriptor("session-1")]}
-        sessionGroupsEnabled
         onSurfaceAction={noop}
       />,
     );
@@ -622,7 +600,6 @@ describe("Transcript", () => {
               },
             },
           ]}
-          sessionGroupsEnabled
           onSurfaceAction={noop}
         />,
       );
@@ -667,7 +644,6 @@ describe("Transcript", () => {
             },
           },
         ]}
-        sessionGroupsEnabled
         onSurfaceAction={noop}
       />,
     );
@@ -741,7 +717,6 @@ describe("Transcript", () => {
           items={items}
           conversationId="conv-1"
           modeSessionDescriptors={descriptors}
-          sessionGroupsEnabled
           sessionDisclosureState={disclosure}
           onSurfaceAction={noop}
         />
@@ -790,50 +765,6 @@ describe("Transcript", () => {
     }
   });
 
-  test("uses the assistant flag and avoids session observers while it is off", () => {
-    const originalIntersectionObserver = globalThis.IntersectionObserver;
-    let observerCount = 0;
-    globalThis.IntersectionObserver = class implements IntersectionObserver {
-      readonly root = null;
-      readonly rootMargin = "0px";
-      readonly scrollMargin = "0px";
-      readonly thresholds = [0];
-      constructor() {
-        observerCount += 1;
-      }
-      disconnect() {}
-      observe() {}
-      takeRecords() {
-        return [];
-      }
-      unobserve() {}
-    };
-    const interval = spyOn(globalThis, "setInterval");
-    const stamped = assistantMessage("a-session", "Flat reply");
-    if (stamped.kind !== "message") {
-      throw new Error("Expected message fixture");
-    }
-    stamped.message.modeSession = { mode: "browser", id: "session-1" };
-    try {
-      const { getByText, queryByRole } = render(
-        <Transcript
-          items={[stamped]}
-          conversationId="conv-1"
-          modeSessionDescriptors={[activeDescriptor("session-1", "a-session")]}
-          onSurfaceAction={noop}
-        />,
-      );
-
-      expect(getByText("Flat reply")).toBeTruthy();
-      expect(queryByRole("button", { name: /Browser session/ })).toBeNull();
-      expect(observerCount).toBe(0);
-      expect(interval).not.toHaveBeenCalled();
-    } finally {
-      globalThis.IntersectionObserver = originalIntersectionObserver;
-      interval.mockRestore();
-    }
-  });
-
   test("with empty items, renders zero rows", () => {
     const html = renderToStaticMarkup(
       <Transcript items={[]} conversationId={null} onSurfaceAction={noop} />,
@@ -851,7 +782,7 @@ describe("Transcript", () => {
     expect(html).not.toContain("flex-col-reverse");
   });
 
-  test("with trailing user message, renders history rows and a latest-turn row", () => {
+  test("with trailing user message, renders history rows and the grouped latest response", () => {
     const items: TranscriptItem[] = [
       assistantMessage("a1", "hello"),
       userMessage("u1", "first question"),
@@ -870,12 +801,14 @@ describe("Transcript", () => {
     expect(html).toContain("first question");
     expect(html).toContain("some reply");
 
-    // LatestTurnRow renders the anchor message + response items inline.
+    // Grouping is always on: the anchor question renders as a plain row and
+    // the streaming response mounts inside a session group collapsible.
     expect(html).toContain("latest question");
     expect(html).toContain("streaming reply");
+    expect(html).toContain('data-session-mode="');
 
-    // Marker attributes emitted by LatestTurnRow.
-    expect(html).toContain('data-latest-turn="true"');
+    // The flat latest-turn row is gone; the latest-edge sentinel stays.
+    expect(html).not.toContain('data-latest-turn="true"');
     expect(html).toContain('data-latest-edge="true"');
   });
 
@@ -894,7 +827,7 @@ describe("Transcript", () => {
     expect(html).toContain("also assistant");
   });
 
-  test("items render in correct visual order (flex-col: history first in DOM, latest-turn last)", () => {
+  test("items render in correct visual order (flex-col: history first in DOM, latest response last)", () => {
     const items: TranscriptItem[] = [
       assistantMessage("a1", "FIRST_MSG"),
       userMessage("u1", "SECOND_MSG"),
@@ -905,14 +838,14 @@ describe("Transcript", () => {
       <Transcript items={items} conversationId={null} onSurfaceAction={noop} />,
     );
 
-    // In flex-col DOM order: history items come first (visual top),
-    // LatestTurnRow (u1 + a2) is rendered last (visual bottom).
-    const latestTurnIdx = html.indexOf('data-latest-turn="true"');
+    // In flex-col DOM order: history items come first (visual top), the
+    // anchor (u1) follows, and the grouped response (a2) renders last.
     const firstMsgIdx = html.indexOf("FIRST_MSG");
-    expect(latestTurnIdx).toBeGreaterThanOrEqual(0);
+    const secondMsgIdx = html.indexOf("SECOND_MSG");
+    const thirdMsgIdx = html.indexOf("THIRD_MSG");
     expect(firstMsgIdx).toBeGreaterThanOrEqual(0);
-    // History appears first in DOM (before LatestTurnRow).
-    expect(firstMsgIdx).toBeLessThan(latestTurnIdx);
+    expect(firstMsgIdx).toBeLessThan(secondMsgIdx);
+    expect(secondMsgIdx).toBeLessThan(thirdMsgIdx);
   });
 });
 

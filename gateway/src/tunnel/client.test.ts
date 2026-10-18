@@ -30,7 +30,6 @@ import {
 let workspaceDir = "";
 let registeredWebhookPaths: string[] = [];
 let webhookRouteReadError: Error | undefined;
-let webhookRouteReads = 0;
 
 let fetchImplFn: (
   input: string | URL | Request,
@@ -53,7 +52,6 @@ mock.module("../credential-reader.js", () => ({
 
 mock.module("../db/webhook-ingress-route-store.js", () => ({
   listWebhookIngressRoutes: () => {
-    webhookRouteReads++;
     if (webhookRouteReadError) {
       throw webhookRouteReadError;
     }
@@ -281,7 +279,6 @@ beforeEach(() => {
   workspaceDir = mkdtempSync(join(tmpdir(), "tunnel-client-"));
   registeredWebhookPaths = [];
   webhookRouteReadError = undefined;
-  webhookRouteReads = 0;
   fetchImplFn = async () => new Response("not found", { status: 404 });
   delete process.env.ASSISTANT_API_KEY;
   delete process.env.CADET_CLOUD_URL;

@@ -12,7 +12,6 @@ import {
   reconcileHistoryModeSessions,
   useHistoryPagination,
   type HistoryCache,
-  modeSessionIdsForRefresh,
 } from "@/domains/chat/transcript/use-history-pagination";
 import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 import type { RuntimeSubagentNotification } from "@/domains/chat/api/messages";
@@ -230,7 +229,7 @@ describe("mode session descriptor aggregation", () => {
     );
   });
 
-  test("cache ownership survives remount, stale pages, and flag-off rendering", async () => {
+  test("cache ownership survives remount and stale pages", async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, gcTime: Infinity } },
     });
@@ -242,22 +241,21 @@ describe("mode session descriptor aggregation", () => {
     });
     const wrapper = ({ children }: PropsWithChildren) =>
       createElement(QueryClientProvider, { client: queryClient }, children);
-    const mount = (sessionGroupsEnabled: boolean) =>
+    const mount = () =>
       renderHook(
         ({ conversationId }) =>
           useHistoryPagination({
             assistantId: "assistant-1",
             conversationId,
             enabled: false,
-            sessionGroupsEnabled,
           }),
         { wrapper, initialProps: { conversationId: "conv-1" } },
       );
-    const first = mount(true);
+    const first = mount();
     expect(first.result.current.modeSessions?.[0]).toBe(accepted);
     first.unmount();
 
-    const second = mount(true);
+    const second = mount();
     await act(async () => {
       queryClient.setQueryData<HistoryCache>(queryKey, {
         pages: [
@@ -278,18 +276,7 @@ describe("mode session descriptor aggregation", () => {
     ).toBe(accepted);
     second.unmount();
 
-    const disabled = mount(false);
-    expect(disabled.result.current.modeSessions).toBeUndefined();
-    await act(async () => {
-      queryClient.setQueryData<HistoryCache>(queryKey, {
-        pages: [page(undefined, undefined, [descriptor("session-a", 1)])],
-        pageParams: [null],
-      });
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-    expect(disabled.result.current.modeSessions).toBeUndefined();
-    disabled.unmount();
-    const third = mount(true);
+    const third = mount();
     expect(third.result.current.modeSessions?.[0]).toBe(accepted);
     third.rerender({ conversationId: "conv-2" });
     expect(third.result.current.modeSessions).toEqual([]);
@@ -309,14 +296,5 @@ describe("mode session descriptor aggregation", () => {
         ]),
       ]),
     ).toEqual(["session-new", "session-old"]);
-  });
-
-  test("omits active session refresh ids while the feature is disabled", () => {
-    const pages = [
-      page(undefined, undefined, [descriptor("session-active", 1)]),
-    ];
-
-    expect(modeSessionIdsForRefresh(pages, false)).toEqual([]);
-    expect(modeSessionIdsForRefresh(pages, true)).toEqual(["session-active"]);
   });
 });

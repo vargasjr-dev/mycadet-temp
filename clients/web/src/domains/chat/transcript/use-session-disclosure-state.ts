@@ -29,9 +29,8 @@ function emptyVisitState(
  */
 export function useSessionDisclosureState(
   conversationId: string | null,
-  enabled = true,
 ): SessionDisclosureState {
-  const activeConversationId = enabled ? conversationId : null;
+  const activeConversationId = conversationId;
   const [visit, setVisit] = useState<SessionDisclosureVisitState>(() =>
     emptyVisitState(activeConversationId),
   );

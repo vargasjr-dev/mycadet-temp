@@ -60,7 +60,6 @@ export interface UseTranscriptScrollArgs {
   onLoadOlder: () => void;
   /** Hidden transcript content stays mounted without measuring or scrolling. */
   isVisible?: boolean;
-  sessionGroupsEnabled?: boolean;
 }
 
 export interface UseTranscriptScrollReturn {
@@ -84,7 +83,6 @@ export function useTranscriptScroll(
     isLoadingOlder,
     onLoadOlder,
     isVisible = true,
-    sessionGroupsEnabled = false,
   } = args;
 
   // Coerced to boolean so the dep arrays below re-fire exactly once on
@@ -117,7 +115,6 @@ export function useTranscriptScroll(
     isPinnedToLatest,
     showScrollToLatest,
     isVisible,
-    sessionGroupsEnabled,
   });
   useLayoutEffect(() => {
     latestRef.current = {
@@ -129,7 +126,6 @@ export function useTranscriptScroll(
       isPinnedToLatest,
       showScrollToLatest,
       isVisible,
-      sessionGroupsEnabled,
     };
   }, [
     items,
@@ -140,7 +136,6 @@ export function useTranscriptScroll(
     isPinnedToLatest,
     showScrollToLatest,
     isVisible,
-    sessionGroupsEnabled,
   ]);
 
   // ---------- Saved anchor for prepend preservation ---------------------
@@ -424,7 +419,7 @@ export function useTranscriptScroll(
     if (el) {
       const itemKeysChanged = !haveSameItemKeys(prev, items);
       let hasRenderedProgress = true;
-      if (latest.sessionGroupsEnabled && itemKeysChanged) {
+      if (itemKeysChanged) {
         const renderedMessageIds = new Set(
           transcriptRef.current?.getRenderedMessageIds?.() ?? [],
         );
@@ -469,7 +464,7 @@ export function useTranscriptScroll(
         !loadOlderInFlightRef.current &&
         itemKeysChanged &&
         hasRenderedProgress &&
-        (!latest.sessionGroupsEnabled || !suppressNextItemsLoadRef.current)
+        !suppressNextItemsLoadRef.current
       ) {
         if (!shouldAutoPinRef.current) {
           const firstItem = items[0];
@@ -731,8 +726,7 @@ export function useTranscriptScroll(
         clientHeight: target.clientHeight,
       };
       const latest = latestRef.current;
-      const suppressDisclosureLoad =
-        latest.sessionGroupsEnabled && suppressNextItemsLoadRef.current;
+      const suppressDisclosureLoad = suppressNextItemsLoadRef.current;
       clearDisclosureSuppression();
       const classification = classifyScrollPosition(metrics, {
         hasMore: latest.hasMore,
