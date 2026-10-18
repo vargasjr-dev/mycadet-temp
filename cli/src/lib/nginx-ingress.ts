@@ -1269,11 +1269,19 @@ export async function startRemoteWebIngress(opts: {
   ) {
     listenPort = recorded.listenPort;
   }
+  // The hub mapping is per-environment, but every client served by THIS edge
+  // is remote (they arrived through the tunnel) and cannot reach a
+  // developer's loopback — so a local environment serves the dev hub, whose
+  // host is reachable from anywhere.
+  const currentEnvName = getCurrentEnvironment().name;
+  const hubUrl = cloudAssistantHubUrl(
+    currentEnvName === "local" ? "dev" : currentEnvName,
+  );
   // The SPA config the served index must carry, computed up front so the
   // reuse decision and the actual spawn share one value and cannot drift.
   const spaOptions = includeWebApp
     ? {
-        hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
+        hubUrl,
         ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
       }

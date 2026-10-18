@@ -4,7 +4,7 @@ import { KeyboardResize, KeyboardStyle } from "@capacitor/keyboard";
 // node-based TS config loader transpiles one file at a time and cannot
 // resolve the index's `.js`-suffixed runtime re-exports, while the seeds
 // module is self-contained (type-only imports) and loads cleanly.
-import { cloudAssistantHubUrl, SEEDS } from "@mycadet/environments/seeds";
+import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 
 // `server.url` is baked into native Capacitor config by `cap sync`, so
 // whatever URL resolves here at sync time is what the archived mobile build
@@ -17,15 +17,9 @@ import { cloudAssistantHubUrl, SEEDS } from "@mycadet/environments/seeds";
 // The environment-to-hub mapping (including the deliberate `/assistant`
 // suffix) is shared with the CLI's remote-web edge via
 // `@mycadet/environments`; see `cloudAssistantHubUrl` for the rationale.
-// The local arm resolves HERE, not inside `cloudAssistantHubUrl`: that
-// shared mapping folds local into the dev hub because remote clients can't
-// reach a developer's loopback — the simulator can.
 const env = process.env.CADET_ENVIRONMENT ?? "local";
 
-const ENV_SERVER_URL =
-  env === "local"
-    ? `${SEEDS.local.webUrl}/assistant`
-    : cloudAssistantHubUrl(env);
+const ENV_SERVER_URL = cloudAssistantHubUrl(env);
 
 // `CADET_SERVER_URL` points the shell at a self-hosted assistant's own HTTPS
 // origin, taking precedence over the environment-derived Cadet Cloud URL. It
@@ -62,7 +56,7 @@ const SCHEME_NAMES: Record<string, string> = {
   production: "App",
   staging: "App Staging",
   dev: "App Dev",
-  local: "App Dev",
+  local: "App Local",
 };
 
 const config: CapacitorConfig = {

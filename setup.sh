@@ -2,9 +2,10 @@
 #
 # setup.sh — One-time local development setup for mycadet.
 #
-# Installs workspace dependencies, registers local packages as linkable,
-# links them into the meta package, and then links the global `cadet`
-# command to the local meta entry point.
+# Installs workspace dependencies and installs the global `cadet-local`
+# command pinned to this checkout's source + the local environment. (The
+# global `cadet` command is left free for real production installs —
+# `npm install -g mycadet`.)
 #
 # Usage:
 #   ./setup.sh
@@ -51,13 +52,6 @@ info "Installing workspace dependencies"
 (cd "${REPO_ROOT}" && bun install)
 
 # ---------------------------------------------------------------------------
-# Register local packages as linkable
-# ---------------------------------------------------------------------------
-for dir in cli gateway assistant credential-executor; do
-  info "Registering ${dir}/ as a linkable package"
-  (cd "${REPO_ROOT}/${dir}" && bun link)
-done
-
 # ---------------------------------------------------------------------------
 # Install dependencies for scripts/
 # ---------------------------------------------------------------------------
@@ -65,17 +59,7 @@ info "Installing dependencies in scripts/"
 (cd "${REPO_ROOT}/scripts" && bun install)
 
 # ---------------------------------------------------------------------------
-# Link local packages into meta so it resolves to local source
 # ---------------------------------------------------------------------------
-info "Linking local packages into meta/"
-(cd "${REPO_ROOT}/meta" && bun link @mycadet/cli @mycadet/assistant @mycadet/gateway @mycadet/credential-executor)
-
-# ---------------------------------------------------------------------------
-# Link the global `cadet` command to this repo's meta package
-# ---------------------------------------------------------------------------
-info "Linking global 'cadet' command to meta/"
-(cd "${REPO_ROOT}/meta" && bun link)
-
 # ---------------------------------------------------------------------------
 # Link the global `cadet-local` command to this checkout's source, pinned to
 # the local environment
@@ -98,9 +82,9 @@ CADET_LOCAL_SHIM
 chmod +x "${HOME}/.bun/bin/cadet-local"
 
 # ---------------------------------------------------------------------------
-# Install shell completions for the `cadet` command
+# Install shell completions for the `cadet-local` command
 # ---------------------------------------------------------------------------
-info "Installing shell completions for cadet"
+info "Installing shell completions for cadet-local"
 
 CADET_COMP_DIR="${HOME}/.config/cadet/completions"
 mkdir -p "${CADET_COMP_DIR}"
@@ -143,7 +127,6 @@ cat >> "${CADET_COMP_DIR}/completions.bash" << 'BASH_COMP_END'
   return 0
 }
 
-complete -F _cadet_completions cadet
 complete -F _cadet_completions cadet-local
 BASH_COMP_END
 
@@ -190,7 +173,6 @@ cat >> "${CADET_COMP_DIR}/completions.zsh" << 'ZSH_COMP_END'
   esac
 }
 
-compdef _cadet cadet
 compdef _cadet cadet-local
 ZSH_COMP_END
 
@@ -268,4 +250,4 @@ if [ -e "${HOME}/.zshrc" ]; then
   fi
 fi
 
-info "Setup complete! Run 'cadet --version' to verify."
+info "Setup complete! Run 'cadet-local --version' to verify."

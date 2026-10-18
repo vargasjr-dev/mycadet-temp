@@ -26,15 +26,11 @@ function portBlock(base: number): PortMap {
 
 /**
  * Base URL of the cloud-hosted assistant SPA (the "hub") for a deployment
- * environment. The Capacitor mobile shell bakes this into native builds as
- * `server.url`, and the CLI's remote-web edge stamps it into the served
- * config as `hubUrl`, so the environment-to-hub mapping lives here exactly
- * once.
- *
- * Only the cloud deployments (production, staging) serve the hosted SPA at
- * their own web origin; every other environment (dev, test, local, unknown)
- * falls back to the dev SPA, whose host serves remote clients that cannot
- * reach a local or per-developer web URL.
+ * environment: always `${SEEDS[env].webUrl}/assistant`. The Capacitor mobile
+ * shell bakes this into native builds as `server.url`, and the CLI's
+ * remote-web edge stamps it into the served config as `hubUrl`, so the
+ * environment-to-hub mapping lives here exactly once. Unknown environment
+ * names fall back to the dev SPA defensively.
  *
  * The `/assistant` suffix is deliberate: booting on the bare host lands on
  * the marketing page, whose CTA redirects to `mycadet.ai/assistant` and
@@ -46,10 +42,7 @@ function portBlock(base: number): PortMap {
  * imports type-only so it stays loadable on its own.
  */
 export function cloudAssistantHubUrl(envName: string | undefined): string {
-  const seed =
-    envName === "production" || envName === "staging"
-      ? SEEDS[envName]
-      : SEEDS.dev;
+  const seed = (envName && SEEDS[envName]) || SEEDS.dev;
   return `${seed.webUrl}/assistant`;
 }
 
