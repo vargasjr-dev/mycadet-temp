@@ -38,7 +38,6 @@ export interface SerializedProviderSummary {
   logo_url: string | null;
   supports_cloud_mode: boolean;
   managed_service_is_paid: boolean;
-  feature_flag: string | null;
   /**
    * Where the integrations catalog files the provider. `null` for a row with
    * no seed entry, such as a provider a user registered by hand.
@@ -148,7 +147,6 @@ function _serializeProvider(
     identityFormat: row.identityFormat ?? null,
     identityOkField: row.identityOkField ?? null,
     responseOkField: row.responseOkField ?? null,
-    featureFlag: row.featureFlag ?? null,
     redirectUri:
       options?.redirectUri !== undefined ? options.redirectUri : null,
     createdAt: new Date(row.createdAt).toISOString(),
@@ -178,7 +176,6 @@ export function serializeProviderSummary(
     logo_url: row.logoUrl ?? null,
     supports_cloud_mode: !!row.cloudServiceConfigKey,
     managed_service_is_paid: !!row.managedServiceIsPaid,
-    feature_flag: row.featureFlag ?? null,
     category: PROVIDER_SEED_DATA[row.provider]?.category ?? null,
     tenant_host: PROVIDER_SEED_DATA[row.provider]?.tenantHost ?? null,
     acts_as: isChannelBotProvider(row.provider) ? "assistant" : "user",

@@ -25,7 +25,6 @@ function provider(overrides: Partial<OAuthProvider> = {}): OAuthProvider {
     logo_url: null,
     supports_cloud_mode: true,
     managed_service_is_paid: false,
-    feature_flag: null,
     category: "productivity",
     tenant_host: null,
     acts_as: "user",
@@ -383,12 +382,12 @@ describe("integration items", () => {
 
   test("searches OAuth descriptions and MCP endpoint hosts", () => {
     const items = buildIntegrationItems([provider()], [], [server()]);
-    expect(filterIntegrationItems(items, "workspace").map((item) => item.id)).toEqual([
-      "oauth:notion",
-    ]);
-    expect(filterIntegrationItems(items, "mcp.example").map((item) => item.id)).toEqual([
-      "mcp:example-server",
-    ]);
+    expect(
+      filterIntegrationItems(items, "workspace").map((item) => item.id),
+    ).toEqual(["oauth:notion"]);
+    expect(
+      filterIntegrationItems(items, "mcp.example").map((item) => item.id),
+    ).toEqual(["mcp:example-server"]);
   });
 
   test("narrows to one category when a chip is chosen", () => {
@@ -405,11 +404,9 @@ describe("integration items", () => {
     expect(
       filterIntegrationItems(items, "", "productivity").map((item) => item.id),
     ).toEqual(["oauth:notion"]);
-    expect(filterIntegrationItems(items, "", null).map((item) => item.id)).toEqual([
-      "mcp:example-server",
-      "oauth:hubspot",
-      "oauth:notion",
-    ]);
+    expect(
+      filterIntegrationItems(items, "", null).map((item) => item.id),
+    ).toEqual(["mcp:example-server", "oauth:hubspot", "oauth:notion"]);
   });
 
   test("files an integration under no category when its slug is unknown here", () => {

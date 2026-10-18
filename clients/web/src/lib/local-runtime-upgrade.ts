@@ -20,10 +20,7 @@ export function getLatestRuntimeRelease(
 ): ReleaseListItem | undefined {
   const runtimeReleases =
     releases?.filter((release) => !isLocalBuildVersion(release.version)) ?? [];
-  return (
-    runtimeReleases.find((release) => release.is_stable !== false) ??
-    runtimeReleases[0]
-  );
+  return runtimeReleases[0];
 }
 
 export function isRuntimeUpgradeAvailable(

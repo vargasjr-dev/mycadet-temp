@@ -70,7 +70,6 @@ function makeProviderRow(
     identityFormat: null,
     identityOkField: null,
     responseOkField: null,
-    featureFlag: null,
     createdAt: now,
     updatedAt: now,
     ...rest,

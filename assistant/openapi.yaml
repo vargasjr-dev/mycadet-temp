@@ -30244,10 +30244,6 @@ paths:
                             type: boolean
                           managed_service_is_paid:
                             type: boolean
-                          feature_flag:
-                            anyOf:
-                              - type: string
-                              - type: "null"
                           category:
                             anyOf:
                               - type: string
@@ -30295,7 +30291,6 @@ paths:
                           - logo_url
                           - supports_cloud_mode
                           - managed_service_is_paid
-                          - feature_flag
                           - category
                           - tenant_host
                           - acts_as
@@ -30812,10 +30807,6 @@ paths:
                           type: boolean
                         managed_service_is_paid:
                           type: boolean
-                        feature_flag:
-                          anyOf:
-                            - type: string
-                            - type: "null"
                         category:
                           anyOf:
                             - type: string
@@ -30863,7 +30854,6 @@ paths:
                         - logo_url
                         - supports_cloud_mode
                         - managed_service_is_paid
-                        - feature_flag
                         - category
                         - tenant_host
                         - acts_as

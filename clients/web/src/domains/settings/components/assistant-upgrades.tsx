@@ -103,13 +103,10 @@ export function AssistantUpgrades({
   });
 
   const { data: releases, isLoading: releasesLoading } = useQuery(
-    releasesListOptions({
-      query: { channel: "stable" },
-    }),
+    releasesListOptions({}),
   );
 
-  const latestRelease =
-    releases?.find((r) => r.is_stable !== false) ?? releases?.[0];
+  const latestRelease = releases?.[0];
   const latestVersion = latestRelease?.version ?? null;
 
   const upgradeAvailable = useMemo(() => {
@@ -272,7 +269,7 @@ export function LocalAssistantUpgrades({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const { data: releases, isLoading: releasesLoading } = useQuery(
     releasesListOptions({
-      query: { stable: true, limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
+      query: { limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
     }),
   );
 

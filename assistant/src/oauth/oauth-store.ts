@@ -59,7 +59,7 @@ export type OAuthConnectionRow = typeof oauthConnections.$inferSelect;
  * cloudServiceConfigKey,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
- * identityResponsePaths, identityFormat, identityOkField, responseOkField, featureFlag,
+ * identityResponsePaths, identityFormat, identityOkField, responseOkField,
  * scopeSeparator, defaultScopes, availableScopes)
  * and display metadata (displayLabel, description, dashboardUrl,
  * clientIdPlaceholder, logoUrl, requiresClientSecret) propagate to existing
@@ -112,7 +112,6 @@ export function seedProviders(
     identityFormat?: string;
     identityOkField?: string;
     responseOkField?: string;
-    featureFlag?: string;
   }>,
 ): void {
   const db = getDb();
@@ -177,7 +176,6 @@ export function seedProviders(
     const identityFormat = p.identityFormat ?? null;
     const identityOkField = p.identityOkField ?? null;
     const responseOkField = p.responseOkField ?? null;
-    const featureFlag = p.featureFlag ?? null;
 
     db.insert(oauthProviders)
       .values({
@@ -219,7 +217,6 @@ export function seedProviders(
         identityFormat,
         identityOkField,
         responseOkField,
-        featureFlag,
         createdAt: now,
         updatedAt: now,
       })
@@ -263,7 +260,6 @@ export function seedProviders(
           identityFormat,
           identityOkField,
           responseOkField,
-          featureFlag,
           updatedAt: now,
         },
       })
@@ -364,7 +360,6 @@ export function registerProvider(params: {
   identityFormat?: string;
   identityOkField?: string;
   responseOkField?: string;
-  featureFlag?: string;
 }): OAuthProviderRow {
   const db = getDb();
   const now = Date.now();
@@ -431,7 +426,6 @@ export function registerProvider(params: {
     identityFormat: params.identityFormat ?? null,
     identityOkField: params.identityOkField ?? null,
     responseOkField: params.responseOkField ?? null,
-    featureFlag: params.featureFlag ?? null,
     createdAt: now,
     updatedAt: now,
   };
@@ -493,7 +487,6 @@ export function updateProvider(
     identityFormat: string;
     identityOkField: string;
     responseOkField: string;
-    featureFlag: string;
     managedServiceIsPaid: boolean;
   }>,
 ): OAuthProviderRow | undefined {
@@ -619,9 +612,6 @@ export function updateProvider(
   }
   if (params.responseOkField !== undefined) {
     set.responseOkField = params.responseOkField;
-  }
-  if (params.featureFlag !== undefined) {
-    set.featureFlag = params.featureFlag;
   }
   if (params.managedServiceIsPaid !== undefined) {
     set.managedServiceIsPaid = params.managedServiceIsPaid;

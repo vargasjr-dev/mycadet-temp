@@ -51,7 +51,6 @@ export const oauthProviders = sqliteTable("oauth_providers", {
   identityFormat: text("identity_format"),
   identityOkField: text("identity_ok_field"),
   responseOkField: text("response_ok_field"),
-  featureFlag: text("feature_flag"),
   createdAt: integer("created_at").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });

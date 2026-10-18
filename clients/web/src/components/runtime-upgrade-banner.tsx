@@ -43,8 +43,6 @@ interface RuntimeUpgradeBannerProps {
   className?: string;
 }
 
-type UpgradeMode = "local" | "platform";
-
 export function RuntimeUpgradeBanner({
   assistantId: assistantIdProp,
   currentVersion: currentVersionProp,
@@ -75,20 +73,14 @@ export function RuntimeUpgradeBanner({
     activeAssistant?.runtimeVersion ?? currentVersion ?? null;
   const platformCurrentVersion =
     activeAssistant?.currentReleaseVersion ?? currentVersion ?? null;
-  const mode: UpgradeMode | null = isBunLocalAssistant
-    ? "local"
-    : isCloudAssistant
-      ? "platform"
-      : null;
   const { data: platformOperationalStatus } = useAssistantOperationalStatus(
     isCloudAssistant ? (assistantId ?? null) : null,
   );
-  const effectiveCurrentVersion =
-    mode === "local"
-      ? localCurrentVersion
-      : mode === "platform"
-        ? platformCurrentVersion
-        : null;
+  const effectiveCurrentVersion = isBunLocalAssistant
+    ? localCurrentVersion
+    : isCloudAssistant
+      ? platformCurrentVersion
+      : null;
 
   const canUpgradeActiveBunLocalAssistant =
     isBunLocalAssistant && activeAssistant?.isActiveLockfileAssistant === true;
@@ -126,10 +118,9 @@ export function RuntimeUpgradeBanner({
 
   const { data: releases, refetch: refetchReleases } = useQuery({
     ...releasesListOptions({
-      query:
-        mode === "platform"
-          ? { channel: "stable" }
-          : { stable: true, limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
+      query: isCloudAssistant
+        ? {}
+        : { limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
     }),
     enabled: shouldCheck,
     refetchInterval: RUNTIME_RELEASES_REFETCH_INTERVAL_MS,
@@ -157,14 +148,11 @@ export function RuntimeUpgradeBanner({
   }, [refetchReleases, shouldCheck]);
 
   const latestRelease = useMemo(() => {
-    if (mode === "platform") {
-      return (
-        releases?.find((release) => release.is_stable !== false) ??
-        releases?.[0]
-      );
+    if (isCloudAssistant) {
+      return releases?.[0];
     }
     return getLatestRuntimeRelease(releases);
-  }, [mode, releases]);
+  }, [isCloudAssistant, releases]);
   const targetVersion = latestRelease?.version ?? null;
   const dismissalScope =
     assistantId && targetVersion ? `${assistantId}:${targetVersion}` : null;
@@ -181,8 +169,9 @@ export function RuntimeUpgradeBanner({
     targetVersion: targetVersion ?? undefined,
     shouldStopPolling: platformOperationalStatus?.detail_state === "failed",
   });
-  const upgradePending =
-    mode === "platform" ? platformUpgrade.isPending : localUpgrade.isPending;
+  const upgradePending = isCloudAssistant
+    ? platformUpgrade.isPending
+    : localUpgrade.isPending;
 
   useEffect(() => {
     if (!assistantId || !targetVersion) {
@@ -200,12 +189,12 @@ export function RuntimeUpgradeBanner({
     dismissalScope !== null && dismissalScope === dismissedScope;
 
   const handleConfirmUpgrade = async () => {
-    if (!assistantId || !targetVersion || !mode) {
+    if (!assistantId || !targetVersion) {
       return;
     }
     setShowConfirmation(false);
     try {
-      if (mode === "platform") {
+      if (isCloudAssistant) {
         const result = await platformUpgrade.upgrade();
         const isNoOp = result.detail?.includes("Already on the latest");
         if (isNoOp) {

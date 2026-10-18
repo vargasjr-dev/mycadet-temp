@@ -45,7 +45,7 @@ const SLACK_PROVIDER_INJECTION_TEMPLATES: NonNullable<
  * cloudServiceConfigKey, managedServiceIsPaid,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
- * identityResponsePaths, identityFormat, identityOkField, featureFlag,
+ * identityResponsePaths, identityFormat, identityOkField,
  * scopeSeparator)
  * and display metadata (displayLabel,
  * description, dashboardUrl, clientIdPlaceholder, requiresClientSecret,
@@ -116,7 +116,6 @@ export const PROVIDER_SEED_DATA: Record<
      * `identityOkField`, which governs only the identity call.
      */
     responseOkField?: string;
-    featureFlag?: string;
     logoUrl?: string;
   }
 > = {
@@ -875,7 +874,6 @@ export const PROVIDER_SEED_DATA: Record<
     identityHeaders: { "Content-Type": "application/json" },
     identityBody: { query: "{ me { id name email } }" },
     identityResponsePaths: ["data.me.name", "data.me.email"],
-    featureFlag: "monday-oauth",
   },
 
   eventbrite: {
@@ -1187,7 +1185,6 @@ export const PROVIDER_SEED_DATA: Record<
     // `id` is the stable account identifier; email is the friendlier label
     // with handle as the fallback.
     identityResponsePaths: ["email", "handle"],
-    featureFlag: "figma-oauth",
   },
 
   outlook: {
@@ -1609,7 +1606,6 @@ export const PROVIDER_SEED_DATA: Record<
     // shop-domain input in the clients land separately, and until both are
     // in place a visible Shopify tile would offer a connect flow that
     // cannot complete.
-    featureFlag: "shopify-oauth",
   },
 
   quickbooks: {
@@ -1697,7 +1693,6 @@ export const PROVIDER_SEED_DATA: Record<
     // Gated like figma/shopify: the cloud side lands separately, and until
     // the client ids are live a visible tile would offer a connect flow that
     // cannot complete.
-    featureFlag: "quickbooks-oauth",
   },
 };
 

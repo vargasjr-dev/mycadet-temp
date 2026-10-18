@@ -132,21 +132,6 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
     expect(link.identityResponsePaths).toEqual(["email", "phone"]);
   });
 
-  test("Link is GA and ships without a feature flag", () => {
-    // The seed upserts featureFlag on every startup, so a flag reintroduced
-    // here would hide Link from every install on the next boot.
-    expect(PROVIDER_SEED_DATA.stripe_link.featureFlag).toBeUndefined();
-  });
-
-  test("figma ships behind the figma-oauth flag", () => {
-    // The provider is hidden from the providers list and the connect routes
-    // until the flag is enabled. Dropping featureFlag here would make Figma
-    // visible to every install with no other test noticing.
-    const figma = PROVIDER_SEED_DATA.figma;
-    expect(figma).toBeDefined();
-    expect(figma.featureFlag).toBe("figma-oauth");
-  });
-
   test("shopify keeps its per-tenant URL templates", () => {
     // Shopify has no global OAuth host: every endpoint lives on the
     // merchant's own domain. Hardcoding any host here would send every
@@ -201,14 +186,11 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
     expect(template?.hostPattern).toBe("*.myshopify.com");
   });
 
-  test("quickbooks is wired up for managed mode behind its flag", () => {
+  test("quickbooks is wired up for managed mode", () => {
     const quickbooks = PROVIDER_SEED_DATA.quickbooks;
     expect(quickbooks).toBeDefined();
     expect(quickbooks.cloudServiceConfigKey).toBe("quickbooks-oauth");
     expect("quickbooks-oauth" in ServicesSchema.shape).toBe(true);
-    // Hidden until the cloud side and client ids are live, like Figma
-    // and Shopify.
-    expect(quickbooks.featureFlag).toBe("quickbooks-oauth");
   });
 
   test("quickbooks uses Intuit's OAuth endpoints with HTTP Basic", () => {

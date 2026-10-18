@@ -28,7 +28,6 @@ import { getLogger } from "../util/logger.js";
 import type { OAuthConnectResult } from "./connect-types.js";
 import { verifyIdentity } from "./identity-verifier.js";
 import { getProvider } from "./oauth-store.js";
-import { isProviderVisible } from "./provider-visibility.js";
 import { storeOAuth2Tokens } from "./token-persistence.js";
 
 const log = getLogger("oauth-connect-orchestrator");
@@ -125,20 +124,6 @@ export async function orchestrateOAuthConnect(
   // Read provider config from the DB
   const providerRow = getProvider(options.service);
   if (!providerRow) {
-    return {
-      success: false,
-      error: `No OAuth provider registered for "${options.service}". Ensure the provider is seeded in the database.`,
-      safeError: true,
-    };
-  }
-
-  // A provider gated behind a disabled feature flag is not connectable. This
-  // is the choke point every connect path funnels through (runtime routes,
-  // gateway, CLI, credential vault tool), so enforcing here covers all of
-  // them rather than relying on each entry point to check. The error matches
-  // the not-found case above so a gated provider is indistinguishable from an
-  // absent one, mirroring the provider routes.
-  if (!isProviderVisible(providerRow, getConfig())) {
     return {
       success: false,
       error: `No OAuth provider registered for "${options.service}". Ensure the provider is seeded in the database.`,

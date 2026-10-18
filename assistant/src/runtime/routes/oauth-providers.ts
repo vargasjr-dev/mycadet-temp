@@ -6,10 +6,10 @@
  * the standard runtime auth middleware.
  */
 
+import { getConfig } from "../../config/loader.js";
 import { INTEGRATION_CATEGORIES } from "@mycadet/service-contracts/integration-categories";
 import { z } from "zod";
 
-import { getConfig } from "../../config/loader.js";
 import { getOAuthCallbackUrl } from "../../inbound/public-ingress-urls.js";
 import {
   deleteApp,
@@ -27,7 +27,6 @@ import {
   serializeProvider,
   serializeProviderSummary,
 } from "../../oauth/provider-serializer.js";
-import { isProviderVisible } from "../../oauth/provider-visibility.js";
 import { SEEDED_PROVIDER_KEYS } from "../../oauth/seed-providers.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 import {
@@ -66,9 +65,7 @@ function serializeProviderFull(row: ReturnType<typeof getProvider>) {
 
 function handleListProviders({ queryParams = {} }: RouteHandlerArgs) {
   const rows = listProviders();
-  const config = getConfig();
-  const visibleRows = rows.filter((r) => isProviderVisible(r, config));
-  let serialized = visibleRows
+  let serialized = rows
     .map((row) => serializeProviderSummary(row))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
@@ -91,16 +88,9 @@ function handleGetProvider({ pathParams = {} }: RouteHandlerArgs) {
     );
   }
 
-  const config = getConfig();
-  if (!isProviderVisible(row, config)) {
-    throw new NotFoundError(
-      `No OAuth provider registered for "${providerKey}"`,
-    );
-  }
-
   let oauthCallbackUrl: string | null = null;
   try {
-    oauthCallbackUrl = getOAuthCallbackUrl(config);
+    oauthCallbackUrl = getOAuthCallbackUrl(getConfig());
   } catch {
     // Ingress not configured or disabled — callback URL unavailable
   }
@@ -198,12 +188,6 @@ function handleUpdateProvider({
   const { providerKey } = pathParams;
   const existing = getProvider(providerKey);
   if (!existing) {
-    throw new NotFoundError(
-      `No OAuth provider registered for "${providerKey}"`,
-    );
-  }
-
-  if (!isProviderVisible(existing, getConfig())) {
     throw new NotFoundError(
       `No OAuth provider registered for "${providerKey}"`,
     );
@@ -341,12 +325,6 @@ async function handleDeleteProvider({
     );
   }
 
-  if (!isProviderVisible(existing, getConfig())) {
-    throw new NotFoundError(
-      `No OAuth provider registered for "${providerKey}"`,
-    );
-  }
-
   const force = (body as Record<string, unknown>).force === true;
 
   const dependentApps = listApps().filter((a) => a.provider === providerKey);
@@ -401,7 +379,6 @@ export const oauthProviderSummarySchema = z.object({
   logo_url: z.string().nullable(),
   supports_cloud_mode: z.boolean(),
   managed_service_is_paid: z.boolean(),
-  feature_flag: z.string().nullable(),
   category: z
     .enum(INTEGRATION_CATEGORIES)
     .nullable()
