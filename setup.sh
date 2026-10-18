@@ -52,14 +52,11 @@ info "Installing workspace dependencies"
 (cd "${REPO_ROOT}" && bun install)
 
 # ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 # Install dependencies for scripts/
 # ---------------------------------------------------------------------------
 info "Installing dependencies in scripts/"
 (cd "${REPO_ROOT}/scripts" && bun install)
 
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
 # Link the global `cadet-local` command to this checkout's source, pinned to
 # the local environment
