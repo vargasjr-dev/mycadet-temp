@@ -435,10 +435,9 @@ would require re-provisioning the app. See the inline comment in
 
 ## Common tasks
 
-### After editing `clients/web/capacitor.config.ts`
+### After editing `clients/app/capacitor.config.ts`
 
 ```bash
-cd clients/ios
 bun run setup
 ```
 
@@ -454,14 +453,13 @@ copy in `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 Cadet Cloud URL and is baked into `server.url` the same way:
 
 ```bash
-cd clients/web
-CADET_SERVER_URL=https://your-host.ts.net bunx cap sync ios
+CADET_SERVER_URL=https://your-host.ts.net bun run setup
 ```
 
 Then rebuild in Xcode. The value must be a valid `https:` URL — `cap sync`
 fails loudly otherwise, because iOS App Transport Security requires valid
 TLS and `server.cleartext` stays `false`. Nothing to edit or revert: resync
-without the variable (e.g. `bun run setup` from `clients/ios/`) to return to
+without the variable (`bun run setup`) to return to
 the environment default.
 
 **Plain-HTTP local dev on your LAN (i.e. a device):** the default already
@@ -482,7 +480,7 @@ server: {
   the host's loopback but a device won't
 - `cleartext: true` is needed because iOS App Transport Security blocks
   HTTP by default
-- Run `bunx cap sync ios`, then rebuild in Xcode
+- Run `bun run setup`, then rebuild in Xcode
 - **Revert before committing.** The default must remain
   the local dev server URL (`localhost:3000`) with `cleartext: false`.
 
@@ -494,10 +492,8 @@ installed `@capacitor/*` packages — you **must** commit the resulting
 who clones fresh. ([Capacitor SPM docs](https://capacitorjs.com/docs/ios/spm))
 
 ```bash
-cd clients/web
-bun add --exact @capacitor/<plugin-name>   # adds to package.json + bun.lock
-cd ../ios
-bun run setup                       # cap sync regenerates Package.swift; xcodegen wires it into the project
+bun add --exact @capacitor/<plugin-name> --cwd ../app   # adds to clients/app package.json + bun.lock
+bun run setup                                           # cap sync regenerates Package.swift; xcodegen wires it into the project
 ```
 
 Then `git diff clients/ios/App/CapApp-SPM/Package.swift` — you should see
@@ -507,17 +503,16 @@ gitignored, so don't try to commit it.
 
 ### Update Capacitor
 
-Version bumps live in `clients/web/package.json` (`@capacitor/core`, `@capacitor/ios`,
+Version bumps live in `clients/app/package.json` (`@capacitor/core`, `@capacitor/ios`,
 `@capacitor/cli` — all pinned to exact versions per the repo rule). After
 bumping:
 
 ```bash
-cd clients/web
-bun install
-bunx cap update ios   # only if @capacitor/ios major changed
-cd ../ios
-bun run setup         # cap sync + xcodegen regenerate
+bun run setup         # installs clients/app deps, then cap sync + xcodegen regenerate
 ```
+
+Only when `@capacitor/ios` changes major version, also run `bunx cap update ios`
+from `clients/app` first — it migrates the native project templates.
 
 `@capacitor/ios` major bumps may require updating the SPM pin in
 `CapApp-SPM/Package.swift` (`exact:` version) — `cap sync` writes
@@ -1065,18 +1060,18 @@ All iOS signing secrets are stored as GitHub Actions secrets:
 
 ## Structure
 
-The iOS shell lives as a peer of `clients/web/`, not nested inside it.
-`capacitor.config.ts` in `clients/web/` points at it via `ios.path: "../ios"`,
-so `cd clients/web && bunx cap sync ios` writes generated files into
+The iOS shell lives as a peer of `clients/app/`, not nested inside it.
+`capacitor.config.ts` in `clients/app/` points at it via `ios.path: "../ios"`,
+so `bun run setup` (from `clients/ios/`) writes generated files into
 `clients/ios/`.
 
 ```
 clients/
-├── web/
+├── app/
 │   ├── capacitor.config.ts           # Capacitor config (edit this); ios.path: "../ios"
 │   ├── capacitor-shell/
 │   │   └── index.html                # Placeholder webDir (unused at runtime)
-│   └── package.json                  # @capacitor/* deps + Capacitor CLI
+│   └── package.json                  # @capacitor/* deps + Capacitor CLI (native builds)
 └── ios/
     ├── package.json                  # iOS dev flow: `bun run dev` / `bun run setup`
     ├── .gitignore                    # Ignores Pods, DerivedData, xcuserdata,

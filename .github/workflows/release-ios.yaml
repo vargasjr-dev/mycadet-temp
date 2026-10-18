@@ -127,11 +127,11 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
 
       - name: Install dependencies
-        working-directory: clients/web
-        run: bun install --frozen-lockfile --filter=@mycadet/web
+        working-directory: clients/app
+        run: bun install --frozen-lockfile --filter=@mycadet/app
 
       - name: Capacitor sync
-        working-directory: clients/web
+        working-directory: clients/app
         env:
           CADET_ENVIRONMENT: ${{ steps.config.outputs.cadet_env }}
         run: bunx cap sync ios

@@ -20,7 +20,7 @@ No web assets are bundled beyond the placeholder `capacitor-shell/` page.
 
 ## First-Time Setup
 
-From `clients/web/`:
+From `clients/app/`:
 
 ```bash
 bun install
@@ -549,7 +549,7 @@ gates. Verify:
 
 ```
 clients/
-├── web/
+├── app/
 │   ├── capacitor.config.ts       # Shared Capacitor config; android.path: "../android"
 │   ├── capacitor-shell/          # Placeholder webDir
 │   └── package.json              # android:sync / android:open scripts
@@ -586,14 +586,14 @@ clients/
 ### Run Android From the Command Line
 
 ```bash
-cd clients/web
+cd clients/app
 bun run android:run
 ```
 
 ### Sync Android After Editing Capacitor Config
 
 ```bash
-cd clients/web
+cd clients/app
 CADET_ENVIRONMENT=dev bun run android:sync
 ```
 

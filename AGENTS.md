@@ -341,7 +341,7 @@ Surfaces map onto Sentry projects as below. The Electron renderer reports to the
 | iOS webview + native     | `mycadet-ios`     | `SENTRY_DSN_IOS` (secret) → `VITE_SENTRY_DSN_IOS`         | web-SPA build (loaded at runtime on iOS)     |
 | Android webview + native | `mycadet-android` | `SENTRY_DSN_ANDROID` (secret) → `VITE_SENTRY_DSN_ANDROID` | web-SPA build (loaded at runtime on Android) |
 
-Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps run the deployed SPA via `server.url` (see `clients/web/capacitor.config.ts`) and bundle no web assets at `cap sync`.
+Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps run the deployed SPA via `server.url` (see `clients/app/capacitor.config.ts`) and bundle no web assets at `cap sync`.
 
 The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@sentry/electron` pins `@sentry/core` 10.50 while `@sentry/capacitor` pins `@sentry/react`/`@sentry/browser` 10.52, and Sentry's current-client carrier is version-specific, so an `@sentry/electron/renderer` client couldn't see `@sentry/react` captures. Renderer native crashes still reach `mycadet-macos` via `@sentry/electron/main` (separate process).
 

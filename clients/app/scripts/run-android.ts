@@ -18,8 +18,10 @@ const IMAGE_TAG = "google_apis_playstore";
 const IMAGE_ABI = process.arch === "arm64" ? "arm64-v8a" : "x86_64";
 const SYSTEM_IMAGE = `system-images;android-${API_LEVEL};${IMAGE_TAG};${IMAGE_ABI}`;
 
-const webRoot = resolve(import.meta.dir, "..");
-const androidRoot = resolve(webRoot, "../android");
+// The Capacitor config lives in this package; the web dev server the
+// emulator's `server.url` targets runs separately from `clients/web`.
+const appRoot = resolve(import.meta.dir, "..");
+const androidRoot = resolve(appRoot, "../android");
 
 function isExecutable(path: string): boolean {
   try {
@@ -64,7 +66,7 @@ function run(
 ): void {
   console.log(`\n> ${basename(command)} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
-    cwd: webRoot,
+    cwd: appRoot,
     env,
     input,
     stdio: input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],

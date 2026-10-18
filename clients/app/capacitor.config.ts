@@ -71,10 +71,10 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   ios: {
-    // Native iOS project lives as a peer to `clients/web/` at `clients/ios/`,
-    // not nested inside the web app. This keeps the Capacitor shell
-    // alongside the other client apps (`clients/web`, future `clients/...`)
-    // rather than burying it inside the web tree.
+    // Native iOS project lives as a peer to `clients/app/` at `clients/ios/`,
+    // not nested inside the app package. This keeps the Capacitor shell
+    // alongside the other client apps (`clients/web`, `clients/app`, …)
+    // rather than burying it inside any one of them.
     path: "../ios",
     // Map to `WKWebView.scrollView.contentInsetAdjustmentBehavior = .never`.
     // Without this, iOS WKWebView defaults to `.automatic` and pads the
@@ -94,7 +94,7 @@ const config: CapacitorConfig = {
     scheme: SCHEME_NAMES[env] ?? "App",
   },
   android: {
-    // Native Android project lives as a peer to `clients/web/` at
+    // Native Android project lives as a peer to `clients/app/` at
     // `clients/android/`, matching the iOS shell layout.
     path: "../android",
   },

@@ -24,7 +24,6 @@
     "src/**/*.tsx",
     ".storybook/**/*.ts",
     ".storybook/**/*.tsx",
-    "capacitor.config.ts"
   ],
   "exclude": ["dist/**", "node_modules/**"]
 }
