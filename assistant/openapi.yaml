@@ -11845,8 +11845,7 @@ paths:
       summary: List defined LLM profiles
       description:
         Returns the sorted list of profile names defined in `llm.profiles` plus the workspace-wide active profile.
-        Used to populate per-call profile dropdowns (e.g. memory router playground) without requiring the caller to type
-        profile names.
+        Used to populate per-call profile dropdowns without requiring the caller to type profile names.
       tags:
         - config
       responses:
@@ -14666,81 +14665,6 @@ paths:
                 required:
                   - ok
                 additionalProperties: false
-  /v1/conversations/{id}/playground/compact:
-    post:
-      operationId: conversations_by_id_playground_compact_post
-      summary: Force compaction on a conversation (dev-only playground)
-      tags:
-        - playground
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful response
-  /v1/conversations/{id}/playground/compaction-state:
-    get:
-      operationId: conversations_by_id_playground_compactionstate_get
-      summary: Read current compaction state for a conversation
-      tags:
-        - playground
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful response
-  /v1/conversations/{id}/playground/inject-compaction-failures:
-    post:
-      operationId: conversations_by_id_playground_injectcompactionfailures_post
-      summary: Directly mutate compaction circuit-breaker state (dev-only playground)
-      tags:
-        - playground
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                consecutiveFailures:
-                  type: integer
-                  minimum: 0
-                  maximum: 10
-                circuitOpenForMs:
-                  type: integer
-                  minimum: 0
-                  maximum: 86400000
-      responses:
-        "200":
-          description: Successful response
-  /v1/conversations/{id}/playground/reset-compaction-circuit:
-    post:
-      operationId: conversations_by_id_playground_resetcompactioncircuit_post
-      summary: Clear compaction circuit-breaker state (dev-only playground)
-      tags:
-        - playground
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful response
   /v1/conversations/{id}/retry:
     post:
       operationId: conversations_by_id_retry_post
@@ -26127,8 +26051,8 @@ paths:
       operationId: memory_v2_nowtext_get
       summary: Return the current rendered `<now>` body
       description:
-        Returns the current NOW.md (autoloaded essentials/threads/recent). Used by the memory router playground to
-        seed its `<now>` text area with a production-like default so callers can edit from a realistic baseline.
+        Returns the current NOW.md (autoloaded essentials/threads/recent). Provides a production-like default so
+        callers can edit from a realistic baseline.
       tags:
         - memory
       responses:
@@ -26170,8 +26094,7 @@ paths:
       summary: Return the bundled router system-prompt template
       description:
         Returns the bundled `ROUTER_PROMPT` body with placeholders intact (`{{ASSISTANT_NAME}}`, `{{USER_NAME}}`,
-        `{{PAGE_INDEX}}`). Used by the memory router playground's 'Load default' affordance so users have a known-good
-        starting point when authoring an inline prompt override.
+        `{{PAGE_INDEX}}`). Gives users a known-good starting point when authoring an inline prompt override.
       tags:
         - memory
       responses:
@@ -32141,68 +32064,6 @@ paths:
                 required:
                   - status
                 additionalProperties: false
-  /v1/playground/seed-conversation:
-    post:
-      operationId: playground_seedconversation_post
-      summary: Create a synthetic seeded conversation for compaction testing
-      tags:
-        - playground
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                turns:
-                  type: integer
-                  exclusiveMinimum: 0
-                  maximum: 500
-                avgTokensPerTurn:
-                  default: 500
-                  type: integer
-                  exclusiveMinimum: 0
-                  maximum: 5000
-                title:
-                  type: string
-                  maxLength: 120
-              required:
-                - turns
-      responses:
-        "200":
-          description: Successful response
-  /v1/playground/seeded-conversations:
-    delete:
-      operationId: playground_seededconversations_delete
-      summary: Delete every seeded playground conversation (prefix-gated)
-      tags:
-        - playground
-      responses:
-        "200":
-          description: Successful response
-    get:
-      operationId: playground_seededconversations_get
-      summary: List conversations created by the seed-conversation endpoint
-      tags:
-        - playground
-      responses:
-        "200":
-          description: Successful response
-  /v1/playground/seeded-conversations/{id}:
-    delete:
-      operationId: playground_seededconversations_by_id_delete
-      summary: Delete a single seeded conversation (prefix-gated)
-      tags:
-        - playground
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Successful response
   /v1/plugins:
     get:
       operationId: plugins_get

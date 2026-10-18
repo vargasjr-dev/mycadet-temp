@@ -149,7 +149,6 @@ import type { RouteHandlerArgs } from "./types.js";
 
 const log = getLogger("runtime-http");
 
-
 const DISK_PRESSURE_REMOTE_BLOCK_REPLY =
   "Storage is critically low, so remote messages are ignored until the guardian frees enough space. Please try again later.";
 
@@ -487,6 +486,11 @@ export async function handleChannelInbound({
   // Resolve the effective policy before ACL so it can skip its hard-deny
   // paths for permissive policies (`strangers`, `any_contact`). The same
   // value is reused by the floor stage below.
+  const admissionPolicyFromGateway = isAdmissionPolicy(
+    sourceMetadata?.admissionPolicy,
+  )
+    ? (sourceMetadata!.admissionPolicy as AdmissionPolicy)
+    : ADMISSION_POLICY_DEFAULT;
 
   // Callback payloads (button presses, delete sentinels) are decision
   // attempts / lifecycle events, not access attempts: the ACL stage must not

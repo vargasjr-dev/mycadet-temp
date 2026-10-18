@@ -613,7 +613,6 @@ export function listPinnedConversations(
   return query.all().map(parseConversation);
 }
 
-
 /**
  * How many conversations {@link listConversations} would return for the same
  * filter, ignoring `limit` / `offset`. Both read through
