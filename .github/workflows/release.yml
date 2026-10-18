@@ -1138,6 +1138,10 @@ jobs:
           VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
+          # The prod channel ships minified (with source maps — see the build
+          # block in clients/web/vite.config.ts); the dev channel stays
+          # unminified so QA can read it.
+          VITE_WEB_MINIFY: "true"
         run: bun run build
 
       - name: Rewrite package.json for publish

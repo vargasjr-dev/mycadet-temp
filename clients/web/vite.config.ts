@@ -39,6 +39,11 @@ const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
 function isCloudServedBuild(raw: string | undefined): boolean {
   return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
 }
+// Same truthy semantics, for build-shape knobs that aren't about where the
+// bundle is served from (e.g. VITE_WEB_MINIFY picks the minified prod build).
+function isTruthyBuildFlag(raw: string | undefined): boolean {
+  return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
+}
 
 /**
  * Proxy configure hook (local mode) that authenticates upstream requests with
@@ -181,13 +186,13 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       emptyOutDir: true,
-      // Cloud-served bundles stay minified without source maps — the deploy
-      // hands phones a cold cache. Everything else (the bundle the local web
-      // host and the tunnel edge serve) builds unminified with source maps
-      // so QA and debugging can read it.
-      ...(isCloudServedBuild(env.VITE_CLOUD_MODE)
-        ? { sourcemap: false }
-        : { sourcemap: true, minify: false }),
+      // Source maps ship in EVERY bundle so devtools always shows origins —
+      // minified prod and readable dev alike. Minification follows the
+      // channel: the prod train sets VITE_WEB_MINIFY (the deploy hands phones
+      // a cold cache), while dev-channel and self-hosted builds stay
+      // unminified so QA and debugging can read them.
+      sourcemap: true,
+      ...(isTruthyBuildFlag(env.VITE_WEB_MINIFY) ? {} : { minify: false }),
       // Chunking is tuned for a cold cache on a phone, which is what every
       // deploy hands users: `index.html` modulepreloads the whole boot
       // graph, and hundreds of tiny chunks fetched at once stall a congested
