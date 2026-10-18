@@ -9,7 +9,7 @@
 
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { act, cleanup, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 
 import {
   DefaultStepPill,
@@ -20,12 +20,8 @@ import {
 import { SubagentPhaseTimeline } from "@/domains/chat/components/subagent-phase-timeline";
 import type { ToolCallCardStep } from "@/domains/chat/utils/tool-call-card-utils";
 
-const { useAssistantFeatureFlagStore } =
-  await import("@/stores/assistant-feature-flag-store");
-
 afterEach(() => {
   cleanup();
-  useAssistantFeatureFlagStore.setState({ sessionGroups: false });
 });
 
 function thinking(
@@ -63,7 +59,6 @@ describe("PhaseGroupedStepList — empty input", () => {
 
 describe("PhaseGroupedStepList — phase grouping", () => {
   test("localized action wording does not split the stable Working phase", () => {
-    useAssistantFeatureFlagStore.setState({ sessionGroups: true });
     const steps = [
       { ...bash("raw click"), actionDisplayKey: "click" as const },
       { ...bash("raw type"), actionDisplayKey: "type" as const },
@@ -467,16 +462,13 @@ describe("sumDurationLabels", () => {
   });
 });
 
-test("default tool pills preserve the exact legacy detail until session groups is enabled", () => {
+test("default tool pills surface the activity over the raw detail", () => {
   const step: ToolCallCardStep = {
     ...bash("git status"),
     activity: "Checking the release",
     actionDisplayKey: "terminal",
   };
   const { getByText, queryByText } = render(<DefaultStepPill step={step} />);
-  expect(getByText("git status")).toBeTruthy();
-  expect(queryByText("Checking the release")).toBeNull();
-  act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: true }));
   expect(getByText("Checking the release")).toBeTruthy();
   expect(queryByText("git status")).toBeNull();
 });
@@ -488,18 +480,13 @@ test.each([
   "info-less default pills follow the displayed label ($expected)",
   (input) => {
     const step = { ...bash(""), ...input };
-    const { queryByTestId, getByText } = render(
-      <DefaultStepPill step={step} />,
-    );
-    expect(queryByTestId("phase-step-pill")).toBeNull();
-    act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: true }));
+    const { getByTestId, getByText } = render(<DefaultStepPill step={step} />);
+    expect(getByTestId("phase-step-pill")).toBeTruthy();
     expect(getByText(input.expected)).toBeTruthy();
-    act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: false }));
-    expect(queryByTestId("phase-step-pill")).toBeNull();
   },
 );
 
-test("expanded subagent steps reactively gate action wording without changing phases", () => {
+test("expanded subagent steps surface the action wording without changing phases", () => {
   const step = { ...bash("git status"), actionDisplayKey: "terminal" as const };
   const { getByText, queryByText, getByTestId } = render(
     <SubagentPhaseTimeline
@@ -508,11 +495,8 @@ test("expanded subagent steps reactively gate action wording without changing ph
       onStepDetailClick={() => {}}
     />,
   );
-  const phase = getByTestId("subagent-phase-section");
-  expect(getByText("git status")).toBeTruthy();
-  act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: true }));
+  expect(getByTestId("subagent-phase-section")).toBeTruthy();
   expect(getByText("Running a command")).toBeTruthy();
   expect(queryByText("git status")).toBeNull();
-  expect(getByTestId("subagent-phase-section")).toBe(phase);
   expect(getByText("Working")).toBeTruthy();
 });

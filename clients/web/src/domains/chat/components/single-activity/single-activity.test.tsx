@@ -15,7 +15,7 @@
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render } from "@testing-library/react";
 
 import type { WebSearchResultItem } from "@mycadet/assistant-api";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
@@ -67,12 +67,8 @@ function makeToolCall(
   };
 }
 
-const { useAssistantFeatureFlagStore } =
-  await import("@/stores/assistant-feature-flag-store");
-
 afterEach(() => {
   cleanup();
-  useAssistantFeatureFlagStore.setState({ sessionGroups: false });
   // The click writes to the real viewer store — reset the drawer state between
   // tests so assertions don't bleed across cases.
   useViewerStore.setState({ activeToolDetail: null, mainView: "chat" });
@@ -239,7 +235,7 @@ describe("SingleActivity — thinking variant", () => {
 });
 
 describe("SingleActivity — tool variant", () => {
-  test("reactively gates localized action wording", () => {
+  test("localizes computer action wording", () => {
     const { getByText, queryByText } = render(
       <SingleActivity
         variant="tool"
@@ -250,17 +246,11 @@ describe("SingleActivity — tool variant", () => {
       />,
     );
 
-    expect(getByText("screenshot")).toBeTruthy();
-    expect(queryByText("Observing")).toBeNull();
-    act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: true }));
     expect(getByText("Observing")).toBeTruthy();
     expect(queryByText("screenshot")).toBeNull();
-    act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: false }));
-    expect(getByText("screenshot")).toBeTruthy();
   });
 
   test("keeps supplied activity ahead of localized action wording", () => {
-    useAssistantFeatureFlagStore.setState({ sessionGroups: true });
     const { getByText, queryByText } = render(
       <SingleActivity
         variant="tool"

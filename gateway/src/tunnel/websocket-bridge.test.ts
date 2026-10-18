@@ -11,14 +11,23 @@ import {
   type TunnelWebSocketOpenFrame,
 } from "./protocol.js";
 import { FakeWebSocket } from "./test-fake-websocket.js";
-import { TunnelWebSocketBridge } from "./websocket-bridge.js";
+
+// `isAllowedTunnelHttpPath` consults the webhook ingress registry for
+// /webhooks/* paths before the static Twilio prefixes. These tests never
+// register a route, so the registry reads empty and the prefixes keep
+// applying — no gateway DB needed.
+mock.module("../db/webhook-ingress-route-store.js", () => ({
+  hasWebhookIngressRoute: () => false,
+}));
+
+const { TunnelWebSocketBridge } = await import("./websocket-bridge.js");
 
 const WS_OPEN = WebSocket.OPEN;
 
 const OriginalWebSocket = globalThis.WebSocket;
 let fakeSocket: FakeWebSocket;
 let sentFrames: TunnelFrame[];
-let bridge: TunnelWebSocketBridge;
+let bridge: InstanceType<typeof TunnelWebSocketBridge>;
 let WebSocketMock: ReturnType<typeof mock>;
 
 beforeEach(() => {

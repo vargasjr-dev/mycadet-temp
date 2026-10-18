@@ -1,7 +1,7 @@
 /**
  * The registry is what decides whether an inbound webhook is answered, so the
- * IPC surface has to refuse a claim while the flag is off, refuse a path the
- * store would not store, and otherwise show back exactly what it wrote.
+ * IPC surface has to refuse reserved types and paths the store would not
+ * store, and otherwise show back exactly what it wrote.
  */
 
 import {
@@ -11,16 +11,9 @@ import {
   describe,
   expect,
   it,
-  mock,
 } from "bun:test";
 
 import "../__tests__/test-preload.js";
-
-let flagEnabled = true;
-
-mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: (_key: string) => flagEnabled,
-}));
 
 import {
   ListWebhookRoutesIpcResponseSchema,
@@ -63,7 +56,6 @@ afterAll(() => {
 });
 
 beforeEach(() => {
-  flagEnabled = true;
   getGatewayDb().delete(webhookIngressRoutes).run();
 });
 
@@ -79,15 +71,6 @@ describe("register_webhook_route", () => {
     );
     expect(schema?.safeParse({ path: PATH, type: "" }).success).toBe(false);
     expect(schema?.safeParse({ path: PATH }).success).toBe(false);
-  });
-
-  it("refuses without writing while the flag is off", () => {
-    flagEnabled = false;
-
-    expect(register({ path: PATH, type: "telegram" })).toEqual({
-      disabled: true,
-    });
-    expect(list()).toEqual({ routes: [] });
   });
 
   it("returns the stored row and shows it in the listing", () => {
@@ -147,14 +130,12 @@ describe("register_webhook_route", () => {
 
 describe("shared IPC contract", () => {
   it("answers every method in the shape the daemon parses", () => {
-    flagEnabled = false;
     expect(
       RegisterWebhookRouteIpcResponseSchema.safeParse(
         register({ path: PATH, type: "telegram" }),
       ).success,
     ).toBe(true);
 
-    flagEnabled = true;
     expect(
       RegisterWebhookRouteIpcResponseSchema.safeParse(
         register({ path: PATH, type: "telegram", source: "bot-1" }),
@@ -219,9 +200,8 @@ describe("unregister_webhook_route", () => {
     expect(await pollSettles()).toBeGreaterThan(0);
   });
 
-  it("still revokes and lists while the flag is off", () => {
+  it("still revokes and lists", () => {
     register({ path: PATH, type: "telegram" });
-    flagEnabled = false;
 
     expect(list()).toEqual({
       routes: [expect.objectContaining({ path: PATH })],

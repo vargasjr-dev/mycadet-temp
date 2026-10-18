@@ -73,7 +73,6 @@ afterEach(async () => {
   });
   useAssistantFeatureFlagStore.setState({
     sendUserMessage: false,
-    sessionGroups: false,
   });
 });
 
@@ -100,7 +99,7 @@ function renderCard(
 }
 
 describe("MultiActivityGroup — non-web tool group", () => {
-  test("terminal header titles the run by its outcome and keeps the bash command", () => {
+  test("terminal header titles the run by its outcome and terminal action", () => {
     const toolCalls = [
       makeToolCall({
         id: "tc-1",
@@ -113,11 +112,9 @@ describe("MultiActivityGroup — non-web tool group", () => {
       renderCard(toolCalls);
     // The unified group mounts the shared shell wrapper.
     expect(getByTestId("tool-progress-card-shell")).toBeTruthy();
-    // A settled run reads as done, while the action wording follows the flag.
+    // A settled run reads as done, with the localized terminal action wording.
     expect(getByText("Completed")).toBeTruthy();
     expect(queryByText("Working")).toBeNull();
-    expect(getByText("git status")).toBeTruthy();
-    act(() => useAssistantFeatureFlagStore.setState({ sessionGroups: true }));
     expect(getByText("Running a command")).toBeTruthy();
     expect(getByRole("button", { name: /view steps/i })).toBeTruthy();
     expect(queryByTestId("tool-step-pill")).toBeNull();
@@ -868,7 +865,7 @@ describe("MultiActivityGroup — header reflects the latest step", () => {
     expect(queryByText(/^Worked for |tool failed|^Failed$/)).toBeNull();
   });
 
-  test("a live run ending in a tool step keeps the tool title/info in the header", () => {
+  test("a live run ending in a tool step keeps the tool title in the header", () => {
     const toolCalls = [
       makeToolCall({
         id: "tc-1",
@@ -887,9 +884,10 @@ describe("MultiActivityGroup — header reflects the latest step", () => {
       items,
       active: true,
     });
-    // The disabled feature keeps the stable Working phase and command detail.
+    // The live header keeps the stable Working phase and the localized
+    // terminal action wording for the tool step.
     expect(getByText("Working")).toBeTruthy();
-    expect(getByText("echo hi")).toBeTruthy();
+    expect(getByText("Running a command")).toBeTruthy();
     // The leading thinking text is NOT promoted into the header (it's a
     // panel step only).
     expect(queryByText("Let me check the directory first.")).toBeNull();
