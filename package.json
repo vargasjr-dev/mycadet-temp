@@ -8,6 +8,7 @@
     "assistant",
     "assistant/src/api",
     "cli",
+    "clients/android",
     "clients/app",
     "clients/docs",
     "clients/linux",

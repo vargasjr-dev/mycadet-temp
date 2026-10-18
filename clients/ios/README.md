@@ -113,13 +113,19 @@ bun run dev            # web deps + cap sync + xcodegen generate + open Xcode
 ```
 
 `bun run dev` is idempotent — running it on an already-up-to-date tree
-is a no-op. The headless variant is also available individually:
+is a no-op. Both commands delegate to `scripts/setup.sh`, which
+installs missing tooling first (xcodegen via Homebrew when absent),
+then runs the headless steps:
 
-- `bun run setup` — installs the web deps Capacitor needs, then
-  `cap sync ios` + `xcodegen generate`. Use when you want to run
-  `xcodebuild` headlessly (rare for local dev).
+- `bun run setup` — ensures xcodegen, installs the web deps Capacitor
+  needs, then `cap sync ios` + `xcodegen generate`. Use when you want
+  to run `xcodebuild` headlessly (rare for local dev).
 - `bun run dev` — `bun run setup` + `open App/App.xcodeproj`.
   Day-to-day local flow.
+
+The root `./setup.sh` invokes `bun run setup` for every subpackage
+that defines one, so a fresh clone gets the iOS toolchain without
+touching `clients/ios/` directly.
 
 First-time open takes ~30s while Xcode resolves the SPM graph and
 caches `capacitor-swift-pm@8.3.4` (pinned exactly in

@@ -17,9 +17,7 @@ REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 info()  { echo "==> $*"; }
 error() { echo "error: $*" >&2; exit 1; }
 
-# ---------------------------------------------------------------------------
-# Pre-flight: ensure bun is available (install automatically if missing)
-# ---------------------------------------------------------------------------
+# — Pre-flight: ensure bun is available (installs bun automatically if missing) —
 # Keep this version in sync with .tool-versions (bun).
 EXPECTED_BUN_VERSION="1.3.11"
 
@@ -39,28 +37,30 @@ if ! command -v bun &>/dev/null; then
   fi
 fi
 
-# ---------------------------------------------------------------------------
-# Configure git to use .githooks/ for pre-commit hooks (works in worktrees)
-# ---------------------------------------------------------------------------
+# — Configure git to use .githooks/ for pre-commit hooks (works in worktrees) —
 info "Configuring git hooks"
 git config core.hooksPath .githooks
 
-# ---------------------------------------------------------------------------
-# Install workspace dependencies (one install covers every member)
-# ---------------------------------------------------------------------------
+# — Install workspace dependencies (one install covers every member) —
 info "Installing workspace dependencies"
 (cd "${REPO_ROOT}" && bun install)
 
-# ---------------------------------------------------------------------------
-# Install dependencies for scripts/
-# ---------------------------------------------------------------------------
+# — Install dependencies for scripts/ —
 info "Installing dependencies in scripts/"
 (cd "${REPO_ROOT}/scripts" && bun install)
 
-# ---------------------------------------------------------------------------
-# Link the global `cadet-local` command to this checkout's source, pinned to
-# the local environment
-# ---------------------------------------------------------------------------
+# — Run `bun run setup` in every subpackage that defines one (currently
+#   clients/ios: xcodegen install + Capacitor sync + Xcode project
+#   generation; the script skips itself off macOS) —
+info "Running subpackage setups"
+for package_dir in "${REPO_ROOT}"/clients/*/; do
+  [ -f "${package_dir}package.json" ] || continue
+  grep -q '"setup":' "${package_dir}package.json" || continue
+  info "Setting up ${package_dir}"
+  (cd "${package_dir}" && bun run setup)
+done
+
+# — Link the global `cadet-local` command to this checkout's source, pinned to the local environment —
 # `cadet` resolves its environment from its own version (a source checkout
 # resolves to production), and non-production environments install as
 # `cadet-<env>` — the CLI's own next-steps printout advertises `cadet-local`
@@ -78,9 +78,7 @@ exec bun "${REPO_ROOT}/cli/src/index.ts" "\$@"
 CADET_LOCAL_SHIM
 chmod +x "${HOME}/.bun/bin/cadet-local"
 
-# ---------------------------------------------------------------------------
-# Install shell completions for the `cadet-local` command
-# ---------------------------------------------------------------------------
+# — Install shell completions for the `cadet-local` command —
 info "Installing shell completions for cadet-local"
 
 CADET_COMP_DIR="${HOME}/.config/cadet/completions"
@@ -173,15 +171,7 @@ cat >> "${CADET_COMP_DIR}/completions.zsh" << 'ZSH_COMP_END'
 compdef _cadet cadet-local
 ZSH_COMP_END
 
-# ---------------------------------------------------------------------------
-# Wire up PATH + completions in shell rc files.
-#
-# nix / home-manager manage ~/.zshrc (and friends) as read-only symlinks into
-# the nix store. When the canonical rc isn't writable, fall back to a writable
-# "*.local" escape hatch it already sources (e.g. ~/.zshrc sources
-# ~/.zshenv.local) so our additions still load. If no hatch is found we use a
-# "<rc>.local" sidecar and tell the user to source it from their config.
-# ---------------------------------------------------------------------------
+# — Wire up PATH + completions in shell rc files —
 BUN_BIN="${HOME}/.bun/bin"
 
 # Echo the writable file to append to for a given canonical rc.
