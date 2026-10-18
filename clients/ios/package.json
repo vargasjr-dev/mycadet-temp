@@ -1,0 +1,8 @@
+{
+  "name": "@mycadet/ios",
+  "private": true,
+  "scripts": {
+    "setup": "cd ../web && bun install && bunx cap sync ios && cd ../ios/App && xcodegen generate --spec project.yml",
+    "dev": "bun run setup && open App/App.xcodeproj"
+  }
+}

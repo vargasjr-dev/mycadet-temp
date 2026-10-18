@@ -69,7 +69,7 @@ Docker `cache-to: type=gha` must set `ignore-error=true`. The GHA cache is a bui
 
 ### iOS release
 
-The Capacitor iOS source-of-truth lives in [`clients/ios/`](./clients/ios/) and is built locally from `clients/web/` via `bun run ios:open`. See [`clients/ios/README.md`](./clients/ios/README.md) for the local build flow and full release pipeline mapping.
+The Capacitor iOS source-of-truth lives in [`clients/ios/`](./clients/ios/) and is built locally from `clients/ios/` via `bun run dev`. See [`clients/ios/README.md`](./clients/ios/README.md) for the local build flow and full release pipeline mapping.
 
 TestFlight builds are produced by the `release-ios.yaml` reusable workflow in this repo. Both `dev-release.yaml` and `release.yml` call it as a same-repo `uses:` job with `{ environment, version }` inputs. The workflow runs on `macos-15`, installs web dependencies, runs `cap sync ios`, generates the Xcode project via XcodeGen, archives, signs, and uploads to TestFlight.
 

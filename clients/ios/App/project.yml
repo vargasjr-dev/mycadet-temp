@@ -120,7 +120,7 @@ targetTemplates:
       # generated project is older than the source-of-truth spec
       # (`clients/ios/App/project.yml`). This catches the case where a
       # local dev pulls a project.yml change but forgets to run
-      # `bun run ios:setup` (or `xcodegen generate`) before building.
+      # `bun run setup` (or `xcodegen generate`) before building.
       # CI never trips this guard because the workflow runs
       # `xcodegen generate` immediately before `xcodebuild archive`.
       - name: Verify project.yml is in sync with App.xcodeproj
@@ -135,7 +135,7 @@ targetTemplates:
           fi
           if [ "$spec" -nt "$pbxproj" ]; then
             echo "error: clients/ios/App/project.yml is newer than App.xcodeproj." >&2
-            echo "error: Run 'bun run ios:setup' from clients/web/ to regenerate the Xcode project." >&2
+            echo "error: Run 'bun run setup' from clients/ios/ to regenerate the Xcode project." >&2
             exit 1
           fi
 

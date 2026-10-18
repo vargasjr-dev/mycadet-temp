@@ -83,7 +83,7 @@ functionality anyway — there is no useful offline state.
 all `.xcscheme` files, `contents.xcworkspacedata`, the SPM workspace
 state) is regenerated from `App/project.yml` by
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) every time you build —
-locally via `bun run ios:setup`, in CI via the `xcodegen generate` step
+locally via `bun run setup` from `clients/ios/`, in CI via the `xcodegen generate` step
 in `.github/workflows/release-ios.yaml`.
 
 What _is_ committed and what generates from where:
@@ -102,23 +102,23 @@ A pre-build script wired into every target via `project.yml` fails the
 Xcode build with a clear error if `project.yml` is newer than the
 generated `App.xcodeproj/project.pbxproj` — i.e. you pulled a
 `project.yml` change but forgot to regenerate. The fix is always the
-same: `bun run ios:setup` from `clients/web/`.
+same: `bun run setup` from `clients/ios/`.
 
 ## First-time setup
 
-From `clients/web/`:
+From `clients/ios/`:
 
 ```bash
-bun install            # installs @capacitor/cli and Capacitor plugin deps
-bun run ios:open        # cap sync + xcodegen generate + open Xcode
+bun run dev            # web deps + cap sync + xcodegen generate + open Xcode
 ```
 
-`bun run ios:open` is idempotent — running it on an already-up-to-date
-tree is a no-op. Two underlying scripts are also available individually:
+`bun run dev` is idempotent — running it on an already-up-to-date tree
+is a no-op. The headless variant is also available individually:
 
-- `bun run ios:setup` — `cap sync ios` + `xcodegen generate`. Use when
-  you want to run `xcodebuild` headlessly (rare for local dev).
-- `bun run ios:open` — `bun run ios:setup` + `open ../ios/App/App.xcodeproj`.
+- `bun run setup` — installs the web deps Capacitor needs, then
+  `cap sync ios` + `xcodegen generate`. Use when you want to run
+  `xcodebuild` headlessly (rare for local dev).
+- `bun run dev` — `bun run setup` + `open App/App.xcodeproj`.
   Day-to-day local flow.
 
 First-time open takes ~30s while Xcode resolves the SPM graph and
@@ -438,11 +438,11 @@ would require re-provisioning the app. See the inline comment in
 ### After editing `clients/web/capacitor.config.ts`
 
 ```bash
-cd clients/web
-bun run ios:setup
+cd clients/ios
+bun run setup
 ```
 
-`ios:setup` re-runs `cap sync ios` (regenerating
+`setup` re-runs `cap sync ios` (regenerating
 `clients/ios/App/App/capacitor.config.json` and the `capacitor-shell/` webDir
 copy in `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 `App.xcodeproj/`. All three of those output paths are gitignored.
@@ -1070,8 +1070,9 @@ clients/
 │   ├── capacitor.config.ts           # Capacitor config (edit this); ios.path: "../ios"
 │   ├── capacitor-shell/
 │   │   └── index.html                # Placeholder webDir (unused at runtime)
-│   └── package.json                  # @capacitor/* deps + ios:setup / ios:open scripts
+│   └── package.json                  # @capacitor/* deps + Capacitor CLI
 └── ios/
+    ├── package.json                  # iOS dev flow: `bun run dev` / `bun run setup`
     ├── .gitignore                    # Ignores Pods, DerivedData, xcuserdata,
     │                                 # generated capacitor.config.json, etc.
     ├── docs/
