@@ -41,9 +41,10 @@ import {
 } from "./ingress-config.js";
 import { stripVersionPrefix } from "./version-compat.js";
 import {
-  findAppDistDir,
-  findWebDistDir,
   readWebReleaseVersion,
+  resolveAppDistDir,
+  resolveWebDistDir,
+  type DistBuildRunner,
 } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
@@ -1249,6 +1250,11 @@ export async function startRemoteWebIngress(opts: {
     webDistDir: string | null;
     listenPort: number;
   }) => void;
+  /**
+   * Overrides the one-time source build of a missing client bundle (tests
+   * inject a no-op). Defaults to spawning the package's own build script.
+   */
+  runBuild?: DistBuildRunner;
 }): Promise<StartRemoteWebIngressResult> {
   let listenPort = opts.listenPort ?? getNginxIngressPort();
   const includeWebApp = opts.includeWebApp ?? true;
@@ -1278,13 +1284,15 @@ export async function startRemoteWebIngress(opts: {
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
       }
     : undefined;
-  const webDistDir = includeWebApp ? findWebDistDir() : null;
+  const webDistDir = includeWebApp
+    ? await resolveWebDistDir({ runBuild: opts.runBuild })
+    : null;
   if (includeWebApp && !webDistDir) {
     return { status: "web-dist-missing" };
   }
   const appDistDir =
     includeWebApp && shellMode === "app"
-      ? (findAppDistDir() ?? undefined)
+      ? ((await resolveAppDistDir({ runBuild: opts.runBuild })) ?? undefined)
       : undefined;
   if (includeWebApp && shellMode === "app" && !appDistDir) {
     return { status: "app-dist-missing" };

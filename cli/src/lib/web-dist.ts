@@ -1,6 +1,7 @@
 import { stripVersionPrefix } from "./version-compat.js";
 import { z } from "zod";
 import { isValidReleaseVersion } from "@mycadet/local-mode";
+import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
@@ -104,6 +105,130 @@ export function findAppDistDir(options: AppDistOptions = {}): string | null {
     dir = parent;
   }
   return null;
+}
+
+/** One resolved source-build invocation for a missing client bundle. */
+export interface DistBuildSpec {
+  command: string;
+  args: string[];
+  env: Record<string, string>;
+  cwd: string;
+}
+
+/** Runs a source build; the default runner spawns it with inherited stdio. */
+export type DistBuildRunner = (build: DistBuildSpec) => Promise<void>;
+
+export interface DistBuildOptions {
+  /** Anchors the source-checkout walk (defaults to this module's directory). */
+  startDir?: string;
+  /** Overrides build execution so tests can record instead of spawning. */
+  runBuild?: DistBuildRunner;
+  /** Progress sink (defaults to console.log). */
+  log?: (message: string) => void;
+  /** Overrides the npm package resolution (tests defeat the installed arm). */
+  resolvePackage?: () => string;
+}
+
+/** Locate the `clients/<kind>` package of the checkout this CLI runs from. */
+function findSourcePackageDir(
+  kind: "web" | "app",
+  startDir?: string,
+): string | null {
+  let dir = startDir ?? import.meta.dir;
+  for (let depth = 0; depth < 8; depth++) {
+    const packageJson = join(dir, "clients", kind, "package.json");
+    if (existsSync(packageJson)) {
+      return dirname(packageJson);
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return null;
+}
+
+/** Default runner: inherit stdio so the build's progress streams through. */
+function spawnDistBuild(build: DistBuildSpec): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(build.command, build.args, {
+      cwd: build.cwd,
+      env: { ...process.env, ...build.env },
+      stdio: "inherit",
+    });
+    child.on("error", reject);
+    child.on("exit", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`exited with code ${code ?? "signal"}`));
+      }
+    });
+  });
+}
+
+async function resolveDistDirBuilt(
+  kind: "web" | "app",
+  options: DistBuildOptions,
+): Promise<string | null> {
+  const existing =
+    kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
+  if (existing) {
+    return existing;
+  }
+  const sourceDir = findSourcePackageDir(kind, options.startDir);
+  if (!sourceDir) {
+    return null;
+  }
+  const log = options.log ?? ((message: string) => console.log(message));
+  const runBuild = options.runBuild ?? spawnDistBuild;
+  log(
+    `No built ${kind} bundle found. Building it from the source checkout ` +
+      "now (first run only; this can take a minute)...",
+  );
+  const recipe =
+    kind === "web"
+      ? "cd clients/web && VITE_CLOUD_MODE=false bun run build"
+      : "cd clients/app && VITE_CLOUD_MODE=false bun run build";
+  try {
+    await runBuild({
+      command: "bun",
+      args: ["run", "build"],
+      // Both bundles need the desktop artifact shape: the cloud-served flag
+      // strips the account tree the shells mount.
+      env: { VITE_CLOUD_MODE: "false" },
+      cwd: sourceDir,
+    });
+  } catch (error) {
+    throw new Error(
+      `Building the ${kind} bundle from source failed, so the edge cannot ` +
+        `start. Run the build by hand to see the full output: ` +
+        `\`${recipe}\`. ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  log(`Built the ${kind} bundle.`);
+  return kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
+}
+
+/**
+ * Locate the built web SPA, building it once from the source checkout when
+ * missing. Returns null when there is no dist and no source to build from.
+ */
+export async function resolveWebDistDir(
+  options: DistBuildOptions = {},
+): Promise<string | null> {
+  return resolveDistDirBuilt("web", options);
+}
+
+/**
+ * Locate the built standalone app shell, building it once from the source
+ * checkout when missing. Mirrors {@link resolveWebDistDir}.
+ */
+export async function resolveAppDistDir(
+  options: DistBuildOptions = {},
+): Promise<string | null> {
+  return resolveDistDirBuilt("app", options);
 }
 
 const WebReleaseSchema = z.object({

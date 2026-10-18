@@ -87,6 +87,7 @@ import {
   stopContainerTunnelEdge,
   stopIngressNginx,
 } from "../lib/nginx-ingress.js";
+import type { DistBuildRunner, DistBuildSpec } from "../lib/web-dist.js";
 
 const originalKill = process.kill;
 const workspaces: string[] = [];
@@ -731,11 +732,21 @@ function mockNginxSpawnExitsAfterProbe(): void {
   }) as unknown as typeof childProcess.spawn);
 }
 
-/** Force findWebDistDir() to resolve nothing, regardless of checkout state. */
+/**
+ * Force the dist lookup to resolve nothing, regardless of checkout state:
+ * no built bundle anywhere, and no clients/{web,app} source checkout for
+ * the auto-build to run from.
+ */
 function mockWebDistMissing(): void {
-  existsSyncMock.mockImplementation((path) =>
-    String(path).endsWith("index.html") ? false : realFs.existsSync(path),
-  );
+  existsSyncMock.mockImplementation((path) => {
+    const p = String(path);
+    // No built bundle anywhere...
+    if (p.endsWith("index.html")) return false;
+    // ...and no source package for the auto-build to run.
+    if (p.includes("clients/web/package.json")) return false;
+    if (p.includes("clients/app/package.json")) return false;
+    return realFs.existsSync(path);
+  });
 }
 
 /** Force findWebDistDir() to resolve a dist dir, regardless of checkout state. */
@@ -1138,6 +1149,69 @@ describe("startRemoteWebIngress", () => {
     expect(onStarting).not.toHaveBeenCalled();
     expect(spawnMock).not.toHaveBeenCalled();
     expect(realFs.existsSync(ingressConfPath(ws))).toBe(false);
+  });
+
+  test("builds the missing web bundle from the source checkout and starts", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    // No built bundle anywhere, but the source checkout IS present, so the
+    // auto-build has something to run.
+    existsSyncMock.mockImplementation((path) => {
+      const p = String(path);
+      if (p.endsWith(WEB_INDEX_SUFFIX)) return false;
+      if (p.includes("clients/web/package.json")) return true;
+      return realFs.existsSync(path);
+    });
+
+    const builds: DistBuildSpec[] = [];
+    const runBuild: DistBuildRunner = async (build) => {
+      builds.push(build);
+      mockWebDistPresent(); // the build "lands" the bundle.
+    };
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      runBuild,
+    });
+
+    expect(result).toEqual({
+      status: "started",
+      listenPort: 7845,
+      webDistDir: expect.any(String),
+      version: NGINX_VERSION,
+    });
+    expect(builds).toHaveLength(1);
+    expect(builds[0]?.command).toBe("bun");
+    expect(builds[0]?.args).toEqual(["run", "build"]);
+    expect(builds[0]?.env.VITE_CLOUD_MODE).toBe("false");
+    expect(builds[0]?.cwd.endsWith(join("clients", "web"))).toBe(true);
+  });
+
+  test("reports a failed source build with the manual recipe", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    // Bundle missing, source checkout present: the auto-build runs and fails.
+    existsSyncMock.mockImplementation((path) => {
+      const p = String(path);
+      if (p.endsWith(WEB_INDEX_SUFFIX)) return false;
+      if (p.includes("clients/web/package.json")) return true;
+      return realFs.existsSync(path);
+    });
+
+    await expect(
+      startRemoteWebIngress({
+        workspaceDir: ws,
+        gatewayPort: 7830,
+        listenPort: 7845,
+        runBuild: async () => {
+          throw new Error("bun exited with code 1");
+        },
+      }),
+    ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
   });
 
   test("short-circuits when the running edge already serves the requested mode", async () => {
@@ -2632,13 +2706,13 @@ describe("app shell mode", () => {
     // path needs the lookup to resolve nothing, regardless of checkout state.
     // Web dist stays present so the app-dist check is the one that fires.
     const previousExists = existsSyncMock.getMockImplementation();
-    existsSyncMock.mockImplementation((path) =>
-      String(path).endsWith(APP_INDEX_SUFFIX)
-        ? false
-        : previousExists
-          ? previousExists(path)
-          : realFs.existsSync(path),
-    );
+    existsSyncMock.mockImplementation((path) => {
+      const p = String(path);
+      if (p.endsWith(APP_INDEX_SUFFIX)) return false;
+      // The app auto-build must not run from the real checkout either.
+      if (p.includes("clients/app/package.json")) return false;
+      return previousExists ? previousExists(path) : realFs.existsSync(path);
+    });
 
     const result = await startRemoteWebIngress({
       workspaceDir: ws,
