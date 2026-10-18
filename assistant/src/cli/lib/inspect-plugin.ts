@@ -288,10 +288,6 @@ export async function inspectPlugin(
   const local = entry ? readLocal(entry, readInstallMeta(entry.target)) : null;
   const surfaces = entry ? detectPluginSurfaces(entry.target) : null;
 
-  if (!installed) {
-    throw new PluginInspectNotFoundError(name);
-  }
-
   let remote: PluginRemoteInfo | null = null;
   let remoteError: string | null = null;
   try {
