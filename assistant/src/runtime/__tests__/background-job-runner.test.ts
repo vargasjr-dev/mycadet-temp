@@ -13,7 +13,6 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import type { TrustContext } from "../../daemon/trust-context-types.js";
 
 // ── Module mocks ─────────────────────────────────────────────────────
