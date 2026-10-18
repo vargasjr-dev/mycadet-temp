@@ -273,6 +273,26 @@
         // Best-effort. A failure leaves the English label the markup ships with.
       }
     })();
+
+    // If the bundle's module graph never finishes loading (a failed chunk
+    // fetch leaves nothing to run — no console surface, no error boundary),
+    // the splash would sit forever. Watchdog: if the splash is still what's
+    // mounted 20s in, swap it for an honest error with a reload — the same
+    // treatment a thrown boot failure gets from the bundle's own startup
+    // failure screen.
+    setTimeout(function () {
+      var splash = document.getElementById("boot-splash");
+      if (!splash) {
+        return;
+      }
+      splash.setAttribute("role", "alert");
+      splash.innerHTML =
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:16px;max-width:28rem;padding:24px;text-align:center">' +
+        '<h1 style="font-size:1.25rem;font-weight:600;margin:0">Cadet couldn\u2019t start</h1>' +
+        '<p style="font-size:0.875rem;margin:0;opacity:0.8">It took too long to load. Reload the app to try again.</p>' +
+        '<button type="button" style="margin-top:8px;padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:0.875rem;background:#71808E;color:#fff" onclick="window.location.reload()">Reload app</button>' +
+        "</div>";
+    }, 20000);
   </script>
 
   <!--

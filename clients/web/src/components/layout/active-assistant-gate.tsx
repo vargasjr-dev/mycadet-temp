@@ -1,9 +1,10 @@
-import { Loader2 } from "lucide-react";
+import { CloudOff, Loader2 } from "lucide-react";
 import { Outlet, useNavigate } from "react-router";
 
 import { Typography } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
 
+import { lifecycleService } from "@/assistant/lifecycle-service";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
@@ -35,18 +36,46 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
  */
 export function ActiveAssistantGate() {
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantStateKind = useAssistantLifecycleStore(
-    (s) => s.assistantState.kind,
-  );
+  const assistantState = useAssistantLifecycleStore.use.assistantState();
+
+  // A lifecycle error is terminal (or retryable via the button below) — it
+  // must surface as an honest error, never as the connecting placeholder:
+  // an unreachable assistant left on an eternal spinner is the one failure
+  // mode a user can't self-diagnose.
+  if (assistantState.kind === "error") {
+    return <ActiveAssistantError message={assistantState.message} />;
+  }
 
   if (
     !assistantId ||
-    (assistantStateKind !== "active" && assistantStateKind !== "self_hosted")
+    (assistantState.kind !== "active" && assistantState.kind !== "self_hosted")
   ) {
     return <ActiveAssistantPlaceholder />;
   }
 
   return <Outlet />;
+}
+
+function ActiveAssistantError({ message }: { message: string }) {
+  const { t } = useTranslation();
+
+  return (
+    <div
+      className="flex min-h-0 flex-1 flex-col items-center justify-center gap-[var(--app-spacing-md)] px-6 text-center text-[var(--content-tertiary)]"
+      role="alert"
+    >
+      <CloudOff className="size-6" aria-hidden="true" />
+      <Typography variant="body-medium-default">
+        {t("activeAssistantGate.errorTitle")}
+      </Typography>
+      <p className="text-body-medium-lighter max-w-md text-[var(--content-secondary)]">
+        {message}
+      </p>
+      <Button variant="ghost" onClick={() => lifecycleService.retryAssistant()}>
+        {t("activeAssistantGate.retry")}
+      </Button>
+    </div>
+  );
 }
 
 function ActiveAssistantPlaceholder() {

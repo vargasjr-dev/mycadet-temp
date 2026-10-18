@@ -8,7 +8,9 @@
   "activeAssistantGate": {
     "connecting": "Connecting to your assistant…",
     "logIn": "Log In",
-    "logOut": "Log Out"
+    "logOut": "Log Out",
+    "errorTitle": "We couldn't reach your assistant",
+    "retry": "Try again"
   },
   "addCredentialModal": {
     "cancel": "Cancel",
