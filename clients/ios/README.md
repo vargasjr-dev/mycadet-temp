@@ -461,12 +461,15 @@ CADET_SERVER_URL=https://your-host.ts.net bunx cap sync ios
 Then rebuild in Xcode. The value must be a valid `https:` URL — `cap sync`
 fails loudly otherwise, because iOS App Transport Security requires valid
 TLS and `server.cleartext` stays `false`. Nothing to edit or revert: resync
-without the variable (e.g. `bun run ios:setup`) to return to the environment
-default.
+without the variable (e.g. `bun run setup` from `clients/ios/`) to return to
+the environment default.
 
-**Plain-HTTP local dev (e.g. a local Next.js on your LAN):** ATS blocks
-cleartext HTTP and `CADET_SERVER_URL` is https-only, so this path still
-requires temporarily editing `capacitor.config.ts`:
+**Plain-HTTP local dev on your LAN (i.e. a device):** the default already
+points locally-synced shells at the local dev server on `localhost:3000` —
+the simulator shares the host's loopback, so that works as-is. A device
+can't reach the host's loopback, ATS blocks cleartext HTTP, and
+`CADET_SERVER_URL` is https-only, so this path still requires temporarily
+editing `capacitor.config.ts`:
 
 ```ts
 server: {
@@ -481,7 +484,7 @@ server: {
   HTTP by default
 - Run `bunx cap sync ios`, then rebuild in Xcode
 - **Revert before committing.** The default must remain
-  the dev server URL with `cleartext: false`.
+  the local dev server URL (`localhost:3000`) with `cleartext: false`.
 
 ### Add a new Capacitor plugin
 
