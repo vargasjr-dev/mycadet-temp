@@ -1583,11 +1583,11 @@ jobs:
 
   release-ios:
     needs: [compute-version, build-chrome-extension]
-    continue-on-error: true # ios on the dev channel is a canary — a failed ios leg must not red the dev release
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: dev
       version: ${{ needs.compute-version.outputs.version }}
+      tolerate_failure: true # ios on the dev channel is a canary — a failed ios leg must not red the dev release
     secrets: inherit
 
   release-android:

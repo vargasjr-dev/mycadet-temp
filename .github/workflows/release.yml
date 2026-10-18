@@ -371,7 +371,6 @@ jobs:
         id: tags
         run: |
           VERSION="${{ needs.extract-version.outputs.version }}"
-          SHORT_SHA="${{ needs.extract-version.outputs.short_sha }}"
           IMAGE_REF="docker.io/mycadet/${{ env.ASSISTANT_IMAGE_NAME }}"
           IMAGE_TAGS="${IMAGE_REF}:${{ github.sha }}"
           IMAGE_TAGS=$(printf "%s\n%s" "$IMAGE_TAGS" "${IMAGE_REF}:${VERSION}")
