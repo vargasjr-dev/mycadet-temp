@@ -1,3 +1,3 @@
 "use client";
 
-export { AppShell, type AppShellProps, type AppShellStatus } from "./app-shell";
+export { AppShell, type AppShellProps } from "./app-shell";

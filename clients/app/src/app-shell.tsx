@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import {
-  useAssistantRequest,
-  type AssistantRequestState,
-} from "./assistant/use-assistant-request";
+import { useState } from "react";
+import { useAssistantRequest } from "./assistant/use-assistant-request";
 import { AppI18nProvider } from "./i18n/provider";
 import { useTranslation } from "./i18n/react";
 import { AssistantFrame } from "./shell/assistant-frame";
 
-export type AppShellStatus = Exclude<
-  AssistantRequestState,
-  { status: "ready" }
->;
 export interface AppShellProps {
   apiBaseUrl?: string;
   assistantId?: string;
@@ -20,7 +13,6 @@ export interface AppShellProps {
   origin: string;
   mountPath?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
-  renderStatus?: (state: AppShellStatus, retry: () => void) => ReactNode;
   title?: string;
 }
 
@@ -40,7 +32,6 @@ function AssistantShell({
   origin,
   mountPath = "/assistant",
   onNavigate,
-  renderStatus,
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
@@ -60,9 +51,7 @@ function AssistantShell({
     assistantId: selectedId,
   });
   if (state.status !== "ready") {
-    return renderStatus && state.status !== "selection" ? (
-      renderStatus(state, reload)
-    ) : (
+    return (
       <div role="status">
         <p>{t(`appShell.${state.status}`)}</p>
         {state.status === "selection" &&
