@@ -16,15 +16,12 @@
 
 import type pino from "pino";
 
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import {
   getGuardianDelivery,
   guardianForChannel,
 } from "../contacts/guardian-delivery-reader.js";
 import { isWebConversationFocused } from "../runtime/web-presence.js";
 import { getLogger } from "../util/logger.js";
-
-const ACTIVITY_PRESENCE_FLAG = "activity-presence-suppression" as const;
 
 const log = getLogger("notification-source-active");
 
@@ -46,9 +43,6 @@ export function resolveVisibleInSourceNow(
   if (!conversationId) {
     return false;
   }
-  if (!isAssistantFeatureFlagEnabled(ACTIVITY_PRESENCE_FLAG)) {
-    return false;
-  }
   return readConversationPresence(options);
 }
 
@@ -56,10 +50,7 @@ export function resolveVisibleInSourceNow(
 export async function resolveCompletionVisibleInSourceNow(
   options: ResolveVisibleInSourceOptions,
 ): Promise<boolean> {
-  if (
-    !options.conversationId ||
-    !isAssistantFeatureFlagEnabled("web-presence-suppression")
-  ) {
+  if (!options.conversationId) {
     return false;
   }
   const actorPrincipalId =

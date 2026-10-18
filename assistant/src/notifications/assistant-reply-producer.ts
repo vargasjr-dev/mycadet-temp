@@ -9,7 +9,6 @@
 
 import type pino from "pino";
 
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { isToolResultOnlyUserMessage } from "../conversations/message-consolidation.js";
 import { getAttachmentMetadataForMessage } from "../persistence/attachments-store.js";
 import {
@@ -48,7 +47,6 @@ import { resolveCompletionVisibleInSourceNow } from "./resolve-visible-in-source
 import { collectRunRows } from "./result-output.js";
 
 /** Kill switch for this producer, on by default. */
-const ASSISTANT_REPLY_PUSH_FLAG = "assistant-reply-push" as const;
 const REPLY_HISTORY_PAGE_SIZE = 200;
 
 function isCurrentUnseenReply(
@@ -190,9 +188,6 @@ export async function emitAssistantReplyNotification(params: {
 }): Promise<void> {
   const { conversationId, assistantMessageId, userMessageId, rlog } = params;
   try {
-    if (!isAssistantFeatureFlagEnabled(ASSISTANT_REPLY_PUSH_FLAG)) {
-      return;
-    }
     if (!userMessageId) {
       return;
     }

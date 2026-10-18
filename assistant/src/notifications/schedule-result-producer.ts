@@ -27,7 +27,6 @@
 
 import type pino from "pino";
 
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { emitNotificationSignal } from "./emit-signal.js";
 import { hasNotifiedSourceContextSince } from "./events-store.js";
 import { sanitizeNotificationTitle } from "./notification-utils.js";
@@ -39,7 +38,6 @@ import {
 } from "./result-output.js";
 
 /** Kill switch for this producer, on by default. */
-const SCHEDULE_RESULT_NOTIFY_FLAG = "schedule-result-notify" as const;
 
 export interface ScheduleResultNotificationParams {
   /** `cron_jobs.id` of the schedule that fired. */
@@ -76,9 +74,6 @@ export async function emitScheduleResultNotification(
     rlog,
   } = params;
   try {
-    if (!isAssistantFeatureFlagEnabled(SCHEDULE_RESULT_NOTIFY_FLAG)) {
-      return;
-    }
     // A bootstrap failure hands back a sentinel rather than a real id; there
     // is no conversation to read and nothing to say about it.
     if (!conversationId || conversationId.startsWith("bootstrap-error:")) {

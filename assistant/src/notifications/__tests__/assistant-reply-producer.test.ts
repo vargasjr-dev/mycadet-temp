@@ -4,7 +4,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import { MESSAGE_KEYS } from "../../i18n/index.js";
 import type { AttentionState } from "../../persistence/conversation-attention-store.js";
 import type {
@@ -383,9 +382,6 @@ beforeEach(() => {
   ] as ContentBlock[]);
   initiatingRow = makeMessage();
   attentionState = makeAttentionState();
-  // Empty overrides = every flag resolves to its registry default, so the
-  // kill switch reads as enabled unless a case says otherwise.
-  setOverridesForTesting({});
 });
 
 // ── Tests ──────────────────────────────────────────────────────────────
@@ -692,14 +688,6 @@ describe("emitAssistantReplyNotification", () => {
     expect("routingIntent" in emitCalls[0]).toBe(false);
   });
 
-  test("stays silent when the kill-switch flag is off", async () => {
-    setOverridesForTesting({ "assistant-reply-push": false });
-
-    await run();
-
-    expect(emitCalls).toHaveLength(0);
-  });
-
   // The push is suppressed downstream, at the source-active pre-gate in
   // `emitNotificationSignal` (covered in `emit-signal-routing-intent.test.ts`),
   // so the producer's contract here is the hint it emits, not the silence.
@@ -767,16 +755,6 @@ describe("emitAssistantReplyNotification", () => {
 
       expect(emitCalls).toHaveLength(1);
       expect(emitCalls[0].attentionHints.visibleInSourceNow).toBe(false);
-    });
-
-    test("leaves the signal live when the web presence flag is off", async () => {
-      setOverridesForTesting({ "web-presence-suppression": false });
-
-      await run();
-
-      expect(emitCalls).toHaveLength(1);
-      expect(emitCalls[0].attentionHints.visibleInSourceNow).toBe(false);
-      expect(webPresenceArgs).toEqual([]);
     });
 
     test("leaves the signal live when the web presence read throws", async () => {

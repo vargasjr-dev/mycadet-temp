@@ -6,9 +6,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type pino from "pino";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
-
-const FLAG = "activity-presence-suppression";
 const CONVERSATION_ID = "conv-1";
 
 let webFocused = false;
@@ -56,10 +53,9 @@ describe("resolveVisibleInSourceNow", () => {
     webFocused = false;
     webPresenceShouldThrow = false;
     webPresenceArgs.length = 0;
-    setOverridesForTesting({ [FLAG]: true });
   });
 
-  test("returns true when the flag is on and the conversation is focused", () => {
+  test("returns true when the conversation is focused", () => {
     webFocused = true;
 
     expect(resolveVisibleInSourceNow({ conversationId: CONVERSATION_ID })).toBe(
@@ -75,16 +71,6 @@ describe("resolveVisibleInSourceNow", () => {
       false,
     );
     expect(webPresenceArgs).toEqual([[CONVERSATION_ID]]);
-  });
-
-  test("returns false without reading presence when the flag is off", () => {
-    webFocused = true;
-    setOverridesForTesting({ [FLAG]: false });
-
-    expect(resolveVisibleInSourceNow({ conversationId: CONVERSATION_ID })).toBe(
-      false,
-    );
-    expect(webPresenceArgs).toEqual([]);
   });
 
   test("returns false and warns once when the presence read throws", () => {
@@ -124,7 +110,6 @@ describe("resolveCompletionVisibleInSourceNow", () => {
     webFocused = true;
     webPresenceShouldThrow = false;
     webPresenceArgs.length = 0;
-    setOverridesForTesting({ "web-presence-suppression": true });
   });
 
   test("reads attendance only for the completion recipient", async () => {
@@ -159,23 +144,6 @@ describe("resolveCompletionVisibleInSourceNow", () => {
     expect(webPresenceArgs).toEqual([
       [CONVERSATION_ID, { actorPrincipalId: "guardian-resolved" }],
     ]);
-  });
-
-  test("uses the completion presence flag independently of activity suppression", async () => {
-    setOverridesForTesting({ "web-presence-suppression": true, [FLAG]: false });
-    expect(
-      await resolveCompletionVisibleInSourceNow({
-        conversationId: CONVERSATION_ID,
-      }),
-    ).toBe(true);
-    setOverridesForTesting({ "web-presence-suppression": false, [FLAG]: true });
-    webPresenceArgs.length = 0;
-    expect(
-      await resolveCompletionVisibleInSourceNow({
-        conversationId: CONVERSATION_ID,
-      }),
-    ).toBe(false);
-    expect(webPresenceArgs).toEqual([]);
   });
 
   test("allows delivery when recipient lookup fails", async () => {

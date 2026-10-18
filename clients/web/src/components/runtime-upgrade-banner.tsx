@@ -123,13 +123,12 @@ export function RuntimeUpgradeBanner({
     isCloudAssistant &&
     isHealthyPlatformRuntimeState;
   const shouldCheck = shouldCheckLocal || shouldCheckPlatform;
-  const visiblePlatformReleaseChannel = "stable";
 
   const { data: releases, refetch: refetchReleases } = useQuery({
     ...releasesListOptions({
       query:
         mode === "platform"
-          ? { channel: visiblePlatformReleaseChannel }
+          ? { channel: "stable" }
           : { stable: true, limit: LOCAL_RUNTIME_RELEASES_FETCH_LIMIT },
     }),
     enabled: shouldCheck,

@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
-
-const PRESENCE_FLAG = "activity-presence-suppression";
-
 let webFocused = false;
 const webPresenceArgs: unknown[][] = [];
 const realWebPresence = await import("../../runtime/web-presence.js");
@@ -126,7 +122,6 @@ describe("emitBackgroundFailureSignal source-active suppression", () => {
     emitCalls.length = 0;
     webFocused = false;
     webPresenceArgs.length = 0;
-    setOverridesForTesting({ [PRESENCE_FLAG]: true });
   });
 
   function emitWithPresence(presenceConversationId: string): void {
@@ -186,18 +181,6 @@ describe("emitBackgroundFailureSignal source-active suppression", () => {
         visibleInSourceNow: false,
       });
     }
-    expect(webPresenceArgs).toEqual([]);
-  });
-
-  test("the flag off keeps the hint false without reading presence", () => {
-    webFocused = true;
-    setOverridesForTesting({ [PRESENCE_FLAG]: false });
-
-    emitWithPresence("conv-3");
-
-    expect(emitCalls[0].attentionHints).toMatchObject({
-      visibleInSourceNow: false,
-    });
     expect(webPresenceArgs).toEqual([]);
   });
 });

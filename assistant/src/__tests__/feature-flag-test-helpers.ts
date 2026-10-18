@@ -51,9 +51,6 @@ export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
   "channel-trust-floors",
-  "schedule-result-notify",
-  "assistant-reply-push",
-  "web-presence-suppression",
   "plugin-schedules",
 ];
 
@@ -91,10 +88,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "new-thread-suggestions",
   "chat-credential-reveal",
   "marketing-pricing-takeover",
-  "schedule-result-notify",
-  "assistant-reply-push",
-  "activity-presence-suppression",
-  "web-presence-suppression",
   "plugin-schedules",
   "android-avatar-app-icon",
   "push-avatar-sender",

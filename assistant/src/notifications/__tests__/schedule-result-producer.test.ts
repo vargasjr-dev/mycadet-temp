@@ -9,7 +9,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import type { AttentionState } from "../../persistence/conversation-attention-store.js";
 import type { MessageRow } from "../../persistence/conversation-crud.js";
 import type { ContentBlock } from "../../providers/types.js";
@@ -228,7 +227,6 @@ beforeEach(() => {
   assistantRow = makeAssistantRow([
     { type: "text", text: "**3 new emails** and one calendar change." },
   ] as ContentBlock[]);
-  setOverridesForTesting({ "schedule-result-notify": true });
 });
 
 describe("emitScheduleResultNotification", () => {
@@ -493,14 +491,6 @@ describe("emitScheduleResultNotification", () => {
     expect(
       emitCalls[0].contextPayload.requestedMessage.length,
     ).toBeLessThanOrEqual(2000);
-  });
-
-  test("stays silent when the flag is off", async () => {
-    setOverridesForTesting({ "schedule-result-notify": false });
-
-    await run();
-
-    expect(emitCalls).toHaveLength(0);
   });
 
   test("stays silent for a bootstrap-failure sentinel conversation id", async () => {

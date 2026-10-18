@@ -172,38 +172,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "schedule-result-notify",
-      "scope": "assistant",
-      "key": "schedule-result-notify",
-      "label": "Schedule Result Notify",
-      "description": "Gates the `schedule.result` fallback notification the assistant sends when an execute-mode schedule run produces user-facing output but never notifies about it itself. On by default; turn it off to return to notify-only-if-the-run-said-so, where a scheduled briefing can run and leave no trace outside its own conversation.",
-      "defaultEnabled": true
-    },
-    {
-      "id": "assistant-reply-push",
-      "scope": "assistant",
-      "key": "assistant-reply-push",
-      "label": "Assistant Reply Push",
-      "description": "Gates the `chat.assistant_reply` push notification the assistant sends at the end of a user-initiated turn whose reply the user has not seen. On by default; turn it off to silence the push without disabling the rest of the notification pipeline.",
-      "defaultEnabled": true
-    },
-    {
-      "id": "activity-presence-suppression",
-      "scope": "assistant",
-      "key": "activity-presence-suppression",
-      "label": "Activity Presence Suppression",
-      "description": "Gates whether a background-activity failure notification is suppressed while a client reports itself visible on that conversation. Off by default; turn it on to stop notifying about work the user is already watching.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "web-presence-suppression",
-      "scope": "assistant",
-      "key": "web-presence-suppression",
-      "label": "Web Presence Suppression",
-      "description": "Gates whether a `chat.assistant_reply` push is suppressed while a browser tab or desktop app window reports itself visible on that conversation. On by default; turn it off to restore unconditional reply pushes for web-visible conversations.",
-      "defaultEnabled": true
-    },
-    {
       "id": "plugin-schedules",
       "scope": "assistant",
       "key": "plugin-schedules",
