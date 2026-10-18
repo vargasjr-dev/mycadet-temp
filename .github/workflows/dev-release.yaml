@@ -1583,7 +1583,7 @@ jobs:
 
   release-ios:
     needs: [compute-version, build-chrome-extension]
-    if: ${{ false }} # ios offline on the dev channel; bring back online by deleting this marker
+    continue-on-error: true # ios on the dev channel is a canary — a failed ios leg must not red the dev release
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: dev

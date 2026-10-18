@@ -1878,7 +1878,7 @@ jobs:
           exit 0
   release-ios:
     needs: [extract-version, build-chrome-extension]
-    if: ${{ false }} # offline on this channel for now; bring back online by deleting this marker
+    if: ${{ false }} # offline on the prod channel — the dev channel proves ios out first; bring back online by deleting this marker
     uses: ./.github/workflows/release-ios.yaml
     with:
       environment: production
