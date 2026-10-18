@@ -191,8 +191,6 @@ export function TranscriptMessageBody({
   isLatestMessage = false,
 }: TranscriptMessageBodyProps) {
   const { t } = useTranslation("chat");
-  const inlineAssistantIntermediates =
-    useClientFeatureFlagStore.use.inlineAssistantIntermediates();
   const quietTurnActivity = useClientFeatureFlagStore.use.quietTurnActivity();
   const isSlackMessage = Boolean(message.slackMessage);
   const isSlackReaction = getMessageRenderKind(message) === "slackReaction";
@@ -1384,11 +1382,10 @@ export function TranscriptMessageBody({
   // block is a message the assistant chose to send and none is "earlier"
   // prose to fold away; a row the daemon marks private, whose prose arrives
   // projected into thinking blocks with the reply as its own text; and a row
-  // the reader watched stream in. The third reason is the row's own marker,
-  // so a row sent under the flag stays inline after the flag is turned off.
+  // the reader watched stream in. The last reason is the row's own marker, so a
+  // row stays inline after the stream it was watched in ends.
   const collapsibleGroupIndexes = groups.flatMap((group, groupIndex) => {
     if (
-      inlineAssistantIntermediates ||
       hideThinkingUi ||
       message.assistantTextVisibility === "private" ||
       isStreaming ||

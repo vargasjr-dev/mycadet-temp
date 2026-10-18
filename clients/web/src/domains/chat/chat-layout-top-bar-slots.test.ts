@@ -56,10 +56,7 @@ describe("ChatLayout top-bar slots", () => {
     expect(accessoryAt).toBeGreaterThan(pillAt);
   });
 
-  test("the route composes the pill into the pill slot", () => {
-    expect(routesSource).toContain(
-      "topBarPill={<ActivationSuggestionsPillHost />}",
-    );
+  test("the route composes the bell into the accessory slot", () => {
     expect(routesSource).toContain("topBarAccessory={<NotificationsBell />}");
   });
 });

@@ -13,7 +13,6 @@ import { memoryGraphOptions } from "@/domains/intelligence/memory-graph/get-memo
 import { memoryStatsOptions } from "@/domains/intelligence/memory-graph/get-memory-stats";
 import { mcpQueryKeys } from "@/domains/settings/mcp/mcp-query-keys";
 import {
-  activationProgressGetQueryKey,
   appsGetQueryKey,
   configGetQueryKey,
   composerSettingsGetQueryKey,
@@ -404,33 +403,6 @@ describe("useAssistantResourceSync", () => {
       expect(claims(LIBRARY_DOCUMENTS_KEY)).toBe(true);
     });
     expect(claims(CONVERSATION_DOCUMENTS_KEY)).toBe(true);
-  });
-
-  test("invalidates activation progress on the activation:progress sync tag", async () => {
-    const queryClient = freshQueryClient();
-    const calls: unknown[] = [];
-    queryClient.invalidateQueries = ((arg: unknown) => {
-      calls.push(arg);
-      return Promise.resolve();
-    }) as never;
-    renderHook(() => useAssistantResourceSync("asst-1", true), {
-      wrapper: createWrapper(queryClient),
-    });
-    emit(
-      syncEvent([SYNC_TAGS.activationProgress]) as unknown as AssistantEvent,
-    );
-    await waitFor(() => {
-      const queryKeys = calls.map(
-        (arg) => (arg as { queryKey: readonly unknown[] }).queryKey,
-      );
-      expect(queryKeys).toEqual(
-        expect.arrayContaining([
-          activationProgressGetQueryKey({
-            path: { assistant_id: "asst-1" },
-          }),
-        ]) as never,
-      );
-    });
   });
 
   test("invalidates plugin list / catalog / open-detail queries on plugins:list sync tag", async () => {
@@ -965,10 +937,6 @@ describe("useAssistantResourceSync", () => {
     ).toBe(true);
   });
 
-  // The relationship snapshot carries the capability tiers the activation
-  // checklist reads (`domains/activation/capabilities.ts`), so a connection
-  // made on another client has to reach this query or an eligible task stays
-  // hidden behind a prerequisite that is already met.
   test("invalidates the home state on relationship_state_updated", async () => {
     const queryClient = freshQueryClient();
     const calls: InvalidateCall[] = [];

@@ -278,21 +278,6 @@ describe("skills routes", () => {
   });
 });
 
-describe("Inspiration List route", () => {
-  // The celebration modal's "See the full list" navigates here. Without a
-  // route of its own the path falls through to the `/assistant/*` catch-all
-  // and the reward for finishing the checklist is a not-found page.
-  test("the celebration's destination matches a route of its own", async () => {
-    const { routes } = await import("@/utils/routes");
-    const matches =
-      matchRoutes(routeTree as never, routes.activationList) ?? [];
-    expect(matches.length).toBeGreaterThan(0);
-    expect(matches.at(-1)?.pathname).toBe(routes.activationList);
-    expect(matches.at(-1)?.params["*"]).toBeUndefined();
-    expect(hasRouteMiddleware(routes.activationList)).toBe(true);
-  });
-});
-
 describe("All chats route", () => {
   // The page is reachable by URL only while the flag is off everywhere else,
   // so the failure this guards is the path falling through to the

@@ -21,7 +21,6 @@ import { subscribe } from "@/lib/event-bus";
 import {
   dismissRuntimeUpgrade,
   getLatestRuntimeRelease,
-  getVisibleReleaseChannel,
   isRuntimeUpgradeAvailable,
   isRuntimeUpgradeDismissed,
   LOCAL_RUNTIME_RELEASES_FETCH_LIMIT,
@@ -29,7 +28,6 @@ import {
 } from "@/lib/local-runtime-upgrade";
 import { isLocalModeHostAvailable } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { cn } from "@/utils/misc";
 import { Button } from "@mycadet/design-library/components/button";
@@ -61,7 +59,6 @@ export function RuntimeUpgradeBanner({
   const fallbackAssistantId =
     useResolvedAssistantsStore.use.activeAssistantId();
   const fallbackCurrentVersion = useAssistantIdentityStore.use.version();
-  const previewChannelEnabled = useClientFeatureFlagStore.use.previewChannel();
   const assistantId = assistantIdProp ?? fallbackAssistantId;
   const currentVersion = currentVersionProp ?? fallbackCurrentVersion;
   const activeAssistant = useResolvedAssistantsStore((s) =>
@@ -126,10 +123,7 @@ export function RuntimeUpgradeBanner({
     isCloudAssistant &&
     isHealthyPlatformRuntimeState;
   const shouldCheck = shouldCheckLocal || shouldCheckPlatform;
-  const visiblePlatformReleaseChannel = getVisibleReleaseChannel(
-    activeAssistant?.releaseChannel,
-    previewChannelEnabled,
-  );
+  const visiblePlatformReleaseChannel = "stable";
 
   const { data: releases, refetch: refetchReleases } = useQuery({
     ...releasesListOptions({

@@ -7,27 +7,19 @@ import {
   assistantsRetrieveQueryKey,
   releasesListOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
-import {
-  assistantsUpgradeDetailCreate,
-} from "@/generated/api/sdk.gen";
-import type {
-  ReleaseChannelEnum,
-  ReleaseListItem,
-} from "@/generated/api/types.gen";
+import { assistantsUpgradeDetailCreate } from "@/generated/api/sdk.gen";
+import type { ReleaseListItem } from "@/generated/api/types.gen";
 import { useLocalRuntimeUpgrade } from "@/hooks/use-local-runtime-upgrade";
-import { Trans, t, useTranslation } from "@/i18n";
+import { t, useTranslation } from "@/i18n";
 import {
   LOCAL_RUNTIME_RELEASES_FETCH_LIMIT,
   getLatestRuntimeRelease,
-  getVisibleReleaseChannel,
   isRuntimeUpgradeAvailable,
 } from "@/lib/local-runtime-upgrade";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { compareParsed, parseSemver } from "@/utils/semver";
 import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { toast } from "@mycadet/design-library/components/toast";
-import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 
 function releaseLabel(
   release: ReleaseListItem,
@@ -63,24 +55,16 @@ function CurrentVersionValue({
 interface AssistantUpgradesProps {
   assistantId: string;
   currentVersion?: string | null;
-  releaseChannel?: ReleaseChannelEnum;
   onUpgradeComplete?: () => void;
 }
 
 export function AssistantUpgrades({
   assistantId,
   currentVersion,
-  releaseChannel,
   onUpgradeComplete,
 }: AssistantUpgradesProps) {
   const { t } = useTranslation("settings");
-  const previewChannel = useClientFeatureFlagStore.use.previewChannel();
   const queryClient = useQueryClient();
-  const visibleReleaseChannel = getVisibleReleaseChannel(
-    releaseChannel,
-    previewChannel,
-  );
-  const isPreviewReleaseChannel = visibleReleaseChannel === "preview";
   const [isPollingUpgrade, setIsPollingUpgrade] = useState(false);
   const targetVersionRef = useRef<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -120,7 +104,7 @@ export function AssistantUpgrades({
 
   const { data: releases, isLoading: releasesLoading } = useQuery(
     releasesListOptions({
-      query: { channel: visibleReleaseChannel },
+      query: { channel: "stable" },
     }),
   );
 
@@ -188,11 +172,9 @@ export function AssistantUpgrades({
     }
   };
 
-  const targetLabel = isPreviewReleaseChannel
-    ? t("assistantUpgrades.previewRelease")
-    : !upgradeAvailable
-      ? t("assistantUpgrades.selected")
-      : t("assistantUpgrades.updateTo");
+  const targetLabel = !upgradeAvailable
+    ? t("assistantUpgrades.selected")
+    : t("assistantUpgrades.updateTo");
 
   return (
     <div className="space-y-5">
@@ -248,57 +230,25 @@ export function AssistantUpgrades({
             >
               {isPollingUpgrade
                 ? t("assistantUpgrades.updating")
-                : isPreviewReleaseChannel
-                  ? t("assistantUpgrades.updatePreview")
-                  : t("assistantUpgrades.update")}
+                : t("assistantUpgrades.update")}
             </Button>
           </div>
         </div>
       </div>
 
-      {isPreviewReleaseChannel && (
-        <p className="text-body-small-default text-[var(--content-tertiary)]">
-          <Trans
-            ns="settings"
-            i18nKey="assistantUpgrades.usingPreviewReleases"
-            components={{
-              stableLink: (
-                <a
-                  href="#preview-release-channel"
-                  className={textLinkVariants()}
-                />
-              ),
-            }}
-          />
+      {!upgradeAvailable && currentVersion && !releasesLoading && (
+        <p className="text-body-medium-lighter text-[var(--system-positive-strong)]">
+          {successMessage ?? t("assistantUpgrades.alreadyOnVersion")}
         </p>
       )}
-      {!upgradeAvailable && currentVersion && !releasesLoading && (
-          <p className="text-body-medium-lighter text-[var(--system-positive-strong)]">
-            {successMessage ?? t("assistantUpgrades.alreadyOnVersion")}
-          </p>
-        )}
 
       <ConfirmDialog
         open={showConfirmation}
-        title={
-          isPreviewReleaseChannel
-            ? t("assistantUpgrades.confirmPreviewTitle")
-            : t("assistantUpgrades.confirmUpdateTitle")
-        }
-        message={
-          isPreviewReleaseChannel
-            ? t("assistantUpgrades.confirmPreviewMessage", {
-                version: latestVersion ?? t("assistantUpgrades.latest"),
-              })
-            : t("assistantUpgrades.confirmUpdateMessage", {
-                version: latestVersion ?? t("assistantUpgrades.latest"),
-              })
-        }
-        confirmLabel={
-          isPreviewReleaseChannel
-            ? t("assistantUpgrades.updatePreview")
-            : t("assistantUpgrades.update")
-        }
+        title={t("assistantUpgrades.confirmUpdateTitle")}
+        message={t("assistantUpgrades.confirmUpdateMessage", {
+          version: latestVersion ?? t("assistantUpgrades.latest"),
+        })}
+        confirmLabel={t("assistantUpgrades.update")}
         onConfirm={handleUpgrade}
         onCancel={() => setShowConfirmation(false)}
       />

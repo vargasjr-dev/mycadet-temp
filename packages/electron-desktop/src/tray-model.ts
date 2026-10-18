@@ -8,10 +8,8 @@ import {
 } from "electron";
 
 import {
-  pairedHostLabel,
   type Lockfile,
   type LockfileAssistant,
-  isCloudHome,
 } from "@mycadet/local-mode/contract";
 import {
   type CompanionSize,
@@ -158,28 +156,6 @@ const assistantDisplayTitle = (assistant: LockfileAssistant): string => {
 };
 
 /**
- * Switcher label for a lockfile assistant. Paired entries carry a suffix
- * naming the remote host (the chooser's paired labeling) so they read as
- * remote pairings, not cloud assistants.
- */
-const assistantMenuLabel = (assistant: LockfileAssistant): string => {
-  const title = assistantDisplayTitle(assistant);
-  if (assistant.cloud !== "paired") {
-    return title;
-  }
-  return `${title} (${pairedHostLabel(assistant.runtimeUrl)})`;
-};
-
-/**
- * Whether the multi-platform-assistant feature flag is currently enabled.
- * Checked at menu-build time so toggling the flag takes effect on the next
- * right-click without requiring an app restart.
- */
-const isMultiAssistantEnabled = (): boolean => {
-  return getRuntime().featureEnabled("multi-platform-assistant");
-};
-
-/**
  * Whether the developer-menu-items feature flag is currently enabled.
  * Gates developer/internal actions (Replay Onboarding, Replay Hatch Failure,
  * Component Gallery) in the tray and application menu.
@@ -203,84 +179,6 @@ const buildTrayMenu = (
       enabled: false,
     },
   ];
-
-  // Assistant switcher: gated by the multi-platform-assistant feature flag.
-  if (isMultiAssistantEnabled() && !onboarding) {
-    const lockfile = trayRuntime.getLockfile();
-    // Managed (cloud-hosted) and paired (remote, imported) assistants
-    // belong in the switcher. Local/Docker lockfile entries are handled by
-    // separate flows and would mis-route through the cloud selection path.
-    const assistants = lockfile.assistants.filter(
-      (a) => isCloudHome(a.cloud) || a.cloud === "paired",
-    );
-    const activeId = lockfile.activeAssistant;
-
-    items.push({ type: "separator" });
-    items.push({ label: "Assistants", enabled: false });
-
-    if (assistants.length === 0) {
-      items.push({ label: "No managed or paired assistants", enabled: false });
-    } else {
-      for (const assistant of assistants) {
-        const isActive = assistant.assistantId === activeId;
-        items.push({
-          label: assistantMenuLabel(assistant),
-          type: "radio",
-          checked: isActive,
-          click: async () => {
-            await handlers.ensureMainWindow();
-            trayRuntime.dispatch({
-              kind: "selectAssistant",
-              assistantId: assistant.assistantId,
-            });
-          },
-        });
-      }
-    }
-
-    items.push({ type: "separator" });
-    items.push({
-      label: "New Assistant\u2026",
-      click: async () => {
-        await handlers.ensureMainWindow();
-        trayRuntime.dispatch({ kind: "createAssistant" });
-      },
-    });
-
-    if (activeId) {
-      const activeAssistant = assistants.find(
-        (a) => a.assistantId === activeId,
-      );
-      if (activeAssistant?.cloud === "paired") {
-        // A paired entry is a pairing record on this machine, so forget it
-        // rather than retire the remote assistant. The renderer owns the
-        // removal (confirm dialog + unpair host op + session cleanup) \u2014
-        // unpairing here in main would leave the window selected on, and
-        // still authenticated to, the removed assistant.
-        items.push({
-          label: trayRuntime.removePairedLabel,
-          click: async () => {
-            await handlers.ensureMainWindow();
-            trayRuntime.dispatch({
-              kind: "removePairedAssistant",
-              assistantId: activeAssistant.assistantId,
-            });
-          },
-        });
-      } else if (activeAssistant) {
-        items.push({
-          label: `Retire ${assistantDisplayTitle(activeAssistant)}\u2026`,
-          click: async () => {
-            await handlers.ensureMainWindow();
-            trayRuntime.dispatch({
-              kind: "retireAssistant",
-              assistantId: activeAssistant.assistantId,
-            });
-          },
-        });
-      }
-    }
-  }
 
   // Re-pair: only visible when the guardian token has expired or the
   // daemon is unreachable. Dispatches to the renderer which owns the

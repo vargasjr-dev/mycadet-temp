@@ -82,12 +82,10 @@ export function pollIntervalFor(
 /**
  * Cache key for the `/assistant/` resolution.
  *
- * When no platform assistant is explicitly selected (single-assistant
- * accounts, or the `multi-platform-assistant` flag off) this is exactly
+ * When no assistant is explicitly selected this is exactly
  * `ASSISTANT_QUERY_KEY` — so every existing `setQueryData` / `invalidate`
- * site keeps matching and the resolution path is byte-identical to before
- * multi-assistant. When an id is selected the key is suffixed with it, so
- * switching assistants is a key change that triggers a fresh resolve.
+ * site keeps matching. When an id is selected the key is suffixed with it,
+ * so switching assistants is a key change that triggers a fresh resolve.
  */
 export function assistantQueryKey(
   selectedCloudAssistantId?: string | null,

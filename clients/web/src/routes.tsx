@@ -11,8 +11,6 @@ import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
 import { ConversationRedirect } from "@/domains/chat/conversation-redirect";
 import { NotificationsBell } from "@/domains/home/components/notifications-bell";
-import { ActivationController } from "@/domains/activation/activation-controller";
-import { ActivationSuggestionsPillHost } from "@/domains/activation/components/activation-suggestions-pill";
 import { InChatOnboardingController } from "@/domains/chat/in-chat-onboarding/in-chat-onboarding-controller";
 import { NotFound } from "@/components/not-found";
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
@@ -59,29 +57,17 @@ function AdvancedSettingsRedirect() {
  * the route level and no domain imports another (see STYLE_GUIDE.md, Shared UI
  * components).
  *
- * The pill is composed rather than registered through the header's slot store,
- * which the chat page's own header registration already owns: two effects
- * writing one slot erase each other on every conversation change. It renders
- * null unless the activation checklist has been put off with starters left.
- *
- * It takes the layout's pill slot rather than riding beside the bell in the
- * accessory one, because the accessory is restated in the mobile drawer's
- * glyph row and a full pill has no seat there.
+ * The accessory is restated in the mobile drawer's glyph row, so it rides
+ * the layout's dedicated accessory slot.
  */
 function ChatLayoutRoute() {
   return (
     <>
-      <ChatLayout
-        topBarPill={<ActivationSuggestionsPillHost />}
-        topBarAccessory={<NotificationsBell />}
-      />
+      <ChatLayout topBarAccessory={<NotificationsBell />} />
       {/* In-chat onboarding tour orchestrator. Renders only portals
           (stage panel, avatar tour, narration takeover) over the real
           chat; inert until the post-onboarding hand-off activates it. */}
       <InChatOnboardingController />
-      {/* Activation checklist. Renders the welcome or celebration modal when
-          the gate stack calls for one, and nothing at all otherwise. */}
-      <ActivationController />
     </>
   );
 }
@@ -1032,18 +1018,6 @@ export const routeTree = [
                           Component: () =>
                             import("@/domains/library/library-detail-page").then(
                               (m) => m.LibraryDetailPage,
-                            ),
-                        },
-                      },
-                      // The Inspiration List renders its own serif title and
-                      // stays outside IntelligenceLayout: it is not an About
-                      // Assistant section and must not inherit that chrome.
-                      {
-                        path: "suggestions",
-                        lazy: {
-                          Component: () =>
-                            import("@/domains/activation/pages/activation-list-route").then(
-                              (m) => m.ActivationListRoute,
                             ),
                         },
                       },

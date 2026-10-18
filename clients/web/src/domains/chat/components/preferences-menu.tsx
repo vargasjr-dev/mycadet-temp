@@ -2,7 +2,6 @@ import {
   ChevronDown,
   ChevronUp,
   CircleUser,
-  List,
   MessageSquareText,
   Settings as SettingsIcon,
   Shield,
@@ -27,7 +26,6 @@ import {
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import { usePreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
-import { useEffectiveActivationListId } from "@/hooks/use-activation-enabled";
 import { useBillingBalanceStatus } from "@/hooks/use-billing-balance-status";
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
@@ -298,13 +296,9 @@ function PreferencesMenuContent({
   activeConversationId,
 }: PreferencesMenuContentProps) {
   const { t } = useTranslation("chat");
-  const { t: tActivation } = useTranslation("activation");
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
   const cloudGate = useCloudGate();
-  /* The Inspiration List entry rides the same gate as every other activation
-     surface, resolved in the one place that owns it. */
-  const activationListId = useEffectiveActivationListId();
   const {
     enabled: showBillingRows,
     balance: effectiveBalance,
@@ -347,17 +341,6 @@ function PreferencesMenuContent({
             }}
           />
         </div>
-      ) : null}
-
-      {activationListId !== null ? (
-        <PanelItem
-          icon={List}
-          label={tActivation("menu.inspirationList")}
-          onSelect={() => {
-            onClose();
-            navigate(routes.activationList);
-          }}
-        />
       ) : null}
 
       {(cloudGate === "full" || isElectron()) && (

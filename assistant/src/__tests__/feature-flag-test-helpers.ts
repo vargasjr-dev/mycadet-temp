@@ -55,7 +55,6 @@ export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
   "assistant-reply-push",
   "web-presence-suppression",
   "plugin-schedules",
-  "experiment-activation-checklist-2026-09-10",
 ];
 
 /**
@@ -75,17 +74,14 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "vision-mode",
   "cadet-hosted-inference",
   "developer-menu-items",
-  "multi-platform-assistant",
   "quick-input",
   "teach",
   "quiet-turn-activity",
-  "inline-assistant-intermediates",
   "fast-mode",
   "apple-container",
   "fork-from-message",
   "internal-thread-actions",
   "compaction-playground",
-  "preview-channel",
   "velvet",
   "memory-router-playground",
   "self-intro-greeting",
@@ -109,7 +105,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "shopify-oauth",
   "chatgpt-device-code-login",
   "model-first-profile-create",
-  "experiment-activation-checklist-2026-09-10",
   "send-user-message",
   "sidebar-done",
   "cadet-trusted-contacts",

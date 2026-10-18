@@ -9,9 +9,6 @@
  * factory's return type, so an export added to the module without a default
  * here is one compile error rather than an `undefined` that six suites read
  * as a passing branch.
- *
- * `activation-list-route.test.tsx` spreads the real module instead: it restores
- * the real functions in `afterAll`, so it holds them already.
  */
 
 import { mock } from "bun:test";

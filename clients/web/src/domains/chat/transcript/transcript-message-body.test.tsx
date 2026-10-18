@@ -800,39 +800,6 @@ describe("TranscriptMessageBody", () => {
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
-  test("renders all activity inline when inline-assistant-intermediates is on", () => {
-    useClientFeatureFlagStore.setState({ inlineAssistantIntermediates: true });
-    try {
-      const { queryByRole, queryByText } = render(
-        <TranscriptMessageBody
-          message={{
-            id: "inline-response",
-            role: "assistant",
-            contentBlocks: [
-              textBlock("I will check that."),
-              toolUseBlock({
-                id: "tc-check",
-                name: "bash",
-                input: {},
-                completedAt: 1,
-              }),
-              textBlock("Here is the final answer."),
-            ],
-          }}
-          onSurfaceAction={noop}
-        />,
-      );
-
-      expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
-      expect(queryByText("I will check that.")).not.toBeNull();
-      expect(queryByText("Here is the final answer.")).not.toBeNull();
-    } finally {
-      useClientFeatureFlagStore.setState({
-        inlineAssistantIntermediates: false,
-      });
-    }
-  });
-
   describe("under quiet-turn-activity", () => {
     const slackCommand =
       "TOKEN=$(assistant credentials reveal --service slack_channel --field bot_token)";
@@ -1242,44 +1209,35 @@ describe("TranscriptMessageBody", () => {
       ],
     };
 
-    // The per-user opt-out renders every group inline, so the assertions read
-    // the thinking affordances themselves rather than the collapse around them.
-    useClientFeatureFlagStore.setState({ inlineAssistantIntermediates: true });
-    try {
-      useAssistantFeatureFlagStore.setState({ sendUserMessage: true });
-      const gated = render(
-        <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
-      );
-      // The reasoning reaches neither the rendered text nor the steps the
-      // activity card would draw, and the tool run it sat beside is untouched.
-      expect(gated.container.textContent).not.toContain("Thinking");
-      expect(gated.container.textContent).not.toContain("weighing the options");
-      // The run is down to its one tool, so it renders as a lone tool row
-      // rather than the combined activity card.
-      expect(
-        gated.container.querySelector("[data-testid='inline-tool-link']"),
-      ).not.toBeNull();
-      expect(gated.queryByText("Here you go.")).not.toBeNull();
-      cleanup();
+    useAssistantFeatureFlagStore.setState({ sendUserMessage: true });
+    const gated = render(
+      <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
+    );
+    // The reasoning reaches neither the rendered text nor the steps the
+    // activity card would draw, and the tool run it sat beside is untouched.
+    expect(gated.container.textContent).not.toContain("Thinking");
+    expect(gated.container.textContent).not.toContain("weighing the options");
+    // The run is down to its one tool, so it renders as a lone tool row
+    // rather than the combined activity card.
+    expect(
+      gated.container.querySelector("[data-testid='inline-tool-link']"),
+    ).not.toBeNull();
+    expect(gated.queryByText("Here you go.")).not.toBeNull();
+    cleanup();
 
-      useAssistantFeatureFlagStore.setState({ sendUserMessage: false });
-      const ungated = render(
-        <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
-      );
-      const ungatedCard = ungated.container.querySelector(
-        "[data-testid='tool-progress-card']",
-      );
-      expect(ungatedCard?.getAttribute("data-item-kinds")).toBe(
-        "thinking,toolCall",
-      );
-      expect(ungatedCard?.getAttribute("data-item-thinking")).toBe(
-        "weighing the options",
-      );
-    } finally {
-      useClientFeatureFlagStore.setState({
-        inlineAssistantIntermediates: false,
-      });
-    }
+    useAssistantFeatureFlagStore.setState({ sendUserMessage: false });
+    const ungated = render(
+      <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
+    );
+    const ungatedCard = ungated.container.querySelector(
+      "[data-testid='tool-progress-card']",
+    );
+    expect(ungatedCard?.getAttribute("data-item-kinds")).toBe(
+      "thinking,toolCall",
+    );
+    expect(ungatedCard?.getAttribute("data-item-thinking")).toBe(
+      "weighing the options",
+    );
   });
 
   test("renders the answered question card for a settled ask_question", () => {
@@ -3403,10 +3361,7 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    clickCadetLink(
-      "cadet://workspace/qa-delete-desktop-dialog.png",
-      "desktop",
-    );
+    clickCadetLink("cadet://workspace/qa-delete-desktop-dialog.png", "desktop");
     clickModalAction("Download file");
     expect(downloadAttachmentMock).toHaveBeenCalledTimes(1);
     expect(

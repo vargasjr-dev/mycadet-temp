@@ -21,8 +21,6 @@ import { DeleteAccountSection } from "@/domains/settings/components/delete-accou
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
-import { PreviewReleaseChannel } from "@/domains/settings/components/preview-release-channel";
-import { PreviewUiChannel } from "@/domains/settings/components/preview-ui-channel";
 import { ResizeCard } from "@/domains/settings/components/resize-card";
 import { RetireAssistant } from "@/domains/settings/components/retire-assistant";
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
@@ -210,14 +208,7 @@ export function GeneralPage() {
               <AssistantUpgrades
                 assistantId={cloudAssistant.id}
                 currentVersion={versionValue}
-                releaseChannel={cloudAssistant.release_channel}
                 onUpgradeComplete={() => {
-                  void refetch();
-                }}
-              />
-              <PreviewReleaseChannel
-                assistantId={cloudAssistant.id}
-                onComplete={() => {
                   void refetch();
                 }}
               />
@@ -253,7 +244,6 @@ export function GeneralPage() {
               {t("generalPage.updatesLoginNotice")}
             </CloudLoginNotice>
           )}
-          <PreviewUiChannel />
         </div>
       </DetailCard>
       {infraGate === "full" && cloudAssistant && (
@@ -311,10 +301,7 @@ export function GeneralPage() {
 
       <PairDeviceCard />
 
-
-      {multiCloudAssistant && !showAssistantSwitcherCard && (
-        <AssistantPicker />
-      )}
+      {multiCloudAssistant && !showAssistantSwitcherCard && <AssistantPicker />}
 
       {showAssistantSwitcherCard && (
         <DetailCard

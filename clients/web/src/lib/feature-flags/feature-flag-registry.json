@@ -36,14 +36,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "multi-platform-assistant",
-      "scope": "client",
-      "key": "multi-platform-assistant",
-      "label": "Multi-Platform Assistant Switcher",
-      "description": "Enable the menu-bar assistant switcher for managing multiple cloud-hosted assistants (new/switch/retire)",
-      "defaultEnabled": false
-    },
-    {
       "id": "quick-input",
       "scope": "client",
       "key": "quick-input",
@@ -65,14 +57,6 @@
       "key": "quiet-turn-activity",
       "label": "Quiet Turn Activity",
       "description": "While the assistant works, show a reply skeleton with one line naming where it is working instead of its intermediate text and steps; a settled turn shows only its opening line and its answer, with the steps behind a Worked summary in the message footer",
-      "defaultEnabled": false
-    },
-    {
-      "id": "inline-assistant-intermediates",
-      "scope": "client",
-      "key": "inline-assistant-intermediates",
-      "label": "Inline Assistant Intermediates",
-      "description": "Render a completed response's intermediate activity inline at full size instead of collapsing it behind the Earlier activity disclosure",
       "defaultEnabled": false
     },
     {
@@ -113,14 +97,6 @@
       "key": "compaction-playground",
       "label": "Compaction Playground",
       "description": "Expose the developer-only Compaction Playground tab in macOS Settings and enable the /playground/* HTTP endpoints for exercising compaction conditions. Dev-only; default off.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "preview-channel",
-      "scope": "client",
-      "key": "preview-channel",
-      "label": "Preview Channel",
-      "description": "Enable user-facing Preview release channel controls in assistant settings.",
       "defaultEnabled": false
     },
     {
@@ -306,15 +282,6 @@
       "label": "Model-First Profile Create",
       "description": "Reverses the two questions the web client's New Model modal asks when creating an inference profile. Off: the modal asks for a provider first and then offers that provider's models. On: it opens on one searchable list of every catalog model the assistant can reach, deduplicated across providers, and only then asks which provider serves the chosen model. That second question is skipped when a single provider serves it, answered with radio cards when several do, and turned into an inline connect form (API key, setup, or ChatGPT sign-in) when the chosen route has no connection yet. Editing an existing profile is unchanged either way, and both flows persist the same profile shape.",
       "defaultEnabled": false
-    },
-    {
-      "id": "experiment-activation-checklist-2026-09-10",
-      "scope": "client",
-      "key": "experiment-activation-checklist-2026-09-10",
-      "label": "Experiment: Activation Checklist (2026-09-10)",
-      "description": "A/B test of the post-onboarding activation checklist (welcome modal, suggestions pill, inspiration list). off = control, the standard chat landing with no checklist; smb / parent / general = the checklist with that persona's task list. Any other value hides the checklist. Percentages per arm are set in LaunchDarkly; the readout keys a user on their first-ever assignment, so a new round gets a new key.",
-      "defaultEnabled": "off",
-      "values": ["off", "smb", "parent", "general"]
     },
     {
       "id": "send-user-message",

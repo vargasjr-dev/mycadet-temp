@@ -2,7 +2,7 @@
  * Bus consumer for assistant-level resource cache invalidation.
  *
  * Routes `sync_changed` tags (avatar, identity, config, sounds, schedules,
- * apps, documents, plugins, activation progress) and discrete SSE events
+ * apps, documents, plugins) and discrete SSE events
  * (`home_feed_updated`, `relationship_state_updated`, `identity_changed`,
  * `avatar_updated`) into TanStack Query cache invalidations.
  *
@@ -36,7 +36,6 @@ import { invalidateMemoryQueries } from "@/domains/intelligence/memory-graph/inv
 import { invalidatePluginQueries } from "@/lib/invalidate-plugin-queries";
 import { mcpQueryKeys } from "@/domains/settings/mcp/mcp-query-keys";
 import {
-  activationProgressGetQueryKey,
   configGetQueryKey,
   composerSettingsGetQueryKey,
   configLlmCallsitesGetQueryKey,
@@ -211,11 +210,6 @@ export function useAssistantResourceSync(
             case SYNC_TAGS.mcpList:
               invalidateMcpQueries(queryClient, assistantId);
               break;
-            case SYNC_TAGS.activationProgress:
-              void queryClient.invalidateQueries({
-                queryKey: activationProgressGetQueryKey(pathOpts),
-              });
-              break;
           }
         }
         return;
@@ -229,11 +223,7 @@ export function useAssistantResourceSync(
 
       // The daemon rewrites the relationship snapshot at a turn boundary,
       // which is also when the feed can have gained an item, so the feed is
-      // marked stale alongside the snapshot itself. The snapshot carries the
-      // capability tiers the activation checklist reads to decide which tasks
-      // have a connected account behind them, so a mail or calendar
-      // connection made on another client has to reach this query or an
-      // eligible task stays hidden.
+      // marked stale alongside the snapshot itself.
       case "relationship_state_updated":
         void queryClient.invalidateQueries({
           predicate: (query) =>
@@ -408,10 +398,6 @@ function refreshAssistantResources(
   });
   void queryClient.invalidateQueries({
     queryKey: homeStateGetQueryKey(pathOpts),
-    refetchType,
-  });
-  void queryClient.invalidateQueries({
-    queryKey: activationProgressGetQueryKey(pathOpts),
     refetchType,
   });
 }

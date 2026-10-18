@@ -29,10 +29,8 @@ import {
 import { SideMenu } from "@mycadet/design-library";
 
 import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
-import { MIN_VERSION } from "@/lib/backwards-compat/use-supports-activation-progress";
 import type { AuthUser } from "@/stores/auth-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   restoreStubbedModules,
@@ -153,39 +151,19 @@ const billingRef = {
     | undefined,
 };
 
-/**
- * What the daemon's activation progress read answers with. `null` is the read
- * that has not landed, which is every test that does not care about it.
- */
-const activationProgressRef: { data: unknown } = { data: undefined };
-
-/** The `_id` the generated factory puts at the head of a query key. */
-function queryId(options: unknown): string | undefined {
-  const key = (options as { queryKey?: Array<{ _id?: string }> } | undefined)
-    ?.queryKey;
-  return key?.[0]?._id;
-}
-
 // Spread the real module so shared utilities that import other exports
 // (e.g. `isCancelledError` via `captureError`) keep resolving; only the
-// hook under test's read is overridden. The menu makes two reads, so the
-// stub answers by query key rather than handing both the same body.
+// hook under test's read is overridden.
 const reactQueryModule = await import("@tanstack/react-query");
 stubModule("@tanstack/react-query", reactQueryModule, {
   // The menu reads `data`, `isLoading` and `isError` only, so the answer is
   // asserted against `useQuery`'s type rather than built out to its full
   // result shape.
-  useQuery: ((options: unknown) => {
-    const id = queryId(options);
-    if (id === "activationProgressGet") {
-      return {
-        data: activationProgressRef.data,
-        isLoading: false,
-        isError: false,
-      };
-    }
-    return { data: billingRef.data, isLoading: false, isError: false };
-  }) as unknown as typeof reactQueryModule.useQuery,
+  useQuery: (() => ({
+    data: billingRef.data,
+    isLoading: false,
+    isError: false,
+  })) as unknown as typeof reactQueryModule.useQuery,
 });
 
 const generatedQueriesModule =
@@ -358,29 +336,8 @@ function usage(ratio: number, walletEmpty = false): PreferencesUsage {
   };
 }
 
-const ACTIVATION_ASSISTANT_ID = "asst-1";
-
-function setActivationArm(arm: string): void {
-  useClientFeatureFlagStore
-    .getState()
-    .setStringFlags({ experimentActivationChecklist20260910: arm }, null);
-}
-
-/** Puts the client on `arm` with a daemon new enough to serve the list. */
-function enableActivationList(arm = "smb"): void {
-  setActivationArm(arm);
-  useResolvedAssistantsStore.setState({
-    activeAssistantId: ACTIVATION_ASSISTANT_ID,
-  });
-  useAssistantIdentityStore
-    .getState()
-    .setIdentity("Vel", MIN_VERSION, ACTIVATION_ASSISTANT_ID);
-}
-
 beforeEach(() => {
   navigateArgs = [];
-  activationProgressRef.data = undefined;
-  setActivationArm("off");
   useAssistantIdentityStore.getState().clearIdentity();
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
   isTouchMobileRef.value = false;
@@ -648,90 +605,6 @@ describe("PreferencesMenu", () => {
 
     expect(screen.getByTestId("credits-card")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Add credits" })).toBeTruthy();
-  });
-});
-
-describe("PreferencesMenu Inspiration List", () => {
-  test("stays hidden while the activation arm is off", async () => {
-    await openMenu();
-
-    expect(screen.queryByText("Inspiration List")).toBeNull();
-  });
-
-  test("stays hidden against a daemon with no activation routes", async () => {
-    setActivationArm("smb");
-    useResolvedAssistantsStore.setState({
-      activeAssistantId: ACTIVATION_ASSISTANT_ID,
-    });
-    useAssistantIdentityStore
-      .getState()
-      .setIdentity("Vel", "0.11.0", ACTIVATION_ASSISTANT_ID);
-    await openMenu();
-
-    // The page reads a resource that daemon does not serve, so the entry
-    // point to it goes too.
-    expect(screen.queryByText("Inspiration List")).toBeNull();
-  });
-
-  test("opens the list, records the visit, and closes the menu", async () => {
-    enableActivationList();
-    await openMenu();
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Inspiration List"));
-      await Promise.resolve();
-    });
-
-    expect(navigateArgs).toEqual([routes.activationList]);
-    expect(screen.queryByTestId("preferences-usage")).toBeNull();
-  });
-
-  // A frozen id from a newer client that this bundle has no catalog for must
-  // not enable an empty list; the entry point stays hidden.
-  test("hides the entry point when the frozen list is unknown here", async () => {
-    enableActivationList("parent");
-    activationProgressRef.data = {
-      version: 1,
-      listId: "mystery-list",
-      modalDismissedAt: null,
-      allDoneShownAt: null,
-      tasks: {},
-    };
-    await openMenu();
-
-    expect(screen.queryByText("Inspiration List")).toBeNull();
-  });
-
-  // The daemon freezes a list on the first write and the arm can be
-  // re-bucketed after that, so the entry point follows the freeze. Which list
-  // the event is filed under is `use-activation-enabled.test.tsx`'s to prove;
-  // the emitter resolves it, and the menu tells it nothing.
-  test("keeps the entry point on a frozen list the arm no longer names", async () => {
-    enableActivationList("parent");
-    activationProgressRef.data = {
-      version: 1,
-      listId: "smb",
-      modalDismissedAt: null,
-      allDoneShownAt: null,
-      tasks: {},
-    };
-    await openMenu();
-
-    await act(async () => {
-      fireEvent.click(screen.getByText("Inspiration List"));
-      await Promise.resolve();
-    });
-  });
-
-  test("sits above Share Feedback, as Figma orders the menu", async () => {
-    enableActivationList();
-    await openMenu();
-
-    const list = screen.getByText("Inspiration List");
-    const feedback = screen.getByText("Share Feedback");
-    expect(
-      list.compareDocumentPosition(feedback) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
   });
 });
 

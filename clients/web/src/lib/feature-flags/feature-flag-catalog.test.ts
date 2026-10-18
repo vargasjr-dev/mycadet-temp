@@ -47,21 +47,6 @@ describe("feature flag catalog", () => {
     );
   });
 
-  test("exposes the activation checklist as a client string flag defaulted off", () => {
-    expect(
-      CLIENT_STRING_FLAG_DEFAULTS.experimentActivationChecklist20260910,
-    ).toBe("off");
-    expect(
-      "experimentActivationChecklist20260910" in CLIENT_FLAG_DEFAULTS,
-    ).toBe(false);
-    expect(
-      "experimentActivationChecklist20260910" in ASSISTANT_FLAG_DEFAULTS,
-    ).toBe(false);
-    expect(
-      "experimentActivationChecklist20260910" in ASSISTANT_STRING_FLAG_DEFAULTS,
-    ).toBe(false);
-  });
-
   test("does not expose the GA billing CTA experiment as a feature flag", () => {
     expect("experimentBillingCta20260723" in CLIENT_STRING_FLAG_DEFAULTS).toBe(
       false,
@@ -177,15 +162,13 @@ describe("getEnvFlagOverridesForScope", () => {
         // assistant-only flag (boolean) — should be excluded from client scope
         "cadet-hosted-inference": true,
         // client-visible flag (string)
-        "experiment-activation-checklist-2026-09-10": "variant-a",
+        "vision-mode": "on",
       },
     };
 
     const result = getEnvFlagOverridesForScope("client");
     expect(result.bool).toEqual({ velvet: true });
-    expect(result.str).toEqual({
-      experimentActivationChecklist20260910: "variant-a",
-    });
+    expect(result.str).toEqual({ visionMode: "on" });
     expect(result.bool).not.toHaveProperty("cadetHostedInference");
   });
 

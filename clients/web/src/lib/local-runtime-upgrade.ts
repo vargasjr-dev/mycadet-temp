@@ -1,7 +1,4 @@
-import type {
-  ReleaseChannelEnum,
-  ReleaseListItem,
-} from "@/generated/api/types.gen";
+import type { ReleaseListItem } from "@/generated/api/types.gen";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { compareParsed, parseSemver } from "@/utils/semver";
 
@@ -42,15 +39,6 @@ export function isRuntimeUpgradeAvailable(
     return targetVersion !== currentVersion;
   }
   return compareParsed(target, current) > 0;
-}
-
-export function getVisibleReleaseChannel(
-  releaseChannel: ReleaseChannelEnum | undefined,
-  previewChannelEnabled: boolean,
-): ReleaseChannelEnum {
-  return previewChannelEnabled && releaseChannel === "preview"
-    ? "preview"
-    : "stable";
 }
 
 function dismissedKey(

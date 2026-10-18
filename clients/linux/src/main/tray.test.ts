@@ -90,9 +90,9 @@ test("serves tray menus from the shared lockfile watcher", () => {
 test("reads feature gates from the synchronized flag state", () => {
   installLinuxTray(isFeatureEnabled);
 
-  expect(trayRuntime?.featureEnabled("multi-platform-assistant")).toBe(false);
-  flagHandler?.([{ "multi-platform-assistant": true }]);
-  expect(trayRuntime?.featureEnabled("multi-platform-assistant")).toBe(true);
+  expect(trayRuntime?.featureEnabled("developer-menu-items")).toBe(false);
+  flagHandler?.([{ "developer-menu-items": true }]);
+  expect(trayRuntime?.featureEnabled("developer-menu-items")).toBe(true);
 });
 
 test("exposes menu accelerators and themed icons", () => {
