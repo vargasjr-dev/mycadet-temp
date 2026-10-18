@@ -7,7 +7,6 @@ import {
 } from "./assistant/use-assistant-request";
 import { AppI18nProvider } from "./i18n/provider";
 import { useTranslation } from "./i18n/react";
-import type { SupportedLocale } from "./i18n/supported-locales";
 import { AssistantFrame } from "./shell/assistant-frame";
 
 export type AppShellStatus = Exclude<
@@ -23,13 +22,12 @@ export interface AppShellProps {
   onNavigate(path: string, options: { replace: boolean }): void;
   renderStatus?: (state: AppShellStatus, retry: () => void) => ReactNode;
   title?: string;
-  locale?: SupportedLocale;
 }
 
 /** Portable React entry. Resolves assistants through the host API; the host owns browser navigation. */
-export function AppShell({ locale, ...props }: AppShellProps) {
+export function AppShell(props: AppShellProps) {
   return (
-    <AppI18nProvider locale={locale}>
+    <AppI18nProvider>
       <AssistantShell {...props} />
     </AppI18nProvider>
   );

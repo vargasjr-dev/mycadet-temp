@@ -8,20 +8,19 @@ import {
 import { createInstance, type i18n } from "i18next";
 import ICU from "i18next-icu";
 import { FALLBACK_CATALOGS, loadCatalogs } from "./catalogs";
+import { currentLocale } from "./i18n";
 import { i18nextInitOptions } from "./config";
-import { type SupportedLocale } from "./supported-locales";
 
 export const AppI18nContext: Context<i18n | undefined> = createContext<
   i18n | undefined
 >(undefined);
 
-export function AppI18nProvider({
-  locale = "en",
-  children,
-}: {
-  locale?: SupportedLocale;
-  children: ReactNode;
-}) {
+export function AppI18nProvider({ children }: { children: ReactNode }) {
+  // The app locale is global state (resolved once at boot by `initI18n()` and
+  // moved by `changeLocale()`), so this reads it at render instead of taking
+  // it as a prop. Parents that render this inside a `useTranslation()`
+  // subscriber re-render on a language switch, re-running that read.
+  const locale = currentLocale();
   const instance = useMemo(() => {
     const i18n = createInstance();
     void i18n.use(new ICU()).init({

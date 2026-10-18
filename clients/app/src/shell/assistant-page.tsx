@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router";
 import { AppShell } from "@app/app-shell";
-import { currentLocale, useTranslation } from "@app/i18n";
+import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import {
   assistantSelectionState,
@@ -19,7 +19,6 @@ export function AssistantPage() {
       assistantId={selection ?? config?.assistantId}
       location={`${location.pathname}${location.search}${location.hash}`}
       origin={window.location.origin}
-      locale={currentLocale()}
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,

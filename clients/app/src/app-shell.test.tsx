@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { AppShell } from "@app/app-shell";
+import { changeLocale } from "@app/i18n";
 
 const origin = "https://site.example.com";
 const detail = (id = "assistant-1") => ({
@@ -241,22 +242,23 @@ test("without an ID the shell offers choices and fetches only the selected assis
   );
 });
 
-test("embedded shells maintain independent translated statuses", async () => {
+test("embedded shells follow the app locale", async () => {
   respond(async () => json({ results: [] }));
-  const first = render(
-    <AppShell {...props()} assistantId={undefined} locale="es" />,
-  );
-  const second = render(
-    <AppShell {...props()} assistantId={undefined} locale="ru" />,
-  );
-  await waitFor(() => {
-    expect(first.container.textContent).toContain(
-      "No hay ningún asistente disponible.",
-    );
-    expect(second.container.textContent).toContain(
-      "Нет доступных ассистентов.",
-    );
-  });
+  await changeLocale("es");
+  try {
+    const first = render(<AppShell {...props()} assistantId={undefined} />);
+    const second = render(<AppShell {...props()} assistantId={undefined} />);
+    await waitFor(() => {
+      for (const view of [first, second]) {
+        expect(view.container.textContent).toContain(
+          "No hay ningún asistente disponible.",
+        );
+      }
+    });
+  } finally {
+    await changeLocale("en");
+    localStorage.removeItem("device:locale");
+  }
 });
 
 test("a late reply for a previous assistant cannot replace the current selection", async () => {
