@@ -8,7 +8,9 @@
   "activeAssistantGate": {
     "connecting": "正在连接到您的助手…",
     "logIn": "登录",
-    "logOut": "注销"
+    "logOut": "注销",
+    "errorTitle": "无法连接到您的助手",
+    "retry": "重试"
   },
   "addCredentialModal": {
     "cancel": "取消",
