@@ -2,10 +2,7 @@ import { Menu, type MenuItemConstructorOptions, app, shell } from "electron";
 import { z } from "zod";
 
 import { companionVisibilityItem } from "@mycadet/electron-desktop/companion-menu";
-import {
-  onSettingChange,
-  readSetting,
-} from "@mycadet/electron-desktop/settings";
+import { onSettingChange } from "@mycadet/electron-desktop/settings";
 import {
   onCompanionHiddenChange,
   readCompanionHidden,
@@ -108,11 +105,6 @@ const cliPathItems = (): MenuItemConstructorOptions[] => {
   ];
 };
 
-const isDeveloperMenuEnabled = (): boolean => {
-  const flags = readSetting("featureFlags");
-  return flags?.["developer-menu-items"] === true;
-};
-
 export const dispatchMenuCommand = (command: CadetCommand): void => {
   if (command.kind === "commandPalette") {
     if (isCommandPaletteWindowFocused()) {
@@ -132,7 +124,6 @@ export const dispatchMenuCommand = (command: CadetCommand): void => {
 const buildTemplate = (): MenuItemConstructorOptions[] => {
   const isDev = !app.isPackaged;
   const chromeDevToolsEnabled = areChromeDevToolsEnabled();
-  const developerMenuEnabled = isDeveloperMenuEnabled();
   const cliItems = cliPathItems();
 
   const fileItem = (
@@ -262,39 +253,6 @@ const buildTemplate = (): MenuItemConstructorOptions[] => {
         { role: "front" },
       ],
     },
-    ...(developerMenuEnabled
-      ? [
-          {
-            label: "Developer",
-            submenu: [
-              {
-                label: "Choose Assistant…",
-                click: () => dispatchMenuCommand({ kind: "chooseAssistant" }),
-              },
-              { type: "separator" as const },
-              {
-                label: "Replay Onboarding",
-                click: () => dispatchMenuCommand({ kind: "replayOnboarding" }),
-              },
-              {
-                label: "Replay Hatch Failure",
-                click: () => dispatchToFocused({ kind: "replayHatchFailure" }),
-              },
-              ...(!app.isPackaged
-                ? [
-                    { type: "separator" as const },
-                    {
-                      label: "Component Gallery",
-                      click: () => {
-                        void shell.openExternal("http://localhost:6007");
-                      },
-                    },
-                  ]
-                : []),
-            ],
-          } satisfies MenuItemConstructorOptions,
-        ]
-      : []),
     {
       role: "help",
       submenu: [
@@ -345,12 +303,6 @@ export const installApplicationMenu = (): void => {
   // Rebuild the menu when hotkey settings change so accelerators update
   // immediately without requiring an app restart.
   onSettingChange("hotkeys", () => {
-    applyMenu();
-  });
-
-  // Rebuild the menu when feature flags change so the Developer submenu
-  // appears or disappears without requiring an app restart.
-  onSettingChange("featureFlags", () => {
     applyMenu();
   });
 

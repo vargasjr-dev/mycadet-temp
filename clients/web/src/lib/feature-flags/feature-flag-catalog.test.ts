@@ -74,6 +74,11 @@ describe("feature flag catalog", () => {
     expect("quoteReply" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
   });
 
+  test("does not expose the developer menu flag", () => {
+    expect("developerMenuItems" in CLIENT_FLAG_DEFAULTS).toBe(false);
+    expect("developerMenuItems" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
+  });
+
   test("the deleted fork-from-message alias and playgrounds stay gone", () => {
     expect("forkFromMessage" in CLIENT_FLAG_DEFAULTS).toBe(false);
     expect("memoryRouterPlayground" in CLIENT_FLAG_DEFAULTS).toBe(false);

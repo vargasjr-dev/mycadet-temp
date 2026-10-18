@@ -66,9 +66,7 @@ const dispatch = (command: CadetCommand): void => {
   }
 };
 
-export const installWindowsTray = (
-  featureEnabled: (flag: string) => boolean,
-): void => {
+export const installWindowsTray = (): void => {
   const icon = getTrayIcon();
   configureStatusIconFallback(icon.isEmpty() ? null : icon);
   configureTrayModel({
@@ -81,7 +79,6 @@ export const installWindowsTray = (
     companionHidden: () => true,
     companionSize: () => DEFAULT_COMPANION_SIZE,
     dispatch,
-    featureEnabled,
     getLockfile: getWatchedLockfile,
     icon: (icon) => ICONS[icon](),
     onboardingActive: readOnboardingActive,

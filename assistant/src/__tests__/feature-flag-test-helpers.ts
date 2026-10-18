@@ -68,7 +68,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "in-chat-onboarding-tour",
   "vision-mode",
   "cadet-hosted-inference",
-  "developer-menu-items",
   "quick-input",
   "teach",
   "quiet-turn-activity",

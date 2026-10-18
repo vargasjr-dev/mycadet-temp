@@ -20,7 +20,6 @@ import {
 import { resolveLockfilePaths } from "@mycadet/local-mode";
 
 import { handle, on } from "../ipc.client";
-import { installFeatureFlagsIpc, isFeatureEnabled } from "../feature-flags";
 import log from "../logger";
 import { installLinuxTray } from "../tray";
 
@@ -30,7 +29,6 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
     configurePresenceRuntime({ ipc: { handle, on }, logger: log });
     installAvatarIpc();
     installIdentityIpc();
-    installFeatureFlagsIpc();
     installPowerEvents();
     installStatusIpc();
     const retryProbe = installConnectivityProbe(
@@ -40,7 +38,7 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
     configureLockfileWatcher(() => resolveLockfilePaths(process.env));
     const stopLockfileWatcher = installLockfileWatcher();
     app.once("before-quit", stopLockfileWatcher);
-    installLinuxTray(isFeatureEnabled);
+    installLinuxTray();
   },
 };
 

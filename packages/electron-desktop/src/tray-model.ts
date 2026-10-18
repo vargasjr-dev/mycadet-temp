@@ -59,7 +59,6 @@ export interface TrayModelRuntime {
   /** Which named size one axis of the companion surface is drawn at. */
   companionSize: (axis: CompanionSizeAxis) => CompanionSize;
   dispatch: (command: CadetCommand) => void;
-  featureEnabled: (flag: string) => boolean;
   getLockfile: () => Lockfile;
   icon: (icon: TrayMenuIcon) => NativeImage | undefined;
   onboardingActive: () => boolean;
@@ -155,15 +154,6 @@ const assistantDisplayTitle = (assistant: LockfileAssistant): string => {
   return id.length > 12 ? `${id.slice(0, 12)}\u2026` : id;
 };
 
-/**
- * Whether the developer-menu-items feature flag is currently enabled.
- * Gates developer/internal actions (Replay Onboarding, Replay Hatch Failure,
- * Component Gallery) in the tray and application menu.
- */
-const isDeveloperMenuEnabled = (): boolean => {
-  return getRuntime().featureEnabled("developer-menu-items");
-};
-
 const buildTrayMenu = (
   handlers: TrayHandlers,
   status: AssistantStatus,
@@ -229,50 +219,6 @@ const buildTrayMenu = (
         trayRuntime.dispatch({ kind: "markAllRead" });
       },
     },
-    ...(isDeveloperMenuEnabled()
-      ? [
-          { type: "separator" as const },
-          {
-            label: "Replay Onboarding",
-            click: async () => {
-              await handlers.ensureMainWindow();
-              trayRuntime.dispatch({ kind: "replayOnboarding" });
-            },
-          },
-          {
-            label: "Replay Hatch Failure",
-            click: async () => {
-              await handlers.ensureMainWindow();
-              trayRuntime.dispatch({ kind: "replayHatchFailure" });
-            },
-          },
-          // The run is staged over the app's own window, so the window is
-          // brought up first: a replay against a closed window would stand the
-          // surface in the middle of the display instead.
-          ...(trayRuntime.companionSupported() &&
-          trayRuntime.replayCompanionIntro
-            ? [
-                {
-                  label: "Replay Companion Intro",
-                  click: async () => {
-                    await handlers.ensureMainWindow();
-                    trayRuntime.replayCompanionIntro?.();
-                  },
-                },
-              ]
-            : []),
-          ...(!app.isPackaged
-            ? [
-                {
-                  label: "Component Gallery",
-                  click: () => {
-                    trayRuntime.openComponentGallery();
-                  },
-                },
-              ]
-            : []),
-        ]
-      : []),
     { type: "separator" },
     {
       label: "Show / Hide Main Window",

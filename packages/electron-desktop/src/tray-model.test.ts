@@ -186,7 +186,6 @@ beforeEach(() => {
     companionSupported: () => companionSupported,
     companionHidden: () => companionHidden,
     dispatch: dispatchToMainMock,
-    featureEnabled: (flag) => featureFlags?.[flag] === true,
     getLockfile: () => watchedLockfile as Lockfile,
     icon: () => ({ __kind: "template-icon" }) as never,
     onboardingActive: () => false,

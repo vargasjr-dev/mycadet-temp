@@ -28,14 +28,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "developer-menu-items",
-      "scope": "client",
-      "key": "developer-menu-items",
-      "label": "Developer Menu Items",
-      "description": "Show Component Gallery and Replay Onboarding in the menu bar",
-      "defaultEnabled": false
-    },
-    {
       "id": "quick-input",
       "scope": "client",
       "key": "quick-input",

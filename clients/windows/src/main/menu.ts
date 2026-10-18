@@ -15,10 +15,7 @@ import {
 } from "@mycadet/electron-desktop/commands";
 import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
-import {
-  onSettingChange,
-  readSetting,
-} from "@mycadet/electron-desktop/settings";
+import { onSettingChange } from "@mycadet/electron-desktop/settings";
 import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   MENU_POPUP,
@@ -36,10 +33,6 @@ interface WindowsMenuOptions {
 }
 
 let hasCloudSession = false;
-
-// Same flag the macOS menu reads; the renderer publishes it over IPC.
-const isDeveloperMenuEnabled = (): boolean =>
-  readSetting("featureFlags")?.["developer-menu-items"] === true;
 
 const commandItem = (
   label: string,
@@ -138,21 +131,6 @@ export const buildWindowsMenu = ({
       commandItem("Pop Out Conversation", { kind: "popOut" }),
     ],
   },
-  ...(isDeveloperMenuEnabled()
-    ? [
-        {
-          id: "developer",
-          label: "Developer",
-          submenu: [
-            commandItem("Choose Assistant...", { kind: "chooseAssistant" }),
-            commandItem("Replay Onboarding", { kind: "replayOnboarding" }),
-            commandItem("Replay Hatch Failure", {
-              kind: "replayHatchFailure",
-            }),
-          ],
-        } satisfies MenuItemConstructorOptions,
-      ]
-    : []),
   {
     id: "help",
     label: "Help",

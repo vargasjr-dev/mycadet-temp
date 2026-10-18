@@ -21,16 +21,8 @@ mock.module("@mycadet/electron-desktop/lockfile-watcher", () => ({
   getWatchedLockfile,
 }));
 
-let flagHandler: ((args: [Record<string, boolean>]) => void) | null = null;
-mock.module("./ipc.client", () => ({
-  on: (_channel: string, _schema: unknown, handler: typeof flagHandler) => {
-    flagHandler = handler;
-  },
-}));
-
 type TrayRuntime = {
   accelerator: (kind: string) => { accelerator?: string };
-  featureEnabled: (flag: string) => boolean;
   getLockfile: () => Lockfile;
   icon: (icon: string) => unknown;
 };
@@ -65,8 +57,6 @@ mock.module("./main-window", () => ({
 }));
 
 const { installLinuxTray } = await import("./tray");
-const { installFeatureFlagsIpc, isFeatureEnabled } =
-  await import("./feature-flags");
 
 beforeEach(() => {
   trayRuntime = null;
@@ -75,11 +65,10 @@ beforeEach(() => {
     activeAssistant: "assistant-1",
   };
   getWatchedLockfile.mockClear();
-  installFeatureFlagsIpc();
 });
 
 test("serves tray menus from the shared lockfile watcher", () => {
-  installLinuxTray(() => false);
+  installLinuxTray();
 
   expect(trayRuntime?.getLockfile()).toEqual(currentLockfile);
   currentLockfile = { assistants: [], activeAssistant: null };
@@ -87,16 +76,8 @@ test("serves tray menus from the shared lockfile watcher", () => {
   expect(getWatchedLockfile).toHaveBeenCalledTimes(2);
 });
 
-test("reads feature gates from the synchronized flag state", () => {
-  installLinuxTray(isFeatureEnabled);
-
-  expect(trayRuntime?.featureEnabled("developer-menu-items")).toBe(false);
-  flagHandler?.([{ "developer-menu-items": true }]);
-  expect(trayRuntime?.featureEnabled("developer-menu-items")).toBe(true);
-});
-
 test("exposes menu accelerators and themed icons", () => {
-  installLinuxTray(() => false);
+  installLinuxTray();
 
   expect(trayRuntime?.accelerator("newConversation")).toEqual({
     accelerator: "CmdOrCtrl+N",

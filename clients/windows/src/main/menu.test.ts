@@ -73,27 +73,21 @@ describe("buildWindowsMenu", () => {
     expect(enabled("Window", "Pop Out Conversation")).toBeUndefined();
   });
 
-  test("gates Settings on onboarding and Developer on its flag", () => {
+  test("gates Settings on onboarding", () => {
     expect(enabled("File", "Settings...")).toBe(true);
-    expect(submenu("Developer")).toBeUndefined();
     expect(submenu("View").some((item) => item.role === "toggleDevTools")).toBe(
       false,
     );
 
     onboardingActive = true;
-    featureFlags = { "developer-menu-items": true };
     chromeDevTools = true;
     try {
       expect(enabled("File", "Settings...")).toBe(false);
-      expect(
-        submenu("Developer").some((item) => item.label === "Replay Onboarding"),
-      ).toBe(true);
       expect(
         submenu("View").some((item) => item.role === "toggleDevTools"),
       ).toBe(true);
     } finally {
       onboardingActive = false;
-      featureFlags = {};
       chromeDevTools = false;
     }
   });

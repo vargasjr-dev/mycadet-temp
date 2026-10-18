@@ -56,7 +56,6 @@ export const installTray = (handlers: TrayHandlers): void => {
     companionHidden: readCompanionHidden,
     companionSize: readCompanionSize,
     dispatch: dispatchToMain,
-    featureEnabled: (flag) => readSetting("featureFlags")?.[flag] === true,
     getLockfile: getWatchedLockfile,
     icon: (icon) => ICONS[icon],
     onboardingActive: readOnboardingActive,
