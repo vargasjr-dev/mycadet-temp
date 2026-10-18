@@ -478,7 +478,6 @@ describe("plugins install - declared-schedules consent", () => {
     ]);
     expect(r.exitCode).toBe(0);
   });
-
 });
 
 describe("plugins upgrade - declared-schedules consent (local fallback)", () => {
