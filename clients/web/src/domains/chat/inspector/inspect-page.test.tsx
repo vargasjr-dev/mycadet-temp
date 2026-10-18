@@ -210,7 +210,6 @@ beforeEach(() => {
   // Hydrated, flag-on baseline: most tests exercise the allowed branch;
   // gating tests flip the flag keys off to reach the denial branch.
   internalActionsFlagStub = true;
-  legacyForkFlagStub = false;
   flagsHydratedStub = true;
   contextStub = {
     data: undefined,
@@ -246,7 +245,6 @@ function makeLog(id: string, createdAt: number) {
 describe("InspectPage — gating", () => {
   test("blocks sessions with both flag keys off before resolving inspector params", () => {
     internalActionsFlagStub = false;
-    legacyForkFlagStub = false;
     paramsStub = { conversationId: "conv-abc" };
 
     const html = renderInspector();
@@ -290,41 +288,10 @@ describe("InspectPage — gating", () => {
     expect(html).toContain("1 LLM call");
   });
 
-  test("accepts the legacy fork-from-message key on its own", () => {
-    // The cloud may serve this gate under either key, so a session
-    // carrying only the legacy one still gets in.
-    internalActionsFlagStub = false;
-    legacyForkFlagStub = true;
-    paramsStub = { conversationId: "conv-abc" };
-    contextStub = {
-      data: {
-        conversationId: "conv-int-1",
-        conversationKey: "conv-abc",
-        conversationKind: "user",
-        conversationTotalEstimatedCostUsd: null,
-        logs: [makeLog("log-1", 1)],
-        memoryRecall: null,
-        memoryV2Activation: null,
-      },
-      isLoading: false,
-      isError: false,
-      error: null,
-      refetch: () => {},
-    };
-
-    const html = renderInspector();
-
-    expect(html).not.toContain(
-      "Inspector is available when the Internal Thread Actions",
-    );
-    expect(html).toContain("LLM Context Inspector");
-  });
-
   test("treats the pre-hydration window as loading, not denial", () => {
     // Until /feature-flags lands, the flag reads its registry default of
     // false, so sessions must see the loading state, not a denial flash.
     internalActionsFlagStub = false;
-    legacyForkFlagStub = false;
     flagsHydratedStub = false;
 
     const html = renderInspector();

@@ -76,27 +76,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "fork-from-message",
-      "scope": "client",
-      "key": "fork-from-message",
-      "label": "Internal Thread Actions (legacy key)",
-      "description": "Legacy key for `internal-thread-actions`. The client grants the internal thread affordances when either key is enabled, so the cloud may serve the gate under either name. Declared here so the flag mapper keeps the value instead of dropping it as undeclared.",
-      "defaultEnabled": false
-    },
-    {
       "id": "internal-thread-actions",
       "scope": "client",
       "key": "internal-thread-actions",
       "label": "Internal Thread Actions",
       "description": "Show the internal thread affordances: 'Fork from here' and 'Summarize up to here' on messages, 'Fork Conversation', 'Analyze Conversation', and 'Copy conversation ID' in the thread menu, plus the LLM inspector surfaces. The flag is the sole gate: any session that enables it gets the affordances, including local sessions with no platform identity.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "compaction-playground",
-      "scope": "assistant",
-      "key": "compaction-playground",
-      "label": "Compaction Playground",
-      "description": "Expose the developer-only Compaction Playground tab in macOS Settings and enable the /playground/* HTTP endpoints for exercising compaction conditions. Dev-only; default off.",
       "defaultEnabled": false
     },
     {
@@ -108,28 +92,12 @@
       "defaultEnabled": false
     },
     {
-      "id": "memory-router-playground",
-      "scope": "client",
-      "key": "memory-router-playground",
-      "label": "Memory Router Playground",
-      "description": "Expose the developer-only Memory Router Playground tab in macOS Settings and the /assistant/memory-router-playground web page for dry-running v4 router config overrides against the live page index. Dev-only; default off.",
-      "defaultEnabled": false
-    },
-    {
       "id": "self-intro-greeting",
       "scope": "both",
       "key": "self-intro-greeting",
       "label": "Self-intro first message",
       "description": "On the first conversation, send a natural self-introduction (e.g. \"Hi Vela, I'm alex. Nice to meet you.\") on the user's behalf and route it through real LLM inference, instead of serving the canned first greeting. Names come from the onboarding context; falls back to the canned greeting when no name is known. Exposed to clients so pre-hatch onboarding can compute the source-of-truth initial message, and to the assistant so older clients can still be gated server-side. See assistant/src/daemon/first-greeting.ts (buildSelfIntroMessage).",
       "defaultEnabled": false
-    },
-    {
-      "id": "channel-trust-floors",
-      "scope": "assistant",
-      "key": "channel-trust-floors",
-      "label": "Channel Trust Floors",
-      "description": "Server-side switch for admission-floor enforcement: the gateway kill switch, the runtime floor stage, and enforcement-time policy resolution gate on it. Configuration reads and writes stay available while it is off. On by default. Client UI visibility is version-gated, not flag-gated.",
-      "defaultEnabled": true
     },
     {
       "id": "mcp-catalog-qa-integrations",
@@ -170,14 +138,6 @@
       "label": "Marketing Pricing Takeover",
       "description": "Gates the marketing pricing takeover page (mycadet.ai/pricing) and the `/assistant/checkout?package=<slug>` deep link its package CTAs target. One flag covers both halves of the funnel so they can never be enabled independently and strand a CTA. When off, the checkout deep link redirects to the in-app plans takeover.",
       "defaultEnabled": false
-    },
-    {
-      "id": "plugin-schedules",
-      "scope": "assistant",
-      "key": "plugin-schedules",
-      "label": "Plugin Schedules",
-      "description": "Plugins declare recurring schedules as files that register and run automatically",
-      "defaultEnabled": true
     },
     {
       "id": "android-avatar-app-icon",

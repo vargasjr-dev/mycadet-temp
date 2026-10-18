@@ -74,6 +74,14 @@ describe("feature flag catalog", () => {
     expect("quoteReply" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
   });
 
+  test("the deleted fork-from-message alias and playgrounds stay gone", () => {
+    expect("forkFromMessage" in CLIENT_FLAG_DEFAULTS).toBe(false);
+    expect("memoryRouterPlayground" in CLIENT_FLAG_DEFAULTS).toBe(false);
+    expect("channelTrustFloors" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
+    expect("pluginSchedules" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
+    expect("compactionPlayground" in ASSISTANT_FLAG_DEFAULTS).toBe(false);
+  });
+
   test("does not expose GA web remote ingress as a feature flag", () => {
     expect("webRemoteIngress" in CLIENT_FLAG_DEFAULTS).toBe(false);
     expect("webRemoteIngress" in ASSISTANT_FLAG_DEFAULTS).toBe(false);

@@ -1043,15 +1043,6 @@ export const routeTree = [
                             ),
                         },
                       },
-                      {
-                        path: "memory-router-playground",
-                        lazy: {
-                          Component: () =>
-                            import("@/domains/chat/inspector/memory-router-playground-page").then(
-                              (m) => m.MemoryRouterPlaygroundPage,
-                            ),
-                        },
-                      },
                     ],
                   },
                 ], // end inner chunk-fail boundary (chat-side)
