@@ -46,8 +46,14 @@ import {
 
 // ── Table formatting helpers ────────────────────────────────────
 
-/** What each row's `type` column says: the KIND of process the row describes. */
-const ASSISTANT_TYPE = "Assistant";
+/**
+ * What each row's `type` column says: the KIND of process the row describes.
+ * Assistant's emoji is a single code point (🤖, same class as 🚇/🌐) on
+ * purpose: ZWJ sequences compose into one glyph in Terminal.app but render
+ * as TWO glyphs in VSCode's xterm.js — eating an extra 2 cells and shoving
+ * every later column out of alignment (the 🧑‍🚀 incident).
+ */
+const ASSISTANT_TYPE = "🤖 Assistant";
 const TUNNEL_TYPE = "🚇 Tunnel";
 const APP_TYPE = "🌐 App";
 
