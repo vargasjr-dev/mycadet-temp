@@ -130,7 +130,7 @@ describe("getVersionInfo", () => {
     expect(info.appName).toBe("Cadet");
     expect(info.version).toBe("1.2.3");
     expect(info.website).toBe("https://mycadet.ai");
-    expect(info.copyright).toContain("Cadet");
+    expect(info.copyright).toContain("Vargas JR LLC");
     expect(info.copyright).toContain(String(new Date().getFullYear()));
     // SHA isn't defined off the build pipeline; the module falls back
     // to "unknown" rather than throwing.

@@ -693,6 +693,8 @@
     "current": "目前",
     "customize": "自訂",
     "dangerZoneTitle": "危險區域",
+    "handleSubtitle": "為此頁面提供服務的助理。",
+    "handleTitle": "助理識別碼",
     "preferencesSubtitle": "自訂 Cadet 在此裝置上的外觀和行為。",
     "preferencesTitle": "偏好設定",
     "retireAssistantDescription": "永久停用此助理並刪除所有相關資料。",

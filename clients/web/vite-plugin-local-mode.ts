@@ -82,9 +82,12 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   // The `/assistant/__config` document, also injected into the index. No
   // `assistantId`: the dev server fronts every assistant in the lockfile at
   // once, so it has no single identity to report the way an nginx edge does.
+  // `version` rides in from the CLI (`CADET_CONFIG_VERSION`) so the page's
+  // version row answers the same thing `cadet-local --version` does.
   const configJson = JSON.stringify({
     webUrl: config.webUrl,
     cloudUrl: config.cloudUrl,
+    ...(env.CADET_CONFIG_VERSION ? { version: env.CADET_CONFIG_VERSION } : {}),
   });
 
   return {

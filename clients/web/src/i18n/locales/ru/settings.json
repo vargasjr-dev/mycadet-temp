@@ -679,6 +679,8 @@
     "current": "Текущий",
     "customize": "Настроить",
     "dangerZoneTitle": "Опасная зона",
+    "handleSubtitle": "Ассистент, обслуживающий эту страницу.",
+    "handleTitle": "Идентификатор ассистента",
     "preferencesSubtitle": "Настройка того, как ассистент выглядит на этом устройстве.",
     "preferencesTitle": "Предпочтения",
     "retireAssistantDescription": "Навсегда удалить этого ассистента и все связанные данные.",

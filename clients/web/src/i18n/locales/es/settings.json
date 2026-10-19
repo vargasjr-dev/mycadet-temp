@@ -693,6 +693,8 @@
     "current": "Actual",
     "customize": "Personalizar",
     "dangerZoneTitle": "Zona de peligro",
+    "handleSubtitle": "El asistente que sirve esta página.",
+    "handleTitle": "Identificador del asistente",
     "preferencesSubtitle": "Personaliza cómo se ve y se comporta Cadet en este dispositivo.",
     "preferencesTitle": "Preferencias",
     "retireAssistantDescription": "Retira permanentemente este asistente y elimina todos los datos asociados.",

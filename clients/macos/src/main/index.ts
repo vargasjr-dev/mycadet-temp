@@ -29,7 +29,7 @@ import {
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
 
-import { installAbout, openAboutWindow } from "./about.client";
+import { getVersionInfo, installAbout, openAboutWindow } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
@@ -356,7 +356,7 @@ handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
-  version: app.getVersion(),
+  version: getVersionInfo().version,
 }));
 
 /**
@@ -429,9 +429,7 @@ app
       appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
       resolveAllowedOrigin,
     });
-    registerCadetProtocol(
-      path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
-    );
+    registerCadetProtocol(path.join(app.getPath("userData"), BUNDLES_DIR_NAME));
     installMacBundleWorkflow();
     onFileOpen(handleBundleFile);
     installPermissionHandler(resolveAllowedOrigin);

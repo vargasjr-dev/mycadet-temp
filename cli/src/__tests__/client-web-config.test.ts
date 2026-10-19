@@ -24,4 +24,14 @@ describe("cadet client web __config", () => {
     // assistant this origin serves would read a false `foreign`.
     expect(config).not.toHaveProperty("assistantId");
   });
+
+  test("carries the serving version when the caller stamps one", () => {
+    const config = buildWebInterfaceConfig({
+      ...BASE,
+      version: "0.13.0-local.202610191920.58bcf38",
+    });
+
+    expect(config["version"]).toBe("0.13.0-local.202610191920.58bcf38");
+    expect(config).not.toHaveProperty("assistantId");
+  });
 });

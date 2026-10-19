@@ -61,6 +61,8 @@ import {
   type CliInvocation,
 } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
+import { displayVersion } from "../lib/local-version.js";
+import cliPkg from "../package.json";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
   fetchOrganizationId,
@@ -89,9 +91,7 @@ const SyncPlatformBodySchema = z.object({
   syncPlatform: z.unknown().optional(),
   cloudAssistants: z.array(z.record(z.string(), z.unknown())).optional(),
   organizationId: z.string().optional(),
-  rename: z
-    .object({ assistantId: z.string(), name: z.string() })
-    .optional(),
+  rename: z.object({ assistantId: z.string(), name: z.string() }).optional(),
   assistant: z.record(z.string(), z.unknown()).optional(),
   activeAssistant: z.string().optional(),
 });
@@ -432,9 +432,9 @@ async function maybeHydrateCloudAssistantName(
   }
 
   try {
-    const matchedAssistant = (
-      await fetchCloudAssistants(cloudToken)
-    ).find((assistant) => assistant.id === assistantId);
+    const matchedAssistant = (await fetchCloudAssistants(cloudToken)).find(
+      (assistant) => assistant.id === assistantId,
+    );
     const hydratedName = matchedAssistant?.name.trim();
     if (!hydratedName) {
       return assistantName;
@@ -499,8 +499,7 @@ const PAIRING_POLL_PATTERN = /^(?:\/assistant)?\/__local\/pairing-poll$/;
 const PAIRING_CANCEL_PATTERN = /^(?:\/assistant)?\/__local\/pairing-cancel$/;
 const GUARDIAN_TOKEN_PATTERN =
   /^(?:\/assistant)?\/__local\/guardian-token\/([^/]+)$/;
-const PLATFORM_SESSION_PATTERN =
-  /^(?:\/assistant)?\/__local\/cloud-session$/;
+const PLATFORM_SESSION_PATTERN = /^(?:\/assistant)?\/__local\/cloud-session$/;
 
 // The loopback platform session token. Persisted via the same store the CLI
 // uses (so `cadet client` restarts and CLI logins stay in sync), cached here
@@ -1304,9 +1303,16 @@ async function spawnBackgroundWebInterface(
 export function buildWebInterfaceConfig(opts: {
   webUrl: string;
   cloudUrl: string;
+  version?: string;
 }): Record<string, unknown> {
   const { webUrl, cloudUrl } = opts;
-  return { webUrl, cloudUrl };
+  return {
+    webUrl,
+    cloudUrl,
+    // Which CLI build is serving — the same string `cadet-local --version`
+    // prints, so devtools and the settings page answer identically.
+    ...(opts.version ? { version: opts.version } : {}),
+  };
 }
 
 async function runWebInterface(
@@ -1329,6 +1335,7 @@ async function runWebInterface(
       disableCloud,
       openInBrowser,
       webPort,
+      displayVersion(cliPkg.version),
     );
   }
 
@@ -1348,7 +1355,13 @@ async function runWebInterface(
   const webUrl = getWebUrl();
   const safeJson = (v: unknown) =>
     JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
-  const configJson = safeJson(buildWebInterfaceConfig({ webUrl, cloudUrl }));
+  const configJson = safeJson(
+    buildWebInterfaceConfig({
+      webUrl,
+      cloudUrl,
+      version: displayVersion(cliPkg.version),
+    }),
+  );
   const hasOverrides = Object.keys(parsedFlagOverrides).length > 0;
   const flagOverridesSnippet = hasOverrides
     ? `;window.__CADET_FLAG_OVERRIDES__=${safeJson(parsedFlagOverrides)}`
@@ -1526,6 +1539,7 @@ async function runViteDevServer(
   disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
+  serveVersion: string,
 ): Promise<void> {
   const cloudUrl = getCloudUrl();
 
@@ -1558,6 +1572,7 @@ async function runViteDevServer(
       API_PROXY_TARGET: cloudUrl,
       CADET_WEB_URL: getWebUrl(),
       CADET_CLOUD_URL: cloudUrl,
+      CADET_CONFIG_VERSION: serveVersion,
       PORT: String(port),
     },
   });
@@ -1629,113 +1644,114 @@ export async function resolveFreshBearerToken(
 
 export const client = Object.assign(
   async function client(): Promise<void> {
-  const {
-    runtimeUrl,
-    assistantId,
-    assistantName: parsedAssistantName,
-    workspaceRoot,
-    cloud,
-    cloudToken,
-    bearerToken,
-    interfaceId,
-    flagEnvVars,
-    parsedFlagOverrides,
-    disableCloud,
-    openBrowser: openInBrowser,
-    webPort,
-    background,
-  } = parseArgs();
-
-  if (disableCloud) {
-    process.env.CADET_DISABLE_CLOUD = "true";
-  }
-
-  if (interfaceId === WEB_INTERFACE_ID) {
-    if (background) {
-      await spawnBackgroundWebInterface(webPort);
-      return;
-    }
-    await runWebInterface(
+    const {
+      runtimeUrl,
+      assistantId,
+      assistantName: parsedAssistantName,
+      workspaceRoot,
+      cloud,
+      cloudToken,
+      bearerToken,
+      interfaceId,
       flagEnvVars,
       parsedFlagOverrides,
       disableCloud,
-      openInBrowser,
+      openBrowser: openInBrowser,
       webPort,
-    );
-    return;
-  }
+      background,
+    } = parseArgs();
 
-  tuiLog.init();
-  tuiLog.info("session start", {
-    runtimeUrl,
-    assistantId,
-    cloud,
-    interfaceId,
-  });
+    if (disableCloud) {
+      process.env.CADET_DISABLE_CLOUD = "true";
+    }
 
-  const assistantName = await maybeHydrateCloudAssistantName(
-    assistantId,
-    parsedAssistantName,
-    cloud,
-    cloudToken,
-  );
+    if (interfaceId === WEB_INTERFACE_ID) {
+      if (background) {
+        await spawnBackgroundWebInterface(webPort);
+        return;
+      }
+      await runWebInterface(
+        flagEnvVars,
+        parsedFlagOverrides,
+        disableCloud,
+        openInBrowser,
+        webPort,
+      );
+      return;
+    }
 
-  // Build pre-constructed request headers merged from auth + client registration.
-  // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
-  let auth: Record<string, string> | undefined;
-  if (isCloudHome(cloud) && cloudToken) {
-    const orgId = await fetchOrganizationId(cloudToken).catch((err) => {
-      tuiLog.warn("failed to fetch organization id", { err: String(err) });
-      return undefined;
-    });
-    auth = {
-      "X-Session-Token": cloudToken,
-      ...(orgId ? { "Cadet-Organization-Id": orgId } : {}),
-      ...getClientRegistrationHeaders(interfaceId),
-    };
-  } else {
-    // Proactively refresh a stale STORED guardian token before opening the TUI,
-    // so launching after the access token expired renews transparently rather
-    // than erroring. (Mid-session expiry — the token dying while the TUI is
-    // already open — is a separate follow-up, since the TUI threads a static
-    // auth object through React.)
-    const token = await resolveFreshBearerToken(
+    tuiLog.init();
+    tuiLog.info("session start", {
       runtimeUrl,
       assistantId,
-      bearerToken,
       cloud,
+      interfaceId,
+    });
+
+    const assistantName = await maybeHydrateCloudAssistantName(
+      assistantId,
+      parsedAssistantName,
+      cloud,
+      cloudToken,
     );
-    auth = {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...getClientRegistrationHeaders(interfaceId),
-    };
-  }
 
-  // The CLI addresses its chat conversation by a client-minted uuid key
-  // (web's temp-client-id pattern) — resolve-or-mint once, persisted on the
-  // entry, so every session shares one conversation.
-  const lookup = lookupAssistantByIdentifier(assistantId);
-  const conversationKey =
-    lookup.status === "found" ? resolveConversationKey(lookup.entry) : undefined;
+    // Build pre-constructed request headers merged from auth + client registration.
+    // Spreading into every fetch site ensures consistency across REST and SSE endpoints.
+    let auth: Record<string, string> | undefined;
+    if (isCloudHome(cloud) && cloudToken) {
+      const orgId = await fetchOrganizationId(cloudToken).catch((err) => {
+        tuiLog.warn("failed to fetch organization id", { err: String(err) });
+        return undefined;
+      });
+      auth = {
+        "X-Session-Token": cloudToken,
+        ...(orgId ? { "Cadet-Organization-Id": orgId } : {}),
+        ...getClientRegistrationHeaders(interfaceId),
+      };
+    } else {
+      // Proactively refresh a stale STORED guardian token before opening the TUI,
+      // so launching after the access token expired renews transparently rather
+      // than erroring. (Mid-session expiry — the token dying while the TUI is
+      // already open — is a separate follow-up, since the TUI threads a static
+      // auth object through React.)
+      const token = await resolveFreshBearerToken(
+        runtimeUrl,
+        assistantId,
+        bearerToken,
+        cloud,
+      );
+      auth = {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...getClientRegistrationHeaders(interfaceId),
+      };
+    }
 
-  const { renderChatApp } = await import("../components/DefaultMainScreen");
+    // The CLI addresses its chat conversation by a client-minted uuid key
+    // (web's temp-client-id pattern) — resolve-or-mint once, persisted on the
+    // entry, so every session shares one conversation.
+    const lookup = lookupAssistantByIdentifier(assistantId);
+    const conversationKey =
+      lookup.status === "found"
+        ? resolveConversationKey(lookup.entry)
+        : undefined;
 
-  process.stdout.write("\x1b[2J\x1b[H");
+    const { renderChatApp } = await import("../components/DefaultMainScreen");
 
-  const app = renderChatApp(
-    runtimeUrl,
-    assistantId,
-    () => {
-      tuiLog.info("session end (user disconnect)");
-      tuiLog.close();
-      app.unmount();
-      process.stdout.write("\x1b[2J\x1b[H");
-      console.log(`${ANSI.dim}Disconnected.${ANSI.reset}`);
-      process.exit(0);
-    },
-    { auth, assistantName, workspaceRoot, conversationKey },
-  );
-},
+    process.stdout.write("\x1b[2J\x1b[H");
+
+    const app = renderChatApp(
+      runtimeUrl,
+      assistantId,
+      () => {
+        tuiLog.info("session end (user disconnect)");
+        tuiLog.close();
+        app.unmount();
+        process.stdout.write("\x1b[2J\x1b[H");
+        console.log(`${ANSI.dim}Disconnected.${ANSI.reset}`);
+        process.exit(0);
+      },
+      { auth, assistantName, workspaceRoot, conversationKey },
+    );
+  },
   { description: "Connect to a hatched assistant" },
 );
-

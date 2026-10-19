@@ -700,6 +700,8 @@
     "current": "Current",
     "customize": "Customize",
     "dangerZoneTitle": "Danger Zone",
+    "handleSubtitle": "The assistant serving this page.",
+    "handleTitle": "Assistant handle",
     "preferencesSubtitle": "Customize how Cadet looks and behaves on this device.",
     "preferencesTitle": "Preferences",
     "retireAssistantDescription": "Permanently retire this assistant and delete all associated data.",

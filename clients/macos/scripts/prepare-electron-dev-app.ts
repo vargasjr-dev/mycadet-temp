@@ -35,9 +35,19 @@ const DOCK_BUST_MARKER = path.join(
 const CADET_ENVIRONMENT = process.env.CADET_ENVIRONMENT || "local";
 const DEV_BUNDLE_ID = `ai.mycadet.electron-${CADET_ENVIRONMENT}`;
 
+// Same env→name scheme as electron-builder.config.cjs's productName, so the
+// dev menu bar / Dock label reads "Cadet Local" (etc.) the way a packaged
+// build of the same environment does. `app.setName` in src/main/index.ts
+// stays "Cadet Electron" on purpose: the dev userData dir keeps its
+// separation from packaged installs of every environment.
+const DEV_APP_NAME =
+  CADET_ENVIRONMENT === "production"
+    ? "Cadet"
+    : `Cadet ${CADET_ENVIRONMENT.charAt(0).toUpperCase()}${CADET_ENVIRONMENT.slice(1)}`;
+
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
-  CFBundleDisplayName: "Cadet Electron",
-  CFBundleName: "Cadet Electron",
+  CFBundleDisplayName: DEV_APP_NAME,
+  CFBundleName: DEV_APP_NAME,
   CFBundleIdentifier: DEV_BUNDLE_ID,
   NSUserNotificationAlertStyle: "alert",
 };
