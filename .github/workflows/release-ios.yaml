@@ -134,9 +134,6 @@ jobs:
 
       - name: Install dependencies
         working-directory: clients/app
-        # `@mycadet/ios` is the sync home now: its manifest carries the
-        # Capacitor platform + plugin set and the CLI/typescript its config
-        # loader resolves. `@mycadet/app` still builds the shell (webDir).
         run: bun install --frozen-lockfile --filter=@mycadet/app --filter=@mycadet/ios
 
       - name: Capacitor sync

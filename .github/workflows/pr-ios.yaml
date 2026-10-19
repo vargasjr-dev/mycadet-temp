@@ -54,6 +54,7 @@ jobs:
         run: |
           bun install --frozen-lockfile \
             --filter=@mycadet/app \
+            --filter=@mycadet/ios \
             --filter=@mycadet/assistant
 
       - name: Test filters
