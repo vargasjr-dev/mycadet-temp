@@ -7,6 +7,7 @@ import {
   readFileSync,
   writeFileSync,
 } from "node:fs";
+import * as net from "node:net";
 import { dirname, join } from "node:path";
 
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
@@ -33,9 +34,22 @@ import type {
 } from "../tunnel.js";
 import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
-const NGROK_API_URL = "http://127.0.0.1:4040/api/tunnels";
+const NGROK_DEFAULT_API_ADDR = "127.0.0.1:4040";
+const NGROK_API_URL = `http://${NGROK_DEFAULT_API_ADDR}/api/tunnels`;
 const NGROK_POLL_INTERVAL_MS = 500;
 const NGROK_POLL_TIMEOUT_MS = 15_000;
+
+/**
+ * Inspection-port band for agents this CLI starts beyond the first. ngrok's
+ * web interface/API port (`web_addr`) is config-file only — it cannot be set
+ * on the command line — so a second concurrent agent needs its own address
+ * layered in through a config file. Ports 4041-4049 sit next to ngrok's
+ * default 4040 and away from the environment port blocks.
+ */
+const NGROK_SECONDARY_ADDR_CANDIDATES = Array.from(
+  { length: 9 },
+  (_, i) => `127.0.0.1:${4041 + i}`,
+);
 
 const NgrokTunnelSchema = z.object({
   public_url: z.string(),
@@ -94,6 +108,16 @@ export function isNgrokAuthError(output: string): boolean {
   );
 }
 
+/**
+ * Whether the agent was refused because the account is already running its
+ * plan's maximum of concurrent agent sessions. Checked before the auth-error
+ * path (whose regex also matches ERR_NGROK_108), because the recovery is
+ * different: pasting an authtoken cannot fix a session-count limit.
+ */
+export function isNgrokSessionLimitError(output: string): boolean {
+  return /simultaneous ngrok agent sessions|ERR_NGROK_108/i.test(output);
+}
+
 /** An ngrok agent that exited during startup, with its captured output. */
 export class NgrokStartupError extends Error {
   readonly exitCode: number;
@@ -134,12 +158,14 @@ export function saveNgrokAuthToken(token: string): boolean {
 }
 
 /**
- * Query the ngrok local API for running tunnels.
+ * Query an ngrok local API for running tunnels.
  * Returns the list of tunnels, or null if the API is unreachable.
  */
-async function queryNgrokTunnels(): Promise<NgrokTunnel[] | null> {
+async function queryNgrokTunnels(
+  apiUrl: string = NGROK_API_URL,
+): Promise<NgrokTunnel[] | null> {
   try {
-    const res = await loopbackSafeFetch(NGROK_API_URL, {
+    const res = await loopbackSafeFetch(apiUrl, {
       signal: AbortSignal.timeout(2_000),
     });
     if (!res.ok) return null;
@@ -148,6 +174,40 @@ async function queryNgrokTunnels(): Promise<NgrokTunnel[] | null> {
   } catch {
     return null;
   }
+}
+
+/** A live ngrok agent seen through its local inspection API. */
+interface NgrokAgentView {
+  /** Base inspection address (`host:port`) the agent answers on. */
+  apiAddr: string;
+  tunnels: NgrokTunnel[];
+}
+
+/**
+ * Every inspection address a relevant agent could be answering on: ngrok's
+ * default, the one in the user's own ngrok config (they may have moved
+ * `web_addr`), and the one recorded for agents this CLI started beyond the
+ * first. Sibling environments' records are not read — their agents tunnel
+ * their own edge ports, so the only thing a sibling agent can offer this
+ * environment is a port to avoid, which the free-port probe handles.
+ */
+function agentAddrCandidates(): string[] {
+  const candidates = [NGROK_DEFAULT_API_ADDR];
+  const userWebAddr = readUserDefaultNgrokWebAddr();
+  if (userWebAddr) candidates.push(userWebAddr);
+  const recorded = readNgrokAgentConfigFile().web_addr;
+  if (recorded) candidates.push(recorded);
+  return [...new Set(candidates)];
+}
+
+/** Probe the known inspection addresses and return the live agents. */
+async function discoverNgrokAgents(): Promise<NgrokAgentView[]> {
+  const agents: NgrokAgentView[] = [];
+  for (const addr of agentAddrCandidates()) {
+    const tunnels = await queryNgrokTunnels(`http://${addr}/api/tunnels`);
+    if (tunnels) agents.push({ apiAddr: addr, tunnels });
+  }
+  return agents;
 }
 
 /** Whether a tunnel targets the given local port, under any addr spelling. */
@@ -184,9 +244,27 @@ function describeTunnels(tunnels: NgrokTunnel[]): string {
     .join(", ");
 }
 
-/** Diagnostic for a running ngrok agent whose tunnels all miss the target port. */
-function staleAgentDiagnostic(tunnels: NgrokTunnel[], port: number): string {
-  return `an ngrok agent is already running but tunnels a different local port (${describeTunnels(tunnels)}), not ${port}. It was likely started before the tunnel edge unification or by an external process.`;
+/**
+ * Find an already-running tunnel to adopt: an agent whose tunnels include
+ * the target port (and the reserved domain, when one is requested). When an
+ * agent tunnels the target port but under a different domain, that is
+ * reported as a conflict — adopting it would silently drop the saved
+ * reserved-domain intent.
+ */
+function findAdoptableTunnel(
+  agents: NgrokAgentView[],
+  targetPort: number,
+  domain?: string,
+): { url: string } | { conflict: string } | null {
+  for (const agent of agents) {
+    const portMatch = pickMatchingTunnel(agent.tunnels, targetPort);
+    if (!portMatch) continue;
+    if (domain && !urlMatchesDomain(portMatch, domain)) {
+      return { conflict: portMatch };
+    }
+    return { url: portMatch };
+  }
+  return null;
 }
 
 /** Recovery copy for a saved domain whose reservation may have lapsed. */
@@ -271,6 +349,144 @@ export function loadNgrokDomain(): string | null {
   return domain?.trim() ? domain : null;
 }
 
+const NgrokAgentConfigFileSchema = z.looseObject({
+  web_addr: z.string().optional(),
+});
+
+type NgrokAgentConfigFile = z.infer<typeof NgrokAgentConfigFileSchema>;
+
+/**
+ * The config file recording the inspection address (`web_addr`) of an agent
+ * this CLI started beyond the first. Distinct from `ngrok.yaml`, which stays
+ * out of spawning entirely — this one is ONLY fed to layered `--config`
+ * spawns, where the user's default config is loaded first so their authtoken
+ * stays in play and this file's `web_addr` wins on top of it.
+ */
+export function ngrokAgentConfigPath(): string {
+  return join(
+    getConfigDir(getCurrentEnvironment()),
+    "tunnels",
+    "ngrok-agent.yaml",
+  );
+}
+
+function readNgrokAgentConfigFile(): NgrokAgentConfigFile {
+  const path = ngrokAgentConfigPath();
+  if (!existsSync(path)) return {};
+  try {
+    const parsed = NgrokAgentConfigFileSchema.safeParse(
+      parseYaml(readFileSync(path, "utf-8")),
+    );
+    return parsed.success ? parsed.data : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Persist the inspection address for the next secondary-agent spawn. */
+function writeNgrokAgentConfig(webAddr: string): string {
+  const path = ngrokAgentConfigPath();
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, stringifyYaml({ version: "2", web_addr: webAddr }));
+  return path;
+}
+
+/**
+ * Resolve the user's default ngrok config path with `ngrok config check`.
+ * Null when it can't be determined — the layered secondary spawn then runs
+ * without it, and an authentication failure is recovered by the usual
+ * paste-in flow (which writes the default config the next attempt layers).
+ */
+function resolveNgrokDefaultConfigPath(): string | null {
+  try {
+    const output = execFileSync("ngrok", ["config", "check"], {
+      encoding: "utf-8",
+      timeout: 5_000,
+      stdio: ["ignore", "pipe", "ignore"],
+      windowsHide: true,
+    });
+    return (
+      output.match(/Valid configuration file at (.+)/)?.[1]?.trim() ?? null
+    );
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The `web_addr` from the user's default ngrok config, when they moved the
+ * inspection interface off the default port — an agent there would otherwise
+ * be invisible to discovery.
+ */
+function readUserDefaultNgrokWebAddr(): string | null {
+  const configPath = resolveNgrokDefaultConfigPath();
+  if (!configPath || !existsSync(configPath)) return null;
+  try {
+    const parsed = NgrokAgentConfigFileSchema.safeParse(
+      parseYaml(readFileSync(configPath, "utf-8")),
+    );
+    const webAddr = parsed.success ? parsed.data.web_addr : undefined;
+    // `web_addr: false` disables the interface; only a host:port answers.
+    return webAddr && webAddr.includes(":") ? webAddr : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pick an inspection address for a second agent: the first candidate in the
+ * 4041-4049 band that no discovered agent already answers on and that this
+ * process can bind. Throws when the band is exhausted.
+ */
+async function pickFreeAgentAddr(agents: NgrokAgentView[]): Promise<string> {
+  const taken = new Set(agents.map((a) => a.apiAddr));
+  for (const addr of NGROK_SECONDARY_ADDR_CANDIDATES) {
+    if (taken.has(addr)) continue;
+    if (await isAddrBindable(addr)) return addr;
+  }
+  throw new Error(
+    `no free ngrok inspection port in 4041-4049; stop an ngrok agent or free one of those ports and re-run.`,
+  );
+}
+
+/** Whether this process can bind the given `host:port` on loopback. */
+function isAddrBindable(addr: string): Promise<boolean> {
+  const port = Number(addr.split(":").pop());
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once("error", () => resolve(false));
+    server.listen({ port, host: "127.0.0.1" }, () => {
+      server.close(() => resolve(true));
+    });
+  });
+}
+
+/** How a second agent (for an edge port no live agent tunnels) is started. */
+interface SecondaryAgentPlan {
+  webAddr: string;
+  defaultConfigPath?: string;
+  /** Where this run polls for the tunnel URL the new agent publishes. */
+  apiUrl: string;
+}
+
+/**
+ * Prepare a second ngrok agent: pick and record an inspection address, and
+ * resolve the user's default config so the layered spawn keeps the authtoken
+ * in play. Pure preparation — the caller spawns and reports.
+ */
+async function planSecondaryAgent(
+  agents: NgrokAgentView[],
+): Promise<SecondaryAgentPlan> {
+  const webAddr = await pickFreeAgentAddr(agents);
+  writeNgrokAgentConfig(webAddr);
+  const defaultConfigPath = resolveNgrokDefaultConfigPath() ?? undefined;
+  return {
+    webAddr,
+    defaultConfigPath,
+    apiUrl: `http://${webAddr}/api/tunnels`,
+  };
+}
+
 /**
  * Check whether a PID belongs to an ngrok process via its command line, so a
  * recorded pid is verified before it is signaled (PID reuse guard).
@@ -306,10 +522,20 @@ function urlMatchesDomain(publicUrl: string, domain: string): boolean {
 export function buildNgrokSpawnArgs(
   targetPort: number,
   domain?: string,
+  secondaryAgent?: { webAddr: string; defaultConfigPath?: string },
 ): string[] {
   const args = ["http", `127.0.0.1:${targetPort}`, "--log=stdout"];
   if (domain) {
     args.push(`--domain=${domain}`);
+  }
+  if (secondaryAgent) {
+    // ngrok's `web_addr` cannot be set on the command line, so the second
+    // agent layers config files: the user's default first (authtoken stays
+    // in play — a bare --config would replace it), ours last (web_addr wins).
+    if (secondaryAgent.defaultConfigPath) {
+      args.push(`--config=${secondaryAgent.defaultConfigPath}`);
+    }
+    args.push(`--config=${ngrokAgentConfigPath()}`);
   }
   return args;
 }
@@ -337,6 +563,7 @@ export function startNgrokProcess(
   targetPort: number,
   logFilePath?: string,
   domain?: string,
+  secondaryAgent?: { webAddr: string; defaultConfigPath?: string },
 ): ChildProcess {
   let stdio: ("ignore" | "pipe" | number)[] = ["ignore", "pipe", "pipe"];
   let fd: number | undefined;
@@ -347,11 +574,15 @@ export function startNgrokProcess(
     stdio = ["ignore", fd, fd];
   }
 
-  const child = spawn("ngrok", buildNgrokSpawnArgs(targetPort, domain), {
-    detached: true,
-    stdio,
-    windowsHide: true,
-  });
+  const child = spawn(
+    "ngrok",
+    buildNgrokSpawnArgs(targetPort, domain, secondaryAgent),
+    {
+      detached: true,
+      stdio,
+      windowsHide: true,
+    },
+  );
 
   // The child process inherits a duplicate of the fd via dup2, so the
   // parent's copy is no longer needed. Close it to avoid leaking the
@@ -366,16 +597,19 @@ export function startNgrokProcess(
 /**
  * Poll the ngrok local API until a tunnel appears for the target port (and
  * reserved domain, when one is requested), preferring HTTPS.
+ * `apiUrl` targets a specific agent's inspection API — a second agent answers
+ * on its own port, and the default only reaches the first agent on a machine.
  * Returns the public URL, or throws if the timeout is exceeded.
  */
 export async function waitForNgrokUrl(
   targetPort: number,
   domain?: string,
   timeoutMs: number = NGROK_POLL_TIMEOUT_MS,
+  apiUrl: string = NGROK_API_URL,
 ): Promise<string> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    const tunnels = await queryNgrokTunnels();
+    const tunnels = await queryNgrokTunnels(apiUrl);
     if (tunnels && tunnels.length > 0) {
       const url = pickMatchingTunnel(tunnels, targetPort, domain);
       if (url) return url;
@@ -476,18 +710,20 @@ export async function maybeStartNgrokTunnel(
   const savedDomain = loadNgrokDomain() ?? undefined;
 
   // Reuse an existing tunnel if one is already running
-  const runningTunnels = (await queryNgrokTunnels()) ?? [];
-  const existingUrl = pickMatchingTunnel(runningTunnels, targetPort);
-  if (existingUrl) {
-    if (savedDomain && !urlMatchesDomain(existingUrl, savedDomain)) {
-      // Spawning a second agent would collide (ERR_NGROK_334), and saving the
-      // mismatched URL would clobber the reserved-domain intent. Leave the
-      // tunnel running but refuse to bless it in config.
-      console.warn(
-        `   ⚠ Existing ngrok tunnel ${existingUrl} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`cadet tunnel --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
-      );
-      return null;
-    }
+  const agents = await discoverNgrokAgents();
+  const adoptable = findAdoptableTunnel(agents, targetPort, savedDomain);
+  if (adoptable && "conflict" in adoptable) {
+    // Spawning a second agent would tunnel the same edge under a different
+    // domain, and saving the mismatched URL would clobber the
+    // reserved-domain intent. Leave the tunnel running but refuse to bless
+    // it in config.
+    console.warn(
+      `   ⚠ Existing ngrok tunnel ${adoptable.conflict} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`cadet tunnel --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
+    );
+    return null;
+  }
+  if (adoptable) {
+    const existingUrl = adoptable.url;
     console.log(`   Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, assistantId, "ngrok");
     await notifyGatewayOfPublicUrl(existingUrl, assistantId);
@@ -496,15 +732,11 @@ export async function maybeStartNgrokTunnel(
     clearRootProcess("tunnel");
     return null;
   }
-  if (runningTunnels.length > 0) {
-    // An agent is up but tunnels some other local port (likely started before
-    // the edge unification, or by an external process). Spawning a second
-    // agent would collide (ERR_NGROK_334) on single-agent plans, so skip.
-    console.warn(
-      `   ⚠ ${staleAgentDiagnostic(runningTunnels, targetPort)} Stop that ngrok agent, then run \`cadet tunnel --provider ngrok\` to tunnel the local edge.`,
-    );
-    return null;
-  }
+
+  // A live agent that tunnels a different local port is not a blocker: ngrok
+  // supports concurrent agents, so start one more for this edge.
+  const secondaryAgent =
+    agents.length > 0 ? await planSecondaryAgent(agents) : undefined;
 
   console.log(`   Starting ngrok tunnel for webhook integrations...`);
 
@@ -515,11 +747,21 @@ export async function maybeStartNgrokTunnel(
   // Writing to a log file sidesteps both issues — the file descriptor is
   // inherited by the detached ngrok process and remains valid after CLI exit.
   const ngrokLogPath = join(workspaceDir, "data", "logs", "ngrok.log");
-  const ngrokProcess = startNgrokProcess(targetPort, ngrokLogPath, savedDomain);
+  const ngrokProcess = startNgrokProcess(
+    targetPort,
+    ngrokLogPath,
+    savedDomain,
+    secondaryAgent,
+  );
   ngrokProcess.unref();
 
   try {
-    const publicUrl = await waitForNgrokUrl(targetPort, savedDomain);
+    const publicUrl = await waitForNgrokUrl(
+      targetPort,
+      savedDomain,
+      NGROK_POLL_TIMEOUT_MS,
+      secondaryAgent?.apiUrl,
+    );
     saveIngressUrl(workspaceDir, publicUrl, assistantId, "ngrok");
     await notifyGatewayOfPublicUrl(publicUrl, assistantId);
     if (ngrokProcess.pid) {
@@ -605,27 +847,19 @@ export async function runNgrokTunnel(
   }
 
   // Check for an existing ngrok tunnel pointing at the local edge
-  const runningTunnels = (await queryNgrokTunnels()) ?? [];
-  const existingUrl = pickMatchingTunnel(runningTunnels, port);
-  if (!existingUrl && runningTunnels.length > 0) {
-    // Spawning a second agent would collide (ERR_NGROK_334) on single-agent
-    // plans; fail loudly instead, matching the domain-mismatch path.
-    console.error(`Error: ${staleAgentDiagnostic(runningTunnels, port)}`);
+  const agents = await discoverNgrokAgents();
+  const adoptable = findAdoptableTunnel(agents, port, domain);
+  if (adoptable && "conflict" in adoptable) {
     console.error(
-      "Stop the existing ngrok agent first, then re-run this command to tunnel the local edge.",
+      `Error: an ngrok tunnel is already running on port ${port} at ${adoptable.conflict}, which does not match the ${opts.domain ? "requested" : "saved"} domain '${domain}'.`,
+    );
+    console.error(
+      "Stop the existing ngrok agent first, then re-run this command to bind the reserved domain.",
     );
     process.exit(1);
   }
-  if (existingUrl) {
-    if (domain && !urlMatchesDomain(existingUrl, domain)) {
-      console.error(
-        `Error: an ngrok tunnel is already running on port ${port} at ${existingUrl}, which does not match the ${opts.domain ? "requested" : "saved"} domain '${domain}'.`,
-      );
-      console.error(
-        "Stop the existing ngrok agent first, then re-run this command to bind the reserved domain.",
-      );
-      process.exit(1);
-    }
+  if (adoptable) {
+    const existingUrl = adoptable.url;
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
     saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
     // Not our child process: a recorded entry would be stale or foreign.
@@ -649,6 +883,18 @@ export async function runNgrokTunnel(
       process.on("SIGTERM", () => resolve());
     });
     return { publicUrl: existingUrl, waitForExit };
+  }
+
+  // A live agent tunneling a different local port is not a blocker: ngrok
+  // supports concurrent agents, so start one more for this edge.
+  const secondary =
+    agents.length > 0 ? await planSecondaryAgent(agents) : undefined;
+  if (secondary) {
+    console.log(
+      `Another ngrok agent is already running (${describeTunnels(
+        agents.flatMap((a) => a.tunnels),
+      )}) — starting a second agent for this tunnel on inspection port ${secondary.webAddr.split(":").pop()}.`,
+    );
   }
 
   console.log(`Starting ngrok tunnel to localhost:${port}...`);
@@ -680,7 +926,7 @@ export async function runNgrokTunnel(
   });
 
   while (publicUrl === undefined) {
-    const ngrokProcess = startNgrokProcess(port, undefined, domain);
+    const ngrokProcess = startNgrokProcess(port, undefined, domain, secondary);
     currentNgrok = ngrokProcess;
 
     // Captured per attempt so an authentication failure can be told apart
@@ -720,8 +966,23 @@ export async function runNgrokTunnel(
 
     let url: string;
     try {
-      url = await Promise.race([waitForNgrokUrl(port, domain), exitFailure]);
+      url = await Promise.race([
+        waitForNgrokUrl(port, domain, NGROK_POLL_TIMEOUT_MS, secondary?.apiUrl),
+        exitFailure,
+      ]);
     } catch (err) {
+      if (
+        err instanceof NgrokStartupError &&
+        isNgrokSessionLimitError(err.output)
+      ) {
+        console.error(
+          "\nngrok rejected the tunnel: this account is at its limit of concurrent agent sessions.",
+        );
+        console.error(
+          "Stop another running ngrok agent (see: https://dashboard.ngrok.com/agents) or upgrade the ngrok plan, then re-run this command.",
+        );
+        process.exit(1);
+      }
       if (err instanceof NgrokStartupError && isNgrokAuthError(err.output)) {
         if (authAttempts >= MAX_AUTH_RETRIES) {
           console.error("\nngrok still rejects the tunnel as unauthenticated.");

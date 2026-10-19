@@ -23,6 +23,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
+import { parse } from "yaml";
 import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
@@ -1181,6 +1182,10 @@ describe("tunnel edge targeting", () => {
 describe("ngrok --domain spawn args", () => {
   const originalContainerized = process.env.IS_CONTAINERIZED;
   let lastChild: ChildProcess | null = null;
+  // Stand-in for the user's default ngrok config — where their authtoken
+  // lives — that `ngrok config check` resolves for layered second-agent
+  // spawns.
+  let defaultNgrokConfigPath = "";
 
   const spawnMock = mock(
     (
@@ -1200,7 +1205,12 @@ describe("ngrok --domain spawn args", () => {
       return fake;
     },
   );
-  const execFileSyncMock = mock(() => "ngrok version 3.9.0");
+  const execFileSyncMock = mock(
+    (_cmd: string, args: readonly string[]): string =>
+      args[0] === "config"
+        ? `Valid configuration file at ${defaultNgrokConfigPath}`
+        : "ngrok version 3.9.0",
+  );
 
   beforeAll(() => {
     mock.module("node:child_process", () => ({
@@ -1223,7 +1233,12 @@ describe("ngrok --domain spawn args", () => {
     const configHome = mkdtempSync(join(tmpdir(), "cadet-ngrok-xdg-"));
     tempDirs.push(configHome);
     process.env.XDG_CONFIG_HOME = configHome;
-    mockNgrokApiFetch([{ tunnels: [] }]);
+    defaultNgrokConfigPath = join(configHome, "user-ngrok-default.yml");
+    writeFileSync(
+      defaultNgrokConfigPath,
+      "authtoken: test-token-for-layered-spawn\n",
+    );
+    mockNgrokApiFetch([null]);
   });
 
   afterEach(() => {
@@ -1256,12 +1271,19 @@ describe("ngrok --domain spawn args", () => {
     config: { addr: string };
   }
 
-  /** ngrok local API stub replaying one response per call, last one repeated. */
-  function mockNgrokApiFetch(responses: { tunnels: StubTunnel[] }[]): void {
+  /**
+   * ngrok local API stub replaying one response per call, last one repeated.
+   * A `null` entry means the API is unreachable — no agent on that address —
+   * as opposed to `{ tunnels: [] }`, which is a live agent with no tunnels.
+   */
+  function mockNgrokApiFetch(
+    responses: ({ tunnels: StubTunnel[] } | null)[],
+  ): void {
     let call = 0;
     globalThis.fetch = withPreconnect(async () => {
       const body = responses[Math.min(call, responses.length - 1)];
       call++;
+      if (body === null) throw new Error("connection refused");
       return new Response(JSON.stringify(body), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -1313,7 +1335,7 @@ describe("ngrok --domain spawn args", () => {
     // post-spawn, only the tunnel matching the target port and domain may be
     // saved even with an unrelated-port tunnel listed first.
     mockNgrokApiFetch([
-      { tunnels: [] },
+      null,
       {
         tunnels: [
           unrelatedPortTunnel,
@@ -1508,7 +1530,7 @@ describe("ngrok --domain spawn args", () => {
   test("a spawned automatic tunnel records the assistant it fronts", async () => {
     const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
     mockNgrokApiFetch([
-      { tunnels: [] },
+      null,
       {
         tunnels: [
           {
@@ -1534,89 +1556,113 @@ describe("ngrok --domain spawn args", () => {
     });
   });
 
-  test("maybeStartNgrokTunnel skips when an existing agent tunnels a different port", async () => {
-    const ws = makeWorkspace({
-      telegram: { botUsername: "example_bot" },
-    });
-    // A stale pre-upgrade agent still tunnels the raw gateway port; the edge
-    // port (18080) has no tunnel.
-    mockTunnelListFetch("https://stale.ngrok-free.app", "localhost:7830");
-
-    const warnings: string[] = [];
-    const warnSpy = spyOn(console, "warn").mockImplementation(
-      (...a: unknown[]) => {
-        warnings.push(a.join(" "));
+  test("maybeStartNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
+    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+    // Discovery sees the first agent on the default inspection port, serving
+    // some other tunnel; after the second agent spawns, its own API reports
+    // the new tunnel for the requested port.
+    mockNgrokApiFetch([
+      {
+        tunnels: [
+          {
+            public_url: "https://stale.ngrok-free.app",
+            config: { addr: "localhost:7830" },
+          },
+        ],
       },
+      {
+        tunnels: [
+          {
+            public_url: "https://second.ngrok-free.app",
+            config: { addr: "localhost:18080" },
+          },
+        ],
+      },
+    ]);
+
+    const child = await withLockfileFor("second-agent", () =>
+      realNgrok.maybeStartNgrokTunnel(18080, ws, "second-agent"),
     );
 
-    let child: unknown;
-    try {
-      child = await realNgrok.maybeStartNgrokTunnel(18080, ws);
-    } finally {
-      warnSpy.mockRestore();
-    }
-
-    expect(child).toBeNull();
-    expect(spawnMock).not.toHaveBeenCalled();
-    const combined = warnings.join("\n");
-    expect(combined).toContain("different local port");
-    expect(combined).toContain(
-      "https://stale.ngrok-free.app -> localhost:7830",
+    // Concurrent agents are supported: the second agent spawned instead of
+    // the old skip-and-warn.
+    expect(child).not.toBeNull();
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    const [, args] = spawnMock.mock.calls[0];
+    expect(args).toEqual([
+      "http",
+      "127.0.0.1:18080",
+      "--log=stdout",
+      `--config=${defaultNgrokConfigPath}`,
+      `--config=${realNgrok.ngrokAgentConfigPath()}`,
+    ]);
+    expect(readIngress(ws)).toMatchObject({
+      publicBaseUrl: "https://second.ngrok-free.app",
+      assistantId: "second-agent",
+    });
+    // The second agent's inspection address is recorded so the next run can
+    // rediscover it for adoption.
+    const agentConfig = parse(
+      readFileSync(realNgrok.ngrokAgentConfigPath(), "utf-8"),
     );
-    expect(combined).toContain("not 18080");
-    expect(combined).toContain("cadet tunnel --provider ngrok");
-
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBeUndefined();
+    expect(agentConfig.web_addr).toBe("127.0.0.1:4041");
   });
 
-  test("runNgrokTunnel fails loudly when an existing agent tunnels a different port", async () => {
+  test("runNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
     const ws = makeWorkspace({});
-    mockTunnelListFetch("https://stale.ngrok-free.app", "localhost:7830");
-
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
+    // Discovery sees the stale agent; the poll of the second agent's own API
+    // then reports the tunnel for the requested port.
+    mockNgrokApiFetch([
+      {
+        tunnels: [
+          {
+            public_url: "https://stale.ngrok-free.app",
+            config: { addr: "localhost:7830" },
+          },
+        ],
       },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
+      {
+        tunnels: [
+          {
+            public_url: "https://second.ngrok-free.app",
+            config: { addr: "localhost:18080" },
+          },
+        ],
       },
-    );
+    ]);
 
+    const run = realNgrok.runNgrokTunnel({ port: 18080, workspaceDir: ws });
+    // runNgrokTunnel blocks until the ngrok process exits; pump exit events
+    // until its final exit listener is registered and the promise settles.
+    const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
     try {
-      await expect(
-        realNgrok.runNgrokTunnel({ port: 18080, workspaceDir: ws }),
-      ).rejects.toThrow("exit:1");
+      await run;
     } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
+      clearInterval(pump);
     }
 
-    const combined = errors.join("\n");
-    expect(combined).toContain("different local port");
-    expect(combined).toContain(
-      "https://stale.ngrok-free.app -> localhost:7830",
-    );
-    expect(combined).toContain("not 18080");
-    expect(combined).toContain("Stop the existing ngrok agent");
-    expect(spawnMock).not.toHaveBeenCalled();
+    expect(spawnMock).toHaveBeenCalledTimes(1);
+    const [, args] = spawnMock.mock.calls[0];
+    // Layered config: the user's default (authtoken) under ours (web_addr).
+    expect(args).toEqual([
+      "http",
+      "127.0.0.1:18080",
+      "--log=stdout",
+      `--config=${defaultNgrokConfigPath}`,
+      `--config=${realNgrok.ngrokAgentConfigPath()}`,
+    ]);
 
     const config = IngressTestConfigSchema.parse(
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
-    expect(config.ingress?.publicBaseUrl).toBeUndefined();
+    expect(config.ingress?.publicBaseUrl).toBe("https://second.ngrok-free.app");
   });
 
   test("maybeStartNgrokTunnel passes the saved domain to the spawn args", async () => {
     const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockNgrokApiFetch([
-      { tunnels: [] },
+      null,
       {
         tunnels: [
           unrelatedPortTunnel,
@@ -1653,7 +1699,7 @@ describe("ngrok --domain spawn args", () => {
     const ws = makeWorkspace({});
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockNgrokApiFetch([
-      { tunnels: [] },
+      null,
       {
         tunnels: [
           {

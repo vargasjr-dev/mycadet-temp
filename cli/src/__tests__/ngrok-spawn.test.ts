@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildNgrokSpawnArgs, isNgrokAuthError } from "../lib/tunnels/ngrok.js";
+import {
+  buildNgrokSpawnArgs,
+  isNgrokAuthError,
+  isNgrokSessionLimitError,
+  ngrokAgentConfigPath,
+} from "../lib/tunnels/ngrok.js";
 
 describe("buildNgrokSpawnArgs", () => {
   test("spawns a plain http agent against the loopback edge", () => {
@@ -24,6 +29,36 @@ describe("buildNgrokSpawnArgs", () => {
       "--domain=my-assistant.ngrok.app",
     ]);
   });
+
+  test("a second agent layers the user's default config under ours", () => {
+    // Order is load-bearing: the default config carries the authtoken, ours
+    // wins for web_addr. A bare --config would replace the default and drop
+    // the token.
+    const args = buildNgrokSpawnArgs(7840, "me.ngrok.app", {
+      webAddr: "127.0.0.1:4041",
+      defaultConfigPath: "/users/me/.config/ngrok/ngrok.yml",
+    });
+    expect(args).toEqual([
+      "http",
+      "127.0.0.1:7840",
+      "--log=stdout",
+      "--domain=me.ngrok.app",
+      "--config=/users/me/.config/ngrok/ngrok.yml",
+      `--config=${ngrokAgentConfigPath()}`,
+    ]);
+  });
+
+  test("a second agent without a resolvable default config still sets its inspection address", () => {
+    const args = buildNgrokSpawnArgs(7840, undefined, {
+      webAddr: "127.0.0.1:4041",
+    });
+    expect(args).toEqual([
+      "http",
+      "127.0.0.1:7840",
+      "--log=stdout",
+      `--config=${ngrokAgentConfigPath()}`,
+    ]);
+  });
 });
 
 describe("isNgrokAuthError", () => {
@@ -45,5 +80,14 @@ describe("isNgrokAuthError", () => {
         "creating tunnel session failed: dial tcp 3.219.x.x:443: connection refused",
       ),
     ).toBe(false);
+  });
+
+  test("recognizes the concurrent-agent session limit", () => {
+    expect(
+      isNgrokSessionLimitError(
+        "authentication failed: Your account is limited to 3 simultaneous ngrok agent sessions. ERR_NGROK_108",
+      ),
+    ).toBe(true);
+    expect(isNgrokSessionLimitError("connection refused")).toBe(false);
   });
 });
