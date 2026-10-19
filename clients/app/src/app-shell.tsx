@@ -52,7 +52,7 @@ function AssistantShell({
               type="button"
               onClick={() => select(assistant.id)}
             >
-              {assistant.name || assistant.id}
+              {assistant.name}
             </button>
           ))}
         {!assistantId && selectedId && (

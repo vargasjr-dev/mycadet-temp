@@ -54,7 +54,10 @@ export const AssistantDetailSchema = ResolvedAssistantSchema.extend({
 
 export const AssistantChoiceSchema = z.object({
   id: z.string().min(1),
-  name: z.string().optional(),
+  name: z
+    .string()
+    .nullish()
+    .transform((name) => name?.trim() || "New Assistant"),
 });
 
 export const AssistantResolutionSchema = z.discriminatedUnion("status", [
