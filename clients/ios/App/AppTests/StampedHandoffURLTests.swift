@@ -8,22 +8,22 @@ final class StampedHandoffURLTests: XCTestCase {
             </script></head><body></body></html>
             """
         XCTAssertEqual(
-            SelfHostedServer.parseStampedHandoffURL(html)?.absoluteString,
+            StampedHandoffURL.parse(html)?.absoluteString,
             "https://mycadet.ai/assistant"
         )
     }
 
     func testIsNilWhenTheStampIsAbsentOrGarbage() {
-        XCTAssertNil(SelfHostedServer.parseStampedHandoffURL("<html><head></head></html>"))
-        XCTAssertNil(SelfHostedServer.parseStampedHandoffURL("not html"))
-        XCTAssertNil(SelfHostedServer.parseStampedHandoffURL(""))
+        XCTAssertNil(StampedHandoffURL.parse("<html><head></head></html>"))
+        XCTAssertNil(StampedHandoffURL.parse("not html"))
+        XCTAssertNil(StampedHandoffURL.parse(""))
         XCTAssertNil(
-            SelfHostedServer.parseStampedHandoffURL(
+            StampedHandoffURL.parse(
                 "<script>window.__CADET_CONFIG__=</script>"
             )
         )
         XCTAssertNil(
-            SelfHostedServer.parseStampedHandoffURL(
+            StampedHandoffURL.parse(
                 "<script>window.__CADET_CONFIG__={\"remote\":\"cloud\"}</script>"
             )
         )
@@ -38,6 +38,6 @@ final class StampedHandoffURLTests: XCTestCase {
             {"remote":"custom","handoffUrl":"https://x.example/?a=\u{003C}/script\u{003E}"}\
             </script>
             """
-        XCTAssertNil(SelfHostedServer.parseStampedHandoffURL(html))
+        XCTAssertNil(StampedHandoffURL.parse(html))
     }
 }

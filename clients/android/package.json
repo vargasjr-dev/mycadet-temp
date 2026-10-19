@@ -9,8 +9,8 @@
   "type": "module",
   "description": "Cadet Android Capacitor shell — native Gradle project plus the plugin set its sync wires",
   "scripts": {
-    "dev": "bun run scripts/run-android.ts",
-    "build": "(cd ../app && bun run build:capacitor) && bunx --bun cap sync android"
+    "dev": "bun run scripts/dev.ts",
+    "build": "bun run scripts/build.ts"
   },
   "devDependencies": {
     "@capacitor-community/camera-preview": "8.0.1",

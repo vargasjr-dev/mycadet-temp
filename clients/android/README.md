@@ -563,7 +563,8 @@ clients/
     ├── capacitor.config.ts       # Base config + appId + LocalNotifications + the android block (path: ".")
     ├── package.json              # dev / build scripts
     ├── scripts/
-    │   └── run-android.ts        # Emulator bootstrap + devDebug install + launch
+    │   ├── dev.ts                # Emulator bootstrap + boot-bundle build + devDebug install + launch
+    │   └── build.ts              # Headless boot-bundle build + cap sync (release workflows call this)
     ├── app/
     │   ├── build.gradle          # Product flavors and Capacitor app module
     │   └── src/main/

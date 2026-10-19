@@ -1,4 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
+import { buildAndSyncAndroid } from "./build.ts";
 import {
   accessSync,
   constants,
@@ -22,10 +23,6 @@ const SYSTEM_IMAGE = `system-images;android-${API_LEVEL};${IMAGE_TAG};${IMAGE_AB
 // server the emulator's `server.url` targets runs separately from
 // `clients/web`.
 const androidRoot = resolve(import.meta.dir, "..");
-// The web bundle the sync copies is built from the sibling @mycadet/app
-// package, so the dev flow builds it with the same environment it syncs with
-// (the stamp + allowNavigation must agree).
-const appRoot = resolve(androidRoot, "../app");
 
 function isExecutable(path: string): boolean {
   try {
@@ -67,11 +64,10 @@ function run(
   args: string[],
   env: NodeJS.ProcessEnv,
   input?: string,
-  cwd: string = androidRoot,
 ): void {
   console.log(`\n> ${basename(command)} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
-    cwd,
+    cwd: androidRoot,
     env,
     input,
     stdio: input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
@@ -124,7 +120,9 @@ function commandLineToolInSdk(sdkRoot: string, name: string): string | null {
       candidates.push(join(commandLineRoot, version, "bin", executable));
     }
   }
-  return candidates.find((candidate) => candidate && isExecutable(candidate)) ?? null;
+  return (
+    candidates.find((candidate) => candidate && isExecutable(candidate)) ?? null
+  );
 }
 
 function commandLineTool(sdkRoot: string, name: string): string | null {
@@ -153,7 +151,9 @@ function resolveJavaHome(env: NodeJS.ProcessEnv): string | null {
   }
   const java = findOnPath("java", env.PATH);
   const version = java ? capture(java, ["-version"], env) : null;
-  return version?.includes('version "21.') && java ? dirname(dirname(java)) : null;
+  return version?.includes('version "21.') && java
+    ? dirname(dirname(java))
+    : null;
 }
 
 function ensureJava(env: NodeJS.ProcessEnv): void {
@@ -196,11 +196,7 @@ function ensureCommandLineTools(
   let localAvdmanager = commandLineToolInSdk(sdkRoot, "avdmanager");
   if (!localSdkmanager || !localAvdmanager) {
     console.log("Installing command-line tools into the Android SDK.");
-    run(
-      sdkmanager,
-      [`--sdk_root=${sdkRoot}`, "cmdline-tools;latest"],
-      env,
-    );
+    run(sdkmanager, [`--sdk_root=${sdkRoot}`, "cmdline-tools;latest"], env);
     localSdkmanager = commandLineToolInSdk(sdkRoot, "sdkmanager");
     localAvdmanager = commandLineToolInSdk(sdkRoot, "avdmanager");
   }
@@ -281,10 +277,7 @@ function avdConfigPath(avdName: string, env: NodeJS.ProcessEnv): string {
   return join(avdHome, `${avdName}.avd`, "config.ini");
 }
 
-function enableAvdKeyboard(
-  avdName: string,
-  env: NodeJS.ProcessEnv,
-): boolean {
+function enableAvdKeyboard(avdName: string, env: NodeJS.ProcessEnv): boolean {
   const configPath = avdConfigPath(avdName, env);
   if (!existsSync(configPath)) {
     return false;
@@ -392,15 +385,7 @@ function ensureAvd(sdkRoot: string, env: NodeJS.ProcessEnv): string {
   console.log(`Creating Android emulator ${AVD_NAME}.`);
   run(
     avdmanager,
-    [
-      "create",
-      "avd",
-      "--force",
-      "--name",
-      AVD_NAME,
-      "--package",
-      SYSTEM_IMAGE,
-    ],
+    ["create", "avd", "--force", "--name", AVD_NAME, "--package", SYSTEM_IMAGE],
     env,
     "no\n",
   );
@@ -507,12 +492,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Using Android target ${deviceSerial}.`);
-  run(process.execPath, ["run", "build:capacitor"], env, undefined, appRoot);
-  run(
-    process.execPath,
-    ["x", "--bun", "cap", "sync", "android"],
-    env,
-  );
+  buildAndSyncAndroid(env);
 
   env.ANDROID_SERIAL = deviceSerial;
   run(

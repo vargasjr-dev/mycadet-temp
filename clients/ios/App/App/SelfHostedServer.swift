@@ -92,8 +92,7 @@ enum SelfHostedServer {
     /// `handoffUrl`) into the synced `public/index.html` before `cap sync`
     /// copies it, so the bundled document — not the native config, which no
     /// longer carries a `server.url` — is the build's source of truth for
-    /// the baked default. The payload escapes its `<`s, so splitting at
-    /// `</script>` is safe. `nil` when the bundle or the stamp is unreadable.
+    /// the baked default. `nil` when the bundle or the stamp is unreadable.
     static func stampedHandoffURL(bundle: Bundle = .main) -> URL? {
         guard
             let htmlPath = bundle.path(
@@ -103,29 +102,7 @@ enum SelfHostedServer {
         else {
             return nil
         }
-        return parseStampedHandoffURL(html)
-    }
-
-    /// Pure parser behind `stampedHandoffURL`: extracts the inline
-    /// `window.__CADET_CONFIG__` payload and reads its `handoffUrl`.
-    static func parseStampedHandoffURL(_ html: String) -> URL? {
-        guard
-            let marker = html.range(of: "window.__CADET_CONFIG__="),
-            let end = html[marker.upperBound...].range(of: "</script>")
-        else {
-            return nil
-        }
-        let payload = String(html[marker.upperBound..<end.lowerBound])
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard payload.hasSuffix("}"),
-              let data = payload.data(using: .utf8),
-              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-              let handoff = object["handoffUrl"] as? String,
-              let url = URL(string: handoff)
-        else {
-            return nil
-        }
-        return url
+        return StampedHandoffURL.parse(html)
     }
 
     /// Canonical identity of a server URL, shared with the web chooser's

@@ -387,6 +387,9 @@ targets:
       # real notification, which a host-less bundle has no way to produce.
       - path: App/Shared/AvatarCache.swift
       - path: App/Shared/SenderPayload.swift
+      # The boot-bundle stamp parser: Foundation-only, so the host-less
+      # bundle compiles it directly (StampedHandoffURLTests exercises it).
+      - path: App/Shared/StampedHandoffURL.swift
       - path: App/Shared
         includes:
           - AppGroupID.swift
