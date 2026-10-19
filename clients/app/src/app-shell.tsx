@@ -20,7 +20,7 @@ export interface AppShellProps {
 export function AppShell(props: AppShellProps) {
   return (
     <AppI18nProvider>
-      <AssistantShell {...props} />
+      <AssistantShell key={props.assistantId} {...props} />
     </AppI18nProvider>
   );
 }
@@ -35,11 +35,11 @@ function AssistantShell({
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
-  const [selectedId, select] = useState<string>();
+  const [selectedId, select] = useState<string | undefined>(assistantId);
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     origin,
-    assistantId: assistantId ?? selectedId,
+    assistantId: selectedId,
   });
   if (state.status !== "ready") {
     return (
