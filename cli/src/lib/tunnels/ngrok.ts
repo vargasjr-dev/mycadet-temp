@@ -135,6 +135,20 @@ export function isNgrokEndpointOnlineError(output: string): boolean {
   return /is already online|ERR_NGROK_334/i.test(output);
 }
 
+/**
+ * The endpoint URL ngrok reported as already online, if named in the output
+ * (e.g. the free plan's auto-assigned dev domain).
+ */
+export function ngrokOnlineEndpoint(output: string): string | null {
+  return output.match(/'(https:\/\/[^'\s]+)' is already online/i)?.[1] ?? null;
+}
+
+/** The answer to a stop-the-stale-tunnel confirmation: Enter and y/yes go, anything else stays. */
+export function confirmStopAnswer(answer: string): boolean {
+  const normalized = answer.trim().toLowerCase();
+  return normalized === "" || normalized === "y" || normalized === "yes";
+}
+
 /** An ngrok agent that exited during startup, with its captured output. */
 export class NgrokStartupError extends Error {
   readonly exitCode: number;
@@ -149,6 +163,8 @@ export class NgrokStartupError extends Error {
 
 /** Paste-in attempts before the tunnel command gives up and says how. */
 const MAX_AUTH_RETRIES = 2;
+/** Only one confirm-then-stop round for the endpoint-online collision. */
+const MAX_STALE_STOPS = 1;
 
 /**
  * Run `ngrok config add-authtoken <token>` — writing the user's default
@@ -533,27 +549,31 @@ export function staleTrackedNgrokAgent(
 }
 
 /**
- * Stop the leftover tracked ngrok agent, if any. Returns the stopped record
- * so callers can report it, or null when the spawn should proceed without
- * touching anything (nothing recorded, not ngrok, pid unverifiable, or the
- * stop failed — the fresh agent then surfaces ngrok's own refusal).
+ * Stop the leftover tracked ngrok agent after the user confirmed it. The
+ * caller selects the record (staleTrackedNgrokAgent) and asks first — this
+ * only runs once a yes came back. Returns the record on success, or null
+ * when the stop did not go through (pid unverifiable, or the stop failed —
+ * the fresh agent then surfaces ngrok's own refusal again).
  */
-async function stopStaleTrackedNgrokAgent(
+async function stopConfirmedNgrokAgent(
+  stale: RootProcessRecord,
   assistantId: string | undefined,
   workspaceDir: string | undefined,
 ): Promise<RootProcessRecord | null> {
-  const stale = staleTrackedNgrokAgent(readRootProcesses().tunnel);
-  if (!stale) return null;
   try {
     const stopped = await stopOwnedTunnelAgent(
       { record: stale, assistantId, workspaceDir },
       isNgrokProcess,
       "ngrok",
     );
-    return stopped ? stale : null;
+    if (!stopped) return null;
   } catch {
     return null;
   }
+  // The recorded entry names the agent just stopped; a fresh spawn stamps a
+  // new one.
+  clearRootProcess("tunnel", stale.pid);
+  return stale;
 }
 
 /**
@@ -767,7 +787,7 @@ export async function maybeStartNgrokTunnel(
   const savedDomain = loadNgrokDomain() ?? undefined;
 
   // Reuse an existing tunnel if one is already running
-  let agents = await discoverNgrokAgents();
+  const agents = await discoverNgrokAgents();
   const adoptable = findAdoptableTunnel(agents, targetPort, savedDomain);
   if (adoptable && "conflict" in adoptable) {
     // Spawning a second agent would tunnel the same edge under a different
@@ -790,22 +810,11 @@ export async function maybeStartNgrokTunnel(
     return null;
   }
 
-  // On the free plan a bare agent reuses the account's single assigned dev
-  // domain, so a leftover agent from an earlier run — fronting a stale edge
-  // port — would make the fresh agent fail with ERR_NGROK_334. When the
-  // blocker is one this CLI recorded, stop it and start one fresh agent.
-  if (agents.length > 0) {
-    const stale = await stopStaleTrackedNgrokAgent(assistantId, workspaceDir);
-    if (stale) {
-      console.log(
-        `   Stopped a leftover ngrok agent from an earlier run (pid ${stale.pid}) so this tunnel can claim the ngrok domain.`,
-      );
-      agents = await discoverNgrokAgents();
-    }
-  }
-
   // A live agent that tunnels a different local port is not a blocker: ngrok
-  // supports concurrent agents, so start one more for this edge.
+  // supports concurrent agents, so start one more for this edge. When that
+  // fresh agent is refused because the free plan's single dev domain is
+  // already online, the spawn failure surfaces it — this daemon context has
+  // no user attached to confirm stopping the other agent.
   const secondaryAgent =
     agents.length > 0 ? await planSecondaryAgent(agents) : undefined;
 
@@ -918,7 +927,7 @@ export async function runNgrokTunnel(
   }
 
   // Check for an existing ngrok tunnel pointing at the local edge
-  let agents = await discoverNgrokAgents();
+  const agents = await discoverNgrokAgents();
   const adoptable = findAdoptableTunnel(agents, port, domain);
   if (adoptable && "conflict" in adoptable) {
     console.error(
@@ -956,23 +965,6 @@ export async function runNgrokTunnel(
     return { publicUrl: existingUrl, waitForExit };
   }
 
-  // On the free plan a bare agent reuses the account's single assigned dev
-  // domain, so a leftover agent from an earlier run — fronting a stale edge
-  // port — would make the fresh agent fail with ERR_NGROK_334. When the
-  // blocker is one this CLI recorded, stop it and start one fresh agent.
-  if (agents.length > 0) {
-    const stale = await stopStaleTrackedNgrokAgent(
-      opts.assistantId,
-      workspaceDir,
-    );
-    if (stale) {
-      console.log(
-        `Stopped a leftover ngrok agent from an earlier run (pid ${stale.pid}) so this tunnel can claim the ngrok domain.`,
-      );
-      agents = await discoverNgrokAgents();
-    }
-  }
-
   // A live agent tunneling a different local port is not a blocker: ngrok
   // supports concurrent agents, so start one more for this edge.
   const secondary =
@@ -992,6 +984,8 @@ export async function runNgrokTunnel(
   // whichever attempt is current.
   let currentNgrok: ChildProcess | null = null;
   let authAttempts = 0;
+  // Confirm-and-stop rounds spent on the endpoint-online collision.
+  let staleAttempts = 0;
 
   const cleanup = () => {
     if (currentNgrok && !currentNgrok.killed) {
@@ -1063,12 +1057,52 @@ export async function runNgrokTunnel(
         err instanceof NgrokStartupError &&
         isNgrokEndpointOnlineError(err.output)
       ) {
-        console.error(
-          "\nngrok rejected the tunnel: its endpoint is already online.",
-        );
-        console.error(
-          "The free plan's single ngrok domain is held by another running agent. Stop that agent (its terminal, or `pkill ngrok`) and re-run, pass a different reserved domain with --domain, or upgrade the ngrok plan.",
-        );
+        const endpoint = ngrokOnlineEndpoint(err.output);
+        // The free plan's single dev domain is held by another running
+        // agent. Ask before stopping it — and only stop an agent this CLI
+        // recorded in the lockfile (pid verified); a process we can't
+        // identify is never touched.
+        const stale = staleTrackedNgrokAgent(readRootProcesses().tunnel);
+        const interactive = "isTTY" in process.stdin && process.stdin.isTTY;
+        if (stale && interactive && staleAttempts < MAX_STALE_STOPS) {
+          staleAttempts++;
+          console.error(
+            `\nngrok refused the tunnel: ${endpoint ?? "the ngrok endpoint"} is already online.`,
+          );
+          console.error(
+            `An ngrok agent from an earlier run (pid ${stale.pid}) is holding your free ngrok domain.`,
+          );
+          const answer = await readLineText(
+            "Stop the other ngrok tunnel and start a new one pointing at this installation? [Y/n] ",
+          );
+          if (confirmStopAnswer(answer)) {
+            const stopped = await stopConfirmedNgrokAgent(
+              stale,
+              opts.assistantId,
+              workspaceDir,
+            );
+            if (stopped) {
+              console.log(
+                "Stopped the old ngrok agent. Retrying the tunnel...",
+              );
+              continue;
+            }
+            console.error(
+              `Could not stop the old ngrok agent (pid ${stale.pid}). Stop it yourself and re-run this command.`,
+            );
+          } else {
+            console.error(
+              "Keeping the other ngrok agent. Stop it yourself (its terminal, or `pkill ngrok`) and re-run this command.",
+            );
+          }
+        } else {
+          console.error(
+            `\nngrok rejected the tunnel: ${endpoint ?? "its endpoint"} is already online.`,
+          );
+          console.error(
+            "Your free ngrok domain is held by another running ngrok agent. Stop that agent (its terminal, or `pkill ngrok`) and re-run, pass a different reserved domain with --domain, or upgrade the ngrok plan.",
+          );
+        }
         process.exit(1);
       }
       if (

@@ -2,10 +2,12 @@ import { describe, expect, test } from "bun:test";
 
 import {
   buildNgrokSpawnArgs,
+  confirmStopAnswer,
   isNgrokAuthError,
   isNgrokEndpointOnlineError,
   isNgrokSessionLimitError,
   ngrokAgentConfigPath,
+  ngrokOnlineEndpoint,
   staleTrackedNgrokAgent,
 } from "../lib/tunnels/ngrok.js";
 
@@ -109,6 +111,36 @@ describe("isNgrokEndpointOnlineError", () => {
         "creating tunnel session failed: dial tcp 3.219.x.x:443: connection refused",
       ),
     ).toBe(false);
+  });
+});
+
+describe("ngrokOnlineEndpoint", () => {
+  test("extracts the endpoint the incident refused", () => {
+    expect(
+      ngrokOnlineEndpoint(
+        "failed to start tunnel: The endpoint 'https://camping-trustful-fog.ngrok-free.dev' is already online.",
+      ),
+    ).toBe("https://camping-trustful-fog.ngrok-free.dev");
+  });
+
+  test("no endpoint named, no extraction", () => {
+    expect(
+      ngrokOnlineEndpoint("creating tunnel session failed: connection refused"),
+    ).toBeNull();
+  });
+});
+
+describe("confirmStopAnswer", () => {
+  test("Enter and y/yes confirm the stop", () => {
+    expect(confirmStopAnswer("")).toBe(true);
+    expect(confirmStopAnswer("y")).toBe(true);
+    expect(confirmStopAnswer("  YES\n")).toBe(true);
+  });
+
+  test("anything else declines", () => {
+    expect(confirmStopAnswer("n")).toBe(false);
+    expect(confirmStopAnswer("no")).toBe(false);
+    expect(confirmStopAnswer("wait")).toBe(false);
   });
 });
 
