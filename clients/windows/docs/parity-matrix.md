@@ -14,14 +14,13 @@ that exercises the Windows behavior.
 
 ## Notification sender parity
 
-Under `push-avatar-sender`, Windows consumes the same optional exact sender
-payload as macOS through the shared Electron notification module. The native
+Windows consumes the same optional exact sender payload as macOS through the
+shared Electron notification module. The native
 helper stages the verified avatar for the toast app-logo slot, promotes the
 assistant name to the title, and uses the conversation title as the subtitle.
 Actions, tap identifiers, and delivery acknowledgments keep their existing
 owners. If the sender is absent or malformed, the plain route receives no
-sender decoration. `local-notification-avatar` does not select the Windows
-helper route, and the macOS grant-time sender confirmation has no Windows
+sender decoration. The macOS grant-time sender confirmation has no Windows
 counterpart.
 
 The packaged Windows result remains `NOT RUN`. Its required cases and rollout

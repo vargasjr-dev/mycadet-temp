@@ -1,7 +1,7 @@
 /**
  * Scoped preparation runs across browser, Capacitor, Electron, and popouts
  * when either sender flag needs it. The legacy singleton remains exclusive to
- * the main Electron window with `push-avatar-sender` enabled.
+ * the main Electron window.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
@@ -147,19 +147,11 @@ beforeEach(() => {
   rasterizeNotificationAvatar.mockClear();
   installSenderNotificationIdentityAdapter.mockClear();
   __clearNotificationIdentitySnapshotsForTests();
-  useClientFeatureFlagStore.setState({
-    pushAvatarSender: true,
-    localNotificationAvatar: false,
-  });
 });
 
 afterEach(() => {
   cleanup();
   __clearNotificationIdentitySnapshotsForTests();
-  useClientFeatureFlagStore.setState({
-    pushAvatarSender: false,
-    localNotificationAvatar: false,
-  });
 });
 
 describe("useNotificationAvatarSync", () => {
@@ -184,12 +176,8 @@ describe("useNotificationAvatarSync", () => {
     });
   });
 
-  test("connects the iOS identity adapter only while local avatars are enabled", async () => {
+  test("connects the iOS identity adapter", async () => {
     electronHost = false;
-    useClientFeatureFlagStore.setState({
-      pushAvatarSender: false,
-      localNotificationAvatar: true,
-    });
 
     render();
 
@@ -198,7 +186,7 @@ describe("useNotificationAvatarSync", () => {
     });
   });
 
-  test("holds the composited avatar, its hash and its assistant on Electron with the flag on", async () => {
+  test("holds the composited avatar, its hash and its assistant on Electron", async () => {
     render();
 
     await waitFor(() => {
@@ -238,33 +226,7 @@ describe("useNotificationAvatarSync", () => {
     expect(getNotificationAvatar()).toBeNull();
   });
 
-  test("does no canvas work and holds nothing with the flag off", async () => {
-    useClientFeatureFlagStore.setState({ pushAvatarSender: false });
 
-    render();
-
-    await waitFor(() => {
-      expect(rasterizeNotificationAvatar).not.toHaveBeenCalled();
-    });
-    expect(installSenderNotificationIdentityAdapter).not.toHaveBeenCalled();
-    expect(getNotificationAvatar()).toBeNull();
-  });
-
-  test("takes back a held avatar when the flag turns off", async () => {
-    const { rerender } = render();
-    await waitFor(() => {
-      expect(getNotificationAvatar()).not.toBeNull();
-    });
-
-    act(() => {
-      useClientFeatureFlagStore.setState({ pushAvatarSender: false });
-    });
-    rerender();
-
-    await waitFor(() => {
-      expect(getNotificationAvatar()).toBeNull();
-    });
-  });
 
   test("empties the holder when the hook goes away", async () => {
     const { unmount } = render();
@@ -597,51 +559,10 @@ describe("useNotificationAvatarSync", () => {
 });
 
 describe("scoped notification identity preparation", () => {
-  test("prepares for every enabled flag combination and stays cold when both are off", async () => {
+  test("prepares the scoped identity outside the Electron singleton", async () => {
     electronHost = false;
-    const cases = [
-      { pushAvatarSender: false, localNotificationAvatar: false, runs: false },
-      { pushAvatarSender: true, localNotificationAvatar: false, runs: true },
-      { pushAvatarSender: false, localNotificationAvatar: true, runs: true },
-      { pushAvatarSender: true, localNotificationAvatar: true, runs: true },
-    ];
-
-    for (const flags of cases) {
-      __clearNotificationIdentitySnapshotsForTests();
-      rasterizeNotificationAvatar.mockClear();
-      useClientFeatureFlagStore.setState(flags);
-      const view = renderHook(() =>
-        useNotificationAvatarSync(
-          ASSISTANT_ID,
-          IMAGE_URL,
-          IMAGE_META,
-          null,
-          null,
-          ACCENT,
-          preparedOptions(),
-        ),
-      );
-
-      if (flags.runs) {
-        await waitFor(() => {
-          expect(
-            getNotificationIdentitySnapshot(preparedIdentity())?.avatar,
-          ).toBeDefined();
-        });
-      } else {
-        await act(async () => {});
-        expect(rasterizeNotificationAvatar).not.toHaveBeenCalled();
-        expect(getNotificationIdentitySnapshot(preparedIdentity())).toBeNull();
-      }
-      view.unmount();
-    }
-  });
-
-  test("local-only preparation does not populate the Electron singleton", async () => {
-    useClientFeatureFlagStore.setState({
-      pushAvatarSender: false,
-      localNotificationAvatar: true,
-    });
+    __clearNotificationIdentitySnapshotsForTests();
+    rasterizeNotificationAvatar.mockClear();
     renderHook(() =>
       useNotificationAvatarSync(
         ASSISTANT_ID,
@@ -662,12 +583,9 @@ describe("scoped notification identity preparation", () => {
     expect(getNotificationAvatar()).toBeNull();
   });
 
+
   test("publishes the exact name during startup before avatar data is ready", async () => {
     electronHost = false;
-    useClientFeatureFlagStore.setState({
-      pushAvatarSender: false,
-      localNotificationAvatar: true,
-    });
     const { rerender } = renderHook(
       ({ url, ready }: { url: string | null; ready: boolean }) =>
         useNotificationAvatarSync(
@@ -932,10 +850,6 @@ describe("scoped notification identity preparation", () => {
 
   test("logout during preparation resets native memory and rejects late bytes", async () => {
     electronHost = false;
-    useClientFeatureFlagStore.setState({
-      pushAvatarSender: false,
-      localNotificationAvatar: true,
-    });
     let releaseRasterize = () => {};
     rasterizeGate = new Promise<void>((resolve) => {
       releaseRasterize = resolve;
@@ -1138,36 +1052,6 @@ describe("scoped notification identity preparation", () => {
     );
   });
 
-  test("disabling both flags clears a prepared identity", async () => {
-    const { rerender } = renderHook(() => {
-      useNotificationAvatarSync(
-        ASSISTANT_ID,
-        IMAGE_URL,
-        IMAGE_META,
-        null,
-        null,
-        ACCENT,
-        preparedOptions(),
-      );
-    });
-    await waitFor(() => {
-      expect(
-        getNotificationIdentitySnapshot(preparedIdentity()),
-      ).not.toBeNull();
-    });
-
-    act(() => {
-      useClientFeatureFlagStore.setState({
-        pushAvatarSender: false,
-        localNotificationAvatar: false,
-      });
-    });
-    rerender();
-
-    await waitFor(() => {
-      expect(getNotificationIdentitySnapshot(preparedIdentity())).toBeNull();
-    });
-  });
 
   test("uses account/org isolation and preserves an explicit platform sender id", async () => {
     const accountScope: NotificationAvatarScope = {

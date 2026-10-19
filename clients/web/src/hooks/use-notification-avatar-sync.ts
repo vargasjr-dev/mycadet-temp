@@ -21,7 +21,6 @@ import {
 } from "@/runtime/notification-avatar";
 import { isPopoutWindowLifetime } from "@/runtime/popout-window";
 import { installSenderNotificationIdentityAdapter } from "@/runtime/sender-notification";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import type {
   AvatarImageMeta,
   CharacterComponents,
@@ -92,12 +91,8 @@ export function useNotificationAvatarSync(
   accentHex: string | null,
   options?: NotificationAvatarSyncOptions,
 ): void {
-  const pushAvatarSender = useClientFeatureFlagStore.use.pushAvatarSender();
-  const localNotificationAvatar =
-    useClientFeatureFlagStore.use.localNotificationAvatar();
-  const prepareEnabled = pushAvatarSender || localNotificationAvatar;
-  const legacyEnabled =
-    pushAvatarSender && isElectron() && !isPopoutWindowLifetime();
+  const prepareEnabled = true;
+  const legacyEnabled = isElectron() && !isPopoutWindowLifetime();
   const scopeId = options
     ? options.scopeId
     : resolveNotificationIdentityScope({
@@ -187,10 +182,8 @@ export function useNotificationAvatarSync(
   const [redraws, setRedraws] = useState(0);
 
   useEffect(() => {
-    if (localNotificationAvatar) {
-      installSenderNotificationIdentityAdapter();
-    }
-  }, [localNotificationAvatar]);
+    installSenderNotificationIdentityAdapter();
+  }, []);
 
   useEffect(
     () => () => {

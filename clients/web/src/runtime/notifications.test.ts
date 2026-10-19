@@ -327,10 +327,6 @@ beforeEach(() => {
     },
   );
   __clearNotificationIdentitySnapshotsForTests();
-  useClientFeatureFlagStore.setState({
-    pushAvatarSender: false,
-    localNotificationAvatar: false,
-  });
   __resetNotificationsStateForTests();
   delete (window as unknown as { cadet?: unknown }).cadet;
   setVisibility("visible");
@@ -354,16 +350,16 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
     ]);
   });
 
-  test("visible app schedules the local banner (the only foreground surface)", async () => {
+  test("visible app posts the banner through the native owner", async () => {
     sessionConfirmedAssistantId = "assistant-1";
     setVisibility("visible");
 
     await postLocalNotification({ ...baseArgs, remotePushDispatched: true });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
-    expect(scheduleMock.mock.calls[0]?.[0].notifications[0]?.channelId).toBe(
-      undefined,
-    );
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
+    expect(
+      postSenderNotificationMock.mock.calls[0]?.[0].presentation,
+    ).toBe("app");
     expect(ackArgs).toEqual([
       {
         path: { assistant_id: "assistant-1" },
@@ -388,7 +384,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
     setVisibility("hidden");
     await pending;
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
   });
 
   test("explicit empty platforms override legacy APNs acceptance", async () => {
@@ -401,7 +397,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
       remotePushPlatforms: [],
     });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
   });
 
   test("dispatched but no active registration (e.g. permission denied): schedules", async () => {
@@ -409,7 +405,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
 
     await postLocalNotification({ ...baseArgs, remotePushDispatched: true });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
   });
 
   test("dispatched but registration belongs to a different assistant: schedules", async () => {
@@ -418,10 +414,10 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
 
     await postLocalNotification({ ...baseArgs, remotePushDispatched: true });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
   });
 
-  test("no assistantId: schedules even when hidden and dispatched, no ack", async () => {
+  test("no assistantId: posts even when hidden and dispatched, no ack", async () => {
     sessionConfirmedAssistantId = "assistant-1";
     setVisibility("hidden");
 
@@ -431,7 +427,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
       remotePushDispatched: true,
     });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(1);
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
     expect(ackMock).not.toHaveBeenCalled();
   });
 
@@ -652,9 +648,9 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
         },
       ],
     });
-    expect(scheduleMock.mock.calls[0]?.[0].notifications[0]?.actionTypeId).toBe(
-      NOTIFICATION_INTENT_ACTION_TYPE_ID,
-    );
+    expect(
+      postSenderNotificationMock.mock.calls[0]?.[0].actionTypeId,
+    ).toBe(NOTIFICATION_INTENT_ACTION_TYPE_ID);
   });
 
   test("registers the action type even when the banner has no conversation", async () => {
@@ -662,7 +658,7 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
 
     expect(registerActionTypesMock).toHaveBeenCalledTimes(1);
     expect(
-      scheduleMock.mock.calls[0]?.[0].notifications[0]?.actionTypeId,
+      postSenderNotificationMock.mock.calls[0]?.[0].actionTypeId,
     ).toBeUndefined();
   });
 });
@@ -701,7 +697,6 @@ describe("postLocalNotification scoped presentation policy", () => {
 
   beforeEach(() => {
     showMock.mockClear();
-    useClientFeatureFlagStore.setState({ pushAvatarSender: true });
     (window as unknown as { cadet?: unknown }).cadet = {
       platform: "electron",
       notifications: { show: showMock },
@@ -903,48 +898,11 @@ describe("postLocalNotification scoped presentation policy", () => {
     }
   });
 
-  test("uses push-avatar-sender only for Electron across all flag combinations", async () => {
-    const identity = testIdentity();
-    prepareIdentity(identity, "Verified Name");
-    const combinations = [
-      { pushAvatarSender: false, localNotificationAvatar: false },
-      { pushAvatarSender: true, localNotificationAvatar: false },
-      { pushAvatarSender: false, localNotificationAvatar: true },
-      { pushAvatarSender: true, localNotificationAvatar: true },
-    ];
 
-    for (const combination of combinations) {
-      useClientFeatureFlagStore.setState(combination);
-      await postLocalNotification({
-        ...baseArgs,
-        deliveryId: `delivery-${combination.pushAvatarSender}-${combination.localNotificationAvatar}`,
-        identity,
-        assistantName: "Event Name",
-      });
-    }
-
-    expect(
-      showMock.mock.calls.map(([payload]) => payload.presentation),
-    ).toEqual(["app", "assistant", "app", "assistant"]);
-    expect(
-      showMock.mock.calls.map(([payload]) => Boolean(payload.sender)),
-    ).toEqual([false, true, false, true]);
-  });
-
-  test("keeps a legacy flag-off Electron call shape compatible", async () => {
-    useClientFeatureFlagStore.setState({ pushAvatarSender: false });
-
-    await postLocalNotification(baseArgs);
-
-    const payload = showMock.mock.calls[0]?.[0] ?? {};
-    expect("identity" in payload).toBe(false);
-    expect("presentation" in payload).toBe(false);
-    expect("sender" in payload).toBe(false);
-  });
 });
 
 describe("postLocalNotification local-surface presentation flags", () => {
-  test("uses the iOS owner only with local-notification-avatar across all flag combinations", async () => {
+  test("uses the negotiated iOS owner for a prepared identity", async () => {
     const identity = testIdentity();
     const publication = beginNotificationIdentityPublication(identity);
     publishPreparedNotificationIdentity(publication, {
@@ -955,30 +913,16 @@ describe("postLocalNotification local-surface presentation flags", () => {
         avatarHash: "f".repeat(64),
       },
     });
-    const combinations = [
-      { pushAvatarSender: false, localNotificationAvatar: false },
-      { pushAvatarSender: true, localNotificationAvatar: false },
-      { pushAvatarSender: false, localNotificationAvatar: true },
-      { pushAvatarSender: true, localNotificationAvatar: true },
-    ];
 
-    for (const combination of combinations) {
-      useClientFeatureFlagStore.setState(combination);
-      await postLocalNotification({
-        ...baseArgs,
-        deliveryId: `delivery-native-${combination.pushAvatarSender}-${combination.localNotificationAvatar}`,
-        identity,
-        assistantName: "Event Name",
-      });
-    }
+    await postLocalNotification({
+      ...baseArgs,
+      deliveryId: "delivery-native-ios",
+      identity,
+      assistantName: "Event Name",
+    });
 
-    expect(scheduleMock).toHaveBeenCalledTimes(2);
-    expect(
-      scheduleMock.mock.calls.map(
-        ([request]) => request.notifications[0]?.extra?.presentation,
-      ),
-    ).toEqual(["app", "app"]);
-    expect(postSenderNotificationMock).toHaveBeenCalledTimes(2);
+    expect(scheduleMock).not.toHaveBeenCalled();
+    expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
     for (const [request] of postSenderNotificationMock.mock.calls) {
       expect(request).toMatchObject({
         presentation: "assistant",
@@ -994,7 +938,7 @@ describe("postLocalNotification local-surface presentation flags", () => {
     }
   });
 
-  test("uses the negotiated Android owner across all flag combinations", async () => {
+  test("uses the negotiated Android owner for a prepared identity", async () => {
     nativeAndroid = true;
     androidNotificationOwnership = true;
     const identity = testIdentity();
@@ -1007,30 +951,21 @@ describe("postLocalNotification local-surface presentation flags", () => {
         avatarHash: "a".repeat(64),
       },
     });
-    const combinations = [
-      { pushAvatarSender: false, localNotificationAvatar: false },
-      { pushAvatarSender: true, localNotificationAvatar: false },
-      { pushAvatarSender: false, localNotificationAvatar: true },
-      { pushAvatarSender: true, localNotificationAvatar: true },
-    ];
 
-    for (const combination of combinations) {
-      useClientFeatureFlagStore.setState(combination);
-      await postLocalNotification({
-        ...baseArgs,
-        deliveryId: `delivery-${combination.pushAvatarSender}-${combination.localNotificationAvatar}`,
-        identity,
-        assistantName: "Event Name",
-      });
-    }
+    await postLocalNotification({
+      ...baseArgs,
+      deliveryId: "delivery-native-android",
+      identity,
+      assistantName: "Event Name",
+    });
 
-    expect(scheduleMock).not.toHaveBeenCalled();
-    expect(postAndroidSenderNotificationMock).toHaveBeenCalledTimes(4);
+    expect(postAndroidSenderNotificationMock).toHaveBeenCalledTimes(1);
     expect(
-      postAndroidSenderNotificationMock.mock.calls.map(
-        ([request]) => request.presentation,
-      ),
-    ).toEqual(["app", "app", "assistant", "assistant"]);
+      postAndroidSenderNotificationMock.mock.calls[0]?.[0],
+    ).toMatchObject({
+      presentation: "assistant",
+      identity,
+    });
   });
 });
 
@@ -1042,7 +977,6 @@ describe("postLocalNotification Android coordinator owner", () => {
 
   test("preserves full delivery and tap metadata while trimming only the coordinator key", async () => {
     const identity = testIdentity();
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     const disposition = await postLocalNotification({
       ...baseArgs,
@@ -1078,7 +1012,6 @@ describe("postLocalNotification Android coordinator owner", () => {
 
   test("lets native prepared memory supply an avatar missing from the renderer", async () => {
     const identity = testIdentity();
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     await postLocalNotification({
       ...baseArgs,
@@ -1219,7 +1152,6 @@ describe("postLocalNotification Android coordinator owner", () => {
 
   test("foreground FCM preserves scoped tap identity and deep-link metadata", async () => {
     const identity = testIdentity();
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     postForegroundRemotePush({
       id: "message-1",
@@ -1404,13 +1336,6 @@ describe("postLocalNotification iOS sender owner", () => {
     avatarBase64: "iVBORw==",
     avatarHash: "e".repeat(64),
   };
-
-  beforeEach(() => {
-    useClientFeatureFlagStore.setState({
-      pushAvatarSender: false,
-      localNotificationAvatar: true,
-    });
-  });
 
   test("submits the complete notification and tap identity to the native owner", async () => {
     const identity = testIdentity();
@@ -1612,39 +1537,20 @@ describe("postLocalNotification browser avatar icons", () => {
     nativePlatform = false;
   });
 
-  test("uses only local-notification-avatar across all flag combinations", async () => {
+  test("rides the prepared avatar into the browser notification", async () => {
     const identity = testIdentity();
     prepareIdentity(identity);
-    const combinations = [
-      { pushAvatarSender: false, localNotificationAvatar: false },
-      { pushAvatarSender: true, localNotificationAvatar: false },
-      { pushAvatarSender: false, localNotificationAvatar: true },
-      { pushAvatarSender: true, localNotificationAvatar: true },
-    ];
 
     await withBrowserNotificationMock(async (calls) => {
-      for (const combination of combinations) {
-        useClientFeatureFlagStore.setState(combination);
-        await postLocalNotification({
-          ...baseArgs,
-          deliveryId: `delivery-browser-${combination.pushAvatarSender}-${combination.localNotificationAvatar}`,
-          identity,
-          assistantName: "Assistant",
-        });
-      }
+      await postLocalNotification({
+        ...baseArgs,
+        deliveryId: "delivery-browser",
+        identity,
+        assistantName: "Assistant",
+      });
 
-      expect(calls.map(({ options }) => options?.icon)).toEqual([
-        undefined,
-        undefined,
-        icon,
-        icon,
-      ]);
-      expect(calls.map(({ title }) => title)).toEqual([
-        "Reminder",
-        "Reminder",
-        "Reminder",
-        "Reminder",
-      ]);
+      expect(calls.map(({ options }) => options?.icon)).toEqual([icon]);
+      expect(calls.map(({ title }) => title)).toEqual(["Reminder"]);
     });
   });
 
@@ -1656,7 +1562,6 @@ describe("postLocalNotification browser avatar icons", () => {
       "123e4567-e89b-12d3-a456-426614174002",
     );
     prepareIdentity(second);
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     await withBrowserNotificationMock(async (calls) => {
       await postLocalNotification({
@@ -1683,7 +1588,6 @@ describe("postLocalNotification browser avatar icons", () => {
   test("preserves plain browser options when the exact identity has no avatar", async () => {
     const identity = testIdentity();
     prepareIdentity(identity, false);
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     await withBrowserNotificationMock(async (calls) => {
       await postLocalNotification({
@@ -1709,7 +1613,6 @@ describe("postLocalNotification browser avatar icons", () => {
   test("retries once without the icon after synchronous constructor rejection", async () => {
     const identity = testIdentity();
     prepareIdentity(identity);
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     await withBrowserNotificationMock(
       async (calls, instances) => {
@@ -1743,7 +1646,6 @@ describe("postLocalNotification browser avatar icons", () => {
   test("supplies the same verified icon across notification pipeline events", async () => {
     const identity = testIdentity();
     prepareIdentity(identity);
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
 
     await withBrowserNotificationMock(async (calls) => {
       for (const sourceEventName of [
@@ -1993,7 +1895,6 @@ describe("notification tap listener adapters", () => {
         avatarHash: "d".repeat(64),
       },
     });
-    useClientFeatureFlagStore.setState({ localNotificationAvatar: true });
     const received: NotificationTapPayload[] = [];
     const createdNotifications: Array<{
       onclick: (() => void) | null;

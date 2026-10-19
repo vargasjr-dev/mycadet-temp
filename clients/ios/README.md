@@ -747,8 +747,8 @@ IDs carried the capability too.
 The app has two native notification routes with different owners. APNs invokes
 the `NotificationService` extension, which may rewrite the remote push before
 its one-shot content handler returns. App-originated notifications do not pass
-through that extension. Under `local-notification-avatar`, the app-local
-`SenderNotificationPlugin` owns them after a versioned capability check. An
+through that extension. The app-local `SenderNotificationPlugin` owns them
+after a versioned capability check. An
 exact prepared scope, assistant, and native sender identity match gates the
 sender rewrite, not native ownership. Missing or stale prepared identity makes
 the same native owner submit plain content.
@@ -762,9 +762,8 @@ restart clears those results. Validated PNG bytes may remain in the existing
 App Group cache, but the cache does not establish identity or delivery
 ownership.
 
-`push-avatar-sender` independently controls whether the cloud gives the APNs
-route sender metadata. `local-notification-avatar` controls the app-local route.
-Both default off. The signed-device cases and current rollout status are in the
+The cloud gives the APNs route sender metadata. The signed-device cases and
+current rollout status are in the
 [notification avatar and local delivery QA ledger](../../docs/notification-avatar-local-qa.md).
 
 #### The push payload the extension reads

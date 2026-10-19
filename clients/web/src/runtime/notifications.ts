@@ -75,7 +75,6 @@ import {
   postSenderNotification,
 } from "@/runtime/sender-notification";
 import { isClientAttended } from "@/runtime/window-attention";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { isConversationChatPath } from "@/utils/routes";
 
@@ -694,7 +693,6 @@ type SenderPayload = Pick<
 
 function resolveSenderAtIntent(
   args: PostLocalNotificationArgs,
-  electronHost: boolean,
 ): NotificationSenderResolution | null {
   if (
     !args.identity ||
@@ -703,12 +701,8 @@ function resolveSenderAtIntent(
   ) {
     return null;
   }
-  const flags = useClientFeatureFlagStore.getState();
-  const presentationEnabled = electronHost
-    ? flags.pushAvatarSender
-    : flags.localNotificationAvatar;
   return resolveNotificationSender({
-    presentation: presentationEnabled ? "assistant" : "app",
+    presentation: "assistant",
     identity: args.identity,
     assistantName: args.assistantName,
     identityStoreName: args.identityStoreName,
@@ -758,7 +752,17 @@ export async function postLocalNotification(
   args: PostLocalNotificationArgs,
 ): Promise<NotificationSoundDisposition> {
   const electronHost = isElectron();
-  const senderResolution = resolveSenderAtIntent(args, electronHost);
+  const senderResolution = resolveSenderAtIntent(args);
+  console.log(
+    "PROBE postLocalNotification: electron=",
+    electronHost,
+    "native=",
+    isNativePlatform(),
+    "supported=",
+    isNotificationsSupported(),
+    "attended=",
+    browserNotificationDelivery.isConversationAttended(null),
+  );
   const presentationPayload = senderPayload(senderResolution);
   const { sender: _sender, ...tapPresentationPayload } = presentationPayload;
   const browserHost = !electronHost && !isNativePlatform();
@@ -923,9 +927,7 @@ export async function postLocalNotification(
     };
     try {
       const legacyCorrelationId = correlationId ?? normalizedDeliveryId;
-      const useIOSNativeOwner =
-        isNativeIOS() &&
-        useClientFeatureFlagStore.getState().localNotificationAvatar;
+      const useIOSNativeOwner = isNativeIOS();
       if (isNativeAndroid()) {
         const nativeResult = await postAndroidSenderNotification({
           correlationId,

@@ -1148,9 +1148,8 @@ export function __clearNotificationIdentitySnapshotsForTests(): void {
  * Nothing here reaches the host; `runtime/notifications.ts` attaches what is
  * held to the IPC payload it is already sending.
  *
- * Empty is the ordinary state. Off Electron, with `push-avatar-sender` off, or
- * for an assistant with no avatar, nothing is stored and notifications keep
- * their app-icon look.
+ * Empty is the ordinary state. Off Electron, or for an assistant with no
+ * avatar, nothing is stored and notifications keep their app-icon look.
  */
 export interface NotificationAvatar {
   /**

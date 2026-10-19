@@ -1,44 +1,20 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useState } from "react";
 
 import { Disclosure } from "@mycadet/design-library/components/disclosure";
-import { Select } from "@mycadet/design-library/components/select";
 import { Input, Textarea } from "@mycadet/design-library/components/input";
 import { Toggle } from "@mycadet/design-library/components/toggle";
 import { Typography } from "@mycadet/design-library/components/typography";
 
-import { PROVIDER_DISPLAY_NAMES } from "@/assistant/llm-model-catalog";
-import { OPENAI_COMPATIBLE_PROVIDER } from "@/domains/settings/ai/constants";
 import { ProfileAdvancedParams } from "@/domains/settings/ai/profile-advanced-params";
 import { ProfileCreateModelFirst } from "@/domains/settings/ai/profile-create-model-first";
 import { ProfileEditorProviderSection } from "@/domains/settings/ai/profile-editor-provider-section";
 import { ProfileModalitiesSection } from "@/domains/settings/ai/profile-modalities-section";
 import { profileUsesFreeTextModel } from "@/domains/settings/ai/profile-modalities";
-import {
-  entryPickerValue,
-  expandEndpointEntries,
-  parseEntryPickerValue,
-  providersServedByConnections,
-  unconnectedProviders,
-} from "@/domains/settings/ai/provider-availability";
-import {
-  PickerMeta,
-  useProviderPickerAvailability,
-} from "@/domains/settings/ai/provider-picker-availability";
-import { ProviderCreateForm } from "@/domains/settings/ai/provider-create-form";
-import { connectionAuthTypeForProvider } from "@/domains/settings/ai/provider-editor-constants";
-import { useModelFirstProfileCreate } from "@/domains/settings/ai/use-model-first-profile-create-flag";
 import type { ProfileEditor } from "@/domains/settings/ai/use-profile-editor";
-import type {
-  ConnectionProvider,
-  ProviderConnection,
-} from "@/generated/daemon/types.gen";
 import { useTranslation, Trans } from "@/i18n";
+import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import { useSupportsProfileInputModalities } from "@/lib/backwards-compat/profile-input-modalities";
 
-// Sentinel value for the "+ Create new provider" option in the create-mode
-// Provider dropdown. Picking it mounts the inline ProviderCreateForm instead
-// of selecting a provider.
-const CREATE_NEW_PROVIDER_SENTINEL = "__create_new_provider__";
 
 export interface ProfileEditorFieldsProps {
   editor: ProfileEditor;
@@ -82,8 +58,6 @@ export function ProfileEditorFields({
   menuBoundary,
 }: ProfileEditorFieldsProps) {
   const { t } = useTranslation("settings");
-  const providerAvailability = useProviderPickerAvailability();
-  const modelFirstCreate = useModelFirstProfileCreate();
   const isCreate = editor.effectiveMode === "create";
   const flat = variant === "panel";
   const supportsInputModalities = useSupportsProfileInputModalities();
@@ -217,192 +191,6 @@ export function ProfileEditorFields({
     </Typography>
   ) : null;
 
-  // ---- Create-mode: provider-first picker with inline create ----
-
-  // Providers with no connection yet. Listed after the connected entries so a
-  // ready-to-use provider is never buried, and routed into the inline create
-  // form on selection.
-  const providersNeedingSetup = useMemo(
-    () => unconnectedProviders(editor.effectiveConnections),
-    [editor.effectiveConnections],
-  );
-
-  // Every provider the catalog knows, connected ones first, then the rest
-  // annotated with what they still need, then the always-present "+ Create new
-  // provider" sentinel for custom endpoints. A provider this assistant cannot
-  // reach keeps its row, disabled and annotated with why.
-  const createModeProviderOptions = useMemo(() => {
-    const opts: {
-      value: string;
-      label: string;
-      suffix?: ReactNode;
-      sticky?: boolean;
-      disabled?: boolean;
-      tooltip?: ReactNode;
-    }[] = expandEndpointEntries(
-      providersServedByConnections(editor.effectiveConnections),
-      editor.effectiveConnections,
-      (p) => PROVIDER_DISPLAY_NAMES[p] ?? p,
-      t("aiProviderPicker.defaultEntryMeta"),
-    ).map(({ value, label, meta }) => ({
-      value,
-      label,
-      suffix: meta ? <PickerMeta text={meta} /> : undefined,
-      ...providerAvailability(value),
-    }));
-    for (const unconnected of providersNeedingSetup) {
-      const meta =
-        connectionAuthTypeForProvider(unconnected) === "api_key"
-          ? t("profileEditorFields.addApiKey")
-          : t("profileEditorFields.setUp");
-      opts.push({
-        value: unconnected,
-        label: PROVIDER_DISPLAY_NAMES[unconnected] ?? unconnected,
-        suffix: <PickerMeta text={meta} />,
-        ...providerAvailability(unconnected),
-      });
-    }
-    opts.push({
-      value: CREATE_NEW_PROVIDER_SENTINEL,
-      label: t("profileEditorFields.createNewProvider"),
-      // The catalog grows past the menu's height, so the escape hatch is
-      // pinned rather than left at the end of a scroll.
-      sticky: true,
-    });
-    return opts;
-  }, [
-    editor.effectiveConnections,
-    providerAvailability,
-    providersNeedingSetup,
-    t,
-  ]);
-
-  const createProviderSection = (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <label
-          id="profile-editor-provider-label"
-          className="block text-body-small-default text-[var(--content-tertiary)]"
-        >
-          {t("profileEditorFields.providerLabel")}
-        </label>
-        <Select
-          value={
-            editor.creatingProvider
-              ? (editor.pendingCreateProvider ?? CREATE_NEW_PROVIDER_SENTINEL)
-              : editor.provider &&
-                  editor.providerConnection &&
-                  createModeProviderOptions.some(
-                    (option) =>
-                      option.value ===
-                      entryPickerValue(
-                        editor.provider,
-                        editor.providerConnection,
-                      ),
-                  )
-                ? entryPickerValue(editor.provider, editor.providerConnection)
-                : editor.provider
-          }
-          onChange={(next) => {
-            if (next === CREATE_NEW_PROVIDER_SENTINEL) {
-              editor.setCreatingProvider(true);
-              editor.setPendingCreateProvider(null);
-              editor.setNewProviderNote(false);
-              return;
-            }
-            if (!next) {
-              return;
-            }
-            const entry = parseEntryPickerValue(next);
-            if (entry) {
-              // An entry row implies its kind plus the binding. Endpoint
-              // model lists differ per entry, so switching endpoints
-              // re-picks the model; same-kind catalog entries share one
-              // list, so the model survives.
-              editor.setCreatingProvider(false);
-              editor.setPendingCreateProvider(null);
-              if (editor.provider !== entry.provider) {
-                editor.handleProviderChange(entry.provider);
-              } else if (entry.provider === OPENAI_COMPATIBLE_PROVIDER) {
-                editor.setModel("");
-              }
-              editor.setProviderConnection(entry.connectionName);
-              return;
-            }
-            const picked = next as ConnectionProvider;
-            if (providersNeedingSetup.includes(picked)) {
-              // Nothing to dispatch through yet — hand the user straight to
-              // the create form for that provider instead of a dead selection.
-              editor.setCreatingProvider(true);
-              editor.setPendingCreateProvider(picked);
-              editor.setNewProviderNote(false);
-              return;
-            }
-            editor.setCreatingProvider(false);
-            editor.setPendingCreateProvider(null);
-            editor.handleProviderChange(picked);
-            // Re-picking the current kind's bare row means "the default
-            // entry": the explicit binding must clear, and the provider
-            // change above no-ops so it won't do it.
-            if (picked === editor.provider) {
-              editor.setProviderConnection("");
-            }
-          }}
-          placeholder={t("profileEditorFields.selectProviderPlaceholder")}
-          aria-labelledby="profile-editor-provider-label"
-          options={createModeProviderOptions}
-        />
-        {editor.newProviderNote ? (
-          <Typography
-            variant="body-small-default"
-            as="p"
-            className="text-[var(--content-tertiary)]"
-          >
-            {t("profileEditorFields.newProviderNote")}
-          </Typography>
-        ) : null}
-      </div>
-
-      {editor.creatingProvider ? (
-        // Keyed by the preselected provider: the sub-form seeds its provider,
-        // label, and credential ref from props at mount, so switching the
-        // outer picker to another unconnected provider must remount it.
-        <ProviderCreateForm
-          key={editor.pendingCreateProvider ?? "any"}
-          variant="inline"
-          assistantId={assistantId}
-          existingNames={editor.effectiveConnections.map((c) => c.name)}
-          connections={editor.effectiveConnections}
-          defaultProviderType={
-            (editor.pendingCreateProvider ?? editor.provider) || undefined
-          }
-          hideProviderSelect={editor.pendingCreateProvider !== null}
-          onCreated={editor.handleProviderCreated}
-          onCancel={() => {
-            editor.setCreatingProvider(false);
-            editor.setPendingCreateProvider(null);
-          }}
-        />
-      ) : (
-        <ProfileEditorProviderSection
-          provider={editor.provider}
-          model={editor.model}
-          providerConnection={editor.providerConnection}
-          onProviderChange={editor.handleProviderChange}
-          onModelChange={editor.handleModelChange}
-          onConnectionChange={editor.handleConnectionChange}
-          connections={editor.effectiveConnections}
-          isReadOnly={editor.isReadOnly}
-          availableConnectionsForProvider={
-            editor.availableConnectionsForProvider
-          }
-          connectionNotFound={editor.connectionNotFound}
-          hideProviderField
-        />
-      )}
-    </div>
-  );
-
   if (isCreate) {
     // Advanced only surfaces once a model is chosen: the Name derives from
     // the model, and the model controls the available advanced parameters.
@@ -437,20 +225,14 @@ export function ProfileEditorFields({
         );
 
     // Create asks two questions: which provider, and which model. Everything
-    // else has an answer the model supplies, so it waits under Advanced. The
-    // `model-first-profile-create` flag decides the order the two are asked
-    // in; both fill the same editor state.
+    // else has an answer the model supplies, so it waits under Advanced.
     return (
       <div className="space-y-4">
-        {modelFirstCreate ? (
-          <ProfileCreateModelFirst
-            editor={editor}
-            assistantId={assistantId}
-            menuBoundary={menuBoundary}
-          />
-        ) : (
-          createProviderSection
-        )}
+        <ProfileCreateModelFirst
+          editor={editor}
+          assistantId={assistantId}
+          menuBoundary={menuBoundary}
+        />
         {modalitiesNode}
         {createAdvanced}
         {saveErrorNode}

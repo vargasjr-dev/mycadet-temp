@@ -1,6 +1,6 @@
-// The quiet-turn projection of an assistant row (`quiet-turn-activity`
-// client flag): which content groups a turn shows, and the one "where it is
-// working" line that stands in for the rest while it runs. Pure, no React, so
+// The quiet-turn projection of an assistant row: which content groups a turn
+// shows, and the one "where it is working" line that stands in for the rest
+// while it runs. Pure, no React, so
 // the render body and its tests read the same answers.
 
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";

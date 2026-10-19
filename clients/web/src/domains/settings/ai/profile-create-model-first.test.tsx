@@ -1,5 +1,5 @@
 /**
- * The create flow under `model-first-profile-create`: the model is chosen
+ * The create flow: the model is chosen
  * first, and the provider question is asked only as far as it needs to be.
  *
  * The generated daemon SDK and the credential hooks are mocked the way
@@ -35,7 +35,6 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -393,13 +392,8 @@ function setupActionButton(): HTMLButtonElement {
   return match;
 }
 
-function setModelFirstFlag(value: boolean): void {
-  useClientFeatureFlagStore.setState({ modelFirstProfileCreate: value });
-}
-
 beforeEach(() => {
   createdConnection = makeConnection("openai-personal", "openai");
-  setModelFirstFlag(true);
   // Save awaits the entry-binding version gate, so a hydrated identity keeps
   // it from waiting out its timeout. The floor is pinned below the gate, which
   // is the legacy payload the provider-first flow writes on the same daemon.
@@ -410,7 +404,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  setModelFirstFlag(false);
   useAssistantIdentityStore.getState().clearIdentity();
   useAssistantLifecycleStore.setState(initialLifecycleState);
 });
@@ -419,33 +412,6 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("the flag", () => {
-  test("off leaves the provider-first flow in place", () => {
-    setModelFirstFlag(false);
-    renderCreate([makeConnection("anthropic-personal")]);
-
-    expect(
-      document.querySelector(
-        'button[role="combobox"][aria-labelledby="profile-editor-provider-label"]',
-      ),
-    ).not.toBeNull();
-    expect(candidateCards()).toHaveLength(0);
-    // The provider-first Model field stays disabled until a provider is
-    // chosen, which is the shape of the old flow.
-    expect(modelField().getAttribute("aria-disabled")).not.toBe("true");
-  });
-
-  test("on replaces the provider dropdown with the model list", () => {
-    renderCreate([makeConnection("anthropic-personal")]);
-
-    expect(
-      document.querySelector(
-        'button[role="combobox"][aria-labelledby="profile-editor-provider-label"]',
-      ),
-    ).toBeNull();
-    expect(modelField()).not.toBeNull();
-  });
-});
 
 describe("the model list", () => {
   test("offers each model once, and says nothing else on the row", () => {
@@ -948,19 +914,8 @@ describe("the custom model id path", () => {
   });
 });
 
-/** The provider-first flow's dropdown trigger, which the flag hides. */
-function providerFirstTrigger(): HTMLButtonElement {
-  const trigger = document.querySelector<HTMLButtonElement>(
-    'button[role="combobox"][aria-labelledby="profile-editor-provider-label"]',
-  );
-  if (!trigger) {
-    throw new Error("expected the provider-first Provider dropdown");
-  }
-  return trigger;
-}
-
 describe("the cloud route's annotation", () => {
-  test("reads Recommended here, and stays Managed in the provider-first picker", () => {
+  test("reads Recommended on the model-first candidate card", () => {
     renderCreate([
       makeConnection("cadet-cloud", "cadet"),
       makeConnection("anthropic-personal"),
@@ -977,16 +932,5 @@ describe("the cloud route's annotation", () => {
     expect(card.textContent).toContain("Recommended");
     expect(card.textContent).not.toContain("Managed");
 
-    // The shared encoding keeps its own word wherever the provider is the
-    // question, so the two flows cannot be quietly unified.
-    cleanup();
-    setModelFirstFlag(false);
-    renderCreate([makeConnection("cadet-cloud", "cadet")]);
-    fireEvent.click(providerFirstTrigger());
-
-    const managed = Array.from(
-      document.querySelectorAll<HTMLElement>('[role="option"]'),
-    ).find((option) => optionLabel(option) === "Cadet");
-    expect(managed?.textContent).toContain("Managed");
   });
 });

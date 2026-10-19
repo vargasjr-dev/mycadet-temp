@@ -98,8 +98,7 @@ export const createNativeNotificationFactory = (): {
   create: (options) => {
     // The addon exists for one thing Electron cannot do: render the assistant
     // avatar as the icon. A notification with no sender has nothing to gain
-    // from it, so Electron's presenter takes it, which is also what makes the
-    // `push-avatar-sender` flag a kill switch.
+    // from it, so Electron's presenter takes it.
     const sender = options.sender;
     if (!sender) {
       const notification = createElectronNotification(options);

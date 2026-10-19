@@ -1314,7 +1314,8 @@ export class AnthropicProvider implements Provider {
         finalMessage(): Promise<Anthropic.Message>;
       }
 
-      // Fast mode: use the beta endpoint with speed: "fast" for Opus models (4.6, 4.7).
+      // Fast mode: use the beta endpoint with speed: "fast" for the Opus
+      // models that support it (5.5, 5, 4.8 — 4.7 lost support in July 2026).
       const useFastMode = speed === "fast" && effectiveModel.includes("opus");
 
       // Collect request betas that are still explicit transport features.

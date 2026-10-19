@@ -188,10 +188,8 @@ export function isRemotePushSupported(): boolean {
  * `native-notification-render`, so an older shell whose plugin lacks the
  * method must report nothing and keep receiving notification-block pushes.
  *
- * The claim is deliberately not gated on `push-avatar-sender`: that flag is the
- * platform's own switch for the data-only shape, while this says which tokens
- * could render one. A shell that can render natively says so whether the flag
- * is on or off.
+ * The claim says which tokens could render a data-only push, not what the
+ * platform chooses to send. A shell that can render natively says so.
  */
 async function readAndroidCapabilities(): Promise<string[]> {
   if (!Capacitor.isPluginAvailable(ANDROID_PUSH_REGISTRATION_PLUGIN)) {

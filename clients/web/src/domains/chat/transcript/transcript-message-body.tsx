@@ -100,7 +100,6 @@ import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import { useAcpRunStore } from "@/domains/chat/acp-run-store";
 import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { ChatMessageToolCall } from "@/domains/chat/api/event-types";
 import type { ConversationMessageSurface } from "@mycadet/assistant-api";
@@ -191,7 +190,6 @@ export function TranscriptMessageBody({
   isLatestMessage = false,
 }: TranscriptMessageBodyProps) {
   const { t } = useTranslation("chat");
-  const quietTurnActivity = useClientFeatureFlagStore.use.quietTurnActivity();
   const isSlackMessage = Boolean(message.slackMessage);
   const isSlackReaction = getMessageRenderKind(message) === "slackReaction";
   const isUser = message.role === "user";
@@ -1261,13 +1259,14 @@ export function TranscriptMessageBody({
   // truncates inside the card instead of overflowing the message column.
   const columnClass = `flex w-full min-w-0 flex-col gap-2 ${isUser ? "items-end" : "items-start"}`;
 
-  // Under `quiet-turn-activity` an assistant turn that used tools shows its
-  // opening and its answer, with its steps behind one progress line while it
-  // runs and a "Worked for" summary in the footer once it settles.
+  // An assistant turn that used tools shows its opening and its answer, with
+  // its steps behind one progress line while it runs and a "Worked for"
+  // summary in the footer once it settles. A private row opts out: its texts
+  // are deliberate sends, and the live holdback would hide ones already read.
   const quietTurn =
-    quietTurnActivity &&
     isAssistant &&
     !isSlackReaction &&
+    message.assistantTextVisibility !== "private" &&
     firstToolGroupIndex(groups) !== -1;
   const quietTurnLive = quietTurn && isStreaming && isLatestMessage;
 
@@ -1370,6 +1369,10 @@ export function TranscriptMessageBody({
       activityHasDedicatedCard(group.items, isCardBacked) ||
       activityItemsToCardData(group.items).toolCalls.some(
         (toolCall) =>
+          // An ask_question keeps its row even when its record is empty (the
+          // card draws nothing there and the raw chip falls back) — the
+          // question and the reader's answer are conversation content.
+          toolCall.name === "ask_question" ||
           toolCall.pendingConfirmation !== undefined ||
           acpConnectToolUseId === toolCall.id ||
           unknownNudgeToolCallIds?.has(toolCall.id) === true,

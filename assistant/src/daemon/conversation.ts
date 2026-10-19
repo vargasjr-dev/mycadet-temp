@@ -29,7 +29,6 @@ import type {
   TurnInterfaceContext,
 } from "../channels/types.js";
 import { parseChannelId, parseInterfaceId } from "../channels/types.js";
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { isInterruptOnSendEnabled } from "../config/interrupt-on-send-gate.js";
 import {
   contextWindowConfigFromEffective,
@@ -1071,7 +1070,6 @@ export class Conversation {
     // as a top-level `model` param on `run()`.
     this.modelOverride = modelOverride;
 
-    const fastModeEnabled = isAssistantFeatureFlagEnabled("fast-mode", config);
     const resolvedSpeed = speedOverride ?? resolvedMainAgent.speed;
     const initialContextWindow = resolveEffectiveContextWindow({
       llm: config.llm,
@@ -1085,9 +1083,7 @@ export class Conversation {
     const agentLoopConfig: Partial<AgentLoopConfig> = {
       thinking: resolvedMainAgent.thinking,
       effort: resolvedMainAgent.effort,
-      ...(fastModeEnabled && resolvedSpeed === "fast"
-        ? { speed: resolvedSpeed }
-        : {}),
+      ...(resolvedSpeed === "fast" ? { speed: resolvedSpeed } : {}),
       ...(cacheTtl ? { cacheTtl } : {}),
       ...(enableNativeWebSearch ? { enableNativeWebSearch: true } : {}),
     };

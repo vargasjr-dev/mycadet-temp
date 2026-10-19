@@ -19,7 +19,6 @@ let supported = true;
 let unreadBadgeSurface = "Dock icon";
 let unreadBadgesSupported = true;
 let hostOS: "macos" | "windows" = "macos";
-let pushAvatarSender = true;
 let selectedAssistantId: string | null = "assistant-a";
 let ownerScopeId: string | null = `scope:v1:${"a".repeat(64)}`;
 let preparedSnapshot: {
@@ -104,7 +103,6 @@ mock.module("@/runtime/platform-detection", () => ({
 
 mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {
-    use: { pushAvatarSender: () => pushAvatarSender },
   },
 }));
 
@@ -160,7 +158,6 @@ beforeEach(() => {
   unreadBadgeSurface = "Dock icon";
   unreadBadgesSupported = true;
   hostOS = "macos";
-  pushAvatarSender = true;
   selectedAssistantId = "assistant-a";
   ownerScopeId = `scope:v1:${"a".repeat(64)}`;
   preparedSnapshot = {
@@ -292,20 +289,7 @@ describe("SystemPermissionsCard", () => {
     });
   });
 
-  test("keeps notifications requests plain when the flag is off", async () => {
-    state = makeState({ notifications: "not-determined" });
-    pushAvatarSender = false;
-
-    render(<SystemPermissionsCard />);
-    fireEvent.click(screen.getByRole("switch", { name: "Notifications" }));
-
-    await waitFor(() => {
-      expect(requestSystemPermission).toHaveBeenCalledWith("notifications");
-    });
-    expect(requestSystemPermission.mock.calls[0]).toHaveLength(1);
-    expect(resolveAssistantAvatarOwnerScopeId).not.toHaveBeenCalled();
-  });
-
+  
   test("keeps notifications requests plain without a complete snapshot", async () => {
     state = makeState({ notifications: "not-determined" });
     preparedSnapshot = { name: "Alice" };

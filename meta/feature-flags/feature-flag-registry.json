@@ -18,14 +18,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "fast-mode",
-      "scope": "assistant",
-      "key": "fast-mode",
-      "label": "Fast Mode",
-      "description": "Enable Anthropic fast mode for Opus models (4.6, 4.7, 4.8), delivering up to 2.5x higher output tokens per second at premium pricing",
-      "defaultEnabled": false
-    },
-    {
       "id": "in-chat-onboarding-tour",
       "scope": "client",
       "key": "in-chat-onboarding-tour",
@@ -43,14 +35,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "local-notification-avatar",
-      "scope": "client",
-      "key": "local-notification-avatar",
-      "label": "Local Notification Avatar",
-      "description": "Shows the assistant name and avatar in notifications posted locally by native clients and supported browsers. Independent of remote push avatar presentation.",
-      "defaultEnabled": false
-    },
-    {
       "id": "marketing-pricing-takeover",
       "scope": "client",
       "key": "marketing-pricing-takeover",
@@ -59,35 +43,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "model-first-profile-create",
-      "scope": "client",
-      "key": "model-first-profile-create",
-      "label": "Model-First Profile Create",
-      "description": "Reverses the two questions the web client's New Model modal asks when creating an inference profile. Off: the modal asks for a provider first and then offers that provider's models. On: it opens on one searchable list of every catalog model the assistant can reach, deduplicated across providers, and only then asks which provider serves the chosen model. That second question is skipped when a single provider serves it, answered with radio cards when several do, and turned into an inline connect form (API key, setup, or ChatGPT sign-in) when the chosen route has no connection yet. Editing an existing profile is unchanged either way, and both flows persist the same profile shape.",
-      "defaultEnabled": false
-    },
-    {
       "id": "os-beta",
       "scope": "assistant",
       "key": "os-beta",
       "label": "OS Beta",
       "description": "Enable the OS Beta model profile (MiniMax M3 / Together) in the assistant's model profile selection.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "push-avatar-sender",
-      "scope": "client",
-      "key": "push-avatar-sender",
-      "label": "Push Avatar Sender",
-      "description": "Native notifications show the assistant's avatar as the icon with the assistant's name on line one. Same key the cloud reads for APNs/FCM sender blocks.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "quiet-turn-activity",
-      "scope": "client",
-      "key": "quiet-turn-activity",
-      "label": "Quiet Turn Activity",
-      "description": "While the assistant works, show a reply skeleton with one line naming where it is working instead of its intermediate text and steps; a settled turn shows only its opening line and its answer, with the steps behind a Worked summary in the message footer",
       "defaultEnabled": false
     },
     {

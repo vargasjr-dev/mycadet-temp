@@ -24,7 +24,6 @@ import {
   type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
 import { useAuthStore } from "@/stores/auth-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
@@ -247,7 +246,6 @@ export function SystemPermissionsCard({
   const { pendingKind, run } = usePendingKind();
   const [notificationBadgesEnabled, setNotificationBadgesEnabled] =
     useNotificationBadgesEnabled();
-  const pushAvatarSender = useClientFeatureFlagStore.use.pushAvatarSender();
   const selectedAssistantId =
     useResolvedAssistantsStore.use.selectedAssistantId();
   const assistants = useResolvedAssistantsStore.use.assistants();
@@ -348,11 +346,7 @@ export function SystemPermissionsCard({
       await openSystemPermissionSettings(meta.sourceKind);
     } else {
       const presentation = (() => {
-        if (
-          meta.sourceKind !== "notifications" ||
-          hostOS !== "macos" ||
-          !pushAvatarSender
-        ) {
+        if (meta.sourceKind !== "notifications" || hostOS !== "macos") {
           return undefined;
         }
         const assistant = assistants.find(

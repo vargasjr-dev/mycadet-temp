@@ -6,8 +6,7 @@ import os
 ///
 /// A push whose payload carries a complete `sender` block is rewritten into a
 /// Communication Notification so the assistant's avatar is the icon. Everything
-/// else, including every push sent while the `push-avatar-sender` flag is off,
-/// is delivered exactly as it arrived.
+/// else is delivered exactly as it arrived.
 ///
 /// Every path that gives up on the rewrite logs one stable `nse.*` prefix
 /// before delivering the push unchanged, so a device that shows plain

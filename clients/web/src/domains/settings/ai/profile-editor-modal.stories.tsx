@@ -3,7 +3,6 @@ import { expect, screen, userEvent, waitFor, within } from "storybook/test";
 
 import { ProfileEditorModal } from "@/domains/settings/ai/profile-editor-modal";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 function connection(provider: string): ProviderConnection {
   return {
@@ -22,16 +21,6 @@ const CONNECTIONS: ProviderConnection[] = [
   connection("anthropic"),
   connection("openai"),
 ];
-
-/** Turns the model-first create flow on for one story, and off again after. */
-function withModelFirstCreate() {
-  const previous =
-    useClientFeatureFlagStore.getState().modelFirstProfileCreate === true;
-  useClientFeatureFlagStore.setState({ modelFirstProfileCreate: true });
-  return () => {
-    useClientFeatureFlagStore.setState({ modelFirstProfileCreate: previous });
-  };
-}
 
 const meta: Meta<typeof ProfileEditorModal> = {
   title: "Settings/AI/ProfileEditorModal",
@@ -164,13 +153,12 @@ export const CreateDuplicateName: Story = {
 };
 
 /**
- * The same create modal under `model-first-profile-create`: it opens on one
+ * The same create modal: it opens on one
  * list of models rather than a provider dropdown, and asks nothing else until
  * a model is chosen.
  */
 export const CreateModelFirst: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
 };
 
 /**
@@ -181,7 +169,6 @@ export const CreateModelFirst: Story = {
  */
 export const CreateModelFirstListOpen: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Model" }),
@@ -198,7 +185,6 @@ export const CreateModelFirstListOpen: Story = {
  */
 export const CreateModelFirstListReopened: Story = {
   args: { mode: "create", connections: [connection("gemini")] },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     const modelField = await screen.findByRole("combobox", { name: "Model" });
     await userEvent.click(modelField);
@@ -220,7 +206,6 @@ export const CreateModelFirstListReopened: Story = {
  */
 export const CreateModelFirstListOpenShort: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   globals: { viewport: { value: "sbShort", isRotated: false } },
   play: async () => {
     await userEvent.click(
@@ -237,7 +222,6 @@ export const CreateModelFirstListOpenShort: Story = {
  */
 export const CreateModelFirstCustomId: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Model" }),
@@ -260,7 +244,6 @@ export const CreateModelFirstCustomId: Story = {
  */
 export const CreateModelFirstSeeMore: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Model" }),
@@ -286,7 +269,6 @@ export const CreateModelFirstSeeMore: Story = {
  */
 export const CreateModelFirstConnectForm: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     await userEvent.click(
       await screen.findByRole("combobox", { name: "Model" }),
@@ -309,7 +291,6 @@ export const CreateModelFirstConnectForm: Story = {
  */
 export const CreateModelFirstSeveralProviders: Story = {
   args: { mode: "create" },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     const modelField = await screen.findByRole("combobox", { name: "Model" });
     await userEvent.click(modelField);
@@ -329,7 +310,6 @@ export const CreateModelFirstSeveralProviders: Story = {
  */
 export const CreateModelFirstSingleProvider: Story = {
   args: { mode: "create", connections: [connection("gemini")] },
-  beforeEach: withModelFirstCreate,
   play: async () => {
     const modelField = await screen.findByRole("combobox", { name: "Model" });
     await userEvent.click(modelField);

@@ -342,9 +342,10 @@ import { TranscriptMessageBody } from "@/domains/chat/transcript/transcript-mess
 import { MIN_VERSION as REDACTED_CHIPS_MIN_VERSION } from "@/lib/backwards-compat/use-supports-redacted-credential-chips";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
+import { useAcpRunStore } from "@/domains/chat/acp-run-store";
+import { useBackgroundTaskStore } from "@/domains/chat/background-task-store";
 
 import {
   appendThinkingDelta,
@@ -706,8 +707,8 @@ describe("TranscriptMessageBody", () => {
     expect(inspectedIds).toEqual(["message-1"]);
   });
 
-  test("merges a contiguous thinking + tool_use run into one activity card", () => {
-    const { container } = render(
+  test("summarizes a merged thinking + tool run behind the footer summary", () => {
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "b-activity",
@@ -728,18 +729,14 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    const card = container.querySelector("[data-testid='tool-progress-card']");
-    expect(card).not.toBeNull();
-    expect(card!.getAttribute("data-item-kinds")).toBe("thinking,toolCall");
-    expect(card!.getAttribute("data-item-thinking")).toBe(
-      "why I called the tool",
-    );
-    expect(card!.getAttribute("data-item-tool-ids")).toBe("tc-a");
-
-    const markdowns = container.querySelectorAll("[data-testid='markdown']");
     expect(
-      Array.from(markdowns).some((m) => m.textContent === "the answer"),
-    ).toBe(true);
+      container.querySelector("[data-testid='tool-progress-card']"),
+    ).toBeNull();
+    expect(queryByText("the answer")).not.toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((toolCall) => toolCall.id)).toEqual(["tc-a"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("gives no timeline row to a collapsed group that renders nothing", () => {
@@ -768,39 +765,8 @@ describe("TranscriptMessageBody", () => {
     expect(rows[0]!.textContent).toBe("I will check that.");
   });
 
-  test("collapses completed assistant activity before the final text response", () => {
-    const { getByRole, queryByText } = render(
-      <TranscriptMessageBody
-        message={{
-          id: "completed-response",
-          role: "assistant",
-          contentBlocks: [
-            textBlock("I will check that."),
-            toolUseBlock({
-              id: "tc-check",
-              name: "bash",
-              input: {},
-              completedAt: 1,
-            }),
-            textBlock("Here is the final answer."),
-          ],
-        }}
-        onSurfaceAction={noop}
-      />,
-    );
 
-    expect(queryByText("I will check that.")).toBeNull();
-    expect(queryByText("Here is the final answer.")).not.toBeNull();
-
-    const trigger = getByRole("button", { name: "Earlier activity" });
-    expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(trigger);
-
-    expect(queryByText("I will check that.")).not.toBeNull();
-    expect(trigger.getAttribute("aria-expanded")).toBe("true");
-  });
-
-  describe("under quiet-turn-activity", () => {
+  describe("quiet-turn projection", () => {
     const slackCommand =
       "TOKEN=$(assistant credentials reveal --service slack_channel --field bot_token)";
     const turn: DisplayMessage = {
@@ -827,11 +793,7 @@ describe("TranscriptMessageBody", () => {
       ],
     };
 
-    beforeEach(() => {
-      useClientFeatureFlagStore.setState({ quietTurnActivity: true });
-    });
     afterEach(() => {
-      useClientFeatureFlagStore.setState({ quietTurnActivity: false });
       useViewerStore.getState().closeActivitySteps();
     });
 
@@ -1010,38 +972,11 @@ describe("TranscriptMessageBody", () => {
     }
   });
 
-  test("still collapses a row carrying no visibility marker", () => {
-    // An unmarked row sits beside private rows in the same conversation and
-    // keeps the standard rendering. The decision is the row's, so nothing
-    // about the assistant's current settings reaches it.
-    const { getByRole, queryByText } = render(
-      <TranscriptMessageBody
-        message={{
-          id: "legacy-response",
-          role: "assistant",
-          contentBlocks: [
-            textBlock("I will check that."),
-            toolUseBlock({
-              id: "tc-check",
-              name: "bash",
-              input: {},
-              completedAt: 1,
-            }),
-            textBlock("Here is the final answer."),
-          ],
-        }}
-        onSurfaceAction={noop}
-      />,
-    );
 
-    expect(getByRole("button", { name: "Earlier activity" })).not.toBeNull();
-    expect(queryByText("I will check that.")).toBeNull();
-  });
-
-  test("still collapses a fallback row marked visible", () => {
-    // A row marked visible carries its own plain text as the reply, so that
-    // text is prose the user reads and the standard folding applies to it.
-    const { getByRole } = render(
+  test("a row marked visible renders through the projection", () => {
+    // A row marked visible carries its own plain text as the reply, so the
+    // quiet-turn projection applies to it exactly as to an unmarked row.
+    const { getByTestId, queryByRole, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "fallback-response",
@@ -1062,7 +997,10 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    expect(getByRole("button", { name: "Earlier activity" })).not.toBeNull();
+    expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
+    expect(queryByText("I will check that.")).not.toBeNull();
+    expect(queryByText("Here is the final answer.")).not.toBeNull();
+    expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
   });
 
   test("keeps an already-sent reply visible while the turn keeps working", () => {
@@ -1193,51 +1131,45 @@ describe("TranscriptMessageBody", () => {
   });
 
   test("hides every thinking affordance when the transcript-wide gate is on", () => {
-    // A mixed history row: reasoning, a tool run, then the answer.
-    const mixedRow: DisplayMessage = {
-      id: "mixed-history",
-      role: "assistant",
-      contentBlocks: [
-        thinkingBlock("weighing the options"),
-        toolUseBlock({
-          id: "tc-bash",
-          name: "bash",
-          input: { command: "ls" },
-          completedAt: 1,
-        }),
-        textBlock("Here you go."),
-      ],
-    };
-
+    // A mixed history row: reasoning, a tool run, then the answer. With the
+    // gate on, the reasoning reaches neither the rendered text nor the steps
+    // the footer summary opens, and the answer shows.
     useAssistantFeatureFlagStore.setState({ sendUserMessage: true });
-    const gated = render(
-      <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
-    );
-    // The reasoning reaches neither the rendered text nor the steps the
-    // activity card would draw, and the tool run it sat beside is untouched.
-    expect(gated.container.textContent).not.toContain("Thinking");
-    expect(gated.container.textContent).not.toContain("weighing the options");
-    // The run is down to its one tool, so it renders as a lone tool row
-    // rather than the combined activity card.
-    expect(
-      gated.container.querySelector("[data-testid='inline-tool-link']"),
-    ).not.toBeNull();
-    expect(gated.queryByText("Here you go.")).not.toBeNull();
-    cleanup();
+    try {
+      const { container, getByTestId, queryByText } = render(
+        <TranscriptMessageBody
+          message={{
+            id: "mixed-history",
+            role: "assistant",
+            contentBlocks: [
+              thinkingBlock("weighing the options"),
+              toolUseBlock({
+                id: "tc-bash",
+                name: "bash",
+                input: { command: "ls" },
+                completedAt: 1,
+              }),
+              textBlock("Here you go."),
+            ],
+          }}
+          onSurfaceAction={noop}
+        />,
+      );
 
-    useAssistantFeatureFlagStore.setState({ sendUserMessage: false });
-    const ungated = render(
-      <TranscriptMessageBody message={mixedRow} onSurfaceAction={noop} />,
-    );
-    const ungatedCard = ungated.container.querySelector(
-      "[data-testid='tool-progress-card']",
-    );
-    expect(ungatedCard?.getAttribute("data-item-kinds")).toBe(
-      "thinking,toolCall",
-    );
-    expect(ungatedCard?.getAttribute("data-item-thinking")).toBe(
-      "weighing the options",
-    );
+      expect(container.textContent).not.toContain("Thinking");
+      expect(container.textContent).not.toContain("weighing the options");
+      expect(queryByText("Here you go.")).not.toBeNull();
+      expect(
+        container.querySelector("[data-testid='inline-tool-link']"),
+      ).toBeNull();
+      fireEvent.click(getByTestId("quiet-turn-work-summary"));
+      const opened = useViewerStore.getState().activeActivitySteps;
+      expect(opened?.toolCalls.map((toolCall) => toolCall.id)).toEqual([
+        "tc-bash",
+      ]);
+    } finally {
+      useAssistantFeatureFlagStore.setState({ sendUserMessage: false });
+    }
   });
 
   test("renders the answered question card for a settled ask_question", () => {
@@ -1411,7 +1343,7 @@ describe("TranscriptMessageBody", () => {
       expect(queryByText("I am checking that.")).not.toBeNull();
     });
 
-    test("folds its earlier prose when it next mounts as history", () => {
+    test("keeps its opening prose when it next mounts as history", () => {
       const { unmount } = render(
         <TranscriptMessageBody
           message={message}
@@ -1421,18 +1353,19 @@ describe("TranscriptMessageBody", () => {
       );
       unmount();
 
-      const { getByRole, queryByText } = render(
+      const { getByTestId, queryByText } = render(
         <TranscriptMessageBody message={message} onSurfaceAction={noop} />,
       );
 
-      const trigger = getByRole("button", { name: "Earlier activity" });
-      expect(trigger.getAttribute("aria-expanded")).toBe("false");
-      expect(queryByText("I am checking that.")).toBeNull();
+      // The projection owns the remounted row: the opening prose stays, the
+      // work sits behind the footer summary.
+      expect(queryByText("I am checking that.")).not.toBeNull();
       expect(queryByText("Here is the final answer.")).not.toBeNull();
+      expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
     });
   });
 
-  test("keeps result artifacts visible outside collapsed earlier activity", () => {
+  test("keeps result artifacts visible outside the collapsed steps", () => {
     const toolCall: ChatMessageToolCall = {
       id: "tc-result-image",
       name: "media_generate_image",
@@ -1441,7 +1374,7 @@ describe("TranscriptMessageBody", () => {
       imageDataList: ["img-a"],
       completedAt: 1,
     };
-    const { container, getAllByRole, getByText, queryByText } = render(
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "completed-with-artifacts",
@@ -1458,37 +1391,15 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    expect(queryByText("I will create that.")).toBeNull();
+    // The opening, the tool-result image, and the final answer show; the
+    // mid-turn narration hides behind the footer summary.
+    expect(queryByText("I will create that.")).not.toBeNull();
     expect(queryByText("I will summarize it.")).toBeNull();
     expect(queryByText("Here are the results.")).not.toBeNull();
-    const image = container.querySelector("[data-testid='tool-result-image']");
-    expect(image).not.toBeNull();
-
-    // One disclosure for the message, not one per run: the pinned image no
-    // longer splits the collapsed prose into two sections with two triggers.
-    const triggers = getAllByRole("button", { name: "Earlier activity" });
-    expect(triggers.length).toBe(1);
-    fireEvent.click(triggers[0]!);
-
-    const firstText = getByText("I will create that.");
-    const secondText = getByText("I will summarize it.");
-    const finalText = getByText("Here are the results.");
-    // Both collapsed runs read inside the one disclosure, which sits where the
-    // first of them was. That puts "I will summarize it." above the image it
-    // originally followed. That is the ordering cost of a single disclosure, paid only
-    // while it is open. The pinned image and the final answer keep their places.
     expect(
-      firstText.compareDocumentPosition(secondText) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(
-      secondText.compareDocumentPosition(image!) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(
-      image!.compareDocumentPosition(finalText) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
+      container.querySelector("[data-testid='tool-result-image']"),
+    ).not.toBeNull();
+    expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
   });
 
   test("keeps surface lead-in text visible as part of the final response", () => {
@@ -1614,11 +1525,11 @@ describe("TranscriptMessageBody", () => {
     expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
   });
 
-  test("collapses prose before a card-backed activity when a later surface has trailing text", () => {
+  test("keeps the opening beside a card-backed activity and a trailing surface", () => {
     // A process card is visible output even though it is not a timeline row.
-    // Prose before that card is earlier activity. The surface and trailing
-    // scrap stay in the reply.
-    const { container, getByRole, queryByRole, queryByTestId, queryByText } =
+    // Under the projection the opening prose, the card, the surface, and the
+    // trailing scrap all show.
+    const { container, getByTestId, queryByRole, queryByTestId, queryByText } =
       render(
         <TranscriptMessageBody
           message={{
@@ -1658,16 +1569,14 @@ describe("TranscriptMessageBody", () => {
         />,
       );
 
-    expect(queryByText("Let me ask first.")).toBeNull();
-    expect(queryByRole("button", { name: "Earlier activity" })).not.toBeNull();
+    expect(queryByText("Let me ask first.")).not.toBeNull();
+    expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
     expect(queryByTestId("answered-question-card")).not.toBeNull();
     expect(queryByText("Sparkle")).not.toBeNull();
     expect(
       container.querySelector("[data-surface-id='choice-after-card']"),
     ).not.toBeNull();
-
-    fireEvent.click(getByRole("button", { name: "Earlier activity" }));
-    expect(queryByText("Let me ask first.")).not.toBeNull();
+    expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
   });
 
   test("keeps inline surfaces visible outside collapsed earlier text", () => {
@@ -1694,8 +1603,8 @@ describe("TranscriptMessageBody", () => {
     expect(container.querySelector("[data-testid='surface']")).not.toBeNull();
   });
 
-  test("keeps running activity visible outside collapsed earlier text", () => {
-    const { container, queryByText } = render(
+  test("summarizes a still-running step on a settled-looking row", () => {
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "completed-with-running-tool",
@@ -1714,11 +1623,12 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    expect(queryByText("I will start that.")).toBeNull();
+    expect(queryByText("I will start that.")).not.toBeNull();
     expect(queryByText("It is running in the background.")).not.toBeNull();
     expect(
       container.querySelector("[data-tool-call-id='tc-running']"),
-    ).not.toBeNull();
+    ).toBeNull();
+    expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
   });
 
   test("does not add a disclosure to a single assistant text response", () => {
@@ -1766,11 +1676,10 @@ describe("TranscriptMessageBody", () => {
     expect(queryByText("Here is the final answer.")).not.toBeNull();
   });
 
-  test("does not wrap a lone multi-step activity run in earlier activity", () => {
-    // Step count does not change the calculus: a merged run renders as ONE
-    // header row whose timeline lives in the steps panel, so collapsing it
-    // removes no text from the transcript.
-    const { container, queryByRole } = render(
+  test("summarizes a lone multi-step activity run without a disclosure", () => {
+    // Step count does not change the calculus: a merged run hides behind the
+    // footer summary, which keeps the steps ordered in the steps panel.
+    const { container, getByTestId, queryByRole } = render(
       <TranscriptMessageBody
         message={{
           id: "lone-multi-step-response",
@@ -1797,15 +1706,16 @@ describe("TranscriptMessageBody", () => {
     );
 
     expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
-    const cards = container.querySelectorAll(
-      "[data-testid='tool-progress-card']",
-    );
-    expect(cards.length).toBe(1);
-    // The whole run occupies that one header, so there is no second block
-    // beside it to make the pair a disclosure would need.
-    expect(cards[0]!.getAttribute("data-item-kinds")).toBe(
-      "thinking,toolCall,toolCall",
-    );
+    expect(
+      container.querySelector("[data-testid='tool-progress-card']"),
+    ).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((toolCall) => toolCall.id)).toEqual([
+      "tc-step-a",
+      "tc-step-b",
+    ]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("a pinned surface does not strand the run on the far side of it", () => {
@@ -1849,11 +1759,10 @@ describe("TranscriptMessageBody", () => {
     ).toBe(2);
   });
 
-  test("collapses an image group whose images the attachments already show", () => {
-    // The group is pinned only when the strip draws something. Here every
-    // referenced image is already shown by the end-of-turn attachment chips, so
-    // the strip is empty and the group has nothing to keep it outside the
-    // disclosure.
+  test("hides an image group whose images the attachments already show", () => {
+    // Every referenced image is already shown by the end-of-turn attachment
+    // chips, so the strip is empty and the group has nothing keeping it
+    // outside the footer summary.
     const toolCall: ChatMessageToolCall = {
       id: "tc-shown-image",
       name: "media_generate_image",
@@ -1862,7 +1771,7 @@ describe("TranscriptMessageBody", () => {
       imageAttachmentIds: ["att-img"],
       completedAt: 1,
     };
-    const { container, getAllByRole } = render(
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "images-covered-by-attachments",
@@ -1887,14 +1796,17 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    expect(getAllByRole("button", { name: "Earlier activity" }).length).toBe(1);
-    // The tool group collapsed with the prose rather than pinning itself.
-    expect(
-      container.querySelector("[data-testid='tool-progress-card']"),
-    ).toBeNull();
+    expect(queryByText("Making that image.")).not.toBeNull();
+    expect(queryByText("Here it is.")).not.toBeNull();
     expect(
       container.querySelector("[data-testid='tool-result-image']"),
     ).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual([
+      "tc-shown-image",
+    ]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("pins only the group that owns the selected computer-use screenshot", async () => {
@@ -1912,7 +1824,7 @@ describe("TranscriptMessageBody", () => {
       imageDataList: ["selected"],
       completedAt: 2,
     };
-    const { container, getByRole } = render(
+    const { container, getByTestId, queryByRole, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "computer-use-disclosure",
@@ -1931,26 +1843,27 @@ describe("TranscriptMessageBody", () => {
     );
 
     await waitForComputerUseScreenshot(container);
+
+    // The selected screenshot's group stays visible with its displayed
+    // screenshot; the earlier one hides behind the footer summary.
     expect(
       container.querySelectorAll("[data-testid='tool-progress-card']"),
     ).toHaveLength(1);
-
-    fireEvent.click(getByRole("button", { name: "Earlier activity" }));
-
-    expect(
-      container.querySelectorAll("[data-testid='tool-progress-card']"),
-    ).toHaveLength(2);
     expect(
       container.querySelectorAll(
         "[data-testid='computer-use-screenshot-displayed']",
       ),
     ).toHaveLength(1);
-
-    expect(
-      container
-        .querySelectorAll("[data-testid='tool-progress-card']")[0]
-        ?.getAttribute("data-group-tool-call-ids"),
-    ).toBe("cu-earlier");
+    expect(queryByText("I am opening the report.")).not.toBeNull();
+    expect(queryByText("The report is ready.")).not.toBeNull();
+    expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual([
+      "cu-earlier",
+      "cu-selected",
+    ]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("keeps a pending earlier screenshot call pinned after another screenshot wins", async () => {
@@ -2001,12 +1914,11 @@ describe("TranscriptMessageBody", () => {
     await waitForComputerUseScreenshot(container);
   });
 
-  test("opens the one disclosure above the pinned rows it cannot swallow", () => {
-    // The shape the containment rule is for: work, a still-running tool that
-    // must stay visible, more work, then the answer. One trigger, anchored
-    // where the first collapsed group was, with the live row below it and the
-    // answer last.
-    const { container, getAllByRole, getByText, queryByText } = render(
+  test("summarizes a still-running step on a settled-looking row", () => {
+    // The shape the projection owns: work, a still-running tool, more work,
+    // then the answer. Not streaming, so the running tool is summarized
+    // rather than drawn, and the opening and the answer show.
+    const { container, getByTestId, queryByRole, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "pinned-live-tool",
@@ -2023,28 +1935,22 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    const triggers = getAllByRole("button", { name: "Earlier activity" });
-    expect(triggers.length).toBe(1);
-    expect(queryByText("Starting on that.")).toBeNull();
-
-    // The still-running tool merges with the thinking either side of it into
-    // one activity group, which renders as a progress card rather than a link.
-    const live = container.querySelector("[data-testid='tool-progress-card']");
-    expect(live).not.toBeNull();
-    const finalText = getByText("Here is the final answer.");
+    expect(queryByText("Starting on that.")).not.toBeNull();
+    expect(queryByText("Here is the final answer.")).not.toBeNull();
     expect(
-      triggers[0]!.compareDocumentPosition(live!) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
-    expect(
-      live!.compareDocumentPosition(finalText) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).not.toBe(0);
+      container.querySelector("[data-testid='tool-progress-card']"),
+    ).toBeNull();
+    expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual(["tc-live"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
-  test("merges contiguous thinking + tool runs into one card per run", () => {
+  test("summarizes each contiguous thinking + tool run behind the footer", () => {
     // [thinking, tool, thinking, text, tool, thinking] → two activity runs
-    // (split by the text), each one merged card, plus the text between them.
+    // (split by the text); both hide behind the footer summary while the
+    // text between them shows as the answer.
     const message: DisplayMessage = {
       id: "m-merged",
       role: "assistant",
@@ -2059,37 +1965,22 @@ describe("TranscriptMessageBody", () => {
       timestamp: 1_000,
     };
 
-    const { container } = render(
+    const { container, getByTestId } = render(
       <TranscriptMessageBody message={message} onSurfaceAction={noop} />,
     );
 
-    // Exactly two merged tool cards (one per run).
-    const cards = container.querySelectorAll(
-      "[data-testid='tool-progress-card']",
-    );
-    expect(cards.length).toBe(2);
-
-    // The first card's ordered body is thinking → tool → thinking, carrying
-    // both reasoning texts and the tool step.
-    const first = cards[0]!;
-    expect(first.getAttribute("data-item-kinds")).toBe(
-      "thinking,toolCall,thinking",
-    );
-    expect(first.getAttribute("data-item-thinking")).toBe("reason A|reason B");
-    expect(first.getAttribute("data-item-tool-ids")).toBe("tc-a");
-    expect(first.getAttribute("data-group-tool-call-ids")).toBe("tc-a");
-
-    // The second card carries the trailing tool + thinking run.
-    const second = cards[1]!;
-    expect(second.getAttribute("data-item-kinds")).toBe("toolCall,thinking");
-    expect(second.getAttribute("data-item-tool-ids")).toBe("tc-b");
-    expect(second.getAttribute("data-group-tool-call-ids")).toBe("tc-b");
-
-    // The text between the two runs renders.
+    expect(
+      container.querySelectorAll("[data-testid='tool-progress-card']").length,
+    ).toBe(0);
     const markdowns = container.querySelectorAll("[data-testid='markdown']");
     expect(
       Array.from(markdowns).some((m) => m.textContent === "the middle answer"),
     ).toBe(true);
+
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual(["tc-a", "tc-b"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("keeps raw group ids when a process-backed call is suppressed", () => {
@@ -2131,7 +2022,7 @@ describe("TranscriptMessageBody", () => {
     );
   });
 
-  test("keeps a blank-separated ordinary run in one active header while streaming", () => {
+  test("keeps a blank-separated ordinary run behind one progress line while streaming", () => {
     const message: DisplayMessage = {
       id: "m-blank-streaming",
       role: "assistant",
@@ -2152,7 +2043,7 @@ describe("TranscriptMessageBody", () => {
       ],
     };
 
-    const { container, queryByRole } = render(
+    const { container, queryByRole, queryByTestId } = render(
       <TranscriptMessageBody
         message={message}
         onSurfaceAction={noop}
@@ -2162,17 +2053,10 @@ describe("TranscriptMessageBody", () => {
     );
 
     expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
-    const cards = container.querySelectorAll(
-      "[data-testid='tool-progress-card']",
-    );
-    expect(cards).toHaveLength(1);
-    expect(cards[0]!.getAttribute("data-item-kinds")).toBe(
-      "thinking,toolCall,thinking,toolCall",
-    );
-    expect(cards[0]!.getAttribute("data-item-tool-ids")).toBe(
-      "tc-first,tc-next",
-    );
-    expect(cards[0]!.getAttribute("data-active")).toBe("true");
+    expect(
+      container.querySelectorAll("[data-testid='tool-progress-card']").length,
+    ).toBe(0);
+    expect(queryByTestId("quiet-turn-progress")).not.toBeNull();
   });
 
   test("settles a blank-separated run without losing its ordered steps", () => {
@@ -2190,21 +2074,22 @@ describe("TranscriptMessageBody", () => {
         }),
         textBlock("  "),
         thinkingBlock("done"),
-        textBlock("\n"),
+        textBlock("\t"),
       ],
     };
 
-    const { container, queryByRole } = render(
+    const { container, getByTestId } = render(
       <TranscriptMessageBody message={message} onSurfaceAction={noop} />,
     );
 
-    expect(queryByRole("button", { name: "Earlier activity" })).toBeNull();
-    const card = container.querySelector("[data-testid='tool-progress-card']");
-    expect(card?.getAttribute("data-item-kinds")).toBe(
-      "thinking,toolCall,thinking",
-    );
-    expect(card?.getAttribute("data-active")).toBe("false");
+    expect(
+      container.querySelector("[data-testid='tool-progress-card']"),
+    ).toBeNull();
     expect(container.querySelector("[data-testid='markdown']")).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual(["tc-first"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("keeps partial and complete no-response sentinels hidden across blanks", () => {
@@ -2270,22 +2155,30 @@ describe("TranscriptMessageBody", () => {
       ],
     };
 
-    const { container, getByRole, getByText } = render(
+    const { container, getByTestId, getByText } = render(
       <TranscriptMessageBody message={message} onSurfaceAction={noop} />,
     );
 
-    expect(getByRole("button", { name: "Earlier activity" })).toBeTruthy();
-    fireEvent.click(getByRole("button", { name: "Earlier activity" }));
+    // The intermediate prose hides behind the footer summary; the final
+    // answer shows. The summary keeps both runs in order across the prose
+    // boundary.
+    expect(getByText("Final answer.")).toBeTruthy();
     expect(
       Array.from(container.querySelectorAll("[data-testid='markdown']")).some(
         (element) => element.textContent === "  Intermediate result.  ",
       ),
-    ).toBe(true);
-    expect(getByText("Final answer.")).toBeTruthy();
+    ).toBe(false);
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual([
+      "tc-first",
+      "tc-next",
+    ]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
-  test("renders a lone bash tool_use as the inline chip, not a card", () => {
-    const { container } = render(
+  test("summarizes a lone bash tool_use behind the footer summary", () => {
+    const { container, getByTestId } = render(
       <TranscriptMessageBody
         message={{
           id: "b-lone-tool",
@@ -2304,12 +2197,16 @@ describe("TranscriptMessageBody", () => {
       />,
     );
 
-    const chip = container.querySelector("[data-testid='inline-tool-link']");
-    expect(chip).not.toBeNull();
-    expect(chip!.getAttribute("data-tool-call-id")).toBe("tc-lone");
+    expect(
+      container.querySelector("[data-testid='inline-tool-link']"),
+    ).toBeNull();
     expect(
       container.querySelector("[data-testid='tool-progress-card']"),
     ).toBeNull();
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual(["tc-lone"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test.each([
@@ -2972,10 +2869,10 @@ describe("TranscriptMessageBody", () => {
     });
   });
 
-  test("a tool + thinking run still renders the boxed activity card", () => {
-    // A run with more than one card item (tool + thinking) is NOT a lone tool,
-    // so it stays the boxed card rather than collapsing to the inline chip.
-    const { container } = render(
+  test("summarizes a tool + thinking run behind the footer summary", () => {
+    // A run with more than one card item (tool + thinking) hides behind the
+    // footer summary with the rest of the turn's steps.
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "m-tool-thinking",
@@ -2998,10 +2895,12 @@ describe("TranscriptMessageBody", () => {
 
     expect(
       container.querySelector("[data-testid='tool-progress-card']"),
-    ).not.toBeNull();
+    ).toBeNull();
     expect(
       container.querySelector("[data-testid='inline-tool-link']"),
     ).toBeNull();
+    expect(queryByText("done")).not.toBeNull();
+    expect(getByTestId("quiet-turn-work-summary")).not.toBeNull();
   });
 
   test("renders a pure-thinking run as an inline SingleActivity, not a card", () => {
@@ -3026,10 +2925,10 @@ describe("TranscriptMessageBody", () => {
     ).toBeNull();
   });
 
-  test("a pure-thinking run renders inline while a later lone tool renders as a chip", () => {
-    // The first run before the text is pure thinking; a lone bash tool follows
-    // the text and must render as the compact inline chip, not a boxed card.
-    const { container } = render(
+  test("a pure-thinking run renders inline while a later lone tool is summarized", () => {
+    // The run before the text is pure thinking and stays inline; the lone
+    // bash tool after the text hides behind the footer summary.
+    const { container, getByTestId, queryByText } = render(
       <TranscriptMessageBody
         message={{
           id: "m-pure-thinking",
@@ -3054,12 +2953,14 @@ describe("TranscriptMessageBody", () => {
       container.querySelector("[data-testid='thought-process-link']"),
     ).not.toBeNull();
     expect(container.textContent).toContain("Thought process");
-    expect(
-      container.querySelectorAll("[data-testid='tool-progress-card']").length,
-    ).toBe(0);
+    expect(queryByText("answer")).not.toBeNull();
     expect(
       container.querySelectorAll("[data-testid='inline-tool-link']").length,
-    ).toBe(1);
+    ).toBe(0);
+    fireEvent.click(getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual(["tc-a"]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("renders a 'Thought process' link for completed reasoning followed by text", () => {
@@ -3165,12 +3066,10 @@ describe("TranscriptMessageBody", () => {
         "[data-testid='surface'][data-surface-id='tps-1']",
       ).length,
     ).toBe(0);
-    // Suppressing it does not disturb the rest of the message: the activity
-    // card and the trailing prose still render.
-    expect(
-      container.querySelector("[data-testid='tool-progress-card']"),
-    ).not.toBeNull();
     expect(getByText("all done")).toBeTruthy();
+    expect(
+      container.querySelector("[data-testid='quiet-turn-work-summary']"),
+    ).not.toBeNull();
   });
 
   test("a NON task-progress surface still renders inline", () => {
@@ -3787,6 +3686,20 @@ describe("TranscriptMessageBody — generic inline process cards", () => {
   });
 
   test("renders the ACP-run descriptor row and wires open + stop", () => {
+    useAcpRunStore.getState().seedFromHistory([
+      {
+        acpSessionId: "acp-1",
+        agent: "Test agent",
+        parentConversationId: "conv-1",
+        status: "completed",
+        startedAt: 1_000,
+        completedAt: 2_000,
+        parentToolUseId: "tc-acp",
+        events: [],
+        usedTokens: 0,
+        contextSize: 0,
+      },
+    ]);
     stopAcpRunMock.mockClear();
     const toolCall: ChatMessageToolCall = {
       id: "tc-acp",
@@ -3810,9 +3723,20 @@ describe("TranscriptMessageBody — generic inline process cards", () => {
 
     fireEvent.click(getByTestId("inline-process-card-stop"));
     expect(stopAcpRunMock).toHaveBeenCalledWith("acp-1");
+    useAcpRunStore.getState().reset();
   });
 
   test("renders the background-task descriptor row and wires open + stop", () => {
+    useBackgroundTaskStore.getState().seedFromHistory([
+      {
+        id: "bg-1",
+        toolName: "bash",
+        conversationId: "conv-1",
+        command: "sleep 10",
+        startedAt: 1_000,
+        status: "running",
+      },
+    ]);
     stopBackgroundTaskMock.mockClear();
     const toolCall: ChatMessageToolCall = {
       id: "tc-bg",
@@ -3836,6 +3760,7 @@ describe("TranscriptMessageBody — generic inline process cards", () => {
 
     fireEvent.click(getByTestId("inline-process-card-stop"));
     expect(stopBackgroundTaskMock).toHaveBeenCalledWith("bg-1");
+    useBackgroundTaskStore.getState().reset();
   });
 });
 
@@ -4040,15 +3965,12 @@ describe("TranscriptMessageBody: response asset cards", () => {
     const { container, getByText } = renderTurn(["surf-notes"]);
 
     const link = reopenLinks(container)[0]!;
-    // A direct child of the message column, so it is a sibling of the
-    // "Earlier activity" disclosure rather than something inside it.
+    // A direct child of the message column: after the response body, above
+    // the footer, and outside any collapsed run.
     const column = link.parentElement!;
     expect(column.parentElement!.getAttribute("data-message-id")).toBe(
       "m-doc-turn",
     );
-    expect(
-      screen.getByRole("button", { name: "Earlier activity" }).contains(link),
-    ).toBe(false);
     expect(
       getByText("Done.").compareDocumentPosition(link) &
         Node.DOCUMENT_POSITION_FOLLOWING,
@@ -4134,28 +4056,22 @@ describe("TranscriptMessageBody: response asset cards", () => {
     expect(
       container.querySelector("[data-surface-id='preview-surf-notes']"),
     ).toBeNull();
-    // With nothing splitting the run, the whole lead-up collapses under ONE
-    // disclosure instead of leaving the trailing tool run flush outside it.
-    const triggers = screen.getAllByRole("button", {
-      name: "Earlier activity",
-    });
-    expect(triggers.length).toBe(1);
-    // Collapsed, so the lead-in is not mounted; the answer and the card are.
+    // The opening prose and the answer show; the tool runs hide behind the
+    // footer summary. With the preview dropped, the create and the edit form
+    // one contiguous run in the summary's steps.
     expect(
       screen.queryByText("i'll make a short weather-themed test document."),
-    ).toBeNull();
+    ).not.toBeNull();
     expect(
       screen.queryByText("created the weather test document."),
     ).not.toBeNull();
-    // Both tool runs live in that one disclosure: with the preview dropped,
-    // the create and the edit form one contiguous run.
-    fireEvent.click(triggers[0]!);
-    expect(
-      screen.queryByText("i'll make a short weather-themed test document."),
-    ).not.toBeNull();
-    expect(
-      container.querySelectorAll("[data-testid='tool-progress-card']").length,
-    ).toBe(1);
+    fireEvent.click(screen.getByTestId("quiet-turn-work-summary"));
+    const opened = useViewerStore.getState().activeActivitySteps;
+    expect(opened?.toolCalls.map((call) => call.id)).toEqual([
+      "tc-create",
+      "tc-update",
+    ]);
+    useViewerStore.getState().closeActivitySteps();
   });
 
   test("an app follows the same rule: no inline preview, one card at the end", () => {

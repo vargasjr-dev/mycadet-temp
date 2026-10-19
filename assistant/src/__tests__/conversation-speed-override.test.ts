@@ -161,8 +161,8 @@ mock.module("../agent/loop.js", () => ({
 import { Conversation } from "../daemon/conversation.js";
 
 beforeEach(() => {
-  // Real flag resolution — fast-mode (and all registry flags) enabled,
-  // replacing the former blanket module mock.
+  // Real flag resolution for the surviving registry flags, replacing the
+  // former blanket module mock.
   setAllFlagsOnForTesting();
 });
 

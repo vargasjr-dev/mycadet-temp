@@ -211,9 +211,8 @@ would otherwise use the addon.
 **Which notifications the addon posts.** The addon posts only notifications
 that carry a sender; everything else uses Electron's presenter, through the
 shared `createElectronNotification`. The avatar is the one thing the addon
-renders that Electron cannot, and the renderer attaches a sender only under the
-`push-avatar-sender` flag, so turning that flag off restores Electron as the
-delivery path for every notification without shipping a new build.
+renders that Electron cannot, and the renderer attaches a sender whenever the
+prepared identity matches the selected notification.
 
 The sender is process-local prepared state, not a value reconstructed in the
 preload or main process. The renderer supplies it only when the prepared scope,
@@ -222,10 +221,10 @@ identity. A name or conversation title is presentation data and never becomes
 sender identity. The optional preload field preserves compatibility with older
 packaged shells;
 missing support and native unavailability take the existing plain Electron
-path. `local-notification-avatar` does not select the Electron sender route.
+path.
 
-**Permission confirmation.** Under `push-avatar-sender`, the notifications
-permission flow captures the exact selected identity before prompting. After a
+**Permission confirmation.** The notifications permission flow captures the
+exact selected identity before prompting. After a
 grant, it revalidates that identity and the prepared in-memory avatar, then asks
 the native notifier for one confirmation. Stale or missing identity, missing
 avatar resolution, or unavailable native support posts the confirmation
