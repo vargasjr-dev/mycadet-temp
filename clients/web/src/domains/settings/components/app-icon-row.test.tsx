@@ -176,8 +176,6 @@ const { AppIconRow } =
   await import("@/domains/settings/components/app-icon-row");
 const { APP_ICON_UNSUPPORTED, useAppIconStore } =
   await import("@/stores/app-icon-store");
-const { useClientFeatureFlagStore } =
-  await import("@/stores/client-feature-flag-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
@@ -309,15 +307,11 @@ async function renderRow() {
   return view;
 }
 
-/**
- * Put the stand-in shell on Android, flag and all. Android carries its own
- * flag, so naming the cloud without opening its gate draws nothing.
- */
+/** Put the stand-in shell on Android. */
 function runOnAndroidShell(appId: string) {
   nativeIOS = false;
   nativeAndroid = true;
   shellAppId = appId;
-  useClientFeatureFlagStore.setState({ androidAvatarAppIcon: true });
 }
 
 beforeEach(() => {
@@ -332,7 +326,6 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: ALL_ICONS };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useClientFeatureFlagStore.setState({ androidAvatarAppIcon: false });
   useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
 });
 
@@ -343,19 +336,19 @@ afterEach(() => {
   getAppIconState.mockClear();
   setAppIcon.mockClear();
   getInfoMock.mockClear();
-  useClientFeatureFlagStore.setState({ androidAvatarAppIcon: false });
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
 });
 
 describe("AppIconRow", () => {
-  test("draws nothing on Android without its own flag", async () => {
+  test("draws the row on Android", async () => {
     nativeIOS = false;
     nativeAndroid = true;
 
-    const { container } = await renderRow();
+    await renderRow();
 
-    expect(container.innerHTML).toBe("");
-    expect(getAppIconState).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(getAppIconState).toHaveBeenCalled();
+    });
   });
 
   test("draws nothing off native iOS", async () => {

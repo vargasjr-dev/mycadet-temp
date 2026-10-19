@@ -90,8 +90,6 @@ mock.module("@/hooks/use-assistant-avatar", () => ({
 const { useAppIconSync } = await import("@/hooks/use-app-icon-sync");
 const { APP_ICON_UNSUPPORTED, useAppIconStore } =
   await import("@/stores/app-icon-store");
-const { useClientFeatureFlagStore } =
-  await import("@/stores/client-feature-flag-store");
 const { publish } = await import("@/lib/event-bus");
 
 async function renderSync() {
@@ -109,14 +107,12 @@ beforeEach(() => {
   swapSucceeds = true;
   iconState = { supported: true, current: null, available: [ICON] };
   useAppIconStore.setState({ snapshot: APP_ICON_UNSUPPORTED });
-  useClientFeatureFlagStore.setState({ androidAvatarAppIcon: false });
 });
 
 afterEach(() => {
   cleanup();
   getAppIconState.mockClear();
   setAppIcon.mockClear();
-  useClientFeatureFlagStore.setState({ androidAvatarAppIcon: false });
 });
 
 describe("useAppIconSync", () => {
@@ -141,10 +137,9 @@ describe("useAppIconSync", () => {
     expect(getAppIconState).not.toHaveBeenCalled();
   });
 
-  test("runs on the Android shell behind its own flag", async () => {
+  test("runs on the Android shell", async () => {
     nativeIOS = false;
     nativeAndroid = true;
-    useClientFeatureFlagStore.setState({ androidAvatarAppIcon: true });
 
     const { result } = await renderSync();
 

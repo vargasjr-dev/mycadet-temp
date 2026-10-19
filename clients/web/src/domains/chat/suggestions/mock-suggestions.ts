@@ -153,8 +153,7 @@ export const MOCK_SUGGESTION_GROUPS: SuggestionGroup[] = [
       },
     ],
   },
-  // Cadet-curated picks: placeholder/mock suggestions rendered behind the
-  // new-thread-suggestions feature flag.
+  // Cadet-curated picks: the editorial suggestions rendered in the library.
   {
     id: "cadet-picks",
     title: "Cadet picks",

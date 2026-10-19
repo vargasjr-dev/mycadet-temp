@@ -39,7 +39,6 @@ import {
 import type { ConversationStarter } from "@/domains/chat/utils/conversation-starters";
 import type { ThreadSuggestion } from "@/domains/chat/suggestions/types";
 import type { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 // ---------------------------------------------------------------------------
 // Params & return type
@@ -67,9 +66,9 @@ export interface UseChatEmptyStateParams {
   showCreditsUpsell: boolean;
   onSelectStarter: (starter: ConversationStarter) => void;
   /**
-   * Behind the new-thread-suggestions flag, clicking a library card invokes
-   * this to open the detail drawer. The library only renders when this is
-   * provided; otherwise the empty state falls back to the starter chips.
+   * Clicking a library card invokes this to open the detail drawer. The
+   * library only renders when this is provided; otherwise the empty state
+   * falls back to the starter chips.
    */
   onSelectSuggestion?: (suggestion: ThreadSuggestion) => void;
 }
@@ -132,10 +131,8 @@ export function useChatEmptyState({
     customImageUrl: avatarImageUrl,
   } = avatar;
 
-  const newThreadSuggestionsEnabled =
-    useClientFeatureFlagStore.use.newThreadSuggestions();
   // Cheap memoized hook — safe to call unconditionally; the result is only
-  // rendered on the flag-on path below.
+  // rendered on the library path below.
   const { featured, groups } = useThreadSuggestions();
 
   const emptyStatePlaceholder = useMemo(() => pickRandomPlaceholder(), []);
@@ -172,15 +169,12 @@ export function useChatEmptyState({
   const actsEnabled =
     isPlainEmptyState && !isLiveVoiceSessionActive(liveVoiceState);
 
-  // Behind the flag, the new suggestions library replaces the starter chips
-  // on a fresh thread. The app-editing override keeps its bespoke chips
-  // regardless of the flag, so it stays on the grid path. The library also
-  // needs `onSelectSuggestion` to open its detail drawer; without it we fall
-  // back to the chip grid.
+  // On a fresh thread the suggestions library replaces the starter chips.
+  // The app-editing override keeps its bespoke chips, so it stays on the
+  // grid path. The library also needs `onSelectSuggestion` to open its
+  // detail drawer; without it we fall back to the chip grid.
   const showSuggestionLibrary =
-    newThreadSuggestionsEnabled &&
-    isPlainEmptyState &&
-    onSelectSuggestion != null;
+    isPlainEmptyState && onSelectSuggestion != null;
 
   // Gate the daemon fetch by `isEmptyConversation` so non-empty chats stop
   // polling for data that's never rendered. Also skip it whenever the

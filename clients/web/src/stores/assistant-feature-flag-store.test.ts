@@ -37,17 +37,17 @@ beforeEach(() => {
 
 describe("useAssistantFeatureFlagStore", () => {
   test("keeps an optimistic assistant flag update when the server accepts it", async () => {
-    store().setFlag("selfIntroGreeting", true, "assistant-123");
+    store().setFlag("fastMode", true, "assistant-123");
 
-    expect(store().selfIntroGreeting).toBe(true);
+    expect(store().fastMode).toBe(true);
     await Promise.resolve();
 
-    expect(store().selfIntroGreeting).toBe(true);
+    expect(store().fastMode).toBe(true);
     const request = patchMock.mock.calls[0]?.[0];
     expect(request).toMatchObject({
       path: {
         assistant_id: "assistant-123",
-        flag_key: "self-intro-greeting",
+        flag_key: "fast-mode",
       },
       body: { enabled: true },
       throwOnError: false,
@@ -63,13 +63,13 @@ describe("useAssistantFeatureFlagStore", () => {
         }),
     );
 
-    store().setFlag("selfIntroGreeting", true, "assistant-123");
-    expect(store().selfIntroGreeting).toBe(true);
+    store().setFlag("fastMode", true, "assistant-123");
+    expect(store().fastMode).toBe(true);
 
     resolvePatch?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
 
-    expect(store().selfIntroGreeting).toBe(false);
+    expect(store().fastMode).toBe(false);
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
   });
 
@@ -82,19 +82,19 @@ describe("useAssistantFeatureFlagStore", () => {
         }),
     );
 
-    store().setFlag("selfIntroGreeting", true, "assistant-123");
-    expect(store().selfIntroGreeting).toBe(true);
+    store().setFlag("fastMode", true, "assistant-123");
+    expect(store().fastMode).toBe(true);
 
-    store().setFlag("selfIntroGreeting", false, "assistant-123");
-    expect(store().selfIntroGreeting).toBe(false);
+    store().setFlag("fastMode", false, "assistant-123");
+    expect(store().fastMode).toBe(false);
 
     resolvePatches[0]?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
-    expect(store().selfIntroGreeting).toBe(false);
+    expect(store().fastMode).toBe(false);
 
     resolvePatches[1]?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
-    expect(store().selfIntroGreeting).toBe(false);
+    expect(store().fastMode).toBe(false);
   });
 
   test("is a no-op for an assistant flag when there is no assistant id", async () => {

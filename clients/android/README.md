@@ -100,9 +100,8 @@ with it.
 
 A user picks an eyes-on-color launcher icon in the web app under
 Settings -> General -> Preferences -> App icon
-(`clients/web/src/domains/settings/components/app-icon-modal.tsx`), gated on the
-dark `android-avatar-app-icon` flag. Every combination ships: 9 eye styles by 6
-colors, so 54 alternates.
+(`clients/web/src/domains/settings/components/app-icon-modal.tsx`). Every
+combination ships: 9 eye styles by 6 colors, so 54 alternates.
 
 `clients/ios/scripts/generate-android-avatar-icons.ts` writes all of them from
 the avatar catalog as vector XML rather than rasterized PNGs. Edit the script,

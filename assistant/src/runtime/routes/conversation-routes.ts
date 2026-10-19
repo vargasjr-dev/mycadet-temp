@@ -41,7 +41,6 @@ import {
   parseInterfaceId,
   supportsHostProxy,
 } from "../../channels/types.js";
-import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
 import { getConversationProfilesForProvider } from "../../config/default-profile-catalog.js";
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { getConfig } from "../../config/loader.js";
@@ -365,8 +364,6 @@ function alignAttachments(
   return { attachments, refIndexToAttachment, rewriteContentOrder: identity };
 }
 
-/** Feature flag gating the self-intro first message (see first-greeting.ts). */
-const SELF_INTRO_GREETING_FLAG = "self-intro-greeting" as const;
 
 const SUGGESTION_CACHE_MAX = 100;
 const VALID_RISK_THRESHOLDS = ["none", "low", "medium", "high"] as const;
@@ -2190,11 +2187,8 @@ export async function handleSendMessage(
   const isScanPath = !!scanUrl && isWakeUp;
   // Self-intro path: when we know a name, send a natural introduction on the
   // user's behalf instead of the canned greeting, so the assistant generates a
-  // real first response. Gated behind the `self-intro-greeting` flag (default
-  // off); `undefined` (flag off or no names) falls back to the canned path.
-  const selfIntroGreetingEnabled =
-    isWakeUp && isAssistantFeatureFlagEnabled(SELF_INTRO_GREETING_FLAG);
-  const selfIntro = selfIntroGreetingEnabled
+  // real first response. `undefined` (no names) falls back to the canned path.
+  const selfIntro = isWakeUp
     ? buildSelfIntroMessage(body.onboarding ?? undefined)
     : undefined;
 
@@ -2308,7 +2302,7 @@ export async function handleSendMessage(
       : ("content-source" as const);
     effectiveContent = buildScanFirstMessage(scanUrl, scanVariant);
     // Fall through to normal inference path below
-  } else if (selfIntroGreetingEnabled && body.onboarding?.initialMessage) {
+  } else if (isWakeUp && body.onboarding?.initialMessage) {
     effectiveContent = body.onboarding.initialMessage;
   } else if (isWakeUp && selfIntro) {
     // Rewrite to the self-introduction and fall through to real inference

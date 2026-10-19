@@ -43,14 +43,6 @@ export async function getPluginCatalog(
   return catalog;
 }
 
-/** Category metadata for plugins already installed. */
-export async function getPluginCatalogForInstalledMetadata(
-  ref: string,
-  deps: PluginCatalogLoadDeps,
-): Promise<PluginCatalog> {
-  return getPluginCatalog(ref, deps);
-}
-
 /** Invalidate the cache (for testing or forced refresh). */
 export function invalidatePluginCatalogCache(): void {
   cache.clear();

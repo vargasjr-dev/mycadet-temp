@@ -19,16 +19,6 @@ import type { ThreadSuggestion } from "@/domains/chat/suggestions/types";
 
 // --- Mocks ----------------------------------------------------------------
 
-const flagRef = { value: false };
-
-mock.module("@/stores/client-feature-flag-store", () => {
-  const store = () => null;
-  store.use = {
-    newThreadSuggestions: () => flagRef.value,
-  };
-  return { useClientFeatureFlagStore: store };
-});
-
 mock.module("@/domains/chat/hooks/use-empty-state-greeting", () => ({
   useEmptyStateGreeting: () => ({ greeting: "Hi there", isGenerating: false }),
 }));
@@ -112,7 +102,6 @@ function baseParams(
 }
 
 beforeEach(() => {
-  flagRef.value = false;
   startersRef.value = [STARTER];
   startersStatusRef.value = "ready";
   awaitingStartersRef.value = false;
@@ -142,7 +131,7 @@ describe("useChatEmptyState composerPeekSlot", () => {
 });
 
 describe("useChatEmptyState startersSlot", () => {
-  test("flag OFF renders the conversation-starter chips, not the library", () => {
+  test("without onSelectSuggestion renders the conversation-starter chips, not the library", () => {
     const { result } = renderHook(() => useChatEmptyState(baseParams()));
 
     const { container } = render(<>{result.current.startersSlot}</>);
@@ -154,8 +143,7 @@ describe("useChatEmptyState startersSlot", () => {
     ).not.toBeNull();
   });
 
-  test("flag ON with onSelectSuggestion docks the featured row and groups below the fold", () => {
-    flagRef.value = true;
+  test("with onSelectSuggestion docks the featured row and groups below the fold", () => {
     const { result } = renderHook(() =>
       useChatEmptyState(baseParams({ onSelectSuggestion: () => {} })),
     );
@@ -176,21 +164,7 @@ describe("useChatEmptyState startersSlot", () => {
     ).not.toBeNull();
   });
 
-  test("flag ON without onSelectSuggestion falls back to the conversation-starter chips", () => {
-    flagRef.value = true;
-    const { result } = renderHook(() => useChatEmptyState(baseParams()));
-
-    const { container } = render(<>{result.current.startersSlot}</>);
-    expect(
-      container.querySelector('[data-slot="suggestion-library"]'),
-    ).toBeNull();
-    expect(
-      container.querySelector(`[aria-label="Send: ${STARTER.label}"]`),
-    ).not.toBeNull();
-  });
-
-  test("flag ON: selecting a card opens the suggestion via onSelectSuggestion", () => {
-    flagRef.value = true;
+  test("selecting a card opens the suggestion via onSelectSuggestion", () => {
     const submitted: ConversationStarter[] = [];
     const opened: ThreadSuggestion[] = [];
     const { result } = renderHook(() =>
@@ -209,8 +183,7 @@ describe("useChatEmptyState startersSlot", () => {
     expect(submitted).toHaveLength(0);
   });
 
-  test("flag ON but app-editing keeps the conversation-starter grid", () => {
-    flagRef.value = true;
+  test("app-editing keeps the conversation-starter grid", () => {
     const { result } = renderHook(() =>
       useChatEmptyState(
         baseParams({
@@ -368,8 +341,7 @@ describe("useChatEmptyState starters dock", () => {
     // The library takes the same docked slot but fills it from its own data,
     // and the starter query is disabled on that path, so it answers idle with
     // no chips. Reading that as an empty dock collapsed the featured row out
-    // of sight on the whole flag-on empty state.
-    flagRef.value = true;
+    // of sight on the whole library empty state.
     const { result } = renderHook(() =>
       useChatEmptyState(baseParams({ onSelectSuggestion: () => {} })),
     );
@@ -385,13 +357,12 @@ describe("useChatEmptyState starters dock", () => {
   });
 
   test("the library is not collapsed even for an assistant known to have no chips", () => {
-    // The discriminating case: the flag-off path for this assistant would
+    // The discriminating case: the chips path for this assistant would
     // collapse, so a gate that only checked the starter data would take the
     // library down with it.
     recordAssistantProducesStarters("a1", false);
     startersRef.value = [];
     startersStatusRef.value = "empty";
-    flagRef.value = true;
     const { result } = renderHook(() =>
       useChatEmptyState(baseParams({ onSelectSuggestion: () => {} })),
     );

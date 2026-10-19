@@ -367,24 +367,8 @@
     "otherPlaceholder": "我們可以在哪些方面做得更好？",
     "title": "您為什麼要取消？"
   },
-  "chatgptDeviceAuthFlow": {
-    "authorizationHint": "您或您的團隊管理員可能需要在 <settingsLink>ChatGPT 設定</settingsLink> 中啟用裝置代碼授權。",
-    "connected": "ChatGPT 訂閱已成功連線。",
-    "copiedButton": "已複製",
-    "copyButton": "複製代碼",
-    "copyError": "無法複製代碼。請手動複製。",
-    "instructions": "請在 ChatGPT 頁面上輸入此代碼。此代碼將在 15 分鐘後過期。",
-    "openButton": "開啟 ChatGPT",
-    "signInButton": "使用 ChatGPT 登入",
-    "startOver": "重新開始",
-    "starting": "正在開始登入...",
-    "tryAgain": "再試一次",
-    "waiting": "正在等待您輸入代碼..."
-  },
   "chatgptOauthSection": {
-    "hideOtherOptions": "隱藏其他登入選項",
-    "intro": "連結您的 ChatGPT 訂閱，無需 API 金鑰即可使用 OpenAI 模型。",
-    "otherOptions": "其他登入選項"
+    "intro": "連結您的 ChatGPT 訂閱，無需 API 金鑰即可使用 OpenAI 模型。"
   },
   "chatgptPasteAuthFlow": {
     "completeFailed": "登入失敗。請再試一次。",
@@ -395,14 +379,11 @@
     "missingCode": "URL 缺少授權碼。請確認您已複製完整的 URL。",
     "missingState": "URL 缺少狀態參數。請確認您已複製完整的 URL。",
     "pasteUrlError": "請貼上錯誤頁面中的 URL。",
-    "signInButton": "開啟 ChatGPT 登入",
-    "signInButtonStandalone": "使用 ChatGPT 登入",
+    "signInButton": "使用 ChatGPT 登入",
     "startFailed": "啟動 ChatGPT 登入失敗。請再試一次。",
     "startingSignIn": "正在啟動登入...",
-    "step1Idle": "1. 點擊下方的「開啟 ChatGPT 登入」以開啟彈出視窗",
-    "step1IdleStandalone": "1. 按一下下方的「使用 ChatGPT 登入」以開啟彈出視窗",
-    "step1PasteUrl": "1. 點擊「開啟 ChatGPT 登入」以開啟彈出視窗",
-    "step1PasteUrlStandalone": "1. 按一下「使用 ChatGPT 登入」以開啟彈出視窗",
+    "step1Idle": "1. 按一下下方的「使用 ChatGPT 登入」以開啟彈出視窗",
+    "step1PasteUrl": "1. 按一下「使用 ChatGPT 登入」以開啟彈出視窗",
     "step2": "2. 登入後，您將會進入錯誤頁面 - 這是預期行為",
     "step3": "3. 從該頁面的網址列複製完整的 URL 並貼到下方",
     "tryAgain": "再試一次",
@@ -1851,11 +1832,6 @@
     "cancelFailedToast": "無法取消您的訂閱。請再試一次。",
     "canceledToast": "專業版方案已取消。您將可使用至 {date}。",
     "endOfBillingPeriod": "您的帳單週期結束"
-  },
-  "useChatgptDeviceAuth": {
-    "expired": "此代碼已過期。請重新開始以取得新代碼。",
-    "rejected": "ChatGPT 無法確認此代碼。",
-    "startFailed": "無法啟動 ChatGPT 登入。請再試一次。"
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助理尚未準備就緒。請再試一次。",

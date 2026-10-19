@@ -170,7 +170,6 @@ import { useVoiceInput } from "@/domains/chat/hooks/use-voice-input";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { shouldMintNewChatDraft } from "@/domains/chat/utils/conversation-selection";
 import { isNativeMobile } from "@/runtime/platform-detection";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -1118,10 +1117,8 @@ export function ChatMainPanel({
   );
 
   // -------------------------------------------------------------------------
-  // New-thread suggestion drawer (behind the flag, empty-state only)
+  // New-thread suggestion drawer (empty-state only)
   // -------------------------------------------------------------------------
-  const newThreadSuggestionsEnabled =
-    useClientFeatureFlagStore.use.newThreadSuggestions();
   // Called unconditionally — the desktop drawer vs mobile sheet choice below
   // branches on this, but the hook must run on every render.
   const [selectedSuggestion, setSelectedSuggestion] =
@@ -1219,9 +1216,7 @@ export function ChatMainPanel({
     isAssistantBusy,
     showCreditsUpsell: balanceStatus.isExhausted,
     onSelectStarter: handleSelectStarter,
-    onSelectSuggestion: newThreadSuggestionsEnabled
-      ? setSelectedSuggestion
-      : undefined,
+    onSelectSuggestion: setSelectedSuggestion,
   });
 
   // -------------------------------------------------------------------------
@@ -1608,9 +1603,8 @@ export function ChatMainPanel({
   // viewports, so the chat renders normally and the detail floats above it in a
   // `BottomSheet` instead.
   //
-  // Flag off (either viewport): the chat renders exactly as before — no wrapper.
-  let mainContent: ReactNode = chatBody;
-  if (newThreadSuggestionsEnabled && !isMobile) {
+  let mainContent: ReactNode;
+  if (!isMobile) {
     mainContent = (
       <AnimatedRightDrawer
         open={Boolean(selectedSuggestion)}
@@ -1619,7 +1613,7 @@ export function ChatMainPanel({
         right={suggestionDetailPanel}
       />
     );
-  } else if (newThreadSuggestionsEnabled && isMobile) {
+  } else {
     mainContent = (
       <>
         {chatBody}

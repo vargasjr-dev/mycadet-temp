@@ -367,24 +367,8 @@
     "otherPlaceholder": "我们可以在哪些方面做得更好？",
     "title": "您为什么要取消？"
   },
-  "chatgptDeviceAuthFlow": {
-    "authorizationHint": "您或您的团队管理员可能需要在 <settingsLink>ChatGPT 设置</settingsLink> 中启用设备代码授权。",
-    "connected": "ChatGPT 订阅连接成功。",
-    "copiedButton": "已复制",
-    "copyButton": "复制代码",
-    "copyError": "无法复制代码。请手动复制。",
-    "instructions": "在 ChatGPT 页面上输入此代码。它将在 15 分钟后过期。",
-    "openButton": "打开 ChatGPT",
-    "signInButton": "使用 ChatGPT 登录",
-    "startOver": "重新开始",
-    "starting": "正在开始登录...",
-    "tryAgain": "重试",
-    "waiting": "正在等待您输入代码..."
-  },
   "chatgptOauthSection": {
-    "hideOtherOptions": "隐藏其他登录选项",
-    "intro": "连接您的 ChatGPT 订阅，无需 API 密钥即可使用 OpenAI 模型。",
-    "otherOptions": "其他登录选项"
+    "intro": "连接您的 ChatGPT 订阅，无需 API 密钥即可使用 OpenAI 模型。"
   },
   "chatgptPasteAuthFlow": {
     "completeFailed": "登录失败。请重试。",
@@ -395,14 +379,11 @@
     "missingCode": "URL 缺少授权码。请确保您复制了完整的 URL。",
     "missingState": "URL 缺少状态参数。请确保您复制了完整的 URL。",
     "pasteUrlError": "请粘贴错误页面中的 URL。",
-    "signInButton": "打开 ChatGPT 登录",
-    "signInButtonStandalone": "使用 ChatGPT 登录",
+    "signInButton": "使用 ChatGPT 登录",
     "startFailed": "启动 ChatGPT 登录失败。请重试。",
     "startingSignIn": "正在启动登录...",
-    "step1Idle": "1. 点击下方的“打开 ChatGPT 登录”以打开一个弹窗",
-    "step1IdleStandalone": "1. 点击下方的“使用 ChatGPT 登录”以打开弹出窗口",
-    "step1PasteUrl": "1. 点击“打开 ChatGPT 登录”以打开一个弹窗",
-    "step1PasteUrlStandalone": "1. 点击“使用 ChatGPT 登录”以打开弹出窗口",
+    "step1Idle": "1. 点击下方的“使用 ChatGPT 登录”以打开弹出窗口",
+    "step1PasteUrl": "1. 点击“使用 ChatGPT 登录”以打开弹出窗口",
     "step2": "2. 登录后，您将进入一个错误页面 - 这是预期行为",
     "step3": "3. 从该页面的地址栏复制完整的 URL 并粘贴到下方",
     "tryAgain": "重试",
@@ -1851,11 +1832,6 @@
     "cancelFailedToast": "无法取消您的订阅。请重试。",
     "canceledToast": "专业版套餐已取消。您将拥有访问权限直到 {date}。",
     "endOfBillingPeriod": "您的账单周期结束"
-  },
-  "useChatgptDeviceAuth": {
-    "expired": "此代码已过期。请重新开始以获取新代码。",
-    "rejected": "ChatGPT 无法确认此代码。",
-    "startFailed": "无法启动 ChatGPT 登录。请重试。"
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助手未就绪。请重试。",

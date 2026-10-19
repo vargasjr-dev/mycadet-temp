@@ -18,7 +18,7 @@
  * of depending on real animation timing (see active-subagents-overlay.test).
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import {
   createElement,
@@ -32,16 +32,6 @@ import {
 import type { ThreadSuggestion } from "@/domains/chat/suggestions/types";
 
 // --- Mocks ----------------------------------------------------------------
-
-const flagRef = { value: true };
-
-mock.module("@/stores/client-feature-flag-store", () => {
-  const store = () => null;
-  store.use = {
-    newThreadSuggestions: () => flagRef.value,
-  };
-  return { useClientFeatureFlagStore: store };
-});
 
 mock.module("@/domains/chat/hooks/use-empty-state-greeting", () => ({
   useEmptyStateGreeting: () => ({ greeting: "Hi there", isGenerating: false }),
@@ -222,10 +212,6 @@ function Harness({
     />
   );
 }
-
-beforeEach(() => {
-  flagRef.value = true;
-});
 
 afterEach(() => {
   cleanup();

@@ -14,11 +14,6 @@ afterEach(() => {
 });
 
 describe("feature flag catalog", () => {
-  test("exposes self-intro greeting to client and assistant flag stores", () => {
-    expect(CLIENT_FLAG_DEFAULTS.selfIntroGreeting).toBe(false);
-    expect(ASSISTANT_FLAG_DEFAULTS.selfIntroGreeting).toBe(false);
-  });
-
   test("exposes cadet hosted inference as an assistant flag defaulting off", () => {
     expect(ASSISTANT_FLAG_DEFAULTS.cadetHostedInference).toBe(false);
     expect("cadetHostedInference" in CLIENT_FLAG_DEFAULTS).toBe(false);
@@ -157,15 +152,15 @@ describe("getEnvFlagOverridesForScope", () => {
   test("flags with scope 'both' appear for both client and assistant scopes", () => {
     (globalThis as Record<string, unknown>).window = {
       __CADET_FLAG_OVERRIDES__: {
-        "self-intro-greeting": true,
+        "send-user-message": true,
       },
     };
 
     const clientResult = getEnvFlagOverridesForScope("client");
     const assistantResult = getEnvFlagOverridesForScope("assistant");
 
-    expect(clientResult.bool).toEqual({ selfIntroGreeting: true });
-    expect(assistantResult.bool).toEqual({ selfIntroGreeting: true });
+    expect(clientResult.bool).toEqual({ sendUserMessage: true });
+    expect(assistantResult.bool).toEqual({ sendUserMessage: true });
   });
 });
 

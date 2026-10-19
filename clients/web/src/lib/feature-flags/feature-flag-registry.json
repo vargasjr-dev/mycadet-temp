@@ -2,93 +2,11 @@
   "version": 1,
   "flags": [
     {
-      "id": "in-chat-onboarding-tour",
-      "scope": "client",
-      "key": "in-chat-onboarding-tour",
-      "label": "In-Chat Onboarding Tour",
-      "description": "Multivariate experiment for the eyes-led in-chat onboarding tour. control = straight to chat after research onboarding (current behavior); tour = the extended tour auto-plays on first workspace entry. Desktop-only: phone-width viewports and the native shell get neither the tour nor its telemetry (not even the exposure event), so the funnel measures desktop sessions exclusively. Targeted via LaunchDarkly (70% tour / 30% control).",
-      "defaultEnabled": "control",
-      "values": ["control", "tour"]
-    },
-    {
-      "id": "vision-mode",
-      "scope": "client",
-      "key": "vision-mode",
-      "label": "Vision Mode",
-      "description": "Gates hold-to-Live ambient frame sampling in the voice room camera. String-valued so future A/B arms can be added as new values.",
-      "defaultEnabled": "off",
-      "values": ["off", "on"]
-    },
-    {
       "id": "cadet-hosted-inference",
       "scope": "assistant",
       "key": "cadet-hosted-inference",
       "label": "Cadet Hosted Inference",
       "description": "Show Cadet-hosted GPU models (Qwen3 8B) in the catalog and the Settings Personality sliders that steer them.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "teach",
-      "scope": "client",
-      "key": "teach",
-      "label": "Teach",
-      "description": "Offer Teach, the session that reads the user's screen while they narrate what they are doing. Gates the companion surface's Teach control and the toggleWatch command that starts a session; evaluated in the app's window and read again in the Electron main process, which pushes it to the floating surface",
-      "defaultEnabled": false
-    },
-    {
-      "id": "quiet-turn-activity",
-      "scope": "client",
-      "key": "quiet-turn-activity",
-      "label": "Quiet Turn Activity",
-      "description": "While the assistant works, show a reply skeleton with one line naming where it is working instead of its intermediate text and steps; a settled turn shows only its opening line and its answer, with the steps behind a Worked summary in the message footer",
-      "defaultEnabled": false
-    },
-    {
-      "id": "fast-mode",
-      "scope": "assistant",
-      "key": "fast-mode",
-      "label": "Fast Mode",
-      "description": "Enable Anthropic fast mode for Opus models (4.6, 4.7, 4.8), delivering up to 2.5x higher output tokens per second at premium pricing",
-      "defaultEnabled": false
-    },
-    {
-      "id": "internal-thread-actions",
-      "scope": "client",
-      "key": "internal-thread-actions",
-      "label": "Internal Thread Actions",
-      "description": "Show the internal thread affordances: 'Fork from here' and 'Summarize up to here' on messages, 'Fork Conversation', 'Analyze Conversation', and 'Copy conversation ID' in the thread menu, plus the LLM inspector surfaces. The flag is the sole gate: any session that enables it gets the affordances, including local sessions with no platform identity.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "velvet",
-      "scope": "client",
-      "key": "velvet",
-      "label": "Velvet",
-      "description": "Enable the Velvet design theme.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "self-intro-greeting",
-      "scope": "both",
-      "key": "self-intro-greeting",
-      "label": "Self-intro first message",
-      "description": "On the first conversation, send a natural self-introduction (e.g. \"Hi Vela, I'm alex. Nice to meet you.\") on the user's behalf and route it through real LLM inference, instead of serving the canned first greeting. Names come from the onboarding context; falls back to the canned greeting when no name is known. Exposed to clients so pre-hatch onboarding can compute the source-of-truth initial message, and to the assistant so older clients can still be gated server-side. See assistant/src/daemon/first-greeting.ts (buildSelfIntroMessage).",
-      "defaultEnabled": false
-    },
-    {
-      "id": "os-beta",
-      "scope": "assistant",
-      "key": "os-beta",
-      "label": "OS Beta",
-      "description": "Enable the OS Beta model profile (MiniMax M3 / Together) in the assistant's model profile selection.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "new-thread-suggestions",
-      "scope": "client",
-      "key": "new-thread-suggestions",
-      "label": "New-thread suggestions library",
-      "description": "Replace the empty-state conversation-starter chips with the scrollable, categorized suggestions library and detail drawer (currently mocked data).",
       "defaultEnabled": false
     },
     {
@@ -100,27 +18,31 @@
       "defaultEnabled": false
     },
     {
-      "id": "marketing-pricing-takeover",
-      "scope": "client",
-      "key": "marketing-pricing-takeover",
-      "label": "Marketing Pricing Takeover",
-      "description": "Gates the marketing pricing takeover page (mycadet.ai/pricing) and the `/assistant/checkout?package=<slug>` deep link its package CTAs target. One flag covers both halves of the funnel so they can never be enabled independently and strand a CTA. When off, the checkout deep link redirects to the in-app plans takeover.",
+      "id": "fast-mode",
+      "scope": "assistant",
+      "key": "fast-mode",
+      "label": "Fast Mode",
+      "description": "Enable Anthropic fast mode for Opus models (4.6, 4.7, 4.8), delivering up to 2.5x higher output tokens per second at premium pricing",
       "defaultEnabled": false
     },
     {
-      "id": "android-avatar-app-icon",
+      "id": "in-chat-onboarding-tour",
       "scope": "client",
-      "key": "android-avatar-app-icon",
-      "label": "Android Avatar App Icon",
-      "description": "Shows the App icon picker in Settings -> General on Android, where any user chooses an eyes-on-color launcher icon, seeds the picker from their assistant's character avatar, or resets to the default. Android applies the change when the app goes to the background, and switching icons can reset a pinned home-screen shortcut. Off hides the picker and leaves the default icon in place.",
-      "defaultEnabled": false
+      "key": "in-chat-onboarding-tour",
+      "label": "In-Chat Onboarding Tour",
+      "description": "Multivariate experiment for the eyes-led in-chat onboarding tour. control = straight to chat after research onboarding (current behavior); tour = the extended tour auto-plays on first workspace entry. Desktop-only: phone-width viewports and the native shell get neither the tour nor its telemetry (not even the exposure event), so the funnel measures desktop sessions exclusively. Targeted via LaunchDarkly (70% tour / 30% control).",
+      "defaultEnabled": "control",
+      "values": [
+        "control",
+        "tour"
+      ]
     },
     {
-      "id": "push-avatar-sender",
+      "id": "internal-thread-actions",
       "scope": "client",
-      "key": "push-avatar-sender",
-      "label": "Push Avatar Sender",
-      "description": "Native notifications show the assistant's avatar as the icon with the assistant's name on line one. Same key the cloud reads for APNs/FCM sender blocks.",
+      "key": "internal-thread-actions",
+      "label": "Internal Thread Actions",
+      "description": "Show the internal thread affordances: 'Fork from here' and 'Summarize up to here' on messages, 'Fork Conversation', 'Analyze Conversation', and 'Copy conversation ID' in the thread menu, plus the LLM inspector surfaces. The flag is the sole gate: any session that enables it gets the affordances, including local sessions with no platform identity.",
       "defaultEnabled": false
     },
     {
@@ -132,11 +54,11 @@
       "defaultEnabled": false
     },
     {
-      "id": "chatgpt-device-code-login",
+      "id": "marketing-pricing-takeover",
       "scope": "client",
-      "key": "chatgpt-device-code-login",
-      "label": "ChatGPT Device Code Login",
-      "description": "Gates the device-code sign-in as the primary ChatGPT subscription connect flow in the web client. Off: the redirect-and-paste flow is the only flow the connect section shows, with no device code UI and no other-sign-in-options disclosure. On: device code leads, and the redirect-and-paste flow stays reachable behind that disclosure and takes the section over when the assistant has no device-auth route.",
+      "key": "marketing-pricing-takeover",
+      "label": "Marketing Pricing Takeover",
+      "description": "Gates the marketing pricing takeover page (mycadet.ai/pricing) and the `/assistant/checkout?package=<slug>` deep link its package CTAs target. One flag covers both halves of the funnel so they can never be enabled independently and strand a CTA. When off, the checkout deep link redirects to the in-app plans takeover.",
       "defaultEnabled": false
     },
     {
@@ -145,6 +67,30 @@
       "key": "model-first-profile-create",
       "label": "Model-First Profile Create",
       "description": "Reverses the two questions the web client's New Model modal asks when creating an inference profile. Off: the modal asks for a provider first and then offers that provider's models. On: it opens on one searchable list of every catalog model the assistant can reach, deduplicated across providers, and only then asks which provider serves the chosen model. That second question is skipped when a single provider serves it, answered with radio cards when several do, and turned into an inline connect form (API key, setup, or ChatGPT sign-in) when the chosen route has no connection yet. Editing an existing profile is unchanged either way, and both flows persist the same profile shape.",
+      "defaultEnabled": false
+    },
+    {
+      "id": "os-beta",
+      "scope": "assistant",
+      "key": "os-beta",
+      "label": "OS Beta",
+      "description": "Enable the OS Beta model profile (MiniMax M3 / Together) in the assistant's model profile selection.",
+      "defaultEnabled": false
+    },
+    {
+      "id": "push-avatar-sender",
+      "scope": "client",
+      "key": "push-avatar-sender",
+      "label": "Push Avatar Sender",
+      "description": "Native notifications show the assistant's avatar as the icon with the assistant's name on line one. Same key the cloud reads for APNs/FCM sender blocks.",
+      "defaultEnabled": false
+    },
+    {
+      "id": "quiet-turn-activity",
+      "scope": "client",
+      "key": "quiet-turn-activity",
+      "label": "Quiet Turn Activity",
+      "description": "While the assistant works, show a reply skeleton with one line naming where it is working instead of its intermediate text and steps; a settled turn shows only its opening line and its answer, with the steps behind a Worked summary in the message footer",
       "defaultEnabled": false
     },
     {
@@ -162,6 +108,34 @@
       "label": "Sidebar Done",
       "description": "Turns archiving a chat into marking it done: the sidebar row carries a Done check instead of the overflow menu, an All chats page lists the full history, and done chats stay findable in search by default. Off keeps today's Archive wording, the overflow menu, and search that hides archived rows unless the query asks for them.",
       "defaultEnabled": false
+    },
+    {
+      "id": "teach",
+      "scope": "client",
+      "key": "teach",
+      "label": "Teach",
+      "description": "Offer Teach, the session that reads the user's screen while they narrate what they are doing. Gates the companion surface's Teach control and the toggleWatch command that starts a session; evaluated in the app's window and read again in the Electron main process, which pushes it to the floating surface",
+      "defaultEnabled": false
+    },
+    {
+      "id": "velvet",
+      "scope": "client",
+      "key": "velvet",
+      "label": "Velvet",
+      "description": "Enable the Velvet design theme.",
+      "defaultEnabled": false
+    },
+    {
+      "id": "vision-mode",
+      "scope": "client",
+      "key": "vision-mode",
+      "label": "Vision Mode",
+      "description": "Gates hold-to-Live ambient frame sampling in the voice room camera. String-valued so future A/B arms can be added as new values.",
+      "defaultEnabled": "off",
+      "values": [
+        "off",
+        "on"
+      ]
     }
   ]
 }

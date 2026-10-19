@@ -367,24 +367,8 @@
     "otherPlaceholder": "¿Qué podríamos haber hecho mejor?",
     "title": "¿Por qué cancelas?"
   },
-  "chatgptDeviceAuthFlow": {
-    "authorizationHint": "Puede que tú o el administrador de tu equipo tengáis que activar la autorización por código de dispositivo <settingsLink>en los ajustes de ChatGPT</settingsLink>.",
-    "connected": "Suscripción a ChatGPT conectada correctamente.",
-    "copiedButton": "Copiado",
-    "copyButton": "Copiar código",
-    "copyError": "No se pudo copiar el código. Cópialo a mano.",
-    "instructions": "Introduce este código en la página de ChatGPT. Caduca en 15 minutos.",
-    "openButton": "Abrir ChatGPT",
-    "signInButton": "Iniciar sesión con ChatGPT",
-    "startOver": "Empezar de nuevo",
-    "starting": "Iniciando sesión...",
-    "tryAgain": "Intentar de nuevo",
-    "waiting": "Esperando a que introduzcas el código..."
-  },
   "chatgptOauthSection": {
-    "hideOtherOptions": "Ocultar otras opciones de inicio de sesión",
-    "intro": "Conecta tu suscripción a ChatGPT para usar modelos de OpenAI sin una clave de API.",
-    "otherOptions": "Otras opciones de inicio de sesión"
+    "intro": "Conecta tu suscripción a ChatGPT para usar modelos de OpenAI sin una clave de API."
   },
   "chatgptPasteAuthFlow": {
     "completeFailed": "No se pudo completar el inicio de sesión. Inténtalo de nuevo.",
@@ -395,14 +379,11 @@
     "missingCode": "A la URL le falta el código de autorización. Asegúrate de haber copiado la URL completa.",
     "missingState": "A la URL le falta el parámetro state. Asegúrate de haber copiado la URL completa.",
     "pasteUrlError": "Pega la URL de la página de error.",
-    "signInButton": "Abrir el inicio de sesión de ChatGPT",
-    "signInButtonStandalone": "Iniciar sesión con ChatGPT",
+    "signInButton": "Iniciar sesión con ChatGPT",
     "startFailed": "No se pudo iniciar el inicio de sesión con ChatGPT. Inténtalo de nuevo.",
     "startingSignIn": "Iniciando sesión...",
-    "step1Idle": "1. Haz clic en \"Abrir el inicio de sesión de ChatGPT\" abajo para abrir una ventana emergente",
-    "step1IdleStandalone": "1. Haz clic en \"Iniciar sesión con ChatGPT\" abajo para abrir una ventana emergente",
-    "step1PasteUrl": "1. Haz clic en \"Abrir el inicio de sesión de ChatGPT\" para abrir una ventana emergente",
-    "step1PasteUrlStandalone": "1. Haz clic en \"Iniciar sesión con ChatGPT\" para abrir una ventana emergente",
+    "step1Idle": "1. Haz clic en \"Iniciar sesión con ChatGPT\" abajo para abrir una ventana emergente",
+    "step1PasteUrl": "1. Haz clic en \"Iniciar sesión con ChatGPT\" para abrir una ventana emergente",
     "step2": "2. Inicia sesión; llegarás a una página de error, y eso es normal",
     "step3": "3. Copia la URL completa de la barra de direcciones de esa página y pégala abajo",
     "tryAgain": "Intentar de nuevo",
@@ -1873,11 +1854,6 @@
     "cancelFailedToast": "No se pudo cancelar tu suscripción. Inténtalo de nuevo.",
     "canceledToast": "Plan Pro cancelado. Tendrás acceso hasta {date}.",
     "endOfBillingPeriod": "el final de tu período de facturación"
-  },
-  "useChatgptDeviceAuth": {
-    "expired": "Este código caducó. Empieza de nuevo para obtener otro.",
-    "rejected": "ChatGPT no pudo confirmar este código.",
-    "startFailed": "No se pudo iniciar el inicio de sesión con ChatGPT. Inténtalo de nuevo."
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "El asistente no está listo. Inténtalo de nuevo.",
