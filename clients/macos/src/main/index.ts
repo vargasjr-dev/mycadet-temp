@@ -234,20 +234,37 @@ protocol.registerSchemesAsPrivileged([
 installDeepLinks();
 installFileOpen();
 
-// Serve clients/web/dist/ as static files via `app://mycadet.ai/...`. Route-like
-// paths (no file extension, or `.html`) fall back to index.html so React
-// Router can handle client-side routes on reload / deep-link; requests for
-// missing static assets return 404 so a stale or partial deploy surfaces as
-// a load error rather than silently serving HTML with a wrong Content-Type.
+// Serve the app/web split over `app://mycadet.ai/...`:
+//
+// - The app shell (`@mycadet/app` standalone build, root-based) is the MAIN
+//   window's renderer. Its paths resolve against `appDistRoot` with no mount
+//   prefix; extension-less misses fall back to the app dist's index.html so
+//   the shell's client routes survive reload / deep-link.
+// - The web bundle (`clients/web`, base `/assistant/`) stays served under the
+//   `/assistant` mount for the windows that still render web routes (about,
+//   command palette, companion, popouts) and as the local-assistant iframe
+//   content the app shell frames. Route-like web paths fall back to the web
+//   dist's index.html; missing web assets 404 so a stale or partial deploy
+//   surfaces as a load error rather than silently serving HTML with a wrong
+//   Content-Type.
+//
 // Reference: https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler
-// `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built
-// HTML emits asset URLs like `/assistant/assets/index.js`. The
-// renderer files on disk live directly under `rendererRoot`, NOT
-// under `rendererRoot/assistant/`. Pass the mount as a separate
-// parameter so the protocol handler strips it before path resolution.
-const RENDERER_MOUNT = "/assistant";
+// `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built HTML
+// emits asset URLs like `/assistant/assets/index.js`. The web renderer files
+// on disk live directly under `webDistRoot`, NOT under `webDistRoot/assistant/`.
+// The mount is passed separately so the protocol handler strips it before
+// path resolution.
+const resolveAppDistRoot = (): string => {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, "app-dist");
+  }
+  // Dev source tree: clients/app/dist/standalone — requires `bun run build`
+  // in clients/app/ (the standalone target's outDir).
+  const repoRoot = path.resolve(app.getAppPath(), "..", "..");
+  return path.join(repoRoot, "clients", "app", "dist", "standalone");
+};
 
-const resolveRendererRoot = (): string => {
+const resolveWebDistRoot = (): string => {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "web-dist");
   }
@@ -257,8 +274,10 @@ const resolveRendererRoot = (): string => {
 };
 
 const registerAppProtocol = (): void => {
-  const rendererRoot = resolveRendererRoot();
-  const indexHtml = path.join(rendererRoot, "index.html");
+  const appDistRoot = resolveAppDistRoot();
+  const appIndexHtml = path.join(appDistRoot, "index.html");
+  const webDistRoot = resolveWebDistRoot();
+  const webIndexHtml = path.join(webDistRoot, "index.html");
   const lockfilePaths = resolveLockfilePaths(process.env);
   const getAllowedGatewayPorts = (): Set<number> =>
     readAllowedGatewayPorts(lockfilePaths);
@@ -304,11 +323,14 @@ const registerAppProtocol = (): void => {
     const platformProxied = await forwardPlatformRequest(request, cloudUrl);
     if (platformProxied) return platformProxied;
 
+    // The `/assistant` mount serves the web bundle (auxiliary windows and
+    // the local-assistant iframe); every other path is the app shell.
+    const isWebMount = new URL(request.url).pathname.startsWith("/assistant");
     const asset = await planAppProtocolAssetRequest({
-      rendererRoot,
-      indexHtml,
+      rendererRoot: isWebMount ? webDistRoot : appDistRoot,
+      indexHtml: isWebMount ? webIndexHtml : appIndexHtml,
       requestUrl: request.url,
-      mountPrefix: RENDERER_MOUNT,
+      mountPrefix: isWebMount ? "/assistant" : undefined,
       allowedOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
     });
     if (asset.kind === "forbidden") {

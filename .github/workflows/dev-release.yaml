@@ -929,8 +929,8 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
         run: |
-          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web
+          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web --filter=@mycadet/app; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web --filter=@mycadet/app
           fi
 
       # Installing does not download the Electron binary or build the mac

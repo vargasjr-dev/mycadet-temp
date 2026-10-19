@@ -93,6 +93,7 @@ module.exports = {
     // Native notifier addon, per architecture, built by build-notifier.sh.
     { from: "resources/notifier", to: "bin/notifier" },
     { from: "resources/web-dist", to: "web-dist" },
+    { from: "resources/app-dist", to: "app-dist" },
     { from: "resources/cli-lockfile", to: "cli-lockfile" },
     { from: "build/icon.icns", to: "icon.icns" },
   ],

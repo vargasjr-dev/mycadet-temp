@@ -7,11 +7,12 @@
   "scripts": {
     "setup": "node node_modules/electron/install.js && bash scripts/build-mac-helper.sh && (bash scripts/build-notifier.sh || echo 'notifier unavailable; notifications fall back to Electron')",
     "dev": "bun run install:all && bun scripts/dev.ts",
-    "dev:standalone": "bun run install:all && bun run scripts/reclaim-dev-port.ts && concurrently --kill-others --names web,electron --prefix-colors blue,green \"bun run dev:web\" \"bun run dev:electron\"",
+    "dev:standalone": "bun run install:all && bun run scripts/reclaim-dev-port.ts && concurrently --kill-others --names web,app,electron --prefix-colors blue,yellow,green \"bun run dev:web\" \"bun run dev:app\" \"bun run dev:electron\"",
     "dev:electron-only": "bun install && bun run setup && bun run prepare:electron-dev && electron-vite dev",
     "install:all": "bun install && bun run setup",
     "dev:web": "cd ../web && bun run dev -- --port 5173 --strictPort",
-    "dev:electron": "bun scripts/wait-for-web.ts --timeout 180000 http://localhost:5173 && bun run prepare:electron-dev && electron-vite dev",
+    "dev:app": "cd ../app && VITE_CLOUD_MODE=1 bun run dev -- --port 3001 --strictPort",
+    "dev:electron": "bun scripts/wait-for-web.ts --timeout 180000 http://localhost:5173 http://localhost:3001 && bun run prepare:electron-dev && electron-vite dev",
     "prepare:electron-dev": "bun scripts/prepare-electron-dev-app.ts",
     "build": "electron-vite build",
     "typecheck": "bunx tsc --noEmit",
@@ -19,6 +20,7 @@
     "test:ci": "bun run --filter=@mycadet/electron-desktop test && bun scripts/run-tests.ts",
     "build:fetch-bun": "bash scripts/fetch-bun.sh",
     "build:web": "cd ../web && bun install && bun run openapi-ts && bun run build && cd ../macos && mkdir -p resources && rm -rf resources/web-dist && cp -R ../web/dist resources/web-dist",
+    "build:app": "cd ../app && bun install && bun run build && cd ../macos && mkdir -p resources && rm -rf resources/app-dist && cp -R ../app/dist/standalone resources/app-dist",
     "pack": "bash scripts/pack.sh",
     "pack:debug": "CADET_ENABLE_CHROME_DEVTOOLS=true bash scripts/pack.sh"
   },

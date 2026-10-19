@@ -51,10 +51,11 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // sandboxed srcdoc surfaces (visual, dynamic-page, app-viewer) nothing,
 // because a srcdoc document resolves as 'self'.
 //
-// This list must stay a superset of the frame-src meta in
-// clients/web/index.html. The packaged app serves that same bundle over
-// app:// and applies both policies, and CSP intersects, so a host missing
-// here is blocked in the desktop app however the meta reads.
+// https://*.mycadet.ai in frame-src: the app shell's AssistantFrame
+// (@mycadet/app) iframes the resolved assistant's own edge, where the web
+// bundle is served — the same remote-web model the hub and the mobile shells
+// use. 'self' covers the local-assistant shape (the same-origin /assistant
+// mount and its __gateway forwards).
 //
 // frame-src must not be dropped, and 'self' must stay the floor. It is the
 // only control over where a sandboxed frame can navigate *itself*: no CSP
@@ -69,7 +70,7 @@ export const CSP_POLICY = [
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com",
   "style-src 'self' 'unsafe-inline'",
   `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:*`,
-  "frame-src 'self' https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://link.com https://*.link.com",
+  `frame-src 'self' https://${WILDCARD_HOST} https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://link.com https://*.link.com`,
   "img-src 'self' https: data: blob:",
   // Hosted voice-preview samples: ElevenLabs premades live in the
   // eleven-public-prod GCS bucket (path-scoped so the rest of GCS stays

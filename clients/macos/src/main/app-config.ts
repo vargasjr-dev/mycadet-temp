@@ -11,46 +11,64 @@
  * as a broken renderer load rather than a build error, which is
  * exactly the kind of thing a small shared module prevents.
  *
- * The renderer-base URLs are derived: `RENDERER_BASE_PROD` is the
- * packaged path the `app://` protocol handler resolves to; the dev
- * path is honored from `CADET_DEV_URL` (vel's edge proxy, or the
- * local Vite default at port 5173). Both end at the `/assistant`
- * suffix that `clients/web/vite.config.ts`'s `base` setting requires.
+ * The renderer-base URLs split with the app/web bundle split (see
+ * docs/proposals/desktop-app-shell.md):
+ *
+ * - The MAIN window renders the app shell (`@mycadet/app` standalone build,
+ *   root-based). `APP_RENDERER_BASE_PROD` is the packaged root the `app://`
+ *   protocol handler resolves to; dev honors `CADET_APP_DEV_URL` (the
+ *   clients/app Vite default at port 3001).
+ *
+ * - Auxiliary windows (about, command palette, companion, popouts, …) still
+ *   render web routes. They keep the `/assistant` base the web bundle's
+ *   `base` setting requires: `RENDERER_BASE_PROD` packaged, `CADET_DEV_URL`
+ *   (web Vite at :5173) in dev.
  */
 
 export const APP_PROTOCOL = "app";
 export const APP_HOST = "mycadet.ai";
 
-const DEV_SERVER_FALLBACK_URL = "http://localhost:5173/assistant";
+const WEB_DEV_FALLBACK_URL = "http://localhost:5173/assistant";
+const APP_DEV_FALLBACK_URL = "http://localhost:3001";
 
 /**
- * Renderer-base URL for the packaged app. Auxiliary windows append
- * their own subpath (`/about`, future `/conversations/<id>`, etc.).
+ * Renderer-base URL for auxiliary windows, which render web routes.
+ * They append their own subpath (`/about`, future `/conversations/<id>`,
+ * etc.) onto the `/assistant` mount the web bundle's `base` requires.
  */
 export const RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}/assistant`;
 
 /**
- * Renderer-base URL in dev. Honors `CADET_DEV_URL` so the launcher
- * can point at whichever Vite-or-equivalent is up (standalone Vite
- * at :5173, or vel's edge proxy at :3000). Strips any trailing slash
- * so callers can append `/<subpath>` without producing `//`.
+ * Auxiliary-window base in dev. Honors `CADET_DEV_URL` so the launcher
+ * can point at whichever Vite-or-equivalent is up (web Vite at :5173).
+ * Strips any trailing slash so callers can append `/<subpath>` without
+ * producing `//`.
  */
 export const getDevRendererBase = (): string =>
-  (process.env.CADET_DEV_URL ?? DEV_SERVER_FALLBACK_URL).replace(/\/+$/, "");
+  (process.env.CADET_DEV_URL ?? WEB_DEV_FALLBACK_URL).replace(/\/+$/, "");
+
+/**
+ * Renderer-base URL for the MAIN window, which renders the app shell
+ * (root-based `@mycadet/app` standalone build — no mount suffix).
+ */
+export const APP_RENDERER_BASE_PROD = `${APP_PROTOCOL}://${APP_HOST}`;
+
+/**
+ * Main-window app-shell base in dev. Honors `CADET_APP_DEV_URL` so the
+ * launcher can point at the app's Vite dev server (:3001). Strips any
+ * trailing slash like the web base does.
+ */
+export const getAppDevRendererBase = (): string =>
+  (process.env.CADET_APP_DEV_URL ?? APP_DEV_FALLBACK_URL).replace(/\/+$/, "");
 
 /**
  * SPA-root URL the main BrowserWindow loads.
  *
- * Dev and prod resolve the root document differently. In dev the renderer
- * is served by Vite, whose dev server only serves the app when the request
- * path matches its configured `base` (`/assistant/`) exactly — a slashless
- * `/assistant` returns Vite's "did you mean `/assistant/`?" helper page
- * instead of the SPA. So the dev root carries the trailing slash. In prod
- * the `app://` protocol handler maps the slashless `/assistant` to
- * `index.html`, so `RENDERER_BASE_PROD` loads as-is (a trailing slash would
- * land on the `/assistant/*` NotFound route). Auxiliary windows append a
- * subpath (`/about`) to the base, which already matches Vite's `base`
- * prefix, so only the bare root needs this treatment.
+ * Dev and prod resolve the root document differently. In dev the app Vite
+ * dev server answers on `/` (root-based build); the trailing slash is kept
+ * so the browser-router root mounts without a redirect hop. In prod the
+ * `app://` protocol handler maps the slashless `/` to the app dist's
+ * `index.html`, so `APP_RENDERER_BASE_PROD` loads as-is.
  */
 export const getRendererRootUrl = (isPackaged: boolean): string =>
-  isPackaged ? RENDERER_BASE_PROD : `${getDevRendererBase()}/`;
+  isPackaged ? APP_RENDERER_BASE_PROD : `${getAppDevRendererBase()}/`;
