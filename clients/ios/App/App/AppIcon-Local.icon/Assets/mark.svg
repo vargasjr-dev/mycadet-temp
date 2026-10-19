@@ -1,0 +1,11 @@
+<svg width="724" height="691" viewBox="0 0 724 691" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(150.51 109.20) scale(2.67)">
+<path fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="butt" d="M118.4 50.3 A48.5 48.5 0 1 0 118.4 126.7"/>
+<clipPath id="e76"><circle cx="76" cy="90" r="12"/></clipPath>
+<circle cx="76" cy="90" r="12" fill="#FFFFFF"/>
+<circle cx="80.32" cy="85.68" r="9.84" fill="#101010" clip-path="url(#e76)"/>
+<clipPath id="e108"><circle cx="108" cy="90" r="12"/></clipPath>
+<circle cx="108" cy="90" r="12" fill="#FFFFFF"/>
+<circle cx="112.32" cy="85.68" r="9.84" fill="#101010" clip-path="url(#e108)"/>
+</g>
+</svg>

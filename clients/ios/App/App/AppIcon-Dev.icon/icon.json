@@ -24,13 +24,13 @@
             }
           ],
           "glass": false,
-          "image-name": "eyes.svg",
-          "name": "eyes",
+          "image-name": "mark.svg",
+          "name": "mark",
           "position": {
             "scale": 2.213,
             "translation-in-points": [
-              61.33,
-              -14.21
+              0,
+              0
             ]
           }
         }

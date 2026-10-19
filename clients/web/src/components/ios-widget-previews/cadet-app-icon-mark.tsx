@@ -18,11 +18,12 @@
 
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
 
-/** The three grounds the Icon Composer bundles declare, in sRGB. */
+/** The four grounds the Icon Composer bundles declare, in sRGB. */
 export const APP_ICON_GROUNDS = {
   production: "#4C9B50",
   staging: "#E9C91A",
   dev: "#FF88C9",
+  local: "#0E9B8B",
 } as const;
 
 export type AppIconEnvironment = keyof typeof APP_ICON_GROUNDS;

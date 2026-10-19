@@ -1,0 +1,23 @@
+// App-Local.xcconfig — local target overrides.
+
+#include "Base.xcconfig"
+
+// Alternate app icons compiled from App/App/AvatarIcons.xcassets.
+#include "AvatarIcons.xcconfig"
+
+APP_GROUP_ID = group.ai.mycadet.ios.local
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon-Local
+// Local builds load the loopback dev server, so universal links never
+// fire — the domain only keeps the CadetAssociatedDomain Info.plist key
+// well-formed (and matches Dev's, where the local app's link handling
+// already points).
+ASSOCIATED_DOMAIN = dev.mycadet.ai
+BUNDLE_DISPLAY_NAME = Cadet Local
+BUNDLE_URL_SCHEME = cadet-local
+CODE_SIGN_ENTITLEMENTS = App/App-Local.entitlements
+PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.local
+
+// Exact portal profile name; must equal release-ios.yaml's `profile_name`.
+// Local never releases (local builds sign automatically), so this only
+// exercises if someone manually archives this target with manual signing.
+PROVISIONING_PROFILE_SPECIFIER_Manual = Cadet Assistant iOS Local Distribution

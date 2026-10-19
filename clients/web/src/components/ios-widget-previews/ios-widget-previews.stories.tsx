@@ -278,6 +278,7 @@ export const AppIconMark: Story = {
       <CadetIconMark size={72} environment="production" />
       <CadetIconMark size={72} environment="staging" />
       <CadetIconMark size={72} environment="dev" />
+      <CadetIconMark size={72} environment="local" />
       <span style={{ background: "#141416", padding: 12, borderRadius: 14 }}>
         <CadetIconMark size={72} flattened />
       </span>

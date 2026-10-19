@@ -47,7 +47,7 @@ targetTemplates:
     platform: iOS
     sources:
       # Shared Swift sources, storyboards, assets, and entitlements.
-      # The three `AppIcon-*.icon` directories are excluded here; each
+      # The four `AppIcon-*.icon` directories are excluded here; each
       # target re-adds the single icon it ships with so that
       # ASSETCATALOG_COMPILER_APPICON_NAME (set per-target via xcconfig)
       # resolves to a bundled resource.
@@ -64,6 +64,7 @@ targetTemplates:
           - "AppIcon.icon"
           - "AppIcon-Dev.icon"
           - "AppIcon-Staging.icon"
+          - "AppIcon-Local.icon"
           - "capacitor.config.json"
           - "config.xml"
           - "public"
@@ -142,7 +143,7 @@ targetTemplates:
   # WidgetKit extension hosting the live-voice Live Activity. One per
   # environment, so each app embeds an extension whose bundle ID is
   # prefixed by its own — iOS requires that, and it is why there are
-  # three of these rather than one shared appex.
+  # four of these rather than one shared appex.
   ExtensionEnvironment:
     type: app-extension
     platform: iOS
@@ -175,7 +176,7 @@ targetTemplates:
         Release:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: VOICE_ACTIVITY_EXTENSION
     # No `scheme:` — extensions build as embedded dependencies of the app
-    # targets, so the three app schemes are the only ones worth having.
+    # targets, so the four app schemes are the only ones worth having.
     preBuildScripts: *projectSpecFreshnessGuard
 
   # Notification Service Extension. iOS runs it for every push carrying
@@ -278,6 +279,25 @@ targets:
       - target: "NotificationService Dev"
         embed: true
 
+  # Local QA build. capacitor.config.ts bakes this scheme name as the
+  # default (CADET_ENVIRONMENT unset -> local), and the baked server.url
+  # is the loopback dev server, so `bun run dev` plus this scheme is the
+  # whole local-iOS flow. Never released.
+  "App Local":
+    templates: [AppEnvironment]
+    sources:
+      - path: App/AppIcon-Local.icon
+    configFiles:
+      Debug: App/Config/App-Local.xcconfig
+      Release: App/Config/App-Local.xcconfig
+    dependencies:
+      - target: "VoiceActivity Local"
+        embed: true
+      - target: "Share Local"
+        embed: true
+      - target: "NotificationService Local"
+        embed: true
+
   VoiceActivity:
     templates: [ExtensionEnvironment]
     configFiles:
@@ -295,6 +315,12 @@ targets:
     configFiles:
       Debug: App/Config/Extension-Dev.xcconfig
       Release: App/Config/Extension-Dev.xcconfig
+
+  "VoiceActivity Local":
+    templates: [ExtensionEnvironment]
+    configFiles:
+      Debug: App/Config/Extension-Local.xcconfig
+      Release: App/Config/Extension-Local.xcconfig
 
   Share:
     templates: [ShareExtensionEnvironment]
@@ -314,6 +340,12 @@ targets:
       Debug: App/Config/Share-Dev.xcconfig
       Release: App/Config/Share-Dev.xcconfig
 
+  "Share Local":
+    templates: [ShareExtensionEnvironment]
+    configFiles:
+      Debug: App/Config/Share-Local.xcconfig
+      Release: App/Config/Share-Local.xcconfig
+
   NotificationService:
     templates: [NotificationServiceEnvironment]
     configFiles:
@@ -331,6 +363,12 @@ targets:
     configFiles:
       Debug: App/Config/NotificationService-Dev.xcconfig
       Release: App/Config/NotificationService-Dev.xcconfig
+
+  "NotificationService Local":
+    templates: [NotificationServiceEnvironment]
+    configFiles:
+      Debug: App/Config/NotificationService-Local.xcconfig
+      Release: App/Config/NotificationService-Local.xcconfig
 
   # Logic-only unit tests for the framework-free helpers under `App/`.
   # Sources are listed file by file rather than as the whole `App`

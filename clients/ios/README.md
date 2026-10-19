@@ -138,12 +138,15 @@ caches `capacitor-swift-pm@8.3.4` (pinned exactly in
 
 When Xcode opens the regenerated project for the first time it picks
 **"App"** alphabetically as the active scheme — that's the production
-target, which is _not_ what you want for local dev.
+target, which is _not_ what you want for local dev. `bun run dev` bakes
+the **local** environment into the synced config (the loopback dev
+server), whose scheme is **App Local**.
 
 In the Xcode toolbar:
 
-1. **Scheme dropdown** (left of the run button): pick **App Dev** (or
-   App Staging — see the table below). Xcode
+1. **Scheme dropdown** (left of the run button): pick **App Local** for
+   the local flow, or **App Dev** / **App Staging** for the cloud
+   environments. Xcode
    stores the choice in `xcuserdata/<user>.xcuserdatad/xcschememanagement.plist`,
    which is gitignored and survives `xcodegen generate` runs, so you
    only have to do this once per machine.
@@ -287,24 +290,26 @@ experience works. Do not enable it.
 
 ### Targets and environments
 
-The Xcode project has three _app_ targets — one per environment. Each has its own
+The Xcode project has four _app_ targets — one per environment
+(production, staging, dev, and local). Each has its own
 bundle ID, display name, and icon colour so they can be installed side by
 side on the same device. Each also embeds its own `VoiceActivity` widget
 extension (`<app bundle id>.VoiceActivity`), `Share` extension
 (`<app bundle id>.Share`), and `NotificationService` extension
 (`<app bundle id>.NotificationService`). With the host-less `AppTests`
-logic-test bundle, `xcodegen generate` produces thirteen targets and four
-schemes in total; of those, the three app schemes are the ones worth
-building, since the extensions build as embedded dependencies. See
+logic-test bundle, `xcodegen generate` produces seventeen targets and five
+schemes in total; of those, the four app schemes are the ones worth
+building, since the extensions build as embedded dependencies. The local
+build never releases — it exists for the `bun run dev` flow. See
 [`docs/NATIVE_VOICE.md`](docs/NATIVE_VOICE.md) for the widget extension
 and [Signing: four profiles per environment](#signing-four-profiles-per-environment)
 for what the extra App IDs cost at release time.
 
-| Target      | Bundle ID                            | Display Name   | Icon   | Server          |
-| ----------- | ------------------------------------ | -------------- | ------ | --------------- |
-| App         | `ai.mycadet.ios` | Cadet         | Green  | `mycadet.ai` |
-| App Staging | `.staging`                           | Cadet Staging | Yellow | staging server  |
-| App Dev     | `.dev`                               | Cadet Dev     | Pink   | dev server      |
+| Target      | Bundle ID        | Display Name  | Icon   | Server         |
+| ----------- | ---------------- | ------------- | ------ | -------------- |
+| App         | `ai.mycadet.ios` | Cadet         | Green  | `mycadet.ai`   |
+| App Staging | `.staging`       | Cadet Staging | Yellow | staging server |
+| App Dev     | `.dev`           | Cadet Dev     | Pink   | dev server     |
 
 Build settings shared across all three targets live in
 `App/App/Config/Base.xcconfig`. Per-target overrides (bundle ID, display
@@ -427,10 +432,10 @@ a catalog that already costs about one.
 
 The Capacitor config's `appId` mirrors the app bundle ID:
 
-| Where                             | Value                                           |
-| --------------------------------- | ----------------------------------------------- |
-| Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.mycadet.ios` ← real one |
-| `capacitor.config.ts` `appId`     | `ai.mycadet.ios` (inert for iOS)               |
+| Where                             | Value                            |
+| --------------------------------- | -------------------------------- |
+| Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.mycadet.ios` ← real one      |
+| `capacitor.config.ts` `appId`     | `ai.mycadet.ios` (inert for iOS) |
 
 Capacitor requires `appId` to use Java package form because Android uses it as
 the application namespace; iOS never consumes it. The real per-environment
@@ -631,6 +636,7 @@ release.yml (manual dispatch on release/v* branch)
 | `production` | App         | External + App Store eligible | `app-store-connect`                                   |
 | `staging`    | App Staging | Internal only                 | `app-store-connect` + `testFlightInternalTestingOnly` |
 | `dev`        | App Dev     | Internal only                 | `app-store-connect` + `testFlightInternalTestingOnly` |
+| `local`      | App Local   | — (never released)            | —                                                     |
 
 Non-production builds set
 [`testFlightInternalTestingOnly`](https://developer.apple.com/documentation/xcode/creating-a-workflow-that-builds-your-app-for-distribution)
@@ -833,17 +839,17 @@ provisioning profile` instead. The fix is the portal work below, not a
 > it means doing step 2 and step 4 below for the app App ID of the environment
 > being released and replacing its `IOS_PROVISIONING_PROFILE*` secret.
 
-| Environment | Extension bundle ID                                              | Profile name (exact)                                            | GitHub secret                            |
-| ----------- | ---------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------- |
+| Environment | Extension bundle ID                          | Profile name (exact)                                           | GitHub secret                            |
+| ----------- | -------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------- |
 | production  | `ai.mycadet.ios.VoiceActivity`               | `Cadet Assistant iOS VoiceActivity Distribution`               | `IOS_PROVISIONING_PROFILE_EXT`           |
 | staging     | `ai.mycadet.ios.staging.VoiceActivity`       | `Cadet Assistant iOS Staging VoiceActivity Distribution`       | `IOS_PROVISIONING_PROFILE_EXT_STAGING`   |
 | dev         | `ai.mycadet.ios.dev.VoiceActivity`           | `Cadet Assistant iOS Dev VoiceActivity Distribution`           | `IOS_PROVISIONING_PROFILE_EXT_DEV`       |
 | production  | `ai.mycadet.ios.Share`                       | `Cadet Assistant iOS Share Distribution`                       | `IOS_PROVISIONING_PROFILE_SHARE`         |
 | staging     | `ai.mycadet.ios.staging.Share`               | `Cadet Assistant iOS Staging Share Distribution`               | `IOS_PROVISIONING_PROFILE_SHARE_STAGING` |
 | dev         | `ai.mycadet.ios.dev.Share`                   | `Cadet Assistant iOS Dev Share Distribution`                   | `IOS_PROVISIONING_PROFILE_SHARE_DEV`     |
-| production  | `ai.mycadet.ios.NotificationService`         | `Cadet iOS NotificationService Distribution`         | `IOS_PROVISIONING_PROFILE_NSE`           |
+| production  | `ai.mycadet.ios.NotificationService`         | `Cadet iOS NotificationService Distribution`                   | `IOS_PROVISIONING_PROFILE_NSE`           |
 | staging     | `ai.mycadet.ios.staging.NotificationService` | `Cadet Assistant iOS Staging NotificationService Distribution` | `IOS_PROVISIONING_PROFILE_NSE_STAGING`   |
-| dev         | `ai.mycadet.ios.dev.NotificationService`     | `Cadet iOS Dev NotificationService Distribution`     | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
+| dev         | `ai.mycadet.ios.dev.NotificationService`     | `Cadet iOS Dev NotificationService Distribution`               | `IOS_PROVISIONING_PROFILE_NSE_DEV`       |
 
 The containing app App IDs already exist, and each one already carries
 the App Group from the VoiceActivity row. A new Share or
@@ -852,8 +858,8 @@ capability added to an App ID does not reach profiles already issued
 against it, so a first-time extension row also issues that extension's
 distribution profile:
 
-| Environment | App bundle ID                                | Profile name (exact)                        | GitHub secret                      |
-| ----------- | -------------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| Environment | App bundle ID            | Profile name (exact)                       | GitHub secret                      |
+| ----------- | ------------------------ | ------------------------------------------ | ---------------------------------- |
 | production  | `ai.mycadet.ios`         | `Cadet Assistant iOS Distribution`         | `IOS_PROVISIONING_PROFILE`         |
 | staging     | `ai.mycadet.ios.staging` | `Cadet Assistant iOS Staging Distribution` | `IOS_PROVISIONING_PROFILE_STAGING` |
 | dev         | `ai.mycadet.ios.dev`     | `Cadet Assistant iOS Dev Distribution`     | `IOS_PROVISIONING_PROFILE_DEV`     |
