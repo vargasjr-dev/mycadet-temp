@@ -136,6 +136,12 @@ jobs:
         working-directory: clients/app
         run: bun install --frozen-lockfile --filter=@mycadet/app --filter=@mycadet/ios
 
+      - name: Build the app-shell boot bundle
+        working-directory: clients/app
+        env:
+          CADET_ENVIRONMENT: ${{ steps.config.outputs.cadet_env }}
+        run: bun run build:capacitor
+
       - name: Capacitor sync
         working-directory: clients/ios
         env:

@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -369,11 +371,49 @@ public final class SelfHostedServer {
         return base + "/" + trimmed;
     }
 
-    /** The baked server.url from the bundled Capacitor config, or null when unreadable. */
+    /**
+     * The baked Cadet Cloud origin the shell hands off to: the boot bundle's
+     * stamped `handoffUrl` (the synced bundle is the build's source of truth —
+     * the baked config carries no `server.url` anymore), falling back to the
+     * legacy baked config's `server.url`, or null when neither is readable.
+     */
     static String bakedServerUrl(Context context) {
+        String stamped = stampedHandoffUrl(context);
+        if (stamped != null) {
+            return stamped;
+        }
         try {
             return parseBakedServerUrl(readAsset(context, CONFIG_FILE));
         } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    private static final String BUNDLE_INDEX = "public/index.html";
+
+    static String stampedHandoffUrl(Context context) {
+        try {
+            return parseStampedHandoffUrl(readAsset(context, BUNDLE_INDEX));
+        } catch (Exception exception) {
+            return null;
+        }
+    }
+
+    static String parseStampedHandoffUrl(String bundleHtml) {
+        if (bundleHtml == null) {
+            return null;
+        }
+        Matcher matcher =
+            Pattern.compile("window\\.__CADET_CONFIG__=(\\{.*?\\})</script>")
+                .matcher(bundleHtml);
+        if (!matcher.find()) {
+            return null;
+        }
+        try {
+            String url =
+                new JSONObject(matcher.group(1)).optString("handoffUrl", null);
+            return url == null || url.trim().isEmpty() ? null : url;
+        } catch (JSONException exception) {
             return null;
         }
     }

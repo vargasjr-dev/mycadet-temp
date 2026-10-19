@@ -76,6 +76,9 @@ jobs:
             patches \
             clients/ios \
             clients/app/capacitor.config.base.ts \
+            clients/app/capacitor.html \
+            clients/app/src/capacitor \
+            clients/app/scripts/build-capacitor.ts \
             clients/app/package.json \
             .github/workflows/pr-ios.yaml |
             grep -q .; then
@@ -85,13 +88,21 @@ jobs:
             echo "No iOS-relevant files changed — skipping the Xcode build."
           fi
 
+      - name: Build the app-shell boot bundle
+        if: steps.filters.outputs.ios_changed == 'true'
+        working-directory: clients/app
+        env:
+          CADET_ENVIRONMENT: dev
+        run: bun run build:capacitor
+
       - name: Capacitor sync
         if: steps.filters.outputs.ios_changed == 'true'
         working-directory: clients/ios
         env:
           # The iOS Capacitor config (clients/ios/capacitor.config.ts)
-          # derives `server.url` and the Xcode scheme name from this, so it
-          # has to agree with the scheme built below.
+          # derives the Xcode scheme name from this, so it has to agree with
+          # the scheme built below; the boot bundle's stamped handoff config
+          # resolves from it too.
           CADET_ENVIRONMENT: dev
         run: bunx cap sync ios
 

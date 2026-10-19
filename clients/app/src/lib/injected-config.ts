@@ -28,6 +28,8 @@ export const InjectedConfigSchema = z.object({
   assistantName: z.string().optional(),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),
+  /** Session-gated assistant entry a baked Capacitor boot shell hands off to (mobile boot hosts only). */
+  handoffUrl: z.string().optional(),
 });
 
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;

@@ -87,6 +87,47 @@ enum SelfHostedServer {
         return url
     }
 
+    /// The boot bundle's stamped handoff URL — the Cadet Cloud origin the
+    /// shell ships with. `build:capacitor` stamps `__CADET_CONFIG__` (with
+    /// `handoffUrl`) into the synced `public/index.html` before `cap sync`
+    /// copies it, so the bundled document — not the native config, which no
+    /// longer carries a `server.url` — is the build's source of truth for
+    /// the baked default. The payload escapes its `<`s, so splitting at
+    /// `</script>` is safe. `nil` when the bundle or the stamp is unreadable.
+    static func stampedHandoffURL(bundle: Bundle = .main) -> URL? {
+        guard
+            let htmlPath = bundle.path(
+                forResource: "index", ofType: "html", inDirectory: "public"
+            ),
+            let html = try? String(contentsOfFile: htmlPath, encoding: .utf8)
+        else {
+            return nil
+        }
+        return parseStampedHandoffURL(html)
+    }
+
+    /// Pure parser behind `stampedHandoffURL`: extracts the inline
+    /// `window.__CADET_CONFIG__` payload and reads its `handoffUrl`.
+    static func parseStampedHandoffURL(_ html: String) -> URL? {
+        guard
+            let marker = html.range(of: "window.__CADET_CONFIG__="),
+            let end = html[marker.upperBound...].range(of: "</script>")
+        else {
+            return nil
+        }
+        let payload = String(html[marker.upperBound..<end.lowerBound])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard payload.hasSuffix("}"),
+              let data = payload.data(using: .utf8),
+              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let handoff = object["handoffUrl"] as? String,
+              let url = URL(string: handoff)
+        else {
+            return nil
+        }
+        return url
+    }
+
     /// Canonical identity of a server URL, shared with the web chooser's
     /// remembered-origins store (`normalizeOriginUrl`): lowercase scheme and
     /// host, userinfo dropped, trailing slashes stripped from the path, query

@@ -532,6 +532,35 @@ public class SelfHostedServerTest {
         assertNull(SelfHostedServer.parseBakedServerUrl(null));
     }
 
+    @Test
+    public void parsesTheStampedHandoffUrlFromTheBootBundle() {
+        assertEquals(
+            "https://mycadet.ai/assistant",
+            SelfHostedServer.parseStampedHandoffUrl(
+                "<html><head><script>window.__CADET_CONFIG__="
+                    + "{\"remote\":\"cloud\",\"handoffUrl\":\"https://mycadet.ai/assistant\"}"
+                    + "</script></head><body></body></html>"
+            )
+        );
+    }
+
+    @Test
+    public void stampedHandoffUrlParsingIsNullOrGarbageTolerant() {
+        assertNull(SelfHostedServer.parseStampedHandoffUrl("<html><head></head></html>"));
+        assertNull(SelfHostedServer.parseStampedHandoffUrl("not html"));
+        assertNull(SelfHostedServer.parseStampedHandoffUrl(null));
+        assertNull(
+            SelfHostedServer.parseStampedHandoffUrl(
+                "<script>window.__CADET_CONFIG__=</script>"
+            )
+        );
+        assertNull(
+            SelfHostedServer.parseStampedHandoffUrl(
+                "<script>window.__CADET_CONFIG__={\"remote\":\"cloud\"}</script>"
+            )
+        );
+    }
+
     private static final class FakeStore implements SelfHostedServer.Store {
         private String value;
         private String servers;

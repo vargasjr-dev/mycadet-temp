@@ -34,8 +34,15 @@ fi
 info "Installing workspace dependencies"
 (cd "${IOS_DIR}" && bun install)
 
-# — Sync the Capacitor shell: bakes `server.url` (defaults to the local
-#   environment) and copies the webDir placeholder into the Xcode project —
+# — Build the baked app-shell boot bundle the sync copies into the project:
+#   the initial Cadet screens ship as local assets, and the bundle's stamped
+#   `__CADET_CONFIG__.handoffUrl` resolves from this setup's environment
+#   (defaults to local — the simulator shares the host's loopback) —
+info "Building the app-shell boot bundle"
+(cd "${IOS_DIR}/../app" && bun run build:capacitor)
+
+# — Sync the Capacitor shell: copies the built boot bundle into the Xcode
+#   project and bakes the resolved Capacitor config into the native build —
 info "Syncing Capacitor iOS project"
 (cd "${IOS_DIR}" && bunx --bun cap sync ios)
 

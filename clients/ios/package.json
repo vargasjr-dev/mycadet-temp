@@ -10,7 +10,7 @@
   "description": "Cadet iOS Capacitor shell — native Xcode project plus the plugin set its sync wires",
   "scripts": {
     "setup": "bash scripts/setup.sh",
-    "ios:sync": "bunx --bun cap sync ios",
+    "ios:sync": "(cd ../app && bun run build:capacitor) && bunx --bun cap sync ios",
     "dev": "bun run setup && open App/App.xcodeproj"
   },
   "devDependencies": {

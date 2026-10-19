@@ -18,12 +18,12 @@ clients/
 └── chrome-extension/  # MV3 Chrome browser extension
 ```
 
-The iOS app is a Capacitor shell that lives in [`ios/`](./ios/); it loads the
-web app over HTTPS and does not consume any code from the other client
-surfaces.
+The iOS app is a Capacitor shell that lives in [`ios/`](./ios/); it boots a
+baked `@mycadet/app` boot bundle (the initial Cadet screens) and hands off to
+the deployed assistant entry over HTTPS.
 
 The Android app is a Capacitor shell that lives in [`android/`](./android/);
-it follows the same remote web app loading model as iOS.
+it follows the same baked boot-bundle model as iOS.
 
 The macOS, Linux, and Windows Electron shells share their platform-neutral main and
 preload foundations through `@mycadet/electron-desktop` and native helper process supervision through `@mycadet/native-sidecar`. Thin client adapters
@@ -54,8 +54,8 @@ macOS flipped first; Linux and Windows follow the same pattern.
   `tsconfig.json`, and lint config.
 - `chrome-extension/` is the one standalone package, with its own `bun.lock`
   and per-package `bun install`. Native shells (`ios/`, `android/`) are
-  Capacitor shells built from `web/` and have no package manifests of their
-  own.
+  Capacitor shells that build from the `@mycadet/app` config package and
+  carry their own package manifests (both root-workspace members).
 - Exact version pinning applies repo-wide (see root [`AGENTS.md`](../AGENTS.md)).
 - When a new client is added under `clients/`, add corresponding `paths:` globs
   to any relevant PR/CI workflows in `.github/workflows/`.

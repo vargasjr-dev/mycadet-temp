@@ -14,9 +14,11 @@ The Android app loads the web UI from the environment-specific web origin:
 | `staging`    | `https://staging.mycadet.ai/assistant` |
 | `dev`        | `https://dev.mycadet.ai/assistant`     |
 
-Set `CADET_ENVIRONMENT` before `bunx cap sync android` to bake the matching
-URL into `app/src/main/assets/capacitor.config.json`. The default is `dev`.
-No web assets are bundled beyond the placeholder `capacitor-shell/` page.
+Set `CADET_ENVIRONMENT` before `bun run android:sync` (which builds the
+boot bundle first) to stamp the matching handoff URL into the baked boot
+bundle — unset means the local dev server. The baked boot bundle ships the
+initial Cadet screens; the assistant UI itself still loads from the handoff
+URL.
 
 ## First-Time Setup
 
@@ -549,8 +551,9 @@ gates. Verify:
 ```
 clients/
 ├── app/
-│   ├── capacitor.config.base.ts  # Shared Capacitor config (appName, server URL, webDir)
-│   ├── capacitor-shell/          # Placeholder webDir (the base's ../app path names it)
+│   ├── capacitor.config.base.ts  # Shared Capacitor config (appName, webDir)
+│   ├── capacitor.html            # Boot bundle document (build:capacitor entry)
+│   ├── src/capacitor/            # Boot shell — splash + handoff (baked as webDir)
 │   └── package.json              # Exports the base config (@mycadet/app/capacitor.config.base)
 ├── ios/
 │   ├── capacitor.config.ts       # Base config + appId + Keyboard + the ios block (path: ".")

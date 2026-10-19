@@ -62,9 +62,12 @@ class MyViewController: CAPBridgeViewController {
 
     // MARK: - Self-hosted server origin
 
-    /// The baked Cadet Cloud URL from `capacitor.config.json`, captured before
-    /// any self-hosted override is applied so a cleared preference and the
-    /// unreachable alert's "Choose Assistant" fallback can always return here.
+    /// The baked Cadet Cloud URL, captured before any self-hosted override
+    /// is applied so a cleared preference and the unreachable alert's
+    /// "Choose Assistant" fallback can always return here. The native config
+    /// no longer carries a `server.url` — the boot bundle's stamped
+    /// `handoffUrl` is the build's source of truth for the baked default —
+    /// so this falls back to reading it out of the synced bundle.
     private var bakedServerURL: URL?
 
     /// The baked Cadet Cloud URL as a string, exposed for the
@@ -113,6 +116,7 @@ class MyViewController: CAPBridgeViewController {
     override open func instanceDescriptor() -> InstanceDescriptor {
         let descriptor = super.instanceDescriptor()
         bakedServerURL = descriptor.serverURL.flatMap { URL(string: $0) }
+            ?? SelfHostedServer.stampedHandoffURL()
 
         let configured = SelfHostedServer.configuredURL()
         appliedServerURL = configured ?? bakedServerURL

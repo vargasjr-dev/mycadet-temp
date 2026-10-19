@@ -4,7 +4,7 @@
 
 Bun + TypeScript monorepo with multiple packages:
 
-- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell that loads the web app in a WKWebView), `clients/android/` (Capacitor Android shell that loads the web app in a WebView), `clients/macos/` (Electron desktop shell whose main window renders the `@mycadet/app` shell — auxiliary windows still wrap `clients/web/`; daemon/gateway lifecycle is owned by the `cadet` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md).
+- `clients/`: End-user app surfaces: `clients/web/` (Vite + React Router v7 SPA), `clients/ios/` (Capacitor iOS shell booting the baked `@mycadet/app` boot bundle in a WKWebView), `clients/android/` (Capacitor Android shell booting the baked boot bundle in a WebView), `clients/macos/` (Electron desktop shell whose main window renders the `@mycadet/app` shell — auxiliary windows still wrap `clients/web/`; daemon/gateway lifecycle is owned by the `cadet` CLI, which the app invokes as a subprocess; auto-update via `electron-updater`; CI workflows are `pr-macos.yaml` / `ci-main-macos.yaml`), `clients/linux/` (Electron desktop shell around `clients/web/` packaged as an AppImage; CI workflows are `pr-linux.yaml` / `ci-main-linux.yaml`), `clients/windows/` (Electron desktop shell around `clients/web/` at capability parity with macOS, see `clients/windows/docs/parity-matrix.md`; CI workflows are `pr-windows.yaml` / `ci-main-windows.yaml`), and `clients/chrome-extension/` (MV3 Chrome browser extension). See [`clients/README.md`](clients/README.md).
 - `assistant/` — Main backend service (Bun + TypeScript)
 - `cli/` — Multi-assistant management CLI (Bun + TypeScript).
 - `gateway/` — Channel ingress gateway (Bun + TypeScript)
@@ -71,7 +71,7 @@ Docker `cache-to: type=gha` must set `ignore-error=true`. The GHA cache is a bui
 
 The Capacitor iOS source-of-truth lives in [`clients/ios/`](./clients/ios/) and is built locally from `clients/ios/` via `bun run dev`. See [`clients/ios/README.md`](./clients/ios/README.md) for the local build flow and full release pipeline mapping.
 
-TestFlight builds are produced by the `release-ios.yaml` reusable workflow in this repo. Both `dev-release.yaml` and `release.yml` call it as a same-repo `uses:` job with `{ environment, version }` inputs. The workflow runs on `macos-15`, installs web dependencies, runs `cap sync ios`, generates the Xcode project via XcodeGen, archives, signs, and uploads to TestFlight.
+TestFlight builds are produced by the `release-ios.yaml` reusable workflow in this repo. Both `dev-release.yaml` and `release.yml` call it as a same-repo `uses:` job with `{ environment, version }` inputs. The workflow runs on `macos-15`, installs app dependencies, builds the baked boot bundle (`bun run build:capacitor`), runs `cap sync ios`, generates the Xcode project via XcodeGen, archives, signs, and uploads to TestFlight.
 
 ## Cutting Releases
 
@@ -341,7 +341,7 @@ Surfaces map onto Sentry projects as below. The Electron renderer reports to the
 | iOS webview + native     | `mycadet-ios`     | `SENTRY_DSN_IOS` (secret) → `VITE_SENTRY_DSN_IOS`         | web-SPA build (loaded at runtime on iOS)     |
 | Android webview + native | `mycadet-android` | `SENTRY_DSN_ANDROID` (secret) → `VITE_SENTRY_DSN_ANDROID` | web-SPA build (loaded at runtime on Android) |
 
-Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps run the deployed SPA via `server.url` (see `clients/app/capacitor.config.base.ts`) and bundle no web assets at `cap sync`.
+Native mobile DSNs are baked into the deployed web SPA bundle rather than the native builds, because the iOS and Android apps hand off from their baked boot bundle to the deployed assistant entry (the boot bundle's stamped `handoffUrl`, see `clients/app/capacitor.config.base.ts`); the only web assets baked at `cap sync` are the boot bundle's own initial screens.
 
 The Electron renderer uses `@sentry/react` (not `@sentry/electron/renderer`): `@sentry/electron` pins `@sentry/core` 10.50 while `@sentry/capacitor` pins `@sentry/react`/`@sentry/browser` 10.52, and Sentry's current-client carrier is version-specific, so an `@sentry/electron/renderer` client couldn't see `@sentry/react` captures. Renderer native crashes still reach `mycadet-macos` via `@sentry/electron/main` (separate process).
 

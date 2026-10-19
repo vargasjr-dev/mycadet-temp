@@ -20,18 +20,18 @@ documented in [`docs/NATIVE_VOICE.md`](docs/NATIVE_VOICE.md).
 
 ## Web content delivery
 
-**What:** The iOS app loads the web UI live over HTTPS from the deployed
-web origin (e.g. `https://mycadet.ai/assistant`). No web assets are
-bundled in the IPA — the `webDir` (`capacitor-shell/`) contains only a
-placeholder HTML page that is never shown at runtime.
+**What:** The iOS app boots a baked `@mycadet/app` boot bundle — the initial
+Cadet screens render from local assets in the IPA with zero network — then
+hands off to the deployed assistant entry (e.g.
+`https://mycadet.ai/assistant`), which carries the login/session UI.
 
-**How:** `capacitor.config.ts` sets
-[`server.url`](https://capacitorjs.com/docs/guides/server-url) to the
-environment-appropriate origin. `cap sync ios` bakes that URL into the
-native `capacitor.config.json`. At launch, `WKWebView` navigates
-straight to it. Each environment (production, staging, dev) has its own
-origin — set `CADET_ENVIRONMENT` before `bunx cap sync ios` to select
-which URL is baked into the build.
+**How:** `bun run build:capacitor` (run by every sync flow, `setup`
+included) builds the bundle and stamps `__CADET_CONFIG__.handoffUrl` into it
+from the environment. `cap sync ios` copies the bundle into the Xcode
+project as the `webDir`. At launch, `WKWebView` renders the boot bundle's
+splash and navigates to the handoff URL. Each environment (production,
+staging, dev) has its own origin — set `CADET_ENVIRONMENT` before the build
+to select which URL is stamped into the bundle.
 
 **Why remote URL, not a local bundle (like the Electron app):**
 
@@ -41,8 +41,10 @@ which URL is baked into the build.
   frequency from the native release cycle.
 - **App Store review avoidance** — Apple's review process can take hours
   to days. Bundling web assets would gate every web change behind that
-  process. With `server.url`, only native shell changes (Swift code,
-  entitlements, Capacitor plugin updates) require a store submission.
+  process. With the baked boot bundle + handoff, only shell or boot-bundle
+  changes (Swift code, entitlements, Capacitor plugin updates, the boot
+  screens) require a store submission — the assistant UI still ships from
+  the web origin.
 - **Thin native surface** - the IPC bridge between the WKWebView and
   native code is minimal (eleven app-local plugins: `NativeAuthPlugin`,
   `NativeBiometricPlugin`, `VoiceAudioSessionPlugin`,
@@ -62,9 +64,10 @@ which URL is baked into the build.
   pattern for Capacitor apps — see Capacitor's
   [server.url guide](https://capacitorjs.com/docs/guides/server-url).
 
-**Tradeoff:** The app requires a network connection to load the UI. This
-is acceptable because the assistant needs its backend services for all
-functionality anyway — there is no useful offline state.
+**Tradeoff:** The app requires a network connection to load the assistant
+UI. This is acceptable because the assistant needs its backend services for
+all functionality anyway — the baked boot bundle covers the no-network case
+with an honest offline state and hands off once connectivity returns.
 
 ## Prerequisites
 
@@ -256,8 +259,8 @@ a breakpoint.
 - **The WebView never loads, just a blank green screen**: check the
   Xcode console for a failed navigation. Common cause is a typo'd
   `server.url` in `capacitor.config.ts` or `cleartext: true` missing for
-  an HTTP target. The placeholder `capacitor-shell/index.html` is also
-  what flashes briefly before the remote URL paints.
+  an HTTP target. The baked boot bundle's splash is also what shows
+  while the entry URL loads.
 
 ## How it's set up
 
@@ -452,48 +455,40 @@ re-provisioning the app.
 bun run setup
 ```
 
-`setup` re-runs `cap sync ios` (regenerating
-`clients/ios/App/App/capacitor.config.json` and the `capacitor-shell/` webDir
-copy in `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
+`setup` rebuilds the app-shell boot bundle (`build:capacitor`) and re-runs
+`cap sync ios` (regenerating
+`clients/ios/App/App/capacitor.config.json` and the boot-bundle copy in
+`clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 `App.xcodeproj/`. All three of those output paths are gitignored.
 
 ### Point at a different server (self-hosted origin or local dev)
 
 **HTTPS origin (self-hosted assistant, or any valid-TLS host):** set
-`CADET_SERVER_URL` when syncing. It overrides the environment-derived
-Cadet Cloud URL and is baked into `server.url` the same way:
+`CADET_SERVER_URL` when building. It overrides the environment-derived
+Cadet Cloud URL and is stamped into the boot bundle's `handoffUrl` the same
+way:
 
 ```bash
 CADET_SERVER_URL=https://your-host.ts.net bun run setup
 ```
 
-Then rebuild in Xcode. The value must be a valid `https:` URL — `cap sync`
+Then rebuild in Xcode. The value must be a valid `https:` URL — the build
 fails loudly otherwise, because iOS App Transport Security requires valid
-TLS and `server.cleartext` stays `false`. Nothing to edit or revert: resync
+TLS. Nothing to edit or revert: resync
 without the variable (`bun run setup`) to return to
 the environment default.
 
-**Plain-HTTP local dev on your LAN (i.e. a device):** the default already
-points locally-synced shells at the local dev server on `localhost:3000` —
-the simulator shares the host's loopback, so that works as-is. A device
-can't reach the host's loopback, ATS blocks cleartext HTTP, and
-`CADET_SERVER_URL` is https-only, so this path still requires temporarily
-editing `capacitor.config.ts`:
+**A device on your LAN (plain-HTTP local dev):** the simulator shares the
+host's loopback, so the default (`localhost:3000`) works there as-is. A
+physical device can't reach the host's loopback, ATS blocks cleartext HTTP
+(the config no longer carries a `server` block to exempt), and
+`CADET_SERVER_URL` is https-only — so run the web surface through
+`cadet tunnel` instead and point the build at its https URL:
 
-```ts
-server: {
-  url: "http://192.168.x.x:3000", // your Mac's LAN IP — not localhost
-  cleartext: true,                 // HTTP, not HTTPS
-},
+```bash
+cadet tunnel  # on the host — serves the assistant surface over https
+CADET_SERVER_URL=https://<tunnel-host> bun run setup
 ```
-
-- Use your LAN IP, not `localhost` / `127.0.0.1` — the simulator shares
-  the host's loopback but a device won't
-- `cleartext: true` is needed because iOS App Transport Security blocks
-  HTTP by default
-- Run `bun run setup`, then rebuild in Xcode
-- **Revert before committing.** The default must remain
-  the local dev server URL (`localhost:3000`) with `cleartext: false`.
 
 ### Add a new Capacitor plugin
 
@@ -1081,9 +1076,9 @@ generated files here.
 ```
 clients/
 ├── app/
-│   ├── capacitor.config.base.ts      # Shared base (appName, server URL, webDir)
-│   ├── capacitor-shell/
-│   │   └── index.html                # Placeholder webDir (unused at runtime)
+│   ├── capacitor.config.base.ts      # Shared base (appName, webDir)
+│   ├── capacitor.html                # Boot bundle document (build:capacitor entry)
+│   ├── src/capacitor/                # Boot shell — splash + handoff (baked as webDir)
 │   └── package.json                  # Exports the base config (@mycadet/app/capacitor.config.base)
 └── ios/
     ├── capacitor.config.ts           # Capacitor config (edit this); owns the ios block (path: ".")

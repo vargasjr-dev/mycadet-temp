@@ -9,7 +9,7 @@
   "type": "module",
   "description": "Cadet Android Capacitor shell — native Gradle project plus the plugin set its sync wires",
   "scripts": {
-    "android:sync": "bunx --bun cap sync android",
+    "android:sync": "(cd ../app && bun run build:capacitor) && bunx --bun cap sync android",
     "android:run": "bun run scripts/run-android.ts",
     "android:open": "bun run android:sync && bunx --bun cap open android"
   },
