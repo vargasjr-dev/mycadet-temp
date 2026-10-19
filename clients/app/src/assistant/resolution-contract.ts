@@ -59,7 +59,7 @@ export const AssistantChoiceSchema = z.object({
 
 export const AssistantResolutionSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("ready"), assistant: ResolvedAssistantSchema }),
-  z.object({ status: z.literal("starting") }),
+  z.object({ status: z.literal("notReady") }),
   z.object({ status: z.literal("unavailable") }),
   z.object({
     status: z.literal("selection"),

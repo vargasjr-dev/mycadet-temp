@@ -96,7 +96,9 @@
   "appShell": {
     "loading": "正在加载助手…",
     "error": "无法加载助手。",
-    "starting": "你的助手正在启动。",
+    "notReady": "你的助手尚未就绪。",
+    "notReadyTitle": "你的助手尚未就绪。",
+    "notReadyBody": "它当前不可用。请稍后重试，或从你的 Cadet 账户启动它。",
     "empty": "没有可用的助手。",
     "unauthenticated": "请登录以继续。",
     "retry": "重试",

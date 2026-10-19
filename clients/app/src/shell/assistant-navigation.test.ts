@@ -77,7 +77,7 @@ for (const value of [
   });
 }
 test("a public ready descriptor and readiness outcomes share one contract", () => {
-  for (const status of ["empty", "starting", "unauthenticated"]) {
+  for (const status of ["empty", "notReady", "unauthenticated"]) {
     expect(AssistantResolutionSchema.safeParse({ status }).success).toBe(true);
   }
   expect(

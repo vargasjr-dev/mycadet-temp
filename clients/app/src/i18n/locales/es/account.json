@@ -96,7 +96,9 @@
   "appShell": {
     "loading": "Cargando asistente…",
     "error": "No se pudo cargar el asistente.",
-    "starting": "Tu asistente se está iniciando.",
+    "notReady": "Tu asistente no está listo.",
+    "notReadyTitle": "Tu asistente no está listo.",
+    "notReadyBody": "No está disponible en este momento. Inténtalo de nuevo en un rato o actívalo desde tu cuenta de Cadet.",
     "empty": "No hay ningún asistente disponible.",
     "unauthenticated": "Inicia sesión para continuar.",
     "retry": "Reintentar",
