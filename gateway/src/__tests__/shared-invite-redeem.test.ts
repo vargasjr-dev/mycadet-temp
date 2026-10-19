@@ -113,6 +113,8 @@ const { handleGuardianRefresh } =
 const { tryIpcProxy } = await import("../http/routes/ipc-runtime-proxy.js");
 const { refreshRouteSchema } = await import("../ipc/route-schema-cache.js");
 const { trustVerdictRoutes } = await import("../ipc/trust-verdict-handlers.js");
+const { initAdmissionPolicyCache, resetAdmissionPolicyCache } =
+  await import("../risk/admission-policy-cache.js");
 const { seedContact } = await import("./helpers/contact-fixtures.js");
 
 const CLIENT_IP = "203.0.113.7";
@@ -213,9 +215,11 @@ async function resolveInboundTrust(principalId: string) {
 beforeAll(async () => {
   await initGatewayDb();
   await refreshRouteSchema();
+  initAdmissionPolicyCache();
 });
 
 afterAll(() => {
+  resetAdmissionPolicyCache();
   resetGatewayDb();
 });
 

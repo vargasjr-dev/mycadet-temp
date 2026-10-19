@@ -23,13 +23,13 @@ type PluginCatalogLoadDeps = Pick<SearchPluginsDeps, "fetch">;
 const cache = new Map<string, CacheEntry>();
 
 /**
- * Resolve the full plugin catalog at {@link ref}.
+ * Resolve the full installable plugin catalog at {@link ref}.
  *
  * The catalog is fetched from the cloud and, on success, cached per ref for
  * the TTL; a fetch failure propagates so the caller can surface it (e.g. map
  * a rate-limit to 503) — no stale catalog is ever served.
  */
-async function loadPluginCatalog(
+export async function getPluginCatalog(
   ref: string,
   deps: PluginCatalogLoadDeps,
 ): Promise<PluginCatalog> {
@@ -43,20 +43,12 @@ async function loadPluginCatalog(
   return catalog;
 }
 
-/** Installable catalog. */
-export async function getPluginCatalog(
-  ref: string,
-  deps: SearchPluginsDeps,
-): Promise<PluginCatalog> {
-  return loadPluginCatalog(ref, deps);
-}
-
 /** Category metadata for plugins already installed. */
 export async function getPluginCatalogForInstalledMetadata(
   ref: string,
   deps: PluginCatalogLoadDeps,
 ): Promise<PluginCatalog> {
-  return loadPluginCatalog(ref, deps);
+  return getPluginCatalog(ref, deps);
 }
 
 /** Invalidate the cache (for testing or forced refresh). */
