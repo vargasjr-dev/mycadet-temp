@@ -29,15 +29,15 @@ if ! command -v xcodegen &>/dev/null; then
   brew install xcodegen
 fi
 
-# — Workspace deps: bun install from the app package installs the root
-#   workspace, which is where the Capacitor plugin packages resolve —
+# — Workspace deps: bun install from this package walks up to the workspace
+#   root, which is where the Capacitor plugin packages resolve —
 info "Installing workspace dependencies"
-(cd "${IOS_DIR}/../app" && bun install)
+(cd "${IOS_DIR}" && bun install)
 
 # — Sync the Capacitor shell: bakes `server.url` (defaults to the local
 #   environment) and copies the webDir placeholder into the Xcode project —
 info "Syncing Capacitor iOS project"
-(cd "${IOS_DIR}/../app" && bunx cap sync ios)
+(cd "${IOS_DIR}" && bunx --bun cap sync ios)
 
 # — Regenerate App.xcodeproj from App/project.yml —
 info "Generating Xcode project"

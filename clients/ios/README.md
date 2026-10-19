@@ -425,23 +425,23 @@ a catalog that already costs about one.
 
 ### Bundle ID vs capacitor.config appId
 
-There's a deliberate mismatch:
+The Capacitor config's `appId` mirrors the app bundle ID:
 
 | Where                             | Value                                           |
 | --------------------------------- | ----------------------------------------------- |
 | Xcode `PRODUCT_BUNDLE_IDENTIFIER` | `ai.mycadet.ios` ← real one |
-| `capacitor.config.ts` `appId`     | `ai.mycadet.android`                           |
+| `capacitor.config.ts` `appId`     | `ai.mycadet.ios` (inert for iOS)               |
 
 Capacitor requires `appId` to use Java package form because Android uses it as
-the application namespace. The iOS project is generated from `project.yml`
-after `cap sync`, and its xcconfigs keep the existing hyphenated App Store
-bundle IDs. **Do not align the iOS bundle IDs with `appId`** because doing so
-would require re-provisioning the app. See the inline comment in
-`capacitor.config.ts`.
+the application namespace; iOS never consumes it. The real per-environment
+bundle IDs (`ai.mycadet.ios`, `.staging`, `.dev`) live in the xcconfigs under
+`App/App/Config/`, which `project.yml` feeds `PRODUCT_BUNDLE_IDENTIFIER` from.
+**Do not change the xcconfig bundle IDs** — doing so would require
+re-provisioning the app.
 
 ## Common tasks
 
-### After editing `clients/app/capacitor.config.ts`
+### After editing `clients/ios/capacitor.config.ts` (or the shared base in `clients/app/`)
 
 ```bash
 bun run setup
@@ -1066,20 +1066,22 @@ All iOS signing secrets are stored as GitHub Actions secrets:
 
 ## Structure
 
-The iOS shell lives as a peer of `clients/app/`, not nested inside it.
-`capacitor.config.ts` in `clients/app/` points at it via `ios.path: "../ios"`,
-so `bun run setup` (from `clients/ios/`) writes generated files into
-`clients/ios/`.
+The iOS shell lives as a peer of `clients/app/`, not nested inside it. The
+Capacitor config lives IN this package — `capacitor.config.ts` owns the `ios`
+block and imports the shared base from `@mycadet/app/capacitor.config.base` —
+so `bun run setup` runs `cap sync ios` from `clients/ios/` and writes
+generated files here.
 
 ```
 clients/
 ├── app/
-│   ├── capacitor.config.ts           # Capacitor config (edit this); ios.path: "../ios"
+│   ├── capacitor.config.base.ts      # Shared base (appName, server URL, webDir)
 │   ├── capacitor-shell/
 │   │   └── index.html                # Placeholder webDir (unused at runtime)
-│   └── package.json                  # @capacitor/* deps + Capacitor CLI (native builds)
+│   └── package.json                  # Exports the base config (@mycadet/app/capacitor.config.base)
 └── ios/
-    ├── package.json                  # iOS dev flow: `bun run dev` / `bun run setup`
+    ├── capacitor.config.ts           # Capacitor config (edit this); owns the ios block (path: ".")
+    ├── package.json                  # iOS dev flow + @capacitor/ios + plugin deps (native builds)
     ├── .gitignore                    # Ignores Pods, DerivedData, xcuserdata,
     │                                 # generated capacitor.config.json, etc.
     ├── docs/

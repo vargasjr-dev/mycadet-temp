@@ -11,6 +11,7 @@
     "clients/android",
     "clients/app",
     "clients/docs",
+    "clients/ios",
     "clients/linux",
     "clients/macos",
     "clients/web",

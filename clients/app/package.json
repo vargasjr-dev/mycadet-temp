@@ -16,7 +16,8 @@
     "./contracts": {
       "types": "./dist/package/types/contracts.d.ts",
       "default": "./dist/package/contracts.js"
-    }
+    },
+    "./capacitor.config.base": "./capacitor.config.base.ts"
   },
   "dependencies": {
     "@capacitor/app": "8.1.0",

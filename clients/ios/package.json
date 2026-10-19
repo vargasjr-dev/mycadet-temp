@@ -1,8 +1,37 @@
 {
   "name": "@mycadet/ios",
+  "version": "0.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
+  },
+  "type": "module",
+  "description": "Cadet iOS Capacitor shell — native Xcode project plus the plugin set its sync wires",
   "scripts": {
     "setup": "bash scripts/setup.sh",
+    "ios:sync": "bunx --bun cap sync ios",
     "dev": "bun run setup && open App/App.xcodeproj"
+  },
+  "devDependencies": {
+    "@capacitor-community/camera-preview": "8.0.1",
+    "@capacitor/app": "8.1.0",
+    "@capacitor/browser": "8.0.3",
+    "@capacitor/cli": "8.3.4",
+    "@capacitor/core": "8.3.4",
+    "@capacitor/file-viewer": "2.0.1",
+    "@capacitor/filesystem": "8.1.2",
+    "@capacitor/haptics": "8.0.0",
+    "@capacitor/ios": "8.3.4",
+    "@capacitor/keyboard": "8.0.5",
+    "@capacitor/local-notifications": "8.2.0",
+    "@capacitor/network": "8.0.0",
+    "@capacitor/push-notifications": "8.0.3",
+    "@capacitor/share": "8.0.1",
+    "@capawesome/capacitor-file-picker": "8.0.4",
+    "@mycadet/app": "workspace:*",
+    "@mycadet/environments": "workspace:*",
+    "capacitor-plugin-safe-area": "5.0.0",
+    "typescript": "5.9.3"
   }
 }

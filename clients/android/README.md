@@ -550,12 +550,14 @@ gates. Verify:
 ```
 clients/
 ├── app/
-│   ├── capacitor.config.base.ts  # Shared Capacitor config (server URL, plugins)
-│   ├── capacitor.config.ts       # Base config + the ios block; iOS sync runs here
-│   ├── capacitor-shell/          # Placeholder webDir
-│   └── package.json              # @capacitor/ios + plugin deps for the iOS sync
+│   ├── capacitor.config.base.ts  # Shared Capacitor config (appName, server URL, webDir)
+│   ├── capacitor-shell/          # Placeholder webDir (the base's ../app path names it)
+│   └── package.json              # Exports the base config (@mycadet/app/capacitor.config.base)
+├── ios/
+│   ├── capacitor.config.ts       # Base config + appId + Keyboard + the ios block (path: ".")
+│   └── package.json              # ios:sync script + @capacitor/ios + plugin deps for the iOS sync
 └── android/
-    ├── capacitor.config.ts       # Base config + the android block (path: ".")
+    ├── capacitor.config.ts       # Base config + appId + LocalNotifications + the android block (path: ".")
     ├── package.json              # android:sync / android:run / android:open scripts
     ├── scripts/
     │   └── run-android.ts        # Emulator bootstrap + devDebug install + launch
