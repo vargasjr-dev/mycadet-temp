@@ -108,23 +108,16 @@ export function findAppDistDir(options: AppDistOptions = {}): string | null {
 }
 
 /** One resolved source-build invocation for a missing client bundle. */
-export interface DistBuildSpec {
+interface DistBuildSpec {
   command: string;
   args: string[];
   env: Record<string, string>;
   cwd: string;
 }
 
-/** Runs a source build; the default runner spawns it with inherited stdio. */
-export type DistBuildRunner = (build: DistBuildSpec) => Promise<void>;
-
 export interface DistBuildOptions {
   /** Anchors the source-checkout walk (defaults to this module's directory). */
   startDir?: string;
-  /** Overrides build execution so tests can record instead of spawning. */
-  runBuild?: DistBuildRunner;
-  /** Progress sink (defaults to console.log). */
-  log?: (message: string) => void;
   /** Overrides the npm package resolution (tests defeat the installed arm). */
   resolvePackage?: () => string;
 }
@@ -149,7 +142,7 @@ function findSourcePackageDir(
   return null;
 }
 
-/** Default runner: inherit stdio so the build's progress streams through. */
+/** Spawn the source build with inherited stdio so progress streams through. */
 function spawnDistBuild(build: DistBuildSpec): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(build.command, build.args, {
@@ -181,9 +174,7 @@ async function resolveDistDirBuilt(
   if (!sourceDir) {
     return null;
   }
-  const log = options.log ?? ((message: string) => console.log(message));
-  const runBuild = options.runBuild ?? spawnDistBuild;
-  log(
+  console.log(
     `No built ${kind} bundle found. Building it from the source checkout ` +
       "now (first run only; this can take a minute)...",
   );
@@ -192,7 +183,7 @@ async function resolveDistDirBuilt(
       ? "cd clients/web && VITE_CLOUD_MODE=false bun run build"
       : "cd clients/app && VITE_CLOUD_MODE=false bun run build";
   try {
-    await runBuild({
+    await spawnDistBuild({
       command: "bun",
       args: ["run", "build"],
       // Both bundles need the desktop artifact shape: the cloud-served flag
@@ -207,7 +198,7 @@ async function resolveDistDirBuilt(
         `\`${recipe}\`. ${error instanceof Error ? error.message : String(error)}`,
     );
   }
-  log(`Built the ${kind} bundle.`);
+  console.log(`Built the ${kind} bundle.`);
   return kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
 }
 

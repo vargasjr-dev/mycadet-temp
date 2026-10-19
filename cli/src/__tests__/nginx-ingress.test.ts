@@ -1,4 +1,5 @@
 import * as childProcess from "node:child_process";
+import type { SpawnOptions } from "node:child_process";
 import { createHash } from "node:crypto";
 import * as fsModule from "node:fs";
 import {
@@ -87,7 +88,6 @@ import {
   stopContainerTunnelEdge,
   stopIngressNginx,
 } from "../lib/nginx-ingress.js";
-import type { DistBuildRunner, DistBuildSpec } from "../lib/web-dist.js";
 
 const originalKill = process.kill;
 const workspaces: string[] = [];
@@ -1154,27 +1154,35 @@ describe("startRemoteWebIngress", () => {
   test("builds the missing web bundle from the source checkout and starts", async () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
-    mockNginxSpawn();
     // No built bundle anywhere, but the source checkout IS present, so the
-    // auto-build has something to run.
+    // edge auto-builds it through the spawn boundary (mocked here).
     existsSyncMock.mockImplementation((path) => {
       const p = String(path);
       if (p.endsWith(WEB_INDEX_SUFFIX)) return false;
       if (p.includes("clients/web/package.json")) return true;
       return realFs.existsSync(path);
     });
-
-    const builds: DistBuildSpec[] = [];
-    const runBuild: DistBuildRunner = async (build) => {
-      builds.push(build);
-      mockWebDistPresent(); // the build "lands" the bundle.
-    };
+    mockNginxSpawn();
+    const nginxSpawn = spawnMock.getMockImplementation();
+    spawnMock.mockImplementation(((
+      command: string,
+      args: readonly string[],
+      options?: SpawnOptions,
+    ) => {
+      if (command === "bun") {
+        // The auto-build "lands" the bundle and exits cleanly.
+        mockWebDistPresent();
+        const child = new childProcess.ChildProcess();
+        setTimeout(() => child.emit("exit", 0), 10);
+        return child;
+      }
+      return nginxSpawn?.(command, args, options ?? {});
+    }) as unknown as typeof childProcess.spawn);
 
     const result = await startRemoteWebIngress({
       workspaceDir: ws,
       gatewayPort: 7830,
       listenPort: 7845,
-      runBuild,
     });
 
     expect(result).toEqual({
@@ -1183,33 +1191,40 @@ describe("startRemoteWebIngress", () => {
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
     });
-    expect(builds).toHaveLength(1);
-    expect(builds[0]?.command).toBe("bun");
-    expect(builds[0]?.args).toEqual(["run", "build"]);
-    expect(builds[0]?.env.VITE_CLOUD_MODE).toBe("false");
-    expect(builds[0]?.cwd.endsWith(join("clients", "web"))).toBe(true);
+    const buildCalls = spawnMock.mock.calls.filter(
+      ([command]) => command === "bun",
+    );
+    expect(buildCalls).toHaveLength(1);
+    const [, buildArgs, buildOptions] = buildCalls[0] ?? [];
+    expect(buildArgs).toEqual(["run", "build"]);
+    expect(buildOptions?.env?.VITE_CLOUD_MODE).toBe("false");
+    expect(String(buildOptions?.cwd).endsWith(join("clients", "web"))).toBe(
+      true,
+    );
   });
 
   test("reports a failed source build with the manual recipe", async () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
-    mockNginxSpawn();
-    // Bundle missing, source checkout present: the auto-build runs and fails.
+    // Bundle missing, source checkout present: the edge auto-builds, and
+    // the build spawn fails.
     existsSyncMock.mockImplementation((path) => {
       const p = String(path);
       if (p.endsWith(WEB_INDEX_SUFFIX)) return false;
       if (p.includes("clients/web/package.json")) return true;
       return realFs.existsSync(path);
     });
+    spawnMock.mockImplementation((() => {
+      const child = new childProcess.ChildProcess();
+      setTimeout(() => child.emit("exit", 1), 10);
+      return child;
+    }) as unknown as typeof childProcess.spawn);
 
     await expect(
       startRemoteWebIngress({
         workspaceDir: ws,
         gatewayPort: 7830,
         listenPort: 7845,
-        runBuild: async () => {
-          throw new Error("bun exited with code 1");
-        },
       }),
     ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
   });
