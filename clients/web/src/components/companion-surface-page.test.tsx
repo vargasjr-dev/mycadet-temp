@@ -77,10 +77,6 @@ const STATE: CompanionSurfaceState = {
   call: null,
   assistantName: "Ziggy",
   working: false,
-  // Watch offered, which is what every case below except the flag's own is
-  // about. The flag is main's answer and arrives on the state like everything
-  // else here; the cases that care about it being absent say so.
-  watchEnabled: true,
   intro: null,
 };
 
@@ -110,7 +106,6 @@ const resetState = () => {
   delete STATE.screenShare;
   delete STATE.screenShareEnabled;
   delete STATE.voicesPickable;
-  STATE.watchEnabled = true;
   STATE.intro = null;
   STATE.assistantName = "Ziggy";
   delete STATE.character;
@@ -1651,14 +1646,12 @@ describe("the dial on the companion surface", () => {
 });
 
 /**
- * The Watch flag, which this window cannot evaluate for itself.
+ * The Teach control the companion surface draws.
  *
- * The route is standalone: no auth, no `RootLayout`, and so no flag store that
- * ever settles. Main reads the evaluation the app's window wrote into settings
- * and pushes it here, and this page's whole job is to believe only a positive
- * answer.
+ * Teach is always offered: the way into a session draws with the call row, and
+ * the same control carries the way out while a session runs.
  */
-describe("the Watch flag on the companion surface", () => {
+describe("the Teach control on the companion surface", () => {
   const watchButton = (container: HTMLElement): HTMLButtonElement | null =>
     container.querySelector<HTMLButtonElement>('button[aria-label="Teach"]');
 
@@ -1675,24 +1668,7 @@ describe("the Watch flag on the companion surface", () => {
     STATE.call = LISTENING_CALL;
   });
 
-  test("draws no way in when the pushed state says nothing about it", async () => {
-    delete STATE.watchEnabled;
-    const { container } = render(<CompanionSurfacePage />);
-    await openPill(container);
-
-    expect(watchButton(container)).toBeNull();
-  });
-
-  test("draws no way in when the pushed state says no", async () => {
-    STATE.watchEnabled = false;
-    const { container } = render(<CompanionSurfacePage />);
-    await openPill(container);
-
-    expect(watchButton(container)).toBeNull();
-  });
-
-  test("draws the way in when the pushed state says yes", async () => {
-    STATE.watchEnabled = true;
+  test("draws the way in", async () => {
     const { container } = render(<CompanionSurfacePage />);
     await openPill(container);
 
@@ -1700,21 +1676,17 @@ describe("the Watch flag on the companion surface", () => {
   });
 
   /**
-   * The flag hides the door and never the exit. A session that outlives the
-   * answer is still reading the screen, and a capture the user cannot end is
-   * the one thing this surface exists to prevent.
+   * A running session keeps its control: the pill is held down for as long as
+   * the session reads, and the press on it is the one that ends it.
    */
-  test("keeps a way out of a session the flag no longer offers", async () => {
-    STATE.watchEnabled = false;
+  test("keeps a way out of a running session", async () => {
     STATE.watching = true;
     const { container } = render(<CompanionSurfacePage />);
     await pinSurface(container);
     fireEvent.mouseMove(canvasOf(container), { clientX: 120, clientY: 120 });
 
     const stop = await waitFor(() => {
-      const found = container.querySelector<HTMLButtonElement>(
-        'button[aria-label="Stop teaching"]',
-      );
+      const found = watchButton(container);
       if (!found) {
         throw new Error("Expected the stop control to render");
       }

@@ -46,7 +46,6 @@ import {
   companionNearEdgeFor,
   companionPadFor,
   companionScaleFor,
-  WATCH_FLAG,
   companionLowerReachFor,
   type CoachmarkRefusal,
   type CoachmarkRequest,
@@ -152,33 +151,6 @@ import {
 } from "./main-window";
 
 /**
-/**
- * The flag Watch is behind.
- *
- * Its own flag rather than a share of whatever gates the surface, because the
- * surface is a place to talk to the assistant from and Watch is a session that
- * reads the user's screen. They are ready to be offered to people at different
- * moments, and folding one into the other would mean shipping the second the
- * day the first goes out.
- *
- * Absent means off. A fresh install whose window has not synced yet and an
- * environment where the flag was never provisioned both arrive here as
- * nothing, and the thing on the other side of this answer is a control that
- * starts reading the screen: an affordance offered on a guess is one a user
- * can press before anyone has decided they should have it.
- *
- * Read here rather than in the window that draws the control. That window is a
- * floating route with no auth and no flag store that ever settles, so main is
- * the only side of the surface holding a real evaluation, and it travels down
- * on the state push as {@link CompanionSurfaceState.watchEnabled}.
- *
- * The key itself comes from the contract package, because the web app's
- * `toggleWatch` command reads the same evaluation to decide whether a press may
- * start a session. See {@link WATCH_FLAG}.
- */
-const isWatchEnabled = (): boolean =>
-  readSetting("featureFlags")?.[WATCH_FLAG] === true;
-
 /**
  * The companion surface (LUM-3086): the assistant's avatar floating from app
  * launch, expanding on hover into a pill carrying the ways to reach it, and
@@ -1235,10 +1207,6 @@ const currentState = (): CompanionSurfaceState => {
     // Passed through as it arrived. Bounded by the publisher and again by the
     // schema, so nothing here has to decide how much of it is too much.
     dictationText: context.dictationText,
-    // Read on every rebuild rather than captured once, because the evaluation
-    // lands after launch: the app's window has to sign in and fetch it first,
-    // and a targeting change can move it again while the app runs.
-    watchEnabled: isWatchEnabled(),
   };
 };
 

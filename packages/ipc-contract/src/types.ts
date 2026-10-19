@@ -2531,28 +2531,6 @@ export const COMPANION_DICTATION_TAIL = 120;
 export type CompanionDictating = "listening" | "transcribing";
 
 /**
- * The feature flag key Teach is behind, as the app's window wrote it into
- * settings (`useElectronFeatureFlagBridge`).
- *
- * The constant's name and the key it holds spell the feature differently: the
- * symbols around it say Watch, everything a person reads says Teach. A flag key
- * is one of the things a person reads, in the LaunchDarkly dashboard.
- *
- * Here rather than in either client, because two clients read the same
- * evaluation for two halves of one gate: Electron main reads it to decide
- * whether the companion surface draws the Teach control at all, and the web
- * app's `toggleWatch` command reads it to decide whether a press may start a
- * session. A second copy of the string is a gate that can disagree with
- * itself, and both ways it can disagree are bad: a visible control that
- * nothing will start, or a command open with no control that says so.
- *
- * The evaluated value travels to the surface on
- * {@link CompanionSurfaceState.watchEnabled}; this is only the key it is
- * evaluated under.
- */
-export const WATCH_FLAG = "teach";
-
-/**
  * The beats of the surface's one-time introduction, in order.
  *
  * The companion is the only thing this app puts on a user's desktop rather than
@@ -3047,25 +3025,6 @@ export interface CompanionSurfaceState {
    */
   frameInsetTop?: number;
 
-  /**
-   * Whether Watch is offered at all, as the flag was last evaluated for the
-   * signed-in user.
-   *
-   * Carried on the state rather than read where it is drawn, because the
-   * surface is a floating route: it has no session, no auth, and no flag store
-   * that ever hydrates, so a value it read for itself would be the registry
-   * default forever. Main reads the evaluation the app's window wrote into
-   * settings and pushes it here with everything else, which is the same path
-   * `companion-window.ts` already takes for the surface's own flag.
-   *
-   * Optional, and absence means not offered. Read it as `watchEnabled === true`
-   * for the reason {@link CompanionSurfaceState.watching} is read that way: a
-   * shell that predates the field, a window whose flags have not synced yet,
-   * and an environment where the flag was never provisioned are all states of
-   * not knowing, and a control that reads a user's screen is not something to
-   * offer while the answer is unknown.
-   */
-  watchEnabled?: boolean;
   /**
    * The character to render live, or `undefined` when there is none to
    * compose. See {@link CompanionCharacter}; `avatarBase64` is the fallback.

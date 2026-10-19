@@ -32,10 +32,7 @@
       "label": "In-Chat Onboarding Tour",
       "description": "Multivariate experiment for the eyes-led in-chat onboarding tour. control = straight to chat after research onboarding (current behavior); tour = the extended tour auto-plays on first workspace entry. Desktop-only: phone-width viewports and the native shell get neither the tour nor its telemetry (not even the exposure event), so the funnel measures desktop sessions exclusively. Targeted via LaunchDarkly (70% tour / 30% control).",
       "defaultEnabled": "control",
-      "values": [
-        "control",
-        "tour"
-      ]
+      "values": ["control", "tour"]
     },
     {
       "id": "internal-thread-actions",
@@ -110,14 +107,6 @@
       "defaultEnabled": false
     },
     {
-      "id": "teach",
-      "scope": "client",
-      "key": "teach",
-      "label": "Teach",
-      "description": "Offer Teach, the session that reads the user's screen while they narrate what they are doing. Gates the companion surface's Teach control and the toggleWatch command that starts a session; evaluated in the app's window and read again in the Electron main process, which pushes it to the floating surface",
-      "defaultEnabled": false
-    },
-    {
       "id": "velvet",
       "scope": "client",
       "key": "velvet",
@@ -132,10 +121,7 @@
       "label": "Vision Mode",
       "description": "Gates hold-to-Live ambient frame sampling in the voice room camera. String-valued so future A/B arms can be added as new values.",
       "defaultEnabled": "off",
-      "values": [
-        "off",
-        "on"
-      ]
+      "values": ["off", "on"]
     }
   ]
 }

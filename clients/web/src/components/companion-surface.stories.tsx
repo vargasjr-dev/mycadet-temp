@@ -188,7 +188,6 @@ const meta: Meta<StoryArgs> = {
     },
     accentHex: { control: "color" },
     watching: { control: "boolean" },
-    watchEnabled: { control: "boolean" },
     introBeat: {
       control: "inline-radio",
       options: COMPANION_INTRO_BEATS,
@@ -199,11 +198,6 @@ const meta: Meta<StoryArgs> = {
   },
   args: {
     phase: "resting",
-    // On here, off everywhere a real user meets it until the flag says
-    // otherwise. Design stories are for looking at what the surface can draw,
-    // and a control the stories hid would be one nobody could review. Turn it
-    // off to see the two-control row a user without the flag gets.
-    watchEnabled: true,
     backdrop: "dark",
     avatarSrc: EXAMPLE_AVATAR,
     character: EXAMPLE_CHARACTER,
@@ -773,7 +767,6 @@ export const InCallWithPrompt: Story = {
   args: {
     phase: "call",
     call: DEMO_CALL,
-    watchEnabled: false,
     prompt: (
       <CompanionPromptRow
         popover={{
@@ -795,7 +788,6 @@ export const InCallWithPromptsDeferred: Story = {
   args: {
     phase: "call",
     call: DEMO_CALL,
-    watchEnabled: false,
     promptsDeferred: 3,
   },
 };

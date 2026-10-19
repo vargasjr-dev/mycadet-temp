@@ -188,8 +188,6 @@ export function CompanionSurfacePage() {
   const [popoverView, setPopoverView] = useState<
     CompanionPopoverView | undefined
   >(undefined);
-  // Whether Watch is offered at all, which is the flag as main last read it.
-  const [watchEnabled, setWatchEnabled] = useState(false);
   // Whether a session started from the app's window can be told what to
   // read, which is that window's answer about its assistant's version. It
   // decides whether Teach asks first or starts at once.
@@ -341,11 +339,6 @@ export function CompanionSurfacePage() {
       setDictationOffer(state.dictationOffer);
       setPopover(state.popover);
       setPopoverView(state.popoverView);
-      // Off unless the answer is positively yes, which covers a shell that
-      // predates the field and a window whose flags have not synced yet. The
-      // control this decides starts reading the user's screen, so a state of
-      // not knowing has to read as not offering it.
-      setWatchEnabled(state.watchEnabled === true);
       // Off unless positively on, for the reason the flag is: a pick taken
       // from the user is a promise about what will be read, and a window that
       // has not said its assistant can keep it is one that cannot.
@@ -1023,10 +1016,6 @@ export function CompanionSurfacePage() {
         // The reads that session has taken, which is what turns a running
         // session into something the user can see happening rather than
         // something they are told is on.
-        // The flag, from main. It hides the way into a session and leaves
-        // everything a running one draws alone, so a session already going
-        // when the flag turns off can still be seen and still be stopped.
-        watchEnabled={watchEnabled}
         // Draws the control the beat is about as though the pointer were on
         // it. The pill is open on those beats but the pointer is wherever the
         // user's hand happens to be, so without this the beat names a control

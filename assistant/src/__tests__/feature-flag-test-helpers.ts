@@ -71,7 +71,6 @@ export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
   "quiet-turn-activity",
   "fast-mode",
   "internal-thread-actions",
-  "teach",
   "velvet",
   "os-beta",
   "chat-credential-reveal",
