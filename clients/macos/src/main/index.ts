@@ -240,13 +240,16 @@ installFileOpen();
 //   window's renderer. Its paths resolve against `appDistRoot` with no mount
 //   prefix; extension-less misses fall back to the app dist's index.html so
 //   the shell's client routes survive reload / deep-link.
-// - The web bundle (`clients/web`, base `/assistant/`) stays served under the
-//   `/assistant` mount for the windows that still render web routes (about,
+// - The `/assistant` mount serves the web bundle (`clients/web`, base
+//   `/assistant/`) for the windows that still render web routes (about,
 //   command palette, companion, popouts) and as the local-assistant iframe
-//   content the app shell frames. Route-like web paths fall back to the web
-//   dist's index.html; missing web assets 404 so a stale or partial deploy
-//   surfaces as a load error rather than silently serving HTML with a wrong
-//   Content-Type.
+//   content the app shell frames. The package no longer ships a web dist —
+//   the web UI is iframed from the assistant's own version — so packaged
+//   requests under the mount 404 until those windows move to the
+//   assistant-served bundle (dev keeps the source-tree dist). Route-like web
+//   paths fall back to the web dist's index.html; missing web assets 404 so a
+//   stale or partial deploy surfaces as a load error rather than silently
+//   serving HTML with a wrong Content-Type.
 //
 // Reference: https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler
 // `clients/web/vite.config.ts` sets `base: "/assistant/"`, so the built HTML
@@ -265,6 +268,8 @@ const resolveAppDistRoot = (): string => {
 };
 
 const resolveWebDistRoot = (): string => {
+  // Packaged builds stopped shipping web-dist (the web bundle is iframed from
+  // the assistant's version); dev reads the source-tree build.
   if (app.isPackaged) {
     return path.join(process.resourcesPath, "web-dist");
   }

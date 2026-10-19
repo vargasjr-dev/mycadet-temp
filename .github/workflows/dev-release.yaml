@@ -873,7 +873,10 @@ jobs:
   build-electron:
     # No publish dep: the bundled CLI floats to the `dev` dist-tag at runtime.
     needs: [compute-version]
-    if: ${{ false }} # electron offline on the dev channel; bring back online by deleting this marker
+    # Dev-channel canary: runs on every dev release but never blocks the rest
+    # of the train. The dev environment has no Apple signing secrets seeded
+    # yet, so expect a red job here until they land.
+    continue-on-error: true
     runs-on: macos-26
     timeout-minutes: 30
     # Resolves the environment-scoped STRIPE_PUBLISHABLE_KEY secret baked into
@@ -929,8 +932,8 @@ jobs:
       - name: Install dependencies
         working-directory: ${{ github.workspace }}
         run: |
-          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/web --filter=@mycadet/app; then
-            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/web --filter=@mycadet/app
+          if ! bun install --frozen-lockfile --filter=@mycadet/macos --filter=@mycadet/app; then
+            rm -f bun.lock && rm -rf node_modules && bun install --filter=@mycadet/macos --filter=@mycadet/app
           fi
 
       # Installing does not download the Electron binary or build the mac
@@ -1126,6 +1129,9 @@ jobs:
     # publish: never offer an auto-update for a release that didn't publish.
     needs: [compute-version, build-electron, publish-meta-dev]
     if: ${{ always() && !cancelled() && needs.build-electron.result == 'success' && needs.publish-meta-dev.result == 'success' }}
+    # A failed continue-on-error build still reports success to `needs`, so
+    # this can run with no artifacts to upload; it must not red the release.
+    continue-on-error: true
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: dev

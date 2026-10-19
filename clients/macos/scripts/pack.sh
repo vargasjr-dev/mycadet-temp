@@ -77,7 +77,8 @@ bash scripts/generate-icon.sh
 bash scripts/generate-dmg-background.sh
 bash scripts/build-mac-helper.sh
 bash scripts/build-notifier.sh
-bun run build:web
+# The web bundle is iframed from the assistant's version at runtime; the pack
+# ships only the app dist.
 bun run build:app
 bash scripts/generate-cli-lockfile.sh
 electron-vite build

@@ -11,26 +11,26 @@ This package is the macOS distribution surface (outside the App Store).
 
 ## Renderer content delivery
 
-**What:** Two bundles ship inside the `.app` package, both served by the
+**What:** One bundle ships inside the `.app` package, served by the
 Electron main process over a custom
-[`app://` protocol](https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler)
-(see `docs/proposals/desktop-app-shell.md` for the split's rationale):
+[`app://` protocol](https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler):
 
 - The **app shell** (`@mycadet/app` standalone build, root-based) is the main
   window's renderer: `app://mycadet.ai/` resolves to
   `process.resourcesPath/app-dist`. The shell iframes the resolved assistant's
   own edge for cloud assistants, and the `/assistant` mount for local ones.
-- The **web bundle** (`clients/web/`, base `/assistant/`) serves the auxiliary
-  windows and the local-assistant iframe: `app://mycadet.ai/assistant/...`
-  resolves to `process.resourcesPath/web-dist`.
+- The **web bundle** is not packed — the web UI is iframed in at the
+  assistant's version, the same way the CLI's app-mode edge serves it.
+  Auxiliary windows still render web routes off `app://mycadet.ai/assistant/...`;
+  their packaged content source moves to the assistant-served bundle as a
+  follow-up (dev keeps the Vite dev server).
 
 **How:** At build time, `bun run build:app` builds `clients/app/` and copies
-`clients/app/dist/standalone/` into `resources/app-dist`; `bun run build:web`
-runs `vite build` in `clients/web/` and copies `clients/web/dist/` into
-`resources/web-dist`. `electron-builder` packs both directories into the app's
+`clients/app/dist/standalone/` into `resources/app-dist`; `electron-builder`
+packs it into the app's
 `extraResources` (see `electron-builder.config.cjs`). No network request is
-involved at runtime — the protocol handler reads files from the local bundles
-and falls back to each bundle's `index.html` for client-side routes.
+involved at runtime — the protocol handler reads files from the local bundle
+and falls back to its `index.html` for client-side routes.
 
 **Why local bundle, not a remote URL:**
 
@@ -44,9 +44,6 @@ and falls back to each bundle's `index.html` for client-side routes.
   renders instantly.
 - **Startup speed** — local file reads are ~instant; no DNS / TLS / CDN
   roundtrip.
-- **Version coherence** — the web UI and Electron main process are
-  tightly coupled via IPC (`window.cadet.*`). Bundling them together
-  guarantees they are always compatible.
 
 ## Auto-update
 
@@ -63,9 +60,10 @@ Configuration lives in `src/main/auto-update.ts`:
   menu item (packaged builds only), or the renderer can invoke
   `cadet:update:check` / `cadet:update:install` over IPC.
 
-Because the web UI is bundled locally, **web changes require an Electron
-release** to reach users. The update typically lands within hours (next
-app restart or the 4-hour poll), not instantly.
+Because the app shell is bundled locally, **shell changes require an
+Electron release** to reach users, while the iframed web bundle updates with
+the assistant's own releases. Electron updates typically land within hours
+(next app restart or the 4-hour poll), not instantly.
 
 > **Workflow filenames.** This directory is `clients/macos/` to match the
 > platform-named convention used by `clients/ios/`, and its CI workflow files are

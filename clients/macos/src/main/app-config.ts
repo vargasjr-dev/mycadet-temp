@@ -12,7 +12,7 @@
  * exactly the kind of thing a small shared module prevents.
  *
  * The renderer-base URLs split with the app/web bundle split (see
- * docs/proposals/desktop-app-shell.md):
+ * clients/README.md):
  *
  * - The MAIN window renders the app shell (`@mycadet/app` standalone build,
  *   root-based). `APP_RENDERER_BASE_PROD` is the packaged root the `app://`

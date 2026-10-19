@@ -10,7 +10,7 @@ import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/
 //
 // No renderer config: the MAIN window renders the @mycadet/app standalone
 // bundle (served in dev via http://localhost:3001 and in prod via the custom
-// `app://` protocol; see docs/proposals/desktop-app-shell.md). The auxiliary
+// `app://` protocol; see clients/README.md). The auxiliary
 // windows still render web routes off clients/web's build.
 //
 // Dependencies that must be bundled inline rather than externalized as
