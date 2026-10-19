@@ -118,6 +118,8 @@ describe("baseConfig", () => {
       CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT,
       CADET_SERVER_URL: process.env.CADET_SERVER_URL,
     }).handoffUrl;
-    expect(baseConfig.server?.allowNavigation).toEqual([new URL(stamped).host]);
+    expect(baseConfig.server?.allowNavigation).toEqual([
+      new URL(stamped).hostname,
+    ]);
   });
 });

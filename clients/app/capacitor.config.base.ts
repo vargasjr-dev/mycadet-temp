@@ -55,8 +55,11 @@ const baseConfig: Omit<CapacitorConfig, "appId"> = {
   server: {
     // The handoff is a foreign-host navigation, and Capacitor opens those
     // externally unless the host is allowed — without this the boot would
-    // bounce the user into the system browser.
-    allowNavigation: [new URL(resolveServerUrl()).host],
+    // bounce the user into the system browser. The entry must be a bare
+    // hostname: Capacitor matches it against Swift's port-less `URL.host`
+    // via a dot-split comparison, so `.host`'s `localhost:3000` never
+    // matched and every local boot bounced into Safari.
+    allowNavigation: [new URL(resolveServerUrl()).hostname],
   },
 };
 
