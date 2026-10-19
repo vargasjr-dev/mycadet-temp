@@ -265,7 +265,7 @@ describe("cadet ps — platform status line", () => {
     expect(output).toContain("nginx");
     expect(output).toContain("port ");
     // …the type column distinguishes the three process kinds…
-    expect(output).toContain("🧑‍🚀 Assistant");
+    expect(output).toContain("Assistant");
     expect(output).toContain("🚇 Tunnel");
     expect(output).toContain("🌐 App");
     // …and the second table is gone: one header row only.

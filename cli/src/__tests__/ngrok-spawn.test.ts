@@ -9,6 +9,7 @@ import {
   ngrokAgentConfigPath,
   ngrokOnlineEndpoint,
   staleTrackedNgrokAgent,
+  untrackedNgrokHolderPid,
 } from "../lib/tunnels/ngrok.js";
 
 describe("buildNgrokSpawnArgs", () => {
@@ -167,5 +168,90 @@ describe("staleTrackedNgrokAgent", () => {
 
   test("nothing recorded, nothing to stop", () => {
     expect(staleTrackedNgrokAgent(undefined, () => true)).toBeNull();
+  });
+});
+
+describe("untrackedNgrokHolderPid", () => {
+  // Mirrors Vargas's Saturday incident: an agent with no lockfile record
+  // holding the free plan's single domain, answering its inspection API on
+  // the default port.
+  const holderAgent = {
+    apiAddr: "127.0.0.1:4040",
+    tunnels: [
+      {
+        public_url: "https://camping-trustful-fog.ngrok-free.dev",
+        config: { addr: "http://127.0.0.1:7840" },
+      },
+    ],
+  };
+
+  test("returns the verified pid of the agent serving the domain", () => {
+    expect(
+      untrackedNgrokHolderPid(
+        [holderAgent],
+        "camping-trustful-fog.ngrok-free.dev",
+        () => true,
+        () => 4242,
+      ),
+    ).toBe(4242);
+  });
+
+  test("refuses a port pid that does not verify as ngrok (reuse guard)", () => {
+    expect(
+      untrackedNgrokHolderPid(
+        [holderAgent],
+        "camping-trustful-fog.ngrok-free.dev",
+        () => false,
+        () => 4242,
+      ),
+    ).toBeNull();
+  });
+
+  test("only probes agents that actually serve the domain", () => {
+    const probes: number[] = [];
+    const pid = untrackedNgrokHolderPid(
+      [
+        {
+          apiAddr: "127.0.0.1:4041",
+          tunnels: [
+            {
+              public_url: "https://other-tunnel.ngrok-free.dev",
+              config: { addr: "http://127.0.0.1:7840" },
+            },
+          ],
+        },
+        holderAgent,
+      ],
+      "camping-trustful-fog.ngrok-free.dev",
+      () => true,
+      (port) => {
+        probes.push(port);
+        return 4242;
+      },
+    );
+    expect(pid).toBe(4242);
+    expect(probes).toEqual([4040]);
+  });
+
+  test("returns null when the inspection port has no listener pid", () => {
+    expect(
+      untrackedNgrokHolderPid(
+        [holderAgent],
+        "camping-trustful-fog.ngrok-free.dev",
+        () => true,
+        () => null,
+      ),
+    ).toBeNull();
+  });
+
+  test("matches the domain case-insensitively", () => {
+    expect(
+      untrackedNgrokHolderPid(
+        [holderAgent],
+        "Camping-Trustful-Fog.ngrok-free.dev",
+        () => true,
+        () => 4242,
+      ),
+    ).toBe(4242);
   });
 });

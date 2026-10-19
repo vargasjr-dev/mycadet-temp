@@ -47,7 +47,7 @@ import {
 // ── Table formatting helpers ────────────────────────────────────
 
 /** What each row's `type` column says: the KIND of process the row describes. */
-const ASSISTANT_TYPE = "🧑‍🚀 Assistant";
+const ASSISTANT_TYPE = "Assistant";
 const TUNNEL_TYPE = "🚇 Tunnel";
 const APP_TYPE = "🌐 App";
 
