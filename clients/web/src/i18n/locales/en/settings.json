@@ -1336,18 +1336,13 @@
   },
   "profileEditorFields": {
     "activeLabel": "Active",
-    "addApiKey": "Add API key",
     "advanced": "Advanced",
-    "createNewProvider": "+ Create new provider",
     "descriptionLabel": "Description <optional>(optional)</optional>",
     "descriptionPlaceholder": "Describe when to use this profile",
     "displayNameLabel": "Display Name",
     "displayNamePlaceholder": "e.g. Claude Opus 4.8",
     "nameLabel": "Name",
-    "newProviderNote": "New provider connection will show up in the Providers section.",
-    "providerLabel": "Provider",
-    "selectProviderPlaceholder": "Select a provider…",
-    "setUp": "Set up"
+    "newProviderNote": "New provider connection will show up in the Providers section."
   },
   "profileEditorModal": {
     "cancel": "Cancel",

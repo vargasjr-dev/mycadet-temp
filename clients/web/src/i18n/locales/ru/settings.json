@@ -1247,18 +1247,13 @@
   },
   "profileEditorFields": {
     "activeLabel": "Активный",
-    "addApiKey": "Добавить API-ключ",
     "advanced": "Дополнительно",
-    "createNewProvider": "+ Создать нового провайдера",
     "descriptionLabel": "Описание <optional>(необязательно)</optional>",
     "descriptionPlaceholder": "Когда использовать этот профиль",
     "displayNameLabel": "Отображаемое имя",
     "displayNamePlaceholder": "например, Claude Opus 4.8",
     "nameLabel": "Имя",
-    "newProviderNote": "Новое подключение провайдера появится в разделе «Провайдеры».",
-    "providerLabel": "Провайдер",
-    "selectProviderPlaceholder": "Выбор провайдера…",
-    "setUp": "Настроить"
+    "newProviderNote": "Новое подключение провайдера появится в разделе «Провайдеры»."
   },
   "profileEditorModal": {
     "cancel": "Отмена",

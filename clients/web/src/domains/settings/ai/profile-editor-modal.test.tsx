@@ -154,24 +154,6 @@ function optionLabel(option: Element): string {
   ).trim();
 }
 
-/** Open the dropdown trigger and click the option whose label matches. */
-function pickOption(trigger: HTMLButtonElement, wantedLabel: string): void {
-  fireEvent.click(trigger);
-  const option = Array.from(
-    document.querySelectorAll<HTMLElement>('[role="option"]'),
-  ).find((o) => optionLabel(o) === wantedLabel);
-  if (!option) {
-    throw new Error(
-      `expected option "${wantedLabel}" — saw: ${Array.from(
-        document.querySelectorAll('[role="option"]'),
-      )
-        .map((o) => `"${optionLabel(o)}"`)
-        .join(", ")}`,
-    );
-  }
-  fireEvent.click(option);
-}
-
 /**
  * The open listbox as `{ label, meta }` rows. `meta` is the right-aligned
  * suffix chip ("Managed", "Custom", "Add API key", …), empty when absent.
@@ -191,48 +173,6 @@ function optionLabels(): string[] {
   return optionRows().map((row) => row.label);
 }
 
-/** Meta chip on supported-but-unconnected, key-based provider rows. */
-const ADD_KEY_META = "Add API key";
-
-/** Meta chip on a provider only a self-hosted assistant can reach. */
-const SELF_HOSTED_ONLY_META = "Self-hosted only";
-
-/** The open listbox's Ollama row. */
-function ollamaOption(): HTMLElement {
-  const option = Array.from(
-    document.querySelectorAll<HTMLElement>('[role="option"]'),
-  ).find((o) => optionLabel(o) === "Ollama");
-  if (!option) {
-    throw new Error("expected an Ollama option row");
-  }
-  return option;
-}
-
-/**
- * Every supported provider offered as an unconnected row, in picker order.
- * Custom endpoints are reached through "+ Create new provider", so they do not
- * appear here. Ollama is listed for every assistant; a cloud-hosted one
- * sees it disabled with the self-hosted-only reason.
- */
-const UNCONNECTED_PROVIDER_LABELS = [
-  "Anthropic",
-  "OpenAI",
-  "Google Gemini",
-  "Ollama",
-  "Fireworks",
-  "Together AI",
-  "OpenRouter",
-  "Vercel AI Gateway",
-  "MiniMax",
-  "Atlas Cloud",
-  "LiteLLM",
-  "OpenCode",
-  "Baseten",
-  "IO Intelligence",
-  "Poolside",
-  "TypeSafe",
-];
-
 /** The create-mode Provider dropdown is labelled via `aria-labelledby`. */
 function providerTrigger(): HTMLButtonElement {
   const trigger = document.querySelector<HTMLButtonElement>(
@@ -242,21 +182,6 @@ function providerTrigger(): HTMLButtonElement {
     throw new Error("expected the Provider dropdown trigger");
   }
   return trigger;
-}
-
-/**
- * The inline ProviderCreateForm's own Provider dropdown (`aria-label`), or
- * null — the sub-form omits it when the outer picker preselected the provider.
- */
-function createFormProviderTrigger(): HTMLButtonElement | null {
-  return document.querySelector<HTMLButtonElement>(
-    'button[role="combobox"][aria-label="Provider"]',
-  );
-}
-
-/** Selects a provider in the create-mode Provider dropdown. */
-function selectProvider(label: string): void {
-  pickOption(providerTrigger(), label);
 }
 
 /**
@@ -297,6 +222,21 @@ function selectModel(label: string): void {
     );
   }
   fireEvent.click(option);
+}
+
+/** Picks a route card (the provider step's candidate) by its encoded value. */
+function pickRoute(value: string): void {
+  const card = document.querySelector<HTMLElement>(
+    `[data-candidate="${value}"]`,
+  );
+  if (!card) {
+    throw new Error(`expected a "${value}" route card`);
+  }
+  const radio = card.querySelector<HTMLElement>('[role="radio"]');
+  if (!radio) {
+    throw new Error(`expected a radio in the "${value}" route card`);
+  }
+  fireEvent.click(radio);
 }
 
 function renderCreate(
@@ -414,13 +354,12 @@ function topPSlider(): HTMLElement {
 }
 
 /**
- * Drive a provider-first create up to a Save-enabled state. Picking the model
- * fills the Name in, and the key follows the Name, so the two picks are the
+ * Drive a model-first create up to a Save-enabled state. Picking the model
+ * fills the Name in, and the key follows the Name, so the one pick is the
  * whole form.
  */
 function fillCreateForm(): void {
-  selectProvider("Anthropic");
-  selectModel("Claude Opus 4.8");
+  selectModel("Claude Opus 5.5");
 }
 
 beforeEach(async () => {
@@ -446,20 +385,19 @@ afterEach(async () => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("ProfileEditorModal create mode — provider-first", () => {
-  test("the create body asks only for Provider and Model; Name waits under Advanced", () => {
+describe("ProfileEditorModal create mode — model-first", () => {
+  test("the create body asks only for the Model; Name waits under Advanced", () => {
     renderCreate([makeConnection("anthropic-personal")]);
 
     const nameField = () =>
       document.querySelector('input[placeholder="e.g. Claude Opus 4.8"]');
 
-    // Nothing but the two questions the form is for.
+    // Nothing but the one question the form opens with.
     expect(nameField()).toBeNull();
     expect(document.body.textContent).not.toContain("Key");
     expect(findSwitchByLabel("Active")).toBeNull();
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
 
     // Advanced arrives collapsed, so the Name is still not in the body.
     expect(nameField()).toBeNull();
@@ -476,8 +414,6 @@ describe("ProfileEditorModal create mode — provider-first", () => {
   test("Advanced is hidden until a model is chosen, then collapsed by default", () => {
     renderCreate([makeConnection("anthropic-personal")]);
 
-    expect(document.body.textContent).not.toContain("Pick a provider");
-
     // No model selected yet → the Advanced disclosure is not rendered.
     const hasAdvancedButton = () =>
       Array.from(document.querySelectorAll("button")).some(
@@ -485,8 +421,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       );
     expect(hasAdvancedButton()).toBe(false);
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
 
     // Once a model is chosen the disclosure appears, collapsed.
     expect(hasAdvancedButton()).toBe(true);
@@ -501,12 +436,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     };
     renderCreate([makeConnection("anthropic-personal")], onSave);
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
     fireEvent.click(getButton("Advanced"));
 
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe(
-      "Claude Opus 4.8",
+      "Claude Opus 5.5",
     );
 
     // The key is never shown, so it is asserted where it surfaces: the name
@@ -515,8 +449,8 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     await waitFor(() => {
       expect(saveCalls.length).toBe(1);
     });
-    expect(saveCalls[0].name).toBe("claude-opus-4-8");
-    expect(saveCalls[0].entry.label).toBe("Claude Opus 4.8");
+    expect(saveCalls[0].name).toBe("claude-opus-5-5");
+    expect(saveCalls[0].entry.label).toBe("Claude Opus 5.5");
   });
 
   test("a model whose name is taken gains a numeric suffix", async () => {
@@ -526,48 +460,46 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       return Promise.resolve();
     };
     renderCreate([makeConnection("anthropic-personal")], onSave, [
-      "claude-opus-4-8",
+      "claude-opus-5-5",
     ]);
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
     fireEvent.click(getButton("Advanced"));
 
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe(
-      "Claude Opus 4.8 (2)",
+      "Claude Opus 5.5 (2)",
     );
 
     fireEvent.click(getSaveBtn());
     await waitFor(() => {
       expect(saveCalls.length).toBe(1);
     });
-    expect(saveCalls[0].name).toBe("claude-opus-4-8-2");
+    expect(saveCalls[0].name).toBe("claude-opus-5-5-2");
   });
 
   test("a hand-typed duplicate Name gains the suffix on blur", () => {
     renderCreate([makeConnection("anthropic-personal")], undefined, [
-      "claude-opus-4-8",
+      "claude-opus-5-5",
     ]);
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.7");
+    // Pick a model whose derived name is free, then type the taken one.
+    selectModel("Claude Fable 5.1");
     fireEvent.click(getButton("Advanced"));
 
     const name = getInputByPlaceholder("e.g. Claude Opus 4.8");
-    fireEvent.change(name, { target: { value: "Claude Opus 4.8" } });
-    expect(name.value).toBe("Claude Opus 4.8");
+    fireEvent.change(name, { target: { value: "Claude Opus 5.5" } });
+    expect(name.value).toBe("Claude Opus 5.5");
 
     fireEvent.blur(name);
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe(
-      "Claude Opus 4.8 (2)",
+      "Claude Opus 5.5 (2)",
     );
   });
 
   test("editing Name stops model-driven pre-fill from overwriting", () => {
     renderCreate([makeConnection("anthropic-personal")]);
 
-    selectProvider("Anthropic");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
     fireEvent.click(getButton("Advanced"));
 
     // User overrides the Name.
@@ -576,55 +508,14 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     });
 
     // Selecting a different model must NOT clobber the manual Name.
-    selectModel("Claude Opus 4.7");
+    selectModel("Claude Fable 5.1");
 
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe(
       "My Custom Profile",
     );
   });
 
-  test("first-run empty state offers every supported provider, each flagged as needing a key", () => {
-    // Nothing is connected yet, so every supported provider is listed as a
-    // "connect me" entry — a supported provider must never be invisible just
-    // because no connection exists for it (Google Gemini, in the report).
-    renderCreate([]);
-    fireEvent.click(providerTrigger());
-    expect(optionLabels()).toEqual([
-      ...UNCONNECTED_PROVIDER_LABELS,
-      "+ Create new provider",
-    ]);
-    expect(optionLabels()).toContain("Google Gemini");
-    // Each connectable one carries the chip naming what it still needs, while
-    // Ollama names why this assistant cannot reach it at all.
-    expect(
-      optionRows()
-        .filter(
-          (row) =>
-            row.label !== "+ Create new provider" && row.label !== "Ollama",
-        )
-        .every((row) => row.meta === ADD_KEY_META),
-    ).toBe(true);
-    expect(optionRows()).toContainEqual({
-      label: "Ollama",
-      meta: SELF_HOSTED_ONLY_META,
-    });
-  });
-
-  test("the Cadet Cloud connection leads, with the unconnected providers behind it", () => {
-    // A cloud-hosted user's only connection is the single provider-agnostic
-    // `cadet` connection. It leads the list as one entry (never the cloud
-    // upstreams it routes to); BYOK providers follow as connect-me entries.
-    renderCreate([makeConnection("cadet-cloud", "cadet")]);
-    fireEvent.click(providerTrigger());
-    expect(optionRows()[0]).toEqual({ label: "Cadet", meta: "Managed" });
-    expect(optionLabels()).toEqual([
-      "Cadet",
-      ...UNCONNECTED_PROVIDER_LABELS,
-      "+ Create new provider",
-    ]);
-  });
-
-  test("selecting Cadet saves the model's cloud upstream bound to the cadet connection", async () => {
+  test("the Cadet connection saves the model's cloud upstream bound to it", async () => {
     const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
     const onSave = (name: string, entry: unknown) => {
       saveCalls.push({ name, entry: entry as Record<string, unknown> });
@@ -632,8 +523,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     };
     renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
-    selectProvider("Cadet");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
 
     await waitFor(() => {
       expect(getSaveBtn().disabled).toBe(false);
@@ -656,7 +546,6 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     };
     renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
-    selectProvider("Cadet");
     selectModel("GLM 5.3");
 
     await waitFor(() => {
@@ -671,17 +560,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     expect(saveCalls[0].entry.provider_connection).toBe("cadet-cloud");
   });
 
-  test("catalog providers show no connection field, even with multiple keys", async () => {
-    renderCreate([
-      makeConnection("anthropic-personal"),
-      makeConnection("anthropic-personal-2"),
-    ]);
-    selectProvider("Anthropic");
-    expect(document.body.textContent).not.toContain("Connection");
-    expect(document.body.textContent).not.toContain("Endpoint");
-  });
-
-  test("each openai-compatible endpoint is its own provider entry", async () => {
+  test("each openai-compatible endpoint serves its own models", async () => {
     const lmStudio = {
       ...makeConnection("lm-studio", "openai-compatible"),
       models: [{ id: "model-1", displayName: "Model 1" }],
@@ -697,29 +576,8 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     };
     renderCreate([lmStudio, vllmBox], onSave);
 
-    // Both endpoints are individual entries; no generic collapsed entry and
-    // no second field.
-    fireEvent.click(providerTrigger());
-    expect(optionRows().slice(0, 2)).toEqual([
-      { label: "lm-studio", meta: "Custom" },
-      { label: "vllm-box", meta: "Custom" },
-    ]);
-    // The unconnected providers follow, and the create entry still closes the
-    // list — "OpenAI-compatible" is never offered as a bare protocol entry.
-    expect(optionLabels()).toEqual([
-      "lm-studio",
-      "vllm-box",
-      ...UNCONNECTED_PROVIDER_LABELS,
-      "+ Create new provider",
-    ]);
-    fireEvent.click(
-      Array.from(
-        document.querySelectorAll<HTMLElement>('[role="option"]'),
-      ).find((o) => optionLabel(o) === "lm-studio")!,
-    );
-    expect(document.body.textContent).not.toContain("Endpoint");
-    expect(document.body.textContent).not.toContain("Connection (optional)");
-
+    // The shared model list files each endpoint's models under it; picking
+    // the model implies its endpoint route — no second field to answer.
     selectModel("Model 1");
     await waitFor(() => {
       expect(getSaveBtn().disabled).toBe(false);
@@ -728,7 +586,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     await waitFor(() => {
       expect(saveCalls.length).toBe(1);
     });
-    // The endpoint entry implies the provider plus its binding on the wire.
+    // The endpoint route implies the provider plus its binding on the wire.
     expect(saveCalls[0].entry.provider).toBe("openai-compatible");
     expect(saveCalls[0].entry.provider_connection).toBe("lm-studio");
     expect(saveCalls[0].entry.model).toBe("model-1");
@@ -748,8 +606,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       };
       renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
-      selectProvider("Cadet");
-      selectModel("Claude Opus 4.8");
+      selectModel("Claude Opus 5.5");
 
       await waitFor(() => {
         expect(getSaveBtn().disabled).toBe(false);
@@ -760,7 +617,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         expect(saveCalls.length).toBe(1);
       });
       expect(saveCalls[0].entry.provider).toBe("cadet");
-      expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
+      expect(saveCalls[0].entry.model).toBe("claude-opus-5-5");
       expect(saveCalls[0].entry.provider_connection).toBeUndefined();
     } finally {
       useAssistantIdentityStore.getState().clearIdentity();
@@ -779,8 +636,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       };
       renderCreate([makeConnection("cadet-cloud", "cadet")], onSave);
 
-      selectProvider("Cadet");
-      selectModel("Claude Opus 4.8");
+      selectModel("Claude Opus 5.5");
 
       await waitFor(() => {
         expect(getSaveBtn().disabled).toBe(false);
@@ -791,301 +647,11 @@ describe("ProfileEditorModal create mode — provider-first", () => {
         expect(saveCalls.length).toBe(1);
       });
       expect(saveCalls[0].entry.provider).toBe("anthropic");
-      expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
+      expect(saveCalls[0].entry.model).toBe("claude-opus-5-5");
       expect(saveCalls[0].entry.provider_connection).toBe("cadet-cloud");
     } finally {
       useAssistantIdentityStore.getState().clearIdentity();
     }
-  });
-
-  test("an unbound openai-compatible profile keeps its provider label in edit mode", async () => {
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-local"
-          initialValues={
-            {
-              name: "my-local",
-              provider: "openai-compatible",
-              model: "my-model",
-            } as never
-          }
-          existingNames={["my-local"]}
-          connections={[
-            {
-              ...makeConnection("lm-studio", "openai-compatible"),
-              models: [{ id: "my-model" }],
-            },
-            {
-              ...makeConnection("vllm-box", "openai-compatible"),
-              models: [{ id: "other-model" }],
-            },
-          ]}
-          assistantId={ASSISTANT_ID}
-          onSave={() => Promise.resolve()}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    // No endpoint entry matches the unbound state; the bare protocol value
-    // keeps the trigger labeled instead of falling to the placeholder.
-    await waitFor(() => {
-      expect(providerTrigger().textContent?.trim()).toBe("OpenAI-compatible");
-    });
-  });
-
-  test("a legacy-shape cloud profile presents as Cadet in edit mode", async () => {
-    // Cloud profiles store their real upstream (anthropic) bound to the
-    // cadet connection; the editor must present them as "Cadet".
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-managed"
-          initialValues={
-            {
-              name: "my-managed",
-              provider: "anthropic",
-              model: "claude-opus-4-8",
-              provider_connection: "cadet",
-            } as never
-          }
-          existingNames={["my-managed"]}
-          connections={[makeConnection("cadet", "cadet")]}
-          assistantId={ASSISTANT_ID}
-          onSave={() => Promise.resolve()}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(optionLabel(providerTrigger())).toBe("Cadet");
-    });
-    expect(document.body.textContent).not.toContain("Connection (optional)");
-  });
-
-  test("editing a Cadet profile with a catalog-unknown model preserves the stored upstream", async () => {
-    const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
-    const onSave = (name: string, entry: unknown) => {
-      saveCalls.push({ name, entry: entry as Record<string, unknown> });
-      return Promise.resolve();
-    };
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-managed"
-          initialValues={
-            {
-              name: "my-managed",
-              provider: "fireworks",
-              model: "accounts/fireworks/models/some-future-model",
-              provider_connection: "cadet",
-            } as never
-          }
-          existingNames={["my-managed"]}
-          connections={[makeConnection("cadet", "cadet")]}
-          assistantId={ASSISTANT_ID}
-          onSave={onSave}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(getSaveBtn().disabled).toBe(false);
-    });
-    fireEvent.click(getSaveBtn());
-
-    await waitFor(() => {
-      expect(saveCalls.length).toBe(1);
-    });
-    // A harmless save must not clear the stored upstream.
-    expect(saveCalls[0].entry.provider).toBe("fireworks");
-    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
-  });
-
-  test("a user-owned connection merely named 'cadet' does not trigger Cadet mode", async () => {
-    // The daemon's seeder preserves a user row named "cadet" whose provider
-    // is not the sentinel; editing a profile bound to it must keep the real
-    // provider and not corrupt the binding.
-    const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
-    const onSave = (name: string, entry: unknown) => {
-      saveCalls.push({ name, entry: entry as Record<string, unknown> });
-      return Promise.resolve();
-    };
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-local"
-          initialValues={
-            {
-              name: "my-local",
-              provider: "openai-compatible",
-              model: "my-model",
-              provider_connection: "cadet",
-            } as never
-          }
-          existingNames={["my-local"]}
-          connections={[
-            {
-              ...makeConnection("cadet", "openai-compatible"),
-              models: [{ id: "my-model" }],
-            },
-          ]}
-          assistantId={ASSISTANT_ID}
-          onSave={onSave}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    // The trigger renders the ENDPOINT entry (labeled by the row name) —
-    // not Cadet picker mode; the wire payload proves the distinction.
-    await waitFor(() => {
-      expect(optionLabel(providerTrigger())).toBe("cadet");
-    });
-
-    await waitFor(() => {
-      expect(getSaveBtn().disabled).toBe(false);
-    });
-    fireEvent.click(getSaveBtn());
-    await waitFor(() => {
-      expect(saveCalls.length).toBe(1);
-    });
-    expect(saveCalls[0].entry.provider).toBe("openai-compatible");
-    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
-  });
-
-  test("a routed model string is stripped to the upstream's native id on save", async () => {
-    const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
-    const onSave = (name: string, entry: unknown) => {
-      saveCalls.push({ name, entry: entry as Record<string, unknown> });
-      return Promise.resolve();
-    };
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-managed"
-          initialValues={
-            {
-              name: "my-managed",
-              provider: "fireworks",
-              model: "fireworks/accounts/fireworks/models/kimi-k2p5",
-              provider_connection: "cadet",
-            } as never
-          }
-          existingNames={["my-managed"]}
-          connections={[makeConnection("cadet", "cadet")]}
-          assistantId={ASSISTANT_ID}
-          onSave={onSave}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    await waitFor(() => {
-      expect(getSaveBtn().disabled).toBe(false);
-    });
-    fireEvent.click(getSaveBtn());
-    await waitFor(() => {
-      expect(saveCalls.length).toBe(1);
-    });
-    expect(saveCalls[0].entry.provider).toBe("fireworks");
-    expect(saveCalls[0].entry.model).toBe(
-      "accounts/fireworks/models/kimi-k2p5",
-    );
-    expect(saveCalls[0].entry.provider_connection).toBe("cadet");
-  });
-
-  test("a routed model resolves advanced controls from its native id", async () => {
-    // Visibility heuristics expect native ids; a routed string must not hide
-    // the upstream's controls (a replace-mode save would then clear them).
-    render(
-      <Wrapper>
-        <ProfileEditorModal
-          isOpen
-          mode="edit"
-          profileName="my-managed"
-          initialValues={
-            {
-              name: "my-managed",
-              provider: "openai",
-              model: "openai/gpt-5.5",
-              provider_connection: "cadet",
-              effort: "high",
-            } as never
-          }
-          existingNames={["my-managed"]}
-          connections={[makeConnection("cadet", "cadet")]}
-          assistantId={ASSISTANT_ID}
-          onSave={() => Promise.resolve()}
-          onCancel={() => {}}
-        />
-      </Wrapper>,
-    );
-
-    // gpt-5.5's controls include Verbosity (an openai-family field) — it
-    // only renders when visibility resolved against the native id.
-    await waitFor(() => {
-      expect(document.body.textContent).toContain("Verbosity");
-    });
-  });
-
-  test("Cadet hides the Connection sub-dropdown", () => {
-    renderCreate([makeConnection("cadet-cloud", "cadet")]);
-    selectProvider("Cadet");
-    expect(document.body.textContent).not.toContain("Connection (optional)");
-    expect(
-      Array.from(document.querySelectorAll("label")).some((l) =>
-        l.textContent?.trim().startsWith("Connection"),
-      ),
-    ).toBe(false);
-  });
-
-  test("a BYOK connection surfaces its own provider, unchipped and listed once", () => {
-    // A self-hosted user who entered an Anthropic API key gets an `anthropic`
-    // connection, which must surface Anthropic as a ready-to-use provider —
-    // leading the list, with no "needs a key" chip and no duplicate entry in
-    // the unconnected tail.
-    renderCreate([makeConnection("anthropic-personal", "anthropic")]);
-    fireEvent.click(providerTrigger());
-    expect(optionRows()[0]).toEqual({ label: "Anthropic", meta: "" });
-    expect(optionLabels().filter((l) => l === "Anthropic")).toHaveLength(1);
-    expect(optionLabels()).toEqual([
-      "Anthropic",
-      ...UNCONNECTED_PROVIDER_LABELS.filter((l) => l !== "Anthropic"),
-      "+ Create new provider",
-    ]);
-  });
-
-  test("a provider unknown to the catalog shows an explicit empty-model state", () => {
-    // "acme-llm" isn't in the static web catalog — `getModelsForProvider`
-    // returns [] for unknown ids — reproducing the drift scenario where a
-    // connection exists for a provider this app version doesn't know about.
-    renderCreate([makeConnection("acme-llm-personal", "acme-llm")]);
-
-    selectProvider("acme-llm");
-
-    // The Model field explains the empty list instead of showing a bare
-    // "Select a model" placeholder over zero options...
-    expect(modelField().placeholder).toBe("No models available");
-
-    // ...and the hint below spells out why and what to do about it.
-    expect(document.body.textContent).toContain(
-      "No models are available for this provider in this app version. " +
-        "Update the app, or enter a custom model ID.",
-    );
   });
 
   test("Ollama connections offer the bundled local models", () => {
@@ -1093,10 +659,6 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       assistantState: { kind: "self_hosted" },
     });
     renderCreate([makeConnection("ollama", "ollama")]);
-
-    selectProvider("Ollama");
-
-    expect(modelField().placeholder).toBe("Select a model");
 
     selectModel("Llama 3.2");
     fireEvent.click(getButton("Advanced"));
@@ -1109,175 +671,7 @@ describe("ProfileEditorModal create mode — provider-first", () => {
     expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe("Mistral");
   });
 
-  test("cloud-hosted assistants offer Ollama disabled with the reason", () => {
-    // Hiding it entirely reads as missing support; the row states the
-    // restriction instead and refuses selection.
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "active", isLocal: false },
-    });
-    renderCreate([makeConnection("ollama", "ollama")]);
-
-    fireEvent.click(providerTrigger());
-
-    expect(optionRows()).toContainEqual({
-      label: "Ollama",
-      meta: SELF_HOSTED_ONLY_META,
-    });
-    const ollama = ollamaOption();
-    expect(ollama.getAttribute("aria-disabled")).toBe("true");
-    expect(ollama.getAttribute("data-disabled")).not.toBeNull();
-
-    // Clicking it leaves the picker on its original selection.
-    const before = providerTrigger().textContent;
-    fireEvent.click(ollama);
-    expect(providerTrigger().textContent).toBe(before);
-  });
-
-  test("a self-hosted assistant offers unconnected Ollama as a keyless set-up entry", () => {
-    // Ollama serves a local endpoint with no credential, so its chip must not
-    // promise an API key step it never asks for.
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "self_hosted" },
-    });
-    renderCreate([]);
-
-    fireEvent.click(providerTrigger());
-
-    expect(optionRows()).toContainEqual({ label: "Ollama", meta: "Set up" });
-  });
-
-  test("+ Create new provider mounts ProviderCreateForm; successful create selects it and Save enables after a model", async () => {
-    renderCreate([]);
-
-    selectProvider("+ Create new provider");
-
-    // Inline ProviderCreateForm is mounted; auth derives from the provider
-    // (anthropic → api_key), so entering a key is the whole flow.
-    fireEvent.change(getInputByPlaceholder("Enter your API key"), {
-      target: { value: "sk-test-123" },
-    });
-    fireEvent.click(getButton("Add"));
-
-    // After create, the sub-form collapses and the provider is selected.
-    await waitFor(() => {
-      expect(document.body.textContent).toContain(
-        "New provider connection will show up in the Providers section.",
-      );
-    });
-
-    // Save is still blocked until a model is chosen.
-    expect(getSaveBtn().disabled).toBe(true);
-
-    selectModel("Claude Opus 4.8");
-
-    await waitFor(() => {
-      expect(getSaveBtn().disabled).toBe(false);
-    });
-  });
-
-  test("picking an unconnected provider opens the inline create form preselected on it", () => {
-    renderCreate([makeConnection("anthropic-personal", "anthropic")]);
-
-    selectProvider("Google Gemini");
-
-    // The sub-form is mounted with Gemini already fixed, so the user lands
-    // directly on the API-key field with no second Provider dropdown — the
-    // outer picker is the single place the provider reads.
-    expect(createFormProviderTrigger()).toBeNull();
-    expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
-    expect(optionLabel(providerTrigger())).toBe("Google Gemini");
-  });
-
-  test("switching to another unconnected provider re-seeds the inline create form", () => {
-    renderCreate([]);
-
-    selectProvider("Google Gemini");
-    // Gemini's credential ref is seeded into the remounted sub-form.
-    expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
-    expect(optionLabel(providerTrigger())).toBe("Google Gemini");
-
-    selectProvider("OpenRouter");
-    expect(getInputByPlaceholder("Enter your API key")).toBeDefined();
-    expect(optionLabel(providerTrigger())).toBe("OpenRouter");
-  });
-
-  test("the generic create-new-provider entry keeps the sub-form's own Provider dropdown", () => {
-    renderCreate([]);
-
-    selectProvider("+ Create new provider");
-
-    const trigger = createFormProviderTrigger();
-    expect(trigger).not.toBeNull();
-  });
-
-  test("connecting a preselected provider binds it and continues the profile flow", async () => {
-    createdConnection = makeConnection("gemini", "gemini");
-    const saveCalls: { name: string; entry: Record<string, unknown> }[] = [];
-    const onSave = (name: string, entry: unknown) => {
-      saveCalls.push({ name, entry: entry as Record<string, unknown> });
-      return Promise.resolve();
-    };
-    renderCreate([], onSave);
-
-    selectProvider("Google Gemini");
-    fireEvent.change(getInputByPlaceholder("Enter your API key"), {
-      target: { value: "test-key-123" },
-    });
-    fireEvent.click(getButton("Add"));
-
-    // The sub-form collapses and the new connection is bound to the profile.
-    await waitFor(() => {
-      expect(document.body.textContent).toContain(
-        "New provider connection will show up in the Providers section.",
-      );
-    });
-
-    selectModel("Gemini 3.6 Flash");
-    await waitFor(() => {
-      expect(getSaveBtn().disabled).toBe(false);
-    });
-    fireEvent.click(getSaveBtn());
-
-    await waitFor(() => {
-      expect(saveCalls.length).toBe(1);
-    });
-    expect(saveCalls[0].entry.provider).toBe("gemini");
-    expect(saveCalls[0].entry.provider_connection).toBe("gemini");
-  });
-
-  test("cancelling the inline create leaves the profile without a provider", () => {
-    renderCreate([]);
-
-    selectProvider("Google Gemini");
-    // The sub-form's own Cancel, not the modal footer's.
-    const inlineCancel = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("button"),
-    ).find(
-      (b) =>
-        b.textContent?.trim() === "Cancel" &&
-        b.getAttribute("data-testid") !== "modal-cancel-btn",
-    );
-    fireEvent.click(inlineCancel!);
-
-    // No connection was created, so the profile must not be left bound to a
-    // route the daemon can't dispatch through — Save stays blocked.
-    expect(getSaveBtn().disabled).toBe(true);
-    expect(providerTrigger().textContent?.trim()).toBe("Select a provider…");
-  });
-
-  test("a connected provider is selected directly, without the create form", () => {
-    renderCreate([makeConnection("anthropic-personal", "anthropic")]);
-
-    selectProvider("Anthropic");
-
-    expect(
-      document.querySelector('input[placeholder="Enter your API key"]'),
-    ).toBeNull();
-    selectModel("Claude Opus 4.8");
-    expect(optionLabel(providerTrigger())).toBe("Anthropic");
-  });
-
-  test("inline-create then immediate save persists the new provider_connection (no race)", async () => {
+  test("connecting the model's route then saving immediately persists the new provider_connection (no race)", async () => {
     // Regression: before the optimistic local-connection merge, saving in the
     // window between inline create and the parent connections refetch left
     // `connectionNotFound` true, so the save handler dropped the binding to "".
@@ -1289,29 +683,23 @@ describe("ProfileEditorModal create mode — provider-first", () => {
       return Promise.resolve();
     };
 
-    // Start with zero connections so the only Provider option is "+ Create
-    // new provider" and the parent prop never refetches in this test (the
-    // binding must be valid purely from the optimistic local merge).
+    // Start with zero connections so the route arrives unconnected (the
+    // parent prop never refetches in this test — the binding must be valid
+    // purely from the optimistic local merge).
     renderCreate([], onSave);
 
-    selectProvider("+ Create new provider");
+    selectModel("Claude Opus 5.5");
+    // The unconnected route blocks Save and expands the inline connect form.
+    pickRoute("anthropic");
     fireEvent.change(getInputByPlaceholder("Enter your API key"), {
       target: { value: "sk-test-123" },
     });
     fireEvent.click(getButton("Add"));
 
     await waitFor(() => {
-      expect(document.body.textContent).toContain(
-        "New provider connection will show up in the Providers section.",
-      );
-    });
-
-    // Pick a model, then save immediately (no connections refetch).
-    selectModel("Claude Opus 4.8");
-
-    await waitFor(() => {
       expect(getSaveBtn().disabled).toBe(false);
     });
+    // Save immediately (no connections refetch).
     fireEvent.click(getSaveBtn());
 
     await waitFor(() => {
@@ -1402,7 +790,6 @@ describe("ProfileEditorModal create mode — provider-first", () => {
 
     renderCreate([makeConnection("fireworks-managed", "fireworks")], onSave);
 
-    selectProvider("Fireworks");
     selectModel("DeepSeek V4.1 Flash");
     fireEvent.click(getButton("Advanced"));
     fireEvent.click(getButton("none"));
@@ -2193,30 +1580,14 @@ describe("entries wire shape", () => {
     return { saveCalls, onSave };
   }
 
-  test("a multi-key kind expands into labeled entry rows plus a default row", () => {
-    renderCreate([anthropicWork, anthropicPersonal]);
-    fireEvent.click(providerTrigger());
-    expect(optionRows().slice(0, 3)).toEqual([
-      { label: "Anthropic", meta: "Default" },
-      { label: "Work key", meta: "Anthropic" },
-      { label: "anthropic-personal", meta: "Anthropic" },
-    ]);
-  });
-
-  test("a single-key kind stays one bare row", () => {
-    renderCreate([anthropicPersonal]);
-    fireEvent.click(providerTrigger());
-    expect(optionRows()[0]).toEqual({ label: "Anthropic", meta: "" });
-  });
-
-  test("a gated assistant writes the picked entry name as the provider", async () => {
+  test("a gated assistant writes the picked route's entry name as the provider", async () => {
     const store = await gateOn();
     try {
       const { saveCalls, onSave } = collectSaves();
       renderCreate([anthropicWork, anthropicPersonal], onSave);
 
-      selectProvider("Work key");
-      selectModel("Claude Opus 4.8");
+      selectModel("Claude Opus 5.5");
+      pickRoute("anthropic::anthropic-work");
 
       await waitFor(() => {
         expect(getSaveBtn().disabled).toBe(false);
@@ -2227,19 +1598,19 @@ describe("entries wire shape", () => {
         expect(saveCalls.length).toBe(1);
       });
       expect(saveCalls[0].entry.provider).toBe("anthropic-work");
-      expect(saveCalls[0].entry.model).toBe("claude-opus-4-8");
+      expect(saveCalls[0].entry.model).toBe("claude-opus-5-5");
       expect(saveCalls[0].entry.provider_connection).toBeUndefined();
     } finally {
       store.getState().clearIdentity();
     }
   });
 
-  test("an ungated assistant writes the picked entry as the legacy binding", async () => {
+  test("an ungated assistant writes the picked route as the legacy binding", async () => {
     const { saveCalls, onSave } = collectSaves();
     renderCreate([anthropicWork, anthropicPersonal], onSave);
 
-    selectProvider("Work key");
-    selectModel("Claude Opus 4.8");
+    selectModel("Claude Opus 5.5");
+    pickRoute("anthropic::anthropic-work");
 
     await waitFor(() => {
       expect(getSaveBtn().disabled).toBe(false);
@@ -2259,8 +1630,7 @@ describe("entries wire shape", () => {
       const { saveCalls, onSave } = collectSaves();
       renderCreate([anthropicPersonal], onSave);
 
-      selectProvider("Anthropic");
-      selectModel("Claude Opus 4.8");
+      selectModel("Claude Opus 5.5");
 
       await waitFor(() => {
         expect(getSaveBtn().disabled).toBe(false);
@@ -2289,7 +1659,6 @@ describe("entries wire shape", () => {
       const { saveCalls, onSave } = collectSaves();
       renderCreate([lmStudio], onSave);
 
-      selectProvider("lm-studio");
       selectModel("Model 1");
 
       await waitFor(() => {
@@ -2317,8 +1686,7 @@ describe("entries wire shape", () => {
       const { saveCalls, onSave } = collectSaves();
       renderCreate([userCadet], onSave);
 
-      selectProvider("Anthropic");
-      selectModel("Claude Opus 4.8");
+      selectModel("Claude Opus 5.5");
 
       await waitFor(() => {
         expect(getSaveBtn().disabled).toBe(false);

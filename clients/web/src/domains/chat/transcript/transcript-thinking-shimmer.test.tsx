@@ -17,6 +17,8 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, render } from "@testing-library/react";
 
+import type { ReactNode } from "react";
+
 mock.module("@/domains/chat/components/chat-markdown-message", () => ({
   ChatMarkdownMessage: ({ content }: { content: string }) => (
     <div data-testid="markdown">{content}</div>
@@ -26,7 +28,12 @@ mock.module("@/domains/chat/components/chat-markdown-message", () => ({
 mock.module(
   "@/domains/chat/components/message-hover-actions/message-hover-actions",
   () => ({
-    MessageHoverActions: () => <div data-testid="hover-actions" />,
+    // The stub keeps the real hover chrome out of the wiring assertions but
+    // must still render the `workSummary` slot — the settled quiet turn
+    // mounts its "Worked for" summary control through it.
+    MessageHoverActions: ({ workSummary }: { workSummary?: ReactNode }) => (
+      <div data-testid="hover-actions">{workSummary}</div>
+    ),
   }),
 );
 
@@ -173,27 +180,32 @@ describe("streaming thinking shimmer wiring", () => {
     expect(getByText("Thinking")).toBeTruthy();
   });
 
-  test("completed tool plus blank plus active thinking keeps the merged header shimmering", () => {
+  test("completed tool plus blank plus active thinking keeps the quiet line shimmering", () => {
     useTurnStore.setState({ phase: "thinking" });
-    const { getByTestId } = renderTurn(
+    const { getByTestId, queryByTestId } = renderTurn(
       assistantToolThenThinkingItem("a-tool-thinking"),
     );
 
-    const card = getByTestId("tool-progress-card-shell");
-    expect(card.textContent).toContain("Thinking");
-    expect(getByTestId("streaming-shimmer")).toBeTruthy();
+    // The merged tool + thinking run renders as the live quiet line: the
+    // completed tool's step names the work, the label shimmers, and no
+    // settled summary competes with it.
+    const line = getByTestId("quiet-turn-progress");
+    expect(line.textContent).toContain("Using Terminal");
+    expect(getByTestId("thought-process-loading")).toBeTruthy();
+    expect(queryByTestId("quiet-turn-work-summary")).toBeNull();
   });
 
-  test("the same merged header settles on its summary while awaiting user input", () => {
+  test("the same merged run settles onto its work summary while awaiting user input", () => {
     useTurnStore.setState({ phase: "awaiting_user_input" });
     const { getByTestId, queryByTestId } = renderTurn(
       assistantToolThenThinkingItem("a-tool-thinking-settled"),
     );
 
-    const card = getByTestId("tool-progress-card-shell");
-    expect(card.textContent).not.toContain("Thinking");
-    expect(card.textContent).toContain("Completed");
-    expect(queryByTestId("streaming-shimmer")).toBeNull();
+    // Settled, the shimmering line is gone; the summary control speaks the
+    // run's outcome instead.
+    expect(getByTestId("quiet-turn-work-summary")).toBeTruthy();
+    expect(queryByTestId("quiet-turn-progress")).toBeNull();
+    expect(queryByTestId("thought-process-loading")).toBeNull();
   });
 });
 

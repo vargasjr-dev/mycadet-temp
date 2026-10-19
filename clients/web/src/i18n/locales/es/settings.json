@@ -1262,18 +1262,13 @@
   },
   "profileEditorFields": {
     "activeLabel": "Activo",
-    "addApiKey": "Añadir clave API",
     "advanced": "Avanzado",
-    "createNewProvider": "+ Crear proveedor nuevo",
     "descriptionLabel": "Descripción <optional>(opcional)</optional>",
     "descriptionPlaceholder": "Describe cuándo usar este perfil",
     "displayNameLabel": "Nombre para mostrar",
     "displayNamePlaceholder": "p. ej., Claude Opus 4.8",
     "nameLabel": "Nombre",
-    "newProviderNote": "La nueva conexión de proveedor aparecerá en la sección Proveedores.",
-    "providerLabel": "Proveedor",
-    "selectProviderPlaceholder": "Selecciona un proveedor…",
-    "setUp": "Configurar"
+    "newProviderNote": "La nueva conexión de proveedor aparecerá en la sección Proveedores."
   },
   "profileEditorModal": {
     "cancel": "Cancelar",
