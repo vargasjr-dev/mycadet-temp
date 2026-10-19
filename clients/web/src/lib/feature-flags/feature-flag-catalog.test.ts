@@ -2,9 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import {
   ASSISTANT_FLAG_DEFAULTS,
-  ASSISTANT_STRING_FLAG_DEFAULTS,
   CLIENT_FLAG_DEFAULTS,
-  CLIENT_STRING_FLAG_DEFAULTS,
   getEnvFlagOverridesForScope,
   scopeIncludes,
 } from "@/lib/feature-flags/feature-flag-catalog";
