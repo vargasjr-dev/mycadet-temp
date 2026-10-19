@@ -6,6 +6,11 @@ import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
 import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/inline-deps";
 
+// Build-time reuse of the CLI's version stamper: the local (dev) build bakes
+// the exact string `cadet-local --version` prints, so the About panel and the
+// injected config agree with the CLI (see resolveCliDisplayVersion below).
+import { displayVersion } from "../../cli/src/lib/local-version";
+
 // Reference: https://electron-vite.org/config/
 //
 // No renderer config: the MAIN window renders the @mycadet/app standalone

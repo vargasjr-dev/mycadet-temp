@@ -62,7 +62,7 @@ import {
 } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { displayVersion } from "../lib/local-version.js";
-import cliPkg from "../package.json";
+import cliPkg from "../../package.json";
 import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
   fetchOrganizationId,
