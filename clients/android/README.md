@@ -14,7 +14,7 @@ The Android app loads the web UI from the environment-specific web origin:
 | `staging`    | `https://staging.mycadet.ai/assistant` |
 | `dev`        | `https://dev.mycadet.ai/assistant`     |
 
-Set `CADET_ENVIRONMENT` before `bun run android:sync` (which builds the
+Set `CADET_ENVIRONMENT` before `bun run build` (which builds the
 boot bundle first) to stamp the matching handoff URL into the baked boot
 bundle — unset means the local dev server. The baked boot bundle ships the
 initial Cadet screens; the assistant UI itself still loads from the handoff
@@ -26,16 +26,17 @@ From `clients/android/`:
 
 ```bash
 bun install
-bun run android:run
+bun run dev
 ```
 
-`android:run` syncs the dev configuration, builds `devDebug`, starts or reuses
-a connected device or available emulator, installs the app, and launches it.
+`bun run dev` builds the boot bundle for the dev environment, syncs the
+Capacitor project, builds `devDebug`, starts or reuses a connected device or
+available emulator, installs the app, and launches it.
 If no emulator exists, the command installs the API 36 system image and creates
 `cadet-api-36`. On macOS it installs missing Android command-line tools through
 Homebrew. The first run may prompt you to accept Android SDK licenses.
-Use `bun run android:open` to work in Android Studio or `bun run android:sync`
-when you only need to refresh native generated files.
+Open Android Studio on `clients/android/` if you want the IDE — `bun run build`
+refreshes the native generated files whenever the Capacitor config changes.
 
 ## Build Variants
 
@@ -557,10 +558,10 @@ clients/
 │   └── package.json              # Exports the base config (@mycadet/app/capacitor.config.base)
 ├── ios/
 │   ├── capacitor.config.ts       # Base config + appId + Keyboard + the ios block (path: ".")
-│   └── package.json              # ios:sync script + @capacitor/ios + plugin deps for the iOS sync
+│   └── package.json              # dev / build scripts + @capacitor/ios + plugin deps for the iOS sync
 └── android/
     ├── capacitor.config.ts       # Base config + appId + LocalNotifications + the android block (path: ".")
-    ├── package.json              # android:sync / android:run / android:open scripts
+    ├── package.json              # dev / build scripts
     ├── scripts/
     │   └── run-android.ts        # Emulator bootstrap + devDebug install + launch
     ├── app/
@@ -596,14 +597,14 @@ clients/
 
 ```bash
 cd clients/android
-bun run android:run
+bun run dev
 ```
 
 ### Sync Android After Editing Capacitor Config
 
 ```bash
 cd clients/android
-CADET_ENVIRONMENT=dev bun run android:sync
+CADET_ENVIRONMENT=dev bun run build
 ```
 
 ### Build From the Command Line

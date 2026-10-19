@@ -9,9 +9,8 @@
   "type": "module",
   "description": "Cadet iOS Capacitor shell — native Xcode project plus the plugin set its sync wires",
   "scripts": {
-    "setup": "bash scripts/setup.sh",
-    "ios:sync": "(cd ../app && bun run build:capacitor) && bunx --bun cap sync ios",
-    "dev": "bun run setup && open App/App.xcodeproj"
+    "dev": "bash scripts/setup.sh && open App/App.xcodeproj",
+    "build": "bash scripts/build.sh"
   },
   "devDependencies": {
     "@capacitor-community/camera-preview": "8.0.1",

@@ -4,7 +4,7 @@ import { Network } from "@capacitor/network";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { AppI18nProvider } from "@app/i18n/provider";
 import { useTranslation } from "@app/i18n/react";
-import { readInjectedConfig } from "@app/lib/injected-config";
+import { readCapacitorBootConfig } from "./boot-config";
 import "../index.css";
 
 /**
@@ -23,7 +23,7 @@ import "../index.css";
  */
 function Boot() {
   const { t } = useTranslation("account");
-  const handoffUrl = readInjectedConfig()?.handoffUrl;
+  const handoffUrl = readCapacitorBootConfig()?.handoffUrl;
   const [offline, setOffline] = useState(false);
   const [attempt, setAttempt] = useState(0);
 

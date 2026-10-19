@@ -743,7 +743,7 @@ expect.
 | The mic privacy indicator competing for the island | Also reproducible: a session holds the mic for the whole call, muted included, so the island is shared and iOS falls back to the minimal presentation. This is the one that decides whether the compact slots are ever seen during a call |
 | App Intents in the Shortcuts app | The three intents appear under the app with their icons and short titles |
 | Control Center control | Add "New voice conversation" from the gallery and tap it |
-| Extension builds (compile check only) | `cd clients/ios/App && xcodebuild -project App.xcodeproj -target "VoiceActivity Dev" -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO` after `bun run setup` from `clients/ios/`. **Never install a build made with that flag**; see below |
+| Extension builds (compile check only) | `cd clients/ios/App && xcodebuild -project App.xcodeproj -target "VoiceActivity Dev" -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO` after `bun run build` from `clients/ios/`. **Never install a build made with that flag**; see below |
 
 **`CODE_SIGNING_ALLOWED=NO` silently kills Live Activities.** It is fine for a
 compile check and wrong for anything you install: it strips the signature *and*

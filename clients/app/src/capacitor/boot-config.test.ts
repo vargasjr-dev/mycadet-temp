@@ -1,6 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import baseConfig from "../../capacitor.config.base";
-import { bootConfigScript, capacitorBootConfig } from "./boot-config";
+import {
+  bootConfigScript,
+  capacitorBootConfig,
+  readCapacitorBootConfig,
+} from "./boot-config";
 
 describe("capacitorBootConfig", () => {
   test("local environment hands off to the local dev server", () => {
@@ -64,6 +68,45 @@ describe("bootConfigScript", () => {
       handoffUrl:
         "https://assistant.example.com/?a=\u003c/script\u003e\u003cscript\u003ealert(1)\u003c/script\u003e",
     });
+  });
+});
+
+describe("readCapacitorBootConfig", () => {
+  const setWindow = (config: unknown) => {
+    (globalThis as unknown as { window: unknown }).window = {
+      __CADET_CONFIG__: config,
+    };
+  };
+  const clearWindow = () => {
+    delete (globalThis as unknown as { window?: unknown }).window;
+  };
+
+  afterEach(clearWindow);
+
+  test("returns the parsed config when the stamp matches", () => {
+    setWindow({
+      remote: "cloud",
+      handoffUrl: "https://mycadet.ai/assistant",
+    });
+    expect(readCapacitorBootConfig()).toEqual({
+      remote: "cloud",
+      handoffUrl: "https://mycadet.ai/assistant",
+    });
+  });
+
+  test("reads as undefined when nothing is stamped (SSR / absent)", () => {
+    clearWindow();
+    expect(readCapacitorBootConfig()).toBeUndefined();
+    setWindow(undefined);
+    expect(readCapacitorBootConfig()).toBeUndefined();
+  });
+
+  test("reads as undefined when a competing shape is stamped", () => {
+    setWindow({
+      webUrl: "http://localhost:3000",
+      cloudUrl: "http://localhost:8000",
+    });
+    expect(readCapacitorBootConfig()).toBeUndefined();
   });
 });
 

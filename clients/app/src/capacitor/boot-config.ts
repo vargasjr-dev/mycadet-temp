@@ -4,8 +4,10 @@ import { z } from "zod";
 /**
  * The runtime config the baked Capacitor boot bundle ships with, stamped
  * into `dist/capacitor/index.html` as `window.__CADET_CONFIG__` at build
- * time (`bun run build:capacitor`). Readers go through
- * `readInjectedConfig()` like every other host.
+ * time (`bun run build:capacitor`). The boot bundle reads the stamp back
+ * through `readCapacitorBootConfig()` — this schema owns it, not the shared
+ * `InjectedConfigSchema`, so the handoff URL never joins the shared surface's
+ * origin families.
  *
  * The mobile shells boot on this baked bundle (the `webDir` in
  * `capacitor.config.base.ts`) so the initial Cadet screens render from
@@ -24,6 +26,23 @@ export const CapacitorBootConfigSchema = z.object({
 });
 
 export type CapacitorBootConfig = z.infer<typeof CapacitorBootConfigSchema>;
+
+/**
+ * The parsed boot stamp, or `undefined` when the bundle runs somewhere that
+ * isn't its baked home: SSR, a host that injects nothing, or a stale sync
+ * whose stamp no longer parses (both fields are required, so a competing
+ * shape — like the local-mode shim's `{ webUrl, cloudUrl }` — reads as
+ * absent).
+ */
+export function readCapacitorBootConfig(): CapacitorBootConfig | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  const parsed = CapacitorBootConfigSchema.safeParse(
+    (window as Window & { __CADET_CONFIG__?: unknown }).__CADET_CONFIG__,
+  );
+  return parsed.success ? parsed.data : undefined;
+}
 
 /**
  * Resolve the boot bundle's handoff from the build environment. Mirrors the

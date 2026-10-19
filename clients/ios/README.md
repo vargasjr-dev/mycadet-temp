@@ -86,7 +86,7 @@ with an honest offline state and hands off once connectivity returns.
 all `.xcscheme` files, `contents.xcworkspacedata`, the SPM workspace
 state) is regenerated from `App/project.yml` by
 [XcodeGen](https://github.com/yonaskolb/XcodeGen) every time you build —
-locally via `bun run setup` from `clients/ios/`, in CI via the `xcodegen generate` step
+locally via `bun run build` from `clients/ios/`, in CI via the `xcodegen generate` step
 in `.github/workflows/release-ios.yaml`.
 
 What _is_ committed and what generates from where:
@@ -105,7 +105,7 @@ A pre-build script wired into every target via `project.yml` fails the
 Xcode build with a clear error if `project.yml` is newer than the
 generated `App.xcodeproj/project.pbxproj` — i.e. you pulled a
 `project.yml` change but forgot to regenerate. The fix is always the
-same: `bun run setup` from `clients/ios/`.
+same: `bun run build` from `clients/ios/`.
 
 ## First-time setup
 
@@ -116,19 +116,19 @@ bun run dev            # web deps + cap sync + xcodegen generate + open Xcode
 ```
 
 `bun run dev` is idempotent — running it on an already-up-to-date tree
-is a no-op. Both commands delegate to `scripts/setup.sh`, which
-installs missing tooling first (xcodegen via Homebrew when absent),
-then runs the headless steps:
+is a no-op. `dev` delegates to `scripts/setup.sh`, which installs
+missing tooling first (xcodegen via Homebrew when absent), then
+delegates the headless core to `scripts/build.sh`:
 
-- `bun run setup` — ensures xcodegen, installs the web deps Capacitor
-  needs, then `cap sync ios` + `xcodegen generate`. Use when you want
-  to run `xcodebuild` headlessly (rare for local dev).
-- `bun run dev` — `bun run setup` + `open App/App.xcodeproj`.
+- `bun run build` — the headless steps: boot-bundle build + `cap sync ios`
+  - `xcodegen generate`. Use when you want to run `xcodebuild`
+    headlessly (rare for local dev).
+- `bun run dev` — toolchain checks + the build + `open App/App.xcodeproj`.
   Day-to-day local flow.
 
-The root `./setup.sh` invokes `bun run setup` for every subpackage
-that defines one, so a fresh clone gets the iOS toolchain without
-touching `clients/ios/` directly.
+The root `./setup.sh` no longer reaches iOS — only the Electron shells
+define a `setup` script now. A fresh clone gets the iOS toolchain via
+`bun run dev` from `clients/ios/`.
 
 First-time open takes ~30s while Xcode resolves the SPM graph and
 caches `capacitor-swift-pm@8.3.4` (pinned exactly in
@@ -452,11 +452,11 @@ re-provisioning the app.
 ### After editing `clients/ios/capacitor.config.ts` (or the shared base in `clients/app/`)
 
 ```bash
-bun run setup
+bun run build
 ```
 
-`setup` rebuilds the app-shell boot bundle (`build:capacitor`) and re-runs
-`cap sync ios` (regenerating
+`bun run build` rebuilds the app-shell boot bundle (`build:capacitor`) and
+re-runs `cap sync ios` (regenerating
 `clients/ios/App/App/capacitor.config.json` and the boot-bundle copy in
 `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 `App.xcodeproj/`. All three of those output paths are gitignored.
@@ -469,13 +469,13 @@ Cadet Cloud URL and is stamped into the boot bundle's `handoffUrl` the same
 way:
 
 ```bash
-CADET_SERVER_URL=https://your-host.ts.net bun run setup
+CADET_SERVER_URL=https://your-host.ts.net bun run build
 ```
 
 Then rebuild in Xcode. The value must be a valid `https:` URL — the build
 fails loudly otherwise, because iOS App Transport Security requires valid
 TLS. Nothing to edit or revert: resync
-without the variable (`bun run setup`) to return to
+without the variable (`bun run build`) to return to
 the environment default.
 
 **A device on your LAN (plain-HTTP local dev):** the simulator shares the
@@ -487,7 +487,7 @@ physical device can't reach the host's loopback, ATS blocks cleartext HTTP
 
 ```bash
 cadet tunnel  # on the host — serves the assistant surface over https
-CADET_SERVER_URL=https://<tunnel-host> bun run setup
+CADET_SERVER_URL=https://<tunnel-host> bun run build
 ```
 
 ### Add a new Capacitor plugin
@@ -499,7 +499,7 @@ who clones fresh. ([Capacitor SPM docs](https://capacitorjs.com/docs/ios/spm))
 
 ```bash
 bun add --exact @capacitor/<plugin-name> --cwd ../app   # adds to clients/app package.json + bun.lock
-bun run setup                                           # cap sync regenerates Package.swift; xcodegen wires it into the project
+bun run build                                           # cap sync regenerates Package.swift; xcodegen wires it into the project
 ```
 
 Then `git diff clients/ios/App/CapApp-SPM/Package.swift` — you should see
@@ -514,7 +514,8 @@ Version bumps live in `clients/app/package.json` (`@capacitor/core`, `@capacitor
 bumping:
 
 ```bash
-bun run setup         # installs clients/app deps, then cap sync + xcodegen regenerate
+bun install      # picks up the bumped Capacitor packages (walks up to the workspace root)
+bun run build    # boot bundle + cap sync + xcodegen regenerate
 ```
 
 Only when `@capacitor/ios` changes major version, also run `bunx cap update ios`
@@ -563,10 +564,10 @@ On first build after pulling:
 ## Gotchas
 
 - **`open App.xcworkspace` doesn't exist** — we're on SPM, not
-  CocoaPods. Use `App.xcodeproj` (regenerated by `bun run setup`
+  CocoaPods. Use `App.xcodeproj` (regenerated by `bun run build`
   from `clients/ios/`).
 - **`error: project.yml is newer than App.xcodeproj`** — pre-build
-  guard fired. Run `bun run setup` from `clients/ios/` and rebuild.
+  guard fired. Run `bun run build` from `clients/ios/` and rebuild.
 - **actool "no AppIcon stack" error** — `AppIcon.icon` must live at
   `App/App/AppIcon.icon/` (alongside `Info.plist`), _not_ inside
   `Assets.xcassets/`. It's wired into `project.yml` as a per-target
@@ -577,7 +578,7 @@ On first build after pulling:
 - **`xcuserdata` and `App.xcodeproj/*` changes in `git status`** —
   expected, both are gitignored. `xcuserdata` is per-user IDE state
   (selected scheme, breakpoints); `App.xcodeproj/*` is regenerated by
-  xcodegen on every `bun run setup`.
+  xcodegen on every `bun run build`.
 
 ## CI / Release pipeline
 
@@ -1070,7 +1071,7 @@ All iOS signing secrets are stored as GitHub Actions secrets:
 The iOS shell lives as a peer of `clients/app/`, not nested inside it. The
 Capacitor config lives IN this package — `capacitor.config.ts` owns the `ios`
 block and imports the shared base from `@mycadet/app/capacitor.config.base` —
-so `bun run setup` runs `cap sync ios` from `clients/ios/` and writes
+so `bun run build` runs `cap sync ios` from `clients/ios/` and writes
 generated files here.
 
 ```

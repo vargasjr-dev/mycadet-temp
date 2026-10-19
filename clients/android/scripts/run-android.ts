@@ -22,6 +22,10 @@ const SYSTEM_IMAGE = `system-images;android-${API_LEVEL};${IMAGE_TAG};${IMAGE_AB
 // server the emulator's `server.url` targets runs separately from
 // `clients/web`.
 const androidRoot = resolve(import.meta.dir, "..");
+// The web bundle the sync copies is built from the sibling @mycadet/app
+// package, so the dev flow builds it with the same environment it syncs with
+// (the stamp + allowNavigation must agree).
+const appRoot = resolve(androidRoot, "../app");
 
 function isExecutable(path: string): boolean {
   try {
@@ -63,10 +67,11 @@ function run(
   args: string[],
   env: NodeJS.ProcessEnv,
   input?: string,
+  cwd: string = androidRoot,
 ): void {
   console.log(`\n> ${basename(command)} ${args.join(" ")}`);
   const result = spawnSync(command, args, {
-    cwd: androidRoot,
+    cwd,
     env,
     input,
     stdio: input === undefined ? "inherit" : ["pipe", "inherit", "inherit"],
@@ -502,6 +507,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Using Android target ${deviceSerial}.`);
+  run(process.execPath, ["run", "build:capacitor"], env, undefined, appRoot);
   run(
     process.execPath,
     ["x", "--bun", "cap", "sync", "android"],
