@@ -30,6 +30,12 @@ preload foundations through `@mycadet/electron-desktop` and native helper proces
 under each platform package connect that core to platform lifecycle and native
 features. Dependency-free Electron helpers remain in `@mycadet/electron-utils`.
 
+The desktop shells are joining the app/web split (see
+[`docs/proposals/desktop-app-shell.md`](../docs/proposals/desktop-app-shell.md)):
+the main window renders the `@mycadet/app` shell and iframes the web bundle
+served from the assistant, while auxiliary windows keep their web routes.
+macOS flipped first; Linux and Windows follow the same pattern.
+
 ## What belongs here
 
 - End-user client surfaces (web app, Capacitor wrappers, Electron desktop

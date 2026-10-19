@@ -1,26 +1,36 @@
 # Electron wrapper
 
-Desktop shell for the Cadet macOS app. Wraps [`clients/web/`](../web/)
-in an Electron `BrowserWindow`. Each assistant's background processes are owned
-entirely by the `cadet` CLI, which the app invokes as a subprocess — the
-Electron app is a GUI client, not a process manager.
+Desktop shell for the Cadet macOS app. The main window renders the
+[`@mycadet/app`](../app/) shell (the account/assistant client), which iframes the
+web bundle served from the assistant; auxiliary windows (about, command palette,
+companion, popouts) still render web routes. Each assistant's background
+processes are owned entirely by the `cadet` CLI, which the app invokes as a
+subprocess — the Electron app is a GUI client, not a process manager.
 
 This package is the macOS distribution surface (outside the App Store).
 
-## Web content delivery
+## Renderer content delivery
 
-**What:** The web UI (`clients/web/`) is bundled as static files inside the
-`.app` package. The Electron main process serves them via a custom
+**What:** Two bundles ship inside the `.app` package, both served by the
+Electron main process over a custom
 [`app://` protocol](https://www.electronjs.org/docs/latest/api/protocol#protocolhandlescheme-handler)
-— the `BrowserWindow` loads `app://mycadet.ai/assistant`, which resolves
-to files on disk at `process.resourcesPath/web-dist`.
+(see `docs/proposals/desktop-app-shell.md` for the split's rationale):
 
-**How:** At build time, `bun run build:web` runs `vite build` in
-`clients/web/`, then copies `clients/web/dist/` into `resources/web-dist`.
-`electron-builder` packs that directory into the app's `extraResources`
-(see `electron-builder.config.cjs`). No network request is involved at
-runtime — the protocol handler reads files from the local bundle and
-falls back to `index.html` for client-side routes.
+- The **app shell** (`@mycadet/app` standalone build, root-based) is the main
+  window's renderer: `app://mycadet.ai/` resolves to
+  `process.resourcesPath/app-dist`. The shell iframes the resolved assistant's
+  own edge for cloud assistants, and the `/assistant` mount for local ones.
+- The **web bundle** (`clients/web/`, base `/assistant/`) serves the auxiliary
+  windows and the local-assistant iframe: `app://mycadet.ai/assistant/...`
+  resolves to `process.resourcesPath/web-dist`.
+
+**How:** At build time, `bun run build:app` builds `clients/app/` and copies
+`clients/app/dist/standalone/` into `resources/app-dist`; `bun run build:web`
+runs `vite build` in `clients/web/` and copies `clients/web/dist/` into
+`resources/web-dist`. `electron-builder` packs both directories into the app's
+`extraResources` (see `electron-builder.config.cjs`). No network request is
+involved at runtime — the protocol handler reads files from the local bundles
+and falls back to each bundle's `index.html` for client-side routes.
 
 **Why local bundle, not a remote URL:**
 
@@ -84,33 +94,37 @@ proxy) with a 1.5s timeout and picks one of two paths:
 
 2. **No vel up** → dispatches to `dev:standalone`, which uses
    [`concurrently`](https://github.com/open-cli-tools/concurrently) to
-   run two children in parallel:
+   run three children in parallel:
    - `dev:web` → `cd ../web && bun run dev -- --port 5173 --strictPort`.
      Going through `clients/web`'s own `dev` script means we use _its_
      local Vite (8.x) and plugin tree, not whatever older Vite happens
      to live in `clients/macos/node_modules`. Pinning the port via the
      Vite CLI overrides `clients/web/.env` if `PORT` is set there.
-   - `dev:electron` → `scripts/wait-for-web.ts` polls `:5173` (180s
-     timeout), then runs `electron-vite dev` against it. The wait avoids
-     Electron racing the renderer. On timeout the script captures stack
-     samples of the Vite processes plus the port state to `/tmp` before
-     exiting — a hung Vite gets un-wedged by the ensuing teardown, so
-     that capture is the only record of where it was stuck.
+   - `dev:app` → `cd ../app && VITE_CLOUD_MODE=1 bun run dev -- --port
+     3001 --strictPort` — the app-shell Vite the main window loads.
+   - `dev:electron` → `scripts/wait-for-web.ts` polls `:5173` and
+     `:3001` (180s timeout), then runs `electron-vite dev` against them.
+     The wait avoids Electron racing the renderers. On timeout the
+     script captures stack samples of the Vite processes plus the port
+     state to `/tmp` before exiting — a hung Vite gets un-wedged by the
+     ensuing teardown, so that capture is the only record of where it
+     was stuck.
 
-   `concurrently --kill-others` tears both down on Ctrl+C or on either
-   child exiting. Logs are prefixed and color-coded (`[web]` blue,
-   `[electron]` green). Standalone mode has no backends, so renderer
-   API calls will fail — useful for shell-only work (menus, IPC, window
-   chrome), not for feature development against the real stack.
+   `concurrently --kill-others` tears all three down on Ctrl+C or on
+   any child exiting. Logs are prefixed and color-coded (`[web]` blue,
+   `[app]` yellow, `[electron]` green). Standalone mode has no
+   backends, so renderer API calls will fail — useful for shell-only
+   work (menus, IPC, window chrome), not for feature development
+   against the real stack.
 
-The main-process URL choice lives in `src/main/index.ts`:
-`process.env.CADET_DEV_URL ?? "http://localhost:5173/assistant"`.
+The main-process URL choices live in `src/main/app-config.ts`:
+the main window reads `CADET_APP_DEV_URL ??
+"http://localhost:3001"` (the app-shell Vite, root-based bundle), and
+the auxiliary windows read `CADET_DEV_URL ?? "http://localhost:5173/assistant"`.
 `CADET_DEV_URL` is treated as the full URL — callers must include the
 `/assistant` path themselves because `clients/web/vite.config.ts` sets
-`base: "/assistant/"` (so the bare origin lands the BrowserWindow on
-the marketing page in vel-up mode, or on a Vite 404 in standalone).
-Override the env var yourself (e.g.,
-`CADET_DEV_URL=http://localhost:3002/assistant bun run dev:electron-only`)
+`base: "/assistant/"`. Override either env var yourself (e.g.,
+`CADET_APP_DEV_URL=http://localhost:3011 bun run dev:electron-only`)
 if you need to point at a non-default service.
 
 The app shows up as **Cadet Electron** in the menu bar and Dock

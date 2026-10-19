@@ -41,16 +41,16 @@ Target topology:
 
 ## What already exists (verified)
 
-| Piece | Where | State |
-| --- | --- | --- |
-| Portable app shell (`AppShell`, resolution, selection) | `clients/app/src/app-shell.tsx`, `src/assistant/*` | Shipped; hub + mobile render it today |
-| Standalone desktop-shaped entry (router, DesktopChrome, AssistantPage) | `clients/app/src/standalone.tsx`, `src/main.tsx` | Shipped; reads injected config |
-| Electron bridge contract the app expects | `clients/app/src/runtime/electron-bridge.ts` | Shipped |
-| Electron preload exposing that bridge (`auth.startOAuth`, `menu.setCloudSession`, `mainWindow.*`, `commands.on`) | `clients/macos/src/preload/index.ts` (linux/windows mirrors) | Shipped — built for this flip |
-| Config injection (`__CADET_CONFIG__` via `cadet:config:get`) | all three preloads | Shipped |
-| Platform forwards on the `app://` origin | `clients/*/src/main/index.ts` via `forwardPlatformRequest` | Shipped |
-| Cloud artifactory for the app bundle (`/app/<version>`) | `services/cloud-api/app-artifacts.ts` (#277, #278) | Shipped |
-| CLI edge app mode (shell at `/`, web iframed from `/web/assistant/`) | `cli/src/lib/nginx-ingress.ts` | Shipped — the reference self-hosted deployment of the same bundle |
+| Piece                                                                                                            | Where                                                        | State                                                             |
+| ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------- |
+| Portable app shell (`AppShell`, resolution, selection)                                                           | `clients/app/src/app-shell.tsx`, `src/assistant/*`           | Shipped; hub + mobile render it today                             |
+| Standalone desktop-shaped entry (router, DesktopChrome, AssistantPage)                                           | `clients/app/src/standalone.tsx`, `src/main.tsx`             | Shipped; reads injected config                                    |
+| Electron bridge contract the app expects                                                                         | `clients/app/src/runtime/electron-bridge.ts`                 | Shipped                                                           |
+| Electron preload exposing that bridge (`auth.startOAuth`, `menu.setCloudSession`, `mainWindow.*`, `commands.on`) | `clients/macos/src/preload/index.ts` (linux/windows mirrors) | Shipped — built for this flip                                     |
+| Config injection (`__CADET_CONFIG__` via `cadet:config:get`)                                                     | all three preloads                                           | Shipped                                                           |
+| Platform forwards on the `app://` origin                                                                         | `clients/*/src/main/index.ts` via `forwardPlatformRequest`   | Shipped                                                           |
+| Cloud artifactory for the app bundle (`/app/<version>`)                                                          | `services/cloud-api/app-artifacts.ts` (#277, #278)           | Shipped                                                           |
+| CLI edge app mode (shell at `/`, web iframed from `/web/assistant/`)                                             | `cli/src/lib/nginx-ingress.ts`                               | Shipped — the reference self-hosted deployment of the same bundle |
 
 ## The hosting contract (per desktop shell)
 
@@ -87,13 +87,13 @@ Target topology:
 
 ## Rollout
 
-| Step | Scope | Notes |
-| --- | --- | --- |
-| 1. macOS flip (this PR) | `clients/macos`, `packages/electron-desktop` shared bits it uniquely consumes | Renderer root, mount, CSP `frame-src`, assistant-mount proxy, `build:app`/`dev:app` scripts, pack + electron-builder resources |
-| 2. linux flip | `clients/linux` | Mechanical copy of step 1's diff shape; AppImage packaging |
-| 3. windows flip | `clients/windows` | Same, plus `package-runtime.ts`/`package-smoke.ts` cli-runtime layout and the parity matrix |
-| 4. Release plumbing | `.github/workflows/release.yml`, `dev-release.yaml`, `pr-macos/linux/windows.yaml` | Build/publish the app dist instead of web dist for electron jobs (web dist no longer needed at all — the assistant serves it) |
-| 5. Cleanup | `clients/web` electron-isms, stale flags | Sweep only after all three shells flip |
+| Step                    | Scope                                                                              | Notes                                                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1. macOS flip (this PR) | `clients/macos`, `packages/electron-desktop` shared bits it uniquely consumes      | Renderer root, mount, CSP `frame-src`, assistant-mount proxy, `build:app`/`dev:app` scripts, pack + electron-builder resources |
+| 2. linux flip           | `clients/linux`                                                                    | Mechanical copy of step 1's diff shape; AppImage packaging                                                                     |
+| 3. windows flip         | `clients/windows`                                                                  | Same, plus `package-runtime.ts`/`package-smoke.ts` cli-runtime layout and the parity matrix                                    |
+| 4. Release plumbing     | `.github/workflows/release.yml`, `dev-release.yaml`, `pr-macos/linux/windows.yaml` | Build/publish the app dist instead of web dist for electron jobs (web dist no longer needed at all — the assistant serves it)  |
+| 5. Cleanup              | `clients/web` electron-isms, stale flags                                           | Sweep only after all three shells flip                                                                                         |
 
 ## Explicitly out of scope
 
