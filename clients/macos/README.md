@@ -308,7 +308,7 @@ plainly.
 
 ```sh
 bun run dev                # pack the app + web dists, then electron-vite dev — the one dev flow (no dev servers)
-bun run install:all        # workspace bun install + Electron setup (called automatically by dev)
+bun run setup              # bun install + Electron binary + native helper builds (dev kicks it off too)
 bun run build              # electron-vite build — bundles main + preload to out/
 bun run typecheck          # tsc --noEmit
 bun run test               # bun test — single Bun process (fastest for local iteration)

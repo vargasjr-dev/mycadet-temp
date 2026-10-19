@@ -152,14 +152,6 @@ const installSameOriginNavigationGuard = (win: BrowserWindow): void => {
 };
 
 const createMainWindow = (): BrowserWindow => {
-  // The load target is the renderer base itself (no `/index.html`
-  // suffix). The `app://` protocol handler in `index.ts` falls back
-  // to `index.html` for extension-less paths, so this serves the
-  // shell's client routes on reload / deep-link. Dev packs the same
-  // dists (see `bun run dev`) and serves the same origin, so there is
-  // no dev branch.
-  const loadTarget = APP_RENDERER_BASE_PROD;
-
   // Onboarding and the main app share the same sizing: restore the user's
   // saved main-app state, which defaults to maximized (work-area bounds)
   // when nothing has been persisted yet. A saved fullscreen session includes
@@ -287,8 +279,14 @@ const createMainWindow = (): BrowserWindow => {
     fireVisibilityChange();
   });
 
-  win.loadURL(loadTarget).catch((err: unknown) => {
-    console.error(`[main-window] loadURL failed for ${loadTarget}:`, err);
+  // The renderer base itself (no `/index.html` suffix): the `app://`
+  // handler in `index.ts` falls back to `index.html` for extension-less
+  // paths, so this serves the shell's client routes on reload / deep-link.
+  win.loadURL(APP_RENDERER_BASE_PROD).catch((err: unknown) => {
+    console.error(
+      `[main-window] loadURL failed for ${APP_RENDERER_BASE_PROD}:`,
+      err,
+    );
   });
 
   mainWindow = win;

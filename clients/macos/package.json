@@ -5,9 +5,8 @@
   "description": "Electron wrapper for the Cadet macOS app.",
   "main": "out/main/index.js",
   "scripts": {
-    "setup": "node node_modules/electron/install.js && bash scripts/build-mac-helper.sh && (bash scripts/build-notifier.sh || echo 'notifier unavailable; notifications fall back to Electron')",
-    "dev": "bun run install:all && bun scripts/dev.ts",
-    "install:all": "bun install && bun run setup",
+    "setup": "bash scripts/setup.sh",
+    "dev": "bun scripts/dev.ts",
     "prepare:electron-dev": "bun scripts/prepare-electron-dev-app.ts",
     "build": "electron-vite build",
     "typecheck": "bunx tsc --noEmit",

@@ -32,6 +32,11 @@ const run = (label: string, cwd: string, cmd: [string, ...string[]]): void => {
   }
 };
 
+// Setup owns the workspace install, the Electron binary, and the native
+// helper builds — it is idempotent, so kick it off unconditionally. In the
+// future, this should hash `bun.lock` to determine whether we even need to.
+run("setting up the package", MACOS_DIR, ["bun", "run", "setup"]);
+
 run(
   "building @mycadet/app (the main window's app shell)",
   path.join(CLIENTS_DIR, "app"),
