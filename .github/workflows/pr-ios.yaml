@@ -87,7 +87,7 @@ jobs:
 
       - name: Capacitor sync
         if: steps.filters.outputs.ios_changed == 'true'
-        working-directory: clients/app
+        working-directory: clients/ios
         env:
           # The iOS Capacitor config (clients/ios/capacitor.config.ts)
           # derives `server.url` and the Xcode scheme name from this, so it
