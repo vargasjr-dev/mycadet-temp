@@ -350,10 +350,11 @@ describe("buildIngressNginxConfig", () => {
         assistantName: "Homelab",
         assistantId: "assistant-1",
         hubUrl: "https://mycadet.ai/assistant",
+        version: "1.2.3",
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\",\\"version\\":\\"1.2.3\\"}";',
     );
   });
 
@@ -867,6 +868,7 @@ function spaConfigHash(
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
         version: "1.2.3",
@@ -1046,6 +1048,7 @@ describe("startRemoteWebIngress", () => {
           webDistDir,
           indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
       }),
     );
@@ -2566,6 +2569,7 @@ function appConfigHash(
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
+          version: "1.2.3",
         },
         webDistDir: findWebDistDir(),
         version: "1.2.3",
@@ -2701,6 +2705,7 @@ describe("app shell mode", () => {
     );
     expect(appIndex).toContain("__CADET_CONFIG__");
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
+    expect(appIndex).toContain(`"version":"1.2.3"`);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');

@@ -229,7 +229,7 @@ export function edgeServedRemote(recorded: string | undefined): RemoteHost {
 function remoteWebIngressConfig(
   opts: Pick<
     RemoteWebIngressOptions,
-    "config" | "assistantName" | "assistantId" | "hubUrl"
+    "config" | "assistantName" | "assistantId" | "hubUrl" | "version"
   >,
 ): Record<string, unknown> {
   return {
@@ -240,6 +240,9 @@ function remoteWebIngressConfig(
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
+    // The assistant release the bundles were verified against — devtools'
+    // window.__CADET_CONFIG__.version answers "which one is running".
+    ...(opts.version ? { version: opts.version } : {}),
     ...opts.config,
   };
 }
@@ -1269,15 +1272,6 @@ export async function startRemoteWebIngress(opts: {
   ) {
     listenPort = recorded.listenPort;
   }
-  // The SPA config the served index must carry, computed up front so the
-  // reuse decision and the actual spawn share one value and cannot drift.
-  const spaOptions = includeWebApp
-    ? {
-        hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
-        ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
-        ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
-      }
-    : undefined;
   const webDistDir = includeWebApp ? await resolveWebDistDir() : null;
   if (includeWebApp && !webDistDir) {
     return { status: "web-dist-missing" };
@@ -1300,6 +1294,19 @@ export async function startRemoteWebIngress(opts: {
     assistantVersion && webVersion === assistantVersion
       ? assistantVersion
       : undefined;
+  // The SPA config the served index must carry, computed up front so the
+  // reuse decision and the actual spawn share one value and cannot drift.
+  // The verified release version rides it: the served documents stamp it
+  // (window.__CADET_CONFIG__.version) and the reuse fingerprint covers the
+  // drift.
+  const spaOptions = includeWebApp
+    ? {
+        hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
+        ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
+        ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
+        ...(matchedVersion ? { version: matchedVersion } : {}),
+      }
+    : undefined;
   const requestedConfigHash =
     spaOptions && webDistDir
       ? remoteWebConfigFingerprint(
@@ -1374,7 +1381,6 @@ export async function startRemoteWebIngress(opts: {
       ? {
           webDistDir,
           ...spaOptions,
-          version: matchedVersion,
           ...(appDistDir ? { appDistDir } : {}),
         }
       : undefined,

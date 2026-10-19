@@ -356,6 +356,7 @@ handleSync("cadet:config:get", () => ({
   webUrl: resolvedConfig.webUrl,
   cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
+  version: app.getVersion(),
 }));
 
 /**
