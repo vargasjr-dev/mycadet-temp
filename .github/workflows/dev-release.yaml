@@ -3,20 +3,12 @@ name: Dev Release
 on:
   # The cloud drives releases by dispatching this workflow.
   workflow_dispatch: {}
-  # Daily automated fire at 6:00 AM America/New_York. Cron is pinned to UTC
-  # while Eastern flips between EST (UTC-5) and EDT (UTC-4), so both
-  # wall-clock candidates are scheduled and the should-release gate keeps
-  # whichever firing IS 6 AM in New York on that day (the loser is a green
-  # no-op):
-  #   - 10:00 UTC = 6:00 AM EDT (summer)
-  #   - 11:00 UTC = 6:00 AM EST (winter)
   schedule:
-    - cron: "0 10 * * *"
-    - cron: "0 11 * * *"
+    - cron: "0 9 * * *"
 
 concurrency:
   group: dev-release
-  # Queue instead of cancel: the scheduled 6 AM fire must not kill an
+  # Queue instead of cancel: the scheduled fire must not kill an
   # in-flight manual release mid-publish. A queued scheduled run is cheap —
   # its gate re-checks freshness and bails as a green no-op if the manual
   # run already shipped the tip.
@@ -29,10 +21,10 @@ env:
 
 jobs:
   should-release:
-    # Gate for the scheduled 6 AM Eastern fire: bail as a green no-op unless
-    # it is actually 6 AM in New York right now AND main has commits the
-    # last successful dev release didn't already ship (a failed release
-    # counts as unshipped, so the next morning retries it). Manual
+    # Gate for the scheduled daily fire: bail as a green no-op unless main
+    # has commits the last successful dev release didn't already ship (a
+    # failed release counts as unshipped, so the next fire retries it).
+    # Manual
     # dispatches bypass the freshness checks and always release — but the
     # JOB itself must still RUN, never skip: a skipped job poisons every
     # environment:dev job transitively downstream of it (GitHub skips those
@@ -49,7 +41,7 @@ jobs:
     outputs:
       proceed: ${{ steps.gate.outputs.proceed }}
     steps:
-      - name: Schedule gate (6 AM Eastern + fresh commits on main)
+      - name: Schedule gate (fresh commits on main)
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -57,15 +49,6 @@ jobs:
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "proceed=true" >> "$GITHUB_OUTPUT"
             echo "RELEASE: manual dispatch always releases."
-            exit 0
-          fi
-
-          NOW=$(TZ=America/New_York date '+%Y-%m-%d %H:%M %Z')
-          echo "Time in New York: ${NOW}"
-          HOUR=$(TZ=America/New_York date +%H)
-          if [ "${HOUR}" != "06" ]; then
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "SKIP: not 6:00 AM Eastern — this firing is the DST twin; skipping."
             exit 0
           fi
 
