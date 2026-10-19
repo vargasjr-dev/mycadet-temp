@@ -64,8 +64,6 @@ const {
   setNotificationIdentityNativeAdapter,
   sha256Hex,
 } = await import("@/runtime/notification-avatar");
-const { useClientFeatureFlagStore } =
-  await import("@/stores/client-feature-flag-store");
 const { resolveNotificationAvatarScope, useNotificationAvatarSync } =
   await import("@/hooks/use-notification-avatar-sync");
 
@@ -225,8 +223,6 @@ describe("useNotificationAvatarSync", () => {
     });
     expect(getNotificationAvatar()).toBeNull();
   });
-
-
 
   test("empties the holder when the hook goes away", async () => {
     const { unmount } = render();
@@ -582,7 +578,6 @@ describe("scoped notification identity preparation", () => {
     });
     expect(getNotificationAvatar()).toBeNull();
   });
-
 
   test("publishes the exact name during startup before avatar data is ready", async () => {
     electronHost = false;
@@ -1051,7 +1046,6 @@ describe("scoped notification identity preparation", () => {
       "Assistant One",
     );
   });
-
 
   test("uses account/org isolation and preserves an explicit platform sender id", async () => {
     const accountScope: NotificationAvatarScope = {

@@ -218,8 +218,6 @@ const {
   getNotificationIdentitySnapshot,
   publishPreparedNotificationIdentity,
 } = await import("@/runtime/notification-avatar");
-const { useClientFeatureFlagStore } =
-  await import("@/stores/client-feature-flag-store");
 
 const setVisibility = (state: "visible" | "hidden") => {
   Object.defineProperty(document, "visibilityState", {
@@ -357,9 +355,9 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
     await postLocalNotification({ ...baseArgs, remotePushDispatched: true });
 
     expect(postSenderNotificationMock).toHaveBeenCalledTimes(1);
-    expect(
-      postSenderNotificationMock.mock.calls[0]?.[0].presentation,
-    ).toBe("app");
+    expect(postSenderNotificationMock.mock.calls[0]?.[0].presentation).toBe(
+      "app",
+    );
     expect(ackArgs).toEqual([
       {
         path: { assistant_id: "assistant-1" },
@@ -648,9 +646,9 @@ describe("postLocalNotification remote-push dedup (native branch)", () => {
         },
       ],
     });
-    expect(
-      postSenderNotificationMock.mock.calls[0]?.[0].actionTypeId,
-    ).toBe(NOTIFICATION_INTENT_ACTION_TYPE_ID);
+    expect(postSenderNotificationMock.mock.calls[0]?.[0].actionTypeId).toBe(
+      NOTIFICATION_INTENT_ACTION_TYPE_ID,
+    );
   });
 
   test("registers the action type even when the banner has no conversation", async () => {
@@ -897,8 +895,6 @@ describe("postLocalNotification scoped presentation policy", () => {
       });
     }
   });
-
-
 });
 
 describe("postLocalNotification local-surface presentation flags", () => {
@@ -960,9 +956,7 @@ describe("postLocalNotification local-surface presentation flags", () => {
     });
 
     expect(postAndroidSenderNotificationMock).toHaveBeenCalledTimes(1);
-    expect(
-      postAndroidSenderNotificationMock.mock.calls[0]?.[0],
-    ).toMatchObject({
+    expect(postAndroidSenderNotificationMock.mock.calls[0]?.[0]).toMatchObject({
       presentation: "assistant",
       identity,
     });

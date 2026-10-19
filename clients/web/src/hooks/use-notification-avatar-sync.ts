@@ -91,7 +91,6 @@ export function useNotificationAvatarSync(
   accentHex: string | null,
   options?: NotificationAvatarSyncOptions,
 ): void {
-  const prepareEnabled = true;
   const legacyEnabled = isElectron() && !isPopoutWindowLifetime();
   const scopeId = options
     ? options.scopeId
@@ -168,7 +167,6 @@ export function useNotificationAvatarSync(
     identityKey,
     assistantName,
     pictureKey,
-    prepareEnabled,
     legacyEnabled,
   ]);
 
@@ -199,7 +197,7 @@ export function useNotificationAvatarSync(
 
   useEffect(() => {
     const previous = currentPublication.current;
-    if (!prepareEnabled || !identity) {
+    if (!identity) {
       currentPublication.current = null;
       lastUpdateKey.current = null;
       inFlightPictureKey.current = null;
@@ -366,7 +364,6 @@ export function useNotificationAvatarSync(
       })
       .catch(giveUp);
   }, [
-    prepareEnabled,
     legacyEnabled,
     identity,
     identityKey,

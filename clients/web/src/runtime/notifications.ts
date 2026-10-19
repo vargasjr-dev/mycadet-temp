@@ -753,16 +753,6 @@ export async function postLocalNotification(
 ): Promise<NotificationSoundDisposition> {
   const electronHost = isElectron();
   const senderResolution = resolveSenderAtIntent(args);
-  console.log(
-    "PROBE postLocalNotification: electron=",
-    electronHost,
-    "native=",
-    isNativePlatform(),
-    "supported=",
-    isNotificationsSupported(),
-    "attended=",
-    browserNotificationDelivery.isConversationAttended(null),
-  );
   const presentationPayload = senderPayload(senderResolution);
   const { sender: _sender, ...tapPresentationPayload } = presentationPayload;
   const browserHost = !electronHost && !isNativePlatform();
