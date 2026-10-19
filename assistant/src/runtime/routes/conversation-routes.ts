@@ -364,7 +364,6 @@ function alignAttachments(
   return { attachments, refIndexToAttachment, rewriteContentOrder: identity };
 }
 
-
 const SUGGESTION_CACHE_MAX = 100;
 const VALID_RISK_THRESHOLDS = ["none", "low", "medium", "high"] as const;
 type RiskThreshold = (typeof VALID_RISK_THRESHOLDS)[number];
