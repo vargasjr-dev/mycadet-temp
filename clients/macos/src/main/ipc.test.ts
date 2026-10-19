@@ -25,8 +25,8 @@ const { handle, on } = await import("./ipc");
 const { resolveAllowedOrigin } = await import("./app-origin");
 
 // The guard derives the allowed origin from the same resolver the
-// production code uses, so the synthetic sender tracks the dev/packaged
-// toggle without hard-coding either origin.
+// production code uses — the constant `app://mycadet.ai` origin — so the
+// synthetic sender always matches.
 const allowedEvent = (): { senderFrame: { origin: string } } => {
   const { protocol, host } = resolveAllowedOrigin();
   return { senderFrame: { origin: `${protocol}//${host}` } };
@@ -38,7 +38,6 @@ beforeEach(() => {
   appState.isPackaged = false;
   handlers.clear();
   listeners.clear();
-  delete process.env.CADET_DEV_URL;
 });
 
 describe("handle (invocable)", () => {

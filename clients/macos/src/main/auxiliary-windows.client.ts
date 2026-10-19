@@ -13,14 +13,12 @@ import {
   track as trackWindowState,
 } from "@mycadet/electron-desktop/window-state";
 
-import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
+import { RENDERER_BASE_PROD } from "./app-config";
 import { handle, on } from "./ipc";
 import { current, dispatchToMain, ensureVisible } from "./main-window";
 import { createWindow } from "./windows";
 
-const resolveRoute = createWindowRouteResolver(() =>
-  app.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
-);
+const resolveRoute = createWindowRouteResolver(() => RENDERER_BASE_PROD);
 
 configureFloatingWindows({
   createWindow,

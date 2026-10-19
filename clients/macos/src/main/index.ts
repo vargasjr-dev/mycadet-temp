@@ -420,13 +420,14 @@ app
       return;
     }
 
-    if (!isDev) {
-      registerAppProtocol();
-      installPairedGatewayRequestGuard({
-        appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
-        resolveAllowedOrigin,
-      });
-    }
+    // Dev packs the renderer dists (see `bun run dev`) and serves them
+    // through the same `app://mycadet.ai` origin as packaged builds, so
+    // the handler and the paired-gateway guard are unconditional.
+    registerAppProtocol();
+    installPairedGatewayRequestGuard({
+      appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
+      resolveAllowedOrigin,
+    });
     registerCadetProtocol(
       path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
     );

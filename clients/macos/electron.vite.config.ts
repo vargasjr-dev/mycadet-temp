@@ -9,9 +9,10 @@ import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/
 // Reference: https://electron-vite.org/config/
 //
 // No renderer config: the MAIN window renders the @mycadet/app standalone
-// bundle (served in dev via http://localhost:3001 and in prod via the custom
-// `app://` protocol; see clients/README.md). The auxiliary
-// windows still render web routes off clients/web's build.
+// bundle over the custom `app://` protocol in every build — `bun run dev`
+// packs the same dists from the source trees and serves them through the
+// same handler (see clients/README.md). The auxiliary windows still render
+// web routes off clients/web's build.
 //
 // Dependencies that must be bundled inline rather than externalized as
 // runtime `require(...)` calls. The cross-client rules (and the sandboxed

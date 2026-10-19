@@ -20,7 +20,7 @@ import { hostFileExecutor } from "@mycadet/electron-desktop/host-proxy/executors
 import { hostTransferExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-transfer-executor";
 import { createHostUiSnapshotExecutor } from "@mycadet/electron-desktop/host-proxy/executors/host-ui-snapshot-executor";
 
-import { getDevRendererBase, RENDERER_BASE_PROD } from "./app-config";
+import { RENDERER_BASE_PROD } from "./app-config";
 import { showCompanionCoachmarks } from "./companion-window";
 import { hostAppControlExecutor } from "./executors/host-app-control-executor";
 import { hostBashExecutor } from "./executors/host-bash-adapter";
@@ -39,8 +39,7 @@ export const installHostProxyBridge = (
 ): (() => void) => {
   const browserExecutor = new HostBrowserExecutor();
   const uiSnapshotExecutor = createHostUiSnapshotExecutor({
-    resolveRendererBase: () =>
-      app.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
+    resolveRendererBase: () => RENDERER_BASE_PROD,
   });
   const runtime: HostProxyRuntime = {
     acquireGuardianToken: async (assistantId) => {

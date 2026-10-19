@@ -73,57 +73,33 @@ the assistant's own releases. Electron updates typically land within hours
 
 - Bun (see `.tool-versions` at the repo root)
 
-That's it — `bun run dev` and `bun run dev:electron-only` both run
-`bun install` for you on first launch (and verify on subsequent runs,
-which is a fast no-op when the lockfile already matches).
+That's it — `bun run dev` runs `bun install` for you on first launch (and
+verifies on subsequent runs, which is a fast no-op when the lockfile
+already matches).
 
 ## How it runs
 
-`bun run dev` is the one command. On launch it probes
-`http://localhost:3000` (the URL Swift Cadet hits — `vel up`'s edge
-proxy) with a 1.5s timeout and picks one of two paths:
+`bun run dev` is the one command, and it needs no dev servers:
 
-1. **vel up is running** → dispatches to `dev:electron-only` with
-   `CADET_DEV_URL=http://localhost:3000/assistant`. No Vite is spawned
-   here; the Electron BrowserWindow loads the edge proxy at the
-   `/assistant` path (the bare root is the marketing site) and reuses
-   vel's backends (Django, gateway, daemon) the same way Swift Cadet
-   does today. This is the common case once you have `vel up` going.
+1. It packs the renderer bundles from the source trees — the
+   `@mycadet/app` standalone build (the main window's app shell) and the
+   `clients/web` build (the auxiliary windows' `/assistant` mount).
+2. It prepares the dev Electron.app (bundle id + notification plist
+   patching; see `scripts/prepare-electron-dev-app.ts`).
+3. It launches `electron-vite dev`, which compiles the main process +
+   preload and starts the app.
 
-2. **No vel up** → dispatches to `dev:standalone`, which uses
-   [`concurrently`](https://github.com/open-cli-tools/concurrently) to
-   run three children in parallel:
-   - `dev:web` → `cd ../web && bun run dev -- --port 5173 --strictPort`.
-     Going through `clients/web`'s own `dev` script means we use _its_
-     local Vite (8.x) and plugin tree, not whatever older Vite happens
-     to live in `clients/macos/node_modules`. Pinning the port via the
-     Vite CLI overrides `clients/web/.env` if `PORT` is set there.
-   - `dev:app` → `cd ../app && VITE_CLOUD_MODE=1 bun run dev -- --port
-     3001 --strictPort` — the app-shell Vite the main window loads.
-   - `dev:electron` → `scripts/wait-for-web.ts` polls `:5173` and
-     `:3001` (180s timeout), then runs `electron-vite dev` against them.
-     The wait avoids Electron racing the renderers. On timeout the
-     script captures stack samples of the Vite processes plus the port
-     state to `/tmp` before exiting — a hung Vite gets un-wedged by the
-     ensuing teardown, so that capture is the only record of where it
-     was stuck.
+The renderer loads the same `app://mycadet.ai` origin packaged builds
+serve. The protocol handler in `src/main/index.ts` registers in dev too
+and reads the freshly built source-tree dists (`clients/app/dist/standalone`
+and `clients/web/dist` — see `resolveAppDistRoot` / `resolveWebDistRoot`),
+so the serving path, the CSP, and the origin guards are the packaged
+behavior. There is no HMR: shell or web-route changes re-run the build on
+the next `bun run dev`.
 
-   `concurrently --kill-others` tears all three down on Ctrl+C or on
-   any child exiting. Logs are prefixed and color-coded (`[web]` blue,
-   `[app]` yellow, `[electron]` green). Standalone mode has no
-   backends, so renderer API calls will fail — useful for shell-only
-   work (menus, IPC, window chrome), not for feature development
-   against the real stack.
-
-The main-process URL choices live in `src/main/app-config.ts`:
-the main window reads `CADET_APP_DEV_URL ??
-"http://localhost:3001"` (the app-shell Vite, root-based bundle), and
-the auxiliary windows read `CADET_DEV_URL ?? "http://localhost:5173/assistant"`.
-`CADET_DEV_URL` is treated as the full URL — callers must include the
-`/assistant` path themselves because `clients/web/vite.config.ts` sets
-`base: "/assistant/"`. Override either env var yourself (e.g.,
-`CADET_APP_DEV_URL=http://localhost:3011 bun run dev:electron-only`)
-if you need to point at a non-default service.
+The environment defaults to `local` (matching the native Swift app):
+`scripts/dev.ts` exports `CADET_ENVIRONMENT=local` unless one is already
+set.
 
 The app shows up as **Cadet Electron** in the menu bar and Dock
 (via `app.setName`, gated to `!app.isPackaged` in `src/main/index.ts`),
@@ -133,10 +109,9 @@ separate from the Swift `Cadet.app`, `Cadet Local.app`, and
 `Cadet Dev.app` installs — running this locally won't clobber
 whichever Swift channel you have around.
 
-- **Dev (vel up)** — Electron loads `http://localhost:3000/assistant` (edge proxy + the path clients/web's Vite is configured for).
-- **Dev (standalone)** — Electron loads `http://localhost:5173/assistant` (our Vite, same path).
-- **Prod** — A custom `app://mycadet.ai/` protocol serves the bundled
-  `web-dist/` files. See [Web content delivery](#web-content-delivery).
+- **Dev & prod** — The renderer loads `app://mycadet.ai`. Dev packs the
+  app + web dists from the source trees; packaged builds ship only the
+  app dist. See [Web content delivery](#web-content-delivery).
 - **Assistant process** — The app does not run or supervise any background
   process of its own. Each local assistant runs its own processes, spawned and
   managed by the `cadet` CLI; the main process only invokes the CLI as a
@@ -333,12 +308,8 @@ plainly.
 ## Scripts
 
 ```sh
-bun run dev                # probe vel-up at :3000, dispatch to dev:electron-only or dev:standalone
-bun run dev:standalone     # explicit: spawn our Vite (:5173) + electron-vite dev (no backends)
-bun run dev:electron-only  # explicit: electron-vite dev only, honors $CADET_DEV_URL (default :5173)
+bun run dev                # pack the app + web dists, then electron-vite dev — the one dev flow (no dev servers)
 bun run install:all        # workspace bun install + Electron setup (called automatically by dev)
-bun run dev:web            # clients/web Vite (port 5173, strict) — invoked by dev:standalone
-bun run dev:electron       # wait for :5173 (hang capture on timeout) then electron-vite dev — invoked by dev:standalone
 bun run build              # electron-vite build — bundles main + preload to out/
 bun run typecheck          # tsc --noEmit
 bun run test               # bun test — single Bun process (fastest for local iteration)

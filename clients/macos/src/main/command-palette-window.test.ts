@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { CommandPaletteWindowDependencies } from "@mycadet/electron-desktop/command-palette-window";
 import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
 
-import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
+import { RENDERER_BASE_PROD } from "./app-config";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -294,9 +294,7 @@ configureFloatingWindows({
   createWindow:
     createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
   platform: "darwin",
-  resolveRoute: createWindowRouteResolver(() =>
-    appState.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
-  ),
+  resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
 configureCommandPaletteWindow({
   currentMainWindow: (() =>
@@ -318,7 +316,6 @@ beforeEach(() => {
   ensureVisibleMock.mockClear();
   dispatchToMainMock.mockClear();
   appState.isPackaged = false;
-  process.env.CADET_DEV_URL = "http://localhost:4242/assistant/";
   activeWorkArea = { x: 1440, y: 100, width: 1600, height: 900 };
   focusedWindow = makeFocusedSource();
   currentMainWindow = null;
@@ -329,7 +326,6 @@ afterEach(() => {
   for (const { win } of created) {
     if (!win.isDestroyed()) win.close();
   }
-  delete process.env.CADET_DEV_URL;
 });
 
 describe("openCommandPaletteWindow", () => {
@@ -359,7 +355,7 @@ describe("openCommandPaletteWindow", () => {
     expect(win.show).toHaveBeenCalledTimes(1);
     expect(win.focus).toHaveBeenCalledTimes(1);
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "http://localhost:4242/assistant/floating/command-palette",
+      "app://mycadet.ai/assistant/floating/command-palette",
     );
 
     openCommandPaletteWindow();

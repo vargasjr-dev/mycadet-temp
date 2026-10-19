@@ -8,7 +8,7 @@ import {
   writeOnboardingActive,
 } from "@mycadet/electron-desktop/window-state";
 
-import { getRendererRootUrl } from "./app-config";
+import { APP_RENDERER_BASE_PROD } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { decideNavigation } from "./auth-nav";
 import { type CadetCommand } from "@mycadet/electron-desktop/commands";
@@ -152,15 +152,13 @@ const installSameOriginNavigationGuard = (win: BrowserWindow): void => {
 };
 
 const createMainWindow = (): BrowserWindow => {
-  // The prod load target is the renderer base itself (no `/index.html`
+  // The load target is the renderer base itself (no `/index.html`
   // suffix). The `app://` protocol handler in `index.ts` falls back
-  // to `index.html` for paths without a file extension, so this
-  // serves the SPA — but with the browser URL staying at `/assistant`,
-  // which is where React Router's app-root route matches. Appending
-  // `/index.html` would land us at the NotFound route under
-  // `/assistant/*`. In dev the URL carries a trailing slash to match
-  // Vite's `base`; see `getRendererRootUrl`.
-  const loadTarget = getRendererRootUrl(app.isPackaged);
+  // to `index.html` for extension-less paths, so this serves the
+  // shell's client routes on reload / deep-link. Dev packs the same
+  // dists (see `bun run dev`) and serves the same origin, so there is
+  // no dev branch.
+  const loadTarget = APP_RENDERER_BASE_PROD;
 
   // Onboarding and the main app share the same sizing: restore the user's
   // saved main-app state, which defaults to maximized (work-area bounds)
