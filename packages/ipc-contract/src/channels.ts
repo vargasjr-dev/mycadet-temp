@@ -129,6 +129,7 @@ export const MENU_POPUP = "cadet:menu:popup";
 // Main window
 export const MAIN_WINDOW_ENSURE_VISIBLE = "cadet:mainWindow:ensureVisible";
 export const MAIN_WINDOW_SET_ONBOARDING = "cadet:mainWindow:setOnboarding";
+export const MAIN_WINDOW_NAVIGATE_TO = "cadet:mainWindow:navigateTo";
 export const MAIN_WINDOW_SET_TITLE_BAR_OVERLAY =
   "cadet:mainWindow:setTitleBarOverlay";
 

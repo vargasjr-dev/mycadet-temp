@@ -3,6 +3,7 @@ import {
   IDENTITY_NAME,
   MAIN_WINDOW_ENSURE_VISIBLE,
   MAIN_WINDOW_SET_ONBOARDING,
+  MAIN_WINDOW_NAVIGATE_TO,
   MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,
   type TitleBarOverlayTheme,
 } from "@mycadet/ipc-contract";
@@ -322,6 +323,7 @@ describe("Windows main window", () => {
     expect(invokeHandlers.has(MAIN_WINDOW_SET_ONBOARDING)).toBe(true);
     expect(eventHandlers.has(IDENTITY_NAME)).toBe(true);
 
+    expect(invokeHandlers.has(MAIN_WINDOW_NAVIGATE_TO)).toBe(true);
     expect(invokeHandlers.has(MAIN_WINDOW_SET_TITLE_BAR_OVERLAY)).toBe(true);
 
     invokeHandlers.get(MAIN_WINDOW_SET_ONBOARDING)?.([true], {

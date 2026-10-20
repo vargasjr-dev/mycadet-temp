@@ -430,6 +430,28 @@ export const installMainWindow = (): void => {
     },
   );
 
+  // The chooser's switch-to-origin: the renderer hands over a remembered
+  // https base and the window loads it itself. `loadURL` does not fire
+  // `will-navigate`, so the same-origin guard above — which ejects
+  // renderer-initiated cross-origin navigations to the system browser —
+  // stays intact for everything but this one deliberate escape.
+  handle(
+    "cadet:mainWindow:navigateTo",
+    z.tuple([z.string()]),
+    async ([url]): Promise<void> => {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return;
+      }
+      if (parsed.protocol !== "https:") {
+        return;
+      }
+      await mainWindow?.loadURL(url);
+    },
+  );
+
   // Keep the (recreatable) main window's title in sync with the assistant
   // name. `createMainWindow` seeds the title on creation; this updates the
   // live window when the renderer publishes a new identity. Reads the
