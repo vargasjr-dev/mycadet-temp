@@ -94,6 +94,7 @@
     "logIn": "登录"
   },
   "selectAssistantScreen": {
+    "listAriaLabel": "助手",
     "create": "创建助手"
   },
   "appShell": {

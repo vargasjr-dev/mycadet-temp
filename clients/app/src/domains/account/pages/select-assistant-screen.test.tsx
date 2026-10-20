@@ -88,9 +88,9 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
     )
     .mockResolvedValueOnce(Response.json(detail));
   const router = setup(undefined, true);
-  expect(await screen.findByRole("button", { name: "One" })).toBeDefined();
+  expect(await screen.findByRole("radio", { name: "One" })).toBeDefined();
   expect(request).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "New Assistant" }));
+  fireEvent.click(screen.getByRole("radio", { name: "New Assistant" }));
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
     "http://localhost:3001/web/1.2.3/assistant/",
@@ -125,12 +125,12 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
     }),
   );
   setup();
-  const withAvatar = await screen.findByRole("button", { name: "One" });
+  const withAvatar = await screen.findByRole("radio", { name: "One" });
   const img = withAvatar.querySelector("img");
   expect(img?.getAttribute("src")).toBe("https://cloud.example/one.png");
   // The chip is decorative: the row's own label names the assistant.
   expect(img?.getAttribute("alt")).toBe("");
-  const bare = screen.getByRole("button", { name: "Two" });
+  const bare = screen.getByRole("radio", { name: "Two" });
   expect(bare.querySelector("img")).toBeNull();
   // A thumbnail that fails to load demotes to the initial for the row.
   if (!(img instanceof HTMLImageElement)) {
@@ -141,12 +141,52 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
   expect(withAvatar.textContent).toContain("O");
 });
 
+test("arrow keys move focus across cards without selecting", async () => {
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [
+        { id: "assistant-1", name: "One" },
+        { id: "assistant-2", name: "Two" },
+      ],
+    }),
+  );
+  const router = setup();
+  const one = await screen.findByRole("radio", { name: "One" });
+  const two = screen.getByRole("radio", { name: "Two" });
+  one.focus();
+  fireEvent.keyDown(one, { key: "ArrowDown" });
+  expect(document.activeElement).toBe(two);
+  // Focus-only: arrowing through the list never navigates into an assistant.
+  expect(router.state.location.pathname).toBe("/account/select-assistant");
+  expect(screen.queryByTitle("Assistant")).toBeNull();
+});
+
+test("Enter selects the focused card", async () => {
+  request
+    .mockResolvedValueOnce(
+      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
+    )
+    // The shell rejects a detail whose id mismatches the selection, so the
+    // queued detail must answer the assistant the card navigated with.
+    .mockResolvedValueOnce(Response.json({ ...detail, id: "assistant-1" }));
+  const router = setup();
+  const one = await screen.findByRole("radio", { name: "One" });
+  fireEvent.keyDown(one, { key: "Enter" });
+  const frame = await screen.findByTitle("Assistant");
+  expect(frame.getAttribute("src")).toBe(
+    "http://localhost:3001/web/1.2.3/assistant/",
+  );
+  expect(router.state.location.state).toEqual(
+    assistantSelectionState("assistant-1"),
+  );
+});
+
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
   request.mockResolvedValueOnce(
     Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
   );
   setup();
-  await screen.findByRole("button", { name: "One" });
+  await screen.findByRole("radio", { name: "One" });
   expect(request).toHaveBeenCalledTimes(1);
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
@@ -160,7 +200,7 @@ test("an empty host list can be refreshed", async () => {
   setup();
   await screen.findByText("No assistant is available.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("button", { name: "One" });
+  await screen.findByRole("radio", { name: "One" });
 });
 
 test("an empty list offers creation and lands in the created assistant", async () => {
@@ -220,7 +260,7 @@ test("a malformed list produces an error and retry can recover", async () => {
   setup();
   await screen.findByText("Unable to load assistant.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("button", { name: "One" });
+  await screen.findByRole("radio", { name: "One" });
 });
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
@@ -242,7 +282,7 @@ test("leaving the chooser aborts its request and ignores a late reply", async ()
   await act(async () => {
     finish(Response.json({ results: [{ id: "assistant-1" }] }));
   });
-  expect(screen.queryByRole("button", { name: "assistant-1" })).toBeNull();
+  expect(screen.queryByRole("radio", { name: "assistant-1" })).toBeNull();
 });
 
 test("browser history restores selection and frame navigation retains it", async () => {

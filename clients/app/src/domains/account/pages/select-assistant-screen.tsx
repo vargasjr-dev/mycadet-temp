@@ -4,6 +4,8 @@ import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { AccountShell } from "@app/components/account/account-shell";
 import { AccountHeading } from "@app/components/account/account-form";
 import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
+import { ChooserCard } from "@app/components/account/chooser-card";
+import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
@@ -30,24 +32,31 @@ export function SelectAssistantScreen() {
   return (
     <AccountShell>
       <AccountHeading title={t("appShell.selection")} />
-      <div className="flex flex-col gap-3">
+      <div
+        role="radiogroup"
+        aria-label={t("selectAssistantScreen.listAriaLabel")}
+        onKeyDown={handleRadioCardArrowNav}
+        className="flex flex-col gap-3"
+      >
         {state.status === "selection" &&
-          state.assistants.map((assistant) => (
-            <Button
+          state.assistants.map((assistant, index) => (
+            <ChooserCard
               key={assistant.id}
-              variant="outlined"
-              onClick={() => {
+              icon={
+                <ChooserAvatarChip
+                  avatarUrl={assistant.avatar_url}
+                  name={assistant.name}
+                  size={48}
+                />
+              }
+              title={assistant.name}
+              tabStop={index === 0}
+              onSelect={() => {
                 void navigate(routes.assistant, {
                   state: assistantSelectionState(assistant.id),
                 });
               }}
-            >
-              <ChooserAvatarChip
-                avatarUrl={assistant.avatar_url}
-                name={assistant.name}
-              />
-              {assistant.name}
-            </Button>
+            />
           ))}
         {status !== "selection" && (
           <p role="status">{t(`appShell.${status}`)}</p>

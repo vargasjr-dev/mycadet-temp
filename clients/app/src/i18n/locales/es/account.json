@@ -94,6 +94,7 @@
     "logIn": "Iniciar sesión"
   },
   "selectAssistantScreen": {
+    "listAriaLabel": "Asistentes",
     "create": "Crear un asistente"
   },
   "appShell": {

@@ -94,6 +94,7 @@
     "logIn": "Войти"
   },
   "selectAssistantScreen": {
+    "listAriaLabel": "Ассистенты",
     "create": "Создать ассистента"
   },
   "appShell": {
