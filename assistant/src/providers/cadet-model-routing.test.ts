@@ -41,7 +41,14 @@ describe("cadet-model-routing", () => {
 
   test("getCloudUpstream resolves a bare catalog id to its owner", () => {
     expect(getCloudUpstream("claude-fable-5")).toBe("anthropic");
-    expect(getCloudUpstream("qwen/qwen3-8b")).toBe("cadet");
+    // The cadet catalog's model id is fireworks-shaped, so the shared id
+    // resolves to its first catalog owner and the cadet prefix pins cadet.
+    expect(getCloudUpstream("accounts/fireworks/models/glm-5p3-flash")).toBe(
+      "fireworks",
+    );
+    expect(getCloudUpstream("cadet/accounts/fireworks/models/glm-5p3-flash")).toBe(
+      "cadet",
+    );
   });
 
   test("getCloudUpstream resolves a routing string by its prefix", () => {
