@@ -13,7 +13,7 @@ import {
   isStagingVersion,
 } from "../lib/version-compat.js";
 
-import { CADET_GITHUB_REPOSITORY } from "../lib/github-repository.js";
+import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 
 const originalFetch = globalThis.fetch;
 

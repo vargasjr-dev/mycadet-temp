@@ -16,7 +16,7 @@ export type ResolvedAssistantLifecycleState =
  * synthesized 502 body when `net.fetch` itself failed (the request
  * never reached the cloud — e.g. `net::ERR_NETWORK_CHANGED` while
  * Wi-Fi reassociates after sleep). Mirrors `PROXY_NETWORK_ERROR_CODE`
- * in `clients/macos/src/main/platform-forward.ts`; the two must stay in
+ * in `packages/electron-desktop/src/cloud-forward.ts`; the two must stay in
  * sync, but there is no shared package between the renderer and the
  * Electron main bundle to host the constant.
  */

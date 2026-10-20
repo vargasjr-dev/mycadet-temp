@@ -18,9 +18,10 @@ import { GitHubLogo } from "@/components/icons/github-logo";
 import { XLogo } from "@/components/icons/x-logo";
 import { YouTubeLogo } from "@/components/icons/youtube-logo";
 import { joinDiscord } from "@/hooks/use-discord-nudge";
-import { GITHUB_REPO_URL, useGitHubNudgeState } from "@/hooks/use-github-nudge";
+import { useGitHubNudgeState } from "@/hooks/use-github-nudge";
 import { useTranslation } from "@/i18n";
 import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
 import { Button } from "@mycadet/design-library/components/button";
 import { Card } from "@mycadet/design-library/components/card";
 import { Tag } from "@mycadet/design-library/components/tag";
@@ -250,7 +251,7 @@ export function CommunityPage() {
           }}
           secondaryAction={{
             label: t("communityPage.viewSource"),
-            href: GITHUB_REPO_URL,
+            href: CADET_GITHUB_REPOSITORY_URL,
           }}
         />
 

@@ -13,13 +13,12 @@ import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   forwardGatewayRequest,
   forwardPairedGatewayRequest,
-  type GatewayForwardFetcher,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { getPairedGuardianAccessToken } from "@mycadet/electron-desktop/local-mode";
 import { getWatchedLockfileSnapshot } from "@mycadet/electron-desktop/lockfile-watcher";
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import { forwardPlatformRequest } from "@mycadet/electron-desktop/platform-forward";
+import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
@@ -165,7 +164,7 @@ const registerAppProtocol = (): void => {
     const proxied = await forwardGatewayRequest(
       request,
       getAllowedGatewayPorts,
-      gatewayForwardFetcher,
+      net.fetch,
     );
     if (proxied) {
       return proxied;
@@ -179,30 +178,23 @@ const registerAppProtocol = (): void => {
       request,
       getPairedGatewayTargets,
       getPairedGuardianAccessToken,
-      gatewayForwardFetcher,
+      net.fetch,
     );
     if (pairedProxied) {
       return pairedProxied;
     }
 
     // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the
-    // cloud platform so managed mode and desktop replay ingest work.
-    const platformProxied = await forwardPlatformRequest(
+    // cloud so managed mode and desktop replay ingest work.
+    const cloudProxied = await forwardCloudRequest({
       request,
-      { cloudBase: resolvedConfig.cloudUrl },
-      {
-        allowedOrigin: resolveAllowedOrigin(),
-        fetcher: gatewayForwardFetcher,
-        onError: (error, attempt, target) => {
-          log.error(
-            `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
-            error,
-          );
-        },
-      },
-    );
-    if (platformProxied) {
-      return platformProxied;
+      cloudBase: resolvedConfig.cloudUrl,
+      fetcher: net.fetch,
+      allowedOrigin: resolveAllowedOrigin(),
+      log: log.error,
+    });
+    if (cloudProxied) {
+      return cloudProxied;
     }
 
     const asset = await planAppProtocolAssetRequest({
@@ -229,9 +221,6 @@ handleSync("cadet:config:get", () => ({
   cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
 }));
-
-const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
-  net.fetch(url, init);
 
 // ---------------------------------------------------------------------------
 // App lifecycle

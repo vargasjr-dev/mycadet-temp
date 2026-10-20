@@ -10,7 +10,7 @@ import {
 import {
   PROXY_ERROR_HEADER,
   PROXY_NETWORK_ERROR_CODE,
-} from "./platform-forward";
+} from "./cloud-forward";
 
 const allow =
   (...ports: number[]) =>

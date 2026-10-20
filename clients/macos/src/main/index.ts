@@ -10,11 +10,10 @@ import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-ove
 import {
   forwardGatewayRequest,
   forwardPairedGatewayRequest,
-  type GatewayForwardFetcher,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
-import { forwardPlatformRequest } from "@mycadet/electron-desktop/platform-forward";
+import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
@@ -327,7 +326,7 @@ const registerAppProtocol = (): void => {
     const proxied = await forwardGatewayRequest(
       request,
       getAllowedGatewayPorts,
-      gatewayForwardFetcher,
+      net.fetch,
     );
     if (proxied) return proxied;
 
@@ -340,30 +339,24 @@ const registerAppProtocol = (): void => {
       request,
       getPairedGatewayTargets,
       getPairedGuardianAccessToken,
-      gatewayForwardFetcher,
+      net.fetch,
     );
     if (pairedProxied) {
       return pairedProxied;
     }
 
-    // Platform API and authentication routes forward through the shared
-    // platform forward: the login surfaces ride the cloud, same-origin
+    // Cloud API and authentication routes forward through the shared
+    // cloud forward: the login surfaces ride the cloud, same-origin
     // `/v1/*` rides the active local assistant's gateway.
-    const platformProxied = await forwardPlatformRequest(
+    const cloudProxied = await forwardCloudRequest({
       request,
-      { cloudBase: cloudUrl, gatewayBase: getActiveGatewayBase() },
-      {
-        allowedOrigin: resolveAllowedOrigin(),
-        fetcher: gatewayForwardFetcher,
-        onError: (err, attempt, target) => {
-          console.error(
-            `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
-            err,
-          );
-        },
-      },
-    );
-    if (platformProxied) return platformProxied;
+      cloudBase: cloudUrl,
+      gatewayBase: getActiveGatewayBase(),
+      fetcher: net.fetch,
+      allowedOrigin: resolveAllowedOrigin(),
+      log: console.error,
+    });
+    if (cloudProxied) return cloudProxied;
 
     // The `/assistant` mount serves the web bundle (auxiliary windows and
     // the local-assistant iframe); every other path is the app shell.
@@ -384,9 +377,6 @@ const registerAppProtocol = (): void => {
     return new Response("Not Found", { status: 404 });
   });
 };
-
-const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
-  net.fetch(url, init);
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
@@ -457,12 +447,7 @@ app
           log.error("[app] startup CLI provisioning failed:", err);
         });
     }
-    // `setLoginItemSettings` fails in dev ("Operation not permitted" — the
-    // unpacked binary can't register as a login item); only packaged builds
-    // register at boot.
-    if (app.isPackaged) {
-      installLoginItem();
-    }
+    installLoginItem();
     installLoginItemIpc();
     installHotkeyHelper();
     installCompanionPermissionGuide(installPermissionsService());

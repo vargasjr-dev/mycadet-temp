@@ -67,7 +67,7 @@
     "./notifications": "./src/notifications.ts",
     "./paired-gateway-request-guard": "./src/paired-gateway-request-guard.ts",
     "./permissions": "./src/permissions.ts",
-    "./platform-forward": "./src/platform-forward.ts",
+    "./cloud-forward": "./src/cloud-forward.ts",
     "./popout-window": "./src/popout-window.ts",
     "./power-events": "./src/power-events.ts",
     "./preload": "./src/preload.ts",

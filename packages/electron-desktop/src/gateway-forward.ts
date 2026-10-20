@@ -9,7 +9,7 @@ import {
 import {
   fetchForwardPlanWithRetry,
   type ForwardFetchRetryOptions,
-} from "./platform-forward";
+} from "./cloud-forward";
 
 /**
  * Planning and execution for the gateway data-plane proxies: the loopback

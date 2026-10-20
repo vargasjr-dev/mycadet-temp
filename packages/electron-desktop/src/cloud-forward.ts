@@ -1,56 +1,58 @@
 /**
  * The desktop protocol handler's cloud-API proxy: `/v1/*`, `/_allauth/*`,
- * and `/accounts/*` requests forward through one `forwardPlatformRequest`
- * call. The platform's login surfaces (`/_allauth`, `/accounts`) always
+ * and `/accounts/*` requests forward through one `forwardCloudRequest`
+ * call. The cloud's login surfaces (`/_allauth`, `/accounts`) always
  * ride the cloud, while same-origin `/v1/*` rides the active local
  * assistant's gateway when one is set — the same contract the CLI edge
  * implements by proxying `/v1` there — and the cloud otherwise. Unsafe
  * requests forward only when their browser-controlled `Origin` or
  * `Referer` matches the trusted renderer origin. The `fetcher` is the
- * caller's `net.fetch` — the process boundary tests mock.
+ * caller's `net.fetch` — the process-boundary seam tests record (bun
+ * cannot import Electron's API at module scope, so the module itself
+ * stays Electron-free).
  */
 
-export interface PlatformForwardRequest {
+export interface CloudForwardRequest {
   url: string;
   method: string;
   headers: Headers;
   body?: Request["body"];
 }
 
-export interface PlatformForwardAllowedOrigin {
+export interface CloudForwardAllowedOrigin {
   protocol: string;
   host: string;
 }
 
-export interface PlatformForwardTargets {
-  /** Login surfaces (`/_allauth`, `/accounts`) always forward here. */
-  cloudBase: string;
-  /** Same-origin `/v1/*` forwards here when set, the cloud otherwise. */
-  gatewayBase?: string;
-}
-
 /** Injectable stand-in for Electron's `net.fetch`. */
-export type PlatformForwardFetcher = (
+export type CloudForwardFetcher = (
   url: string,
   init: RequestInit & { duplex?: "half" },
 ) => Promise<Response>;
 
-export interface ForwardPlatformRequestOptions {
-  allowedOrigin?: PlatformForwardAllowedOrigin;
-  fetcher: PlatformForwardFetcher;
+export interface ForwardCloudRequestArgs {
+  /** The renderer request received by the protocol handler. */
+  request: CloudForwardRequest;
+  /** Login surfaces (`/_allauth`, `/accounts`) always forward here. */
+  cloudBase: string;
+  /** Same-origin `/v1/*` forwards here when set, the cloud otherwise. */
+  gatewayBase?: string;
+  allowedOrigin?: CloudForwardAllowedOrigin;
+  /** The caller's `net.fetch`; tests inject a recorder. */
+  fetcher: CloudForwardFetcher;
   /** Extra attempts after the first failure. */
   retries?: number;
   retryDelayMs?: number;
-  /** Per-failure observer (logging); receives every rejected attempt. */
-  onError?: (err: unknown, attempt: number, target: string) => void;
+  /** Receives one line per failed attempt; the module owns the wording. */
+  log?: (message: string, error?: unknown) => void;
 }
 
 const AUTH_PREFIXES = ["/_allauth", "/accounts"] as const;
-const PLATFORM_PREFIXES = ["/v1", ...AUTH_PREFIXES] as const;
+const CLOUD_PREFIXES = ["/v1", ...AUTH_PREFIXES] as const;
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
-function isPlatformPath(pathname: string): boolean {
-  return PLATFORM_PREFIXES.some(
+function isCloudPath(pathname: string): boolean {
+  return CLOUD_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -63,7 +65,7 @@ function isAuthPath(pathname: string): boolean {
 
 function isAllowedSource(
   value: string | null,
-  allowed: PlatformForwardAllowedOrigin,
+  allowed: CloudForwardAllowedOrigin,
 ): boolean {
   if (!value) return false;
   try {
@@ -78,7 +80,7 @@ function isUnsafeMethod(method: string): boolean {
   return !["GET", "HEAD", "OPTIONS"].includes(method.toUpperCase());
 }
 
-function expectedRendererOrigin(allowed: PlatformForwardAllowedOrigin): string {
+function expectedRendererOrigin(allowed: CloudForwardAllowedOrigin): string {
   return `${allowed.protocol}//${allowed.host}`;
 }
 
@@ -99,7 +101,7 @@ function expectedRendererOrigin(allowed: PlatformForwardAllowedOrigin): string {
 function hasTrustedSourceLessRendererSignal(
   requestUrl: URL,
   headers: Headers,
-  allowed: PlatformForwardAllowedOrigin,
+  allowed: CloudForwardAllowedOrigin,
 ): boolean {
   if (
     requestUrl.protocol !== allowed.protocol ||
@@ -121,7 +123,7 @@ function hasTrustedSourceLessRendererSignal(
 function getInitiatorTrust(
   requestUrl: URL,
   headers: Headers,
-  allowed?: PlatformForwardAllowedOrigin,
+  allowed?: CloudForwardAllowedOrigin,
 ): { trusted: boolean; rejected: boolean } {
   if (!allowed) return { trusted: false, rejected: false };
 
@@ -143,7 +145,7 @@ function getInitiatorTrust(
   return { trusted, rejected: !trusted };
 }
 
-type PlatformForwardPlan =
+type CloudForwardPlan =
   | { kind: "pass" }
   | { kind: "reject"; status: number; message: string }
   | {
@@ -165,13 +167,13 @@ type PlatformForwardPlan =
  * matches the trusted renderer origin. All other headers pass through
  * unchanged.
  */
-function planPlatformForward(
-  request: PlatformForwardRequest,
-  targets: PlatformForwardTargets,
-  allowedOrigin?: PlatformForwardAllowedOrigin,
-): PlatformForwardPlan {
+function planCloudForward(
+  request: CloudForwardRequest,
+  targets: Pick<ForwardCloudRequestArgs, "cloudBase" | "gatewayBase">,
+  allowedOrigin?: CloudForwardAllowedOrigin,
+): CloudForwardPlan {
   const url = new URL(request.url);
-  if (!isPlatformPath(url.pathname)) {
+  if (!isCloudPath(url.pathname)) {
     return { kind: "pass" };
   }
 
@@ -206,7 +208,7 @@ function planPlatformForward(
 /**
  * Error code carried in the JSON body of a proxy-synthesized 502 so the
  * renderer can tell "the proxy's own `net.fetch` failed" apart from a real
- * platform answer. Mirrors `PROXY_NETWORK_ERROR_CODE` in
+ * cloud answer. Mirrors `PROXY_NETWORK_ERROR_CODE` in
  * `clients/web/src/assistant/lifecycle.ts`; the two must stay in sync, but
  * there is no shared package between the renderer and the Electron main
  * bundle to host the constant.
@@ -308,18 +310,20 @@ export async function fetchForwardPlanWithRetry(
 }
 
 /**
- * Forward a platform-path renderer request to its resolved target, or
- * return `null` for non-platform paths (the protocol handler falls
+ * Forward a cloud-path renderer request to its resolved target, or
+ * return `null` for non-cloud paths (the protocol handler falls
  * through to static serving). The fetch runs through the injected
- * `fetcher` — `net.fetch` in main, a fake in tests — so the renderer
- * stays same-origin.
+ * `fetcher` — `net.fetch` in main, a recorder in tests — so the
+ * renderer stays same-origin.
  */
-export async function forwardPlatformRequest(
-  request: PlatformForwardRequest,
-  targets: PlatformForwardTargets,
-  options: ForwardPlatformRequestOptions,
+export async function forwardCloudRequest(
+  args: ForwardCloudRequestArgs,
 ): Promise<Response | null> {
-  const plan = planPlatformForward(request, targets, options.allowedOrigin);
+  const plan = planCloudForward(
+    args.request,
+    args,
+    args.allowedOrigin,
+  );
   switch (plan.kind) {
     case "pass":
       return null;
@@ -329,19 +333,22 @@ export async function forwardPlatformRequest(
       return fetchForwardPlanWithRetry(
         plan,
         () =>
-          options.fetcher(plan.url, {
+          args.fetcher(plan.url, {
             method: plan.method,
             headers: plan.headers,
-            body: plan.hasBody ? request.body : undefined,
+            body: plan.hasBody ? args.request.body : undefined,
             ...(plan.hasBody ? { duplex: "half" as const } : {}),
             redirect: "manual",
             credentials: "omit",
           }),
         {
-          retries: options.retries,
-          retryDelayMs: options.retryDelayMs,
+          retries: args.retries,
+          retryDelayMs: args.retryDelayMs,
           onError: (err, attempt) =>
-            options.onError?.(err, attempt, `${plan.method} ${plan.url}`),
+            args.log?.(
+              `[cloud-forward] fetch failed (attempt ${attempt + 1}) for ${plan.method} ${plan.url}:`,
+              err,
+            ),
         },
       );
   }
