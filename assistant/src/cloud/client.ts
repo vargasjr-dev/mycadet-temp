@@ -17,7 +17,7 @@ const log = getLogger("cloud-client");
 
 let _missingPrereqsWarned = false;
 
- interface CloudClientConfig {
+interface CloudClientConfig {
   baseUrl: string;
   apiKey: string;
   assistantId: string;
@@ -218,7 +218,7 @@ export class CadetCloudClient {
     return fetch(url, { ...init, headers });
   }
 
-   /**
+  /**
    * Ask the cloud whether this client's assistant API key still
    * authenticates.
    *

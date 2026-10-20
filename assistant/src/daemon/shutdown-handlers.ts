@@ -92,7 +92,6 @@ async function shutdown(): Promise<void> {
 
   await stopHeartbeatService();
 
-
   // Fire plugin / user / workspace / skill `shutdown` hooks through the unified
   // hook pipeline — the same dispatch path every other lifecycle hook uses —
   // before stopping the server so any teardown work still has live transports.
