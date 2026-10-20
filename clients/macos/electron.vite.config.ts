@@ -67,17 +67,20 @@ const LOCAL_CLI_ENTRY =
     : "";
 
 // The version the About panel + injected config report for local builds:
-// the repo CLI's display version — the exact string `cadet-local --version`
+// the repo CLI's version — locally the exact string `cadet-local --version`
 // prints (`<base>-local.<stamp>.<sha>`, see cli/src/lib/local-version.ts).
-// Release builds bake "" and fall back to the packaged app version the
-// release pipeline stamps.
+// Release builds bake the plain version: the release train bumps
+// cli/package.json but never this shell's manifest, so the app.getVersion()
+// fallback would read a placeholder forever.
 const resolveCliDisplayVersion = (): string => {
-  if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return "";
   try {
     const pkg = JSON.parse(
       readFileSync(path.resolve(__dirname, "../../cli/package.json"), "utf8"),
     ) as { version?: string };
     if (!pkg.version) return "";
+    if ((process.env.CADET_ENVIRONMENT || "local") !== "local") {
+      return pkg.version;
+    }
     return displayVersion(pkg.version);
   } catch {
     return "";

@@ -7,8 +7,8 @@ import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
 import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { Button } from "@mycadet/design-library/components/button";
+import { CloudOff } from "lucide-react";
 import { useTranslation } from "@app/i18n";
-import { readInjectedConfig } from "@app/lib/injected-config";
 import { useAssistantRequest } from "@app/assistant/use-assistant-request";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
@@ -28,11 +28,9 @@ function assistantSubtitle(created: string | null | undefined): string {
 
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
-  const config = readInjectedConfig();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const { state, retry } = useAssistantRequest({
-    apiBaseUrl: config?.cloudUrl,
     origin: window.location.origin,
     listOnly: true,
   });
@@ -72,7 +70,20 @@ export function SelectAssistantScreen() {
               }}
             />
           ))}
-        {status !== "selection" && (
+        {status === "error" && (
+          <ChooserCard
+            icon={
+              <CloudOff
+                size={22}
+                aria-hidden="true"
+                className="text-[var(--content-tertiary)]"
+              />
+            }
+            title={t("appShell.error")}
+            disabled
+          />
+        )}
+        {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
         )}
         {status === "unauthenticated" && (
@@ -83,7 +94,7 @@ export function SelectAssistantScreen() {
             {t("selectAssistantScreen.create")}
           </Button>
         )}
-        {(status === "error" || status === "empty") && (
+        {status === "empty" && (
           <Button variant="outlined" onClick={retry}>
             {t("appShell.retry")}
           </Button>

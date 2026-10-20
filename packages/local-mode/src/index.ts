@@ -50,6 +50,8 @@ export {
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
+  readLockfileBearerToken,
+  readLockfileCloudBaseUrl,
 } from "./lockfile";
 export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";

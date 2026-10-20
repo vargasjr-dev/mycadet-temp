@@ -10,7 +10,9 @@ interface ChooserCardProps {
   selected?: boolean;
   /** The radiogroup's single roving tab stop lands on this card. */
   tabStop?: boolean;
-  onSelect: () => void;
+  /** Degraded arm: renders inert — no focus, no hover, no selection. */
+  disabled?: boolean;
+  onSelect?: () => void;
 }
 
 /**
@@ -30,28 +32,35 @@ export function ChooserCard({
   subtitle,
   selected = false,
   tabStop = false,
+  disabled = false,
   onSelect,
 }: ChooserCardProps) {
   const select = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      onSelect();
+      onSelect?.();
     }
   };
   return (
     <div
       role="radio"
       aria-checked={selected}
-      tabIndex={tabStop ? 0 : -1}
-      onClick={onSelect}
+      aria-disabled={disabled || undefined}
+      tabIndex={disabled ? -1 : tabStop ? 0 : -1}
+      onClick={disabled ? undefined : () => onSelect?.()}
       onKeyDown={select}
       className={[
-        "group flex w-full cursor-pointer items-center gap-4 rounded-2xl border px-[18px] py-4 text-left",
-        "transition-all duration-200 ease-out",
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary-base)]",
-        selected
-          ? "border-[var(--primary-base)] bg-[var(--surface-lift)]"
-          : "border-[var(--border-base)] bg-[var(--surface-lift)]/60 hover:border-[var(--border-element)] hover:bg-[var(--surface-lift)]",
+        "group flex w-full items-center gap-4 rounded-2xl border px-[18px] py-4 text-left",
+        disabled
+          ? "cursor-default border-[var(--border-base)] bg-[var(--surface-lift)]/40 opacity-60"
+          : [
+              "cursor-pointer transition-all duration-200 ease-out",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary-base)]",
+              selected
+                ? "border-[var(--primary-base)] bg-[var(--surface-lift)]"
+                : "border-[var(--border-base)] bg-[var(--surface-lift)]/60 hover:border-[var(--border-element)] hover:bg-[var(--surface-lift)]",
+            ].join(" "),
       ].join(" ")}
     >
       <div

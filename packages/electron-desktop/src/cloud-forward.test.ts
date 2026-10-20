@@ -428,20 +428,100 @@ describe("forwardCloudRequest", () => {
 
   test("reports failed attempts through log with module-owned wording", async () => {
     const { fetcher } = recorder();
-    const lines: string[] = [];
+    const errors: string[] = [];
     await forwardCloudRequest({
       request: request("/v1/assistants"),
       cloudBase: PLATFORM,
       fetcher: () => Promise.reject(new Error("boom")),
-      log: (message, error) => {
-        lines.push(`${message} ${String(error)}`);
-      },
+      log: { error: (...args) => errors.push(args.join(" ")) },
     });
-    expect(lines).toHaveLength(1);
-    expect(lines[0]).toContain("[cloud-forward] fetch failed (attempt 1)");
-    expect(lines[0]).toContain("GET https://cloud.mycadet.ai/v1/assistants");
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("[cloud-forward] fetch failed (attempt 1)");
+    expect(errors[0]).toContain("GET https://cloud.mycadet.ai/v1/assistants");
+  });
+
+  test("transient net failures log as warnings, the rest as errors", async () => {
+    const { fetcher } = recorder();
+    const levels: string[] = [];
+    const logger = {
+      error: () => levels.push("error"),
+      warning: () => levels.push("warning"),
+    };
+    await forwardCloudRequest({
+      request: request("/v1/assistants"),
+      cloudBase: PLATFORM,
+      // Single attempt: the level-selection is the pin, not the retry count.
+      retries: 0,
+      fetcher: () => Promise.reject(new Error("net::ERR_NETWORK_CHANGED")),
+      log: logger,
+    });
+    await forwardCloudRequest({
+      request: request("/v1/assistants"),
+      cloudBase: PLATFORM,
+      fetcher: () => Promise.reject(new Error("boom")),
+      log: logger,
+    });
+    expect(levels).toEqual(["warning", "error"]);
+  });
+
+  test("a warning-less logger logs transient failures as errors", async () => {
+    const { fetcher } = recorder();
+    const levels: string[] = [];
+    await forwardCloudRequest({
+      request: request("/v1/assistants"),
+      cloudBase: PLATFORM,
+      retries: 0,
+      fetcher: () => Promise.reject(new Error("net::ERR_NETWORK_CHANGED")),
+      log: { error: () => levels.push("error") },
+    });
+    expect(levels).toEqual(["error"]);
   });
 });
+
+  test("gateway-bound forwards carry the injected bearer, stripping any inbound one", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardCloudRequest({
+      request: request("/v1/assistants", {
+        headers: { authorization: "Bearer stale-renderer-token" },
+      }),
+      cloudBase: PLATFORM,
+      gatewayBase: GATEWAY,
+      gatewayBearer: "guardian-token",
+      fetcher,
+    });
+    expect(calls[0]?.url).toBe(`${GATEWAY}/v1/assistants`);
+    expect(header(calls[0]?.init, "authorization")).toBe("Bearer guardian-token");
+  });
+
+  test("auth paths ride the cloud and never carry the gateway bearer", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardCloudRequest({
+      request: request("/_allauth/browser/v1/auth/session"),
+      cloudBase: PLATFORM,
+      gatewayBase: GATEWAY,
+      gatewayBearer: "guardian-token",
+      fetcher,
+    });
+    expect(calls[0]?.url).toBe(
+      `${PLATFORM}/_allauth/browser/v1/auth/session`,
+    );
+    expect(header(calls[0]?.init, "authorization")).toBeNull();
+  });
+
+  test("gateway forwards without a bearer keep the inbound headers", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardCloudRequest({
+      request: request("/v1/assistants", {
+        headers: { authorization: "Bearer renderer-supplied" },
+      }),
+      cloudBase: PLATFORM,
+      gatewayBase: GATEWAY,
+      fetcher,
+    });
+    expect(header(calls[0]?.init, "authorization")).toBe(
+      "Bearer renderer-supplied",
+    );
+  });
 
 // ---------------------------------------------------------------------------
 // Transient-failure retry + structured proxy error (LUM-2402)

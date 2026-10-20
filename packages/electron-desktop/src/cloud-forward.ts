@@ -4,9 +4,12 @@
  * call. The cloud's login surfaces (`/_allauth`, `/accounts`) always
  * ride the cloud, while same-origin `/v1/*` rides the active local
  * assistant's gateway when one is set — the same contract the CLI edge
- * implements by proxying `/v1` there — and the cloud otherwise. Unsafe
- * requests forward only when their browser-controlled `Origin` or
- * `Referer` matches the trusted renderer origin. The `fetcher` is the
+ * implements by proxying `/v1` there — and the cloud otherwise. Gateway
+ * destinations get the caller's guardian bearer injected server-side
+ * (`gatewayBearer`): the gateway's edge auth demands it and the renderer
+ * never sees the token. Unsafe requests forward only when their
+ * browser-controlled `Origin` or `Referer` matches the trusted renderer
+ * origin. The `fetcher` is the
  * caller's `net.fetch` — the process-boundary seam tests record (bun
  * cannot import Electron's API at module scope, so the module itself
  * stays Electron-free).
@@ -37,14 +40,31 @@ export interface ForwardCloudRequestArgs {
   cloudBase: string;
   /** Same-origin `/v1/*` forwards here when set, the cloud otherwise. */
   gatewayBase?: string;
+  /**
+   * Guardian bearer stamped onto gateway-bound forwards — the paired arm's
+   * `getPairedGuardianAccessToken` equivalent for the local assistant's
+   * gateway, whose edge auth demands the bearer. Any inbound
+   * `Authorization` is replaced; the token never reaches the renderer.
+   */
+  gatewayBearer?: string;
   allowedOrigin?: CloudForwardAllowedOrigin;
   /** The caller's `net.fetch`; tests inject a recorder. */
   fetcher: CloudForwardFetcher;
   /** Extra attempts after the first failure. */
   retries?: number;
   retryDelayMs?: number;
-  /** Receives one line per failed attempt; the module owns the wording. */
-  log?: (message: string, error?: unknown) => void;
+  /**
+   * Receives one line per failed attempt; the module owns the wording AND
+   * the level — transient net errors (likely self-healing) log as
+   * warnings, everything else as errors.
+   */
+  log?: CloudForwardLogger;
+}
+
+export interface CloudForwardLogger {
+  error: (...args: unknown[]) => void;
+  /** Absent loggers fall back to `error` for the transient arm. */
+  warning?: (...args: unknown[]) => void;
 }
 
 const AUTH_PREFIXES = ["/_allauth", "/accounts"] as const;
@@ -169,7 +189,10 @@ type CloudForwardPlan =
  */
 function planCloudForward(
   request: CloudForwardRequest,
-  targets: Pick<ForwardCloudRequestArgs, "cloudBase" | "gatewayBase">,
+  targets: Pick<
+    ForwardCloudRequestArgs,
+    "cloudBase" | "gatewayBase" | "gatewayBearer"
+  >,
   allowedOrigin?: CloudForwardAllowedOrigin,
 ): CloudForwardPlan {
   const url = new URL(request.url);
@@ -188,13 +211,18 @@ function planCloudForward(
     };
   }
 
-  const base = isAuthPath(url.pathname)
+  const authPath = isAuthPath(url.pathname);
+  const base = authPath
     ? targets.cloudBase
     : (targets.gatewayBase ?? targets.cloudBase);
   const target = new URL(base);
   const headers = new Headers(request.headers);
   headers.delete(ELECTRON_RENDERER_ORIGIN_HEADER);
   headers.set("origin", target.origin);
+  if (!authPath && targets.gatewayBase && targets.gatewayBearer) {
+    headers.delete("authorization");
+    headers.set("authorization", `Bearer ${targets.gatewayBearer}`);
+  }
 
   return {
     kind: "forward",
@@ -344,11 +372,14 @@ export async function forwardCloudRequest(
         {
           retries: args.retries,
           retryDelayMs: args.retryDelayMs,
-          onError: (err, attempt) =>
-            args.log?.(
-              `[cloud-forward] fetch failed (attempt ${attempt + 1}) for ${plan.method} ${plan.url}:`,
-              err,
-            ),
+          onError: (err, attempt) => {
+            const line = `[cloud-forward] fetch failed (attempt ${attempt + 1}) for ${plan.method} ${plan.url}:`;
+            if (isTransientNetworkError(err) && args.log?.warning) {
+              args.log.warning(line, err);
+            } else {
+              args.log?.error(line, err);
+            }
+          },
         },
       );
   }

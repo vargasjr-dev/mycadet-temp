@@ -98,14 +98,14 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
-  // The account picker lists from the cloud base; the shell resolves the
-  // chosen assistant from its own origin, which routes /v1 to the gateway.
+  // Every chooser fetch is same-origin: the serving layer (desktop
+  // forward, edge proxy, cloud takeover) routes /v1 and owns credentials.
   expect(
     request.mock.calls
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/")),
   ).toEqual([
-    "https://host.example/admin/proxy/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
@@ -261,7 +261,7 @@ test("an empty list offers creation and lands in the created assistant", async (
       // the platform session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "https://host.example/admin/proxy/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "/v1/organizations/?limit=100&offset=0",
     "/v1/assistants/hatch/?mode=create",
     "http://localhost:3001/v1/assistants/assistant-2/",
@@ -276,16 +276,18 @@ test("401 displays sign-in without running Web account or onboarding probes", as
   expect(request).toHaveBeenCalledTimes(1);
 });
 
-test("a malformed list produces an error and retry can recover", async () => {
-  request
-    .mockResolvedValueOnce(Response.json({ results: [{ name: "Missing ID" }] }))
-    .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
-    );
+test("a failed list renders a degraded disabled row instead of retry", async () => {
+  request.mockResolvedValueOnce(
+    Response.json({ results: [{ name: "Missing ID" }] }),
+  );
   setup();
-  await screen.findByText("Unable to load assistant.");
-  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("radio", { name: /^One/ });
+  const row = await screen.findByRole("radio", {
+    name: "Unable to load assistant.",
+  });
+  expect(row.getAttribute("aria-disabled")).toBe("true");
+  expect(row.getAttribute("tabindex")).toBe("-1");
+  // No retry affordance: the row is inert, a reload re-resolves.
+  expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 });
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
