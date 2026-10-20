@@ -47,7 +47,6 @@ import {
   getSelectedAssistant,
   isLocalClient,
   isCadetCloudRemote,
-  isCloudDisabled,
   isServedGatewayRuntime,
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
@@ -1295,17 +1294,13 @@ for (const apiClient of [authClient, cloudClient]) {
 // there risks re-entrancy with the `getSession()` inside `refreshSession`.
 cloudClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
 
-function areCloudFeaturesEnabled(): boolean {
-  return !isCloudDisabled();
-}
-
 /**
  * What {@link platformFeaturesGate} does with a request. A deny carries the
  * reason it was denied, so the gate reports it without re-probing the mode the
  * decision already looked at. {@link PLATFORM_GATE_DENIALS} keys off this
  * union, so a third reason cannot be mislabelled as one of the existing two.
  */
-type CloudGateDecision = "allow" | "deny_remote_gateway" | "deny_local";
+type CloudGateDecision = "allow" | "deny_remote_gateway";
 
 /**
  * How each denial is reported. Keyed by every deny decision, so a new reason
@@ -1319,10 +1314,6 @@ const PLATFORM_GATE_DENIALS: Record<
   deny_remote_gateway: {
     log: "remote-gateway mode, no-op platform request:",
     abortMessage: "Platform routes disabled in remote-gateway mode",
-  },
-  deny_local: {
-    log: "CADET_DISABLE_CLOUD is set, no-op platform request:",
-    abortMessage: "Platform features disabled in local mode",
   },
 };
 
@@ -1350,29 +1341,13 @@ function cloudFeaturesGateDecision(request: Request): CloudGateDecision {
     return hasBearer ? "allow" : "deny_remote_gateway";
   }
 
-  if (!isLocalClient()) {
-    return "allow";
-  }
-  if (areCloudFeaturesEnabled()) {
-    return "allow";
-  }
-
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (!ingressUrl) {
-    return "deny_local";
-  }
-  return new URL(request.url).origin === new URL(ingressUrl).origin
-    ? "allow"
-    : "deny_local";
+  return "allow";
 }
 
 /**
- * In local mode with platform features disabled, abort platform client
- * requests that still target the cloud, but let through requests
- * already rewritten to the self-hosted gateway by the preceding
- * {@link requestInterceptor}. Without this check, daemon endpoints
- * (skills, memories, etc.) that route through the cloud client would
- * be silently killed even though they target the local daemon.
+ * Abort platform client requests in remote-gateway mode that ride no
+ * gateway bearer. Let-through requests keep the daemon endpoints
+ * (skills, memories, etc.) that route through the cloud client alive.
  *
  * Exported for direct unit testing.
  */

@@ -3,7 +3,7 @@
  * catalog entry > SKILL.md frontmatter > "system" fallback.
  */
 import { join } from "node:path";
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import type { SkillSummary } from "../config/skills.js";
 import type { CatalogSkill } from "../skills/catalog-install.js";
@@ -115,10 +115,6 @@ mock.module("../daemon/handlers/shared.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { listSkills } from "../daemon/handlers/skills.js";
-
-beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-});
 
 // ---------------------------------------------------------------------------
 // Helpers

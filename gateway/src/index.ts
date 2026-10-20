@@ -210,7 +210,6 @@ import {
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
-import { areCloudFeaturesEnabled } from "./cloud-features.js";
 import { isNewCommand, handleNewCommand } from "./webhook-pipeline.js";
 import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
@@ -1368,7 +1367,6 @@ async function main() {
         }),
     },
 
-
     // ── Auto-approve thresholds (scope-protected) ──
     {
       path: "/v1/permissions/thresholds",
@@ -2297,11 +2295,6 @@ async function main() {
    *  Throttled to at most one outbound POST per 30 seconds. */
   let lastRecordActivityTs = 0;
   async function notifyRecordActivity(): Promise<void> {
-    if (!areCloudFeaturesEnabled()) {
-      log.debug("Platform features disabled — skipping record-activity");
-      return;
-    }
-
     const now = Date.now();
     if (now - lastRecordActivityTs < 30_000) return;
     lastRecordActivityTs = now;

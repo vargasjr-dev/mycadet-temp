@@ -293,7 +293,6 @@ export interface HatchDockerParams {
   watch?: boolean;
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
-  /** Extra env vars forwarded into the assistant container. */
   setupProviderCredentials?: boolean;
   /** Whole-installation state installed into stopped containers before startup. */
   initialArchive?: string;

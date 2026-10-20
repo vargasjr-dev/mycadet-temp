@@ -8,7 +8,7 @@
  * whose persisted write throws (and therefore reverts) must NOT release
  * waiters.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
@@ -142,10 +142,6 @@ mock.module("../agent/loop.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { Conversation } from "../daemon/conversation.js";
-
-beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-});
 
 // ---------------------------------------------------------------------------
 // Helpers

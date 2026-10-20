@@ -1270,33 +1270,30 @@ platform. For surfaces that differ across desktop, iOS, and Android, see
 The web app can run in three auth/hosting configurations that affect
 which UI surfaces are available:
 
-| Signal                 | Where                      | What it means                                                                                                                                                                        |
-| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `isLocalClient()`      | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not Cadet Cloud                                                            |
-| `hasCloudSession`   | `src/stores/auth-store.ts` | `true` when the user has a valid session with Cadet Cloud (set asynchronously after probing the allauth session endpoint)                                                     |
-| `isCloudDisabled()` | `src/lib/local-mode.ts`    | Env var / config setting (`VITE_CADET_DISABLE_CLOUD` or `__CADET_CONFIG__.disableCloud`). When `true` in local mode, the API interceptor no-ops all platform client requests |
+| Signal            | Where                      | What it means                                                                                                             |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `isLocalClient()` | `src/lib/local-mode.ts`    | `true` when `VITE_PLATFORM_MODE` is unset — the app is running against a local/self-hosted daemon, not Cadet Cloud        |
+| `hasCloudSession` | `src/stores/auth-store.ts` | `true` when the user has a valid session with Cadet Cloud (set asynchronously after probing the allauth session endpoint) |
 
-### The five user states
+### The user states
 
 1. **Platform-hosted + logged in** — full access to everything
 2. **Platform-hosted + NOT logged in** — session expired; platform-dependent UI is _disabled_ with a "log in" prompt
-3. **Self-hosted + platform features ON + logged in** — full access
-4. **Self-hosted + platform features ON + NOT logged in** — platform-dependent UI is _disabled_
-5. **Self-hosted + platform features OFF** — platform-dependent UI is _gated_ (hidden entirely)
+3. **Self-hosted + logged in** — full access
+4. **Self-hosted + NOT logged in** — platform-dependent UI is _disabled_
 
 ### `useCloudGate()` hook
 
 `src/hooks/use-cloud-gate.ts` encapsulates the decision tree and
-returns one of three states:
+returns one of two states:
 
-| Return value | Meaning                                      | When                                                             |
-| ------------ | -------------------------------------------- | ---------------------------------------------------------------- |
-| `"full"`     | Feature is fully functional                  | `hasCloudSession` is `true`                                   |
-| `"disabled"` | Show the UI but disable it (prompt re-login) | `hasCloudSession` is `false`, platform features still enabled |
-| `"gated"`    | Hide the UI entirely                         | Local mode AND `VITE_CADET_DISABLE_CLOUD` is set             |
+| Return value | Meaning                                      | When                         |
+| ------------ | -------------------------------------------- | ---------------------------- |
+| `"full"`     | Feature is fully functional                  | `hasCloudSession` is `true`  |
+| `"disabled"` | Show the UI but disable it (prompt re-login) | `hasCloudSession` is `false` |
 
 Use this hook for any UI surface that depends on the Cadet Cloud
-API. The three actions map to concrete UI patterns:
+API. The actions map to concrete UI patterns:
 
 - **Full** — render normally.
 - **Disabled** — render the container/chrome but replace interactive
@@ -1313,7 +1310,7 @@ Some UI surfaces only make sense on cloud-hosted assistants — plan
 management, machine sizing, release channels, sleep policy, system
 events. They have no meaningful behavior on a self-hosted assistant
 and should be hidden whenever the active assistant is self-hosted,
-regardless of platform login or the `VITE_CADET_DISABLE_CLOUD` env var.
+regardless of platform login.
 
 Pass `{ cloudHostedOnly: true }` to `useCloudGate` for these:
 
@@ -1355,16 +1352,11 @@ Truth table when `cloudHostedOnly` is `true`:
 
 | Active assistant            | Platform session | Result       |
 | --------------------------- | ---------------- | ------------ |
-| cloud-hosted             | yes              | `"full"`     |
-| cloud-hosted             | no               | `"disabled"` |
+| cloud-hosted                | yes              | `"full"`     |
+| cloud-hosted                | no               | `"disabled"` |
 | self-hosted                 | any              | `"gated"`    |
 | none resolved (loading etc) | yes              | `"full"`     |
 | none resolved               | no               | `"disabled"` |
-
-The `VITE_CADET_DISABLE_CLOUD` env var does NOT apply to this
-branch — that setting gates the daemon-side API interceptor in local
-mode, which is orthogonal to "is this UI's target assistant
-cloud-hosted?"
 
 #### Gating network fetches: pair the gate with `useActiveAssistantIsCloudHosted`
 
@@ -1494,7 +1486,7 @@ proxies `/v1/assistants/{id}/<path>` → daemon `/v1/<path>`). In local
 mode, the self-hosted ingress rewrite in `api-interceptors.ts` already
 reroutes these to the gateway directly — the
 `RUNTIME_PROXIED_FIRST_SEGMENTS` allowlist is skipped entirely in
-local mode. These features work in all five states with no gating
+local mode. These features work in all four states with no gating
 needed. Examples: AI page (profiles, providers, models), Inspector,
 Home, Workspace, Contacts.
 

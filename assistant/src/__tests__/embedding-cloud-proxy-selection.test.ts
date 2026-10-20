@@ -85,7 +85,6 @@ function makeConfig(
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
   disableCloudProxy();
   secureKeys.clear(); // wipe provider keys; disableCloudProxy already cleared the assistant key
   clearEmbeddingBackendCache();

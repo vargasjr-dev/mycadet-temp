@@ -35,7 +35,6 @@ describe("getBuilderManagedEnvKeys", () => {
       expect(always.has(key)).toBe(true);
     }
 
-    expect(always.has("CADET_DISABLE_CLOUD")).toBe(false);
     expect(always.has("CADET_DEVICE_ID")).toBe(false);
   });
 
@@ -126,7 +125,7 @@ describe("buildServiceRunArgs extra env routing", () => {
       gatewayContainer: "test-gateway",
       network: "test-net",
     },
-    extraGatewayEnv: { CADET_DISABLE_CLOUD: "1" },
+    extraGatewayEnv: { BAR: "1" },
     extraAssistantEnv: { FOO: "bar" },
   };
 
@@ -134,19 +133,19 @@ describe("buildServiceRunArgs extra env routing", () => {
 
   test("extraGatewayEnv lands only in gateway args", () => {
     const gatewayArgs = runArgs.gateway();
-    expect(gatewayArgs).toContain("CADET_DISABLE_CLOUD=1");
+    expect(gatewayArgs).toContain("BAR=1");
     expect(gatewayArgs).not.toContain("FOO=bar");
   });
 
   test("extraAssistantEnv lands only in assistant args", () => {
     const assistantArgs = runArgs.assistant();
     expect(assistantArgs).toContain("FOO=bar");
-    expect(assistantArgs).not.toContain("CADET_DISABLE_CLOUD=1");
+    expect(assistantArgs).not.toContain("BAR=1");
   });
 
   test("credential-executor args get neither extra env map", () => {
     const cesArgs = runArgs["credential-executor"]();
-    expect(cesArgs).not.toContain("CADET_DISABLE_CLOUD=1");
+    expect(cesArgs).not.toContain("BAR=1");
     expect(cesArgs).not.toContain("FOO=bar");
   });
 

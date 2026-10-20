@@ -368,6 +368,18 @@ test("a malformed list produces an error and retry can recover", async () => {
   await screen.findByRole("radio", { name: /^One/ });
 });
 
+test("a dead list still offers hatching from the chooser", async () => {
+  request.mockRejectedValueOnce(new Error("no control plane"));
+  setup();
+  // The chooser's own failure line — not the shell panel's
+  // "We couldn't reach your assistant": the list died, not the assistant.
+  await screen.findByText("Unable to load assistant.");
+  // And the way forward survives the dead list: hatch from the chooser.
+  fireEvent.click(screen.getByRole("button", { name: "Create an assistant" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(within(dialog).getByRole("button", { name: "Create" })).toBeDefined();
+});
+
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
   let finish!: (value: Response) => void;
   request.mockImplementationOnce(

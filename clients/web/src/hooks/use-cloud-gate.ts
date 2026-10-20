@@ -5,7 +5,6 @@ import {
   useIsCloudSessionSettled,
 } from "@/stores/auth-store";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import { isLocalClient, isCloudDisabled } from "@/lib/local-mode";
 
 /**
  * How a cloud-dependent UI surface should behave, given the app mode,
@@ -85,14 +84,8 @@ export interface CloudGateOptions {
    * | none resolved (loading etc) | yes              | `"full"`     |
    * | none resolved               | no               | `"disabled"` |
    *
-   * `CADET_DISABLE_CLOUD` does NOT apply to this branch — that
-   * env var gates daemon-side platform-API interception in local mode,
-   * which is orthogonal to whether the active assistant is
-   * cloud-hosted.
-   *
    * Defaults to `false` — the standard `"full" / "disabled" / "gated"`
-   * behavior gated on `CADET_DISABLE_CLOUD` and the cloud
-   * session.
+   * behavior gated on the cloud session.
    */
   cloudHostedOnly?: boolean;
 }
@@ -219,16 +212,12 @@ export function useActiveAssistantLifecycleIsLoading(): boolean {
  *
  * Two modes, selected by `options.cloudHostedOnly`:
  *
- *   - **Default** (most surfaces): gate on whether the app can reach the
- *     platform at all. `"gated"` only when the app is in local mode AND
- *     `CADET_DISABLE_CLOUD` is set (the cloud API is turned off);
- *     otherwise the cloud session decides:
+ *   - **Default** (most surfaces): the cloud session decides:
  *
- *     | App mode                          | Platform session | Result       |
- *     | --------------------------------- | ---------------- | ------------ |
- *     | local + `CADET_DISABLE_CLOUD` | any              | `"gated"`    |
- *     | otherwise                         | no               | `"disabled"` |
- *     | otherwise                         | yes              | `"full"`     |
+ *     | Platform session | Result       |
+ *     | ---------------- | ------------ |
+ *     | no               | `"disabled"` |
+ *     | yes              | `"full"`     |
  *
  *   - **`cloudHostedOnly: true`**: for surfaces that only make sense
  *     against a Cadet-hosted assistant (billing, devices, sleep policy,
@@ -241,9 +230,7 @@ export function useActiveAssistantLifecycleIsLoading(): boolean {
  * surface that instead acts irreversibly on `"disabled"` wants
  * {@link useCloudGateWithPending}, which keeps that window distinct.
  */
-export function useCloudGate(
-  options: CloudGateOptions = {},
-): CloudGateState {
+export function useCloudGate(options: CloudGateOptions = {}): CloudGateState {
   const state = useCloudGateDecision(options);
   return state === "pending" ? "disabled" : state;
 }
@@ -294,7 +281,6 @@ function useCloudGateDecision(
   // self-hosted rows (states 3–5) of the truth table.
   const hasCloudSession = useHasCloudSession();
   const cloudSessionSettled = useIsCloudSessionSettled();
-  const cloudDisabled = isCloudDisabled();
   const activeIsSelfHosted = useActiveAssistantIsSelfHosted();
 
   // Only the negative branch consults the settle: `"present"` is a settled
@@ -304,10 +290,7 @@ function useCloudGateDecision(
     : "pending";
 
   // Platform-hosted-only branch is fully self-contained: it only depends
-  // on the active assistant's hosting and the cloud session. The
-  // CADET_DISABLE_CLOUD env var does NOT apply — it gates the
-  // daemon-side API interceptor in local mode, which is orthogonal to
-  // "is this UI's target assistant cloud-hosted?"
+  // on the active assistant's hosting and the cloud session.
   if (options.cloudHostedOnly) {
     if (activeIsSelfHosted) {
       return "gated";
@@ -318,10 +301,6 @@ function useCloudGateDecision(
     return "full";
   }
 
-  const local = isLocalClient();
-  if (local && cloudDisabled) {
-    return "gated";
-  }
   if (!hasCloudSession) {
     return noSession;
   }

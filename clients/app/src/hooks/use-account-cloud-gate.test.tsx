@@ -4,7 +4,6 @@ let session: "unknown" | "absent" | "present" = "unknown";
 mock.module("@app/lib/auth/account-session", () => ({
   useAccountCloudSession: () => session,
 }));
-mock.module("@app/lib/runtime-mode", () => ({ isLocalClient: () => false }));
 const { useAccountCloudGate } = await import("./use-account-cloud-gate");
 afterEach(() => {
   cleanup();

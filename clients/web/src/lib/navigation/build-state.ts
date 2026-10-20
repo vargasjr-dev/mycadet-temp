@@ -2,11 +2,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { isSessionSettled, isAuthenticated } from "@/stores/session-status";
 import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import {
-  isLocalClient,
-  isCloudDisabled,
-  isServedGatewayRuntime,
-} from "@/lib/local-mode";
+import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
 import {
   readTosAccepted,
   readPrivacyConsent,
@@ -58,7 +54,6 @@ export function buildNavigationState(
   const isRemoteGateway = isServedGatewayRuntime();
   return {
     isLocalClient: isLocalClient(),
-    isCloudDisabled: isCloudDisabled(),
     isRemoteGateway,
     remoteGatewayPublicPathPrefix: isRemoteGateway
       ? remoteGatewayPublicPathPrefix()

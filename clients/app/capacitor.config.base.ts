@@ -13,7 +13,9 @@ import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 function resolveServerUrl(): string {
   const override = process.env.CADET_SERVER_URL?.trim();
   if (!override) {
-    return cloudAssistantHubUrl(process.env.CADET_ENVIRONMENT ?? "local");
+    // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
+    process.env.CADET_ENVIRONMENT ??= "local";
+    return cloudAssistantHubUrl();
   }
 
   let parsed: URL;

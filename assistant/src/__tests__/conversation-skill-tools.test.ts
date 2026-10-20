@@ -350,7 +350,6 @@ describe("projectSkillTools", () => {
   let sessionState: Map<string, string>;
 
   beforeEach(() => {
-    // Real flag resolution replaces the former blanket module mock.
     mockCatalog = [];
     mockManifests = {};
     mockRegisteredTools = new Map();

@@ -137,7 +137,6 @@ mock.module("@/lib/local-mode", () => ({
   isPairedAssistant: () => false,
   isLocalClient: isLocalClientMock,
   isCloudAssistant: () => false,
-  isCloudDisabled: () => false,
   isCadetCloudRemote: isCadetCloudRemoteMock,
   isServedGatewayRuntime: isServedGatewayRuntimeMock,
   loadLockfile: async () => ({ assistants: [], activeAssistant: null }),

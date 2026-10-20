@@ -33,7 +33,6 @@ import {
   type AssistantEntry,
 } from "./assistant-config.js";
 import type { RemoteHost } from "./constants.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
@@ -1236,7 +1235,7 @@ export async function startRemoteWebIngress(opts: {
   // between processes.
   const version = displayVersion(cliPkg.version);
   const spaOptions = {
-    hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
+    hubUrl: cloudAssistantHubUrl(),
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
     version,

@@ -56,18 +56,12 @@ jobs:
           TIP=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
           echo "main tip: ${TIP}"
 
-          # Only a queued release can overlap this gate (this run is the one
-          # active run in the concurrency group); let it handle the tip.
-          QUEUED=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
-                     --status=queued --json databaseId --jq 'length')
-          if [ "${QUEUED}" != "0" ]; then
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "SKIP: ${QUEUED} dev release run(s) already queued; letting them handle it."
-            exit 0
-          fi
-
           # Ship only when the last successful dev release didn't already
-          # cover this tip.
+          # cover this tip. No queued-run guard: it counted THIS run (the
+          # run status still reads "queued" seconds into job start), so the
+          # schedule skipped itself forever — run 39435991306 exited in 10s
+          # that way. Overlapping fires ship distinct timestamped versions
+          # and the sync ships the newest; nothing needs guarding.
           LAST=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
                    --status=completed --limit=30 --json conclusion,headSha \
                    --jq '[.[] | select(.conclusion == "success")][0].headSha // ""')

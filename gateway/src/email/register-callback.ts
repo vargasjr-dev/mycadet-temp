@@ -2,7 +2,6 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { fetchImpl } from "../fetch.js";
-import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 
@@ -39,22 +38,16 @@ export async function registerEmailCallbackRoute(caches?: {
   credentials?: CredentialCache;
   configFile?: ConfigFileCache;
 }): Promise<string | undefined> {
-  if (!areCloudFeaturesEnabled()) {
-    log.debug(
-      "Platform features disabled — skipping email callback registration",
-    );
-    return undefined;
-  }
-
   const assistantApiKeyRaw = caches?.credentials
     ? await caches.credentials.get(credentialKey("cadet", "assistant_api_key"))
     : undefined;
 
   // The base URL resolves from the environment only — the credential store
   // never carries it.
-  const cloudBaseUrl = (
-    process.env.CADET_CLOUD_URL?.trim() || ""
-  ).replace(/\/+$/, "");
+  const cloudBaseUrl = (process.env.CADET_CLOUD_URL?.trim() || "").replace(
+    /\/+$/,
+    "",
+  );
 
   const assistantCredential =
     assistantApiKeyRaw?.trim() ||

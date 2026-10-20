@@ -158,7 +158,6 @@ export interface HatchLocalParams {
   watch?: boolean;
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
-  /** Extra env vars forwarded into the assistant process. */
   setupProviderCredentials?: boolean;
   /** Whole-installation state installed before the first service startup. */
   initialArchive?: string;

@@ -49,8 +49,6 @@ export const HOTKEYS_CHANGED = "cadet:hotkeys:changed";
 export const LAUNCH_AT_LOGIN_GET = "cadet:launchAtLogin:get";
 export const LAUNCH_AT_LOGIN_SET = "cadet:launchAtLogin:set";
 
-// Feature flags
-
 // Diagnostics
 export const DIAGNOSTICS_SET_SHARE = "cadet:diagnostics:setShareDiagnostics";
 
