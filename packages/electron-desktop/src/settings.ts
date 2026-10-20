@@ -16,7 +16,6 @@ import Store, { type Options, type Schema } from "electron-store";
 export interface AppSettings {
   hotkeys: Record<string, string>;
   theme: "light" | "dark" | "system";
-  featureFlags: Record<string, boolean>;
   launchAtLogin: boolean;
   shareDiagnostics: boolean;
   suppressRelocationPrompt: boolean;
@@ -32,11 +31,6 @@ const schema: Schema<AppSettings> = {
     type: "string",
     enum: ["light", "dark", "system"],
     default: "system",
-  },
-  featureFlags: {
-    type: "object",
-    additionalProperties: { type: "boolean" },
-    default: {},
   },
   launchAtLogin: {
     type: "boolean",

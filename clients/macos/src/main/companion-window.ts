@@ -4599,10 +4599,6 @@ export const installCompanionWindow = (): void => {
   // Watch became available, or stopped being, without waiting for something
   // else to move the state. It pushes rather than syncing, because whether the
   // surface is on screen is no longer this flag's business.
-  onSettingChange("featureFlags", () => {
-    pushState();
-  });
-
   // The route loads lazily after the window is created, so a state pushed
   // before its subscription registers is dropped. It pulls this once mounted.
   handle("cadet:companion:getState", z.tuple([]), () => currentState());

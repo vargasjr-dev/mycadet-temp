@@ -67,7 +67,6 @@ import type {
 } from "@mycadet/ipc-contract";
 import {
   DIAGNOSTICS_SET_SHARE,
-  FEATURE_FLAGS_SET,
   FEEDBACK_DIAGNOSTICS,
   FEEDBACK_LOGS,
   HELPER_DICTATION_FINALIZED_EVENT,
@@ -181,11 +180,6 @@ const bridge: CadetBridge = {
   },
   hotkeys: createHotkeysBridge(ipcRenderer),
   launchAtLogin: createLaunchAtLoginBridge(ipcRenderer),
-  featureFlags: {
-    set: (flags: Record<string, boolean>): void => {
-      ipcRenderer.send(FEATURE_FLAGS_SET, flags);
-    },
-  },
   diagnostics: {
     setShareDiagnostics: (enabled: boolean): void => {
       ipcRenderer.send(DIAGNOSTICS_SET_SHARE, enabled);
@@ -352,11 +346,7 @@ const bridge: CadetBridge = {
       ipcRenderer.send("cadet:icon:setAvatar", png);
     },
     setCharacter: (character, accentHex): void => {
-      ipcRenderer.send(
-        "cadet:icon:setCharacter",
-        character,
-        accentHex ?? null,
-      );
+      ipcRenderer.send("cadet:icon:setCharacter", character, accentHex ?? null);
     },
   },
   dock: {
@@ -372,10 +362,7 @@ const bridge: CadetBridge = {
   localMode: createLocalModeBridge(ipcRenderer),
   menu: {
     setCloudSession: (has: boolean): Promise<void> =>
-      ipcRenderer.invoke(
-        "cadet:menu:setCloudSession",
-        has,
-      ) as Promise<void>,
+      ipcRenderer.invoke("cadet:menu:setCloudSession", has) as Promise<void>,
   },
   mainWindow: {
     ensureVisible: (): Promise<void> =>
@@ -692,11 +679,7 @@ const bridge: CadetBridge = {
       answer: DictationOfferAnswer,
       offerId: string,
     ): void => {
-      ipcRenderer.send(
-        "cadet:companion:answerDictationOffer",
-        answer,
-        offerId,
-      );
+      ipcRenderer.send("cadet:companion:answerDictationOffer", answer, offerId);
     },
     answerPopover: (
       answer: CompanionPopoverAnswer,

@@ -72,9 +72,6 @@
   "assistantEmailIntroModal": {
     "setUp": "Set up email"
   },
-  "assistantFeatureFlagStore": {
-    "updateFailed": "Couldn't update \"{label}\". Your change was reverted."
-  },
   "avatarManagementModal": {
     "accent": "Accent",
     "accentAutomatic": "Automatic",

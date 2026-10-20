@@ -840,7 +840,10 @@ async function startDaemonFromSource(
         windowsHide: true,
       })
     : (() => {
-        const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
+        const daemonLogFd = openRuntimeLogFile(
+          resources?.instanceDir ?? spawnStateRoot(),
+          "assistant",
+        );
         const c = spawn(bunPath, ["run", resolve(daemonMainPath)], {
           cwd: spawnStateRoot(),
           detached: true,
@@ -913,7 +916,10 @@ async function startDaemonWatchFromSource(
   // detect the in-progress spawn and wait instead of racing.
   writeFileSync(pidFile, "starting", "utf-8");
 
-  const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
+  const daemonLogFd = openRuntimeLogFile(
+    resources?.instanceDir ?? spawnStateRoot(),
+    "assistant",
+  );
   const child = spawn(
     resolveBunExecutable(),
     ["--watch", "run", resolve(mainPath)],
@@ -1700,7 +1706,10 @@ export async function startLocalDaemon(
             windowsHide: true,
           })
         : (() => {
-            const daemonLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "assistant");
+            const daemonLogFd = openRuntimeLogFile(
+              resources?.instanceDir ?? spawnStateRoot(),
+              "assistant",
+            );
             const c = spawn(daemonBinary, [], {
               cwd: spawnStateRoot(),
               detached: true,
@@ -1835,7 +1844,6 @@ export async function startGateway(
   options?: {
     signingKey?: string;
     bootstrapSecret?: string;
-    envOverrides?: Record<string, string>;
     requireReady?: boolean;
   },
 ): Promise<string> {
@@ -1858,7 +1866,6 @@ export async function startGateway(
 
   const gatewayEnv: Record<string, string> = {
     ...(process.env as Record<string, string>),
-    ...options?.envOverrides,
     RUNTIME_HTTP_PORT: String(effectiveDaemonPort),
     GATEWAY_PORT: String(effectiveGatewayPort),
     // Pass gateway operational settings via env vars so the CLI does not
@@ -1906,7 +1913,10 @@ export async function startGateway(
     // Use the compiled gateway binary when available (desktop app or compiled
     // CLI invoked from the terminal). In watch mode, skip the bundled binary
     // and use source (bun --watch only works with source files).
-    const gatewayLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "gateway");
+    const gatewayLogFd = openRuntimeLogFile(
+      resources?.instanceDir ?? spawnStateRoot(),
+      "gateway",
+    );
     gateway = spawn(gatewayBinary, [], {
       cwd: spawnStateRoot(),
       detached: true,
@@ -1922,7 +1932,10 @@ export async function startGateway(
     const bunArgs = watch
       ? ["--watch", "run", gatewayEntry, "--cadet-gateway"]
       : ["run", gatewayEntry, "--cadet-gateway"];
-    const gwLogFd = openRuntimeLogFile(resources?.instanceDir ?? spawnStateRoot(), "gateway");
+    const gwLogFd = openRuntimeLogFile(
+      resources?.instanceDir ?? spawnStateRoot(),
+      "gateway",
+    );
     gateway = spawn(resolveBunExecutable(), bunArgs, {
       cwd: spawnStateRoot(),
       detached: true,
@@ -1986,12 +1999,24 @@ export async function stopLocalProcesses(
   );
 
   const gatewayPidFile = join(cadetDir, "gateway.pid");
-  await stopProcessByPidFile(gatewayPidFile, "gateway", undefined, 7000, stopProcessGracefully);
+  await stopProcessByPidFile(
+    gatewayPidFile,
+    "gateway",
+    undefined,
+    7000,
+    stopProcessGracefully,
+  );
 
   // Stop the CES sibling if one was launched. No-op when the
   // PID file is absent.
   const cesPidFile = join(cadetDir, "ces.pid");
-  await stopProcessByPidFile(cesPidFile, "credential-executor", undefined, DAEMON_STOP_TIMEOUT_MS, stopProcessGracefully);
+  await stopProcessByPidFile(
+    cesPidFile,
+    "credential-executor",
+    undefined,
+    DAEMON_STOP_TIMEOUT_MS,
+    stopProcessGracefully,
+  );
 
   // Stop the tunnel agent this CLI spawned (root lockfile `tunnel` entry),
   // verifying the pid still belongs to the provider's binary before signaling

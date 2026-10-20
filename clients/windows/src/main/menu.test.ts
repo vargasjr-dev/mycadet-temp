@@ -33,11 +33,9 @@ mock.module("electron", () => ({
   shell: { openExternal: () => Promise.resolve() },
 }));
 
-let featureFlags: Record<string, boolean> = {};
 let onboardingActive = false;
 let chromeDevTools = false;
 mock.module("@mycadet/electron-desktop/settings", () => ({
-  readSetting: () => featureFlags,
   onSettingChange: () => () => undefined,
 }));
 mock.module("@mycadet/electron-desktop/window-state", () => ({

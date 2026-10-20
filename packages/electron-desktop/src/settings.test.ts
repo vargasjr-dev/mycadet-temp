@@ -29,6 +29,5 @@ describe("settings persistence", () => {
     const store = createAppSettingsStore({ cwd: temporaryDirectory });
 
     expect(store.get("theme")).toBe("system");
-    expect(store.get("featureFlags")).toEqual({});
   });
 });

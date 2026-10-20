@@ -445,7 +445,6 @@ export function buildServiceRunArgs(
         }
       }
 
-      // Gateway-only additions (e.g. feature flag env overrides)
       if (svc === "gateway" && extraGatewayEnv) {
         for (const [k, v] of Object.entries(extraGatewayEnv)) {
           args.push("-e", `${k}=${v}`);

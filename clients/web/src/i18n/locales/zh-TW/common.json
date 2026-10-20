@@ -72,9 +72,6 @@
   "assistantEmailIntroModal": {
     "setUp": "設定電子郵件"
   },
-  "assistantFeatureFlagStore": {
-    "updateFailed": "無法更新「{label}」。您的變更已還原。"
-  },
   "avatarManagementModal": {
     "accent": "強調色",
     "accentAutomatic": "自動",

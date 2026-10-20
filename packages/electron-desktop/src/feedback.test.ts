@@ -27,7 +27,6 @@ const dependencies = (
     releaseChannel: "staging",
   }),
   getLogFilePaths: () => [],
-  getFeatureFlags: () => ({ featureA: true }),
   hasSession: () => false,
   ...overrides,
 });

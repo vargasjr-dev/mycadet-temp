@@ -159,7 +159,6 @@ export interface HatchLocalParams {
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
   /** Extra env vars forwarded into the assistant process. */
-  flagEnvVars?: Record<string, string>;
   setupProviderCredentials?: boolean;
   /** Whole-installation state installed before the first service startup. */
   initialArchive?: string;
@@ -192,7 +191,7 @@ export interface HatchLocalResult {
 export async function hatchLocal(
   params: HatchLocalParams = {},
 ): Promise<HatchLocalResult> {
-  const { name, watch = false, configValues = {}, flagEnvVars = {} } = params;
+  const { name, watch = false, configValues = {} } = params;
   const reporter = params.reporter ?? consoleLifecycleReporter;
   const verbose = params.verbose ?? false;
   const setupProviderCredentials = params.setupProviderCredentials !== false;
@@ -335,7 +334,6 @@ export async function hatchLocal(
         runtimeUrl = await startGateway(watch, resources, {
           signingKey,
           bootstrapSecret,
-          envOverrides: flagEnvVars,
           requireReady: true,
         });
       } catch (error) {

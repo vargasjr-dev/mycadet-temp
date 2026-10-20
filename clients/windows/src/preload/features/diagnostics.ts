@@ -16,7 +16,6 @@ const diagnosticsFeature: CapabilityModule<
 > = {
   id: "diagnostics",
   install: (registry) => {
-    // `featureFlags` is contributed by the presence feature module.
     registry.contribute("diagnostics", {
       setShareDiagnostics: (enabled) => {
         ipcRenderer.send(DIAGNOSTICS_SET_SHARE, enabled);

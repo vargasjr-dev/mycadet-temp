@@ -38,6 +38,5 @@ export interface FeedbackDependencies {
   readFile: (path: string, encoding: "utf-8") => Promise<string>;
   getVersionInfo: () => FeedbackVersionInfo;
   getLogFilePaths: () => string[];
-  getFeatureFlags: () => Record<string, boolean> | null;
   hasSession: () => boolean;
 }
