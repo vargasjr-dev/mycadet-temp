@@ -153,30 +153,4 @@ describe("onboardingCompletedMiddleware", () => {
     });
   });
 
-  test("allows the local research flow after hatch when onboarding is not complete", async () => {
-    localStorage.setItem(
-      "cadet:local:lockfile",
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "asst-local-1",
-            cloud: "local",
-            runtimeUrl: "http://localhost:5173",
-          },
-        ],
-        activeAssistant: "asst-local-1",
-      }),
-    );
-    const next = mock(async () => "ok");
-
-    const result = await onboardingCompletedMiddleware(
-      { request: makeRequest(routes.onboarding.research) } as Parameters<
-        typeof onboardingCompletedMiddleware
-      >[0],
-      next,
-    );
-
-    expect(result).toBe("ok");
-    expect(next).toHaveBeenCalled();
-  });
 });

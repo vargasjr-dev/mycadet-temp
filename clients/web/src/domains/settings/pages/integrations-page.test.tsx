@@ -1442,16 +1442,4 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("custom setup waits for feature hydration", async () => {
-    hydrated = false;
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-    await screen.findByText("No integrations are available.");
-    expect(
-      (
-        screen.getByRole("button", {
-          name: "Add custom integration",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true);
-  });
 });

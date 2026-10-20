@@ -304,6 +304,9 @@ describe("AssistantSwitcher expanded card", () => {
   });
 
   test("sibling avatars fetch only through an addressable transport", () => {
+    // The sibling-avatar transport is the cloud proxy, which only a cloud-stamped
+    // client may use; absence reads local and no fetch would be addressable.
+    window.__CADET_CONFIG__ = { remote: "cloud" };
     const PAIRED: ResolvedAssistant = {
       id: "a4",
       name: "Dana",
