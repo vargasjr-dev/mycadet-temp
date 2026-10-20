@@ -93,6 +93,9 @@
     "cancel": "Отмена",
     "logIn": "Войти"
   },
+  "selectAssistantScreen": {
+    "create": "Создать ассистента"
+  },
   "appShell": {
     "loading": "Загрузка ассистента…",
     "error": "Не удалось загрузить ассистента.",

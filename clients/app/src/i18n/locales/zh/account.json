@@ -93,6 +93,9 @@
     "cancel": "取消",
     "logIn": "登录"
   },
+  "selectAssistantScreen": {
+    "create": "创建助手"
+  },
   "appShell": {
     "loading": "正在加载助手…",
     "error": "无法加载助手。",

@@ -10,11 +10,16 @@ import { toast } from "@mycadet/design-library/components/toast";
 interface CreateAssistantDialogProps {
   open: boolean;
   onClose: () => void;
+  /** Fired with the new assistant's id once the hatch succeeds — the
+   * chooser navigates into the assistant with it; the desktop menu
+   * command just closes. */
+  onCreated?: (id: string) => void;
 }
 
 export function CreateAssistantDialog({
   open,
   onClose,
+  onCreated,
 }: CreateAssistantDialogProps) {
   const { t } = useTranslation();
   const [name, setName] = useState("");
@@ -27,6 +32,7 @@ export function CreateAssistantDialog({
     if (result.ok) {
       toast.success(t("createAssistantDialog.toastSuccess"));
       setName("");
+      onCreated?.(result.id);
       onClose();
       return;
     }

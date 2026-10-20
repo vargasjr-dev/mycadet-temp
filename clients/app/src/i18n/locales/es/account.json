@@ -93,6 +93,9 @@
     "cancel": "Cancelar",
     "logIn": "Iniciar sesión"
   },
+  "selectAssistantScreen": {
+    "create": "Crear un asistente"
+  },
   "appShell": {
     "loading": "Cargando asistente…",
     "error": "No se pudo cargar el asistente.",

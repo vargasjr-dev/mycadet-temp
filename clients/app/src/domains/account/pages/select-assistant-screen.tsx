@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { AccountShell } from "@app/components/account/account-shell";
 import { AccountHeading } from "@app/components/account/account-form";
 import { Button } from "@mycadet/design-library/components/button";
@@ -12,6 +14,7 @@ export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const config = readInjectedConfig();
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
   const { state, retry } = useAssistantRequest({
     apiBaseUrl: config?.cloudUrl,
     origin: window.location.origin,
@@ -47,10 +50,26 @@ export function SelectAssistantScreen() {
         {status === "unauthenticated" && (
           <Link to={routes.account.login}>{t("accountPage.signIn")}</Link>
         )}
+        {status === "empty" && (
+          <Button variant="primary" onClick={() => setCreating(true)}>
+            {t("selectAssistantScreen.create")}
+          </Button>
+        )}
         {(status === "error" || status === "empty") && (
           <Button variant="outlined" onClick={retry}>
             {t("appShell.retry")}
           </Button>
+        )}
+        {status === "empty" && (
+          <CreateAssistantDialog
+            open={creating}
+            onClose={() => setCreating(false)}
+            onCreated={(id) => {
+              void navigate(routes.assistant, {
+                state: assistantSelectionState(id),
+              });
+            }}
+          />
         )}
       </div>
     </AccountShell>

@@ -93,6 +93,9 @@
     "cancel": "取消",
     "logIn": "登入"
   },
+  "selectAssistantScreen": {
+    "create": "建立助理"
+  },
   "appShell": {
     "loading": "正在載入助理…",
     "error": "無法載入助理。",

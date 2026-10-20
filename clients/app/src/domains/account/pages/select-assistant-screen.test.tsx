@@ -36,11 +36,12 @@ function setup(
     | string
     | { pathname: string; state: unknown } = "/account/select-assistant",
   useAccountRoute = false,
+  respond?: (url: RequestInfo | URL) => Promise<Response>,
 ) {
   // The shell resolves assistants same-origin now, so the mounted iframe's
   // own document is fetched from the test origin; answer it quietly.
   request.mockImplementation(
-    Object.assign(async () => iframeDocument.clone(), {
+    Object.assign(respond ?? (async () => iframeDocument.clone()), {
       preconnect: fetch.preconnect,
     }),
   );
@@ -130,6 +131,46 @@ test("an empty host list can be refreshed", async () => {
   await screen.findByText("No assistant is available.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByRole("button", { name: "One" });
+});
+
+test("an empty list offers creation and lands in the created assistant", async () => {
+  const router = setup("/account/select-assistant", false, async (url) => {
+    const target = String(url);
+    if (target.includes("/v1/assistants/?")) {
+      return Response.json({ results: [] });
+    }
+    // The dialog's create flow resolves the organization, hatches, and the
+    // shell then resolves the created assistant's detail same-origin.
+    if (target.includes("/v1/organizations/")) {
+      return Response.json({ results: [{ id: "org-1" }] });
+    }
+    if (target.includes("/hatch/")) {
+      return Response.json(detail);
+    }
+    if (target.includes("/v1/assistants/assistant-2/")) {
+      return Response.json(detail);
+    }
+    return iframeDocument.clone();
+  });
+  await screen.findByText("No assistant is available.");
+  fireEvent.click(screen.getByRole("button", { name: "Create an assistant" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Create" }));
+  await screen.findByTitle("Assistant");
+  expect(router.state.location.state).toEqual(
+    assistantSelectionState("assistant-2"),
+  );
+  expect(
+    request.mock.calls
+      .map(([url]) => String(url))
+      // The create flow rides the bundle's own auth machinery, which probes
+      // the platform session between API calls; pin the load-bearing chain.
+      .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
+  ).toEqual([
+    "https://host.example/admin/proxy/v1/assistants/?limit=100&offset=0",
+    "/v1/organizations/?limit=100&offset=0",
+    "/v1/assistants/hatch/?mode=create",
+    "http://localhost:3001/v1/assistants/assistant-2/",
+  ]);
 });
 
 test("401 displays sign-in without running Web account or onboarding probes", async () => {

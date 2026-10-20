@@ -93,6 +93,9 @@
     "cancel": "Cancel",
     "logIn": "Log In"
   },
+  "selectAssistantScreen": {
+    "create": "Create an assistant"
+  },
   "appShell": {
     "loading": "Loading assistant…",
     "error": "Unable to load assistant.",
