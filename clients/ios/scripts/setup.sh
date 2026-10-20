@@ -36,3 +36,10 @@ info "Installing workspace dependencies"
 
 # — The build itself (boot bundle + cap sync + xcodegen) —
 bash "${IOS_DIR}/scripts/build.sh"
+
+# — iOS caches the launch screen per install, so a changed launch
+#   storyboard never shows until the old app is deleted. Uninstall both
+#   QA schemes so every dev run reinstalls fresh (no-op when absent) —
+for app_id in ai.mycadet.ios.local ai.mycadet.ios.dev; do
+  xcrun simctl uninstall booted "$app_id" 2>/dev/null || true
+done
