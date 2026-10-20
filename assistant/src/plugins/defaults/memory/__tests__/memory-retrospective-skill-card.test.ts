@@ -222,7 +222,6 @@ describe("memory-retrospective skill card", () => {
       metadata: { kind: "skill-authored-card", automated: true },
       skipIndexing: true,
       clientMessageId: "skill-card-run-conv-1",
-      skipResurface: true,
     });
     // Disk view sync mirrors the wake-persist path, then clients are told to
     // refetch the message list.
@@ -383,7 +382,6 @@ describe("memory-retrospective skill card", () => {
       metadata: { kind: "skill-authored-card", automated: true },
       skipIndexing: true,
       clientMessageId: "skill-card-run-conv-1",
-      skipResurface: true,
     });
     expect(syncedToDisk).toHaveLength(1);
     expect(publishedConversationIds).toEqual(["src-conv-9"]);

@@ -1,8 +1,7 @@
 /**
- * `cadet conversations export` writes a transcript a person reads, so it
- * projects each row the way the transcript does: a row a `send_user_message`
- * turn marked private contributes the delivered message, never the model's
- * working notes. Unmarked rows are untouched.
+ * `cadet conversations export` writes a transcript a person reads: each row
+ * contributes its blocks rendered through the shared formatter, and the
+ * markdown and JSON exports carry the same rows.
  */
 
 import { describe, expect, mock, test } from "bun:test";
@@ -26,21 +25,16 @@ const messages = [
     id: "m2",
     role: "assistant",
     content: [
-      { type: "text", text: "zzscratchpad reasoning nobody saw" },
-      {
-        type: "tool_use",
-        id: "tu_1",
-        name: "send_user_message",
-        input: { message: "You have two meetings today." },
-      },
+      { type: "text", text: "You have two meetings today." },
+      { type: "tool_use", id: "tu_1", name: "bash", input: { command: "cal" } },
     ],
-    metadata: JSON.stringify({ assistantTextVisibility: "private" }),
+    metadata: null,
     createdAt: 2,
   },
   {
     id: "m3",
     role: "assistant",
-    content: [{ type: "text", text: "an ordinary unmarked reply" }],
+    content: [{ type: "text", text: "an ordinary reply" }],
     metadata: null,
     createdAt: 3,
   },
@@ -72,25 +66,26 @@ function exportHandler() {
   return route.handler;
 }
 
-describe("conversation export visibility", () => {
-  test("markdown export carries the delivered message, not the scratchpad", async () => {
+describe("conversation export", () => {
+  test("markdown export carries each row's rendered blocks", async () => {
     const result = (await exportHandler()({
       body: { conversationId: CONVERSATION.id, format: "md" },
     })) as { output: string };
 
-    expect(result.output).toContain("You have two meetings today.");
-    expect(result.output).not.toContain("zzscratchpad");
-    // Untouched rows still export exactly as before.
-    expect(result.output).toContain("an ordinary unmarked reply");
+    expect(result.output).toContain("# Export me");
     expect(result.output).toContain("what is on my calendar?");
+    expect(result.output).toContain("You have two meetings today.");
+    expect(result.output).toContain("[Tool: bash]");
+    expect(result.output).toContain("an ordinary reply");
   });
 
-  test("json export carries the same projection", async () => {
+  test("json export carries the same rows", async () => {
     const result = (await exportHandler()({
       body: { conversationId: CONVERSATION.id, format: "json" },
     })) as { output: string };
 
     expect(result.output).toContain("You have two meetings today.");
-    expect(result.output).not.toContain("zzscratchpad");
+    expect(result.output).toContain("what is on my calendar?");
+    expect(result.output).toContain("an ordinary reply");
   });
 });

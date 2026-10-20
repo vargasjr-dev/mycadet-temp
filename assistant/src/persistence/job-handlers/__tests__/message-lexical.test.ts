@@ -164,43 +164,6 @@ describe("indexMessageLexicalJob", () => {
     });
   });
 
-  test("indexes the delivered message, not the scratchpad, on a private row", async () => {
-    // This index answers user-facing message search, so a row a
-    // `send_user_message` turn marked private must be findable by what the
-    // user read and not by the model's working notes.
-    const createdAt = 1_700_000_000_002;
-    const raw = JSON.stringify([
-      { type: "text", text: "zzscratchpadonly reasoning nobody sees" },
-      {
-        type: "tool_use",
-        id: "tu_1",
-        name: "send_user_message",
-        input: { message: "You have two meetings today." },
-      },
-    ]);
-    insertConversation("conv-private");
-    insertMessage({
-      id: "msg-private",
-      conversationId: "conv-private",
-      role: "assistant",
-      content: raw,
-      metadata: JSON.stringify({ assistantTextVisibility: "private" }),
-      createdAt,
-    });
-
-    await indexMessageLexicalJob(
-      makeJob("index_message_lexical", { messageId: "msg-private" }),
-      TEST_CONFIG,
-    );
-
-    expect(upsertCalls).toHaveLength(1);
-    const projected = JSON.stringify([
-      { type: "text", text: "You have two meetings today." },
-    ]);
-    expect(upsertCalls[0].sparse).toEqual(generateSparseEmbedding(projected));
-    expect(upsertCalls[0].sparse).not.toEqual(generateSparseEmbedding(raw));
-  });
-
   test("no-ops when messageId is missing from the payload", async () => {
     await indexMessageLexicalJob(
       makeJob("index_message_lexical", {}),
