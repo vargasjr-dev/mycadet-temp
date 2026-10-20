@@ -634,7 +634,9 @@ interface RootManagedRow {
  * Rows for the CLI-managed processes recorded at the lockfile root: the
  * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
  * stale entry reads as not running rather than as a lie. Each row carries the
- * assistant it fronts so the listing can nest it under that assistant.
+ * assistant it fronts so the listing can nest it under that assistant. The
+ * app entry may carry only its built-sha stamp between runs; such an entry
+ * reports no row.
  */
 async function getRootManagedRows(): Promise<RootManagedRow[]> {
   const { tunnel, app } = readRootProcesses();
@@ -652,7 +654,7 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
       },
     });
   }
-  if (app) {
+  if (app?.pid !== undefined) {
     const alive = isLocalProcessAlive(app.pid);
     rows.push({
       assistantId: app.assistantId,

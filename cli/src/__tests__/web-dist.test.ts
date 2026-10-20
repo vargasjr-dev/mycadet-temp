@@ -1,6 +1,7 @@
 import {
   afterAll,
   afterEach,
+  beforeEach,
   describe,
   expect,
   mock,
@@ -18,7 +19,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PassThrough } from "node:stream";
-import { resolveAppDistDir, resolveWebDistDir } from "../lib/web-dist.js";
+import { readAppBuiltSha, stampAppBuiltSha } from "../lib/assistant-config.js";
+import { resolveEdgeClientDists } from "../lib/web-dist.js";
 
 const realChildProcess = { ...childProcess };
 const spawnMock = mock(childProcess.spawn);
@@ -40,7 +42,17 @@ afterAll(() => {
  */
 let fixtureHeadSha: string | null = null;
 
+// The built-sha stamp lives in the CLI lockfile now — each test redirects it
+// to a temp dir (the root-process-lockfile.test.ts pattern).
+const lockfileDirs: string[] = [];
+
+beforeEach(() => {
+  lockfileDirs.push(mkdtempSync(join(tmpdir(), "web-dist-lockfile-")));
+  process.env.CADET_LOCKFILE_DIR = lockfileDirs.at(-1);
+});
+
 afterEach(() => {
+  delete process.env.CADET_LOCKFILE_DIR;
   spawnMock.mockReset();
   spawnMock.mockImplementation(realChildProcess.spawn);
   fixtureHeadSha = null;
@@ -55,7 +67,7 @@ function makeRoot(): string {
 }
 
 afterAll(() => {
-  for (const dir of roots.splice(0)) {
+  for (const dir of [...roots.splice(0), ...lockfileDirs.splice(0)]) {
     rmSync(dir, { recursive: true, force: true });
   }
 });
@@ -123,267 +135,247 @@ function seedWebDist(packageDir: string): string {
   return distDir;
 }
 
-describe("resolveWebDistDir", () => {
-  test("returns the source-checkout dist without building when present", async () => {
-    const root = makeRoot();
-    const distDir = seedWebDist(join(root, "clients", "web"));
-    // git-less tree: staleness detection is inert, the dist serves as-is.
+function seedAppDist(packageDir: string): string {
+  const distDir = join(packageDir, "dist", "standalone");
+  mkdirSync(distDir, { recursive: true });
+  writeFileSync(join(distDir, "index.html"), "<html></html>");
+  return distDir;
+}
+
+/** A fixture checkout with both client packages declared. */
+function seedCheckout(): { root: string; web: string; app: string } {
+  const root = makeRoot();
+  const web = join(root, "clients", "web");
+  const app = join(root, "clients", "app");
+  mkdirSync(web, { recursive: true });
+  mkdirSync(app, { recursive: true });
+  writeFileSync(join(web, "package.json"), "{}");
+  writeFileSync(join(app, "package.json"), "{}");
+  return { root, web, app };
+}
+
+describe("resolveEdgeClientDists", () => {
+  test("returns both source-checkout dists without building when present", async () => {
+    const { root, web, app } = seedCheckout();
+    const webDist = seedWebDist(web);
+    const appDist = seedAppDist(app);
+    // git-less tree: staleness detection is inert, the dists serve as-is.
     fixtureHeadSha = null;
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBe(distDir);
+    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
     expect(bunCalls()).toHaveLength(0);
   });
 
-  test("builds the missing bundle once from the source checkout", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
+  test("builds both missing bundles once and stamps the lockfile's app record", async () => {
+    const { root, web, app } = seedCheckout();
     fixtureHeadSha = "a".repeat(40);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(
       fakeSpawn(() => {
-        mkdirSync(join(packageDir, "dist"), { recursive: true });
-        writeFileSync(join(packageDir, "dist", "index.html"), "<html></html>");
+        seedWebDist(web);
+        seedAppDist(app);
       }),
     );
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBe(join(packageDir, "dist"));
-    expect(
-      logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("No built web bundle found"),
+    expect(resolved).toEqual({
+      webDistDir: join(web, "dist"),
+      appDistDir: join(app, "dist", "standalone"),
+    });
+    const builds = bunCalls();
+    expect(builds).toHaveLength(2);
+    for (const [command, args, options] of builds) {
+      expect(command).toBe("bun");
+      expect(args).toEqual(["run", "build"]);
+      expect(options?.env?.VITE_CLOUD_MODE).toBe("false");
+    }
+    // The stamp is the commit both bundles consumed, recorded on the
+    // lockfile's `app` entry.
+    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
+    const rawLockfile = JSON.parse(
+      readFileSync(
+        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        "utf-8",
       ),
-    ).toBe(true);
+    );
+    expect(rawLockfile.app.builtSha).toBe(fixtureHeadSha);
     logSpy.mockRestore();
-
-    const [command, args, options] = bunCalls()[0] ?? [];
-    expect(command).toBe("bun");
-    expect(args).toEqual(["run", "build"]);
-    expect(options?.env?.VITE_CLOUD_MODE).toBe("false");
-    expect(options?.cwd).toBe(packageDir);
-    // The build is stamped with the commit it consumed.
-    expect(
-      readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
-    ).toBe(fixtureHeadSha);
 
     // The second resolve finds a fresh stamp and does not rebuild.
     expect(
-      await resolveWebDistDir({
+      await resolveEdgeClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
-    ).toBe(join(packageDir, "dist"));
-    expect(bunCalls()).toHaveLength(1);
+    ).toEqual(resolved);
+    expect(bunCalls()).toHaveLength(2);
   });
 
-  test("rebuilds the bundle when the checkout moved past it", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    const distDir = seedWebDist(packageDir);
-    writeFileSync(join(packageDir, ".cadet-built-sha"), `${"b".repeat(40)}\n`);
+  test("rebuilds both bundles when the checkout moved past the stamp", async () => {
+    const { root, web, app } = seedCheckout();
+    seedWebDist(web);
+    seedAppDist(app);
+    stampAppBuiltSha("b".repeat(40));
     // The pull moved HEAD past the stamped build.
     fixtureHeadSha = "c".repeat(40);
     const logSpy = spyOn(console, "log");
-    spawnMock.mockImplementation(
-      fakeSpawn(() => {
-        writeFileSync(join(packageDir, "dist", "index.html"), "<html>2</html>");
-      }),
-    );
+    spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(1);
+    expect(resolved.webDistDir).toBe(join(web, "dist"));
+    expect(bunCalls()).toHaveLength(2);
     expect(
       logSpy.mock.calls.some((call) =>
         call.join(" ").includes("older than the current checkout"),
       ),
     ).toBe(true);
     logSpy.mockRestore();
-    expect(
-      readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
-    ).toBe(fixtureHeadSha);
+    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
   });
 
-  test("serves the fresh bundle without rebuilding", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    const distDir = seedWebDist(packageDir);
+  test("serves fresh bundles without rebuilding", async () => {
+    const { root, web, app } = seedCheckout();
+    const webDist = seedWebDist(web);
+    const appDist = seedAppDist(app);
     fixtureHeadSha = "d".repeat(40);
-    writeFileSync(join(packageDir, ".cadet-built-sha"), `${fixtureHeadSha}\n`);
+    stampAppBuiltSha(fixtureHeadSha);
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBe(distDir);
+    expect(resolved).toEqual({ webDistDir: webDist, appDistDir: appDist });
     expect(bunCalls()).toHaveLength(0);
   });
 
-  test("rebuilds a bundle that predates the build stamp once", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    const distDir = seedWebDist(packageDir);
+  test("rebuilds bundles that predate the stamp once", async () => {
+    const { root, web, app } = seedCheckout();
+    seedWebDist(web);
+    seedAppDist(app);
     fixtureHeadSha = "e".repeat(40);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn());
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(1);
+    expect(resolved.webDistDir).toBe(join(web, "dist"));
+    expect(bunCalls()).toHaveLength(2);
     expect(
       logSpy.mock.calls.some((call) =>
         call.join(" ").includes("no build stamp"),
       ),
     ).toBe(true);
     logSpy.mockRestore();
-    expect(
-      readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
-    ).toBe(fixtureHeadSha);
+    expect(readAppBuiltSha()).toBe(fixtureHeadSha);
   });
 
-  test("returns null when there is no dist and no source package to build", async () => {
+  test("returns null dists when there is no dist and no source package", async () => {
     const root = makeRoot();
     spawnMock.mockImplementation(unexpectedSpawn());
 
-    const resolved = await resolveWebDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
       resolvePackage: resolvePackageThrows,
     });
 
-    expect(resolved).toBeNull();
+    expect(resolved).toEqual({ webDistDir: null, appDistDir: null });
     expect(spawnMock.mock.calls).toHaveLength(0);
   });
 
   test("reports a failed source build with the manual recipe", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
+    const { root } = seedCheckout();
     fixtureHeadSha = "f".repeat(40);
     const logSpy = spyOn(console, "log");
     spawnMock.mockImplementation(fakeSpawn(undefined, 1));
 
     await expect(
-      resolveWebDistDir({
+      resolveEdgeClientDists({
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
     ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
-    expect(
-      logSpy.mock.calls.some((call) =>
-        call.join(" ").includes("No built web bundle found"),
-      ),
-    ).toBe(true);
     logSpy.mockRestore();
   });
 
-  test("leaves an installed-package dist alone even with a stale source checkout", async () => {
-    const root = makeRoot();
-    // The npm arm resolves first and owns the dist; the source checkout may
-    // be as stale as it likes.
-    const npmPackageDir = join(root, "npm", "@mycadet", "web");
-    seedWebDist(npmPackageDir);
-    const packageDir = join(root, "clients", "web");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    seedWebDist(packageDir);
+  test("records the stamp only after both builds succeed", async () => {
+    const { root, web } = seedCheckout();
     fixtureHeadSha = "1".repeat(40);
-    writeFileSync(join(packageDir, ".cadet-built-sha"), `${"0".repeat(40)}\n`);
-    spawnMock.mockImplementation(unexpectedSpawn());
+    let builds = 0;
+    spawnMock.mockImplementation(((command: string) => {
+      if (command === "git") {
+        return fakeGitChild();
+      }
+      builds++;
+      const child = new childProcess.ChildProcess();
+      // The web build lands; the app build fails — a half-stamped state must
+      // never pretend the second bundle is fresh.
+      if (builds === 1) {
+        seedWebDist(web);
+        setTimeout(() => child.emit("exit", 0), 10);
+      } else {
+        setTimeout(() => child.emit("exit", 1), 10);
+      }
+      return child;
+    }) as unknown as typeof childProcess.spawn);
 
-    const resolved = await resolveWebDistDir({
-      startDir: root,
-      resolvePackage: () => join(npmPackageDir, "package.json"),
-    });
-
-    expect(resolved).toBe(join(npmPackageDir, "dist"));
-    expect(spawnMock.mock.calls).toHaveLength(0);
-  });
-});
-
-describe("resolveAppDistDir", () => {
-  test("mirrors the auto-build for the app shell bundle", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "app");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    fixtureHeadSha = "2".repeat(40);
-    const logSpy = spyOn(console, "log");
-    spawnMock.mockImplementation(
-      fakeSpawn(() => {
-        mkdirSync(join(packageDir, "dist", "standalone"), { recursive: true });
-        writeFileSync(
-          join(packageDir, "dist", "standalone", "index.html"),
-          "<html></html>",
-        );
+    await expect(
+      resolveEdgeClientDists({
+        startDir: root,
+        resolvePackage: resolvePackageThrows,
       }),
-    );
+    ).rejects.toThrow("Building the app bundle from source failed");
 
-    const resolved = await resolveAppDistDir({
-      startDir: root,
-      resolvePackage: resolvePackageThrows,
-    });
-
-    expect(resolved).toBe(join(packageDir, "dist", "standalone"));
-    logSpy.mockRestore();
-
-    const [command, args, options] = bunCalls()[0] ?? [];
-    expect(command).toBe("bun");
-    expect(args).toEqual(["run", "build"]);
-    expect(options?.cwd).toBe(packageDir);
-    expect(
-      readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
-    ).toBe(fixtureHeadSha);
+    expect(readAppBuiltSha()).toBeUndefined();
   });
 
-  test("rebuilds a stale app-shell bundle from the moved checkout", async () => {
-    const root = makeRoot();
-    const packageDir = join(root, "clients", "app");
-    mkdirSync(packageDir, { recursive: true });
-    writeFileSync(join(packageDir, "package.json"), "{}");
-    const distDir = join(packageDir, "dist", "standalone");
-    mkdirSync(distDir, { recursive: true });
-    writeFileSync(join(distDir, "index.html"), "<html></html>");
-    writeFileSync(join(packageDir, ".cadet-built-sha"), `${"3".repeat(40)}\n`);
-    fixtureHeadSha = "4".repeat(40);
-    spawnMock.mockImplementation(fakeSpawn());
+  test("leaves installed-package dists alone even with a stale source checkout", async () => {
+    const { root, web, app } = seedCheckout();
+    // The npm arm resolves first and owns the web dist; the source checkout
+    // may be as stale as it likes.
+    const npmWebDir = join(root, "npm", "@mycadet", "web");
+    seedWebDist(npmWebDir);
+    const appDist = seedAppDist(app);
+    seedWebDist(web);
+    fixtureHeadSha = "2".repeat(40);
+    // The source-built app arm is fresh at HEAD, so nothing rebuilds.
+    stampAppBuiltSha(fixtureHeadSha);
+    spawnMock.mockImplementation(((command: string) => {
+      // git HEAD is a legitimate probe (the app arm is source-built); a
+      // BUILD spawn here is a bug.
+      if (command === "git") {
+        return fakeGitChild();
+      }
+      throw new Error("unexpected spawn");
+    }) as unknown as typeof childProcess.spawn);
 
-    const resolved = await resolveAppDistDir({
+    const resolved = await resolveEdgeClientDists({
       startDir: root,
-      resolvePackage: resolvePackageThrows,
+      resolvePackage: () => join(npmWebDir, "package.json"),
     });
 
-    expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(1);
-    expect(
-      readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
-    ).toBe(fixtureHeadSha);
+    expect(resolved).toEqual({
+      webDistDir: join(npmWebDir, "dist"),
+      appDistDir: appDist,
+    });
+    expect(bunCalls()).toHaveLength(0);
   });
 });

@@ -95,7 +95,6 @@ const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
   async () => ({
     port: EDGE_PORT,
     started: true,
-    shellMode: "web",
   }),
 );
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
@@ -293,7 +292,6 @@ describe("tunnel edge targeting", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
-      shellMode: "web",
     });
   });
 
@@ -807,7 +805,6 @@ describe("tunnel edge targeting", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: false,
-      shellMode: "web",
     });
 
     const logs = await runTunnelCapturingLogs();
@@ -1793,7 +1790,6 @@ describe("tunnel background mode", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
-      shellMode: "web",
     });
     const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
     tempDirs.push(configHome);

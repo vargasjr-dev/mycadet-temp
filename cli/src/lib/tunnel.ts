@@ -17,7 +17,6 @@ import {
 } from "./ingress-config.js";
 import {
   ensureTunnelEdge,
-  formatEdgeMode,
   isIngressRunning,
   readIngressState,
   type TunnelEdge,
@@ -434,9 +433,7 @@ export async function restoreTunnelEdge(
     return survivingPort;
   }
   console.log(
-    `   Tunnel edge ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (${formatEdgeMode(
-      edge.shellMode,
-    )}).`,
+    `   Tunnel edge ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
   );
   return edge.port;
 }

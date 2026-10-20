@@ -11,9 +11,7 @@ import {
 
 import {
   lookupAssistantByIdentifier,
-  readEdgeShellSelection,
   saveAssistantEntry,
-  saveEdgeShellSelection,
   type AssistantEntry,
 } from "./assistant-config.js";
 import { getStateDir } from "./environments/paths.js";
@@ -68,35 +66,6 @@ export function getDefaultWorkspaceDir(): string {
     process.env.CADET_WORKSPACE_DIR?.trim() ||
     join(getStateDir(getCurrentEnvironment()), "workspace")
   );
-}
-
-/** Which client bundle the nginx edge serves as the outer shell. */
-export type ShellMode = "web" | "app";
-
-export const DEFAULT_SHELL_MODE: ShellMode = "web";
-
-/**
- * Read the persisted shell mode from the CLI lockfile. The nginx edge is a
- * CLI-managed server — the lockfile's `app` record — not a per-cadet
- * setting, so its shell lives beside that record there rather than in any
- * one cadet's workspace config. Unset records read as the default so the
- * edge's behavior never depends on config files that predate the setting;
- * an unrecognized value fails loudly rather than silently serving a shell
- * the user did not ask for.
- */
-export function readShellMode(): ShellMode {
-  const raw = readEdgeShellSelection();
-  if (raw === undefined) return DEFAULT_SHELL_MODE;
-  if (raw === "web" || raw === "app") return raw;
-  throw new Error(
-    `The nginx edge shell mode must be "web" or "app" (got ${JSON.stringify(raw)}). ` +
-      "Fix it in the CLI lockfile or run `cadet tunnel --shell <web|app>`.",
-  );
-}
-
-/** Persist the shell mode to the CLI lockfile beside the nginx edge record. */
-export function saveShellMode(mode: ShellMode): void {
-  saveEdgeShellSelection(mode);
 }
 
 function getConfigPath(workspaceDir: string): string {

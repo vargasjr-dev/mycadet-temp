@@ -304,7 +304,6 @@ beforeEach(() => {
   ensureTunnelEdgeMock.mockResolvedValue({
     port: 7840,
     started: true,
-    shellMode: "web",
   });
   isIngressRunningMock.mockReset();
   isIngressRunningMock.mockReturnValue(false);
@@ -1070,7 +1069,6 @@ describe("cadet wake — tunnel edge restore", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: 7840,
       started: false,
-      shellMode: "web",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1553,7 +1551,6 @@ describe("cadet wake — tunnel edge restore", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: 7841,
       started: false,
-      shellMode: "web",
     });
 
     await wake();

@@ -70,7 +70,7 @@
   "scripts": {
     "predev": "bun run build",
     "dev": "bun --bun vite",
-    "build": "bun install && bun scripts/build.ts",
+    "build": "bun scripts/build.ts",
     "build:capacitor": "bun scripts/build-capacitor.ts",
     "preview": "bun --bun vite preview",
     "test": "bun test",

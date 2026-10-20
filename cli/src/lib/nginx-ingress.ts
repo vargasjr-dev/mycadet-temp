@@ -22,9 +22,10 @@ import { z } from "zod";
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import {
-  clearRootProcess,
+  clearAppProcessRecord,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
+  readRootProcesses,
   stampRootProcess,
   type AssistantEntry,
 } from "./assistant-config.js";
@@ -36,10 +37,9 @@ import {
   isLocalContainerEntry,
   loadRawConfig,
   parseGatewayPortFromEntryUrls,
-  readShellMode,
   saveRawConfig,
 } from "./ingress-config.js";
-import { resolveAppDistDir, resolveWebDistDir } from "./web-dist.js";
+import { resolveEdgeClientDists } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
 export { findAppDistDir } from "./web-dist.js";
@@ -161,12 +161,11 @@ const DENYLIST_LOCATIONS = denylistLocations();
 export interface RemoteWebIngressOptions {
   webDistDir: string;
   /**
-   * Standalone app-shell bundle. Present only in app shell mode: the edge
-   * serves this bundle as the outer account/client shell from the origin
-   * root and iframes the web SPA from /web/assistant/. Absent (web mode)
-   * keeps serving the web SPA directly from /assistant/.
+   * Standalone app-shell bundle: the edge serves it as the outer
+   * account/client shell from the origin root and iframes the web SPA from
+   * /web/assistant/.
    */
-  appDistDir?: string;
+  appDistDir: string;
   /**
    * The config-injected app-shell document. Defaults to the app bundle's own
    * index; the edge start path points this at the ingress dir, where the
@@ -191,13 +190,10 @@ export interface RemoteWebIngressOptions {
 
 /**
  * The web UI entry the assistant detail API hands the shell, relative to the
- * origin root. Web mode serves the web SPA directly at /assistant/; app mode
- * serves it from the distinct /web/assistant/ iframe namespace so the shell's
+ * origin root: the distinct /web/assistant/ iframe namespace, so the shell's
  * own /assistant/* host routes can never load the shell recursively.
  */
-export function assistantEntryUrl(appDistDir: string | undefined): string {
-  return appDistDir ? "web/assistant/" : "assistant/";
-}
+export const ASSISTANT_ENTRY_URL = "web/assistant/";
 
 // The edge serves remote browsers, so the bundle's remote-gateway machinery
 // must always run: it is reached through this self-hosted edge however the
@@ -249,16 +245,16 @@ function remoteWebIngressConfig(
 export const EDGE_TEMPLATE_VERSION = 13;
 
 /**
- * Stable fingerprint of the injected SPA config, its source bundles, the
- * shell mode, and the template that renders them. Recorded
- * alongside the edge state so a reuse decision can tell whether a running edge
- * already serves the requested config (see `IngressState.remoteWebConfigHash`).
+ * Stable fingerprint of the injected SPA config, its source bundles, and the
+ * template that renders them. Recorded alongside the edge state so a reuse
+ * decision can tell whether a running edge already serves the requested
+ * config (see `IngressState.remoteWebConfigHash`).
  */
 function remoteWebConfigFingerprint(
   config: Record<string, unknown>,
   webDistDir: string,
-  version?: string,
-  appDistDir?: string,
+  version: string | undefined,
+  appDistDir: string,
 ): string {
   return createHash("sha256")
     .update(
@@ -267,19 +263,8 @@ function remoteWebConfigFingerprint(
         config,
         webDistDir,
         version,
-        // The shell mode is part of edge identity: flipping the persisted
-        // shell mode must rotate a running edge onto the requested shell
-        // even though every other fingerprint input may be unchanged.
-        shellMode: appDistDir ? "app" : "web",
-        ...(appDistDir
-          ? {
-              appDistDir,
-              appIndexHtml: readFileSync(
-                join(appDistDir, "index.html"),
-                "utf-8",
-              ),
-            }
-          : {}),
+        appDistDir,
+        appIndexHtml: readFileSync(join(appDistDir, "index.html"), "utf-8"),
         indexHtml: readFileSync(join(webDistDir, "index.html"), "utf-8"),
       }),
     )
@@ -702,7 +687,7 @@ function webAssetsLocations(webDistDir: string): string {
 function buildRemoteWebIngressLocations(opts: {
   gatewayPort: number;
   webDistDir: string;
-  appDistDir?: string;
+  appDistDir: string;
   appIndexHtmlPath?: string;
   indexHtmlPath?: string;
   config: Record<string, unknown>;
@@ -712,33 +697,7 @@ function buildRemoteWebIngressLocations(opts: {
   const indexHtmlPath =
     opts.indexHtmlPath ?? join(opts.webDistDir, "index.html");
 
-  if (!opts.appDistDir) {
-    // Web mode: the web SPA IS the served surface, at /assistant/.
-    return `${DENYLIST_LOCATIONS}
-
-${assistantMetadataLocations({ ...opts.config, version: opts.version })}
-
-${gatewayProxyLocations(opts.gatewayPort)}
-
-${webAssetsLocations(opts.webDistDir)}
-
-${webSpaLocations({
-  prefix: "/assistant",
-  webDistDir: opts.webDistDir,
-  indexHtmlPath,
-  config: opts.config,
-})}
-
-    location = / {
-      return 302 /assistant/;
-    }
-
-    location / {
-      return 404;
-    }`;
-  }
-
-  // App mode: the app bundle is the outer shell (origin root, including the
+  // The app bundle is the outer shell (origin root, including the
   // app's own /assistant/* host routes) and the web SPA is iframed from the
   // distinct /web/assistant/ namespace, so neither surface can load the
   // other recursively. The web bundle's asset URLs keep their baked
@@ -753,7 +712,7 @@ ${denylistLocations("/web")}
 ${assistantMetadataLocations({
   ...opts.config,
   version: opts.version,
-  entryUrl: assistantEntryUrl(opts.appDistDir),
+  entryUrl: ASSISTANT_ENTRY_URL,
 })}
 
 ${gatewayProxyLocations(opts.gatewayPort)}
@@ -985,8 +944,10 @@ function clearIngressState(workspaceDir: string): void {
 function clearStoppedIngress(workspaceDir: string, pidPath: string): void {
   clearIngressState(workspaceDir);
   rmSync(pidPath, { force: true });
-  // The edge is gone; drop the root lockfile's process entry with it.
-  clearRootProcess("app");
+  // The edge is gone; release the root lockfile's process entry with it.
+  // Its built-sha stamp survives (a build-cache fact, not a process fact)
+  // so restarting the edge never pays a needless bundle rebuild.
+  clearAppProcessRecord();
 }
 
 /**
@@ -1020,19 +981,17 @@ export function startIngressNginx(opts: {
       remoteWebIngress.indexHtmlPath,
       buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
     );
-    if (remoteWebIngress.appDistDir) {
-      // The app shell gets its own injected document: the same remote-web
-      // config, written beside the web one so the generated locations can
-      // alias it internally.
-      const rawAppIndexHtml = readFileSync(
-        join(remoteWebIngress.appDistDir, "index.html"),
-        "utf-8",
-      );
-      writeFileSync(
-        join(paths.dir, "app-index.html"),
-        buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
-      );
-    }
+    // The app shell gets its own injected document: the same remote-web
+    // config, written beside the web one so the generated locations can
+    // alias it internally.
+    const rawAppIndexHtml = readFileSync(
+      join(remoteWebIngress.appDistDir, "index.html"),
+      "utf-8",
+    );
+    writeFileSync(
+      join(paths.dir, "app-index.html"),
+      buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
+    );
   }
   writeFileSync(
     paths.confPath,
@@ -1199,13 +1158,6 @@ export async function startRemoteWebIngress(opts: {
   listenPort?: number;
   readyTimeoutMs?: number;
   /**
-   * Which client bundle is the outer shell (default "web"). "app" additionally
-   * serves the standalone app bundle as the outer account/client shell and
-   * hands the shell a /web/assistant/ iframe URL for the web UI; "web" keeps
-   * serving the web SPA directly from /assistant/.
-   */
-  shellMode?: "web" | "app";
-  /**
    * Serving assistant's display name, stamped into the served remote-web
    * config (`__CADET_CONFIG__.assistantName`) so remote clients can label
    * this origin. Omitted when unknown; consumers tolerate its absence.
@@ -1230,7 +1182,6 @@ export async function startRemoteWebIngress(opts: {
   }) => void;
 }): Promise<StartRemoteWebIngressResult> {
   let listenPort = opts.listenPort ?? getNginxIngressPort();
-  const shellMode = opts.shellMode ?? "web";
 
   const nginxVersion = getNginxVersion();
   if (!nginxVersion) {
@@ -1246,15 +1197,11 @@ export async function startRemoteWebIngress(opts: {
   ) {
     listenPort = recorded.listenPort;
   }
-  const webDistDir = await resolveWebDistDir();
+  const { webDistDir, appDistDir } = await resolveEdgeClientDists();
   if (!webDistDir) {
     return { status: "web-dist-missing" };
   }
-  const appDistDir =
-    shellMode === "app"
-      ? ((await resolveAppDistDir()) ?? undefined)
-      : undefined;
-  if (shellMode === "app" && !appDistDir) {
+  if (!appDistDir) {
     return { status: "app-dist-missing" };
   }
   const version = await fetchCurrentVersion(
@@ -1290,9 +1237,9 @@ export async function startRemoteWebIngress(opts: {
     return alreadyRunning();
   }
 
-  // The running edge serves the other mode, targets a different gateway
-  // port, or injects a stale SPA config; restart it with the requested
-  // config. A false stop can mean the old edge exited on its own after the
+  // The running edge targets a different gateway port or injects a stale
+  // SPA config; restart it with the requested config. A false stop can mean
+  // the old edge exited on its own after the
   // check above, so recheck liveness and only bail when it is still serving.
   if (
     running &&
@@ -1328,7 +1275,7 @@ export async function startRemoteWebIngress(opts: {
     remoteWebIngress: {
       webDistDir,
       ...spaOptions,
-      ...(appDistDir ? { appDistDir } : {}),
+      appDistDir,
     },
   });
   let exited = false;
@@ -1406,13 +1353,6 @@ function lockfileAssistantName(assistantId: string): string | undefined {
     : undefined;
 }
 
-/** User-facing label for the edge mode, shared by every edge status line. */
-export function formatEdgeMode(shellMode: "web" | "app" = "web"): string {
-  return shellMode === "app"
-    ? "app shell + remote web + webhooks"
-    : "remote web + webhooks";
-}
-
 /**
  * Stop the tunnel edge fronting a container assistant, if this assistant is
  * the one it currently fronts.
@@ -1450,22 +1390,25 @@ function stampAppProcessEntry(
 ): void {
   const pid = getIngressPid(workspaceDir);
   if (pid !== null) {
+    // Carry the built-sha stamp forward: it predates this process entry
+    // (it survives the edge's own stop) and must not be wiped by the stamp.
+    const builtSha = readRootProcesses().app?.builtSha;
     stampRootProcess("app", {
       pid,
       startedAt: new Date().toISOString(),
       assistantId,
       port,
+      ...(builtSha !== undefined ? { builtSha } : {}),
     });
   }
 }
 
-/** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */ export interface TunnelEdge {
+/** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */
+export interface TunnelEdge {
   /** Loopback listen port the HTTPS front should forward to. */
   port: number;
   /** True when this call started the edge, false when a running one was reused. */
   started: boolean;
-  /** The shell mode the edge serves (the persisted lockfile setting). */
-  shellMode: "web" | "app";
 }
 
 /**
@@ -1511,14 +1454,9 @@ export async function ensureTunnelEdge(opts: {
   const assistantName = opts.assistantId
     ? lockfileAssistantName(opts.assistantId)
     : undefined;
-  // The persisted lockfile setting owns the shell choice; every edge caller
-  // (tunnel, wake restore, upgrade restore) reads it through here so a mode
-  // flip only needs `cadet tunnel --shell` once.
-  const shellMode = readShellMode();
   const result = await startRemoteWebIngress({
     workspaceDir: opts.workspaceDir,
     gatewayPort: opts.gatewayPort,
-    shellMode,
     ...(assistantName ? { assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.onStarting ? { onStarting: opts.onStarting } : {}),
@@ -1534,7 +1472,6 @@ export async function ensureTunnelEdge(opts: {
       return {
         port: result.listenPort,
         started: true,
-        shellMode,
       };
     case "already-running": {
       // `already-running` also covers a drifted edge whose restart failed, so
@@ -1565,7 +1502,6 @@ export async function ensureTunnelEdge(opts: {
       return {
         port: result.listenPort,
         started: false,
-        shellMode,
       };
     }
     case "nginx-missing":
@@ -1582,10 +1518,9 @@ export async function ensureTunnelEdge(opts: {
       );
     case "app-dist-missing":
       throw new Error(
-        "The app shell edge mode is selected but no " +
-          "built app bundle is available. Build it with `cd clients/app && bun run build`, " +
-          "or install @mycadet/app so its packaged standalone directory is available. " +
-          "Switch back to the web shell with `cadet tunnel --shell web`.",
+        "No built app shell bundle is available. Build it with " +
+          "`cd clients/app && bun run build`, " +
+          "or install @mycadet/app so its packaged standalone directory is available.",
       );
     case "unreachable":
       throw new Error(

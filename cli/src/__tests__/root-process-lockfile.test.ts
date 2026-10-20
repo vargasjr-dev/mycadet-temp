@@ -5,8 +5,11 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
 import {
+  clearAppProcessRecord,
   clearRootProcess,
+  readAppBuiltSha,
   readRootProcesses,
+  stampAppBuiltSha,
   stampRootProcess,
 } from "../lib/assistant-config.js";
 
@@ -99,5 +102,25 @@ describe("root process lockfile entries", () => {
   test("clearing an absent entry is a no-op", () => {
     clearRootProcess("tunnel");
     expect(readRootProcesses()).toEqual({});
+  });
+});
+
+describe("the app entry's built-sha stamp", () => {
+  test("a stamp can land before any edge process exists (stamp-only entry)", () => {
+    stampAppBuiltSha("a".repeat(40));
+    expect(readAppBuiltSha()).toBe("a".repeat(40));
+    // Stamp-only entry: no process bookkeeping to report.
+    expect(readRootProcesses().app?.pid).toBeUndefined();
+  });
+
+  test("clearing the edge's process entry keeps its built-sha stamp", () => {
+    stampRootProcess("app", { pid: 5, port: 7841, startedAt: "t" });
+    stampAppBuiltSha("b".repeat(40));
+    expect(readAppBuiltSha()).toBe("b".repeat(40));
+
+    clearAppProcessRecord();
+    // The pid bookkeeping goes; the build-cache stamp stays.
+    expect(readRootProcesses().app?.pid).toBeUndefined();
+    expect(readAppBuiltSha()).toBe("b".repeat(40));
   });
 });
