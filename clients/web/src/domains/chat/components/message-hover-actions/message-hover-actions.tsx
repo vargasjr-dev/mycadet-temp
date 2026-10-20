@@ -2,6 +2,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  FileCode,
   GitBranch,
   Loader2,
   RotateCcw,
@@ -31,6 +32,8 @@ export type MessageHoverActionsProps = {
   openInSlackUrl?: string;
   /** Callback when "Fork from here" is clicked. */
   onFork?: () => void;
+  /** Callback when "Inspect" is clicked. */
+  onInspect?: () => void;
   /** Callback when "Retry" is clicked. Only provided on the latest assistant
    *  message while no turn is in flight — retry discards that response and
    *  regenerates it. */
@@ -121,6 +124,7 @@ export function MessageHoverActions({
   conversationId,
   openInSlackUrl,
   onFork,
+  onInspect,
   onRetry,
   workSummary,
 }: MessageHoverActionsProps) {
@@ -230,6 +234,15 @@ export function MessageHoverActions({
           />
         )}
 
+        {onInspect && (
+          <Button
+            {...ACTION_BUTTON_PROPS}
+            onClick={onInspect}
+            title={t("messageHoverActions.inspect")}
+            aria-label={t("messageHoverActions.inspect")}
+            iconOnly={<FileCode />}
+          />
+        )}
       </div>
     </div>
   );

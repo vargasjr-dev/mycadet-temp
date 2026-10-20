@@ -170,6 +170,7 @@ export function TranscriptMessageBody({
   onSurfaceAction,
   onForkConversation,
   onRetryLatestTurn,
+  onInspectMessage,
   onOpenRuleEditor,
   unknownNudgeToolCallIds,
   onDismissUnknownNudge,
@@ -315,6 +316,11 @@ export function TranscriptMessageBody({
   const forkHandler =
     actionMessageId && onForkConversation
       ? () => onForkConversation(actionMessageId)
+      : undefined;
+  const inspectMessageId = message.id;
+  const inspectHandler =
+    inspectMessageId && onInspectMessage
+      ? () => onInspectMessage(inspectMessageId)
       : undefined;
   // Retry only attaches to the latest persisted assistant message — the turn
   // the daemon's retry endpoint would discard and re-run. Everything else
@@ -1263,6 +1269,7 @@ export function TranscriptMessageBody({
           conversationId={conversationId}
           openInSlackUrl={slackMessageUrl}
           onFork={forkHandler}
+          onInspect={inspectHandler}
           onRetry={retryHandler}
           workSummary={
             quietTurn && !quietTurnLive ? (
@@ -1318,6 +1325,7 @@ export function TranscriptMessageBody({
               conversationId={conversationId}
               openInSlackUrl={slackMessageUrl}
               onFork={forkHandler}
+              onInspect={inspectHandler}
               open={longPressOpen}
               onOpenChange={handleLongPressOpenChange}
             />
@@ -1543,6 +1551,7 @@ export function TranscriptMessageBody({
             conversationId={conversationId}
             openInSlackUrl={slackMessageUrl}
             onFork={forkHandler}
+            onInspect={inspectHandler}
             open={longPressOpen}
             onOpenChange={handleLongPressOpenChange}
           />

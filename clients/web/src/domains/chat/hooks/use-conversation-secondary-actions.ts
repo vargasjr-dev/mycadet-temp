@@ -1,6 +1,6 @@
 /**
- * Conversation secondary actions — fork, open-in-new-window, copy
- * transcript, and share-feedback modal state.
+ * Conversation secondary actions — fork, inspect, open-in-new-window,
+ * copy transcript, and share-feedback modal state.
  *
  * These are the "utility" actions surfaced in the conversation header chevron
  * menu and sidebar context menu. The primary CRUD-like actions (archive,
@@ -27,6 +27,7 @@ import { navigateToConversation } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
 import { haptic } from "@/utils/haptics";
 import { messagePlainText } from "@/domains/chat/utils/message-plain-text";
+import type { DisplayMessage } from "@/domains/chat/types/types";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -49,6 +50,8 @@ export interface UseConversationSecondaryActionsReturn {
   handleForkConversation: (throughMessageId: string) => Promise<void>;
   handleForkConversationFromMenu: () => void;
   handleRetryLatestTurn: () => Promise<void>;
+  handleInspectConversation: (conversation: Conversation) => void;
+  handleInspectMessage: (messageId: string) => void;
   handleOpenInNewWindow: (conversation: Conversation) => void;
   handleCopyConversation: () => void;
 }
@@ -57,6 +60,26 @@ export interface UseConversationSecondaryActionsReturn {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// A turn is headed by its user message: the user message plus the
+// assistant responses it produced share one group of LLM calls. Maps any
+// message in the active transcript to its turn's heading user message so
+// the inspector scope always matches an entry in its filter dropdown.
+function turnHeadMessageId(
+  messageId: string,
+  messages: DisplayMessage[],
+): string {
+  const index = messages.findIndex((m) => m.id === messageId);
+  if (index === -1) {
+    return messageId;
+  }
+  for (let i = index; i >= 0; i -= 1) {
+    const m = messages[i];
+    if (m && m.role === "user" && m.id != null) {
+      return m.id;
+    }
+  }
+  return messageId;
+}
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -154,6 +177,55 @@ export function useConversationSecondaryActions({
     }
   }, []);
 
+  // Navigate to the per-conversation LLM context inspector. The
+  // conversation lives in the path; `?messageId=` scopes to one turn. A turn
+  // is headed by its user message, so we always seed the scope with a user
+  // message id — the inspector's filter dropdown only lists user-headed
+  // turns. We default to the most recent turn, but only when the target
+  // conversation is the currently active one — the chat session store always
+  // holds the active transcript, so using it for a different conversation
+  // would produce a mismatched (conversationId, messageId) pair and show the
+  // wrong LLM context in the inspector.
+  const handleInspectConversation = useCallback(
+    (conversation: Conversation) => {
+      const params = new URLSearchParams();
+      const currentActiveId =
+        useConversationStore.getState().activeConversationId;
+      if (conversation.conversationId === currentActiveId) {
+        const latestUser = transcriptRef.current.findLast(
+          (m) => m.role === "user" && m.id != null,
+        );
+        const messageId = latestUser?.id;
+        if (messageId) {
+          params.set("messageId", messageId);
+        }
+      }
+      const qs = params.toString();
+      const base = routes.inspect(conversation.conversationId);
+      void navigate(qs ? `${base}?${qs}` : base);
+    },
+    [navigate],
+  );
+
+  const handleInspectMessage = useCallback(
+    (messageId: string) => {
+      const activeConversationId =
+        useConversationStore.getState().activeConversationId;
+      if (!activeConversationId) {
+        return;
+      }
+      const params = new URLSearchParams();
+      params.set(
+        "messageId",
+        turnHeadMessageId(messageId, transcriptRef.current),
+      );
+      void navigate(
+        `${routes.inspect(activeConversationId)}?${params.toString()}`,
+      );
+    },
+    [navigate],
+  );
+
   const handleCopyConversation = useCallback(() => {
     const name = useAssistantIdentityStore.getState().name ?? "Assistant";
     const parts: string[] = [];
@@ -182,6 +254,8 @@ export function useConversationSecondaryActions({
     handleForkConversation,
     handleForkConversationFromMenu,
     handleRetryLatestTurn,
+    handleInspectConversation,
+    handleInspectMessage,
     handleOpenInNewWindow,
     handleCopyConversation,
   };

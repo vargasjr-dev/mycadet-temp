@@ -114,6 +114,7 @@ export interface AssistantSideMenuProps extends UseSidebarStateParams {
   activeConversationProcessing?: boolean;
   onOpenInNewWindow?: (conversation: Conversation) => void;
   onShareFeedback?: () => void;
+  onInspect?: (conversation: Conversation) => void;
   /** Move a conversation into an existing custom group. */
   onMoveToGroup?: (conversation: Conversation, groupId: string) => void;
   /** Create a new custom group ("New group…") and move the conversation into it. */
@@ -265,6 +266,7 @@ export function AssistantSideMenu({
   activeConversationProcessing,
   onOpenInNewWindow,
   onShareFeedback,
+  onInspect,
   onMoveToGroup,
   onCreateGroupInto,
   onRemoveFromGroup,
@@ -427,6 +429,7 @@ export function AssistantSideMenu({
     onMarkUnread: onMarkConversationUnread,
     onOpenInNewWindow,
     onShareFeedback,
+    onInspect,
     conversationGroups,
     onMoveToGroup,
     onCreateGroupInto,
@@ -481,7 +484,6 @@ export function AssistantSideMenu({
     });
   };
 
-
   /* Index of the last listed section, the one that may claim the rail's
      leftover space. -1 when the list is empty, so nothing fills. */
   const listSections = sidebar.sections;
@@ -508,7 +510,6 @@ export function AssistantSideMenu({
       isLast={variant === "rail" && index === lastFillIndex}
     />
   );
-
 
   // Rendered in the rail's non-scrolling header, or at the top of the
   // overlay's body so the whole menu scrolls as one surface; the block's

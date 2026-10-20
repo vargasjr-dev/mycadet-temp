@@ -7,6 +7,7 @@ import {
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import { CreditsUpsellCard } from "@/domains/chat/components/credits-upsell-card";
+import { MessageHoverActions } from "@/domains/chat/components/message-hover-actions/message-hover-actions";
 import { StreamingShimmerText } from "@/domains/chat/components/streaming-shimmer-text";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";
 import type { TranscriptItem } from "@/domains/chat/transcript/types";
@@ -53,6 +54,7 @@ export interface TranscriptRowProps {
   ) => void;
   onForkConversation?: (messageId: string) => void;
   onRetryLatestTurn?: () => void;
+  onInspectMessage?: (messageId: string) => void;
   /** Render-prop for `kind: "onboardingChoice"` items. Onboarding depends on
    *  props from the parent (sendMessage, didOnboarding, etc.) and has a
    *  different lifecycle than interaction prompts, so it stays as a render-prop
@@ -125,9 +127,13 @@ export interface TranscriptRowProps {
  */
 function SubstitutedMessageShell({
   message,
+  conversationId,
+  onInspectMessage,
   children,
 }: {
   message: DisplayMessage;
+  conversationId?: string | null;
+  onInspectMessage?: (messageId: string) => void;
   children: ReactNode;
 }) {
   const { wrapperRef, revealed, toggleRevealed } = useCoarsePointerReveal();
@@ -142,6 +148,10 @@ function SubstitutedMessageShell({
   };
 
   const messageId = message.id;
+  const inspectHandler =
+    onInspectMessage && messageId
+      ? () => onInspectMessage(messageId)
+      : undefined;
   return (
     <div
       ref={wrapperRef}
@@ -152,13 +162,32 @@ function SubstitutedMessageShell({
       className="group/msg flex flex-col gap-2"
     >
       {children}
+      <div className="h-6">
+        <MessageHoverActions
+          message={message}
+          conversationId={conversationId}
+          onInspect={inspectHandler}
+        />
+      </div>
     </div>
   );
 }
 
-function CreditsUpsellMessageRow({ message }: { message: DisplayMessage }) {
+function CreditsUpsellMessageRow({
+  message,
+  conversationId,
+  onInspectMessage,
+}: {
+  message: DisplayMessage;
+  conversationId?: string | null;
+  onInspectMessage?: (messageId: string) => void;
+}) {
   return (
-    <SubstitutedMessageShell message={message}>
+    <SubstitutedMessageShell
+      message={message}
+      conversationId={conversationId}
+      onInspectMessage={onInspectMessage}
+    >
       <CreditsUpsellCard />
     </SubstitutedMessageShell>
   );
@@ -172,6 +201,7 @@ export const TranscriptRow = memo(function TranscriptRow({
   onSurfaceAction,
   onForkConversation,
   onRetryLatestTurn,
+  onInspectMessage,
   renderOnboardingChoice,
   onOpenRuleEditor,
   unknownNudgeToolCallIds,
@@ -198,7 +228,11 @@ export const TranscriptRow = memo(function TranscriptRow({
       // The shell keeps the row addressable and its content behind Inspect.
       if (renderKind === "deleted") {
         return (
-          <SubstitutedMessageShell message={item.message}>
+          <SubstitutedMessageShell
+            message={item.message}
+            conversationId={conversationId}
+            onInspectMessage={onInspectMessage}
+          >
             <DeletedMessageRow />
           </SubstitutedMessageShell>
         );
@@ -218,14 +252,22 @@ export const TranscriptRow = memo(function TranscriptRow({
       // Slack transcript line inside the ordinary body path.
       if (renderKind === "reaction") {
         return (
-          <SubstitutedMessageShell message={item.message}>
+          <SubstitutedMessageShell
+            message={item.message}
+            conversationId={conversationId}
+            onInspectMessage={onInspectMessage}
+          >
             <ReactionLineRow message={item.message} />
           </SubstitutedMessageShell>
         );
       }
       if (renderKind === "noResponse") {
         return (
-          <SubstitutedMessageShell message={item.message}>
+          <SubstitutedMessageShell
+            message={item.message}
+            conversationId={conversationId}
+            onInspectMessage={onInspectMessage}
+          >
             <NoResponseRow />
           </SubstitutedMessageShell>
         );
@@ -240,6 +282,7 @@ export const TranscriptRow = memo(function TranscriptRow({
           onSurfaceAction={onSurfaceAction}
           onForkConversation={onForkConversation}
           onRetryLatestTurn={onRetryLatestTurn}
+          onInspectMessage={onInspectMessage}
           onOpenRuleEditor={onOpenRuleEditor}
           unknownNudgeToolCallIds={unknownNudgeToolCallIds}
           onDismissUnknownNudge={onDismissUnknownNudge}
@@ -349,7 +392,11 @@ export const TranscriptRow = memo(function TranscriptRow({
       // proactive tail card has no backing message and renders the bare card.
       if (item.message) {
         return (
-          <CreditsUpsellMessageRow message={item.message} />
+          <CreditsUpsellMessageRow
+            message={item.message}
+            conversationId={conversationId}
+            onInspectMessage={onInspectMessage}
+          />
         );
       }
       return <CreditsUpsellCard />;

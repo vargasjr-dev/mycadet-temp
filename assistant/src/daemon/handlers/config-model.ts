@@ -67,16 +67,15 @@ export async function getModelInfo(): Promise<ModelInfo> {
   const config = getConfig();
   const resolved = resolveCallSiteConfig("mainAgent", config.llm);
   const provider = resolved.provider;
-  const visibleCatalog = PROVIDER_CATALOG;
 
   return {
     model: resolved.model,
     provider,
     configuredProviders: await getConfiguredProviders(),
-    availableModels: visibleCatalog
-      .find((p) => p.id === provider)
-      ?.models?.map((m) => ({ id: m.id, displayName: m.displayName })),
-    allProviders: visibleCatalog.map(projectProviderForWire),
+    availableModels: PROVIDER_CATALOG.find(
+      (p) => p.id === provider,
+    )?.models?.map((m) => ({ id: m.id, displayName: m.displayName })),
+    allProviders: PROVIDER_CATALOG.map(projectProviderForWire),
   };
 }
 

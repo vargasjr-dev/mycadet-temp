@@ -356,9 +356,6 @@ async function appendSummaryToFeedTarget(
   try {
     const message = await addMessage(conversationId, "assistant", summary, {
       skipIndexing: true,
-      // The body is bookkeeping about the conversation, not activity in it:
-      // a receipt for work the conversation already saw must not bounce a
-      // chat the user just marked Done back into the sidebar.
     });
     publishConversationMessagesChanged(conversationId);
     log.info(

@@ -51,6 +51,7 @@ export interface ConversationListContextValue {
   onMarkUnread?: (conversation: Conversation) => void;
   onOpenInNewWindow?: (conversation: Conversation) => void;
   onShareFeedback?: () => void;
+  onInspect?: (conversation: Conversation) => void;
 
   /** Custom groups available as "Move to group" targets in each row's menu. */
   conversationGroups?: ConversationGroup[];

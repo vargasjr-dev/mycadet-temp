@@ -2887,6 +2887,36 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     apiKeyUrl: "https://typesafe.ai",
     apiKeyPlaceholder: "Your TypeSafe API key",
   },
+  {
+    id: "cadet",
+    displayName: "Cadet",
+    subtitle: "Models served on Cadet GPU nodes through the cloud connection.",
+    setupMode: "api-key",
+    setupHint:
+      "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",
+    models: [
+      {
+        id: "accounts/fireworks/models/glm-5p3-flash",
+        displayName: "GLM 5.3 Flash",
+        contextWindowTokens: 1040000,
+        maxOutputTokens: 131072,
+        supportsThinking: true,
+        // Same always-on reasoning as GLM 5.3.
+        adaptiveThinkingOnly: true,
+        supportsCaching: true,
+        supportsVision: true,
+        supportsToolUse: true,
+        maxEffort: "max",
+        supportedEfforts: ["low", "high", "max"],
+        pricing: {
+          inputPer1mTokens: 0.15,
+          outputPer1mTokens: 0.5,
+          cacheReadPer1mTokens: 0.029,
+        },
+      },
+    ],
+    defaultModel: "accounts/fireworks/models/glm-5p3-flash",
+  },
 ];
 
 export const PROVIDER_CATALOG: ProviderCatalogEntry[] =

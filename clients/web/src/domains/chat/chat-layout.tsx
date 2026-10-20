@@ -854,6 +854,18 @@ export function ChatLayout({
   const openAppFromChat = useOpenAppFromChat();
   const activeAppId = useViewerStore.use.activeAppId();
 
+  // Inspector affordance for the sidebar context menu. The topbar variant
+  // (in `chat-page.tsx`) uses `useConversationSecondaryActions` so it can
+  // enrich the URL with the latest assistant `messageId` from the active
+  // transcript. The sidebar doesn't hold transcript state, so we navigate
+  // with just the conversation path and let `InspectPage` resolve the
+  // latest assistant message via `ResolveLatestMessage`.
+  const handleInspectConversation = useCallback(
+    (conversation: Conversation) => {
+      void navigate(routes.inspect(conversation.conversationId));
+    },
+    [navigate],
+  );
 
   const handleOpenInNewWindow = useCallback(
     (conversation: Conversation) => {
@@ -901,6 +913,7 @@ export function ChatLayout({
       onMarkAllReadInGroup={handleMarkAllReadInGroup}
       onArchiveAllInGroup={requestArchiveAll}
       onOpenInNewWindow={isNative ? undefined : handleOpenInNewWindow}
+      onInspect={handleInspectConversation}
       onMoveToGroup={handleMoveToGroup}
       onCreateGroupInto={handleRequestCreateGroup}
       onRemoveFromGroup={handleRemoveFromGroup}

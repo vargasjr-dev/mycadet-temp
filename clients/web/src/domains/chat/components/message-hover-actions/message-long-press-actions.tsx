@@ -2,6 +2,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  FileCode,
   GitBranch,
   type LucideIcon,
   Square,
@@ -27,7 +28,8 @@ type MessageLongPressActionsProps = MessageHoverActionsProps & {
 /**
  * Mobile-only action sheet for a message — the BottomSheet counterpart of
  * `MessageHoverActions`. Renders the same action set (Copy, Read aloud,
- * Open in Slack, Fork from here) as `PanelItem` rows inside a `BottomSheet`,
+ * Open in Slack, Fork from here, Inspect) as `PanelItem` rows inside a
+ * `BottomSheet`,
  * which is inherently mobile-only
  * (renders below 768px). Each action runs its callback and then dismisses the
  * sheet so the action's UI feedback (modals, toasts, navigation) doesn't fire
@@ -39,6 +41,7 @@ export function MessageLongPressActions({
   conversationId,
   openInSlackUrl,
   onFork,
+  onInspect,
   open,
   onOpenChange,
 }: MessageLongPressActionsProps) {
@@ -153,6 +156,17 @@ export function MessageLongPressActions({
         icon: GitBranch,
         label: t("messageLongPressActions.forkFromHere"),
         run: onFork,
+      }),
+    );
+  }
+
+  if (onInspect) {
+    items.push(
+      buildItem({
+        key: "inspect",
+        icon: FileCode,
+        label: t("messageLongPressActions.inspect"),
+        run: onInspect,
       }),
     );
   }

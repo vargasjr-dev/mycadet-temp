@@ -87,6 +87,8 @@ export interface TranscriptProps {
   onForkConversation?: (messageId: string) => void;
   /** Callback for "Retry" from the latest assistant message's hover actions. */
   onRetryLatestTurn?: () => void;
+  /** Callback for "Inspect" from a message's hover actions. */
+  onInspectMessage?: (messageId: string) => void;
 
   /** Render-prop for `kind: "onboardingChoice"` items. Onboarding depends
    *  on props from the parent (sendMessage, didOnboarding, etc.) and has a
@@ -686,6 +688,7 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
       onSurfaceAction: rest.onSurfaceAction,
       onForkConversation: rest.onForkConversation,
       onRetryLatestTurn: rest.onRetryLatestTurn,
+      onInspectMessage: rest.onInspectMessage,
       renderOnboardingChoice: rest.renderOnboardingChoice,
       assistantDisplayName: rest.assistantDisplayName,
       onOpenRuleEditor: rest.onOpenRuleEditor,

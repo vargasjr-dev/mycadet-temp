@@ -39,6 +39,7 @@ export interface LatestTurnRowProps {
   ) => void;
   onForkConversation?: (messageId: string) => void;
   onRetryLatestTurn?: () => void;
+  onInspectMessage?: (messageId: string) => void;
   renderOnboardingChoice?: () => ReactNode;
   onOpenRuleEditor?: (context: {
     toolName: string;
@@ -87,6 +88,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
   onSurfaceAction,
   onForkConversation,
   onRetryLatestTurn,
+  onInspectMessage,
   renderOnboardingChoice,
   onOpenRuleEditor,
   unknownNudgeToolCallIds,
@@ -122,6 +124,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
         onSurfaceAction={onSurfaceAction}
         onForkConversation={onForkConversation}
         onRetryLatestTurn={onRetryLatestTurn}
+        onInspectMessage={onInspectMessage}
         renderOnboardingChoice={renderOnboardingChoice}
         onOpenRuleEditor={onOpenRuleEditor}
         unknownNudgeToolCallIds={unknownNudgeToolCallIds}
@@ -145,6 +148,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
         onSurfaceAction={onSurfaceAction}
         onForkConversation={onForkConversation}
         onRetryLatestTurn={onRetryLatestTurn}
+        onInspectMessage={onInspectMessage}
         renderOnboardingChoice={renderOnboardingChoice}
         onOpenRuleEditor={onOpenRuleEditor}
         unknownNudgeToolCallIds={unknownNudgeToolCallIds}

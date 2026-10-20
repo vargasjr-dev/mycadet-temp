@@ -1295,6 +1295,18 @@ export const MODELS_BY_PROVIDER = {
       supportsText: false,
     },
   ],
+  cadet: [
+    {
+      id: "accounts/fireworks/models/glm-5p3-flash",
+      displayName: "GLM 5.3 Flash",
+      vendor: "zhipu",
+      contextWindowTokens: 1_040_000,
+      defaultContextWindowTokens: 200_000,
+      maxOutputTokens: 131_072,
+      supportsThinking: true,
+      adaptiveThinkingOnly: true,
+    },
+  ],
   "openai-compatible": [],
 } as const satisfies Record<string, readonly LlmCatalogModel[]>;
 
@@ -1317,6 +1329,7 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
   ionet: "meta-llama/Llama-3.3-70B-Instruct",
   poolside: "poolside/laguna-s-2.1",
   typesafe: "jev-latest",
+  cadet: "accounts/fireworks/models/glm-5p3-flash",
   "openai-compatible": "",
 };
 
@@ -1422,6 +1435,9 @@ export const CADET_SERVED_PROVIDERS = [
   "fireworks",
   "together",
   "typesafe",
+  // The cadet entry's own GPU models ride the union too; they dedupe by id
+  // against the upstream catalogs (first provider in order wins).
+  "cadet",
 ] as const;
 
 /**

@@ -747,54 +747,6 @@ async function resolvedRevealCandidatesForState(
   return state.revealCandidateCache.candidates;
 }
 
-/**
- * Kick off (or refresh) the live stream guard's swap entries from the
- * memoized candidate resolution. Called from `handleToolResult` once a
- * staged reveal invocation is confirmed successful — never at propose
- * time, since candidate resolution reads plaintext straight from the
- * store and the tool may yet be denied or cancelled. The store read is
- * asynchronous while the dispatcher moves on, so a slow
- * `getSecureKeyAsync` could let the next text deltas reach the guard
- * before entries exist. The pending promise is therefore recorded on
- * state and awaited by the dispatcher at the delta boundary (see
- * `dispatchAgentEvent`), turning the race into a barrier. If resolution
- * fails, the guard stays on its previous entries and the persist seams
- * still redact; the stream guard remains a wire-level layer, persistence
- * the redaction boundary.
- */
-/**
- * Barrier for the live reveal guard: resolves once any in-flight priming
- * has settled. Awaited before text deltas are guarded and before the
- * end-of-message guard flush, so echoed plaintext can never beat the
- * guard entries onto the wire. No-op (no await, no microtask churn) when
- * nothing is being primed.
- */
-/**
- * `--for-chat` mints authorized for THIS run: recorded by the reveal route
- * after this run's watermark AND matching an identity this run itself
- * staged from its own `tool_use` commands. Both legs are load-bearing —
- * the registry proves a reveal EXECUTED (a quoted/commented-out invocation
- * never reaches the route), while the staging set scopes authority to the
- * conversation that actually requested it (registry records carry no
- * trustworthy conversation identity, so without this leg one
- * conversation's approved reveal could authorize a concurrent
- * conversation's forged sentinel). Read fresh at each guard site rather
- * than cached: the route records a mint while the reveal tool is still
- * executing, so by the time the model echoes the sentinel back the
- * registry is already current — no priming race like the async candidate
- * fetch has.
- */
-/**
- * Combined re-mint authorities for the LIVE emit sites (synchronous):
- * route-recorded `--for-chat` mints plus the candidate-derived authorities
- * primed behind the dispatcher barrier alongside the swap entries.
- */
-/**
- * Combined re-mint authorities for the PERSIST sites, deriving the
- * candidate half from the resolved candidate set the call site already
- * fetched — persistence must not depend on whether live priming ran
- * (a flush can outlive the stream), so it never reads the primed state.
- */
 // ── Partial-persistence helpers ──────────────────────────────────────
 
 /**

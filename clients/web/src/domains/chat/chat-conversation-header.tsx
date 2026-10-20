@@ -118,6 +118,11 @@ export function ChatConversationHeader({
           ? () => headerSupplements.onOpenInNewWindow!(activeConversation)
           : undefined
       }
+      onInspect={
+        headerSupplements?.onInspect && activeConversation.conversationId
+          ? () => headerSupplements.onInspect!(activeConversation)
+          : undefined
+      }
       onCopyConversation={headerSupplements?.onCopyConversation ?? undefined}
       onCopyConversationId={
         activeConversation.conversationId

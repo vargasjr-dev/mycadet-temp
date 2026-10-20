@@ -79,7 +79,7 @@ describe("cadet connection routing", () => {
         baseUrl: "https://test-cloud.mycadet.ai/v1/runtime-proxy/cadet",
       },
       {
-        model: "qwen/qwen3-8b",
+        model: "accounts/fireworks/models/glm-5p3-flash",
         provider: "cadet",
       },
     );

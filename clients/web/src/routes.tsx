@@ -774,6 +774,15 @@ export const routeTree = [
                     path: "conversations/:conversationId",
                     Component: ChatPage,
                   },
+                  {
+                    path: "conversations/:conversationId/inspect",
+                    lazy: {
+                      Component: () =>
+                        import("@/domains/chat/inspector/inspect-page").then(
+                          (m) => m.InspectPage,
+                        ),
+                    },
+                  },
                   // The app the viewer shows is part of the URL so browser Back
                   // closes it (see `useAppRouteSync`). Same component and the
                   // same lifecycle tolerance as the conversation route above;

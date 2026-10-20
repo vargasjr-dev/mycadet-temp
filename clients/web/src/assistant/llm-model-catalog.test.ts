@@ -128,12 +128,22 @@ describe("parity with meta/llm-provider-catalog.json", () => {
   );
   const webProviderIds = (
     Object.keys(MODELS_BY_PROVIDER) as LlmProviderId[]
-  ).filter((id) => id !== "openai-compatible");
+  ).filter((id) => id !== "openai-compatible" && id !== "cadet");
   const pickerProviderIds = webProviderIds;
 
-  test("cadet picker is the union of served catalogs", () => {
-    // The picker exposes the union of every served catalog through
+  test("cadet picker is the union of served catalogs, including GPU models", () => {
+    // MODELS_BY_PROVIDER.cadet lists the Cadet-hosted GPU models; the picker
+    // still exposes the union of every served catalog through
     // getModelsForProvider("cadet").
+    expect(MODELS_BY_PROVIDER.cadet.map((model) => model.id)).toEqual([
+      "accounts/fireworks/models/glm-5p3-flash",
+    ]);
+    expect(metaProvidersById.get("cadet")?.id).toBe("cadet");
+    // GLM 5.3 Flash is dual-hosted (Fireworks upstream + Cadet entry), so the
+    // cloud upstream resolves to the first served catalog carrying the id.
+    expect(
+      getCloudUpstreamForModel("accounts/fireworks/models/glm-5p3-flash"),
+    ).toBe("fireworks");
     const cadetModels = getModelsForProvider("cadet");
     const servedIds = new Set<string>(
       CADET_SERVED_PROVIDERS.flatMap((p) =>
@@ -155,9 +165,9 @@ describe("parity with meta/llm-provider-catalog.json", () => {
 
   test("getCloudUpstreamForModel derives the serving provider", () => {
     expect(getCloudUpstreamForModel("claude-opus-4-8")).toBe("anthropic");
-    expect(
-      getCloudUpstreamForModel("accounts/fireworks/models/glm-5p3"),
-    ).toBe("fireworks");
+    expect(getCloudUpstreamForModel("accounts/fireworks/models/glm-5p3")).toBe(
+      "fireworks",
+    );
     expect(getCloudUpstreamForModel("not-a-real-model")).toBeUndefined();
   });
 
@@ -173,7 +183,9 @@ describe("parity with meta/llm-provider-catalog.json", () => {
     expect(providerOffersTextGeneration("openai-compatible")).toBe(true);
     expect(getTextGenerationModelsForProvider("typesafe")).toEqual([]);
     expect(
-      getModelsForProvider("typesafe").some((model) => model.id === "jev-latest"),
+      getModelsForProvider("typesafe").some(
+        (model) => model.id === "jev-latest",
+      ),
     ).toBe(true);
   });
 

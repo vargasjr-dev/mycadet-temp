@@ -33,6 +33,7 @@ import { getLogger } from "../../util/logger.js";
 import { AnthropicProvider } from "../anthropic/client.js";
 import { AtlasCloudProvider } from "../atlascloud/client.js";
 import { BasetenProvider } from "../baseten/client.js";
+import { CadetProvider } from "../cadet/client.js";
 import {
   CADET_CLOUD_PROVIDER,
   CLOUD_ROUTABLE_PROVIDERS,
@@ -209,6 +210,11 @@ const ADAPTER_FACTORIES: Record<string, AdapterFactory> = {
     }),
   typesafe: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
     new JevProvider(apiKey, model, {
+      streamTimeoutMs,
+      ...(baseURL ? { baseURL } : {}),
+    }),
+  cadet: ({ apiKey, model, streamTimeoutMs, baseURL }) =>
+    new CadetProvider(apiKey, model, {
       streamTimeoutMs,
       ...(baseURL ? { baseURL } : {}),
     }),

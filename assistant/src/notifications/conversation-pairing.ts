@@ -733,13 +733,7 @@ async function appendBodyToSourceConversation(
     conversationId,
     "assistant",
     messageContent,
-    {
-      skipIndexing: true,
-      // A notification the bell carries is bookkeeping about the
-      // conversation, not activity in it, so it must not bounce a chat the
-      // user just marked Done back into the sidebar. One the bell does not
-      // carry has this transcript as its only home, and the chat resurfaces.
-    },
+    { skipIndexing: true },
   );
   // `addMessage` projects attention metadata alone, so a client with this
   // conversation open needs the messages tag to refetch the transcript. A

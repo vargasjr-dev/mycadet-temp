@@ -172,19 +172,18 @@ export function ConversationRowList({
      control so it can be put back. */
   const canExpand =
     expandable === true && isLast === true && !unbounded && !scrollWithBody;
-  const grown = expanded;
   const { ref: scrollerRef, overflows: scrollerOverflows } =
     useOverflows<HTMLDivElement>({ contentKey: items.length });
   const overflowsCap =
     windows || scrollerOverflows || onEndReached !== undefined;
   const expandRow =
-    canExpand && (overflowsCap || grown) ? (
+    canExpand && (overflowsCap || expanded) ? (
       <SidebarExpandRow
-        expanded={grown}
-        onToggle={() => onExpandedChange?.(!grown)}
+        expanded={expanded}
+        onToggle={() => onExpandedChange?.(!expanded)}
       />
     ) : null;
-  const atMidHeight = canExpand && !grown;
+  const atMidHeight = canExpand && !expanded;
 
   const renderRow = (conversation: Conversation) => (
     <ConversationRow

@@ -492,6 +492,8 @@ export function ActiveChatView() {
     handleForkConversationFromMenu,
     handleRetryLatestTurn,
     handleOpenInNewWindow,
+    handleInspectConversation,
+    handleInspectMessage,
     handleCopyConversation,
   } = useConversationSecondaryActions({
     activeConversation: activeConversation ?? null,
@@ -536,6 +538,7 @@ export function ActiveChatView() {
     assetsRefreshKey,
     handleForkConversationFromMenu,
     handleOpenInNewWindow,
+    handleInspectConversation,
     handleCopyConversation,
     onRefresh: handleRefreshLatest,
   });
@@ -587,6 +590,7 @@ export function ActiveChatView() {
     onRetryLatestTurn: supportsRetryTurn
       ? handleRetryLatestTurnRequested
       : undefined,
+    handleInspectMessage,
 
     // History pagination
     historyPagination: historyResult.pagination,
