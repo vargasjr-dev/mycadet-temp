@@ -12,7 +12,6 @@ import {
 } from "@/domains/chat/voice/live-voice/session-control";
 import { MIN_VERSION as SIGHT_STREAM_MIN_VERSION } from "@/lib/backwards-compat/use-supports-sight-stream";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 
 const ASSISTANT_ID = "assistant-1";
 
@@ -32,12 +31,6 @@ function withShareBridge() {
     companion: { setScreenShare },
   };
   return setScreenShare;
-}
-
-function withVisionMode(value: string): void {
-  useClientFeatureFlagStore
-    .getState()
-    .setStringFlags({ visionMode: value }, null);
 }
 
 function withCamera(): void {
@@ -77,7 +70,6 @@ afterEach(() => {
   applyLiveVoiceSessionControl({ action: "end" });
   useLiveVoiceStore.getState().setControls(null);
   delete (window as unknown as { cadet?: unknown }).cadet;
-  withVisionMode("off");
 });
 
 describe("applyLiveVoiceSessionControl", () => {
@@ -257,7 +249,6 @@ describe("look controls", () => {
 describe("liveVoiceSessionControls", () => {
   test("end and mute only, for an assistant that cannot take frames", () => {
     withShareBridge();
-    withVisionMode("on");
     withCamera();
 
     expect(liveVoiceSessionControls(ASSISTANT_ID, "composer")).toEqual([
@@ -269,7 +260,6 @@ describe("liveVoiceSessionControls", () => {
   test("the macOS app's chat call can be shown the screen and the camera", () => {
     withSightStreamAssistant();
     withShareBridge();
-    withVisionMode("on");
     withCamera();
 
     expect(liveVoiceSessionControls(ASSISTANT_ID, "composer")).toEqual([
@@ -284,7 +274,6 @@ describe("liveVoiceSessionControls", () => {
   test("a companion call has no room, so no camera", () => {
     withSightStreamAssistant();
     withShareBridge();
-    withVisionMode("on");
     withCamera();
 
     expect(liveVoiceSessionControls(ASSISTANT_ID, "companion")).toEqual([
@@ -295,15 +284,10 @@ describe("liveVoiceSessionControls", () => {
     ]);
   });
 
-  test("a browser gets the camera behind the vision flag", () => {
+  test("a browser gets the camera", () => {
     withSightStreamAssistant();
     withCamera();
 
-    expect(liveVoiceSessionControls(ASSISTANT_ID, "composer")).toEqual([
-      "end",
-      "mute",
-    ]);
-    withVisionMode("on");
     expect(liveVoiceSessionControls(ASSISTANT_ID, "composer")).toEqual([
       "end",
       "mute",

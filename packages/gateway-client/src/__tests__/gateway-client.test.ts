@@ -115,7 +115,7 @@ describe("ipc-client", () => {
             const req = JSON.parse(line);
             const resp = JSON.stringify({
               id: req.id,
-              result: { flags: { browser: true } },
+              result: { thresholds: { daily: 42 } },
             });
             conn.write(resp + "\n");
           }
@@ -126,8 +126,8 @@ describe("ipc-client", () => {
         server.listen(socketPath, () => resolve());
       });
 
-      const result = await ipcCall(socketPath, "get_feature_flags");
-      expect(result).toEqual({ flags: { browser: true } });
+      const result = await ipcCall(socketPath, "get_global_thresholds");
+      expect(result).toEqual({ thresholds: { daily: 42 } });
     });
 
     test("returns undefined when server sends error response", async () => {

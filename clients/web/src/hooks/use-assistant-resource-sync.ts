@@ -19,10 +19,9 @@
  * Tag-driven operations are stateless one-liner invalidations with no
  * per-row patching.
  *
- * More complex sync domains (conversations, feature flags) own their
+ * More complex sync domains (conversations) own their
  * own hooks:
  * - `hooks/use-conversation-sync.ts`
- * - `hooks/use-feature-flag-bus-sync.ts`
  *
  * References:
  * - EVENT_BUS.md — bus subscription contract

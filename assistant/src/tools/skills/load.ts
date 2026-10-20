@@ -1,9 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
-import { getConfig } from "../../config/loader.js";
-import { skillFlagKey } from "../../config/skill-state.js";
 import type { SkillSummary, SkillToolManifest } from "../../config/skills.js";
 import {
   listReferenceFiles,
@@ -249,16 +246,6 @@ export const skillLoadTool = {
       child.owner?.kind === "plugin" &&
       !enabledPluginSet.has(child.owner.id);
 
-    // Assistant feature flag gate: reject loading if the skill's flag is OFF
-    const config = getConfig();
-    const flagKey = skillFlagKey(skill);
-    if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
-      return {
-        content: `Error: skill "${skill.id}" is currently unavailable (disabled by feature flag)`,
-        isError: true,
-      };
-    }
-
     // Load catalog for include validation and child metadata output
     let catalogIndex: Map<string, SkillSummary> | undefined;
     let missingIncludedSkillIds: string[] = [];
@@ -427,13 +414,6 @@ export const skillLoadTool = {
         if (!isSkillCompatibleWithCloud(child)) {
           continue;
         }
-        const childFlagKey = skillFlagKey(child);
-        if (
-          childFlagKey &&
-          !isAssistantFeatureFlagEnabled(childFlagKey, config)
-        ) {
-          continue;
-        }
 
         childLines.push(
           `  - ${child.id}: ${child.displayName} - ${child.description} (${child.skillFilePath})`,
@@ -576,13 +556,6 @@ export const skillLoadTool = {
         // loaded-skill marker (which projects the child's tools) for a child
         // whose owning plugin is outside the effective set.
         if (childOutOfPluginScope(child)) {
-          continue;
-        }
-        const childFlagKey2 = skillFlagKey(child);
-        if (
-          childFlagKey2 &&
-          !isAssistantFeatureFlagEnabled(childFlagKey2, config)
-        ) {
           continue;
         }
         let childHash: string | undefined;

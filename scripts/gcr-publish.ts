@@ -74,7 +74,6 @@ interface ServiceConfig {
   imageEnvVar: string;
   context: string;
   dockerfile: string;
-  featureFlagSync?: { src: string; dest: string };
 }
 
 const SERVICE_CONFIG: Record<Service, ServiceConfig> = {
@@ -82,19 +81,11 @@ const SERVICE_CONFIG: Record<Service, ServiceConfig> = {
     imageEnvVar: "ASSISTANT_IMAGE_NAME",
     context: ".",
     dockerfile: "assistant/Dockerfile",
-    featureFlagSync: {
-      src: "meta/feature-flags/feature-flag-registry.json",
-      dest: "assistant/src/config/feature-flag-registry.json",
-    },
   },
   gateway: {
     imageEnvVar: "GATEWAY_IMAGE_NAME",
     context: "gateway",
     dockerfile: "gateway/Dockerfile",
-    featureFlagSync: {
-      src: "meta/feature-flags/feature-flag-registry.json",
-      dest: "gateway/src/feature-flag-registry.json",
-    },
   },
   "credential-executor": {
     imageEnvVar: "CREDENTIAL_EXECUTOR_IMAGE_NAME",
@@ -231,31 +222,6 @@ try {
 }
 console.log("");
 
-// ---------------------------------------------------------------------------
-// Sync feature flags
-// ---------------------------------------------------------------------------
-
-const needsFeatureFlagSync = selectedServices.some(
-  (svc) => SERVICE_CONFIG[svc].featureFlagSync
-);
-
-if (needsFeatureFlagSync) {
-  console.log("==> Syncing feature flag registry");
-  for (const svc of selectedServices) {
-    const sync = SERVICE_CONFIG[svc].featureFlagSync;
-    if (sync) {
-      const src = resolve(REPO_ROOT, sync.src);
-      const dest = resolve(REPO_ROOT, sync.dest);
-      if (existsSync(src)) {
-        execSync(`cp "${src}" "${dest}"`);
-        console.log(`  ${sync.src} -> ${sync.dest}`);
-      } else {
-        console.warn(`  WARNING: Feature flag source not found: ${sync.src}`);
-      }
-    }
-  }
-  console.log("");
-}
 
 // ---------------------------------------------------------------------------
 // Build and push each service

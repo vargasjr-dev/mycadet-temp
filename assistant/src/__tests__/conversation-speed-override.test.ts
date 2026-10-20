@@ -8,7 +8,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import { beforeEach } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent, AgentLoopConfig } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -163,7 +162,6 @@ import { Conversation } from "../daemon/conversation.js";
 beforeEach(() => {
   // Real flag resolution for the surviving registry flags, replacing the
   // former blanket module mock.
-  setAllFlagsOnForTesting();
 });
 
 // ---------------------------------------------------------------------------

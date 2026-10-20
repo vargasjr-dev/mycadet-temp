@@ -36,7 +36,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "./feature-flag-test-helpers.js";
 import { setConfig } from "./helpers/set-config.js";
 import { mockHttp } from "./requests-mock.js";
 
@@ -129,7 +128,6 @@ function catalogBody(ids: string[]): { skills: unknown[] } {
 }
 
 beforeEach(() => {
-  setAllFlagsOnForTesting();
   invalidateCatalogCache();
   _resetFileProvidersForTest();
   installNpxShim({});

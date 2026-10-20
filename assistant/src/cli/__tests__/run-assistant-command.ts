@@ -64,8 +64,8 @@ function captureWrites(chunks: string[]): typeof process.stdout.write {
 export async function runAssistantCommandFull(
   ...args: string[]
 ): Promise<AssistantCommandResult> {
-  const { buildCliProgram } = await import("../program.js");
-  const program = await buildCliProgram();
+  const { buildCliProgramTree } = await import("../program.js");
+  const program = buildCliProgramTree();
   program.exitOverride();
 
   const stderrChunks: string[] = [];

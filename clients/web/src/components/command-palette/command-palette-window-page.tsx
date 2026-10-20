@@ -7,7 +7,6 @@ import {
 import { useAssistantLifecycle } from "@/assistant/use-lifecycle";
 import { useCommandPaletteSections } from "@/domains/chat/hooks/use-command-palette-sections";
 import { useAppTheme } from "@/hooks/use-app-theme";
-import { useClientFeatureFlagSync } from "@/hooks/use-client-feature-flag-sync";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { useGatedSelectedAssistantId } from "@/assistant/selection";
 import {
@@ -18,7 +17,6 @@ import type { CadetCommand } from "@/runtime/is-electron";
 import {
   useAuthStore,
   useHasCloudSession,
-  useIsSessionInitializing,
 } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
@@ -62,12 +60,10 @@ const commandForItem = (item: CommandPaletteItemData): CadetCommand | null => {
 
 export function CommandPaletteWindowPage() {
   const sessionStatus = useAuthStore.use.sessionStatus();
-  const isSessionInitializing = useIsSessionInitializing();
   const hasCloudSession = useHasCloudSession();
   // This standalone route bypasses RootLayout; bootstrap theme + feature flags
   // so CSS custom properties resolve to the user's stored preference.
   useAppTheme();
-  useClientFeatureFlagSync(!isSessionInitializing);
   useAssistantLifecycle({
     sessionStatus,
     hasCloudSession,

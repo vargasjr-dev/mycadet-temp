@@ -27,9 +27,9 @@ let processingAfterInterrupt: boolean | null = null;
 /**
  * What the synchronous gate answers. `eligible` is the only value that reaches
  * `interruptRunningTurn`; everything else queues without a handover, which is
- * what the flag-off and wrong-actor paths do.
+ * what the wrong-actor path does.
  */
-let interruptEligibility: "eligible" | "flag_off" = "eligible";
+let interruptEligibility: "eligible" | "other_actor" = "eligible";
 
 /** Held open by the acknowledgement-timing test to stall the handover. */
 let interruptGate: Promise<void> = Promise.resolve();
@@ -268,8 +268,8 @@ describe("CLI signal send after an interrupt", () => {
     expect(backgroundDispatches).toEqual(["answer me"]);
   });
 
-  test("queues on `declined`, which is what the flag-off path answers", async () => {
-    interruptEligibility = "flag_off";
+  test("queues on `declined`, which is what the wrong-actor path answers", async () => {
+    interruptEligibility = "other_actor";
     conversationProcessing = true;
 
     await sendSignal("hello");

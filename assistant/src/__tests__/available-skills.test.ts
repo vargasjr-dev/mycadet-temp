@@ -1,12 +1,11 @@
 /**
  * Tests for `skills/available-skills.ts` — the plugin-facing skill read API.
  * Covers the host-side composition: catalog load + install-state resolution
- * (real `resolveSkillStates`) + feature-flag gating + install-meta folding,
- * and the remote-catalog projection with flag gating.
+ * (real `resolveSkillStates`) + install-meta folding,
+ * and the remote-catalog projection.
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import {
   SKILL_PLATFORM_VALUES,
@@ -56,8 +55,6 @@ mock.module("../skills/catalog-cache.js", () => ({
 
 beforeEach(() => {
   // Real flag resolution: only the synthetic "on-flag" key is enabled.
-  setOverridesForTesting({ "on-flag": true });
-
   catalogFixture = [];
   remoteFixture = [];
   remoteError = null;
@@ -105,22 +102,6 @@ describe("listInstalledSkills", () => {
       state: "enabled",
     });
     expect(entries[1]!.state).toBe("disabled");
-  });
-
-  test("reports flag-gated skills as unavailable instead of omitting them", async () => {
-    catalogFixture = [
-      makeSummary({ id: "gated", featureFlag: "off-flag" }),
-      makeSummary({ id: "ungated", featureFlag: "on-flag" }),
-    ];
-
-    const { listInstalledSkills } =
-      await import("../skills/available-skills.js");
-    const entries = await listInstalledSkills();
-
-    expect(entries.map((e) => [e.id, e.state])).toEqual([
-      ["gated", "unavailable"],
-      ["ungated", "enabled"],
-    ]);
   });
 
   test("reports host-incompatible skills as unavailable", async () => {
@@ -202,7 +183,7 @@ describe("listInstalledSkills", () => {
 });
 
 describe("listCatalogSkills", () => {
-  test("projects cadet metadata with name fallback and flag gating", async () => {
+  test("projects cadet metadata with name fallback", async () => {
     remoteFixture = [
       {
         id: "rich-skill",
@@ -213,7 +194,6 @@ describe("listCatalogSkills", () => {
             "display-name": "Rich Skill",
             "activation-hints": ["when remote"],
             "avoid-when": ["when local"],
-            "feature-flag": "on-flag",
           },
         },
       },
@@ -259,7 +239,7 @@ describe("listCatalogSkills", () => {
         activationHints: undefined,
         avoidWhen: undefined,
         installed: false,
-        state: "unavailable",
+        state: "available",
       },
     ]);
   });

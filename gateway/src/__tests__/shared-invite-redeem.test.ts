@@ -62,11 +62,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-const actualFlagResolver = await import("../feature-flag-resolver.js");
-mock.module("../feature-flag-resolver.js", () => ({
-  ...actualFlagResolver,
-  isFeatureFlagEnabled: () => false,
-}));
 
 // Token minting stays real; a test can make the next mint throw to fail a
 // redemption after its claim.

@@ -11,7 +11,7 @@
  * - The persist middleware serialises the slice into one localStorage key,
  *   `cadet:debug:cameraGateHud`. The `cadet:debug:` namespace is what gets
  *   the key captured into a support export, so a report filed from a session
- *   with a moved threshold says so (see `lib/feature-flags/debug-flag-snapshot.ts`).
+ *   with a moved threshold says so.
  * - A persisted payload is never trusted. Every restored value is clamped to
  *   its slider's range on the way in, the interval pair is put back the right
  *   way round, and anything missing or unparseable falls back to the shipped

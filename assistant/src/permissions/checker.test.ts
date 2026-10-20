@@ -7,8 +7,6 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOffForTesting } from "../__tests__/feature-flag-test-helpers.js";
-
 // ── Module mocks ─────────────────────────────────────────────────────────────
 
 // Mock feature flags to return false by default.
@@ -197,7 +195,6 @@ describe("Permission Checker (gateway IPC)", () => {
   beforeEach(() => {
     // Real flag resolution with every default-enabled flag pinned off —
     // replaces the former blanket `() => false` module mock.
-    setAllFlagsOffForTesting();
     mockIsContainerized = false;
     mockIpcClassifyRiskResult = undefined;
     lastClassifyRiskParams = undefined;

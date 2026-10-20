@@ -29,7 +29,6 @@ import type {
   TurnInterfaceContext,
 } from "../channels/types.js";
 import { parseChannelId, parseInterfaceId } from "../channels/types.js";
-import { isInterruptOnSendEnabled } from "../config/interrupt-on-send-gate.js";
 import {
   contextWindowConfigFromEffective,
   resolveEffectiveContextWindow,
@@ -2579,10 +2578,10 @@ export class Conversation {
    * ordinary end-of-turn drain rather than by cutting a turn short.
    */
   canHandoffAtCheckpoint(): boolean {
-    if (isInterruptOnSendEnabled()) {
-      return false;
-    }
-    return this._processing && this.hasQueuedMessages();
+    // Interrupt-on-send is unconditional now: a busy send interrupts the turn
+    // instead of queueing, so the queue never holds entries a checkpoint
+    // handoff should cut a turn short for.
+    return false;
   }
 
   hasPendingConfirmation(requestId: string): boolean {

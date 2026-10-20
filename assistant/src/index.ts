@@ -5,9 +5,9 @@ import {
   detectUnknownCommand,
   formatUnknownCommandMessage,
 } from "./cli/lib/unknown-command.js";
-import { buildCliProgram } from "./cli/program.js";
+import { buildCliProgramTree } from "./cli/program.js";
 
-const program = await buildCliProgram();
+const program = buildCliProgramTree();
 
 // Commander processes `--help` before any action or hook fires, so
 // `assistant <unknown> --help` would dump the root help instead of flagging

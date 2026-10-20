@@ -42,7 +42,6 @@ import type { LogsExportPostData } from "@/generated/daemon/types.gen";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { buildAssetDiagnosticsSnapshot } from "@/lib/asset-query-diagnostics";
 import { buildDiagnosticsSnapshot } from "@/lib/diagnostics";
-import { buildDebugFlagSnapshot } from "@/lib/feature-flags/debug-flag-snapshot";
 import { isElectron } from "@/runtime/is-electron";
 import { saveFile } from "@/runtime/native-file";
 import { Trans, useTranslation } from "@/i18n";
@@ -509,15 +508,6 @@ async function buildClientLogsFile(
       // A diagnostic snapshot must never block a support submission.
     }
   }
-
-  // Capture client debug-flag state so flag values are unambiguous during
-  // analysis. The flags are localStorage-only overrides with no server
-  // targeting, so they can't be reconstructed after the fact — a report has
-  // to carry them or the resolved value is lost.
-  const debugFlagBytes = new TextEncoder().encode(
-    JSON.stringify(buildDebugFlagSnapshot(), null, 2),
-  );
-  tarParts.push(buildTarEntry("web-debug-flags.json", debugFlagBytes));
 
   for (const file of extraLogFiles) {
     const contents = file.contents.trim();

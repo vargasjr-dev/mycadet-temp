@@ -3,7 +3,6 @@ import { useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 
@@ -16,20 +15,16 @@ function PreviewFixture() {
   useLayoutEffect(() => {
     const initialSession = useDesktopPreviewStore.getState().session;
     const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
-    const assistantDesktop =
-      useAssistantFeatureFlagStore.getState().assistantDesktop;
     const assistantState = useAssistantLifecycleStore.getState().assistantState;
     useResolvedAssistantsStore.setState({
       activeAssistantId: "assistant-example",
     });
-    useAssistantFeatureFlagStore.setState({ assistantDesktop: true });
     useAssistantLifecycleStore.setState({
       assistantState: { kind: "active", isLocal: false, health: "healthy" },
     });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
       useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
-      useAssistantFeatureFlagStore.setState({ assistantDesktop });
       useAssistantLifecycleStore.setState({ assistantState });
     };
   }, []);

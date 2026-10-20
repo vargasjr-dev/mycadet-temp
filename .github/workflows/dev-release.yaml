@@ -135,8 +135,6 @@ jobs:
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
 
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
 
       - name: Lint
         run: bun run lint
@@ -165,8 +163,6 @@ jobs:
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
 
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
 
       - name: Typecheck
         run: bunx tsc --noEmit
@@ -201,8 +197,6 @@ jobs:
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
 
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
 
       - name: Test (shard ${{ matrix.shard }} of 8)
         run: bun run test
@@ -228,8 +222,6 @@ jobs:
         run: bun install --frozen-lockfile --filter=@mycadet/gateway
         working-directory: gateway
 
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
 
       - name: Lint
         run: bun run lint
@@ -408,8 +400,6 @@ jobs:
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
 
-      - name: Sync feature flag registry for Docker context
-        run: cp meta/feature-flags/feature-flag-registry.json assistant/src/config/feature-flag-registry.json
 
       - name: Build and push by digest
         id: build
@@ -549,8 +539,6 @@ jobs:
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
 
-      - name: Sync feature flag registry for Docker context
-        run: cp meta/feature-flags/feature-flag-registry.json gateway/src/feature-flag-registry.json
 
       - name: Build and push by digest
         id: build
@@ -1182,8 +1170,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
       - name: Stamp dev version
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
       - name: Install package dependencies
@@ -1226,8 +1212,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
       - name: Stamp dev version
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
       - name: Install package dependencies
@@ -1273,8 +1257,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
       - name: Stamp dev version
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' credential-executor/package.json > credential-executor/package.json.tmp && mv credential-executor/package.json.tmp credential-executor/package.json
       - name: Install package dependencies
@@ -1317,8 +1299,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Sync feature flag registry
-        run: bun run meta/sync-bundled-copies.ts
       - name: Stamp dev version
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
       - name: Install package dependencies

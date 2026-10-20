@@ -2,7 +2,7 @@ import type { ConfigFileCache } from "../config-file-cache.js";
 import type { CredentialCache } from "../credential-cache.js";
 import { credentialKey } from "../credential-key.js";
 import { fetchImpl } from "../fetch.js";
-import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 

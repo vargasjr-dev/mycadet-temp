@@ -99,25 +99,16 @@ async function buildToolsSection(
  * The full catalog is included (one summarized line per skill) so the advisor
  * can point the agent at any existing capability instead of letting it
  * reinvent one. Skills the conversation cannot actually load are omitted,
- * mirroring the `skill_load` gates: plugin-owned skills outside the per-chat
- * plugin scope and skills whose feature flag is off.
+ * mirroring the `skill_load` gates: plugin-owned skills outside the
+ * per-chat plugin scope.
  */
 async function buildSkillsSection(
   enabledPluginSet: ReadonlySet<string> | null | undefined,
 ): Promise<string | null> {
   try {
-    const [
-      { loadSkillCatalog },
-      { skillFlagKey },
-      { isAssistantFeatureFlagEnabled },
-      { getConfig },
-    ] = await Promise.all([
+    const [{ loadSkillCatalog }] = await Promise.all([
       import("../config/skills.js"),
-      import("../config/skill-state.js"),
-      import("../config/assistant-feature-flags.js"),
-      import("../config/loader.js"),
     ]);
-    const config = getConfig();
     const pluginScope = enabledPluginSet ?? null;
     const catalog = loadSkillCatalog().filter((skill) => {
       if (
@@ -127,8 +118,7 @@ async function buildSkillsSection(
       ) {
         return false;
       }
-      const flagKey = skillFlagKey(skill);
-      return !flagKey || isAssistantFeatureFlagEnabled(flagKey, config);
+      return true;
     });
     if (catalog.length === 0) {
       return null;

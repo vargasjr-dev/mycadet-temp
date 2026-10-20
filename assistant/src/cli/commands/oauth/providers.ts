@@ -52,7 +52,6 @@ interface SerializedProvider {
   responseOkField?: string | null;
   availableScopes?: unknown;
   setupNotes?: string[] | unknown;
-  featureFlag?: string | null;
   logoUrl?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -230,9 +229,6 @@ function formatProviderDetail(p: SerializedProvider): string {
       lines.push(`  Setup notes: ${formatJsonValue(p.setupNotes)}`);
     }
   }
-  if (p.featureFlag) {
-    lines.push(`  Feature flag: ${p.featureFlag}`);
-  }
   if (p.logoUrl) {
     lines.push(`  Logo: ${p.logoUrl}`);
   }
@@ -306,7 +302,6 @@ export function registerProviderCommands(oauth: Command): void {
         logoUrl: p.logo_url as string | null,
         dashboardUrl: p.dashboard_url as string | null,
         clientIdPlaceholder: p.client_id_placeholder as string | null,
-        featureFlag: p.feature_flag as string | null,
         actsAs: p.acts_as as "user" | "assistant" | undefined,
       }));
 

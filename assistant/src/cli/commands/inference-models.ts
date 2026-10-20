@@ -23,7 +23,6 @@ interface CatalogModel {
   supportsThinking?: boolean;
   supportsVision?: boolean;
   supportsToolUse?: boolean;
-  featureFlag?: string;
 }
 
 export function attachModelsSubcommand(inference: Command): void {

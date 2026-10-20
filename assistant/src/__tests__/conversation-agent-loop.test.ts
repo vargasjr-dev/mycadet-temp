@@ -2320,11 +2320,6 @@ describe("session-agent-loop", () => {
     });
 
     test("does not queue an earlier delivered reply without a linked attachment", async () => {
-      const featureFlags = await import("../config/assistant-feature-flags.js");
-      const flagSpy = spyOn(
-        featureFlags,
-        "isAssistantFeatureFlagEnabled",
-      ).mockImplementation((key: string) => key === "send-user-message");
       reserveMessageMock
         .mockImplementationOnce(async () => ({
           id: "msg-delivered-empty",
@@ -2340,16 +2335,12 @@ describe("session-agent-loop", () => {
         }));
       mockTurnReplyMessageId = "msg-delivered-empty";
 
-      try {
-        await runAgentLoopImpl(
-          makeSendUserMessageCtx(),
-          "click it",
-          "msg-1",
-          () => {},
-        );
-      } finally {
-        flagSpy.mockRestore();
-      }
+      await runAgentLoopImpl(
+        makeSendUserMessageCtx(),
+        "click it",
+        "msg-1",
+        () => {},
+      );
 
       const calls = syncMessageToDiskMock.mock.calls as unknown as Array<
         [string, string, number]
@@ -3164,11 +3155,6 @@ describe("session-agent-loop", () => {
     test("drops the private marker when an error row replaces the failed call", async () => {
       // GIVEN a gated turn whose first call delivered through the tool (so the
       // state carries `"private"`) and whose next call is rejected.
-      const featureFlags = await import("../config/assistant-feature-flags.js");
-      const flagSpy = spyOn(
-        featureFlags,
-        "isAssistantFeatureFlagEnabled",
-      ).mockImplementation((key: string) => key === "send-user-message");
       const events: AssistantEvent[] = [];
       const ctx = makeCtx({
         currentCallSite: "mainAgent",
@@ -3188,13 +3174,7 @@ describe("session-agent-loop", () => {
         toolExecutor: async () => ({ content: "Delivered.", isError: false }),
       });
 
-      try {
-        await runAgentLoopImpl(ctx, "hi", "msg-1", (event) =>
-          events.push(event),
-        );
-      } finally {
-        flagSpy.mockRestore();
-      }
+      await runAgentLoopImpl(ctx, "hi", "msg-1", (event) => events.push(event));
 
       // THEN the terminal event describes the row it actually ends on. The
       // error row carries no visibility marker, so labelling it private would

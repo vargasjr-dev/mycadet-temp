@@ -14,7 +14,6 @@
  * third one for interrupts.
  */
 
-import { isInterruptOnSendEnabled } from "../config/interrupt-on-send-gate.js";
 import { getConfigReadOnly } from "../config/loader.js";
 import { supersedePendingSecrets } from "../runtime/pending-interactions.js";
 import { createAbortReason } from "../util/abort-reasons.js";
@@ -126,8 +125,6 @@ export interface InterruptOptions {
  */
 export type InterruptEligibility =
   | "eligible"
-  /** The `interrupt-on-send` flag is off for this install. */
-  | "flag_off"
   /**
    * A hidden send is a machine signal (proactive-greeting priming, the
    * channel-setup wizard close), not a user deciding to move on, which is the
@@ -163,9 +160,6 @@ export function classifyInterruptEligibility(
   conversation: Conversation,
   options: InterruptOptions,
 ): InterruptEligibility {
-  if (!isInterruptOnSendEnabled()) {
-    return "flag_off";
-  }
   if (options.hidden === true) {
     return "hidden";
   }

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import {
   BadRequestError,
   ForbiddenError,
@@ -189,7 +188,6 @@ describe("credentials routes", () => {
     scrubbedValues = [];
     liveRecordsUnreachable = false;
     _resetRevealSuccessRegistryForTest();
-    setOverridesForTesting({ "chat-credential-reveal": false });
   });
 
   describe("credentials_reveal", () => {

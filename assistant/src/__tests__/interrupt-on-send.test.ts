@@ -18,11 +18,6 @@ import {
   test,
 } from "bun:test";
 
-import {
-  clearCachedOverrides,
-  setCachedOverrides,
-} from "../config/feature-flag-cache.js";
-import { INTERRUPT_ON_SEND_FLAG_KEY } from "../config/interrupt-on-send-flag.js";
 import type { Conversation } from "../daemon/conversation.js";
 import {
   deleteConversation,
@@ -287,12 +282,6 @@ function registerBusyTurn(
 }
 
 beforeEach(() => {
-  setCachedOverrides(
-    { [INTERRUPT_ON_SEND_FLAG_KEY]: true },
-    {
-      fromGateway: false,
-    },
-  );
   persisted.length = 0;
   persistGate = Promise.resolve();
   persistShouldFail = false;
@@ -304,9 +293,6 @@ afterEach(() => {
   deleteConversation(CONV);
   pendingInteractions.clear();
   resetTurnFinalizationsForTesting();
-  // Drop the override so the flag reads its shipped (off) state — a later
-  // file's flag-off expectations must not be answered by this file's setting.
-  clearCachedOverrides();
 });
 
 describe("interruptRunningTurn", () => {
@@ -508,29 +494,6 @@ describe("interruptRunningTurn", () => {
     );
     expect(source).not.toContain("getSubagentManager");
     expect(source).not.toContain("cancelForParent");
-  });
-
-  test("declines when the flag is off, touching nothing", async () => {
-    setCachedOverrides(
-      { [INTERRUPT_ON_SEND_FLAG_KEY]: false },
-      {
-        fromGateway: false,
-      },
-    );
-    const turn = registerBusyTurn({
-      messages: [assistantWithToolUse("tool-1")],
-    });
-
-    const outcome = await interruptRunningTurn(turn.conversation, {
-      origin: "test",
-    });
-
-    expect(outcome).toBe("declined");
-    expect(turn.aborts).toEqual([]);
-    expect(turn.denyAllCount()).toBe(0);
-    expect(turn.messages).toHaveLength(1);
-    expect(persisted).toEqual([]);
-    expect(turn.conversation.isProcessing()).toBe(true);
   });
 
   test("declines when another actor principal owns the running turn", async () => {
@@ -803,19 +766,6 @@ describe("classifyInterruptEligibility", () => {
     const turn = registerBusyTurn();
     expect(classifyInterruptEligibility(turn.conversation, opts)).toBe(
       "eligible",
-    );
-  });
-
-  test("names the flag when it is off", () => {
-    setCachedOverrides(
-      { [INTERRUPT_ON_SEND_FLAG_KEY]: false },
-      {
-        fromGateway: false,
-      },
-    );
-    const turn = registerBusyTurn();
-    expect(classifyInterruptEligibility(turn.conversation, opts)).toBe(
-      "flag_off",
     );
   });
 

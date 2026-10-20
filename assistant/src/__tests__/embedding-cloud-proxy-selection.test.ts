@@ -7,7 +7,6 @@
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { credentialKey } from "../security/credential-key.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 
@@ -87,8 +86,6 @@ function makeConfig(
 
 beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
-
   disableCloudProxy();
   secureKeys.clear(); // wipe provider keys; disableCloudProxy already cleared the assistant key
   clearEmbeddingBackendCache();

@@ -252,8 +252,6 @@ describe("scope profile contract", () => {
       "attachments.write",
       "calls.read",
       "calls.write",
-      "feature_flags.read",
-      "feature_flags.write",
     ],
     contact_client_v1: ["chat.write", "approval.write", "attachments.write"],
     gateway_ingress_v1: ["ingress.write", "internal.write"],

@@ -803,7 +803,7 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Local skill inspect",
     description:
-      "Return full local detail for an installed or bundled skill, including featureFlag, toolManifest, installMeta, configEntry, and directoryPath.",
+      "Return full local detail for an installed or bundled skill, including toolManifest, installMeta, configEntry, and directoryPath.",
     tags: ["skills"],
     handler: ({ pathParams }: RouteHandlerArgs) => {
       const result = getSkillLocalDetail(pathParams!.id);

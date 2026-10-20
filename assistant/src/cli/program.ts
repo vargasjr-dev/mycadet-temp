@@ -2,7 +2,6 @@ import { existsSync } from "node:fs";
 
 import { Command } from "commander";
 
-import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
 import { getWorkspaceDir } from "../util/layout.js";
 import { APP_VERSION } from "../version.js";
 import { registerAppsCommand } from "./commands/apps.js";
@@ -58,22 +57,8 @@ import { registerGlobalJsonOption } from "./lib/global-json-option.js";
 import { log } from "./logger.js";
 
 /**
- * Build the CLI program tree. Pre-populates the feature flag cache from
- * the gateway so flag-gated commands are registered correctly.
- */
-export async function buildCliProgram(): Promise<Command> {
-  await initFeatureFlagOverrides({ retryBackoffsMs: [], callTimeoutMs: 200 });
-  return buildCliProgramTree();
-}
-
-/**
- * Synchronously build the CLI program tree without pre-populating the
- * feature-flag cache. Use this from inside the daemon, where flags are
- * already initialized — calling `buildCliProgram` from there would round-trip
- * to the gateway unnecessarily.
- *
- * Same shape as `buildCliProgram` minus the async feature-flag init: registers
- * the full subcommand set and installs the workspace-preAction hook.
+ * Build the CLI program tree: registers the full subcommand set and
+ * installs the workspace-preAction hook.
  */
 export function buildCliProgramTree(): Command {
   const program = new Command();

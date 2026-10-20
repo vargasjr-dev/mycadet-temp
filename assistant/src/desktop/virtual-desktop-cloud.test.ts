@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { shouldUseVirtualDesktopBrowser } from "../browser/virtual-desktop-target.js";
 import { executeDesktopBrowserOperation } from "./desktop-browser-operations.js";
 import { desktopDependencies } from "./desktop-dependencies.js";
@@ -27,7 +26,6 @@ beforeEach(() => {
 
 afterEach(() => {
   status.mockRestore();
-  setOverridesForTesting({});
   if (originalPlatform === undefined) {
     delete process.env.IS_CLOUD;
   } else {

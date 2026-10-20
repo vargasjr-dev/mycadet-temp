@@ -1,5 +1,4 @@
 import { isSkillCompatibleWithCloud } from "../skills/cloud-compatibility.js";
-import { isAssistantFeatureFlagEnabled } from "./assistant-feature-flags.js";
 import type { AssistantConfig, SkillEntryConfig } from "./schema.js";
 import type { SkillSummary } from "./skills.js";
 
@@ -9,16 +8,6 @@ export interface ResolvedSkill {
   summary: SkillSummary;
   state: SkillState;
   configEntry?: SkillEntryConfig;
-}
-
-/**
- * Derive the feature flag key for a skill from its frontmatter `featureFlag` field.
- * Returns undefined if the skill has no feature flag declared.
- */
-export function skillFlagKey(
-  skill: Pick<SkillSummary, "featureFlag">,
-): string | undefined {
-  return skill.featureFlag || undefined;
 }
 
 export function resolveSkillStates(
@@ -33,12 +22,6 @@ export function resolveSkillStates(
 
   for (const skill of catalog) {
     if (!isSkillCompatibleWithCloud(skill)) {
-      continue;
-    }
-
-    // Assistant feature flag gate: if the skill declares a flag and it's disabled, skip it
-    const flagKey = skillFlagKey(skill);
-    if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
       continue;
     }
 

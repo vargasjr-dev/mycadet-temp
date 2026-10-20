@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { ModeSession } from "../api/mode-session.js";
 import {
   isModeSessionRecoveryHealthy,
@@ -77,9 +76,7 @@ function createCoordinator() {
 }
 
 describe("BrowserModeSessionProducer", () => {
-  afterEach(() => {
-    setOverridesForTesting({});
-  });
+  afterEach(() => {});
 
   test.each([false, true])(
     "retires failed admission while preserving a partial turn owner (%s)",

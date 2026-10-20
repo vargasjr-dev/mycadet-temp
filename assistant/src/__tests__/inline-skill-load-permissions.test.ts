@@ -46,7 +46,6 @@ mockIpcResponse("get_global_thresholds", {
 
 import { check, classifyRisk } from "../permissions/checker.js";
 import { _clearGlobalCacheForTesting } from "../permissions/gateway-threshold-reader.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -104,7 +103,6 @@ function mockDynamicSkillClassification(): void {
 describe("inline-command skill_load permissions", () => {
   beforeEach(() => {
     _clearGlobalCacheForTesting();
-    setOverridesForTesting({});
     mockIpcResponse("classify_risk", {
       risk: "low",
       reason: "skill_load",
@@ -128,9 +126,7 @@ describe("inline-command skill_load permissions", () => {
     }
   });
 
-  afterEach(() => {
-    setOverridesForTesting({});
-  });
+  afterEach(() => {});
 
   // ── Default behavior ─────────────────────────────────────────────────
 

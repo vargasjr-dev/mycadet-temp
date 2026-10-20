@@ -38,9 +38,6 @@ import {
 import type { PoolCandidateRecord, PoolLane } from "../pool-log-store.js";
 import { type Section, sectionKey } from "../types.js";
 
-const realFlags = {
-  ...(await import("../../../../../config/assistant-feature-flags.js")),
-};
 const realDb = {
   ...(await import("../../../../../persistence/db-connection.js")),
 };
@@ -48,7 +45,6 @@ const realPageContent = { ...(await import("../page-content.js")) };
 const realPageStore = { ...(await import("../../substrate/page-store.js")) };
 
 let storeMockActive = false;
-let liveEnabled = false;
 // When false, the stubbed `getMemorySqlite` resolves to null — the contract
 // the store sees when the dedicated memory database cannot be opened.
 let memoryDbAvailable = true;
@@ -147,21 +143,6 @@ function stampPool(
     .run(messageId, conversationId, turn);
 }
 
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  ...realFlags,
-  isAssistantFeatureFlagEnabled: (key: string, config: unknown) =>
-    storeMockActive
-      ? key === "memory-v3-live"
-        ? liveEnabled
-        : false
-      : realFlags.isAssistantFeatureFlagEnabled(
-          key as Parameters<typeof realFlags.isAssistantFeatureFlagEnabled>[0],
-          config as Parameters<
-            typeof realFlags.isAssistantFeatureFlagEnabled
-          >[1],
-        ),
-}));
-
 mock.module("../../../../../persistence/db-connection.js", () => ({
   ...realDb,
   getDb: () => (storeMockActive ? testDb : realDb.getDb()),
@@ -215,7 +196,6 @@ const { writePool } = await import("../pool-log-store.js");
 
 beforeEach(() => {
   storeMockActive = true;
-  liveEnabled = false;
   memoryDbAvailable = true;
   // The inspector's `live` flag comes from `isMemoryV3Live(getConfig())`,
   // which reads `memory.v3.live` — seed it for real.
@@ -293,8 +273,6 @@ describe("getMemoryV3SelectionForInspector", () => {
 
     const off = await getMemoryV3SelectionForInspector("conv-5", 1);
     expect(off?.live).toBe(false);
-
-    liveEnabled = true;
     setConfig("memory", { v3: { live: true } });
     const on = await getMemoryV3SelectionForInspector("conv-5", 1);
     expect(on?.live).toBe(true);

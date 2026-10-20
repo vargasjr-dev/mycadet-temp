@@ -104,9 +104,6 @@ import {
 let carryMockActive = false;
 
 const realPluginApi = await import("@mycadet/plugin-api");
-const realFlags = {
-  ...(await import("../../../../../config/assistant-feature-flags.js")),
-};
 const realMemoryConfig = { ...(await import("../../config.js")) };
 const realDbConnection = {
   ...(await import("../../../../../persistence/db-connection.js")),
@@ -201,22 +198,6 @@ mock.module("../../config.js", () => ({
     carryMockActive
       ? { v3: { live: true, prune: pruneConfig ?? undefined } }
       : realMemoryConfig.getMemoryConfig(),
-}));
-
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  ...realFlags,
-  isAssistantFeatureFlagEnabled: (
-    key: string,
-    config: Parameters<typeof realFlags.isAssistantFeatureFlagEnabled>[1],
-  ) => {
-    if (!carryMockActive) {
-      return realFlags.isAssistantFeatureFlagEnabled(
-        key as Parameters<typeof realFlags.isAssistantFeatureFlagEnabled>[0],
-        config,
-      );
-    }
-    return key === "memory-v3-live";
-  },
 }));
 
 // Pages resolve from the in-memory fixture corpus (the disk read is the only

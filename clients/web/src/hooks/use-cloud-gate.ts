@@ -54,7 +54,7 @@ export interface CloudGateOptions {
   /**
    * When `true`, the feature is cloud-hosted only — gate it whenever
    * the **active assistant** is self-hosted, regardless of platform
-   * session or feature-flag value. Use for UI surfaces that manage
+   * session. Use for UI surfaces that manage
    * Cadet-hosted infrastructure (plan/billing tier, devices, machine
    * sizing, release channels, sleep policy, system events) which have
    * no meaningful behavior on a self-hosted assistant.

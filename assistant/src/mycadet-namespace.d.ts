@@ -43,12 +43,6 @@ interface CadetDbSlot {
 /** Slot value: the assistant DB connection singletons, keyed by connection. Managed by `persistence/db-singleton.ts`. */
 type CadetDbSlots = Record<CadetDbSlotKey, CadetDbSlot>;
 
-/** Slot value: the resolved feature-flag override cache. Managed by `config/feature-flag-cache.ts`. */
-interface CadetFeatureFlagCache {
-  overrides: Record<string, boolean | string> | null;
-  fromGateway: boolean;
-}
-
 /** The per-process `globalThis.cadetAssistant` namespace. */
 interface CadetAssistantNamespace {
   /**
@@ -58,8 +52,6 @@ interface CadetAssistantNamespace {
   mainDaemonProcess?: boolean;
   /** See `persistence/db-singleton.ts`. */
   dbSingletons?: CadetDbSlots;
-  /** See `config/feature-flag-cache.ts`. */
-  featureFlagCache?: CadetFeatureFlagCache;
 }
 
 /**

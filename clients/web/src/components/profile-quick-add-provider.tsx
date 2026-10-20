@@ -12,7 +12,7 @@
  * The controller owns everything settings-specific the composer previously
  * inlined: the `ProfileEditorModal` render (create mode), the provider-
  * connections query that feeds its Provider picker, the existing-name list,
- * the feature-flag props, the create-persistence config PATCH, and the
+ * the create-persistence config PATCH, and the
  * success toast.
  *
  * Persistence goes through the settings-owned `useLlmConfigPatch` mutation

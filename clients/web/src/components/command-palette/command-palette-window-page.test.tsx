@@ -32,11 +32,6 @@ mock.module("@/hooks/use-app-theme", () => ({
   useAppTheme: () => undefined,
 }));
 
-const useClientFeatureFlagSyncMock = mock((_enabled: boolean) => undefined);
-mock.module("@/hooks/use-client-feature-flag-sync", () => ({
-  useClientFeatureFlagSync: useClientFeatureFlagSyncMock,
-}));
-
 const useConversationListQueryMock = mock(
   (_assistantId: string | null, _enabled: boolean) => ({
     conversations: [
@@ -181,7 +176,6 @@ beforeEach(() => {
   localSelectedRef.value = null;
 
   useAssistantLifecycleMock.mockClear();
-  useClientFeatureFlagSyncMock.mockClear();
   useConversationListQueryMock.mockClear();
   useCommandPaletteSectionsMock.mockClear();
 });
@@ -194,7 +188,6 @@ describe("CommandPaletteWindowPage", () => {
   test("bootstraps assistant context for the standalone floating window", () => {
     render(<CommandPaletteWindowPage />);
 
-    expect(useClientFeatureFlagSyncMock).toHaveBeenCalledWith(true);
     expect(useAssistantLifecycleMock).toHaveBeenCalledWith({
       sessionStatus: "authenticated",
       hasCloudSession: true,

@@ -66,9 +66,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   onWebhookIngressRoutesChanged: () => () => {},
 }));
 
-mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: () => false,
-}));
 
 const { TUNNEL_STATIC_ALLOWED_PATHS, buildTunnelAllowedPathsHeaderValue } =
   await import("./allowed-paths.js");

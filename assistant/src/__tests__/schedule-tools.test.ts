@@ -21,7 +21,6 @@ import { executeScheduleDelete } from "../tools/schedule/delete.js";
 import { executeScheduleList } from "../tools/schedule/list.js";
 import { executeScheduleUpdate } from "../tools/schedule/update.js";
 import type { Tool, ToolContext } from "../tools/types.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 
 await initializeDb();
 
@@ -413,11 +412,8 @@ describe("schedule tools — workflow mode", () => {
   beforeEach(() => {
     getRawDb().run("DELETE FROM cron_runs");
     getRawDb().run("DELETE FROM cron_jobs");
-    setOverridesForTesting({});
   });
-  afterAll(() => {
-    setOverridesForTesting({});
-  });
+  afterAll(() => {});
 
   test("creates a workflow-mode schedule with workflow_name + workflow_args", async () => {
     const result = await executeScheduleCreate(
@@ -520,13 +516,11 @@ describe("schedule_create — workflow capability manifest", () => {
   beforeEach(() => {
     getRawDb().run("DELETE FROM cron_runs");
     getRawDb().run("DELETE FROM cron_jobs");
-    setOverridesForTesting({});
     // Deterministic registry so a declared side-effecting tool resolves.
     __clearRegistryForTesting();
     registerTool(makeFakeTool("file_write"));
   });
   afterAll(() => {
-    setOverridesForTesting({});
     __resetRegistryForTesting();
   });
 

@@ -44,8 +44,6 @@ import {
   readPluginManifest,
 } from "../util/plugin-manifest.js";
 import { stripCommentLines } from "../util/strip-comment-lines.js";
-import { isAssistantFeatureFlagEnabled } from "./assistant-feature-flags.js";
-import { getConfig } from "./loader.js";
 
 const log = getLogger("skills");
 
@@ -56,7 +54,6 @@ const CadetMetadataSchema = z
     emoji: z.string().optional(),
     "display-name": z.string().optional(),
     includes: z.array(z.string()).optional(),
-    "feature-flag": z.string().optional(),
     "activation-hints": z.array(z.string()).optional(),
     "avoid-when": z.array(z.string()).optional(),
     category: z.string().optional(),
@@ -122,8 +119,6 @@ export interface SkillSummary {
    * they play no part in which skills get selected for a turn.
    */
   includes?: string[];
-  /** Feature flag ID declared in frontmatter. Only skills with this field are subject to feature flag gating. */
-  featureFlag?: string;
   /**
    * Intent phrases rendered into the skill's capability card as "Use when: ..."
    * (memory substrate/skill-content.ts), which is the text skill routing scores.
@@ -258,7 +253,6 @@ export interface ParsedFrontmatter {
   icon?: string;
   emoji?: string;
   includes?: string[];
-  featureFlag?: string;
   activationHints?: string[];
   avoidWhen?: string[];
   category?: string;
@@ -364,11 +358,6 @@ export function parseFrontmatter(
     includes = normalized.length > 0 ? normalized : undefined;
   }
 
-  const featureFlag =
-    typeof cadetMeta?.["feature-flag"] === "string"
-      ? cadetMeta["feature-flag"]
-      : undefined;
-
   const displayName =
     (typeof cadetMeta?.["display-name"] === "string"
       ? cadetMeta["display-name"]
@@ -410,7 +399,6 @@ export function parseFrontmatter(
     icon,
     emoji,
     includes,
-    featureFlag,
     activationHints,
     avoidWhen,
     category,
@@ -571,7 +559,6 @@ function readSkillFromDirectory(
       source,
       toolManifest: detectToolManifest(directoryPath),
       includes: parsed.includes,
-      featureFlag: parsed.featureFlag,
       activationHints: parsed.activationHints,
       avoidWhen: parsed.avoidWhen,
       category: parsed.category,
@@ -628,7 +615,6 @@ function readBundledSkillFromDirectory(
       source: "bundled",
       toolManifest: detectToolManifest(directoryPath),
       includes: parsed.includes,
-      featureFlag: parsed.featureFlag,
       activationHints: parsed.activationHints,
       avoidWhen: parsed.avoidWhen,
       category: parsed.category,
@@ -697,7 +683,6 @@ function loadBundledSkills(): SkillSummary[] {
       source: "bundled",
       toolManifest: skill.toolManifest,
       includes: skill.includes,
-      featureFlag: skill.featureFlag,
       activationHints: skill.activationHints,
       avoidWhen: skill.avoidWhen,
       category: skill.category,
@@ -976,7 +961,6 @@ function skillSummaryFromDefinition(
     source,
     toolManifest: skill.toolManifest,
     includes: skill.includes,
-    featureFlag: skill.featureFlag,
     activationHints: skill.activationHints,
     avoidWhen: skill.avoidWhen,
     category: skill.category,
@@ -1040,7 +1024,6 @@ export function loadSkillCatalog(
             source: "extra",
             toolManifest: detectToolManifest(directory),
             includes: parsed.includes,
-            featureFlag: parsed.featureFlag,
             activationHints: parsed.activationHints,
             avoidWhen: parsed.avoidWhen,
             category: parsed.category,
@@ -1188,7 +1171,6 @@ export function loadSkillCatalog(
           source: "workspace",
           toolManifest: detectToolManifest(directory),
           includes: parsed.includes,
-          featureFlag: parsed.featureFlag,
           activationHints: parsed.activationHints,
           avoidWhen: parsed.avoidWhen,
           category: parsed.category,
@@ -1219,37 +1201,6 @@ export function loadSkillCatalog(
   }
 
   return catalog;
-}
-
-/**
- * Process feature-gated sections in skill body markdown.
- *
- * Markers:
- *   <!-- feature:<flag-id>:start --> ... <!-- feature:<flag-id>:end -->
- *     Content included only when the flag is enabled.
- *   <!-- feature:<flag-id>:alt --> ... <!-- feature:<flag-id>:alt:end -->
- *     Fallback content included only when the flag is disabled.
- */
-function applyFeatureGatedSections(body: string): string {
-  const config = getConfig();
-  // Match feature:*:start/end blocks
-  const mainRe =
-    /<!-- feature:([^:]+):start -->\n?([\s\S]*?)<!-- feature:\1:end -->\n?/g;
-  // Match feature:*:alt/alt:end blocks
-  const altRe =
-    /<!-- feature:([^:]+):alt -->\n?([\s\S]*?)<!-- feature:\1:alt:end -->\n?/g;
-
-  let result = body;
-
-  result = result.replace(mainRe, (_match, flagId: string, content: string) => {
-    return isAssistantFeatureFlagEnabled(flagId, config) ? content : "";
-  });
-
-  result = result.replace(altRe, (_match, flagId: string, content: string) => {
-    return isAssistantFeatureFlagEnabled(flagId, config) ? "" : content;
-  });
-
-  return result;
 }
 
 /**
@@ -1368,7 +1319,6 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
     getWorkspaceDirDisplay(),
   );
   // Strip feature-gated sections based on assistant feature flags
-  loaded.body = applyFeatureGatedSections(loaded.body);
 
   // Re-parse inline command expansions after placeholder substitution.
   // The initial parse (during SKILL.md parsing) produces byte offsets against

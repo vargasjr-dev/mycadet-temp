@@ -63,7 +63,6 @@ interface TestState {
   resolved: ResolvedSkill[] | null;
   fullCatalog: CatalogSkill[];
   fullCatalogThrows: Error | null;
-  flagsEnabled: Record<string, boolean>;
   embedThrows: Error | null;
   embedReturn: number[][];
   sparseReturn: { indices: number[]; values: number[] };
@@ -134,11 +133,6 @@ mock.module("../../../../../config/skill-state.js", () => ({
             : "disabled",
       }));
   },
-}));
-
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) =>
-    state.flagsEnabled[key] ?? true,
 }));
 
 mock.module(
@@ -229,7 +223,6 @@ function resetState(): void {
   state.resolved = [];
   state.fullCatalog = [];
   state.fullCatalogThrows = null;
-  state.flagsEnabled = {};
   state.embedThrows = null;
   state.embedReturn = [];
   state.sparseReturn = { indices: [1], values: [1] };
@@ -388,17 +381,13 @@ describe("seedV2SkillEntries", () => {
     ]);
   });
 
-  test("skips skills whose declared feature flag is disabled", async () => {
-    // Flag gating is resolved host-side: `resolveSkillStates` drops the
-    // flagged skill from its result, so it reaches the seed loop as
-    // `state: "unavailable"` and must not be embedded.
-    const flagged = makeSummary({
-      id: "example-skill-a",
-      featureFlag: "experimental-flag",
-    });
-    const unflagged = makeSummary({ id: "example-skill-b" });
-    state.catalog = [flagged, unflagged];
-    state.resolved = [{ summary: unflagged, state: "enabled" }];
+  test("skips skills the host-side resolve drops", async () => {
+    // `resolveSkillStates` drops the skill from its result, so it reaches
+    // the seed loop as `state: "unavailable"` and must not be embedded.
+    const excluded = makeSummary({ id: "example-skill-a" });
+    const included = makeSummary({ id: "example-skill-b" });
+    state.catalog = [excluded, included];
+    state.resolved = [{ summary: included, state: "enabled" }];
     state.embedReturn = [[0.4, 0.5, 0.6]];
 
     await seedV2SkillEntries();
@@ -407,28 +396,22 @@ describe("seedV2SkillEntries", () => {
     expect(state.upsertCalls[0].slug).toBe("skills/example-skill-b");
   });
 
-  test("does not seed remote catalog skills whose feature flag is disabled but keeps their ids in the backfill allowlist", async () => {
+  test("seeds uninstalled remote catalog skills and keeps their ids in the backfill allowlist", async () => {
     state.catalog = [];
     state.resolved = [];
     state.fullCatalog = [
-      {
-        id: "gated-remote",
-        name: "gated-remote",
-        description: "Remote skill behind a disabled flag",
-        metadata: { cadet: { "feature-flag": "off-flag" } },
-      },
+      { id: "gated-remote", name: "gated-remote", description: "Remote skill" },
       { id: "open-remote", name: "open-remote", description: "Open remote" },
     ];
-    state.flagsEnabled = { "off-flag": false };
     state.embedReturn = [[0.1, 0.2, 0.3]];
 
     await seedV2SkillEntries();
 
-    // Only the ungated remote skill is embedded...
     expect(state.upsertCalls.map((c) => c.slug)).toEqual([
+      "skills/gated-remote",
       "skills/open-remote",
     ]);
-    // ...but the gated id stays in the known-skill allowlist so the legacy
+    // Every catalog id stays in the known-skill allowlist so the legacy
     // kind backfill never mis-tags (and prune never deletes) a user page
     // that happens to share its slug.
     expect(state.backfillCalls).toHaveLength(1);
@@ -467,14 +450,11 @@ describe("seedV2SkillEntries", () => {
     ]);
   });
 
-  test("passes only the active (post-flag-filter) ids to pruneSlugsWithPrefixExcept", async () => {
-    const flagged = makeSummary({
-      id: "example-skill-a",
-      featureFlag: "off-flag",
-    });
-    const unflagged = makeSummary({ id: "example-skill-b" });
-    state.catalog = [flagged, unflagged];
-    state.resolved = [{ summary: unflagged, state: "enabled" }];
+  test("passes only the active (post-filter) ids to pruneSlugsWithPrefixExcept", async () => {
+    const excluded = makeSummary({ id: "example-skill-a" });
+    const included = makeSummary({ id: "example-skill-b" });
+    state.catalog = [excluded, included];
+    state.resolved = [{ summary: included, state: "enabled" }];
     state.fullCatalog = [
       { id: "example-skill-a", name: "example-skill-a", description: "A" },
       { id: "example-skill-b", name: "example-skill-b", description: "B" },
@@ -960,12 +940,11 @@ describe("listAlwaysCandidateSkillSlugs — pre-seed catalog fallback", () => {
       id: "example-skill-b",
       alwaysCandidate: true,
     });
-    // Flag gating is resolved host-side: the gated skill is absent from
-    // `resolveSkillStates`, so it surfaces as `state: "unavailable"`.
+    // The unpinned-in-resolve skill is absent from `resolveSkillStates`,
+    // so it surfaces as `state: "unavailable"`.
     const pinnedButGated = makeSummary({
       id: "example-skill-c",
       alwaysCandidate: true,
-      featureFlag: "off-flag",
     });
     state.catalog = [pinned, pinnedButDisabled, pinnedButGated];
     state.resolved = [

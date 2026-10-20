@@ -275,11 +275,6 @@ const FAKE_SECTION_INDEX: SectionIndex = {
 
 // ─── module mocks (installed before the plugin import) ──────────────────────
 
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) =>
-    key === "memory-v3-live" ? liveEnabled : false,
-}));
-
 // `observeTurn` and the injector resolve their tuning through the real
 // `getConfig()`; `seedMemoryConfig()` (called by the observe/produce wrappers
 // below) writes the mutable knobs into the workspace config for real. The

@@ -65,11 +65,8 @@ import { useWebPresenceReport } from "@/hooks/use-web-presence-report";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
 import { useOnboardingWindowSize } from "@/hooks/use-onboarding-window-size";
 import { useConversationSync } from "@/hooks/use-conversation-sync";
-import { useFeatureFlagBusSync } from "@/hooks/use-feature-flag-bus-sync";
 import { useLegacyPinMigration } from "@/hooks/use-legacy-pin-migration";
 import { useWorkspaceTheme } from "@/hooks/use-workspace-theme";
-import { useClientFeatureFlagSync } from "@/hooks/use-client-feature-flag-sync";
-import { useAssistantFeatureFlagSync } from "@/hooks/use-assistant-feature-flag-sync";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -88,7 +85,6 @@ import { useIslandAvatarSource } from "@/hooks/use-island-avatar-source";
 import { useNotificationAvatarSync } from "@/hooks/use-notification-avatar-sync";
 import { useElectronIdentitySync } from "@/hooks/use-electron-identity-sync";
 import { useElectronStatusSync } from "@/hooks/use-electron-status-sync";
-import { useElectronFeatureFlagBridge } from "@/runtime/electron-feature-flags";
 import { subscribeAndroidBackButtonSource } from "@/runtime/event-sources/android-back-button";
 import { isElectron } from "@/runtime/is-electron";
 import { isNativeMobile } from "@/runtime/platform-detection";
@@ -216,7 +212,6 @@ export function RootLayout() {
   );
   const isAssistantActive = assistantStateKind === "active";
   const companionReady = isAssistantActive && !isSessionInitializing;
-  useClientFeatureFlagSync(!isSessionInitializing, isAssistantActive);
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -227,10 +222,8 @@ export function RootLayout() {
     assistantStateKind,
     ownerScopeId: notificationScopeId,
   });
-  useAssistantFeatureFlagSync(assistantId);
   useAssistantResourceSync(assistantId, isAssistantActive);
   useConversationSync(assistantId, isAssistantActive);
-  useFeatureFlagBusSync(assistantId, isAssistantActive);
   useWorkspaceTheme(assistantId, isAssistantActive);
   // Drains the browser-local pinned-app list this assistant owns into the
   // daemon. Mounted here rather than on the chat layout because it is a
@@ -339,7 +332,6 @@ export function RootLayout() {
   );
   useElectronStatusSync();
   useElectronIdentitySync(companionReady);
-  useElectronFeatureFlagBridge();
 
   // Size the Electron main window to the onboarding layout (440×630
   // default) while on an onboarding step, and back to the main-app size

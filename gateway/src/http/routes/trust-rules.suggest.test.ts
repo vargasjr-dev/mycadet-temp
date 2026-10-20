@@ -34,7 +34,6 @@ mock.module("../../ipc/assistant-client.js", () => ({
 const { createTrustRulesSuggestHandler } = await import("./trust-rules.js");
 
 import { initGatewayDb, resetGatewayDb } from "../../db/connection.js";
-import { clearFeatureFlagStoreCache } from "../../feature-flag-store.js";
 import { getGatewayDb } from "../../db/connection.js";
 import { autoApproveThresholds } from "../../db/schema.js";
 
@@ -44,7 +43,6 @@ import { autoApproveThresholds } from "../../db/schema.js";
 
 beforeEach(async () => {
   resetGatewayDb();
-  clearFeatureFlagStoreCache();
   await initGatewayDb();
 
   // Clear persisted threshold rows so each test starts from a clean state.
@@ -64,7 +62,6 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  clearFeatureFlagStoreCache();
   resetGatewayDb();
 });
 

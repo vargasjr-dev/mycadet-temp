@@ -101,11 +101,6 @@ mock.module("@/runtime/platform-detection", () => ({
   detectElectronHostOS: () => hostOS,
 }));
 
-mock.module("@/stores/client-feature-flag-store", () => ({
-  useClientFeatureFlagStore: {
-  },
-}));
-
 mock.module("@/stores/resolved-assistants-store", () => ({
   useResolvedAssistantsStore: {
     use: {

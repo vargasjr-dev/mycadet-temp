@@ -53,8 +53,6 @@ const { MultiActivityGroup } =
 const { useViewerStore } = await import("@/stores/viewer-store");
 const { useChatSessionStore } =
   await import("@/domains/chat/chat-session-store");
-const { useAssistantFeatureFlagStore } =
-  await import("@/stores/assistant-feature-flag-store");
 const { changeLocale } = await import("@/i18n");
 
 afterEach(async () => {
@@ -70,9 +68,6 @@ afterEach(async () => {
   useChatSessionStore.setState({
     expandedCardIds: new Map(),
     expandedToolCallIds: new Set(),
-  });
-  useAssistantFeatureFlagStore.setState({
-    sendUserMessage: false,
   });
 });
 
@@ -124,7 +119,6 @@ describe("MultiActivityGroup — non-web tool group", () => {
   });
 
   test("carousels the live step in the header while streaming", () => {
-    useAssistantFeatureFlagStore.setState({ sessionGroups: true });
     const toolCalls = [
       makeToolCall({
         id: "tc-1",
@@ -894,7 +888,7 @@ describe("MultiActivityGroup — header reflects the latest step", () => {
   });
 });
 
-describe("MultiActivityGroup - a web_fetch under the thinking gate", () => {
+describe("MultiActivityGroup - a web_fetch in flight", () => {
   /**
    * A fetch is projected as a synthesized reasoning step, so its header title
    * is the word "Thinking" paired with the page read: "Thinking | Hacker
@@ -909,24 +903,6 @@ describe("MultiActivityGroup - a web_fetch under the thinking gate", () => {
       status,
       input: { url: "https://news.ycombinator.com" },
     });
-
-  test("says what it read, not that it thought", () => {
-    useAssistantFeatureFlagStore.setState({ sendUserMessage: true });
-    const { getByTestId, queryByText, getByText } = renderCard(
-      [fetchCall("completed")],
-      { active: true },
-    );
-    expect(getByTestId("tool-progress-card-shell")).toBeTruthy();
-    expect(getByText("Read the web")).toBeTruthy();
-    expect(queryByText("Thinking")).toBeNull();
-  });
-
-  test("keeps the present tense while the page is still loading", () => {
-    useAssistantFeatureFlagStore.setState({ sendUserMessage: true });
-    const { getByText, queryByText } = renderCard([fetchCall("running")]);
-    expect(getByText("Reading the web")).toBeTruthy();
-    expect(queryByText("Thinking")).toBeNull();
-  });
 
   test("is unchanged with the gate off", () => {
     const { getByText } = renderCard([fetchCall("completed")], {

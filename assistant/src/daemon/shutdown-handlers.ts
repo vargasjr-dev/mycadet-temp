@@ -3,7 +3,6 @@ import { stopConsentRefresh } from "../cloud/consent-cache.js";
 import { stopCes } from "../credential-execution/ces-runtime.js";
 import { stopHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { stopCliIpcServer } from "../ipc/assistant-server.js";
-import { stopGatewayFlagListener } from "../ipc/gateway-flag-listener.js";
 import { stopMcpServerManager } from "../mcp/manager.js";
 import { stopMonitoring } from "../monitoring/control.js";
 import {
@@ -42,7 +41,6 @@ const log = getLogger("lifecycle");
  * leaves a stale PID file or orphaned timers behind.
  */
 function stopBackgroundServicesAndCleanupPidFile(): void {
-  stopGatewayFlagListener();
   stopDiskPressureGuardForLifecycle();
   stopResourcePressureGuardForLifecycle();
   stopOrphanReaper();

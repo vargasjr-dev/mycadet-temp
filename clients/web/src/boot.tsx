@@ -21,7 +21,6 @@ import { initI18n } from "@/i18n";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
-import { setupClientFlagScopeSync } from "@/lib/feature-flags/client-flag-scope";
 import { installConsentRefreshListeners } from "@/lib/consent/consent-refresh";
 import { isLocalClient, loadLockfile } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -79,10 +78,6 @@ async function boot(router: Router) {
   installConsentRefreshListeners();
 
   setupOrganizationStore();
-  // Register before initSession so no identity transition is missed: client
-  // flags are evaluated per (user, org) and must be re-fetched, not re-read,
-  // when either moves.
-  setupClientFlagScopeSync();
   // Register before initSession so the boot `unknown → present` transition it
   // drives is caught and the cloud assistants list is loaded.
   setupCloudAssistantsSync();

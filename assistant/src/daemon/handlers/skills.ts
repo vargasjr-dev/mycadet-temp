@@ -9,14 +9,13 @@ import {
 } from "node:fs";
 import { basename, join, relative, sep } from "node:path";
 
-import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
 import {
   getConfig,
   invalidateConfigCache,
   loadRawConfig,
   saveRawConfig,
 } from "../../config/loader.js";
-import { resolveSkillStates, skillFlagKey } from "../../config/skill-state.js";
+import { resolveSkillStates } from "../../config/skill-state.js";
 import type { SkillSummary } from "../../config/skills.js";
 import { loadSkillCatalog } from "../../config/skills.js";
 import { deleteSkillCapabilityNode } from "../../plugins/defaults/memory/graph/capability-seed.js";
@@ -814,7 +813,6 @@ export function getSkillLocalDetail(skillId: string):
       source: string;
       state: string;
       directoryPath: string;
-      featureFlag: string | null;
       includes: string[] | null;
       activationHints: string[] | null;
       avoidWhen: string[] | null;
@@ -854,7 +852,6 @@ export function getSkillLocalDetail(skillId: string):
       source: summary.source,
       state,
       directoryPath: summary.directoryPath,
-      featureFlag: summary.featureFlag ?? null,
       includes: summary.includes ?? null,
       activationHints: summary.activationHints ?? null,
       avoidWhen: summary.avoidWhen ?? null,
@@ -1243,13 +1240,6 @@ export async function installSkill(spec: {
         return {
           success: false,
           error: skillPlatformUnavailableMessage(spec.slug, catalogSkill),
-        };
-      }
-      const flagKey = skillFlagKey(catalogSkill);
-      if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
-        return {
-          success: false,
-          error: `Skill "${spec.slug}" is currently unavailable (disabled by feature flag)`,
         };
       }
     }

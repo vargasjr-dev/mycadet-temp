@@ -180,8 +180,6 @@ const _testAuthContext: AuthContext = {
     "attachments.write",
     "calls.read",
     "calls.write",
-    "feature_flags.read",
-    "feature_flags.write",
   ]),
   policyEpoch: 1,
 };

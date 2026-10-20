@@ -23,7 +23,6 @@ import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useAuthStore } from "@/stores/auth-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 import type * as ActiveChat from "../active-chat-view";
@@ -108,7 +107,6 @@ const viewport = viewportAxesStub();
 const initialLifecycle = useAssistantLifecycleStore.getState();
 const initialAuth = useAuthStore.getState();
 const initialSelection = useResolvedAssistantsStore.getState();
-const initialFlags = useClientFeatureFlagStore.getState();
 const initialSlots = useChatLayoutSlotsStore.getState();
 let queryClient: QueryClient;
 
@@ -180,7 +178,6 @@ afterEach(() => {
   useAssistantLifecycleStore.setState(initialLifecycle, true);
   useAuthStore.setState(initialAuth, true);
   useResolvedAssistantsStore.setState(initialSelection, true);
-  useClientFeatureFlagStore.setState(initialFlags, true);
   useChatLayoutSlotsStore.setState(initialSlots, true);
 });
 
