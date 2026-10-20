@@ -75,8 +75,22 @@ export const AssistantResolutionSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("empty") }),
   z.object({ status: z.literal("unauthenticated") }),
 ]);
+/**
+ * What the list endpoint alone can answer: the choices on the account, or no
+ * session to read them with. The chooser renders off this contract only —
+ * the single-assistant resolution arms (ready/notReady/unavailable/empty)
+ * belong to the shell's resolution flow.
+ */
+export const AssistantListSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("selection"),
+    assistants: z.array(AssistantChoiceSchema),
+  }),
+  z.object({ status: z.literal("unauthenticated") }),
+]);
 export type ResolvedAssistant = z.infer<typeof ResolvedAssistantSchema>;
 export type AssistantResolution = z.infer<typeof AssistantResolutionSchema>;
+export type AssistantList = z.infer<typeof AssistantListSchema>;
 export const AssistantNavigationSchema = z.object({
   source: z.literal("mycadet-web-nav"),
   nav: z.enum(["push", "replace", "pop"]),
