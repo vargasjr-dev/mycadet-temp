@@ -1,7 +1,10 @@
 {
   "name": "@mycadet/web",
   "version": "0.13.0",
-  "repository": { "type": "git", "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
+  },
   "type": "module",
   "description": "Pre-built web SPA for the Cadet Assistant",
   "license": "MIT",
@@ -12,7 +15,7 @@
     "predev": "bun run openapi-ts && node scripts/copy-skill-assets.mjs",
     "dev": "bun --bun vite",
     "prebuild": "node scripts/copy-skill-assets.mjs",
-    "build": "bun --bun vite build",
+    "build": "bun install && bun --bun vite build",
     "preview": "bun --bun vite preview",
     "lint": "eslint",
     "audit:cross-domain": "node scripts/audit-cross-domain-imports.mjs",

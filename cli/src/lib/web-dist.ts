@@ -215,15 +215,9 @@ async function buildDistFromSource(
 ): Promise<void> {
   const recipe =
     kind === "web"
-      ? "cd clients/web && bun install && VITE_CLOUD_MODE=false bun run build"
-      : "cd clients/app && bun install && VITE_CLOUD_MODE=false bun run build";
+      ? "cd clients/web && VITE_CLOUD_MODE=false bun run build"
+      : "cd clients/app && VITE_CLOUD_MODE=false bun run build";
   try {
-    await spawnDistBuild({
-      command: "bun",
-      args: ["install"],
-      env: {},
-      cwd: sourceDir,
-    });
     await spawnDistBuild({
       command: "bun",
       args: ["run", "build"],

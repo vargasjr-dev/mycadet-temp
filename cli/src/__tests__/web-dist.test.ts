@@ -167,11 +167,7 @@ describe("resolveWebDistDir", () => {
     ).toBe(true);
     logSpy.mockRestore();
 
-    const [installCommand, installArgs, installOptions] = bunCalls()[0] ?? [];
-    expect(installCommand).toBe("bun");
-    expect(installArgs).toEqual(["install"]);
-    expect(installOptions?.cwd).toBe(packageDir);
-    const [command, args, options] = bunCalls()[1] ?? [];
+    const [command, args, options] = bunCalls()[0] ?? [];
     expect(command).toBe("bun");
     expect(args).toEqual(["run", "build"]);
     expect(options?.env?.VITE_CLOUD_MODE).toBe("false");
@@ -188,7 +184,7 @@ describe("resolveWebDistDir", () => {
         resolvePackage: resolvePackageThrows,
       }),
     ).toBe(join(packageDir, "dist"));
-    expect(bunCalls()).toHaveLength(2);
+    expect(bunCalls()).toHaveLength(1);
   });
 
   test("rebuilds the bundle when the checkout moved past it", async () => {
@@ -213,7 +209,7 @@ describe("resolveWebDistDir", () => {
     });
 
     expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(2);
+    expect(bunCalls()).toHaveLength(1);
     expect(
       logSpy.mock.calls.some((call) =>
         call.join(" ").includes("older than the current checkout"),
@@ -260,7 +256,7 @@ describe("resolveWebDistDir", () => {
     });
 
     expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(2);
+    expect(bunCalls()).toHaveLength(1);
     expect(
       logSpy.mock.calls.some((call) =>
         call.join(" ").includes("no build stamp"),
@@ -299,9 +295,7 @@ describe("resolveWebDistDir", () => {
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
-    ).rejects.toThrow(
-      "cd clients/web && bun install && VITE_CLOUD_MODE=false bun run build",
-    );
+    ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
     expect(
       logSpy.mock.calls.some((call) =>
         call.join(" ").includes("No built web bundle found"),
@@ -360,7 +354,7 @@ describe("resolveAppDistDir", () => {
     expect(resolved).toBe(join(packageDir, "dist", "standalone"));
     logSpy.mockRestore();
 
-    const [command, args, options] = bunCalls()[1] ?? [];
+    const [command, args, options] = bunCalls()[0] ?? [];
     expect(command).toBe("bun");
     expect(args).toEqual(["run", "build"]);
     expect(options?.cwd).toBe(packageDir);
@@ -387,7 +381,7 @@ describe("resolveAppDistDir", () => {
     });
 
     expect(resolved).toBe(distDir);
-    expect(bunCalls()).toHaveLength(2);
+    expect(bunCalls()).toHaveLength(1);
     expect(
       readFileSync(join(packageDir, ".cadet-built-sha"), "utf8").trim(),
     ).toBe(fixtureHeadSha);
