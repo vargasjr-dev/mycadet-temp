@@ -3,30 +3,25 @@ import {
   AssistantResolutionSchema,
   type AssistantResolution,
 } from "./resolution-contract";
-import {
-  listAssistantChoices,
-  resolveAssistant,
-  type AssistantRequest,
-} from "./resolve-assistant";
+import { resolveAssistant, type AssistantRequest } from "./resolve-assistant";
 
 export type AssistantRequestState =
   | AssistantResolution
   | { status: "loading" | "error" };
 
+/**
+ * The shell's resolution flow: it resolves one assistant's detail, falling
+ * back to the list endpoint's summary when there is nothing (or more than
+ * one) to resolve. The chooser picks instead of resolving, so it reads the
+ * list endpoint through its own useAssistantChoices hook.
+ */
 export function useAssistantRequest({
   apiBaseUrl = "/",
   origin,
   assistantId,
-  listOnly = false,
-}: Omit<AssistantRequest, "signal"> & { listOnly?: boolean }) {
+}: Omit<AssistantRequest, "signal">) {
   const [attempt, setAttempt] = useState(0);
-  const key = JSON.stringify([
-    apiBaseUrl,
-    origin,
-    assistantId,
-    listOnly,
-    attempt,
-  ]);
+  const key = JSON.stringify([apiBaseUrl, origin, assistantId, attempt]);
   const [result, setResult] = useState<{
     key: string;
     state: AssistantRequestState;
@@ -53,9 +48,7 @@ export function useAssistantRequest({
           assistantId,
           signal: controller.signal,
         };
-        return listOnly
-          ? listAssistantChoices(request)
-          : resolveAssistant(request);
+        return resolveAssistant(request);
       })
       .then(
         (value) => {
@@ -97,7 +90,7 @@ export function useAssistantRequest({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [apiBaseUrl, origin, assistantId, listOnly, attempt, key]);
+  }, [apiBaseUrl, origin, assistantId, attempt, key]);
   const state: AssistantRequestState =
     result?.key === key ? result.state : { status: "loading" };
   return {

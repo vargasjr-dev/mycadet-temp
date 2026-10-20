@@ -1568,12 +1568,10 @@ export async function runAgentLoopImpl(
       });
     };
 
-    const onCheckpoint = async (): Promise<CheckpointDecision> => {
-      if (ctx.canHandoffAtCheckpoint()) {
-        return "handoff";
-      }
-      return "continue";
-    };
+    // Interrupt-on-send is unconditional: a busy send interrupts the turn
+    // instead of queueing, so the queue never holds entries a checkpoint
+    // handoff should cut a turn short for — the loop always continues.
+    const onCheckpoint = async (): Promise<CheckpointDecision> => "continue";
 
     turnStarted = true;
 

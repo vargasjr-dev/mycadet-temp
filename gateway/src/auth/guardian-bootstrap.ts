@@ -21,7 +21,6 @@ import {
 } from "../db/schema.js";
 import { readCredential } from "../credential-reader.js";
 import { credentialKey } from "../credential-key.js";
-import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { reportGuardianMintRefused } from "../guardian-integrity-reporter.js";
 import { ipcCallAssistant } from "../ipc/assistant-client.js";
 import { getLogger } from "../logger.js";
@@ -1040,22 +1039,16 @@ export function mintAndRecordBrowserTokenPair(params: {
  * callers fall back to a generated principal ID in that case.
  */
 async function fetchPlatformOwnerDisplayName(): Promise<string | null> {
-  if (!areCloudFeaturesEnabled()) {
-    log.debug(
-      "Platform features disabled — skipping platform owner display name fetch",
-    );
-    return null;
-  }
-
   const isCloud = getIsCloud();
   if (!isCloud) return null;
 
   const assistantApiKey = await readCredential(
     credentialKey("cadet", "assistant_api_key"),
   );
-  const cloudBaseUrl = (
-    process.env.CADET_CLOUD_URL?.trim() || ""
-  ).replace(/\/+$/, "");
+  const cloudBaseUrl = (process.env.CADET_CLOUD_URL?.trim() || "").replace(
+    /\/+$/,
+    "",
+  );
 
   if (!cloudBaseUrl || !assistantApiKey) {
     return null;

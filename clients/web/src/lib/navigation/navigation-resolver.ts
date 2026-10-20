@@ -13,7 +13,6 @@ import { routes } from "@/utils/routes";
 
 export interface NavigationState {
   isLocalClient: boolean;
-  isCloudDisabled: boolean;
   isRemoteGateway: boolean;
   remoteGatewayPublicPathPrefix: string;
   isGatewayAuth: boolean;
@@ -720,7 +719,6 @@ function enforceFunnelConsent(
   if (
     path === routes.onboarding.research &&
     postCheckoutHatchReturnTo(pathnameWithSearch) &&
-    !state.isCloudDisabled &&
     state.cloudSession === "present" &&
     !consentIsCurrent(state)
   ) {
@@ -810,11 +808,7 @@ function requireConsent(
   // absent/unknown session has no server consent record to gate on. Note this
   // is NOT gated on isLocalClient — a local-mode client with a cloud session
   // still re-reviews stale terms.
-  if (
-    state.isCloudDisabled ||
-    state.cloudSession !== "present" ||
-    consentIsCurrent(state)
-  ) {
+  if (state.cloudSession !== "present" || consentIsCurrent(state)) {
     return null;
   }
 
@@ -878,7 +872,10 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
     return { action: "redirect", to: routes.account.login };
   }
   if (!hasCompletedOnboarding(state)) {
-    return { action: "redirect", to: onboardingEntrypoint(state.isLocalClient) };
+    return {
+      action: "redirect",
+      to: onboardingEntrypoint(state.isLocalClient),
+    };
   }
   // A stale toggle must be re-reviewed before hatching, even via direct navigation.
   if (!state.isLocalClient && !consentIsCurrent(state)) {

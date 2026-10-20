@@ -1318,8 +1318,6 @@ function loadSkillDefinition(skill: SkillSummary): SkillLookupResult {
     "{workspaceDir}",
     getWorkspaceDirDisplay(),
   );
-  // Strip feature-gated sections based on assistant feature flags
-
   // Re-parse inline command expansions after placeholder substitution.
   // The initial parse (during SKILL.md parsing) produces byte offsets against
   // the pre-substitution body. Since {baseDir} and {workspaceDir} replacements

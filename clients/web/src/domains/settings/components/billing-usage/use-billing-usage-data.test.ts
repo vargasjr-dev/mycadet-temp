@@ -43,36 +43,25 @@ describe("buildBillingUsageTotalsQuery", () => {
 });
 
 describe("isBillingUsageDataEnabled", () => {
-  // Signature: (cloudGate, reachabilityGate, isCloudHosted).
-  test("enables the queries only for a positively-resolved cloud-hosted assistant with the cloud API reachable", () => {
-    expect(isBillingUsageDataEnabled("full", "full", true)).toBe(true);
+  // Signature: (cloudGate, isCloudHosted).
+  test("enables the queries only for a positively-resolved cloud-hosted assistant", () => {
+    expect(isBillingUsageDataEnabled("full", true)).toBe(true);
   });
 
   test("stays disabled while the gate is 'full' but hosting is not yet resolved", () => {
     // The cloudHostedOnly gate reports "full" during the lifecycle loading
     // window; the strict isCloudHosted check is what blocks a doomed fetch.
-    expect(isBillingUsageDataEnabled("full", "full", false)).toBe(false);
-  });
-
-  test("stays disabled when the cloud API is unreachable (CADET_DISABLE_CLOUD)", () => {
-    // cloudHostedOnly ignores CADET_DISABLE_CLOUD and can report "full"
-    // for a cloud-hosted assistant even when platformFeaturesGate aborts the
-    // request. The reachability gate ("gated") is what prevents the doomed
-    // fetch and keeps the chart hidden, matching how the Billing tab hides
-    // itself for the same state.
-    expect(isBillingUsageDataEnabled("full", "gated", true)).toBe(false);
+    expect(isBillingUsageDataEnabled("full", false)).toBe(false);
   });
 
   test("stays disabled for a self-hosted assistant (gate 'gated')", () => {
-    expect(isBillingUsageDataEnabled("gated", "gated", false)).toBe(false);
-    expect(isBillingUsageDataEnabled("gated", "gated", true)).toBe(false);
+    expect(isBillingUsageDataEnabled("gated", false)).toBe(false);
+    expect(isBillingUsageDataEnabled("gated", true)).toBe(false);
   });
 
   test("stays disabled with no platform session (gate 'disabled')", () => {
-    expect(isBillingUsageDataEnabled("disabled", "disabled", false)).toBe(
-      false,
-    );
-    expect(isBillingUsageDataEnabled("disabled", "disabled", true)).toBe(false);
+    expect(isBillingUsageDataEnabled("disabled", false)).toBe(false);
+    expect(isBillingUsageDataEnabled("disabled", true)).toBe(false);
   });
 });
 

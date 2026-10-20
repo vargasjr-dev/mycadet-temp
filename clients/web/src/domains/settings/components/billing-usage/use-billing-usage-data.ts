@@ -85,43 +85,28 @@ export function buildBillingUsageTotalsQuery(
 /**
  * Whether the organization-scoped platform billing queries may fire.
  *
- * These fetches only make sense when three things hold:
+ * These fetches only make sense when two things hold:
  *   - the active assistant is cloud-hosted (`cloudHostedOnly` gate is
- *     "full"),
- *   - the cloud API is reachable (the default reachability gate is not
- *     "gated" — i.e. the app is not in local mode with
- *     `CADET_DISABLE_CLOUD` set, where `platformFeaturesGate` aborts the
- *     request), and
+ *     "full"), and
  *   - the assistant is positively resolved as cloud-hosted.
  *
- * The `cloudHostedOnly` gate deliberately ignores `CADET_DISABLE_CLOUD`
- * and reports "full" during the lifecycle loading window, so neither of the
- * other two checks is redundant: without the reachability gate a local-mode
- * app driving a cloud-hosted assistant with the cloud API disabled would
- * fire two doomed requests, and without `isCloudHosted` a fetch could kick
- * off before hosting is resolved.
+ * The `cloudHostedOnly` gate reports "full" during the lifecycle loading
+ * window, so the strict `isCloudHosted` check is what keeps a fetch from
+ * kicking off before hosting is resolved.
  */
 export function isBillingUsageDataEnabled(
   cloudGate: CloudGateState,
-  reachabilityGate: CloudGateState,
   isCloudHosted: boolean,
 ): boolean {
-  return (
-    cloudGate === "full" && reachabilityGate !== "gated" && isCloudHosted
-  );
+  return cloudGate === "full" && isCloudHosted;
 }
 
 export function useBillingUsageData(state: UsageChartState) {
   const tz = useEffectiveTimezone();
 
   const cloudGate = useCloudGate({ cloudHostedOnly: true });
-  const reachabilityGate = useCloudGate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const enabled = isBillingUsageDataEnabled(
-    cloudGate,
-    reachabilityGate,
-    isCloudHosted,
-  );
+  const enabled = isBillingUsageDataEnabled(cloudGate, isCloudHosted);
 
   const seriesQuery = useQuery({
     ...organizationsBillingUsageSeriesRetrieveOptions({

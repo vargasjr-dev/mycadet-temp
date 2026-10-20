@@ -61,7 +61,7 @@ import {
   type CliInvocation,
 } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { displayVersion } from "../lib/local-version.js";
+import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../package.json";
 import {
   fetchOrganizationId,
@@ -140,7 +140,6 @@ interface ParsedArgs {
   bearerToken?: string;
   /** Interface identifier sent as X-Cadet-Interface-Id on all requests. */
   interfaceId: SupportedInterface;
-  disableCloud: boolean;
   /** Auto-open the web interface in the default browser (--interface web only). */
   openBrowser: boolean;
   /** Explicit web server port (--interface web only). Binds strictly — no scan. */
@@ -171,10 +170,6 @@ function readWorkspaceRoot(entry: AssistantEntry | null): string | undefined {
 
 // Exported for unit testing the arg/auth resolution without launching the TUI.
 export function parseArgs(): ParsedArgs {
-  const disableCloudAmbient =
-    process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
-  let disableCloud =
-    disableCloudAmbient === "true" || disableCloudAmbient === "1";
   const args = process.argv.slice(3);
 
   const positionalName = parseAssistantTargetArg(args, [
@@ -198,8 +193,6 @@ export function parseArgs(): ParsedArgs {
     if (arg === "--help" || arg === "-h") {
       printUsage();
       process.exit(0);
-    } else if (arg === "--disable-cloud") {
-      disableCloud = true;
     } else if (arg === "--no-open") {
       openBrowserPref = false;
     } else if (arg === "--background") {
@@ -344,7 +337,6 @@ export function parseArgs(): ParsedArgs {
     cloudToken,
     bearerToken,
     interfaceId,
-    disableCloud,
     openBrowser: openBrowserPref,
     webPort,
     background,
@@ -374,8 +366,6 @@ ${ANSI.bold}OPTIONS:${ANSI.reset}
     --background               Run the web server as a background process
                               (--interface web). Prints the URL, PID, and log
                               path, then returns to the shell.
-    --flag <key=value>         Feature flag override (repeatable, kebab-case key)
-    --disable-cloud         Suppress all outbound platform API calls
     -h, --help                 Show this help message
 
 ${ANSI.bold}EXAMPLES:${ANSI.reset}
@@ -1288,7 +1278,6 @@ export function buildWebInterfaceConfig(opts: {
 }
 
 async function runWebInterface(
-  disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
@@ -1296,7 +1285,7 @@ async function runWebInterface(
   // (HMR, __local endpoints, gateway proxy).
   const webSourceDir = findWebSourceDir();
   if (webSourceDir) {
-    return runViteDevServer(webSourceDir, disableCloud, openInBrowser, webPort);
+    return runViteDevServer(webSourceDir, openInBrowser, webPort);
   }
 
   const distDir = findWebDistDir();
@@ -1317,7 +1306,7 @@ async function runWebInterface(
   const configJson = safeJson(
     buildWebInterfaceConfig({
       cloudUrl,
-      version: displayVersion(cliPkg.version),
+      version: stampedVersion(cliPkg.version),
     }),
   );
   const indexHtml = rawIndexHtml.replace(
@@ -1489,7 +1478,6 @@ async function runWebInterface(
 
 async function runViteDevServer(
   webSourceDir: string,
-  disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
@@ -1510,7 +1498,6 @@ async function runViteDevServer(
     windowsHide: true,
     env: {
       ...process.env,
-      ...(disableCloud ? { VITE_CADET_DISABLE_CLOUD: "true" } : {}),
       VITE_WEB_MODE: "full",
       API_PROXY_TARGET: cloudUrl,
       CADET_WEB_URL: getWebUrl(),
@@ -1595,22 +1582,17 @@ export const client = Object.assign(
       cloudToken,
       bearerToken,
       interfaceId,
-      disableCloud,
       openBrowser: openInBrowser,
       webPort,
       background,
     } = parseArgs();
-
-    if (disableCloud) {
-      process.env.CADET_DISABLE_CLOUD = "true";
-    }
 
     if (interfaceId === WEB_INTERFACE_ID) {
       if (background) {
         await spawnBackgroundWebInterface(webPort);
         return;
       }
-      await runWebInterface(disableCloud, openInBrowser, webPort);
+      await runWebInterface(openInBrowser, webPort);
       return;
     }
 

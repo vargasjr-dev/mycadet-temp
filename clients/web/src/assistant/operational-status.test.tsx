@@ -49,7 +49,6 @@ const sdkMock = mock(
   }),
 );
 const isLocalClientMock = mock(() => false);
-const isCloudDisabledMock = mock(() => false);
 let isOrgReadyMock = true;
 const recordLifecycleDiagnosticMock = mock(
   (_kind: string, _details: Record<string, unknown>) => {},
@@ -70,7 +69,6 @@ mock.module("@/stores/sse-connected-store", () => ({
 
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
-  isCloudDisabled: isCloudDisabledMock,
 }));
 
 mock.module("@/hooks/use-is-org-ready", () => ({
@@ -125,7 +123,6 @@ beforeEach(() => {
   recordLifecycleDiagnosticMock.mockClear();
   sseConnectedSnapshotMock = false;
   isLocalClientMock.mockImplementation(() => false);
-  isCloudDisabledMock.mockImplementation(() => false);
   isOrgReadyMock = true;
   useAuthStore.setState(
     {
@@ -484,7 +481,9 @@ describe("daemon traffic supersedes stale operational status", () => {
       await waitFor(() =>
         expect(result.current.status.data?.state).toBe(expected),
       );
-      if (expected === "active") {expect(result.current.serving).toBe(true);}
+      if (expected === "active") {
+        expect(result.current.serving).toBe(true);
+      }
       expect(sdkMock).toHaveBeenCalledTimes(1);
       expect(
         result.current.client.getQueryCache().getAll()[0]?.state.data,

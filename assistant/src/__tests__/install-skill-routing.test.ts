@@ -178,7 +178,6 @@ import { installSkill } from "../daemon/handlers/skills.js";
 
 describe("installSkill routing", () => {
   beforeEach(() => {
-    // Real flag resolution replaces the former blanket module mock.
     rmSync(TEST_SKILLS_DIR, { recursive: true, force: true });
     mkdirSync(TEST_SKILLS_DIR, { recursive: true });
     installedSkillIds.clear();

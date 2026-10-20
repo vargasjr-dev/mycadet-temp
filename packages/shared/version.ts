@@ -91,7 +91,7 @@ export function stampedVersion(
  * stamped for local-environment source builds, plain otherwise — release
  * versions are decided by the release pipeline, never the machine.
  */
-export function displayVersion(packageRoot: string = process.cwd()): string {
+export function resolveVersion(packageRoot: string = process.cwd()): string {
   let base = "";
   try {
     const pkg = JSON.parse(

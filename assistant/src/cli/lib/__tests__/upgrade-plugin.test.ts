@@ -249,7 +249,6 @@ beforeEach(() => {
   pluginsDir = join(ws, "plugins");
   mkdirSync(pluginsDir, { recursive: true });
   invalidatePluginCatalogCache();
-  delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
 });
 

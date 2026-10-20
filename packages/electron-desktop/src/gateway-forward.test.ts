@@ -29,11 +29,10 @@ const request = (
   if (init.origin !== undefined) {
     headers.set("origin", init.origin);
   }
-  return {
-    url: `app://mycadet.ai${pathname}`,
+  return new Request(`app://mycadet.ai${pathname}`, {
     method: init.method ?? "GET",
     headers,
-  };
+  });
 };
 
 describe("planGatewayForward", () => {
@@ -98,15 +97,14 @@ describe("planGatewayForward", () => {
   });
 
   test("preserves non-Origin headers such as the guardian bearer", () => {
-    const req = {
-      url: "app://mycadet.ai/assistant/__gateway/8080/auth/token",
+    const req = new Request("app://mycadet.ai/assistant/__gateway/8080/auth/token", {
       method: "POST",
       headers: new Headers({
         origin: "app://mycadet.ai",
         authorization: "Bearer guardian-token",
         "content-type": "application/json",
       }),
-    };
+    });
     const plan = planGatewayForward(req, allow(8080));
     if (plan.kind !== "forward") throw new Error("expected forward");
     expect(plan.headers.get("authorization")).toBe("Bearer guardian-token");
@@ -165,8 +163,7 @@ describe("planPairedGatewayForward", () => {
   });
 
   test("strips the browser-ambient headers on the server-to-server hop", () => {
-    const req = {
-      url: "app://mycadet.ai/__gateway-paired/abc/v1/events",
+    const req = new Request("app://mycadet.ai/__gateway-paired/abc/v1/events", {
       method: "POST",
       headers: new Headers({
         origin: "app://mycadet.ai",
@@ -175,7 +172,7 @@ describe("planPairedGatewayForward", () => {
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
       }),
-    };
+    });
     const plan = planPairedGatewayForward(
       req,
       pair({ abc: "https://gw.example.com" }),
@@ -205,15 +202,14 @@ describe("planPairedGatewayForward", () => {
   });
 
   test("strips renderer authorization while preserving ordinary headers", () => {
-    const req = {
-      url: "app://mycadet.ai/assistant/__gateway-paired/abc/v1/foo",
+    const req = new Request("app://mycadet.ai/assistant/__gateway-paired/abc/v1/foo", {
       method: "GET",
       headers: new Headers({
         origin: "app://mycadet.ai",
         authorization: "Bearer guardian-token",
         accept: "text/event-stream",
       }),
-    };
+    });
     const plan = planPairedGatewayForward(
       req,
       pair({ abc: "https://gw.example.com" }),

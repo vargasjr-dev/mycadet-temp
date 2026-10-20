@@ -19,7 +19,7 @@ const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
  * can't infer, and the loopback handoff only runs in standalone local mode
  * where the build's seed owns the routing. */
 function cloudLoginUrl(page: string, callbackReturnTo: string): string {
-  return `${cloudWebUrl(import.meta.env.VITE_ENVIRONMENT)}/account/${page}?returnTo=${encodeURIComponent(callbackReturnTo)}`;
+  return `${cloudWebUrl()}/account/${page}?returnTo=${encodeURIComponent(callbackReturnTo)}`;
 }
 
 function generateState(): string {

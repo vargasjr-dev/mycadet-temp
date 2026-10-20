@@ -22,7 +22,7 @@ import { z } from "zod";
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
 import cliPkg from "../../package.json";
-import { displayVersion } from "./local-version.js";
+import { stampedVersion } from "@mycadet/shared/version";
 
 import {
   clearAppProcessRecord,
@@ -33,7 +33,6 @@ import {
   type AssistantEntry,
 } from "./assistant-config.js";
 import type { RemoteHost } from "./constants.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
@@ -1231,12 +1230,12 @@ export async function startRemoteWebIngress(opts: {
   }
   // The edge serves the CLI's own bundles, so the version it stamps answers
   // "which cadet is running this" — the CLI's own stamp, not the gateway
-  // runtime's. displayVersion is stable for a given checkout (the stamp's
+  // runtime's. stampedVersion is stable for a given checkout (the stamp's
   // timestamp is the HEAD commit's), so the fingerprint below never drifts
   // between processes.
-  const version = displayVersion(cliPkg.version);
+  const version = stampedVersion(cliPkg.version);
   const spaOptions = {
-    hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
+    hubUrl: cloudAssistantHubUrl(),
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
     version,

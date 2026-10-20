@@ -4593,12 +4593,6 @@ export const installCompanionWindow = (): void => {
   // blanked on sign-out, so this is both edges.
   onNameChange(syncCompanionSurface);
 
-  // Watch's flag arrives after launch, not before it: main reads it from
-  // settings and the app's window is what puts it there, once it has signed in
-  // and fetched an evaluation. A surface that is already open has to hear that
-  // Watch became available, or stopped being, without waiting for something
-  // else to move the state. It pushes rather than syncing, because whether the
-  // surface is on screen is no longer this flag's business.
   // The route loads lazily after the window is created, so a state pushed
   // before its subscription registers is dropped. It pulls this once mounted.
   handle("cadet:companion:getState", z.tuple([]), () => currentState());

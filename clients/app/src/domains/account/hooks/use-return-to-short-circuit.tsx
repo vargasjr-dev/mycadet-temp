@@ -65,8 +65,7 @@ function ReturnToRedirect({ to }: { to: string }) {
  * screen can change — must not suppress a sign-in the visitor needs.
  *
  * `"pending"` is bounded by the gate, so the auth screen can never hang on the
- * probe; `"gated"` short-circuits, since no auth screen can mint a session that
- * does not exist.
+ * probe.
  */
 export function useReturnToShortCircuit(): ReturnToShortCircuit {
   const [searchParams] = useSearchParams();

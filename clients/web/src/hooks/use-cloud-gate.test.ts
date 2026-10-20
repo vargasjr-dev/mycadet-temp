@@ -2,10 +2,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 const isLocalClientMock = mock(() => false);
-const isCloudDisabledMock = mock(() => false);
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
-  isCloudDisabled: isCloudDisabledMock,
 }));
 
 import { useAuthStore } from "@/stores/auth-store";
@@ -27,7 +25,6 @@ function setLifecycle(assistantState: AssistantState) {
 
 beforeEach(() => {
   isLocalClientMock.mockImplementation(() => false);
-  isCloudDisabledMock.mockImplementation(() => false);
   useAuthStore.setState(initialAuthState, true);
   useAssistantLifecycleStore.setState(initialLifecycleState, true);
 });
@@ -49,30 +46,20 @@ describe("useCloudGate — default (standard pattern)", () => {
     expect(result.current).toBe("disabled");
   });
 
-  test('returns "full" in local mode when logged in and platform not disabled', () => {
+  test('returns "full" in local mode when logged in', () => {
     isLocalClientMock.mockImplementation(() => true);
     useAuthStore.setState({ cloudSession: "present" });
-    isCloudDisabledMock.mockImplementation(() => false);
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
   });
-
-  test('returns "gated" in local mode when CADET_DISABLE_CLOUD is set', () => {
-    isLocalClientMock.mockImplementation(() => true);
-    useAuthStore.setState({ cloudSession: "present" });
-    isCloudDisabledMock.mockImplementation(() => true);
-    const { result } = renderHook(() => useCloudGate());
-    expect(result.current).toBe("gated");
-  });
 });
 
-describe("useCloudGate — five documented user states (CONVENTIONS.md)", () => {
+describe("useCloudGate — documented user states (CONVENTIONS.md)", () => {
   // Locks the default-branch outcome useCloudGate returns for each of the
-  // five user states the cloud gating contract documents (CONVENTIONS.md).
+  // user states the cloud gating contract documents (CONVENTIONS.md).
 
   test('1. cloud-hosted + logged in → "full"', () => {
     isLocalClientMock.mockImplementation(() => false);
-    isCloudDisabledMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "present" });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
@@ -80,7 +67,6 @@ describe("useCloudGate — five documented user states (CONVENTIONS.md)", () => 
 
   test('2. cloud-hosted + NOT logged in → "disabled"', () => {
     isLocalClientMock.mockImplementation(() => false);
-    isCloudDisabledMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "absent" });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
@@ -88,7 +74,6 @@ describe("useCloudGate — five documented user states (CONVENTIONS.md)", () => 
 
   test('3. self-hosted + platform ON + logged in → "full"', () => {
     isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "present" });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
@@ -96,29 +81,15 @@ describe("useCloudGate — five documented user states (CONVENTIONS.md)", () => 
 
   test('4. self-hosted + platform ON + NOT logged in → "disabled"', () => {
     isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "absent" });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
-  });
-
-  test('5. self-hosted + platform OFF (CADET_DISABLE_CLOUD) → "gated"', () => {
-    isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => true);
-    // Session value is irrelevant once platform features are off; assert both.
-    for (const cloudSession of ["present", "absent"] as const) {
-      useAuthStore.setState({ cloudSession });
-      const { result, unmount } = renderHook(() => useCloudGate());
-      expect(result.current).toBe("gated");
-      unmount();
-    }
   });
 
   test('pre-settle "unknown" session gates the surface as "disabled"', () => {
     // The optimistic tri-state: "unknown" is not a live session, so the
     // default branch treats it like "absent" until the probe settles.
     isLocalClientMock.mockImplementation(() => false);
-    isCloudDisabledMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "unknown" });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
@@ -199,16 +170,9 @@ describe("useCloudGateWithPending", () => {
     expect(result.current).toBe("full");
   });
 
-  test('"gated" wins over the unsettled window in both branches', () => {
+  test('"gated" wins over the unsettled window', () => {
     // Nothing the probe can answer changes a gated surface, so it must not
     // report a wait no caller should honor.
-    isLocalClientMock.mockImplementation(() => true);
-    isCloudDisabledMock.mockImplementation(() => true);
-    useAuthStore.setState({ cloudSession: "unknown" });
-    const { result, unmount } = renderHook(() => useCloudGateWithPending());
-    expect(result.current).toBe("gated");
-    unmount();
-
     setLifecycle({ kind: "self_hosted" });
     const hostedOnly = renderHook(() =>
       useCloudGateWithPending({ cloudHostedOnly: true }),
@@ -276,19 +240,6 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     isLocalClientMock.mockImplementation(() => true);
     setLifecycle({ kind: "active", isLocal: false });
     useAuthStore.setState({ cloudSession: "present" });
-    const { result } = renderHook(() =>
-      useCloudGate({ cloudHostedOnly: true }),
-    );
-    expect(result.current).toBe("full");
-  });
-
-  test("ignores CADET_DISABLE_CLOUD when active assistant is cloud-hosted", () => {
-    // The env var gates the daemon-side API interceptor in local mode —
-    // it has no bearing on UI that targets a cloud-hosted assistant.
-    isLocalClientMock.mockImplementation(() => true);
-    setLifecycle({ kind: "active", isLocal: false });
-    useAuthStore.setState({ cloudSession: "present" });
-    isCloudDisabledMock.mockImplementation(() => true);
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );

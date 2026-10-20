@@ -11,7 +11,7 @@ import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav"
 import { Button } from "@mycadet/design-library/components/button";
 import { CloudOff } from "lucide-react";
 import { useTranslation } from "@app/i18n";
-import { useAssistantRequest } from "@app/assistant/use-assistant-request";
+import { useAssistantChoices } from "@app/assistant/use-assistant-choices";
 import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
@@ -39,16 +39,13 @@ export function SelectAssistantScreen() {
   } | null>(null);
   const [retirePending, setRetirePending] = useState(false);
   const [retireError, setRetireError] = useState<string | null>(null);
-  const { state, retry } = useAssistantRequest({
+  const { state, retry } = useAssistantChoices({
     origin: window.location.origin,
-    listOnly: true,
   });
   const status =
-    state.status === "ready"
-      ? "error"
-      : state.status === "selection" && state.assistants.length === 0
-        ? "empty"
-        : state.status;
+    state.status === "selection" && state.assistants.length === 0
+      ? "empty"
+      : state.status;
 
   const closeRetireDialog = () => {
     if (retirePending) {
@@ -133,26 +130,28 @@ export function SelectAssistantScreen() {
         {status === "unauthenticated" && (
           <Link to={routes.account.login}>{t("accountPage.signIn")}</Link>
         )}
-        {status === "empty" && (
-          <Button variant="primary" onClick={() => setCreating(true)}>
-            {t("selectAssistantScreen.create")}
-          </Button>
-        )}
-        {status === "empty" && (
-          <Button variant="outlined" onClick={retry}>
-            {t("appShell.retry")}
-          </Button>
-        )}
-        {status === "empty" && (
-          <CreateAssistantDialog
-            open={creating}
-            onClose={() => setCreating(false)}
-            onCreated={(id) => {
-              void navigate(routes.assistant, {
-                state: assistantSelectionState(id),
-              });
-            }}
-          />
+        {/* A dead list still leaves a way forward: hatch a new assistant from
+            the chooser itself (the dialog's failures toast on their own), so
+            an unreachable API reads as a degraded chooser rather than a dead
+            end. */}
+        {(status === "empty" || status === "error") && (
+          <>
+            <Button variant="primary" onClick={() => setCreating(true)}>
+              {t("selectAssistantScreen.create")}
+            </Button>
+            <Button variant="outlined" onClick={retry}>
+              {t("appShell.retry")}
+            </Button>
+            <CreateAssistantDialog
+              open={creating}
+              onClose={() => setCreating(false)}
+              onCreated={(id) => {
+                void navigate(routes.assistant, {
+                  state: assistantSelectionState(id),
+                });
+              }}
+            />
+          </>
         )}
         {/* Gated by retireTarget, not by the list status: a row can be
             retired from any state the chooser renders. */}

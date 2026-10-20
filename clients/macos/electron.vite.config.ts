@@ -5,7 +5,7 @@ import path from "node:path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
 import { SHARED_DESKTOP_INLINE_DEPS } from "@mycadet/electron-desktop/src/inline-deps";
-import { displayVersion } from "@mycadet/shared/local-version";
+import { resolveVersion } from "@mycadet/shared/version";
 
 // Reference: https://electron-vite.org/config/
 //
@@ -64,7 +64,7 @@ const LOCAL_CLI_ENTRY =
 
 // The version the About panel + injected config report: this shell's own
 // package.json version — stamped display form for local builds
-// (`<base>-local.<stamp>.<sha>`, see @mycadet/shared/local-version), plain
+// (`<base>-local.<stamp>.<sha>`, see @mycadet/shared/version), plain
 // otherwise. Release builds bake the plain version; app.getVersion() fallback
 // covers bundles built without the define.
 
@@ -74,7 +74,7 @@ const BUILD_DEFINES = {
     process.env.CADET_ENVIRONMENT || "local",
   ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
-  __CADET_VERSION_DISPLAY__: JSON.stringify(displayVersion(__dirname)),
+  __CADET_VERSION_DISPLAY__: JSON.stringify(resolveVersion()),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||

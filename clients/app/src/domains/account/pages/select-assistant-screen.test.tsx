@@ -348,7 +348,7 @@ test("a failed retire keeps the dialog open with the cloud's detail", async () =
   expect(screen.getByText("One")).toBeDefined();
 });
 
-test("a failed list renders a degraded disabled row instead of retry", async () => {
+test("a failed list renders a degraded disabled row plus the way forward", async () => {
   request.mockResolvedValueOnce(
     Response.json({ results: [{ name: "Missing ID" }] }),
   );
@@ -358,8 +358,24 @@ test("a failed list renders a degraded disabled row instead of retry", async () 
   });
   expect(row.getAttribute("aria-disabled")).toBe("true");
   expect(row.getAttribute("tabindex")).toBe("-1");
-  // No retry affordance: the row is inert, a reload re-resolves.
-  expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+  // The row is inert chrome; recovery lives beside it — the create/retry
+  // affordances (#449's colocated way forward) survive the dead list.
+  expect(screen.getByRole("button", { name: "Retry" })).toBeDefined();
+  expect(
+    screen.getByRole("button", { name: "Create an assistant" }),
+  ).toBeDefined();
+});
+
+test("a dead list still offers hatching from the chooser", async () => {
+  request.mockRejectedValueOnce(new Error("no control plane"));
+  setup();
+  // The chooser's own failure line — not the shell panel's
+  // "We couldn't reach your assistant": the list died, not the assistant.
+  await screen.findByText("Unable to load assistant.");
+  // And the way forward survives the dead list: hatch from the chooser.
+  fireEvent.click(screen.getByRole("button", { name: "Create an assistant" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(within(dialog).getByRole("button", { name: "Create" })).toBeDefined();
 });
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {

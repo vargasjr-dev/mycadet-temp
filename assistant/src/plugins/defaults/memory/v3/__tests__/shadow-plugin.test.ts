@@ -273,8 +273,6 @@ const FAKE_SECTION_INDEX: SectionIndex = {
   ]),
 };
 
-// ─── module mocks (installed before the plugin import) ──────────────────────
-
 // `observeTurn` and the injector resolve their tuning through the real
 // `getConfig()`; `seedMemoryConfig()` (called by the observe/produce wrappers
 // below) writes the mutable knobs into the workspace config for real. The
@@ -316,6 +314,8 @@ function seedMemoryConfig(): void {
     qdrant: { vectorSize: 8, onDisk: false },
   });
 }
+
+// ─── module mocks (installed before the plugin import) ──────────────────────
 
 // Stable-prefix lanes: the curated core loader and the frecency hot set are
 // stubbed to controllable values; `initLanes` owns the existence filtering and

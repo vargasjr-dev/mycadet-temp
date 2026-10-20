@@ -15,13 +15,6 @@
  * stays Electron-free).
  */
 
-export interface CloudForwardRequest {
-  url: string;
-  method: string;
-  headers: Headers;
-  body?: Request["body"];
-}
-
 export interface CloudForwardAllowedOrigin {
   protocol: string;
   host: string;
@@ -35,7 +28,7 @@ export type CloudForwardFetcher = (
 
 export interface ForwardCloudRequestArgs {
   /** The renderer request received by the protocol handler. */
-  request: CloudForwardRequest;
+  request: Request;
   /** Login surfaces (`/_allauth`, `/accounts`) always forward here. */
   cloudBase: string;
   /** Same-origin `/v1/*` forwards here when set, the cloud otherwise. */
@@ -188,7 +181,7 @@ type CloudForwardPlan =
  * unchanged.
  */
 function planCloudForward(
-  request: CloudForwardRequest,
+  request: Request,
   targets: Pick<
     ForwardCloudRequestArgs,
     "cloudBase" | "gatewayBase" | "gatewayBearer"
@@ -347,11 +340,7 @@ export async function fetchForwardPlanWithRetry(
 export async function forwardCloudRequest(
   args: ForwardCloudRequestArgs,
 ): Promise<Response | null> {
-  const plan = planCloudForward(
-    args.request,
-    args,
-    args.allowedOrigin,
-  );
+  const plan = planCloudForward(args.request, args, args.allowedOrigin);
   switch (plan.kind) {
     case "pass":
       return null;

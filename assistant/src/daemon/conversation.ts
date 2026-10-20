@@ -2566,24 +2566,6 @@ export class Conversation {
     return this.queue.removeByRequestId(requestId);
   }
 
-  /**
-   * Whether the agent loop may yield at a turn-boundary checkpoint to let a
-   * queued message take over.
-   *
-   * Under `interrupt-on-send` a message sent while this conversation is busy
-   * never queues, so the handoff has nothing to hand off to. Answering `false`
-   * outright keeps the loop from taking the branch on a queue that only holds
-   * entries the interrupt path deliberately left there (another actor's send
-   * falling back to the queue, a daemon-internal enqueue): those run on the
-   * ordinary end-of-turn drain rather than by cutting a turn short.
-   */
-  canHandoffAtCheckpoint(): boolean {
-    // Interrupt-on-send is unconditional now: a busy send interrupts the turn
-    // instead of queueing, so the queue never holds entries a checkpoint
-    // handoff should cut a turn short for.
-    return false;
-  }
-
   hasPendingConfirmation(requestId: string): boolean {
     return this.prompter.hasPendingRequest(requestId);
   }

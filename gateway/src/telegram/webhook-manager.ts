@@ -6,10 +6,7 @@ import { mutateConfigFile } from "../config-file-utils.js";
 import { credentialKey } from "../credential-key.js";
 import { registerWebhookIngressRoute } from "../db/webhook-ingress-route-store.js";
 import { fetchImpl } from "../fetch.js";
-import {
-  areCloudFeaturesEnabled,
-  isCloudServedBuild,
-} from "../cloud-features.js";
+import { isCloudServedBuild } from "../cloud-features.js";
 import { callTelegramApi } from "./api.js";
 import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
@@ -45,13 +42,6 @@ interface PlatformCallbackRouteResponse {
 async function registerManagedTelegramCallbackRoute(
   caches?: WebhookManagerCaches,
 ): Promise<string | undefined> {
-  if (!areCloudFeaturesEnabled()) {
-    log.debug(
-      "Platform features disabled — skipping managed Telegram callback registration",
-    );
-    return undefined;
-  }
-
   const assistantApiKeyRaw = caches?.credentials
     ? await caches.credentials.get(credentialKey("cadet", "assistant_api_key"))
     : undefined;

@@ -163,7 +163,6 @@ mock.module("@/lib/local-mode", () => ({
   isServedGatewayRuntime: () => false,
   isLocalAssistant: () => false,
   isCloudAssistant: () => false,
-  isCloudDisabled: () => false,
   hasAssistants: () => false,
   getCloudAssistants: () => [],
   getActiveAssistant: () => null,

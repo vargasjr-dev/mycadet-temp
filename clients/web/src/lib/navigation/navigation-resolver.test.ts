@@ -18,7 +18,6 @@ import {
 
 const base: NavigationState = {
   isLocalClient: false,
-  isCloudDisabled: false,
   isRemoteGateway: false,
   remoteGatewayPublicPathPrefix: "",
   isGatewayAuth: false,
@@ -809,20 +808,6 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             analyticsConsentCurrent: false,
             diagnosticsConsentCurrent: false,
-          }),
-        ),
-      ).toEqual(ALLOW);
-    });
-
-    test("does not enforce consent when the cloud is disabled", () => {
-      expect(
-        guard(
-          s({
-            isCloudDisabled: true,
-            hasAssistants: true,
-            cloudSession: "present",
-            tosAccepted: false,
-            privacyConsent: false,
           }),
         ),
       ).toEqual(ALLOW);

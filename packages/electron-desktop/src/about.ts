@@ -65,7 +65,7 @@ const APP_NAME =
 
 // Local (dev) builds bake this shell's display version — the stamped form of
 // its own package.json version (`<base>-local.<stamp>.<sha>`, see
-// @mycadet/shared/local-version) — so the About panel names the build kind
+// @mycadet/shared/version) — so the About panel names the build kind
 // and the checkout it came from. Release builds bake the plain version.
 const VERSION: string =
   typeof __CADET_VERSION_DISPLAY__ === "string" && __CADET_VERSION_DISPLAY__

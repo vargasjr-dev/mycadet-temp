@@ -17,19 +17,19 @@ afterEach(() => {
 });
 
 describe("buildReplayEnv", () => {
-  test("gateway: drops secrets, statics, and PATH; keeps flag overrides", () => {
+  test("gateway: drops secrets, statics, and PATH; keeps the rest", () => {
     const captured = {
       GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
       ACTOR_TOKEN_SIGNING_KEY: "s3",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
-      CADET_DISABLE_CLOUD: "1",
+      CADET_TELEMETRY: "1",
       CADET_DEVICE_ID: "abc",
     };
 
     expect(buildReplayEnv(captured, "gateway")).toEqual({
-      CADET_DISABLE_CLOUD: "1",
+      CADET_TELEMETRY: "1",
       CADET_DEVICE_ID: "abc",
     });
   });
@@ -118,9 +118,9 @@ describe("buildReplayState", () => {
   });
 
   test("backfills CADET_DEVICE_ID on gateway replay env when absent", () => {
-    const state = buildReplayState({}, { CADET_DISABLE_CLOUD: "1" });
+    const state = buildReplayState({}, { CADET_TELEMETRY: "1" });
     expect(state.extraGatewayEnv).toEqual({
-      CADET_DISABLE_CLOUD: "1",
+      CADET_TELEMETRY: "1",
       CADET_DEVICE_ID: "host-device-id",
     });
   });
