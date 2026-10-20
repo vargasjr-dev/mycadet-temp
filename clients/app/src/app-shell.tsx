@@ -153,9 +153,20 @@ function AssistantShell({
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
         {(state.status === "error" || state.status === "unavailable") && (
-          <button type="button" onClick={reload} style={quietButton}>
-            {t("appShell.retry")}
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" onClick={reload} style={quietButton}>
+              {t("appShell.retry")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                onNavigate(routes.account.selectAssistant, { replace: false })
+              }
+              style={quietButton}
+            >
+              {t("appShell.switchAssistant")}
+            </button>
+          </div>
         )}
       </div>
     );

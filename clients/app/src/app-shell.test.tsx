@@ -206,6 +206,16 @@ test("retries an API failure without account session probes", async () => {
   ).toBe(true);
 });
 
+test("an API failure offers switching to another assistant", async () => {
+  request.mockResolvedValue(new Response(null, { status: 503 }));
+  render(<AppShell {...props()} />);
+  await screen.findByText("We couldn't reach your assistant");
+  fireEvent.click(screen.getByRole("button", { name: "Switch assistant" }));
+  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+    replace: false,
+  });
+});
+
 test("unmount aborts requests and ignores late replies", async () => {
   let finish!: (value: Response) => void;
   respond(

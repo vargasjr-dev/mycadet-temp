@@ -110,6 +110,7 @@
     "empty": "没有可用的助手。",
     "unauthenticated": "请登录以继续。",
     "retry": "重试",
+    "switchAssistant": "切换助手",
     "title": "助手",
     "selection": "选择一个助手。",
     "unavailable": "此助手不可用。"

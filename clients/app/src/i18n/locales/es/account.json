@@ -110,6 +110,7 @@
     "empty": "No hay ningún asistente disponible.",
     "unauthenticated": "Inicia sesión para continuar.",
     "retry": "Reintentar",
+    "switchAssistant": "Cambiar de asistente",
     "title": "Asistente",
     "selection": "Elige un asistente.",
     "unavailable": "Este asistente no está disponible."

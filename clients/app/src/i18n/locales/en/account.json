@@ -110,6 +110,7 @@
     "empty": "No assistant is available.",
     "unauthenticated": "Please sign in to continue.",
     "retry": "Retry",
+    "switchAssistant": "Switch assistant",
     "title": "Assistant",
     "selection": "Choose an assistant.",
     "unavailable": "This assistant is unavailable."

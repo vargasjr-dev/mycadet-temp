@@ -110,6 +110,7 @@
     "empty": "沒有可用的助理。",
     "unauthenticated": "請登入以繼續。",
     "retry": "重試",
+    "switchAssistant": "切換助理",
     "title": "助理",
     "selection": "選擇一個助理。",
     "unavailable": "此助理無法使用。"
