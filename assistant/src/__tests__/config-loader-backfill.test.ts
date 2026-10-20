@@ -53,8 +53,6 @@ import {
   getEffectiveProfile,
   getEffectiveProfiles,
   getEffectiveProfilesForProvider,
-  MANAGED_PROFILE_NAMES,
-  materializeProfile,
 } from "../config/default-profile-catalog.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import {

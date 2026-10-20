@@ -47,7 +47,6 @@ mock.module("@/domains/chat/components/thread-status-indicator", () => ({
 
 import { ConversationRow } from "@/domains/chat/components/conversation-row";
 import { ConversationListProvider } from "@/domains/chat/components/conversation-list-context";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import type { Conversation } from "@/types/conversation-types";
 
 const CONVERSATION: Conversation = {

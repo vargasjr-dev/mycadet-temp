@@ -19,7 +19,6 @@
 
 import { Pin, PinOff } from "lucide-react";
 
-import { useCallback, useRef } from "react";
 
 import { ContextMenu, PanelItem } from "@mycadet/design-library";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -37,8 +36,6 @@ import {
   type ConversationDoneLabels,
 } from "@/utils/done-labels";
 import {
-  ROW_TRAILING_CONTROL_CLASSES,
-  ROW_TRAILING_GLYPH_CLASSES,
 } from "@/domains/chat/utils/row-trailing-control";
 import { useTranslation, type TFunction } from "@/i18n";
 import { useLongPressSheet } from "@/hooks/use-long-press-sheet";
@@ -229,7 +226,6 @@ export function ConversationRow({
   withContextMenu = true,
   marquee = true,
   onSelect,
-  windowed = false,
 }: ConversationRowProps) {
   const ctx = useConversationListContext();
   const { conversationId } = conversation;

@@ -94,7 +94,6 @@ import {
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
 import {
   SYNTHETIC_OPAQUE_CREDENTIAL,
-  SYNTHETIC_OPENAI_PROJECT_KEY,
 } from "./secret-fixtures.js";
 
 function toolResults(events: AssistantEvent[]): string[] {
@@ -137,15 +136,6 @@ function createMockDeps(collected: AssistantEvent[]): EventHandlerDeps {
   } as EventHandlerDeps;
 }
 
-function streamedText(events: AssistantEvent[]): string {
-  return events
-    .filter(
-      (e): e is Extract<AssistantEvent, { type: "assistant_text_delta" }> =>
-        (e as { type?: string }).type === "assistant_text_delta",
-    )
-    .map((e) => e.text)
-    .join("");
-}
 
 const REVEAL_TOOL_USE = {
   type: "tool_use",

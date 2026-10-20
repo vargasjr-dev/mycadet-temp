@@ -800,13 +800,14 @@ export async function runDaemon(): Promise<void> {
   // CES, which the startup sequence above just brought up. Fire-and-forget:
   // the resumes run sequentially in the background while the daemon serves
   // requests; per-conversation failures are logged inside.
-  let startupRecovery = Promise.resolve();
   if (conversationsToResume.length > 0) {
     log.info(
       { count: conversationsToResume.length },
       "Resuming conversations interrupted by the previous process",
     );
-    startupRecovery = resumeInterruptedConversations(conversationsToResume);
+    // Fire-and-forget: the recovery promise was only awaited by the
+    // auto-archive worker's first sweep; nothing else consumes it.
+    void resumeInterruptedConversations(conversationsToResume);
   }
 
   log.info(

@@ -7,7 +7,6 @@ import {
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
 import { CreditsUpsellCard } from "@/domains/chat/components/credits-upsell-card";
-import { MessageHoverActions } from "@/domains/chat/components/message-hover-actions/message-hover-actions";
 import { StreamingShimmerText } from "@/domains/chat/components/streaming-shimmer-text";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";
 import type { TranscriptItem } from "@/domains/chat/transcript/types";

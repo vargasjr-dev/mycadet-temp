@@ -9,7 +9,6 @@ import {
   Pin,
   PinOff,
   RefreshCw,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";

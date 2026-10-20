@@ -28,7 +28,6 @@ import { createElement } from "react";
 import { SIDEBAR_SECTION_MAX_HEIGHT } from "@/components/sidebar-nav-geometry";
 import type * as ConversationRowModule from "@/domains/chat/components/conversation-row";
 import { ConversationListProvider } from "@/domains/chat/components/conversation-list-context";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import type { Conversation } from "@/types/conversation-types";
 
 /* Row rendering is not under test; a stub keeps this on the seam. Typed

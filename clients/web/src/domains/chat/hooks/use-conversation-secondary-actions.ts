@@ -28,7 +28,6 @@ import { routes } from "@/utils/routes";
 import { haptic } from "@/utils/haptics";
 import { messagePlainText } from "@/domains/chat/utils/message-plain-text";
 import { useTranscriptMessages } from "@/domains/chat/transcript/use-transcript-messages";
-import type { DisplayMessage } from "@/domains/chat/types/types";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";

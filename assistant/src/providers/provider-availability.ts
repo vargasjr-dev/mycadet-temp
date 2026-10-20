@@ -5,7 +5,6 @@
  * environment variable fallbacks, and cloud proxy availability.
  */
 
-import { getConfig } from "../config/loader.js";
 import {
   getProviderKeyAsync,
   getSecureKeyResultAsync,

@@ -7,7 +7,7 @@ import { MemoryRouter } from "react-router";
 import type { SidebarItem } from "@/components/sidebar-tree";
 
 let assistantFlags: Record<string, boolean> = {};
-let supportsBookmarks = false;
+const supportsBookmarks = false;
 let supportsCredentials = false;
 let nativeAndroid = false;
 let browserHost = false;

@@ -22,14 +22,10 @@ mock.module("../tools/credentials/metadata-store.js", () => ({
 }));
 
 // ── Imports (after mocks) ────────────────────────────────────────────────
-import { neutralizeRedactedSentinels } from "@mycadet/service-contracts/redacted-credential";
-
 import {
   collectRevealRefsFromCommand,
   drainCandidateGuardedChunk,
-  drainSentinelGuardedText,
   filterRefsByRevealProof,
-  redactCandidateValuesLegacy,
   resolveProvenRevealCandidates,
   resolveRefIdentities,
   resolveRevealCandidates,

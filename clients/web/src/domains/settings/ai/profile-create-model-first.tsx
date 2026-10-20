@@ -34,7 +34,6 @@ import { ProviderCreateForm } from "@/domains/settings/ai/provider-create-form";
 import type { ProfileEditor } from "@/domains/settings/ai/use-profile-editor";
 import { useActiveAssistantIsSelfHosted } from "@/hooks/use-cloud-gate";
 import { useTranslation, type TFunction } from "@/i18n";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 /**
  * Sentinel for the Model list's sticky escape hatch. Namespaced so it can

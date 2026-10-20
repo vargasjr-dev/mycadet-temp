@@ -10,8 +10,8 @@ import {
 } from "../config/loader.js";
 import { orderProfileKeys } from "../config/profile-order.js";
 import { getConversationOverrideProfile } from "../persistence/conversation-crud.js";
-import { getConfiguredProviders } from "../providers/provider-availability.js";
 import { PROVIDER_CATALOG } from "../providers/model-catalog.js";
+import { getConfiguredProviders } from "../providers/provider-availability.js";
 
 export type SlashResolution =
   | { kind: "passthrough"; content: string }
