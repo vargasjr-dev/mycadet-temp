@@ -889,7 +889,29 @@ jobs:
           security set-keychain-settings -lut 3600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
+          # The generic `SecKeychainItemImport: One or more parameters passed
+          # to a function were not valid.` failure is what an empty P12
+          # produces: without the secret, `base64 -D` writes a 0-byte file and
+          # security import rejects it with that opaque error.
+          if [ -z "$CERT_P12" ]; then
+            echo "::error::DEVID_CERTIFICATE_P12 is unset or empty. Export the Developer ID Application .p12, base64-encode it, and add it plus DEVID_CERTIFICATE_PASSWORD to the dev environment secrets."
+            exit 1
+          fi
+
           echo "$CERT_P12" | base64 -D > /tmp/certificate.p12
+          if [ ! -s /tmp/certificate.p12 ]; then
+            echo "::error::DEVID_CERTIFICATE_P12 decoded to an empty file. Re-export the Developer ID Application .p12 and update the secret with its full base64 encoding."
+            exit 1
+          fi
+
+          # Prove the P12 parses and the password matches before the import,
+          # so a wrong-password or malformed export fails with a clear message
+          # instead of security import's generic error.
+          if ! openssl pkcs12 -info -in /tmp/certificate.p12 -passin "pass:$CERT_PASSWORD" -nokeys -nocerts >/dev/null 2>&1; then
+            echo "::error::DEVID_CERTIFICATE_P12 is not a valid PKCS#12 for DEVID_CERTIFICATE_PASSWORD. Re-export the Developer ID Application certificate and update both secrets."
+            exit 1
+          fi
+
           security import /tmp/certificate.p12 \
             -k "$KEYCHAIN_PATH" \
             -P "$CERT_PASSWORD" \
