@@ -154,15 +154,40 @@ for (const [status, message] of [
   });
 }
 
-test("retries a not-ready assistant and mounts it once ready", async () => {
+test("wakes a not-ready assistant and mounts it once ready", async () => {
   request
     .mockResolvedValueOnce(new Response(null, { status: 409 }))
+    .mockResolvedValueOnce(json({ ok: true, action: "woke", output: "" }))
     .mockResolvedValueOnce(json(detail()));
   render(<AppShell {...props()} />);
   await screen.findByText("Your assistant isn't ready.");
-  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  fireEvent.click(screen.getByRole("button", { name: "Wake it up" }));
   await screen.findByTitle("Assistant");
+  expect(request).toHaveBeenCalledTimes(3);
+  const wakeCall = request.mock.calls.find(([url]) =>
+    String(url).endsWith("/v1/assistants/assistant-1/wake/"),
+  );
+  expect(wakeCall?.[1]?.method).toBe("POST");
+});
+
+test("a failed wake shows the node's own punchline and offers the wake again", async () => {
+  request
+    .mockResolvedValueOnce(new Response(null, { status: 409 }))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          error: "hatch_failed",
+          reason: "Firecracker exited with error",
+        }),
+        { status: 502 },
+      ),
+    );
+  render(<AppShell {...props()} />);
+  await screen.findByText("Your assistant isn't ready.");
+  fireEvent.click(screen.getByRole("button", { name: "Wake it up" }));
+  await screen.findByText("Firecracker exited with error");
   expect(request).toHaveBeenCalledTimes(2);
+  expect(screen.queryByTitle("Assistant")).toBeNull();
 });
 
 test("retries an API failure without account session probes", async () => {
