@@ -2,6 +2,7 @@ import { useLocation, useNavigate } from "react-router";
 import { AppShell } from "@app/app-shell";
 import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
+import { isNativePlatform } from "@app/runtime/native-platform";
 import {
   assistantSelectionState,
   selectedAssistantId,
@@ -18,8 +19,8 @@ export function AssistantPage() {
       assistantId={selection ?? config?.assistantId}
       // Served surfaces leave this unset and resolve same-origin through
       // their origin's /v1 proxy; the native boot bundle's webview origin
-      // has no /v1 router, so it resolves against the stamped base.
-      apiBaseUrl={config?.assistantsApiUrl}
+      // has no /v1 router, so it resolves against the stamped cloudUrl.
+      apiBaseUrl={isNativePlatform() ? config?.cloudUrl : undefined}
       location={`${location.pathname}${location.search}${location.hash}`}
       origin={window.location.origin}
       onNavigate={(path, options) => {

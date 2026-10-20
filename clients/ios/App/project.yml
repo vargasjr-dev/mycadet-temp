@@ -59,6 +59,7 @@ targetTemplates:
       - path: App
         excludes:
           - "Info.plist"
+          - "App-Local-Info.plist"
           - "App.entitlements"
           - "Config/**"
           - "AppIcon.icon"

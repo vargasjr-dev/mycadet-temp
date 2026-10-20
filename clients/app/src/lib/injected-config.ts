@@ -11,13 +11,12 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  * The URL fields are distinct origins in the topology, not synonyms:
  * `cloudUrl` is the cloud backend base — the account session, auth
  * endpoints, and the cloud-hosted assistant list. It is never the API base
- * for a local assistant: served shells resolve assistants same-origin, and
- * the serving origin routes `/v1` to the right control plane (the tunnel
- * edge proxies it to the local gateway; the desktop protocol forwards it;
- * the cloud takeover proxies it). The native boot bundle is the one
- * exception — its webview origin serves only baked assets and has no /v1
- * router, so it resolves assistants against `assistantsApiUrl` instead.
- * `hubUrl` is the cloud hub SPA the
+ * for a local assistant: the shell resolves assistants same-origin, and the
+ * serving origin routes `/v1` to the right control plane (the tunnel edge
+ * proxies it to the local gateway; the desktop protocol forwards it; the
+ * cloud takeover proxies it). The native boot bundle is the one host with
+ * no `/v1` router at its origin, so it resolves assistants against
+ * `cloudUrl` directly. `hubUrl` is the cloud hub SPA the
  * pairing/settings pages link back to. The platform login base is
  * deliberately absent: the loopback handoff reads it from the build's
  * environment seed (see startLoopbackAuth), keeping this config to the
@@ -28,12 +27,6 @@ export const InjectedConfigSchema = z.object({
   remote: z.enum(["local", "docker", "custom", "cloud"]).default("local"),
   /** Cloud backend base (account session, auth, cloud-hosted assistants). */
   cloudUrl: z.string().optional(),
-  /**
-   * Assistants control-plane base for shells whose serving origin has no
-   * /v1 router. Stamped by the Capacitor build only — every served surface
-   * leaves it unset and keeps resolving assistants same-origin.
-   */
-  assistantsApiUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */

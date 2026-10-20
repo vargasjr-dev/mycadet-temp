@@ -6,7 +6,6 @@ describe("capacitorInjectedConfig", () => {
     expect(capacitorInjectedConfig({})).toEqual({
       remote: "local",
       cloudUrl: "http://localhost:8000",
-      assistantsApiUrl: "http://localhost:8000",
     });
   });
 
@@ -16,17 +15,14 @@ describe("capacitorInjectedConfig", () => {
     ).toEqual({
       remote: "cloud",
       cloudUrl: "https://cloud.mycadet.ai",
-      assistantsApiUrl: "https://cloud.mycadet.ai",
     });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "staging" })).toEqual({
       remote: "cloud",
       cloudUrl: "https://staging-cloud.mycadet.ai",
-      assistantsApiUrl: "https://staging-cloud.mycadet.ai",
     });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "dev" })).toEqual({
       remote: "cloud",
       cloudUrl: "https://dev-cloud.mycadet.ai",
-      assistantsApiUrl: "https://dev-cloud.mycadet.ai",
     });
   });
 
@@ -39,7 +35,6 @@ describe("capacitorInjectedConfig", () => {
     ).toEqual({
       remote: "custom",
       cloudUrl: "https://assistant.example.com",
-      assistantsApiUrl: "https://assistant.example.com",
     });
   });
 

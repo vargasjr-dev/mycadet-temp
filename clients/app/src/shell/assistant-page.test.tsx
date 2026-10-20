@@ -1,14 +1,26 @@
-import { afterEach, expect, spyOn, test } from "bun:test";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { AssistantPage } from "@app/shell/assistant-page";
 
 const fetchSpy = spyOn(globalThis, "fetch");
+
+// The boot bundle test needs the shell to read itself as native; served
+// surfaces (tests included, happy-dom has no Capacitor bridge) stay false.
+let isNative = false;
+mock.module("@app/runtime/native-platform", () => ({
+  isNativePlatform: () => isNative,
+  useIsNativePlatform: () => isNative,
+}));
+
+// Registered after the mock above — bun's mock.module is not retroactive for
+// already-evaluated modules.
+const { AssistantPage } = await import("@app/shell/assistant-page");
 type ConfigWindow = Window & { __CADET_CONFIG__?: unknown };
 
 afterEach(() => {
   cleanup();
   fetchSpy.mockReset();
+  isNative = false;
   delete (window as ConfigWindow).__CADET_CONFIG__;
 });
 
@@ -28,11 +40,8 @@ test("the boot bundle resolves assistants against the stamped control plane", as
   // A 500 keeps the shell in its error body — the only state that doesn't
   // redirect — while the request URL still proves where resolution went.
   fetchSpy.mockResolvedValue(new Response("nope", { status: 500 }));
-  stamp({
-    remote: "local",
-    cloudUrl: "http://localhost:8000",
-    assistantsApiUrl: "http://localhost:8000",
-  });
+  isNative = true;
+  stamp({ remote: "local", cloudUrl: "http://localhost:8000" });
   renderAssistantPage();
   await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
   const requested = new URL(String(fetchSpy.mock.calls[0][0]));

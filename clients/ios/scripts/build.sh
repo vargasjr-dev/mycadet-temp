@@ -30,6 +30,16 @@ info "Building the app-shell boot bundle"
 info "Syncing Capacitor iOS project"
 (cd "${IOS_DIR}" && bunx --bun cap sync ios)
 
+# — The local target's plist variant: the shared Info.plist ships with no
+#   ATS entry at all (released environments never get localhost support), so
+#   the Cadet Local target builds against a generated copy that carries just
+#   the loopback cleartext exception. Re-derived from the shared plist on
+#   every run so the two can't drift. —
+info "Generating the local target's Info.plist"
+cp "${IOS_DIR}/App/App/Info.plist" "${IOS_DIR}/App/App/App-Local-Info.plist"
+plutil -insert NSAppTransportSecurity -json '{"NSAllowsLocalNetworking":true}' \
+  "${IOS_DIR}/App/App/App-Local-Info.plist"
+
 # — Regenerate App.xcodeproj from App/project.yml —
 info "Generating Xcode project"
 (cd "${IOS_DIR}/App" && xcodegen generate --spec project.yml)

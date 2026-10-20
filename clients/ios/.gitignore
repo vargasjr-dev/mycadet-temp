@@ -23,6 +23,10 @@ capacitor-cordova-ios-plugins
 App/App/capacitor.config.json
 App/App/config.xml
 
+# Generated local-target plist (scripts/build.sh): the shared plist plus the
+# loopback ATS exception the Cadet Local target needs.
+App/App/App-Local-Info.plist
+
 # Generated Xcode project. `App.xcodeproj/` is regenerated from
 # `App/project.yml` on every CI run via `xcodegen generate` (see
 # `.github/workflows/release-ios.yaml`). Local devs run
