@@ -56,18 +56,12 @@ jobs:
           TIP=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
           echo "main tip: ${TIP}"
 
-          # Only a queued release can overlap this gate (this run is the one
-          # active run in the concurrency group); let it handle the tip.
-          QUEUED=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
-                     --status=queued --json databaseId --jq 'length')
-          if [ "${QUEUED}" != "0" ]; then
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "SKIP: ${QUEUED} dev release run(s) already queued; letting them handle it."
-            exit 0
-          fi
-
           # Ship only when the last successful dev release didn't already
-          # cover this tip.
+          # cover this tip. No queued-run guard: it counted THIS run (the
+          # run status still reads "queued" seconds into job start), so the
+          # schedule skipped itself forever — run 39435991306 exited in 10s
+          # that way. Overlapping fires ship distinct timestamped versions
+          # and the sync ships the newest; nothing needs guarding.
           LAST=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
                    --status=completed --limit=30 --json conclusion,headSha \
                    --jq '[.[] | select(.conclusion == "success")][0].headSha // ""')
@@ -375,7 +369,13 @@ jobs:
   # ── Docker Images ──────────────────────────────────────────────────────
 
   push-assistant-image:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
@@ -983,7 +983,6 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: dev
           # Environment-scoped secret (pk_test_ on dev); requires the job's
@@ -1166,7 +1165,13 @@ jobs:
   # ── Dev npm publishing ─────────────────────────────────────────────────
 
   publish-npm-assistant-dev:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1349,7 +1354,13 @@ jobs:
   # `npm pack` consumes directly, so it keeps its own combined build/publish job
   # instead of a slot in the npm publish family. Mirrors build/publish-plugin-api-* in release.yml.
   publish-plugin-api-dev:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1421,7 +1432,6 @@ jobs:
       - name: Build
         working-directory: clients/web
         env:
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_APP_VERSION: ${{ needs.compute-version.outputs.version }}
         run: bun run build
@@ -1603,4 +1613,3 @@ jobs:
     secrets: inherit
 
   # ── Slack notification (first failure only) ──────────────────────────
-
