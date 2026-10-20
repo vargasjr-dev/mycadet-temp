@@ -157,10 +157,7 @@ describe("AddCreditsModal", () => {
 
     await waitFor(() =>
       expect(openedUrl).toBe(
-        new URL(
-          routes.settings.usageBilling,
-          window.location.origin,
-        ).toString(),
+        new URL(routes.settings.usage, window.location.origin).toString(),
       ),
     );
     expect(closes).toEqual([false]);
@@ -186,9 +183,7 @@ describe("AddCreditsModal", () => {
     const link = screen.getByRole("link", {
       name: /Configure Auto-Reload/,
     });
-    expect(link.getAttribute("href")).toBe(
-      routes.settings.usageBillingConfigureTopUps,
-    );
+    expect(link.getAttribute("href")).toBe(routes.settings.usage);
   });
 });
 

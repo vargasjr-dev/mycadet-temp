@@ -4,7 +4,6 @@ import { Outlet, useLocation, useNavigate } from "react-router";
 
 import { useTranslation } from "@/i18n";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { isBrowserNotificationHost } from "@/runtime/notifications";
@@ -44,12 +43,9 @@ export function SettingsLayout() {
   const supportsCredentials = useSupportsCredentialsSettings(activeAssistantId);
   //   // inspector affordances. Hides the tab rather than leaving a route whose
   // only content-producing affordance (the per-message toggle) is hidden.
-  // The Usage item is never hidden: the Usage tab reads from the local daemon
-  // and works for every assistant. Its label only gains "Billing &" when the
-  // Billing tab is actually shown — i.e. signed in to Cadet Cloud
-  // (`useCloudGate() === "full"`), matching billing-page.tsx's
-  // `showBillingTab`. Signed-out / self-hosted users see just "Usage".
-  const billingGate = useCloudGate();
+  // The Usage item is never hidden: the usage page reads from the local
+  // daemon and works for every assistant. Billing management moved off web
+  // (the cloud's account pages own it), so the label is just "Usage".
   const { pathname } = useLocation();
   const navigate = useNavigate();
   // Show Log Out when a cloud session exists, Log In otherwise.
@@ -76,9 +72,7 @@ export function SettingsLayout() {
         case "privacy":
           return t("sidebar.privacy", "Permissions & Privacy");
         case "billing":
-          return billingGate === "full"
-            ? t("sidebar.billingUsage", "Billing & Usage")
-            : t("sidebar.usage", "Usage");
+          return t("sidebar.usage", "Usage");
         case "community":
           return t("sidebar.community", "Community");
         case "debug":
@@ -87,7 +81,7 @@ export function SettingsLayout() {
           return defaultLabel;
       }
     },
-    [t, billingGate],
+    [t],
   );
 
   const filteredItems = useMemo(
@@ -104,11 +98,7 @@ export function SettingsLayout() {
         ...item,
         label: getSidebarLabel(item.id, item.label),
       })),
-    [
-      notificationSettingsAvailable,
-      supportsCredentials,
-      getSidebarLabel,
-    ],
+    [notificationSettingsAvailable, supportsCredentials, getSidebarLabel],
   );
 
   const bottomItems = useMemo<SidebarItem[]>(() => {
@@ -130,13 +120,7 @@ export function SettingsLayout() {
           },
     );
     return items;
-  }, [
-    hasCloudSession,
-    navigate,
-    login,
-    t,
-    getSidebarLabel,
-  ]);
+  }, [hasCloudSession, navigate, login, t]);
 
   const pageTitle = useMemo(() => {
     if (pathname === routes.settings.root) {

@@ -192,7 +192,7 @@ function AddCreditsModalContent({ open, onOpenChange }: AddCreditsModalProps) {
             )}
 
             <Link
-              to={routes.settings.usageBillingConfigureTopUps}
+              to={routes.settings.usage}
               className={cn(
                 textLinkVariants({ tone: "quiet" }),
                 "flex items-center gap-1 text-body-small-default text-[var(--content-tertiary)]",
@@ -226,11 +226,13 @@ function AddCreditsModalContent({ open, onOpenChange }: AddCreditsModalProps) {
 }
 
 export function AddCreditsModal(props: AddCreditsModalProps) {
-  // Native Android buys credits on the web app's billing page in the
-  // browser instead of running Stripe checkout from the app.
+  // Native Android buys credits on the web app's settings usage page in the
+  // browser instead of running Stripe checkout from the app. (The billing
+  // tab it used to open is gone; where purchase management lands — the
+  // cloud's account pages — is its own decision.)
   const handsOff = useAndroidBillingHandoff({
     open: props.open,
-    path: routes.settings.usageBilling,
+    path: routes.settings.usage,
     onClose: () => props.onOpenChange(false),
   });
   if (handsOff) {

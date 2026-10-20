@@ -1,0 +1,1181 @@
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
+
+import { Select } from "@mycadet/design-library/components/select";
+
+import { buildCallSiteMetadataMap } from "@/domains/settings/billing/usage/call-site-metadata";
+import {
+  UsageTrendChart,
+  UsageTrendSkeleton,
+  type UsageTrendChartLegendItem,
+} from "@/domains/settings/billing/usage/usage-trend-chart";
+import {
+  formatCost,
+  formatTokens,
+} from "@/domains/settings/billing/usage/format";
+import { decorateUsageBreakdownGroups } from "@/domains/settings/billing/usage/group-labels";
+import {
+  buildUsageBreakdownQuery,
+  buildUsageDailyQuery,
+  buildUsageSeriesQuery,
+  buildUsageTotalsQuery,
+} from "@/domains/settings/billing/usage/usage-api";
+import {
+  formatBreakdownTokens,
+  formatBreakdownTokensShort,
+} from "@/domains/settings/billing/usage/usage-breakdown-format";
+import {
+  decorateUsageSeriesGroups,
+  seriesFromDailyBuckets,
+  usageSeriesKeyForGroupValue,
+} from "@/domains/settings/billing/usage/usage-series";
+import {
+  buildUsageSearchParams,
+  FALLBACK_USAGE_GROUP_BY,
+  readUsageUrlState,
+  resolveEffectiveUsageGranularity,
+  resolveRangeWindow,
+  resolveUsageGranularity,
+  shouldFallbackUsageGroupBy,
+  shouldFetchUsageSeries,
+  shouldRetryUsageGroupQuery,
+  USAGE_GROUP_BY_OPTIONS,
+  type UsageSearchParamsUpdate,
+} from "@/domains/settings/billing/usage/usage-tab-state";
+import type {
+  UsageBreakdownResponse,
+  UsageGranularity,
+  UsageGroupBreakdown,
+  UsageGroupBy,
+  UsageTimeRange,
+  UsageTotals,
+} from "@/domains/settings/billing/usage/usage-types";
+import { usageBreakdownGet } from "@/generated/daemon/sdk.gen";
+import {
+  configGetOptions,
+  configLlmCallsitesGetOptions,
+  usageBreakdownGetQueryKey,
+  usageDailyGetOptions,
+  usageSeriesGetOptions,
+  usageTotalsGetOptions,
+  schedulesGetQueryKey,
+} from "@/generated/daemon/@tanstack/react-query.gen";
+import { PromptLaunchButton } from "@/components/prompt-launch-button";
+import { useTranslation } from "@/i18n";
+import { navigateToConversation } from "@/utils/conversation-navigation";
+import { isModifiedLinkClick } from "@/utils/link-click";
+import { extractUsageProfileMetadata } from "@/utils/profile-metadata";
+import { routes } from "@/utils/routes";
+import { fetchSchedules, type AssistantSchedule } from "@/utils/schedules";
+import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
+
+interface UsageTabProps {
+  assistantId: string;
+}
+
+type SettingsTranslate = ReturnType<typeof useTranslation<"settings">>["t"];
+
+type UsageBreakdownState = {
+  groupBy: UsageGroupBy;
+  response: UsageBreakdownResponse;
+};
+
+const USAGE_RANGE_KEYS: Record<
+  UsageTimeRange,
+  | "usageTab.rangeToday"
+  | "usageTab.rangeYesterday"
+  | "usageTab.range7d"
+  | "usageTab.range30d"
+  | "usageTab.range90d"
+  | "usageTab.rangeAll"
+> = {
+  today: "usageTab.rangeToday",
+  yesterday: "usageTab.rangeYesterday",
+  "7d": "usageTab.range7d",
+  "30d": "usageTab.range30d",
+  "90d": "usageTab.range90d",
+  all: "usageTab.rangeAll",
+};
+
+const USAGE_GROUP_BY_KEYS: Record<
+  UsageGroupBy,
+  | "usageTab.groupByTask"
+  | "usageTab.groupByProfile"
+  | "usageTab.groupByModel"
+  | "usageTab.groupByProvider"
+  | "usageTab.groupByActor"
+  | "usageTab.groupByConversation"
+  | "usageTab.groupBySchedule"
+> = {
+  task: "usageTab.groupByTask",
+  profile: "usageTab.groupByProfile",
+  model: "usageTab.groupByModel",
+  provider: "usageTab.groupByProvider",
+  actor: "usageTab.groupByActor",
+  conversation: "usageTab.groupByConversation",
+  schedule: "usageTab.groupBySchedule",
+};
+
+function usageGroupLabel(t: SettingsTranslate, groupBy: UsageGroupBy): string {
+  return t(USAGE_GROUP_BY_KEYS[groupBy]);
+}
+
+function usageTrendTitle(
+  t: SettingsTranslate,
+  rangeGranularity: UsageGranularity,
+  groupBy?: UsageGroupBy,
+): string {
+  const prefix =
+    rangeGranularity === "hourly"
+      ? t("usageTab.hourlyTrend")
+      : t("usageTab.dailyTrend");
+  if (!groupBy || groupBy === "conversation") {
+    return prefix;
+  }
+
+  const group = usageGroupLabel(t, groupBy);
+  return rangeGranularity === "hourly"
+    ? t("usageTab.hourlyTrendBy", { group })
+    : t("usageTab.dailyTrendBy", { group });
+}
+
+const PROFILE_METADATA_STALE_TIME_MS = 5 * 60 * 1000;
+const COST_ANALYSIS_PROMPT = [
+  "Please load the llm-cost-optimizer skill.",
+  "Analyze my recent LLM usage and explain the biggest cost contributors by call site, model, and profile.",
+  "Check my current llm.default, llm.callSites, and llm.profiles.",
+  "Give me a concise summary of what is driving cost and what you would optimize first.",
+  "Do not change config yet.",
+].join(" ");
+const COST_OPTIMIZATION_PROMPT = [
+  "Please load the llm-cost-optimizer skill.",
+  "Analyze my recent LLM usage and current LLM config, then recommend the safest cost-optimization changes.",
+  "If changes are clearly safe, show me the exact config commands you would run and ask for confirmation before applying them.",
+].join(" ");
+
+export function UsageTab({ assistantId }: UsageTabProps) {
+  const { t } = useTranslation("settings");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { range, groupBy, scheduleId } = useMemo(
+    () => readUsageUrlState(searchParams),
+    [searchParams],
+  );
+  const timezone = useEffectiveTimezone();
+  const updateUsageSearchParams = useCallback(
+    (update: UsageSearchParamsUpdate) => {
+      setSearchParams((prev) => buildUsageSearchParams(prev, update), {
+        replace: true,
+      });
+    },
+    [setSearchParams],
+  );
+  // Depend on `timezone` so bounded ranges (e.g. "Today", "Last 7 days")
+  // recompute their from/to boundaries in the effective zone when it changes
+  // (OS or `device:timezone` update). `resolveRangeWindow` derives the calendar
+  // day boundaries in `timezone`, keeping them aligned with the `tz` sent to
+  // the backend rather than browser-local boundaries.
+  const rangeWindow = useMemo(
+    () => resolveRangeWindow(range, timezone),
+    [range, timezone],
+  );
+  const granularity = useMemo(() => resolveUsageGranularity(range), [range]);
+
+  const schedulesQuery = useQuery({
+    queryKey: schedulesGetQueryKey({ path: { assistant_id: assistantId } }),
+    queryFn: () => fetchSchedules(assistantId),
+    staleTime: 10_000,
+  });
+
+  const handleRangeChange = useCallback(
+    (nextRange: UsageTimeRange) => {
+      updateUsageSearchParams({ range: nextRange });
+    },
+    [updateUsageSearchParams],
+  );
+
+  const totalsQuery = useQuery({
+    ...usageTotalsGetOptions({
+      path: { assistant_id: assistantId },
+      query: buildUsageTotalsQuery({
+        from: rangeWindow.from,
+        to: rangeWindow.to,
+        scheduleId,
+      }),
+    }),
+  });
+
+  const breakdownQuery = useQuery<UsageBreakdownState>({
+    queryKey: usageBreakdownGetQueryKey({
+      path: { assistant_id: assistantId },
+      query: buildUsageBreakdownQuery({
+        from: rangeWindow.from,
+        to: rangeWindow.to,
+        groupBy,
+        scheduleId,
+      }),
+    }),
+    queryFn: async ({ signal }) => {
+      try {
+        const { data } = await usageBreakdownGet({
+          path: { assistant_id: assistantId },
+          query: buildUsageBreakdownQuery({
+            from: rangeWindow.from,
+            to: rangeWindow.to,
+            groupBy,
+            scheduleId,
+          }),
+          signal,
+          throwOnError: true,
+        });
+        return { groupBy, response: data };
+      } catch (error) {
+        if (!shouldFallbackUsageGroupBy(groupBy, error)) {
+          throw error;
+        }
+
+        const { data } = await usageBreakdownGet({
+          path: { assistant_id: assistantId },
+          query: buildUsageBreakdownQuery({
+            from: rangeWindow.from,
+            to: rangeWindow.to,
+            groupBy: FALLBACK_USAGE_GROUP_BY,
+            scheduleId,
+          }),
+          signal,
+          throwOnError: true,
+        });
+        return { groupBy: FALLBACK_USAGE_GROUP_BY, response: data };
+      }
+    },
+    retry: shouldRetryUsageGroupQuery,
+  });
+
+  const effectiveGroupBy = breakdownQuery.data?.groupBy ?? groupBy;
+
+  // The breakdown query falls back to a supported grouping when this gateway
+  // rejects the requested one, so `effectiveGroupBy` is what the page is
+  // actually showing. Adopt it into the URL: leaving the two apart means the
+  // address bar keeps asking for a grouping this gateway cannot serve, and
+  // every load pays the rejected request again. Converges in one pass, since
+  // the fallback grouping is by definition one the gateway supports.
+  useEffect(() => {
+    if (effectiveGroupBy !== groupBy) {
+      updateUsageSearchParams({
+        groupBy: effectiveGroupBy,
+        scheduleId: effectiveGroupBy === "schedule" ? undefined : null,
+      });
+    }
+  }, [effectiveGroupBy, groupBy, updateUsageSearchParams]);
+  const seriesGroupBy = shouldFetchUsageSeries(effectiveGroupBy)
+    ? effectiveGroupBy
+    : undefined;
+
+  const seriesQuery = useQuery({
+    ...usageSeriesGetOptions({
+      path: { assistant_id: assistantId },
+      query: buildUsageSeriesQuery({
+        from: rangeWindow.from,
+        to: rangeWindow.to,
+        granularity,
+        // Safe default when disabled — query never fires without seriesGroupBy
+        groupBy: seriesGroupBy ?? "actor",
+        tz: timezone,
+        scheduleId,
+      }),
+    }),
+    enabled: Boolean(seriesGroupBy),
+    retry: shouldRetryUsageGroupQuery,
+  });
+
+  const dailyQuery = useQuery({
+    ...usageDailyGetOptions({
+      path: { assistant_id: assistantId },
+      query: buildUsageDailyQuery({
+        from: rangeWindow.from,
+        to: rangeWindow.to,
+        granularity,
+        tz: timezone,
+        scheduleId,
+      }),
+    }),
+    enabled: !seriesGroupBy || seriesQuery.isError,
+  });
+
+  const callSiteCatalogQuery = useQuery({
+    ...configLlmCallsitesGetOptions({
+      path: { assistant_id: assistantId },
+    }),
+    enabled: effectiveGroupBy === "task",
+    staleTime: Infinity,
+  });
+
+  const profileMetadataQuery = useQuery({
+    ...configGetOptions({
+      path: { assistant_id: assistantId },
+    }),
+    select: extractUsageProfileMetadata,
+    enabled: effectiveGroupBy === "profile",
+    staleTime: PROFILE_METADATA_STALE_TIME_MS,
+  });
+
+  const usageGroupMetadata = useMemo(
+    () => ({
+      callSites: buildCallSiteMetadataMap(callSiteCatalogQuery.data),
+      profiles: profileMetadataQuery.data ?? {},
+    }),
+    [callSiteCatalogQuery.data, profileMetadataQuery.data],
+  );
+
+  const decoratedBreakdown = useMemo(() => {
+    const breakdown = breakdownQuery.data;
+    if (!breakdown) {
+      return undefined;
+    }
+
+    return decorateUsageBreakdownGroups(
+      breakdown.response.breakdown,
+      breakdown.groupBy,
+      usageGroupMetadata,
+    );
+  }, [breakdownQuery.data, usageGroupMetadata]);
+
+  const decoratedSeriesBuckets = useMemo(() => {
+    if (!seriesGroupBy || !seriesQuery.data) {
+      return undefined;
+    }
+
+    return decorateUsageSeriesGroups(
+      seriesQuery.data.buckets,
+      seriesGroupBy,
+      usageGroupMetadata,
+    );
+  }, [seriesQuery.data, seriesGroupBy, usageGroupMetadata]);
+
+  const dailyFallbackSeriesBuckets = useMemo(() => {
+    if (!dailyQuery.data) {
+      return undefined;
+    }
+
+    return seriesFromDailyBuckets(dailyQuery.data.buckets);
+  }, [dailyQuery.data]);
+
+  const trendQuery = useMemo(() => {
+    if (!seriesGroupBy) {
+      return {
+        isLoading: dailyQuery.isLoading,
+        error: dailyQuery.error,
+        data: dailyFallbackSeriesBuckets,
+        refetch: dailyQuery.refetch,
+      };
+    }
+
+    if (seriesQuery.error) {
+      if (dailyFallbackSeriesBuckets) {
+        return {
+          isLoading: false,
+          error: null,
+          data: dailyFallbackSeriesBuckets,
+          refetch: dailyQuery.refetch,
+        };
+      }
+
+      return {
+        isLoading:
+          dailyQuery.isLoading ||
+          (!dailyFallbackSeriesBuckets && !dailyQuery.error),
+        error: dailyQuery.error ?? seriesQuery.error,
+        data: undefined,
+        refetch: dailyQuery.error ? dailyQuery.refetch : seriesQuery.refetch,
+      };
+    }
+
+    return {
+      isLoading: seriesQuery.isLoading,
+      error: seriesQuery.error,
+      data: decoratedSeriesBuckets,
+      refetch: seriesQuery.refetch,
+    };
+  }, [
+    dailyFallbackSeriesBuckets,
+    dailyQuery.error,
+    dailyQuery.isLoading,
+    dailyQuery.refetch,
+    decoratedSeriesBuckets,
+    seriesGroupBy,
+    seriesQuery.error,
+    seriesQuery.isLoading,
+    seriesQuery.refetch,
+  ]);
+
+  const effectiveGranularity = resolveEffectiveUsageGranularity({
+    requestedGranularity: granularity,
+    isLoading: trendQuery.isLoading,
+    buckets: trendQuery.data,
+  });
+  const isHourly = effectiveGranularity === "hourly";
+  const trendGroupBy =
+    seriesGroupBy && seriesQuery.error ? undefined : effectiveGroupBy;
+  const selectedScheduleLegendItems = useMemo(() => {
+    if (effectiveGroupBy !== "schedule" || !scheduleId) {
+      return undefined;
+    }
+
+    return buildSelectedScheduleLegendItems(schedulesQuery.data, scheduleId, t);
+  }, [effectiveGroupBy, scheduleId, schedulesQuery.data, t]);
+
+  const handleGroupByChange = (nextGroupBy: UsageGroupBy) => {
+    updateUsageSearchParams({
+      groupBy: nextGroupBy,
+      scheduleId: nextGroupBy === "schedule" ? undefined : null,
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3
+          className="text-title-small"
+          style={{ color: "var(--content-default)" }}
+        >
+          {t("usageTab.title")}
+        </h3>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <TimeRangeStrip range={range} onChange={handleRangeChange} />
+        </div>
+      </div>
+
+      <section aria-label={t("usageTab.totalsAriaLabel")}>
+        <QueryState
+          query={totalsQuery}
+          skeleton={<TotalsSkeleton />}
+          render={(totals) => <TotalsGrid totals={totals} />}
+        />
+      </section>
+
+      <Section title={t("usageTab.inferenceUsageTitle")}>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h4
+              className="text-body-medium-default"
+              style={{ color: "var(--content-default)" }}
+            >
+              {usageTrendTitle(t, effectiveGranularity, trendGroupBy)}
+            </h4>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <GroupByPicker
+                value={effectiveGroupBy}
+                onChange={handleGroupByChange}
+              />
+            </div>
+          </div>
+          <QueryState
+            query={trendQuery}
+            skeleton={<UsageTrendSkeleton isHourly={isHourly} />}
+            render={(buckets) => (
+              <UsageTrendChart
+                buckets={buckets}
+                isHourly={isHourly}
+                legendItems={selectedScheduleLegendItems}
+              />
+            )}
+          />
+        </div>
+      </Section>
+
+      <BreakdownSection query={breakdownQuery} groups={decoratedBreakdown} />
+
+      <CostAssistantSection />
+    </div>
+  );
+}
+
+function buildSelectedScheduleLegendItems(
+  schedules: readonly Pick<AssistantSchedule, "id" | "name">[] | undefined,
+  selectedScheduleId: string,
+  t: SettingsTranslate,
+): UsageTrendChartLegendItem[] {
+  const knownSchedules = schedules ?? [];
+  const hasSelectedSchedule = knownSchedules.some(
+    (schedule) => schedule.id === selectedScheduleId,
+  );
+  const legendSources = [
+    ...(hasSelectedSchedule
+      ? []
+      : [
+          {
+            id: selectedScheduleId,
+            label: t("usageTab.unknownSchedule", {
+              scheduleId: selectedScheduleId,
+            }),
+          },
+        ]),
+    ...knownSchedules.map((schedule) => ({
+      id: schedule.id,
+      label: schedule.name || schedule.id,
+    })),
+  ];
+
+  return legendSources.map((schedule, colorIndex) => ({
+    seriesKey: usageSeriesKeyForGroupValue(schedule.id, "schedule"),
+    label: schedule.label,
+    colorIndex,
+    state: schedule.id === selectedScheduleId ? "active" : "inactive",
+  }));
+}
+
+function CostAssistantSection() {
+  const { t } = useTranslation("settings");
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div
+        className="h-px w-full"
+        style={{
+          background:
+            "linear-gradient(to right, transparent, var(--border-base), transparent)",
+        }}
+      />
+      <Section
+        title={t("usageTab.costAssistantTitle")}
+        subtitle={t("usageTab.costAssistantSubtitle")}
+      >
+        <div className="flex flex-col gap-2 rounded-md px-3 py-3 sm:flex-row sm:items-center">
+          <PromptLaunchButton prompt={COST_ANALYSIS_PROMPT}>
+            {t("usageTab.analyzeCostsButton")}
+          </PromptLaunchButton>
+          <PromptLaunchButton prompt={COST_OPTIMIZATION_PROMPT} variant="ghost">
+            {t("usageTab.optimizeSettingsButton")}
+          </PromptLaunchButton>
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+function TimeRangeStrip({
+  range,
+  onChange,
+}: {
+  range: UsageTimeRange;
+  onChange: (range: UsageTimeRange) => void;
+}) {
+  const { t } = useTranslation("settings");
+  const rangeOptions = (
+    Object.entries(USAGE_RANGE_KEYS) as Array<
+      [UsageTimeRange, (typeof USAGE_RANGE_KEYS)[UsageTimeRange]]
+    >
+  ).map(([value, key]) => ({
+    value,
+    label: t(key),
+  }));
+
+  return (
+    <div className="flex items-center">
+      <Select<UsageTimeRange>
+        value={range}
+        onChange={onChange}
+        options={rangeOptions}
+      />
+    </div>
+  );
+}
+
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      className="flex flex-col gap-3 rounded-md border px-4 py-4"
+      style={{
+        background: "var(--surface-lift)",
+        borderColor: "var(--border-base)",
+      }}
+    >
+      <div className="flex flex-col gap-1">
+        <h3
+          className="text-body-medium-default"
+          style={{ color: "var(--content-default)" }}
+        >
+          {title}
+        </h3>
+        {subtitle ? (
+          <p
+            className="text-body-small-default"
+            style={{ color: "var(--content-tertiary)" }}
+          >
+            {subtitle}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+type QueryStateValue<T> = {
+  isLoading: boolean;
+  error: unknown;
+  data: T | undefined;
+  refetch: () => unknown;
+};
+
+function QueryState<T>({
+  query,
+  skeleton,
+  render,
+}: {
+  query: QueryStateValue<T>;
+  skeleton: ReactNode;
+  render: (data: T) => ReactNode;
+}) {
+  const { t } = useTranslation("settings");
+
+  if (query.isLoading) {
+    return <>{skeleton}</>;
+  }
+  if (query.error) {
+    const message =
+      query.error instanceof Error
+        ? query.error.message
+        : t("usageTab.failedToLoadUsage");
+    return <ErrorRow message={message} onRetry={() => query.refetch()} />;
+  }
+  if (!query.data) {
+    return <>{skeleton}</>;
+  }
+  return <>{render(query.data)}</>;
+}
+
+function TotalsGrid({ totals }: { totals: UsageTotals }) {
+  const { t } = useTranslation("settings");
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <span
+            style={{
+              fontSize: "30px",
+              fontWeight: 600,
+              lineHeight: 1,
+              color: "var(--content-default)",
+            }}
+          >
+            {formatCost(totals.totalEstimatedCostUsd)}
+          </span>
+          <span
+            className="text-body-small-default"
+            style={{ color: "var(--content-secondary)" }}
+          >
+            {t("usageTab.costLabel")}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span
+            className="text-title-small"
+            style={{ color: "var(--content-default)" }}
+          >
+            {formatTokens(totals.eventCount)}
+          </span>
+          <span
+            className="text-body-small-default"
+            style={{ color: "var(--content-secondary)" }}
+          >
+            {t("usageTab.llmCallsLabel")}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <SecondaryMetric
+          label={t("usageTab.directInputTokensLabel")}
+          value={formatTokens(totals.totalInputTokens)}
+        />
+        <SecondaryMetric
+          label={t("usageTab.outputTokensLabel")}
+          value={formatTokens(totals.totalOutputTokens)}
+        />
+        <SecondaryMetric
+          label={t("usageTab.cacheCreatedLabel")}
+          value={formatTokens(totals.totalCacheCreationTokens)}
+        />
+        <SecondaryMetric
+          label={t("usageTab.cacheReadLabel")}
+          value={formatTokens(totals.totalCacheReadTokens)}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SecondaryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex flex-col gap-1 rounded-md px-3 py-2"
+      style={{
+        background: "color-mix(in srgb, var(--border-base) 15%, transparent)",
+      }}
+    >
+      <span
+        className="text-body-small-default"
+        style={{ color: "var(--content-default)" }}
+      >
+        {value}
+      </span>
+      <span
+        className="text-label-medium-default"
+        style={{ color: "var(--content-tertiary)" }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function TotalsSkeleton() {
+  return (
+    <div className="flex flex-col gap-4" aria-hidden="true">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <SkeletonBone width={140} height={30} />
+          <SkeletonBone width={90} height={12} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <SkeletonBone width={60} height={16} />
+          <SkeletonBone width={60} height={12} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex flex-col gap-1 rounded-md px-3 py-2"
+            style={{
+              background:
+                "color-mix(in srgb, var(--border-base) 15%, transparent)",
+            }}
+          >
+            <SkeletonBone width="50%" height={12} />
+            <SkeletonBone width="70%" height={11} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GroupByPicker({
+  value,
+  onChange,
+}: {
+  value: UsageGroupBy;
+  onChange: (value: UsageGroupBy) => void;
+}) {
+  const { t } = useTranslation("settings");
+
+  return (
+    <div className="flex items-center">
+      <Select<UsageGroupBy>
+        value={value}
+        onChange={onChange}
+        menuAlign="end"
+        menuMinWidth={196}
+        options={USAGE_GROUP_BY_OPTIONS.map((option) => ({
+          value: option.value,
+          label: usageGroupLabel(t, option.value),
+        }))}
+      />
+    </div>
+  );
+}
+
+type BreakdownOptionalColumn = "pct" | "tokens" | "turns";
+
+function BreakdownSection({
+  query,
+  groups: decoratedGroups,
+}: {
+  query: QueryStateValue<UsageBreakdownState>;
+  groups: UsageGroupBreakdown[] | undefined;
+}) {
+  const { t } = useTranslation("settings");
+  const [visibleColumns, setVisibleColumns] = useState<
+    Set<BreakdownOptionalColumn>
+  >(new Set());
+
+  const toggleColumn = (col: BreakdownOptionalColumn) => {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(col)) {
+        next.delete(col);
+      } else {
+        next.add(col);
+      }
+      return next;
+    });
+  };
+
+  return (
+    <Section title={t("usageTab.breakdownTitle")}>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <ColumnToggle
+            label={t("usageTab.percentOfTotalLabel")}
+            active={visibleColumns.has("pct")}
+            onClick={() => toggleColumn("pct")}
+          />
+          <ColumnToggle
+            label={t("usageTab.tokensLabel")}
+            active={visibleColumns.has("tokens")}
+            onClick={() => toggleColumn("tokens")}
+          />
+          <ColumnToggle
+            label={t("usageTab.turnsLabel")}
+            active={visibleColumns.has("turns")}
+            onClick={() => toggleColumn("turns")}
+          />
+        </div>
+        <QueryState
+          query={query}
+          skeleton={<BreakdownSkeleton />}
+          render={(breakdown) => (
+            <BreakdownTable
+              groups={decoratedGroups ?? breakdown.response.breakdown}
+              groupBy={breakdown.groupBy}
+              showPct={visibleColumns.has("pct")}
+              showTokens={visibleColumns.has("tokens")}
+              showTurns={visibleColumns.has("turns")}
+            />
+          )}
+        />
+      </div>
+    </Section>
+  );
+}
+
+function ColumnToggle({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-full border px-2.5 py-1 text-label-medium-default"
+      style={{
+        borderColor: active ? "var(--content-secondary)" : "var(--border-base)",
+        background: active
+          ? "color-mix(in srgb, var(--content-secondary) 15%, transparent)"
+          : "transparent",
+        color: active ? "var(--content-default)" : "var(--content-tertiary)",
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function BreakdownTable({
+  groups,
+  groupBy,
+  showPct,
+  showTokens,
+  showTurns,
+}: {
+  groups: UsageGroupBreakdown[];
+  groupBy: UsageGroupBy;
+  showPct: boolean;
+  showTokens: boolean;
+  showTurns: boolean;
+}) {
+  const { t } = useTranslation("settings");
+  const navigate = useNavigate();
+
+  if (groups.length === 0) {
+    return (
+      <EmptyState
+        title={t("usageTab.noBreakdownDataTitle")}
+        subtitle={t("usageTab.noBreakdownDataSubtitle")}
+      />
+    );
+  }
+
+  const totalCost = groups.reduce((sum, g) => sum + g.totalEstimatedCostUsd, 0);
+
+  return (
+    <div className="overflow-hidden rounded-md">
+      <table className="w-full table-fixed">
+        <thead>
+          <tr style={{ borderBottom: "1px solid var(--border-base)" }}>
+            <th
+              className="px-3 py-2.5 text-left text-label-medium-default"
+              style={{ color: "var(--content-tertiary)" }}
+            >
+              {t("usageTab.groupColumnLabel")}
+            </th>
+            {showTokens ? (
+              <th
+                className="px-3 py-2.5 text-left text-label-medium-default"
+                style={{ color: "var(--content-tertiary)", width: "35%" }}
+              >
+                {t("usageTab.tokensLabel")}
+              </th>
+            ) : null}
+            {showTurns ? (
+              <th
+                className="px-3 py-2.5 text-right text-label-medium-default"
+                style={{ color: "var(--content-tertiary)", width: "72px" }}
+              >
+                {t("usageTab.turnsLabel")}
+              </th>
+            ) : null}
+            {showPct ? (
+              <th
+                className="px-3 py-2.5 text-right text-label-medium-default"
+                style={{ color: "var(--content-tertiary)", width: "64px" }}
+              >
+                %
+              </th>
+            ) : null}
+            <th
+              className="px-3 py-2.5 text-right text-label-medium-default"
+              style={{ color: "var(--content-tertiary)", width: "100px" }}
+            >
+              {t("usageTab.costLabel")}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((group, index) => {
+            const tokenDetail = formatBreakdownTokens(group);
+            const tokenShort = formatBreakdownTokensShort(group);
+            // groupId carries the conversation id only for the conversation
+            // grouping ("Other" rows have none); other dimensions reuse it
+            // for their own identifiers.
+            const conversationId =
+              groupBy === "conversation" ? group.groupId : null;
+            const costPct =
+              totalCost > 0
+                ? Math.round((group.totalEstimatedCostUsd / totalCost) * 100)
+                : 0;
+            return (
+              <tr
+                key={
+                  group.groupKey ?? group.groupId ?? `${group.group}-${index}`
+                }
+                className={
+                  conversationId
+                    ? "cursor-pointer hover:bg-[var(--surface-hover)]"
+                    : undefined
+                }
+                onClick={
+                  conversationId
+                    ? (event) => {
+                        if ((event.target as HTMLElement).closest("a")) {
+                          return;
+                        }
+                        navigateToConversation(navigate, conversationId);
+                      }
+                    : undefined
+                }
+                style={{
+                  borderTop:
+                    index === 0 ? "none" : "1px solid var(--border-base)",
+                }}
+              >
+                <td
+                  className="min-w-0 px-3 py-2"
+                  style={{ color: "var(--content-default)" }}
+                >
+                  {conversationId ? (
+                    <Link
+                      to={routes.conversation(conversationId)}
+                      className="block truncate text-body-medium-lighter"
+                      title={group.group}
+                      onClick={(event) => {
+                        // Modifier and middle clicks fall through to the
+                        // native <a> so Cmd/Ctrl-click opens a new tab and
+                        // "Copy link address" works. Plain left-clicks route
+                        // through the shared navigator, which resets viewer
+                        // state before navigating.
+                        if (isModifiedLinkClick(event)) {
+                          return;
+                        }
+                        event.preventDefault();
+                        navigateToConversation(navigate, conversationId);
+                      }}
+                    >
+                      {group.group}
+                    </Link>
+                  ) : (
+                    <span
+                      className="block truncate text-body-medium-lighter"
+                      title={group.group}
+                    >
+                      {group.group}
+                    </span>
+                  )}
+                </td>
+                {showTokens ? (
+                  <td
+                    className="min-w-0 px-3 py-2"
+                    style={{ color: "var(--content-secondary)" }}
+                  >
+                    <span
+                      className="block truncate text-body-small-default"
+                      title={tokenDetail}
+                    >
+                      {tokenShort}
+                    </span>
+                  </td>
+                ) : null}
+                {showTurns ? (
+                  <td className="whitespace-nowrap px-3 py-2 text-right">
+                    <span
+                      className="text-body-small-default"
+                      style={{ color: "var(--content-tertiary)" }}
+                    >
+                      {group.turnCount == null
+                        ? "—"
+                        : group.turnCount.toLocaleString()}
+                    </span>
+                  </td>
+                ) : null}
+                {showPct ? (
+                  <td className="whitespace-nowrap px-3 py-2 text-right">
+                    <span
+                      className="text-body-small-default"
+                      style={{ color: "var(--content-tertiary)" }}
+                    >
+                      {costPct}%
+                    </span>
+                  </td>
+                ) : null}
+                <td className="whitespace-nowrap px-3 py-2 text-right">
+                  <span
+                    className="text-body-medium-lighter"
+                    style={{ color: "var(--content-default)" }}
+                  >
+                    {formatCost(group.totalEstimatedCostUsd)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function BreakdownSkeleton() {
+  return (
+    <div className="flex flex-col gap-2" aria-hidden="true">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="flex items-center gap-3">
+          <SkeletonBone width={100} height={14} />
+          <SkeletonBone width="60%" height={12} />
+          <SkeletonBone width={50} height={14} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonBone({
+  width,
+  height,
+}: {
+  width: number | string;
+  height: number;
+}) {
+  return (
+    <div
+      className="rounded-sm"
+      style={{
+        width: typeof width === "number" ? `${width}px` : width,
+        height: `${height}px`,
+        background: "color-mix(in srgb, var(--border-base) 40%, transparent)",
+      }}
+    />
+  );
+}
+
+function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="flex flex-col items-center gap-1 py-8 text-center">
+      <span
+        className="text-body-medium-default"
+        style={{ color: "var(--content-default)" }}
+      >
+        {title}
+      </span>
+      <span
+        className="text-body-small-default"
+        style={{ color: "var(--content-tertiary)" }}
+      >
+        {subtitle}
+      </span>
+    </div>
+  );
+}
+
+function ErrorRow({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry?: () => void;
+}) {
+  const { t } = useTranslation("settings");
+
+  return (
+    <div className="flex flex-col gap-2 py-2">
+      <div className="flex items-start gap-2">
+        <AlertTriangle
+          className="h-4 w-4 shrink-0"
+          style={{ color: "var(--system-negative-strong, #f87171)" }}
+        />
+        <span
+          className="text-body-medium-lighter"
+          style={{ color: "var(--content-default)" }}
+        >
+          {message}
+        </span>
+      </div>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="self-start rounded-md border px-3 py-1 text-body-small-default"
+          style={{
+            background: "var(--surface-lift)",
+            borderColor: "var(--border-base)",
+            color: "var(--content-default)",
+          }}
+        >
+          {t("usageTab.retry")}
+        </button>
+      ) : null}
+    </div>
+  );
+}

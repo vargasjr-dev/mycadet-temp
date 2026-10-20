@@ -372,10 +372,7 @@ function CheckoutPageContent() {
 function AndroidCheckoutRedirect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const target = checkoutContinuation(
-    searchParams,
-    routes.settings.usageBilling,
-  );
+  const target = checkoutContinuation(searchParams, routes.settings.usage);
 
   useEffect(() => {
     abandonCheckout();

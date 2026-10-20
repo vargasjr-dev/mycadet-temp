@@ -164,14 +164,25 @@
     "backgroundConfirmKeepWaiting": "Подождать ещё",
     "backgroundConfirmTitle": "Продолжить в фоне?"
   },
-  "billingPage": {
-    "accountCta": "Управление аккаунтом",
-    "billingCta": "Управление оплатой",
-    "linkOutBody": "Тарифы, способы оплаты, счета и статистика использования — на страницах вашего аккаунта Cadet Cloud.",
-    "linkOutTitle": "Управляйте оплатой в своём аккаунте Cadet"
-  },
   "billingStatusHandler": {
     "successToast": "Оплата получена! Баланс кредитов скоро обновится."
+  },
+  "billingUsageChart": {
+    "empty": "Нет данных об использовании за этот период"
+  },
+  "billingUsagePanel": {
+    "backToAllUsage": "Ко всему использованию",
+    "chartMetricAria": "Метрика графика",
+    "eventsLabel": "События",
+    "llmDimensionAria": "Измерение расходов LLM",
+    "llmSpend": "Расход LLM",
+    "loadError": "Не удалось загрузить данные об использовании.",
+    "metricEvents": "События",
+    "metricSpend": "Расход ($)",
+    "oauthSpend": "Расход OAuth",
+    "spendLabel": "Расход",
+    "subtitle": "Обзор расходов.",
+    "title": "Расход кредитов"
   },
   "biometricSettingsCard": {
     "description": "Когда сессия истечёт, подтверди вход через {label}, а не заново.",
@@ -1524,6 +1535,54 @@
     "processingFallback": "Обработка повышения. Обновление чуть позже покажет новый план.",
     "successBody": "План Pro активен. Скоро откроется оплата.",
     "welcomeTitle": "Добро пожаловать в Pro"
+  },
+  "usageTab": {
+    "analyzeCostsButton": "Разобрать расходы с ассистентом",
+    "breakdownTitle": "По действиям",
+    "cacheCreatedLabel": "Записей в кэш",
+    "cacheReadLabel": "Чтений кэша",
+    "costAssistantSubtitle": "Недавние траты и правка выбора профилей модели.",
+    "costAssistantTitle": "Ассистент по расходам",
+    "costLabel": "Стоимость",
+    "dailyTrend": "Дневной тренд",
+    "dailyTrendBy": "Дневной тренд по {group}",
+    "directInputTokensLabel": "Входные токены",
+    "failedToLoadUsage": "Не удалось загрузить использование.",
+    "groupByActor": "Актор",
+    "groupByConversation": "Диалог",
+    "groupByModel": "Модель",
+    "groupByProfile": "Профиль",
+    "groupByProvider": "Провайдер",
+    "groupBySchedule": "Расписание",
+    "groupByTask": "Действие",
+    "groupColumnLabel": "Группа",
+    "hourlyTrend": "Часовой тренд",
+    "hourlyTrendBy": "Часовой тренд по {group}",
+    "inferenceUsageTitle": "Использование ИИ",
+    "llmCallsLabel": "Вызовы LLM",
+    "noBreakdownDataSubtitle": "Для этой группировки использования нет",
+    "noBreakdownDataTitle": "Нет данных разбивки",
+    "optimizeSettingsButton": "Оптимизировать настройки",
+    "outputTokensLabel": "Выходные токены",
+    "percentOfTotalLabel": "% от всего",
+    "range30d": "Последние 30 дней",
+    "range7d": "Последние 7 дней",
+    "range90d": "Последние 90 дней",
+    "rangeAll": "За всё время",
+    "rangeToday": "Сегодня",
+    "rangeYesterday": "Вчера",
+    "retry": "Повторить",
+    "title": "Использование",
+    "tokensLabel": "Токены",
+    "totalsAriaLabel": "Итого",
+    "turnsLabel": "Ходы",
+    "unknownSchedule": "Неизвестное расписание ({scheduleId})"
+  },
+  "usageTrendChart": {
+    "noDailyData": "Нет дневных данных",
+    "noHourlyData": "Нет почасовых данных",
+    "noUsageInRange": "В этом диапазоне использования нет",
+    "total": "Итого"
   },
   "useBillingPortalSession": {
     "openError": "Не удалось открыть портал оплаты. Повторите попытку."

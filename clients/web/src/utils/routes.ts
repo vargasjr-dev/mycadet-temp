@@ -294,28 +294,8 @@ export const routes = {
     sounds: r("/assistant/settings/sounds"),
     privacy: r("/assistant/settings/privacy"),
     usage: SETTINGS_USAGE_PATH,
-    // Deep-link straight to the Billing sub-tab (only shown when signed in to
-    // Cadet Cloud).
-    usageBilling: `${SETTINGS_USAGE_PATH}?tab=billing`,
-    // Deep links from the cloud's daily-limit emails. The hash/query params
-    // are legacy: the billing page is a link-out hand-off to the cloud's
-    // account pages now, so they land on it unresolved.
-    usageBillingDailyLimit: `${SETTINGS_USAGE_PATH}?tab=billing#daily-credit-limit`,
-    usageBillingConfigureTopUps: `${SETTINGS_USAGE_PATH}?tab=billing&configure_top_up=1`,
-    // Post-Stripe-Checkout return. The page is a link-out hand-off now, so
-    // a stale `session_id` lands there inert; new checkouts complete on the
-    // cloud's own account pages.
-    usageBillingCheckout: (sessionId: string) => {
-      const params = new URLSearchParams({
-        tab: "billing",
-        session_id: sessionId,
-      });
-      return `${SETTINGS_USAGE_PATH}?${params.toString()}`;
-    },
     usageForSchedule: (scheduleId: string) => {
-      // Billing is the default tab when available, so force the Usage tab.
       const params = new URLSearchParams({
-        tab: "usage",
         range: "7d",
         groupBy: "schedule",
         scheduleId,

@@ -321,10 +321,7 @@ function PlansPageContent() {
       // Platform-hosted but catalog-empty (pro-packages off) or a failed
       // subscription read still has an upgrade path via the billing adjust-plan
       // modal; self-hosted / no session does not.
-      const target = notCloudHosted
-        ? routes.settings.usageBilling
-        : `${routes.settings.usageBilling}&adjust_plan`;
-      navigate(target, { replace: true });
+      navigate(routes.settings.usage, { replace: true });
     }
   }, [cannotResolve, notCloudHosted, navigate]);
 
@@ -333,7 +330,7 @@ function PlansPageContent() {
     if (idx > 0) {
       navigate(-1);
     } else {
-      navigate(routes.settings.usageBilling);
+      navigate(routes.settings.usage);
     }
   };
 
@@ -419,7 +416,7 @@ function PlansPageContent() {
       // posting a change-package that can only fail (the same fallback the
       // Pro → Free case uses).
       if (!isPackageSwitchEligible(subscription)) {
-        navigate(`${routes.settings.usageBilling}&adjust_plan`, {
+        navigate(routes.settings.usage, {
           replace: options?.replaceOnBail === true,
         });
         return;
@@ -570,7 +567,7 @@ function PlansPageContent() {
       const result = await cancelSubscription(toCancelRequestBody(survey));
       if (result) {
         setFreeDowngradeOpen(false);
-        navigate(routes.settings.usageBilling, { replace: true });
+        navigate(routes.settings.usage, { replace: true });
       }
     };
 

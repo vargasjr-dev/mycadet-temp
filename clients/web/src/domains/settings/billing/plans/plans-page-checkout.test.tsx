@@ -429,16 +429,14 @@ describe("PlansPage — ?package= deep link", () => {
     );
   });
 
-  test("an ineligible Pro sub bails to the billing manage surface", async () => {
+  test("an ineligible Pro sub bails to the usage page", async () => {
     const { getByTestId, queryByTestId } = renderPage(
       { ...proMightySubscription(), cancel_at_period_end: true },
       "/assistant/plans?package=super",
     );
 
     await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe(
-        "/assistant/settings/usage?tab=billing&adjust_plan",
-      ),
+      expect(getByTestId("loc").textContent).toBe("/assistant/settings/usage"),
     );
     expect(queryByTestId("confirm-package-switch-button")).toBeNull();
     expect(upgradeCall).toBeNull();
@@ -581,9 +579,7 @@ describe("PlansPage — ?package= deep link", () => {
     );
 
     await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe(
-        "/assistant/settings/usage?tab=billing",
-      ),
+      expect(getByTestId("loc").textContent).toBe("/assistant/settings/usage"),
     );
     expect(queryAllByTestId("confirm-package-switch-button").length).toBe(0);
     expect(upgradeCall).toBeNull();
@@ -668,7 +664,7 @@ describe("PlansPage — ?package= deep link navigation", () => {
     expect(committed).toEqual([
       "/assistant/plans?package=super",
       "/assistant/plans",
-      "/assistant/settings/usage?tab=billing&adjust_plan",
+      "/assistant/settings/usage",
     ]);
 
     // Back must never land on the deep link: that entry re-fires the effect and
@@ -689,7 +685,7 @@ describe("PlansPage — ?package= deep link navigation", () => {
     await waitFor(() =>
       expect(
         `${router.state.location.pathname}${router.state.location.search}`,
-      ).toBe("/assistant/settings/usage?tab=billing&adjust_plan"),
+      ).toBe("/assistant/settings/usage"),
     );
   });
 });

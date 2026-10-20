@@ -178,14 +178,25 @@
     "backgroundConfirmKeepWaiting": "繼續等待",
     "backgroundConfirmTitle": "在背景繼續？"
   },
-  "billingPage": {
-    "accountCta": "管理帳號",
-    "billingCta": "管理帳單",
-    "linkOutBody": "方案、付款方式、帳單和用量均在 Cadet Cloud 帳號頁面中管理。",
-    "linkOutTitle": "在 Cadet 帳號中管理帳單"
-  },
   "billingStatusHandler": {
     "successToast": "付款成功！您的點數餘額將很快更新。"
+  },
+  "billingUsageChart": {
+    "empty": "此期間無使用資料"
+  },
+  "billingUsagePanel": {
+    "backToAllUsage": "返回所有使用情況",
+    "chartMetricAria": "圖表指標",
+    "eventsLabel": "事件",
+    "llmDimensionAria": "LLM 支出維度",
+    "llmSpend": "LLM 支出",
+    "loadError": "載入使用資料失敗。",
+    "metricEvents": "事件",
+    "metricSpend": "支出 ($)",
+    "oauthSpend": "OAuth 支出",
+    "spendLabel": "支出",
+    "subtitle": "您的消費習慣概覽。",
+    "title": "點數使用情況"
   },
   "biometricSettingsCard": {
     "description": "當您的工作階段過期時，請使用 {label} 驗證，而無需再次登入。",
@@ -1525,6 +1536,54 @@
     "successBody": "您的專業版方案已啟用。您將很快被重新導向回帳單頁面。",
     "welcomeTitle": "歡迎使用專業版"
   },
+  "usageTab": {
+    "analyzeCostsButton": "使用助理分析成本",
+    "breakdownTitle": "明細",
+    "cacheCreatedLabel": "快取已建立",
+    "cacheReadLabel": "快取已讀取",
+    "costAssistantSubtitle": "檢視近期支出並調整模型設定檔選擇。",
+    "costAssistantTitle": "成本助理",
+    "costLabel": "成本",
+    "dailyTrend": "每日趨勢",
+    "dailyTrendBy": "依 {group} 的每日趨勢",
+    "directInputTokensLabel": "直接輸入權杖",
+    "failedToLoadUsage": "無法載入使用情況。",
+    "groupByActor": "執行者",
+    "groupByConversation": "對話",
+    "groupByModel": "模型",
+    "groupByProfile": "設定檔",
+    "groupByProvider": "供應商",
+    "groupBySchedule": "排程",
+    "groupByTask": "動作",
+    "groupColumnLabel": "群組",
+    "hourlyTrend": "每小時趨勢",
+    "hourlyTrendBy": "依 {group} 的每小時趨勢",
+    "inferenceUsageTitle": "推論使用情況",
+    "llmCallsLabel": "LLM 呼叫",
+    "noBreakdownDataSubtitle": "此群組沒有記錄使用情況",
+    "noBreakdownDataTitle": "無明細資料",
+    "optimizeSettingsButton": "最佳化設定",
+    "outputTokensLabel": "輸出權杖",
+    "percentOfTotalLabel": "總計百分比",
+    "range30d": "最近 30 天",
+    "range7d": "最近 7 天",
+    "range90d": "最近 90 天",
+    "rangeAll": "所有時間",
+    "rangeToday": "今天",
+    "rangeYesterday": "昨天",
+    "retry": "重試",
+    "title": "使用情況",
+    "tokensLabel": "權杖",
+    "totalsAriaLabel": "總計",
+    "turnsLabel": "回合",
+    "unknownSchedule": "未知排程 ({scheduleId})"
+  },
+  "usageTrendChart": {
+    "noDailyData": "無每日資料",
+    "noHourlyData": "無每小時資料",
+    "noUsageInRange": "此時間範圍內沒有記錄使用情況",
+    "total": "總計"
+  },
   "useBillingPortalSession": {
     "openError": "無法開啟帳單入口網站。請再試一次。"
   },
@@ -1717,7 +1776,6 @@
     "sounds": "聲音",
     "privacy": "權限與隱私",
     "usage": "用量",
-    "billingUsage": "帳單與用量",
     "community": "社群",
     "debug": "偵錯",
     "logout": "登出",

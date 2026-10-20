@@ -968,7 +968,7 @@ describe("PlansPage — Pro package switch (change-package)", () => {
     // shown) with no Stripe redirect, and never touches the
     // portal/package/checkout endpoints.
     await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe(routes.settings.usageBilling),
+      expect(getByTestId("loc").textContent).toBe(routes.settings.usage),
     );
     expect(openedUrl).toBeNull();
     expect(portalSessionCall).toBeNull();
@@ -1225,9 +1225,9 @@ describe("PlansPage — Pro package switch (change-package)", () => {
 
 // A cancelling or non-entitlement-status Pro sub can't switch in place — the
 // change-package endpoint would 4xx. Clicking a package CTA must route it to the
-// billing manage/cancel surface (`?adjust_plan`) instead of posting
-// change-package, matching the plan-card banner's fallback.
-describe("PlansPage — ineligible Pro subs route to manage", () => {
+// settings usage page (the billing manage surface is gone — billing moved
+// to the cloud's account pages) instead of posting change-package.
+describe("PlansPage — ineligible Pro subs route to the usage page", () => {
   const ineligible: Array<[string, SubscriptionResponse]> = [
     ["cancelling", { ...proMightySubscription(), cancel_at_period_end: true }],
     [
@@ -1237,7 +1237,7 @@ describe("PlansPage — ineligible Pro subs route to manage", () => {
   ];
 
   for (const [label, subscription] of ineligible) {
-    test(`a ${label} Pro sub's package CTA routes to manage, not change-package`, async () => {
+    test(`a ${label} Pro sub's package CTA routes to the usage page, not change-package`, async () => {
       const { findByRole, findByTestId } = renderInteractive(subscription);
 
       // From Mighty, "Go Super" is the Super column's upgrade CTA.
@@ -1245,9 +1245,7 @@ describe("PlansPage — ineligible Pro subs route to manage", () => {
 
       const loc = await findByTestId("loc");
       await waitFor(() =>
-        expect(loc.textContent).toBe(
-          "/assistant/settings/usage?tab=billing&adjust_plan",
-        ),
+        expect(loc.textContent).toBe("/assistant/settings/usage"),
       );
       expect(changePackageCall).toBeNull();
       expect(upgradeCall).toBeNull();

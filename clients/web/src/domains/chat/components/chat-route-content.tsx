@@ -494,7 +494,7 @@ export function ChatMainPanel({
   }, [navigate]);
 
   const pushToDailyLimitSettings = useCallback(() => {
-    void navigate(routes.settings.usageBillingDailyLimit);
+    void navigate(routes.settings.usage);
   }, [navigate]);
 
   const checkAssistant = useCallback(

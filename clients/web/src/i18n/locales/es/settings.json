@@ -178,14 +178,25 @@
     "backgroundConfirmKeepWaiting": "Seguir esperando",
     "backgroundConfirmTitle": "¿Continuar en segundo plano?"
   },
-  "billingPage": {
-    "accountCta": "Administrar cuenta",
-    "billingCta": "Administrar facturación",
-    "linkOutBody": "Los planes, los métodos de pago, las facturas y el uso se administran en las páginas de tu cuenta de Cadet Cloud.",
-    "linkOutTitle": "Administra la facturación en tu cuenta de Cadet"
-  },
   "billingStatusHandler": {
     "successToast": "¡Pago recibido! Tu saldo de créditos se actualizará en breve."
+  },
+  "billingUsageChart": {
+    "empty": "No hay datos de uso para este período"
+  },
+  "billingUsagePanel": {
+    "backToAllUsage": "Volver a todo el uso",
+    "chartMetricAria": "Métrica del gráfico",
+    "eventsLabel": "Eventos",
+    "llmDimensionAria": "Dimensión del gasto de LLM",
+    "llmSpend": "Gasto de LLM",
+    "loadError": "No se pudieron cargar los datos de uso.",
+    "metricEvents": "Eventos",
+    "metricSpend": "Gasto ($)",
+    "oauthSpend": "Gasto de OAuth",
+    "spendLabel": "Gasto",
+    "subtitle": "Resumen de tus hábitos de gasto.",
+    "title": "Uso de créditos"
   },
   "biometricSettingsCard": {
     "description": "Cuando expire tu sesión, verifica con {label} en lugar de iniciar sesión de nuevo.",
@@ -1546,6 +1557,54 @@
     "processingFallback": "Estamos procesando su actualización. Actualice en un momento para ver su nuevo plan.",
     "successBody": "Su plan Pro está activo. Será redirigido a facturación en un momento.",
     "welcomeTitle": "Bienvenido a Pro"
+  },
+  "usageTab": {
+    "analyzeCostsButton": "Analizar costos con el asistente",
+    "breakdownTitle": "Desglose",
+    "cacheCreatedLabel": "Caché creada",
+    "cacheReadLabel": "Caché leída",
+    "costAssistantSubtitle": "Revise el gasto reciente y ajuste las opciones de perfil del modelo.",
+    "costAssistantTitle": "Asistente de costos",
+    "costLabel": "Costo",
+    "dailyTrend": "Tendencia diaria",
+    "dailyTrendBy": "Tendencia diaria por {group}",
+    "directInputTokensLabel": "Tokens de entrada directa",
+    "failedToLoadUsage": "No se pudo cargar el uso.",
+    "groupByActor": "Actor",
+    "groupByConversation": "Conversación",
+    "groupByModel": "Modelo",
+    "groupByProfile": "Perfil",
+    "groupByProvider": "Proveedor",
+    "groupBySchedule": "Programación",
+    "groupByTask": "Acción",
+    "groupColumnLabel": "Grupo",
+    "hourlyTrend": "Tendencia por hora",
+    "hourlyTrendBy": "Tendencia por hora por {group}",
+    "inferenceUsageTitle": "Uso de inferencia",
+    "llmCallsLabel": "Llamadas LLM",
+    "noBreakdownDataSubtitle": "No hay uso registrado para esta agrupación",
+    "noBreakdownDataTitle": "Sin datos de desglose",
+    "optimizeSettingsButton": "Optimizar ajustes",
+    "outputTokensLabel": "Tokens de salida",
+    "percentOfTotalLabel": "% del total",
+    "range30d": "Últimos 30 días",
+    "range7d": "Últimos 7 días",
+    "range90d": "Últimos 90 días",
+    "rangeAll": "Todo el tiempo",
+    "rangeToday": "Hoy",
+    "rangeYesterday": "Ayer",
+    "retry": "Reintentar",
+    "title": "Uso",
+    "tokensLabel": "Tokens",
+    "totalsAriaLabel": "Totales",
+    "turnsLabel": "Turnos",
+    "unknownSchedule": "Programación desconocida ({scheduleId})"
+  },
+  "usageTrendChart": {
+    "noDailyData": "Sin datos diarios",
+    "noHourlyData": "Sin datos por hora",
+    "noUsageInRange": "No hay uso registrado en este intervalo",
+    "total": "Total"
   },
   "useBillingPortalSession": {
     "openError": "No se pudo abrir el portal de facturación. Inténtalo de nuevo."

@@ -613,8 +613,8 @@ export const routeTree = [
                     path: "usage",
                     lazy: {
                       Component: () =>
-                        import("@/domains/settings/billing/billing-page").then(
-                          (m) => m.BillingPage,
+                        import("@/domains/settings/billing/usage-page").then(
+                          (m) => m.UsagePage,
                         ),
                     },
                   },

@@ -63,14 +63,7 @@ export function UpgradeCancelPage() {
     if (!isCloudHosted) {
       return;
     }
-    // `usageBilling` already carries `?tab=billing`, hence the `&`. The
-    // billing page's BillingStatusHandler consumes these params: it shows
-    // the upgrade-cancel toast and runs the server-side check for the
-    // abandoned-checkout bonus offer.
-    navigate(
-      `${routes.settings.usageBilling}&billing_status=cancel&billing_context=upgrade`,
-      { replace: true },
-    );
+    navigate(routes.settings.usage, { replace: true });
   }, [navigate, isCloudHosted]);
 
   if (cloudGate === "gated") {
@@ -100,9 +93,7 @@ export function UpgradeCancelPage() {
         <div className="flex justify-end">
           <Button
             variant="primary"
-            onClick={() =>
-              navigate(routes.settings.usageBilling, { replace: true })
-            }
+            onClick={() => navigate(routes.settings.usage, { replace: true })}
           >
             {t("upgradeCancelPage.returnToBilling")}
           </Button>

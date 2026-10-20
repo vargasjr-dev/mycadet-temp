@@ -178,14 +178,25 @@
     "backgroundConfirmKeepWaiting": "继续等待",
     "backgroundConfirmTitle": "在后台继续？"
   },
-  "billingPage": {
-    "accountCta": "管理账号",
-    "billingCta": "管理账单",
-    "linkOutBody": "套餐、付款方式、账单和用量均在 Cadet Cloud 账号页面中管理。",
-    "linkOutTitle": "在 Cadet 账号中管理账单"
-  },
   "billingStatusHandler": {
     "successToast": "付款成功！您的积分余额将很快更新。"
+  },
+  "billingUsageChart": {
+    "empty": "此期间无使用数据"
+  },
+  "billingUsagePanel": {
+    "backToAllUsage": "返回所有使用情况",
+    "chartMetricAria": "图表指标",
+    "eventsLabel": "事件",
+    "llmDimensionAria": "LLM支出维度",
+    "llmSpend": "LLM支出",
+    "loadError": "加载使用数据失败。",
+    "metricEvents": "事件",
+    "metricSpend": "支出 ($)",
+    "oauthSpend": "OAuth支出",
+    "spendLabel": "支出",
+    "subtitle": "您的消费习惯概览。",
+    "title": "积分使用情况"
   },
   "biometricSettingsCard": {
     "description": "当您的会话过期时，使用 {label} 进行验证，而无需再次登录。",
@@ -1525,6 +1536,54 @@
     "successBody": "您的专业版套餐已激活。您将很快被重定向回账单页面。",
     "welcomeTitle": "欢迎使用专业版"
   },
+  "usageTab": {
+    "analyzeCostsButton": "使用助手分析成本",
+    "breakdownTitle": "明细",
+    "cacheCreatedLabel": "缓存创建",
+    "cacheReadLabel": "缓存读取",
+    "costAssistantSubtitle": "查看近期支出并调整模型配置文件选择。",
+    "costAssistantTitle": "成本助手",
+    "costLabel": "成本",
+    "dailyTrend": "每日趋势",
+    "dailyTrendBy": "按 {group} 的每日趋势",
+    "directInputTokensLabel": "直接输入 Token",
+    "failedToLoadUsage": "未能加载使用情况。",
+    "groupByActor": "执行者",
+    "groupByConversation": "对话",
+    "groupByModel": "模型",
+    "groupByProfile": "配置文件",
+    "groupByProvider": "提供商",
+    "groupBySchedule": "定时任务",
+    "groupByTask": "操作",
+    "groupColumnLabel": "分组",
+    "hourlyTrend": "每小时趋势",
+    "hourlyTrendBy": "按 {group} 的每小时趋势",
+    "inferenceUsageTitle": "推理使用情况",
+    "llmCallsLabel": "LLM 调用",
+    "noBreakdownDataSubtitle": "此分组没有记录使用情况",
+    "noBreakdownDataTitle": "无明细数据",
+    "optimizeSettingsButton": "优化设置",
+    "outputTokensLabel": "输出 Token",
+    "percentOfTotalLabel": "占总计百分比",
+    "range30d": "最近 30 天",
+    "range7d": "最近 7 天",
+    "range90d": "最近 90 天",
+    "rangeAll": "所有时间",
+    "rangeToday": "今天",
+    "rangeYesterday": "昨天",
+    "retry": "重试",
+    "title": "使用情况",
+    "tokensLabel": "Token",
+    "totalsAriaLabel": "总计",
+    "turnsLabel": "轮次",
+    "unknownSchedule": "未知定时任务 ({scheduleId})"
+  },
+  "usageTrendChart": {
+    "noDailyData": "无每日数据",
+    "noHourlyData": "无每小时数据",
+    "noUsageInRange": "此时间范围内无使用情况记录",
+    "total": "总计"
+  },
   "useBillingPortalSession": {
     "openError": "无法打开账单门户。请重试。"
   },
@@ -1717,7 +1776,6 @@
     "sounds": "声音",
     "privacy": "权限与隐私",
     "usage": "用量",
-    "billingUsage": "账单与用量",
     "community": "社区",
     "debug": "调试",
     "logout": "退出登录",

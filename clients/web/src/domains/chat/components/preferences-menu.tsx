@@ -313,7 +313,7 @@ function PreferencesMenuContent({
         conversationId={activeConversationId}
         onOpenBilling={() => {
           onClose();
-          navigate(routes.settings.usageBilling);
+          navigate(routes.settings.usage);
         }}
         onAddCredits={() => {
           onClose();
@@ -329,7 +329,7 @@ function PreferencesMenuContent({
             )}
             onAddCredits={() => {
               onClose();
-              navigate(routes.settings.usageBilling);
+              navigate(routes.settings.usage);
             }}
           />
         </div>

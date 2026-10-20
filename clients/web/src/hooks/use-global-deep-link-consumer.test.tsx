@@ -489,9 +489,7 @@ describe("deeplink.billingCheckoutComplete", () => {
       });
     });
 
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/settings/usage?tab=billing&session_id=cs_test_a1B2",
-    );
+    expect(navigateMock).toHaveBeenCalledWith("/assistant/settings/usage");
     expect(toastSuccessMock).not.toHaveBeenCalled();
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
@@ -549,12 +547,7 @@ describe("deeplink.billingCheckoutComplete", () => {
       });
     });
 
-    // `usageBilling` already carries `?tab=billing`, so the param appends
-    // with `&`: the exact query `BillingStatusHandler` consumes to run the
-    // server-verified checkout-bonus offer flow.
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/settings/usage?tab=billing&billing_status=cancel",
-    );
+    expect(navigateMock).toHaveBeenCalledWith("/assistant/settings/usage");
     expect(toastSuccessMock).not.toHaveBeenCalled();
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });

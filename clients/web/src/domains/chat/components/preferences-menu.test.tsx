@@ -507,7 +507,7 @@ describe("PreferencesMenu", () => {
       await Promise.resolve();
     });
 
-    expect(navigateArgs).toEqual([routes.settings.usageBilling]);
+    expect(navigateArgs).toEqual([routes.settings.usage]);
     expect(screen.queryByTestId("preferences-usage")).toBeNull();
   });
 
