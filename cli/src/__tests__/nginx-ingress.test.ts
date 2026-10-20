@@ -354,7 +354,7 @@ describe("buildIngressNginxConfig", () => {
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"remote\\":\\"custom\\",\\"apiBaseUrl\\":\\"/v1\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\",\\"version\\":\\"1.2.3\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\",\\"version\\":\\"1.2.3\\"}";',
     );
   });
 
@@ -864,7 +864,6 @@ function spaConfigHash(
         template: EDGE_TEMPLATE_VERSION,
         config: {
           remote: "custom",
-          apiBaseUrl: "/v1",
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
@@ -903,9 +902,14 @@ describe("startRemoteWebIngress", () => {
   for (const [webVersion, runtimeVersion, ready] of [
     ["1.2.3", "1.2.3", true],
     ["1.2.3", "v1.2.3", true],
-    ["1.2.2", "1.2.3", false],
-    ["1.2.3", undefined, false],
-    [null, "1.2.3", false],
+    // Version skew between the served bundle and the runtime no longer 409s
+    // a live assistant: the runtime's own answer is the readiness truth.
+    ["1.2.2", "1.2.3", true],
+    // The bundle's declared version backfills when the runtime didn't answer.
+    ["1.2.3", undefined, true],
+    [null, "1.2.3", true],
+    // No version from either source: genuinely unconfirmed.
+    [null, undefined, false],
   ] as const) {
     test(`release resolution: UI ${webVersion}, assistant ${runtimeVersion}`, async () => {
       const ws = makeWorkspace();
@@ -961,7 +965,8 @@ describe("startRemoteWebIngress", () => {
     const detail = conf
       .split('location = "/v1/assistants/assistant-1/" {')[1]
       ?.split("\n    }")[0];
-    expect(detail).toContain("return 409 ");
+    expect(detail).toContain("return 200 ");
+    expect(detail).toContain('\\"version\\":\\"1.2.4\\"');
   });
 
   test("webhooks-only mode starts the denylist+proxy edge without a web dist", async () => {
@@ -2565,7 +2570,6 @@ function appConfigHash(
         template: EDGE_TEMPLATE_VERSION,
         config: {
           remote: "custom",
-          apiBaseUrl: "/v1",
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,

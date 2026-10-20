@@ -1289,13 +1289,17 @@ export async function startRemoteWebIngress(opts: {
   const assistantVersion = runtimeVersion
     ? stripVersionPrefix(runtimeVersion)
     : undefined;
-  const matchedVersion =
-    assistantVersion && webVersion === assistantVersion
-      ? assistantVersion
-      : undefined;
+  // Readiness comes from the runtime answering its healthz version probe,
+  // not from the served bundle matching it: a web bundle built from a
+  // different checkout (e.g. the source auto-build vs an installed release)
+  // must not 409 a live assistant into "not ready". The bundle's declared
+  // release version backfills when the runtime didn't answer — the baked
+  // response is static, so the web UI's live error surface owns a down
+  // gateway, while a sticky 409 could never recover without an edge restart.
+  const servedVersion = assistantVersion ?? webVersion;
   // The SPA config the served index must carry, computed up front so the
   // reuse decision and the actual spawn share one value and cannot drift.
-  // The verified release version rides it: the served documents stamp it
+  // The release version rides it: the served documents stamp it
   // (window.__CADET_CONFIG__.version) and the reuse fingerprint covers the
   // drift.
   const spaOptions = includeWebApp
@@ -1303,7 +1307,7 @@ export async function startRemoteWebIngress(opts: {
         hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
         ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
         ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
-        ...(matchedVersion ? { version: matchedVersion } : {}),
+        ...(servedVersion ? { version: servedVersion } : {}),
       }
     : undefined;
   const requestedConfigHash =
@@ -1311,7 +1315,7 @@ export async function startRemoteWebIngress(opts: {
       ? remoteWebConfigFingerprint(
           remoteWebIngressConfig(spaOptions),
           webDistDir,
-          matchedVersion,
+          servedVersion,
           appDistDir,
         )
       : undefined;
