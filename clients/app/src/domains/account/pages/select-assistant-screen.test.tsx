@@ -111,6 +111,36 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
 });
 
+test("rows render the cloud's synced avatar when the list carries one", async () => {
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [
+        {
+          id: "assistant-1",
+          name: "One",
+          avatar_url: "https://cloud.example/one.png",
+        },
+        { id: "assistant-2", name: "Two" },
+      ],
+    }),
+  );
+  setup();
+  const withAvatar = await screen.findByRole("button", { name: "One" });
+  const img = withAvatar.querySelector("img");
+  expect(img?.getAttribute("src")).toBe("https://cloud.example/one.png");
+  // The chip is decorative: the row's own label names the assistant.
+  expect(img?.getAttribute("alt")).toBe("");
+  const bare = screen.getByRole("button", { name: "Two" });
+  expect(bare.querySelector("img")).toBeNull();
+  // A thumbnail that fails to load demotes to the initial for the row.
+  if (!(img instanceof HTMLImageElement)) {
+    throw new Error("Missing thumbnail.");
+  }
+  fireEvent.error(img);
+  expect(withAvatar.querySelector("img")).toBeNull();
+  expect(withAvatar.textContent).toContain("O");
+});
+
 test("a sole assistant waits for selection rather than fetching detail on the account page", async () => {
   request.mockResolvedValueOnce(
     Response.json({ results: [{ id: "assistant-1", name: "One" }] }),

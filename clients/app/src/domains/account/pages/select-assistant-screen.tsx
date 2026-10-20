@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { AccountShell } from "@app/components/account/account-shell";
 import { AccountHeading } from "@app/components/account/account-form";
+import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
@@ -41,6 +42,10 @@ export function SelectAssistantScreen() {
                 });
               }}
             >
+              <ChooserAvatarChip
+                avatarUrl={assistant.avatar_url}
+                name={assistant.name}
+              />
               {assistant.name}
             </Button>
           ))}
