@@ -27879,11 +27879,6 @@ paths:
                         cameraFrame:
                           type: boolean
                           const: true
-                        assistantTextVisibility:
-                          type: string
-                          enum:
-                            - private
-                            - visible
                         reaction:
                           type: object
                           properties:
@@ -42070,7 +42065,6 @@ paths:
                             enum:
                               - light
                               - dark
-                              - velvet
                               - system
                           tokens:
                             type: object

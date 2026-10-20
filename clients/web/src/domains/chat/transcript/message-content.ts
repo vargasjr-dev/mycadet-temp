@@ -331,22 +331,15 @@ export function activityItemsToCardData(items: ContentBlockActivityItem[]): {
       continue;
     }
     const tc = item.toolCall;
-    if (isSuppressedUiTool(tc)) {
+    // UI surface tools are rendered by the inline surface widget (unless they
+    // carry a pending confirmation, whose chip carries the inline card).
+    if (isUiSurfaceToolCall(tc)) {
       continue;
     }
     toolCalls.push(tc);
     cardItems.push({ kind: "toolCall", toolCall: tc });
   }
   return { cardItems, toolCalls };
-}
-
-/**
- * Tool calls that draw no chip of their own. UI surface tools are rendered by
- * the inline surface widget, unless they carry a pending confirmation, in
- * which case the chip must render so the inline confirmation card is visible.
- */
-export function isSuppressedUiTool(tc: ChatMessageToolCall): boolean {
-  return isUiSurfaceToolCall(tc);
 }
 
 /**

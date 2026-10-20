@@ -5,7 +5,6 @@ import type { Surface } from "@/domains/chat/types/types";
 import type { ConversationContentBlock } from "@mycadet/assistant-api";
 import {
   activityHasDedicatedCard,
-  activityItemsToCardData,
   type ContentBlockGroup,
   finalResponseStartIndex,
   groupContentBlocks,
@@ -15,7 +14,6 @@ import {
   isBackgroundBashCall,
   isRunWorkflowCall,
   isSubagentSpawnCall,
-  isSuppressedUiTool,
   isTaskProgressSurface,
 } from "@/domains/chat/transcript/message-content";
 import { extractBgIdFromResult } from "@/domains/chat/transcript/transcript-message-body-shared";
@@ -471,33 +469,6 @@ describe("extractBgIdFromResult", () => {
         }),
       ),
     ).toBeUndefined();
-  });
-});
-
-describe("isSuppressedUiTool", () => {
-  test("suppresses ui_* tools without pending confirmation", () => {
-    expect(isSuppressedUiTool(toolCall({ id: "x", name: "ui_show" }))).toBe(
-      true,
-    );
-    expect(isSuppressedUiTool(toolCall({ id: "x", name: "ui_update" }))).toBe(
-      true,
-    );
-    expect(isSuppressedUiTool(toolCall({ id: "x", name: "ui_dismiss" }))).toBe(
-      true,
-    );
-  });
-
-  test("does not suppress ui_* with a pending confirmation, or non-ui tools", () => {
-    expect(
-      isSuppressedUiTool(
-        toolCall({
-          id: "x",
-          name: "ui_show",
-          pendingConfirmation: { requestId: "req-1" },
-        }),
-      ),
-    ).toBe(false);
-    expect(isSuppressedUiTool(toolCall({ id: "x", name: "bash" }))).toBe(false);
   });
 });
 

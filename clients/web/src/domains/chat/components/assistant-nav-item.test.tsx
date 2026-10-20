@@ -9,7 +9,6 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { createElement } from "react";
-import { render } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { SIDE_MENU_TILE_SIZE } from "@mycadet/design-library";
@@ -244,6 +243,4 @@ describe("AssistantNavItem New Chat button", () => {
       expect(tag).toContain('data-variant="accent"');
     }
   });
-
-
 });

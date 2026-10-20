@@ -102,18 +102,6 @@ const toolUseStart = (
     toolName: name,
     input: {},
   } as AssistantEvent);
-const toolUsePreviewStart = (
-  seq: number,
-  id: string,
-  toolUseId: string,
-  name: string,
-) =>
-  env(seq, {
-    type: "tool_use_preview_start",
-    messageId: id,
-    toolUseId,
-    toolName: name,
-  } as AssistantEvent);
 const surfacePending = (seq: number, id: string, toolUseId: string) =>
   env(seq, {
     type: "ui_surface_pending",

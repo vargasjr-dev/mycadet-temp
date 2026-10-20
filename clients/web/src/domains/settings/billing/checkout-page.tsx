@@ -114,9 +114,6 @@ function CheckoutPageContent() {
   // The tri-state, not the boolean: an id that hasn't arrived yet is worth
   // waiting for, and one that resolution concluded without is not.
   const orgReadiness = useOrgHeaderReadiness();
-  // Kill switch over the pricing funnel. `"pending"` until the real flag value
-  // lands — the flag defaults off, so redirecting on the cold-load default
-  // would bounce every legitimate deep link.
   // Where to go when no purchase happens here. Onboarding hands off before the
   // funnel flag has necessarily resolved and passes its own next step, so a
   // pending→disabled transition resumes onboarding instead of stranding a new

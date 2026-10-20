@@ -53,8 +53,8 @@ import type {
   ProxyApprovalRequest,
 } from "../tools/tool-types.js";
 import {
+  isDiskPressureCleanupToolName,
   type OwnerKind,
-  survivesDiskPressureCleanup,
   type ToolContext,
   type ToolExecutionResult,
 } from "../tools/types.js";
@@ -797,7 +797,7 @@ export function isToolActiveForContext(
   }
   if (
     ctx.diskPressureCleanupModeActive === true &&
-    !survivesDiskPressureCleanup(name)
+    !isDiskPressureCleanupToolName(name)
   ) {
     return false;
   }
@@ -1244,7 +1244,7 @@ export function createResolveToolsCallback(
 
     if (ctx.diskPressureCleanupModeActive === true) {
       const survivesCleanup = (name: string): boolean =>
-        survivesDiskPressureCleanup(name);
+        isDiskPressureCleanupToolName(name);
       const cleanupDefs = allBaseDefs.filter((d) => survivesCleanup(d.name));
       ctx.allowedToolNames = new Set(
         Array.from(turnAllowed).filter(survivesCleanup),

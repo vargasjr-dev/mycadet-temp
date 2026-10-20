@@ -63,9 +63,6 @@ function ChatLayoutRoute() {
   return (
     <>
       <ChatLayout topBarAccessory={<NotificationsBell />} />
-      {/* In-chat onboarding tour orchestrator. Renders only portals
-          (stage panel, avatar tour, narration takeover) over the real
-          chat; inert until the post-onboarding hand-off activates it. */}
     </>
   );
 }

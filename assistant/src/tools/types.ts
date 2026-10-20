@@ -39,20 +39,6 @@ export function isDiskPressureCleanupToolName(name: string): boolean {
   return DISK_PRESSURE_CLEANUP_TOOL_NAMES.has(name);
 }
 
-/**
- * Whether a tool survives disk-pressure cleanup mode on this turn.
- *
- * The cleanup set holds tools that can free space without consuming it.
- *
- * Lives here, beside the set it extends, because three layers have to agree on
- * it: the wire filter and its mirror in `conversation-tool-setup.ts`, and the
- * approval handler that gates the call at execution. A tool offered by the
- * first two and refused by the third is worse than one never offered.
- */
-export function survivesDiskPressureCleanup(name: string): boolean {
-  return isDiskPressureCleanupToolName(name);
-}
-
 // ---------------------------------------------------------------------------
 // Concrete overlays for types that live in ./tool-types.js.
 //

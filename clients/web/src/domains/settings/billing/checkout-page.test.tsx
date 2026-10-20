@@ -49,11 +49,6 @@ let nativeAndroid = false;
 // When true the upgrade rejects — drives the error path. Otherwise it resolves
 // with `upgradeData`.
 let upgradeRejects = false;
-// When true the upgrade hangs until `releaseUpgrade()` — the mid-flight window
-// where a flag flip and the response race.
-let holdUpgrade = false;
-let releaseUpgrade: (() => void) | null = null;
-let heldUpgrade: Promise<unknown> | null = null;
 let upgradeData: {
   status: string;
   checkout_url: string | null;
@@ -70,13 +65,6 @@ mock.module("@/generated/api/sdk.gen", () => ({
     upgradeCalls.push(opts);
     if (upgradeRejects) {
       return Promise.reject(new Error("checkout failed"));
-    }
-    if (holdUpgrade) {
-      heldUpgrade = new Promise((resolve) => {
-        releaseUpgrade = () =>
-          resolve({ data: upgradeData, response: { ok: true } });
-      });
-      return heldUpgrade;
     }
     return Promise.resolve({ data: upgradeData, response: { ok: true } });
   },
@@ -115,7 +103,6 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   // disagree about the same store state.
   useIsOrgReady: () => orgReadinessValue === "ready",
 }));
-
 
 const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
@@ -183,9 +170,6 @@ beforeEach(() => {
     },
   });
   upgradeRejects = false;
-  holdUpgrade = false;
-  releaseUpgrade = null;
-  heldUpgrade = null;
   upgradeData = { status: "redirect", checkout_url: CHECKOUT_URL, message: "" };
   sessionStorage.removeItem(INTENT_KEY);
   useResolvedAssistantsStore.setState({

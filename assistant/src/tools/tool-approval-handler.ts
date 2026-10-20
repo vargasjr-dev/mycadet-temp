@@ -54,8 +54,8 @@ import { suggestToolName } from "./tool-name-aliases.js";
 import { recordToolCompletion } from "./tool-profiler.js";
 import type { ExecutionTarget } from "./tool-types.js";
 import {
+  isDiskPressureCleanupToolName,
   type OwnerInfo,
-  survivesDiskPressureCleanup,
   type Tool,
   type ToolContext,
   type ToolExecutionResult,
@@ -902,7 +902,7 @@ export class ToolApprovalHandler {
 
     if (
       context.diskPressureCleanupModeActive === true &&
-      !survivesDiskPressureCleanup(name)
+      !isDiskPressureCleanupToolName(name)
     ) {
       const msg = `Tool "${name}" is not available during disk pressure cleanup mode.`;
       this.auditGateError(context, name, input, riskLevel, startTime, msg);
