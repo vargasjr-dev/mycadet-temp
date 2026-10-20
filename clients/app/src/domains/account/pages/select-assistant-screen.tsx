@@ -41,7 +41,10 @@ export function SelectAssistantScreen() {
   const [retirePending, setRetirePending] = useState(false);
   const [retireError, setRetireError] = useState<string | null>(null);
   const { state, retry } = useAssistantChoices({
-    apiBaseUrl: config?.cloudUrl,
+    // The boot bundle's webview origin has no /v1 router, so it resolves
+    // against the stamped control plane; served surfaces fall back to the
+    // cloud backend base they've always used.
+    apiBaseUrl: config?.assistantsApiUrl ?? config?.cloudUrl,
     origin: window.location.origin,
   });
   const status =

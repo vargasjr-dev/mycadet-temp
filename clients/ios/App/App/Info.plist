@@ -47,6 +47,15 @@
 	<string>Cadet uses the microphone to record voice messages and dictate prompts to your assistant.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Cadet uses speech recognition to transcribe what you dictate into text.</string>
+	<!-- The local environment's control plane is plain http on loopback
+	     (http://localhost:8000); ATS blocks cleartext without this exception,
+	     and the simulator reaches nothing without it. It only opens local
+	     networking — every stamped cloud origin is https. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Allow Cadet to attach photos and videos from your library to messages.</string>
 	<key>UIMainStoryboardFile</key>

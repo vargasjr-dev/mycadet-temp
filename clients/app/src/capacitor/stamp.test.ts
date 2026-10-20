@@ -2,21 +2,31 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { capacitorInjectedConfig, injectedConfigScript } from "./stamp";
 
 describe("capacitorInjectedConfig", () => {
-  test("local environment stamps the bare local remote", () => {
-    expect(capacitorInjectedConfig({})).toEqual({ remote: "local" });
+  test("local environment stamps the local backend as the control plane", () => {
+    expect(capacitorInjectedConfig({})).toEqual({
+      remote: "local",
+      cloudUrl: "http://localhost:8000",
+      assistantsApiUrl: "http://localhost:8000",
+    });
   });
 
   test("cloud environments stamp their platform API origin", () => {
     expect(
       capacitorInjectedConfig({ CADET_ENVIRONMENT: "production" }),
-    ).toEqual({ remote: "cloud", cloudUrl: "https://cloud.mycadet.ai" });
+    ).toEqual({
+      remote: "cloud",
+      cloudUrl: "https://cloud.mycadet.ai",
+      assistantsApiUrl: "https://cloud.mycadet.ai",
+    });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "staging" })).toEqual({
       remote: "cloud",
       cloudUrl: "https://staging-cloud.mycadet.ai",
+      assistantsApiUrl: "https://staging-cloud.mycadet.ai",
     });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "dev" })).toEqual({
       remote: "cloud",
       cloudUrl: "https://dev-cloud.mycadet.ai",
+      assistantsApiUrl: "https://dev-cloud.mycadet.ai",
     });
   });
 
@@ -29,6 +39,7 @@ describe("capacitorInjectedConfig", () => {
     ).toEqual({
       remote: "custom",
       cloudUrl: "https://assistant.example.com",
+      assistantsApiUrl: "https://assistant.example.com",
     });
   });
 

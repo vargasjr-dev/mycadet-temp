@@ -16,6 +16,10 @@ export function AssistantPage() {
   return (
     <AppShell
       assistantId={selection ?? config?.assistantId}
+      // Served surfaces leave this unset and resolve same-origin through
+      // their origin's /v1 proxy; the native boot bundle's webview origin
+      // has no /v1 router, so it resolves against the stamped base.
+      apiBaseUrl={config?.assistantsApiUrl}
       location={`${location.pathname}${location.search}${location.hash}`}
       origin={window.location.origin}
       onNavigate={(path, options) => {

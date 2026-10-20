@@ -9,7 +9,12 @@ import {
  * it into `dist/capacitor/index.html` as `window.__CADET_CONFIG__`. It IS
  * the shared injected-config shape — the app shell boots from these assets
  * through the same `main.tsx` entry every other host serves, and reads the
- * stamp back through the same `readInjectedConfig()`.
+ * stamp back through the same `readInjectedConfig()`. Every branch stamps
+ * `assistantsApiUrl` alongside `cloudUrl`: the webview origin serves only
+ * baked assets (no /v1 router), so the shell and the chooser must resolve
+ * assistants against the environment's control plane directly — same-origin
+ * would request `capacitor://localhost/v1/...` and get the SPA's index
+ * HTML back.
  *
  * Resolution mirrors the native `server.url` bake this replaces: the release
  * workflows set `CADET_ENVIRONMENT`; `CADET_SERVER_URL` overrides with an
@@ -23,12 +28,21 @@ export function capacitorInjectedConfig(env: {
   if (!override) {
     const environment = env.CADET_ENVIRONMENT ?? "local";
     if (environment === "local") {
-      return InjectedConfigSchema.parse({ remote: "local" });
+      // The local backend is a full control plane — the web dev server
+      // proxies /v1 at it — so the simulator reaches the same stack every
+      // other local surface uses.
+      const cloudUrl = SEEDS.local.cloudUrl;
+      return InjectedConfigSchema.parse({
+        remote: "local",
+        cloudUrl,
+        assistantsApiUrl: cloudUrl,
+      });
     }
     const seed = SEEDS[environment] ?? SEEDS.dev;
     return InjectedConfigSchema.parse({
       remote: "cloud",
       cloudUrl: seed.cloudUrl,
+      assistantsApiUrl: seed.cloudUrl,
     });
   }
 
@@ -47,7 +61,11 @@ export function capacitorInjectedConfig(env: {
     );
   }
 
-  return InjectedConfigSchema.parse({ remote: "custom", cloudUrl: override });
+  return InjectedConfigSchema.parse({
+    remote: "custom",
+    cloudUrl: override,
+    assistantsApiUrl: override,
+  });
 }
 
 /**
