@@ -292,7 +292,6 @@ export const routes = {
     notifications: r("/assistant/settings/notifications"),
     voice: r("/assistant/settings/voice"),
     sounds: r("/assistant/settings/sounds"),
-    privacy: r("/assistant/settings/privacy"),
     usage: SETTINGS_USAGE_PATH,
     // Deep-link straight to the Billing sub-tab (only shown when signed in to
     // Cadet Cloud).

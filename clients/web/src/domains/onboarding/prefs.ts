@@ -1,17 +1,12 @@
 /**
  * Onboarding preference public API.
  *
- * Consent preferences are owned by `useOnboardingStore` — the share toggles
- * (`shareAnalytics`, `shareDiagnostics`) are tri-state (`null` = never
- * asked), the legal flags (`tosAccepted`, `privacyConsent`) are booleans.
- * The store persists each share toggle to its existing localStorage key. This file exposes the hook +
+ * Consent preferences are owned by `useOnboardingStore` — the legal flags
+ * (`tosAccepted`, `privacyConsent`) are booleans populated by an explicit
+ * acceptance or a per-user device restore. This file exposes the hook +
  * non-React shim around the store, plus the non-store helpers for the
  * onboarding-only keys that don't fit the boolean store shape
  * (`onboarding.selectedVersion`, `onboarding.lastUserId`).
- *
- * Storage keys are documented in `onboarding-store.ts`. The diagnostics
- * consent gate reads `device:share_*` directly — that contract is preserved
- * by the per-key adapter.
  */
 import { useCallback } from "react";
 
@@ -38,36 +33,6 @@ const KEY_SELECTED_VERSION = "cadet:onboarding:selectedVersion";
 // Public hooks — thin wrappers around the Zustand store
 // ---------------------------------------------------------------------------
 
-/**
- * Share anonymous product analytics. Tri-state: `null` = never asked
- * (analytics is opt-out, so never-asked behaves as enabled), a boolean is an
- * explicit choice. Backed by the SAME localStorage key as `/settings/privacy`
- * so onboarding and settings are a single source of truth.
- */
-export function useShareAnalytics(): [boolean | null, (next: boolean) => void] {
-  const value = useOnboardingStore.use.shareAnalytics();
-  const setter = useCallback((next: boolean) => {
-    useOnboardingStore.getState().setShareAnalytics(next);
-  }, []);
-  return [value, setter];
-}
-
-/**
- * Share crash reports and diagnostics. Tri-state: `null` = never asked
- * (diagnostics is opt-out), a boolean is an explicit choice. Backed by the
- * SAME localStorage key as `/settings/privacy`.
- */
-export function useShareDiagnostics(): [
-  boolean | null,
-  (next: boolean) => void,
-] {
-  const value = useOnboardingStore.use.shareDiagnostics();
-  const setter = useCallback((next: boolean) => {
-    useOnboardingStore.getState().setShareDiagnostics(next);
-  }, []);
-  return [value, setter];
-}
-
 /** Whether the user accepted Terms of Service during onboarding. Defaults to `false`. */
 export function useTosAccepted(): [boolean, (next: boolean) => void] {
   const value = useOnboardingStore.use.tosAccepted();
@@ -87,38 +52,6 @@ export function usePrivacyConsent(): [boolean, (next: boolean) => void] {
   const value = useOnboardingStore.use.privacyConsent();
   const setter = useCallback((next: boolean) => {
     useOnboardingStore.getState().setPrivacyConsent(next);
-  }, []);
-  return [value, setter];
-}
-
-/**
- * Whether the analytics consent the user accepted is for the current toggle
- * version. Set on session sync by the auth store. A stale value means the user
- * must re-review the terms.
- */
-export function useAnalyticsConsentCurrent(): [
-  boolean,
-  (next: boolean) => void,
-] {
-  const value = useOnboardingStore.use.analyticsConsentCurrent();
-  const setter = useCallback((next: boolean) => {
-    useOnboardingStore.getState().setAnalyticsConsentCurrent(next);
-  }, []);
-  return [value, setter];
-}
-
-/**
- * Whether the diagnostics consent the user accepted is for the current toggle
- * version. Set on session sync by the auth store. A stale value means the user
- * must re-review the terms.
- */
-export function useDiagnosticsConsentCurrent(): [
-  boolean,
-  (next: boolean) => void,
-] {
-  const value = useOnboardingStore.use.diagnosticsConsentCurrent();
-  const setter = useCallback((next: boolean) => {
-    useOnboardingStore.getState().setDiagnosticsConsentCurrent(next);
   }, []);
   return [value, setter];
 }
@@ -159,24 +92,6 @@ export function readTosAccepted(): boolean {
  */
 export function readPrivacyConsent(): boolean {
   return useOnboardingStore.getState().privacyConsent;
-}
-
-/**
- * SSR-safe, non-hook read of whether analytics consent is for the current
- * toggle version. Used by the navigation guard to redirect platform users
- * back to review-terms when their consent has gone stale.
- */
-export function readAnalyticsConsentCurrent(): boolean {
-  return useOnboardingStore.getState().analyticsConsentCurrent;
-}
-
-/**
- * SSR-safe, non-hook read of whether diagnostics consent is for the current
- * toggle version. Used alongside `readAnalyticsConsentCurrent()` by the
- * navigation guard.
- */
-export function readDiagnosticsConsentCurrent(): boolean {
-  return useOnboardingStore.getState().diagnosticsConsentCurrent;
 }
 
 /**

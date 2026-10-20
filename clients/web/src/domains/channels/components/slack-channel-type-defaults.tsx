@@ -1,9 +1,7 @@
 import { Hash, MessageSquare } from "lucide-react";
-import { Link } from "react-router";
 
 import { Card } from "@mycadet/design-library/components/card";
 import { ListRow } from "@mycadet/design-library/components/list-row";
-import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 import { Typography } from "@mycadet/design-library/components/typography";
 
 import { Trans, useTranslation } from "@/i18n";
@@ -11,7 +9,6 @@ import { SlackChannelTierLegend } from "@/domains/channels/components/slack-chan
 import { TierPicker } from "@/domains/channels/components/tier-picker";
 import type { ChannelDefaultBucket } from "@/domains/channels/slack-channel-overrides";
 import type { RiskThreshold } from "@/utils/threshold-presets";
-import { routes } from "@/utils/routes";
 
 interface BucketRow {
   bucket: ChannelDefaultBucket;
@@ -94,14 +91,6 @@ export function SlackChannelTypeDefaults({
               i18nKey="slackChannelTypeDefaults.subtitle"
               ns="channels"
               values={{ assistant: assistantName }}
-              components={{
-                trustRules: (
-                  <Link
-                    to={routes.settings.privacy}
-                    className={textLinkVariants()}
-                  />
-                ),
-              }}
             />
           </Typography>
         </div>

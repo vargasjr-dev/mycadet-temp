@@ -119,11 +119,6 @@
   "consentControls": {
     "agreeTo": "Acepto <link>{policy}</link>",
     "whatsChanged": "Qué ha cambiado",
-    "privacyPreferences": "Preferencias de privacidad",
-    "analyticsLabel": "Compartir analíticas",
-    "analyticsHelp": "Enviar datos agregados de uso del producto",
-    "diagnosticsLabel": "Compartir diagnósticos",
-    "diagnosticsHelp": "Enviar informes de fallos, trazas de conversación y datos de repetición de sesión",
     "agreements": "Acuerdos"
   },
   "onboardingAutocomplete": {

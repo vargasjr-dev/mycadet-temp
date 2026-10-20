@@ -78,7 +78,7 @@
   },
   "slackChannelTypeDefaults": {
     "heading": "預設存取權",
-    "subtitle": "{assistant} 根據對話類型自行執行的程度。個別頻道可以在下方覆寫此設定，而 <trustRules>信任規則</trustRules> 則會微調何時進行詢問。",
+    "subtitle": "{assistant} 根據對話類型自行執行的程度。個別頻道可以在下方覆寫此設定，而 信任規則 則會微調何時進行詢問。",
     "bucketAria": "{bucket} 的預設助理存取權"
   },
   "tierPicker": {

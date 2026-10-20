@@ -6,8 +6,6 @@ import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
 import {
   readTosAccepted,
   readPrivacyConsent,
-  readAnalyticsConsentCurrent,
-  readDiagnosticsConsentCurrent,
   readConsentHydrated,
 } from "@/domains/onboarding/prefs";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
@@ -71,8 +69,6 @@ export function buildNavigationState(
     cloudSession,
     tosAccepted: readTosAccepted(),
     privacyConsent: readPrivacyConsent(),
-    analyticsConsentCurrent: readAnalyticsConsentCurrent(),
-    diagnosticsConsentCurrent: readDiagnosticsConsentCurrent(),
     consentHydrated: readConsentHydrated(),
     assistantsHydrated,
     userHasOnboardedAssistant: userHasOnboardedAssistant(assistants),

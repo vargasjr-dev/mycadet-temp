@@ -78,7 +78,7 @@
   },
   "slackChannelTypeDefaults": {
     "heading": "Acceso predeterminado",
-    "subtitle": "Cuánto hace {assistant} por su cuenta, según el tipo de conversación. Cada canal puede anular esto más abajo, y las <trustRules>Reglas de confianza</trustRules> afinan cuándo pregunta.",
+    "subtitle": "Cuánto hace {assistant} por su cuenta, según el tipo de conversación. Cada canal puede anular esto más abajo, y las Reglas de confianza afinan cuándo pregunta.",
     "bucketAria": "Acceso predeterminado del asistente para {bucket}"
   },
   "tierPicker": {

@@ -17,10 +17,6 @@ export const PRIVACY_CHANGE_NOTES: Record<string, string[]> = {
   "2026-06-22": ["Introduces Together AI as a new managed model provider"],
 };
 
-export const ANALYTICS_CHANGE_NOTES: Record<string, string[]> = {};
-
-export const DIAGNOSTICS_CHANGE_NOTES: Record<string, string[]> = {};
-
 export function tosChangeNotes(version: string): string[] {
   return TOS_CHANGE_NOTES[version] ?? [];
 }
@@ -29,10 +25,3 @@ export function privacyChangeNotes(version: string): string[] {
   return PRIVACY_CHANGE_NOTES[version] ?? [];
 }
 
-export function analyticsChangeNotes(version: string): string[] {
-  return ANALYTICS_CHANGE_NOTES[version] ?? [];
-}
-
-export function diagnosticsChangeNotes(version: string): string[] {
-  return DIAGNOSTICS_CHANGE_NOTES[version] ?? [];
-}

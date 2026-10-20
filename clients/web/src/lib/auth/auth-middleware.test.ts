@@ -41,16 +41,12 @@ mock.module("@/lib/auth/gateway-session", () => ({
 const consentPrefs = {
   tos: true,
   privacy: true,
-  analytics: true,
-  diagnostics: true,
 };
 const prefsActual = await import("@/domains/onboarding/prefs");
 mock.module("@/domains/onboarding/prefs", () => ({
   ...prefsActual,
   readTosAccepted: () => consentPrefs.tos,
   readPrivacyConsent: () => consentPrefs.privacy,
-  readAnalyticsConsentCurrent: () => consentPrefs.analytics,
-  readDiagnosticsConsentCurrent: () => consentPrefs.diagnostics,
 }));
 
 // Clamp whenStoreState timeouts so hydration-timeout paths are testable
@@ -210,8 +206,6 @@ beforeEach(() => {
   hasAssistantsMock.mockImplementation(() => false);
   consentPrefs.tos = true;
   consentPrefs.privacy = true;
-  consentPrefs.analytics = true;
-  consentPrefs.diagnostics = true;
   mockSelectedAssistant = undefined;
   mockGatewayTokenPresent = false;
   mockGatewayAuthMode = false;

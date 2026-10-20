@@ -1,21 +1,4 @@
 {
-  "accessConsentSetting": {
-    "description": "啟用後，Cadet 員工將能存取您的助理及其資料以進行偵錯。建議您保持此功能關閉，僅在需要 Cadet 支援團隊協助調查問題時暫時開啟。",
-    "expireAgain": "24 小時後到期",
-    "expiresAt": "員工存取將於{when}結束。",
-    "extend": "延長 24 小時",
-    "keepOn": "保持開啟，直到我關閉",
-    "loadError": "無法載入同意設定。",
-    "loginNotice": "登入 Cadet 平台以管理管理員資料存取權。",
-    "staysOn": "員工存取將保持開啟，直到您關閉為止。",
-    "title": "允許員工存取",
-    "toastDisabled": "管理員資料存取已停用。",
-    "toastEnabled": "管理員資料存取已啟用。",
-    "toastExpiring": "管理員資料存取將在 24 小時後結束。",
-    "toastExtended": "管理員資料存取已延長。",
-    "toastKeptOn": "管理員資料存取將保持開啟，直到您關閉為止。",
-    "toastUpdateFailed": "無法更新記錄存取同意。"
-  },
   "adjustPlanModal": {
     "alreadyOnPro": "您已是專業版使用者。",
     "back": "返回",
@@ -1167,23 +1150,6 @@
     "showContextWindow": "顯示上下文視窗用量",
     "showContextWindowHelper": "在撰寫器中新增一個環形指示器，追蹤上下文視窗的佔用程度。無論如何，您的助理都會自動壓縮其上下文。",
     "title": "偏好設定"
-  },
-  "privacyPage": {
-    "llmLogRetentionDescription": "在此裝置上保留 LLM 請求和回應日誌的時長。這些日誌記錄傳送給模型供應商的提示詞和完成內容，用於偵錯。較短的保留期可提高隱私權；較長的保留期有助於排解問題。",
-    "llmLogRetentionLabel": "LLM 請求日誌保留",
-    "retentionDontRetain": "不保留",
-    "retentionKeepForever": "永久保留",
-    "retentionNinetyDays": "90 天",
-    "retentionOneDay": "1 天",
-    "retentionOneHour": "1 小時",
-    "retentionSevenDays": "7 天",
-    "retentionThirtyDays": "30 天",
-    "shareAnalyticsHelper": "傳送彙總的產品使用資料",
-    "shareAnalyticsLabel": "分享分析資料",
-    "shareDiagnosticsHelper": "傳送當機報告、對話追蹤和工作階段重播資料",
-    "shareDiagnosticsLabel": "分享診斷資料",
-    "subtitleWithPolicy": "檢視我們收集的資料以及如何在我們的<policyLink>隱私權政策</policyLink>中使用這些資料的詳細資訊。",
-    "title": "隱私權"
   },
   "profileAdvancedParams": {
     "contextWindowLabel": "上下文視窗",

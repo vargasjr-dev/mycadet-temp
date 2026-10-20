@@ -78,7 +78,7 @@
   },
   "slackChannelTypeDefaults": {
     "heading": "默认访问权限",
-    "subtitle": "{assistant}根据对话类型自行执行操作的程度。单个频道可以在下方覆盖此设置，<trustRules>信任规则</trustRules>则会微调何时进行询问。",
+    "subtitle": "{assistant}根据对话类型自行执行操作的程度。单个频道可以在下方覆盖此设置，信任规则则会微调何时进行询问。",
     "bucketAria": "{bucket}的默认助手访问权限"
   },
   "tierPicker": {

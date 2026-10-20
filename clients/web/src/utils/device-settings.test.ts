@@ -18,7 +18,6 @@ afterEach(() => {
 describe("deviceKey", () => {
   test("returns device:-prefixed key", () => {
     expect(deviceKey("theme")).toBe("device:theme");
-    expect(deviceKey("shareAnalytics")).toBe("device:share_analytics");
     expect(deviceKey("biometricEnabled")).toBe("device:biometric_enabled");
     expect(deviceKey("dockBadgesEnabled")).toBe("device:dock_badges_enabled");
     expect(deviceKey("lastUserId")).toBe("device:last_user_id");
@@ -44,17 +43,17 @@ describe("getDeviceSetting / setDeviceSetting", () => {
 
 describe("getDeviceBool", () => {
   test("reads device: key as boolean", () => {
-    localStorage.setItem("device:share_analytics", "true");
-    expect(getDeviceBool("shareAnalytics", false)).toBe(true);
+    localStorage.setItem("device:dock_badges_enabled", "true");
+    expect(getDeviceBool("dockBadgesEnabled", false)).toBe(true);
   });
 
   test("returns fallback when absent", () => {
-    expect(getDeviceBool("shareAnalytics", true)).toBe(true);
-    expect(getDeviceBool("shareAnalytics", false)).toBe(false);
+    expect(getDeviceBool("dockBadgesEnabled", true)).toBe(true);
+    expect(getDeviceBool("dockBadgesEnabled", false)).toBe(false);
   });
 
   test("ignores the pre-migration cadet_ key", () => {
-    localStorage.setItem("cadet_share_analytics", "false");
-    expect(getDeviceBool("shareAnalytics", true)).toBe(true);
+    localStorage.setItem("cadet_dock_badges_enabled", "false");
+    expect(getDeviceBool("dockBadgesEnabled", true)).toBe(true);
   });
 });

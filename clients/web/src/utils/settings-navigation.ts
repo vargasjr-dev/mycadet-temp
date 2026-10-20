@@ -17,7 +17,6 @@ import {
   Mic,
   Users,
   Puzzle,
-  ShieldCheck,
   SlidersHorizontal,
   Volume2,
 } from "lucide-react";
@@ -102,12 +101,6 @@ export const SETTINGS_SIDEBAR: SidebarItem[] = [
     label: "Sounds",
     href: routes.settings.sounds,
     icon: Volume2,
-  },
-  {
-    id: "privacy",
-    label: "Permissions & Privacy",
-    href: routes.settings.privacy,
-    icon: ShieldCheck,
   },
   {
     id: "billing",

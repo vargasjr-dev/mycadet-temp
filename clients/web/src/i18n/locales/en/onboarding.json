@@ -118,11 +118,6 @@
   },
   "consentControls": {
     "whatsChanged": "What's changed",
-    "privacyPreferences": "Privacy preferences",
-    "analyticsLabel": "Share Analytics",
-    "analyticsHelp": "Send aggregated product usage data",
-    "diagnosticsLabel": "Share Diagnostics",
-    "diagnosticsHelp": "Send crash reports and conversation traces",
     "agreements": "Agreements",
     "agreeTo": "I agree to the <link>{policy}</link>"
   },

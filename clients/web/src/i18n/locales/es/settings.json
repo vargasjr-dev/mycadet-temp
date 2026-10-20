@@ -1,21 +1,4 @@
 {
-  "accessConsentSetting": {
-    "description": "Cuando está activado, el personal de Cadet podrá acceder a tu asistente y a sus datos con fines de depuración. Se recomienda dejarlo desactivado y activarlo solo temporalmente si necesitas ayuda de Soporte de Cadet para investigar un problema.",
-    "expireAgain": "Caducar en 24 horas",
-    "expiresAt": "El acceso del personal termina {when}.",
-    "extend": "Extender 24 horas",
-    "keepOn": "Mantener activado hasta que lo desactive",
-    "loadError": "No se pudo cargar la configuración de consentimiento.",
-    "loginNotice": "Inicia sesión en la plataforma de Cadet para gestionar el acceso de administración a los datos.",
-    "staysOn": "El acceso del personal permanece activado hasta que lo desactives.",
-    "title": "Permitir acceso del personal",
-    "toastDisabled": "Acceso de administración a los datos desactivado.",
-    "toastEnabled": "Acceso de administración a los datos activado.",
-    "toastExpiring": "El acceso de administración a los datos terminará en 24 horas.",
-    "toastExtended": "Acceso de administración a los datos extendido.",
-    "toastKeptOn": "El acceso de administración a los datos permanecerá activado hasta que lo desactives.",
-    "toastUpdateFailed": "No se pudo actualizar el consentimiento de acceso a los registros."
-  },
   "adjustPlanModal": {
     "alreadyOnPro": "Ya estás en Pro.",
     "back": "Atrás",
@@ -1167,23 +1150,6 @@
     "showContextWindow": "Mostrar uso de la ventana de contexto",
     "showContextWindowHelper": "Añade un anillo al compositor que indica cuán llena está la ventana de contexto. Tu asistente compacta el contexto automáticamente de todos modos.",
     "title": "Preferencias"
-  },
-  "privacyPage": {
-    "llmLogRetentionDescription": "Cuánto tiempo conservar los registros de solicitudes y respuestas LLM en este dispositivo. Estos registros documentan las solicitudes y completaciones enviadas a los proveedores de modelos y se usan para depuración. Una retención más corta mejora la privacidad; una retención más larga ayuda a solucionar problemas.",
-    "llmLogRetentionLabel": "Retención de registros de solicitudes LLM",
-    "retentionDontRetain": "No conservar",
-    "retentionKeepForever": "Conservar para siempre",
-    "retentionNinetyDays": "90 días",
-    "retentionOneDay": "1 día",
-    "retentionOneHour": "1 hora",
-    "retentionSevenDays": "7 días",
-    "retentionThirtyDays": "30 días",
-    "shareAnalyticsHelper": "Enviar datos agregados de uso del producto",
-    "shareAnalyticsLabel": "Compartir analíticas",
-    "shareDiagnosticsHelper": "Enviar informes de fallos, trazas de conversación y datos de reproducción de sesión",
-    "shareDiagnosticsLabel": "Compartir diagnósticos",
-    "subtitleWithPolicy": "Consulta detalles sobre qué datos recopilamos y cómo se usan en nuestra <policyLink>política de privacidad</policyLink>.",
-    "title": "Privacidad"
   },
   "profileAdvancedParams": {
     "contextWindowLabel": "Ventana de contexto",

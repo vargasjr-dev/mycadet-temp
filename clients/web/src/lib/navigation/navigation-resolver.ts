@@ -32,8 +32,6 @@ export interface NavigationState {
   cloudSession: CloudSessionStatus;
   tosAccepted: boolean;
   privacyConsent: boolean;
-  analyticsConsentCurrent: boolean;
-  diagnosticsConsentCurrent: boolean;
   /**
    * Whether the consent flags above reflect a completed session sync (or an
    * explicit acceptance). They boot `false`, so acting on them before
@@ -107,16 +105,12 @@ function hasCompletedOnboarding(state: NavigationState): boolean {
 }
 
 /**
- * Onboarding is complete AND every consent toggle is for the current version.
- * A stale toggle means the user must re-review the terms even though they
+ * Onboarding is complete AND every consent axis is for the current version.
+ * A stale acceptance means the user must re-review the terms even though they
  * already finished onboarding.
  */
 function consentIsCurrent(state: NavigationState): boolean {
-  return (
-    hasCompletedOnboarding(state) &&
-    state.analyticsConsentCurrent &&
-    state.diagnosticsConsentCurrent
-  );
+  return hasCompletedOnboarding(state);
 }
 
 const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;

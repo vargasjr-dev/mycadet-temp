@@ -78,7 +78,7 @@
   },
   "slackChannelTypeDefaults": {
     "heading": "Default access",
-    "subtitle": "How much {assistant} does on its own, by conversation type. Individual channels can override this below, and <trustRules>Trust Rules</trustRules> fine-tune when it asks.",
+    "subtitle": "How much {assistant} does on its own, by conversation type. Individual channels can override this below, and Trust Rules fine-tune when it asks.",
     "bucketAria": "Default Assistant Access for {bucket}"
   },
   "tierPicker": {

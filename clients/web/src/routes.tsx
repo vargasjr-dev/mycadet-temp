@@ -583,15 +583,6 @@ export const routeTree = [
                     },
                   },
                   {
-                    path: "privacy",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/privacy-page").then(
-                          (m) => m.PrivacyPage,
-                        ),
-                    },
-                  },
-                  {
                     path: "security",
                     lazy: {
                       Component: () =>

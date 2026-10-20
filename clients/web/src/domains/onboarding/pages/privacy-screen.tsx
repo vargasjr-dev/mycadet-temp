@@ -1,10 +1,7 @@
 import { useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import {
-  AgreementsCard,
-  PrivacyPreferencesCard,
-} from "@/domains/onboarding/components/consent-controls";
+import { AgreementsCard } from "@/domains/onboarding/components/consent-controls";
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import { StepIndicatorDots } from "@/domains/onboarding/components/step-indicator-dots";
 import { isSelectedAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant";
@@ -27,12 +24,11 @@ import { isLocalClient } from "@/lib/local-mode";
 import { postCheckoutHatchReturnTo } from "@/lib/navigation/navigation-resolver";
 import {
   usePrivacyConsent,
-  useShareDiagnostics,
   useTosAccepted,
 } from "@/domains/onboarding/prefs";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativePlatform } from "@/runtime/native-auth";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { saveConsent } from "@/lib/consent/consent-persistence";
 import { useTranslation } from "@/i18n";
@@ -46,18 +42,10 @@ export function PrivacyScreen() {
   const userId = useAuthStore.use.user()?.id ?? null;
   const electron = isElectron();
   const isNative = useIsNativePlatform();
-  const [shareDiagnostics, setShareDiagnosticsReal] = useShareDiagnostics();
-  // Never-asked (null) displays as on — diagnostics is opt-out — and the
-  // toggle is on screen, so Start records the displayed value as an explicit
-  // choice.
-  const shareDiagnosticsChecked = shareDiagnostics ?? true;
   const [tosAccepted, setTosAcceptedReal] = useTosAccepted();
   const [privacyConsent, setPrivacyConsentReal] = usePrivacyConsent();
-  const hasCloudSession = useHasCloudSession();
-
   const isPreview = searchParams.get("preview") === "true";
   const noop = useCallback((_next: boolean) => {}, []);
-  const setShareDiagnostics = isPreview ? noop : setShareDiagnosticsReal;
   const setTosAccepted = isPreview ? noop : setTosAcceptedReal;
   const setPrivacyConsent = isPreview ? noop : setPrivacyConsentReal;
 
@@ -73,15 +61,10 @@ export function PrivacyScreen() {
         return;
       }
 
-      // Analytics isn't asked here — the server keeps share_analytics null
-      // until the user opts in via settings or review-terms.
       saveConsent({
         userId,
         tos: tosAccepted,
         privacy: privacyConsent,
-        shareAnalytics: null,
-        shareDiagnostics: shareDiagnosticsChecked,
-        hasCloudSession,
       });
 
       // A completed checkout with nothing provisioned is funneled to the hatching
@@ -168,11 +151,9 @@ export function PrivacyScreen() {
     },
     [
       privacyConsent,
-      hasCloudSession,
       isPreview,
       navigate,
       searchParams,
-      shareDiagnosticsChecked,
       tosAccepted,
       userId,
     ],
@@ -207,17 +188,6 @@ export function PrivacyScreen() {
         >
           {t("privacyScreen.body")}
         </p>
-
-        <PrivacyPreferencesCard
-          electron={electron}
-          showAnalytics={false}
-          shareAnalytics={false}
-          shareDiagnostics={shareDiagnosticsChecked}
-          onShareAnalyticsChange={noop}
-          onShareDiagnosticsChange={setShareDiagnostics}
-          className="mt-8 w-full"
-          style={{ animation: "fadeInUp 0.5s ease-out 0.4s both" }}
-        />
 
         <AgreementsCard
           electron={electron}
