@@ -25,7 +25,10 @@ interface SelfHostedServersPlugin {
   /** An absent `url` returns the shell to its baked Cadet Cloud origin. */
   switchTo(options: { url?: string }): Promise<{ ok: boolean }>;
   /** Switches origin and loads a route relative to the assistant app entry. */
-  switchToPath(options: { url?: string; path: string }): Promise<{ ok: boolean }>;
+  switchToPath(options: {
+    url?: string;
+    path: string;
+  }): Promise<{ ok: boolean }>;
 }
 
 /**

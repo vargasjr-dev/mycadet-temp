@@ -373,10 +373,7 @@ const bridge: CadetBridge = {
         active,
       ) as Promise<void>,
     navigateTo: (url: string): Promise<void> =>
-      ipcRenderer.invoke(
-        "cadet:mainWindow:navigateTo",
-        url,
-      ) as Promise<void>,
+      ipcRenderer.invoke("cadet:mainWindow:navigateTo", url) as Promise<void>,
   },
   power: {
     onEvent: (callback) => {

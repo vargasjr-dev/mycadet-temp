@@ -164,8 +164,11 @@ export type AddOriginResult =
 let state: RememberedOriginsState = { origins: [], hydrated: false };
 const listeners = new Set<() => void>();
 
-function getState(): RememberedOriginsState {
-  return state;
+function getState(): RememberedOriginsState & typeof actions {
+  // Web's zustand store collapses actions into its state, so imperative
+  // callers read `getState().addOrigin(...)`; the merged shape keeps that
+  // call form while the hook's selectors read only the data fields.
+  return { ...state, ...actions };
 }
 
 function publish(next: Partial<RememberedOriginsState>): void {
@@ -181,6 +184,12 @@ function subscribe(onStoreChange: () => void): () => void {
     listeners.delete(onStoreChange);
   };
 }
+
+const actions = {
+  hydrate: (): Promise<void> => hydrate(),
+  addOrigin,
+  removeOrigin,
+};
 
 /**
  * Mutations run one at a time through this chain so a slow async save can
@@ -361,17 +370,24 @@ function useRememberedOrigins<T>(
 }
 
 /**
+ * Test seam: drop the memoized hydration and empty the published state, so a
+ * test file starts every case from the store's pristine shape.
+ */
+export function resetRememberedOriginsForTesting(): void {
+  hydrationPromise = null;
+  refreshSkippedWhileUnhydrated = false;
+  publish({ origins: [], hydrated: false });
+}
+
+/**
  * The remembered-origins store: call it with a selector inside React, reach
  * `getState()` / the actions outside one (the app's `auth-store` shape).
  */
 export const useRememberedOriginsStore = Object.assign(useRememberedOrigins, {
   getState,
-  hydrate: (): Promise<void> => hydrate(),
-  addOrigin,
-  removeOrigin,
+  ...actions,
   use: {
-    origins: (): RememberedOrigin[] =>
-      useRememberedOrigins((s) => s.origins),
+    origins: (): RememberedOrigin[] => useRememberedOrigins((s) => s.origins),
     hydrated: (): boolean => useRememberedOrigins((s) => s.hydrated),
   },
 });

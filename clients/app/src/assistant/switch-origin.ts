@@ -28,16 +28,17 @@ import {
   normalizeOriginUrl,
   type RememberedOrigin,
 } from "@app/stores/remembered-origins-store";
-import { REMOTE_PAIR_PATH, pairingLinkForBase } from "@app/utils/pairing-address";
+import {
+  REMOTE_PAIR_PATH,
+  pairingLinkForBase,
+} from "@app/utils/pairing-address";
 import { routes } from "@app/utils/routes";
 
 /**
  * The pair route as the native shell addresses it: relative to the assistant
  * entry the shell loads, which is what `switchToPath` appends.
  */
-const NATIVE_PAIR_ROUTE = REMOTE_PAIR_PATH.slice(
-  `${routes.assistant}/`.length,
-);
+const NATIVE_PAIR_ROUTE = REMOTE_PAIR_PATH.slice(`${routes.assistant}/`.length);
 
 /**
  * Whether `origin` is the deployment serving the running app. Stored urls are

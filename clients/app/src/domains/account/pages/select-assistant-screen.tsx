@@ -218,49 +218,54 @@ export function SelectAssistantScreen() {
               }}
             />
           ))}
-          {originEntries.map((origin, index) => {
-            // Selecting a remembered origin leaves the app for that
-            // deployment; the one already serving this bundle just re-enters
-            // its assistant route.
-            const current = isCurrentOrigin(origin);
-            return (
-              <ChooserCard
-                key={origin.url}
-                icon={<Globe className="h-5 w-5" />}
-                title={originLabel(origin)}
-                subtitle={t(current ? "selectAssistantScreen.currentWithHost" : "selectAssistantScreen.remoteWithHost", {
+        {originEntries.map((origin, index) => {
+          // Selecting a remembered origin leaves the app for that
+          // deployment; the one already serving this bundle just re-enters
+          // its assistant route.
+          const current = isCurrentOrigin(origin);
+          return (
+            <ChooserCard
+              key={origin.url}
+              icon={<Globe className="h-5 w-5" />}
+              title={originLabel(origin)}
+              subtitle={t(
+                current
+                  ? "selectAssistantScreen.currentWithHost"
+                  : "selectAssistantScreen.remoteWithHost",
+                {
                   host: new URL(origin.url).hostname,
-                })}
-                removeMenu={
-                  <OriginCardMenu
-                    label={originLabel(origin)}
-                    onRemove={() => setRemoveOriginTarget(origin)}
-                  />
+                },
+              )}
+              removeMenu={
+                <OriginCardMenu
+                  label={originLabel(origin)}
+                  onRemove={() => setRemoveOriginTarget(origin)}
+                />
+              }
+              tabStop={
+                state.status === "selection" &&
+                state.assistants.length === 0 &&
+                index === 0
+              }
+              onSelect={() => {
+                if (current) {
+                  void navigate(routes.assistant);
+                } else {
+                  void switchToOrigin(origin);
                 }
-                tabStop={
-                  state.status === "selection" &&
-                  state.assistants.length === 0 &&
-                  index === 0
-                }
-                onSelect={() => {
-                  if (current) {
-                    void navigate(routes.assistant);
-                  } else {
-                    void switchToOrigin(origin);
-                  }
-                }}
-              />
-            );
-          })}
-          {/* The app is always a hostless surface (hub browser, desktop shell,
+              }}
+            />
+          );
+        })}
+        {/* The app is always a hostless surface (hub browser, desktop shell,
               native shell): it adds an origin by address or pairing link and
               navigates to it. */}
-          <DashedActionButton
-            icon={<Globe className="h-4 w-4" />}
-            label={t("selectAssistantScreen.addRemote")}
-            disabled={false}
-            onClick={() => setAddOriginOpen(true)}
-          />
+        <DashedActionButton
+          icon={<Globe className="h-4 w-4" />}
+          label={t("selectAssistantScreen.addRemote")}
+          disabled={false}
+          onClick={() => setAddOriginOpen(true)}
+        />
         {status !== "selection" && (
           <p role="status">{t(`appShell.${status}`)}</p>
         )}
