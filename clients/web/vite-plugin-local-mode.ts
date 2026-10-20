@@ -88,7 +88,6 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   // so the page's version row answers the same thing `cadet-local --version`
   // does and nothing can override it out of band.
   const configJson = JSON.stringify({
-    webUrl: config.webUrl,
     cloudUrl: config.cloudUrl,
     version: displayVersion(cliPkg.version),
   });

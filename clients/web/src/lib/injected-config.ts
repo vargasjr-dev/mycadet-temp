@@ -9,17 +9,17 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  * re-declaring per-file object types.
  *
  * The URL fields are distinct origins in the topology, not synonyms:
- * `cloudUrl` is the cloud API base, `webUrl` the platform login UI the
- * localhost OAuth handoff bounces through, and `hubUrl` the cloud hub SPA
- * the pairing/settings pages link back to.
+ * `cloudUrl` is the cloud API base and `hubUrl` the cloud hub SPA the
+ * pairing/settings pages link back to. The platform login base is
+ * deliberately absent: the loopback handoff reads it from the build's
+ * environment seed (see startLoopbackAuth), keeping this config to the
+ * origins a served bundle can't infer.
  */
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
   remote: z.enum(["local", "docker", "custom", "cloud"]).default("local"),
   /** Cloud API base (auth endpoints + assistant API). */
   cloudUrl: z.string().optional(),
-  /** Platform login UI base for localhost OAuth handoff. */
-  webUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */

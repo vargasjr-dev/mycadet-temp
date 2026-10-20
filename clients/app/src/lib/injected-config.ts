@@ -14,17 +14,17 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  * for a local assistant: the shell resolves assistants same-origin, and the
  * serving origin routes `/v1` to the right control plane (the tunnel edge
  * proxies it to the local gateway; the desktop protocol forwards it; the
- * cloud takeover proxies it). `webUrl` is the platform login UI the
- * localhost OAuth handoff bounces through, and `hubUrl` the cloud hub SPA
- * the pairing/settings pages link back to.
+ * cloud takeover proxies it). `hubUrl` is the cloud hub SPA the
+ * pairing/settings pages link back to. The platform login base is
+ * deliberately absent: the loopback handoff reads it from the build's
+ * environment seed (see startLoopbackAuth), keeping this config to the
+ * origins a served bundle can't infer.
  */
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
   remote: z.enum(["local", "docker", "custom", "cloud"]).default("local"),
   /** Cloud backend base (account session, auth, cloud-hosted assistants). */
   cloudUrl: z.string().optional(),
-  /** Platform login UI base for localhost OAuth handoff. */
-  webUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */

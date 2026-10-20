@@ -376,8 +376,7 @@ const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
-  webUrl: resolvedConfig.webUrl,
-  cloudUrl: resolvedConfig.cloudUrl,
+    cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
   version: getVersionInfo().version,
 }));

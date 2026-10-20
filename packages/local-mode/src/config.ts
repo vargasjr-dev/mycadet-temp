@@ -16,7 +16,6 @@ const PRODUCTION_ENVIRONMENT_NAME = "production";
 export interface LocalEndpointConfig {
   lockfilePaths: string[];
   configDir: string;
-  webUrl: string;
   cloudUrl: string;
 }
 
@@ -35,7 +34,6 @@ export function resolveLocalConfigFromEnv(
   return {
     lockfilePaths: resolveLockfilePaths(env, options),
     configDir: resolveConfigDir(env, options),
-    webUrl: env.CADET_WEB_URL || seed.webUrl,
     cloudUrl: env.CADET_CLOUD_URL || seed.cloudUrl,
   };
 }

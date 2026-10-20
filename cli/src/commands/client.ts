@@ -1301,13 +1301,11 @@ async function spawnBackgroundWebInterface(
  * report a false `foreign`. An absent id is deliberately benign to the probe.
  */
 export function buildWebInterfaceConfig(opts: {
-  webUrl: string;
   cloudUrl: string;
   version: string;
 }): Record<string, unknown> {
-  const { webUrl, cloudUrl } = opts;
+  const { cloudUrl } = opts;
   return {
-    webUrl,
     cloudUrl,
     // Which CLI build is serving — the same string `cadet-local --version`
     // prints, so devtools and the settings page answer identically.
@@ -1351,12 +1349,10 @@ async function runWebInterface(
 
   const rawIndexHtml = await Bun.file(path.join(distDir, "index.html")).text();
   const cloudUrl = getCloudUrl();
-  const webUrl = getWebUrl();
   const safeJson = (v: unknown) =>
     JSON.stringify(v).replace(/</g, "\\u003c").replace(/>/g, "\\u003e");
   const configJson = safeJson(
     buildWebInterfaceConfig({
-      webUrl,
       cloudUrl,
       version: displayVersion(cliPkg.version),
     }),

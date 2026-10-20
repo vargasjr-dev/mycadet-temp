@@ -17,7 +17,6 @@ const bridge = composePreloadFeatures(createLinuxCoreBridge(ipcRenderer));
 contextBridge.exposeInMainWorld("cadet", bridge);
 
 const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
-  webUrl: string;
   cloudUrl: string;
   deviceId: string | null;
 } | null;

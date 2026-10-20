@@ -17,7 +17,6 @@ const bridge = composePreloadFeatures(createWindowsCoreBridge(ipcRenderer));
 contextBridge.exposeInMainWorld("cadet", bridge);
 
 const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
-  webUrl: string;
   cloudUrl: string;
   deviceId: string | null;
 } | null;

@@ -207,8 +207,7 @@ const registerAppProtocol = (): void => {
 // renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
-  webUrl: resolvedConfig.webUrl,
-  cloudUrl: resolvedConfig.cloudUrl,
+    cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
 }));
 

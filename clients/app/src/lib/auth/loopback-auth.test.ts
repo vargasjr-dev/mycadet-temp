@@ -1,13 +1,14 @@
 import { afterEach, expect, test } from "bun:test";
 import { isPlatformLocal, startLoopbackAuth } from "./loopback-auth";
+import { SEEDS } from "@mycadet/environments/seeds";
 const originalWindow = window;
-function useLocation(origin: string, port: string) {
+function useLocation(origin: string, port: string, config?: unknown) {
   const location = { origin, port, href: origin };
   // Model only the host capabilities consumed by this handoff; navigation
   // should record the URL without initiating a document load in happy-dom.
   Reflect.set(globalThis, "window", {
     location,
-    __CADET_CONFIG__: { webUrl: "https://cloud.example" },
+    ...(config === undefined ? {} : { __CADET_CONFIG__: config }),
   });
   return location;
 }
@@ -16,7 +17,11 @@ afterEach(() => {
   sessionStorage.clear();
 });
 test("loopback persists a fresh state and destination and sends only the callback to cloud", async () => {
-  const location = useLocation("http://localhost:4567", "4567");
+  // The platform base is the build seed's web url, not an injected field.
+  const location = useLocation("http://localhost:4567", "4567", {
+    remote: "local",
+    cloudUrl: "https://cloud.example",
+  });
   await startLoopbackAuth("/assistant/checkout?package=super", {
     intent: "signup",
   });
@@ -26,7 +31,7 @@ test("loopback persists a fresh state and destination and sends only the callbac
     "/assistant/checkout?package=super",
   );
   const target = new URL(location.href);
-  expect(target.origin).toBe("https://cloud.example");
+  expect(target.origin).toBe(SEEDS.production.webUrl);
   expect(target.pathname).toBe("/account/signup");
   expect(target.searchParams.get("returnTo")).toBe(
     `/accounts/cli/callback?port=4567&state=${firstState}`,
@@ -36,6 +41,12 @@ test("loopback persists a fresh state and destination and sends only the callbac
   expect(new URL(location.href).pathname).toBe("/account/login");
 });
 test("a platform served on the same origin bypasses cloud loopback", () => {
+  // The platform serves the bundle without an injected config; any injected
+  // shape (local gateway, remote edge, cloud) is not platform-local.
   useLocation("https://cloud.example", "");
   expect(isPlatformLocal()).toBe(true);
+  useLocation("https://cloud.example", "", { remote: "local" });
+  expect(isPlatformLocal()).toBe(false);
+  useLocation("https://cloud.example", "", { remote: "cloud" });
+  expect(isPlatformLocal()).toBe(false);
 });

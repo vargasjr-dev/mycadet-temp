@@ -1,4 +1,5 @@
 import { readInjectedConfig } from "@app/lib/injected-config";
+import { SEEDS } from "@mycadet/environments/seeds";
 
 /**
  * Loopback authentication for local-mode web UI.
@@ -11,12 +12,19 @@ import { readInjectedConfig } from "@app/lib/injected-config";
  * its cloud proxy can authenticate — no browser session cookie is used.
  */
 
-const FALLBACK_WEB_URL = "https://www.mycadet.ai";
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
-function getLocalConfig(): { webUrl: string } {
-  return { webUrl: readInjectedConfig()?.webUrl || FALLBACK_WEB_URL };
+/** The platform login base comes from the build's environment seed, not the
+ * injected config — the config carries only the origins a served bundle
+ * can't infer, and the loopback handoff only runs in standalone local mode
+ * where the build's seed owns the routing. */
+function platformWebUrl(): string {
+  return (
+    (
+      SEEDS[import.meta.env.VITE_ENVIRONMENT ?? "production"] ?? SEEDS.production
+    ).webUrl
+  );
 }
 
 function generateState(): string {
@@ -26,14 +34,17 @@ function generateState(): string {
 }
 
 export function isPlatformLocal(): boolean {
-  return getLocalConfig().webUrl === window.location.origin;
+  // Nothing injected = the platform web app itself is serving the bundle,
+  // so auth is same-origin. Every injected shape (standalone local gateway,
+  // remote edges, cloud) carries `remote` and is not platform-local.
+  return readInjectedConfig() === undefined;
 }
 
 export async function startLoopbackAuth(
   returnTo?: string,
   options?: { intent?: string },
 ): Promise<void> {
-  const { webUrl } = getLocalConfig();
+  const webUrl = platformWebUrl();
   const state = generateState();
   const port = window.location.port || "3000";
 
