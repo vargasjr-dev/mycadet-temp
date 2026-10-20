@@ -750,14 +750,6 @@ describe("useNotificationIntentSync already-watching skip", () => {
     expectSuppressed();
   });
 
-  test("notifies on the inspector, which replaces the transcript", () => {
-    mountAt(routes.inspect(CONVERSATION_ID));
-
-    publishForActiveConversation();
-
-    expectNotified();
-  });
-
   test("notifies on a route that mounts no chat surface", () => {
     mountAt(routes.settings.root);
 

@@ -1,11 +1,8 @@
 import {
-  Bookmark,
   Check,
   Copy,
   ExternalLink,
-  FileCode,
   GitBranch,
-  ListCollapse,
   Loader2,
   RotateCcw,
   Square,
@@ -19,11 +16,6 @@ import { ExternalAnchor } from "@/components/external-anchor";
 import { useMessageReadAloudStore } from "@/domains/chat/message-read-aloud-store";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { messageCopyText } from "@/domains/chat/utils/message-plain-text";
-import {
-  useBookmarkToggle,
-  useCanBookmark,
-  useIsBookmarked,
-} from "@/hooks/use-bookmarks";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { useTranslation } from "@/i18n";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -33,17 +25,12 @@ export type MessageHoverActionsProps = {
   message: DisplayMessage;
   /** Hide Copy and Read aloud when the rendered row has no message text. */
   showTextActions?: boolean;
-  /** Conversation the message belongs to. Required for the bookmark toggle —
-   *  the bookmark API keys on (messageId, conversationId). */
+  /** Conversation the message belongs to (read-aloud + retry scoping). */
   conversationId?: string | null;
   /** Slack permalink for the message, shown as a hover action when present. */
   openInSlackUrl?: string;
   /** Callback when "Fork from here" is clicked. */
   onFork?: () => void;
-  /** Callback when "Summarize up to here" is clicked. */
-  onSummarizeUpToHere?: () => void;
-  /** Callback when "Inspect" is clicked. */
-  onInspect?: () => void;
   /** Callback when "Retry" is clicked. Only provided on the latest assistant
    *  message while no turn is in flight — retry discards that response and
    *  regenerates it. */
@@ -134,18 +121,11 @@ export function MessageHoverActions({
   conversationId,
   openInSlackUrl,
   onFork,
-  onSummarizeUpToHere,
-  onInspect,
   onRetry,
   workSummary,
 }: MessageHoverActionsProps) {
   const { t } = useTranslation("chat");
   const { role } = message;
-
-  // The toggle's data hooks live in `MessageBookmarkButton` so they only mount
-  // (and only touch TanStack Query) for bookmarkable rows; that keeps the
-  // unsupported-assistant and no-conversation paths free of any query client.
-  const canBookmark = useCanBookmark(message, conversationId);
 
   // Flat plain-text body derived from the message's text blocks (empty for a
   // row deleted on its channel); this is the copy payload and mirrors the
@@ -228,13 +208,6 @@ export function MessageHoverActions({
           />
         )}
 
-        {canBookmark && conversationId && message.id && (
-          <MessageBookmarkButton
-            messageId={message.id}
-            conversationId={conversationId}
-          />
-        )}
-
         {openInSlackUrl && (
           <Button
             {...ACTION_BUTTON_PROPS}
@@ -257,25 +230,6 @@ export function MessageHoverActions({
           />
         )}
 
-        {onSummarizeUpToHere && (
-          <Button
-            {...ACTION_BUTTON_PROPS}
-            onClick={onSummarizeUpToHere}
-            title={t("messageHoverActions.summarizeUpToHere")}
-            aria-label={t("messageHoverActions.summarizeUpToHere")}
-            iconOnly={<ListCollapse />}
-          />
-        )}
-
-        {onInspect && (
-          <Button
-            {...ACTION_BUTTON_PROPS}
-            onClick={onInspect}
-            title={t("messageHoverActions.inspect")}
-            aria-label={t("messageHoverActions.inspect")}
-            iconOnly={<FileCode />}
-          />
-        )}
       </div>
     </div>
   );
@@ -331,52 +285,6 @@ function MessageReadAloudButton({
         ) : (
           <Volume2 />
         )
-      }
-    />
-  );
-}
-
-/**
- * Bookmark toggle for a persisted message. Split out from the row so its
- * TanStack Query hooks only mount for bookmarkable messages — rows without a
- * conversation, optimistic rows, and flag-off installs never construct a query
- * observer (and SSR render tests need no QueryClientProvider).
- */
-function MessageBookmarkButton({
-  messageId,
-  conversationId,
-}: {
-  messageId: string;
-  conversationId: string;
-}) {
-  const { t } = useTranslation("chat");
-  const isBookmarked = useIsBookmarked(messageId);
-  const toggleBookmark = useBookmarkToggle();
-  const handleToggle = useCallback(() => {
-    void toggleBookmark(messageId, conversationId, isBookmarked);
-  }, [messageId, conversationId, isBookmarked, toggleBookmark]);
-
-  return (
-    <Button
-      {...ACTION_BUTTON_PROPS}
-      onClick={handleToggle}
-      title={
-        isBookmarked
-          ? t("messageHoverActions.removeBookmark")
-          : t("messageHoverActions.bookmark")
-      }
-      aria-label={
-        isBookmarked
-          ? t("messageHoverActions.removeBookmark")
-          : t("messageHoverActions.bookmark")
-      }
-      aria-pressed={isBookmarked}
-      iconOnly={
-        <Bookmark
-          className={
-            isBookmarked ? "fill-current text-[var(--content-default)]" : ""
-          }
-        />
       }
     />
   );

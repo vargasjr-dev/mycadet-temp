@@ -85,12 +85,8 @@ export interface TranscriptProps {
   onSurfaceAction: (surfaceId: string, action: string, input?: unknown) => void;
   /** Callback for "Fork from here" from a message's hover actions. */
   onForkConversation?: (messageId: string) => void;
-  /** Callback for "Summarize up to here" from a message's hover actions. */
-  onSummarizeUpToHere?: (messageId: string) => void;
   /** Callback for "Retry" from the latest assistant message's hover actions. */
   onRetryLatestTurn?: () => void;
-  /** Callback for "Inspect" from a message's hover actions. */
-  onInspectMessage?: (messageId: string) => void;
 
   /** Render-prop for `kind: "onboardingChoice"` items. Onboarding depends
    *  on props from the parent (sendMessage, didOnboarding, etc.) and has a
@@ -689,9 +685,7 @@ export const Transcript = forwardRef<TranscriptHandle, TranscriptProps>(
       acpConnectInlineToolUseId,
       onSurfaceAction: rest.onSurfaceAction,
       onForkConversation: rest.onForkConversation,
-      onSummarizeUpToHere: rest.onSummarizeUpToHere,
       onRetryLatestTurn: rest.onRetryLatestTurn,
-      onInspectMessage: rest.onInspectMessage,
       renderOnboardingChoice: rest.renderOnboardingChoice,
       assistantDisplayName: rest.assistantDisplayName,
       onOpenRuleEditor: rest.onOpenRuleEditor,

@@ -317,15 +317,6 @@
     "title": "安全性",
     "useForSignIn": "使用 {label} 登入"
   },
-  "bookmarksPage": {
-    "emptyDescription": "將滑鼠游標懸停在任何訊息上，然後點擊書籤圖示即可將其儲存到此處。",
-    "emptyTitle": "無書籤",
-    "errorDescription": "發生錯誤。請再試一次。",
-    "errorTitle": "載入書籤失敗",
-    "open": "開啟",
-    "removeBookmark": "移除書籤",
-    "retry": "重試"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, other {# 個動作目前使用 {profile}}}",
     "applyTo": "{count, plural, other {套用至 # 個動作}}",
@@ -2010,7 +2001,6 @@
     "voice": "語音",
     "sounds": "聲音",
     "privacy": "權限與隱私",
-    "bookmarks": "書籤",
     "usage": "用量",
     "billingUsage": "帳單與用量",
     "community": "社群",

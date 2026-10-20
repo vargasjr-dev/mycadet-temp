@@ -239,21 +239,6 @@ describe("app viewer route", () => {
     expect(isUnderComponent(appPath, "ChatLayoutRoute")).toBe(true);
   });
 
-  // The sibling `inspect` sub-route is lazy and gated, and nothing else
-  // asserts that asymmetry: adding the app segment must not move it.
-  test("leaves the sibling inspect route on InspectPage behind the gate", async () => {
-    const inspectPath = "/assistant/conversations/c1/inspect";
-    const matches = matchRoutes(routeTree as never, inspectPath) ?? [];
-    const leaf = matches.at(-1)?.route as
-      | { lazy?: { Component: () => Promise<unknown> } }
-      | undefined;
-
-    expect(matches.at(-1)?.pathname).toBe(inspectPath);
-    expect(await leaf?.lazy?.Component()).toBe(
-      (await import("@/domains/chat/inspector/inspect-page")).InspectPage,
-    );
-    expect(isUnderComponent(inspectPath, "ActiveAssistantGate")).toBe(true);
-  });
 });
 
 describe("skills routes", () => {

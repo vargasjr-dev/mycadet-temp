@@ -73,7 +73,6 @@ function renderRegistration() {
       assetsRefreshKey: 0,
       handleForkConversationFromMenu: () => {},
       handleOpenInNewWindow: () => {},
-      handleInspectConversation: () => {},
       handleCopyConversation: () => {},
       onRefresh: () => {},
     }),

@@ -22,7 +22,6 @@ interface ChatConversationHeaderProps {
   /** Gates the internal-only menu items: Copy Full Conversation, Open in New
    *  Window, Refresh, Analyze Conversation, and Copy conversation ID. See
    *  `@/lib/auth/internal-thread-actions`. */
-  showInternalActions: boolean;
   onArchive: (c: Conversation) => void;
   onUnarchive: (c: Conversation) => void;
   onDelete: (c: Conversation) => void;
@@ -36,7 +35,6 @@ export function ChatConversationHeader({
   assistantId,
   activeConversation,
   headerSupplements,
-  showInternalActions,
   onArchive,
   onUnarchive,
   onDelete,
@@ -115,26 +113,14 @@ export function ChatConversationHeader({
           : undefined
       }
       onOpenInNewWindow={
-        showInternalActions &&
         headerSupplements?.onOpenInNewWindow &&
         activeConversation.conversationId
           ? () => headerSupplements.onOpenInNewWindow!(activeConversation)
           : undefined
       }
-      onInspect={
-        showInternalActions &&
-        headerSupplements?.onInspect &&
-        activeConversation.conversationId
-          ? () => headerSupplements.onInspect!(activeConversation)
-          : undefined
-      }
-      onCopyConversation={
-        showInternalActions
-          ? (headerSupplements?.onCopyConversation ?? undefined)
-          : undefined
-      }
+      onCopyConversation={headerSupplements?.onCopyConversation ?? undefined}
       onCopyConversationId={
-        showInternalActions && activeConversation.conversationId
+        activeConversation.conversationId
           ? () =>
               copyIdToClipboard(
                 activeConversation.conversationId!,
@@ -143,7 +129,6 @@ export function ChatConversationHeader({
           : undefined
       }
       onRefresh={
-        showInternalActions &&
         headerSupplements?.onRefresh &&
         activeConversation.conversationId != null
           ? headerSupplements.onRefresh

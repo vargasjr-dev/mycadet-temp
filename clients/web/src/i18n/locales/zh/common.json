@@ -880,10 +880,6 @@
       "phone": "我的电话号码已设置但无法工作。你能完成它吗？"
     }
   },
-  "useBookmarks": {
-    "addFailed": "收藏消息失败。",
-    "removeFailed": "移除收藏失败。"
-  },
   "useConnectClaude": {
     "exchangeFailed": "请检查粘贴的密钥并重试。",
     "failed": "连接 Claude 失败。请重试。",

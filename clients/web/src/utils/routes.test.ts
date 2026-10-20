@@ -166,8 +166,10 @@ describe("isConversationPath (conversation area, subroutes included)", () => {
     expect(isConversationPath(routes.conversation("conv-1"))).toBe(true);
   });
 
-  test("matches conversation subroutes like the inspector", () => {
-    expect(isConversationPath(routes.inspect("conv-1"))).toBe(true);
+  test("matches conversation subroutes", () => {
+    expect(isConversationPath("/assistant/conversations/conv-1/inspect")).toBe(
+      true,
+    );
   });
 
   test("matches an escaped spelling of the prefix, as the router does", () => {
@@ -207,8 +209,10 @@ describe("conversationIdForPath (the id a path names, if any)", () => {
     expect(isConversationChatPath("/assistant")).toBe(true);
   });
 
-  test("rejects conversation subroutes like the inspector", () => {
-    expect(conversationIdForPath(routes.inspect("conv-1"))).toBeNull();
+  test("rejects conversation subroutes", () => {
+    expect(
+      conversationIdForPath("/assistant/conversations/conv-1/inspect"),
+    ).toBeNull();
   });
 
   test("extracts the id from the app viewer sub-route", () => {
@@ -266,7 +270,7 @@ describe("appIdForPath (the app a path keeps on screen, if any)", () => {
   });
 
   test("returns null for the inspector and non-conversation routes", () => {
-    expect(appIdForPath(routes.inspect("conv-1"))).toBeNull();
+    expect(appIdForPath("/assistant/conversations/conv-1/inspect")).toBeNull();
     expect(appIdForPath("/assistant")).toBeNull();
     expect(appIdForPath("/assistant/library")).toBeNull();
   });
@@ -293,9 +297,6 @@ describe("isConversationChatPath (composer-mounting routes only)", () => {
     );
   });
 
-  test("rejects the inspector subroute — InspectPage has no composer", () => {
-    expect(isConversationChatPath(routes.inspect("conv-1"))).toBe(false);
-  });
 
   test("matches the app viewer sub-route, which keeps ChatPage mounted", () => {
     expect(isConversationChatPath(routes.conversation("conv-1", "app-1"))).toBe(

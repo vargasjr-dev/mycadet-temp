@@ -878,10 +878,6 @@
       "phone": "Mi número de teléfono está configurado pero no funciona. ¿Puedes terminarlo?"
     }
   },
-  "useBookmarks": {
-    "addFailed": "No se pudo marcar el mensaje.",
-    "removeFailed": "No se pudo quitar el marcador."
-  },
   "useConnectClaude": {
     "exchangeFailed": "Comprueba la clave pegada e inténtalo de nuevo.",
     "failed": "No se pudo conectar Claude. Inténtalo de nuevo.",

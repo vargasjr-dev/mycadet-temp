@@ -36,7 +36,6 @@ export interface UseChatHeaderRegistrationOptions {
    *  passes the staff + internal-thread-actions gate, which drops the menu item. */
   handleForkConversationFromMenu?: () => void;
   handleOpenInNewWindow: (conversation: Conversation) => void;
-  handleInspectConversation: (conversation: Conversation) => void;
   handleCopyConversation: () => void;
   onRefresh: () => void;
 }
@@ -45,7 +44,6 @@ export function useChatHeaderRegistration({
   assetsRefreshKey,
   handleForkConversationFromMenu,
   handleOpenInNewWindow,
-  handleInspectConversation,
   handleCopyConversation,
   onRefresh,
 }: UseChatHeaderRegistrationOptions): void {
@@ -118,7 +116,6 @@ export function useChatHeaderRegistration({
       channelSourceLinkHref,
       onForkConversation: handleForkConversationFromMenu ?? null,
       onOpenInNewWindow: handleOpenInNewWindow,
-      onInspect: handleInspectConversation,
       onCopyConversation: messages.length > 0 ? handleCopyConversation : null,
       onRefresh,
     }),
@@ -129,8 +126,7 @@ export function useChatHeaderRegistration({
       channelSourceLinkHref,
       handleForkConversationFromMenu,
       handleOpenInNewWindow,
-      handleInspectConversation,
-      handleCopyConversation,
+          handleCopyConversation,
       messages.length,
       onRefresh,
     ],

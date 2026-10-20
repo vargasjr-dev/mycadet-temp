@@ -317,15 +317,6 @@
     "title": "Seguridad",
     "useForSignIn": "Usar {label} para iniciar sesión"
   },
-  "bookmarksPage": {
-    "emptyDescription": "Pasa el cursor sobre cualquier mensaje y haz clic en el icono de marcador para guardarlo aquí.",
-    "emptyTitle": "Sin marcadores",
-    "errorDescription": "Algo salió mal. Inténtalo de nuevo.",
-    "errorTitle": "No se pudieron cargar los marcadores",
-    "open": "Abrir",
-    "removeBookmark": "Eliminar marcador",
-    "retry": "Reintentar"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# acción usa actualmente {profile}} other {# acciones usan actualmente {profile}}}",
     "applyTo": "{count, plural, one {Aplicar a # acción} other {Aplicar a # acciones}}",

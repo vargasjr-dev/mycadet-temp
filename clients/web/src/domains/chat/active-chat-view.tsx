@@ -54,8 +54,6 @@ import { useOnboardingOrchestrator } from "@/domains/chat/hooks/use-onboarding-o
 import { useConversationSecondaryActions } from "@/domains/chat/hooks/use-conversation-secondary-actions";
 import { useAssistantCapability } from "@/hooks/use-assistant-capability";
 import { useSupportsResourcePressureStatus } from "@/lib/backwards-compat/use-supports-resource-pressure-status";
-import { useSupportsSummarizeUpToHere } from "@/lib/backwards-compat/use-supports-summarize-up-to-here";
-import { useCanUseInternalThreadActions } from "@/lib/auth/internal-thread-actions";
 import { useSendMessage } from "@/domains/chat/hooks/use-send-message";
 import { useMessageLifecycle } from "@/domains/chat/hooks/use-message-lifecycle";
 import { useActiveAppPinSync } from "@/domains/chat/hooks/use-active-app-pin-sync";
@@ -114,7 +112,6 @@ function prefillComposerFromUrl(content: string): void {
 
 export function ActiveChatView() {
   const { t } = useTranslation("chat");
-  const canUseInternalActions = useCanUseInternalThreadActions();
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -493,65 +490,17 @@ export function ActiveChatView() {
   const {
     handleForkConversation,
     handleForkConversationFromMenu,
-    handleSummarizeUpToMessage,
     handleRetryLatestTurn,
     handleOpenInNewWindow,
-    handleInspectConversation,
-    handleInspectMessage,
     handleCopyConversation,
   } = useConversationSecondaryActions({
     activeConversation: activeConversation ?? null,
     refreshConversations,
   });
 
-  // "Summarize up to here" confirm dialog. The hover action only records the
-  // target message; the POST fires from the dialog's confirm button — a
-  // misfired summarize mutates the assistant's live context with no undo, so
-  // it always goes through an explicit confirmation. Gated at the callback
-  // source on both the endpoint version and the internal-thread-actions
-  // audience: without either, no `onSummarizeUpToHere` is provided, so the
-  // hover button never renders and the dialog is unreachable.
-  const supportsSummarizeUpToHere = useSupportsSummarizeUpToHere();
-  const [pendingSummarizeMessageId, setPendingSummarizeMessageId] = useState<
-    string | null
-  >(null);
-  const [summarizePending, setSummarizePending] = useState(false);
-  // A pending target only counts while the viewer still qualifies, so a flag
-  // sync that revokes the gate mid-dialog closes it and takes its confirm
-  // button with it rather than leaving one summarize reachable. The derived
-  // value closes the dialog in the same render the gate drops; the effect
-  // below discards the target itself, so restoring the flag cannot resurrect
-  // a confirmation the viewer never re-opened.
-  const activeSummarizeMessageId = canUseInternalActions
-    ? pendingSummarizeMessageId
-    : null;
-  useEffect(() => {
-    if (!canUseInternalActions) {
-      setPendingSummarizeMessageId(null);
-    }
-  }, [canUseInternalActions]);
-  const handleSummarizeUpToHere = useCallback((messageId: string) => {
-    setPendingSummarizeMessageId(messageId);
-  }, []);
-  const handleConfirmSummarize = useCallback(() => {
-    if (!activeSummarizeMessageId) {
-      return;
-    }
-    setSummarizePending(true);
-    // Errors toast inside the handler; the dialog just closes.
-    void handleSummarizeUpToMessage(activeSummarizeMessageId).finally(() => {
-      setSummarizePending(false);
-      setPendingSummarizeMessageId(null);
-    });
-  }, [activeSummarizeMessageId, handleSummarizeUpToMessage]);
-  const handleCancelSummarize = useCallback(() => {
-    setPendingSummarizeMessageId(null);
-  }, []);
-
-  // "Retry" confirm dialog. Same shape as summarize: the hover action only
-  // opens the dialog; the POST fires from its confirm button — retry
-  // permanently discards the latest assistant response, so it always goes
-  // through an explicit confirmation. Capability-gated at the callback
+  // "Retry" confirm dialog: the hover action only opens the dialog; the POST
+  // fires from its confirm button — retry permanently discards the latest
+  // assistant response, so it always goes through an explicit confirmation. Capability-gated at the callback
   // source: daemons without the retry endpoint get no `onRetryLatestTurn`,
   // so the hover button never renders and the dialog is unreachable.
   const supportsRetryTurn = useAssistantCapability("retryLastTurn");
@@ -585,11 +534,8 @@ export function ActiveChatView() {
   // -------------------------------------------------------------------------
   useChatHeaderRegistration({
     assetsRefreshKey,
-    handleForkConversationFromMenu: canUseInternalActions
-      ? handleForkConversationFromMenu
-      : undefined,
+    handleForkConversationFromMenu,
     handleOpenInNewWindow,
-    handleInspectConversation,
     handleCopyConversation,
     onRefresh: handleRefreshLatest,
   });
@@ -637,18 +583,9 @@ export function ActiveChatView() {
     handleEditQueueTail,
 
     // Conversation secondary actions
-    handleForkConversation: canUseInternalActions
-      ? handleForkConversation
-      : undefined,
-    onSummarizeUpToHere:
-      supportsSummarizeUpToHere && canUseInternalActions
-        ? handleSummarizeUpToHere
-        : undefined,
+    handleForkConversation,
     onRetryLatestTurn: supportsRetryTurn
       ? handleRetryLatestTurnRequested
-      : undefined,
-    handleInspectMessage: canUseInternalActions
-      ? handleInspectMessage
       : undefined,
 
     // History pagination
@@ -690,15 +627,6 @@ export function ActiveChatView() {
           />
         </LazyBoundary>
       ) : null}
-      <ConfirmDialog
-        open={activeSummarizeMessageId !== null}
-        title={t("activeChatView.summarizeTitle")}
-        message={t("activeChatView.summarizeMessage")}
-        confirmLabel={t("activeChatView.summarizeConfirm")}
-        isPending={summarizePending}
-        onConfirm={handleConfirmSummarize}
-        onCancel={handleCancelSummarize}
-      />
       <ConfirmDialog
         open={retryConfirmOpen}
         title={t("activeChatView.retryTitle")}

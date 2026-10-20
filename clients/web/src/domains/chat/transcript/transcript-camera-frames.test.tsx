@@ -72,24 +72,16 @@ describe("camera frames in transcript rows", () => {
     "actions use the visible group's cutoff for $key",
     (item) => {
       const fork = mock();
-      const summarize = mock();
-      const inspect = mock();
       const { getByRole } = render(
         <TranscriptRow
           item={item}
           onSurfaceAction={() => {}}
           onForkConversation={fork}
-          onSummarizeUpToHere={summarize}
-          onInspectMessage={inspect}
         />,
       );
       fireEvent.click(getByRole("button", { name: "Fork from here" }));
-      fireEvent.click(getByRole("button", { name: "Summarize up to here" }));
-      fireEvent.click(getByRole("button", { name: "Inspect" }));
       const cutoff = item === standalone ? frames.at(-1)!.id : item.message.id;
       expect(fork).toHaveBeenCalledWith(cutoff);
-      expect(summarize).toHaveBeenCalledWith(cutoff);
-      expect(inspect).toHaveBeenCalledWith(item.message.id);
     },
   );
 
@@ -166,13 +158,8 @@ describe("camera frames in transcript rows", () => {
         },
       );
       try {
-        const summarize = mock();
         const { container } = render(
-          <TranscriptRow
-            item={item}
-            onSurfaceAction={() => {}}
-            onSummarizeUpToHere={summarize}
-          />,
+          <TranscriptRow item={item} onSurfaceAction={() => {}} />,
         );
         const wrapper = container.querySelector('[data-message-role="user"]')!;
         fireEvent.touchStart(wrapper, {
@@ -188,10 +175,6 @@ describe("camera frames in transcript rows", () => {
         );
         expect(Boolean(sheet.queryByText("Read aloud", { exact: true }))).toBe(
           item === utterance,
-        );
-        fireEvent.click(sheet.getByText("Summarize up to here"));
-        expect(summarize).toHaveBeenCalledWith(
-          item === standalone ? frames.at(-1)!.id : item.message.id,
         );
       } finally {
         cleanup();

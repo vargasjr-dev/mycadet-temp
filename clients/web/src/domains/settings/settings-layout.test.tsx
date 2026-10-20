@@ -8,7 +8,6 @@ import type { SidebarItem } from "@/components/sidebar-tree";
 
 let assistantFlags: Record<string, boolean> = {};
 let supportsBookmarks = false;
-let canUseInternalActions = true;
 let supportsCredentials = false;
 let nativeAndroid = false;
 let browserHost = false;
@@ -16,7 +15,7 @@ let browserHost = false;
 mock.module("@/stores/assistant-feature-flag-store", () => {
   const store = () => null;
   store.use = {
-    cadetHostedInference: () => assistantFlags.cadetHostedInference ?? false,
+    osBeta: () => assistantFlags.osBeta ?? false,
   };
   return { useAssistantFeatureFlagStore: store };
 });
@@ -25,9 +24,6 @@ mock.module("@/lib/backwards-compat/use-supports-bookmarks", () => ({
   useSupportsBookmarks: () => supportsBookmarks,
 }));
 
-mock.module("@/lib/auth/internal-thread-actions", () => ({
-  useCanUseInternalThreadActions: () => canUseInternalActions,
-}));
 
 mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({
   useSupportsCredentialsSettings: () => supportsCredentials,
@@ -107,9 +103,7 @@ const { SettingsLayout } = await import("./settings-layout");
 afterEach(() => {
   cleanup();
   assistantFlags = {};
-  supportsBookmarks = false;
   supportsCredentials = false;
-  canUseInternalActions = true;
   nativeAndroid = false;
   browserHost = false;
 });
@@ -136,37 +130,6 @@ describe("SettingsLayout", () => {
     expect(screen.queryByRole("link", { name: "Security" })).toBeNull();
   });
 
-  test("renders Bookmarks only when the assistant supports the bookmark routes", () => {
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.queryByRole("link", { name: "Bookmarks" })).toBeNull();
-    cleanup();
-
-    supportsBookmarks = true;
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole("link", { name: "Bookmarks" })).not.toBeNull();
-  });
-
-  test("hides Bookmarks for sessions outside the internal gate", () => {
-    // Bookmarks are internal-only: a supporting assistant is not enough on
-    // its own.
-    supportsBookmarks = true;
-    canUseInternalActions = false;
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.queryByRole("link", { name: "Bookmarks" })).toBeNull();
-  });
-
   test("renders Credentials only when the assistant serves the credentials routes", () => {
     render(
       <MemoryRouter initialEntries={["/assistant/settings"]}>
@@ -183,25 +146,6 @@ describe("SettingsLayout", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("link", { name: "Credentials" })).not.toBeNull();
-  });
-
-  test("renders Personality only when hosted inference is on", () => {
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.queryByRole("link", { name: "Personality" })).toBeNull();
-    cleanup();
-
-    assistantFlags.cadetHostedInference = true;
-    render(
-      <MemoryRouter initialEntries={["/assistant/settings"]}>
-        <SettingsLayout />
-      </MemoryRouter>,
-    );
-    expect(screen.getByRole("link", { name: "Personality" })).not.toBeNull();
-    expect(screen.queryByRole("link", { name: "Developer" })).toBeNull();
   });
 
   test("renders Notifications on Android and browser hosts", () => {

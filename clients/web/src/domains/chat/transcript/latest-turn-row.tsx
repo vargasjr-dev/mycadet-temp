@@ -38,9 +38,7 @@ export interface LatestTurnRowProps {
     data?: Record<string, unknown>,
   ) => void;
   onForkConversation?: (messageId: string) => void;
-  onSummarizeUpToHere?: (messageId: string) => void;
   onRetryLatestTurn?: () => void;
-  onInspectMessage?: (messageId: string) => void;
   renderOnboardingChoice?: () => ReactNode;
   onOpenRuleEditor?: (context: {
     toolName: string;
@@ -88,9 +86,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
   assistantDisplayName,
   onSurfaceAction,
   onForkConversation,
-  onSummarizeUpToHere,
   onRetryLatestTurn,
-  onInspectMessage,
   renderOnboardingChoice,
   onOpenRuleEditor,
   unknownNudgeToolCallIds,
@@ -125,9 +121,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
         assistantDisplayName={assistantDisplayName}
         onSurfaceAction={onSurfaceAction}
         onForkConversation={onForkConversation}
-        onSummarizeUpToHere={onSummarizeUpToHere}
         onRetryLatestTurn={onRetryLatestTurn}
-        onInspectMessage={onInspectMessage}
         renderOnboardingChoice={renderOnboardingChoice}
         onOpenRuleEditor={onOpenRuleEditor}
         unknownNudgeToolCallIds={unknownNudgeToolCallIds}
@@ -150,9 +144,7 @@ export const LatestTurnRow = memo(function LatestTurnRow({
         assistantDisplayName={assistantDisplayName}
         onSurfaceAction={onSurfaceAction}
         onForkConversation={onForkConversation}
-        onSummarizeUpToHere={onSummarizeUpToHere}
         onRetryLatestTurn={onRetryLatestTurn}
-        onInspectMessage={onInspectMessage}
         renderOnboardingChoice={renderOnboardingChoice}
         onOpenRuleEditor={onOpenRuleEditor}
         unknownNudgeToolCallIds={unknownNudgeToolCallIds}

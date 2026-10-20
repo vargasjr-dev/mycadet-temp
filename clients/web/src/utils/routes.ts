@@ -135,13 +135,6 @@ export const routes = {
       ? `${base}&relay=${encodeURIComponent(relayToken)}`
       : base;
   },
-  /**
-   * LLM-context inspector for a single conversation. The conversation id
-   * lives in the URL path so the link is sharable and the page can route
-   * directly to its data without leaning on captured search params.
-   */
-  inspect: (conversationId: string) =>
-    `${dyn(r("/assistant/conversations"), conversationId)}/inspect`,
   logs: {
     root: r("/assistant/logs"),
     emails: r("/assistant/logs/emails"),
@@ -293,7 +286,6 @@ export const routes = {
     voice: r("/assistant/settings/voice"),
     sounds: r("/assistant/settings/sounds"),
     privacy: r("/assistant/settings/privacy"),
-    bookmarks: r("/assistant/settings/bookmarks"),
     usage: SETTINGS_USAGE_PATH,
     // Deep-link straight to the Billing sub-tab (only shown when signed in to
     // Cadet Cloud).

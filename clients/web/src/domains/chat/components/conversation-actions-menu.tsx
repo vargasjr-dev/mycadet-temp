@@ -161,13 +161,6 @@ export interface ConversationMenuItemsProps {
   onForkConversation?: () => void;
   /** Open the Share Feedback modal for this conversation. */
   onShareFeedback?: () => void;
-  /**
-   * Open the per-conversation LLM context inspector. When provided, an
-   * "Inspect" item appears at the bottom of the action set — power-user
-   * affordance for debugging the assistant's prompt/response/memory
-   * decisions per message.
-   */
-  onInspect?: () => void;
   /** Copy the full conversation as markdown to the clipboard. */
   onCopyConversation?: () => void;
   /**
@@ -224,7 +217,6 @@ export function renderConversationMenuItems({
   onForkConversation,
   onOpenInNewWindow,
   onShareFeedback,
-  onInspect,
   onCopyConversation,
   onCopyConversationId,
   onRefresh,
@@ -363,12 +355,6 @@ export function renderConversationMenuItems({
     </Primitive.Item>
   ) : null;
 
-  const inspectItem = onInspect ? (
-    <Primitive.Item leftIcon={<Sparkles size={14} />} onSelect={onInspect}>
-      {t("conversationActions.inspect")}
-    </Primitive.Item>
-  ) : null;
-
   const copyConversationIdItem = onCopyConversationId ? (
     <Primitive.Item
       leftIcon={<Copy size={14} />}
@@ -399,7 +385,6 @@ export function renderConversationMenuItems({
           </Primitive.Item>
         ) : null}
 
-        {inspectItem}
         {channelSourceLinkItem}
         {openInNewWindowItem}
 
@@ -446,12 +431,11 @@ export function renderConversationMenuItems({
         </>
       ) : null}
 
-      {copyConversationIdItem || inspectItem ? (
+      {copyConversationIdItem ? (
         <>
           <Primitive.Separator />
           {copyConversationIdItem}
-          {inspectItem}
-        </>
+          </>
       ) : null}
     </>
   );
@@ -547,7 +531,6 @@ export function renderConversationMenuItemsAsPanelItems({
   onForkConversation,
   onOpenInNewWindow,
   onShareFeedback,
-  onInspect,
   onCopyConversation,
   onCopyConversationId,
   onRefresh,
@@ -694,16 +677,6 @@ export function renderConversationMenuItemsAsPanelItems({
       })
     : null;
 
-  const inspectItem = onInspect
-    ? buildSheetMenuItem({
-        key: "inspect",
-        icon: Sparkles,
-        label: t("conversationActions.inspect"),
-        run: onInspect,
-        onClose,
-      })
-    : null;
-
   const copyConversationIdItem = onCopyConversationId
     ? buildSheetMenuItem({
         key: "copy-conversation-id",
@@ -737,7 +710,6 @@ export function renderConversationMenuItemsAsPanelItems({
             })
           : null}
 
-        {inspectItem}
         {channelSourceLinkItem}
         {openInNewWindowItem}
 
@@ -785,12 +757,11 @@ export function renderConversationMenuItemsAsPanelItems({
         </>
       ) : null}
 
-      {copyConversationIdItem || inspectItem ? (
+      {copyConversationIdItem ? (
         <>
           <PanelMenuDivider />
           {copyConversationIdItem}
-          {inspectItem}
-        </>
+          </>
       ) : null}
     </>
   );

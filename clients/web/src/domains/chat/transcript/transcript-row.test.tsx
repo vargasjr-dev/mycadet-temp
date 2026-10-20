@@ -3,7 +3,7 @@
  * is stubbed (its CTA behavior is covered by `credits-upsell-card.test.tsx`);
  * these tests pin that the transcript renders the substituted item through the
  * card component rather than any message-body machinery, keeps the replaced
- * row's DOM anchor, and exposes the standard Inspect affordance for the
+ * row's DOM anchor, and
  * backing message.
  */
 import { afterEach, describe, expect, mock, test } from "bun:test";
@@ -169,7 +169,7 @@ describe("TranscriptRow deliberate-silence dispatch", () => {
 
 describe("TranscriptRow channel-deletion dispatch", () => {
   test("a deleted row renders the tombstone in the message shell, never its content", () => {
-    // The route keeps the stored content for Inspect, so the tombstone must
+    // The route keeps the stored content, so the tombstone must
     // not depend on the content being absent.
     const message: DisplayMessage = {
       id: "m-deleted",
@@ -254,45 +254,6 @@ describe("TranscriptRow creditsUpsell dispatch", () => {
     expect(container.querySelector('[id^="msg-"]')).toBeNull();
   });
 
-  test("substituted cards expose the Inspect affordance wired to the backing message", () => {
-    // The daemon backfills the failed request's LLM logs onto the
-    // provider-error row's message id; while the card substitutes the bubble,
-    // the hover Inspect action is the only path to those logs.
-    const inspected: string[] = [];
-    const { getByTitle } = render(
-      <TranscriptRow
-        item={substitutedItem("m1")}
-        onSurfaceAction={() => {}}
-        onInspectMessage={(id) => inspected.push(id)}
-      />,
-    );
-
-    fireEvent.click(getByTitle("Inspect"));
-    expect(inspected).toEqual(["m1"]);
-  });
-
-  test("no Inspect affordance without an onInspectMessage handler", () => {
-    // Mirrors ordinary rows: the inspector entry point only exists when the
-    // LLM inspector is enabled (the parent passes the handler).
-    const { container } = render(
-      <TranscriptRow item={substitutedItem("m1")} onSurfaceAction={() => {}} />,
-    );
-
-    expect(container.querySelector('[title="Inspect"]')).toBeNull();
-  });
-
-  test("the proactive card gets no Inspect affordance", () => {
-    const { container } = render(
-      <TranscriptRow
-        item={PROACTIVE_ITEM}
-        onSurfaceAction={() => {}}
-        onInspectMessage={() => {}}
-      />,
-    );
-
-    expect(container.querySelector('[title="Inspect"]')).toBeNull();
-  });
-
   test("a coarse-pointer tap reveals the actions; tapping outside dismisses", () => {
     // Touch screens have no hover and no focus-visible path to the actions
     // row, so the substituted card mirrors ordinary rows' tap-to-reveal:
@@ -320,7 +281,6 @@ describe("TranscriptRow creditsUpsell dispatch", () => {
         <TranscriptRow
           item={substitutedItem("m1")}
           onSurfaceAction={() => {}}
-          onInspectMessage={() => {}}
         />,
       );
       const wrapper = container.querySelector("#msg-m1")!;
@@ -347,7 +307,6 @@ describe("TranscriptRow creditsUpsell dispatch", () => {
       <TranscriptRow
         item={substitutedItem("m1")}
         onSurfaceAction={() => {}}
-        onInspectMessage={() => {}}
       />,
     );
     const wrapper = container.querySelector("#msg-m1")!;

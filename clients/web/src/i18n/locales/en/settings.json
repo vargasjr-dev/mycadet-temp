@@ -317,15 +317,6 @@
     "title": "Security",
     "useForSignIn": "Use {label} for sign-in"
   },
-  "bookmarksPage": {
-    "emptyDescription": "Hover any message and click the bookmark icon to save it here.",
-    "emptyTitle": "No bookmarks",
-    "errorDescription": "Something went wrong. Please try again.",
-    "errorTitle": "Failed to load bookmarks",
-    "open": "Open",
-    "removeBookmark": "Remove bookmark",
-    "retry": "Retry"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# action currently uses {profile}} other {# actions currently use {profile}}}",
     "applyTo": "{count, plural, one {Apply to # action} other {Apply to # actions}}",
@@ -2106,7 +2097,6 @@
     "voice": "Voice",
     "sounds": "Sounds",
     "privacy": "Permissions & Privacy",
-    "bookmarks": "Bookmarks",
     "usage": "Usage",
     "billingUsage": "Billing & Usage",
     "community": "Community",

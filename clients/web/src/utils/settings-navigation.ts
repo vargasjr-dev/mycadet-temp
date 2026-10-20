@@ -11,7 +11,6 @@ import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
   Bell,
-  Bookmark,
   Bug,
   Cpu,
   KeyRound,
@@ -38,7 +37,6 @@ export const PANEL_IDS = [
   "voice",
   "sounds",
   "privacy",
-  "bookmarks",
   "billing",
   "community",
   "assistant-status",
@@ -110,12 +108,6 @@ export const SETTINGS_SIDEBAR: SidebarItem[] = [
     label: "Permissions & Privacy",
     href: routes.settings.privacy,
     icon: ShieldCheck,
-  },
-  {
-    id: "bookmarks",
-    label: "Bookmarks",
-    href: routes.settings.bookmarks,
-    icon: Bookmark,
   },
   {
     id: "billing",

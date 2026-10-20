@@ -14,9 +14,9 @@ afterEach(() => {
 });
 
 describe("feature flag catalog", () => {
-  test("exposes cadet hosted inference as an assistant flag defaulting off", () => {
-    expect(ASSISTANT_FLAG_DEFAULTS.cadetHostedInference).toBe(false);
-    expect("cadetHostedInference" in CLIENT_FLAG_DEFAULTS).toBe(false);
+  test("exposes os-beta as an assistant flag defaulting off", () => {
+    expect(ASSISTANT_FLAG_DEFAULTS.osBeta).toBe(false);
+    expect("osBeta" in CLIENT_FLAG_DEFAULTS).toBe(false);
   });
 
 
@@ -47,45 +47,28 @@ describe("getEnvFlagOverridesForScope", () => {
   test("filters client-scoped flags and separates bool/str", () => {
     (globalThis as Record<string, unknown>).window = {
       __CADET_FLAG_OVERRIDES__: {
-        // client-only flag (boolean)
-        "internal-thread-actions": true,
-        // assistant-only flag (boolean) — should be excluded from client scope
-        "cadet-hosted-inference": true,
+        // assistant-only flag (boolean) — excluded from the client scope
+        "os-beta": true,
       },
     };
 
     const result = getEnvFlagOverridesForScope("client");
-    expect(result.bool).toEqual({ internalThreadActions: true });
+    expect(result.bool).toEqual({});
     expect(result.str).toEqual({});
-    expect(result.bool).not.toHaveProperty("cadetHostedInference");
   });
 
   test("boolean flags keep case-insensitive env coercion", () => {
     (globalThis as Record<string, unknown>).window = undefined;
     for (const raw of ["on", "ON"]) {
-      process.env.VITE_CADET_FLAG_INTERNAL_THREAD_ACTIONS = raw;
+      process.env.VITE_CADET_FLAG_OS_BETA = raw;
       try {
-        const result = getEnvFlagOverridesForScope("client");
-        expect(result.bool.internalThreadActions).toBe(true);
-        expect(result.str).not.toHaveProperty("internalThreadActions");
+        const result = getEnvFlagOverridesForScope("assistant");
+        expect(result.bool.osBeta).toBe(true);
+        expect(result.str).not.toHaveProperty("osBeta");
       } finally {
-        delete process.env.VITE_CADET_FLAG_INTERNAL_THREAD_ACTIONS;
+        delete process.env.VITE_CADET_FLAG_OS_BETA;
       }
     }
-  });
-
-  test("flags with scope 'both' appear for both client and assistant scopes", () => {
-    (globalThis as Record<string, unknown>).window = {
-      __CADET_FLAG_OVERRIDES__: {
-        "sidebar-done": true,
-      },
-    };
-
-    const clientResult = getEnvFlagOverridesForScope("client");
-    const assistantResult = getEnvFlagOverridesForScope("assistant");
-
-    expect(clientResult.bool).toEqual({ sidebarDone: true });
-    expect(assistantResult.bool).toEqual({ sidebarDone: true });
   });
 });
 

@@ -53,7 +53,6 @@ export interface ChatHeaderSupplements {
    *  access to the message list, active stream, or ChatPage-local state. */
   onForkConversation: (() => void) | null;
   onOpenInNewWindow: ((conversation: Conversation) => void) | null;
-  onInspect: ((conversation: Conversation) => void) | null;
   onCopyConversation: (() => void) | null;
   onRefresh: (() => void) | null;
 }

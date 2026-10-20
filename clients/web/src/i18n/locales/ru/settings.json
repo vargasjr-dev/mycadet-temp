@@ -303,15 +303,6 @@
     "title": "Безопасность",
     "useForSignIn": "Использовать {label} для входа"
   },
-  "bookmarksPage": {
-    "emptyDescription": "Наведение на любое сообщение и нажатие значка закладки сохраняет его сюда.",
-    "emptyTitle": "Нет закладок",
-    "errorDescription": "Что-то пошло не так. Повторите попытку.",
-    "errorTitle": "Не удалось загрузить закладки",
-    "open": "Открыть",
-    "removeBookmark": "Убрать закладку",
-    "retry": "Повторить"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# действие сейчас использует {profile}} few {# действия сейчас используют {profile}} many {# действий сейчас используют {profile}} other {# действия сейчас используют {profile}}}",
     "applyTo": "{count, plural, one {Применить к # действию} few {Применить к # действиям} many {Применить к # действиям} other {Применить к # действиям}}",

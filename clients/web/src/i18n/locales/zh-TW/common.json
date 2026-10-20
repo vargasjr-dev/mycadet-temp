@@ -880,10 +880,6 @@
       "phone": "我的電話號碼已設定但無法運作。你能完成它嗎？"
     }
   },
-  "useBookmarks": {
-    "addFailed": "加入書籤失敗。",
-    "removeFailed": "移除書籤失敗。"
-  },
   "useConnectClaude": {
     "exchangeFailed": "檢查貼上的金鑰，然後再試一次。",
     "failed": "連線 Claude 失敗。請再試一次。",

@@ -317,15 +317,6 @@
     "title": "安全",
     "useForSignIn": "使用 {label} 登录"
   },
-  "bookmarksPage": {
-    "emptyDescription": "将鼠标悬停在任意消息上，然后点击书签图标即可将其保存到此处。",
-    "emptyTitle": "无书签",
-    "errorDescription": "发生错误。请重试。",
-    "errorTitle": "加载书签失败",
-    "open": "打开",
-    "removeBookmark": "移除书签",
-    "retry": "重试"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, other {# 个操作当前使用 {profile}}}",
     "applyTo": "{count, plural, other {应用于 # 个操作}}",
@@ -2010,7 +2001,6 @@
     "voice": "语音",
     "sounds": "声音",
     "privacy": "权限与隐私",
-    "bookmarks": "书签",
     "usage": "用量",
     "billingUsage": "账单与用量",
     "community": "社区",

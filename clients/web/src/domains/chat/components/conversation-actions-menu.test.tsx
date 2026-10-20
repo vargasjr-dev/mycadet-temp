@@ -325,7 +325,6 @@ describe("renderConversationMenuItems", () => {
           variant: "header",
           onCopyConversation: () => {},
           onForkConversation: () => {},
-          onInspect: () => {},
           onRefresh: () => {},
           onPinToggle: () => {},
           onRename: () => {},
@@ -340,7 +339,6 @@ describe("renderConversationMenuItems", () => {
     const order = [
       "Copy Full Conversation",
       "Fork Conversation",
-      "Analyze Conversation",
       "Refresh",
       "Pin",
       "Rename",
@@ -741,7 +739,6 @@ describe("ConversationActionsMenu — mobile panel details", () => {
         variant="header"
         onCopyConversation={() => {}}
         onForkConversation={() => {}}
-        onInspect={() => {}}
         onRefresh={() => {}}
         onPinToggle={() => {}}
         onRename={() => {}}
@@ -753,7 +750,6 @@ describe("ConversationActionsMenu — mobile panel details", () => {
     const order = [
       "Copy Full Conversation",
       "Fork Conversation",
-      "Analyze Conversation",
       "Refresh",
       "Pin",
       "Rename",

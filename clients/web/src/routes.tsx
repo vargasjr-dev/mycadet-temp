@@ -610,15 +610,6 @@ export const routeTree = [
                     },
                   },
                   {
-                    path: "bookmarks",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/bookmarks-page").then(
-                          (m) => m.BookmarksPage,
-                        ),
-                    },
-                  },
-                  {
                     path: "usage",
                     lazy: {
                       Component: () =>
@@ -1004,15 +995,6 @@ export const routeTree = [
                           Component: () =>
                             import("@/domains/library/library-detail-page").then(
                               (m) => m.LibraryDetailPage,
-                            ),
-                        },
-                      },
-                      {
-                        path: "conversations/:conversationId/inspect",
-                        lazy: {
-                          Component: () =>
-                            import("@/domains/chat/inspector/inspect-page").then(
-                              (m) => m.InspectPage,
                             ),
                         },
                       },

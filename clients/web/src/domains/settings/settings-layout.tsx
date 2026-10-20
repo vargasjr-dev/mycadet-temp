@@ -6,8 +6,6 @@ import { useTranslation } from "@/i18n";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import { useCanUseInternalThreadActions } from "@/lib/auth/internal-thread-actions";
-import { useSupportsBookmarks } from "@/lib/backwards-compat/use-supports-bookmarks";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { isBrowserNotificationHost } from "@/runtime/notifications";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
@@ -39,16 +37,13 @@ export function SettingsLayout() {
   const notificationSettingsAvailable =
     useIsNativeAndroid() || isBrowserNotificationHost();
   const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  // The Bookmarks and Credentials tabs need routes that only newer assistants
+  // The Credentials tab needs routes that only newer assistants
   // serve (v0.8.1+ / v0.10.8+); an older assistant 404s them, so hide the
   // tabs rather than render a dead error page. Scoped to the active assistant
   // so a stale cross-store version can't light a tab mid-switch.
-  const supportsBookmarks = useSupportsBookmarks(activeAssistantId);
   const supportsCredentials = useSupportsCredentialsSettings(activeAssistantId);
-  // Bookmarks are internal-only, behind the same gate as the fork and
-  // inspector affordances. Hides the tab rather than leaving a route whose
+  //   // inspector affordances. Hides the tab rather than leaving a route whose
   // only content-producing affordance (the per-message toggle) is hidden.
-  const canUseInternalActions = useCanUseInternalThreadActions();
   // The Usage item is never hidden: the Usage tab reads from the local daemon
   // and works for every assistant. Its label only gains "Billing &" when the
   // Billing tab is actually shown — i.e. signed in to Cadet Cloud
@@ -80,8 +75,6 @@ export function SettingsLayout() {
           return t("sidebar.sounds", "Sounds");
         case "privacy":
           return t("sidebar.privacy", "Permissions & Privacy");
-        case "bookmarks":
-          return t("sidebar.bookmarks", "Bookmarks");
         case "billing":
           return billingGate === "full"
             ? t("sidebar.billingUsage", "Billing & Usage")
@@ -103,12 +96,6 @@ export function SettingsLayout() {
         if (item.id === "notifications" && !notificationSettingsAvailable) {
           return false;
         }
-        if (
-          item.id === "bookmarks" &&
-          (!supportsBookmarks || !canUseInternalActions)
-        ) {
-          return false;
-        }
         if (item.id === "credentials" && !supportsCredentials) {
           return false;
         }
@@ -119,8 +106,6 @@ export function SettingsLayout() {
       })),
     [
       notificationSettingsAvailable,
-      supportsBookmarks,
-      canUseInternalActions,
       supportsCredentials,
       getSidebarLabel,
     ],

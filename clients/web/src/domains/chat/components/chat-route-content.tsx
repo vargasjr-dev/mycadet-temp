@@ -205,10 +205,8 @@ export interface ChatMainPanelProps {
    *  staff + internal-thread-actions gate, which hides the hover action. */
   handleForkConversation?: (throughMessageId: string) => Promise<void>;
   /** Opens the "Summarize up to here" confirm dialog for a message. */
-  onSummarizeUpToHere?: (messageId: string) => void;
   /** Opens the "Retry" confirm dialog for the latest assistant turn. */
   onRetryLatestTurn?: () => void;
-  handleInspectMessage?: (messageId: string) => void;
 
   // History pagination (from useConversationLoader in ActiveChatView)
   historyPagination: HistoryPaginationResult;
@@ -300,9 +298,7 @@ export function ChatMainPanel({
   handleSteerMessage,
   handleEditQueueTail,
   handleForkConversation,
-  onSummarizeUpToHere,
   onRetryLatestTurn,
-  handleInspectMessage,
   historyPagination,
   sessionDisclosureState,
   diskPressure,
@@ -1301,11 +1297,9 @@ export function ChatMainPanel({
     onConfirmationSubmit: handleConfirmationSubmit,
     onAllowAndCreateRule: handleAllowAndCreateRule,
     onForkConversation: handleForkConversationCallback,
-    onSummarizeUpToHere,
     // Hidden while a turn is in flight: retrying mid-generation would 409,
     // and the affordance targets the settled latest response.
     onRetryLatestTurn: isAssistantBusy ? undefined : onRetryLatestTurn,
-    onInspectMessage: handleInspectMessage,
     renderAvatar,
     onPullRefresh: handlePullRefresh,
     pullRefreshEnabled: touchSupported,

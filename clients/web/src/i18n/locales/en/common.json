@@ -880,10 +880,6 @@
       "phone": "My phone number is set up but not working. Can you finish it off?"
     }
   },
-  "useBookmarks": {
-    "addFailed": "Failed to bookmark message.",
-    "removeFailed": "Failed to remove bookmark."
-  },
   "useConnectClaude": {
     "exchangeFailed": "Check the pasted key and try again.",
     "failed": "Connecting Claude failed. Please try again.",
