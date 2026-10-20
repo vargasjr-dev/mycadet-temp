@@ -1,6 +1,4 @@
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
-import type { AssistantConfig } from "../config/schema.js";
 import { type LLMConfig } from "../config/schemas/llm.js";
 import { getProviderKeyAsync } from "../security/secure-keys.js";
 import { ProviderNotConfiguredError } from "../util/errors.js";
