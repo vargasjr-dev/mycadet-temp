@@ -5,7 +5,7 @@ import {
   MessageSquareText,
   Settings as SettingsIcon,
 } from "lucide-react";
-import { lazy, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import {
@@ -17,67 +17,25 @@ import {
   useSideMenuCollapsed,
 } from "@mycadet/design-library";
 
-import { LazyBoundary } from "@/components/lazy-boundary";
 import {
   prefetchShareFeedbackModal,
   ShareFeedbackModalLazy,
 } from "@/components/share-feedback-modal-lazy";
-import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
-import { usePreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
-import { useBillingBalanceStatus } from "@/hooks/use-billing-balance-status";
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
-import { displayedCreditsUsd } from "@/lib/billing/displayed-credits";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsAuthenticated } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 
-import { CreditsCard } from "./credits-card";
-import { PreferencesUsagePanel } from "./preferences-usage-panel";
 import { SIDEBAR_PILL_GAP_CLASSES } from "@/components/sidebar-nav-geometry";
 import { useTranslation } from "@/i18n";
-
-// The top-up checkout only opens from the usage panel's exhausted strip, so
-// its chunk stays out of the initial bundle until then.
-const AddCreditsModal = lazy(() =>
-  import("@/components/add-credits-modal").then((m) => ({
-    default: m.AddCreditsModal,
-  })),
-);
 
 /**
  * The trigger names the menu it opens, never the signed-in account. This is a
  * settings entry point rather than a profile row, and the account's identity
  * belongs on the Settings page the menu links to.
  */
-
-/**
- * Whether the credits row belongs below the usage panel.
- *
- * The dollar balance stays hidden whenever there is a usage reading to stand
- * in for it. While the included bundle has room the bar is the reading that
- * matters, and a second number beside it only invites the arithmetic the
- * usage-relative view exists to avoid. Once the bundle is spent the panel
- * itself says the next turn draws on extra usage credits, and once the wallet
- * is empty too its add-credits strip takes over, so the row never earns its
- * place.
- *
- * With no reading to hide behind, the row stays: the panel renders nothing
- * without one, and hiding the row too would leave the menu with no balance and
- * no way to buy more.
- *
- * `settled` is what keeps that last clause from firing early. The row needs
- * only the summary while the panel needs the subscription too, so an unguarded
- * `usage == null` shows the row in the gap between the two and then swaps it
- * for the panel. Waiting means the menu picks one of them and keeps it.
- */
-export function showsMenuCredits(
-  usage: PreferencesUsage | null,
-  settled: boolean,
-): boolean {
-  return settled && usage == null;
-}
 
 export interface PreferencesMenuProps {
   assistantId?: string | null;
@@ -107,10 +65,6 @@ export function PreferencesMenu({
   const isTouchMobile = useTouchMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
-  /* Held here rather than in the menu body: the popover and the bottom sheet
-     both unmount their content on close, and the strip closes the menu as it
-     opens the checkout. */
-  const [isAddCreditsOpen, setIsAddCreditsOpen] = useState(false);
 
   /* Warm the chunks this menu leads to as it opens rather than on the click
      that needs them, so they are usually already there by the time they are
@@ -127,15 +81,6 @@ export function PreferencesMenu({
     prefetchShareFeedbackModal();
     prefetchRoute(routes.settings.root);
   }, [isOpen]);
-
-  /* The usage panel and the credits row below it mount with the menu, and the
-     reading they share rests on requests that stay cold until something asks
-     for it. Asking from the trigger, which is mounted with the sidebar, means
-     those requests run while the app loads and an opening menu reads answers
-     that have already landed rather than its undecided state. The reading is
-     discarded here: TanStack Query dedupes it with the two call sites inside
-     the menu, which own what they render from it. */
-  usePreferencesUsage({ conversationId: activeConversationId });
 
   if (!isAuthenticated) {
     return null;
@@ -218,8 +163,6 @@ export function PreferencesMenu({
     <PreferencesMenuContent
       onClose={closeMenu}
       onShareFeedback={() => setIsFeedbackOpen(true)}
-      onAddCredits={() => setIsAddCreditsOpen(true)}
-      activeConversationId={activeConversationId}
     />
   );
 
@@ -266,15 +209,6 @@ export function PreferencesMenu({
           activeConversationId={activeConversationId}
         />
       ) : null}
-
-      {isAddCreditsOpen ? (
-        <LazyBoundary>
-          <AddCreditsModal
-            open={isAddCreditsOpen}
-            onOpenChange={setIsAddCreditsOpen}
-          />
-        </LazyBoundary>
-      ) : null}
     </>
   );
 }
@@ -282,59 +216,17 @@ export function PreferencesMenu({
 interface PreferencesMenuContentProps {
   onClose: () => void;
   onShareFeedback: () => void;
-  onAddCredits: () => void;
-  activeConversationId?: string | null;
 }
 
 function PreferencesMenuContent({
   onClose,
   onShareFeedback,
-  onAddCredits,
-  activeConversationId,
 }: PreferencesMenuContentProps) {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
   const cloudGate = useCloudGate();
-  const {
-    enabled: showBillingRows,
-    balance: effectiveBalance,
-    availableUsageBalance,
-  } = useBillingBalanceStatus();
-  /* The same reading the usage panel below draws, composed once so the row and
-     the bar can never disagree about how much of the bundle is left. */
-  const { usage, settled } = usePreferencesUsage({
-    conversationId: activeConversationId,
-  });
-  const showCredits = showsMenuCredits(usage, settled);
-
   return (
     <>
-      <PreferencesUsagePanel
-        conversationId={activeConversationId}
-        onOpenBilling={() => {
-          onClose();
-          navigate(routes.settings.usage);
-        }}
-        onAddCredits={() => {
-          onClose();
-          onAddCredits();
-        }}
-      />
-
-      {showBillingRows && effectiveBalance !== null && showCredits ? (
-        <div className="my-2">
-          <CreditsCard
-            balance={formatWholeCredits(
-              displayedCreditsUsd(effectiveBalance, availableUsageBalance),
-            )}
-            onAddCredits={() => {
-              onClose();
-              navigate(routes.settings.usage);
-            }}
-          />
-        </div>
-      ) : null}
-
       {(cloudGate === "full" || isElectron()) && (
         <PanelItem
           icon={MessageSquareText}
@@ -356,15 +248,4 @@ function PreferencesMenuContent({
       />
     </>
   );
-}
-
-function formatWholeCredits(value: string): string {
-  const num = parseFloat(value);
-  if (!Number.isFinite(num)) {
-    return value;
-  }
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }

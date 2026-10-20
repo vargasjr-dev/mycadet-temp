@@ -614,11 +614,6 @@
     "groupCopied": "群组ID已复制到剪贴板。",
     "groupFailed": "无法复制群组ID。"
   },
-  "creditsCard": {
-    "balanceAria": "{balance} 积分",
-    "balanceShort": "{balance} 积分",
-    "credits": "积分"
-  },
   "creditsUpsellCard": {
     "loginToAddCredits": "登录Cadet Cloud以添加积分。"
   },
@@ -1002,16 +997,6 @@
     "preferences": "偏好设置",
     "settings": "设置",
     "shareFeedback": "分享反馈"
-  },
-  "preferencesUsagePanel": {
-    "addCreditsAriaLabel": "添加额度",
-    "dailyExhausted": "今日用量已用完。添加额度以继续。",
-    "dailyTitle": "每日用量",
-    "exhausted": "添加额度以继续。",
-    "extraCredits": "正在使用额外用量额度",
-    "pctUsed": "已使用 {pct}%",
-    "settingsAriaLabel": "用量和账单设置",
-    "title": "用量"
   },
   "previewError": {
     "cannotPreview": "无法预览此文件"
@@ -1638,7 +1623,7 @@
     "addCredits": "添加额度",
     "subtitle": "您已用完今日的免费用量，将在{resetPhrase}重置。升级或添加额度以继续。",
     "title": "今日免费用量已用完",
-    "viewPlans": "查看方案"
+    "upgrade": "升级"
   },
   "chatsSettingsModal": {
     "title": "聊天设置",

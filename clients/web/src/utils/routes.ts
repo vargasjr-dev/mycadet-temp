@@ -18,7 +18,6 @@ const r = <const T extends string>(path: T): T => path;
 const dyn = (parent: string, id: string): string => `${parent}/${id}`;
 const LOCAL_ADMIN_ORIGIN = "http://localhost:3000";
 const SETTINGS_USAGE_PATH = r("/assistant/settings/usage");
-const PLANS_PATH = r("/assistant/plans");
 
 /**
  * Search param the chat transcript reads on load to scroll to and highlight a
@@ -38,9 +37,7 @@ export const CONVERSATION_APP_SEGMENT = "app";
 /**
  * Search param naming a Pro package. Carried by the checkout deep link
  * (`/assistant/checkout?package=<slug>`) that the marketing pricing CTAs
- * target, and by the plans takeover's one-shot switch deep link
- * ({@link routes.plansForPackage}). Shared by every producer and reader so the
- * spelling can't drift.
+ * target. Shared by every producer and reader so the spelling can't drift.
  */
 export const PACKAGE_PARAM = "package";
 
@@ -258,17 +255,6 @@ export const routes = {
       dyn(r("/assistant/contacts"), encodeURIComponent(contactId)),
   },
 
-  /** Full-screen pricing takeover ("View Plans") — renders outside ChatLayout
-   *  chrome, a sibling of the settings/logs full-screen shells. */
-  plans: PLANS_PATH,
-  /**
-   * Plans takeover URL that opens the in-place package-switch flow for `key`
-   * on load. A one-shot deep link: the page consumes the param, strips it, and
-   * routes the key through the same guards a card click gets.
-   */
-  plansForPackage: (key: string) =>
-    `${PLANS_PATH}?${PACKAGE_PARAM}=${encodeURIComponent(key)}`,
-
   /**
    * Deep-link checkout entrypoint. The marketing pricing CTAs route here (via
    * auth `returnTo`) with `?package=<slug>` to start Stripe checkout for a
@@ -307,7 +293,6 @@ export const routes = {
     debug: r("/assistant/settings/debug"),
     dangerZone: r("/assistant/settings/danger-zone"),
     systemEvents: r("/assistant/settings/system-events"),
-    upgradeCancel: r("/assistant/settings/billing/upgrade/cancel"),
     upgradeSuccess: r("/assistant/settings/billing/upgrade/success"),
   },
 

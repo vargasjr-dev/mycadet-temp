@@ -24,18 +24,18 @@ import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
 
 export type UsageChartState = {
   dateRange: DateRange;
-  drilldown: BillingUsageDrilldown | null;
-  setDrilldown: (d: BillingUsageDrilldown | null) => void;
+  drilldown: InferenceUsageDrilldown | null;
+  setDrilldown: (d: InferenceUsageDrilldown | null) => void;
 };
 
-export type BillingUsageSourceFilter = "runtime_proxy" | "oauth_proxy";
-export type BillingUsageDrilldown = {
-  usageSource: BillingUsageSourceFilter;
+export type InferenceUsageSourceFilter = "runtime_proxy" | "oauth_proxy";
+export type InferenceUsageDrilldown = {
+  usageSource: InferenceUsageSourceFilter;
   llmDimension?: LlmUsageDimension;
 };
 
-export function getBillingUsageGroupBy(
-  drilldown: BillingUsageDrilldown | null,
+export function getInferenceUsageGroupBy(
+  drilldown: InferenceUsageDrilldown | null,
 ):
   | NonNullable<
       OrganizationsBillingUsageSeriesRetrieveData["query"]
@@ -53,7 +53,7 @@ export function getBillingUsageGroupBy(
   );
 }
 
-export function buildBillingUsageSeriesQuery(
+export function buildInferenceUsageSeriesQuery(
   state: UsageChartState,
   tz: string = getEffectiveTimezone(),
 ): NonNullable<OrganizationsBillingUsageSeriesRetrieveData["query"]> {
@@ -64,13 +64,13 @@ export function buildBillingUsageSeriesQuery(
     ...(state.drilldown
       ? {
           usage_source: state.drilldown.usageSource,
-          group_by: getBillingUsageGroupBy(state.drilldown),
+          group_by: getInferenceUsageGroupBy(state.drilldown),
         }
       : {}),
   };
 }
 
-export function buildBillingUsageTotalsQuery(
+export function buildInferenceUsageTotalsQuery(
   state: UsageChartState,
   tz: string = getEffectiveTimezone(),
 ): NonNullable<OrganizationsBillingUsageTotalsRetrieveData["query"]> {
@@ -101,7 +101,7 @@ export function isBillingUsageDataEnabled(
   return cloudGate === "full" && isCloudHosted;
 }
 
-export function useBillingUsageData(state: UsageChartState) {
+export function useInferenceUsageData(state: UsageChartState) {
   const tz = useEffectiveTimezone();
 
   const cloudGate = useCloudGate({ cloudHostedOnly: true });
@@ -110,14 +110,14 @@ export function useBillingUsageData(state: UsageChartState) {
 
   const seriesQuery = useQuery({
     ...organizationsBillingUsageSeriesRetrieveOptions({
-      query: buildBillingUsageSeriesQuery(state, tz),
+      query: buildInferenceUsageSeriesQuery(state, tz),
     }),
     enabled,
   });
 
   const totalsQuery = useQuery({
     ...organizationsBillingUsageTotalsRetrieveOptions({
-      query: buildBillingUsageTotalsQuery(state, tz),
+      query: buildInferenceUsageTotalsQuery(state, tz),
     }),
     enabled,
   });

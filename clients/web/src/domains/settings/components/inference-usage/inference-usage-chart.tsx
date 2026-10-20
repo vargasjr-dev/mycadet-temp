@@ -119,7 +119,7 @@ function ChartLegend({
 }
 
 // ---------------------------------------------------------------------------
-// BillingUsageChart
+// InferenceUsageChart
 // ---------------------------------------------------------------------------
 
 const CHART_HEIGHT = 350;
@@ -129,17 +129,17 @@ const Y_TICK_COUNT = 5;
 const TOOLTIP_OFFSET = 12;
 const ESTIMATED_TOOLTIP_WIDTH = 200;
 
-interface BillingUsageChartProps {
+interface InferenceUsageChartProps {
   buckets: UsageBucket[];
   metric: ChartMetric;
   onBarClick?: (groupKey: string) => void;
 }
 
-export function BillingUsageChart({
+export function InferenceUsageChart({
   buckets,
   metric,
   onBarClick,
-}: BillingUsageChartProps) {
+}: InferenceUsageChartProps) {
   const { t } = useTranslation("settings");
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -322,7 +322,7 @@ export function BillingUsageChart({
       >
         {isEmpty ? (
           <div className="flex h-full items-center justify-center text-body-medium-lighter text-[var(--content-faint)]">
-            {t("billingUsageChart.empty")}
+            {t("inferenceUsageChart.empty")}
           </div>
         ) : width > 0 ? (
           <>

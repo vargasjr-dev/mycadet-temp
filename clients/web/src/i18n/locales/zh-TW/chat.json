@@ -614,11 +614,6 @@
     "groupCopied": "群組 ID 已複製到剪貼簿。",
     "groupFailed": "無法複製群組 ID。"
   },
-  "creditsCard": {
-    "balanceAria": "{balance} 點數",
-    "balanceShort": "{balance} 點",
-    "credits": "點數"
-  },
   "creditsUpsellCard": {
     "loginToAddCredits": "登入 Cadet Cloud 以新增點數。"
   },
@@ -1002,16 +997,6 @@
     "preferences": "偏好設定",
     "settings": "設定",
     "shareFeedback": "分享意見回饋"
-  },
-  "preferencesUsagePanel": {
-    "addCreditsAriaLabel": "新增點數",
-    "dailyExhausted": "今日用量已用完。新增點數以繼續。",
-    "dailyTitle": "每日用量",
-    "exhausted": "新增點數以繼續。",
-    "extraCredits": "目前使用額外用量點數",
-    "pctUsed": "已使用 {pct}%",
-    "settingsAriaLabel": "用量與帳單設定",
-    "title": "用量"
   },
   "previewError": {
     "cannotPreview": "無法預覽此檔案"
@@ -1638,7 +1623,7 @@
     "addCredits": "新增點數",
     "subtitle": "您已用完今日的免費用量，將在 {resetPhrase} 重設。升級或新增點數以繼續。",
     "title": "今日免費用量已用完",
-    "viewPlans": "查看方案"
+    "upgrade": "升級"
   },
   "chatsSettingsModal": {
     "title": "聊天設定",

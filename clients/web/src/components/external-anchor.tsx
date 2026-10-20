@@ -10,11 +10,17 @@ export {
   isWebUrl,
 } from "@mycadet/design-library/components/external-anchor";
 
-export function ExternalAnchor(props: Omit<ExternalAnchorProps, "onClick">) {
+export function ExternalAnchor({
+  onOpen,
+  ...props
+}: Omit<ExternalAnchorProps, "onClick"> & { onOpen?: () => void }) {
   return (
     <SharedExternalAnchor
       {...props}
-      onClick={(event) => handleNativeAnchorClick(event, props.href)}
+      onClick={(event) => {
+        onOpen?.();
+        handleNativeAnchorClick(event, props.href);
+      }}
     />
   );
 }

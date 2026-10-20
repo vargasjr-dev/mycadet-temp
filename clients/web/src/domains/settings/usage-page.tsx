@@ -1,5 +1,5 @@
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { BillingUsagePanel } from "@/domains/settings/components/billing-usage/billing-usage-panel";
+import { InferenceUsagePanel } from "@/domains/settings/components/inference-usage/inference-usage-panel";
 import { UsageTab } from "@/domains/settings/billing/usage/usage-tab";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 
@@ -19,7 +19,7 @@ export function UsagePage() {
 
   return (
     <div className="space-y-4">
-      {showChart && <BillingUsagePanel />}
+      {showChart && <InferenceUsagePanel />}
       <UsageTab assistantId={assistantId} />
     </div>
   );

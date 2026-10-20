@@ -7,7 +7,9 @@ import type { DiskPressureStatus } from "@mycadet/assistant-api";
 
 let nativeAndroid = false;
 
+const actualPlatformDetection = await import("@/runtime/platform-detection");
 mock.module("@/runtime/platform-detection", () => ({
+  ...actualPlatformDetection,
   useIsNativeAndroid: () => nativeAndroid,
 }));
 

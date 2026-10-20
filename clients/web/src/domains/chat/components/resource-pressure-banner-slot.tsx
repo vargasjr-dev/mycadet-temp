@@ -12,8 +12,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { useNavigate } from "react-router";
-
 import { ResourcePressureBanner } from "@/components/resource-pressure-banner";
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
 import {
@@ -23,8 +21,8 @@ import {
   setLocalNumber,
   watchSetting,
 } from "@/utils/local-settings";
-import { routes } from "@/utils/routes";
-
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 // setTimeout treats delays above 2^31 - 1 ms as 0; longer waits re-arm in
@@ -76,8 +74,6 @@ export function ResourcePressureBannerSlot({
   assistantStateKind,
   hidden = false,
 }: ResourcePressureBannerSlotProps) {
-  const navigate = useNavigate();
-
   const dismissedUntilKey = assistantId
     ? `cadet:resourcePressureDismissedUntil:${assistantId}`
     : null;
@@ -211,7 +207,7 @@ export function ResourcePressureBannerSlot({
         onDismiss={dismiss}
         onUpgrade={
           assistantStateKind === "active"
-            ? () => void navigate(routes.plans)
+            ? () => void openExternalUrl(cloudAccountBillingUrl())
             : null
         }
       />

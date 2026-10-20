@@ -173,18 +173,13 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
   },
-  "billingOnboardingModal": {
-    "backgroundConfirmContinue": "继续",
-    "backgroundConfirmKeepWaiting": "继续等待",
-    "backgroundConfirmTitle": "在后台继续？"
-  },
   "billingStatusHandler": {
     "successToast": "付款成功！您的积分余额将很快更新。"
   },
-  "billingUsageChart": {
+  "inferenceUsageChart": {
     "empty": "此期间无使用数据"
   },
-  "billingUsagePanel": {
+  "inferenceUsagePanel": {
     "backToAllUsage": "返回所有使用情况",
     "chartMetricAria": "图表指标",
     "eventsLabel": "事件",
@@ -232,19 +227,6 @@
     "providerLabel": "提供商",
     "unavailableOption": "{name} (不可用)"
   },
-  "cancelReasonSurvey": {
-    "optionCustomerService": "客服体验不佳",
-    "optionLowQuality": "质量没有达到我的预期",
-    "optionMissingFeatures": "缺少我需要的功能",
-    "optionOther": "其他",
-    "optionSwitchedService": "我换用了其他服务",
-    "optionTooComplex": "太复杂了",
-    "optionTooExpensive": "太贵了",
-    "optionUnused": "我用得不多",
-    "otherLabel": "告诉我们更多",
-    "otherPlaceholder": "我们可以在哪些方面做得更好？",
-    "title": "您为什么要取消？"
-  },
   "chatgptOauthSection": {
     "intro": "连接您的 ChatGPT 订阅，无需 API 密钥即可使用 OpenAI 模型。"
   },
@@ -275,7 +257,7 @@
     "preparingCheckoutAriaLabel": "正在准备结账",
     "reopenCheckout": "重新打开结账",
     "tryAgain": "重试",
-    "viewPlans": "查看套餐"
+    "openBilling": "打开账单"
   },
   "communityPage": {
     "communityHubDescription": "社区分享的展示、指南和项目。",
@@ -396,38 +378,6 @@
     "placeholder": "选择积分包",
     "tooltip": "每月分配给您的专业版计划订阅的积分额度"
   },
-  "customPlanModal": {
-    "cancel": "取消",
-    "changeFailed": "未能更改套餐。请重试。",
-    "comparedToPrevious": "与之前相比 {delta} ({previous})",
-    "continue": "继续",
-    "learnMore": "了解更多",
-    "machineSizeAriaLabel": "机器规格",
-    "machineSizeDocsAriaLabel": "了解更多关于机器规格的信息",
-    "machineSizeLabel": "选择机器规格：",
-    "machineSizePlaceholder": "选择机器规格",
-    "noExtraUsage": "无额外用量",
-    "recap": "概要",
-    "storageAriaLabel": "存储",
-    "storageDocsAriaLabel": "了解更多关于存储的信息",
-    "storageLabel": "选择存储：",
-    "storagePlaceholder": "选择存储",
-    "subtitle": "只为更好。",
-    "title": "创建自定义计划",
-    "totalBilledMonthly": "总计 · 按月计费",
-    "usageBundleAriaLabel": "用量包",
-    "usageBundleDocsAriaLabel": "了解更多关于用量包的信息",
-    "usageBundleLabel": "添加用量包：",
-    "usageBundlePlaceholder": "选择用量包",
-    "yourSelection": "您的选择："
-  },
-  "customPlanRow": {
-    "configure": "配置",
-    "currentPlanTag": "您的当前计划",
-    "genericDescriptor": "选择自定义CPU算力、内存和存储。或者直接添加一些 Token。",
-    "prompt": "需要更符合您需求的服务吗？",
-    "title": "自定义计划"
-  },
   "debugBundleExport": {
     "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
     "export": "导出调试包",
@@ -525,15 +475,6 @@
   "errorStates": {
     "fetchErrorTitle": "无法连接到账单服务",
     "goToBilling": "前往账单"
-  },
-  "freeDowngradeConfirmModal": {
-    "bodyCancelOnly": "您的订阅将在当前账单周期结束时取消。在此之前，您将保留专业版访问权限。",
-    "bodyCancelOnlyPortal": "您将被带到 Stripe 以取消订阅。",
-    "bodyWithFeatures": "降级将移除以下专业版功能。您的订阅将在当前账单周期结束时取消。",
-    "bodyWithFeaturesPortal": "降级将移除以下专业版功能。您将被带到 Stripe 以取消订阅。",
-    "cancel": "取消",
-    "confirm": "降级到基础版",
-    "title": "降级到基础版？"
   },
   "generalPage": {
     "chooseAssistant": "选择助手",
@@ -819,9 +760,6 @@
     "searchPlaceholder": "搜索操作…",
     "title": "操作覆盖"
   },
-  "packageSwitchConfirmModal": {
-    "cancel": "取消"
-  },
   "pairDeviceCard": {
     "copyError": "无法复制配对地址。",
     "generateButton": "生成配对二维码",
@@ -890,41 +828,7 @@
     "requestedMetaHost": "{when} 从本机请求",
     "title": "配对请求"
   },
-  "planCard": {
-    "usageBalanceAddCredits": "添加",
-    "usageBalanceBarRenews": "每月使用量，{date} 续订",
-    "usageBalanceBarResets": "每月使用量，{date} 重置",
-    "usageBalanceExhausted": "添加点数以继续使用您的助手",
-    "usageBalancePctUsed": "已使用 {pct}%",
-    "usageBalanceRenews": "{date} 续订",
-    "usageBalanceResets": "{date} 重置"
-  },
-  "planColumnCard": {
-    "currentPlan": "当前套餐",
-    "includes": "包含：",
-    "recommended": "推荐"
-  },
-  "plansPage": {
-    "alreadyOnPlanToast": "您已在使用此套餐。",
-    "back": "返回",
-    "billedMonthlyCaption": "按月计费",
-    "cancelAnytimeFooter": "您可以随时取消或更改套餐。了解更多信息请<docsLink>阅读我们的文档。</docsLink>",
-    "checkoutFailedToast": "未能启动升级结账。请重试。",
-    "downgradeTo": "降级到 {name}",
-    "featureComputer": "{machine} 计算机",
-    "featureStorage": "{gib} GB 存储空间",
-    "featureUsage": "{name} 用量，每月重置",
-    "foreverCaption": "永久",
-    "freeFeaturePayAsYouGo": "按量付费积分",
-    "freeFeatureSmallComputer": "小型计算机",
-    "freeFeatureStorage": "{gib} GB 存储空间",
-    "freePriceLabel": "免费",
-    "heading": "为您的助手提供更强大的能力",
-    "loadingPlansAriaLabel": "正在加载套餐",
-    "planUpdatedToast": "套餐已更新。",
-    "startFreeCta": "免费开始",
-    "subheading": "选择适合您需求的服务等级。"
-  },
+  "planCard": {},
   "preferencesModal": {
     "composerTitle": "撰写器",
     "description": "自定义快捷方式以及 Cadet 在此设备上的行为。",
@@ -1517,13 +1421,6 @@
     "updateWindowWithTz": "更新窗口 ({tz})",
     "weekly": "每周"
   },
-  "upgradeCancelPage": {
-    "billingUnavailable": "当前助手状态下无法使用账单功能。",
-    "platformLoginNotice": "登录 Cadet 平台以管理账单和使用情况。",
-    "redirectingBody": "正在将您返回账单设置…",
-    "returnToBilling": "返回账单",
-    "title": "升级已取消"
-  },
   "upgradeSuccessPage": {
     "cantConfirmUpgrade": "无法确认当前助手的升级。请返回账单页面重试。",
     "fetchErrorBody": "检查订阅时遇到问题。您的升级可能仍在处理中。请返回账单页面刷新。",
@@ -1587,11 +1484,6 @@
   "useBillingPortalSession": {
     "openError": "无法打开账单门户。请重试。"
   },
-  "useCancelSubscription": {
-    "cancelFailedToast": "无法取消您的订阅。请重试。",
-    "canceledToast": "专业版套餐已取消。您将拥有访问权限直到 {date}。",
-    "endOfBillingPeriod": "您的账单周期结束"
-  },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助手未就绪。请重试。",
     "saveApiKeyFailedToast": "未能保存 {providerName} API 密钥。请重试。"
@@ -1611,10 +1503,6 @@
     "deleteFailedToast": "未能删除提供商。请重试。",
     "deleteInUseToast": "此提供商正被某个配置文件使用或作为默认提供商。请在删除前更新这些设置。",
     "setDefaultFailedToast": "未能设置默认提供商。请重试。"
-  },
-  "useReactivateSubscription": {
-    "reactivateFailedToast": "无法重新激活您的订阅。请重试。",
-    "reactivatedToast": "专业版套餐已重新激活。"
   },
   "useSystemTasks": {
     "consolidationAlreadyQueued": "合并任务已在队列中或正在运行。",

@@ -142,12 +142,9 @@ describe("requiresCloudSession", () => {
   test.each([
     [routes.checkout],
     [`${routes.checkout}?package=mighty`],
-    [routes.plans],
-    [`${routes.plans}?package=mighty`],
     [BILLING_LANDING],
     [`${BILLING_LANDING}?${STRIPE_RETURN}`],
     [routes.settings.upgradeSuccess],
-    [routes.settings.upgradeCancel],
     [`${routes.settings.usage}?${STRIPE_RETURN}`],
     [PAID_HATCH],
     [routes.account.root],
@@ -173,8 +170,8 @@ describe("requiresCloudSession", () => {
   });
 
   test("matches sub-paths, not siblings that merely share a prefix", () => {
-    expect(requiresCloudSession(`${routes.plans}/detail`)).toBe(true);
-    expect(requiresCloudSession(`${routes.plans}-archive`)).toBe(false);
+    expect(requiresCloudSession(`${routes.checkout}/detail`)).toBe(true);
+    expect(requiresCloudSession(`${routes.checkout}-archive`)).toBe(false);
     expect(requiresCloudSession(`${routes.account.root}/login`)).toBe(true);
     expect(requiresCloudSession("/accountant")).toBe(false);
   });

@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import type { UsageBucket } from "@/generated/api/types.gen";
 
-import { BillingUsageChart } from "./billing-usage-chart";
+import { InferenceUsageChart } from "./inference-usage-chart";
 
-const meta: Meta<typeof BillingUsageChart> = {
-  title: "Settings/BillingUsageChart",
-  component: BillingUsageChart,
+const meta: Meta<typeof InferenceUsageChart> = {
+  title: "Settings/InferenceUsageChart",
+  component: InferenceUsageChart,
   parameters: {
     layout: "padded",
   },
@@ -26,7 +26,7 @@ const meta: Meta<typeof BillingUsageChart> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof BillingUsageChart>;
+type Story = StoryObj<typeof InferenceUsageChart>;
 
 function makeBuckets(
   days: number,

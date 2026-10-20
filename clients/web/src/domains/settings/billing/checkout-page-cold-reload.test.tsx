@@ -15,6 +15,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
 import { saveCheckoutIntent } from "@/lib/billing/checkout-intent";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
 import * as orgReadyMod from "@/hooks/use-is-org-ready";
@@ -52,7 +53,6 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   ...orgReadyMod,
   useOrgHeaderReadiness: () => "ready",
 }));
-
 
 const { useAuthStore } = await import("@/stores/auth-store");
 const { CheckoutPage } = await import("./checkout-page");
@@ -117,7 +117,7 @@ describe("CheckoutPage — cold reload", () => {
     expect(getByTestId("loc").textContent).toBe(ENTRY);
   });
 
-  test("a settled-absent session still bails to plans and drops the stash", async () => {
+  test("a settled-absent session still hands off to the cloud's billing page and drops the stash", async () => {
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
       cloudSession: "absent",
@@ -130,11 +130,9 @@ describe("CheckoutPage — cold reload", () => {
 
     const { getByTestId } = renderCheckout();
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
-    );
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(ENTRY);
     expect(upgradeCalls.length).toBe(0);
-    expect(openedUrl).toBeNull();
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 });

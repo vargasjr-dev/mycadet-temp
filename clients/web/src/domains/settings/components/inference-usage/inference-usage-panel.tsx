@@ -23,13 +23,13 @@ import {
 import { useTranslation } from "@/i18n";
 
 import {
-  BillingUsageChart,
+  InferenceUsageChart,
   type ChartMetric,
-} from "@/domains/settings/components/billing-usage/billing-usage-chart";
+} from "@/domains/settings/components/inference-usage/inference-usage-chart";
 import {
-  type BillingUsageSourceFilter,
-  useBillingUsageData,
-} from "@/domains/settings/components/billing-usage/use-billing-usage-data";
+  type InferenceUsageSourceFilter,
+  useInferenceUsageData,
+} from "@/domains/settings/components/inference-usage/use-inference-usage-data";
 import { useEffectiveTimezone } from "@/utils/use-effective-timezone";
 
 /**
@@ -58,7 +58,7 @@ function formatEventCount(count: number | undefined): string {
   return count.toLocaleString("en-US");
 }
 
-export function BillingUsagePanel() {
+export function InferenceUsagePanel() {
   const { t } = useTranslation("settings");
   const tz = useEffectiveTimezone();
   // Track the SELECTED PRESET IDENTITY (days), not its computed bounds, so a tz
@@ -72,20 +72,20 @@ export function BillingUsagePanel() {
   );
 
   const [drilldown, setDrilldown] = useState<{
-    usageSource: BillingUsageSourceFilter;
+    usageSource: InferenceUsageSourceFilter;
     llmDimension?: LlmUsageDimension;
   } | null>(null);
   const [metric, setMetric] = useState<ChartMetric>("spend");
 
   const metricItems: SegmentControlItem<ChartMetric>[] = useMemo(
     () => [
-      { value: "spend", label: t("billingUsagePanel.metricSpend") },
-      { value: "events", label: t("billingUsagePanel.metricEvents") },
+      { value: "spend", label: t("inferenceUsagePanel.metricSpend") },
+      { value: "events", label: t("inferenceUsagePanel.metricEvents") },
     ],
     [t],
   );
 
-  const { series, totals, isLoading, isError } = useBillingUsageData({
+  const { series, totals, isLoading, isError } = useInferenceUsageData({
     dateRange,
     drilldown,
     setDrilldown,
@@ -94,7 +94,7 @@ export function BillingUsagePanel() {
   const handleBarClick = drilldown
     ? undefined
     : (groupKey: string) => {
-        const usageSourceMap: Record<string, BillingUsageSourceFilter> = {
+        const usageSourceMap: Record<string, InferenceUsageSourceFilter> = {
           runtime_proxy_api: "runtime_proxy",
           oauth_proxy: "oauth_proxy",
         };
@@ -120,14 +120,14 @@ export function BillingUsagePanel() {
               variant="title-medium"
               className="text-[var(--content-default)]"
             >
-              {t("billingUsagePanel.title")}
+              {t("inferenceUsagePanel.title")}
             </Typography>
             <Typography
               as="p"
               variant="body-small-default"
               className="mt-2 text-[var(--content-tertiary)]"
             >
-              {t("billingUsagePanel.subtitle")}
+              {t("inferenceUsagePanel.subtitle")}
             </Typography>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -137,7 +137,7 @@ export function BillingUsagePanel() {
                 items={metricItems}
                 value={metric}
                 onChange={setMetric}
-                ariaLabel={t("billingUsagePanel.chartMetricAria")}
+                ariaLabel={t("inferenceUsagePanel.chartMetricAria")}
               />
             </div>
           </div>
@@ -154,7 +154,7 @@ export function BillingUsagePanel() {
                 formatUsd(totals?.total_usd)
               )
             }
-            label={t("billingUsagePanel.spendLabel")}
+            label={t("inferenceUsagePanel.spendLabel")}
           />
           <StatSquare
             icon={<Target />}
@@ -165,7 +165,7 @@ export function BillingUsagePanel() {
                 formatEventCount(totals?.event_count)
               )
             }
-            label={t("billingUsagePanel.eventsLabel")}
+            label={t("inferenceUsagePanel.eventsLabel")}
           />
         </div>
 
@@ -179,12 +179,12 @@ export function BillingUsagePanel() {
                 onClick={() => setDrilldown(null)}
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                <span>{t("billingUsagePanel.backToAllUsage")}</span>
+                <span>{t("inferenceUsagePanel.backToAllUsage")}</span>
                 <span className="text-[var(--content-tertiary)]">/</span>
                 <span className="text-body-medium-default text-[var(--content-default)]">
                   {drilldown.usageSource === "runtime_proxy"
-                    ? t("billingUsagePanel.llmSpend")
-                    : t("billingUsagePanel.oauthSpend")}
+                    ? t("inferenceUsagePanel.llmSpend")
+                    : t("inferenceUsagePanel.oauthSpend")}
                 </span>
               </button>
             </div>
@@ -199,7 +199,7 @@ export function BillingUsagePanel() {
                       llmDimension: nextDimension,
                     })
                   }
-                  ariaLabel={t("billingUsagePanel.llmDimensionAria")}
+                  ariaLabel={t("inferenceUsagePanel.llmDimensionAria")}
                 />
               </div>
             )}
@@ -213,11 +213,11 @@ export function BillingUsagePanel() {
           </div>
         ) : isError ? (
           <div className="flex h-[345px] items-center justify-center rounded-xl bg-[var(--surface-base)] text-body-medium-lighter text-[var(--content-tertiary)]">
-            {t("billingUsagePanel.loadError")}
+            {t("inferenceUsagePanel.loadError")}
           </div>
         ) : series ? (
           <div className="rounded-xl bg-[var(--surface-base)] p-3">
-            <BillingUsageChart
+            <InferenceUsageChart
               buckets={series.buckets}
               metric={metric}
               onBarClick={handleBarClick}

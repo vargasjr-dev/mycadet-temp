@@ -7,7 +7,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
-import { UsagePage } from "@/domains/settings/billing/usage-page";
+import { UsagePage } from "@/domains/settings/usage-page";
 import * as activeAssistantIdModule from "@/assistant/use-active-assistant-id";
 import * as cloudGate from "@/hooks/use-cloud-gate";
 
@@ -29,8 +29,8 @@ mock.module("@/domains/settings/billing/usage/usage-tab", () => ({
   UsageTab: () => <div data-testid="usage-tab-stub" />,
 }));
 mock.module(
-  "@/domains/settings/components/billing-usage/billing-usage-panel",
-  () => ({ BillingUsagePanel: () => <div data-testid="usage-chart-stub" /> }),
+  "@/domains/settings/components/inference-usage/inference-usage-panel",
+  () => ({ InferenceUsagePanel: () => <div data-testid="usage-chart-stub" /> }),
 );
 
 describe("usage-page", () => {

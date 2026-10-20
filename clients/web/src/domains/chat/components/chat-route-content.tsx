@@ -64,6 +64,8 @@ import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import { isChannelConversation } from "@/domains/chat/utils/conversation-channel";
 import { resolveComposerPlaceholder } from "@/domains/chat/utils/composer-placeholder";
 import { isPopoutWindow } from "@/runtime/popout-window";
+import { openExternalUrl } from "@/runtime/browser";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { isImageAttachment } from "@/utils/attachment-utils";
@@ -494,8 +496,8 @@ export function ChatMainPanel({
   }, [navigate]);
 
   const pushToDailyLimitSettings = useCallback(() => {
-    void navigate(routes.settings.usage);
-  }, [navigate]);
+    void openExternalUrl(cloudAccountBillingUrl());
+  }, []);
 
   const checkAssistant = useCallback(
     () => lifecycleService.checkAssistant(),

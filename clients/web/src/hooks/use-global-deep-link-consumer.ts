@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { notifyCheckoutSuccess } from "@/lib/billing/checkout-success";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
   isLiveVoiceSessionActive,
@@ -395,12 +397,13 @@ export function useGlobalDeepLinkConsumer(): void {
       }
       // A pro checkout's `session_id` lands on the usage page inert now —
       // the billing tab that consumed it is gone (billing management moved
-      // to the cloud's account pages).
-      navigateRef.current(
-        status === "success"
-          ? routes.settings.usage
-          : routes.settings.upgradeCancel,
-      );
+      // to the cloud's account pages). The cancel leg hands off there too:
+      // the upgrade-cancel page that used to own it is gone.
+      if (status === "success") {
+        navigateRef.current(routes.settings.usage);
+        return;
+      }
+      void openExternalUrl(cloudAccountBillingUrl());
     },
   );
 

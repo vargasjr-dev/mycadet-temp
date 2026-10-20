@@ -1,11 +1,11 @@
 import { CalendarClock } from "lucide-react";
-import { useNavigate } from "react-router";
 
 import { BillingErrorBanner } from "@/domains/chat/components/billing-error-banner";
 import { useTranslation } from "@/i18n";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { useAddCreditsModalStore } from "@/stores/add-credits-modal-store";
 import { dailyResetTimePhrase } from "@/utils/daily-reset-time";
-import { routes } from "@/utils/routes";
+import { openExternalUrl } from "@/runtime/browser";
 
 /**
  * Composer banner for the cloud's free-tier daily usage-credit cap: the
@@ -18,7 +18,6 @@ import { routes } from "@/utils/routes";
  */
 export function FreeTierDailyLimitBanner() {
   const { t } = useTranslation("chat");
-  const navigate = useNavigate();
   const resetPhrase = dailyResetTimePhrase();
 
   return (
@@ -33,8 +32,8 @@ export function FreeTierDailyLimitBanner() {
       title={t("freeTierDailyLimitBanner.title")}
       subtitle={t("freeTierDailyLimitBanner.subtitle", { resetPhrase })}
       secondaryAction={{
-        label: t("freeTierDailyLimitBanner.viewPlans"),
-        onClick: () => void navigate(routes.plans),
+        label: t("freeTierDailyLimitBanner.upgrade"),
+        onClick: () => void openExternalUrl(cloudAccountBillingUrl()),
       }}
       action={{
         label: t("freeTierDailyLimitBanner.addCredits"),

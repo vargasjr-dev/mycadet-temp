@@ -3,11 +3,11 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { computeRangeInTimezone } from "@/components/charts/date-range-select";
 
 import {
-  buildBillingUsageSeriesQuery,
-  buildBillingUsageTotalsQuery,
+  buildInferenceUsageSeriesQuery,
+  buildInferenceUsageTotalsQuery,
   isBillingUsageDataEnabled,
   type UsageChartState,
-} from "./use-billing-usage-data";
+} from "./use-inference-usage-data";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,18 +24,24 @@ function makeState(): UsageChartState {
   };
 }
 
-describe("buildBillingUsageSeriesQuery", () => {
+describe("buildInferenceUsageSeriesQuery", () => {
   test("uses the explicit tz argument", () => {
-    const query = buildBillingUsageSeriesQuery(makeState(), "America/New_York");
+    const query = buildInferenceUsageSeriesQuery(
+      makeState(),
+      "America/New_York",
+    );
     expect(query.tz).toBe("America/New_York");
     expect(query.from).toBe("2026-01-01");
     expect(query.to).toBe("2026-01-31");
   });
 });
 
-describe("buildBillingUsageTotalsQuery", () => {
+describe("buildInferenceUsageTotalsQuery", () => {
   test("uses the explicit tz argument", () => {
-    const query = buildBillingUsageTotalsQuery(makeState(), "America/New_York");
+    const query = buildInferenceUsageTotalsQuery(
+      makeState(),
+      "America/New_York",
+    );
     expect(query.tz).toBe("America/New_York");
     expect(query.from).toBe("2026-01-01");
     expect(query.to).toBe("2026-01-31");
@@ -137,9 +143,9 @@ describe("default tz resolution", () => {
 
     // Re-import after mocking so the builders pick up the mocked default.
     const {
-      buildBillingUsageSeriesQuery: buildSeries,
-      buildBillingUsageTotalsQuery: buildTotals,
-    } = await import("./use-billing-usage-data");
+      buildInferenceUsageSeriesQuery: buildSeries,
+      buildInferenceUsageTotalsQuery: buildTotals,
+    } = await import("./use-inference-usage-data");
 
     expect(buildSeries(makeState()).tz).toBe("Europe/Berlin");
     expect(buildTotals(makeState()).tz).toBe("Europe/Berlin");

@@ -173,18 +173,13 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
-  "billingOnboardingModal": {
-    "backgroundConfirmContinue": "Continue",
-    "backgroundConfirmKeepWaiting": "Keep waiting",
-    "backgroundConfirmTitle": "Continue in the background?"
-  },
   "billingStatusHandler": {
     "successToast": "Payment received! Your credit balance will update shortly."
   },
-  "billingUsageChart": {
+  "inferenceUsageChart": {
     "empty": "No usage data for this period"
   },
-  "billingUsagePanel": {
+  "inferenceUsagePanel": {
     "backToAllUsage": "Back to all usage",
     "chartMetricAria": "Chart metric",
     "eventsLabel": "Events",
@@ -232,19 +227,6 @@
     "providerLabel": "Provider",
     "unavailableOption": "{name} (unavailable)"
   },
-  "cancelReasonSurvey": {
-    "optionCustomerService": "I had a poor support experience",
-    "optionLowQuality": "The quality didn't meet my expectations",
-    "optionMissingFeatures": "It's missing features I need",
-    "optionOther": "Other",
-    "optionSwitchedService": "I switched to another service",
-    "optionTooComplex": "It's too complicated",
-    "optionTooExpensive": "It's too expensive",
-    "optionUnused": "I don't use it enough",
-    "otherLabel": "Tell us more",
-    "otherPlaceholder": "What could we have done better?",
-    "title": "Why are you canceling?"
-  },
   "chatgptOauthSection": {
     "intro": "Connect your ChatGPT subscription to use OpenAI models without an API key."
   },
@@ -275,7 +257,7 @@
     "preparingCheckoutAriaLabel": "Preparing checkout",
     "reopenCheckout": "Reopen checkout",
     "tryAgain": "Try again",
-    "viewPlans": "View plans"
+    "openBilling": "Open billing"
   },
   "communityPage": {
     "communityHubDescription": "Showcases, guides, and projects shared by the community.",
@@ -403,38 +385,6 @@
     "placeholder": "Select a credit bundle",
     "tooltip": "A monthly allotment of credits added to your Pro Plan subscription"
   },
-  "customPlanModal": {
-    "cancel": "Cancel",
-    "changeFailed": "Failed to change your plan. Please try again.",
-    "comparedToPrevious": "{delta} compared to previous ({previous})",
-    "continue": "Continue",
-    "learnMore": "Learn more",
-    "machineSizeAriaLabel": "Machine size",
-    "machineSizeDocsAriaLabel": "Learn more about machine sizes",
-    "machineSizeLabel": "Select a machine size:",
-    "machineSizePlaceholder": "Select a machine size",
-    "noExtraUsage": "No extra usage",
-    "recap": "Recap",
-    "storageAriaLabel": "Storage",
-    "storageDocsAriaLabel": "Learn more about storage",
-    "storageLabel": "Select storage:",
-    "storagePlaceholder": "Select storage",
-    "subtitle": "Just better.",
-    "title": "Create a custom plan",
-    "totalBilledMonthly": "Total · Billed monthly",
-    "usageBundleAriaLabel": "Usage bundle",
-    "usageBundleDocsAriaLabel": "Learn more about usage bundles",
-    "usageBundleLabel": "Add a usage bundle:",
-    "usageBundlePlaceholder": "Select a usage bundle",
-    "yourSelection": "Your selection:"
-  },
-  "customPlanRow": {
-    "configure": "Configure",
-    "currentPlanTag": "Your Current Plan",
-    "genericDescriptor": "Select custom CPU power, Ram and Storage. Or just throw in some tokens.",
-    "prompt": "Need something more tailored to your needs?",
-    "title": "Custom Plan"
-  },
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
@@ -532,15 +482,6 @@
   "errorStates": {
     "fetchErrorTitle": "Couldn't reach billing",
     "goToBilling": "Go to billing"
-  },
-  "freeDowngradeConfirmModal": {
-    "bodyCancelOnly": "Your subscription will be canceled at the end of your current billing period. You'll keep Pro access until then.",
-    "bodyCancelOnlyPortal": "You'll be taken to Stripe to cancel your subscription.",
-    "bodyWithFeatures": "Downgrading removes the following Pro features. Your subscription will be canceled at the end of your current billing period.",
-    "bodyWithFeaturesPortal": "Downgrading removes the following Pro features. You'll be taken to Stripe to cancel your subscription.",
-    "cancel": "Cancel",
-    "confirm": "Downgrade to Base",
-    "title": "Downgrade to Base?"
   },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
@@ -893,9 +834,6 @@
     "searchPlaceholder": "Search actions…",
     "title": "Action Overrides"
   },
-  "packageSwitchConfirmModal": {
-    "cancel": "Cancel"
-  },
   "pairDeviceCard": {
     "copyError": "Could not copy the pairing address.",
     "generateButton": "Generate pairing QR",
@@ -964,41 +902,7 @@
     "requestedMetaHost": "Requested {when} from this computer",
     "title": "Pairing requests"
   },
-  "planCard": {
-    "usageBalanceAddCredits": "Add",
-    "usageBalanceBarRenews": "Monthly Usage, renews on {date}",
-    "usageBalanceBarResets": "Monthly Usage, resets on {date}",
-    "usageBalanceExhausted": "Add credits to continue using your assistant",
-    "usageBalancePctUsed": "{pct}% used",
-    "usageBalanceRenews": "Renews on {date}",
-    "usageBalanceResets": "Resets on {date}"
-  },
-  "planColumnCard": {
-    "currentPlan": "Current Plan",
-    "includes": "Includes:",
-    "recommended": "Recommended"
-  },
-  "plansPage": {
-    "alreadyOnPlanToast": "You're already on this plan.",
-    "back": "Back",
-    "billedMonthlyCaption": "Billed monthly",
-    "cancelAnytimeFooter": "You can cancel or change your plan anytime you want. To learn more <docsLink>Read our Docs.</docsLink>",
-    "checkoutFailedToast": "Failed to start the upgrade checkout. Please try again.",
-    "downgradeTo": "Downgrade to {name}",
-    "featureComputer": "{machine} Computer",
-    "featureStorage": "{gib} GB Storage",
-    "featureUsage": "{name} usage, reset monthly",
-    "foreverCaption": "Forever",
-    "freeFeaturePayAsYouGo": "Pay-as-you-go credits",
-    "freeFeatureSmallComputer": "Small Computer",
-    "freeFeatureStorage": "{gib} GB Storage",
-    "freePriceLabel": "Free",
-    "heading": "Give your assistant more power",
-    "loadingPlansAriaLabel": "Loading plans",
-    "planUpdatedToast": "Plan updated.",
-    "startFreeCta": "Start Free",
-    "subheading": "Choose the level that matches how much you want it to take on."
-  },
+  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Composer",
     "description": "Customize shortcuts and how Cadet behaves on this device.",
@@ -1613,13 +1517,6 @@
     "updateWindowWithTz": "Update window ({tz})",
     "weekly": "Weekly"
   },
-  "upgradeCancelPage": {
-    "billingUnavailable": "Billing isn't available for the current assistant state.",
-    "platformLoginNotice": "Log in to Cadet Cloud to manage billing and usage.",
-    "redirectingBody": "Returning you to billing settings…",
-    "returnToBilling": "Return to billing",
-    "title": "Upgrade canceled"
-  },
   "upgradeSuccessPage": {
     "cantConfirmUpgrade": "We can't confirm your upgrade for the current assistant. Return to billing to retry.",
     "fetchErrorBody": "We hit a problem checking your subscription. Your upgrade may still be processing. Return to billing to refresh.",
@@ -1683,11 +1580,6 @@
   "useBillingPortalSession": {
     "openError": "Couldn't open the billing portal. Please try again."
   },
-  "useCancelSubscription": {
-    "cancelFailedToast": "Couldn't cancel your subscription. Please try again.",
-    "canceledToast": "Pro plan canceled. You'll have access until {date}.",
-    "endOfBillingPeriod": "the end of your billing period"
-  },
   "useDaemonConfig": {
     "assistantNotReadyToast": "Assistant not ready. Please try again.",
     "saveApiKeyFailedToast": "Failed to save {providerName} API key. Please try again."
@@ -1707,10 +1599,6 @@
     "deleteFailedToast": "Failed to delete the provider. Please try again.",
     "deleteInUseToast": "This provider is in use by a profile or as the default provider. Update those settings before deleting it.",
     "setDefaultFailedToast": "Failed to set the default provider. Please try again."
-  },
-  "useReactivateSubscription": {
-    "reactivateFailedToast": "Couldn't reactivate your subscription. Please try again.",
-    "reactivatedToast": "Pro plan reactivated."
   },
   "useSystemTasks": {
     "consolidationAlreadyQueued": "Consolidation already queued or running.",

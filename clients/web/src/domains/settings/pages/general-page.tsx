@@ -46,6 +46,8 @@ import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
 import { useIsAuthenticated } from "@/stores/auth-store";
 import { useTranslation } from "@/i18n";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
@@ -168,7 +170,9 @@ export function GeneralPage() {
             void navigate(`${routes.workspace}?sort=size`)
           }
           onUpgradeStorage={
-            infraGate === "full" ? () => void navigate(routes.plans) : null
+            infraGate === "full"
+              ? () => void openExternalUrl(cloudAccountBillingUrl())
+              : null
           }
         />
       )}

@@ -13,9 +13,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
 import { saveCheckoutIntent } from "@/lib/billing/checkout-intent";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import * as capacitorCore from "@capacitor/core";
 import * as sdkGen from "@/generated/api/sdk.gen";
 import * as browserRuntime from "@/runtime/browser";
+import * as nativeAuthMod from "@/runtime/native-auth";
 import * as platformDetection from "@/runtime/platform-detection";
 import * as orgReadyMod from "@/hooks/use-is-org-ready";
 import type { OrgHeaderReadiness } from "@/hooks/use-is-org-ready";
@@ -89,6 +91,13 @@ mock.module("@/runtime/browser", () => ({
 mock.module("@/runtime/platform-detection", () => ({
   ...platformDetection,
   useIsNativeAndroid: () => nativeAndroid,
+}));
+
+// The external anchor's click handler reads this one directly (not through the
+// Capacitor surface the mocks above cover), so it needs the same toggle.
+mock.module("@/runtime/native-auth", () => ({
+  ...nativeAuthMod,
+  isNativePlatform: () => nativePlatform,
 }));
 
 mock.module("@/hooks/use-cloud-gate", () => ({
@@ -194,9 +203,7 @@ describe("CheckoutPage", () => {
     const { getByTestId } = renderCheckout("/assistant/checkout?package=super");
 
     await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe(
-        "/assistant/settings/usage?tab=billing",
-      ),
+      expect(getByTestId("loc").textContent).toBe("/assistant/settings/usage"),
     );
     expect(upgradeCalls.length).toBe(0);
     expect(openedUrl).toBeNull();
@@ -277,7 +284,7 @@ describe("CheckoutPage", () => {
     );
 
     await findByRole("button", { name: "Try again" });
-    await findByRole("link", { name: "View plans" });
+    await findByRole("link", { name: "Open billing" });
     expect(queryByLabelText("Preparing checkout")).toBeNull();
     // Deciding must not mean sending the request anyway: without
     // `Cadet-Organization-Id` the upgrade fails.
@@ -306,7 +313,7 @@ describe("CheckoutPage", () => {
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
   });
 
-  test("a no_op result navigates to plans carrying the package and clears any marked stash", async () => {
+  test("a no_op result hands off to the cloud's billing page and clears any marked stash", async () => {
     upgradeData = { status: "no_op", checkout_url: null, message: "" };
     // A marked stash from the onboarding signup carry survives into this bounce;
     // the already-Pro no_op must clear it rather than leave it lingering its TTL.
@@ -318,13 +325,12 @@ describe("CheckoutPage", () => {
     const { getByTestId } = renderCheckout("/assistant/checkout?package=super");
 
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
-    // Already Pro is an upgrade request plans can still honor, in place.
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe(
-        "/assistant/plans?package=super",
-      ),
+    // Already Pro has no in-app switch flow anymore — the hand-off lands on
+    // the cloud's account billing page, and the route itself never moves.
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      "/assistant/checkout?package=super",
     );
-    expect(openedUrl).toBeNull();
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 
@@ -335,29 +341,26 @@ describe("CheckoutPage", () => {
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
     // The error state offers a retry and a non-dead-end escape to plans.
     await findByRole("button", { name: "Try again" });
-    await findByRole("link", { name: "View plans" });
+    await findByRole("link", { name: "Open billing" });
 
     fireEvent.click(await findByRole("button", { name: "Try again" }));
     await waitFor(() => expect(upgradeCalls.length).toBe(2));
   });
 
-  test("the error escape falls back to plans and drops the stash", async () => {
+  test("the error escape hands off to the cloud's billing page and drops the stash", async () => {
     upgradeRejects = true;
+    nativePlatform = true;
     saveCheckoutIntent({
       kind: "package",
       packageKey: "super",
       resumeAfterOnboarding: true,
     });
-    const { findByRole, getByTestId } = renderCheckout(
-      "/assistant/checkout?package=super",
-    );
+    const { findByRole } = renderCheckout("/assistant/checkout?package=super");
 
-    // No continuation carried, so the escape is literally the plans takeover.
-    fireEvent.click(await findByRole("link", { name: "View plans" }));
+    // No continuation carried, so the escape is the cloud billing hand-off.
+    fireEvent.click(await findByRole("link", { name: "Open billing" }));
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
-    );
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 
@@ -385,16 +388,15 @@ describe("CheckoutPage", () => {
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 
-  test("missing package navigates to plans without firing the upgrade", async () => {
+  test("missing package hands off to the cloud's billing page without firing the upgrade", async () => {
     const { getByTestId } = renderCheckout("/assistant/checkout");
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
-    );
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe("/assistant/checkout");
     expect(upgradeCalls.length).toBe(0);
   });
 
-  test("a gated session skips the upgrade and falls back to plans", async () => {
+  test("a gated session skips the upgrade and hands off to the cloud's billing page", async () => {
     gateValue = "gated";
     saveCheckoutIntent({
       kind: "package",
@@ -403,8 +405,9 @@ describe("CheckoutPage", () => {
     });
     const { getByTestId } = renderCheckout("/assistant/checkout?package=super");
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      "/assistant/checkout?package=super",
     );
     expect(upgradeCalls.length).toBe(0);
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
@@ -448,8 +451,9 @@ describe("CheckoutPage", () => {
     gateValue = "disabled";
     rerender(makeTree());
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      "/assistant/checkout?package=super",
     );
     expect(upgradeCalls.length).toBe(0);
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
@@ -507,7 +511,7 @@ describe("CheckoutPage", () => {
     // return, no navigation. So whatever the hand-off rendered is exactly what
     // the user comes back to, and it has to be something they can act on.
     await findByRole("button", { name: "Reopen checkout" });
-    await findByRole("link", { name: "View plans" });
+    await findByRole("link", { name: "Open billing" });
     expect(queryByLabelText("Preparing checkout")).toBeNull();
   });
 
@@ -538,10 +542,11 @@ describe("CheckoutPage", () => {
       "/assistant/checkout?package=super",
     );
 
-    fireEvent.click(await findByRole("link", { name: "View plans" }));
+    fireEvent.click(await findByRole("link", { name: "Open billing" }));
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      "/assistant/checkout?package=super",
     );
     // Unlike the failure escape: a checkout that reached Stripe may still be
     // paid for, and the hand-off already rewrote the stash unmarked, so leaving
@@ -584,15 +589,17 @@ describe("CheckoutPage", () => {
     expect(queryByRole("button", { name: "Reopen checkout" })).toBeNull();
   });
 
-  test("an off-site continuation is rejected in favor of plans", async () => {
+  test("an off-site continuation is rejected in favor of the cloud billing hand-off", async () => {
     // No package and no tier configuration: the route bails to the
-    // continuation, and an off-site continuation is rejected in favor of plans.
+    // continuation, and an off-site continuation is rejected in favor of the
+    // cloud billing page — never the attacker's URL.
     const { getByTestId } = renderCheckout(
       `/assistant/checkout?continue=${encodeURIComponent("https://evil.example.com/steal")}`,
     );
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      `/assistant/checkout?continue=${encodeURIComponent("https://evil.example.com/steal")}`,
     );
   });
 
@@ -676,29 +683,24 @@ describe("CheckoutPage", () => {
       packageKey: "super",
       resumeAfterOnboarding: true,
     });
-    const { getByTestId } = renderCheckout(
-      "/assistant/checkout?machine_tier=large&storage_tier=xxl",
-    );
+    renderCheckout("/assistant/checkout?machine_tier=large&storage_tier=xxl");
 
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
-    );
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
     expect(upgradeCalls.length).toBe(0);
-    expect(openedUrl).toBeNull();
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 
-  test("a no_op on a custom configuration falls back to plans", async () => {
+  test("a no_op on a custom configuration hands off to the cloud's billing page", async () => {
     // Already Pro: the upgrade endpoint no-ops instead of minting a session,
     // for a custom body exactly as it does for a package.
     upgradeData = { status: "no_op", checkout_url: null, message: "" };
     const { getByTestId } = renderCheckout(CUSTOM_ENTRY);
 
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
-    await waitFor(() =>
-      expect(getByTestId("loc").textContent).toBe("/assistant/plans"),
+    await waitFor(() => expect(openedUrl).toBe(cloudAccountBillingUrl()));
+    expect(getByTestId("loc").textContent).toBe(
+      "/assistant/checkout?machine_tier=large&storage_tier=s&credit_tier=credits_50",
     );
-    expect(openedUrl).toBeNull();
     expect(sessionStorage.getItem(INTENT_KEY)).toBeNull();
   });
 });

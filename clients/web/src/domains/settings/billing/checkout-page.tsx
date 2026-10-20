@@ -14,10 +14,12 @@ import {
   saveCheckoutIntent,
 } from "@/lib/billing/checkout-intent";
 import { checkoutReturnTarget } from "@/lib/billing/checkout-return-target";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { parseCustomCheckoutSelection } from "@/lib/billing/custom-checkout-params";
 import { openUrl } from "@/runtime/browser";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { useOrganizationStore } from "@/stores/organization-store";
+import { ExternalAnchor } from "@/components/external-anchor";
 import { PACKAGE_PARAM, routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";
@@ -117,15 +119,28 @@ function CheckoutPageContent() {
   // Where to go when no purchase happens here. Onboarding hands off before the
   // funnel flag has necessarily resolved and passes its own next step, so a
   // pending→disabled transition resumes onboarding instead of stranding a new
-  // user on plans, outside the funnel and short of an assistant.
-  const bailTarget = checkoutContinuation(searchParams, routes.plans);
+  // user outside the funnel and short of an assistant. Without a carried
+  // continuation the bail lands on the cloud's account billing page — plan
+  // management moved there when the plans takeover left.
+  const carriedBail = checkoutContinuation(searchParams, "");
+  const bailTarget = carriedBail || cloudAccountBillingUrl();
   // The escape offered on a failed attempt goes there too, and says so: a
-  // carried onboarding continuation is not the plans takeover, and a label
-  // naming one destination while taking another is worse than either wording.
-  const bailLabel =
-    bailTarget === routes.plans
-      ? t("checkoutPage.viewPlans")
-      : t("checkoutPage.continueSetup");
+  // carried onboarding continuation is not the cloud billing hand-off, and a
+  // label naming one destination while taking another is worse than either
+  // wording.
+  const bailLabel = carriedBail
+    ? t("checkoutPage.continueSetup")
+    : t("checkoutPage.openBilling");
+
+  // A carried continuation is an in-app route; the cloud billing fallback is
+  // another app, so it leaves through the browser, not the router.
+  const goToBailTarget = useCallback(() => {
+    if (carriedBail) {
+      navigate(bailTarget, { replace: true });
+    } else {
+      void openUrl(bailTarget);
+    }
+  }, [bailTarget, carriedBail, navigate]);
 
   const { mutateAsync } = useMutation(
     organizationsBillingSubscriptionUpgradeCreateMutation(),
@@ -198,20 +213,14 @@ function CheckoutPageContent() {
       // `no_op` means already Pro, nothing to provision. Clear the stashes so
       // an already-Pro bounce doesn't leave them lingering for their TTL, then
       // hand off rather than stranding the user on a blank splash. Pro→Pro is
-      // an in-place package switch, never Stripe Checkout, so the requested
-      // package rides along to plans, which opens that switch from it. A
-      // carried continuation owns the destination instead — an onboarding
-      // resume must not divert into the switch modal. A custom configuration
-      // names no package, so it lands on the bail target as it always has:
-      // plans has no deep link that reopens a per-dimension configuration.
+      // an in-place package switch, never Stripe Checkout, and the plans
+      // takeover that owned the switch flow is gone — billing management
+      // lives on the cloud's account billing page, so that is where the
+      // hand-off lands. A carried continuation owns the destination instead —
+      // an onboarding resume must not divert away from the funnel.
       phaseRef.current = "settled";
       abandonCheckout();
-      navigate(
-        bailTarget === routes.plans && packageKey
-          ? routes.plansForPackage(packageKey)
-          : bailTarget,
-        { replace: true },
-      );
+      goToBailTarget();
     } catch {
       if (phaseRef.current !== "running") {
         return;
@@ -219,7 +228,7 @@ function CheckoutPageContent() {
       phaseRef.current = "settled";
       setFailed(true);
     }
-  }, [bailTarget, customSelection, mutateAsync, navigate, packageKey]);
+  }, [customSelection, goToBailTarget, mutateAsync, packageKey]);
 
   // The retry the failure and hand-off UIs offer. A failed or abandoned attempt
   // re-runs the upgrade; a missing organization re-runs org resolution instead,
@@ -262,7 +271,7 @@ function CheckoutPageContent() {
       // screen resumes checkout from.
       phaseRef.current = "settled";
       abandonCheckout();
-      navigate(bailTarget, { replace: true });
+      goToBailTarget();
       return;
     }
     // Hold until the cloud gate is full (a `"pending"` session lands here).
@@ -288,10 +297,9 @@ function CheckoutPageContent() {
     }
     void runCheckout();
   }, [
-    bailTarget,
     customSelection,
     gate,
-    navigate,
+    goToBailTarget,
     orgReadiness,
     packageKey,
     runCheckout,
@@ -310,16 +318,29 @@ function CheckoutPageContent() {
            * Nothing was bought, and a signup-marked intent left behind is one
            * the privacy screen resumes checkout from for the rest of its TTL.
            */}
-          <Link
-            to={bailTarget}
-            onClick={abandonCheckout}
-            className={cn(
-              textLinkVariants({ tone: "quiet" }),
-              "text-sm text-[var(--content-tertiary)]",
-            )}
-          >
-            {bailLabel}
-          </Link>
+          {carriedBail ? (
+            <Link
+              to={bailTarget}
+              onClick={abandonCheckout}
+              className={cn(
+                textLinkVariants({ tone: "quiet" }),
+                "text-sm text-[var(--content-tertiary)]",
+              )}
+            >
+              {bailLabel}
+            </Link>
+          ) : (
+            <ExternalAnchor
+              href={bailTarget}
+              onOpen={abandonCheckout}
+              className={cn(
+                textLinkVariants({ tone: "quiet" }),
+                "text-sm text-[var(--content-tertiary)]",
+              )}
+            >
+              {bailLabel}
+            </ExternalAnchor>
+          )}
         </div>
       </div>
     );
@@ -342,15 +363,27 @@ function CheckoutPageContent() {
            * signup marker, so leaving it can only help the return trip — it
            * carries a package name and resumes nothing on its own.
            */}
-          <Link
-            to={bailTarget}
-            className={cn(
-              textLinkVariants({ tone: "quiet" }),
-              "text-sm text-[var(--content-tertiary)]",
-            )}
-          >
-            {bailLabel}
-          </Link>
+          {carriedBail ? (
+            <Link
+              to={bailTarget}
+              className={cn(
+                textLinkVariants({ tone: "quiet" }),
+                "text-sm text-[var(--content-tertiary)]",
+              )}
+            >
+              {bailLabel}
+            </Link>
+          ) : (
+            <ExternalAnchor
+              href={bailTarget}
+              className={cn(
+                textLinkVariants({ tone: "quiet" }),
+                "text-sm text-[var(--content-tertiary)]",
+              )}
+            >
+              {bailLabel}
+            </ExternalAnchor>
+          )}
         </div>
       </div>
     );

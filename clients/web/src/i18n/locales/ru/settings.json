@@ -159,18 +159,13 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
   },
-  "billingOnboardingModal": {
-    "backgroundConfirmContinue": "Продолжить",
-    "backgroundConfirmKeepWaiting": "Подождать ещё",
-    "backgroundConfirmTitle": "Продолжить в фоне?"
-  },
   "billingStatusHandler": {
     "successToast": "Оплата получена! Баланс кредитов скоро обновится."
   },
-  "billingUsageChart": {
+  "inferenceUsageChart": {
     "empty": "Нет данных об использовании за этот период"
   },
-  "billingUsagePanel": {
+  "inferenceUsagePanel": {
     "backToAllUsage": "Ко всему использованию",
     "chartMetricAria": "Метрика графика",
     "eventsLabel": "События",
@@ -218,19 +213,6 @@
     "providerLabel": "Провайдер",
     "unavailableOption": "{name} (недоступно)"
   },
-  "cancelReasonSurvey": {
-    "optionCustomerService": "Плохой опыт общения с поддержкой",
-    "optionLowQuality": "Качество не оправдало ожиданий",
-    "optionMissingFeatures": "Не хватает нужных функций",
-    "optionOther": "Другое",
-    "optionSwitchedService": "Переход на другой сервис",
-    "optionTooComplex": "Слишком сложно",
-    "optionTooExpensive": "Слишком дорого",
-    "optionUnused": "Редко пользуюсь",
-    "otherLabel": "Расскажите подробнее",
-    "otherPlaceholder": "Что мы могли бы сделать лучше?",
-    "title": "Почему вы отменяете подписку?"
-  },
   "chatgptOauthSection": {
     "intro": "Подключение подписки ChatGPT для моделей OpenAI без API-ключа."
   },
@@ -261,7 +243,7 @@
     "preparingCheckoutAriaLabel": "Готовим оплату",
     "reopenCheckout": "Открыть оплату снова",
     "tryAgain": "Попробовать снова",
-    "viewPlans": "Смотреть планы"
+    "openBilling": "Открыть платежи"
   },
   "communityPage": {
     "communityHubDescription": "Витрины, гайды и проекты от сообщества.",
@@ -382,38 +364,6 @@
     "placeholder": "Выбор пакета кредитов",
     "tooltip": "Ежемесячный запас кредитов, который добавляется к подписке Pro"
   },
-  "customPlanModal": {
-    "cancel": "Отмена",
-    "changeFailed": "Не удалось изменить план. Повторите попытку.",
-    "comparedToPrevious": "{delta} относительно предыдущего ({previous})",
-    "continue": "Продолжить",
-    "learnMore": "Подробнее",
-    "machineSizeAriaLabel": "Размер машины",
-    "machineSizeDocsAriaLabel": "Подробнее о размерах машин",
-    "machineSizeLabel": "Выбор размера машины:",
-    "machineSizePlaceholder": "Выбор размера машины",
-    "noExtraUsage": "Без дополнительного использования",
-    "recap": "Итого",
-    "storageAriaLabel": "Хранилище",
-    "storageDocsAriaLabel": "Подробнее о хранилище",
-    "storageLabel": "Выбор хранилища:",
-    "storagePlaceholder": "Выбор хранилища",
-    "subtitle": "Просто лучше.",
-    "title": "Сборка плана",
-    "totalBilledMonthly": "Итого · Ежемесячная оплата",
-    "usageBundleAriaLabel": "Пакет использования",
-    "usageBundleDocsAriaLabel": "Подробнее о пакетах использования",
-    "usageBundleLabel": "Добавить пакет использования:",
-    "usageBundlePlaceholder": "Выбор пакета использования",
-    "yourSelection": "Выбор:"
-  },
-  "customPlanRow": {
-    "configure": "Настроить",
-    "currentPlanTag": "Текущий план",
-    "genericDescriptor": "Выбор CPU, RAM и хранилища. Или просто добавление токенов.",
-    "prompt": "Нужно что-то ближе к текущим задачам?",
-    "title": "Свой план"
-  },
   "debugBundleExport": {
     "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
     "export": "Экспортировать отладочный пакет",
@@ -511,15 +461,6 @@
   "errorStates": {
     "fetchErrorTitle": "Не удалось открыть оплату",
     "goToBilling": "К оплате"
-  },
-  "freeDowngradeConfirmModal": {
-    "bodyCancelOnly": "Подписка будет отменена в конце текущего расчётного периода. Доступ Pro сохранится до этого момента.",
-    "bodyCancelOnlyPortal": "Перенаправление в Stripe, чтобы отменить подписку.",
-    "bodyWithFeatures": "При понижении пропадут эти функции Pro. Подписка будет отменена в конце текущего расчётного периода.",
-    "bodyWithFeaturesPortal": "При понижении пропадут эти функции Pro. Перенаправление в Stripe, чтобы отменить подписку.",
-    "cancel": "Отмена",
-    "confirm": "Перейти на Base",
-    "title": "Перейти на Base?"
   },
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",
@@ -805,9 +746,6 @@
     "searchPlaceholder": "Поиск действий…",
     "title": "Переопределения действий"
   },
-  "packageSwitchConfirmModal": {
-    "cancel": "Отмена"
-  },
   "pairDeviceCard": {
     "copyError": "Не удалось скопировать адрес привязки.",
     "generateButton": "Создать QR для привязки",
@@ -875,41 +813,7 @@
     "requestedMetaHost": "Запрос {when} с этого компьютера",
     "title": "Запросы на привязку"
   },
-  "planCard": {
-    "usageBalanceAddCredits": "Добавить",
-    "usageBalanceBarRenews": "Месячное использование, продлится {date}",
-    "usageBalanceBarResets": "Месячное использование, сброс {date}",
-    "usageBalanceExhausted": "Добавление кредитов, чтобы продолжить пользоваться ассистентом",
-    "usageBalancePctUsed": "использовано {pct}%",
-    "usageBalanceRenews": "Продлится {date}",
-    "usageBalanceResets": "Сброс {date}"
-  },
-  "planColumnCard": {
-    "currentPlan": "Текущий план",
-    "includes": "Входит:",
-    "recommended": "Рекомендуем"
-  },
-  "plansPage": {
-    "alreadyOnPlanToast": "Этот план уже активен.",
-    "back": "Назад",
-    "billedMonthlyCaption": "Ежемесячная оплата",
-    "cancelAnytimeFooter": "План можно отменить или сменить в любой момент. Подробнее: <docsLink>документация.</docsLink>",
-    "checkoutFailedToast": "Не удалось начать оплату повышения. Повторите попытку.",
-    "downgradeTo": "Перейти на {name}",
-    "featureComputer": "Компьютер {machine}",
-    "featureStorage": "{gib} ГБ хранилища",
-    "featureUsage": "Использование {name}, сброс каждый месяц",
-    "foreverCaption": "Навсегда",
-    "freeFeaturePayAsYouGo": "Кредиты по мере использования",
-    "freeFeatureSmallComputer": "Небольшой компьютер",
-    "freeFeatureStorage": "{gib} ГБ хранилища",
-    "freePriceLabel": "Бесплатно",
-    "heading": "Больше мощности для ассистента",
-    "loadingPlansAriaLabel": "Загрузка планов",
-    "planUpdatedToast": "План обновлён.",
-    "startFreeCta": "Начать бесплатно",
-    "subheading": "Выбор уровня под объём задач для этого ассистента."
-  },
+  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Поле ввода",
     "description": "Настройка сочетаний клавиш и поведения Cadet на этом устройстве.",
@@ -1517,13 +1421,6 @@
     "updateWindowWithTz": "Окно обновления ({tz})",
     "weekly": "Еженедельно"
   },
-  "upgradeCancelPage": {
-    "billingUnavailable": "Оплата недоступна при текущем состоянии ассистента.",
-    "platformLoginNotice": "Вход на платформу Cadet для управления оплатой и использованием.",
-    "redirectingBody": "Возврат в настройки оплаты…",
-    "returnToBilling": "Вернуться к оплате",
-    "title": "Повышение отменено"
-  },
   "upgradeSuccessPage": {
     "cantConfirmUpgrade": "Не можем подтвердить повышение для текущего ассистента. Вернитесь к оплате и повторите попытку.",
     "fetchErrorBody": "Не получилось проверить подписку. Повышение, возможно, ещё обрабатывается. Вернитесь к оплате и обновите страницу.",
@@ -1587,11 +1484,6 @@
   "useBillingPortalSession": {
     "openError": "Не удалось открыть портал оплаты. Повторите попытку."
   },
-  "useCancelSubscription": {
-    "cancelFailedToast": "Не удалось отменить подписку. Повторите попытку.",
-    "canceledToast": "План Pro отменён. Доступ сохранится до {date}.",
-    "endOfBillingPeriod": "конца расчётного периода"
-  },
   "useDaemonConfig": {
     "assistantNotReadyToast": "Ассистент не готов. Повторите попытку.",
     "saveApiKeyFailedToast": "Не удалось сохранить API-ключ {providerName}. Повторите попытку."
@@ -1611,10 +1503,6 @@
     "deleteFailedToast": "Не удалось удалить провайдера. Повторите попытку.",
     "deleteInUseToast": "Этот провайдер используется в профиле или как провайдер по умолчанию. Сначала обновление этих настроек, потом удаление.",
     "setDefaultFailedToast": "Не удалось назначить провайдера по умолчанию. Повторите попытку."
-  },
-  "useReactivateSubscription": {
-    "reactivateFailedToast": "Не удалось возобновить подписку. Повторите попытку.",
-    "reactivatedToast": "План Pro снова активен."
   },
   "useSystemTasks": {
     "consolidationAlreadyQueued": "Консолидация уже в очереди или выполняется.",
