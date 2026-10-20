@@ -1671,7 +1671,6 @@
     "newMode": "新建",
     "builtIn": "内置",
     "yours": "自定义",
-    "beta": "测试版",
     "noModes": "没有可用模型。",
     "autonomyTitle": "自主程度",
     "modeTitle": "模型",
@@ -1719,10 +1718,6 @@
       },
       "budget": {
         "hint": "费用最低，可能遗漏细节。"
-      },
-      "experimental": {
-        "label": "开放测试",
-        "hint": "开源测试版，结果可能不稳定。"
       }
     },
     "allModelsLink": "所有模型（{count}）",

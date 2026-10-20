@@ -33,7 +33,7 @@ import type { Conversation } from "@/types/conversation-types";
 export interface UseChatHeaderRegistrationOptions {
   assetsRefreshKey: number;
   /** Forks through the latest persisted message. Omitted unless the viewer
-   *  passes the staff + internal-thread-actions gate, which drops the menu item. */
+   *  passes the staff gate, which drops the menu item. */
   handleForkConversationFromMenu?: () => void;
   handleOpenInNewWindow: (conversation: Conversation) => void;
   handleCopyConversation: () => void;

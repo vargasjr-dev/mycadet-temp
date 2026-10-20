@@ -27,7 +27,6 @@ import type {
   TurnChannelContext,
   TurnInterfaceContext,
 } from "../channels/types.js";
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
 import { getConfig } from "../config/loader.js";
 import { recordEstimate } from "../context/estimator-calibration.js";
 import { stripInjectionsForCompaction } from "../context/strip-injections.js";
@@ -80,7 +79,6 @@ import {
   currentRevealSuccessWatermark,
   openRevealProofWindow,
 } from "../runtime/reveal-success-registry.js";
-import { credentialKey } from "../security/credential-key.js";
 import { extractDomain } from "../tools/network/domain-normalize.js";
 import {
   classifyWebSearchFailure,
@@ -523,7 +521,7 @@ export interface EventHandlerState {
    * Staged per tool_use in {@link pendingRevealRefsByToolUse} and promoted
    * here only when that tool's result arrives successfully; consumed at the
    * persist seams to scope the candidate fetch for redaction-sentinel
-   * enrichment. Only ever read when the `chat-credential-reveal` feature
+   * enrichment.
    * flag is on.
    */
   readonly revealCandidateRefs: RevealCandidateRef[];
@@ -721,7 +719,6 @@ export function selectFinalComputerUseScreenshotCandidate(
   return undefined;
 }
 
-
 /**
  * Candidate resolution for the legacy-marker fallbacks: a route-proven
  * reveal plaintext must be kept out of persisted rows, so the fallback
@@ -848,7 +845,10 @@ export function buildPersistedAssistantContent(
       // `_redactionVersion` rider (internal, same convention as `_startedAt`)
       // marks the block as neutralization-aware; `renderHistoryContent`
       // neutralizes unmarked (pre-feature) blocks at read.
-      const text = redactCandidateValuesLegacy(tb.text, legacyFallbackCandidates);
+      const text = redactCandidateValuesLegacy(
+        tb.text,
+        legacyFallbackCandidates,
+      );
       return { ...tb, text, _redactionVersion: SENTINEL_REDACTION_VERSION };
     }
     // Native server tools (Anthropic web_search) resolve mid-stream — their
@@ -1589,7 +1589,7 @@ export function handleToolUse(
     state.appBuildToolUsedThisRun = true;
   }
   // Record `credentials reveal` invocations so the persist seams can enrich
-  // redaction sentinels with a proven vault identity (chat-credential-reveal).
+  // redaction sentinels with a proven vault identity.
   // Tool-name agnostic on purpose: any shell-style tool (bash, host_bash)
   // carries the command in `input.command`. Pure string parse — no store
   // access happens here: `tool_use` precedes execution, and the refs are

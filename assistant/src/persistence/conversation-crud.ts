@@ -48,7 +48,6 @@ import { indexMessageNow } from "../plugins/defaults/memory/indexer.js";
 import { runHook } from "../plugins/pipeline.js";
 import type { ContentBlock } from "../providers/types.js";
 import { getCurrentSeq } from "../runtime/assistant-stream-state.js";
-import { publishConversationListAndMetadataChanged } from "../runtime/sync/resource-sync-events.js";
 import { publishSyncInvalidation } from "../runtime/sync/sync-publisher.js";
 import { UserError } from "../util/errors.js";
 import { getConversationsDir } from "../util/layout.js";
@@ -101,7 +100,6 @@ import {
   computerUseScreenshotAttachmentIdsFromMetadata,
   type ConversationCreateType,
   type ConversationOrigin,
-  isEchoSuppressedUserMessage,
   isHiddenMessageMetadata,
   isNoResponseMetadata,
   isReactionMessageMetadata,
@@ -1023,7 +1021,6 @@ async function insertMessageCore(
     clientMessageId,
     id,
     insertPrecondition,
-    reserved,
   } = params;
   warnOnModelInvisibleContent(content, conversationId);
   const db = getDb();
@@ -2663,13 +2660,8 @@ export async function addMessage(
   content: string,
   options?: AddMessageOptions,
 ) {
-  const {
-    metadata,
-    skipIndexing,
-    clientMessageId,
-    id,
-    insertPrecondition,
-  } = options ?? {};
+  const { metadata, skipIndexing, clientMessageId, id, insertPrecondition } =
+    options ?? {};
   const inserted = await insertMessageCore({
     conversationId,
     role,
@@ -3547,7 +3539,6 @@ export function unarchiveConversation(id: string): boolean {
   );
   return true;
 }
-
 
 /**
  * Persist the processing-start timestamp for a conversation. Called by

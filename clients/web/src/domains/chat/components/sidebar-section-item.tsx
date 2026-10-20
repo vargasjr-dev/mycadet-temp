@@ -148,7 +148,7 @@ export function SidebarSectionItem({
       isLast={isLast}
       /* Which sections rest at the mid height, whatever the flag: the cap is
          the section's shape, and only the control that grows past it goes
-         away under `sidebar-done` (see `ConversationRowList`). */
+         away (see `ConversationRowList`). */
       expandable={section.type === "recents" || section.type === "channel"}
       expanded={expanded}
       onExpandedChange={onExpandedChange}

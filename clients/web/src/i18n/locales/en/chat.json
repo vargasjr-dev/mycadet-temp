@@ -1671,7 +1671,6 @@
     "newMode": "New",
     "builtIn": "Built-in",
     "yours": "Custom",
-    "beta": "Beta",
     "noModes": "No models available.",
     "autonomyTitle": "Autonomy",
     "modeTitle": "Model",
@@ -1719,10 +1718,6 @@
       },
       "budget": {
         "hint": "Lowest cost. May miss details."
-      },
-      "experimental": {
-        "label": "Open Beta",
-        "hint": "Open-source beta. Results vary."
       }
     },
     "allModelsLink": "All models ({count})",

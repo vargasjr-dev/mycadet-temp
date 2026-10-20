@@ -202,7 +202,7 @@ export interface ChatMainPanelProps {
 
   // Conversation secondary actions (orchestration dependency)
   /** Forks through a message. Omitted unless the viewer passes the
-   *  staff + internal-thread-actions gate, which hides the hover action. */
+   *  staff gate, which hides the hover action. */
   handleForkConversation?: (throughMessageId: string) => Promise<void>;
   /** Opens the "Summarize up to here" confirm dialog for a message. */
   /** Opens the "Retry" confirm dialog for the latest assistant turn. */

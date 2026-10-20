@@ -1,7 +1,7 @@
 /**
  * In-process registry of successful `credentials_reveal` route executions.
  *
- * The chat-credential-reveal persist seams need PROOF that a reveal
+ * The chat-redaction persist seams need PROOF that a reveal
  * actually ran before candidate resolution may read a plaintext from the
  * store: a shell tool's overall success is not that proof (`assistant
  * credentials reveal … || true` succeeds when the route failed, and an

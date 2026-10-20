@@ -54,10 +54,7 @@ describe("chat settings config", () => {
       { notifications: { newMessageEnabled: "false" } },
       { notifications: { newMessageEnabled: "true" } },
     ],
-    [
-      { notifications: { newMessageEnabled: "false" } },
-      { notifications: [] },
-    ],
+    [{ notifications: { newMessageEnabled: "false" } }, { notifications: [] }],
   ])("raw writes reject changed invalid values: %j -> %j", (previous, next) => {
     const configPath = getWorkspaceConfigPath();
     writeFileSync(configPath, JSON.stringify(previous));

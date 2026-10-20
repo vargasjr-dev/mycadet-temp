@@ -1103,7 +1103,9 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
           pathParams: { name: "balanced" },
           body: { label: "My Balanced" },
         }),
-      ).rejects.toThrow(/Cannot edit cloud profile "balanced" fields \[label\]/);
+      ).rejects.toThrow(
+        /Cannot edit cloud profile "balanced" fields \[label\]/,
+      );
       // Guard rejects before any write — the seed label is untouched.
       expect(persistedProfile("balanced").label).toBe("Balanced");
     });
@@ -1861,7 +1863,6 @@ describe("persisted chat settings", () => {
     rawConfigFixture = {
       conversations: {
         skipAutoRetitling: true,
-        autoArchive: { enabled: true, afterDays: 14, futureOption: "keep" },
       },
       notifications: { newMessageEnabled: false, futureOption: "keep" },
       maxStepsPerSession: 75,
@@ -1892,10 +1893,6 @@ describe("persisted chat settings", () => {
       { conversations: [] },
       { conversations: null },
       { conversations: { autoArchive: "legacy" } },
-      { conversations: { autoArchive: [] } },
-      { conversations: { autoArchive: null } },
-      { conversations: { autoArchive: { enabled: "true", afterDays: 2 } } },
-      { conversations: { autoArchive: { enabled: null, afterDays: null } } },
       { notifications: "legacy" },
       { notifications: [] },
       { notifications: null },
@@ -1922,40 +1919,21 @@ describe("persisted chat settings", () => {
 
     test(`${writer} can repair one leaf without changing other legacy values`, async () => {
       rawConfigFixture = {
-        conversations: { autoArchive: { enabled: "true", afterDays: 14 } },
-        notifications: null,
+        notifications: { newMessageEnabled: "false" },
+        maxStepsPerSession: 75,
       };
       seedRawConfig();
       invalidateConfigCache();
 
-      await writeSetting(writer, "conversations.autoArchive.enabled", true);
+      await writeSetting(writer, "notifications.newMessageEnabled", true);
 
       expect(loadRawConfig()).toMatchObject({
-        conversations: { autoArchive: { enabled: true, afterDays: 14 } },
+        notifications: { newMessageEnabled: true },
       });
-    });
-
-    test(`${writer} rejects an invalid leaf change beside an unchanged invalid sibling`, async () => {
-      rawConfigFixture = {
-        conversations: { autoArchive: { enabled: "true", afterDays: 2 } },
-      };
-      seedRawConfig();
-      invalidateConfigCache();
-      const configPath = join(process.env.CADET_WORKSPACE_DIR!, "config.json");
-      const originalBytes = readFileSync(configPath, "utf-8");
-
-      await expect(
-        writeSetting(writer, "conversations.autoArchive.afterDays", 3),
-      ).rejects.toMatchObject({ statusCode: 400 });
-
-      expect(readFileSync(configPath, "utf-8")).toBe(originalBytes);
-      expect(initializeProvidersCalls).toBe(0);
     });
 
     test.each([
       ["conversations", []],
-      ["conversations.autoArchive", { enabled: "true" }],
-      ["conversations.autoArchive", { afterDays: 2 }],
       ["notifications.newMessageEnabled", "true"],
       ["notifications.newMessageEnabled", 1],
     ])(
@@ -2084,17 +2062,18 @@ describe("persisted chat settings", () => {
     ).toBe(false);
   });
 
-  test.each([
-    { conversations: null, notifications: null },
-  ])("PATCH null subtrees restore defaults: %j", async (body) => {
-    const result = await patchRoute.handler({ body });
-    expect(result).toMatchObject({
-      notifications: { newMessageEnabled: true },
-    });
-    // The nulled subtrees restore to the schema defaults on the canonical
-    // save — the same values a fresh read would materialize.
-    expect(getConfig().notifications.newMessageEnabled).toBe(true);
-  });
+  test.each([{ conversations: null, notifications: null }])(
+    "PATCH null subtrees restore defaults: %j",
+    async (body) => {
+      const result = await patchRoute.handler({ body });
+      expect(result).toMatchObject({
+        notifications: { newMessageEnabled: true },
+      });
+      // The nulled subtrees restore to the schema defaults on the canonical
+      // save — the same values a fresh read would materialize.
+      expect(getConfig().notifications.newMessageEnabled).toBe(true);
+    },
+  );
 
   test.each([
     { conversations: false },

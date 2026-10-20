@@ -29,8 +29,7 @@ import {
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
-mock.module("../daemon/conversation-process.js", () => ({
-}));
+mock.module("../daemon/conversation-process.js", () => ({}));
 
 mock.module("../daemon/handlers/conversations.js", () => ({
   cancelGeneration: () => true,

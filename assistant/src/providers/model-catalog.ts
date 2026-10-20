@@ -2886,7 +2886,8 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     defaultModel: "jev-latest",
     apiKeyUrl: "https://typesafe.ai",
     apiKeyPlaceholder: "Your TypeSafe API key",
-  },];
+  },
+];
 
 export const PROVIDER_CATALOG: ProviderCatalogEntry[] =
   RAW_PROVIDER_CATALOG.map((entry) => ({

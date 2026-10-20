@@ -6,7 +6,7 @@
  * `<redacted type="…" />` HTML marker that the chat markdown pipeline (no
  * rehype-raw) can never render as an element, and that carries no way back
  * to the vault entry it came from. This module implements the replacement
- * behavior behind the `chat-credential-reveal` feature flag:
+ * that replaced the legacy persist path's marker for chat:
  *
  *   1. While a turn runs, every shell-style tool command is scanned for
  *      `credentials reveal` invocations and the referenced credentials
@@ -38,11 +38,7 @@
  */
 
 import {
-  buildRedactedSentinel,
-  createRedactedSentinelRegex,
-  decodeRedactedSentinelMatch,
   neutralizeRedactedSentinels,
-  REDACTED_SENTINEL_CLOSE,
   REDACTED_SENTINEL_OPEN,
   REDACTED_SENTINEL_TAG,
 } from "@mycadet/service-contracts/redacted-credential";
@@ -51,7 +47,6 @@ import { revealedValuesSince } from "../runtime/reveal-success-registry.js";
 import { credentialKey } from "../security/credential-key.js";
 import {
   redactSecrets,
-  redactSecretsWith,
   scanText,
 } from "../security/secret-scanner.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
@@ -633,8 +628,6 @@ function stableEmitLen(buffer: string, targets: readonly string[]): number {
  * without closing is forged garbage and is released (neutralized) rather
  * than buffered forever.
  */
-const UNCLOSED_SENTINEL_HOLD_CAP = 512;
-
 export function drainSentinelGuardedText(buffer: string): {
   emitText: string;
   consumedRaw: string;
@@ -692,7 +685,6 @@ export function drainCandidateGuardedChunk(
 // ---------------------------------------------------------------------------
 // Sentinel redaction
 // ---------------------------------------------------------------------------
-
 
 interface RawSpan {
   start: number;
@@ -885,33 +877,3 @@ function protectCandidateValuesLegacy(
   );
 }
 
-/**
- * Resolve a matched plaintext to a candidate identity — but only when the
- * mapping is unambiguous. A byte match proves the VALUE, not the vault
- * identity: if two revealed credentials happen to share the same plaintext
- * (the same API key stored under two services), picking either would mint a
- * chip whose label — and whose click-to-reveal path — names a credential the
- * user may not have revealed, and whose value silently diverges if that
- * credential later rotates. Duplicate-value spans therefore degrade to the
- * plain type-only sentinel. Multiple candidate entries that agree on
- * service:field (the same reveal parsed twice) are still unique.
- */
-function uniqueCandidateForValue(
-  candidates: readonly ResolvedRevealCandidate[],
-  rawValue: string,
-): ResolvedRevealCandidate | undefined {
-  let hit: ResolvedRevealCandidate | undefined;
-  for (const candidate of candidates) {
-    if (candidate.value !== rawValue) {
-      continue;
-    }
-    if (
-      hit !== undefined &&
-      (hit.service !== candidate.service || hit.field !== candidate.field)
-    ) {
-      return undefined;
-    }
-    hit = candidate;
-  }
-  return hit;
-}

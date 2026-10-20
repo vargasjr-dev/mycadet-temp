@@ -5,7 +5,7 @@
  * drag-reorder. Action callbacks, active/processing state, and the drag
  * controller come from {@link useConversationListContext}.
  *
- * Which trailing control it is, is the `sidebar-done` flag's answer. Off, it
+ * The trailing control is the actions ellipsis. It
  * is the actions "…", and pin/unpin lives in that menu and in the context
  * menu. On, it is a Done check: the row's one command is "I am finished with
  * this", and every other action is on the right-click menu and the chat

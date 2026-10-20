@@ -22,7 +22,6 @@
 import { v7 as uuidv7 } from "uuid";
 import { z } from "zod";
 
-import { isUserCancellation } from "../../daemon/conversation-error.js";
 import { touchConversation } from "../../daemon/conversation-evictor.js";
 import {
   discardLastAssistantDisplayTurn,
@@ -64,7 +63,6 @@ import {
 } from "../../persistence/conversation-key-store.js";
 import type { NonScheduledConversationType } from "../../persistence/conversation-types.js";
 import { enqueueMemoryJob } from "../../persistence/jobs-store.js";
-import { linkRequestLogsToMessage } from "../../persistence/llm-request-log-store.js";
 import { deleteSchedule, getSchedule } from "../../schedule/schedule-store.js";
 import { UserError } from "../../util/errors.js";
 import { safeParseRecord } from "../../util/json.js";
@@ -81,8 +79,6 @@ import {
   publishConversationTitleChanged,
 } from "../sync/resource-sync-events.js";
 import { resolveCadetActorTrustContext } from "./cadet-actor-trust.js";
-import { persistCannedAssistantCard } from "./canned-message-complete.js";
-import { buildChannelMetadata } from "./channel-metadata.js";
 import { conversationSummarySchema } from "./conversation-list-routes.js";
 import {
   BadRequestError,
@@ -238,7 +234,6 @@ async function handleForkConversation({
     throw err;
   }
 }
-
 
 async function handleSwitchConversation({ body = {} }: RouteHandlerArgs) {
   const conversationId = body.conversationId as string | undefined;
@@ -808,7 +803,7 @@ export const ROUTES: RouteDefinition[] = [
     }),
     handler: handleForkConversation,
   },
- 
+
   {
     operationId: "switchConversation",
     endpoint: "conversations/switch",

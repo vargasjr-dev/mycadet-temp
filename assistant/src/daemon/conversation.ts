@@ -112,7 +112,6 @@ import { ToolExecutor } from "../tools/executor.js";
 import { getAllToolDefinitions } from "../tools/registry.js";
 import type { OnboardingContext } from "../types/onboarding-context.js";
 import type { AbortReason } from "../util/abort-reasons.js";
-import { UserError } from "../util/errors.js";
 import { getLogger } from "../util/logger.js";
 import { withSqliteRetry } from "../util/sqlite-retry.js";
 import type { WorkspaceGitService } from "../workspace/git-service.js";
@@ -207,35 +206,6 @@ import { startsNewTurn } from "./summarize-boundary.js";
 const log = getLogger("conversation");
 const PROMPT_CACHE_WARM_MAX_TOKENS = 16;
 
-/**
- * First text block of a persisted message row's content, mirroring
- * `loadFromDb`'s parse: non-JSON / non-array content loads as a single text
- * block holding the raw string. Returns null when the row's block array has
- * no text block. Used to verify the row→history boundary mapping in
- * {@link Conversation.summarizeUpToMessage}.
- */
-function firstPersistedTextBlockText(
-  content: string | ContentBlock[],
-): string | null {
-  try {
-    const parsed: unknown = Array.isArray(content)
-      ? content
-      : JSON.parse(content);
-    if (Array.isArray(parsed)) {
-      const block = parsed.find(
-        (b): b is { type: "text"; text: string } =>
-          typeof b === "object" &&
-          b !== null &&
-          (b as { type?: unknown }).type === "text" &&
-          typeof (b as { text?: unknown }).text === "string",
-      );
-      return block?.text ?? null;
-    }
-  } catch {
-    // Non-JSON content loads as a raw text block.
-  }
-  return Array.isArray(content) ? null : content;
-}
 
 export interface CleanResult {
   previousEstimatedInputTokens: number;
@@ -291,7 +261,6 @@ export type {
   QueuePolicy,
 } from "./conversation-queue-manager.js";
 import {
-  INTERNAL_GUARDIAN_TRUST_CONTEXT,
   isPersonalMemoryAllowed,
 } from "./trust-context.js";
 import type { TrustContext } from "./trust-context-types.js";
@@ -2888,7 +2857,6 @@ export class Conversation {
   ): Promise<ContextWindowResult> {
     return this.runUserCompaction(() => this.runCompaction(true), onEvent);
   }
-
 
   /**
    * Trim this conversation's aged camera frames out of a history about to be

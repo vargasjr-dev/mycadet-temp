@@ -23,7 +23,7 @@
  * non-last section caps at, so a hundred threads do not run the rail's
  * whole height by default, and grows to the full height on request (see
  * {@link SidebarExpandRow}). Either way the rows scroll inside it the same
- * way; only how much of the list is in view changes. Under `sidebar-done`
+ * way; only how much of the list is in view changes.
  * the request goes away and the section stays at the resting height.
  *
  * Every section above the last one caps at a fixed height and scrolls

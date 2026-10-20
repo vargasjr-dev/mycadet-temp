@@ -515,7 +515,7 @@ export interface WakeDeps {
   /**
    * Resolve the live {@link Conversation} for a wake invocation.
    * Returns `null` if the conversation doesn't exist, `"archived"` if it
-   * exists but is archived and the `sidebar-done` gate is off, or the
+   * exists but is archived, or the
    * `Conversation` to proceed with the wake.
    *
    * Receives the full {@link WakeOptions} so the default resolver can

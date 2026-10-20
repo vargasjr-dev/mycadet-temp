@@ -42,11 +42,7 @@ export function validateChatSettingsWrite(
 }
 
 export const ChatSettingsPatchSchema = z.object({
-  conversations: z
-    .object({})
-    .passthrough()
-    .nullable()
-    .optional(),
+  conversations: z.object({}).passthrough().nullable().optional(),
   notifications: z
     .object({
       newMessageEnabled: NotificationsConfigSchema.shape.newMessageEnabled

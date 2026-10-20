@@ -238,11 +238,6 @@ export function ComposerConfigurationContent({
                       <span className="min-w-0 flex-1">
                         <span className="composer-config-model-name">
                           {modeLabel(entry)}
-                          {isBuiltinMode(entry) && entry.name === "os-beta" && (
-                            <span className="composer-config-beta">
-                              {t("composerConfiguration.beta")}
-                            </span>
-                          )}
                         </span>
                         <span
                           className="composer-config-model-description"

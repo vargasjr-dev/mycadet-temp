@@ -102,7 +102,6 @@ export function isCloudOnlyProfileKey(value: string): boolean {
   return (MANAGED_ONLY_PROFILE_KEYS as readonly string[]).includes(value);
 }
 
-
 /**
  * The named columns of the intent × provider matrix. `cadet` is the
  * cloud column (routed through the single `cadet` connection to

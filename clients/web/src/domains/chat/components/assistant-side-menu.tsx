@@ -114,7 +114,6 @@ export interface AssistantSideMenuProps extends UseSidebarStateParams {
   activeConversationProcessing?: boolean;
   onOpenInNewWindow?: (conversation: Conversation) => void;
   onShareFeedback?: () => void;
-  /** Whether the viewer passes the internal-thread-actions gate. */
   /** Move a conversation into an existing custom group. */
   onMoveToGroup?: (conversation: Conversation, groupId: string) => void;
   /** Create a new custom group ("New group…") and move the conversation into it. */

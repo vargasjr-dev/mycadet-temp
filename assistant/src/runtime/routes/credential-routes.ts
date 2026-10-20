@@ -391,8 +391,7 @@ async function handleCredentialsReveal({ body, headers }: RouteHandlerArgs) {
     headers?.["x-cadet-principal-type"] === "local" &&
     headers?.["x-cadet-proxy-server"] !== "ipc";
 
-
-  // Ground truth for the chat-credential-reveal persist seams: this route
+  // Ground truth for the chat-redaction persist seams: this route
   // is the only place a reveal legitimately reads plaintext, so a success
   // recorded here is the proof the agent loop requires before promoting
   // staged reveal candidates (a shell command can "succeed" without ever
@@ -637,11 +636,7 @@ export const ROUTES: RouteDefinition[] = [
         ),
     }),
     responseBody: z.object({
-      value: z
-        .string()
-        .describe(
-          "The plaintext credential value",
-        ),
+      value: z.string().describe("The plaintext credential value"),
     }),
     handler: handleCredentialsReveal,
   },

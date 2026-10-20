@@ -267,4 +267,3 @@ describe("global-search q parser", () => {
     expect(result.queryTokens).toEqual(["alpha", "beta"]);
   });
 });
-

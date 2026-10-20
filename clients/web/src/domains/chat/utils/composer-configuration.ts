@@ -43,14 +43,13 @@ export const DEFAULT_FAVORITES = [
 ];
 const BUILTIN_KEYS: Record<
   string,
-  `chat:composerConfiguration.modes.${"auto" | "balanced" | "quality" | "fast" | "budget" | "experimental"}.hint`
+  `chat:composerConfiguration.modes.${"auto" | "balanced" | "quality" | "fast" | "budget"}.hint`
 > = {
   auto: "chat:composerConfiguration.modes.auto.hint",
   balanced: "chat:composerConfiguration.modes.balanced.hint",
   "quality-optimized": "chat:composerConfiguration.modes.quality.hint",
   "latency-optimized": "chat:composerConfiguration.modes.fast.hint",
   "cost-optimized": "chat:composerConfiguration.modes.budget.hint",
-  "os-beta": "chat:composerConfiguration.modes.experimental.hint",
 };
 
 export function isBuiltinMode(entry: ProfilePickerEntry): boolean {
@@ -58,13 +57,6 @@ export function isBuiltinMode(entry: ProfilePickerEntry): boolean {
 }
 
 export function modeLabel(entry: ProfilePickerEntry): string {
-  if (
-    isBuiltinMode(entry) &&
-    entry.name === "os-beta" &&
-    (!entry.label || entry.label === "OS Beta")
-  ) {
-    return t("chat:composerConfiguration.modes.experimental.label");
-  }
   return profilePickerLabel(entry);
 }
 

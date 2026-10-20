@@ -1613,7 +1613,6 @@
     "newMode": "Nuevo",
     "builtIn": "Integrados",
     "yours": "Personalizados",
-    "beta": "Beta",
     "noModes": "No hay modelos disponibles.",
     "autonomyTitle": "Autonomía",
     "modeTitle": "Modelo",
@@ -1661,10 +1660,6 @@
       },
       "budget": {
         "hint": "El menor costo. Puede pasar por alto detalles."
-      },
-      "experimental": {
-        "label": "Beta abierta",
-        "hint": "Beta de código abierto. Resultados variables."
       }
     },
     "allModelsLink": "Todos los modelos ({count})",

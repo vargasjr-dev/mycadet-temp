@@ -623,7 +623,6 @@ describe("resolveDefaultProfileForProvider", () => {
     ).toBeUndefined();
   });
 
-
   test("agrees with getEffectiveProfile for the cadet default provider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {
       expect(

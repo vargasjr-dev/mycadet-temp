@@ -124,7 +124,7 @@ function parseCategories(raw: string | undefined): Set<Category> {
  * matching rather than silently dropped.
  *
  * `defaultArchived` is what an unfiltered query means. It is `false` by
- * default and `true` under the `sidebar-done` flag, where a done chat is a
+ * default; a done chat is a
  * filed chat rather than a hidden one and search is how the user reaches it.
  * Either way both filters still say exactly what they say, so `is:unarchived`
  * is the opt-out whenever the default is on.

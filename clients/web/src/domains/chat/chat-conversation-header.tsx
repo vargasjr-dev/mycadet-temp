@@ -21,7 +21,7 @@ interface ChatConversationHeaderProps {
   headerSupplements: ChatHeaderSupplements | null;
   /** Gates the internal-only menu items: Copy Full Conversation, Open in New
    *  Window, Refresh, Analyze Conversation, and Copy conversation ID. See
-   *  `@/lib/auth/internal-thread-actions`. */
+   */
   onArchive: (c: Conversation) => void;
   onUnarchive: (c: Conversation) => void;
   onDelete: (c: Conversation) => void;

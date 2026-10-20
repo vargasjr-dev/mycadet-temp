@@ -99,8 +99,6 @@ export function formatCompactResult(result: ContextWindowResult): string {
   ].join("\n");
 }
 
-
-
 /** Format the result of a forced clean into a user-facing message. */
 export function formatCleanResult(result: CleanResult): string {
   const reclaimed =

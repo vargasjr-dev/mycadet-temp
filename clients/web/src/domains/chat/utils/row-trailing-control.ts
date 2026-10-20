@@ -2,7 +2,7 @@
  * The box a conversation row's trailing control draws in.
  *
  * A row has exactly one trailing affordance, and which one it is depends on
- * the `sidebar-done` flag: the actions ellipsis or the Done check. They stand
+ * the row: the actions ellipsis. They stand
  * in the same cell, so nothing on the row may shift when one replaces the
  * other, which is what makes the geometry a shared constant rather than a
  * class list each control repeats.
