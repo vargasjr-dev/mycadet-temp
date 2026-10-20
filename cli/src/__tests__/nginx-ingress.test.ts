@@ -291,9 +291,13 @@ describe("buildIngressNginxConfig", () => {
         .map((b) => b.matcher)
         .sort(),
     ).toEqual([
-      "= /assistant/__remote-index.html",
+      "/",
+      "= /__cadet-app-index.html",
+      "= /web/assistant/__remote-index.html",
+      "^~ /assets/",
       "^~ /assistant/",
       "^~ /assistant/assets/",
+      "^~ /web/assistant/",
     ]);
     expect(
       blocks
@@ -310,17 +314,24 @@ describe("buildIngressNginxConfig", () => {
       blocks
         .find((b) => b.matcher === matcher)
         ?.body.match(/add_header Cache-Control "([^"]+)"/)?.[1];
-    expect(cacheControlOf("= /assistant/__remote-index.html")).toBe("no-cache");
-    expect(cacheControlOf("^~ /assistant/")).toBe("no-cache");
+    expect(cacheControlOf("= /web/assistant/__remote-index.html")).toBe(
+      "no-cache",
+    );
+    expect(cacheControlOf("^~ /web/assistant/")).toBe("no-cache");
     expect(cacheControlOf("^~ /assistant/assets/")).toBe(
       "public, max-age=31536000, immutable",
     );
+    // The app shell's own document revalidates too; its hashed assets don't.
+    expect(cacheControlOf("= /__cadet-app-index.html")).toBe("no-cache");
+    expect(cacheControlOf("^~ /assets/")).toBe(
+      "public, max-age=31536000, immutable",
+    );
     // Inline config has no validator and must not be stored.
-    expect(cacheControlOf("= /assistant/__config")).toBe("no-store");
+    expect(cacheControlOf("= /web/assistant/__config")).toBe("no-store");
   });
 
   test("serves remote web config for the SPA", () => {
-    expect(remoteConf).toContain("location = /assistant/__config {");
+    expect(remoteConf).toContain("location = /web/assistant/__config {");
     expect(remoteConf).toContain("default_type application/json;");
     expect(remoteConf).toContain('add_header Cache-Control "no-store";');
     expect(remoteConf).toContain(
