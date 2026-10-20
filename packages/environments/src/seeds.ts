@@ -1,3 +1,7 @@
+// Loaded standalone by Capacitor's single-file TS config loader — keep
+// imports type-only and keep this file free of the import-meta meta-property:
+// the loader transpiles this file to CJS, where that syntax is illegal and
+// makes Node misroute the result as ESM.
 import type { EnvironmentDefinition, PortMap } from "./types.js";
 
 /**
@@ -24,30 +28,24 @@ function portBlock(base: number): PortMap {
   };
 }
 
-/**
- * Base URL of the cloud-hosted assistant SPA (the "hub") for a deployment
- * environment: always `${SEEDS[env].webUrl}/assistant`. The Capacitor boot
- * bundle stamps this into baked mobile builds as `handoffUrl`, and the CLI's
- * remote-web edge stamps it into the served config as `hubUrl`, so the
- * environment-to-hub mapping lives here exactly once. Unknown environment
- * names fall back to the dev SPA defensively.
- *
- * The `/assistant` suffix is deliberate: booting on the bare host lands on
- * the marketing page, whose CTA redirects to `mycadet.ai/assistant` and
- * bounces non-prod shells off their own host.
- *
- * NOTE: this module is loaded by Capacitor's single-file TS config loader
- * (via the `@mycadet/environments/seeds` subpath), which cannot follow the
- * package index's `.js`-suffixed runtime re-exports. Keep this file's
- * imports type-only so it stays loadable on its own.
- */
-export function cloudWebUrl(envName: string | undefined): string {
+/** Web origin for the current environment (CADET_ENVIRONMENT or VITE_ENVIRONMENT; unknown falls back to dev). */
+export function cloudWebUrl(): string {
+  // globalThis.process reads the same env under bun/node while staying
+  // crash-free in browser bundles (no bare `process` reference) — and free
+  // of import-meta syntax, which the Capacitor config loader can't transpile.
+  const env = (
+    globalThis as unknown as {
+      process?: { env?: Record<string, string | undefined> };
+    }
+  ).process?.env;
+  const envName = env?.CADET_ENVIRONMENT ?? env?.VITE_ENVIRONMENT;
   const seed = (envName && SEEDS[envName]) || SEEDS.dev;
   return seed.webUrl;
 }
 
-export function cloudAssistantHubUrl(envName: string | undefined): string {
-  return `${cloudWebUrl(envName)}/assistant`;
+/** The cloud assistant hub — booting at the bare host bounces non-prod shells. */
+export function cloudAssistantHubUrl(): string {
+  return `${cloudWebUrl()}/assistant`;
 }
 
 /**
