@@ -28,7 +28,6 @@ import { ROUTES as channelIngressRoutes } from "../src/http/routes/channel-ingre
 import { ROUTES as channelPermissionOverrideRoutes } from "../src/http/routes/channel-permission-overrides-routes.js";
 import { ROUTES as contactsControlPlaneRoutes } from "../src/http/routes/contacts-control-plane-routes.js";
 import { ROUTES as credentialRequestRoutes } from "../src/http/routes/credential-requests.js";
-import { ROUTES as featureFlagRoutes } from "../src/http/routes/feature-flags.js";
 import { ROUTES as trustRuleRoutes } from "../src/http/routes/trust-rules-routes.js";
 
 const ROOT = resolve(import.meta.dir, "..");
@@ -43,7 +42,6 @@ const ALL_ROUTES: GatewayRouteDefinition[] = [
   ...channelPermissionOverrideRoutes,
   ...contactsControlPlaneRoutes,
   ...credentialRequestRoutes,
-  ...featureFlagRoutes,
   ...trustRuleRoutes,
 ];
 
