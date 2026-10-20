@@ -62,6 +62,32 @@ export const SENSITIVE_KEYS = [
 ] as const;
 
 /**
+ * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from
+ * each assistant entry and from that entry's `resources`. The one redaction
+ * every host runs before lockfile data crosses to the renderer — pure, no
+ * node built-ins, so it lives beside the keys it enforces and bundles into
+ * the renderer through the `./contract` subpath.
+ */
+export function stripSensitiveFields(data: Record<string, unknown>): void {
+  const assistants = data.assistants;
+  if (!Array.isArray(assistants)) return;
+  for (const assistant of assistants) {
+    if (assistant && typeof assistant === "object") {
+      const entry = assistant as Record<string, unknown>;
+      for (const field of SENSITIVE_KEYS) {
+        delete entry[field];
+      }
+      const resources = entry.resources;
+      if (resources && typeof resources === "object") {
+        for (const field of SENSITIVE_KEYS) {
+          delete (resources as Record<string, unknown>)[field];
+        }
+      }
+    }
+  }
+}
+
+/**
  * Resolve an entry's deployment topology from its raw on-disk fields. Prefers
  * an explicit `cloud`, then the legacy markers that predate the field
  * (`project` ⇒ gcp, `sshUser` ⇒ custom), and defaults to "local". This is the

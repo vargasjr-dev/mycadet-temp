@@ -21,7 +21,11 @@ import { z } from "zod";
 export const CapacitorBootConfigSchema = z.object({
   /** Where the cadet comes from — the seeds' own env, or the override. */
   remote: z.enum(["local", "custom", "cloud"]),
-  /** Session-gated assistant entry the boot shell hands off to. */
+  /**
+   * Where the boot shell hands off: the baked web bundle's same-origin path
+   * (`/assistant/`) for the local cadet, or the environment's session-gated
+   * assistant entry (an absolute URL) for cloud and self-hosted remotes.
+   */
   handoffUrl: z.string(),
 });
 
@@ -57,8 +61,18 @@ export function capacitorBootConfig(env: {
   const override = env.CADET_SERVER_URL?.trim();
   if (!override) {
     const environment = env.CADET_ENVIRONMENT ?? "local";
+    if (environment === "local") {
+      // The local cadet boots the BAKED web bundle from the shell's own
+      // assets (`build:capacitor` copies the clients/web build to
+      // `dist/capacitor/assistant/`) — nothing needs to be listening on
+      // localhost:3000 for the app to render. The handoff is a same-origin
+      // navigation the watchdog still guards: a web bundle that never boots
+      // lands on the error state instead of a wedged spinner, and lockfile
+      // data reaches the web UI through the native LockfilePlugin.
+      return { remote: "local", handoffUrl: "/assistant/" };
+    }
     return {
-      remote: environment === "local" ? "local" : "cloud",
+      remote: "cloud",
       handoffUrl: cloudAssistantHubUrl(environment),
     };
   }

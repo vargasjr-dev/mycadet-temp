@@ -15,10 +15,11 @@
     <title>Cadet</title>
 
     <!--
-    Theme stamp — same contract as the standalone index.html: the splash's
-    very first paint is already the stored (or system) theme. React re-applies
-    the default once the bundle is running. Inline on purpose: an external
-    script would be a fetch that blocks the splash.
+    Theme stamp — same contract as the standalone index.html. The splash
+    itself is always black (the launch screen's ground), so this exists for
+    React's first paint: the bundle's UI mounts already themed, no flash.
+    Inline on purpose: an external script would be a fetch that blocks the
+    splash.
   -->
     <script>
       (function () {
@@ -45,11 +46,12 @@
     </script>
 
     <!--
-    Boot splash styles — the resolved values of `--surface-base` and
-    `--content-tertiary` from `packages/design-library/src/tokens.css`,
-    light block and dark block. Two dark selectors because there are two
-    ways to be dark before React runs: the stamped `data-theme` above, and
-    the OS media query when nothing is stamped yet.
+    Boot splash — the native launch screen held alive. The launch screens
+    (#412) are the white Cadet wordmark on black, so the splash the WebView
+    paints is the same frame at the same size: no flash at the handoff from
+    the native screen, and the small spinner is the only thing that changes.
+    No token reads — the app stylesheet is part of the module graph this
+    exists to cover.
   -->
     <style>
       #boot-splash {
@@ -58,11 +60,18 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f6f5f4;
-        color: #71808e;
+        background: #000;
+        color: rgba(255, 255, 255, 0.4);
       }
 
-      #boot-splash svg {
+      .boot-splash-mark {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+      }
+
+      #boot-splash .boot-splash-spinner {
         animation: boot-splash-spin 1s linear infinite;
       }
 
@@ -73,20 +82,8 @@
       }
 
       @media (prefers-reduced-motion: reduce) {
-        #boot-splash svg {
+        #boot-splash .boot-splash-spinner {
           animation: none;
-        }
-      }
-
-      :root[data-theme="dark"] #boot-splash {
-        background: #17191c;
-        color: #8d99a5;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root:not([data-theme="light"]) #boot-splash {
-          background: #17191c;
-          color: #8d99a5;
         }
       }
     </style>
@@ -97,23 +94,39 @@
     the container on mount, so React replacing it is the handoff — the same
     contract the standalone index.html uses. The boot module then either
     navigates (the splash stays painted until the entry origin answers) or
-    renders the offline state.
+    renders the shell's honest error+retry state.
   -->
     <div id="root">
       <div id="boot-splash" role="status" aria-label="Loading">
-        <svg
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
+        <div class="boot-splash-mark">
+          <svg
+            width="92"
+            height="28"
+            viewBox="0 0 92 28"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M12.075 24.708Q9.501 24.708 7.701 23.392Q5.902 22.075 4.951 19.691Q4 17.306 4 14.146Q4 10.957 4.951 8.573Q5.902 6.188 7.716 4.857Q9.530 3.526 12.075 3.526Q15.381 3.526 17.342 5.325Q19.302 7.124 19.624 10.196L16.201 10.196Q15.937 8.587 14.899 7.519Q13.860 6.451 12.046 6.451Q9.735 6.451 8.447 8.499Q7.160 10.548 7.160 14.146Q7.160 17.716 8.447 19.749Q9.735 21.783 12.046 21.783Q13.918 21.783 14.913 20.803Q15.908 19.822 16.201 18.213L19.624 18.213Q19.156 21.227 17.254 22.968Q15.352 24.708 12.075 24.708M28.255 24.708Q26.529 24.708 25.358 24.109Q24.188 23.509 23.603 22.499Q23.018 21.490 23.018 20.290Q23.018 18.155 24.583 16.955Q26.148 15.755 29.016 15.755L32.761 15.755L32.761 15.434Q32.761 12.157 29.718 12.157Q28.460 12.157 27.597 12.698Q26.734 13.239 26.441 14.439L23.340 14.439Q23.574 12.157 25.315 10.825Q27.055 9.494 29.718 9.494Q32.936 9.494 34.399 11.074Q35.862 12.654 35.862 15.434L35.862 24.357L33.229 24.357L32.966 22.222L32.761 22.222Q32.117 23.246 31.152 23.977Q30.186 24.708 28.255 24.708M28.840 22.104Q30.742 22.104 31.693 20.949Q32.644 19.793 32.731 18.008L29.338 18.008Q27.670 18.008 26.982 18.550Q26.295 19.091 26.295 20.056Q26.295 21.022 26.982 21.563Q27.670 22.104 28.840 22.104M46.336 24.708Q44.522 24.708 43.089 23.845Q41.655 22.982 40.821 21.285Q39.987 19.588 39.987 17.101Q39.987 14.614 40.836 12.917Q41.684 11.220 43.133 10.357Q44.581 9.494 46.366 9.494Q48.033 9.494 49.116 10.123Q50.199 10.752 50.725 11.718L50.725 3.292L53.827 3.292L53.827 24.357L51.164 24.357L50.901 22.222L50.725 22.222Q50.140 23.363 49.072 24.036Q48.004 24.708 46.336 24.708M46.980 21.753Q48.648 21.753 49.745 20.583Q50.842 19.413 50.842 17.101Q50.842 14.761 49.745 13.605Q48.648 12.449 46.980 12.449Q45.312 12.449 44.215 13.620Q43.118 14.790 43.118 17.131Q43.118 19.442 44.215 20.598Q45.312 21.753 46.980 21.753M64.857 24.708Q62.750 24.708 61.141 23.758Q59.532 22.807 58.625 21.110Q57.718 19.413 57.718 17.160Q57.718 14.878 58.610 13.152Q59.503 11.425 61.126 10.460Q62.750 9.494 64.886 9.494Q66.993 9.494 68.514 10.445Q70.036 11.396 70.869 12.976Q71.703 14.556 71.703 16.458Q71.703 16.750 71.703 17.087Q71.703 17.423 71.674 17.833L60.761 17.833Q60.907 19.852 62.077 20.890Q63.248 21.929 64.828 21.929Q66.203 21.929 67.007 21.358Q67.812 20.788 68.192 19.793L71.323 19.793Q70.796 21.870 69.129 23.289Q67.461 24.708 64.857 24.708M64.857 12.186Q63.423 12.186 62.311 13.049Q61.200 13.912 60.878 15.463L68.602 15.463Q68.485 14 67.461 13.093Q66.437 12.186 64.857 12.186M87.941 24.357L83.816 24.357Q81.680 24.357 80.422 23.319Q79.164 22.280 79.164 19.618L79.164 12.479L75.507 12.479L75.507 9.845L77.672 9.845Q79.164 9.845 79.427 8.382L79.866 6.042L82.265 6.042L82.265 9.845L88 9.845L88 12.479L82.265 12.479L82.265 19.559Q82.265 20.700 82.777 21.154Q83.289 21.607 84.548 21.607L87.941 21.607"
+              fill="#FFFFFF"
+            />
+          </svg>
+          <svg
+            class="boot-splash-spinner"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+          </svg>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/capacitor/boot.tsx"></script>

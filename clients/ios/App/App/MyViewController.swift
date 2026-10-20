@@ -7,9 +7,9 @@ import WebKit
 /// 1. Registers `NativeAuthPlugin`, `NativeBiometricPlugin`,
 ///    `VoiceAudioSessionPlugin`, `VoiceLiveActivityPlugin`,
 ///    `ApnsEnvironmentPlugin`, `SelfHostedServersPlugin`,
-///    `RecentChatsPlugin`, `WidgetSnapshotPlugin`, `AppIconPlugin`, and
-///    `ShareInboxPlugin`, and `SenderNotificationPlugin` as local plugin
-///    instances at bridge init time.
+///    `RecentChatsPlugin`, `WidgetSnapshotPlugin`, `AppIconPlugin`,
+///    `LockfilePlugin`, `ShareInboxPlugin`, and `SenderNotificationPlugin`
+///    as local plugin instances at bridge init time.
 ///    These plugins live inside the App target (no SPM module) so the bridge
 ///    won't discover them automatically.
 ///
@@ -113,6 +113,16 @@ class MyViewController: CAPBridgeViewController {
     /// it, and this is the first point at which the origin for this launch is
     /// known. The report happens ahead of the early return so a launch back on
     /// the baked cloud origin is recorded too.
+    /// The baked web bundle lives at `<appLocation>/assistant/` (it builds at
+    /// the `/assistant/` vite base). CapacitorRouter's SPA fallback serves
+    /// `<appLocation>/index.html` for every extension-less path — the BOOT
+    /// bundle — which would turn the boot bundle's own `/assistant/` handoff
+    /// into a boot→handoff→boot loop. Routes under `/assistant/` fall back to
+    /// the WEB bundle's index.html instead.
+    override open func router() -> Router {
+        AssistantSpaRouter()
+    }
+
     override open func instanceDescriptor() -> InstanceDescriptor {
         let descriptor = super.instanceDescriptor()
         bakedServerURL = descriptor.serverURL.flatMap { URL(string: $0) }
@@ -207,6 +217,7 @@ class MyViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(AppIconPlugin())
         bridge?.registerPluginInstance(ShareInboxPlugin())
         bridge?.registerPluginInstance(SenderNotificationPlugin())
+        bridge?.registerPluginInstance(LockfilePlugin())
         installNavigationDelegateProxy()
         installInputZoomPreventionUserScript()
         installViewportZoomLockUserScript()
@@ -806,5 +817,37 @@ private final class WeakScriptMessageHandler: NSObject, WKScriptMessageHandler {
         didReceive message: WKScriptMessage
     ) {
         delegate?.userContentController(userContentController, didReceive: message)
+    }
+}
+
+/// The route map for the baked two-bundle layout: the boot bundle's
+/// `index.html` owns the origin root, and the web bundle (built at the
+/// `/assistant/` vite base) is synced under `assistant/`. Extension-less
+/// routes under `/assistant/` fall back to the WEB bundle's index.html so
+/// the handoff (`/assistant/`) and the SPA's client-side routes all boot the
+/// web app — CapacitorRouter's default fallback serves the root index.html
+/// (the boot bundle), which would loop boot→handoff→boot. The host-API
+/// namespaces (`__gateway`/`__local`) are not SPA routes: they resolve to
+/// their (absent) file paths and fail the request the way a dead host would,
+/// which is exactly the degradation the web layer's error paths expect.
+struct AssistantSpaRouter: Router {
+    var basePath: String = ""
+
+    func route(for path: String) -> String {
+        let isWebBundleRoute =
+            path == "/assistant"
+            || path == "/assistant/"
+            || (path.hasPrefix("/assistant/")
+                && !path.hasPrefix("/assistant/__gateway/")
+                && !path.hasPrefix("/assistant/__local/")
+                && URL(fileURLWithPath: path).pathExtension.isEmpty)
+        if isWebBundleRoute {
+            return basePath + "/assistant/index.html"
+        }
+        let pathUrl = URL(fileURLWithPath: path)
+        if pathUrl.pathExtension.isEmpty {
+            return basePath + "/index.html"
+        }
+        return basePath + path
     }
 }

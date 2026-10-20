@@ -19,21 +19,50 @@ import "../index.css";
  * While the boot bundle runs, the host bridge is the only Capacitor surface
  * that exists, so the shell never iframes remote content: it either hands off
  * (top-level navigation, exactly what the baked `server.url` used to do at
- * startup) or renders the honest offline state until connectivity returns.
+ * startup) or renders the shell's honest error+retry state — offline until
+ * connectivity returns, or a handoff that never lands (the watchdog below).
  */
+// How long the handoff navigation gets before the boot shell assumes it
+// failed: the navigation is top-level, so a successful load unloads this
+// page and the timer dies with it — only a failed load leaves it ticking.
+const HANDOFF_WATCHDOG_MS = 8_000;
+
 function Boot() {
   const { t } = useTranslation("account");
-  const handoffUrl = readCapacitorBootConfig()?.handoffUrl;
+  const bootConfig = readCapacitorBootConfig();
+  const handoffUrl = bootConfig?.handoffUrl;
+  // The local cadet hands off to the baked web bundle on this same origin —
+  // nothing remote is involved, so the connectivity gate below (which exists
+  // for remote handoffs racing a dead network) would only delay a launch
+  // that cannot fail on connectivity.
+  const bakedBoot = bootConfig?.remote === "local";
   const [offline, setOffline] = useState(false);
+  const [handoffFailed, setHandoffFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!handoffUrl) return;
     let active = true;
     let listener: { remove: () => void } | undefined;
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
     const leave = () => {
+      // A successful handoff unloads this page and the watchdog dies with
+      // it; a failed one (a bundle that never boots, a remote outage) leaves
+      // this page alive, and the watchdog turns the endless splash into an
+      // honest error instead of a wedged spinner.
+      watchdog = setTimeout(() => {
+        if (active) setHandoffFailed(true);
+      }, HANDOFF_WATCHDOG_MS);
       window.location.replace(handoffUrl);
     };
+    if (bakedBoot) {
+      leave();
+      return () => {
+        active = false;
+        clearTimeout(watchdog);
+        void listener?.remove();
+      };
+    }
     void Network.getStatus()
       .then((status) => {
         if (!active) return;
@@ -61,11 +90,18 @@ function Boot() {
       });
     return () => {
       active = false;
+      clearTimeout(watchdog);
       void listener?.remove();
     };
-  }, [handoffUrl, attempt]);
+  }, [handoffUrl, bakedBoot, attempt]);
 
-  if (offline || !handoffUrl) {
+  const retry = () => {
+    setOffline(false);
+    setHandoffFailed(false);
+    setAttempt((n) => n + 1);
+  };
+
+  if (offline || handoffFailed || !handoffUrl) {
     return (
       <div className="flex min-h-svh items-center justify-center" role="status">
         <div className="flex flex-col items-center gap-4">
@@ -73,13 +109,7 @@ function Boot() {
             {t("appShell.error")}
           </p>
           {handoffUrl && (
-            <button
-              type="button"
-              onClick={() => {
-                setOffline(false);
-                setAttempt((n) => n + 1);
-              }}
-            >
+            <button type="button" onClick={retry}>
               {t("appShell.retry")}
             </button>
           )}

@@ -7,10 +7,10 @@ import {
 } from "./boot-config";
 
 describe("capacitorBootConfig", () => {
-  test("local environment hands off to the local dev server", () => {
+  test("local environment hands off to the same-origin baked web bundle", () => {
     expect(capacitorBootConfig({})).toEqual({
       remote: "local",
-      handoffUrl: "http://localhost:3000/assistant",
+      handoffUrl: "/assistant/",
     });
   });
 
@@ -114,12 +114,24 @@ describe("baseConfig", () => {
   test("allowNavigation carries the same handoff host the boot stamp resolves", () => {
     // The base config resolves at cap-sync time, the stamp at build time;
     // both must agree or the handoff navigation opens the system browser.
+    // The local handoff is the same-origin baked bundle — no foreign host to
+    // allow — so only an absolute handoff pins an entry.
     const stamped = capacitorBootConfig({
       CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT,
       CADET_SERVER_URL: process.env.CADET_SERVER_URL,
     }).handoffUrl;
-    expect(baseConfig.server?.allowNavigation).toEqual([
-      new URL(stamped).hostname,
-    ]);
+    if (!stamped.startsWith("/")) {
+      expect(baseConfig.server?.allowNavigation).toEqual([
+        new URL(stamped).hostname,
+      ]);
+    }
+  });
+
+  test("only a CADET_SERVER_URL override produces a cross-origin handoff", () => {
+    expect(
+      capacitorBootConfig({ CADET_SERVER_URL: "https://assistant.example.com" })
+        .handoffUrl,
+    ).toBe("https://assistant.example.com");
+    expect(capacitorBootConfig({}).handoffUrl.startsWith("/")).toBe(true);
   });
 });

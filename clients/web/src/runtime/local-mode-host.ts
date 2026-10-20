@@ -11,7 +11,11 @@ import type {
   LocalUpgradeOptions,
   LocalWakeOptions,
 } from "@mycadet/ipc-contract";
-import { parseLockfile } from "@mycadet/local-mode/contract";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import {
+  parseLockfile,
+  stripSensitiveFields,
+} from "@mycadet/local-mode/contract";
 import type {
   Lockfile,
   LockfileAssistant,
@@ -21,6 +25,27 @@ import type {
 
 import { readInjectedConfig } from "@/lib/injected-config";
 import { isElectron } from "@/runtime/is-electron";
+
+/**
+ * The native `LockfilePlugin` baked into the mobile shells (the Swift class
+ * in `clients/ios/App/App`, the Java class in `clients/android/app`: both
+ * registered as local plugin instances at bridge init). It reads the Cadet
+ * CLI's lockfile off the host machine and hands the RAW JSON text across the
+ * bridge; the renderer parses and strips it here, so every host — dev server,
+ * Electron main, mobile shell — shares the one sanitizer
+ * (`stripSensitiveFields`) and the wire contract stays byte-identical.
+ */
+interface LockfilePluginInterface {
+  readLockfile(): Promise<{ lockfile: string }>;
+}
+
+const LockfilePlugin =
+  registerPlugin<LockfilePluginInterface>("LockfilePlugin");
+
+/** True when this bundle runs inside a Capacitor mobile shell. */
+export function isCapacitorNative(): boolean {
+  return Capacitor.isNativePlatform();
+}
 
 /**
  * Transport seam for local-mode lifecycle operations (hatch, retire, lockfile
@@ -250,6 +275,20 @@ export async function hatchLocalAssistant(
 export async function loadLockfileHost(): Promise<Lockfile> {
   if (isElectron()) {
     return window.cadet!.localMode.readLockfile();
+  }
+
+  if (isCapacitorNative()) {
+    // The baked shell reads the CLI's lockfile off disk natively. The
+    // candidate-path resolution lives in the plugin (it knows the host
+    // filesystem); a missing file rejects, and this layer's caller already
+    // falls back to the persisted mirror on any throw. The strip runs before
+    // the validating parse so the shared sanitizer stays the one redaction
+    // every host runs, and the parse returns the same renderer-safe shape
+    // the persisted-mirror reads go through.
+    const { lockfile } = await LockfilePlugin.readLockfile();
+    const data = JSON.parse(lockfile);
+    stripSensitiveFields(data);
+    return parseLockfile(data);
   }
 
   const res = await fetch("/assistant/__local/lockfile");
