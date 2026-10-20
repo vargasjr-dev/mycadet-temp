@@ -160,10 +160,6 @@ interface AuthState {
 
 interface AuthActions {
   initSession: () => Promise<void>;
-  /** The remote-pairing page calls this when its device-code exchange is
-   *  approved: the boot probe early-settled unauthenticated on the public pair
-   *  page, so only the page itself knows the session came alive. */
-  activateGatewaySession: () => void;
   connectLocalAssistant: (assistantId: string) => Promise<void>;
   connectPairedAssistant: (assistantId: string) => Promise<void>;
   connectCloudAssistant: (assistantId: string) => Promise<void>;
@@ -1024,10 +1020,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   user: null,
   cloudSession: "unknown",
   cloudSessionRestoredOffline: false,
-
-  activateGatewaySession: () => {
-    set(authenticatedLocalUser());
-  },
 
   // Deliberately not guarded by `logoutGeneration`, unlike `refreshSession`.
   // Its two callers can't overlap a logout: the boot path runs before any

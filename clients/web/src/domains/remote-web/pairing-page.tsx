@@ -25,7 +25,6 @@ import {
 import { isNativePlatform } from "@/runtime/native-auth";
 import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
 import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
-import { useAuthStore } from "@/stores/auth-store";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { routes } from "@/utils/routes";
 
@@ -185,7 +184,7 @@ function buildAppHandoffUrl(
 /**
  * The hub's chooser on its own origin, or `null` when the served config names
  * no hub. Abandoning a pairing has to leave this origin: the chooser sits
- * behind `requireRemoteGatewayPairing`, which bounces an unauthenticated visit
+ * behind `requireRemoteGatewayPairing`, which bounces a sessionless visit
  * straight back here and mints a fresh code. `noAutoSkip` keeps the hub on the
  * chooser instead of skipping through a lone assistant.
  */
@@ -331,10 +330,6 @@ export function RemoteWebPairingPage() {
         }
 
         activateRemoteGatewaySession(result);
-        // The boot probe early-settled unauthenticated on this public page;
-        // the approved exchange is the session-establishing event, so the
-        // store must learn it before the navigate below can pass the guard.
-        useAuthStore.getState().activateGatewaySession();
         // Drop the burned device code from the URL before navigating so it
         // never lingers in the address bar or re-submits on reload.
         clearDeviceCodeFromUrl();

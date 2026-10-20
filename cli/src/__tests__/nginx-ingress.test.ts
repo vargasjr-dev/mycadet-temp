@@ -2232,6 +2232,7 @@ function appConfigHash(
           assistantId: opts.assistantId,
           hubUrl: PRODUCTION_HUB_URL,
           cloudUrl: opts.cloudUrl,
+          version: "1.2.3",
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
         version: "1.2.3",

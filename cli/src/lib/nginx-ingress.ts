@@ -223,7 +223,7 @@ export function edgeServedRemote(recorded: string | undefined): RemoteHost {
 function remoteWebIngressConfig(
   opts: Pick<
     RemoteWebIngressOptions,
-    "config" | "assistantName" | "assistantId" | "hubUrl"
+    "config" | "assistantName" | "assistantId" | "hubUrl" | "version"
   > & { cloudUrl?: string },
 ): Record<string, unknown> {
   return {
@@ -234,6 +234,7 @@ function remoteWebIngressConfig(
     assistantId: opts.assistantId,
     hubUrl: opts.hubUrl,
     cloudUrl: opts.cloudUrl,
+    version: opts.version,
     ...opts.config,
   };
 }

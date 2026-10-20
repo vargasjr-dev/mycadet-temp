@@ -501,12 +501,18 @@ function stripRemoteGatewayPublicPathPrefix(
   return pathnameWithSearch;
 }
 
+/**
+ * The gateway-session token decides, not the auth store: the pairing page's
+ * boot settles the store unauthenticated on the public pair route before the
+ * approved exchange lands, and the token the exchange establishes is the
+ * same signal `allowGatewayAuth` reads next.
+ */
 function requireRemoteGatewayPairing(
   state: NavigationState,
   _path: string,
   pathnameWithSearch: string,
 ): NavigationDecision | null {
-  if (!state.isRemoteGateway || state.isAuthenticated) {
+  if (!state.isRemoteGateway || state.isGatewayAuth) {
     return null;
   }
 

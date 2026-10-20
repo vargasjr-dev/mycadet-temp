@@ -1,14 +1,6 @@
 export const BROWSER_REFRESH_COOKIE = "cadet_web_refresh";
 
-/**
- * The refresh cookie is domain-scoped (`Path=/`). The browser's refresh fetch
- * path depends on the prefix the bundle is served under — the app-shell edge
- * iframes the web UI at `/web/assistant/`, so its calls run at
- * `/web/v1/guardian/refresh` while the shell's own run at `/v1/guardian/refresh`
- * — and the pairing challenge's publicBaseUrl (minted CLI-side with the tunnel
- * URL) carries none of that. A narrowly scoped path never matched the requests
- * that needed the cookie, so the session could not survive a reload.
- */
+/** Domain-scoped: the edge iframes the web UI at /web/assistant/ (its refresh runs at /web/v1/guardian/refresh, the shell's own at /v1/guardian/refresh) and the pairing challenge's publicBaseUrl carries none of that prefix, so a narrow path never matched. */
 export const BROWSER_REFRESH_COOKIE_PATH = "/";
 
 function browserAuthCookie(

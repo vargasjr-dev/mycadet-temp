@@ -117,10 +117,10 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects unauthenticated remote-gateway browsers to pairing", () => {
+    test("redirects remote-gateway browsers with no gateway session to pairing", () => {
       const result = guard(
         s({
-          isAuthenticated: false,
+          isAuthenticated: true,
           isLocalClient: true,
           isRemoteGateway: true,
           hasAssistants: true,
@@ -132,6 +132,21 @@ describe("resolveNavigation", () => {
         action: "redirect",
         to: "/assistant/pair?returnTo=%2Fassistant%2Fconversations%2Fself%3Ftab%3Dlatest",
       });
+    });
+
+    test("admits a paired-in browser whose store session is still unauthenticated", () => {
+      const result = guard(
+        s({
+          isAuthenticated: false,
+          isGatewayAuth: true,
+          isLocalClient: true,
+          isRemoteGateway: true,
+          hasAssistants: true,
+        }),
+        "/assistant/conversations/self?tab=latest",
+      );
+
+      expect(result).toEqual(ALLOW);
     });
 
     test("strips remote-gateway public prefix from pairing returnTo", () => {
