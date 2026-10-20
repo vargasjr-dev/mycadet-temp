@@ -1,4 +1,9 @@
-import { getCloud, postCloud, type CloudResult } from "@app/lib/cloud/request";
+import {
+  deleteCloud,
+  getCloud,
+  postCloud,
+  type CloudResult,
+} from "@app/lib/cloud/request";
 import { resolveOrganization } from "@app/lib/cloud/organization";
 import {
   AssistantPageSchema,
@@ -54,5 +59,24 @@ export async function hatchAssistant(
     AssistantSchema,
     name ? { name } : {},
     { organizationId: organization.data },
+  );
+}
+
+export type RetireAssistantResult = CloudResult<null>;
+
+/**
+ * Permanently retire a cloud assistant and all of its data. The cloud keeps
+ * no trash can: the route is the deletion, which is why every caller sits
+ * behind a destructive confirmation.
+ */
+export async function retireAssistantById(
+  assistantId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<RetireAssistantResult> {
+  return deleteCloud(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/retire/`,
+    {
+      signal: options.signal,
+    },
   );
 }

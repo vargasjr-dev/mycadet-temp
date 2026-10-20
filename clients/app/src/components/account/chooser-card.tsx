@@ -8,6 +8,8 @@ interface ChooserCardProps {
   subtitle?: string;
   /** Rendered as the radiogroup's checked card. */
   selected?: boolean;
+  /** Present when the row offers a menu action, e.g. the retire menu. */
+  removeMenu?: ReactNode;
   /** The radiogroup's single roving tab stop lands on this card. */
   tabStop?: boolean;
   onSelect: () => void;
@@ -28,6 +30,7 @@ export function ChooserCard({
   icon,
   title,
   subtitle,
+  removeMenu,
   selected = false,
   tabStop = false,
   onSelect,
@@ -74,6 +77,18 @@ export function ChooserCard({
           </span>
         )}
       </div>
+      {removeMenu && (
+        /* The menu sits inside the radio card: stop clicks and keys from
+           bubbling so opening the menu never selects the card and the
+           radio's Enter/Space handler never swallows the trigger. */
+        <div
+          className="flex shrink-0 items-center"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {removeMenu}
+        </div>
+      )}
     </div>
   );
 }

@@ -95,7 +95,9 @@
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Ассистенты",
-    "create": "Создать ассистента"
+    "create": "Создать ассистента",
+    "rowActionsAriaLabel": "Действия для {name}",
+    "retire": "Удалить ассистента"
   },
   "appShell": {
     "loading": "Загрузка ассистента…",
