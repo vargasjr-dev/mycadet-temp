@@ -12,6 +12,19 @@ import { readInjectedConfig } from "@app/lib/injected-config";
 import { useAssistantRequest } from "@app/assistant/use-assistant-request";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
+import { formatRelativeDate } from "@app/utils/format-date";
+
+/**
+ * The chooser lists cloud assistants only, so web's assistantSubtitle hosting
+ * tree (paired, self-hosted, local) collapses to one label here; web's other
+ * branches arrive with their own transports (chooser roadmap steps 4-5).
+ */
+function assistantSubtitle(created: string | null | undefined): string {
+  if (!created) {
+    return "Cloud-hosted";
+  }
+  return `Cloud-hosted · Created ${formatRelativeDate(created)}`;
+}
 
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
@@ -50,6 +63,7 @@ export function SelectAssistantScreen() {
                 />
               }
               title={assistant.name}
+              subtitle={assistantSubtitle(assistant.created)}
               tabStop={index === 0}
               onSelect={() => {
                 void navigate(routes.assistant, {

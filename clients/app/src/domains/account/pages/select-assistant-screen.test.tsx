@@ -88,9 +88,9 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
     )
     .mockResolvedValueOnce(Response.json(detail));
   const router = setup(undefined, true);
-  expect(await screen.findByRole("radio", { name: "One" })).toBeDefined();
+  expect(await screen.findByRole("radio", { name: /^One/ })).toBeDefined();
   expect(request).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("radio", { name: "New Assistant" }));
+  fireEvent.click(screen.getByRole("radio", { name: /^New Assistant/ }));
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
     "http://localhost:3001/web/1.2.3/assistant/",
@@ -125,12 +125,12 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
     }),
   );
   setup();
-  const withAvatar = await screen.findByRole("radio", { name: "One" });
+  const withAvatar = await screen.findByRole("radio", { name: /^One/ });
   const img = withAvatar.querySelector("img");
   expect(img?.getAttribute("src")).toBe("https://cloud.example/one.png");
   // The chip is decorative: the row's own label names the assistant.
   expect(img?.getAttribute("alt")).toBe("");
-  const bare = screen.getByRole("radio", { name: "Two" });
+  const bare = screen.getByRole("radio", { name: /^Two/ });
   expect(bare.querySelector("img")).toBeNull();
   // A thumbnail that fails to load demotes to the initial for the row.
   if (!(img instanceof HTMLImageElement)) {
@@ -139,6 +139,31 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
   fireEvent.error(img);
   expect(withAvatar.querySelector("img")).toBeNull();
   expect(withAvatar.textContent).toContain("O");
+});
+
+test("rows render the cloud-hosted subtitle with a relative creation date", async () => {
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [
+        {
+          id: "assistant-1",
+          name: "One",
+          // Three whole days back, with a minute of margin so the day floor
+          // lands on 3 regardless of how long the test takes to run.
+          created: new Date(
+            Date.now() - 3 * 24 * 3_600_000 - 60_000,
+          ).toISOString(),
+        },
+        { id: "assistant-2", name: "Two" },
+      ],
+    }),
+  );
+  setup();
+  const withDate = await screen.findByRole("radio", { name: /^One/ });
+  expect(withDate.textContent).toContain("Cloud-hosted · Created 3d ago");
+  const withoutDate = screen.getByRole("radio", { name: /^Two/ });
+  expect(withoutDate.textContent).toContain("Cloud-hosted");
+  expect(withoutDate.textContent).not.toContain("Created");
 });
 
 test("arrow keys move focus across cards without selecting", async () => {
@@ -151,8 +176,8 @@ test("arrow keys move focus across cards without selecting", async () => {
     }),
   );
   const router = setup();
-  const one = await screen.findByRole("radio", { name: "One" });
-  const two = screen.getByRole("radio", { name: "Two" });
+  const one = await screen.findByRole("radio", { name: /^One/ });
+  const two = screen.getByRole("radio", { name: /^Two/ });
   one.focus();
   fireEvent.keyDown(one, { key: "ArrowDown" });
   expect(document.activeElement).toBe(two);
@@ -170,7 +195,7 @@ test("Enter selects the focused card", async () => {
     // queued detail must answer the assistant the card navigated with.
     .mockResolvedValueOnce(Response.json({ ...detail, id: "assistant-1" }));
   const router = setup();
-  const one = await screen.findByRole("radio", { name: "One" });
+  const one = await screen.findByRole("radio", { name: /^One/ });
   fireEvent.keyDown(one, { key: "Enter" });
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
@@ -186,7 +211,7 @@ test("a sole assistant waits for selection rather than fetching detail on the ac
     Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
   );
   setup();
-  await screen.findByRole("radio", { name: "One" });
+  await screen.findByRole("radio", { name: /^One/ });
   expect(request).toHaveBeenCalledTimes(1);
   expect(screen.queryByTitle("Assistant")).toBeNull();
 });
@@ -200,7 +225,7 @@ test("an empty host list can be refreshed", async () => {
   setup();
   await screen.findByText("No assistant is available.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("radio", { name: "One" });
+  await screen.findByRole("radio", { name: /^One/ });
 });
 
 test("an empty list offers creation and lands in the created assistant", async () => {
@@ -260,7 +285,7 @@ test("a malformed list produces an error and retry can recover", async () => {
   setup();
   await screen.findByText("Unable to load assistant.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("radio", { name: "One" });
+  await screen.findByRole("radio", { name: /^One/ });
 });
 
 test("leaving the chooser aborts its request and ignores a late reply", async () => {
