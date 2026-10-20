@@ -72,6 +72,7 @@
     "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
     "@mycadet/local-mode": "workspace:*",
+    "@mycadet/shared": "workspace:*",
     "@mycadet/service-contracts": "workspace:*",
     "capacitor-plugin-safe-area": "5.0.0",
     "class-variance-authority": "0.7.1",

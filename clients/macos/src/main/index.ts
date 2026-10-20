@@ -14,15 +14,13 @@ import {
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
-import {
-  executePlatformForwardPlan,
-  planCloudForward,
-} from "@mycadet/electron-desktop/platform-forward";
+import { forwardPlatformRequest } from "@mycadet/electron-desktop/platform-forward";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   getLockfileData,
+  getLoopbackGatewayPort,
   pairedGatewayTargetsFromLockfile,
   readAllowedGatewayPorts,
   readPairedGatewayTargets,
@@ -298,44 +296,26 @@ const registerAppProtocol = (): void => {
   };
   const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
 
-  // Platform routes forward by path: same-origin `/v1/*` is the active local
-  // assistant's gateway (the same contract the CLI edge implements by
-  // proxying `/v1` there), while `/​_allauth` and `/accounts` are the
-  // platform's login surfaces. The env-resolved seed covers the no-lockfile
+  // Same-origin `/v1/*` rides the active local assistant's gateway — the
+  // same contract the CLI edge implements by proxying `/v1` there — while
+  // the platform's login surfaces always ride the cloud (the forward
+  // resolves that by path). The env-resolved seed covers the no-lockfile
   // window.
-  const resolveForwardBase = (request: GlobalRequest): string => {
-    const pathname = new URL(request.url).pathname;
-    if (pathname.startsWith("/_allauth") || pathname.startsWith("/accounts")) {
-      return cloudUrl;
-    }
+  const getActiveGatewayBase = (): string | undefined => {
     const read = getLockfileData(lockfilePaths);
-    if (read.ok) {
-      const active = read.data.activeAssistant
-        ? read.data.assistants.find(
-            (a) => a.assistantId === read.data.activeAssistant,
-          )
-        : undefined;
-      const entry = active ?? read.data.assistants[0];
-      if (entry && entry.cloud !== "paired") {
-        const port = entry.resources?.gatewayPort;
-        if (typeof port === "number" && port >= 1024 && port <= 65535) {
-          return `http://127.0.0.1:${port}`;
-        }
-        try {
-          const runtime = new URL(entry.runtimeUrl ?? "");
-          if (
-            (runtime.hostname === "127.0.0.1" ||
-              runtime.hostname === "localhost") &&
-            runtime.port
-          ) {
-            return `http://127.0.0.1:${runtime.port}`;
-          }
-        } catch {
-          // unparseable runtimeUrl — fall through to the cloud seed
-        }
-      }
+    if (!read.ok) {
+      return undefined;
     }
-    return cloudUrl;
+    const entry = read.data.activeAssistant
+      ? read.data.assistants.find(
+          (a) => a.assistantId === read.data.activeAssistant,
+        )
+      : read.data.assistants[0];
+    if (!entry || entry.cloud === "paired") {
+      return undefined;
+    }
+    const port = getLoopbackGatewayPort(entry);
+    return port ? `http://127.0.0.1:${port}` : undefined;
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
@@ -366,10 +346,22 @@ const registerAppProtocol = (): void => {
       return pairedProxied;
     }
 
-    // Platform API and authentication routes forward by resolved base.
+    // Platform API and authentication routes forward through the shared
+    // platform forward: the login surfaces ride the cloud, same-origin
+    // `/v1/*` rides the active local assistant's gateway.
     const platformProxied = await forwardPlatformRequest(
       request,
-      resolveForwardBase(request),
+      { cloudBase: cloudUrl, gatewayBase: getActiveGatewayBase() },
+      {
+        allowedOrigin: resolveAllowedOrigin(),
+        fetcher: gatewayForwardFetcher,
+        onError: (err, attempt, target) => {
+          console.error(
+            `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
+            err,
+          );
+        },
+      },
     );
     if (platformProxied) return platformProxied;
 
@@ -403,38 +395,6 @@ handleSync("cadet:config:get", () => ({
   deviceId: getDeviceId(),
   version: getVersionInfo().version,
 }));
-
-/**
- * Forward a cloud API request (`/v1/*`, `/_allauth/*`, `/accounts/*`) to
- * the cloud platform, or return `null` for non-cloud paths. Mirrors the
- * gateway forward: `net.fetch` runs in main so the renderer stays same-origin.
- */
-const forwardPlatformRequest = async (
-  request: GlobalRequest,
-  cloudUrl: string,
-): Promise<Response | null> => {
-  const plan = planCloudForward(request, cloudUrl, {
-    allowedOrigin: resolveAllowedOrigin(),
-  });
-  const target = plan.kind === "forward" ? `${plan.method} ${plan.url}` : "";
-  // Transient net-stack failures (e.g. ERR_NETWORK_CHANGED while Wi-Fi
-  // reassociates after sleep) retry in-proxy for GET/HEAD; whatever still
-  // fails becomes a structured 502 the renderer can classify, never a raw
-  // `net::ERR_*` body (LUM-2402).
-  return executePlatformForwardPlan(
-    plan,
-    request,
-    (url, init) => net.fetch(url, init),
-    {
-      onError: (err, attempt) => {
-        console.error(
-          `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
-          err,
-        );
-      },
-    },
-  );
-};
 
 // ---------------------------------------------------------------------------
 // App lifecycle

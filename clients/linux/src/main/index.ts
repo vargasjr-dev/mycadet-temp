@@ -19,10 +19,7 @@ import { getPairedGuardianAccessToken } from "@mycadet/electron-desktop/local-mo
 import { getWatchedLockfileSnapshot } from "@mycadet/electron-desktop/lockfile-watcher";
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import {
-  executePlatformForwardPlan,
-  planCloudForward,
-} from "@mycadet/electron-desktop/platform-forward";
+import { forwardPlatformRequest } from "@mycadet/electron-desktop/platform-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
@@ -180,7 +177,17 @@ const registerAppProtocol = (): void => {
     // cloud platform so managed mode and desktop replay ingest work.
     const platformProxied = await forwardPlatformRequest(
       request,
-      resolvedConfig.cloudUrl,
+      { cloudBase: resolvedConfig.cloudUrl },
+      {
+        allowedOrigin: resolveAllowedOrigin(),
+        fetcher: gatewayForwardFetcher,
+        onError: (error, attempt, target) => {
+          log.error(
+            `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
+            error,
+          );
+        },
+      },
     );
     if (platformProxied) {
       return platformProxied;
@@ -214,29 +221,6 @@ handleSync("cadet:config:get", () => ({
 
 const gatewayForwardFetcher: GatewayForwardFetcher = (url, init) =>
   net.fetch(url, init);
-
-const forwardPlatformRequest = async (
-  request: GlobalRequest,
-  cloudUrl: string,
-): Promise<Response | null> => {
-  const plan = planCloudForward(request, cloudUrl, {
-    allowedOrigin: resolveAllowedOrigin(),
-  });
-  const target = plan.kind === "forward" ? `${plan.method} ${plan.url}` : "";
-  return executePlatformForwardPlan(
-    plan,
-    request,
-    (url, init) => net.fetch(url, init),
-    {
-      onError: (error, attempt) => {
-        log.error(
-          `[platform-forward] net.fetch failed (attempt ${attempt + 1}) for ${target}:`,
-          error,
-        );
-      },
-    },
-  );
-};
 
 // ---------------------------------------------------------------------------
 // App lifecycle

@@ -12,6 +12,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { CADET_GITHUB_REPOSITORY_URL } from "@mycadet/shared";
+
 import { useNudgeStore } from "@/stores/nudge-store";
 
 // ---------------------------------------------------------------------------
@@ -19,7 +21,7 @@ import { useNudgeStore } from "@/stores/nudge-store";
 // ---------------------------------------------------------------------------
 
 /** Public GitHub repository for Cadet. */
-export const GITHUB_REPO_URL = "https://github.com/vargasjr-dev/mycadet";
+export const GITHUB_REPO_URL = CADET_GITHUB_REPOSITORY_URL;
 
 /** Minimum account age (ms since first observation) before the nudge is eligible. */
 export const GITHUB_MIN_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours

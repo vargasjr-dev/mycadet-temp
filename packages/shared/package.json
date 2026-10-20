@@ -3,6 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
+    ".": "./github-repository.ts",
+    "./github-repository": "./github-repository.ts",
     "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts"
   }
 }

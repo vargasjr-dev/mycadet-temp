@@ -54,7 +54,7 @@ export {
 export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
-export { parseLockfile } from "./lockfile-contract";
+export { getLoopbackGatewayPort, parseLockfile } from "./lockfile-contract";
 export type {
   Lockfile,
   LockfileAssistant,

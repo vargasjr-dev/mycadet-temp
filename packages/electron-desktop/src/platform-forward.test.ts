@@ -3,14 +3,17 @@ import { describe, expect, test } from "bun:test";
 import {
   buildProxyNetworkErrorResponse,
   fetchForwardPlanWithRetry,
+  forwardPlatformRequest,
   isTransientNetworkError,
-  planCloudForward,
   PROXY_ERROR_HEADER,
   PROXY_NETWORK_ERROR_CODE,
+  type PlatformForwardFetcher,
 } from "./platform-forward";
 
 const PLATFORM = "https://cloud.mycadet.ai";
+const GATEWAY = "http://127.0.0.1:20100";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
+const allowedOrigin = { protocol: "app:", host: "mycadet.ai" };
 
 const request = (
   pathname: string,
@@ -26,201 +29,325 @@ const request = (
     ...(init.origin !== undefined ? { origin: init.origin } : {}),
     ...init.headers,
   }),
+  body: null,
 });
 
-describe("planCloudForward", () => {
-  test("passes non-cloud requests through to static serving", () => {
-    expect(
-      planCloudForward(request("/assistant/assets/app.js"), PLATFORM),
-    ).toEqual({ kind: "pass" });
-  });
+/** Fake fetcher recording what the forward would have sent. */
+const recorder = () => {
+  const calls: Array<{
+    url: string;
+    init: RequestInit & { duplex?: "half" };
+  }> = [];
+  const fetcher: PlatformForwardFetcher = async (url, init) => {
+    calls.push({ url, init });
+    return new Response("forwarded", { status: 200 });
+  };
+  return { calls, fetcher };
+};
 
-  test("passes gateway requests through", () => {
-    expect(
-      planCloudForward(request("/__gateway/8080/v1/foo"), PLATFORM),
-    ).toEqual({ kind: "pass" });
-  });
+const header = (init: RequestInit | undefined, name: string) =>
+  new Headers(init?.headers).get(name);
 
-  test("forwards /v1/* requests to platform", () => {
-    const plan = planCloudForward(request("/v1/assistants"), PLATFORM);
-    expect(plan.kind).toBe("forward");
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.mycadet.ai/v1/assistants");
-    expect(plan.method).toBe("GET");
-    expect(plan.hasBody).toBe(false);
-  });
-
-  test("forwards /_allauth/* requests to platform", () => {
-    const plan = planCloudForward(
-      request("/_allauth/browser/v1/auth/session"),
-      PLATFORM,
+describe("forwardPlatformRequest", () => {
+  test("passes non-cloud requests through to static serving", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
+      request("/assistant/assets/app.js"),
+      { cloudBase: PLATFORM },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe(
+    expect(response).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  test("passes gateway requests through", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
+      request("/__gateway/8080/v1/foo"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(response).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  test("does not forward paths that merely start with a prefix string", async () => {
+    const { calls, fetcher } = recorder();
+    expect(
+      await forwardPlatformRequest(
+        request("/v1something/else"),
+        { cloudBase: PLATFORM },
+        { fetcher },
+      ),
+    ).toBeNull();
+    expect(
+      await forwardPlatformRequest(
+        request("/accountsettings"),
+        { cloudBase: PLATFORM },
+        { fetcher },
+      ),
+    ).toBeNull();
+    expect(calls).toHaveLength(0);
+  });
+
+  test("forwards /v1/* requests to the cloud", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
+      request("/v1/assistants"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(response?.status).toBe(200);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/assistants");
+    expect(calls[0]?.init.method).toBe("GET");
+  });
+
+  test("forwards /_allauth/* requests to the cloud", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/_allauth/browser/v1/auth/session"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe(
       "https://cloud.mycadet.ai/_allauth/browser/v1/auth/session",
     );
   });
 
-  test("forwards /accounts/* requests to platform", () => {
-    const plan = planCloudForward(request("/accounts/login"), PLATFORM);
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.mycadet.ai/accounts/login");
-  });
-
-  test("forwards exact prefix without trailing slash", () => {
-    const plan = planCloudForward(request("/v1"), PLATFORM);
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://cloud.mycadet.ai/v1");
-  });
-
-  test("preserves query string on forwarded requests", () => {
-    const plan = planCloudForward(
-      request("/v1/assistants?page=2&limit=10"),
-      PLATFORM,
+  test("forwards /accounts/* requests to the cloud", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/accounts/login"),
+      { cloudBase: PLATFORM },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe(
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/accounts/login");
+  });
+
+  test("forwards exact prefix without trailing slash", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1");
+  });
+
+  test("preserves query string on forwarded requests", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants?page=2&limit=10"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe(
       "https://cloud.mycadet.ai/v1/assistants?page=2&limit=10",
     );
   });
 
-  test("rewrites Origin from app:// to platform origin", () => {
-    const plan = planCloudForward(
-      request("/v1/assistants", { origin: "app://mycadet.ai" }),
-      PLATFORM,
+  test("forwards /v1/* to the gateway when one is set", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants"),
+      { cloudBase: PLATFORM, gatewayBase: GATEWAY },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
+    expect(calls[0]?.url).toBe("http://127.0.0.1:20100/v1/assistants");
+    expect(header(calls[0]?.init, "origin")).toBe("http://127.0.0.1:20100");
   });
 
-  test("sets a cloud Origin even when the renderer sent none", () => {
-    const plan = planCloudForward(request("/v1/assistants"), PLATFORM);
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
+  test("rides the cloud for /_allauth even when a gateway is set", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/_allauth/browser/v1/auth/session"),
+      { cloudBase: PLATFORM, gatewayBase: GATEWAY },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe(
+      "https://cloud.mycadet.ai/_allauth/browser/v1/auth/session",
+    );
+    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
   });
 
-  test("forwards unsafe requests from the trusted app origin", () => {
-    const plan = planCloudForward(
+  test("rides the cloud for /accounts even when a gateway is set", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/accounts/login"),
+      { cloudBase: PLATFORM, gatewayBase: GATEWAY },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/accounts/login");
+  });
+
+  test("rides the cloud for /v1 when no gateway is set", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/assistants");
+  });
+
+  test("rewrites Origin from app:// to the cloud origin", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants", { origin: "app://mycadet.ai" }),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
+  });
+
+  test("sets a cloud Origin even when the renderer sent none", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
+  });
+
+  test("forwards with manual redirects and omitted credentials", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
+      request("/v1/assistants"),
+      { cloudBase: PLATFORM },
+      { fetcher },
+    );
+    expect(calls[0]?.init.redirect).toBe("manual");
+    expect(calls[0]?.init.credentials).toBe("omit");
+  });
+
+  test("forwards unsafe requests from the trusted app origin", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
         origin: "app://mycadet.ai",
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
+    expect(response?.status).toBe(200);
+    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
   });
 
-  test("rejects platform requests with a foreign Origin", () => {
-    const plan = planCloudForward(
+  test("rejects platform requests with a foreign Origin", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
         origin: "https://evil.example",
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan).toEqual({
-      kind: "reject",
-      status: 403,
-      message: "Forbidden cloud proxy request",
-    });
+    expect(response?.status).toBe(403);
+    expect(await response?.text()).toBe("Forbidden cloud proxy request");
+    expect(calls).toHaveLength(0);
   });
 
-  test("rejects platform requests with a foreign Referer when Origin is absent", () => {
-    const plan = planCloudForward(
+  test("rejects platform requests with a foreign Referer when Origin is absent", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
         headers: { referer: "https://evil.example/form" },
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan.kind).toBe("reject");
+    expect(response?.status).toBe(403);
+    expect(calls).toHaveLength(0);
   });
 
-  test("trusts source-less unsafe requests with renderer-origin marker", () => {
-    const plan = planCloudForward(
+  test("trusts source-less unsafe requests with renderer-origin marker", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
       request("/v1/assistants", {
         method: "POST",
         headers: { [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai" },
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("origin")).toBe("https://cloud.mycadet.ai");
-    expect(plan.headers.get(ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
+    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
+    expect(header(calls[0]?.init, ELECTRON_RENDERER_ORIGIN_HEADER)).toBeNull();
   });
 
-  test("trusts source-less unsafe requests with Sec-Fetch-Site same-origin", () => {
-    const plan = planCloudForward(
+  test("trusts source-less unsafe requests with Sec-Fetch-Site same-origin", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/v1/assistants", {
         method: "POST",
         headers: { "sec-fetch-site": "same-origin" },
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    if (plan.kind !== "forward") throw new Error("expected forward");
+    expect(response?.status).toBe(200);
   });
 
-  test("rejects source-less unsafe requests with cross-site fetch metadata", () => {
-    const plan = planCloudForward(
+  test("rejects source-less unsafe requests with cross-site fetch metadata", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/v1/assistants", {
         method: "POST",
         headers: { "sec-fetch-site": "cross-site" },
       }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan.kind).toBe("reject");
+    expect(response?.status).toBe(403);
+    expect(calls).toHaveLength(0);
   });
 
-  test("rejects source-less unsafe requests without any trust signal", () => {
-    const plan = planCloudForward(
+  test("rejects source-less unsafe requests without any trust signal", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/v1/assistants", { method: "POST" }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan.kind).toBe("reject");
+    expect(response?.status).toBe(403);
+    expect(calls).toHaveLength(0);
   });
 
-  test("rejects source-less unsafe requests from a foreign request URL", () => {
-    const plan = planCloudForward(
+  test("rejects source-less unsafe requests from a foreign request URL", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       {
         url: "app://evil.example/v1/assistants",
         method: "POST",
         headers: new Headers({
           [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai",
         }),
+        body: null,
       },
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan.kind).toBe("reject");
+    expect(response?.status).toBe(403);
+    expect(calls).toHaveLength(0);
   });
 
-  test("forwards source-less safe platform requests", () => {
-    const plan = planCloudForward(
+  test("forwards source-less safe platform requests", async () => {
+    const { calls, fetcher } = recorder();
+    const response = await forwardPlatformRequest(
       request("/v1/assistants", { method: "GET" }),
-      PLATFORM,
-      { allowedOrigin: { protocol: "app:", host: "mycadet.ai" } },
+      { cloudBase: PLATFORM },
+      { fetcher, allowedOrigin },
     );
-
-    expect(plan.kind).toBe("forward");
+    expect(response?.status).toBe(200);
   });
 
-  test("preserves non-Origin headers", () => {
-    const plan = planCloudForward(
+  test("preserves non-Origin headers", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
       request("/_allauth/browser/v1/auth/session", {
         method: "POST",
         origin: "app://mycadet.ai",
@@ -230,63 +357,61 @@ describe("planCloudForward", () => {
           "x-csrftoken": "csrf123",
         },
       }),
-      PLATFORM,
+      { cloudBase: PLATFORM },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.headers.get("authorization")).toBe("Bearer api-token");
-    expect(plan.headers.get("content-type")).toBe("application/json");
-    expect(plan.headers.get("x-csrftoken")).toBe("csrf123");
+    expect(header(calls[0]?.init, "authorization")).toBe("Bearer api-token");
+    expect(header(calls[0]?.init, "content-type")).toBe("application/json");
+    expect(header(calls[0]?.init, "x-csrftoken")).toBe("csrf123");
   });
 
-  test("marks POST/PUT/PATCH/DELETE as hasBody, GET/HEAD as no body", () => {
+  test("marks POST/PUT/PATCH/DELETE as having a body, GET/HEAD as none", async () => {
     for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
-      const plan = planCloudForward(
+      const { calls, fetcher } = recorder();
+      await forwardPlatformRequest(
         request("/v1/assistants", { method }),
-        PLATFORM,
+        { cloudBase: PLATFORM },
+        { fetcher },
       );
-      if (plan.kind !== "forward") throw new Error("expected forward");
-      expect(plan.hasBody).toBe(true);
+      expect(calls[0]?.init.body).toBeNull();
+      expect(calls[0]?.init.duplex).toBe("half");
     }
     for (const method of ["GET", "HEAD"]) {
-      const plan = planCloudForward(
+      const { calls, fetcher } = recorder();
+      await forwardPlatformRequest(
         request("/v1/assistants", { method }),
-        PLATFORM,
+        { cloudBase: PLATFORM },
+        { fetcher },
       );
-      if (plan.kind !== "forward") throw new Error("expected forward");
-      expect(plan.hasBody).toBe(false);
+      expect(calls[0]?.init.body).toBeUndefined();
+      expect(calls[0]?.init.duplex).toBeUndefined();
     }
   });
 
-  test("works with custom platform URL (staging)", () => {
-    const plan = planCloudForward(
+  test("works with custom platform URL (staging)", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
       request("/v1/assistants"),
-      "https://staging-cloud.mycadet.ai",
+      { cloudBase: "https://staging-cloud.mycadet.ai" },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("https://staging-cloud.mycadet.ai/v1/assistants");
-    expect(plan.headers.get("origin")).toBe(
+    expect(calls[0]?.url).toBe(
+      "https://staging-cloud.mycadet.ai/v1/assistants",
+    );
+    expect(header(calls[0]?.init, "origin")).toBe(
       "https://staging-cloud.mycadet.ai",
     );
   });
 
-  test("works with local platform URL", () => {
-    const plan = planCloudForward(
+  test("works with local platform URL", async () => {
+    const { calls, fetcher } = recorder();
+    await forwardPlatformRequest(
       request("/v1/assistants"),
-      "http://localhost:8000",
+      { cloudBase: "http://localhost:8000" },
+      { fetcher },
     );
-    if (plan.kind !== "forward") throw new Error("expected forward");
-    expect(plan.url).toBe("http://localhost:8000/v1/assistants");
-    expect(plan.headers.get("origin")).toBe("http://localhost:8000");
-  });
-
-  test("does not forward paths that merely start with a prefix string", () => {
-    expect(planCloudForward(request("/v1something/else"), PLATFORM)).toEqual(
-      { kind: "pass" },
-    );
-
-    expect(planCloudForward(request("/accountsettings"), PLATFORM)).toEqual({
-      kind: "pass",
-    });
+    expect(calls[0]?.url).toBe("http://localhost:8000/v1/assistants");
+    expect(header(calls[0]?.init, "origin")).toBe("http://localhost:8000");
   });
 });
 
