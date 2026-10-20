@@ -41,9 +41,13 @@ function portBlock(base: number): PortMap {
  * package index's `.js`-suffixed runtime re-exports. Keep this file's
  * imports type-only so it stays loadable on its own.
  */
-export function cloudAssistantHubUrl(envName: string | undefined): string {
+export function cloudWebUrl(envName: string | undefined): string {
   const seed = (envName && SEEDS[envName]) || SEEDS.dev;
-  return `${seed.webUrl}/assistant`;
+  return seed.webUrl;
+}
+
+export function cloudAssistantHubUrl(envName: string | undefined): string {
+  return `${cloudWebUrl(envName)}/assistant`;
 }
 
 /**

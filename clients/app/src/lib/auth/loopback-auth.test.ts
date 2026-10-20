@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { isPlatformLocal, startLoopbackAuth } from "./loopback-auth";
+import { startLoopbackAuth } from "./loopback-auth";
 import { SEEDS } from "@mycadet/environments/seeds";
 const originalWindow = window;
 function useLocation(origin: string, port: string, config?: unknown) {
@@ -14,10 +14,12 @@ function useLocation(origin: string, port: string, config?: unknown) {
 }
 afterEach(() => {
   Reflect.set(globalThis, "window", originalWindow);
+  delete import.meta.env.VITE_ENVIRONMENT;
   sessionStorage.clear();
 });
 test("loopback persists a fresh state and destination and sends only the callback to cloud", async () => {
-  // The platform base is the build seed's web url, not an injected field.
+  // The cloud login base is the build seed's web url, not an injected field.
+  import.meta.env.VITE_ENVIRONMENT = "production";
   const location = useLocation("http://localhost:4567", "4567", {
     remote: "local",
     cloudUrl: "https://cloud.example",
@@ -39,14 +41,4 @@ test("loopback persists a fresh state and destination and sends only the callbac
   await startLoopbackAuth();
   expect(sessionStorage.getItem("cadet:loopback:state")).not.toBe(firstState);
   expect(new URL(location.href).pathname).toBe("/account/login");
-});
-test("a platform served on the same origin bypasses cloud loopback", () => {
-  // The platform serves the bundle without an injected config; any injected
-  // shape (local gateway, remote edge, cloud) is not platform-local.
-  useLocation("https://cloud.example", "");
-  expect(isPlatformLocal()).toBe(true);
-  useLocation("https://cloud.example", "", { remote: "local" });
-  expect(isPlatformLocal()).toBe(false);
-  useLocation("https://cloud.example", "", { remote: "cloud" });
-  expect(isPlatformLocal()).toBe(false);
 });

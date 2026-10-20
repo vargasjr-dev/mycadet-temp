@@ -8,23 +8,17 @@
  * which validates the state and registers the token with the local server so
  * its cloud proxy can authenticate — no browser session cookie is used.
  */
-import { readInjectedConfig } from "@/lib/injected-config";
-import { SEEDS } from "@mycadet/environments/seeds";
+import { cloudWebUrl } from "@mycadet/environments/seeds";
 
 const LOOPBACK_STATE_KEY = "cadet:loopback:state";
 const LOOPBACK_RETURN_TO_KEY = "cadet:loopback:returnTo";
 
-/** The platform login base comes from the build's environment seed, not the
+/** The cloud login base comes from the build's environment seed, not the
  * injected config — the config carries only the origins a served bundle
  * can't infer, and the loopback handoff only runs in standalone local mode
- * where the build's seed owns the routing (same pattern as
- * getCloudRuntimeUrl). */
-function platformWebUrl(): string {
-  return (
-    (
-      SEEDS[import.meta.env.VITE_ENVIRONMENT ?? "production"] ?? SEEDS.production
-    ).webUrl
-  );
+ * where the build's seed owns the routing. */
+function cloudLoginUrl(page: string, callbackReturnTo: string): string {
+  return `${cloudWebUrl(import.meta.env.VITE_ENVIRONMENT)}/account/${page}?returnTo=${encodeURIComponent(callbackReturnTo)}`;
 }
 
 function generateState(): string {
@@ -33,22 +27,10 @@ function generateState(): string {
   return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function isPlatformLocal(): boolean {
-  // Nothing injected = the platform web app itself is serving the bundle,
-  // so auth is same-origin. Every injected shape (standalone local gateway,
-  // remote edges, cloud) carries `remote` and is not platform-local.
-  return readInjectedConfig() === undefined;
-}
-
-export function useIsPlatformLocal(): boolean {
-  return isPlatformLocal();
-}
-
 export async function startLoopbackAuth(
   returnTo?: string,
   options?: { intent?: string },
 ): Promise<void> {
-  const webUrl = platformWebUrl();
   const state = generateState();
   const port = window.location.port || "3000";
 
@@ -59,7 +41,6 @@ export async function startLoopbackAuth(
 
   const callbackReturnTo = `/accounts/cli/callback?port=${port}&state=${state}`;
   const page = options?.intent === "signup" ? "signup" : "login";
-  const loginUrl = `${webUrl}/account/${page}?returnTo=${encodeURIComponent(callbackReturnTo)}`;
 
-  window.location.href = loginUrl;
+  window.location.href = cloudLoginUrl(page, callbackReturnTo);
 }

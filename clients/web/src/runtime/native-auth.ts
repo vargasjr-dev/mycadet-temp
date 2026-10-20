@@ -10,7 +10,7 @@ import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
 import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
 import { resolveSignupCheckoutDestination } from "@/lib/billing/post-auth-checkout";
-import { isPlatformLocal, startLoopbackAuth } from "@/lib/auth/loopback-auth";
+import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -489,9 +489,10 @@ export async function startAuthFlow(
     return;
   }
 
-  // Standalone local mode (no local Django serving the SPA): redirect
-  // through the cloud's login page and back to a loopback callback.
-  if (isLocalClient() && !isPlatformLocal()) {
+  // Local client: redirect through the cloud's login page and back to a
+  // loopback callback. Cloud-hosted bundles are remote "cloud" — not local
+  // clients — so they keep same-origin auth.
+  if (isLocalClient()) {
     await startLoopbackAuth(options.returnTo ?? undefined, {
       intent: options.intent,
     });
