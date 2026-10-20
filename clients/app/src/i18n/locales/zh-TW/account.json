@@ -109,7 +109,6 @@
     "retry": "重試",
     "title": "助理",
     "selection": "選擇一個助理。",
-    "unavailable": "此助理無法使用。",
-    "chooseAnother": "選擇其他助理"
+    "unavailable": "此助理無法使用。"
   }
 }

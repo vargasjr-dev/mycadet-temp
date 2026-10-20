@@ -12,6 +12,7 @@ export const routes = {
   account: {
     root: "/account",
     login: "/account/login",
+    selectAssistant: "/account/select-assistant",
     signup: "/account/signup",
     providerSignup: "/account/provider/signup",
     providerCallback: "/account/provider/callback",

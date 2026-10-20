@@ -109,7 +109,6 @@
     "retry": "Reintentar",
     "title": "Asistente",
     "selection": "Elige un asistente.",
-    "unavailable": "Este asistente no está disponible.",
-    "chooseAnother": "Elegir otro asistente"
+    "unavailable": "Este asistente no está disponible."
   }
 }

@@ -1,11 +1,12 @@
 "use client";
 
 import { CloudOff } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useAssistantRequest } from "./assistant/use-assistant-request";
 import { AppI18nProvider } from "./i18n/provider";
 import { useTranslation } from "./i18n/react";
 import { AssistantFrame } from "./shell/assistant-frame";
+import { routes } from "./utils/routes";
 
 export interface AppShellProps {
   apiBaseUrl?: string;
@@ -70,7 +71,6 @@ function AssistantShell({
   title,
 }: AppShellProps) {
   const { t } = useTranslation("account");
-  const [selectedId, select] = useState<string | undefined>(assistantId);
   // The wake flow — the user-facing recovery for the not-ready state: the
   // same drive the admin console's Wake button gets (wake the vm; a
   // missing vm hatches in place), through the same-origin /v1 proxy with
@@ -81,18 +81,35 @@ function AssistantShell({
   const { state, retry: reload } = useAssistantRequest({
     apiBaseUrl,
     origin,
-    assistantId: selectedId,
+    assistantId,
   });
+  // Picking is the account chooser's job — an assistant-agnostic account
+  // flow at a constant path on every surface. Without an id to act on (the
+  // list resolved with nothing chosen, no assistants at all, or no
+  // session), the shell replace-navigates to it and shows the state line
+  // until the router swaps; the chooser hands the pick back as location
+  // state, which AssistantPage feeds in as the assistantId prop.
+  const chooserOwned =
+    state.status === "selection" ||
+    state.status === "empty" ||
+    state.status === "unauthenticated";
+  const redirected = useRef(false);
+  useEffect(() => {
+    if (chooserOwned && !redirected.current) {
+      redirected.current = true;
+      onNavigate(routes.account.selectAssistant, { replace: true });
+    }
+  }, [chooserOwned, onNavigate]);
 
   async function wake() {
-    if (!selectedId || wakePending) return;
+    if (!assistantId || wakePending) return;
     setWakePending(true);
     setWakeReason(null);
     try {
       const base = new URL(apiBaseUrl, origin);
       base.pathname = base.pathname.replace(/\/*$/, "/");
       const response = await fetch(
-        new URL(`v1/assistants/${encodeURIComponent(selectedId)}/wake/`, base),
+        new URL(`v1/assistants/${encodeURIComponent(assistantId)}/wake/`, base),
         { method: "POST", credentials: "include" },
       );
       if (response.ok) {
@@ -135,27 +152,7 @@ function AssistantShell({
         ) : (
           <p style={{ margin: 0 }}>{t(`appShell.${state.status}`)}</p>
         )}
-        {state.status === "selection" &&
-          state.assistants.map((assistant) => (
-            <button
-              key={assistant.id}
-              type="button"
-              onClick={() => select(assistant.id)}
-              style={quietButton}
-            >
-              {assistant.name}
-            </button>
-          ))}
-        {!assistantId && selectedId && (
-          <button
-            type="button"
-            onClick={() => select(undefined)}
-            style={quietButton}
-          >
-            {t("appShell.chooseAnother")}
-          </button>
-        )}
-        {state.status !== "loading" && state.status !== "notReady" && (
+        {(state.status === "error" || state.status === "unavailable") && (
           <button type="button" onClick={reload} style={quietButton}>
             {t("appShell.retry")}
           </button>

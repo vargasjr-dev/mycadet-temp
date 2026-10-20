@@ -109,7 +109,6 @@
     "retry": "Retry",
     "title": "Assistant",
     "selection": "Choose an assistant.",
-    "unavailable": "This assistant is unavailable.",
-    "chooseAnother": "Choose another assistant"
+    "unavailable": "This assistant is unavailable."
   }
 }

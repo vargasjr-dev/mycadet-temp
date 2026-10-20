@@ -248,23 +248,30 @@ test("changing assistant or API base immediately hides the previous frame", asyn
   await screen.findByTitle("Assistant");
 });
 
-test("without an ID the shell offers choices and fetches only the selected assistant", async () => {
-  request
-    .mockResolvedValueOnce(
-      json({
-        results: [
-          { id: "assistant-1", name: "One" },
-          { id: "assistant-2", name: "Two" },
-        ],
-      }),
-    )
-    .mockResolvedValueOnce(json(detail("assistant-2")));
-  render(<AppShell {...props()} assistantId={undefined} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Two" }));
-  await screen.findByTitle("Assistant");
-  expect(String(request.mock.calls[1][0])).toBe(
-    "https://site.example.com/v1/assistants/assistant-2/",
+test("without an ID the shell hands off to the account chooser", async () => {
+  request.mockResolvedValue(
+    json({
+      results: [
+        { id: "assistant-1", name: "One" },
+        { id: "assistant-2", name: "Two" },
+      ],
+    }),
   );
+  render(<AppShell {...props()} assistantId={undefined} />);
+  await screen.findByText("Choose an assistant.");
+  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+    replace: true,
+  });
+  expect(screen.queryByRole("button", { name: "Two" })).toBeNull();
+});
+
+test("empty and unauthenticated states hand off to the chooser too", async () => {
+  request.mockResolvedValue(json({ results: [] }));
+  render(<AppShell {...props()} assistantId={undefined} />);
+  await screen.findByText("No assistant is available.");
+  expect(navigate).toHaveBeenCalledWith("/account/select-assistant", {
+    replace: true,
+  });
 });
 
 test("embedded shells follow the app locale", async () => {
