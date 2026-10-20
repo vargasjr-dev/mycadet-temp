@@ -92,9 +92,8 @@
     <!--
     The splash lives inside #root on purpose: createRoot(...).render() clears
     the container on mount, so React replacing it is the handoff — the same
-    contract the standalone index.html uses. The boot module then either
-    navigates (the splash stays painted until the entry origin answers) or
-    renders the shell's honest error+retry state.
+    contract the standalone index.html uses. The app bundle mounts through
+    the same main.tsx entry every other host serves.
   -->
     <div id="root">
       <div id="boot-splash" role="status" aria-label="Loading">
@@ -129,6 +128,6 @@
         </div>
       </div>
     </div>
-    <script type="module" src="/src/capacitor/boot.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

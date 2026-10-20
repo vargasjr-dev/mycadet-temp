@@ -4,11 +4,10 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // runtime re-exports.
 import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 
-// The handoff host rides the same environment resolution the boot bundle's
-// stamp uses (`build:capacitor` → `__CADET_CONFIG__.handoffUrl`;
-// `src/capacitor/boot-config.test.ts` pins the two resolutions together).
-// Defaults to local — the simulator shares the host's loopback, so a
-// locally-synced shell hands off to the local dev server (`cadet client`).
+// Resolves the environment the same way the build stamps `__CADET_CONFIG__`
+// (`build:capacitor` → `src/capacitor/stamp.ts`). With the shell booting on
+// its own origin there is no handoff navigation anymore, so this mostly
+// covers the self-hosted override flow's own instanceDescriptor allowlist.
 // The release workflows always set `CADET_ENVIRONMENT`; `CADET_SERVER_URL`
 // overrides with an https origin for self-hosted assistants.
 function resolveServerUrl(): string {

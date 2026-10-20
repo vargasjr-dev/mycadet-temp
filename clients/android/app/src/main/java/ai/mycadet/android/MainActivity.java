@@ -108,15 +108,6 @@ public class MainActivity extends BridgeActivity {
             null
         );
         super.onCreate(savedInstanceState);
-        // The baked web bundle lives under public/assistant/ (build:capacitor
-        // copies the clients/web build there); the boot bundle's `/assistant/`
-        // handoff and the SPA's client-side routes are extension-less paths
-        // under it. Capacitor's html5 fallback would serve the ROOT index.html
-        // — the boot bundle — looping boot→handoff→boot, so this client
-        // resolves those routes to the web bundle's index.html itself.
-        if (bridge != null) {
-            bridge.setWebViewClient(new AssistantSpaWebViewClient(bridge));
-        }
         NativeFailureGuard.run("Unable to show the Android launch screen", this::showLaunchScreen);
         launchScreenAttached = true;
         NativeFailureGuard.run("Unable to deliver the Android voice launch", this::deliverPendingVoiceLaunch);
