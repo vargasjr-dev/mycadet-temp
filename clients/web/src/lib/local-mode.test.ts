@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { parseLockfile } from "@mycadet/local-mode/contract";
 
@@ -130,16 +130,25 @@ function setLockfile(lockfile: Lockfile): void {
   useLockfileStore.setState({ lockfile });
 }
 
-// Tests default to platform mode (test-setup.ts pins VITE_CLOUD_MODE).
-// Local-mode behaviour is opt-in per test; the afterEach restores the default.
+// Tests default to cloud-served mode (test-setup.ts stamps the config), but
+// this file's host-read paths need the local arm: every test starts stamped
+// local, the cloud/served-gateway describes override per test, and the
+// afterEach restores the suite default.
 function enableLocalMode(): void {
-  process.env.VITE_CLOUD_MODE = "";
+  window.__CADET_CONFIG__ = { remote: "local" };
 }
+
+function disableLocalMode(): void {
+  window.__CADET_CONFIG__ = { remote: "cloud" };
+}
+
+beforeEach(() => {
+  window.__CADET_CONFIG__ = { remote: "local" };
+});
 
 afterEach(() => {
   globalThis.fetch = realFetch;
-  window.__CADET_CONFIG__ = undefined;
-  process.env.VITE_CLOUD_MODE = "true";
+  window.__CADET_CONFIG__ = { remote: "cloud" };
   useLockfileStore.setState({ lockfile: null, committed: false });
   localStorage.removeItem(LOCKFILE_STORAGE_KEY);
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
@@ -743,6 +752,7 @@ describe("getLocalGatewayUrl", () => {
   });
 
   test("is undefined outside local mode even for a local assistant with a port", () => {
+    disableLocalMode();
     expect(getLocalGatewayUrl(localA)).toBeUndefined();
   });
 });
@@ -807,6 +817,7 @@ describe("getPairedGatewayUrl", () => {
   });
 
   test("is undefined outside local mode", () => {
+    disableLocalMode();
     expect(getPairedGatewayUrl(pairedEntry)).toBeUndefined();
   });
 
@@ -914,6 +925,7 @@ describe("primeLocalGatewayConnection", () => {
   });
 
   test("is a no-op for a paired assistant outside local mode", async () => {
+    disableLocalMode();
     await expect(
       primeLocalGatewayConnection(pairedEntry),
     ).resolves.toBeUndefined();

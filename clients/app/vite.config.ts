@@ -34,9 +34,6 @@ export default defineConfig(({ mode, command }) => {
     }
   }
   Object.assign(env, loadEnv(mode, import.meta.dirname, ""));
-  const cloud = ["1", "true", "yes"].includes(
-    (env.VITE_CLOUD_MODE ?? "").toLowerCase(),
-  );
   const platform = env.API_PROXY_TARGET || "http://localhost:8000";
   return {
     base: library ? "./" : "/",
@@ -54,7 +51,7 @@ export default defineConfig(({ mode, command }) => {
       // race the stamp on read order.
       ...(library
         ? [appPackage()]
-        : target === "capacitor" || cloud
+        : target === "capacitor"
           ? []
           : [localModePlugin(env)]),
     ],
@@ -101,38 +98,17 @@ export default defineConfig(({ mode, command }) => {
         "/v1": {
           target: platform,
           changeOrigin: true,
-          ...(cloud
-            ? {}
-            : {
-                configure: injectCloudSessionToken(
-                  true,
-                  getDevCloudSessionToken,
-                ),
-              }),
+          configure: injectCloudSessionToken(true, getDevCloudSessionToken),
         },
         "/_allauth": {
           target: platform,
           changeOrigin: true,
-          ...(cloud
-            ? {}
-            : {
-                configure: injectCloudSessionToken(
-                  false,
-                  getDevCloudSessionToken,
-                ),
-              }),
+          configure: injectCloudSessionToken(false, getDevCloudSessionToken),
         },
         "/accounts": {
           target: platform,
           changeOrigin: true,
-          ...(cloud
-            ? {}
-            : {
-                configure: injectCloudSessionToken(
-                  false,
-                  getDevCloudSessionToken,
-                ),
-              }),
+          configure: injectCloudSessionToken(false, getDevCloudSessionToken),
         },
         "/auth": {
           target: env.GATEWAY_PROXY_TARGET || "http://localhost:7830",

@@ -110,7 +110,6 @@ export function findAppDistDir(options: AppDistOptions = {}): string | null {
 interface DistBuildSpec {
   command: string;
   args: string[];
-  env: Record<string, string>;
   cwd: string;
 }
 
@@ -146,7 +145,7 @@ function spawnDistBuild(build: DistBuildSpec): Promise<void> {
   return new Promise((resolve, reject) => {
     const child = spawn(build.command, build.args, {
       cwd: build.cwd,
-      env: { ...process.env, ...build.env },
+      env: { ...process.env },
       stdio: "inherit",
     });
     child.on("error", reject);
@@ -192,15 +191,12 @@ async function buildDistFromSource(
 ): Promise<void> {
   const recipe =
     kind === "web"
-      ? "cd clients/web && VITE_CLOUD_MODE=false bun run build"
-      : "cd clients/app && VITE_CLOUD_MODE=false bun run build";
+      ? "cd clients/web && bun run build"
+      : "cd clients/app && bun run build";
   try {
     await spawnDistBuild({
       command: "bun",
       args: ["run", "build"],
-      // Both bundles need the desktop artifact shape: the cloud-served flag
-      // strips the account tree the shells mount.
-      env: { VITE_CLOUD_MODE: "false" },
       cwd: sourceDir,
     });
   } catch (error) {

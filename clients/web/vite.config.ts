@@ -34,20 +34,16 @@ function inPackages(...names: string[]): (id: string) => boolean {
   return (id: string) => pattern.test(id);
 }
 
-// Keep in sync with PLATFORM_MODE_TRUTHY in src/lib/local-mode.ts
-const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
-function isCloudServedBuild(raw: string | undefined): boolean {
-  return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
-}
-// Same truthy semantics, for build-shape knobs that aren't about where the
-// bundle is served from (e.g. VITE_WEB_MINIFY picks the minified prod build).
+// Truthy semantics for build-shape knobs that aren't about where the bundle
+// is served from (e.g. VITE_WEB_MINIFY picks the minified prod build).
+const ENV_FLAG_TRUTHY = new Set(["1", "true", "yes"]);
 function isTruthyBuildFlag(raw: string | undefined): boolean {
-  return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
+  return !!raw && ENV_FLAG_TRUTHY.has(raw.toLowerCase());
 }
 
 /**
  * Proxy configure hook (local mode) that authenticates upstream requests with
- * the loopback platform session token the SPA registered. No browser cookie is
+ * the loopback cloud session token the SPA registered. No browser cookie is
  * involved.
  *
  * The DRF API (`/v1`) authenticates by header (X-Session-Token); sending a
@@ -56,7 +52,7 @@ function isTruthyBuildFlag(raw: string | undefined): boolean {
  * a matching Origin/Referer. The allauth / accounts session endpoints need the
  * Django session cookie instead.
  */
-function injectPlatformToken(apiMode: boolean) {
+function injectCloudSessionToken(apiMode: boolean) {
   return (proxy: {
     on: (event: string, cb: (...args: unknown[]) => void) => void;
   }): void => {
@@ -123,7 +119,7 @@ export default defineConfig(({ mode }) => {
           });
         },
       } satisfies Plugin,
-      isCloudServedBuild(env.VITE_CLOUD_MODE) ? null : localModePlugin(env),
+      localModePlugin(env),
     ].filter(Boolean),
     resolve: {
       alias: [
@@ -157,29 +153,21 @@ export default defineConfig(({ mode }) => {
         allow: [import.meta.dirname, DESIGN_LIBRARY_SRC, ASSISTANT_API_SRC],
       },
       proxy: {
-        ...(isCloudServedBuild(env.VITE_CLOUD_MODE)
-          ? {
-              "/v1": { target: apiProxyTarget, changeOrigin: true },
-              "/_allauth": { target: apiProxyTarget, changeOrigin: true },
-              "/accounts": { target: apiProxyTarget, changeOrigin: true },
-            }
-          : {
-              "/v1": {
-                target: apiProxyTarget,
-                changeOrigin: true,
-                configure: injectPlatformToken(true),
-              },
-              "/_allauth": {
-                target: apiProxyTarget,
-                changeOrigin: true,
-                configure: injectPlatformToken(false),
-              },
-              "/accounts": {
-                target: apiProxyTarget,
-                changeOrigin: true,
-                configure: injectPlatformToken(false),
-              },
-            }),
+        "/v1": {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          configure: injectCloudSessionToken(true),
+        },
+        "/_allauth": {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          configure: injectCloudSessionToken(false),
+        },
+        "/accounts": {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          configure: injectCloudSessionToken(false),
+        },
         "/auth": { target: gatewayProxyTarget, changeOrigin: true },
       },
     },

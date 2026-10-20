@@ -95,7 +95,9 @@
   },
   "selectAssistantScreen": {
     "listAriaLabel": "助理",
-    "create": "建立助理"
+    "create": "建立助理",
+    "rowActionsAriaLabel": "{name} 的動作",
+    "retire": "停用助理"
   },
   "appShell": {
     "loading": "正在載入助理…",

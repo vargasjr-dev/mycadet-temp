@@ -1,21 +1,20 @@
-import { afterAll, expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { isLocalClient } from "@app/lib/runtime-mode";
 
-const original = process.env.VITE_CLOUD_MODE;
-afterAll(() => {
-  if (original === undefined) delete process.env.VITE_CLOUD_MODE;
-  else process.env.VITE_CLOUD_MODE = original;
+afterEach(() => {
+  window.__CADET_CONFIG__ = undefined;
 });
 
-test("runtime mode preserves VITE_CLOUD_MODE values and local default", () => {
-  delete process.env.VITE_CLOUD_MODE;
+test("the injected config's remote field decides: cloud is not local", () => {
+  window.__CADET_CONFIG__ = { remote: "cloud" };
+  expect(isLocalClient()).toBe(false);
+});
+
+test("local, custom, and absent configs all read as local clients", () => {
+  window.__CADET_CONFIG__ = { remote: "local" };
   expect(isLocalClient()).toBe(true);
-  for (const value of ["true", "TRUE", "1", "yes"]) {
-    process.env.VITE_CLOUD_MODE = value;
-    expect(isLocalClient()).toBe(false);
-  }
-  for (const value of ["", "false", "0", "no"]) {
-    process.env.VITE_CLOUD_MODE = value;
-    expect(isLocalClient()).toBe(true);
-  }
+  window.__CADET_CONFIG__ = { remote: "custom" };
+  expect(isLocalClient()).toBe(true);
+  window.__CADET_CONFIG__ = undefined;
+  expect(isLocalClient()).toBe(true);
 });

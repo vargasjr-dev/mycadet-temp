@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
+import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
+import { RetireCardMenu } from "@app/components/account/retire-card-menu";
 import { AccountShell } from "@app/components/account/account-shell";
 import { AccountHeading } from "@app/components/account/account-form";
 import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
@@ -10,6 +12,7 @@ import { Button } from "@mycadet/design-library/components/button";
 import { CloudOff } from "lucide-react";
 import { useTranslation } from "@app/i18n";
 import { useAssistantRequest } from "@app/assistant/use-assistant-request";
+import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
 import { routes } from "@app/utils/routes";
 import { formatRelativeDate } from "@app/utils/format-date";
@@ -30,6 +33,12 @@ export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
+  const [retireTarget, setRetireTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [retirePending, setRetirePending] = useState(false);
+  const [retireError, setRetireError] = useState<string | null>(null);
   const { state, retry } = useAssistantRequest({
     origin: window.location.origin,
     listOnly: true,
@@ -40,6 +49,33 @@ export function SelectAssistantScreen() {
       : state.status === "selection" && state.assistants.length === 0
         ? "empty"
         : state.status;
+
+  const closeRetireDialog = () => {
+    if (retirePending) {
+      return;
+    }
+    setRetireTarget(null);
+    setRetireError(null);
+  };
+
+  const handleRetireConfirm = async () => {
+    if (!retireTarget || retirePending) {
+      return;
+    }
+    setRetirePending(true);
+    const outcome = await retireCloudAssistant(retireTarget.id);
+    setRetirePending(false);
+    // A failure keeps the dialog open with the cloud's detail beside the
+    // retry button — web's chooser-remove shape. Success closes and
+    // refreshes the list, which is what actually removes the row.
+    if (!outcome.ok) {
+      setRetireError(outcome.error);
+      return;
+    }
+    closeRetireDialog();
+    retry();
+  };
+
   return (
     <AccountShell>
       <AccountHeading title={t("appShell.selection")} />
@@ -62,6 +98,14 @@ export function SelectAssistantScreen() {
               }
               title={assistant.name}
               subtitle={assistantSubtitle(assistant.created)}
+              removeMenu={
+                <RetireCardMenu
+                  label={assistant.name}
+                  onRetire={() =>
+                    setRetireTarget({ id: assistant.id, name: assistant.name })
+                  }
+                />
+              }
               tabStop={index === 0}
               onSelect={() => {
                 void navigate(routes.assistant, {
@@ -110,6 +154,15 @@ export function SelectAssistantScreen() {
             }}
           />
         )}
+        {/* Gated by retireTarget, not by the list status: a row can be
+            retired from any state the chooser renders. */}
+        <RetireConfirmDialog
+          open={retireTarget != null}
+          error={retireError}
+          isPending={retirePending}
+          onConfirm={() => void handleRetireConfirm()}
+          onCancel={closeRetireDialog}
+        />
       </div>
     </AccountShell>
   );

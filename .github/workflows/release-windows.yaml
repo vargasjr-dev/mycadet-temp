@@ -133,7 +133,6 @@ jobs:
 
       - name: Build packaged runtime
         env:
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: ${{ inputs.environment }}
           VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.STRIPE_PUBLISHABLE_KEY }}

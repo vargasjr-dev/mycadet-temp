@@ -194,10 +194,9 @@ describe("resolveEdgeClientDists", () => {
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
-    for (const [command, args, options] of builds) {
+    for (const [command, args] of builds) {
       expect(command).toBe("bun");
       expect(args).toEqual(["run", "build"]);
-      expect(options?.env?.VITE_CLOUD_MODE).toBe("false");
     }
     // The stamp is the commit both bundles consumed, recorded on the
     // lockfile's `app` entry.
@@ -312,7 +311,7 @@ describe("resolveEdgeClientDists", () => {
         startDir: root,
         resolvePackage: resolvePackageThrows,
       }),
-    ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
+    ).rejects.toThrow("cd clients/web && bun run build");
     logSpy.mockRestore();
   });
 

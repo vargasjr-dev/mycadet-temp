@@ -8,6 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
+import { within } from "@testing-library/react";
 import { SelectAssistantScreen } from "./select-assistant-screen";
 import { accountRoute } from "../account-route";
 import { AssistantPage } from "@app/shell/assistant-page";
@@ -22,6 +23,9 @@ const originalConfig = Object.getOwnPropertyDescriptor(
   "__CADET_CONFIG__",
 );
 const routers: ReturnType<typeof createMemoryRouter>[] = [];
+// The retire mutation's csrf bootstrap reads this cookie; seed it so no
+// test fetch is spent (or delayed) on a session probe.
+document.cookie = "csrftoken=test; path=/";
 const host = {
   cloudUrl: "https://host.example/admin/proxy/",
 };
@@ -274,6 +278,74 @@ test("401 displays sign-in without running Web account or onboarding probes", as
   await screen.findByText("Please sign in to continue.");
   expect(screen.getByRole("link").getAttribute("href")).toBe("/account/login");
   expect(request).toHaveBeenCalledTimes(1);
+});
+
+test("the row's menu retires the assistant and refreshes the list", async () => {
+  request
+    .mockResolvedValueOnce(
+      Response.json({
+        results: [
+          { id: "assistant-1", name: "One" },
+          { id: "assistant-2", name: "Two" },
+        ],
+      }),
+    )
+    // The DELETE lands, then the refresh re-lists without the retired row.
+    .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    .mockResolvedValueOnce(
+      Response.json({ results: [{ id: "assistant-2", name: "Two" }] }),
+    );
+  setup();
+  const one = await screen.findByRole("radio", { name: /^One/ });
+  // Opening the row menu must not select the card: the menu sits inside the
+  // radio with its own event handling.
+  // Radix menus open on pointerdown, not click.
+  fireEvent.pointerDown(
+    within(one).getByRole("button", { name: "Actions for One" }),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: "Retire Assistant" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(
+    within(dialog).getAllByText(/permanently retire/).length,
+  ).toBeGreaterThan(0);
+  fireEvent.click(within(dialog).getByRole("button", { name: "Retire" }));
+  await screen.findByRole("radio", { name: /^Two/ });
+  expect(screen.queryByRole("radio", { name: /^One/ })).toBeNull();
+  // The retire DELETE runs through the same-origin cloud client.
+  const deleteCall = request.mock.calls.find(([url, init]) =>
+    String(url).includes("/retire/"),
+  );
+  expect(String(deleteCall?.[0])).toBe("/v1/assistants/assistant-1/retire/");
+  expect(deleteCall?.[1]?.method).toBe("DELETE");
+  // Retiring never navigated into an assistant.
+  expect(screen.queryByTitle("Assistant")).toBeNull();
+});
+
+test("a failed retire keeps the dialog open with the cloud's detail", async () => {
+  request
+    .mockResolvedValueOnce(
+      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
+    )
+    .mockResolvedValueOnce(
+      Response.json(
+        { detail: "You do not own this assistant." },
+        { status: 403 },
+      ),
+    );
+  setup();
+  const one = await screen.findByRole("radio", { name: /^One/ });
+  fireEvent.pointerDown(
+    within(one).getByRole("button", { name: "Actions for One" }),
+  );
+  fireEvent.click(screen.getByRole("menuitem", { name: "Retire Assistant" }));
+  const dialog = await screen.findByRole("dialog");
+  fireEvent.click(within(dialog).getByRole("button", { name: "Retire" }));
+  // The detail lands beside the retry button, and the row stays listed.
+  await screen.findByText("You do not own this assistant.");
+  expect(screen.queryByRole("dialog")).toBeDefined();
+  // The open modal aria-hides the page behind it, so the row's presence
+  // reads through its text, not its role.
+  expect(screen.getByText("One")).toBeDefined();
 });
 
 test("a failed list renders a degraded disabled row instead of retry", async () => {

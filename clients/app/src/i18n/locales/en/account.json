@@ -95,7 +95,9 @@
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Assistants",
-    "create": "Create an assistant"
+    "create": "Create an assistant",
+    "rowActionsAriaLabel": "Actions for {name}",
+    "retire": "Retire Assistant"
   },
   "appShell": {
     "loading": "Loading assistant…",

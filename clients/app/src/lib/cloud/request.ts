@@ -26,11 +26,21 @@ export async function postCloud<T>(
   return requestCloud(path, schema, options, body);
 }
 
+/** DELETE through the browser/native host's cloud proxy. A 204 body parses
+ * as null, so the success data is always null. */
+export async function deleteCloud(
+  path: string,
+  options: { organizationId?: string; signal?: AbortSignal } = {},
+): Promise<CloudResult<null>> {
+  return requestCloud(path, z.null(), options, undefined, "DELETE");
+}
+
 async function requestCloud<T>(
   path: string,
   schema: z.ZodType<T>,
   options: { organizationId?: string; signal?: AbortSignal },
   body?: unknown,
+  method?: "DELETE",
 ): Promise<CloudResult<T>> {
   try {
     const headers = new Headers({
@@ -44,11 +54,13 @@ async function requestCloud<T>(
     if (options.organizationId) {
       headers.set("Cadet-Organization-Id", options.organizationId);
     }
-    if (body !== undefined) {
+    // A bodyless DELETE is still a mutation: the cloud's CSRF gate covers
+    // every unsafe method, not just the ones that carry JSON.
+    if (body !== undefined || method === "DELETE") {
       await addCloudMutationHeaders(headers);
     }
     const response = await fetch(path, {
-      method: body === undefined ? "GET" : "POST",
+      method: body === undefined ? (method ?? "GET") : "POST",
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       headers,
       credentials: "same-origin",

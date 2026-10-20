@@ -38,9 +38,9 @@ const viteAssetUrlStub: BunPlugin = {
 
 plugin(viteAssetUrlStub);
 
-// Tests default to platform mode (matching CI/CD builds). Individual tests
-// that need local mode should mock isLocalClient() instead.
-process.env.VITE_CLOUD_MODE = "true";
+// No injected config by default: absence reads as a local client, which is
+// the world most tests were written in. Suites that need the cloud-served
+// arm stamp window.__CADET_CONFIG__ = { remote: "cloud" } themselves.
 
 // Set a base URL so relative fetch requests (e.g. "/v1/assistants/...")
 // resolve correctly instead of failing against "about:blank".

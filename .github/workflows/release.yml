@@ -266,9 +266,14 @@ jobs:
           chrome-webstore-upload publish \
             --extension-id "$EXTENSION_ID"
 
-
   push-assistant-image:
-    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        extract-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
@@ -721,9 +726,14 @@ jobs:
           cache-from: type=gha,scope=docs-site
           cache-to: type=gha,mode=max,ignore-error=true,scope=docs-site
 
-
   publish-npm-assistant-prod:
-    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        extract-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -780,7 +790,6 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
-
 
   publish-npm-cli-prod:
     needs: [extract-version, ci-cli]
@@ -841,7 +850,6 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
 
-
   publish-npm-credential-executor-prod:
     needs: [extract-version, ci-credential-executor]
     runs-on: ubuntu-latest
@@ -900,7 +908,6 @@ jobs:
             exit 0
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
-
 
   publish-npm-gateway-prod:
     needs: [extract-version, ci-gateway]
@@ -961,7 +968,6 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
 
-
   # `@mycadet/plugin-api` is the public TypeScript authoring contract external
   # plugins compile against. Unlike the other npm packages it is not a package
   # directory `npm pack` can consume directly: scripts/build-plugin-api.ts rolls
@@ -970,7 +976,13 @@ jobs:
   # own publish job rather than a slot in the npm matrix. Published in
   # lockstep with the assistant version the loader's peerDependency gate expects.
   publish-plugin-api-prod:
-    needs: [extract-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        extract-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1089,7 +1101,6 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
 
-
   deploy-web-spa-production:
     name: Deploy Web SPA (production)
     needs: [ci-web-lint, ci-web-types, ci-web-tests]
@@ -1134,7 +1145,6 @@ jobs:
       - name: Build
         working-directory: clients/web
         env:
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_APP_VERSION: ${{ needs.extract-version.outputs.version }}
           # The prod channel ships minified (with source maps — see the build
@@ -1175,7 +1185,6 @@ jobs:
           fi
           npm publish /tmp/npm-dist/package.tgz --access public
 
-
   publish-meta-prod:
     needs:
       [
@@ -1192,7 +1201,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-     
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -1370,7 +1379,6 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: production
           # Environment-scoped secret (pk_live_ on production);
@@ -1494,10 +1502,8 @@ jobs:
           security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
           rm -rf ~/.private_keys 2>/dev/null || true
 
-
   upload-electron-updates:
-    needs:
-      [extract-version, build-electron, publish-meta-prod]
+    needs: [extract-version, build-electron, publish-meta-prod]
     # always() disables the implicit success(): publish-meta-prod may be
     # skipped when an upstream publish fails. build-electron must actually
     # it is skipped (offline marker), there are no update artifacts to upload,
@@ -2189,4 +2195,3 @@ jobs:
         env:
           TEST_TIMEOUT_MS: 15000
         run: bun run test:ci
-
