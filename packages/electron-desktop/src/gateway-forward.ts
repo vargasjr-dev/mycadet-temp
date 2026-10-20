@@ -52,12 +52,6 @@ export type GatewayForwardPlan =
       runtimeUrl: string;
     };
 
-export interface GatewayForwardRequest {
-  url: string;
-  method: string;
-  headers: Headers;
-}
-
 /**
  * Resolve a renderer request to a gateway-proxy plan, reusing the shared
  * lockfile-allowlist decision so the security boundary is defined once for
@@ -74,7 +68,7 @@ export interface GatewayForwardRequest {
  * headers (notably the guardian `Authorization` bearer) pass through unchanged.
  */
 export function planGatewayForward(
-  request: GatewayForwardRequest,
+  request: Request,
   getAllowedPorts: () => Set<number>,
 ): GatewayForwardPlan {
   const url = new URL(request.url);
@@ -131,7 +125,7 @@ export function planGatewayForward(
  * cannot read or reuse the guardian credential outside it.
  */
 export function planPairedGatewayForward(
-  request: GatewayForwardRequest,
+  request: Request,
   getTargets: () => Map<string, string>,
 ): GatewayForwardPlan {
   const url = new URL(request.url);
@@ -188,11 +182,8 @@ export type GatewayForwardFetcher = (
   init: RequestInit & { duplex?: "half" },
 ) => Promise<Response>;
 
-export type GatewayForwardableRequest = GatewayForwardRequest &
-  Pick<Request, "body">;
-
 export const forwardGatewayRequest = (
-  request: GatewayForwardableRequest,
+  request: Request,
   getAllowedPorts: () => Set<number>,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response> | Response | null =>
@@ -203,7 +194,7 @@ export const forwardGatewayRequest = (
   );
 
 export const forwardPairedGatewayRequest = async (
-  request: GatewayForwardableRequest,
+  request: Request,
   getTargets: () => Map<string, string>,
   getGuardianToken: PairedGuardianTokenProvider,
   fetcher: GatewayForwardFetcher,
