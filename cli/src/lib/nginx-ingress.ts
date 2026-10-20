@@ -223,24 +223,17 @@ export function edgeServedRemote(recorded: string | undefined): RemoteHost {
 function remoteWebIngressConfig(
   opts: Pick<
     RemoteWebIngressOptions,
-    "config" | "assistantName" | "assistantId" | "hubUrl" | "version"
+    "config" | "assistantName" | "assistantId" | "hubUrl"
   > & { cloudUrl?: string },
 ): Record<string, unknown> {
   return {
     remote: edgeServedRemote(
       opts.assistantId ? lockfileAssistantRemote(opts.assistantId) : undefined,
     ),
-    ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
-    ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
-    ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
-    // The saved tunnel URL, when one is on record. The served page's
-    // account/auth surfaces treat this as the backend base, and a tunnel
-    // client can only reach the origin it came in on — the loopback gateway
-    // seed would point them off-box.
-    ...(opts.cloudUrl ? { cloudUrl: opts.cloudUrl } : {}),
-    // The assistant release the bundles were verified against — devtools'
-    // window.__CADET_CONFIG__.version answers "which one is running".
-    ...(opts.version ? { version: opts.version } : {}),
+    assistantName: opts.assistantName,
+    assistantId: opts.assistantId,
+    hubUrl: opts.hubUrl,
+    cloudUrl: opts.cloudUrl,
     ...opts.config,
   };
 }

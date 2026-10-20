@@ -48,7 +48,6 @@ export interface RotateResult {
   refreshToken: string;
   refreshTokenExpiresAt: number;
   refreshAfter: number;
-  browserRefreshCookiePath?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -335,7 +334,6 @@ function rotateRefreshTokenRecord(
         refreshToken: refresh.refreshToken,
         refreshTokenExpiresAt: refresh.refreshTokenExpiresAt,
         refreshAfter: refresh.refreshAfter,
-        browserRefreshCookiePath: record.browserRefreshCookiePath ?? undefined,
       },
     };
   });

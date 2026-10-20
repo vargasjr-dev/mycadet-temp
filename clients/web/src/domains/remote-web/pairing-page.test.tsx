@@ -81,6 +81,7 @@ const exchangeRemoteWebPairingTokenMock = mock(
   }),
 );
 const activateRemoteGatewaySessionMock = mock((_session: unknown) => {});
+const activateGatewaySessionMock = mock(() => {});
 
 const APPROVED_RESULT: RemoteWebPairingTokenResult = {
   status: "approved",
@@ -100,6 +101,12 @@ class MockRemoteWebPairingError extends Error {
     this.code = code;
   }
 }
+
+mock.module("@/stores/auth-store", () => ({
+  useAuthStore: {
+    getState: () => ({ activateGatewaySession: activateGatewaySessionMock }),
+  },
+}));
 
 mock.module("@/lib/auth/remote-gateway-session", () => ({
   activateRemoteGatewaySession: activateRemoteGatewaySessionMock,
@@ -132,6 +139,7 @@ afterEach(() => {
   setUserAgent(ORIGINAL_USER_AGENT);
   exchangeRemoteWebPairingTokenMock.mockClear();
   activateRemoteGatewaySessionMock.mockClear();
+  activateGatewaySessionMock.mockClear();
   nativeSwitchToOriginPathMock.mockReset();
   nativeSwitchToOriginPathMock.mockImplementation(async () => false);
 });
@@ -397,6 +405,43 @@ describe("RemoteWebPairingPage", () => {
     expect(screen.queryByText("Waiting for approval")).toBeNull();
     expect(screen.queryByText("Pairing code")).toBeNull();
     expect(screen.queryByText("WXYZ-1234")).toBeNull();
+  });
+
+  test("activates the gateway session when the exchange is approved", async () => {
+    exchangeRemoteWebPairingTokenMock.mockImplementationOnce(
+      async () => APPROVED_RESULT,
+    );
+
+    render(
+      <MemoryRouter initialEntries={["/assistant/pair?deviceCode=fast-code"]}>
+        <RemoteWebPairingPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Connected")).not.toBeNull();
+    expect(activateGatewaySessionMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("offers entering a new code after the pairing expires", async () => {
+    exchangeRemoteWebPairingTokenMock.mockImplementationOnce(async () => {
+      throw new MockRemoteWebPairingError(
+        401,
+        "Pairing token exchange failed: 401",
+      );
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/assistant/pair?deviceCode=old-code"]}>
+        <RemoteWebPairingPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Pairing expired")).not.toBeNull();
+
+    fireEvent.click(screen.getByText("Enter a new code"));
+
+    expect(screen.getByText("Pair a device")).not.toBeNull();
+    expect(screen.getByText("Pair")).not.toBeNull();
   });
 
   test("still shows the waiting state and code when the code is not yet approved", async () => {

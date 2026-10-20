@@ -25,6 +25,7 @@ import {
 import { isNativePlatform } from "@/runtime/native-auth";
 import { isAndroidBrowser, isIOSBrowser } from "@/runtime/platform-detection";
 import { nativeSwitchToOriginPath } from "@/runtime/self-hosted-servers";
+import { useAuthStore } from "@/stores/auth-store";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { routes } from "@/utils/routes";
 
@@ -330,6 +331,10 @@ export function RemoteWebPairingPage() {
         }
 
         activateRemoteGatewaySession(result);
+        // The boot probe early-settled unauthenticated on this public page;
+        // the approved exchange is the session-establishing event, so the
+        // store must learn it before the navigate below can pass the guard.
+        useAuthStore.getState().activateGatewaySession();
         // Drop the burned device code from the URL before navigating so it
         // never lingers in the address bar or re-submits on reload.
         clearDeviceCodeFromUrl();
@@ -474,6 +479,21 @@ export function RemoteWebPairingPage() {
             onClick={handleCancel}
           >
             {t("pairingPage.cancel")}
+          </Button>
+        ) : null}
+
+        {state.kind === "expired" ? (
+          <Button
+            variant="outlined"
+            fullWidth
+            className="mt-6"
+            onClick={() => {
+              setPairing(null);
+              setCodeDraft("");
+              setState({ kind: "awaiting_code" });
+            }}
+          >
+            {t("pairingPage.enterNewCode")}
           </Button>
         ) : null}
       </section>

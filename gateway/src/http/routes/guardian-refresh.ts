@@ -44,7 +44,6 @@ function browserRefreshResponse(
   for (const cookie of buildRemoteWebBrowserAuthCookies({
     refreshToken: result.refreshToken,
     refreshTokenExpiresAtMs: result.refreshTokenExpiresAt,
-    refreshCookiePath: result.browserRefreshCookiePath,
   })) {
     headers.append("Set-Cookie", cookie);
   }

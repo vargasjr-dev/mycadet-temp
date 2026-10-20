@@ -5,6 +5,7 @@
     "pairingCode": "配對碼",
     "pair": "配對",
     "expiresAt": "{time} 到期。",
-    "cancel": "取消"
+    "cancel": "取消",
+    "enterNewCode": "輸入新配對碼"
   }
 }

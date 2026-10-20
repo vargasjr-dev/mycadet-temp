@@ -368,7 +368,7 @@ describe("buildIngressNginxConfig", () => {
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"remote\\":\\"custom\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\",\\"version\\":\\"1.2.3\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
     );
   });
 
@@ -2228,11 +2228,10 @@ function appConfigHash(
         template: EDGE_TEMPLATE_VERSION,
         config: {
           remote: "custom",
-          ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
-          ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
+          assistantName: opts.assistantName,
+          assistantId: opts.assistantId,
           hubUrl: PRODUCTION_HUB_URL,
-          ...(opts.cloudUrl ? { cloudUrl: opts.cloudUrl } : {}),
-          version: "1.2.3",
+          cloudUrl: opts.cloudUrl,
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
         version: "1.2.3",
@@ -2364,7 +2363,6 @@ describe("the app shell edge", () => {
     );
     expect(appIndex).toContain("__CADET_CONFIG__");
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
-    expect(appIndex).toContain(`"version":"1.2.3"`);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
