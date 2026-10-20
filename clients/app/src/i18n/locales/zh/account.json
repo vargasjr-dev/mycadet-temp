@@ -97,7 +97,12 @@
     "listAriaLabel": "助手",
     "create": "创建助手",
     "rowActionsAriaLabel": "{name} 的操作",
-    "retire": "停用助手"
+    "retire": "停用助手",
+    "addRemote": "添加远程助手",
+    "currentWithHost": "当前 · {host}",
+    "remoteWithHost": "远程 · {host}",
+    "removeFromDevice": "从本设备移除…",
+    "unnamedAssistant": "该助手"
   },
   "appShell": {
     "loading": "正在加载助手…",
@@ -117,5 +122,16 @@
     "title": "助手",
     "selection": "选择一个助手。",
     "unavailable": "此助手不可用。"
+  },
+  "actions": {
+    "cancel": "取消",
+    "add": "添加",
+    "adding": "正在添加…"
+  },
+  "addRemoteOriginDialog": {
+    "title": "添加远程助手",
+    "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
+    "addressLabel": "助手地址",
+    "addFailed": "添加助手失败。请重试。"
   }
 }

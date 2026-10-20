@@ -97,7 +97,12 @@
     "listAriaLabel": "Ассистенты",
     "create": "Создать ассистента",
     "rowActionsAriaLabel": "Действия для {name}",
-    "retire": "Удалить ассистента"
+    "retire": "Удалить ассистента",
+    "addRemote": "Добавить удалённого ассистента",
+    "currentWithHost": "Текущий · {host}",
+    "remoteWithHost": "Удалённый · {host}",
+    "removeFromDevice": "Убрать с этого устройства…",
+    "unnamedAssistant": "ассистент"
   },
   "appShell": {
     "loading": "Загрузка ассистента…",
@@ -117,5 +122,16 @@
     "title": "Ассистент",
     "selection": "Выберите ассистента.",
     "unavailable": "Этот ассистент недоступен."
+  },
+  "actions": {
+    "cancel": "Отмена",
+    "add": "Добавить",
+    "adding": "Добавление…"
+  },
+  "addRemoteOriginDialog": {
+    "title": "Добавить удалённого ассистента",
+    "body": "Вставка https-ссылки со страницы привязки ассистента.",
+    "addressLabel": "Адрес ассистента",
+    "addFailed": "Не удалось добавить ассистента. Повторите попытку."
   }
 }

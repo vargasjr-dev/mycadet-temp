@@ -1041,5 +1041,13 @@
     "dragError": "无法拖动。请尝试从访达中拖动。",
     "showInFinder": "在访达中显示",
     "inputLabel": "输入监控"
+  },
+  "pairDeviceUrl": {
+    "loopback": "这是一个其他设备无法访问的环回地址。请输入助手的公共 HTTPS URL。",
+    "nonHttps": "URL 必须使用 HTTPS，以便您的设备可以安全连接。",
+    "privateAddress": "此地址指向一个私有网络地址。请输入助手的公共 HTTPS URL，以便您的设备可以访问它。",
+    "serviceFallbackName": "隧道提供商",
+    "serviceWebsite": "这是 {service} 的网站，而不是您的助手地址。请在主机上启动隧道以获取一个；`cadet tunnel --help` 列出了提供商。",
+    "unparseable": "请输入有效的 URL，例如 https://your-assistant.ts.net。"
   }
 }
