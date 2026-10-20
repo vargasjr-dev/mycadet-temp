@@ -117,8 +117,6 @@ export interface CatalogModel {
    * Not projected into the client catalog (see scripts/sync-llm-catalog.ts).
    */
   supportsPromptCacheBreakpoints?: boolean;
-  /** When set, this model is only visible when the named feature flag is enabled. */
-  featureFlag?: string;
 }
 
 const DEFAULT_CONTEXT_WINDOW_TOKENS = 200000;
@@ -171,8 +169,6 @@ export interface ProviderCatalogEntry {
    * OpenRouter where managed keys are not available.
    */
   supportsCloudAuth?: boolean;
-  /** When set, this provider is only visible when the named feature flag is enabled. */
-  featureFlag?: string;
 }
 
 /**
@@ -2890,32 +2886,7 @@ const RAW_PROVIDER_CATALOG: ProviderCatalogEntry[] = [
     defaultModel: "jev-latest",
     apiKeyUrl: "https://typesafe.ai",
     apiKeyPlaceholder: "Your TypeSafe API key",
-  },
-  {
-    id: "cadet",
-    displayName: "Cadet",
-    subtitle: "Models served on Cadet GPU nodes through the cloud connection.",
-    setupMode: "api-key",
-    setupHint:
-      "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",
-    featureFlag: "cadet-hosted-inference",
-    models: [
-      {
-        id: "qwen/qwen3-8b",
-        displayName: "Qwen3 8B",
-        contextWindowTokens: 32768,
-        maxOutputTokens: 32768,
-        supportsThinking: false,
-        supportsCaching: false,
-        supportsVision: false,
-        supportsToolUse: true,
-        pricing: { inputPer1mTokens: 0.3, outputPer1mTokens: 0.3 },
-        featureFlag: "cadet-hosted-inference",
-      },
-    ],
-    defaultModel: "qwen/qwen3-8b",
-  },
-];
+  },];
 
 export const PROVIDER_CATALOG: ProviderCatalogEntry[] =
   RAW_PROVIDER_CATALOG.map((entry) => ({

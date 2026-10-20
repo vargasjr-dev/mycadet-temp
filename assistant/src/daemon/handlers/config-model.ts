@@ -6,9 +6,11 @@ import {
 } from "../../config/loader.js";
 import { setServiceField } from "../../config/raw-config-utils.js";
 import { providerForImageModelPrefix } from "../../media/types.js";
-import type { ProviderCatalogEntry } from "../../providers/model-catalog.js";
+import {
+  PROVIDER_CATALOG,
+  type ProviderCatalogEntry,
+} from "../../providers/model-catalog.js";
 import { getConfiguredProviders } from "../../providers/provider-availability.js";
-import { getVisibleProviderCatalog } from "../../providers/provider-catalog-visibility.js";
 import { CONFIG_RELOAD_DEBOUNCE_MS, log } from "./shared.js";
 
 // ---------------------------------------------------------------------------
@@ -65,7 +67,7 @@ export async function getModelInfo(): Promise<ModelInfo> {
   const config = getConfig();
   const resolved = resolveCallSiteConfig("mainAgent", config.llm);
   const provider = resolved.provider;
-  const visibleCatalog = getVisibleProviderCatalog(config);
+  const visibleCatalog = PROVIDER_CATALOG;
 
   return {
     model: resolved.model,

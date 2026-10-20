@@ -5,7 +5,7 @@
  *   and the PUT profile route accepts only a pure status re-enable body for
  *   them.
  * - The commitConfigWrite invariant guard: every cloud profile name
- *   ("quality-optimized", "balanced", "cost-optimized", "os-beta") is fully
+ *   ("quality-optimized", "balanced", "cost-optimized", "jev-managed") is fully
  *   read-only across PATCH/SET/PUT while its on-disk entry is
  *   managed-source — the only writable transition is re-enabling a disabled
  *   profile. A user-owned (`source: "user"`) entry sharing a cloud name is
@@ -369,80 +369,33 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
     expect(profile.model).toBe("claude-sonnet-4-6");
   });
 
-  test("PUT { label: null, status: null } on managed os-beta is rejected (label is frozen)", async () => {
+  test("PUT { topP } on a cloud profile is rejected (topP is frozen)", async () => {
     seedRawConfig({
       llm: {
         profiles: {
-          "os-beta": {
+          balanced: {
             provider: "cadet",
-            model: "zai-org/GLM-5.2",
-            label: "OS Beta (Custom)",
-            status: "disabled",
-          },
-        },
-      },
-    });
-    // The status clear alone is the re-enable direction and would pass, but
-    // the label clear touches a frozen field so the whole write is rejected.
-    await expect(
-      replaceRoute.handler({
-        pathParams: { name: "os-beta" },
-        body: { label: null, status: null },
-      }),
-    ).rejects.toThrow('Cannot edit cloud profile "os-beta" fields [label]');
-    expectNothingCommitted();
-  });
-
-  test("PUT { status: 'disabled' } on managed os-beta is rejected (read-only)", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "cadet",
-            model: "zai-org/GLM-5.2",
-            label: "Custom Label",
+            model: "claude-sonnet-4-6",
           },
         },
       },
     });
     await expect(
       replaceRoute.handler({
-        pathParams: { name: "os-beta" },
-        body: { status: "disabled" },
-      }),
-    ).rejects.toThrow(
-      'Cannot edit cloud profile "os-beta". Cloud profiles are read-only',
-    );
-    expectNothingCommitted();
-  });
-
-  test("PUT { topP } on managed os-beta is rejected (topP is frozen)", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "cadet",
-            model: "zai-org/GLM-5.2",
-          },
-        },
-      },
-    });
-    await expect(
-      replaceRoute.handler({
-        pathParams: { name: "os-beta" },
+        pathParams: { name: "balanced" },
         body: { topP: 0.9 },
       }),
-    ).rejects.toThrow('Cannot edit cloud profile "os-beta" fields [topP]');
+    ).rejects.toThrow('Cannot edit cloud profile "balanced" fields [topP]');
     expectNothingCommitted();
   });
 
-  test("PUT { topP: null } on managed os-beta is rejected (frozen even when clearing)", async () => {
+  test("PUT { topP: null } on a cloud profile is rejected (frozen even when clearing)", async () => {
     seedRawConfig({
       llm: {
         profiles: {
-          "os-beta": {
+          balanced: {
             provider: "cadet",
-            model: "zai-org/GLM-5.2",
+            model: "claude-sonnet-4-6",
             topP: 0.7,
           },
         },
@@ -450,91 +403,11 @@ describe("PUT /v1/config/llm/profiles/:name — cloud profile guard", () => {
     });
     await expect(
       replaceRoute.handler({
-        pathParams: { name: "os-beta" },
+        pathParams: { name: "balanced" },
         body: { topP: null },
       }),
-    ).rejects.toThrow('Cannot edit cloud profile "os-beta" fields [topP]');
+    ).rejects.toThrow('Cannot edit cloud profile "balanced" fields [topP]');
     expectNothingCommitted();
-  });
-
-  test("PUT { status: 'active' } re-enables a disabled managed os-beta profile", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "cadet",
-            model: "claude-sonnet-4-6",
-            status: "disabled",
-          },
-        },
-      },
-    });
-    const result = await replaceRoute.handler({
-      pathParams: { name: "os-beta" },
-      body: { status: "active" },
-    });
-    expect(result).toEqual({ ok: true });
-    expectOneCommitCycle();
-    const profile = savedProfile("os-beta");
-    expect(profile.status).toBe("active");
-    expect(profile.provider).toBe("cadet");
-    expect(profile.model).toBe("claude-sonnet-4-6");
-  });
-
-  test("allows edits to a user-owned profile sharing a cloud name (os-beta)", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "anthropic",
-            model: "gpt-4o",
-          },
-        },
-      },
-    });
-    const result = await replaceRoute.handler({
-      pathParams: { name: "os-beta" },
-      body: { provider: "openai", model: "gpt-4o" },
-    });
-    expect(result).toEqual({ ok: true });
-    const profile = savedProfile("os-beta");
-    expect(profile.provider).toBe("openai");
-    expect(profile.model).toBe("gpt-4o");
-  });
-
-  test("rejects edits to a cloud os-beta profile", async () => {
-    seedRawConfig({
-      llm: {
-        profiles: {
-          "os-beta": {
-            provider: "cadet",
-            model: "accounts/fireworks/models/glm-5p2",
-          },
-        },
-      },
-    });
-    await expect(
-      replaceRoute.handler({
-        pathParams: { name: "os-beta" },
-        body: { provider: "openai", model: "gpt-4o" },
-      }),
-    ).rejects.toThrow(BadRequestError);
-  });
-
-  test("rejects PUT to os-beta when no os-beta profile exists, writing no stub", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      replaceRoute.handler({
-        pathParams: { name: "os-beta" },
-        body: { label: "My OS Beta" },
-      }),
-    ).rejects.toThrow("not currently available");
-    expect(committedRaw()).toBeNull();
-    const onDisk = JSON.parse(readFileSync(configJsonPath(), "utf8")) as Record<
-      string,
-      any
-    >;
-    expect(onDisk?.llm?.profiles?.["os-beta"]).toBeUndefined();
   });
 
   test("PUT { label: '' } on cloud profile still rejected by `.min(1)`", async () => {
@@ -611,11 +484,11 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
     expect(result).toHaveProperty("llm");
   });
 
-  test("allows deletion of a user-owned profile sharing a cloud name (os-beta)", async () => {
+  test("allows deletion of a managed cloud entry via null (re-seeded on boot)", async () => {
     seedRawConfig({
       llm: {
         profiles: {
-          "os-beta": {
+          "jev-managed": {
             provider: "cadet",
             model: "claude-sonnet-4-6",
           },
@@ -623,7 +496,7 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
       },
     });
     const result = await patchRoute.handler({
-      body: { llm: { profiles: { "os-beta": null } } },
+      body: { llm: { profiles: { "jev-managed": null } } },
     });
     expect(result).toHaveProperty("llm");
   });
@@ -633,7 +506,7 @@ describe("PATCH /v1/config — cloud profile deletion guard", () => {
 // commitConfigWrite — cloud-profile invariant guard
 //
 // Every cloud profile name (balanced, quality-optimized, cost-optimized,
-// os-beta) is read-only to every config-write route while its on-disk entry
+// jev-managed) is read-only to every config-write route while its on-disk entry
 // is managed-source; the only writable transition is re-enabling a disabled
 // profile. A user-owned entry sharing a cloud name is not locked. Enforced
 // point, so PATCH, SET, and PUT are all covered by the same checks.
@@ -775,19 +648,19 @@ describe("default-profile invariant guard — allowed writes", () => {
     expectOneCommitCycle();
   });
 
-  test("PUT full edits on a user-sourced os-beta entry are allowed (invariance is source-gated)", async () => {
-    (rawConfig as Record<string, any>).llm.profiles["os-beta"] = {
+  test("PUT full edits on a user-sourced balanced entry are allowed (invariance is source-gated)", async () => {
+    (rawConfig as Record<string, any>).llm.profiles["balanced"] = {
       provider: "anthropic",
       model: "claude-sonnet-4-6",
     };
     seedRawConfig(rawConfig);
     const result = await replaceRoute.handler({
-      pathParams: { name: "os-beta" },
+      pathParams: { name: "balanced" },
       body: { provider: "openai", model: "gpt-4o", topP: 0.5 },
     });
     expect(result).toEqual({ ok: true });
     expectOneCommitCycle();
-    const profile = savedProfile("os-beta");
+    const profile = savedProfile("balanced");
     expect(profile.provider).toBe("openai");
     expect(profile.model).toBe("gpt-4o");
     expect(profile.topP).toBe(0.5);
@@ -1004,19 +877,6 @@ describe("code-owned default profiles — wire view and write normalization", ()
     expect(savedProfile("balanced")).toEqual({
       status: "active",
     });
-  });
-
-  test("PUT on absent flag-gated os-beta is still rejected", async () => {
-    seedRawConfig({ llm: { profiles: {} } });
-    await expect(
-      replaceRoute.handler({
-        pathParams: { name: "os-beta" },
-        body: { status: "active" },
-      }),
-    ).rejects.toThrow(
-      'Profile "os-beta" is not currently available and cannot be edited.',
-    );
-    expectNothingCommitted();
   });
 
   test("an existing user-source shadow of a default name stays editable", async () => {

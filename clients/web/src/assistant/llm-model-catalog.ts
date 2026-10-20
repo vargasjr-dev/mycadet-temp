@@ -44,7 +44,6 @@ export interface LlmCatalogModel {
   supportsText?: boolean;
   longContextPricingThresholdTokens?: number;
   /** When set, the model is hidden unless that assistant flag is on. */
-  featureFlag?: string;
 }
 
 export const MODELS_BY_PROVIDER = {
@@ -1296,17 +1295,6 @@ export const MODELS_BY_PROVIDER = {
       supportsText: false,
     },
   ],
-  cadet: [
-    {
-      id: "qwen/qwen3-8b",
-      displayName: "Qwen3 8B",
-      vendor: "alibaba",
-      contextWindowTokens: 32_768,
-      defaultContextWindowTokens: 32_768,
-      maxOutputTokens: 32_768,
-      featureFlag: "cadet-hosted-inference",
-    },
-  ],
   "openai-compatible": [],
 } as const satisfies Record<string, readonly LlmCatalogModel[]>;
 
@@ -1329,7 +1317,6 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<LlmProviderId, string> = {
   ionet: "meta-llama/Llama-3.3-70B-Instruct",
   poolside: "poolside/laguna-s-2.1",
   typesafe: "jev-latest",
-  cadet: "qwen/qwen3-8b",
   "openai-compatible": "",
 };
 
@@ -1435,7 +1422,6 @@ export const CADET_SERVED_PROVIDERS = [
   "fireworks",
   "together",
   "typesafe",
-  "cadet",
 ] as const;
 
 /**
@@ -1516,35 +1502,6 @@ export const CODEX_SUBSCRIPTION_MODEL_IDS: ReadonlySet<string> = new Set([
   "gpt-5.5",
 ]);
 
-export const HOSTED_INFERENCE_CATALOG_FLAG = "cadet-hosted-inference";
-
-export function catalogEnabledFlags(args: {
-  hostedInference?: boolean;
-}): Record<string, boolean> {
-  return {
-    [HOSTED_INFERENCE_CATALOG_FLAG]: args.hostedInference === true,
-  };
-}
-
-export function isCatalogModelVisible(
-  model: Pick<LlmCatalogModel, "featureFlag">,
-  enabledFlags: Readonly<Record<string, boolean>>,
-): boolean {
-  if (!model.featureFlag) {
-    return true;
-  }
-  return enabledFlags[model.featureFlag] === true;
-}
-
-export function getVisibleModelsForProvider(
-  provider: string,
-  enabledFlags: Readonly<Record<string, boolean>>,
-): readonly LlmCatalogModel[] {
-  return getModelsForProvider(provider).filter((model) =>
-    isCatalogModelVisible(model, enabledFlags),
-  );
-}
-
 /**
  * Whether a catalog model produces free-form chat text. Unlisted providers
  * and model ids default to true so custom endpoints and unknown snapshots
@@ -1564,9 +1521,8 @@ export function catalogModelSupportsText(
 /** Visible catalog models that can back a conversation pin. */
 export function getTextGenerationModelsForProvider(
   provider: string,
-  enabledFlags: Readonly<Record<string, boolean>>,
 ): readonly LlmCatalogModel[] {
-  return getVisibleModelsForProvider(provider, enabledFlags).filter(
+  return getModelsForProvider(provider).filter(
     (model) => model.supportsText !== false,
   );
 }

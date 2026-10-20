@@ -55,7 +55,6 @@ import {
   getEffectiveProfilesForProvider,
   MANAGED_PROFILE_NAMES,
   materializeProfile,
-  OS_BETA_PROFILE_TEMPLATE,
 } from "../config/default-profile-catalog.js";
 import { resolveCallSiteConfig } from "../config/llm-resolver.js";
 import {
@@ -1927,72 +1926,5 @@ describe("seedInferenceProfiles BYOK-mode default profiles", () => {
     expect(config.llm.profiles.balanced?.status).toBe("active");
     // Label is still suffixed (Cadet can push label updates).
     expect(config.llm.profiles.balanced?.label).toBe("Balanced (Managed)");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Tests: OS Beta flag-gated cloud profile. The template is defined but
-// intentionally NOT part of MANAGED_PROFILE_TEMPLATES, so seedInferenceProfiles
-// must never create it. The flag-gated reconcile creates or removes it based on
-// the `os-beta` feature flag.
-// ---------------------------------------------------------------------------
-
-describe("OS Beta cloud profile template", () => {
-  beforeEach(() => {
-    ensureTestDir();
-    const resetPaths = [
-      CONFIG_PATH,
-      join(WORKSPACE_DIR, "default-config.json"),
-      join(WORKSPACE_DIR, "hatch-overlay.json"),
-      join(WORKSPACE_DIR, "keys.enc"),
-      join(WORKSPACE_DIR, "data"),
-      join(WORKSPACE_DIR, "data", "memory"),
-    ];
-    for (const path of resetPaths) {
-      if (existsSync(path)) {
-        rmSync(path, { recursive: true, force: true });
-      }
-    }
-    ensureTestDir();
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_CLOUD;
-    invalidateConfigCache();
-  });
-
-  afterEach(() => {
-    delete process.env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH;
-    delete process.env.IS_CLOUD;
-    invalidateConfigCache();
-  });
-
-  test("seedInferenceProfiles does not create an os-beta profile", () => {
-    writeConfig({ llm: { default: { provider: "anthropic" } } });
-
-    mergeDefaultConfigAndSeedInferenceProfiles();
-    const raw = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
-
-    expect(raw.llm.profiles["os-beta"]).toBeUndefined();
-    expect((raw.llm.profileOrder as string[]).includes("os-beta")).toBe(false);
-  });
-
-  test("MANAGED_PROFILE_NAMES contains os-beta", () => {
-    expect(MANAGED_PROFILE_NAMES.has("os-beta")).toBe(true);
-  });
-
-  test("materializeProfile resolves OS Beta to the Balanced model with low effort", () => {
-    const entry = materializeProfile(
-      OS_BETA_PROFILE_TEMPLATE,
-      "together",
-      "cadet",
-    );
-
-    expect(entry.model).toBe("MiniMaxAI/MiniMax-M3");
-    expect(entry.provider_connection).toBe("cadet");
-    expect(entry.provider).toBe("together");
-    expect(entry.label).toBe("OS Beta");
-    expect(entry.maxTokens).toBe(32000);
-    expect(entry.effort).toBe("low");
-    expect(entry.thinking?.enabled).toBe(true);
-    expect(entry.topP).toBe(0.95);
   });
 });

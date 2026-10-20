@@ -17,7 +17,6 @@ import {
   BACKUP_PROFILE_KEYS,
   DEFAULT_PROFILE_KEYS,
   DEFAULT_PROFILE_PROVIDERS,
-  OS_BETA_PROFILE_KEY,
 } from "../default-profile-names.js";
 import {
   resolveCallSiteConfig,
@@ -41,7 +40,7 @@ function managedStubs(): Record<string, ProfileEntry> {
 
 describe("getEffectiveProfiles", () => {
   test("the code catalog materializes a full body for every default profile", () => {
-    for (const key of [...DEFAULT_PROFILE_KEYS, OS_BETA_PROFILE_KEY]) {
+    for (const key of DEFAULT_PROFILE_KEYS) {
       const body = CODE_DEFAULT_PROFILE_ENTRIES[key];
       expect(body).toBeDefined();
       expect(typeof body.model).toBe("string");
@@ -51,7 +50,7 @@ describe("getEffectiveProfiles", () => {
   });
 
   test("every cadet-column body translates to a cloud dispatch target", () => {
-    for (const key of [...DEFAULT_PROFILE_KEYS, OS_BETA_PROFILE_KEY]) {
+    for (const key of DEFAULT_PROFILE_KEYS) {
       const body = CODE_DEFAULT_PROFILE_ENTRIES[key];
       const identity = resolveRoutingIdentity(body.provider, body.model);
       expect(identity?.connectionName).toBe("cadet");
@@ -108,7 +107,7 @@ describe("getEffectiveProfiles", () => {
     });
   });
 
-  test("defaults absent from the workspace resolve from the catalog; os-beta stays flag-gated", () => {
+  test("defaults absent from the workspace resolve from the catalog", () => {
     const effective = getEffectiveProfiles(undefined);
     expect(Object.keys(effective).sort()).toEqual(
       [...DEFAULT_PROFILE_KEYS, ...BACKUP_PROFILE_KEYS, "jev-managed"].sort(),
@@ -116,7 +115,6 @@ describe("getEffectiveProfiles", () => {
     expect(getEffectiveProfile({}, "balanced")?.model).toBe(
       CODE_DEFAULT_PROFILE_ENTRIES.balanced.model as string,
     );
-    expect(getEffectiveProfile({}, OS_BETA_PROFILE_KEY)).toBeUndefined();
   });
 
   test("a cadet-provider entry resolves to the code body with only label/status/topP from disk", () => {
@@ -241,11 +239,7 @@ describe("resolver integration", () => {
   });
 
   test("thin managed stubs and fully seeded bodies resolve identically at every call site", () => {
-    const seededProfiles = Object.fromEntries(
-      Object.entries(CODE_DEFAULT_PROFILE_ENTRIES).filter(
-        ([name]) => name !== OS_BETA_PROFILE_KEY,
-      ),
-    );
+    const seededProfiles = { ...CODE_DEFAULT_PROFILE_ENTRIES };
     const seeded = LLMSchema.parse({
       activeProfile: "balanced",
       profiles: seededProfiles,
@@ -361,7 +355,7 @@ describe("schema validation", () => {
     ).toEqual(["voiceFrontDoor"]);
   });
 
-  test("always-available default names are valid references; os-beta only when materialized", () => {
+  test("always-available default names are valid references", () => {
     expect(() => LLMSchema.parse({ activeProfile: "balanced" })).not.toThrow();
     expect(() =>
       LLMSchema.parse({ advisorProfile: "quality-optimized" }),
@@ -369,16 +363,6 @@ describe("schema validation", () => {
     expect(() =>
       LLMSchema.parse({
         callSites: { mainAgent: { profile: "cost-optimized" } },
-      }),
-    ).not.toThrow();
-    // Flag-gated: valid only while its workspace stub exists.
-    expect(() =>
-      LLMSchema.parse({ activeProfile: OS_BETA_PROFILE_KEY }),
-    ).toThrow();
-    expect(() =>
-      LLMSchema.parse({
-        activeProfile: OS_BETA_PROFILE_KEY,
-        profiles: { [OS_BETA_PROFILE_KEY]: { provider: "cadet" } },
       }),
     ).not.toThrow();
     expect(() =>
@@ -639,27 +623,6 @@ describe("resolveDefaultProfileForProvider", () => {
     ).toBeUndefined();
   });
 
-  test("os-beta stays flag-gated and provider-independent", () => {
-    expect(
-      resolveDefaultProfileForProvider(
-        undefined,
-        OS_BETA_PROFILE_KEY,
-        dp("anthropic"),
-      ),
-    ).toBeUndefined();
-    const workspace: Record<string, ProfileEntry> = {
-      [OS_BETA_PROFILE_KEY]: { provider: "cadet" },
-    };
-    const entry = resolveDefaultProfileForProvider(
-      workspace,
-      OS_BETA_PROFILE_KEY,
-      dp("anthropic"),
-    );
-    // The os-beta body never varies with the default provider.
-    expect(entry?.provider).toBe(
-      CODE_DEFAULT_PROFILE_ENTRIES[OS_BETA_PROFILE_KEY].provider,
-    );
-  });
 
   test("agrees with getEffectiveProfile for the cadet default provider", () => {
     for (const key of DEFAULT_PROFILE_KEYS) {

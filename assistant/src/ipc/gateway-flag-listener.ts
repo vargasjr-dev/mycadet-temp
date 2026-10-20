@@ -1,9 +1,7 @@
 import { Socket } from "node:net";
 
 import { refreshOverridesFromGateway } from "../config/assistant-feature-flags.js";
-import { reconcileFlagGatedProfiles } from "../config/sync-gated-profiles.js";
 import { SYNC_TAGS } from "../daemon/message-types/sync.js";
-import { publishConfigChanged } from "../runtime/sync/resource-sync-events.js";
 import { publishSyncInvalidation } from "../runtime/sync/sync-publisher.js";
 import { getLogger } from "../util/logger.js";
 import { resolveIpcSocketPath } from "./socket-path.js";
@@ -11,16 +9,13 @@ import { resolveIpcSocketPath } from "./socket-path.js";
 const log = getLogger("gateway-flag-listener");
 
 /**
- * Refresh the flag-overrides cache from the gateway, then reconcile the
- * flag-gated cloud profile (OS Beta). Both the `feature_flags_changed` event
- * and a reconnect refresh the cache; `reconcileFlagGatedProfiles` then adds or
- * removes the cloud profile and, when it reports a change, a `config_changed`
- * broadcast refreshes the profile picker on clients. The reconcile runs only
- * when the refresh confirmed flags loaded from the gateway — a transient IPC
- * failure leaves the cache unset and resolves `os-beta` to its registry default
- * `false`, which would remove the user's profile and reset their selection.
+ * Refresh the flag-overrides cache from the gateway. Both the
+ * `feature_flags_changed` event and a reconnect refresh the cache. The refresh
+ * runs only when the fetch confirmed flags loaded from the gateway — a
+ * transient IPC failure leaves the cache unset and flags resolve to their
+ * registry defaults.
  */
-function refreshFlagsAndReconcileProfiles(context: string): void {
+function refreshFlags(context: string): void {
   refreshOverridesFromGateway()
     .then((loaded) => {
       if (!loaded) {
@@ -33,12 +28,6 @@ function refreshFlagsAndReconcileProfiles(context: string): void {
       ]).catch((err) => {
         log.warn({ err }, "Failed to broadcast feature-flags sync_changed");
       });
-      if (reconcileFlagGatedProfiles()) {
-        // Reuse the config-changed broadcast clients already consume: web
-        // routes the `assistant:self:config` sync tag to the effective profile
-        // catalog and the call-site catalog, both derived from config.
-        publishConfigChanged();
-      }
     })
     .catch((err) => {
       log.warn(
@@ -71,7 +60,7 @@ function handleData(chunk: Buffer): void {
       const msg = JSON.parse(trimmed) as { event?: string };
       if (msg.event === "feature_flags_changed") {
         log.info("Received feature_flags_changed event — refreshing overrides");
-        refreshFlagsAndReconcileProfiles("flags-changed event");
+        refreshFlags("flags-changed event");
       }
     } catch {
       // Ignore non-JSON lines (e.g. IPC responses on a shared socket)
@@ -108,9 +97,8 @@ function connectToGateway(): void {
     log.info("Connected to gateway IPC for flag events");
     currentBackoffMs = INITIAL_BACKOFF_MS;
     socket = conn;
-    // A reconnect may have missed a flag flip while disconnected, so reconcile
-    // the cloud profile too — not just the cache.
-    refreshFlagsAndReconcileProfiles("reconnect");
+    // A reconnect may have missed a flag flip while disconnected.
+    refreshFlags("reconnect");
   });
 
   let buffer = "";

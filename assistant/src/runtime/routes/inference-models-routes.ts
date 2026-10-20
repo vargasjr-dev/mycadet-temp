@@ -26,8 +26,6 @@ const catalogModelSchema = z
     supportsThinking: z.boolean().optional(),
     supportsVision: z.boolean().optional(),
     supportsToolUse: z.boolean().optional(),
-    /** When set, the model is only visible while the named flag is enabled. */
-    featureFlag: z.string().optional(),
   })
   .meta({ id: "CatalogModel" });
 
@@ -65,9 +63,6 @@ function handleListModels({ queryParams = {} }: RouteHandlerArgs) {
         : {}),
       ...(model.supportsToolUse !== undefined
         ? { supportsToolUse: model.supportsToolUse }
-        : {}),
-      ...(model.featureFlag !== undefined
-        ? { featureFlag: model.featureFlag }
         : {}),
     })),
   );

@@ -335,7 +335,6 @@ export const routes = {
       return `${SETTINGS_USAGE_PATH}?${params.toString()}`;
     },
     community: r("/assistant/settings/community"),
-    personality: r("/assistant/settings/personality"),
     mcp: r("/assistant/settings/mcp"),
     debug: r("/assistant/settings/debug"),
     dangerZone: r("/assistant/settings/danger-zone"),

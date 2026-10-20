@@ -673,15 +673,6 @@ export const routeTree = [
                         ),
                     },
                   },
-                  {
-                    path: "personality",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/personality-page").then(
-                          (m) => m.SettingsPersonalityPage,
-                        ),
-                    },
-                  },
                   { path: "advanced", Component: AdvancedSettingsRedirect },
                   {
                     path: "danger-zone",

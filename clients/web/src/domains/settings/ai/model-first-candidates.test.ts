@@ -36,7 +36,6 @@ function input(
 ): ModelFirstInput {
   return {
     connections,
-    hostedInference: false,
     activeAssistantIsSelfHosted: true,
     labelFor: (provider) => PROVIDER_DISPLAY_NAMES[provider] ?? provider,
     defaultEntryMetaLabel: "Default",
@@ -190,17 +189,6 @@ describe("resolveModelFirstOptions", () => {
     expect(providersOf(opus?.candidates ?? [])).not.toContain(
       "openai-compatible",
     );
-  });
-
-  test("holds a flagged catalog entry back until hosted inference is on", () => {
-    const hidden = resolveModelFirstOptions(input([CADET_CONNECTION])).map(
-      (option) => option.displayName,
-    );
-    const shown = resolveModelFirstOptions(
-      input([CADET_CONNECTION], { hostedInference: true }),
-    ).map((option) => option.displayName);
-    expect(hidden).not.toContain("Qwen3 8B");
-    expect(shown).toContain("Qwen3 8B");
   });
 
   test("omits structured-decision models from the conversation list", () => {

@@ -16,7 +16,6 @@ import {
   mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
-import { reconcileFlagGatedProfiles } from "../config/sync-gated-profiles.js";
 import { startConversationAutoArchive } from "../conversations/auto-archive.js";
 import { startCes } from "../credential-execution/ces-runtime.js";
 import { refreshManagedConnectionCache } from "../credential-execution/cloud-catalog.js";
@@ -50,7 +49,6 @@ import {
 } from "../runtime/http-server.js";
 import { warmLocalGuardianPrincipalCache } from "../runtime/local-actor-identity.js";
 import { markCurrentProcessAsMainDaemon } from "../runtime/process-role.js";
-import { publishConfigChanged } from "../runtime/sync/resource-sync-events.js";
 import { reconcilePluginSchedules } from "../schedule/plugin-schedule-reconciler.js";
 import { recoverStaleSchedules } from "../schedule/schedule-recovery.js";
 import { startScheduler } from "../schedule/scheduler.js";
@@ -195,27 +193,9 @@ export async function runDaemon(): Promise<void> {
   // so a slow or unreachable gateway doesn't delay daemon startup (the
   // IPC call has a 3s connect + 5s call timeout that would otherwise
   // stall the critical path).
-  // After the async fetch resolves, reconcile flag-gated cloud profiles
-  // (OS Beta): `seedInferenceProfiles()` runs synchronously earlier in boot
-  // before flags are available, so this lands the profile on the same boot once
-  // the flag cache is populated. When this reconcile is the call that mutates
-  // config (it raced ahead of the gateway flag listener), publish the config
-  // invalidation so any client that already fetched `GET /v1/config` refreshes
-  // its profile picker.
-  // Profiles are reconciled only when flags actually loaded from the gateway:
-  // a failed fetch leaves the cache unset and resolves `os-beta` to its
-  // registry default `false`, which would remove the user's profile and reset
-  // their selection.
-  void initFeatureFlagOverrides()
-    .then((loaded) => {
-      if (!loaded) {
-        return;
-      }
-      if (reconcileFlagGatedProfiles()) {
-        publishConfigChanged();
-      }
-    })
-    .catch((err) => log.warn({ err }, "Background feature flag init failed"));
+  void initFeatureFlagOverrides().catch((err) =>
+    log.warn({ err }, "Background feature flag init failed"),
+  );
 
   startGatewayFlagListener();
 

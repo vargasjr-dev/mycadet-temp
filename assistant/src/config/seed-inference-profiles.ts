@@ -25,8 +25,6 @@ import {
 
 const log = getLogger("seed-inference-profiles");
 
-export const OS_BETA_FEATURE_FLAG_KEY = "os-beta";
-
 const MIX_MIN_ARMS = 2;
 
 export type SeedInferenceProfilesOptions = {

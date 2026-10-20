@@ -2022,38 +2022,6 @@
     "redirectUrl": "URL de redirección",
     "waitingAuthorization": "Esperando autorización..."
   },
-  "personalityPage": {
-    "axes": {
-      "companionCoworker": {
-        "left": "Compañero",
-        "right": "Colega"
-      },
-      "executeCollaborate": {
-        "left": "Independiente",
-        "right": "Colaborativo"
-      },
-      "genzBoomer": {
-        "left": "Gen Z",
-        "right": "Baby Boomer"
-      },
-      "playfulSerious": {
-        "left": "Juguetón",
-        "right": "Serio"
-      },
-      "politeUnfiltered": {
-        "left": "Educado",
-        "right": "Sin filtro"
-      }
-    },
-    "loadError": "No se pudieron cargar los controles de personalidad.",
-    "rangeAriaLabel": "{left} a {right}",
-    "save": "Guardar",
-    "saveErrorToast": "No se pudieron guardar los controles de personalidad. Inténtalo de nuevo.",
-    "saveSuccessToast": "Controles de personalidad guardados.",
-    "saving": "Guardando…",
-    "subtitle": "Guarda estos valores en el asistente. Esto no reescribe los archivos de identidad.",
-    "title": "Personalidad"
-  },
   "toneLab": {
     "title": "Laboratorio de tonos",
     "subtitle": "Mezcla el tono que suena cuando se conecta una conversación de voz. Su inverso suena cuando la conversación termina.",

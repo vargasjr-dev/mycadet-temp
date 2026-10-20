@@ -9,12 +9,9 @@ import { Input } from "@mycadet/design-library/components/input";
 import { Typography } from "@mycadet/design-library/components/typography";
 
 import {
-  catalogEnabledFlags,
   getModelsForProvider,
-  getVisibleModelsForProvider,
   PROVIDER_DISPLAY_NAMES,
 } from "@/assistant/llm-model-catalog";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 import {
   codexServableModels,
@@ -125,12 +122,6 @@ export function ProfileEditorProviderSection({
   // fixed model set.
   const { t } = useTranslation("settings");
   const [isEnteringCustomModel, setIsEnteringCustomModel] = useState(false);
-  const hostedInference =
-    useAssistantFeatureFlagStore.use.cadetHostedInference();
-  const catalogFlags = catalogEnabledFlags({
-    hostedInference,
-  });
-
   const subscriptionRestricted = restrictsToSubscriptionModels(
     provider,
     providerConnection,
@@ -213,7 +204,7 @@ export function ProfileEditorProviderSection({
       if (!provider) {
         return [];
       }
-      const catalogModels = getVisibleModelsForProvider(provider, catalogFlags);
+      const catalogModels = getModelsForProvider(provider);
       if (catalogModels.length > 0) {
         if (
           restrictsToSubscriptionModels(
@@ -250,7 +241,6 @@ export function ProfileEditorProviderSection({
       provider,
       providerConnection,
       availableConnectionsForProvider,
-      catalogFlags,
     ]);
 
   // The Model dropdown always offers the profile's currently-bound model, even
@@ -330,7 +320,7 @@ export function ProfileEditorProviderSection({
     if (isEnteringCustomModel) {
       return;
     }
-    const catalogModels = getVisibleModelsForProvider(provider, catalogFlags);
+    const catalogModels = getModelsForProvider(provider);
     // Connection-derived providers (openai-compatible) have an empty catalog.
     // An id the connection does not list is still a valid bound model.
     if (catalogModels.length === 0) {
@@ -356,7 +346,6 @@ export function ProfileEditorProviderSection({
     onModelChange,
     provider,
     isEnteringCustomModel,
-    catalogFlags,
   ]);
 
   const defaultEntryMetaLabel = t("aiProviderPicker.defaultEntryMeta");

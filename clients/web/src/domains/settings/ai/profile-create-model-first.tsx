@@ -129,21 +129,17 @@ export function ProfileCreateModelFirst({
 }: ProfileCreateModelFirstProps) {
   const { t } = useTranslation("settings");
   const activeAssistantIsSelfHosted = useActiveAssistantIsSelfHosted();
-  const hostedInference =
-    useAssistantFeatureFlagStore.use.cadetHostedInference();
   const defaultEntryMetaLabel = t("aiProviderPicker.defaultEntryMeta");
 
   const resolverInput = useMemo<ModelFirstInput>(
     () => ({
       connections: editor.effectiveConnections,
-      hostedInference,
       activeAssistantIsSelfHosted,
       labelFor: (provider) => PROVIDER_DISPLAY_NAMES[provider] ?? provider,
       defaultEntryMetaLabel,
     }),
     [
       editor.effectiveConnections,
-      hostedInference,
       activeAssistantIsSelfHosted,
       defaultEntryMetaLabel,
     ],

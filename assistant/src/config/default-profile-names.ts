@@ -102,25 +102,6 @@ export function isCloudOnlyProfileKey(value: string): boolean {
   return (MANAGED_ONLY_PROFILE_KEYS as readonly string[]).includes(value);
 }
 
-/**
- * Flag-gated default profile: only available while the `os-beta` feature
- * flag has reconciled it into the workspace (see `sync-gated-profiles.ts`).
- * Deliberately NOT part of `DEFAULT_PROFILE_KEYS`: it is never
- * unconditionally available, so it must not be treated as an always-valid
- * reference target.
- */
-export const OS_BETA_PROFILE_KEY = "os-beta";
-
-/**
- * Cloud profiles that resolve only while a workspace entry exists, because
- * a feature flag reconciles that entry in and out. Never always-valid
- * reference targets: a reference to one is valid only with the entry present.
- */
-export const FLAG_GATED_PROFILE_KEYS = [OS_BETA_PROFILE_KEY] as const;
-
-export function isFlagGatedProfileKey(value: string): boolean {
-  return (FLAG_GATED_PROFILE_KEYS as readonly string[]).includes(value);
-}
 
 /**
  * The named columns of the intent × provider matrix. `cadet` is the

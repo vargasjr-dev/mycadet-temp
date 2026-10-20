@@ -20,7 +20,6 @@
  */
 
 import {
-  catalogEnabledFlags,
   getTextGenerationModelsForProvider,
   MODELS_BY_PROVIDER,
   vendorDisplayName,
@@ -91,8 +90,6 @@ export interface ModelFirstOption {
 
 export interface ModelFirstInput {
   readonly connections: readonly ProviderConnection[];
-  /** Whether Cadet-hosted GPU catalog entries are visible. */
-  readonly hostedInference: boolean;
   readonly activeAssistantIsSelfHosted: boolean;
   /** Provider id to display name. */
   readonly labelFor: (provider: ConnectionProvider) => string;
@@ -292,12 +289,7 @@ export function resolveModelFirstOptions(
       continue;
     }
 
-    const models = getTextGenerationModelsForProvider(
-      kind,
-      catalogEnabledFlags({
-        hostedInference: input.hostedInference,
-      }),
-    );
+    const models = getTextGenerationModelsForProvider(kind);
     if (models.length === 0) {
       continue;
     }

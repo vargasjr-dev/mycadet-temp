@@ -19,21 +19,11 @@ import {
   FALLBACK_PROFILE_BY_KEY,
   isCloudOnlyProfileKey,
   isDefaultProfileKey,
-  isFlagGatedProfileKey,
   JEV_MANAGED_PROFILE_CALL_SITES,
   JEV_MANAGED_PROFILE_KEY,
   MANAGED_ONLY_PROFILE_KEYS,
 } from "../default-profile-names.js";
 import { InputModalitiesSchema } from "../input-modalities.js";
-
-/**
- * Managed-only keys that are valid reference targets on the cloud column
- * whether or not a workspace stub exists. The flag-gated one (`os-beta`)
- * is excluded: it resolves only while its reconciled stub is
- * present, so it enters the reference set through `llm.profiles` alone.
- */
-const ALWAYS_RESOLVING_MANAGED_ONLY_PROFILE_KEYS =
-  MANAGED_ONLY_PROFILE_KEYS.filter((key) => !isFlagGatedProfileKey(key));
 
 /**
  * Unified LLM configuration schema.
@@ -886,7 +876,7 @@ export function collectFallbackProfileIssues(
   const profileNames = new Set([
     ...referenceableProfileKeys(profiles, backupsResolve),
     ...DEFAULT_PROFILE_KEYS,
-    ...(backupsResolve ? ALWAYS_RESOLVING_MANAGED_ONLY_PROFILE_KEYS : []),
+    ...(backupsResolve ? MANAGED_ONLY_PROFILE_KEYS : []),
   ]);
   const mixProfileNames = new Set(
     entries
@@ -1008,9 +998,7 @@ export const LLMSchema = z
       // cloud stub — its content is code-owned, so the routing-identity
       // model check applies only to entries carrying their own body.
       const isCodeOwnedName =
-        isDefaultProfileKey(name) ||
-        isCloudOnlyProfileKey(name) ||
-        isFlagGatedProfileKey(name);
+        isDefaultProfileKey(name) || isCloudOnlyProfileKey(name);
       const issue =
         entry?.provider && (entry.model != null || !isCodeOwnedName)
           ? routingIdentityModelIssue(entry.provider, entry.model ?? undefined)
@@ -1051,12 +1039,9 @@ export const LLMSchema = z
     // or ChatGPT default provider they have no body to resolve to, and
     // keeping the reference would strand a selection the picker cannot show.
     // The cloud Jev profile (`JEV_MANAGED_PROFILE_KEY`) is scoped the same
-    // way, as a pin target for the judge call sites.
-    // The flag-gated `os-beta` is excluded: it resolves only while a
-    // workspace entry exists, so a reference to it is valid only when that
-    // entry is present in `config.profiles`. A backup name materialized as a
-    // thin cloud stub does not re-enter the set on a non-cloud column
-    // either, see `referenceableProfileKeys`.
+    // way, as a pin target for the judge call sites. A backup name
+    // materialized as a thin cloud stub does not re-enter the set on a
+    // non-cloud column either, see `referenceableProfileKeys`.
     const backupsResolve = backupProfilesResolveUnderDefaultProvider(
       config.default,
     );
@@ -1066,7 +1051,7 @@ export const LLMSchema = z
         backupsResolve,
       ),
       ...DEFAULT_PROFILE_KEYS,
-      ...(backupsResolve ? ALWAYS_RESOLVING_MANAGED_ONLY_PROFILE_KEYS : []),
+      ...(backupsResolve ? MANAGED_ONLY_PROFILE_KEYS : []),
     ]);
     for (const [siteId, siteConfig] of Object.entries(config.callSites ?? {})) {
       // The Jev profile answers with structured verdicts, so only the sites

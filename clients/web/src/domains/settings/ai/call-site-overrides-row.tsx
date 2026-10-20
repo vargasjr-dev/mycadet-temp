@@ -6,13 +6,10 @@ import { Toggle } from "@mycadet/design-library/components/toggle";
 import { useTranslation } from "@/i18n";
 
 import {
-  catalogEnabledFlags,
   getDefaultModelForProvider,
   getModelsForProvider,
-  getVisibleModelsForProvider,
   PROVIDER_DISPLAY_NAMES,
 } from "@/assistant/llm-model-catalog";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import type {
   CallSiteOverrideDraft,
   ProviderConnection,
@@ -84,9 +81,6 @@ export function CallSiteOverrideRow({
   onToggle,
 }: CallSiteOverrideRowProps) {
   const { t } = useTranslation("settings");
-  const catalogFlags = catalogEnabledFlags({
-    hostedInference: useAssistantFeatureFlagStore.use.cadetHostedInference(),
-  });
   const overrideOn = isDraftActive(draft);
 
   const profileVal = (() => {
@@ -155,7 +149,7 @@ export function CallSiteOverrideRow({
     connectionsForProvider,
   )
     ? codexServableModels(currentProvider)
-    : getVisibleModelsForProvider(currentProvider, catalogFlags);
+    : getModelsForProvider(currentProvider);
   const modelOptions = availableModels.map((m) => ({
     value: m.id,
     label: m.displayName,

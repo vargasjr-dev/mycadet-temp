@@ -138,7 +138,6 @@ describe("LLM catalog parity: daemon vs client", () => {
       expect(clientEntry.envVar).toBe(daemonEntry.envVar);
       expect(clientEntry.apiKeyPlaceholder).toBe(daemonEntry.apiKeyPlaceholder);
       expect(clientEntry.supportsCloudAuth).toBe(daemonEntry.supportsCloudAuth);
-      expect(clientEntry.featureFlag).toBe(daemonEntry.featureFlag);
       expect(clientEntry.credentialsGuide).toEqual(
         daemonEntry.credentialsGuide,
       );
@@ -207,7 +206,6 @@ describe("LLM catalog parity: daemon vs client", () => {
         expect(clientModel.supportsToolUse).toBe(daemonModel.supportsToolUse);
         expect(clientModel.supportsText).toBe(daemonModel.supportsText);
         expect(clientModel.pricing).toEqual(daemonModel.pricing);
-        expect(clientModel.featureFlag).toBe(daemonModel.featureFlag);
       }
     }
   });

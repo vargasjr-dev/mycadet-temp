@@ -113,16 +113,6 @@ export interface ProvidersConfig {
   timeouts?: { providerStreamTimeoutSec?: number };
 }
 
-function isProviderFeatureFlagEnabled(
-  key: string,
-  config: ProvidersConfig,
-): boolean {
-  return isAssistantFeatureFlagEnabled(
-    key,
-    config as unknown as AssistantConfig,
-  );
-}
-
 function resolveModel(config: ProvidersConfig, providerName: string): string {
   const resolved = resolveCallSiteConfig("mainAgent", config.llm);
   const inferenceProvider = resolved.provider;
@@ -206,13 +196,6 @@ export async function initializeProviders(
   ).provider;
 
   for (const entry of PROVIDER_CATALOG) {
-    if (
-      entry.featureFlag &&
-      !isProviderFeatureFlagEnabled(entry.featureFlag, config)
-    ) {
-      continue;
-    }
-
     const isKeyless = entry.setupMode === "keyless";
 
     // Credential resolution: user key first, cloud proxy second. Keyless

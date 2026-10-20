@@ -2771,35 +2771,6 @@
           }
         }
       ]
-    },
-    {
-      "id": "cadet",
-      "displayName": "Cadet",
-      "subtitle": "Models served on Cadet GPU nodes through the cloud connection.",
-      "setupMode": "api-key",
-      "setupHint": "Uses the assistant API key through the Cadet Cloud connection. These models cannot use a bring-your-own key.",
-      "supportsCloudAuth": true,
-      "featureFlag": "cadet-hosted-inference",
-      "defaultModel": "qwen/qwen3-8b",
-      "models": [
-        {
-          "id": "qwen/qwen3-8b",
-          "displayName": "Qwen3 8B",
-          "contextWindowTokens": 32768,
-          "maxOutputTokens": 32768,
-          "defaultContextWindowTokens": 32768,
-          "longContextMode": "unsupported",
-          "supportsThinking": false,
-          "supportsCaching": false,
-          "supportsVision": false,
-          "supportsToolUse": true,
-          "pricing": {
-            "inputPer1mTokens": 0.3,
-            "outputPer1mTokens": 0.3
-          },
-          "featureFlag": "cadet-hosted-inference"
-        }
-      ]
     }
   ]
 }

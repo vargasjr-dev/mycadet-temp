@@ -19,7 +19,6 @@ import {
   Users,
   Puzzle,
   ShieldCheck,
-  Smile,
   SlidersHorizontal,
   Volume2,
 } from "lucide-react";
@@ -44,7 +43,6 @@ export const PANEL_IDS = [
   "community",
   "assistant-status",
   "debug",
-  "personality",
 ] as const;
 
 export type PanelId = (typeof PANEL_IDS)[number];
@@ -132,12 +130,6 @@ export const SETTINGS_SIDEBAR: SidebarItem[] = [
     icon: Users,
   },
   { id: "debug", label: "Debug", href: routes.settings.debug, icon: Bug },
-  {
-    id: "personality",
-    label: "Personality",
-    href: routes.settings.personality,
-    icon: Smile,
-  },
 ];
 
 const SETTINGS_TAB_ID_ALIASES: Record<string, PanelId> = {

@@ -158,7 +158,6 @@ import {
   getEffectiveProfilesForProvider,
   MANAGED_PROFILE_NAMES,
 } from "../../config/default-profile-catalog.js";
-import { DEFAULT_PROFILE_KEYS } from "../../config/default-profile-names.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
 
 const RESERVED_PROFILE_NAMES = new Set([
@@ -939,20 +938,6 @@ async function handleReplaceInferenceProfile({
     throw new BadRequestError(
       `Profile "${name}" is code-owned and cannot be edited. ` +
         `Duplicate it to a custom profile to customize.`,
-    );
-  }
-  // A flag-gated managed name (`os-beta`) with no materialized entry cannot
-  // be patched: it only resolves while the flag reconcile has created its
-  // stub, so writing status here would persist an entry that fights the
-  // reconcile. The always-available defaults are catalog-owned even when
-  // absent — a status re-enable on them just creates the thin stub.
-  if (
-    MANAGED_PROFILE_NAMES.has(name) &&
-    existingProfile == null &&
-    !(DEFAULT_PROFILE_KEYS as readonly string[]).includes(name)
-  ) {
-    throw new BadRequestError(
-      `Profile "${name}" is not currently available and cannot be edited.`,
     );
   }
   if (isCloud) {

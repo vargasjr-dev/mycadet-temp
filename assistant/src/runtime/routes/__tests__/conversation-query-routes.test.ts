@@ -1094,49 +1094,43 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
         label: "Balanced",
         status: "active",
       };
-      profiles["os-beta"] = {
-        provider: "cadet",
-        model: "claude-sonnet-4-6",
-        label: "OS Beta",
-        status: "active",
-      };
       seedRawConfig();
     });
 
-    test("rejects label edit on managed os-beta profile (invariant)", async () => {
+    test("rejects label edit on managed balanced profile (invariant)", async () => {
       await expect(
         replaceProfileRoute.handler({
-          pathParams: { name: "os-beta" },
-          body: { label: "My OS Beta" },
+          pathParams: { name: "balanced" },
+          body: { label: "My Balanced" },
         }),
-      ).rejects.toThrow(/Cannot edit cloud profile "os-beta" fields \[label\]/);
+      ).rejects.toThrow(/Cannot edit cloud profile "balanced" fields \[label\]/);
       // Guard rejects before any write — the seed label is untouched.
-      expect(persistedProfile("os-beta").label).toBe("OS Beta");
+      expect(persistedProfile("balanced").label).toBe("Balanced");
     });
 
-    test("rejects disable on managed os-beta profile (invariant)", async () => {
+    test("rejects disable on managed balanced profile (invariant)", async () => {
       await expect(
         replaceProfileRoute.handler({
-          pathParams: { name: "os-beta" },
+          pathParams: { name: "balanced" },
           body: { status: "disabled" },
         }),
       ).rejects.toThrow(
-        'Cannot edit cloud profile "os-beta". Cloud profiles are read-only',
+        'Cannot edit cloud profile "balanced". Cloud profiles are read-only',
       );
       // Guard rejects before any write — the seed status is untouched.
-      expect(persistedProfile("os-beta").status).toBe("active");
+      expect(persistedProfile("balanced").status).toBe("active");
     });
 
-    test("re-enables a disabled managed os-beta profile, preserving seed fields", async () => {
+    test("re-enables a disabled managed balanced profile, preserving seed fields", async () => {
       (
         rawConfigFixture.llm as {
           profiles: Record<string, Record<string, unknown>>;
         }
-      ).profiles["os-beta"]!.status = "disabled";
+      ).profiles["balanced"]!.status = "disabled";
       seedRawConfig();
 
       const result = await replaceProfileRoute.handler({
-        pathParams: { name: "os-beta" },
+        pathParams: { name: "balanced" },
         body: { status: "active" },
       });
 
@@ -1145,7 +1139,7 @@ describe("PUT /v1/config/llm/profiles/:name", () => {
         loadRawConfig().llm as {
           profiles: Record<string, Record<string, unknown>>;
         }
-      ).profiles["os-beta"]!;
+      ).profiles["balanced"]!;
 
       expect(savedProfile.status).toBe("active");
       // Seed fields preserved.
@@ -1566,11 +1560,11 @@ describe("config GET serves profiles verbatim", () => {
             label: "Balanced",
             status: "active",
           },
-          "os-beta": {
+          "jev-managed": {
             source: "cloud",
             provider: "together",
             model: "zai-org/GLM-5.2",
-            label: "OS Beta",
+            label: "Jev",
             status: "active",
           },
           "cost-optimized": {

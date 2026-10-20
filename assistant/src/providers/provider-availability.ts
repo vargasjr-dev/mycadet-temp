@@ -12,7 +12,6 @@ import {
 } from "../security/secure-keys.js";
 import { managedFallbackEnabledFor } from "./cloud-proxy/context.js";
 import { PROVIDER_CATALOG } from "./model-catalog.js";
-import { getVisibleProviderCatalog } from "./provider-catalog-visibility.js";
 import { API_KEY_PROVIDERS } from "./provider-secret-catalog.js";
 
 /**
@@ -33,24 +32,16 @@ export async function isProviderAvailable(provider: string): Promise<boolean> {
 /**
  * Build the list of providers that are usable — via a user-provided key
  * (secure storage or env var) or via the cloud proxy fallback.
- * Feature-flagged LLM providers that are currently disabled are excluded.
  * Ollama is always included because it does not require an API key.
  */
 export async function getConfiguredProviders(): Promise<string[]> {
-  // Build the set of LLM providers hidden by feature flags so we can
-  // exclude them while leaving non-LLM providers (search, STT, TTS)
-  // in API_KEY_PROVIDERS unchanged.
-  const allLlmIds = new Set(PROVIDER_CATALOG.map((p) => p.id));
-  const visibleLlmIds = new Set(
-    getVisibleProviderCatalog(getConfig()).map((p) => p.id),
-  );
-  const hiddenLlmIds = new Set(
-    [...allLlmIds].filter((id) => !visibleLlmIds.has(id)),
-  );
+  // Only LLM providers are configurable here; non-LLM providers (search,
+  // STT, TTS) in API_KEY_PROVIDERS stay out of the returned list.
+  const llmIds = new Set(PROVIDER_CATALOG.map((p) => p.id));
 
   const configured: string[] = [];
   for (const p of API_KEY_PROVIDERS) {
-    if (hiddenLlmIds.has(p)) {
+    if (!llmIds.has(p)) {
       continue;
     }
     if (await isProviderAvailable(p)) {

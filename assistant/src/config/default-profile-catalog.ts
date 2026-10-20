@@ -18,9 +18,7 @@ import {
   isCloudOnlyProfileKey,
   isDefaultProfileKey,
   isDefaultProfileProvider,
-  isFlagGatedProfileKey,
   JEV_MANAGED_PROFILE_KEY,
-  OS_BETA_PROFILE_KEY,
 } from "./default-profile-names.js";
 import { resolveDefaultConnectionName } from "./default-provider-resolution.js";
 import { profileSupportsTextGeneration } from "./profile-text-generation.js";
@@ -36,8 +34,7 @@ import {
 
 /**
  * Code-defined catalog of the default inference profiles (`balanced`,
- * `quality-optimized`, `cost-optimized`, `latency-optimized`, plus the
- * flag-gated `os-beta`).
+ * `quality-optimized`, `cost-optimized`, `latency-optimized`).
  *
  * The catalog is the single source of truth for default profile CONTENT,
  * structured as an intent × provider matrix: each default profile is an
@@ -451,24 +448,6 @@ export const USER_PROFILE_TEMPLATES: Record<string, DefaultProfileTemplate> =
   );
 
 /**
- * Flag-gated cloud profile. NOT in `MANAGED_PROFILE_TEMPLATES`, so the
- * unconditional boot seed never creates it. Reconciled in/out by
- * the flag-gated profile reconcile based on the `os-beta` feature flag.
- * Balanced defaults, with lower reasoning effort while the profile is in beta.
- */
-export const OS_BETA_PROFILE_TEMPLATE: DefaultProfileTemplate = {
-  model: "MiniMaxAI/MiniMax-M3",
-  provider: "cadet",
-  label: "OS Beta",
-  description: "Good balance of quality, cost, and speed, in beta",
-  maxTokens: 32000,
-  effort: "low",
-  thinking: { enabled: true, streamThinking: true },
-  contextWindow: { maxInputTokens: DEFAULT_CONTEXT_WINDOW_MAX_INPUT_TOKENS },
-  topP: 0.95,
-};
-
-/**
  * Profiles whose body is code-owned outright: no workspace overlay, and no
  * user-owned shadow. The shadow rule below lets a user replace a default they
  * can select, but `latency-optimized` serves `voiceFrontDoor` and
@@ -504,7 +483,6 @@ export const MANAGED_PROFILE_NAMES = new Set<string>([
   ...DEFAULT_PROFILE_KEYS,
   ...BACKUP_PROFILE_KEYS,
   JEV_MANAGED_PROFILE_KEY,
-  OS_BETA_PROFILE_KEY,
 ]);
 
 /**
@@ -633,10 +611,6 @@ function buildDefaultProfileEntries(): Record<string, ProfileEntry> {
     JEV_MANAGED_PROFILE_TEMPLATE,
     JEV_MANAGED_PROFILE_TEMPLATE.provider,
   );
-  entries[OS_BETA_PROFILE_KEY] = materializeProfile(
-    OS_BETA_PROFILE_TEMPLATE,
-    OS_BETA_PROFILE_TEMPLATE.provider,
-  );
   return entries;
 }
 
@@ -679,8 +653,7 @@ const WORKSPACE_OWNED_DEFAULT_FIELDS = ["label", "status", "topP"] as const;
  *   default body.
  * - A default absent from the workspace resolves to the catalog body as-is —
  *   the workspace holds at most a thin stub for a default, never its
- *   content. The flag-gated `os-beta` is the exception: it resolves only
- *   while the flag reconcile has materialized a workspace entry for it.
+ *   content.
  */
 export function getEffectiveProfile(
   workspaceProfiles: Record<string, ProfileEntry> | undefined,
@@ -724,7 +697,7 @@ function resolveAgainstBody(
     return { ...body };
   }
   if (workspace == null) {
-    return isFlagGatedProfileKey(name) ? undefined : { ...body };
+    return { ...body };
   }
   if (workspace.provider !== "cadet") {
     return workspace;

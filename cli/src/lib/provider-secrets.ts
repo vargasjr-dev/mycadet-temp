@@ -263,11 +263,6 @@ export function inferProviderFromModel(model: string): string | undefined {
   if (model === "jev-latest" || model.startsWith("jev-")) {
     return "typesafe";
   }
-  if (model === "qwen/qwen3-8b") {
-    // The only qwen/* ID the Cadet hosted provider carries; the rest are
-    // OpenRouter's.
-    return "cadet";
-  }
   if (model.includes("/")) {
     return "openrouter";
   }

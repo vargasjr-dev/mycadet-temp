@@ -12,7 +12,6 @@ import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-suppo
 import { isBrowserNotificationHost } from "@/runtime/notifications";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
 import { useHasCloudSession } from "@/stores/auth-store";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTitleBarStore } from "@/stores/title-bar-store";
 import { routes } from "@/utils/routes";
@@ -27,8 +26,6 @@ import { SidebarTree, type SidebarItem } from "@/components/sidebar-tree";
  * navigation) and an `<Outlet />` for the active settings tab page.
  */
 export function SettingsLayout() {
-  const cadetHostedInference =
-    useAssistantFeatureFlagStore.use.cadetHostedInference();
   // Settings brings its own full-screen chrome; the Windows in-title-bar
   // menu bar yields while it's up (inert off the Windows shell, where the
   // menu bar doesn't render anyway).
@@ -93,8 +90,6 @@ export function SettingsLayout() {
           return t("sidebar.community", "Community");
         case "debug":
           return t("sidebar.debug", "Debug");
-        case "personality":
-          return t("sidebar.personality", "Personality");
         default:
           return defaultLabel;
       }
@@ -117,9 +112,6 @@ export function SettingsLayout() {
         if (item.id === "credentials" && !supportsCredentials) {
           return false;
         }
-        if (item.id === "personality") {
-          return false;
-        }
         return true;
       }).map((item) => ({
         ...item,
@@ -136,16 +128,6 @@ export function SettingsLayout() {
 
   const bottomItems = useMemo<SidebarItem[]>(() => {
     const items: SidebarItem[] = [];
-    if (cadetHostedInference) {
-      items.push(
-        ...SETTINGS_SIDEBAR.filter((item) => item.id === "personality").map(
-          (item) => ({
-            ...item,
-            label: getSidebarLabel(item.id, item.label),
-          }),
-        ),
-      );
-    }
     // The auth action is pinned to the very bottom of the nav.
     items.push(
       hasCloudSession
@@ -164,7 +146,6 @@ export function SettingsLayout() {
     );
     return items;
   }, [
-    cadetHostedInference,
     hasCloudSession,
     navigate,
     login,

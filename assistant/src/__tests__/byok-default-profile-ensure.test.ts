@@ -861,7 +861,6 @@ describe("ensureByokDefaultProfiles", () => {
         advisorProfile: "quality-optimized",
         profileOrder: [
           "balanced",
-          "os-beta",
           "quality-optimized",
           "cost-optimized",
           "custom-balanced",
@@ -902,17 +901,11 @@ describe("ensureByokDefaultProfiles", () => {
             "anthropic",
           ),
           "custom-cost-optimized": hatchBody("cost-optimized", "anthropic"),
-          "os-beta": {
-            provider: "cadet",
-            status: "active",
-            label: "OS Beta (Managed)",
-          },
         },
       },
     });
     // The live workspace booted with completion baking the copies first.
     ensureCompleteCustomProfiles(workspaceDir);
-    const osBetaBefore = { ...profiles()["os-beta"] };
 
     ensureByokDefaultProfiles(workspaceDir);
 
@@ -926,12 +919,10 @@ describe("ensureByokDefaultProfiles", () => {
     ]) {
       expect(profiles()[name]).toBeUndefined();
     }
-    expect(profiles()["os-beta"]).toEqual(osBetaBefore);
     expect(llm().activeProfile).toBe("balanced");
     expect(llm().advisorProfile).toBe("quality-optimized");
     expect(llm().profileOrder).toEqual([
       "balanced",
-      "os-beta",
       "quality-optimized",
       "cost-optimized",
     ]);
