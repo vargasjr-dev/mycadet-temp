@@ -1681,7 +1681,6 @@ export async function startLocalDaemon(
         "CADET_DEBUG",
         "CADET_DEV",
         "CADET_DESKTOP_APP",
-        "CADET_DISABLE_CLOUD",
         "CADET_MIGRATION_EXPORT_ALLOWED_HOSTS",
         "CADET_MIGRATION_IMPORT_ALLOWED_HOSTS",
         "CADET_WORKSPACE_DIR",

@@ -37,7 +37,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-
 type StoredCredential = { value: string | undefined; unreachable: boolean };
 let storedCredentials: Record<string, StoredCredential> = {};
 const actualCredentialReader = await import("../credential-reader.js");
@@ -93,7 +92,6 @@ beforeEach(() => {
   fetchMock = mock(async () => new Response(null, { status: 204 }));
   ipcCalls = [];
   withCloudCredentials();
-  delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
   delete process.env.ASSISTANT_API_KEY;
 });
@@ -189,18 +187,6 @@ describe("registration is skipped", () => {
     expect(activeInviteRows()).toHaveLength(1);
   });
 
-  test("when platform features are disabled", async () => {
-    process.env.CADET_DISABLE_CLOUD = "true";
-
-    await createInviteNative({
-      contactId: CONTACT_ID,
-      sourceChannel: "cadet-shared",
-    });
-
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(activeInviteRows()).toHaveLength(1);
-  });
-
   test("when no platform credentials are configured", async () => {
     storedCredentials = {};
 
@@ -212,7 +198,6 @@ describe("registration is skipped", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(activeInviteRows()).toHaveLength(1);
   });
-
 });
 
 describe("a failed registration leaves no invite", () => {

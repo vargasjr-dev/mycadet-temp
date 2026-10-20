@@ -967,7 +967,6 @@ function makeCtx(
     emitActivityState: () => {},
     getQueueDepth: () => 0,
     hasQueuedMessages: () => false,
-    canHandoffAtCheckpoint: () => false,
     drainQueue: async (_reason?: QueueDrainReason) => {},
     // Forwards to drainQueue so tests that spy the drain observe the agent
     // loop's post-turn kick through the guarded entry point.
@@ -1557,31 +1556,6 @@ describe("session-agent-loop", () => {
       });
       expect(sessions.releaseTurn).toHaveBeenCalledWith("test-req");
       expect(sessions.beginDraining).not.toHaveBeenCalled();
-      expect(sessions.finalizeTurn).not.toHaveBeenCalled();
-    });
-
-    test("transfers ownership to the queued turn at a checkpoint", async () => {
-      const sessions = makeModeSessionDouble();
-      const ctx = makeCtx({
-        modeSessions: sessions.coordinator,
-        providerResponses: [toolUseResponse("tu-1", "file_read", {})],
-        loopTools: [
-          {
-            name: "file_read",
-            description: "Read a file",
-            input_schema: { type: "object", properties: {} },
-          },
-        ],
-        toolExecutor: async () => ({ content: "file content", isError: false }),
-        canHandoffAtCheckpoint: () => true,
-        queue: {
-          snapshot: () => [{ requestId: "msg-2" }],
-        } as unknown as Conversation["queue"],
-      });
-
-      await runAgentLoopImpl(ctx, "hello", "msg-1", () => {});
-
-      expect(sessions.transferTurn).toHaveBeenCalledWith("test-req", "msg-2");
       expect(sessions.finalizeTurn).not.toHaveBeenCalled();
     });
   });
@@ -2832,111 +2806,6 @@ describe("session-agent-loop", () => {
       ) as unknown[] | undefined;
       expect(finalizeCall).toBeDefined();
       expect(finalizeCall?.[2]).toEqual({ model: "gpt-4.1-2026-03-01" });
-    });
-  });
-
-  describe("checkpoint handoff (infinite loop prevention)", () => {
-    test("yields at checkpoint when canHandoffAtCheckpoint returns true", async () => {
-      const events: AssistantEvent[] = [];
-
-      // A tool turn drives the loop to its first mid-loop checkpoint, where the
-      // orchestrator yields for a queued handoff.
-      const ctx = makeCtx({
-        providerResponses: [toolUseResponse("tu-1", "file_read", {})],
-        loopTools: [
-          {
-            name: "file_read",
-            description: "Read a file",
-            input_schema: { type: "object", properties: {} },
-          },
-        ],
-        toolExecutor: async () => ({ content: "file content", isError: false }),
-        canHandoffAtCheckpoint: () => true,
-      });
-
-      await runAgentLoopImpl(ctx, "hello", "msg-1", (msg) => events.push(msg));
-
-      const handoff = events.find((e) => e.type === "generation_handoff");
-      expect(handoff).toBeDefined();
-      expect(setAgentLoopExitReasonOnLatestLogMock).toHaveBeenCalledWith(
-        "test-conv",
-        "checkpoint_handoff",
-      );
-    });
-
-    test("carries automatic screenshot provenance on generation handoff", async () => {
-      resolveAssistantAttachmentsMock.mockImplementation(async () => ({
-        assistantAttachments: [],
-        emittedAttachments: [
-          {
-            id: "screenshot-1",
-            filename: "computer-use-click.png",
-            mimeType: "image/png",
-            data: "c2NyZWVuc2hvdA==",
-            sourceType: "tool_block" as const,
-            computerUseScreenshot: true,
-          },
-        ],
-        directiveWarnings: [],
-        persistedFiles: [],
-        linkedAttachmentIds: ["screenshot-1"],
-        computerUseScreenshotAttachmentIds: ["screenshot-1"],
-      }));
-      const events: AssistantEvent[] = [];
-      const ctx = makeCtx({
-        providerResponses: [toolUseResponse("tu-1", "file_read", {})],
-        loopTools: [
-          {
-            name: "file_read",
-            description: "Read a file",
-            input_schema: { type: "object", properties: {} },
-          },
-        ],
-        toolExecutor: async () => ({ content: "content", isError: false }),
-        canHandoffAtCheckpoint: () => true,
-      });
-
-      await runAgentLoopImpl(ctx, "hello", "msg-1", (event) =>
-        events.push(event),
-      );
-
-      const handoff = events.find(
-        (event) => event.type === "generation_handoff",
-      );
-      expect(handoff?.attachments?.[0]?.computerUseScreenshot).toBe(true);
-    });
-
-    test("continues when canHandoffAtCheckpoint returns false", async () => {
-      const events: AssistantEvent[] = [];
-
-      // The tool turn reaches a checkpoint, but with handoff disabled the loop
-      // continues to the next turn and completes normally.
-      const ctx = makeCtx({
-        providerResponses: [
-          toolUseResponse("tu-1", "file_read", {}),
-          textResponse("done"),
-        ],
-        loopTools: [
-          {
-            name: "file_read",
-            description: "Read a file",
-            input_schema: { type: "object", properties: {} },
-          },
-        ],
-        toolExecutor: async () => ({ content: "content", isError: false }),
-        canHandoffAtCheckpoint: () => false,
-      });
-
-      await runAgentLoopImpl(ctx, "hello", "msg-1", (msg) => events.push(msg));
-
-      const handoff = events.find((e) => e.type === "generation_handoff");
-      expect(handoff).toBeUndefined();
-      expect(setAgentLoopExitReasonOnLatestLogMock).not.toHaveBeenCalledWith(
-        "test-conv",
-        "checkpoint_handoff",
-      );
-      const complete = events.find((e) => e.type === "message_complete");
-      expect(complete).toBeDefined();
     });
   });
 

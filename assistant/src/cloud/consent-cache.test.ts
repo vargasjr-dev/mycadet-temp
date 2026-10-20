@@ -75,17 +75,6 @@ describe("consent-cache", () => {
     expect(getCachedShareDiagnostics()).toBe(false);
   });
 
-  test("cloud features disabled → diagnostics confirmed false, not unknown", async () => {
-    __setCachedShareDiagnosticsForTest("unknown");
-    process.env.CADET_DISABLE_CLOUD = "1";
-    try {
-      await refreshConsentCache();
-    } finally {
-      delete process.env.CADET_DISABLE_CLOUD;
-    }
-    expect(getCachedShareDiagnostics()).toBe(false);
-  });
-
   test("becomes true after a successful fetch reporting shareDiagnostics: true", async () => {
     mockClient = makeClient(makeConsent({ shareDiagnostics: true }));
     await refreshConsentCache();

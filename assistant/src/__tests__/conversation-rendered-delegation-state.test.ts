@@ -185,7 +185,6 @@ function lastBuildDelegation(): unknown {
 }
 
 beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
   builtWith = [];
   throwOnBuild = false;
 });

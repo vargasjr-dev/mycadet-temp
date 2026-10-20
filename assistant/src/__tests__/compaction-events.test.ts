@@ -12,7 +12,7 @@
  * tokenizer's post-compaction count so the web indicator matches the numbers
  * on the `/compact` result card.
  */
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
@@ -545,10 +545,6 @@ describe("maybeCompact gate sizing", () => {
 // ---------------------------------------------------------------------------
 
 import { computeSummaryQualitySignals } from "../daemon/conversation-agent-loop.js";
-
-beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-});
 
 describe("computeSummaryQualitySignals", () => {
   test("counts `## ` headers at the start of lines", () => {

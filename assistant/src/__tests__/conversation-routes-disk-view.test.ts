@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 
 import { createAssistantMessage } from "../agent/message-types.js";
 import type { Conversation } from "../daemon/conversation.js";
@@ -829,8 +829,6 @@ describe("conversationKey send path disk-view regression", () => {
 // when the request arrived, and a setup keyed on "was idle on arrival" would
 // hand a host-capable macOS client a turn with no `computer-use` tool.
 describe("host-proxy preactivation across an interrupt", () => {
-  afterEach(() => {});
-
   /** A conversation mid-turn whose abort releases the lock, as a loop does. */
   function busyConversation(conversationId: string): Conversation {
     const conv = getOrCreateFakeConversation(conversationId) as Conversation & {

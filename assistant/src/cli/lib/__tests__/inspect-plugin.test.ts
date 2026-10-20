@@ -170,7 +170,6 @@ let workspace: string;
 beforeEach(() => {
   workspace = mkdtempSync(join(tmpdir(), "inspect-plugin-"));
   invalidatePluginCatalogCache();
-  delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
 });
 

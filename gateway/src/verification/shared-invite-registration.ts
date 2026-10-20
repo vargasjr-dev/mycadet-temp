@@ -9,7 +9,6 @@ import { hashInviteToken } from "@mycadet/gateway-client";
 import { credentialKey } from "../credential-key.js";
 import { readCredentialResult } from "../credential-reader.js";
 import { fetchImpl } from "../fetch.js";
-import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { getLogger } from "../logger.js";
 
 const log = getLogger("shared-invite-registration");
@@ -55,10 +54,7 @@ export async function registerSharedInvite(params: {
   rawToken: string;
   expiresAt: number;
 }): Promise<SharedInviteRegistrationResult> {
-  if (
-    params.sourceChannel !== SHARED_INVITE_CHANNEL ||
-    !areCloudFeaturesEnabled()
-  ) {
+  if (params.sourceChannel !== SHARED_INVITE_CHANNEL) {
     return { status: "skipped" };
   }
 

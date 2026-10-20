@@ -56,7 +56,6 @@ const localSelectedRef = {
   value: null as { assistantId: string; name?: string } | null,
 };
 mock.module("@/lib/local-mode", () => ({
-  isCloudDisabled: () => undefined,
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   getSelectedAssistant: () => localSelectedRef.value,

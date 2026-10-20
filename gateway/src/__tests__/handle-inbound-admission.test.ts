@@ -55,9 +55,6 @@ mock.module("../verification/text-verification.js", () => ({
   tryTextVerificationIntercept: async () => ({ intercepted: false }),
 }));
 
-// The feature-flag resolver stays mocked off: nothing in this graph should
-// depend on a registry flag resolving true in tests.
-
 await import("./test-preload.js");
 const { initGatewayDb, resetGatewayDb } = await import("../db/connection.js");
 const { AdmissionPolicyStore } =

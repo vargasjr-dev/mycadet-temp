@@ -13,7 +13,6 @@ import {
   isLocalAssistant,
   isLocalClient,
   isLocalGatewayAssistant,
-  isCloudDisabled,
   primeLocalGatewayConnectionWithRepair,
   type LockfileAssistant,
 } from "@/lib/local-mode";
@@ -118,7 +117,7 @@ export async function resolveLocalAssistantCloudIdentity(
   assistantId: string,
   options: ResolveLocalAssistantCloudIdentityOptions = {},
 ): Promise<string> {
-  if (!isLocalClient() || isCloudDisabled() || isUuid(assistantId)) {
+  if (!isLocalClient() || isUuid(assistantId)) {
     return assistantId;
   }
 
@@ -221,7 +220,7 @@ function recoverableLocalAssistant(
   assistantId?: string,
 ): LockfileAssistant | null {
   const target = assistantId ?? getSelectedAssistant()?.assistantId;
-  if (!target || !isLocalClient() || isCloudDisabled() || isUuid(target)) {
+  if (!target || !isLocalClient() || isUuid(target)) {
     return null;
   }
   return resolveLocalAssistant(target, isLocalGatewayAssistant);
@@ -337,7 +336,7 @@ export function bootstrapLocalAssistantCloudIdentity(
   assistantId?: string,
   options: BootstrapLocalAssistantCloudIdentityOptions = {},
 ): void {
-  if (!isLocalClient() || isCloudDisabled()) {
+  if (!isLocalClient()) {
     return;
   }
 

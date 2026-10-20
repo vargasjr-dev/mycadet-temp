@@ -273,7 +273,6 @@ function runCommand(args: string[]): Promise<CliCommandRunResult> {
   return runCliCommand(registerPluginsCommand, args);
 }
 
-const savedDisablePlatform = process.env.CADET_DISABLE_CLOUD;
 const savedIsPlatform = process.env.IS_CLOUD;
 
 beforeEach(() => {
@@ -293,7 +292,6 @@ beforeEach(() => {
   installTarget = null;
   // Platform features on by default, so a plain name install takes the
   // platform-tarball branch.
-  delete process.env.CADET_DISABLE_CLOUD;
   delete process.env.IS_CLOUD;
 });
 
@@ -302,11 +300,6 @@ afterEach(() => {
     rmSync(dir, { recursive: true, force: true });
   }
   installTargetDirs.length = 0;
-  if (savedDisablePlatform === undefined) {
-    delete process.env.CADET_DISABLE_CLOUD;
-  } else {
-    process.env.CADET_DISABLE_CLOUD = savedDisablePlatform;
-  }
   if (savedIsPlatform === undefined) {
     delete process.env.IS_CLOUD;
   } else {

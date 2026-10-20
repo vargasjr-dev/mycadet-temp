@@ -16,7 +16,7 @@
  * - ToolExecutor overhead < 20ms regardless of tool execution time
  */
 
-import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, mock, test } from "bun:test";
 
 import { installThresholdReaderMock } from "./gateway-threshold-reader-mock.js";
 
@@ -98,10 +98,6 @@ import { RiskLevel } from "../permissions/types.js";
 import { scanText } from "../security/secret-scanner.js";
 import { ToolExecutor } from "../tools/executor.js";
 import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
-
-beforeEach(() => {
-  // Real flag resolution replaces the former blanket module mock.
-});
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -162,16 +162,6 @@ export function isLocalClient(): boolean {
   return readInjectedConfig()?.remote !== "cloud";
 }
 
-export function isCloudDisabled(): boolean {
-  const raw = import.meta.env.VITE_CADET_DISABLE_CLOUD;
-  if (raw) {
-    const v = raw.toLowerCase();
-    return v === "true" || v === "1";
-  }
-
-  return false;
-}
-
 export async function loadLockfile(): Promise<Lockfile> {
   if (isServedGatewayRuntime()) {
     const lockfile = getRemoteGatewayLockfile();

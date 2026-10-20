@@ -23,7 +23,6 @@ let activeAssistant = {
   resources: { gatewayPort: 20101 },
 };
 let isLocalClientValue = true;
-let isCloudDisabledValue = false;
 let selfHostedIngressUrl: string | null = GATEWAY_URL;
 let selfHostedActorToken: string | null = "actor-token";
 let browserDeviceId: string | null = null;
@@ -68,7 +67,6 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => isLocalClientValue,
   isLocalGatewayAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local" || assistant?.cloud === "docker",
-  isCloudDisabled: () => isCloudDisabledValue,
   primeLocalGatewayConnectionWithRepair:
     primeLocalGatewayConnectionWithRepairMock,
 }));
@@ -166,7 +164,6 @@ beforeEach(() => {
     resources: { gatewayPort: 20101 },
   };
   isLocalClientValue = true;
-  isCloudDisabledValue = false;
   selfHostedIngressUrl = GATEWAY_URL;
   selfHostedActorToken = "actor-token";
   browserDeviceId = null;
@@ -285,9 +282,9 @@ describe("resolveLocalAssistantCloudIdentity", () => {
     // a caller that only needs the cloud to know the assistant can go on
     expect(requestNames()).toContain("ensure-registration");
     expect(failure).toBeInstanceOf(CloudIdentityInjectionError);
-    expect(
-      (failure as CloudIdentityInjectionError).cloudAssistantId,
-    ).toBe(PLATFORM_ASSISTANT_ID);
+    expect((failure as CloudIdentityInjectionError).cloudAssistantId).toBe(
+      PLATFORM_ASSISTANT_ID,
+    );
   });
 
   test("returns the stored platform id without registration when the API key is present", async () => {
@@ -400,18 +397,13 @@ describe("resolveLocalAssistantCloudIdentity", () => {
   // The surface that offers the repair reads the same predicate the repair
   // refuses on, so a button is never rendered for a repair that would fail.
   test("the capability predicate agrees with the repair", () => {
-    expect(
-      canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID),
-    ).toBe(true);
+    expect(canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID)).toBe(
+      true,
+    );
     isLocalClientValue = false;
-    expect(
-      canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID),
-    ).toBe(false);
-    isLocalClientValue = true;
-    isCloudDisabledValue = true;
-    expect(
-      canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID),
-    ).toBe(false);
+    expect(canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID)).toBe(
+      false,
+    );
   });
 
   // A local Docker instance is never hatched, woken or retired from here, but
@@ -422,9 +414,9 @@ describe("resolveLocalAssistantCloudIdentity", () => {
     activeAssistant = { ...activeAssistant, cloud: "docker" };
     seedRejectedCredential();
 
-    expect(
-      canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID),
-    ).toBe(true);
+    expect(canRecoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID)).toBe(
+      true,
+    );
     await recoverLocalAssistantCloudCredential(RUNTIME_ASSISTANT_ID);
 
     expect(requestNames()).toContain("reprovision-api-key");
@@ -529,9 +521,9 @@ describe("resolveLocalAssistantCloudIdentity", () => {
     );
 
     expect(failure).toBeInstanceOf(CloudIdentityInjectionError);
-    expect(
-      (failure as CloudIdentityInjectionError).cloudAssistantId,
-    ).toBe(PLATFORM_ASSISTANT_ID);
+    expect((failure as CloudIdentityInjectionError).cloudAssistantId).toBe(
+      PLATFORM_ASSISTANT_ID,
+    );
     expect(requestNames()).toEqual(["status"]);
   });
 
@@ -674,16 +666,6 @@ describe("resolveLocalAssistantCloudIdentity", () => {
     expect(primeLocalGatewayConnectionWithRepairMock).toHaveBeenCalledTimes(1);
     expect(requestNames()).toEqual(["status"]);
   });
-
-  test("skips raw platform calls when platform features are disabled", async () => {
-    isCloudDisabledValue = true;
-
-    const cloudAssistantId =
-      await resolveLocalAssistantCloudIdentity(RUNTIME_ASSISTANT_ID);
-
-    expect(cloudAssistantId).toBe(RUNTIME_ASSISTANT_ID);
-    expect(requestNames()).toEqual([]);
-  });
 });
 
 describe("bootstrapLocalAssistantCloudIdentity", () => {
@@ -712,16 +694,6 @@ describe("bootstrapLocalAssistantCloudIdentity", () => {
     await flushAsyncWork();
 
     expect(requestNames()).toEqual(["status"]);
-  });
-
-  test("does nothing when platform features are disabled", async () => {
-    isCloudDisabledValue = true;
-
-    bootstrapLocalAssistantCloudIdentity(RUNTIME_ASSISTANT_ID);
-    await flushAsyncWork();
-
-    expect(primeLocalGatewayConnectionWithRepairMock).not.toHaveBeenCalled();
-    expect(requestNames()).toEqual([]);
   });
 
   // The assistant has no stored API key (so the bootstrap must register and

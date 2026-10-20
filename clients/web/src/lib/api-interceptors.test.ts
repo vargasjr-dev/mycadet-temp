@@ -29,7 +29,6 @@ import type * as CaptureError from "@/lib/error-reporting/capture-error";
 import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
 const isLocalClientMock = mock(() => false);
-const isCloudDisabledMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
 const servedGatewayRuntimeFromConfig = (): boolean => {
   const remote = readInjectedConfig()?.remote;
@@ -54,7 +53,6 @@ mock.module(
     hasAssistants: () => false,
     isLocalAssistant: () => false,
     isLocalClient: isLocalClientMock,
-    isCloudDisabled: isCloudDisabledMock,
     isCloudAssistant: () => false,
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
@@ -1004,34 +1002,6 @@ describe("api-interceptors / platform features gate", () => {
   afterEach(() => {
     window.__CADET_CONFIG__ = undefined;
     setSelfHostedConnection(null);
-    isCloudDisabledMock.mockImplementation(() => false);
-  });
-
-  test("aborts platform-bound requests when platform is disabled", () => {
-    isCloudDisabledMock.mockImplementation(() => true);
-    const input = new Request("https://platform.test/v1/organizations/");
-    const output = platformFeaturesGate(input);
-    expect(output.signal.aborted).toBe(true);
-    expect((output.signal.reason as DOMException).message).toBe(
-      "Platform features disabled in local mode",
-    );
-  });
-
-  test("passes through gateway-rewritten requests when platform is disabled", () => {
-    isCloudDisabledMock.mockImplementation(() => true);
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    // Simulate a request already rewritten to the gateway by requestInterceptor
-    const input = new Request(`${INGRESS}${DAEMON_SKILLS_PATH}`);
-    const output = platformFeaturesGate(input);
-    expect(output.signal.aborted).toBe(false);
-    expect(output.url).toBe(input.url);
-  });
-
-  test("passes through all requests when platform is not disabled", () => {
-    isCloudDisabledMock.mockImplementation(() => false);
-    const input = new Request("https://platform.test/v1/organizations/");
-    const output = platformFeaturesGate(input);
-    expect(output.signal.aborted).toBe(false);
   });
 
   test("aborts platform requests in remote-gateway mode", () => {
@@ -2676,7 +2646,6 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 describe("daemon request activity", () => {
   beforeEach(() => {
     resetAssistantRequestActivity("123");
-    isCloudDisabledMock.mockReturnValue(false);
     setSelfHostedConnection(null);
     setCsrfCookie("test-csrf-token");
   });
