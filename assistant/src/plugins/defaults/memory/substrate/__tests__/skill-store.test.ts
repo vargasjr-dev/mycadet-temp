@@ -82,7 +82,6 @@ const state: TestState = {
   resolved: [],
   fullCatalog: [],
   fullCatalogThrows: null,
-  flagsEnabled: {},
   embedThrows: null,
   embedReturn: [],
   sparseReturn: { indices: [1], values: [1] },
