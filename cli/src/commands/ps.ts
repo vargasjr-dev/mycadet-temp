@@ -1,7 +1,17 @@
 import { getNginxIngressPort } from "../lib/nginx-ingress.js";
+import { getIngressPaths, readIngressState } from "../lib/nginx-ingress.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { join } from "path";
+
+import {
+  TUNNEL_PROVIDERS,
+  type TunnelProviderName,
+} from "@mycadet/service-contracts/ingress";
+import { DEFAULT_TUNNEL_PROVIDER, toLocalTunnelTarget } from "../lib/tunnel.js";
+import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
+import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
+import { getLogDir } from "../lib/xdg-log.js";
 
 import {
   extractHostFromUrl,
@@ -634,9 +644,11 @@ interface RootManagedRow {
  * Rows for the CLI-managed processes recorded at the lockfile root: the
  * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
  * stale entry reads as not running rather than as a lie. Each row carries the
- * assistant it fronts so the listing can nest it under that assistant. The
- * app entry may carry only its built-sha stamp between runs; such an entry
- * reports no row.
+ * assistant it fronts so the listing can nest it under that assistant, and
+ * the INFO column leads with the URL the process serves — the tunnel's
+ * public URL, the edge's loopback listen URL — the same way assistant rows
+ * lead with their runtime URL. The app entry may carry only its built-sha
+ * stamp between runs; such an entry reports no row.
  */
 async function getRootManagedRows(): Promise<RootManagedRow[]> {
   const { tunnel, app } = readRootProcesses();
@@ -644,29 +656,137 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
 
   if (tunnel) {
     const alive = isLocalProcessAlive(tunnel.pid);
+    const info = [tunnel.publicUrl, `PID ${tunnel.pid}`]
+      .filter(Boolean)
+      .join(" | ");
     rows.push({
       assistantId: tunnel.assistantId,
       row: {
         name: tunnel.provider ?? "unknown provider",
         type: TUNNEL_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
-        info: alive ? `PID ${tunnel.pid}` : `PID ${tunnel.pid} (exited)`,
+        info: alive ? info : `${info} (exited)`,
       },
     });
   }
   if (app?.pid !== undefined) {
     const alive = isLocalProcessAlive(app.pid);
+    const listenUrl = `http://127.0.0.1:${app.port ?? getNginxIngressPort()}`;
+    const info = [listenUrl, `PID ${app.pid}`].join(" | ");
     rows.push({
       assistantId: app.assistantId,
       row: {
         name: "nginx",
         type: APP_TYPE,
         status: withStatusEmoji(alive ? "running" : "not running"),
-        info: `port ${app.port ?? getNginxIngressPort()}, PID ${app.pid}${alive ? "" : " (exited)"}`,
+        info: alive ? info : `${info} (exited)`,
       },
     });
   }
   return rows;
+}
+
+// ── Root-managed process detail views ───────────────────────────
+
+function detailLine(label: string, value: string | null | undefined): void {
+  console.log(`  ${label.padEnd(17)}${value ?? "—"}`);
+}
+
+/** The workspace the edge fronting `assistantId` lives in, or the default. */
+function edgeWorkspaceFor(assistantId: string | undefined): string {
+  if (assistantId) {
+    const result = lookupAssistantByIdentifier(assistantId);
+    if (result.status === "found") {
+      const target = toLocalTunnelTarget(result.entry);
+      if (target) return target.workspaceDir;
+    }
+  }
+  return getDefaultWorkspaceDir();
+}
+
+/**
+ * Full info for one CLI-managed process: `cadet ps nginx` (the app edge) and
+ * `cadet ps ngrok` (the tunnel agent — any provider name, or "tunnel"). These
+ * names resolve before assistant lookup: a built-in process name wins.
+ * Returns false when the identifier names neither, so the caller falls
+ * through to the assistant lookup.
+ */
+async function printRootProcessDetail(identifier: string): Promise<boolean> {
+  const name = identifier.toLowerCase();
+  const { tunnel, app } = readRootProcesses();
+
+  if (name === "nginx" || name === "app") {
+    console.log("App edge (nginx):");
+    if (!app?.pid) {
+      console.log(
+        `  not recorded — start one with \`${cliCommand()} app start\``,
+      );
+      return true;
+    }
+    const alive = isLocalProcessAlive(app.pid);
+    const workspaceDir = edgeWorkspaceFor(app.assistantId);
+    const state = readIngressState(workspaceDir);
+    detailLine("Status:", alive ? "running" : "not running");
+    detailLine("PID:", String(app.pid));
+    detailLine(
+      "Listen:",
+      `http://127.0.0.1:${app.port ?? state?.listenPort ?? getNginxIngressPort()}`,
+    );
+    detailLine(
+      "Gateway:",
+      state?.gatewayPort !== undefined
+        ? `127.0.0.1:${state.gatewayPort}`
+        : null,
+    );
+    detailLine("Assistant:", assistantLabelFor(app.assistantId));
+    detailLine("Started:", app.startedAt);
+    detailLine("Log:", getIngressPaths(workspaceDir).logPath);
+    return true;
+  }
+
+  const provider: string | null = tunnel?.provider ?? null;
+  if (
+    name === "tunnel" ||
+    TUNNEL_PROVIDERS.includes(name as TunnelProviderName)
+  ) {
+    console.log(
+      name === "tunnel" ? "Tunnel agent:" : `Tunnel agent (${name}):`,
+    );
+    if (!tunnel) {
+      console.log(
+        `  not recorded — start one with \`${cliCommand()} tunnel start\``,
+      );
+      return true;
+    }
+    if (name !== "tunnel" && (provider ?? DEFAULT_TUNNEL_PROVIDER) !== name) {
+      console.log(
+        `  no ${name} tunnel is recorded — the recorded tunnel's provider is ${provider ?? "unknown"}.`,
+      );
+      return true;
+    }
+    const alive = isLocalProcessAlive(tunnel.pid);
+    detailLine("Status:", alive ? "running" : "not running");
+    detailLine("PID:", String(tunnel.pid));
+    detailLine("Provider:", provider ?? DEFAULT_TUNNEL_PROVIDER);
+    detailLine("URL:", tunnel.publicUrl);
+    detailLine("Assistant:", assistantLabelFor(tunnel.assistantId));
+    if ((provider ?? DEFAULT_TUNNEL_PROVIDER) === "ngrok") {
+      detailLine("Reserved domain:", loadNgrokDomain());
+    }
+    detailLine("Started:", tunnel.startedAt);
+    detailLine("Log:", join(getLogDir(), "tunnel.log"));
+    return true;
+  }
+
+  return false;
+}
+
+function assistantLabelFor(assistantId: string | undefined): string | null {
+  if (!assistantId) return null;
+  const result = lookupAssistantByIdentifier(assistantId);
+  return result.status === "found"
+    ? formatAssistantReference(result.entry)
+    : assistantId;
 }
 
 /**
@@ -840,7 +960,9 @@ export const ps = Object.assign(
       console.log("");
       console.log("Arguments:");
       console.log(
-        "  <name-or-id> Show processes for the assistant display name or ID",
+        "  <name-or-id> Show processes for the assistant display name or ID.",
+        "               Built-in names show the CLI-managed processes instead:",
+        "               `nginx` (the app edge), `ngrok`/`tunnel` (the agent)",
       );
       console.log("");
       console.log("Options:");
@@ -857,6 +979,11 @@ export const ps = Object.assign(
       await listAllAssistants(verbose);
       return;
     }
+
+    // Built-in process names (`nginx`, `ngrok`, any provider, `tunnel`)
+    // detail the CLI-managed processes before assistant lookup — they can
+    // never collide with an assistant name worth shadowing.
+    if (await printRootProcessDetail(assistantIdentifier)) return;
 
     const result = lookupAssistantByIdentifier(assistantIdentifier);
     if (result.status !== "found") {

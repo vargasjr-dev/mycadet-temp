@@ -28,6 +28,7 @@ import {
 } from "../ingress-config.js";
 import { getConfigDir } from "../environments/paths.js";
 import { getCurrentEnvironment } from "../environments/resolve.js";
+import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import { z } from "zod";
@@ -311,7 +312,7 @@ function findAdoptableTunnel(
 
 /** Recovery copy for a saved domain whose reservation may have lapsed. */
 function savedDomainRecoveryHint(domain: string): string {
-  return `The saved ngrok domain '${domain}' (${ngrokConfigPath()}) may no longer be reserved. Run \`cadet tunnel --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
+  return `The saved ngrok domain '${domain}' (${ngrokConfigPath()}) may no longer be reserved. Run \`${cliCommand()} tunnel start --provider ngrok --clear-domain\` to drop it and tunnel without one.`;
 }
 
 const NGROK_TUNNEL_NAME = "cadet";
@@ -919,7 +920,7 @@ export async function maybeStartNgrokTunnel(
     // reserved-domain intent. Leave the tunnel running but refuse to bless
     // it in config.
     console.warn(
-      `   ⚠ Existing ngrok tunnel ${adoptable.conflict} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`cadet tunnel --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
+      `   ⚠ Existing ngrok tunnel ${adoptable.conflict} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`${cliCommand()} tunnel start --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
     );
     return null;
   }
@@ -982,7 +983,7 @@ export async function maybeStartNgrokTunnel(
     return ngrokProcess;
   } catch {
     console.warn(
-      `   ⚠ Could not start ngrok tunnel. Webhook integrations may not work until you run \`cadet tunnel --provider ngrok\`.`,
+      `   ⚠ Could not start ngrok tunnel. Webhook integrations may not work until you run \`${cliCommand()} tunnel start --provider ngrok\`.`,
     );
     if (savedDomain) {
       console.warn(`   ⚠ ${savedDomainRecoveryHint(savedDomain)}`);

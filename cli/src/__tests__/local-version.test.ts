@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { execSync } from "node:child_process";
 
 import { displayVersion } from "../lib/local-version.js";
 import { environmentFromVersion } from "../lib/environments/resolve.js";
@@ -41,5 +42,20 @@ describe("displayVersion", () => {
     expect(
       displayVersion("0.13.0", new Date(), "/opt/src/cli/src/index.ts"),
     ).toBe("0.13.0");
+  });
+
+  test("the stamp's timestamp is the HEAD commit's, so a checkout stamps identically in every process", () => {
+    // The stamp rides the edge's served-config fingerprint: a wall-clock
+    // stamp would drift every CLI process and restart the edge on every
+    // invocation. The commit time moves exactly when the sha does.
+    const commitIso = execSync("git show -s --format=%cI HEAD")
+      .toString()
+      .trim();
+    const stamp = new Date(commitIso)
+      .toISOString()
+      .replace(/[-:T]/g, "")
+      .slice(0, 12);
+    const sha = execSync("git rev-parse --short=7 HEAD").toString().trim();
+    expect(displayVersion("0.13.0")).toBe(`0.13.0-local.${stamp}.${sha}`);
   });
 });

@@ -1,13 +1,18 @@
 import { z } from "zod";
+import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
+  formatAssistantReference,
   loadAllAssistants,
   loadAllAssistantsAcrossEnvs,
   readRootProcesses,
+  resolveTargetAssistant,
   type AssistantEntry,
   type TunnelProcessRecord,
 } from "./assistant-config.js";
+import { isCloudHome } from "./cloud-values.js";
+import { cliCommand } from "./cli-name.js";
 
 import {
   getDefaultWorkspaceDir,
@@ -17,6 +22,7 @@ import {
 } from "./ingress-config.js";
 import {
   ensureTunnelEdge,
+  getNginxVersion,
   isIngressRunning,
   readIngressState,
   type TunnelEdge,
@@ -37,8 +43,7 @@ import {
   saveNgrokDomain,
   stopNgrokHolderPid,
 } from "./tunnels/ngrok.js";
-import { readLineText } from "./ensure-binary.js";
-import { shellArg } from "./shell-arg.js";
+import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
   selectRestartTunnelRecord,
@@ -189,19 +194,187 @@ const providers: Record<TunnelProviderName, TunnelProvider> = {
 const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 
 /**
- * Run a tunnel provider by name — the dispatch `cadet tunnel` uses, so the
- * command layer never names a provider implementation directly. Notifies the
- * gateway of the resulting public URL identically for every provider, then
- * holds until the run ends.
+ * A tunnelable assistant plus the gateway port and workspace the edge fronts.
+ */
+export interface LocalTunnelTarget {
+  entry: AssistantEntry;
+  gatewayPort: number;
+  workspaceDir: string;
+}
+
+/**
+ * Map an entry to its local tunnel target, or null when it has no locally
+ * reachable gateway (e.g. cloud-hosted). Entries with `resources` carry
+ * their own gateway port and instance workspace. Local container entries
+ * (docker, apple-container) run locally without host resources: their gateway
+ * port comes from localUrl/runtimeUrl and their ingress state lives in the
+ * default workspace.
+ */
+export function toLocalTunnelTarget(
+  entry: AssistantEntry,
+): LocalTunnelTarget | null {
+  if (entry.resources) {
+    return {
+      entry,
+      gatewayPort: entry.resources.gatewayPort,
+      workspaceDir: join(entry.resources.instanceDir, "workspace"),
+    };
+  }
+  if (isLocalContainerEntry(entry)) {
+    const gatewayPort = parseGatewayPortFromEntryUrls(entry);
+    if (gatewayPort !== undefined) {
+      return { entry, gatewayPort, workspaceDir: getDefaultWorkspaceDir() };
+    }
+  }
+  return null;
+}
+
+export function describeUntunnelableEntry(entry: AssistantEntry): string {
+  const reference = formatAssistantReference(entry);
+  return isCloudHome(entry.cloud)
+    ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
+    : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
+}
+
+/**
+ * Resolve the assistant whose gateway and workspace the tunnel edge fronts.
+ * Tunnels only make sense for assistants with a local gateway; when the
+ * active assistant has none (e.g. it is cloud-hosted) fall back to the sole
+ * local target, otherwise exit with an error naming the way to pick one.
+ */
+export function resolveLocalTunnelTarget(): LocalTunnelTarget {
+  const entry = resolveTargetAssistant();
+
+  const target = toLocalTunnelTarget(entry);
+  if (target) {
+    return target;
+  }
+
+  const localTargets = loadAllAssistants()
+    .map(toLocalTunnelTarget)
+    .filter((local): local is LocalTunnelTarget => local !== null);
+
+  if (localTargets.length === 1) {
+    console.log(
+      `${describeUntunnelableEntry(entry)} Tunneling the local assistant '${formatAssistantReference(localTargets[0].entry)}' instead.`,
+    );
+    return localTargets[0];
+  }
+
+  console.error(describeUntunnelableEntry(entry));
+  if (localTargets.length === 0) {
+    console.error(
+      `No local assistant found to tunnel. Run \`${cliCommand()} hatch\` first.`,
+    );
+  } else {
+    console.error(
+      `Multiple local assistants found; set the one to front with \`${cliCommand()} use <name>\`.`,
+    );
+  }
+  process.exit(1);
+}
+
+/**
+ * Make sure nginx is installed for the tunnel edge, offering to install it
+ * when missing. Exits the process when nginx cannot be found or installed —
+ * every edge-starting command (`cadet tunnel start`, `cadet app start`)
+ * shares the same requirement.
+ */
+export async function ensureNginxForEdge(): Promise<string> {
+  const nginxVersion = await ensureBinaryInstalled({
+    binary: "nginx",
+    purpose: "the tunnel edge",
+    packages: {
+      brew: ["brew", "install", "nginx"],
+      "apt-get": ["sudo", "apt-get", "install", "-y", "nginx"],
+      dnf: ["sudo", "dnf", "install", "-y", "nginx"],
+      pacman: ["sudo", "pacman", "-S", "--noconfirm", "nginx"],
+      zypper: ["sudo", "zypper", "install", "-y", "nginx"],
+      choco: ["choco", "install", "-y", "nginx"],
+    },
+    manualHint:
+      "See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
+    probe: getNginxVersion,
+  });
+  if (!nginxVersion) {
+    console.error("Error: nginx is required to run the tunnel edge.");
+    process.exit(1);
+  }
+  return nginxVersion;
+}
+
+/**
+ * Tell EVERY locally-reachable assistant's gateway the tunnel's public URL:
+ * the tunnel fronts one edge, but its ingress domain is app-global info —
+ * any assistant the app serves can hand the URL to a session. Best-effort
+ * per assistant; one dead gateway never fails the others.
+ */
+export async function notifyAllLocalGatewaysOfPublicUrl(
+  publicUrl: string,
+): Promise<void> {
+  const targets = loadAllAssistants()
+    .map(toLocalTunnelTarget)
+    .filter((target): target is LocalTunnelTarget => target !== null);
+  await Promise.all(
+    targets.map((target) =>
+      notifyGatewayOfPublicUrl(publicUrl, target.entry.assistantId),
+    ),
+  );
+}
+
+/**
+ * Run a tunnel provider by name — the dispatch `cadet tunnel start` uses, so
+ * the command layer never names a provider implementation directly. Notifies
+ * every local gateway of the resulting public URL identically for each
+ * provider, then holds until the run ends.
  */
 export async function runProviderTunnel(
   provider: TunnelProviderName,
   opts: ProviderTunnelOptions,
 ): Promise<{ publicUrl: string }> {
   const result = await runProvider(provider, opts);
-  await notifyGatewayOfPublicUrl(result.publicUrl, opts.assistantId);
+  await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
+  await refreshEdgeWithEstablishedUrl(opts, result.publicUrl);
   await result.waitForExit;
   return { publicUrl: result.publicUrl };
+}
+
+/**
+ * Re-ensure the edge right after a tunnel establishes, so the fresh public
+ * URL (saved by the provider run) lands in the served config's `cloudUrl` in
+ * the same session that created it. A no-op when the saved URL is not the
+ * established one — e.g. a tailscale pairing-only run, which must never
+ * repoint the webhook callback base the saved URL stands for.
+ */
+async function refreshEdgeWithEstablishedUrl(
+  opts: ProviderTunnelOptions,
+  publicUrl: string,
+): Promise<void> {
+  let savedUrl: string | undefined;
+  try {
+    const config = loadRawConfig(opts.workspaceDir);
+    const ingress = config.ingress as Record<string, unknown> | undefined;
+    const url = ingress?.publicBaseUrl;
+    if (typeof url === "string" && url.trim()) savedUrl = url.trim();
+  } catch {
+    return;
+  }
+  if (!savedUrl) return;
+  if (savedUrl.replace(/\/+$/, "") !== publicUrl.replace(/\/+$/, "")) return;
+  const state = isIngressRunning(opts.workspaceDir)
+    ? readIngressState(opts.workspaceDir)
+    : null;
+  if (state?.gatewayPort === undefined) return;
+  try {
+    await ensureTunnelEdge({
+      assistantId: opts.assistantId,
+      workspaceDir: opts.workspaceDir,
+      gatewayPort: state.gatewayPort,
+    });
+  } catch {
+    // The running edge stays in front of the tunnel; the fresh config lands
+    // via the next invocation's fingerprint drift instead.
+  }
 }
 
 /** Map the provider name onto its run — no gateway notification here. */
@@ -224,26 +397,15 @@ export function clearReservedDomain(): void {
  * process.
  */
 export async function stopTunnelProcess(
-  assistantId?: string,
   workspaceDir?: string,
 ): Promise<boolean> {
   const recorded: TunnelProcessRecord | undefined = readRootProcesses().tunnel;
   if (!recorded) return false;
-  if (
-    assistantId &&
-    recorded.assistantId &&
-    recorded.assistantId !== assistantId
-  ) {
-    throw new Error(
-      `The recorded tunnel belongs to '${recorded.assistantId}', not '${assistantId}'.`,
-    );
-  }
   const provider = providerNameSchema.parse(
     recorded.provider ?? DEFAULT_TUNNEL_PROVIDER,
   );
   const stopped = await providers[provider].stop({
     record: recorded,
-    assistantId,
     workspaceDir,
   });
   clearRootProcess("tunnel", recorded.pid);
@@ -336,29 +498,23 @@ function wantsTunnelEdge(workspaceDir: string): boolean {
 }
 
 /**
- * The `cadet tunnel` invocation that rebuilds this assistant's edge. That
- * command requires `--provider`, and a `<provider>` placeholder would be shell
- * redirection rather than something to paste, so name the provider recorded
- * here; with none recorded, point at the help that lists them.
- *
- * The assistant is named too: an unqualified run targets the active assistant,
- * which on a computer running several is not the one being restored.
+ * The `cadet tunnel start` invocation that rebuilds this assistant's edge.
+ * That command requires `--provider`, and a `<provider>` placeholder would be
+ * shell redirection rather than something to paste, so name the provider
+ * recorded here; with none recorded, point at the help that lists them.
  */
-function tunnelRestartCommand(
-  workspaceDir: string,
-  assistantId: string,
-): string {
+function tunnelRestartCommand(workspaceDir: string): string {
   try {
     const record = selectRestartTunnelRecord(
       loadRawConfig(workspaceDir).ingress,
     );
     if (record) {
-      return `cadet tunnel ${shellArg(assistantId)} --provider ${record.provider}`;
+      return `${cliCommand()} tunnel start --provider ${record.provider}`;
     }
   } catch {
     // An unreadable config names no provider; the help pointer still holds.
   }
-  return "cadet tunnel --help";
+  return `${cliCommand()} tunnel --help`;
 }
 
 /**
@@ -428,7 +584,7 @@ export async function restoreTunnelEdge(
           ? "Webhooks still work, but the web app is not being served."
           : "The web app and webhook delivery are unavailable until it is rebuilt.";
     console.warn(
-      `   Could not restore the tunnel edge: ${detail} ${impact} Run \`${tunnelRestartCommand(workspaceDir, assistantId)}\` to rebuild the edge.`,
+      `   Could not restore the tunnel edge: ${detail} ${impact} Run \`${tunnelRestartCommand(workspaceDir)}\` to rebuild the edge.`,
     );
     return survivingPort;
   }
@@ -529,7 +685,7 @@ export async function restoreContainerTunnelEdge(
     !(await waitForDaemonReady(gatewayPort, gatewayReadyTimeoutMs))
   ) {
     console.warn(
-      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the tunnel edge was not restored. Run \`${tunnelRestartCommand(workspaceDir, entry.assistantId)}\` once it is running.`,
+      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the tunnel edge was not restored. Run \`${tunnelRestartCommand(workspaceDir)}\` once it is running.`,
     );
     return;
   }

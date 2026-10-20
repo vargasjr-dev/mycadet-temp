@@ -21,6 +21,9 @@ import { z } from "zod";
 
 import { cloudAssistantHubUrl } from "@mycadet/environments";
 
+import cliPkg from "../../package.json";
+import { displayVersion } from "./local-version.js";
+
 import {
   clearAppProcessRecord,
   getAssistantDisplayName,
@@ -31,7 +34,7 @@ import {
 } from "./assistant-config.js";
 import type { RemoteHost } from "./constants.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
-import { fetchCurrentVersion, waitForDaemonReady } from "./http-client.js";
+import { waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
@@ -221,7 +224,7 @@ function remoteWebIngressConfig(
   opts: Pick<
     RemoteWebIngressOptions,
     "config" | "assistantName" | "assistantId" | "hubUrl" | "version"
-  >,
+  > & { cloudUrl?: string },
 ): Record<string, unknown> {
   return {
     remote: edgeServedRemote(
@@ -230,6 +233,11 @@ function remoteWebIngressConfig(
     ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
     ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
     ...(opts.hubUrl ? { hubUrl: opts.hubUrl } : {}),
+    // The saved tunnel URL, when one is on record. The served page's
+    // account/auth surfaces treat this as the backend base, and a tunnel
+    // client can only reach the origin it came in on — the loopback gateway
+    // seed would point them off-box.
+    ...(opts.cloudUrl ? { cloudUrl: opts.cloudUrl } : {}),
     // The assistant release the bundles were verified against — devtools'
     // window.__CADET_CONFIG__.version answers "which one is running".
     ...(opts.version ? { version: opts.version } : {}),
@@ -242,7 +250,7 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 13;
+export const EDGE_TEMPLATE_VERSION = 14;
 
 /**
  * Stable fingerprint of the injected SPA config, its source bundles, and the
@@ -951,6 +959,24 @@ function clearStoppedIngress(workspaceDir: string, pidPath: string): void {
 }
 
 /**
+ * The tunnel URL on record for this workspace (`ingress.publicBaseUrl`, saved
+ * when a tunnel established), or undefined when none is — the served config
+ * stamps it as `cloudUrl` so tunnel clients' account/auth surfaces stay on
+ * the origin they came in on.
+ */
+function savedPublicBaseUrl(workspaceDir: string): string | undefined {
+  try {
+    const config = loadRawConfig(workspaceDir);
+    const ingress = config.ingress as Record<string, unknown> | undefined;
+    const url = ingress?.publicBaseUrl;
+    if (typeof url !== "string" || !url.trim()) return undefined;
+    return url.trim();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Write the nginx config and spawn nginx detached (stdout/stderr to a log
  * file, fd closed after spawn, caller unrefs). nginx runs with `daemon off`
  * so the spawned process is the master; it writes its pid to nginx.pid under
@@ -970,6 +996,11 @@ export function startIngressNginx(opts: {
         ...opts.remoteWebIngress,
         config: remoteWebIngressConfig(opts.remoteWebIngress),
         indexHtmlPath: join(paths.dir, "assistant-index.html"),
+        // The app shell's own injected document — written below, and wired
+        // here so the generated location aliases THIS copy instead of the
+        // raw dist index (which carries the build-time vite stamp instead
+        // of the edge's served config).
+        appIndexHtmlPath: join(paths.dir, "app-index.html"),
       }
     : undefined;
   if (remoteWebIngress) {
@@ -1204,14 +1235,18 @@ export async function startRemoteWebIngress(opts: {
   if (!appDistDir) {
     return { status: "app-dist-missing" };
   }
-  const version = await fetchCurrentVersion(
-    `http://127.0.0.1:${opts.gatewayPort}`,
-  );
+  // The edge serves the CLI's own bundles, so the version it stamps answers
+  // "which cadet is running this" — the CLI's own stamp, not the gateway
+  // runtime's. displayVersion is stable for a given checkout (the stamp's
+  // timestamp is the HEAD commit's), so the fingerprint below never drifts
+  // between processes.
+  const version = displayVersion(cliPkg.version);
   const spaOptions = {
     hubUrl: cloudAssistantHubUrl(getCurrentEnvironment().name),
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
     version,
+    cloudUrl: savedPublicBaseUrl(opts.workspaceDir),
   };
   const requestedConfigHash = remoteWebConfigFingerprint(
     remoteWebIngressConfig(spaOptions),

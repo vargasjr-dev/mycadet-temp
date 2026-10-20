@@ -262,6 +262,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "tailscale",
       "--foreground",
@@ -334,6 +335,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -356,12 +358,14 @@ describe("tunnel edge targeting", () => {
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
-  test("the tunnel level notifies the gateway of the provider's public URL", async () => {
-    writeLockfile(makeLocalEntry());
+  test("the tunnel level notifies every local gateway of the public URL", async () => {
+    const second = makeLocalEntry("assistant-2");
+    writeLockfile([makeLocalEntry(), second]);
     process.argv = [
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -370,10 +374,15 @@ describe("tunnel edge targeting", () => {
     await runTunnelCapturingLogs();
 
     // The provider hands its URL back; the notification is the tunnel
-    // level's job, so it holds no matter which provider ran.
+    // level's job, and the domain is app-global info — every locally
+    // reachable assistant's gateway hears it, not just the edge's front.
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
       "https://test.example.ngrok.dev",
       "assistant-1",
+    );
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
+      "https://test.example.ngrok.dev",
+      "assistant-2",
     );
   });
 
@@ -385,6 +394,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -409,15 +419,15 @@ describe("tunnel edge targeting", () => {
     });
   });
 
-  test("a positional docker assistant name tunnels via its runtimeUrl gateway port", async () => {
+  test("a docker assistant set active tunnels via its runtimeUrl gateway port", async () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
-    writeLockfile([local, makeDockerEntry()], local.assistantId);
+    writeLockfile([local, makeDockerEntry()], "docker-1");
     process.argv = [
       "bun",
       "cadet",
       "tunnel",
-      "docker-1",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -445,6 +455,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -472,6 +483,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -496,6 +508,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -522,6 +535,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -534,19 +548,20 @@ describe("tunnel edge targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel.",
     );
     expect(errors).toContain(
-      "Pass a local assistant as the name argument: assistant-a, assistant-b.",
+      "Multiple local assistants found; set the one to front with `cadet use <name>`.",
     );
     expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("a positional cloud assistant name errors without auto-fallback", async () => {
+  test("a stray positional errors pointing at the subcommands", async () => {
     const local = makeLocalEntry();
     writeLockfile([makeCloudEntry(), local], local.assistantId);
     process.argv = [
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "cloud-1",
       "--provider",
       "ngrok",
@@ -556,74 +571,20 @@ describe("tunnel edge targeting", () => {
     const { exited, errors } = await runTunnelExpectingExit1();
 
     expect(exited).toBe(true);
-    expect(errors).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel.",
-    );
-    expect(errors).toContain(
-      "Pass a local assistant as the name argument: assistant-1.",
-    );
+    expect(errors).toContain("takes no assistant name");
     expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("a positional display name resolves the local assistant", async () => {
-    const local = makeLocalEntry();
-    local.name = "Ada";
-    writeLockfile([makeCloudEntry(), local], "cloud-1");
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "Ada",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    await runTunnelCapturingLogs();
-
-    const workspaceDir = join(local.resources!.instanceDir, "workspace");
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-      workspaceDir,
-    });
-  });
-
-  test("an unquoted multi-word display name resolves the local assistant", async () => {
-    const local = makeLocalEntry();
-    local.name = "Ada Lovelace";
-    writeLockfile([makeCloudEntry(), local], "cloud-1");
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "Ada",
-      "Lovelace",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    await runTunnelCapturingLogs();
-
-    const workspaceDir = join(local.resources!.instanceDir, "workspace");
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-      workspaceDir,
-    });
-  });
-
-  test("a positional apple-container assistant name tunnels via its runtimeUrl gateway port", async () => {
+  test("an apple-container assistant set active tunnels via its runtimeUrl gateway port", async () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
-    writeLockfile([local, makeAppleContainerEntry()], local.assistantId);
+    writeLockfile([local, makeAppleContainerEntry()], "apple-1");
     process.argv = [
       "bun",
       "cadet",
       "tunnel",
-      "apple-1",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -651,6 +612,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -674,101 +636,6 @@ describe("tunnel edge targeting", () => {
     });
   });
 
-  test("an exact assistant ID wins over a colliding display name", async () => {
-    const decoy = makeLocalEntry("assistant-a");
-    decoy.name = "assistant-b";
-    const target = makeLocalEntry("assistant-b");
-    writeLockfile([decoy, target], "assistant-a");
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "assistant-b",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    await runTunnelCapturingLogs();
-
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "assistant-b" }),
-    );
-  });
-
-  test("a positional display name of a cloud assistant errors without auto-fallback", async () => {
-    const cloud = makeCloudEntry();
-    cloud.name = "Cloudy";
-    const local = makeLocalEntry();
-    writeLockfile([cloud, local], local.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "Cloudy",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain(
-      "Assistant 'Cloudy (cloud-1)' runs on Cadet Cloud and needs no tunnel.",
-    );
-    expect(errors).toContain(
-      "Pass a local assistant as the name argument: assistant-1.",
-    );
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
-  test("an ambiguous positional display name errors listing the candidates", async () => {
-    const first = makeLocalEntry("assistant-a");
-    first.name = "Ada";
-    const second = makeLocalEntry("assistant-b");
-    second.name = "Ada";
-    writeLockfile([first, second], "assistant-a");
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "Ada",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain(
-      "Multiple assistants match 'Ada': Ada (assistant-a), Ada (assistant-b).",
-    );
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
-  test("an unknown positional name errors", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "nope",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain("No assistant found with name or ID 'nope'.");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
   test("targets the edge port for cloudflare", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
@@ -776,6 +643,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "cloudflare",
       "--foreground",
@@ -798,6 +666,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "tailscale",
       "--foreground",
@@ -820,7 +689,7 @@ describe("tunnel edge targeting", () => {
   test("a bare invocation tunnels the default provider", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "--foreground"];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--foreground"];
 
     const logs = await runTunnelCapturingLogs();
 
@@ -835,24 +704,6 @@ describe("tunnel edge targeting", () => {
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("a named assistant without --provider tunnels it with the default provider", async () => {
-    const entry = makeLocalEntry();
-    entry.name = "Ada";
-    writeLockfile(entry);
-    process.argv = ["bun", "cadet", "tunnel", "Ada", "--foreground"];
-
-    const logs = await runTunnelCapturingLogs();
-
-    expect(logs).toContain("Using the default provider: ngrok");
-    // The assistant that was asked for is the one tunneled.
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: entry.assistantId,
-      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
-    });
-    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
-  });
-
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
@@ -863,6 +714,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "tailscale",
       "--foreground",
@@ -901,6 +753,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "tailscale",
       "--foreground",
@@ -925,6 +778,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -944,6 +798,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -972,6 +827,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "bogus",
       "--foreground",
@@ -996,6 +852,7 @@ describe("tunnel edge targeting", () => {
           "bun",
           "cadet",
           "tunnel",
+          "start",
           "--provider",
           provider,
           "--foreground",
@@ -1018,6 +875,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--domain",
@@ -1040,6 +898,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "cloudflare",
       "--domain",
@@ -1067,6 +926,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--clear-domain",
@@ -1091,6 +951,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--domain",
@@ -1111,6 +972,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "cloudflare",
       "--clear-domain",
@@ -1132,6 +994,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--domain",
@@ -1152,6 +1015,7 @@ describe("tunnel edge targeting", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "cadet",
       "--foreground",
@@ -1490,7 +1354,7 @@ describe("ngrok --domain spawn args", () => {
       "does not match the reserved domain 'foo.ngrok.app'",
     );
     expect(combined).toContain(
-      "cadet tunnel --provider ngrok --domain foo.ngrok.app",
+      "cadet tunnel start --provider ngrok --domain foo.ngrok.app",
     );
 
     const config = IngressTestConfigSchema.parse(
@@ -1809,7 +1673,7 @@ describe("tunnel background mode", () => {
   });
 
   test("runs detached by default: re-invokes itself as a detached child and reports readiness", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
 
     // Simulate the detached child writing its readiness line to the log file
     // the moment it is spawned.
@@ -1849,6 +1713,7 @@ describe("tunnel background mode", () => {
       "bun",
       "cadet",
       "tunnel",
+      "start",
       "--provider",
       "ngrok",
       "--foreground",
@@ -1862,7 +1727,7 @@ describe("tunnel background mode", () => {
   });
 
   test("reports an early child exit instead of hanging", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
     spawnMock.mockImplementationOnce(() => {
       const child = makeFakeChild(4242);
       // Listeners attach synchronously right after spawn() returns; defer the
@@ -1879,7 +1744,7 @@ describe("tunnel background mode", () => {
   });
 
   test("an adopted ngrok tunnel gets an accurate stop message, not a false kill claim", async () => {
-    process.argv = ["bun", "cadet", "tunnel", "--provider", "ngrok"];
+    process.argv = ["bun", "cadet", "tunnel", "start", "--provider", "ngrok"];
     spawnMock.mockImplementationOnce(() => {
       appendFileSync(
         detachedLogPath(),

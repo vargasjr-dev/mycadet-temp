@@ -1471,7 +1471,6 @@ describe("cadet wake — tunnel edge restore", () => {
     );
   });
 
-
   test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
     loadRawConfigMock.mockReturnValue(webhookConfig);
     ensureTunnelEdgeMock.mockRejectedValue(
@@ -1514,7 +1513,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Run `cadet tunnel local-assistant --provider cloudflare` to rebuild the edge.",
+        "Run `cadet tunnel start --provider cloudflare` to rebuild the edge.",
       ),
     );
   });
@@ -1541,7 +1540,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Run `cadet tunnel local-assistant --provider tailscale` to rebuild the edge.",
+        "Run `cadet tunnel start --provider tailscale` to rebuild the edge.",
       ),
     );
   });

@@ -15,11 +15,16 @@ const ASSISTANT_NAME_COMMANDS = new Set([
   "sleep",
   "teleport",
   "terminal",
-  "tunnel",
   "upgrade",
   "use",
   "wake",
 ]);
+
+/** First-positional subcommands, for commands that take no assistant name. */
+const SUBCOMMAND_COMPLETIONS: Record<string, string[]> = {
+  app: ["start", "stop"],
+  tunnel: ["start", "stop"],
+};
 
 /** Assistant names known to this CLI's lockfile; [] when the lockfile is unreadable. */
 function assistantNames(): string[] {
@@ -62,6 +67,12 @@ export function completeCadet(
     !toComplete.startsWith("-")
   ) {
     return assistantNames();
+  }
+
+  // First positional of a subcommand-style command: offer its subcommands.
+  if (preceding.length === 1 && !toComplete.startsWith("-")) {
+    const subcommands = SUBCOMMAND_COMPLETIONS[preceding[0]];
+    if (subcommands) return subcommands;
   }
 
   return [];

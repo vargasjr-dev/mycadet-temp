@@ -44,16 +44,14 @@ const detectOrphanedProcessesMock = spyOn(
   orphanDetection,
   "detectOrphanedProcesses",
 ).mockResolvedValue([]);
-const getCloudUrlMock = spyOn(
-  cloudClient,
-  "getCloudUrl",
-).mockReturnValue("http://platform.test");
+const getCloudUrlMock = spyOn(cloudClient, "getCloudUrl").mockReturnValue(
+  "http://platform.test",
+);
 
 // Per-test toggle for `readCloudToken`.
-const readCloudTokenMock = spyOn(
-  cloudClient,
-  "readCloudToken",
-).mockReturnValue(null);
+const readCloudTokenMock = spyOn(cloudClient, "readCloudToken").mockReturnValue(
+  null,
+);
 
 // `fetchCurrentUser` + `fetchCloudAssistants` are spied so we can assert
 // they're never invoked on the no-token path, and re-shaped per-test for the
@@ -141,7 +139,7 @@ afterAll(() => {
 // Import the command under test AFTER mocks are wired up
 // ---------------------------------------------------------------------------
 
-import { listAllAssistants } from "../commands/ps.js";
+import { listAllAssistants, ps } from "../commands/ps.js";
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -263,7 +261,8 @@ describe("cadet ps — platform status line", () => {
     expect(output).toContain("ngrok");
     expect(output).not.toContain("└ ngrok");
     expect(output).toContain("nginx");
-    expect(output).toContain("port ");
+    // The edge's INFO leads with its listen URL (not a bare port).
+    expect(output).toContain("http://127.0.0.1:7841");
     // …the type column distinguishes the three process kinds…
     expect(output).toContain("🤖 Assistant");
     expect(output).toContain("🚇 Tunnel");
@@ -322,5 +321,80 @@ describe("cadet ps — platform status line", () => {
     expect(output.match(/Bob/g)).toHaveLength(1);
     expect(output).toContain("healthy");
     expect(output).toContain("sleeping");
+  });
+});
+
+describe("cadet ps <built-in process name> details", () => {
+  const originalArgv = process.argv;
+  afterEach(() => {
+    process.argv = originalArgv;
+    readRootProcessesMock.mockReturnValue({});
+  });
+
+  test("`ps nginx` details the app edge with its listen URL", async () => {
+    readRootProcessesMock.mockReturnValue({
+      app: {
+        pid: 77,
+        port: 7841,
+        startedAt: "2026-10-20T15:00:00.000Z",
+      },
+    });
+    process.argv = ["bun", "cadet", "ps", "nginx"];
+
+    await ps();
+
+    const output = stdout.join(NL);
+    expect(output).toContain("App edge (nginx):");
+    expect(output).toContain("http://127.0.0.1:7841");
+  });
+
+  test("`ps nginx` with no record points at `cadet app start`", async () => {
+    readRootProcessesMock.mockReturnValue({});
+    process.argv = ["bun", "cadet", "ps", "nginx"];
+
+    await ps();
+
+    expect(stdout.join(NL)).toContain("not recorded");
+  });
+
+  test("`ps ngrok` details the tunnel agent with its public URL", async () => {
+    readRootProcessesMock.mockReturnValue({
+      tunnel: {
+        pid: 4242,
+        provider: "ngrok",
+        startedAt: "2026-10-20T15:00:00.000Z",
+        publicUrl: "https://camping.ngrok-free.dev",
+      },
+    });
+    process.argv = ["bun", "cadet", "ps", "ngrok"];
+
+    await ps();
+
+    const output = stdout.join(NL);
+    expect(output).toContain("Tunnel agent (ngrok):");
+    expect(output).toContain("https://camping.ngrok-free.dev");
+  });
+
+  test("an assistant name still resolves the assistant", async () => {
+    loadAllAssistantsMock.mockReturnValue([
+      {
+        assistantId: "assistant-123",
+        name: "nginx",
+        runtimeUrl: "https://platform.example",
+        cloud: "cloud",
+      },
+    ]);
+    checkManagedHealthMock.mockImplementation(async () => ({
+      status: "healthy",
+      detail: null,
+    }));
+    process.argv = ["bun", "cadet", "ps", "assistant-123"];
+
+    await ps();
+
+    // A built-in name only wins when asked for by name; an assistant ID
+    // resolves the assistant's process table as before.
+    const output = stdout.join(NL);
+    expect(output).toContain("Processes for");
   });
 });

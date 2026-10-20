@@ -83,7 +83,7 @@ beforeEach(() => {
     "ngrok http 7840",
   );
   logs = spyOn(console, "log").mockImplementation(() => {});
-  process.argv = ["bun", "cadet", "tunnel", "stop", "fixture"];
+  process.argv = ["bun", "cadet", "tunnel", "stop"];
 });
 afterEach(() => {
   stop.mockRestore();
@@ -116,17 +116,6 @@ test("a recycled PID is not signaled and its stale record is cleared", async () 
   await tunnel();
   expect(stop).not.toHaveBeenCalled();
   expect(readRootProcesses().tunnel).toBeUndefined();
-});
-test("another assistant's tunnel is left intact", async () => {
-  stampRootProcess("tunnel", {
-    pid: 424242,
-    provider: "ngrok",
-    assistantId: "another",
-    startedAt: new Date().toISOString(),
-  });
-  await expect(tunnel()).rejects.toThrow("belongs to 'another'");
-  expect(stop).not.toHaveBeenCalled();
-  expect(readRootProcesses().tunnel?.assistantId).toBe("another");
 });
 test("failure to stop retains process and ingress state", async () => {
   stop.mockResolvedValue(false);

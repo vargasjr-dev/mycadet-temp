@@ -18,13 +18,20 @@ import { dirname, join } from "node:path";
  * their channel is decided by the release pipeline, not the machine they run
  * on. A source tree without git history (a raw tarball) also stays unstamped,
  * since the sha is what makes the stamp meaningful.
+ *
+ * The timestamp is the HEAD COMMIT's time, not the process's clock: the same
+ * checkout must stamp identically in every process, because the stamp rides
+ * values that key reuse decisions (the nginx edge's served-config
+ * fingerprint). A wall-clock stamp would drift every invocation and restart
+ * the edge each time a new `cadet` process computed its fingerprint. The
+ * commit time moves exactly when the sha does — every pull.
  */
 
-function utcStamp(now: Date): string {
+function utcStamp(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
   return (
-    `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}` +
-    `${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}`
+    `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}` +
+    `${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`
   );
 }
 
@@ -52,6 +59,16 @@ function shortSha(root: string): string | null {
   return sha || null;
 }
 
+function headCommitTime(root: string): Date | null {
+  const result = spawnSync("git", ["show", "-s", "--format=%cI", "HEAD"], {
+    cwd: root,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) return null;
+  const parsed = new Date((result.stdout ?? "").trim());
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function displayVersion(
   base: string,
   now: Date = new Date(),
@@ -62,5 +79,9 @@ export function displayVersion(
   if (!root) return base;
   const sha = shortSha(root);
   if (!sha) return base;
-  return `${base}-local.${utcStamp(now)}.${sha}`;
+  // `now` is the fallback stamp (and the test seam); a git checkout always
+  // has a HEAD commit time when it has a sha, so the fallback is the
+  // git-less-tail case only.
+  const stamp = headCommitTime(root) ?? now;
+  return `${base}-local.${utcStamp(stamp)}.${sha}`;
 }

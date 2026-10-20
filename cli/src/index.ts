@@ -13,6 +13,7 @@ import { displayVersion } from "./lib/local-version.js";
 
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
+import { app } from "./commands/app";
 import { clean } from "./commands/clean";
 import { client } from "./commands/client";
 import { completeCadet, completions } from "./commands/completions";
@@ -51,6 +52,7 @@ import { checkHealth } from "./lib/health-check";
 
 const commands = {
   backup,
+  app,
   clean,
   client,
   completions,

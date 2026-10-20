@@ -26,11 +26,13 @@ import {
 import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
+import * as localVersionModule from "../lib/local-version.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
 const realHttpClient = { ...httpClient };
+const realLocalVersion = { ...localVersionModule };
 
 const execFileSyncMock = mock(childProcess.execFileSync);
 const spawnSyncMock = mock(childProcess.spawnSync);
@@ -67,10 +69,6 @@ mock.module("node:fs", () => ({
   readFileSync: readFileSyncMock,
 }));
 
-const fetchCurrentVersionMock = mock<typeof httpClient.fetchCurrentVersion>(
-  async () => "1.2.3",
-);
-
 const waitForDaemonReadyMock = mock<typeof httpClient.waitForDaemonReady>(
   async () => true,
 );
@@ -78,7 +76,14 @@ const waitForDaemonReadyMock = mock<typeof httpClient.waitForDaemonReady>(
 mock.module("../lib/http-client.js", () => ({
   ...httpClient,
   waitForDaemonReady: waitForDaemonReadyMock,
-  fetchCurrentVersion: fetchCurrentVersionMock,
+}));
+
+// The edge stamps the CLI's own displayVersion as the served version — a
+// fixed value here keeps the fingerprint replicas below exact.
+const displayVersionMock = mock(() => "1.2.3");
+
+mock.module("../lib/local-version.js", () => ({
+  displayVersion: displayVersionMock,
 }));
 
 // Restore the real modules once this file finishes so the mocks do not leak
@@ -87,6 +92,7 @@ afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:fs", () => realFs);
   mock.module("../lib/http-client.js", () => realHttpClient);
+  mock.module("../lib/local-version.js", () => realLocalVersion);
 });
 
 import {
@@ -145,8 +151,8 @@ afterEach(() => {
   existsSyncMock.mockImplementation(realFs.existsSync);
   readFileSyncMock.mockReset();
   readFileSyncMock.mockImplementation(realFs.readFileSync);
-  fetchCurrentVersionMock.mockReset();
-  fetchCurrentVersionMock.mockImplementation(async () => "1.2.3");
+  displayVersionMock.mockReset();
+  displayVersionMock.mockImplementation(() => "1.2.3");
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   for (const dir of workspaces.splice(0)) {
@@ -171,6 +177,14 @@ const IngressTestConfigSchema = z.object({
 function readConfig(workspaceDir: string) {
   return IngressTestConfigSchema.parse(
     JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
+  );
+}
+
+/** Seed the workspace's saved tunnel URL (ingress.publicBaseUrl). */
+function writeWorkspaceIngressUrl(workspaceDir: string, url: string): void {
+  realFs.writeFileSync(
+    join(workspaceDir, "config.json"),
+    JSON.stringify({ ingress: { publicBaseUrl: url } }),
   );
 }
 
@@ -871,57 +885,11 @@ function pinProductionEnvironment(): void {
 describe("startRemoteWebIngress", () => {
   pinProductionEnvironment();
 
-  // The assistant's own /healthz answer is the only version: when it answers
-  // one, the metadata route serves it verbatim; when it doesn't, the
-  // assistant is not ready. Version skew between the served bundle and the
-  // runtime no longer 409s a live assistant.
-  for (const [runtimeVersion, ready] of [
-    ["1.2.3", true],
-    ["v1.2.3", true],
-    ["1.2.2", true],
-    [undefined, false],
-  ] as const) {
-    test(`release resolution: assistant ${runtimeVersion}`, async () => {
-      const ws = makeWorkspace();
-      mockNginxInstalled();
-      mockNginxSpawn();
-      mockWebDistPresent();
-      fetchCurrentVersionMock.mockResolvedValue(runtimeVersion);
-      const result = await startRemoteWebIngress({
-        workspaceDir: ws,
-        gatewayPort: 7830,
-        listenPort: 7845,
-        assistantId: "assistant-1",
-      });
-      expect(result.status).toBe("started");
-      expect(fetchCurrentVersionMock).toHaveBeenCalledWith(
-        "http://127.0.0.1:7830",
-      );
-      const conf = realFs.readFileSync(ingressConfPath(ws), "utf8");
-      const detail = conf
-        .split('location = "/v1/assistants/assistant-1/" {')[1]
-        ?.split("\n    }")[0];
-      expect(detail).toContain(`return ${ready ? 200 : 409} `);
-      if (ready) {
-        expect(detail).toContain(`\\"version\\":\\"${runtimeVersion}\\"`);
-      } else {
-        expect(detail).not.toContain('\\"url\\"');
-      }
-    });
-  }
-
-  test("restarts an edge when the assistant's release version changes", async () => {
+  test("the metadata route serves the CLI's own version stamp, always ready", async () => {
     const ws = makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    fetchCurrentVersionMock.mockResolvedValue("1.2.4");
-    const pid = mockRunningEdge(ws, {
-      listenPort: 7845,
-      gatewayPort: 7830,
-      remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
-    });
-    const edge = mockKillableNginx(pid);
     const result = await startRemoteWebIngress({
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -929,13 +897,15 @@ describe("startRemoteWebIngress", () => {
       assistantId: "assistant-1",
     });
     expect(result.status).toBe("started");
-    expect(edge.killed()).toBe(true);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf8");
     const detail = conf
       .split('location = "/v1/assistants/assistant-1/" {')[1]
       ?.split("\n    }")[0];
+    // The version is the CLI's own stamp (mocked to "1.2.3" here), so the
+    // detail route is always a 200 — the served page's "which one is
+    // running" answer follows the CLI, not the runtime's /healthz.
     expect(detail).toContain("return 200 ");
-    expect(detail).toContain('\\"version\\":\\"1.2.4\\"');
+    expect(detail).toContain('\\"version\\":\\"1.2.3\\"');
   });
 
   test("serves the SPA config unchanged", async () => {
@@ -968,6 +938,7 @@ describe("startRemoteWebIngress", () => {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
+          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1239,6 +1210,7 @@ describe("startRemoteWebIngress", () => {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
+          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1281,6 +1253,7 @@ describe("startRemoteWebIngress", () => {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
+          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1529,6 +1502,7 @@ describe("startRemoteWebIngress", () => {
           webDistDir,
           appDistDir: fakeAppDistDir(),
           indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
+          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -2243,6 +2217,7 @@ function appConfigHash(
   opts: {
     assistantName?: string;
     assistantId?: string;
+    cloudUrl?: string;
     indexHtml?: string;
     webDistDir?: string;
   } = {},
@@ -2256,6 +2231,7 @@ function appConfigHash(
           ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
           ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
           hubUrl: PRODUCTION_HUB_URL,
+          ...(opts.cloudUrl ? { cloudUrl: opts.cloudUrl } : {}),
           version: "1.2.3",
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
@@ -2372,7 +2348,6 @@ describe("the app shell edge", () => {
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    fetchCurrentVersionMock.mockResolvedValue("1.2.3");
 
     const result = await startRemoteWebIngress({
       workspaceDir: ws,
@@ -2393,11 +2368,70 @@ describe("the app shell edge", () => {
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
+    // The served shell document must be the edge's INJECTED copy (which
+    // carries the served config), never the raw dist index — that one only
+    // carries the build-time vite stamp.
+    expect(conf).toContain(`alias "${join(ingressDir, "app-index.html")}"`);
     expect(readConfig(ws).ingress?.nginx).toMatchObject({
       listenPort: 7845,
       gatewayPort: 7830,
       remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
     });
+  });
+
+  test("stamps the saved tunnel URL as the served config's cloudUrl", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+    writeWorkspaceIngressUrl(ws, "https://camping.ngrok-free.dev");
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      assistantId: "assistant-1",
+    });
+
+    expect(result.status).toBe("started");
+    const appIndex = realFs.readFileSync(
+      join(ws, "data", "ingress", "app-index.html"),
+      "utf-8",
+    );
+    // Tunnel clients can only reach the origin they came in on, so the
+    // account/auth surfaces' backend base is the tunnel URL, not the
+    // loopback gateway seed.
+    expect(appIndex).toContain(`"cloudUrl":"https://camping.ngrok-free.dev"`);
+    // The URL rides the fingerprint: a changed tunnel URL rotates the edge.
+    expect(readConfig(ws).ingress?.nginx).toMatchObject({
+      remoteWebConfigHash: appConfigHash({
+        assistantId: "assistant-1",
+        cloudUrl: "https://camping.ngrok-free.dev",
+      }),
+    });
+  });
+
+  test("omits cloudUrl when no tunnel URL is on record", async () => {
+    const ws = makeWorkspace();
+    mockNginxInstalled();
+    mockNginxSpawn();
+    mockWebDistPresent();
+
+    const result = await startRemoteWebIngress({
+      workspaceDir: ws,
+      gatewayPort: 7830,
+      listenPort: 7845,
+      assistantId: "assistant-1",
+    });
+
+    expect(result.status).toBe("started");
+    const appIndex = realFs.readFileSync(
+      join(ws, "data", "ingress", "app-index.html"),
+      "utf-8",
+    );
+    // Omitted — the shell's same-origin fallbacks own it until a tunnel
+    // saves a URL.
+    expect(appIndex).not.toContain("cloudUrl");
   });
 
   test("fails fast when the app bundle is not built", async () => {
