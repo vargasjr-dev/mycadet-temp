@@ -64,46 +64,6 @@ export function isPairedLockfileEntry(
   );
 }
 
-/**
- * The raw (unstripped) guardian bearer recorded on one assistant's entry.
- * `getLockfileData` strips entry credentials for renderer-facing callers;
- * the desktop main process is the trusted side that injects the bearer
- * server-side when forwarding `/v1/*` to the assistant's gateway (whose
- * edge auth demands it).
- */
-export function readLockfileBearerToken(
-  lockfilePaths: string[],
-  assistantId: string,
-): string | undefined {
-  const lockfile = readRawLockfile(lockfilePaths);
-  const assistants = Array.isArray(lockfile.assistants)
-    ? (lockfile.assistants as Array<Record<string, unknown>>)
-    : [];
-  for (const assistant of assistants) {
-    if (assistant?.assistantId !== assistantId) continue;
-    const bearerToken = assistant.bearerToken;
-    return typeof bearerToken === "string" && bearerToken
-      ? bearerToken
-      : undefined;
-  }
-  return undefined;
-}
-
-/**
- * The cloud base recorded at login (root lockfile `cloudBaseUrl`) — the
- * cloud the user actually authenticated against. Renderer-facing typed
- * reads don't carry the root field, so this is a raw read; callers fall
- * back to their environment seed when absent.
- */
-export function readLockfileCloudBaseUrl(
-  lockfilePaths: string[],
-): string | undefined {
-  const cloudBaseUrl = readRawLockfile(lockfilePaths).cloudBaseUrl;
-  return typeof cloudBaseUrl === "string" && cloudBaseUrl.trim()
-    ? cloudBaseUrl
-    : undefined;
-}
-
 export type WriteResult =
   | { ok: true; lockfile: Lockfile }
   | { ok: false; status: number; error: string };

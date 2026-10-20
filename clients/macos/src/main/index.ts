@@ -22,8 +22,6 @@ import {
   getLoopbackGatewayPort,
   pairedGatewayTargetsFromLockfile,
   readAllowedGatewayPorts,
-  readLockfileBearerToken,
-  readLockfileCloudBaseUrl,
   readPairedGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
@@ -295,15 +293,14 @@ const registerAppProtocol = (): void => {
       ? pairedGatewayTargetsFromLockfile(watched)
       : readPairedGatewayTargets(lockfilePaths);
   };
+  const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
+
   // Same-origin `/v1/*` rides the active local assistant's gateway — the
   // same contract the CLI edge implements by proxying `/v1` there — while
   // the platform's login surfaces always ride the cloud (the forward
   // resolves that by path). The env-resolved seed covers the no-lockfile
   // window.
-  const getActiveGateway = (): {
-    base: string;
-    bearerToken?: string;
-  } | undefined => {
+  const getActiveGatewayBase = (): string | undefined => {
     const read = getLockfileData(lockfilePaths);
     if (!read.ok) {
       return undefined;
@@ -317,15 +314,7 @@ const registerAppProtocol = (): void => {
       return undefined;
     }
     const port = getLoopbackGatewayPort(entry);
-    if (!port) {
-      return undefined;
-    }
-    return {
-      base: `http://127.0.0.1:${port}`,
-      // The typed read strips entry credentials; the raw pull is what the
-      // forward injects server-side.
-      bearerToken: readLockfileBearerToken(lockfilePaths, entry.assistantId),
-    };
+    return port ? `http://127.0.0.1:${port}` : undefined;
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
@@ -358,14 +347,11 @@ const registerAppProtocol = (): void => {
 
     // Cloud API and authentication routes forward through the shared
     // cloud forward: the login surfaces ride the cloud, same-origin
-    // `/v1/*` rides the active local assistant's gateway with its
-    // guardian bearer injected server-side.
-    const gateway = getActiveGateway();
+    // `/v1/*` rides the active local assistant's gateway.
     const cloudProxied = await forwardCloudRequest({
       request,
-      cloudBase: resolveCloudBase(),
-      gatewayBase: gateway?.base,
-      gatewayBearer: gateway?.bearerToken,
+      cloudBase: cloudUrl,
+      gatewayBase: getActiveGatewayBase(),
       fetcher: net.fetch,
       allowedOrigin: resolveAllowedOrigin(),
       log,
@@ -393,16 +379,8 @@ const registerAppProtocol = (): void => {
 };
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
-
-// The cloud the user actually logged into (lockfile root) wins over the
-// env seed — a local-environment runtime seeds `http://localhost:8000`,
-// which is dead for anyone not running the full local cloud stack.
-const resolveCloudBase = (): string =>
-  readLockfileCloudBaseUrl(resolveLockfilePaths(process.env)) ??
-  resolvedConfig.cloudUrl;
-
 handleSync("cadet:config:get", () => ({
-  cloudUrl: resolveCloudBase(),
+    cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
   version: getVersionInfo().version,
 }));

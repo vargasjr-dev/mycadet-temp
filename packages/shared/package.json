@@ -5,6 +5,7 @@
   "exports": {
     ".": "./github-repository.ts",
     "./github-repository": "./github-repository.ts",
-    "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts"
+    "./scripts/run-isolated-tests": "./scripts/run-isolated-tests.ts",
+    "./local-version": "./local-version.ts"
   }
 }

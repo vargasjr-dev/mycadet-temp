@@ -4,12 +4,8 @@ import path from "node:path";
 
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
-import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/inline-deps";
-
-// Build-time reuse of the CLI's version stamper: the local (dev) build bakes
-// the exact string `cadet-local --version` prints, so the About panel and the
-// injected config agree with the CLI (see resolveCliDisplayVersion below).
-import { displayVersion } from "../../cli/src/lib/local-version";
+import { SHARED_DESKTOP_INLINE_DEPS } from "@mycadet/electron-desktop/src/inline-deps";
+import { displayVersion } from "@mycadet/shared/local-version";
 
 // Reference: https://electron-vite.org/config/
 //
@@ -66,26 +62,11 @@ const LOCAL_CLI_ENTRY =
     ? path.resolve(__dirname, "../../cli/src/index.ts")
     : "";
 
-// The version the About panel + injected config report for local builds:
-// the repo CLI's version — locally the exact string `cadet-local --version`
-// prints (`<base>-local.<stamp>.<sha>`, see cli/src/lib/local-version.ts).
-// Release builds bake the plain version: the release train bumps
-// cli/package.json but never this shell's manifest, so the app.getVersion()
-// fallback would read a placeholder forever.
-const resolveCliDisplayVersion = (): string => {
-  try {
-    const pkg = JSON.parse(
-      readFileSync(path.resolve(__dirname, "../../cli/package.json"), "utf8"),
-    ) as { version?: string };
-    if (!pkg.version) return "";
-    if ((process.env.CADET_ENVIRONMENT || "local") !== "local") {
-      return pkg.version;
-    }
-    return displayVersion(pkg.version);
-  } catch {
-    return "";
-  }
-};
+// The version the About panel + injected config report: this shell's own
+// package.json version — stamped display form for local builds
+// (`<base>-local.<stamp>.<sha>`, see @mycadet/shared/local-version), plain
+// otherwise. Release builds bake the plain version; app.getVersion() fallback
+// covers bundles built without the define.
 
 const BUILD_DEFINES = {
   __CADET_BUILD_SHA__: JSON.stringify(resolveBuildSha()),
@@ -93,7 +74,7 @@ const BUILD_DEFINES = {
     process.env.CADET_ENVIRONMENT || "local",
   ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
-  __CADET_VERSION_DISPLAY__: JSON.stringify(resolveCliDisplayVersion()),
+  __CADET_VERSION_DISPLAY__: JSON.stringify(displayVersion(__dirname)),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
