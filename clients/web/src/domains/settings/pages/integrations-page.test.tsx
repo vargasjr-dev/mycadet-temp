@@ -1441,5 +1441,4 @@ describe("IntegrationsPage", () => {
     screen.getByText("https://mcp.example.com/mcp");
     await settle();
   });
-
 });

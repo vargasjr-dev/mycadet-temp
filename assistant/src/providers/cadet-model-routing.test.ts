@@ -46,9 +46,9 @@ describe("cadet-model-routing", () => {
     expect(getCloudUpstream("accounts/fireworks/models/glm-5p3-flash")).toBe(
       "fireworks",
     );
-    expect(getCloudUpstream("cadet/accounts/fireworks/models/glm-5p3-flash")).toBe(
-      "cadet",
-    );
+    expect(
+      getCloudUpstream("cadet/accounts/fireworks/models/glm-5p3-flash"),
+    ).toBe("cadet");
   });
 
   test("getCloudUpstream resolves a routing string by its prefix", () => {

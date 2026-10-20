@@ -152,5 +152,4 @@ describe("onboardingCompletedMiddleware", () => {
       expect(next).toHaveBeenCalled();
     });
   });
-
 });

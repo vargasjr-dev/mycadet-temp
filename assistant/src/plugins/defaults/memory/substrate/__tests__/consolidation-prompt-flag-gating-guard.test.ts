@@ -18,8 +18,6 @@
  * `ConsolidationPromptOptions` gate. When you add a gated section, register
  * it in GATED_SECTIONS below so the guard covers it.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import {

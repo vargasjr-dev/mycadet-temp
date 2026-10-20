@@ -10,9 +10,6 @@ import type { MessageRow } from "../../../persistence/conversation-crud.js";
 import * as conversationCrud from "../../../persistence/conversation-crud.js";
 import { resolveAssistantSnippet } from "../conversation-attention-routes.js";
 
-const PRIVATE = JSON.stringify({ assistantTextVisibility: "private" });
-const SCRATCHPAD = "SECRET reasoning the user never saw";
-
 let rows: MessageRow[] = [];
 const spies: Array<{ mockRestore: () => void }> = [];
 
@@ -30,13 +27,6 @@ function row(
     metadata,
   } as unknown as MessageRow;
 }
-
-const sendCall = (message: string, id = "tu_1"): unknown => ({
-  type: "tool_use",
-  id,
-  name: "send_user_message",
-  input: { message },
-});
 
 beforeEach(() => {
   rows = [];

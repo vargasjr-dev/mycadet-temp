@@ -292,7 +292,6 @@ describe("dispatch routes through provider_connection (Phase 1: connection-only)
 // ---------------------------------------------------------------------------
 
 describe("routing identities", () => {
-
   beforeEach(() => {
     resolveProviderCalls.length = 0;
     resolveProviderOpts.length = 0;
