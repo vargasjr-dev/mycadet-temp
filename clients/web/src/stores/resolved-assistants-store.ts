@@ -201,7 +201,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         isCloudHosted: isCloudAssistant(a),
         isPaired: isPairedAssistant(a),
         runtimeUrl: a.runtimeUrl,
-        organizationId: a.organizationId,
+        organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
       }));
       set({ assistants, assistantsHydrated: true });
@@ -404,7 +404,9 @@ function getLockfileFields(assistantId: string): {
     : null;
   return {
     cloud: entry?.cloud,
-    organizationId: entry?.organizationId,
+    // The renderer-safe lockfile contract carries the org under its
+    // cloud-spelled registration field.
+    organizationId: entry?.cloudOrganizationId,
     onboardedAt: entry?.onboardedAt,
     runtimeVersion: entry?.resources?.runtimeVersion,
     runtimeUrl: entry?.runtimeUrl,

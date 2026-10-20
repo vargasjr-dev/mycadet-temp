@@ -99,8 +99,6 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  const cloudAssistant =
-    assistant?.is_local && !isLocalClient() ? null : assistant;
   const selected = getSelectedAssistant();
   const hasSelectedLocalAssistant =
     isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
@@ -113,8 +111,7 @@ export function GeneralPage() {
   // (e.g. logged out of the cloud, or a self-hosted/remote-gateway runtime
   // that can't upgrade locally).
   const showsUpgradePanel =
-    (infraGate === "full" && !!cloudAssistant) ||
-    (canUpgradeLocally && !!assistant);
+    (infraGate === "full" || canUpgradeLocally) && !!assistant;
 
   useEffect(() => {
     if (!assistant || window.location.hash !== "#storage-resources") {
@@ -128,10 +125,6 @@ export function GeneralPage() {
     });
   }, [assistant]);
 
-  // The version rows read assistant state only — the serving host's own
-  // healthz version first, the platform's release version as fallback. The
-  // upgrade panels need a release version for comparisons, so they keep
-  // `versionValue` too.
   const versionValue =
     healthz?.version ?? assistant?.current_release_version ?? null;
 
@@ -159,7 +152,7 @@ export function GeneralPage() {
   };
 
   const showRetire =
-    ((cloudGate === "full" || canRetireLocally) && !!cloudAssistant) ||
+    ((cloudGate === "full" || canRetireLocally) && !!assistant) ||
     (cloudGate === "disabled" && !canRetireLocally);
   // Mirrors DeleteAccountSection's internal cloudHostedOnly gate — it
   // returns null when gated, so the card must not render an empty shell.
@@ -184,10 +177,7 @@ export function GeneralPage() {
       )}
 
       <ProfileCard
-        // The assistant-handle section doubles as the self-hosted identity
-        // row — local assistants surface their id as the handle (assistant
-        // state carries it).
-        assistant={isCloudHosted ? cloudAssistant : assistant}
+        assistant={assistant}
         showHandles={isAuthenticated && cloudGate === "full"}
       >
         <TimezoneSection />
@@ -198,7 +188,7 @@ export function GeneralPage() {
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
         accessory={
-          infraGate === "full" && cloudAssistant ? (
+          infraGate === "full" && assistant ? (
             <Button
               variant="outlined"
               onClick={() => setUpdateWindowOpen(true)}
@@ -209,10 +199,10 @@ export function GeneralPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          {infraGate === "full" && cloudAssistant && (
+          {infraGate === "full" && assistant && (
             <>
               <AssistantUpgrades
-                assistantId={cloudAssistant.id}
+                assistantId={assistant.id}
                 currentVersion={versionValue}
                 onUpgradeComplete={() => {
                   void refetch();
@@ -252,9 +242,9 @@ export function GeneralPage() {
           )}
         </div>
       </DetailCard>
-      {infraGate === "full" && cloudAssistant && (
+      {infraGate === "full" && assistant && (
         <UpdateWindowModal
-          assistantId={cloudAssistant.id}
+          assistantId={assistant.id}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />
@@ -335,9 +325,8 @@ export function GeneralPage() {
                   {t("generalPage.retireAssistantDescription")}
                 </p>
                 <div className="mt-1">
-                  {(cloudGate === "full" || canRetireLocally) &&
-                  cloudAssistant ? (
-                    <RetireAssistant assistantId={cloudAssistant.id} />
+                  {(cloudGate === "full" || canRetireLocally) && assistant ? (
+                    <RetireAssistant assistantId={assistant.id} />
                   ) : (
                     <CloudLoginNotice>
                       {t("generalPage.retireAssistantLoginNotice")}

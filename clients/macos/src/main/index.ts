@@ -131,9 +131,10 @@ import { installWebContentsSecurity } from "./windows";
 //
 // Caveat: `app.setName()` does NOT change the Dock / Cmd-Tab label —
 // those come from the running binary's `CFBundleName`. In dev the binary
-// is `node_modules/electron/dist/Electron.app`, whose `CFBundleName` is
-// stamped to "Cadet Electron" by `scripts/prepare-electron-dev-app.ts`
-// (which also busts the macOS Dock display-name cache so the relabel
+// is the `node_modules/electron/dist/Electron.app` binary, whose
+// `CFBundleName` is stamped to "Cadet Local" by
+// `scripts/prepare-electron-dev-app.ts` (which also busts the macOS Dock
+// display-name cache so the relabel
 // actually surfaces instead of the stale stock "Electron"). The userData
 // split is what prevents collision with Swift installs. Packaged builds
 // get a real `productName` from electron-builder, which writes
@@ -297,20 +298,41 @@ const registerAppProtocol = (): void => {
   };
   const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
 
-  // Which platform do the current assistants target? The lockfile's
-  // `cloudBaseUrl` (stamped at hatch/registration) is the source of truth —
-  // the same resolution the CLI (`getCloudUrl`) and the web interface's /v1
-  // proxy use. The env-resolved seed only covers the no-lockfile window;
-  // forwarding on it alone would send platform-only routes (e.g. /v1/releases)
-  // at the local gateway, which does not serve them.
-  const getPlatformCloudUrl = (): string => {
+  // Platform routes forward by path: same-origin `/v1/*` is the active local
+  // assistant's gateway (the same contract the CLI edge implements by
+  // proxying `/v1` there), while `/​_allauth` and `/accounts` are the
+  // platform's login surfaces. The env-resolved seed covers the no-lockfile
+  // window.
+  const resolveForwardBase = (request: GlobalRequest): string => {
+    const pathname = new URL(request.url).pathname;
+    if (pathname.startsWith("/_allauth") || pathname.startsWith("/accounts")) {
+      return cloudUrl;
+    }
     const read = getLockfileData(lockfilePaths);
-    const candidates = read.ok
-      ? [read.raw.cloudBaseUrl, read.raw.platformBaseUrl]
-      : [];
-    for (const candidate of candidates) {
-      if (typeof candidate === "string" && candidate.trim()) {
-        return candidate.trim();
+    if (read.ok) {
+      const active = read.data.activeAssistant
+        ? read.data.assistants.find(
+            (a) => a.assistantId === read.data.activeAssistant,
+          )
+        : undefined;
+      const entry = active ?? read.data.assistants[0];
+      if (entry && entry.cloud !== "paired") {
+        const port = entry.resources?.gatewayPort;
+        if (typeof port === "number" && port >= 1024 && port <= 65535) {
+          return `http://127.0.0.1:${port}`;
+        }
+        try {
+          const runtime = new URL(entry.runtimeUrl ?? "");
+          if (
+            (runtime.hostname === "127.0.0.1" ||
+              runtime.hostname === "localhost") &&
+            runtime.port
+          ) {
+            return `http://127.0.0.1:${runtime.port}`;
+          }
+        } catch {
+          // unparseable runtimeUrl — fall through to the cloud seed
+        }
       }
     }
     return cloudUrl;
@@ -344,10 +366,10 @@ const registerAppProtocol = (): void => {
       return pairedProxied;
     }
 
-    // Platform API and authentication routes forward to the cloud platform.
+    // Platform API and authentication routes forward by resolved base.
     const platformProxied = await forwardPlatformRequest(
       request,
-      getPlatformCloudUrl(),
+      resolveForwardBase(request),
     );
     if (platformProxied) return platformProxied;
 
@@ -476,7 +498,12 @@ app
           log.error("[app] startup CLI provisioning failed:", err);
         });
     }
-    installLoginItem();
+    // `setLoginItemSettings` fails in dev ("Operation not permitted" — the
+    // unpacked binary can't register as a login item); only packaged builds
+    // register at boot.
+    if (app.isPackaged) {
+      installLoginItem();
+    }
     installLoginItemIpc();
     installHotkeyHelper();
     installCompanionPermissionGuide(installPermissionsService());

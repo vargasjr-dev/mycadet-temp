@@ -162,9 +162,6 @@ export async function getAssistant(
         status: 200,
         data: {
           id: lockfileAssistant.assistantId,
-          // The handle doubles as the self-hosted identity row — assistant
-          // state carries it so settings pages never re-read the injected
-          // config for it.
           handle: lockfileAssistant.assistantId,
           name: lockfileAssistant.name ?? lockfileAssistant.assistantId,
           status: "active",
@@ -483,7 +480,8 @@ export async function restartAssistant(
 }
 
 export type RetireResult =
-  { ok: true } | { ok: false; status: number; error: Record<string, unknown> };
+  | { ok: true }
+  | { ok: false; status: number; error: Record<string, unknown> };
 
 export interface RetireAssistantOptions {
   /**

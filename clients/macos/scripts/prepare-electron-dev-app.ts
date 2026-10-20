@@ -1,29 +1,29 @@
 #!/usr/bin/env bun
 import { execFileSync } from "node:child_process";
-import { existsSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 const ROOT_DIR = path.resolve(import.meta.dir, "..");
-const ELECTRON_APP = path.join(
-  ROOT_DIR,
-  "node_modules",
-  "electron",
-  "dist",
-  "Electron.app",
-);
+const REPO_ROOT = path.resolve(ROOT_DIR, "..", "..");
+
+// Bun hoists workspace deps into the repo-root node_modules, so `electron`
+// may resolve from either home. Pick the first install that actually shipped
+// the app bundle — a silent skip would leave the stock "Electron" identity
+// (and old stamp) on the binary electron-vite launches.
+const ELECTRON_DIST_DIR = [
+  path.join(ROOT_DIR, "node_modules", "electron", "dist"),
+  path.join(REPO_ROOT, "node_modules", "electron", "dist"),
+].find((dir) => existsSync(path.join(dir, "Electron.app")));
+const ELECTRON_APP = path.join(ELECTRON_DIST_DIR ?? "", "Electron.app");
 const ELECTRON_INFO_PLIST = path.join(ELECTRON_APP, "Contents", "Info.plist");
 
 // Sentinel marking that we've restarted the Dock for this patched bundle.
 // Lives in `dist/` but OUTSIDE `Electron.app/` so it doesn't disturb the
 // bundle's code signature. Wiped when `electron` is reinstalled (which resets
 // the plist to stock "Electron"), so the next prepare re-busts the Dock.
-const DOCK_BUST_MARKER = path.join(
-  ROOT_DIR,
-  "node_modules",
-  "electron",
-  "dist",
-  ".cadet-dock-busted",
-);
+const DOCK_BUST_MARKER = ELECTRON_DIST_DIR
+  ? path.join(ELECTRON_DIST_DIR, ".cadet-dock-busted")
+  : null;
 
 // macOS keys notification authorization to the bundle identifier. The stock
 // Electron.app ships as `com.github.Electron` — an identifier shared by every
@@ -97,7 +97,7 @@ if (process.platform !== "darwin") {
   process.exit(0);
 }
 
-if (!existsSync(ELECTRON_INFO_PLIST)) {
+if (!ELECTRON_DIST_DIR || !existsSync(ELECTRON_INFO_PLIST)) {
   console.warn(
     `[prepare-electron-dev-app] Electron.app Info.plist not found at ${ELECTRON_INFO_PLIST}; skipping`,
   );
@@ -107,6 +107,27 @@ if (!existsSync(ELECTRON_INFO_PLIST)) {
 let changed = false;
 for (const [key, value] of Object.entries(REQUIRED_PLIST_STRINGS)) {
   changed = setPlistString(key, value) || changed;
+}
+
+// Notification prompts show the bundle's icon; the stock Electron.app ships
+// none of ours. Copy the same icns electron-builder packages (mac.icon) and
+// point CFBundleIconFile at it — the copy invalidates the signature, so this
+// rides the re-sign below.
+const ICON_SOURCE = path.join(ROOT_DIR, "build", "icon.icns");
+const ICON_NAME = "cadet-dev";
+if (existsSync(ICON_SOURCE)) {
+  try {
+    copyFileSync(
+      ICON_SOURCE,
+      path.join(ELECTRON_APP, "Contents", "Resources", `${ICON_NAME}.icns`),
+    );
+    changed = setPlistString("CFBundleIconFile", ICON_NAME) || changed;
+  } catch (error) {
+    console.warn(
+      "[prepare-electron-dev-app] icon stamp failed (continuing):",
+      error instanceof Error ? error.message : error,
+    );
+  }
 }
 
 if (changed || !isValidSignature()) {
@@ -138,7 +159,7 @@ if (changed || !isValidSignature()) {
 // re-read the name. Done once per patched bundle (tracked by the marker, and
 // again whenever the plist actually changes) so routine `bun run dev` restarts
 // don't blink the Dock on every launch. Best-effort — never block the dev flow.
-if (changed || !existsSync(DOCK_BUST_MARKER)) {
+if (DOCK_BUST_MARKER && (changed || !existsSync(DOCK_BUST_MARKER))) {
   try {
     execFileSync("killall", ["Dock"], { stdio: "ignore" });
     writeFileSync(DOCK_BUST_MARKER, "");

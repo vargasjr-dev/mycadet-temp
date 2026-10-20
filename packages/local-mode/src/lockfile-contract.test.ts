@@ -20,7 +20,6 @@ describe("parseLockfile", () => {
           cloud: "cadet",
           runtimeUrl: "http://127.0.0.1:7777",
           hatchedAt: "2026-01-01T00:00:00.000Z",
-          organizationId: "org_1",
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
@@ -169,24 +168,6 @@ describe("parseLockfile", () => {
     expect(parseLockfile(raw).assistants).toEqual([]);
   });
 
-  test("keeps organizationId on platform entries and drops it when mistyped", () => {
-    // Platform assistants carry their owning org so the host proxy can scope
-    // requests without guessing; local entries simply omit it.
-    const raw = {
-      assistants: [
-        { assistantId: "asst_1", cloud: "cadet", organizationId: "org_1" },
-        { assistantId: "asst_2", cloud: "cadet", organizationId: 7 }, // mistyped
-        { assistantId: "asst_3", cloud: "local" }, // local, no org
-      ],
-      activeAssistant: null,
-    };
-    expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "asst_1", cloud: "cadet", organizationId: "org_1" },
-      { assistantId: "asst_2", cloud: "cadet" },
-      { assistantId: "asst_3", cloud: "local" },
-    ]);
-  });
-
   test("keeps a well-typed ingressUrl and drops it when mistyped", () => {
     // The tunnel-recorded public URL rides the entry so remote-web pairing
     // surfaces can prefill it; a mistyped value is dropped, entry preserved.
@@ -312,9 +293,7 @@ describe("parseLockfile", () => {
 
   test("prefers an explicit cloud over legacy remote markers", () => {
     const raw = {
-      assistants: [
-        { assistantId: "a", cloud: "cadet", project: "stale-proj" },
-      ],
+      assistants: [{ assistantId: "a", cloud: "cadet", project: "stale-proj" }],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([

@@ -842,7 +842,7 @@ export async function allocateLocalResources(
  */
 export function getLockfilePlatformBaseUrl(): string | undefined {
   const lockfile = readLockfile();
-  const url = lockfile.cloudBaseUrl ?? lockfile.platformBaseUrl;
+  const url = lockfile.cloudBaseUrl;
   if (typeof url === "string" && url.trim()) return url.trim();
   return undefined;
 }

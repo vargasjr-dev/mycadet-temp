@@ -761,7 +761,7 @@ describe("host-proxy-router", () => {
       expect(conn.fingerprint).toBe("cloud:https://cloud.mycadet.ai:");
     });
 
-    test("stamps organizationId from the lockfile into the fingerprint", async () => {
+    test("stamps cloudOrganizationId from the lockfile into the fingerprint", async () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -770,7 +770,7 @@ describe("host-proxy-router", () => {
             assistantId: "cloud-1",
             cloud: "cadet",
             runtimeUrl: "https://cloud.mycadet.ai",
-            organizationId: "org-from-lockfile",
+            cloudOrganizationId: "org-from-lockfile",
           },
         ],
         activeAssistant: "cloud-1",
@@ -782,7 +782,7 @@ describe("host-proxy-router", () => {
       );
     });
 
-    test("reconnects cloud assistant when organizationId changes", async () => {
+    test("reconnects cloud assistant when cloudOrganizationId changes", async () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -791,7 +791,7 @@ describe("host-proxy-router", () => {
             assistantId: "cloud-1",
             cloud: "cadet",
             runtimeUrl: "https://cloud.mycadet.ai",
-            organizationId: "org-a",
+            cloudOrganizationId: "org-a",
           },
         ],
         activeAssistant: "cloud-1",
@@ -805,7 +805,7 @@ describe("host-proxy-router", () => {
             assistantId: "cloud-1",
             cloud: "cadet",
             runtimeUrl: "https://cloud.mycadet.ai",
-            organizationId: "org-b",
+            cloudOrganizationId: "org-b",
           },
         ],
         activeAssistant: "cloud-1",
@@ -1874,7 +1874,7 @@ describe("host-proxy-router", () => {
       const queued = __testing.presencePostQueues.get("cloud-1");
       expect(queued).toBeDefined();
 
-      // Same endpoint, new organizationId: the router rebuilds the connection
+      // Same endpoint, new cloudOrganizationId: the router rebuilds the connection
       // while the old post is still out against that very daemon.
       lockfileListener?.({
         assistants: [
@@ -1882,7 +1882,7 @@ describe("host-proxy-router", () => {
             assistantId: "cloud-1",
             cloud: "cadet",
             runtimeUrl: "https://cloud.mycadet.ai",
-            organizationId: "org-b",
+            cloudOrganizationId: "org-b",
           },
         ],
         activeAssistant: "cloud-1",

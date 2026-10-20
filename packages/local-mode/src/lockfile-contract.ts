@@ -197,19 +197,12 @@ export const LockfileAssistantSchema = z.object({
    * `onboarded-assistant.ts`).
    */
   onboardedAt: z.string().optional(),
-  /** Owning org for platform assistants; absent for local ones. */
-  organizationId: z.string().optional(),
   /** Platform assistant UUID for a self-hosted local assistant registration. */
   cloudAssistantId: z.string().optional(),
   /** Platform base URL used for a self-hosted local assistant registration. */
   cloudBaseUrl: z.string().optional(),
   /** Platform organization UUID used for a self-hosted local assistant registration. */
   cloudOrganizationId: z.string().optional(),
-  /** Pre-rename spellings of the cloud* fields above; readers fall back to
-   *  them so lockfiles written before the platform→cloud rename still resolve. */
-  platformAssistantId: z.string().optional(),
-  platformBaseUrl: z.string().optional(),
-  platformOrganizationId: z.string().optional(),
   /**
    * Public https URL a `cadet tunnel` provider recorded for this assistant
    * (mirrored from the workspace ingress config). A public address, so it is

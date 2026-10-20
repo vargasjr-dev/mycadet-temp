@@ -1392,7 +1392,6 @@
     "unpinAria": "取消固定 {name}"
   },
   "preferencesMenu": {
-    "admin": "管理",
     "preferences": "偏好设置",
     "settings": "设置",
     "shareFeedback": "分享反馈"

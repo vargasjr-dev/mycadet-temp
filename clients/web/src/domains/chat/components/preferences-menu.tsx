@@ -4,7 +4,6 @@ import {
   CircleUser,
   MessageSquareText,
   Settings as SettingsIcon,
-  Shield,
 } from "lucide-react";
 import { lazy, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -31,9 +30,8 @@ import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { displayedCreditsUsd } from "@/lib/billing/displayed-credits";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
-import { useAuthStore, useIsAuthenticated } from "@/stores/auth-store";
-import { openUrl } from "@/runtime/browser";
-import { adminUrl, routes } from "@/utils/routes";
+import { useIsAuthenticated } from "@/stores/auth-store";
+import { routes } from "@/utils/routes";
 
 import { CreditsCard } from "./credits-card";
 import { PreferencesUsagePanel } from "./preferences-usage-panel";
@@ -296,7 +294,6 @@ function PreferencesMenuContent({
 }: PreferencesMenuContentProps) {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
-  const user = useAuthStore.use.user();
   const cloudGate = useCloudGate();
   const {
     enabled: showBillingRows,
@@ -349,22 +346,6 @@ function PreferencesMenuContent({
         />
       )}
 
-      {user?.isStaff ? (
-        <PanelItem
-          icon={Shield}
-          label={t("preferencesMenu.admin")}
-          onSelect={() => {
-            onClose();
-            void openUrl(adminUrl());
-          }}
-        />
-      ) : null}
-
-      {/*
-        Settings is intentionally last: the popover anchors side="top", so
-        the final item sits closest to the Preferences trigger. Item-level
-        ordering can't be asserted by the SSR test harness (open={false}).
-      */}
       <PanelItem
         icon={SettingsIcon}
         label={t("preferencesMenu.settings")}

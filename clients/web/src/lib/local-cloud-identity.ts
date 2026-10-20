@@ -633,9 +633,7 @@ async function resolveOrganizationId(
   const existing =
     statusOrganizationId ??
     assistant.cloudOrganizationId ??
-    getActiveOrganizationIdForRequests() ??
-    assistant.organizationId ??
-    null;
+    getActiveOrganizationIdForRequests();
   if (existing) {
     return existing;
   }
@@ -647,7 +645,6 @@ async function resolveOrganizationId(
   return (
     getActiveOrganizationIdForRequests() ??
     assistant.cloudOrganizationId ??
-    assistant.organizationId ??
     null
   );
 }

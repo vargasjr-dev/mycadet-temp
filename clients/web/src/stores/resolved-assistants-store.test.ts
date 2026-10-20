@@ -21,13 +21,13 @@ import {
 import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
-// A platform entry is identified by `cloud === "cadet"` and carries an
-// `organizationId`; a local entry has a non-cadet cloud + gateway port and no org.
+// A platform entry is identified by `cloud === "cadet"` and carries a
+// `cloudOrganizationId`; a local entry has a non-cadet cloud + gateway port and no org.
 const cloudAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
   cloud: "cadet",
-  organizationId: "org-1",
+  cloudOrganizationId: "org-1",
 };
 
 const localAssistant: LockfileAssistant = {
