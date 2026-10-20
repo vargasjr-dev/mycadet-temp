@@ -138,10 +138,6 @@ mock.module("../tools/credentials/broker.js", () => ({
 import { persistPromptedCredential } from "../credential-execution/prompted-credential.js";
 import { initializeDb } from "../persistence/db-init.js";
 import {
-  forChatMintsSince,
-  resetForChatMintRegistryForTest,
-} from "../runtime/for-chat-mint-registry.js";
-import {
   _resetRevealSuccessRegistryForTest,
   currentRevealSuccessWatermark,
   openRevealProofWindow,
@@ -193,7 +189,6 @@ describe("credentials routes", () => {
     scrubbedValues = [];
     liveRecordsUnreachable = false;
     _resetRevealSuccessRegistryForTest();
-    resetForChatMintRegistryForTest();
     setOverridesForTesting({ "chat-credential-reveal": false });
   });
 
@@ -317,110 +312,6 @@ describe("credentials routes", () => {
       expect(
         revealedValueSince(watermark, "vercel", "api_token", "nonce-A"),
       ).toBeUndefined();
-    });
-  });
-
-  describe("credentials_reveal --for-chat", () => {
-    test("rejects forChat when the chat-credential-reveal flag is off", async () => {
-      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
-      await expect(
-        revealRoute!.handler({
-          body: { service: "vercel", field: "api_token", forChat: true },
-          headers: { "x-cadet-principal-type": "local" },
-        }),
-      ).rejects.toThrow("chat-credential-reveal feature flag");
-    });
-
-    test("a direct local forChat reveal returns the sentinel, records the mint, and no plaintext proof", async () => {
-      setOverridesForTesting({ "chat-credential-reveal": true });
-      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
-      openRevealProofWindow();
-      const watermark = currentRevealSuccessWatermark();
-
-      const result = (await revealRoute!.handler({
-        body: {
-          service: "vercel",
-          field: "api_token",
-          forChat: true,
-          revealNonce: "nonce-A",
-        },
-        headers: { "x-cadet-principal-type": "local" },
-      })) as { value: string };
-
-      expect(result.value).toBe(
-        "\u3014redacted:Credential:vercel:api_token\u3015",
-      );
-      expect(result.value).not.toContain(SECRET_VALUE);
-      expect(forChatMintsSince(0)).toEqual([
-        {
-          service: "vercel",
-          field: "api_token",
-          sentinel: result.value,
-          nonce: "nonce-A",
-        },
-      ]);
-      // The channel never returns plaintext to the tool, so the plaintext
-      // proof registry must not retain the secret for it.
-      expect(
-        revealedValueSince(watermark, "vercel", "api_token", "nonce-A"),
-      ).toBeUndefined();
-    });
-
-    test("a gateway-proxied forChat reveal returns the sentinel but records no mint", async () => {
-      setOverridesForTesting({ "chat-credential-reveal": true });
-      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
-
-      const result = (await revealRoute!.handler({
-        body: {
-          service: "vercel",
-          field: "api_token",
-          forChat: true,
-          revealNonce: "nonce-A",
-        },
-        headers: {
-          "x-cadet-principal-type": "local",
-          "x-cadet-proxy-server": "ipc",
-        },
-      })) as { value: string };
-
-      expect(result.value).toContain("\u3014redacted:");
-      expect(forChatMintsSince(0)).toEqual([]);
-    });
-
-    test("a direct local reveal WITHOUT a nonce records no authority at all", async () => {
-      // Direct terminal use (outside any conversation's tool shell) has no
-      // nonce to forward. The reveal works, but neither registry records —
-      // there is no conversation whose transcript could spend the record.
-      setOverridesForTesting({ "chat-credential-reveal": true });
-      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
-      openRevealProofWindow();
-      const watermark = currentRevealSuccessWatermark();
-
-      await revealRoute!.handler({
-        body: { service: "vercel", field: "api_token" },
-        headers: { "x-cadet-principal-type": "local" },
-      });
-      await revealRoute!.handler({
-        body: { service: "vercel", field: "api_token", forChat: true },
-        headers: { "x-cadet-principal-type": "local" },
-      });
-
-      expect(
-        revealedValueSince(watermark, "vercel", "api_token", "nonce-A"),
-      ).toBeUndefined();
-      expect(forChatMintsSince(0)).toEqual([]);
-    });
-
-    test("a forChat reveal with no principal header records no mint (fails closed)", async () => {
-      setOverridesForTesting({ "chat-credential-reveal": true });
-      secureStore.set(seedKey("vercel", "api_token"), SECRET_VALUE);
-
-      const result = (await revealRoute!.handler({
-        body: { service: "vercel", field: "api_token", forChat: true },
-      })) as { value: string };
-
-      expect(result.value).toContain("\u3014redacted:");
-      expect(forChatMintsSince(0)).toEqual([]);
     });
   });
 

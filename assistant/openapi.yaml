@@ -16611,48 +16611,6 @@ paths:
                   - ok
                   - updated
                 additionalProperties: false
-  /v1/conversations/summarize:
-    post:
-      operationId: conversations_summarize_post
-      summary: Summarize a conversation up to a message
-      description:
-        Replace the conversation's context before the given message with a generated summary. The boundary snaps to
-        the start of the turn containing beforeMessageId; that turn and everything after stay verbatim. Messages are
-        never deleted.
-      tags:
-        - conversations
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                conversationId:
-                  type: string
-                beforeMessageId:
-                  type: string
-                  description: Summarize all messages before this one
-              required:
-                - conversationId
-                - beforeMessageId
-      responses:
-        "202":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  accepted:
-                    type: boolean
-                    const: true
-                  conversationId:
-                    type: string
-                required:
-                  - accepted
-                  - conversationId
-                additionalProperties: false
   /v1/conversations/switch:
     post:
       operationId: conversations_switch_post
@@ -17090,9 +17048,7 @@ paths:
     post:
       operationId: credentials_reveal_post
       summary: Reveal a credential's plaintext value
-      description:
-        Return the raw plaintext value of a stored credential. Blocked in untrusted shell mode. With forChat,
-        returns a chat-safe redaction sentinel instead of the plaintext.
+      description: Return the raw plaintext value of a stored credential. Blocked in untrusted shell mode.
       tags:
         - credentials
       requestBody:
@@ -17111,16 +17067,11 @@ paths:
                 id:
                   description: Credential UUID for lookup by ID
                   type: string
-                forChat:
-                  description:
-                    Return the credential's redaction sentinel (renders as a click-to-reveal chip in chat) instead of the
-                    plaintext. Requires the chat-credential-reveal feature flag.
-                  type: boolean
                 revealNonce:
                   description:
                     Conversation-bound reveal nonce from the tool-shell environment. Scopes any recorded chat-redaction
-                    authority (plaintext proof or forChat mint) to the conversation whose tool executed this reveal;
-                    without it the reveal succeeds but records no authority.
+                    authority (the plaintext proof) to the conversation whose tool executed this reveal; without it the
+                    reveal succeeds but records no authority.
                   type: string
       responses:
         "200":
@@ -17132,7 +17083,7 @@ paths:
                 properties:
                   value:
                     type: string
-                    description: The plaintext credential value (or its redaction sentinel when forChat is set)
+                    description: The plaintext credential value
                 required:
                   - value
                 additionalProperties: false

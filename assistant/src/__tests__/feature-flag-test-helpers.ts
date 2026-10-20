@@ -47,10 +47,7 @@ export function setOverridesForTesting(
  * `isAssistantFeatureFlagEnabled` to a blanket `() => false` must override
  * these explicitly — the real module resolves them to `true` otherwise.
  */
-export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [
-  "in-chat-onboarding-tour",
-  "vision-mode",
-];
+export const DEFAULT_ENABLED_FLAG_KEYS: readonly string[] = [];
 
 /**
  * Equivalent of a blanket `isAssistantFeatureFlagEnabled: () => false` mock:
@@ -64,18 +61,7 @@ export function setAllFlagsOffForTesting(): void {
 }
 
 /** Every key declared in the feature-flag registry. */
-export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = [
-  "in-chat-onboarding-tour",
-  "vision-mode",
-  "cadet-hosted-inference",
-  "internal-thread-actions",
-  "velvet",
-  "os-beta",
-  "chat-credential-reveal",
-  "marketing-pricing-takeover",
-  "send-user-message",
-  "sidebar-done",
-];
+export const ALL_REGISTRY_FLAG_KEYS: readonly string[] = ["os-beta"];
 
 /**
  * Equivalent of a blanket `isAssistantFeatureFlagEnabled: () => true` mock for

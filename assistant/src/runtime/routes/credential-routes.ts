@@ -17,12 +17,10 @@
 import { z } from "zod";
 
 import { AcpCredentialFormatError } from "../../acp/acp-credentials.js";
-import { isAssistantFeatureFlagEnabled } from "../../config/assistant-feature-flags.js";
 import {
   type CloudCredentialDescriptor,
   fetchCloudCatalog,
 } from "../../credential-execution/cloud-catalog.js";
-import { buildForChatSentinel } from "../../daemon/chat-credential-redaction.js";
 import { invalidateEmailReadinessForByoCredential } from "../../email/byo-email-credential.js";
 import {
   disconnectOAuthProvider,
@@ -51,7 +49,6 @@ import {
   storeCredentialValue,
 } from "../../tools/credentials/store.js";
 import { ACTOR_PRINCIPALS } from "../auth/route-policy.js";
-import { recordForChatMint } from "../for-chat-mint-registry.js";
 import { recordRevealSuccess } from "../reveal-success-registry.js";
 import {
   isPlatformCloudCredential,
@@ -361,13 +358,6 @@ async function handleCredentialsReveal({ body, headers }: RouteHandlerArgs) {
     throw new BadRequestError("Request body is required");
   }
 
-  const forChat = (body as { forChat?: unknown }).forChat === true;
-  if (forChat && !isAssistantFeatureFlagEnabled("chat-credential-reveal")) {
-    throw new BadRequestError(
-      "--for-chat requires the chat-credential-reveal feature flag",
-    );
-  }
-
   // Conversation-bound reveal nonce (see reveal-nonce.ts), forwarded by
   // the CLI from the tool-shell env. Required for RECORDING any
   // reveal-derived chat authority below; the reveal itself works without
@@ -401,47 +391,6 @@ async function handleCredentialsReveal({ body, headers }: RouteHandlerArgs) {
     headers?.["x-cadet-principal-type"] === "local" &&
     headers?.["x-cadet-proxy-server"] !== "ipc";
 
-  if (forChat) {
-    // Both lookup forms resolve service+field (or throw); the narrow check
-    // keeps the sentinel's vault coordinates provably non-empty.
-    if (!lookup.service || !lookup.field) {
-      throw new BadRequestError(
-        "Credential identity could not be resolved for --for-chat",
-      );
-    }
-    // Chat-safe reveal: return the enriched redaction sentinel instead of
-    // the plaintext. The caller (the model, echoing a tool result) can
-    // paste this into its reply to render a click-to-reveal chip without
-    // the secret ever entering model context or the conversation stream.
-    // The persist-path forgery guard re-mints it on identity match — see
-    // guardForChatSentinels in chat-credential-redaction.ts. No plaintext
-    // reaches the tool, so no reveal-success proof is recorded: that
-    // registry authorizes plaintext-echo swaps, and retaining the secret
-    // for a path that never emits it would widen retention for nothing.
-    const sentinel = buildForChatSentinel({
-      service: lookup.service,
-      field: lookup.field,
-      value: secret,
-    });
-    // Record the mint AFTER the reveal provably succeeded. This registry —
-    // not any parse of the requested shell command — is what authorizes the
-    // persist guard to re-mint a sentinel with this identity: a command
-    // that merely quotes or comments out a reveal invocation never reaches
-    // this route, so it never allowlists anything. Like the plaintext proof
-    // below, the mint records only for a direct tool-shell invocation, and
-    // only with the conversation-bound nonce that scopes it to the
-    // conversation whose tool shell made this call (see the registry
-    // module doc — no predictable identifier can do this job).
-    if (directLocalInvocation && revealNonce !== undefined) {
-      recordForChatMint({
-        service: lookup.service,
-        field: lookup.field,
-        sentinel,
-        nonce: revealNonce,
-      });
-    }
-    return { value: sentinel };
-  }
 
   // Ground truth for the chat-credential-reveal persist seams: this route
   // is the only place a reveal legitimately reads plaintext, so a success
@@ -674,30 +623,24 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Reveal a credential's plaintext value",
     description:
-      "Return the raw plaintext value of a stored credential. Blocked in untrusted shell mode. With forChat, returns a chat-safe redaction sentinel instead of the plaintext.",
+      "Return the raw plaintext value of a stored credential. Blocked in untrusted shell mode.",
     tags: ["credentials"],
     requestBody: z.object({
       service: z.string().optional().describe("Service namespace"),
       field: z.string().optional().describe("Field name"),
       id: z.string().optional().describe("Credential UUID for lookup by ID"),
-      forChat: z
-        .boolean()
-        .optional()
-        .describe(
-          "Return the credential's redaction sentinel (renders as a click-to-reveal chip in chat) instead of the plaintext. Requires the chat-credential-reveal feature flag.",
-        ),
       revealNonce: z
         .string()
         .optional()
         .describe(
-          "Conversation-bound reveal nonce from the tool-shell environment. Scopes any recorded chat-redaction authority (plaintext proof or forChat mint) to the conversation whose tool executed this reveal; without it the reveal succeeds but records no authority.",
+          "Conversation-bound reveal nonce from the tool-shell environment. Scopes any recorded chat-redaction authority (the plaintext proof) to the conversation whose tool executed this reveal; without it the reveal succeeds but records no authority.",
         ),
     }),
     responseBody: z.object({
       value: z
         .string()
         .describe(
-          "The plaintext credential value (or its redaction sentinel when forChat is set)",
+          "The plaintext credential value",
         ),
     }),
     handler: handleCredentialsReveal,

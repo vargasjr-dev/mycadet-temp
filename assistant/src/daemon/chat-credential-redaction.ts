@@ -560,165 +560,11 @@ export async function resolveRevealCandidates(
 }
 
 // ---------------------------------------------------------------------------
-// Daemon-minted sentinels and re-mint authority
-// ---------------------------------------------------------------------------
-
-/**
- * A sentinel identity the guard may restore to its canonical daemon-minted
- * form. Sources: route-recorded `--for-chat` mints (validated against the
- * conversation's reveal nonce and staged identities by the agent loop
- * before they reach the guard) and candidates proven by this
- * conversation's own plain reveals (nonce-bound at the proof registry).
- */
-export interface SentinelRemintAuthority {
-  service: string;
-  field: string;
-  /** The canonical sentinel to restore for this identity. */
-  sentinel: string;
-}
-
-/**
- * The canonical daemon-minted sentinel for a credential. Used by the
- * `--for-chat` reveal channel (the route returns this instead of the
- * plaintext) and by candidate-derived re-mint authorities, so every path
- * that mints for the same identity produces the same bytes. The type label
- * comes from the same anchored scanner classification persist-time
- * enrichment uses ({@link classifyCandidateType}).
- */
-export function buildForChatSentinel(candidate: {
-  service: string;
-  field: string;
-  value: string;
-}): string {
-  return buildRedactedSentinel({
-    type: classifyCandidateType(candidate.value),
-    service: candidate.service,
-    field: candidate.field,
-  });
-}
-
-/**
- * Re-mint authorities derived from this turn's PROVEN reveal candidates.
- *
- * A model that legitimately revealed a credential this turn holds its
- * plaintext and could echo it verbatim — which the guards would swap into
- * a genuine enriched sentinel. When it instead retypes the sentinel it saw
- * in its (redacted) history, byte-equality can't prove anything, but the
- * identity can: a sentinel-shaped span claiming a `service:field` that was
- * proven this turn grants nothing a plaintext echo wouldn't. Re-minting it
- * (from the candidate's own metadata — never from the span's claimed
- * label) turns the confusing neutralized-glyph outcome into the same chip
- * the echo would have produced. Unproven identities still neutralize.
- *
- * Deduped by identity: encoding-variant candidates share a service:field
- * and must not produce duplicate authorities. Conversation scoping is
- * inherent — candidates live in per-run state that only this
- * conversation's own proven reveals populate.
- */
-export function remintAuthoritiesFromCandidates(
-  candidates: readonly ResolvedRevealCandidate[],
-): SentinelRemintAuthority[] {
-  const byIdentity = new Map<string, SentinelRemintAuthority>();
-  for (const candidate of candidates) {
-    const key = credentialKey(candidate.service, candidate.field);
-    if (byIdentity.has(key)) {
-      continue;
-    }
-    byIdentity.set(key, {
-      service: candidate.service,
-      field: candidate.field,
-      sentinel: buildForChatSentinel(candidate),
-    });
-  }
-  return [...byIdentity.values()];
-}
-
-/**
- * Sentinel guard for text that may legitimately contain daemon-minted
- * sentinels. The forgery-guard spine assumes raw model output never
- * carries a genuine sentinel — with two sanctioned, turn-scoped
- * exceptions, both keyed by identity rather than trust in the span's own
- * bytes:
- *
- * 1. `--for-chat` reveals: the daemon returned the sentinel as the reveal
- *    tool's result precisely so the model can copy it into its reply
- *    without ever touching the plaintext. Authority is the mint the
- *    reveal ROUTE recorded this turn ({@link ForChatMint}) — the route is
- *    the sole authority; a string parse of the requested command is not,
- *    because a segment that merely quotes a reveal invocation never
- *    executed one.
- * 2. Proven plain-reveal candidates
- *    ({@link remintAuthoritiesFromCandidates}): the model provably held
- *    the plaintext this turn, so a span claiming that identity grants
- *    nothing a verbatim echo wouldn't.
- *
- * An enriched span whose decoded `service:field` identity matches an
- * authority is RE-MINTED — replaced with the daemon's own canonical
- * sentinel, so a tampered type label can't survive. Everything else —
- * plain shapes, unknown identities, malformed escapes, partial triggers —
- * flows through `transformRest` (neutralization by default; the persist
- * path passes its neutralize+scan pipeline so a secret embedded inside a
- * forged sentinel is still caught). Re-minted spans are inserted verbatim
- * and never fed to `transformRest`: a minted sentinel is not
- * scanner-inert — its service/field segments are arbitrary user strings
- * that can look secret-shaped, and a scanner rewrite inside a fresh
- * sentinel would corrupt it. With no authorities this is byte-identical
- * to `transformRest(text)`.
- */
-export function guardForChatSentinels(
-  text: string,
-  mints: readonly SentinelRemintAuthority[],
-  transformRest: (segment: string) => string = neutralizeRedactedSentinels,
-): string {
-  if (mints.length === 0) {
-    return transformRest(text);
-  }
-  const re = createRedactedSentinelRegex();
-  let out = "";
-  let last = 0;
-  for (const m of text.matchAll(re)) {
-    const decoded = decodeRedactedSentinelMatch(m as RegExpExecArray);
-    const hit =
-      decoded.service !== undefined && decoded.field !== undefined
-        ? mints.find(
-            (c) => c.service === decoded.service && c.field === decoded.field,
-          )
-        : undefined;
-    // Between-match text can still hold partial/malformed triggers —
-    // transform it segment-wise. Splits are at full-sentinel boundaries,
-    // so no trigger ever spans a segment edge.
-    out += transformRest(text.slice(last, m.index));
-    out += hit ? hit.sentinel : transformRest(m[0]);
-    last = m.index + m[0].length;
-  }
-  out += transformRest(text.slice(last));
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Live-stream forgery guard
+// Sentinel trigger + legacy marker
 // ---------------------------------------------------------------------------
 
 const SENTINEL_TRIGGER = `${REDACTED_SENTINEL_OPEN}${REDACTED_SENTINEL_TAG}:`;
 
-/**
- * A reveal candidate prepared for live-stream substitution: when the model
- * echoes `value` into its reply, the stream guard swaps it for `replacement`
- * (the same enriched sentinel persist-time redaction produces) before the
- * bytes reach the wire — so the plaintext never flashes in the live
- * transcript and never leaves the daemon.
- */
-export interface LiveRevealGuardEntry {
-  /** Credential plaintext exactly as it would appear in model output. */
-  value: string;
-  /** The sentinel `redactSecretsForChat` produces for those bytes. */
-  replacement: string;
-}
-
-/**
- * Fallback type label for a candidate whose bare value the scanner cannot
- * classify on its own (context-sensitive patterns like `password=…`).
- */
 const FALLBACK_SENTINEL_TYPE = "Credential";
 
 /**
@@ -730,45 +576,124 @@ const FALLBACK_SENTINEL_TYPE = "Credential";
 export const LEGACY_CREDENTIAL_REDACTION_MARKER = `<redacted type="${FALLBACK_SENTINEL_TYPE}" />`;
 
 /**
- * Precompute live-swap entries from resolved reveal candidates. Every
- * candidate gets an entry — the guard's job is to keep revealed plaintext
- * off the wire, whatever the surrounding text turns out to be — and each
- * replacement is exactly what persist-time redaction produces for the
- * bare value, so the live stream and the persisted row agree
- * byte-for-byte. `redactSecretsForChat` guarantees a candidate value
- * never survives: the scanner classifies what it can, and the exact-match
- * fallback (see `swapCandidateValueFallbacks`) covers the rest — opaque
- * manual tokens and values the scanner only matches with surrounding
- * context. The lone residual divergence: a contextual persist match
- * (`password=<value>`) may carry a more specific type label than the
- * bare-value chip streamed live — cosmetic, same service:field identity.
+ * Length of the prefix of `buffer` that is stable under the trigger's
+ * neutralization: a COMPLETE trigger in the consumed region commits (it
+ * neutralizes to the same bytes no matter what arrives next); a trailing
+ * PROPER PREFIX of the trigger must be held back — a future chunk could
+ * complete it into a trigger, and emitting it raw would let a split
+ * forgery survive.
  */
-export function buildLiveRevealGuardEntries(
+function stableEmitLen(buffer: string, targets: readonly string[]): number {
+  const target = targets[0]!;
+  const maxLen = Math.min(target.length - 1, buffer.length);
+  for (let len = maxLen; len > 0; len--) {
+    if (buffer.endsWith(target.slice(0, len))) {
+      return buffer.length - len;
+    }
+  }
+  return buffer.length;
+}
+
+/**
+ * Streaming redaction guard for live `assistant_text_delta` emission
+ * (mirrors `drainDirectiveDisplayBuffer`'s hold-back pattern). Two jobs:
+ *
+ * 1. **Forgery neutralization** — genuine sentinels are created by the
+ *    daemon, so a sentinel-shaped string the model streams neutralizes
+ *    unless a re-mint authority for its identity exists this turn
+ *    (`--for-chat` mints and proven reveal candidates — see
+ *    `guardForChatSentinels`), in which case it is restored to the
+ *    daemon's canonical mint.
+ * 2. **Live reveal swap** — a complete occurrence of a reveal candidate's
+ *    plaintext is replaced with its enriched sentinel (`entries`), so the
+ *    secret never flashes in the live stream: the client renders the chip
+ *    immediately and the persisted row (which redacts the same bytes at
+ *    persist time) matches what was streamed.
+ *
+ * A trailing PARTIAL trigger or candidate-value prefix (split across
+ * streaming chunks) is held back in `bufferedRemainder` so the next chunk
+ * decides whether it completes; when that partial prefix could outrank a
+ * completed occurrence it starts inside, the whole occurrence is held with
+ * it (see `stableEmitLen`), so the remainder is bounded by roughly twice
+ * the longest target. Callers must re-prepend the remainder to
+ * the next chunk and, at end-of-message, flush it through
+ * `neutralizeAndSwapLiveRevealValues` — nothing can complete a partial
+ * prefix after the message ends.
+ *
+ * `consumedRaw` is the untransformed input the emit covers. Callers that
+ * mirror streamed text for partial persistence must mirror `consumedRaw`,
+ * not `emitText`: persist-time redaction re-derives the sentinel from the
+ * raw bytes, whereas a mirrored already-swapped sentinel would be
+ * indistinguishable from a forgery and get neutralized.
+ */
+/**
+ * Upper bound on how much tail the guard will hold back waiting for an
+ * in-flight daemon-minted sentinel to close. A genuine sentinel is far
+ * shorter (type + encoded service/field); a trigger that runs this long
+ * without closing is forged garbage and is released (neutralized) rather
+ * than buffered forever.
+ */
+const UNCLOSED_SENTINEL_HOLD_CAP = 512;
+
+export function drainSentinelGuardedText(buffer: string): {
+  emitText: string;
+  consumedRaw: string;
+  bufferedRemainder: string;
+} {
+  // The trigger is the only hold target: a complete live sentinel is forged
+  // by definition (genuine sentinels are created at persist time), and a
+  // trailing partial must not survive a chunk boundary where neutralization
+  // could miss it.
+  const emitLen = stableEmitLen(buffer, [SENTINEL_TRIGGER]);
+  const consumedRaw = buffer.slice(0, emitLen);
+  return {
+    emitText: neutralizeRedactedSentinels(consumedRaw),
+    consumedRaw,
+    bufferedRemainder: buffer.slice(emitLen),
+  };
+}
+
+/**
+ * Streaming redaction guard for live `tool_output_chunk` emission — the
+ * tool-output twin of {@link drainSentinelGuardedText}. A foreground
+ * reveal's stdout streams to the client WHILE the tool runs, before the
+ * tool_result seam redacts the final content, so each chunk must be
+ * redacted on the way out or the plaintext shows in the tool drawer until
+ * the redacted result replaces it. Complete occurrences of candidate
+ * values become the legacy marker (this surface renders no chips, and the
+ * final tool_result row uses the same treatment, so live and persisted
+ * bytes agree); a trailing partial occurrence is held back in
+ * `bufferedRemainder` for the tool's next chunk. The tool_result seam
+ * DISCARDS whatever remains: a held partial is raw credential prefix
+ * bytes that complete-value redaction cannot mask, and the redacted final
+ * result supersedes the streamed view immediately.
+ */
+export function drainCandidateGuardedChunk(
+  buffer: string,
   candidates: readonly ResolvedRevealCandidate[],
-): LiveRevealGuardEntry[] {
-  const entries: LiveRevealGuardEntry[] = [];
+): { emitText: string; bufferedRemainder: string } {
   const seen = new Set<string>();
+  const values: string[] = [];
   for (const candidate of candidates) {
-    // Dedupe by value — duplicate plaintexts would otherwise register two
-    // entries and split/join order would silently pick one.
-    if (seen.has(candidate.value)) {
+    if (candidate.value.length === 0 || seen.has(candidate.value)) {
       continue;
     }
     seen.add(candidate.value);
-    // Derive the replacement against the FULL candidate list, exactly as
-    // the persist seam does: a value shared by two identities degrades to
-    // the plain sentinel there (see `uniqueCandidateForValue`), and the
-    // live swap must emit the same bytes or the streamed text and the
-    // persisted row would disagree on reconnect.
-    entries.push({
-      value: candidate.value,
-      replacement: redactSecretsForChat(candidate.value, candidates),
-    });
+    values.push(candidate.value);
   }
-  return entries;
+  values.sort((a, b) => b.length - a.length);
+  const emitLen = stableEmitLen(buffer, values);
+  return {
+    emitText: redactCandidateValuesLegacy(buffer.slice(0, emitLen), candidates),
+    bufferedRemainder: buffer.slice(emitLen),
+  };
 }
 
-/** A non-overlapping occurrence of a target in raw text. */
+// ---------------------------------------------------------------------------
+// Sentinel redaction
+// ---------------------------------------------------------------------------
+
+
 interface RawSpan {
   start: number;
   end: number;
@@ -868,391 +793,6 @@ function replaceRawSpans(
 }
 
 /**
- * Replace every occurrence of each entry's plaintext with its sentinel.
- * Longest value first: when one candidate's plaintext is a prefix (or
- * substring) of another's, insertion order would let the shorter entry
- * consume the head of the longer value — emitting the shorter chip plus
- * the longer credential's unmatched suffix as raw text, while persist-time
- * redaction (whose scanner prefers the longer span) redacts the whole
- * value. Descending-length ordering keeps the live swap consistent with
- * persistence, and the span-based rebuild (`replaceRawSpans`) guarantees a
- * later entry can never rewrite inside an earlier entry's emitted
- * sentinel.
- */
-export function swapLiveRevealValues(
-  text: string,
-  entries: readonly LiveRevealGuardEntry[],
-): string {
-  const ordered = [...entries].sort((a, b) => b.value.length - a.value.length);
-  return replaceRawSpans(
-    text,
-    ordered.map((entry) => entry.value),
-    (priority) => ordered[priority].replacement,
-  );
-}
-
-/**
- * The live-emit transform: swap candidate values for their sentinels AND
- * neutralize forged sentinels — resolved together on the RAW bytes, with
- * neutralization applied only to the text between candidate spans.
- * Sequencing them instead (`swapLiveRevealValues(neutralizeRedactedSentinels(text))`)
- * breaks when a candidate's plaintext itself contains the sentinel trigger
- * (manual values are arbitrary strings): neutralization would mutate the
- * value's occurrence first, the exact-match swap would miss it, and an
- * opaque secret would cross the wire almost intact. Candidate spans win;
- * forgery neutralization covers everything they don't claim — exactly the
- * occurrence semantics `stableEmitLen` models when it analyzes the trigger
- * and the values as one priority-ordered target set.
- */
-export function neutralizeAndSwapLiveRevealValues(
-  text: string,
-  entries: readonly LiveRevealGuardEntry[],
-  forChatMints: readonly SentinelRemintAuthority[] = [],
-): string {
-  const ordered = [...entries].sort((a, b) => b.value.length - a.value.length);
-  return replaceRawSpans(
-    text,
-    ordered.map((entry) => entry.value),
-    (priority) => ordered[priority].replacement,
-    (segment) => guardForChatSentinels(segment, forChatMints),
-  );
-}
-
-/**
- * Length of the prefix of `buffer` whose transform result is STABLE —
- * i.e. cannot change no matter what bytes arrive next — under the
- * transform's occurrence semantics: targets resolved in priority order
- * (the caller passes them highest-priority first, matching
- * `swapLiveRevealValues`' longest-value-first stable sort), each target's
- * occurrences greedy left-to-right, non-overlapping with higher-priority
- * spans. Everything past the returned offset must be held back.
- *
- * Two steps:
- *
- * 1. Resolve the consumed spans of the CURRENT buffer exactly as the
- *    swap would.
- * 2. Find every "threat": a suffix of the buffer that is a proper prefix
- *    of some target `T` — bytes a future chunk could complete into a
- *    `T`-occurrence. Each threat pulls the stable boundary back:
- *    - threat starts OUTSIDE any consumed span → hold from the threat
- *      start (the classic split-value hold);
- *    - threat starts INSIDE a consumed span of occurrence `E`:
- *      - `priority(T)` higher than `priority(E)` → the future `T` match
- *        would beat `E` in the full-text swap, so `E` cannot be
- *        committed yet — hold from `E`'s START (emitting any part of
- *        `E` would leak raw bytes on one continuation or emit the wrong
- *        replacement on the other);
- *      - otherwise → `E` wins regardless of future bytes (greedy
- *        left-to-right for the same target, priority order across
- *        targets), so the threat is moot — `E` commits whole.
- *
- * Each case guards a real leak shape: a self-overlapping value chunked at
- * the overlap boundary (`abcabc` as `abc`+`abc`: the own-tail threat is
- * moot, the occurrence commits whole); a candidate whose tail is a prefix
- * of a longer candidate (the threat outranks it, so it is held whole —
- * emitting it would leak the longer value's suffix raw once it
- * completes); equal-length overlapping entries (`aba`/`bab`: the
- * earlier-sorted entry outranks, so a completed `bab` holds while `aba`
- * may still complete — keeping chunked output identical to the unchunked
- * swap).
- *
- * The boundary never splits a consumed span: it lands either outside
- * all spans or exactly on a span's start.
- */
-function stableEmitLen(buffer: string, targets: readonly string[]): number {
-  // Same span resolution as the swap transforms — shared so the stability
-  // analysis can never disagree with what the transform actually consumes.
-  const consumed = resolveRawSpans(buffer, targets);
-  let emitLen = buffer.length;
-  targets.forEach((target, priority) => {
-    const maxLen = Math.min(target.length - 1, buffer.length);
-    for (let len = maxLen; len > 0; len--) {
-      if (!buffer.endsWith(target.slice(0, len))) {
-        continue;
-      }
-      const start = buffer.length - len;
-      const host = consumed.find((s) => s.start <= start && start < s.end);
-      if (host === undefined) {
-        if (start < emitLen) {
-          emitLen = start;
-        }
-      } else if (priority < host.priority && host.start < emitLen) {
-        emitLen = host.start;
-      }
-    }
-  });
-  return emitLen;
-}
-
-/**
- * Streaming redaction guard for live `assistant_text_delta` emission
- * (mirrors `drainDirectiveDisplayBuffer`'s hold-back pattern). Two jobs:
- *
- * 1. **Forgery neutralization** — genuine sentinels are created by the
- *    daemon, so a sentinel-shaped string the model streams neutralizes
- *    unless a re-mint authority for its identity exists this turn
- *    (`--for-chat` mints and proven reveal candidates — see
- *    `guardForChatSentinels`), in which case it is restored to the
- *    daemon's canonical mint.
- * 2. **Live reveal swap** — a complete occurrence of a reveal candidate's
- *    plaintext is replaced with its enriched sentinel (`entries`), so the
- *    secret never flashes in the live stream: the client renders the chip
- *    immediately and the persisted row (which redacts the same bytes at
- *    persist time) matches what was streamed.
- *
- * A trailing PARTIAL trigger or candidate-value prefix (split across
- * streaming chunks) is held back in `bufferedRemainder` so the next chunk
- * decides whether it completes; when that partial prefix could outrank a
- * completed occurrence it starts inside, the whole occurrence is held with
- * it (see `stableEmitLen`), so the remainder is bounded by roughly twice
- * the longest target. Callers must re-prepend the remainder to
- * the next chunk and, at end-of-message, flush it through
- * `neutralizeAndSwapLiveRevealValues` — nothing can complete a partial
- * prefix after the message ends.
- *
- * `consumedRaw` is the untransformed input the emit covers. Callers that
- * mirror streamed text for partial persistence must mirror `consumedRaw`,
- * not `emitText`: persist-time redaction re-derives the sentinel from the
- * raw bytes, whereas a mirrored already-swapped sentinel would be
- * indistinguishable from a forgery and get neutralized.
- */
-/**
- * Upper bound on how much tail the guard will hold back waiting for an
- * in-flight daemon-minted sentinel to close. A genuine sentinel is far
- * shorter (type + encoded service/field); a trigger that runs this long
- * without closing is forged garbage and is released (neutralized) rather
- * than buffered forever.
- */
-const UNCLOSED_SENTINEL_HOLD_CAP = 512;
-
-export function drainSentinelGuardedText(
-  buffer: string,
-  entries: readonly LiveRevealGuardEntry[] = [],
-  forChatMints: readonly SentinelRemintAuthority[] = [],
-): {
-  emitText: string;
-  consumedRaw: string;
-  bufferedRemainder: string;
-} {
-  // Priority order must mirror the transforms exactly:
-  // `swapLiveRevealValues` sorts entries longest-value-first (stable),
-  // and the trigger joins the same ordering so its complete occurrences
-  // (consumed by neutralization) participate in the stability analysis.
-  const targets = [
-    SENTINEL_TRIGGER,
-    ...entries.map((entry) => entry.value),
-  ].sort((a, b) => b.length - a.length);
-  let emitLen = stableEmitLen(buffer, targets);
-  // With re-mint authorities in play, a COMPLETE trigger in the emit
-  // region may be the head of a genuine daemon-minted sentinel still
-  // streaming in. The plain guard neutralizes complete triggers eagerly
-  // (any live sentinel is forged by definition); here that would mangle
-  // the sanctioned case — so hold from the first trigger whose sentinel
-  // has not fully landed inside the emit region (bounded by the cap
-  // above), letting `guardForChatSentinels` decide re-mint vs neutralize
-  // on the whole span once it closes. Triggers consumed inside a
-  // candidate-value span are skipped: the span swaps wholesale and its
-  // bytes never reach the gap transform.
-  if (forChatMints.length > 0) {
-    const spans = resolveRawSpans(buffer, targets);
-    let searchFrom = 0;
-    for (;;) {
-      const t = buffer.indexOf(SENTINEL_TRIGGER, searchFrom);
-      if (t === -1) {
-        break;
-      }
-      const host = spans.find((s) => s.start <= t && t < s.end);
-      if (host !== undefined && targets[host.priority] !== SENTINEL_TRIGGER) {
-        searchFrom = t + SENTINEL_TRIGGER.length;
-        continue;
-      }
-      const close = buffer.indexOf(REDACTED_SENTINEL_CLOSE, t);
-      const sentinelEnd = close === -1 ? -1 : close + 1;
-      if (close !== -1 && sentinelEnd <= emitLen) {
-        searchFrom = sentinelEnd;
-        continue;
-      }
-      if (buffer.length - t <= UNCLOSED_SENTINEL_HOLD_CAP) {
-        emitLen = Math.min(emitLen, t);
-      }
-      break;
-    }
-  }
-  const consumedRaw = buffer.slice(0, emitLen);
-  return {
-    emitText: neutralizeAndSwapLiveRevealValues(
-      consumedRaw,
-      entries,
-      forChatMints,
-    ),
-    consumedRaw,
-    bufferedRemainder: buffer.slice(emitLen),
-  };
-}
-
-/**
- * Streaming redaction guard for live `tool_output_chunk` emission — the
- * tool-output twin of {@link drainSentinelGuardedText}. A foreground
- * reveal's stdout streams to the client WHILE the tool runs, before the
- * tool_result seam redacts the final content, so each chunk must be
- * redacted on the way out or the plaintext shows in the tool drawer until
- * the redacted result replaces it. Complete occurrences of candidate
- * values become the legacy marker (this surface renders no chips, and the
- * final tool_result row uses the same treatment, so live and persisted
- * bytes agree); a trailing partial occurrence is held back in
- * `bufferedRemainder` for the tool's next chunk. The tool_result seam
- * DISCARDS whatever remains: a held partial is raw credential prefix
- * bytes that complete-value redaction cannot mask, and the redacted final
- * result supersedes the streamed view immediately.
- */
-export function drainCandidateGuardedChunk(
-  buffer: string,
-  candidates: readonly ResolvedRevealCandidate[],
-): { emitText: string; bufferedRemainder: string } {
-  const seen = new Set<string>();
-  const values: string[] = [];
-  for (const candidate of candidates) {
-    if (candidate.value.length === 0 || seen.has(candidate.value)) {
-      continue;
-    }
-    seen.add(candidate.value);
-    values.push(candidate.value);
-  }
-  values.sort((a, b) => b.length - a.length);
-  const emitLen = stableEmitLen(buffer, values);
-  return {
-    emitText: redactCandidateValuesLegacy(buffer.slice(0, emitLen), candidates),
-    bufferedRemainder: buffer.slice(emitLen),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Sentinel redaction
-// ---------------------------------------------------------------------------
-
-/**
- * Redact secrets in chat-persisted text using sentinels instead of the
- * legacy HTML marker. A span whose bytes exactly equal a candidate's
- * plaintext gets the enriched (revealable) shape — but only when that value
- * maps to exactly one vault identity; everything else gets the plain
- * type-only shape. Detection itself is unchanged — same scanner, same
- * patterns, same overlap handling as `redactSecrets`.
- */
-export function redactSecretsForChat(
-  text: string,
-  candidates: readonly ResolvedRevealCandidate[],
-  forChatMints: readonly SentinelRemintAuthority[] = [],
-): string {
-  // Candidate spans resolve FIRST, on the raw bytes; forgery
-  // neutralization and the scanner then run ONLY over the text between
-  // them (the gap transform below). Raw bytes first because a manual
-  // candidate value may itself contain the sentinel trigger — mutating it
-  // up front would break the exact-match pass, the strongest guarantee
-  // here. Before the scanner because the scanner may only recognize a
-  // SUBSTRING of a proven plaintext (the `Private Key` pattern consumes
-  // just the `-----BEGIN … -----` header, leaving the key body), and once
-  // it has replaced that substring the full candidate value is no longer
-  // present for an exact-match pass to find — the body would
-  // stream/persist raw. Gaps only because a minted sentinel is not
-  // scanner-inert: its service/field segments are arbitrary user strings
-  // that can themselves look secret-shaped, and a scanner match inside a
-  // fresh sentinel would corrupt it into a nested, unrenderable marker.
-  //
-  // Within each gap the scanner still redacts secrets the reveal registry
-  // never proved (defense in depth against any secret the model emitted
-  // that the vault did not serve), with the precise type label for values
-  // it classifies inline. Sentinel-shaped spans in the gaps neutralize —
-  // except identities a re-mint authority vouches for this turn, which are
-  // restored to the daemon's canonical mint and kept out of the scanner's
-  // reach (see `guardForChatSentinels`); everything around them still runs
-  // the full neutralize+scan pipeline, so a secret embedded inside a
-  // forged sentinel cannot ride through unredacted.
-  const neutralizeAndScan = (segment: string): string =>
-    redactSecretsWith(
-      neutralizeRedactedSentinels(segment),
-      (match, rawValue) => {
-        const hit = uniqueCandidateForValue(candidates, rawValue);
-        return buildRedactedSentinel(
-          hit
-            ? { type: match.type, service: hit.service, field: hit.field }
-            : { type: match.type },
-        );
-      },
-    );
-  const redactGap = (segment: string): string =>
-    guardForChatSentinels(segment, forChatMints, neutralizeAndScan);
-  return protectCandidateSpans(text, candidates, redactGap);
-}
-
-/**
- * Replace every occurrence of a proven candidate plaintext with its sentinel,
- * applying `transformGap` (the caller's neutralize+scan pipeline) only to the
- * text between the spans. Candidate spans are resolved on the RAW bytes (a
- * manual value may itself contain the sentinel trigger, and neutralizing
- * first would break the exact match), and protection precedes the scanner so
- * a value the scanner would only partially match (e.g. a PEM key, where only
- * the header is recognized) is still redacted as a whole — its body can
- * never survive into the streamed/persisted text. Minted sentinels are never
- * fed back through `transformGap`: their service/field segments are
- * arbitrary user strings that can look secret-shaped, and a scanner rewrite
- * inside a fresh sentinel would corrupt it.
- *
- * Longest value first (mirroring `swapLiveRevealValues`) so a value that is a
- * substring of another does not pre-empt the larger match; the span-based
- * rebuild (`replaceRawSpans`) keeps one value's sentinel safe from another
- * value that happens to appear inside it. Each value is
- * classified by scanning it in isolation: when a single scanner match spans
- * the ENTIRE value the precise type label is preserved (a recognizable key
- * keeps "Anthropic API Key" rather than degrading to the generic type);
- * otherwise the generic `Credential` type is used. Identity enrichment still
- * requires a unique vault match, exactly as the scanner path.
- */
-function protectCandidateSpans(
-  text: string,
-  candidates: readonly ResolvedRevealCandidate[],
-  transformGap: (segment: string) => string,
-): string {
-  if (candidates.length === 0) {
-    return transformGap(text);
-  }
-  const seen = new Set<string>();
-  const values: string[] = [];
-  for (const candidate of candidates) {
-    if (candidate.value.length === 0 || seen.has(candidate.value)) {
-      continue;
-    }
-    seen.add(candidate.value);
-    values.push(candidate.value);
-  }
-  values.sort((a, b) => b.length - a.length);
-  const sentinelCache = new Map<string, string>();
-  const sentinelForValue = (value: string): string => {
-    let sentinel = sentinelCache.get(value);
-    if (sentinel === undefined) {
-      const hit = uniqueCandidateForValue(candidates, value);
-      sentinel = buildRedactedSentinel(
-        hit
-          ? {
-              type: classifyCandidateType(value),
-              service: hit.service,
-              field: hit.field,
-            }
-          : { type: classifyCandidateType(value) },
-      );
-      sentinelCache.set(value, sentinel);
-    }
-    return sentinel;
-  };
-  return replaceRawSpans(
-    text,
-    values,
-    (priority) => sentinelForValue(values[priority]),
-    transformGap,
-    containedInLongerScannerMatch(text),
-  );
-}
-
-/**
  * Occurrence veto that lets a LONGER scanner match outrank a candidate
  * substring inside it. A proven value can be a strict substring of a
  * DIFFERENT scanner-detectable secret — revealing a manual value `sk-pro`
@@ -1278,32 +818,6 @@ function containedInLongerScannerMatch(
         end <= m.endIndex &&
         m.endIndex - m.startIndex > end - start,
     );
-}
-
-/**
- * The scanner type label for a candidate value, or the generic `Credential`
- * type when the scanner does not recognize it. The value is scanned in
- * isolation (so no neighbouring match bleeds in) and a match ANCHORED AT THE
- * START is used — a value that begins with a recognized signature is that
- * type even when the pattern consumes only a prefix (the `Private Key`
- * pattern matches just the `-----BEGIN … -----` header, yet the value is
- * unambiguously a private key). The longest such anchored match wins.
- * Matches that merely appear mid-value are ignored: they could be a
- * coincidental substring, and mislabelling a chip is worse than the generic
- * type. Identity enrichment is still gated on a unique vault match upstream,
- * so the label never drives which secret a chip can reveal.
- */
-function classifyCandidateType(value: string): string {
-  let best: { type: string; endIndex: number } | undefined;
-  for (const m of scanText(value)) {
-    if (m.startIndex !== 0) {
-      continue;
-    }
-    if (best === undefined || m.endIndex > best.endIndex) {
-      best = { type: m.type, endIndex: m.endIndex };
-    }
-  }
-  return best?.type ?? FALLBACK_SENTINEL_TYPE;
 }
 
 /**

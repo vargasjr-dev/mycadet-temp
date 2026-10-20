@@ -2,43 +2,11 @@
   "version": 1,
   "flags": [
     {
-      "id": "cadet-hosted-inference",
-      "scope": "assistant",
-      "key": "cadet-hosted-inference",
-      "label": "Cadet Hosted Inference",
-      "description": "Show Cadet-hosted GPU models (Qwen3 8B) in the catalog and the Settings Personality sliders that steer them.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "chat-credential-reveal",
-      "scope": "assistant",
-      "key": "chat-credential-reveal",
-      "label": "Chat Credential Reveal",
-      "description": "Persist chat secret redactions as sentinel markers instead of the legacy HTML marker, enriched with the vault identity when the value byte-matches a credential revealed this turn. Also gates the `credentials reveal --for-chat` channel and the live-stream swap that replaces an echoed reveal plaintext with its sentinel before emission. Redaction itself is NOT gated: a route-proven reveal plaintext stays out of persisted rows in both modes. Client chip rendering is gated on daemon version, not on this flag.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "internal-thread-actions",
-      "scope": "client",
-      "key": "internal-thread-actions",
-      "label": "Internal Thread Actions",
-      "description": "Show the internal thread affordances: 'Fork from here' and 'Summarize up to here' on messages, 'Fork Conversation', 'Analyze Conversation', and 'Copy conversation ID' in the thread menu, plus the LLM inspector surfaces. The flag is the sole gate: any session that enables it gets the affordances, including local sessions with no platform identity.",
-      "defaultEnabled": false
-    },
-    {
       "id": "os-beta",
       "scope": "assistant",
       "key": "os-beta",
       "label": "OS Beta",
       "description": "Enable the OS Beta model profile (MiniMax M3 / Together) in the assistant's model profile selection.",
-      "defaultEnabled": false
-    },
-    {
-      "id": "sidebar-done",
-      "scope": "both",
-      "key": "sidebar-done",
-      "label": "Sidebar Done",
-      "description": "Turns archiving a chat into marking it done: the sidebar row carries a Done check instead of the overflow menu, an All chats page lists the full history, and done chats stay findable in search by default. Off keeps today's Archive wording, the overflow menu, and search that hides archived rows unless the query asks for them.",
       "defaultEnabled": false
     }
   ]
