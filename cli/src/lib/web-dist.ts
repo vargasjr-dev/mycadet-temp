@@ -1,8 +1,5 @@
-import { stripVersionPrefix } from "./version-compat.js";
-import { z } from "zod";
-import { isValidReleaseVersion } from "@mycadet/local-mode";
 import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
@@ -220,23 +217,4 @@ export async function resolveAppDistDir(
   options: DistBuildOptions = {},
 ): Promise<string | null> {
   return resolveDistDirBuilt("app", options);
-}
-
-const WebReleaseSchema = z.object({
-  version: z
-    .string()
-    .min(1)
-    .refine((value) => value !== "latest" && isValidReleaseVersion(value)),
-});
-
-export function readWebReleaseVersion(distDir: string): string | undefined {
-  try {
-    const payload: unknown = JSON.parse(
-      readFileSync(join(distDir, "release.json"), "utf8"),
-    );
-    const parsed = WebReleaseSchema.safeParse(payload);
-    return parsed.success ? stripVersionPrefix(parsed.data.version) : undefined;
-  } catch {
-    return undefined;
-  }
 }

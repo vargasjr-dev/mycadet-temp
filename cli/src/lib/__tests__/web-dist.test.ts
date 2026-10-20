@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { findWebDistDir, readWebReleaseVersion } from "../web-dist.js";
+import { findWebDistDir } from "../web-dist.js";
 
 const tempDirs: string[] = [];
 
@@ -83,30 +83,4 @@ test("preserves installed package and source checkout resolution", () => {
       startDir: join(root, "repo", "cli", "src"),
     }),
   ).toBe(sourceDist);
-});
-
-test("reads the built UI release, including a normalized version prefix", () => {
-  const root = makeTempDir();
-  writeFileSync(
-    join(root, "release.json"),
-    JSON.stringify({ version: "v1.2.3-dev.5" }),
-  );
-  expect(readWebReleaseVersion(root)).toBe("1.2.3-dev.5");
-});
-
-test("missing or malformed release metadata cannot stand in for a release", () => {
-  const root = makeTempDir();
-  expect(readWebReleaseVersion(root)).toBeUndefined();
-  for (const value of [
-    "not JSON",
-    "null",
-    "{}",
-    '{"version":null}',
-    '{"version":"latest"}',
-    '{"version":""}',
-    '{"version":"bundle-hash"}',
-  ]) {
-    writeFileSync(join(root, "release.json"), value);
-    expect(readWebReleaseVersion(root)).toBeUndefined();
-  }
 });

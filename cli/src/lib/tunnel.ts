@@ -375,9 +375,7 @@ function survivingSpaEdgePort(
     const recorded = isIngressRunning(workspaceDir)
       ? readIngressState(workspaceDir)
       : null;
-    return recorded?.includeWebApp && recorded.gatewayPort === gatewayPort
-      ? recorded.listenPort
-      : null;
+    return recorded?.gatewayPort === gatewayPort ? recorded.listenPort : null;
   } catch {
     return null;
   }
@@ -437,7 +435,6 @@ export async function restoreTunnelEdge(
   }
   console.log(
     `   Tunnel edge ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (${formatEdgeMode(
-      edge.includesWebApp,
       edge.shellMode,
     )}).`,
   );

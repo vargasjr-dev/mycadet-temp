@@ -62,9 +62,9 @@ const dockerResourceNamesMock = mock<typeof docker.dockerResourceNames>(
   realDocker.dockerResourceNames,
 );
 const wakeContainersMock = mock<typeof docker.wakeContainers>(async () => {});
-const recreateDockerContainersMock = mock<typeof docker.recreateDockerContainers>(
-  async () => {},
-);
+const recreateDockerContainersMock = mock<
+  typeof docker.recreateDockerContainers
+>(async () => {});
 
 mock.module("../lib/docker.js", () => ({
   ...realDocker,
@@ -173,7 +173,7 @@ mock.module("../lib/ingress-config.js", () => ({
 }));
 
 const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
-  async () => ({ port: 7840, started: true, includesWebApp: true, shellMode: "web" }),
+  async () => ({ port: 7840, started: true, shellMode: "web" }),
 );
 const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
   () => false,
@@ -304,7 +304,6 @@ beforeEach(() => {
   ensureTunnelEdgeMock.mockResolvedValue({
     port: 7840,
     started: true,
-    includesWebApp: true,
     shellMode: "web",
   });
   isIngressRunningMock.mockReset();
@@ -1031,7 +1030,6 @@ describe("cadet wake — tunnel edge restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
-      includeWebApp: true,
       gatewayPort: 8030,
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1065,7 +1063,6 @@ describe("cadet wake — tunnel edge restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
-      includeWebApp: true,
       gatewayPort: 7930,
     });
     // Ownership clears the restore, and `ensureTunnelEdge` is what decides the
@@ -1073,7 +1070,6 @@ describe("cadet wake — tunnel edge restore", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: 7840,
       started: false,
-      includesWebApp: true,
       shellMode: "web",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1406,7 +1402,6 @@ describe("cadet wake — tunnel edge restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      includeWebApp: true,
       gatewayPort: 7830,
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
     });
@@ -1434,7 +1429,6 @@ describe("cadet wake — tunnel edge restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      includeWebApp: true,
       gatewayPort: 7830,
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
     });
@@ -1464,7 +1458,6 @@ describe("cadet wake — tunnel edge restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      includeWebApp: true,
       gatewayPort: 7831,
     });
     ensureTunnelEdgeMock.mockRejectedValue(
@@ -1480,26 +1473,6 @@ describe("cadet wake — tunnel edge restore", () => {
     );
   });
 
-  test("a failed rebuild falls back to the gateway port when only a webhooks-only edge survives", async () => {
-    loadRawConfigMock.mockReturnValue(webhookConfig);
-    isIngressRunningMock.mockReturnValue(true);
-    readIngressStateMock.mockReturnValue({
-      listenPort: 7845,
-      includeWebApp: false,
-      gatewayPort: 7830,
-    });
-    ensureTunnelEdgeMock.mockRejectedValue(
-      new Error("The nginx edge is still running in webhooks-only mode."),
-    );
-
-    await wake();
-
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
-  });
 
   test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
     loadRawConfigMock.mockReturnValue(webhookConfig);
@@ -1580,7 +1553,6 @@ describe("cadet wake — tunnel edge restore", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: 7841,
       started: false,
-      includesWebApp: true,
       shellMode: "web",
     });
 

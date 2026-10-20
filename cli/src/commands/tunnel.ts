@@ -620,7 +620,6 @@ export const tunnel = Object.assign(
 
     console.log(
       `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port} (${formatEdgeMode(
-        edge.includesWebApp,
         edge.shellMode,
       )}).`,
     );

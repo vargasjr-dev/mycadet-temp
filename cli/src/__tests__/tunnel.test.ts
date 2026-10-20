@@ -95,7 +95,6 @@ const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
   async () => ({
     port: EDGE_PORT,
     started: true,
-    includesWebApp: true,
     shellMode: "web",
   }),
 );
@@ -294,7 +293,6 @@ describe("tunnel edge targeting", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
-      includesWebApp: true,
       shellMode: "web",
     });
   });
@@ -795,7 +793,7 @@ describe("tunnel edge targeting", () => {
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("targets the edge port for tailscale and notes a reused webhooks-only edge", async () => {
+  test("targets the edge port for tailscale and notes a reused edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     process.argv = [
@@ -809,7 +807,6 @@ describe("tunnel edge targeting", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: false,
-      includesWebApp: false,
       shellMode: "web",
     });
 
@@ -1796,7 +1793,6 @@ describe("tunnel background mode", () => {
     ensureTunnelEdgeMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
-      includesWebApp: true,
       shellMode: "web",
     });
     const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
