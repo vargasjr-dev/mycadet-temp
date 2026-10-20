@@ -79,10 +79,8 @@ export function useChatsSettings({
     }
   }, [open, resetMutation]);
 
-  const autoArchive = query.data?.conversations?.autoArchive;
   const newMessageEnabled = query.data?.notifications?.newMessageEnabled;
-  const validSettings =
-    autoArchive != null && typeof newMessageEnabled === "boolean";
+  const validSettings = typeof newMessageEnabled === "boolean";
   useEffect(() => {
     if (query.isFetchedAfterMount && query.isSuccess && validSettings) {
       setLoadedForSession(true);
@@ -97,12 +95,8 @@ export function useChatsSettings({
     state = { status: "error" };
   } else if (!supported) {
     state = { status: "unsupported" };
-  } else if (
-    loadedForSession &&
-    autoArchive &&
-    typeof newMessageEnabled === "boolean"
-  ) {
-    state = { status: "ready", values: { autoArchive, newMessageEnabled } };
+  } else if (loadedForSession && validSettings) {
+    state = { status: "ready", values: { newMessageEnabled } };
   } else if (
     query.isError ||
     (query.isFetchedAfterMount && query.isSuccess && !validSettings)

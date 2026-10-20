@@ -5277,9 +5277,6 @@ paths:
                 properties:
                   conversations:
                     default:
-                      autoArchive:
-                        enabled: false
-                        afterDays: 7
                       skipAutoRetitling: false
                       backgroundInjection:
                         This is a background turn — your guardian isn't watching. If anything noteworthy comes up, send
@@ -5288,29 +5285,6 @@ paths:
                       resumeProcessingOnStartup: false
                     type: object
                     properties:
-                      autoArchive:
-                        default:
-                          enabled: false
-                          afterDays: 7
-                        type: object
-                        properties:
-                          enabled:
-                            default: false
-                            description: Automatically mark eligible inactive chats Done.
-                            type: boolean
-                          afterDays:
-                            default: 7
-                            description: Elapsed days of inactivity before a chat is eligible for Done.
-                            type: number
-                            enum:
-                              - 1
-                              - 7
-                              - 14
-                              - 30
-                        required:
-                          - enabled
-                          - afterDays
-                        additionalProperties: false
                       skipAutoRetitling:
                         default: false
                         description:
@@ -5337,7 +5311,6 @@ paths:
                           a turn that repeatedly interrupts the process is eventually left idle.
                         type: boolean
                     required:
-                      - autoArchive
                       - skipAutoRetitling
                       - backgroundInjection
                       - resumeProcessingOnStartup
@@ -8461,9 +8434,6 @@ paths:
                 properties:
                   conversations:
                     default:
-                      autoArchive:
-                        enabled: false
-                        afterDays: 7
                       skipAutoRetitling: false
                       backgroundInjection:
                         This is a background turn — your guardian isn't watching. If anything noteworthy comes up, send
@@ -8472,29 +8442,6 @@ paths:
                       resumeProcessingOnStartup: false
                     type: object
                     properties:
-                      autoArchive:
-                        default:
-                          enabled: false
-                          afterDays: 7
-                        type: object
-                        properties:
-                          enabled:
-                            default: false
-                            description: Automatically mark eligible inactive chats Done.
-                            type: boolean
-                          afterDays:
-                            default: 7
-                            description: Elapsed days of inactivity before a chat is eligible for Done.
-                            type: number
-                            enum:
-                              - 1
-                              - 7
-                              - 14
-                              - 30
-                        required:
-                          - enabled
-                          - afterDays
-                        additionalProperties: false
                       skipAutoRetitling:
                         default: false
                         description:
@@ -8521,7 +8468,6 @@ paths:
                           a turn that repeatedly interrupts the process is eventually left idle.
                         type: boolean
                     required:
-                      - autoArchive
                       - skipAutoRetitling
                       - backgroundInjection
                       - resumeProcessingOnStartup
@@ -42650,26 +42596,7 @@ components:
         conversations:
           anyOf:
             - type: object
-              properties:
-                autoArchive:
-                  anyOf:
-                    - type: object
-                      properties:
-                        enabled:
-                          anyOf:
-                            - type: boolean
-                            - type: "null"
-                        afterDays:
-                          anyOf:
-                            - type: number
-                              enum:
-                                - 1
-                                - 7
-                                - 14
-                                - 30
-                            - type: "null"
-                      additionalProperties: {}
-                    - type: "null"
+              properties: {}
               additionalProperties: {}
             - type: "null"
         notifications:

@@ -321,7 +321,6 @@ async function insertOrDeferSkillCard(
       // activity in it, and a pass runs once the conversation has gone idle.
       // That is exactly when the user has just marked it done, so a card that
       // resurfaced would bounce fresh done chats back into the sidebar.
-      skipResurface: true,
     },
   );
   if (persisted.deduplicated) {

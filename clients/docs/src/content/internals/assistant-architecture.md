@@ -926,7 +926,6 @@ flowchart LR
     CAS --> SYNC[Conversation list and metadata invalidation]
 ```
 
-Readiness, eligibility, restart behavior, and the gateway snapshot boundary are documented in [Automatic Done](docs/automatic-done.md).
 
 ---
 

@@ -4,35 +4,14 @@ import { describe, expect, test } from "bun:test";
 import { getWorkspaceConfigPath } from "../../util/layout.js";
 import { loadRawConfig, saveRawConfig } from "../loader.js";
 import { AssistantConfigSchema } from "../schema.js";
-import { AutoArchiveConfigSchema } from "../schemas/conversations.js";
 
 describe("chat settings config", () => {
   test("missing settings preserve existing behavior", () => {
     const config = AssistantConfigSchema.parse({});
-    expect(config.conversations.autoArchive).toEqual({
-      enabled: false,
-      afterDays: 7,
-    });
     expect(config.notifications.newMessageEnabled).toBe(true);
   });
 
-  test.each([1, 7, 14, 30])(
-    "accepts a %i-day inactivity interval",
-    (afterDays) => {
-      expect(AutoArchiveConfigSchema.parse({ afterDays })).toEqual({
-        enabled: false,
-        afterDays,
-      });
-    },
-  );
-
   test.each([
-    { conversations: { autoArchive: { enabled: "false" } } },
-    { conversations: { autoArchive: { afterDays: 2 } } },
-    { conversations: { autoArchive: { afterDays: 1.5 } } },
-    { conversations: { autoArchive: { enabled: null } } },
-    { conversations: { autoArchive: [] } },
-    { conversations: null },
     { notifications: { newMessageEnabled: 1 } },
     { notifications: { newMessageEnabled: null } },
     { notifications: [] },
@@ -40,7 +19,7 @@ describe("chat settings config", () => {
     "raw writes reject invalid settings before changing disk: %j",
     (invalid) => {
       const original = {
-        conversations: { autoArchive: { enabled: true, afterDays: 14 } },
+        conversations: { skipAutoRetitling: true },
         notifications: { newMessageEnabled: false },
       };
       saveRawConfig(original);
@@ -53,11 +32,7 @@ describe("chat settings config", () => {
     { conversations: false },
     { conversations: [] },
     { conversations: null },
-    { conversations: { autoArchive: "legacy" } },
-    { conversations: { autoArchive: [] } },
-    { conversations: { autoArchive: null } },
-    { conversations: { autoArchive: { enabled: "true", afterDays: 2 } } },
-    { conversations: { autoArchive: { enabled: null, afterDays: null } } },
+    { conversations: { skipAutoRetitling: "legacy" } },
     { notifications: "legacy" },
     { notifications: [] },
     { notifications: null },
@@ -76,20 +51,12 @@ describe("chat settings config", () => {
   test.each([
     [{ conversations: false }, { conversations: [] }],
     [
-      { conversations: [] },
-      { conversations: { autoArchive: { enabled: "true" } } },
-    ],
-    [
-      { conversations: { autoArchive: null } },
-      { conversations: { autoArchive: { afterDays: 2 } } },
-    ],
-    [
       { notifications: { newMessageEnabled: "false" } },
       { notifications: { newMessageEnabled: "true" } },
     ],
     [
-      { conversations: { autoArchive: { enabled: "true", afterDays: 2 } } },
-      { conversations: { autoArchive: { enabled: "true", afterDays: 3 } } },
+      { notifications: { newMessageEnabled: "false" } },
+      { notifications: [] },
     ],
   ])("raw writes reject changed invalid values: %j -> %j", (previous, next) => {
     const configPath = getWorkspaceConfigPath();
@@ -105,12 +72,12 @@ describe("chat settings config", () => {
     writeFileSync(
       getWorkspaceConfigPath(),
       JSON.stringify({
-        conversations: { autoArchive: { enabled: "true", afterDays: 2 } },
+        conversations: { skipAutoRetitling: "true" },
         notifications: null,
       }),
     );
     const repaired = {
-      conversations: { autoArchive: { enabled: true, afterDays: 2 } },
+      conversations: { skipAutoRetitling: true },
       notifications: null,
     };
 

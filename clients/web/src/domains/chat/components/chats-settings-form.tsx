@@ -1,28 +1,19 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { Button } from "@mycadet/design-library/components/button";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { Notice } from "@mycadet/design-library/components/notice";
-import { Select } from "@mycadet/design-library/components/select";
 import { Toggle } from "@mycadet/design-library/components/toggle";
-import { Typography } from "@mycadet/design-library/components/typography";
 
 import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
 import { useTranslation } from "@/i18n";
 
-type ChatsSettingsAutoArchive = Pick<
-  NonNullable<ConfigGetResponse["conversations"]>["autoArchive"],
-  "enabled" | "afterDays"
->;
-
 export interface ChatsSettingsValues {
-  autoArchive: ChatsSettingsAutoArchive;
   newMessageEnabled: NonNullable<
     ConfigGetResponse["notifications"]
   >["newMessageEnabled"];
 }
 
 export interface ChatsSettingsChanges {
-  conversations?: { autoArchive: Partial<ChatsSettingsAutoArchive> };
   notifications?: Pick<ChatsSettingsValues, "newMessageEnabled">;
 }
 
@@ -33,9 +24,6 @@ interface ChatsSettingsFormProps {
   onCancel: () => void;
 }
 
-const ARCHIVE_DAYS = [
-  1, 7, 14, 30,
-] as const satisfies readonly ChatsSettingsAutoArchive["afterDays"][];
 const TOGGLE_CLASSES =
   "flex-row-reverse items-start gap-4 [&>div]:flex-1 [&>div>span]:text-[var(--content-secondary)] [&>button]:mt-1 [&>button]:before:absolute [&>button]:before:-inset-x-2.5 [&>button]:before:-inset-y-3.5";
 
@@ -43,17 +31,7 @@ function changedSettings(
   initial: ChatsSettingsValues,
   draft: ChatsSettingsValues,
 ): ChatsSettingsChanges {
-  const autoArchive: Partial<ChatsSettingsAutoArchive> = {};
-  if (draft.autoArchive.enabled !== initial.autoArchive.enabled) {
-    autoArchive.enabled = draft.autoArchive.enabled;
-  }
-  if (draft.autoArchive.afterDays !== initial.autoArchive.afterDays) {
-    autoArchive.afterDays = draft.autoArchive.afterDays;
-  }
   return {
-    ...(Object.keys(autoArchive).length > 0
-      ? { conversations: { autoArchive } }
-      : {}),
     ...(draft.newMessageEnabled !== initial.newMessageEnabled
       ? { notifications: { newMessageEnabled: draft.newMessageEnabled } }
       : {}),
@@ -67,7 +45,6 @@ export function ChatsSettingsForm({
   onCancel,
 }: ChatsSettingsFormProps) {
   const { t } = useTranslation("chat");
-  const daysId = useId();
   // A remote refresh must not turn untouched fields into writes.
   const [initial] = useState(() => structuredClone(values));
   const [draft, setDraft] = useState(initial);
@@ -88,59 +65,15 @@ export function ChatsSettingsForm({
       <Modal.Body className="min-h-0 space-y-5 pb-0" aria-busy={saving}>
         <Toggle
           size="sm"
-          label={t("chatsSettingsModal.autoArchive")}
-          helperText={t("chatsSettingsModal.autoArchiveHelper")}
-          checked={draft.autoArchive.enabled}
-          onChange={(enabled) =>
-            setDraft({
-              ...draft,
-              autoArchive: { ...draft.autoArchive, enabled },
-            })
+          label={t("chatsSettingsModal.notifications")}
+          helperText={t("chatsSettingsModal.notificationsHelper")}
+          checked={draft.newMessageEnabled}
+          onChange={(newMessageEnabled) =>
+            setDraft({ ...draft, newMessageEnabled })
           }
           disabled={saving}
           className={TOGGLE_CLASSES}
         />
-        <div className="flex items-center justify-between gap-4">
-          <Typography as="label" htmlFor={daysId} variant="body-medium-default">
-            {t("chatsSettingsModal.timeToArchive")}
-          </Typography>
-          <Select
-            id={daysId}
-            size="compact"
-            fullWidth={false}
-            value={String(draft.autoArchive.afterDays)}
-            options={ARCHIVE_DAYS.map((days) => ({
-              value: String(days),
-              label: t("chatsSettingsModal.days", { count: days }),
-            }))}
-            onChange={(value) => {
-              const afterDays = ARCHIVE_DAYS.find(
-                (days) => String(days) === value,
-              );
-              if (afterDays !== undefined) {
-                setDraft({
-                  ...draft,
-                  autoArchive: { ...draft.autoArchive, afterDays },
-                });
-              }
-            }}
-            disabled={saving || !draft.autoArchive.enabled}
-            className="min-w-24"
-          />
-        </div>
-        <div className="border-t border-[var(--border-subtle)] pt-5">
-          <Toggle
-            size="sm"
-            label={t("chatsSettingsModal.notifications")}
-            helperText={t("chatsSettingsModal.notificationsHelper")}
-            checked={draft.newMessageEnabled}
-            onChange={(newMessageEnabled) =>
-              setDraft({ ...draft, newMessageEnabled })
-            }
-            disabled={saving}
-            className={TOGGLE_CLASSES}
-          />
-        </div>
         {saveStatus === "error" ? (
           <Notice tone="error">{t("chatsSettingsModal.saveError")}</Notice>
         ) : null}

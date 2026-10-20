@@ -28,7 +28,7 @@ import { conversationDoneLabels } from "@/utils/done-labels";
 // The renderers take a namespace-bound `t`, the same thing
 // `useTranslation("chat")` hands their component callers.
 const t = fixedT("chat");
-const doneLabels = conversationDoneLabels(t, false);
+const doneLabels = conversationDoneLabels(t);
 
 const allActions = {
   onMarkAllRead: () => {},

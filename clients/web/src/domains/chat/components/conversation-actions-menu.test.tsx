@@ -24,7 +24,7 @@ import { conversationDoneLabels } from "@/utils/done-labels";
 const t = fixedT("chat");
 // The archive wording the flag-off catalogue carries; the flag-on set has its
 // own test below.
-const doneLabels = conversationDoneLabels(t, false);
+const doneLabels = conversationDoneLabels(t);
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 

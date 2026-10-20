@@ -61,7 +61,6 @@ import {
   isConversationSeedSane,
 } from "./conversation-seed-composer.js";
 import { isGuardianRequestSignalEvent } from "./guardian-feed-projection.js";
-import { signalMirrorsToHomeFeed } from "./home-feed-mirror.js";
 import type { NotificationSignal } from "./signal.js";
 import type {
   ConversationAction,
@@ -740,7 +739,6 @@ async function appendBodyToSourceConversation(
       // conversation, not activity in it, so it must not bounce a chat the
       // user just marked Done back into the sidebar. One the bell does not
       // carry has this transcript as its only home, and the chat resurfaces.
-      skipResurface: signalMirrorsToHomeFeed(signal, source.conversationType),
     },
   );
   // `addMessage` projects attention metadata alone, so a client with this

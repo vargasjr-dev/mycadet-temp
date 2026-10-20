@@ -17,16 +17,11 @@
  * `withContextMenu={false}` (no right-click menu) and `marquee={false}`.
  */
 
-import { Check, Pin, PinOff } from "lucide-react";
-import {
-  animate,
-  useReducedMotion,
-  type AnimationPlaybackControls,
-} from "motion/react";
+import { Pin, PinOff } from "lucide-react";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useRef } from "react";
 
-import { ContextMenu, PanelItem, Tooltip } from "@mycadet/design-library";
+import { ContextMenu, PanelItem } from "@mycadet/design-library";
 import { cn } from "@mycadet/design-library/utils/cn";
 
 import { SwipeActionReveal } from "@/components/swipe-action-reveal";
@@ -39,7 +34,6 @@ import {
 } from "@/domains/chat/components/conversation-actions-menu";
 import {
   useConversationDoneLabels,
-  useSidebarDoneEnabled,
   type ConversationDoneLabels,
 } from "@/utils/done-labels";
 import {
@@ -223,22 +217,6 @@ function buildSwipeActions(
 }
 
 /**
- * The two halves of a row leaving once it is marked done. The row's content
- * slides out to the left and fades, then the row's box closes so the
- * rows around it slide together over the space it held. The close starts
- * before the slide ends, so the two read as one motion rather than as a
- * slide followed by a snap. Short enough to read as the row leaving rather
- * than as a wait for it.
- */
-const DONE_SLIDE_S = 0.2;
-const DONE_CLOSE_DELAY_S = 0.12;
-const DONE_CLOSE_S = 0.2;
-const DONE_EXIT_MS = (DONE_CLOSE_DELAY_S + DONE_CLOSE_S) * 1000;
-
-/** How far a row in a windowed list closes: the least virtuoso accepts. */
-const WINDOWED_CLOSED_HEIGHT_PX = 1;
-
-/**
  * The space a list puts between this row and the next, which the row's box
  * gives back as it closes: a box closed to zero height still has its gap
  * beside it, and a gap that vanished only when the row unmounted would jump
@@ -249,18 +227,6 @@ const WINDOWED_CLOSED_HEIGHT_PX = 1;
  * touch path's long-press wrapper is `display: contents` and lays out
  * nothing.
  */
-function listGapPx(box: HTMLElement): number {
-  let list = box.parentElement;
-  while (list && getComputedStyle(list).display === "contents") {
-    list = list.parentElement;
-  }
-  if (!list) {
-    return 0;
-  }
-  const gap = parseFloat(getComputedStyle(list).rowGap);
-  return Number.isFinite(gap) ? gap : 0;
-}
-
 export function ConversationRow({
   conversation,
   withContextMenu = true,
@@ -272,11 +238,7 @@ export function ConversationRow({
   const { conversationId } = conversation;
   const { t } = useTranslation("chat");
   const displayTitle = useDisplayConversationTitle();
-  const sidebarDone = useSidebarDoneEnabled();
   const doneLabels = useConversationDoneLabels();
-  const reduceMotion = useReducedMotion();
-  const boxRef = useRef<HTMLDivElement>(null);
-  const rowRef = useRef<HTMLDivElement>(null);
 
   const isProcessing =
     conversationId === ctx.activeConversationId
@@ -318,114 +280,7 @@ export function ConversationRow({
   const showsTrailingControl = useShowsHoverAffordance(
     withContextMenu && isTouch,
   );
-
-  /* Under the flag the row's trailing control is the Done check, never the
-     ellipsis: Rename, Delete and the rest live in the row's right-click menu
-     and in the chat header's title dropdown. The check takes the ellipsis's
-     own slot, box and reveal, so nothing on the row moves. */
-  const animatesOut = sidebarDone && !reduceMotion;
-
-  /* The archive the exit is waiting on. Held in a ref and fired at most
-     once, because the animation is a courtesy and the write is not: the
-     accepted click has to reach the daemon whether the animation finishes,
-     is cut short by a navigation that unmounts the row, or never runs at all
-     because the tab was backgrounded before its first frame. */
-  const pendingDoneRef = useRef<(() => void) | null>(null);
-  const exitRef = useRef<AnimationPlaybackControls[]>([]);
-  const runPendingDone = useCallback(() => {
-    const run = pendingDoneRef.current;
-    pendingDoneRef.current = null;
-    run?.();
-  }, []);
-  useEffect(
-    () => () => {
-      for (const controls of exitRef.current) {
-        controls.stop();
-      }
-      runPendingDone();
-    },
-    [runPendingDone],
-  );
-
-  /* The row leaves in two moves, then hands over to the archive, so the list
-     closes the space once rather than snapping shut under the pointer. The
-     row slides out to the left and fades; its box then closes, height
-     and the list's gap together, and the rows around it slide together over
-     the space it held. The box clips the slide, so a row sliding out never
-     widens the scroller it sits in.
-
-     Driven on the two elements the row already renders rather than through
-     animated wrappers, so the list lays out the same element with the same
-     single child in both flag states, and neither carries an inline value
-     at rest. The row unmounts once the archive lands, so nothing written
-     here has to be put back.
-
-     A windowed list plays it too: virtuoso measures its items with a resize
-     observer, so the box closing is a size change it follows frame by frame.
-     There the box stops a pixel short of closed (see `windowed`). */
-  const markDone = useCallback(() => {
-    const box = boxRef.current;
-    const row = rowRef.current;
-    if (!animatesOut || !box || !row) {
-      ctx.onArchive?.(conversation);
-      return;
-    }
-    if (pendingDoneRef.current) {
-      return;
-    }
-    pendingDoneRef.current = () => ctx.onArchive?.(conversation);
-    const gap = listGapPx(box);
-    box.style.overflow = "hidden";
-    const slide = animate(
-      row,
-      { x: "-100%", opacity: 0 },
-      { duration: DONE_SLIDE_S, ease: [0.4, 0, 1, 1] },
-    );
-    const close = animate(
-      box,
-      {
-        height: [box.offsetHeight, windowed ? WINDOWED_CLOSED_HEIGHT_PX : 0],
-        marginBottom: [0, -gap],
-      },
-      {
-        duration: DONE_CLOSE_S,
-        delay: DONE_CLOSE_DELAY_S,
-        ease: [0.4, 0, 0.2, 1],
-      },
-    );
-    exitRef.current = [slide, close];
-    void close.then(runPendingDone);
-    /* The backstop, not the usual path: the close gets there first whenever
-       frames are running. */
-    window.setTimeout(runPendingDone, DONE_EXIT_MS * 2);
-  }, [animatesOut, ctx, conversation, runPendingDone, windowed]);
-
-  const doneCheck =
-    sidebarDone && ctx.onArchive && conversation.archivedAt == null ? (
-      <Tooltip content={doneLabels.archive} side="right">
-        <button
-          type="button"
-          aria-label={doneLabels.archive}
-          onClick={(event) => {
-            event.stopPropagation();
-            markDone();
-          }}
-          /* No `onContextMenu` of its own, unlike the ellipsis it replaces:
-             the ellipsis swallowed the event because it owned a menu, and
-             this owns a command. Letting it through means a right-click over
-             the check opens the row's menu as a right-click anywhere else on
-             the row does, and the context-menu key with focus on the check
-             reaches the same trigger. */
-          className={ROW_TRAILING_CONTROL_CLASSES}
-        >
-          <Check size={14} aria-hidden className={ROW_TRAILING_GLYPH_CLASSES} />
-        </button>
-      </Tooltip>
-    ) : undefined;
-
-  const trailingAction = !showsTrailingControl ? undefined : sidebarDone ? (
-    doneCheck
-  ) : (
+  const trailingAction = !showsTrailingControl ? undefined : (
     <ConversationActionsMenu {...menuProps} shortcuts={shortcuts} />
   );
 
@@ -440,7 +295,6 @@ export function ConversationRow({
 
   const rowBody = (
     <PanelItem
-      ref={rowRef}
       label={displayTitle(conversation.title)}
       marqueeOnHover={marquee}
       active={isActiveConversation}
@@ -477,9 +331,7 @@ export function ConversationRow({
   );
 
   const panelItem = (
-    <SwipeActionReveal {...swipeProps} ref={boxRef}>
-      {rowBody}
-    </SwipeActionReveal>
+    <SwipeActionReveal {...swipeProps}>{rowBody}</SwipeActionReveal>
   );
 
   // Touch: replace the right-click ContextMenu with a long-press → bottom sheet.

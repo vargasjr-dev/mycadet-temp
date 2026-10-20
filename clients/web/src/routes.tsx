@@ -1007,19 +1007,6 @@ export const routeTree = [
                             ),
                         },
                       },
-                      // All chats draws its own page chrome and keeps the
-                      // sidebar beside it, so it sits here rather than under
-                      // IntelligenceLayout: it is not an About Assistant
-                      // section.
-                      {
-                        path: "chats",
-                        lazy: {
-                          Component: () =>
-                            import("@/domains/chat/pages/all-chats-page-route").then(
-                              (m) => m.AllChatsPageRoute,
-                            ),
-                        },
-                      },
                       {
                         path: "conversations/:conversationId/inspect",
                         lazy: {

@@ -9,10 +9,6 @@ import type { ConfigGetResponse } from "@/generated/daemon/types.gen";
  */
 const MATERIALIZED_DEFAULTS: ConfigGetResponse = {
   conversations: {
-    autoArchive: {
-      enabled: false,
-      afterDays: 7,
-    },
     skipAutoRetitling: false,
     backgroundInjection:
       "This is a background turn — your guardian isn't watching. If anything noteworthy comes up, send them a notification so they see it when they're back by invoking the `notifications` skill (`assistant notifications send --message \"...\"`)",

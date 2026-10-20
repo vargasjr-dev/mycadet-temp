@@ -16,7 +16,6 @@ import {
   mergeDefaultWorkspaceConfig,
 } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
-import { startConversationAutoArchive } from "../conversations/auto-archive.js";
 import { startCes } from "../credential-execution/ces-runtime.js";
 import { refreshManagedConnectionCache } from "../credential-execution/cloud-catalog.js";
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
@@ -809,7 +808,6 @@ export async function runDaemon(): Promise<void> {
     );
     startupRecovery = resumeInterruptedConversations(conversationsToResume);
   }
-  startConversationAutoArchive(startupRecovery);
 
   log.info(
     {

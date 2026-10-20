@@ -25,11 +25,11 @@
  */
 
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router";
+
+import { useTranslation } from "@/i18n";
 
 import type { CollapsibleNavSectionDrag } from "@/components/collapsible-nav-section";
-import { ChatsSectionEmptyState } from "@/domains/chat/components/chats-section-empty-state";
-import { SectionViewAllLink } from "@/domains/chat/components/section-view-all-link";
+import { SidebarSectionEmptyState } from "@/domains/chat/components/sidebar-section-empty-state";
 import {
   saveExpandedSections,
   useExpandedSections,
@@ -39,40 +39,10 @@ import {
   GroupActionsMenu,
   type GroupMenuItemsProps,
 } from "@/domains/chat/components/group-actions-menu";
-import { useSidebarDoneEnabled } from "@/utils/done-labels";
-import {
-  allChatsSearchFor,
-  type AllChatsFilter,
-} from "@/domains/chat/utils/all-chats-filters";
 import type { SidebarSection } from "@/domains/chat/use-sidebar-state";
 import { useSectionConversations } from "@/domains/chat/use-section-conversations";
 import { sectionIcon } from "@/domains/chat/utils/sidebar-section-icon";
-import { useShowsHoverAffordance } from "@/hooks/use-hover-affordance";
 import type { Conversation } from "@/types/conversation-types";
-import { routes } from "@/utils/routes";
-
-/**
- * Where a section's "View all chats" goes: the All chats page, narrowed to
- * that section. `pinned` gets none — it is the user's own curation rather
- * than a slice of the history, so it names no view of the page.
- */
-export function viewAllHrefFor(section: SidebarSection): string | null {
-  const filter = ((): AllChatsFilter | null => {
-    switch (section.type) {
-      case "recents":
-        return { kind: "all" };
-      case "channel":
-        return { kind: "channel", channelId: section.channelId };
-      case "group":
-        return { kind: "group", groupId: section.group.id };
-      default:
-        return null;
-    }
-  })();
-  return filter === null
-    ? null
-    : `${routes.allChats}${allChatsSearchFor(filter)}`;
-}
 
 export interface SidebarSectionItemProps {
   section: SidebarSection;
@@ -123,17 +93,9 @@ export function SidebarSectionItem({
   collapsedIndicator,
   isLast,
 }: SidebarSectionItemProps) {
+  const { t } = useTranslation("chat");
   const { conversations, hasMore, resolved, loadMore, getAllRows } =
     useSectionConversations(assistantId, section);
-  const sidebarDone = useSidebarDoneEnabled();
-  const navigate = useNavigate();
-
-  /* Where the section's whole history lives. The icon in the header is a
-     hover affordance, so a device that cannot hover gets the same
-     destination as the first item in the section's own menu instead. */
-  const viewAllHref = sidebarDone ? viewAllHrefFor(section) : null;
-  const showsViewAllIcon =
-    useShowsHoverAffordance(true) && viewAllHref !== null;
 
   /* Read from storage on render (see `useExpandedSections`), so a section
      the user expanded is at its full height on the first paint rather than
@@ -158,10 +120,6 @@ export function SidebarSectionItem({
      recurs at the next section type. */
   const groupMenu = {
     ...buildGroupMenu(conversations, getAllRows),
-    onViewAllChats:
-      viewAllHref !== null && !showsViewAllIcon
-        ? () => navigate(viewAllHref)
-        : undefined,
   };
   return (
     <SidebarSectionCard
@@ -177,14 +135,7 @@ export function SidebarSectionItem({
          `groupMenu`. Every section carries it: a section's actions should not
          depend on which kind it is, and Chats and the channels have their own
          (the channel-grouping toggle) on top of the bulk ones. */
-      trailing={
-        <>
-          {showsViewAllIcon && viewAllHref !== null ? (
-            <SectionViewAllLink to={viewAllHref} />
-          ) : null}
-          <GroupActionsMenu label={section.label} {...groupMenu} />
-        </>
-      }
+      trailing={<GroupActionsMenu label={section.label} {...groupMenu} />}
       groupMenu={groupMenu}
       collapsedIndicator={collapsedIndicator?.(conversations, section)}
       drag={drag}
@@ -212,7 +163,10 @@ export function SidebarSectionItem({
          reason: it keeps the absent case unambiguous. */
       children={
         conversations.length > 0 ? undefined : section.type === "recents" && resolved ? (
-          <ChatsSectionEmptyState viewAllHref={viewAllHref} />
+          <SidebarSectionEmptyState
+            title={t("chatsSection.emptyTitle")}
+            body={t("chatsSection.emptyBody")}
+          />
         ) : undefined
       }
     />

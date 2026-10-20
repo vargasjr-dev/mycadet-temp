@@ -64,11 +64,6 @@
     "takingLonger": "Tu asistente está tardando más de lo esperado.",
     "tryAgain": "Reintentar"
   },
-  "markAllDoneConfirmDialog": {
-    "confirm": "Marcar todo como hecho",
-    "message": "{count, plural, one {¿Marcar como hecha la conversación en “{groupName}”? Sale de la barra lateral y te espera en Todos los chats, donde puedes reabrirla.} other {¿Marcar como hechas las # conversaciones en “{groupName}”? Salen de la barra lateral y te esperan en Todos los chats, donde puedes reabrirlas.}}",
-    "title": "Marcar todo como hecho"
-  },
   "mobileDetailSheet": {
     "title": "Detalles de la actividad"
   },
@@ -123,34 +118,6 @@
     "observe": "Observando",
     "navigate": "Navegando",
     "terminal": "Ejecutando un comando"
-  },
-  "allChatsPage": {
-    "band": {
-      "previous30Days": "Últimos 30 días",
-      "previous7Days": "Últimos 7 días",
-      "today": "Hoy",
-      "yesterday": "Ayer"
-    },
-    "chip": {
-      "all": "Todos",
-      "background": "En segundo plano",
-      "done": "Hecho"
-    },
-    "empty": "Aún no hay chats aquí.",
-    "filterAria": "Filtrar chats",
-    "loadError": "No se pudieron cargar tus chats.",
-    "loading": "Cargando chats",
-    "noMatches": "Ningún chat coincide con «{query}».",
-    "retry": "Reintentar",
-    "searchPlaceholder": "Buscar chats",
-    "title": "Todos los chats",
-    "close": "Cerrar todos los chats",
-    "openChat": "Ir a la conversación",
-    "doneLabel": "{title}, completado",
-    "unread": "Sin leer",
-    "running": "En curso",
-    "needsAttention": "Requiere atención",
-    "runningCount": "{count, plural, one {# tarea en curso} other {# tareas en curso}}"
   },
   "sessionGroupRow": {
     "mode": {
@@ -495,7 +462,6 @@
   },
   "chatConversationHeader": {
     "archived": "[Archivado]",
-    "done": "[Hecho]",
     "newChat": "Chat nuevo"
   },
   "chatInfoPanel": {
@@ -719,10 +685,8 @@
     "copyConversation": "Copiar conversación completa",
     "copyConversationId": "Copiar ID de conversación",
     "delete": "Eliminar",
-    "done": "Hecho",
     "forkConversation": "Bifurcar conversación",
     "inspect": "Analizar conversación",
-    "markAsDone": "Marcar como hecho",
     "markRead": "Marcar como leída",
     "markUnread": "Marcar como no leída",
     "moveToGroup": "Mover al grupo",
@@ -732,7 +696,6 @@
     "refresh": "Actualizar",
     "removeFromGroup": "Quitar del grupo",
     "rename": "Cambiar nombre",
-    "reopen": "Reabrir",
     "shareFeedback": "Enviar comentarios",
     "triggerAriaLabel": "Acciones de conversación",
     "unarchive": "Desarchivar",
@@ -932,7 +895,6 @@
     "deleteGroup": "Eliminar grupo",
     "deleteGroupWithConversations": "Eliminar grupo…",
     "groupByChannel": "Agrupar por canal",
-    "markAllAsDone": "Marcar todo como hecho…",
     "markAllRead": "Marcar todas como leídas",
     "moveSectionDown": "Bajar sección",
     "moveSectionUp": "Subir sección",
@@ -947,11 +909,6 @@
     "newTitle": "Grupo nuevo",
     "renameTitle": "Renombrar grupo",
     "save": "Guardar"
-  },
-  "inChatOnboardingController": {
-    "next": "Siguiente",
-    "showMeAround": "Muéstrame cómo funciona",
-    "skipTour": "Omitir recorrido"
   },
   "inlineProcessCard": {
     "stop": "Detener"
@@ -1599,8 +1556,6 @@
     "label": "Ver todos los chats"
   },
   "chatsSection": {
-    "doneEmptyBody": "Los chats que marcas como hechos te esperan en Todos los chats.",
-    "doneEmptyTitle": "Todo al día.",
     "emptyBody": "Inicia un chat nuevo y aparecerá aquí.",
     "emptyTitle": "Aún no hay chats."
   },
@@ -1798,8 +1753,7 @@
     "stopWorkflow": "Detener flujo de trabajo"
   },
   "transcriptRow": {
-    "thinking": "Pensando",
-    "working": "Trabajando"
+    "thinking": "Pensando"
   },
   "useConversationLoader": {
     "authFailed": "No se pudo autenticar al usuario."
@@ -2051,10 +2005,6 @@
   "chatsSettingsModal": {
     "title": "Ajustes de chats",
     "description": "Gestiona el marcado automático como hecho y las alertas de respuestas de este asistente en tus dispositivos.",
-    "autoArchive": "Archivar chats automáticamente",
-    "autoArchiveHelper": "Marca los chats inactivos como hechos, incluidos los que ya superan este plazo. Los chats hechos siguen en Todos los chats.",
-    "timeToArchive": "Tiempo para archivar",
-    "days": "{count, plural, one {# día} other {# días}}",
     "notifications": "Alertas de respuestas en chats",
     "notificationsHelper": "Recibe avisos de respuestas en chats que no estás viendo.",
     "cancel": "Cancelar",

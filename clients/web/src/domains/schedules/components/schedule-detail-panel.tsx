@@ -13,7 +13,6 @@ import {
 import { StatSquare } from "@mycadet/design-library/components/stat-square";
 
 import { InsetDetailCard } from "@/components/inset-detail-card";
-import { useScheduleConversationDoneLabel } from "@/utils/done-labels";
 import { useTranslation } from "@/i18n";
 import { SCHEDULE_USAGE_WINDOW_DAYS } from "@/utils/usage-window";
 import {
@@ -254,7 +253,7 @@ function RunRow({
   onToggleDetails: (runId: string) => void;
 }) {
   const { t } = useTranslation("schedules");
-  const conversationDoneLabel = useScheduleConversationDoneLabel();
+  const conversationDoneLabel = t("scheduleDetail.conversationArchived");
   // Older daemons do not send `conversations`, so the scalar pointer is
   // wrapped in the same shape here. Newer daemons fold that pointer into the
   // array themselves.

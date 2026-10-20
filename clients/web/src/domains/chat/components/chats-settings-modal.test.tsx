@@ -8,7 +8,6 @@ import {
 } from "./chats-settings-modal";
 
 const DEFAULTS: ChatsSettingsValues = {
-  autoArchive: { enabled: false, afterDays: 7 },
   newMessageEnabled: true,
 };
 
@@ -44,35 +43,19 @@ describe("ChatsSettingsModal", () => {
   test("labels controls and starts with no writable changes", () => {
     const view = setup();
     expect(view.getByRole("dialog", { name: "Chats Settings" })).toBeDefined();
-    const toggle = view.getByRole("switch", { name: "Auto Archive Chats" });
-    expect(toggle.getAttribute("aria-checked")).toBe("false");
-    expect(
-      document.getElementById(toggle.getAttribute("aria-describedby")!)
-        ?.textContent,
-    ).toContain("Done chats stay in All Chats");
-    expect(
-      view
-        .getByRole("combobox", { name: "Time to Archive" })
-        .hasAttribute("disabled"),
-    ).toBe(true);
+    const toggle = view.getByRole("switch", { name: "Chat reply alerts" });
+    expect(toggle.getAttribute("aria-checked")).toBe("true");
     expect(
       view.getByRole("button", { name: "Confirm" }).hasAttribute("disabled"),
     ).toBe(true);
-    expect(
-      view
-        .getByRole("switch", { name: "Chat reply alerts" })
-        .getAttribute("aria-checked"),
-    ).toBe("true");
   });
 
   test("Confirm submits only changed leaves and leaves closing to successful save", () => {
     const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
     fireEvent.click(view.getByRole("switch", { name: "Chat reply alerts" }));
     fireEvent.click(view.getByRole("button", { name: "Confirm" }));
     expect(view.props.onSave).toHaveBeenCalledTimes(1);
     expect(view.props.onSave).toHaveBeenCalledWith({
-      conversations: { autoArchive: { enabled: true } },
       notifications: { newMessageEnabled: false },
     });
     expect(view.props.onOpenChange).not.toHaveBeenCalled();
@@ -92,33 +75,27 @@ describe("ChatsSettingsModal", () => {
 
   test("a remote refresh preserves the draft and its opening comparison", () => {
     const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
+    fireEvent.click(view.getByRole("switch", { name: "Chat reply alerts" }));
     view.update({
       state: {
         status: "ready",
-        values: {
-          autoArchive: { enabled: false, afterDays: 30 },
-          newMessageEnabled: false,
-        },
+        values: { newMessageEnabled: true },
       },
     });
-    expect(
-      view.getByRole("combobox", { name: "Time to Archive" }).textContent,
-    ).toContain("7 days");
     expect(
       view
         .getByRole("switch", { name: "Chat reply alerts" })
         .getAttribute("aria-checked"),
-    ).toBe("true");
+    ).toBe("false");
     fireEvent.click(view.getByRole("button", { name: "Confirm" }));
     expect(view.props.onSave).toHaveBeenCalledWith({
-      conversations: { autoArchive: { enabled: true } },
+      notifications: { newMessageEnabled: false },
     });
   });
 
   test("Cancel discards edits and reopening uses the latest saved values", async () => {
     const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
+    fireEvent.click(view.getByRole("switch", { name: "Chat reply alerts" }));
     fireEvent.click(view.getByRole("button", { name: "Cancel" }));
     expect(view.props.onOpenChange).toHaveBeenCalledWith(false);
     expect(view.props.onSave).not.toHaveBeenCalled();
@@ -127,15 +104,9 @@ describe("ChatsSettingsModal", () => {
     view.update({
       state: {
         status: "ready",
-        values: {
-          autoArchive: { enabled: true, afterDays: 14 },
-          newMessageEnabled: false,
-        },
+        values: { newMessageEnabled: false },
       },
     });
-    expect(
-      view.getByRole("combobox", { name: "Time to Archive" }).textContent,
-    ).toContain("14 days");
     expect(
       view
         .getByRole("switch", { name: "Chat reply alerts" })
@@ -148,7 +119,7 @@ describe("ChatsSettingsModal", () => {
 
   test.each(["escape", "backdrop"])("%s dismissal never saves", (method) => {
     const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
+    fireEvent.click(view.getByRole("switch", { name: "Chat reply alerts" }));
     if (method === "escape") {
       fireEvent.keyDown(view.getByRole("dialog"), { key: "Escape" });
     } else {
@@ -160,7 +131,7 @@ describe("ChatsSettingsModal", () => {
 
   test("pending save blocks duplicate submission and dismissal, then a failed save can retry", () => {
     const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
+    fireEvent.click(view.getByRole("switch", { name: "Chat reply alerts" }));
     view.getByRole("button", { name: "Confirm" }).focus();
     fireEvent.click(view.getByRole("button", { name: "Confirm" }));
     view.update({ saveStatus: "pending" });
@@ -169,7 +140,7 @@ describe("ChatsSettingsModal", () => {
     expect(document.activeElement).toBe(savingButton);
     expect(
       view
-        .getByRole("switch", { name: "Auto Archive Chats" })
+        .getByRole("switch", { name: "Chat reply alerts" })
         .hasAttribute("disabled"),
     ).toBe(true);
     expect(
@@ -187,9 +158,9 @@ describe("ChatsSettingsModal", () => {
     );
     expect(
       view
-        .getByRole("switch", { name: "Auto Archive Chats" })
+        .getByRole("switch", { name: "Chat reply alerts" })
         .getAttribute("aria-checked"),
-    ).toBe("true");
+    ).toBe("false");
     fireEvent.click(view.getByRole("button", { name: "Confirm" }));
     expect(view.props.onSave).toHaveBeenCalledTimes(2);
   });
@@ -215,15 +186,9 @@ describe("ChatsSettingsModal", () => {
     view.update({
       state: {
         status: "ready",
-        values: {
-          autoArchive: { enabled: true, afterDays: 1 },
-          newMessageEnabled: false,
-        },
+        values: { newMessageEnabled: false },
       },
     });
-    expect(
-      view.getByRole("combobox", { name: "Time to Archive" }).textContent,
-    ).toContain("1 day");
     expect(
       view
         .getByRole("switch", { name: "Chat reply alerts" })
@@ -243,23 +208,4 @@ describe("ChatsSettingsModal", () => {
     }
   });
 
-  test("selecting a day through the nested portal keeps the modal open and preserves it when disabled", async () => {
-    const view = setup();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
-    fireEvent.keyDown(view.getByRole("combobox", { name: "Time to Archive" }), {
-      key: "ArrowDown",
-    });
-    const option = await view.findByRole("option", { name: "14 days" });
-    fireEvent.click(option);
-    await waitFor(() => expect(view.queryByRole("listbox")).toBeNull());
-    expect(view.props.onOpenChange).not.toHaveBeenCalled();
-    fireEvent.click(view.getByRole("switch", { name: "Auto Archive Chats" }));
-    const select = view.getByRole("combobox", { name: "Time to Archive" });
-    expect(select.hasAttribute("disabled")).toBe(true);
-    expect(select.textContent).toContain("14 days");
-    fireEvent.click(view.getByRole("button", { name: "Confirm" }));
-    expect(view.props.onSave).toHaveBeenCalledWith({
-      conversations: { autoArchive: { afterDays: 14 } },
-    });
-  });
 });

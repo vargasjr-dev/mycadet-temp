@@ -67,10 +67,7 @@ import {
   renderGroupMenuItemsAsPanelItems,
   type GroupMenuItemsProps,
 } from "@/domains/chat/components/group-actions-menu";
-import {
-  useConversationDoneLabels,
-  useSidebarDoneEnabled,
-} from "@/utils/done-labels";
+import { useConversationDoneLabels } from "@/utils/done-labels";
 import { useTranslation } from "@/i18n";
 import type { Conversation } from "@/types/conversation-types";
 import { useOverflows } from "@/hooks/use-overflows";
@@ -175,20 +172,13 @@ export function ConversationRowList({
      control so it can be put back. */
   const canExpand =
     expandable === true && isLast === true && !unbounded && !scrollWithBody;
-  /* Under `sidebar-done` the section rests at its mid height for good: the
-     list is short because what is finished leaves it, so the control that
-     grows past the cap is an answer to a problem the check already solves.
-     The cap, the scroll and the paging are untouched, and a section the user
-     had grown before the flag came on is back at the resting height rather
-     than stranded tall with nothing to put it back. */
-  const sidebarDone = useSidebarDoneEnabled();
-  const grown = expanded && !sidebarDone;
+  const grown = expanded;
   const { ref: scrollerRef, overflows: scrollerOverflows } =
     useOverflows<HTMLDivElement>({ contentKey: items.length });
   const overflowsCap =
     windows || scrollerOverflows || onEndReached !== undefined;
   const expandRow =
-    !sidebarDone && canExpand && (overflowsCap || grown) ? (
+    canExpand && (overflowsCap || grown) ? (
       <SidebarExpandRow
         expanded={grown}
         onToggle={() => onExpandedChange?.(!grown)}

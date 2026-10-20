@@ -20,7 +20,6 @@ import {
 } from "./chats-settings-modal";
 
 const DEFAULTS: ChatsSettingsValues = {
-  autoArchive: { enabled: false, afterDays: 7 },
   newMessageEnabled: true,
 };
 
@@ -61,15 +60,6 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
-
-export const AutoArchiveEnabled: Story = {
-  args: {
-    state: {
-      status: "ready",
-      values: { ...DEFAULTS, autoArchive: { enabled: true, afterDays: 14 } },
-    },
-  },
-};
 
 export const NotificationsOff: Story = {
   args: {

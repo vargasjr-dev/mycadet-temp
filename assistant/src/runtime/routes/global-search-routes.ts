@@ -11,7 +11,6 @@
 import { z } from "zod";
 
 import { getConfig } from "../../config/loader.js";
-import { isSidebarDoneEnabled } from "../../config/sidebar-done-gate.js";
 import { searchContacts } from "../../contacts/contact-store.js";
 import { searchConversations } from "../../persistence/conversation-queries.js";
 import { getMemorySqlite } from "../../persistence/db-connection.js";
@@ -304,13 +303,9 @@ async function handleGlobalSearch({
   // Pull the archive filter out of the query string itself (`is:archived` /
   // `archive:yes` / etc.) so the user controls it the same way they control
   // every other modifier: by typing it into the search box. The cleaned term
-  // is what the backends actually search on. Under `sidebar-done` the
-  // unfiltered default flips to including done chats, and `is:unarchived`
-  // becomes the token that narrows back to the live set.
-  const { term, archived: includeArchived } = parseSearchQuery(
-    rawQ,
-    isSidebarDoneEnabled(),
-  );
+  // is what the backends actually search on. Archived conversations stay
+  // hidden unless the query names them.
+  const { term, archived: includeArchived } = parseSearchQuery(rawQ, false);
 
   const limit = Math.max(1, Math.min(Number(queryParams.limit ?? 20), 100));
   const categories = parseCategories(queryParams.categories);

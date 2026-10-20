@@ -56,7 +56,6 @@ import {
 } from "../../config/schemas/llm.js";
 import { VALID_MEMORY_EMBEDDING_PROVIDERS } from "../../config/schemas/memory-storage.js";
 import { ServiceModeSchema } from "../../config/schemas/services.js";
-import { isSidebarDoneEnabled } from "../../config/sidebar-done-gate.js";
 import {
   describeShadowedConfigSet,
   findSubstrateShadowing,
@@ -1180,9 +1179,7 @@ async function handleSearchConversations({
     query: q,
     limit,
     maxMessagesPerConversation: maxMessages,
-    // Under `sidebar-done` a done chat is filed rather than hidden, so the
-    // agent's own history search reaches it the same way the user's does.
-    includeArchived: isSidebarDoneEnabled(),
+    includeArchived: false,
   });
   return { query: q, results };
 }

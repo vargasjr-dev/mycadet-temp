@@ -41,7 +41,6 @@ import {
   getConversation,
   getMessageById,
   parseMessageMetadata,
-  resurfaceArchivedConversation,
 } from "../persistence/conversation-crud.js";
 import { getResolvedConversationDirPath } from "../persistence/conversation-directories.js";
 import { syncMessageToDisk } from "../persistence/conversation-disk-view.js";
@@ -148,17 +147,6 @@ export function buildDeferredFinalizeEffect(params: {
       rlog.warn(
         { err, conversationId, messageId: assistantMessageId },
         "Failed to project assistant message for attention tracking (non-fatal)",
-      );
-    }
-    // The row this turn reserved was empty at insert, so this is where its
-    // content becomes readable and a Done conversation earns its way back to
-    // the list. A run that never got this far produced nothing to read.
-    try {
-      resurfaceArchivedConversation(conversationId, finalizedRow.createdAt);
-    } catch (err) {
-      rlog.warn(
-        { err, conversationId, messageId: assistantMessageId },
-        "Failed to resurface Done conversation after finalize (non-fatal)",
       );
     }
   };

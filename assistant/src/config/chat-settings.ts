@@ -3,13 +3,10 @@ import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 
 import { isPlainObject } from "../util/object.js";
-import { AutoArchiveConfigSchema } from "./schemas/conversations.js";
 import { NotificationsConfigSchema } from "./schemas/notifications.js";
 
 const ChatSettingsConfigSchema = z.object({
-  conversations: z
-    .object({ autoArchive: AutoArchiveConfigSchema.optional() })
-    .optional(),
+  conversations: z.object({}).optional(),
   notifications: NotificationsConfigSchema.optional(),
 });
 
@@ -46,22 +43,7 @@ export function validateChatSettingsWrite(
 
 export const ChatSettingsPatchSchema = z.object({
   conversations: z
-    .object({
-      autoArchive: z
-        .object({
-          enabled: AutoArchiveConfigSchema.shape.enabled
-            .unwrap()
-            .nullable()
-            .optional(),
-          afterDays: AutoArchiveConfigSchema.shape.afterDays
-            .unwrap()
-            .nullable()
-            .optional(),
-        })
-        .passthrough()
-        .nullable()
-        .optional(),
-    })
+    .object({})
     .passthrough()
     .nullable()
     .optional(),
@@ -84,9 +66,6 @@ export function scrubNulledChatSettings(
   for (const path of [
     ["conversations"],
     ["notifications"],
-    ["conversations", "autoArchive"],
-    ["conversations", "autoArchive", "enabled"],
-    ["conversations", "autoArchive", "afterDays"],
     ["notifications", "newMessageEnabled"],
   ]) {
     if (readPath(patch, path) !== null) {

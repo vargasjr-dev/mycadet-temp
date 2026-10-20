@@ -71,9 +71,8 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
-/** The element the conversation list lays out, whatever the flag says. */
-function rowBox(sidebarDone: boolean): HTMLElement {
-  useClientFeatureFlagStore.setState({ sidebarDone });
+/** The element the conversation list lays out. */
+function rowBox(): HTMLElement {
   const { container } = render(
     createElement(
       ConversationListProvider,
@@ -90,7 +89,6 @@ function rowBox(sidebarDone: boolean): HTMLElement {
 
 afterEach(() => {
   cleanup();
-  useClientFeatureFlagStore.setState({ sidebarDone: false });
 });
 
 afterAll(() => {
@@ -102,28 +100,21 @@ afterAll(() => {
   });
 });
 
-describe("ConversationRow layout under sidebar-done", () => {
-  test("the flag adds no box between the list and the row", () => {
-    const off = rowBox(false);
-    cleanup();
-    const on = rowBox(true);
+describe("ConversationRow layout", () => {
+  test("the list lays out the row directly, no wrapper between", () => {
+    const box = rowBox();
 
-    expect(on.tagName).toBe(off.tagName);
-    expect(on.className).toBe(off.className);
     // One child, the row itself: an interposed wrapper would show up here as
     // an extra level before the panel item.
-    expect(off.children).toHaveLength(1);
-    expect(on.children).toHaveLength(1);
-    expect(on.children[0]?.getAttribute("data-slot")).toBe("panel-item");
-    expect(off.children[0]?.getAttribute("data-slot")).toBe("panel-item");
+    expect(box.children).toHaveLength(1);
+    expect(box.children[0]?.getAttribute("data-slot")).toBe("panel-item");
   });
 
-  test("the row takes on no resting geometry from the flag", () => {
-    const on = rowBox(true);
+  test("the row takes on no resting geometry from the list", () => {
+    const on = rowBox();
 
-    /* The exit writes `height` and `margin-bottom` and clips, all only while
-       the row is leaving. Anything here that spaced or sized the box at rest
-       would move every row below it. */
+    /* Anything here that spaced or sized the box at rest would move every
+       row below it. */
     for (const property of [
       "height",
       "margin",

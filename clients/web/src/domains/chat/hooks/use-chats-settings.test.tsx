@@ -101,7 +101,6 @@ beforeEach(() => {
   sparseConfig = undefined;
   savedConfig = makeConfigFixture({
     conversations: {
-      autoArchive: { enabled: false, afterDays: 7 },
       skipAutoRetitling: false,
       backgroundInjection: "",
       resumeProcessingOnStartup: false,
@@ -140,7 +139,6 @@ test("loads selected assistant settings only when opened", async () => {
   expect(hook.result.current.state).toEqual({
     status: "ready",
     values: {
-      autoArchive: { enabled: false, afterDays: 7 },
       newMessageEnabled: true,
     },
   });
