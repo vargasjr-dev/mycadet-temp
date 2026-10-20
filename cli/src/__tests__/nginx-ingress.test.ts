@@ -37,11 +37,26 @@ const execFileSyncMock = mock(childProcess.execFileSync);
 const spawnSyncMock = mock(childProcess.spawnSync);
 const spawnMock = mock(childProcess.spawn);
 
+/**
+ * A git rev-parse that fails like a git-less tree: the built-sha stamp's
+ * staleness probe stays inert and the per-test nginx fakes never see a git
+ * spawn.
+ */
+function gitStubSpawn(): childProcess.ChildProcess {
+  const child = new childProcess.ChildProcess();
+  Object.defineProperty(child, "stdout", { value: null });
+  setTimeout(() => child.emit("exit", 1), 0);
+  return child;
+}
+
 mock.module("node:child_process", () => ({
   ...childProcess,
   execFileSync: execFileSyncMock,
   spawnSync: spawnSyncMock,
-  spawn: spawnMock,
+  spawn: ((command: string, args: readonly string[], options?: SpawnOptions) =>
+    command === "git"
+      ? gitStubSpawn()
+      : spawnMock(command, args, options ?? {})) as typeof childProcess.spawn,
 }));
 
 const existsSyncMock = mock(fsModule.existsSync);
@@ -1138,8 +1153,13 @@ describe("startRemoteWebIngress", () => {
     const buildCalls = spawnMock.mock.calls.filter(
       ([command]) => command === "bun",
     );
-    expect(buildCalls).toHaveLength(1);
-    const [, buildArgs, buildOptions] = buildCalls[0] ?? [];
+    expect(buildCalls).toHaveLength(2);
+    const [, installArgs, installOptions] = buildCalls[0] ?? [];
+    expect(installArgs).toEqual(["install"]);
+    expect(String(installOptions?.cwd).endsWith(join("clients", "web"))).toBe(
+      true,
+    );
+    const [, buildArgs, buildOptions] = buildCalls[1] ?? [];
     expect(buildArgs).toEqual(["run", "build"]);
     expect(buildOptions?.env?.VITE_CLOUD_MODE).toBe("false");
     expect(String(buildOptions?.cwd).endsWith(join("clients", "web"))).toBe(
@@ -1170,7 +1190,9 @@ describe("startRemoteWebIngress", () => {
         gatewayPort: 7830,
         listenPort: 7845,
       }),
-    ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
+    ).rejects.toThrow(
+      "cd clients/web && bun install && VITE_CLOUD_MODE=false bun run build",
+    );
   });
 
   test("already-running carries the recorded listen port over the requested one", async () => {

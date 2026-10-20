@@ -157,3 +157,6 @@ __pycache__/
 
 
 assistant/workspace/
+
+# Written by the CLI auto-builder: the commit each client bundle was built from.
+.cadet-built-sha

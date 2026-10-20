@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 
@@ -158,28 +158,72 @@ function spawnDistBuild(build: DistBuildSpec): Promise<void> {
   });
 }
 
-async function resolveDistDirBuilt(
+/**
+ * The commit a source-checkout bundle was built from, stamped beside dist
+ * after every auto-build. `git pull` moves HEAD while the dist stays put, so
+ * the stamp is what lets the next resolve notice the checkout moved and
+ * rebuild instead of serving a stale bundle forever.
+ */
+const BUILT_SHA_STAMP = ".cadet-built-sha";
+
+/** The source-checkout dist path a kind builds into. */
+function sourceDistDir(kind: "web" | "app", sourceDir: string): string {
+  return kind === "web"
+    ? join(sourceDir, "dist")
+    : join(sourceDir, "dist", "standalone");
+}
+
+/** HEAD commit of the checkout containing sourceDir (null when git-less). */
+function gitHeadSha(sourceDir: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const child = spawn("git", ["rev-parse", "HEAD"], {
+      cwd: sourceDir,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    let stdout = "";
+    child.stdout?.on("data", (chunk: Buffer) => {
+      stdout += chunk.toString();
+    });
+    child.on("error", () => resolve(null));
+    child.on("exit", (code) => {
+      resolve(code === 0 ? stdout.trim() || null : null);
+    });
+  });
+}
+
+function readBuiltSha(sourceDir: string): string | undefined {
+  try {
+    const stamp = readFileSync(join(sourceDir, BUILT_SHA_STAMP), "utf8").trim();
+    return stamp || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeBuiltSha(sourceDir: string, sha: string): void {
+  try {
+    writeFileSync(join(sourceDir, BUILT_SHA_STAMP), `${sha}\n`);
+  } catch {
+    // Best-effort: a missing stamp only costs one extra rebuild.
+  }
+}
+
+/** Install deps (a pull may have moved the lockfile), then build the bundle. */
+async function buildDistFromSource(
   kind: "web" | "app",
-  options: DistBuildOptions,
-): Promise<string | null> {
-  const existing =
-    kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
-  if (existing) {
-    return existing;
-  }
-  const sourceDir = findSourcePackageDir(kind, options.startDir);
-  if (!sourceDir) {
-    return null;
-  }
-  console.log(
-    `No built ${kind} bundle found. Building it from the source checkout ` +
-      "now (first run only; this can take a minute)...",
-  );
+  sourceDir: string,
+): Promise<void> {
   const recipe =
     kind === "web"
-      ? "cd clients/web && VITE_CLOUD_MODE=false bun run build"
-      : "cd clients/app && VITE_CLOUD_MODE=false bun run build";
+      ? "cd clients/web && bun install && VITE_CLOUD_MODE=false bun run build"
+      : "cd clients/app && bun install && VITE_CLOUD_MODE=false bun run build";
   try {
+    await spawnDistBuild({
+      command: "bun",
+      args: ["install"],
+      env: {},
+      cwd: sourceDir,
+    });
     await spawnDistBuild({
       command: "bun",
       args: ["run", "build"],
@@ -194,6 +238,54 @@ async function resolveDistDirBuilt(
         `start. Run the build by hand to see the full output: ` +
         `\`${recipe}\`. ${error instanceof Error ? error.message : String(error)}`,
     );
+  }
+}
+
+async function resolveDistDirBuilt(
+  kind: "web" | "app",
+  options: DistBuildOptions,
+): Promise<string | null> {
+  const existing =
+    kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
+  if (existing) {
+    // Only the source-checkout arm's dist can be refreshed here: installed
+    // (npm package) and packaged dists are owned by their release.
+    const sourceDir = findSourcePackageDir(kind, options.startDir);
+    if (!sourceDir || existing !== sourceDistDir(kind, sourceDir)) {
+      return existing;
+    }
+    const headSha = await gitHeadSha(sourceDir);
+    if (!headSha) {
+      return existing;
+    }
+    const builtSha = readBuiltSha(sourceDir);
+    if (builtSha === headSha) {
+      return existing;
+    }
+    console.log(
+      `The ${kind} bundle is older than the current checkout` +
+        (builtSha
+          ? ` (built at ${builtSha.slice(0, 7)})`
+          : " (no build stamp)") +
+        ". Rebuilding it now (this can take a minute)...",
+    );
+    await buildDistFromSource(kind, sourceDir);
+    writeBuiltSha(sourceDir, headSha);
+    console.log(`Built the ${kind} bundle.`);
+    return existing;
+  }
+  const sourceDir = findSourcePackageDir(kind, options.startDir);
+  if (!sourceDir) {
+    return null;
+  }
+  console.log(
+    `No built ${kind} bundle found. Building it from the source checkout ` +
+      "now (first run only; this can take a minute)...",
+  );
+  const headSha = await gitHeadSha(sourceDir);
+  await buildDistFromSource(kind, sourceDir);
+  if (headSha) {
+    writeBuiltSha(sourceDir, headSha);
   }
   console.log(`Built the ${kind} bundle.`);
   return kind === "web" ? findWebDistDir(options) : findAppDistDir(options);
