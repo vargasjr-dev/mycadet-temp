@@ -92,9 +92,7 @@ import {
   recordRevealSuccess,
 } from "../runtime/reveal-success-registry.js";
 import { mockUnownedModeSessions } from "./helpers/mock-conversation.js";
-import {
-  SYNTHETIC_OPAQUE_CREDENTIAL,
-} from "./secret-fixtures.js";
+import { SYNTHETIC_OPAQUE_CREDENTIAL } from "./secret-fixtures.js";
 
 function toolResults(events: AssistantEvent[]): string[] {
   return events
@@ -135,7 +133,6 @@ function createMockDeps(collected: AssistantEvent[]): EventHandlerDeps {
     } as EventHandlerDeps["turnInterfaceContext"],
   } as EventHandlerDeps;
 }
-
 
 const REVEAL_TOOL_USE = {
   type: "tool_use",

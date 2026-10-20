@@ -45,10 +45,7 @@ import {
 
 import { revealedValuesSince } from "../runtime/reveal-success-registry.js";
 import { credentialKey } from "../security/credential-key.js";
-import {
-  redactSecrets,
-  scanText,
-} from "../security/secret-scanner.js";
+import { redactSecrets, scanText } from "../security/secret-scanner.js";
 import { getSecureKeyAsync } from "../security/secure-keys.js";
 import { getCredentialMetadataById } from "../tools/credentials/metadata-store.js";
 import { parseServiceFieldRef } from "../tools/credentials/ref-parse.js";
@@ -876,4 +873,3 @@ function protectCandidateValuesLegacy(
     containedInLongerScannerMatch(text),
   );
 }
-

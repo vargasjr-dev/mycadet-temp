@@ -206,7 +206,6 @@ import { startsNewTurn } from "./summarize-boundary.js";
 const log = getLogger("conversation");
 const PROMPT_CACHE_WARM_MAX_TOKENS = 16;
 
-
 export interface CleanResult {
   previousEstimatedInputTokens: number;
   estimatedInputTokens: number;
@@ -260,9 +259,7 @@ export type {
   QueueDrainReason,
   QueuePolicy,
 } from "./conversation-queue-manager.js";
-import {
-  isPersonalMemoryAllowed,
-} from "./trust-context.js";
+import { isPersonalMemoryAllowed } from "./trust-context.js";
 import type { TrustContext } from "./trust-context-types.js";
 import { turnActorPrincipalId } from "./turn-actor.js";
 
