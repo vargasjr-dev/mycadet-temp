@@ -134,7 +134,6 @@ mock.module("../inbound/public-ingress-urls.js", () => ({
 // ---------------------------------------------------------------------------
 
 import { orchestrateOAuthConnect } from "../oauth/connect-orchestrator.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 import { setConfig } from "./helpers/set-config.js";
 
 /** Seed `ingress.publicBaseUrl` in the real workspace config. */
@@ -222,8 +221,6 @@ beforeEach(() => {
   setPublicBaseUrl("");
   mockIdentityResult = "user@example.com";
   mockProviderStore = {};
-  setOverridesForTesting({});
-
   mockPrepareResult = {
     authorizeUrl: "https://provider.example.com/authorize?prepared",
     state: "mock-state-123",

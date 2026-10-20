@@ -45,7 +45,6 @@ import {
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
 import { useIsAuthenticated } from "@/stores/auth-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
 
@@ -60,8 +59,6 @@ export function GeneralPage() {
     refetch,
     refetchUntilResized,
   } = useAssistantWithHealthz();
-  const multiCloudAssistant =
-    useClientFeatureFlagStore.use.multiCloudAssistant();
   const isAuthenticated = useIsAuthenticated();
   const isNativeMobile = useIsNativeMobile();
   // The card supersedes the in-page picker so the two never render together.
@@ -297,7 +294,7 @@ export function GeneralPage() {
 
       <PairDeviceCard />
 
-      {multiCloudAssistant && !showAssistantSwitcherCard && <AssistantPicker />}
+      {!showAssistantSwitcherCard && <AssistantPicker />}
 
       {showAssistantSwitcherCard && (
         <DetailCard

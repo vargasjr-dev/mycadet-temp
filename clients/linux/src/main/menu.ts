@@ -15,7 +15,6 @@ import {
 } from "@mycadet/electron-desktop/commands";
 import { areChromeDevToolsEnabled } from "@mycadet/electron-desktop/devtools";
 import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
-import { onSettingChange } from "@mycadet/electron-desktop/settings";
 import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   MENU_POPUP,
@@ -204,7 +203,6 @@ export const installLinuxMenu = (options: LinuxMenuOptions): void => {
     },
   );
   onHotkeyOverridesChange(apply);
-  onSettingChange("featureFlags", apply);
   onOnboardingChange(apply);
   apply();
 };

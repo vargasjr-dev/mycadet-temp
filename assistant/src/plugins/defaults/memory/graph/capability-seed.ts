@@ -8,7 +8,6 @@
 import { CLI_COMMAND_HELP, safeStringSlice } from "@mycadet/plugin-api";
 import { and, eq, like, sql } from "drizzle-orm";
 
-import { isAssistantFeatureFlagEnabled } from "../../../../config/assistant-feature-flags.js";
 import { getConfig } from "../../../../config/loader.js";
 import { isMemoryV1Active } from "../../../../config/memory-v3-gate.js";
 import { resolveSkillStates } from "../../../../config/skill-state.js";
@@ -161,10 +160,6 @@ export function seedSkillGraphNodes(): void {
       }
     } else {
       for (const entry of cachedCatalog) {
-        const flagKey = entry.metadata?.cadet?.["feature-flag"];
-        if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
-          continue;
-        }
         seenKeys.add(`${SKILL_SOURCE_PREFIX}${entry.id}`);
       }
       pruneStaleCapabilities(SKILL_SOURCE_PREFIX, seenKeys);
@@ -214,14 +209,8 @@ export async function seedUninstalledCatalogSkillMemories(): Promise<void> {
     const installedCatalog = loadSkillCatalog();
     const installedIds = new Set(installedCatalog.map((s) => s.id));
 
-    const config = getConfig();
     for (const entry of fullCatalog) {
       if (installedIds.has(entry.id)) {
-        continue;
-      }
-
-      const flagKey = entry.metadata?.cadet?.["feature-flag"];
-      if (flagKey && !isAssistantFeatureFlagEnabled(flagKey, config)) {
         continue;
       }
 

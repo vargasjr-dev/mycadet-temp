@@ -852,7 +852,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
       url: window.location.origin,
       token: ACTOR_TOKEN,
     });
-    const input = new Request(`${window.location.origin}/v1/feature-flags`, {
+    const input = new Request(`${window.location.origin}/v1/contacts`, {
       headers: { "Cadet-Organization-Id": TEST_ORG_ID },
     });
 
@@ -889,7 +889,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
       token: ACTOR_TOKEN,
     });
     const input = new Request(
-      `${window.location.origin}/assistant-123/v1/feature-flags`,
+      `${window.location.origin}/assistant-123/v1/contacts`,
     );
 
     const output = authorizeRemoteGatewayRequest(input);
@@ -903,7 +903,7 @@ describe("api-interceptors / remote gateway direct requests", () => {
       url: `${window.location.origin}/assistant-123`,
       token: ACTOR_TOKEN,
     });
-    const input = new Request(`${window.location.origin}/v1/feature-flags`);
+    const input = new Request(`${window.location.origin}/v1/contacts`);
 
     expect(authorizeRemoteGatewayRequest(input)).toBeNull();
   });
@@ -1037,7 +1037,7 @@ describe("api-interceptors / platform features gate", () => {
   test("aborts platform requests in remote-gateway mode", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     const input = new Request(
-      `${window.location.origin}/v1/feature-flags/client-flag-values/`,
+      `${window.location.origin}/v1/contacts/client-flag-values/`,
     );
     const output = platformFeaturesGate(input);
     expect(output.signal.aborted).toBe(true);

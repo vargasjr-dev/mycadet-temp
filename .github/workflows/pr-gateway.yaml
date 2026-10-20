@@ -19,8 +19,6 @@ on:
       - "packages/shared/**"
       - "packages/slack-text/**"
       - "packages/twilio-client/**"
-      - "meta/feature-flags/**"
-      - "meta/sync-bundled-copies.ts"
       - ".github/workflows/pr-gateway.yaml"
   workflow_dispatch:
 concurrency:
@@ -50,9 +48,6 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile --filter=@mycadet/gateway
-
-      - name: Sync feature flag registry
-        run: cd .. && bun run meta/sync-bundled-copies.ts
 
       - name: Lint
         run: bun run lint

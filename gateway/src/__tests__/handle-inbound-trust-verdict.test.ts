@@ -66,9 +66,6 @@ mock.module("../verification/text-verification.js", () => ({
 
 // The feature-flag resolver stays mocked off: nothing in this graph should
 // depend on a registry flag resolving true in tests.
-mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: () => false,
-}));
 
 await import("./test-preload.js");
 const { initGatewayDb, resetGatewayDb, getGatewayDb } =

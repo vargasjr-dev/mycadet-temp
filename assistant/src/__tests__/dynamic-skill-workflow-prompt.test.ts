@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
 const TEST_DIR = process.env.CADET_WORKSPACE_DIR!;
 
@@ -9,20 +9,8 @@ const noopLogger = new Proxy({} as Record<string, unknown>, {
 });
 
 const { buildSystemPrompt } = await import("../prompts/system-prompt.js");
-const { setOverridesForTesting } =
-  await import("./feature-flag-test-helpers.js");
 
 describe("Dynamic Skill Authoring Workflow moved to tool descriptions", () => {
-  beforeEach(() => {
-    setOverridesForTesting({
-      browser: true,
-    });
-  });
-
-  afterEach(() => {
-    setOverridesForTesting({});
-  });
-
   test("system prompt no longer contains Dynamic Skill Authoring section", () => {
     writeFileSync(join(TEST_DIR, "IDENTITY.md"), "I am Cadet.");
     const result = buildSystemPrompt();

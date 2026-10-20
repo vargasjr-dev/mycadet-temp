@@ -240,9 +240,6 @@ export interface CadetBridge {
     get(): Promise<boolean>;
     set(enabled: boolean): Promise<void>;
   };
-  featureFlags: {
-    set(flags: Record<string, boolean>): void;
-  };
   diagnostics: {
     setShareDiagnostics(enabled: boolean): void;
   };
@@ -1000,7 +997,6 @@ export const CADET_BRIDGE_KEYS = [
   "auth",
   "hotkeys",
   "launchAtLogin",
-  "featureFlags",
   "diagnostics",
   "helper",
   "permissions",

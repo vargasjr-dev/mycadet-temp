@@ -20,8 +20,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
-
 // ── Store mock: reads stay pending until the test releases them ──────────
 // Only reached on the store-fallback path (a ref with no proven value); the
 // proven path redacts the route-served bytes without touching the store.
@@ -152,8 +150,6 @@ const REVEAL_TOOL_RESULT = {
 
 beforeEach(() => {
   // Real flag resolution: only chat-credential-reveal is enabled.
-  setOverridesForTesting({ "chat-credential-reveal": true });
-
   _resetStreamStateForTesting();
   _resetRevealSuccessRegistryForTest();
   _resetRevealNoncesForTest();

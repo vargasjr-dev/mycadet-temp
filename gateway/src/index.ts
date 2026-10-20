@@ -19,7 +19,6 @@ import { validateEdgeToken, mintServiceToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
-import { FeatureFlagWatcher } from "./feature-flag-watcher.js";
 
 import { loadConfig } from "./config.js";
 import { CredentialCache } from "./credential-cache.js";
@@ -77,10 +76,6 @@ import { createResendWebhookHandler } from "./http/routes/resend-webhook.js";
 
 import { createOAuthCallbackHandler } from "./http/routes/oauth-callback.js";
 import { createMcpOAuthClientMetadataHandler } from "./http/routes/mcp-oauth-client-metadata.js";
-import {
-  createFeatureFlagsGetHandler,
-  createFeatureFlagsPatchHandler,
-} from "./http/routes/feature-flags.js";
 import {
   createGlobalThresholdGetHandler,
   createGlobalThresholdPutHandler,
@@ -215,7 +210,7 @@ import {
 import { SleepWakeDetector } from "./sleep-wake-detector.js";
 import { callTelegramApi } from "./telegram/api.js";
 import { fetchImpl } from "./fetch.js";
-import { areCloudFeaturesEnabled } from "./feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "./cloud-features.js";
 import { isNewCommand, handleNewCommand } from "./webhook-pipeline.js";
 import { reconcileTelegramWebhook } from "./telegram/webhook-manager.js";
 import { registerEmailCallbackRoute } from "./email/register-callback.js";
@@ -230,7 +225,6 @@ import { contactRoutes } from "./ipc/contact-handlers.js";
 import { inviteRoutes } from "./ipc/invite-handlers.js";
 import { verificationSessionRoutes } from "./ipc/verification-session-handlers.js";
 import { guardianRequestRoutes } from "./ipc/guardian-request-handlers.js";
-import { featureFlagRoutes } from "./ipc/feature-flag-handlers.js";
 import { admissionPolicyRoutes } from "./ipc/admission-policy-handlers.js";
 import { channelPermissionRoutes } from "./ipc/channel-permission-handlers.js";
 import { trustVerdictRoutes } from "./ipc/trust-verdict-handlers.js";
@@ -655,14 +649,6 @@ async function main() {
   const brainGraphProxy = createBrainGraphProxyHandler(config);
   const handleLogExport = createLogExportHandler(config);
   const handleLogTail = createLogTailHandler(config);
-  const handleFeatureFlagsGet = createFeatureFlagsGetHandler();
-  // Assigned once `ipcServer` exists (see `emitFlagChanged` below). Passing a
-  // thunk lets the PATCH handler push flag changes to connected clients the
-  // moment a write commits, rather than waiting on the FeatureFlagWatcher.
-  let emitFlagChanged: () => void = () => {};
-  const handleFeatureFlagsPatch = createFeatureFlagsPatchHandler(() =>
-    emitFlagChanged(),
-  );
   const handleGlobalThresholdGet = createGlobalThresholdGetHandler();
   const handleGlobalThresholdPut = createGlobalThresholdPutHandler();
   const handleConversationThresholdGet =
@@ -1382,57 +1368,6 @@ async function main() {
         }),
     },
 
-    // ── Feature flags (scope-protected) ──
-    {
-      path: "/v1/feature-flags",
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "feature_flags.read",
-      handler: (req) => handleFeatureFlagsGet(req),
-    },
-    {
-      path: /^\/v1\/assistants\/([^/]+)\/feature-flags\/?$/,
-      method: "GET",
-      auth: "edge-scoped",
-      scope: "feature_flags.read",
-      handler: (req) => handleFeatureFlagsGet(req),
-    },
-    {
-      path: /^\/v1\/feature-flags\/(.+)$/,
-      method: "PATCH",
-      auth: "edge-scoped",
-      scope: "feature_flags.write",
-      handler: (req, params) => {
-        let flagKey: string;
-        try {
-          flagKey = decodeURIComponent(params[0]);
-        } catch {
-          return Response.json(
-            { error: "Invalid flag key encoding" },
-            { status: 400 },
-          );
-        }
-        return handleFeatureFlagsPatch(req, flagKey);
-      },
-    },
-    {
-      path: /^\/v1\/assistants\/([^/]+)\/feature-flags\/(.+)$/,
-      method: "PATCH",
-      auth: "edge-scoped",
-      scope: "feature_flags.write",
-      handler: (req, params) => {
-        let flagKey: string;
-        try {
-          flagKey = decodeURIComponent(params[1].replace(/\/$/, ""));
-        } catch {
-          return Response.json(
-            { error: "Invalid flag key encoding" },
-            { status: 400 },
-          );
-        }
-        return handleFeatureFlagsPatch(req, flagKey);
-      },
-    },
 
     // ── Auto-approve thresholds (scope-protected) ──
     {
@@ -2916,7 +2851,6 @@ async function main() {
 
   // ── IPC server ──
   const ipcServer = new GatewayIpcServer([
-    ...featureFlagRoutes,
     ...contactRoutes,
     ...inviteRoutes,
     ...verificationSessionRoutes,
@@ -2945,15 +2879,6 @@ async function main() {
   ipcServer.start();
 
   void refreshRouteSchema();
-
-  emitFlagChanged = () => {
-    ipcServer.emit("feature_flags_changed");
-  };
-
-  const featureFlagWatcher = new FeatureFlagWatcher({
-    onChanged: emitFlagChanged,
-  });
-  featureFlagWatcher.start();
 
   // ── Sleep/wake detection ──
   // Detect system sleep/wake transitions and force-reconnect channels
@@ -2984,7 +2909,6 @@ async function main() {
     sleepWakeDetector.stop();
     credentialWatcher.stop();
     configFileWatcher.stop();
-    featureFlagWatcher.stop();
     const tunnelStop = tunnelClient?.stop();
     if (tunnelStop) shutdownTasks.push(tunnelStop);
     ipcServer.stop();

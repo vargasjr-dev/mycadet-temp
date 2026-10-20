@@ -8,7 +8,6 @@ import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guar
 import { isCloudClientConfigured } from "../cloud/client.js";
 import { startConsentRefresh } from "../cloud/consent-cache.js";
 import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
-import { initFeatureFlagOverrides } from "../config/assistant-feature-flags.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
 import {
   getConfig,
@@ -21,7 +20,6 @@ import { refreshManagedConnectionCache } from "../credential-execution/cloud-cat
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { backfillRelationshipStateIfMissing } from "../home/relationship-state-writer.js";
 import { startCliIpcServer } from "../ipc/assistant-server.js";
-import { startGatewayFlagListener } from "../ipc/gateway-flag-listener.js";
 import { startMonitoring } from "../monitoring/control.js";
 import { recordDaemonBootTime } from "../monitoring/daemon-boot-time.js";
 import { backfillManualTokenConnections } from "../oauth/manual-token-connection.js";
@@ -186,17 +184,6 @@ export async function runDaemon(): Promise<void> {
   void isCloudClientConfigured().catch((err) =>
     log.warn({ err }, "Platform configured-probe warmup failed"),
   );
-
-  // Pre-populate feature flag overrides so subsequent sync
-  // isAssistantFeatureFlagEnabled() calls have data. Fired non-blocking
-  // so a slow or unreachable gateway doesn't delay daemon startup (the
-  // IPC call has a 3s connect + 5s call timeout that would otherwise
-  // stall the critical path).
-  void initFeatureFlagOverrides().catch((err) =>
-    log.warn({ err }, "Background feature flag init failed"),
-  );
-
-  startGatewayFlagListener();
 
   log.info("Daemon startup: initializing DB");
   ensurePromptFiles();

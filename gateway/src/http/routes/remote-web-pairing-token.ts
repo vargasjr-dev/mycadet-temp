@@ -18,8 +18,8 @@ import {
   releaseRemoteWebPairingChallengeExchange,
 } from "../../remote-web/pairing-challenge-store.js";
 import {
+  BROWSER_REFRESH_COOKIE_PATH,
   buildRemoteWebBrowserAuthCookies,
-  remoteWebRefreshCookiePathForPublicBaseUrl,
 } from "../browser-auth-cookies.js";
 import { errorResponse } from "../loopback-guard.js";
 import {
@@ -109,9 +109,6 @@ export async function handleRemoteWebPairingToken(
   };
   let guardianPrincipalId: string;
   let pair: RefreshableTokenPair;
-  // Set on the browser path only: a device-bound pairing carries its refresh
-  // token in the body, so there is no cookie to scope.
-  let refreshCookiePath: string | undefined;
   try {
     guardianPrincipalId = await ensureCadetGuardianBinding();
     if (deviceBound) {
@@ -122,13 +119,10 @@ export async function handleRemoteWebPairingToken(
         identity,
       });
     } else {
-      refreshCookiePath = remoteWebRefreshCookiePathForPublicBaseUrl(
-        challenge.publicBaseUrl,
-      );
       pair = mintAndRecordBrowserTokenPair({
         guardianPrincipalId,
         platform: REMOTE_WEB_PLATFORM,
-        browserRefreshCookiePath: refreshCookiePath,
+        browserRefreshCookiePath: BROWSER_REFRESH_COOKIE_PATH,
         identity,
       });
     }
@@ -166,8 +160,8 @@ export async function handleRemoteWebPairingToken(
   };
 
   // Delivery follows the same discriminator the mint did. A browser exchange
-  // never serializes its refresh token into the body, whatever the cookie
-  // path helper returns.
+  // never serializes its refresh token into the body — it rides the HttpOnly
+  // cookie.
   if (deviceBound) {
     approved.refreshToken = pair.refreshToken;
     approved.refreshTokenExpiresAt = new Date(
@@ -177,7 +171,6 @@ export async function handleRemoteWebPairingToken(
     for (const cookie of buildRemoteWebBrowserAuthCookies({
       refreshToken: pair.refreshToken,
       refreshTokenExpiresAtMs: pair.refreshTokenExpiresAt,
-      refreshCookiePath,
     })) {
       headers.append("Set-Cookie", cookie);
     }

@@ -184,7 +184,7 @@ function buildAppHandoffUrl(
 /**
  * The hub's chooser on its own origin, or `null` when the served config names
  * no hub. Abandoning a pairing has to leave this origin: the chooser sits
- * behind `requireRemoteGatewayPairing`, which bounces an unauthenticated visit
+ * behind `requireRemoteGatewayPairing`, which bounces a sessionless visit
  * straight back here and mints a fresh code. `noAutoSkip` keeps the hub on the
  * chooser instead of skipping through a lone assistant.
  */
@@ -474,6 +474,21 @@ export function RemoteWebPairingPage() {
             onClick={handleCancel}
           >
             {t("pairingPage.cancel")}
+          </Button>
+        ) : null}
+
+        {state.kind === "expired" ? (
+          <Button
+            variant="outlined"
+            fullWidth
+            className="mt-6"
+            onClick={() => {
+              setPairing(null);
+              setCodeDraft("");
+              setState({ kind: "awaiting_code" });
+            }}
+          >
+            {t("pairingPage.enterNewCode")}
           </Button>
         ) : null}
       </section>

@@ -15,8 +15,8 @@ type Registration = {
 const handleRegistrations: Registration[] = [];
 // `on` is included (as a no-op) even though `hotkeys.ts` only uses `handle`:
 // this mock leaks into co-run test files via the global module registry, so
-// the full `./ipc` surface keeps siblings that import `on` (e.g.
-// `feature-flags.ts`) resolvable regardless of file order.
+// the full `./ipc` surface keeps siblings that import `on` resolvable
+// regardless of file order.
 // `./hotkeys` (via `./commands`) imports `BrowserWindow` from electron; stub
 // the surface the broadcast path touches.
 mock.module("electron", () => ({
@@ -113,7 +113,9 @@ describe("resolveHotkeyCatalog", () => {
 
   test("reflects a custom override in the effective accelerator", () => {
     hotkeys = { newConversation: "CmdOrCtrl+Alt+T" };
-    const entry = resolveHotkeyCatalog().find((c) => c.key === "newConversation");
+    const entry = resolveHotkeyCatalog().find(
+      (c) => c.key === "newConversation",
+    );
     expect(entry?.override).toBe("CmdOrCtrl+Alt+T");
     expect(entry?.accelerator).toBe("CmdOrCtrl+Alt+T");
   });

@@ -6,7 +6,6 @@
 
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import * as configLoader from "../../config/loader.js";
 import type { AssistantConfig } from "../../config/schema.js";
 import * as disabledState from "../../plugins/disabled-state.js";
@@ -277,7 +276,6 @@ test("managed browser guidance follows each turn without changing native or shar
       resolve([]).find((tool) => tool.name === "bash")?.description,
     ).toContain("assistant browser navigate");
   } finally {
-    setOverridesForTesting({});
     if (platform === undefined) {
       delete process.env.IS_CLOUD;
     } else {

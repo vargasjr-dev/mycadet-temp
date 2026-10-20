@@ -55,9 +55,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   },
 }));
 
-mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: () => false,
-}));
 
 const { syncConfiguredTwilioPhoneNumberWebhooks } =
   await import("./webhook-sync.js");

@@ -3,16 +3,12 @@ import fs from "node:fs/promises";
 import os from "node:os";
 
 import { installDiagnosticsIpc as installSharedDiagnosticsIpc } from "@mycadet/electron-desktop/diagnostics";
-import { installFeatureFlagsIpc as installSharedFeatureFlagsIpc } from "@mycadet/electron-desktop/feature-flags";
 import {
   configureFeedback,
   installFeedbackIpc,
 } from "@mycadet/electron-desktop/feedback";
 import { writeSetting as writeSharedSetting } from "@mycadet/electron-desktop/settings";
-import {
-  readSetting,
-  writeSetting,
-} from "@mycadet/electron-desktop/settings";
+import { readSetting, writeSetting } from "@mycadet/electron-desktop/settings";
 
 import { getVersionInfo } from "./about.client";
 import { getInstallLocation } from "./install-location";
@@ -35,23 +31,14 @@ configureFeedback({
   readFile: (filePath, encoding) => fs.readFile(filePath, encoding),
   getVersionInfo: () => ({ ...getVersionInfo(), releaseChannel }),
   getLogFilePaths,
-  getFeatureFlags: () => readSetting("featureFlags"),
   hasSession: () => getSessionToken() !== null,
 });
-
-export const installFeatureFlagsIpc = (): void => {
-  installSharedFeatureFlagsIpc(
-    { on },
-    { write: (flags) => writeSetting("featureFlags", flags) },
-  );
-};
 
 export const installDiagnosticsIpc = (): void => {
   // Persist the renderer's effective diagnostics consent. Sentry reporting
   // is gone; this keeps the user's choice durable for the settings surface.
-  installSharedDiagnosticsIpc(
-    { on },
-    (enabled) => writeSharedSetting("shareDiagnostics", enabled),
+  installSharedDiagnosticsIpc({ on }, (enabled) =>
+    writeSharedSetting("shareDiagnostics", enabled),
   );
 };
 

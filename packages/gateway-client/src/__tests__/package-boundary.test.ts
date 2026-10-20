@@ -9,7 +9,7 @@
  * 3. Remains a lightweight client package with no runtime service dependencies.
  *
  * @mycadet/gateway-client is a typed HTTP client for assistant-to-gateway
- * calls (trust API, feature flags, log export, deliver). It may depend on
+ * calls (trust API, thresholds, log export, deliver). It may depend on
  * @mycadet/service-contracts for shared type definitions, but must not pull
  * in runtime service internals.
  */

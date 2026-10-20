@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
+import { Toaster } from "@mycadet/design-library/components/toast";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
@@ -7,7 +8,7 @@ import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { accountRoute } from "@app/domains/account/account-route";
 import { AssistantPage } from "@app/shell/assistant-page";
 
-function DesktopChrome() {
+export function DesktopChrome() {
   const [createOpen, setCreateOpen] = useState(false);
   useCadetCommands({ createAssistant: () => setCreateOpen(true) });
   return (
@@ -16,6 +17,12 @@ function DesktopChrome() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
       />
+      {/* Single app-wide toast outlet. Sonner only renders toasts when a
+          <Toaster /> is mounted in the tree; without this every `toast.*`
+          call (the create dialog's confirmations, "Assistant retired", etc.)
+          silently no-ops. Every route renders through this layout, and both
+          entries (standalone and capacitor) boot through it. */}
+      <Toaster />
       <Outlet />
     </>
   );

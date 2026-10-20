@@ -10,7 +10,6 @@ import type {
   ModeSessionDescriptor,
   ModeSession,
 } from "@mycadet/assistant-api";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 import {
   Transcript,
@@ -46,10 +45,10 @@ const CONVERSATION: TranscriptItem[] = [
     "a2",
     "Three required checks: **Lint**, **Type Check**, and the isolated **Test** runner. Each test file runs in its own subprocess so `mock.module` can't leak between files.",
   ),
-  user("u3", "How do feature flags work here?"),
+  user("u3", "How do skills get discovered here?"),
   assistant(
     "a3",
-    "Flags live in `meta/feature-flags/feature-flag-registry.json` with a matching kebab-case `id` and `key`. A gate function delegates to the resolver; undeclared flags fail closed.",
+    "Skills ship in the bundled catalog and load from the workspace skills directory; each carries frontmatter with a display name, activation hints, and a category the daemon uses to pick candidates.",
   ),
 ];
 
@@ -411,13 +410,6 @@ const SESSION_DESCRIPTORS: ModeSessionDescriptor[] = [
   },
 ];
 
-function setSessionGroupsStoryFlag(enabled: boolean) {
-  useAssistantFeatureFlagStore.setState({ sessionGroups: enabled });
-  return () => {
-    useAssistantFeatureFlagStore.setState({ sessionGroups: false });
-  };
-}
-
 function SessionGroupingStory() {
   const disclosure = useSessionDisclosureState("session-story");
   const { observeLiveSession } = disclosure;
@@ -441,14 +433,6 @@ function SessionGroupingStory() {
 
 /** Recorded history is closed while the session observed live in this visit is open. */
 export const SessionHistoryAndLatestTurn: Story = {
-  beforeEach: () => setSessionGroupsStoryFlag(true),
-  parameters: { controls: { disable: true } },
-  render: () => <SessionGroupingStory />,
-};
-
-/** The same canonical rows remain flat when the presentation flag is disabled. */
-export const SessionGroupingFlagOff: Story = {
-  beforeEach: () => setSessionGroupsStoryFlag(false),
   parameters: { controls: { disable: true } },
   render: () => <SessionGroupingStory />,
 };
@@ -478,7 +462,6 @@ export const AdjacentSessionGroupsInHistory: Story = {
 
 /** The composed session transcript fits the real mobile viewport width. */
 export const SessionHistoryAndLatestTurnMobile: Story = {
-  beforeEach: () => setSessionGroupsStoryFlag(true),
   globals: { viewport: { value: "sbMobile", isRotated: false } },
   parameters: {
     controls: { disable: true },
@@ -578,7 +561,6 @@ for (const [index, run] of REPEATED_SESSION_RUNS.entries()) {
 
 export const RepeatedBrowserAndComputerSessions: Story = {
   globals: { theme: "dark" },
-  beforeEach: () => setSessionGroupsStoryFlag(true),
   args: {
     items: REPEATED_SESSION_ITEMS,
     conversationId: "compact-session-story",
@@ -663,7 +645,6 @@ function LiveSessionStory() {
 
 /** Live vision includes its stamped camera/user prefix in the active group. */
 export const LiveSessionLatestTurn: Story = {
-  beforeEach: () => setSessionGroupsStoryFlag(true),
   parameters: { controls: { disable: true } },
   render: () => <LiveSessionStory />,
 };

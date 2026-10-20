@@ -36,8 +36,6 @@ export type Scope =
   | "calls.write"
   | "ingress.write"
   | "internal.write"
-  | "feature_flags.read"
-  | "feature_flags.write"
   | "speech.relay"
   | "local.all"
   | "oauth.proxy";

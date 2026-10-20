@@ -5,6 +5,7 @@
     "pairingCode": "Pairing code",
     "pair": "Pair",
     "expiresAt": "Expires {time}.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "enterNewCode": "Enter a new code"
   }
 }

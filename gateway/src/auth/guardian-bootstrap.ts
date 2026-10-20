@@ -21,7 +21,7 @@ import {
 } from "../db/schema.js";
 import { readCredential } from "../credential-reader.js";
 import { credentialKey } from "../credential-key.js";
-import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { reportGuardianMintRefused } from "../guardian-integrity-reporter.js";
 import { ipcCallAssistant } from "../ipc/assistant-client.js";
 import { getLogger } from "../logger.js";

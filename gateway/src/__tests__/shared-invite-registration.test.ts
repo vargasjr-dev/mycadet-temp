@@ -37,11 +37,6 @@ mock.module("../ipc/assistant-client.js", () => ({
   },
 }));
 
-const actualFlagResolver = await import("../feature-flag-resolver.js");
-mock.module("../feature-flag-resolver.js", () => ({
-  ...actualFlagResolver,
-  isFeatureFlagEnabled: () => false,
-}));
 
 type StoredCredential = { value: string | undefined; unreachable: boolean };
 let storedCredentials: Record<string, StoredCredential> = {};

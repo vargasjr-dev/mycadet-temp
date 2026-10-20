@@ -76,7 +76,6 @@ import type { TranscriptItem } from "@/domains/chat/transcript/types";
 import { Transcript } from "@/domains/chat/transcript/transcript";
 import { resetResponseArtifactAwards } from "@/domains/chat/transcript/resolve-response-artifacts";
 import { INITIAL_TURN_STATE, useTurnStore } from "@/domains/chat/turn-store";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import type { ModeSessionDescriptor } from "@mycadet/assistant-api";
 import type { SessionDisclosureState } from "@/domains/chat/transcript/use-session-disclosure-state";
@@ -168,7 +167,6 @@ function completedDescriptor(id: string): ModeSessionDescriptor {
 afterEach(() => {
   cleanup();
   markdownRenderCount = 0;
-  useAssistantFeatureFlagStore.setState({ sessionGroups: false });
 });
 
 describe("Transcript", () => {

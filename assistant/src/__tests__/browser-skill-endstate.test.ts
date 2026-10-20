@@ -18,7 +18,6 @@ import {
   getAllTools,
   initializeTools,
 } from "../tools/registry.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 import {
   BROWSER_SKILL_ID,
   buildSkillLoadHistory,
@@ -26,15 +25,11 @@ import {
 
 afterAll(() => {
   __resetRegistryForTesting();
-  setOverridesForTesting({});
 });
 
 describe("browser CLI-only architecture end-state", () => {
   beforeAll(async () => {
     __resetRegistryForTesting();
-    setOverridesForTesting({
-      browser: true,
-    });
     await initializeTools();
   });
 

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import { RuntimeHttpServer } from "../http-server.js";
 import {
   mintActorToken,
@@ -39,7 +38,6 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
     } else {
       process.env.IS_CLOUD = originalPlatform;
     }
-    setOverridesForTesting({});
   });
 
   test("refuses a non-private origin with 403", async () => {

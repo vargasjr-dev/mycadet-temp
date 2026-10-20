@@ -117,10 +117,10 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects unauthenticated remote-gateway browsers to pairing", () => {
+    test("redirects remote-gateway browsers with no gateway session to pairing", () => {
       const result = guard(
         s({
-          isAuthenticated: false,
+          isAuthenticated: true,
           isLocalClient: true,
           isRemoteGateway: true,
           hasAssistants: true,
@@ -132,6 +132,21 @@ describe("resolveNavigation", () => {
         action: "redirect",
         to: "/assistant/pair?returnTo=%2Fassistant%2Fconversations%2Fself%3Ftab%3Dlatest",
       });
+    });
+
+    test("admits a paired-in browser whose store session is still unauthenticated", () => {
+      const result = guard(
+        s({
+          isAuthenticated: false,
+          isGatewayAuth: true,
+          isLocalClient: true,
+          isRemoteGateway: true,
+          hasAssistants: true,
+        }),
+        "/assistant/conversations/self?tab=latest",
+      );
+
+      expect(result).toEqual(ALLOW);
     });
 
     test("strips remote-gateway public prefix from pairing returnTo", () => {
@@ -168,7 +183,11 @@ describe("resolveNavigation", () => {
     test("allows unauthenticated local-mode user on select-assistant screen", () => {
       expect(
         guard(
-          s({ isAuthenticated: false, isLocalClient: true, hasAssistants: true }),
+          s({
+            isAuthenticated: false,
+            isLocalClient: true,
+            hasAssistants: true,
+          }),
           "/account/select-assistant",
         ),
       ).toEqual(ALLOW);
@@ -202,7 +221,11 @@ describe("resolveNavigation", () => {
     test("redirects unauthenticated local-mode returning user (has assistants) to select-assistant", () => {
       expect(
         guard(
-          s({ isAuthenticated: false, isLocalClient: true, hasAssistants: true }),
+          s({
+            isAuthenticated: false,
+            isLocalClient: true,
+            hasAssistants: true,
+          }),
         ),
       ).toEqual({ action: "redirect", to: "/account/select-assistant" });
     });
@@ -218,7 +241,10 @@ describe("resolveNavigation", () => {
 
     test("bounces first-run privacy when the selected assistant is onboarded", () => {
       expect(
-        guard(s({ selectedAssistantOnboarded: true }), "/assistant/onboarding/privacy"),
+        guard(
+          s({ selectedAssistantOnboarded: true }),
+          "/assistant/onboarding/privacy",
+        ),
       ).toEqual({ action: "redirect", to: "/assistant" });
       expect(
         guard(
@@ -274,7 +300,10 @@ describe("resolveNavigation", () => {
 
     test("keeps research reachable on demand for an onboarded selection", () => {
       expect(
-        guard(s({ selectedAssistantOnboarded: true }), "/assistant/onboarding/research"),
+        guard(
+          s({ selectedAssistantOnboarded: true }),
+          "/assistant/onboarding/research",
+        ),
       ).toEqual(ALLOW);
     });
 
@@ -813,10 +842,12 @@ describe("resolveNavigation", () => {
     });
 
     test("redirects platform user with consent but no assistants to hatching from deep path", () => {
-      expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual({
-        action: "redirect",
-        to: "/assistant/onboarding/hatching",
-      });
+      expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual(
+        {
+          action: "redirect",
+          to: "/assistant/onboarding/hatching",
+        },
+      );
     });
 
     test("redirects a consented no-assistant cloud user to hatching", () => {
@@ -1418,9 +1449,10 @@ describe("resolveNavigation", () => {
       }
     });
 
-    // A remote-gateway session is gateway auth too. Paired (authenticated), it
-    // passes the pairing step untouched; unpaired it pairs first, and the
-    // pairing `returnTo` keeps the markers so the funnel resumes after.
+    // A remote-gateway session is gateway auth too. Paired, it passes the
+    // pairing step untouched (the paid marker still suspends the bypass);
+    // with no gateway session yet it pairs first, and the pairing `returnTo`
+    // keeps the markers so the funnel resumes after.
     test("leaves remote-gateway pairing intact on a paid funnel entry", () => {
       expect(
         guard(
@@ -1433,7 +1465,7 @@ describe("resolveNavigation", () => {
           s({
             ...ELECTRON_PAID,
             isRemoteGateway: true,
-            isAuthenticated: false,
+            isGatewayAuth: false,
           }),
           RESEARCH_FUNNEL_URL,
         ),
@@ -1603,7 +1635,9 @@ describe("resolveNavigation", () => {
     });
 
     test("redirects unauthenticated platform-mode user to login", () => {
-      expect(hatch(s({ isAuthenticated: false, isLocalClient: false }))).toEqual({
+      expect(
+        hatch(s({ isAuthenticated: false, isLocalClient: false })),
+      ).toEqual({
         action: "redirect",
         to: "/account/login",
       });
@@ -1923,12 +1957,15 @@ describe("resolveNavigation", () => {
 
     test("signup still goes to privacy for a freshly hatched assistant", () => {
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: false, hasAssistants: true }), {
-          kind: "post-auth",
-          authIntent: "signup",
-          returnTo: "/assistant/identity",
-          fallback: "/assistant",
-        }),
+        resolveNavigation(
+          s({ userHasOnboardedAssistant: false, hasAssistants: true }),
+          {
+            kind: "post-auth",
+            authIntent: "signup",
+            returnTo: "/assistant/identity",
+            fallback: "/assistant",
+          },
+        ),
       ).toEqual({
         action: "redirect",
         to: "/assistant/onboarding/privacy",

@@ -70,7 +70,6 @@ import {
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
 
@@ -447,9 +446,6 @@ afterEach(() => {
   useLiveVoiceStore.getState().reset();
   useConversationStore.getState().reset();
   useAssistantIdentityStore.getState().clearIdentity();
-  // Flags are off for every case that does not ask for one, the same way they
-  // are before they hydrate in the app.
-  useClientFeatureFlagStore.getState().setStringFlags({}, null);
 });
 
 const connectCard = () => screen.queryByTestId("room-connect-card");
@@ -588,9 +584,6 @@ function seedLiveCapableAssistant() {
   useAssistantIdentityStore
     .getState()
     .setIdentity("test-asst", SIGHT_MIN_VERSION, ASSISTANT_ID);
-  useClientFeatureFlagStore
-    .getState()
-    .setStringFlags({ visionMode: "on" }, null);
 }
 
 describe("VoiceRoom — visibility", () => {

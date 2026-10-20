@@ -2,8 +2,6 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
-
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -181,8 +179,6 @@ import { installSkill } from "../daemon/handlers/skills.js";
 describe("installSkill routing", () => {
   beforeEach(() => {
     // Real flag resolution replaces the former blanket module mock.
-    setAllFlagsOnForTesting();
-
     rmSync(TEST_SKILLS_DIR, { recursive: true, force: true });
     mkdirSync(TEST_SKILLS_DIR, { recursive: true });
     installedSkillIds.clear();

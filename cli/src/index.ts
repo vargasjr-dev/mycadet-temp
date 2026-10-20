@@ -22,7 +22,6 @@ import { connect } from "./commands/connect";
 import { devices } from "./commands/devices";
 import { events } from "./commands/events";
 import { exec } from "./commands/exec";
-import { flags } from "./commands/flags";
 import { gateway } from "./commands/gateway";
 import { hatch } from "./commands/hatch";
 import { login, logout, whoami } from "./commands/login";
@@ -49,7 +48,6 @@ import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 
-
 const commands = {
   backup,
   app,
@@ -62,7 +60,6 @@ const commands = {
   devices,
   events,
   exec,
-  flags,
   gateway,
   hatch,
   login,
@@ -258,7 +255,9 @@ async function main() {
     if (error instanceof SigningKeyContinuityError) {
       emitCliError("AUTH_IDENTITY_UNAVAILABLE", error.message, error.code);
     }
-    console.error(red(`Error: ${error instanceof Error ? error.message : error}`));
+    console.error(
+      red(`Error: ${error instanceof Error ? error.message : error}`),
+    );
     process.exit(1);
   }
 }

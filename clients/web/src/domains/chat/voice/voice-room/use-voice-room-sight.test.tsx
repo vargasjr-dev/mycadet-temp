@@ -139,8 +139,6 @@ const { makeControlsSpies, seedLiveVoiceSession } =
   await import("@/domains/chat/voice/live-voice/live-voice-fakes.test-helper");
 const { useAssistantIdentityStore } =
   await import("@/stores/assistant-identity-store");
-const { useClientFeatureFlagStore } =
-  await import("@/stores/client-feature-flag-store");
 
 const ASSISTANT_ID = "asst_sight";
 /** A dev build off `main` published after the `sight_frame` handler merged. */
@@ -312,9 +310,6 @@ beforeEach(() => {
   useAssistantIdentityStore
     .getState()
     .setIdentity("assistant", SUPPORTING_VERSION, ASSISTANT_ID);
-  useClientFeatureFlagStore
-    .getState()
-    .setStringFlags({ visionMode: "on" }, null);
 });
 
 afterEach(() => {
@@ -420,17 +415,6 @@ describe("useVoiceRoomSight: when it samples", () => {
     // The pulse says the call is being shown this, and once the stream is off
     // it is not being shown anything.
     expect(view.result.current.heldFrame).toBeNull();
-  });
-
-  test("samples nothing while the vision-mode flag is off", () => {
-    useClientFeatureFlagStore
-      .getState()
-      .setStringFlags({ visionMode: "off" }, null);
-
-    const { view } = renderSight({ live: true });
-
-    expect(view.result.current.liveAvailable).toBe(false);
-    expect(samplerStart).not.toHaveBeenCalled();
   });
 
   test("samples nothing against the release that predates the frame", () => {

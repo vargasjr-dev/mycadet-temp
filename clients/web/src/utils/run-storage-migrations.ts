@@ -4,7 +4,7 @@
  *
  * **IMPORTANT** — In `main.tsx`, this import MUST appear before any import
  * that transitively evaluates a Zustand store reading from localStorage
- * (e.g. `routes.tsx` → `onboarding-store`, `client-feature-flag-store`).
+ * (e.g. `routes.tsx` → `onboarding-store`).
  * ES modules evaluate in import-declaration order within a file, so
  * placing this import first guarantees migrations write the new key names
  * before any store's module-level initializer reads them.

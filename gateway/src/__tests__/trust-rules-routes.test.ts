@@ -18,7 +18,6 @@ import {
   createTrustRulesDeleteHandler,
   createTrustRulesResetHandler,
 } from "../http/routes/trust-rules.js";
-import { clearFeatureFlagStoreCache } from "../feature-flag-store.js";
 import "./test-preload.js";
 
 // ---------------------------------------------------------------------------
@@ -30,7 +29,6 @@ let store: TrustRuleStore;
 beforeEach(async () => {
   resetGatewayDb();
   resetTrustRuleCache();
-  clearFeatureFlagStoreCache();
   await initGatewayDb();
   initTrustRuleCache();
   store = new TrustRuleStore();
@@ -38,7 +36,6 @@ beforeEach(async () => {
 
 afterEach(() => {
   resetTrustRuleCache();
-  clearFeatureFlagStoreCache();
   resetGatewayDb();
 });
 

@@ -11,7 +11,6 @@ import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
-import { readAmbientFlagEnvVars } from "../lib/flag-args";
 import { hatchLocal } from "../lib/hatch-local";
 import {
   getCloudUrl,
@@ -29,7 +28,6 @@ interface HatchArgs {
   watch: boolean;
   sourcePath: string | null;
   configValues: Record<string, string>;
-  flagEnvVars: Record<string, string>;
   netnsContainer: string | null;
   gatewayPort: number | null;
   assistantCaCert: string | null;
@@ -37,7 +35,6 @@ interface HatchArgs {
 
 function parseArgs(): HatchArgs {
   const args = process.argv.slice(3);
-  const flagEnvVars = readAmbientFlagEnvVars();
   let verbose = false;
   let name: string | null = null;
   let remote: RemoteHost = DEFAULT_REMOTE;
@@ -179,7 +176,6 @@ function parseArgs(): HatchArgs {
     watch,
     sourcePath,
     configValues,
-    flagEnvVars,
     netnsContainer,
     gatewayPort,
     assistantCaCert,
@@ -194,91 +190,87 @@ function getCliVersion(): string {
 
 export const hatch = Object.assign(
   async function hatch(): Promise<void> {
-  const cliVersion = getCliVersion();
-  console.log(`@mycadet/cli v${cliVersion}`);
+    const cliVersion = getCliVersion();
+    console.log(`@mycadet/cli v${cliVersion}`);
 
-  const {
-    verbose,
-    name,
-    remote,
-    watch,
-    sourcePath,
-    configValues,
-    flagEnvVars,
-    netnsContainer,
-    gatewayPort,
-    assistantCaCert,
-  } = parseArgs();
-
-  if (watch && remote !== "local" && remote !== "docker") {
-    console.error(
-      "Error: --watch is only supported for local and docker hatch targets.",
-    );
-    process.exit(1);
-  }
-
-  if (sourcePath !== null && remote !== "docker") {
-    console.error(
-      "Error: --source is only supported for docker hatch targets.",
-    );
-    process.exit(1);
-  }
-
-  if (
-    (netnsContainer !== null ||
-      gatewayPort !== null ||
-      assistantCaCert !== null) &&
-    remote !== "docker"
-  ) {
-    console.error(
-      "Error: --netns-container, --gateway-port, and --assistant-ca-cert are only supported for docker hatch targets.",
-    );
-    process.exit(1);
-  }
-
-  if (netnsContainer !== null && gatewayPort === null) {
-    console.error(
-      "Error: --gateway-port is required with --netns-container (the namespace owner publishes the port before hatch runs).",
-    );
-    process.exit(1);
-  }
-
-  if (remote === "local") {
-    await hatchLocal({
-      name,
-      watch,
-      configValues,
-      flagEnvVars,
+    const {
       verbose,
-    });
-    return;
-  }
-
-  if (remote === "docker") {
-    await hatchDocker({
       name,
+      remote,
       watch,
-      configValues,
-      flagEnvVars,
       sourcePath,
-      netnsContainer: netnsContainer ?? undefined,
-      gatewayPort: gatewayPort ?? undefined,
-      assistantCaCertPath: assistantCaCert ?? undefined,
-    });
-    return;
-  }
+      configValues,
+      netnsContainer,
+      gatewayPort,
+      assistantCaCert,
+    } = parseArgs();
 
-  if (isCloudHome(remote)) {
-    await hatchCadetPlatform();
-    return;
-  }
+    if (watch && remote !== "local" && remote !== "docker") {
+      console.error(
+        "Error: --watch is only supported for local and docker hatch targets.",
+      );
+      process.exit(1);
+    }
 
-  console.error(`Error: Remote host '${remote}' is not yet supported.`);
-  process.exit(1);
-},
+    if (sourcePath !== null && remote !== "docker") {
+      console.error(
+        "Error: --source is only supported for docker hatch targets.",
+      );
+      process.exit(1);
+    }
+
+    if (
+      (netnsContainer !== null ||
+        gatewayPort !== null ||
+        assistantCaCert !== null) &&
+      remote !== "docker"
+    ) {
+      console.error(
+        "Error: --netns-container, --gateway-port, and --assistant-ca-cert are only supported for docker hatch targets.",
+      );
+      process.exit(1);
+    }
+
+    if (netnsContainer !== null && gatewayPort === null) {
+      console.error(
+        "Error: --gateway-port is required with --netns-container (the namespace owner publishes the port before hatch runs).",
+      );
+      process.exit(1);
+    }
+
+    if (remote === "local") {
+      await hatchLocal({
+        name,
+        watch,
+        configValues,
+        verbose,
+      });
+      return;
+    }
+
+    if (remote === "docker") {
+      await hatchDocker({
+        name,
+        watch,
+        configValues,
+        sourcePath,
+        netnsContainer: netnsContainer ?? undefined,
+        gatewayPort: gatewayPort ?? undefined,
+        assistantCaCertPath: assistantCaCert ?? undefined,
+      });
+      return;
+    }
+
+    if (isCloudHome(remote)) {
+      await hatchCadetPlatform();
+      return;
+    }
+
+    console.error(`Error: Remote host '${remote}' is not yet supported.`);
+    process.exit(1);
+  },
   { description: "Create a new assistant instance" },
 );
-
 
 async function hatchCadetPlatform(): Promise<void> {
   const token = readCloudToken();
@@ -308,7 +300,8 @@ async function hatchCadetPlatform(): Promise<void> {
   setActiveAssistant(result.id);
 
   console.log(
-    "   " + green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
+    "   " +
+      green(`${HATCHED_EMOJI}  Your assistant has hatched!`, process.stdout),
   );
   console.log("");
   console.log(`   ID:     ${result.id}`);

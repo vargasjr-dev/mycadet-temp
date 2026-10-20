@@ -114,20 +114,9 @@ export async function listInstalledSkills(): Promise<ResolvedSkillEntry[]> {
  * non-empty result. Unexpected errors from the catalog read propagate.
  */
 export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
-  const [{ getCatalog }, { isAssistantFeatureFlagEnabled }] = await Promise.all(
-    [
-      import("./catalog-cache.js"),
-      import("../config/assistant-feature-flags.js"),
-    ],
-  );
+  const [{ getCatalog }] = await Promise.all([import("./catalog-cache.js")]);
   const catalog = await getCatalog();
-  const config = getConfig();
   return catalog.map((entry) => {
-    const flagKey = entry.metadata?.cadet?.["feature-flag"];
-    const gated =
-      typeof flagKey === "string" &&
-      flagKey.length > 0 &&
-      !isAssistantFeatureFlagEnabled(flagKey, config);
     const incompatible = !isSkillCompatibleWithCloud(entry);
     return {
       id: entry.id,
@@ -137,7 +126,7 @@ export async function listCatalogSkills(): Promise<ResolvedSkillEntry[]> {
       avoidWhen: entry.metadata?.cadet?.["avoid-when"],
       platforms: entry.platforms,
       installed: false,
-      state: gated || incompatible ? "unavailable" : "available",
+      state: incompatible ? "unavailable" : "available",
     };
   });
 }

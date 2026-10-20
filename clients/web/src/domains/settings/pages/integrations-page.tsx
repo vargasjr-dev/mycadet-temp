@@ -35,7 +35,6 @@ import { useTenantHostRequirement } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 import { routes } from "@/utils/routes";
 
 import { IntegrationConnectModal } from "../components/integration-connect-modal";
@@ -134,7 +133,6 @@ function IntegrationsPanelInner({
   const location = useLocation();
   const cloudGate = useCloudGate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const flagsHydrated = useAssistantFeatureFlagStore.use.hasHydrated();
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
@@ -551,7 +549,7 @@ function IntegrationsPanelInner({
             className="min-h-11 max-w-full whitespace-normal"
             leftIcon={<Plus />}
             onClick={addCustom}
-            disabled={!flagsHydrated || authBusy}
+            disabled={authBusy}
           >
             {t("integrationsPage.addCustom")}
           </Button>

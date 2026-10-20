@@ -5,16 +5,8 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
-  DEFAULT_ENABLED_FLAG_KEYS,
-  setOverridesForTesting,
-} from "../__tests__/feature-flag-test-helpers.js";
-
 // Real flag cache seeded to mirror the former module mock: every flag off
 // (the admission floor is unconditional now).
-const FLAGS = Object.fromEntries(
-  DEFAULT_ENABLED_FLAG_KEYS.map((k) => [k, false]),
-) as Record<string, boolean>;
 
 process.env.DISABLE_HTTP_AUTH = "true";
 
@@ -184,8 +176,6 @@ function accessRequests() {
 
 describe("introduction nudge on first admit", () => {
   beforeEach(() => {
-    setOverridesForTesting(FLAGS);
-
     resetState();
     installNoopProcessor();
   });

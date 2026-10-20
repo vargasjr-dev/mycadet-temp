@@ -294,7 +294,6 @@ export interface HatchDockerParams {
   /** Hatch-time config values (key → value). */
   configValues?: Record<string, string>;
   /** Extra env vars forwarded into the assistant container. */
-  flagEnvVars?: Record<string, string>;
   setupProviderCredentials?: boolean;
   /** Whole-installation state installed into stopped containers before startup. */
   initialArchive?: string;
@@ -865,13 +864,27 @@ export async function sleepContainers(
     res.cesContainer,
   ]) {
     try {
-      const status = await execOutput("docker", ["inspect", "--format", "{{.State.Status}}", container]);
+      const status = await execOutput("docker", [
+        "inspect",
+        "--format",
+        "{{.State.Status}}",
+        container,
+      ]);
       if (status === "exited" || status === "created") continue;
-      if (status !== "running") throw new Error(`${container} is ${status}; cannot stop gracefully.`);
+      if (status !== "running")
+        throw new Error(`${container} is ${status}; cannot stop gracefully.`);
       await exec("docker", ["kill", "--signal=SIGTERM", container]);
       const deadline = Date.now() + (options.timeoutMs ?? 60_000);
-      while (await execOutput("docker", ["inspect", "--format", "{{.State.Running}}", container]) === "true") {
-        if (Date.now() >= deadline) throw new Error(`${container} did not stop gracefully.`);
+      while (
+        (await execOutput("docker", [
+          "inspect",
+          "--format",
+          "{{.State.Running}}",
+          container,
+        ])) === "true"
+      ) {
+        if (Date.now() >= deadline)
+          throw new Error(`${container} did not stop gracefully.`);
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
     } catch (err) {
@@ -924,7 +937,9 @@ export function isNoSuchContainerError(err: unknown): boolean {
  * keeps its own), matching the gateway's resolution order (env → file →
  * generate). Empty volumes just get fresh state on first boot.
  */
-export async function recreateDockerContainers(entry: AssistantEntry): Promise<void> {
+export async function recreateDockerContainers(
+  entry: AssistantEntry,
+): Promise<void> {
   const info = entry.containerInfo;
   if (!info?.assistantImage || !info.gatewayImage || !info.cesImage) {
     throw new Error(
@@ -966,7 +981,8 @@ export async function recreateDockerContainers(entry: AssistantEntry): Promise<v
     await pullImage(image, log);
   }
 
-  const gatewayPort = parseGatewayPort(entry.runtimeUrl) ??
+  const gatewayPort =
+    parseGatewayPort(entry.runtimeUrl) ??
     getDefaultPorts(getCurrentEnvironment()).gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
@@ -1342,7 +1358,7 @@ function startFileWatcher(opts: {
 }
 
 export async function hatchDocker(params: HatchDockerParams): Promise<void> {
-  const { name = null, configValues = {}, flagEnvVars = {} } = params;
+  const { name = null, configValues = {} } = params;
   let watch = params.watch ?? false;
 
   resetLogFile("hatch.log");
@@ -1663,10 +1679,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       : ownSecret;
 
     emitProgress(4, 6, "Starting containers...");
-    if (flagEnvVars.CADET_DISABLE_CLOUD) {
-      extraAssistantEnv.CADET_DISABLE_CLOUD =
-        flagEnvVars.CADET_DISABLE_CLOUD;
-    }
     const hostDeviceId = getOrCreateHostDeviceId();
     extraAssistantEnv.CADET_DEVICE_ID = hostDeviceId;
     // Forward the migration URL allowlists so a daemon inside the container
@@ -1685,7 +1697,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       }
     }
     const extraGatewayEnv = {
-      ...flagEnvVars,
       CADET_DEVICE_ID: hostDeviceId,
     };
     const runtimeUrl = `http://localhost:${gatewayPort}`;
@@ -1748,14 +1759,14 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           notReadyReason: undefined,
         }
       : await waitForGatewayAndLease({
-        bootstrapSecret: ownSecret,
-        containerName: res.assistantContainer,
-        detached: waitDetached,
-        instanceName,
-        logFd,
-        runtimeUrl,
-        containersUpAt,
-      });
+          bootstrapSecret: ownSecret,
+          containerName: res.assistantContainer,
+          detached: waitDetached,
+          instanceName,
+          logFd,
+          runtimeUrl,
+          containersUpAt,
+        });
 
     if (!ready && !(watch && repoRoot)) {
       throw new Error(

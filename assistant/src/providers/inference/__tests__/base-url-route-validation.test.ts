@@ -36,10 +36,6 @@ mock.module("../../../persistence/db-connection.js", () => ({
   getDb: () => testDb,
 }));
 
-mock.module("../../../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => false,
-}));
-
 // Mock platform detection: tests default to platform mode (SSRF enforced).
 // Individual tests can override via `mockIsPlatform = false`. Spread the real
 // module so the config loader's transitive `util/layout` imports still

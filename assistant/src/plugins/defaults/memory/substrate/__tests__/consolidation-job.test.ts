@@ -206,10 +206,6 @@ mock.module("../../../../../persistence/checkpoints.js", () => ({
 // for the article-shape tests.
 let v3FlagOn = false;
 let flagStates: Record<string, boolean> = {};
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: (key: string) => flagStates[key] ?? v3FlagOn,
-}));
-
 // The v3-live gate lives in config (`config.memory.v3.live`), read via
 // `isMemoryV3Live`; drive it through `flagStates["memory-v3-live"]` (and
 // `v3FlagOn` for the existing on/off tests).

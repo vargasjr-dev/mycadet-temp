@@ -63,7 +63,6 @@ import {
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { displayVersion } from "../lib/local-version.js";
 import cliPkg from "../../package.json";
-import { parseFeatureFlagArgs, readAmbientFlagEnvVars } from "../lib/flag-args";
 import {
   fetchOrganizationId,
   fetchCloudAssistants,
@@ -141,10 +140,6 @@ interface ParsedArgs {
   bearerToken?: string;
   /** Interface identifier sent as X-Cadet-Interface-Id on all requests. */
   interfaceId: SupportedInterface;
-  /** CADET_FLAG_* env vars for the gateway (process.env propagation). */
-  flagEnvVars: Record<string, string>;
-  /** Parsed --flag overrides: kebab-case key -> typed value (for web injection). */
-  parsedFlagOverrides: Record<string, boolean | string>;
   disableCloud: boolean;
   /** Auto-open the web interface in the default browser (--interface web only). */
   openBrowser: boolean;
@@ -176,30 +171,11 @@ function readWorkspaceRoot(entry: AssistantEntry | null): string | undefined {
 
 // Exported for unit testing the arg/auth resolution without launching the TUI.
 export function parseArgs(): ParsedArgs {
-  const { envVars: cliFlagVars, remaining: argsWithoutFlags } =
-    parseFeatureFlagArgs(process.argv.slice(3));
-  const flagEnvVars = { ...readAmbientFlagEnvVars(), ...cliFlagVars };
   const disableCloudAmbient =
     process.env.CADET_DISABLE_CLOUD?.trim().toLowerCase();
   let disableCloud =
     disableCloudAmbient === "true" || disableCloudAmbient === "1";
-  const args = argsWithoutFlags;
-
-  // Build parsedFlagOverrides from the extracted env vars:
-  // CADET_FLAG_UPPER_SNAKE -> kebab-case key with typed value.
-  const parsedFlagOverrides: Record<string, boolean | string> = {};
-  for (const [envName, rawValue] of Object.entries(flagEnvVars)) {
-    const snake = envName.replace(/^CADET_FLAG_/, "");
-    const kebab = snake.toLowerCase().replace(/_/g, "-");
-    const lower = rawValue.toLowerCase();
-    if (["true", "1", "yes", "on"].includes(lower)) {
-      parsedFlagOverrides[kebab] = true;
-    } else if (["false", "0", "no", "off"].includes(lower)) {
-      parsedFlagOverrides[kebab] = false;
-    } else {
-      parsedFlagOverrides[kebab] = rawValue;
-    }
-  }
+  const args = process.argv.slice(3);
 
   const positionalName = parseAssistantTargetArg(args, [
     "--url",
@@ -368,8 +344,6 @@ export function parseArgs(): ParsedArgs {
     cloudToken,
     bearerToken,
     interfaceId,
-    flagEnvVars,
-    parsedFlagOverrides,
     disableCloud,
     openBrowser: openBrowserPref,
     webPort,
@@ -1314,26 +1288,15 @@ export function buildWebInterfaceConfig(opts: {
 }
 
 async function runWebInterface(
-  flagEnvVars: Record<string, string>,
-  parsedFlagOverrides: Record<string, boolean | string>,
   disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
-  // Propagate flag env vars so child processes (e.g. hatch from the web UI) inherit them.
-  Object.assign(process.env, flagEnvVars);
-
   // Prefer Vite dev server in source checkouts for full local-mode support
   // (HMR, __local endpoints, gateway proxy).
   const webSourceDir = findWebSourceDir();
   if (webSourceDir) {
-    return runViteDevServer(
-      webSourceDir,
-      flagEnvVars,
-      disableCloud,
-      openInBrowser,
-      webPort,
-    );
+    return runViteDevServer(webSourceDir, disableCloud, openInBrowser, webPort);
   }
 
   const distDir = findWebDistDir();
@@ -1357,13 +1320,9 @@ async function runWebInterface(
       version: displayVersion(cliPkg.version),
     }),
   );
-  const hasOverrides = Object.keys(parsedFlagOverrides).length > 0;
-  const flagOverridesSnippet = hasOverrides
-    ? `;window.__CADET_FLAG_OVERRIDES__=${safeJson(parsedFlagOverrides)}`
-    : "";
   const indexHtml = rawIndexHtml.replace(
     "</head>",
-    `<script>window.__CADET_CONFIG__=${configJson}${flagOverridesSnippet}</script></head>`,
+    `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
   );
 
   // The shell names this build's hashed chunks and carries the host's injected
@@ -1530,18 +1489,11 @@ async function runWebInterface(
 
 async function runViteDevServer(
   webSourceDir: string,
-  flagEnvVars: Record<string, string>,
   disableCloud: boolean,
   openInBrowser: boolean,
   webPort: number | undefined,
 ): Promise<void> {
   const cloudUrl = getCloudUrl();
-
-  // Build VITE_CADET_FLAG_* vars so Vite exposes them to the browser bundle.
-  const viteFlagVars: Record<string, string> = {};
-  for (const [envName, value] of Object.entries(flagEnvVars)) {
-    viteFlagVars[`VITE_${envName}`] = value;
-  }
 
   // Auto-pick a free port (Vite uses strictPort) so a running `vel up` stack
   // on :3000 doesn't wedge dev. The loopback callback port follows
@@ -1558,8 +1510,6 @@ async function runViteDevServer(
     windowsHide: true,
     env: {
       ...process.env,
-      ...flagEnvVars,
-      ...viteFlagVars,
       ...(disableCloud ? { VITE_CADET_DISABLE_CLOUD: "true" } : {}),
       VITE_WEB_MODE: "full",
       API_PROXY_TARGET: cloudUrl,
@@ -1645,8 +1595,6 @@ export const client = Object.assign(
       cloudToken,
       bearerToken,
       interfaceId,
-      flagEnvVars,
-      parsedFlagOverrides,
       disableCloud,
       openBrowser: openInBrowser,
       webPort,
@@ -1662,13 +1610,7 @@ export const client = Object.assign(
         await spawnBackgroundWebInterface(webPort);
         return;
       }
-      await runWebInterface(
-        flagEnvVars,
-        parsedFlagOverrides,
-        disableCloud,
-        openInBrowser,
-        webPort,
-      );
+      await runWebInterface(disableCloud, openInBrowser, webPort);
       return;
     }
 

@@ -11,9 +11,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { isAssistantFeatureFlagEnabled } from "../config/assistant-feature-flags.js";
-import { getConfig } from "../config/loader.js";
-import { skillFlagKey } from "../config/skill-state.js";
 import type { SkillSummary, SkillToolManifest } from "../config/skills.js";
 import {
   filterSkillsByEnabledPlugins,
@@ -296,17 +293,10 @@ export function projectSkillTools(
     catalogById.set(skill.id, skill);
   }
 
-  // Assistant feature flag gate: drop skills whose flag is explicitly OFF,
-  // even if they have markers in conversation history from before the flag was turned off.
-  const config = getConfig();
   const activeIds = new Set<string>();
   for (const id of allCandidateIds) {
     const skill = catalogById.get(id);
-    const flagKey = skill ? skillFlagKey(skill) : undefined;
-    if (
-      (!skill || isSkillCompatibleWithCloud(skill)) &&
-      (!flagKey || isAssistantFeatureFlagEnabled(flagKey, config))
-    ) {
+    if (!skill || isSkillCompatibleWithCloud(skill)) {
       activeIds.add(id);
     }
   }

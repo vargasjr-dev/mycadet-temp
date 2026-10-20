@@ -16,7 +16,6 @@ import {
   test,
 } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import type { BrowserOperationToken } from "../../daemon/browser-mode-session.js";
 import { desktopDependencies } from "../../desktop/desktop-dependencies.js";
 import * as desktopFeature from "../../desktop/virtual-desktop-feature.js";
@@ -207,7 +206,6 @@ function callHandler(
 // ---------------------------------------------------------------------------
 
 afterEach(() => {
-  setOverridesForTesting({});
   desktopEnabled = false;
   desktopReady = false;
   desktopFailure = false;

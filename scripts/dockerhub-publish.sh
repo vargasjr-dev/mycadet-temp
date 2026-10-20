@@ -183,17 +183,6 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes 2>/dev/nu
 
 echo ""
 
-# ---------------------------------------------------------------------------
-# Sync feature flags (needed by assistant and gateway builds)
-# ---------------------------------------------------------------------------
-
-echo "==> Syncing feature flag registry"
-cp "${REPO_ROOT}/meta/feature-flags/feature-flag-registry.json" \
-   "${REPO_ROOT}/assistant/src/config/feature-flag-registry.json"
-cp "${REPO_ROOT}/meta/feature-flags/feature-flag-registry.json" \
-   "${REPO_ROOT}/gateway/src/feature-flag-registry.json"
-echo "  Done"
-echo ""
 
 # ---------------------------------------------------------------------------
 # Build and push each service

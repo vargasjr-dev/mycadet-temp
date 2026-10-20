@@ -13,8 +13,6 @@ import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
 import { useHasCloudSession } from "@/stores/auth-store";
-import { useClientFeatureFlagStore } from "@/stores/client-feature-flag-store";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTranslation } from "@/i18n";
 import { docsUrl, routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
@@ -34,13 +32,7 @@ const ICON_CLASS = "h-5 w-5 shrink-0";
 
 function useHostingOptions(): HostingOption[] {
   const hasCloudSession = useHasCloudSession();
-  const multiCloudAssistant =
-    useClientFeatureFlagStore.use.multiCloudAssistant();
-  const assistants = useResolvedAssistantsStore.use.assistants();
-  const hasCloudAssistant = assistants.some((a) => a.isCloudHosted);
-
-  const cloudDisabled =
-    !hasCloudSession || (!multiCloudAssistant && hasCloudAssistant);
+  const cloudDisabled = !hasCloudSession;
 
   return [
     {

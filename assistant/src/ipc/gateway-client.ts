@@ -14,7 +14,6 @@ import {
   type ClassifyRiskIpcParams,
   type ClassifyRiskIpcResponse,
   ClassifyRiskIpcResponseSchema,
-  FeatureFlagsIpcResponseSchema,
   ListWebhookRoutesIpcResponseSchema,
   type RegisterWebhookRouteIpcParams,
   RegisterWebhookRouteIpcResponseSchema,
@@ -139,23 +138,6 @@ export function resetPersistentClient(): void {
 // ---------------------------------------------------------------------------
 // Typed helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Fetch all merged feature flags from the gateway via IPC.
- * Returns an empty record on any failure.
- *
- * @param timeoutMs - Optional timeout override forwarded to the IPC
- *   transport. Pass a small value (e.g. 200) for CLI startup paths where
- *   a slow/absent gateway should fail fast.
- */
-export async function ipcGetFeatureFlags(
-  timeoutMs?: number,
-): Promise<Record<string, boolean | string>> {
-  const parsed = FeatureFlagsIpcResponseSchema.safeParse(
-    await ipcCall("get_feature_flags", undefined, timeoutMs),
-  );
-  return parsed.success ? parsed.data : {};
-}
 
 // ---------------------------------------------------------------------------
 // Tunnel status

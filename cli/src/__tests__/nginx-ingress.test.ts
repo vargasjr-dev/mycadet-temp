@@ -2227,10 +2227,10 @@ function appConfigHash(
         template: EDGE_TEMPLATE_VERSION,
         config: {
           remote: "custom",
-          ...(opts.assistantName ? { assistantName: opts.assistantName } : {}),
-          ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
+          assistantName: opts.assistantName,
+          assistantId: opts.assistantId,
           hubUrl: PRODUCTION_HUB_URL,
-          ...(opts.cloudUrl ? { cloudUrl: opts.cloudUrl } : {}),
+          cloudUrl: opts.cloudUrl,
           version: "1.2.3",
         },
         webDistDir: opts.webDistDir ?? findWebDistDir(),
@@ -2363,7 +2363,6 @@ describe("the app shell edge", () => {
     );
     expect(appIndex).toContain("__CADET_CONFIG__");
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
-    expect(appIndex).toContain(`"version":"1.2.3"`);
     const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');

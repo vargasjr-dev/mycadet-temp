@@ -1,8 +1,4 @@
-import { describe, expect, it, mock } from "bun:test";
-
-mock.module("../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: () => false,
-}));
+import { describe, expect, it } from "bun:test";
 
 const {
   TUNNEL_ALLOWED_PATHS_HEADER,

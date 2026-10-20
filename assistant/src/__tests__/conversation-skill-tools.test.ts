@@ -1,6 +1,5 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary, SkillToolManifest } from "../config/skills.js";
 import { RiskLevel } from "../permissions/types.js";
 import type {
@@ -352,8 +351,6 @@ describe("projectSkillTools", () => {
 
   beforeEach(() => {
     // Real flag resolution replaces the former blanket module mock.
-    setAllFlagsOnForTesting();
-
     mockCatalog = [];
     mockManifests = {};
     mockRegisteredTools = new Map();

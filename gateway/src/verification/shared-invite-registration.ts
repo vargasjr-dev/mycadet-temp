@@ -9,7 +9,7 @@ import { hashInviteToken } from "@mycadet/gateway-client";
 import { credentialKey } from "../credential-key.js";
 import { readCredentialResult } from "../credential-reader.js";
 import { fetchImpl } from "../fetch.js";
-import { areCloudFeaturesEnabled } from "../feature-flag-resolver.js";
+import { areCloudFeaturesEnabled } from "../cloud-features.js";
 import { getLogger } from "../logger.js";
 
 const log = getLogger("shared-invite-registration");

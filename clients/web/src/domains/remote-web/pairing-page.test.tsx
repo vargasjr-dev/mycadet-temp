@@ -399,6 +399,28 @@ describe("RemoteWebPairingPage", () => {
     expect(screen.queryByText("WXYZ-1234")).toBeNull();
   });
 
+  test("offers entering a new code after the pairing expires", async () => {
+    exchangeRemoteWebPairingTokenMock.mockImplementationOnce(async () => {
+      throw new MockRemoteWebPairingError(
+        401,
+        "Pairing token exchange failed: 401",
+      );
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/assistant/pair?deviceCode=old-code"]}>
+        <RemoteWebPairingPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Pairing expired")).not.toBeNull();
+
+    fireEvent.click(screen.getByText("Enter a new code"));
+
+    expect(screen.getByText("Pair a device")).not.toBeNull();
+    expect(screen.getByText("Pair")).not.toBeNull();
+  });
+
   test("still shows the waiting state and code when the code is not yet approved", async () => {
     // Default mock returns pending — the not-pre-approved device-code path.
 

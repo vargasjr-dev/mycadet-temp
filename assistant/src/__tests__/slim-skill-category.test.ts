@@ -5,7 +5,6 @@
 import { join } from "node:path";
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import type { SkillSummary } from "../config/skills.js";
 import type { CatalogSkill } from "../skills/catalog-install.js";
 import type { SkillInstallMeta } from "../skills/install-meta.js";
@@ -119,7 +118,6 @@ import { listSkills } from "../daemon/handlers/skills.js";
 
 beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
 });
 
 // ---------------------------------------------------------------------------

@@ -73,9 +73,6 @@ mock.module("../../voice/verification.js", () => ({
 let phoneExempt = false;
 let phonePolicy = "everyone";
 
-mock.module("../../feature-flag-resolver.js", () => ({
-  isFeatureFlagEnabled: () => false,
-}));
 
 mock.module("@mycadet/gateway-client", () => ({
   isAdmissionPolicyExemptChannel: (channel: string) =>

@@ -18,11 +18,9 @@ import { TranscriptRow } from "@/domains/chat/transcript/transcript-row";
 import type { CreditsUpsellItem } from "@/domains/chat/transcript/types";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { textBody } from "@/domains/chat/utils/message-test-helpers";
-import { useAssistantFeatureFlagStore } from "@/stores/assistant-feature-flag-store";
 
 afterEach(() => {
   cleanup();
-  useAssistantFeatureFlagStore.setState({ sendUserMessage: false });
 });
 
 function makeErrorRow(id: string): DisplayMessage {

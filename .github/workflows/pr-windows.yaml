@@ -17,7 +17,6 @@ on:
   #     - "clients/windows/**"
   #     - "clients/web/**"
   #     - "clients/macos/src/preload/**"
-  #     - "meta/feature-flags/**"
   #     - "skills/**"
   #     - "packages/**"
   #     - ".github/workflows/pr-windows.yaml"

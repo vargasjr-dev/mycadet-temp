@@ -13,7 +13,6 @@ let os: FeedbackDependencies["os"];
 let fs: { readFile: FeedbackDependencies["readFile"] };
 let getVersionInfo: FeedbackDependencies["getVersionInfo"];
 let getLogFilePaths: FeedbackDependencies["getLogFilePaths"];
-let readSetting: () => Record<string, boolean> | null;
 let hasSession: FeedbackDependencies["hasSession"];
 let handle: FeedbackIpc["handle"];
 
@@ -21,7 +20,6 @@ export const configureFeedback = (dependencies: FeedbackDependencies): void => {
   ({ app, powerMonitor, os, getVersionInfo, getLogFilePaths, hasSession } =
     dependencies);
   fs = { readFile: dependencies.readFile };
-  readSetting = dependencies.getFeatureFlags;
   handle = dependencies.ipc.handle;
 };
 
@@ -49,7 +47,6 @@ export interface ElectronDiagnostics {
   };
   appMetrics: Electron.ProcessMetric[];
   idleTime: number;
-  featureFlags: Record<string, boolean> | null;
   session: { authenticated: boolean };
   redactionVersion: number;
 }
@@ -80,7 +77,6 @@ export function collectDiagnostics(): ElectronDiagnostics {
     },
     appMetrics: app.getAppMetrics(),
     idleTime: powerMonitor.getSystemIdleTime(),
-    featureFlags: readSetting(),
     session: { authenticated: hasSession() },
     redactionVersion: REDACTION_VERSION,
   };

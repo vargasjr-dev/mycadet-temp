@@ -12,7 +12,6 @@ import {
   setBroadcastOverrideForTesting,
   setHubClientsForTesting,
 } from "../runtime/assistant-event-hub.js";
-import { setOverridesForTesting } from "./feature-flag-test-helpers.js";
 import { asConversation } from "./helpers/mock-conversation.js";
 
 const sentMessages: unknown[] = [];
@@ -148,7 +147,6 @@ describe("surfaceProxyResolver — CU tool routing", () => {
   }
 
   afterEach(() => {
-    setOverridesForTesting({});
     proxy?.dispose();
   });
 

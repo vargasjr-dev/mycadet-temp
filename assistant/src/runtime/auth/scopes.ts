@@ -24,11 +24,9 @@ const PROFILE_SCOPES: Record<ScopeProfile, ReadonlySet<Scope>> = {
     "attachments.write",
     "calls.read",
     "calls.write",
-    "feature_flags.read",
-    "feature_flags.write",
   ]),
-  // A non-guardian principal. Excludes the settings, feature-flag and call
-  // scopes `actor_client_v1` carries: those reach the control plane, which
+  // A non-guardian principal. Excludes the settings and call scopes
+  // `actor_client_v1` carries: those reach the control plane, which
   // only the guardian may write.
   // Carries no read scope. The routes behind `chat.read`, `approval.read` and
   // `attachments.read` take a caller-supplied conversation or attachment id

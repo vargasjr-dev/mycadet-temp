@@ -9,12 +9,9 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
 import { mockIpc } from "../__tests__/requests-mock.js";
-import { ServiceUnavailableError } from "../runtime/routes/errors.js";
 import {
   ipcCall,
-  ipcCallPersistent,
   ipcClassifyRisk,
-  ipcGetFeatureFlags,
   ipcGetTunnelStatus,
   resetPersistentClient,
 } from "./gateway-client.js";
@@ -49,94 +46,6 @@ describe("ipcCall", () => {
 
     const result = await ipcCall("unconfigured_method");
     expect(result).toBeUndefined();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// ipcCallPersistent singleton
-// ---------------------------------------------------------------------------
-
-describe("ipcCallPersistent", () => {
-  test("returns result from persistent client", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.setDefaults({ persistent_test: "persistent-result" });
-
-    const result = await ipcCallPersistent("persistent_test");
-    expect(result).toBe("persistent-result");
-  });
-
-  test("maps a missing gateway socket to ServiceUnavailableError", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.failConnect();
-
-    await expect(ipcCallPersistent("any_method")).rejects.toBeInstanceOf(
-      ServiceUnavailableError,
-    );
-    await expect(ipcCallPersistent("any_method")).rejects.toThrow(
-      /Gateway is not reachable over IPC: Mock IPC socket error/,
-    );
-  });
-
-  test("resetPersistentClient does not throw when no client exists", () => {
-    // Should be a no-op when called before any ipcCallPersistent.
-    expect(() => resetPersistentClient()).not.toThrow();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// ipcGetFeatureFlags
-// ---------------------------------------------------------------------------
-
-describe("ipcGetFeatureFlags", () => {
-  test("parses boolean flag values from IPC response", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.setDefaults({
-      get_feature_flags: { "flag-a": true, "flag-b": false },
-    });
-
-    const flags = await ipcGetFeatureFlags();
-    expect(flags).toEqual({ "flag-a": true, "flag-b": false });
-  });
-
-  test("accepts boolean and string values, filters other types from response", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.setDefaults({
-      get_feature_flags: {
-        valid: true,
-        number: 42,
-        string: "yes",
-        nested: { deep: true },
-      },
-    });
-
-    const flags = await ipcGetFeatureFlags();
-    expect(flags).toEqual({ valid: true, string: "yes" });
-  });
-
-  test("returns empty record when IPC returns undefined", async () => {
-    // Explicitly suppress the transport's default `get_feature_flags`
-    // sentinel (which exists to short-circuit `initFeatureFlagOverrides()`'s
-    // retry loop) so this test exercises the underlying-undefined path.
-    const gateway = await mockIpc("gateway");
-    gateway.setDefaults({ get_feature_flags: undefined });
-    const flags = await ipcGetFeatureFlags();
-    expect(flags).toEqual({});
-  });
-
-  test("returns empty record when IPC returns array", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.setDefaults({ get_feature_flags: [true, false] });
-
-    const flags = await ipcGetFeatureFlags();
-    expect(flags).toEqual({});
-  });
-
-  test("returns empty record on error", async () => {
-    const gateway = await mockIpc("gateway");
-    gateway.failConnect();
-
-    const flags = await ipcGetFeatureFlags();
-    expect(flags).toEqual({});
   });
 });
 

@@ -5,6 +5,7 @@
     "pairingCode": "Código de vinculación",
     "pair": "Vincular",
     "expiresAt": "Caduca a las {time}.",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "enterNewCode": "Introducir un código nuevo"
   }
 }

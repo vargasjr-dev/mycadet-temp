@@ -8,7 +8,6 @@ import {
   test,
 } from "bun:test";
 
-import { setOverridesForTesting } from "../../__tests__/feature-flag-test-helpers.js";
 import { desktopDependencies } from "../../desktop/desktop-dependencies.js";
 import { ROUTES } from "./desktop-setup-routes.js";
 import { NotFoundError } from "./errors.js";
@@ -38,7 +37,6 @@ afterEach(() => {
   } else {
     process.env.IS_CLOUD = originalPlatform;
   }
-  setOverridesForTesting({});
   status.mockClear();
 });
 

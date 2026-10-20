@@ -127,24 +127,6 @@ stubModule("@/stores/auth-store", authStoreModule, {
   useIsAuthenticated: () => authRef.isAuthenticated,
 });
 
-// The real client flag store: a plain zustand store with no transport of its
-// own, and the only version that carries the string-flag surface the
-// activation arm is read through. A stub here would also replace it for every
-// test file sharing this process.
-const assistantFeatureFlagStoreModule =
-  await import("@/stores/assistant-feature-flag-store");
-// Nothing the menu renders reads a flag off this store, so the stub answers
-// with an empty surface and asserts the store's type.
-const featureFlagStoreStub = Object.assign(() => null, {
-  use: {},
-  getState: () => ({}),
-}) as unknown as typeof assistantFeatureFlagStoreModule.useAssistantFeatureFlagStore;
-stubModule(
-  "@/stores/assistant-feature-flag-store",
-  assistantFeatureFlagStoreModule,
-  { useAssistantFeatureFlagStore: featureFlagStoreStub },
-);
-
 const billingRef = {
   data: undefined as
     | { effective_balance: string; available_usage_balance?: string }

@@ -35,7 +35,6 @@
     "./dictation-overlay-window": "./src/dictation-overlay-window.ts",
     "./dictation-routing": "./src/dictation-routing.ts",
     "./downloads": "./src/downloads.ts",
-    "./feature-flags": "./src/feature-flags.ts",
     "./feedback": "./src/feedback.ts",
     "./file-open": "./src/file-open.ts",
     "./file-open-preload": "./src/file-open-preload.ts",

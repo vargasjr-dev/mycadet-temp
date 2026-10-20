@@ -34,11 +34,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   },
 }));
 
-const actualFlagResolver = await import("../feature-flag-resolver.js");
-mock.module("../feature-flag-resolver.js", () => ({
-  ...actualFlagResolver,
-  isFeatureFlagEnabled: () => false,
-}));
 
 const { reconcileTelegramWebhook } =
   await import("../telegram/webhook-manager.js");

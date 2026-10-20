@@ -48,8 +48,6 @@ describe("resolveScopeProfile", () => {
       "attachments.write",
       "calls.read",
       "calls.write",
-      "feature_flags.read",
-      "feature_flags.write",
     ];
     for (const s of expected) {
       expect(scopes.has(s)).toBe(true);

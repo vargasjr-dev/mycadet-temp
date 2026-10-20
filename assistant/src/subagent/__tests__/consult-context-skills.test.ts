@@ -1,8 +1,7 @@
 /**
  * Skill-catalog filtering for the advisor context pack: the section must list
  * only skills the conversation can actually load, mirroring the `skill_load`
- * gates: plugin-owned skills outside the per-chat plugin scope and skills
- * whose feature flag is off are omitted.
+ * gates: plugin-owned skills outside the per-chat plugin scope are omitted.
  *
  * Mocks are isolated to this file (the test runner runs each file in its own
  * process), so the broad module stubs here don't leak into other suites.
@@ -24,16 +23,7 @@ mock.module("../../config/skills.js", () => ({
       description: "Out-of-scope plugin skill.",
       owner: { kind: "plugin", id: "disabled-plugin" },
     },
-    {
-      id: "flag-off-skill",
-      name: "flag-off-skill",
-      description: "Flag-gated skill.",
-      featureFlag: "some-flag",
-    },
   ],
-}));
-mock.module("../../config/assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => false,
 }));
 mock.module("../../config/loader.js", () => ({
   getConfig: () => ({ memory: { retrieval: {} }, llm: {} }),
@@ -59,7 +49,7 @@ const baseSources = {
 };
 
 describe("advisor context pack: skill catalog filtering", () => {
-  test("omits plugin skills outside the per-chat scope and flag-off skills", async () => {
+  test("omits plugin skills outside the per-chat scope", async () => {
     const ctx =
       (await buildAdvisorContext({
         ...baseSources,
@@ -68,7 +58,6 @@ describe("advisor context pack: skill catalog filtering", () => {
     expect(ctx).toContain("bundled-skill");
     expect(ctx).toContain("scoped-skill");
     expect(ctx).not.toContain("out-of-scope-skill");
-    expect(ctx).not.toContain("flag-off-skill");
   });
 
   test("a null plugin scope imposes no plugin restriction", async () => {

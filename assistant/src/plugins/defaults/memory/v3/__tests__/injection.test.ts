@@ -63,9 +63,6 @@ import {
 } from "../types.js";
 
 const realMemoryConfig = { ...(await import("../../config.js")) };
-const realFlags = {
-  ...(await import("../../../../../config/assistant-feature-flags.js")),
-};
 const realDbConnection = {
   ...(await import("../../../../../persistence/db-connection.js")),
 };
@@ -177,22 +174,6 @@ mock.module("../../../../../daemon/conversation-registry.js", () => ({
     processingConversations.has(conversationId)
       ? ({ isProcessing: () => true } as unknown as Conversation)
       : undefined,
-}));
-
-mock.module("../../../../../config/assistant-feature-flags.js", () => ({
-  ...realFlags,
-  isAssistantFeatureFlagEnabled: (
-    key: string,
-    config: Parameters<typeof realFlags.isAssistantFeatureFlagEnabled>[1],
-  ) => {
-    if (!injectionMockActive) {
-      return realFlags.isAssistantFeatureFlagEnabled(
-        key as Parameters<typeof realFlags.isAssistantFeatureFlagEnabled>[0],
-        config,
-      );
-    }
-    return key === "memory-v3-live" ? liveEnabled : false;
-  },
 }));
 
 /** The lead render the entry stub produces for a page (no disk pages here). */

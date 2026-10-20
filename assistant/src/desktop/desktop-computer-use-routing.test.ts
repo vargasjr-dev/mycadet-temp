@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { asConversation } from "../__tests__/helpers/mock-conversation.js";
 import {
   getBundledSkillsDir,
@@ -40,7 +39,6 @@ afterEach(() => {
   for (const spy of spies.splice(0)) {
     spy.mockRestore();
   }
-  setOverridesForTesting({});
   if (originalPlatform === undefined) {
     delete process.env.IS_CLOUD;
   } else {

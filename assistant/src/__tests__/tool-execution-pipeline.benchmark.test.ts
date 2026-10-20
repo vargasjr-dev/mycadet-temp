@@ -18,7 +18,6 @@
 
 import { beforeAll, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOffForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { installThresholdReaderMock } from "./gateway-threshold-reader-mock.js";
 
 // Local registry for ToolExecutor tests — the mock delegates to this map
@@ -102,7 +101,6 @@ import type { Tool, ToolContext, ToolExecutionResult } from "../tools/types.js";
 
 beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOffForTesting();
 });
 
 // ---------------------------------------------------------------------------

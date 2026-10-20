@@ -5,6 +5,7 @@
     "pairingCode": "Код сопряжения",
     "pair": "Подключить",
     "expiresAt": "Истекает {time}.",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "enterNewCode": "Ввести новый код"
   }
 }

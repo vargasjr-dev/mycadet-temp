@@ -9,7 +9,7 @@ import { fetchImpl } from "../fetch.js";
 import {
   areCloudFeaturesEnabled,
   isCloudServedBuild,
-} from "../feature-flag-resolver.js";
+} from "../cloud-features.js";
 import { callTelegramApi } from "./api.js";
 import { getLogger } from "../logger.js";
 import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";

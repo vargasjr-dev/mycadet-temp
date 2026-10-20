@@ -29,9 +29,6 @@
   "assistantEmailIntroModal": {
     "setUp": "Настроить почту"
   },
-  "assistantFeatureFlagStore": {
-    "updateFailed": "Не удалось обновить «{label}». Изменение отменено."
-  },
   "channelSetupCompleteNotice": {
     "verifyTitle": "Последний шаг: подтвердите, что это вы",
     "verifyAction": "Подтвердить меня",

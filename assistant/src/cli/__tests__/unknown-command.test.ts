@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { detectUnknownCommand } from "../lib/unknown-command.js";
-import { buildCliProgram } from "../program.js";
+import { buildCliProgramTree } from "../program.js";
 import { runAssistantCommandFull } from "./run-assistant-command.js";
 
 describe("unknown command handling", () => {
@@ -39,7 +39,7 @@ describe("unknown command handling", () => {
   // to surface the error before Commander handles --help. This test guards
   // that path against regression.
   it("detects an unknown subcommand even when --help is passed", async () => {
-    const program = await buildCliProgram();
+    const program = buildCliProgramTree();
     expect(detectUnknownCommand(program, ["invalid", "--help"])).toEqual({
       token: "invalid",
     });
@@ -50,7 +50,7 @@ describe("unknown command handling", () => {
   });
 
   it("does not flag known commands when --help is passed", async () => {
-    const program = await buildCliProgram();
+    const program = buildCliProgramTree();
     expect(detectUnknownCommand(program, ["status", "--help"])).toBeNull();
     expect(
       detectUnknownCommand(program, ["config", "list", "--help"]),

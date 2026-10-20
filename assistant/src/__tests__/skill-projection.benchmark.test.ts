@@ -12,7 +12,6 @@
 import { beforeAll, describe, expect, mock, test } from "bun:test";
 
 import type { Message } from "../providers/types.js";
-import { setAllFlagsOnForTesting } from "./feature-flag-test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Mocks — must be registered before importing the module under test
@@ -267,8 +266,6 @@ function timeMs(fn: () => void): number {
 
 describe("Skill projection benchmark", () => {
   beforeAll(() => {
-    setAllFlagsOnForTesting();
-
     // Prime the real config loader and JIT the projection path once so the
     // first measured "cold" run reflects projection latency, not the one-time
     // loader/module warmup cost that a trivial config mock used to hide.

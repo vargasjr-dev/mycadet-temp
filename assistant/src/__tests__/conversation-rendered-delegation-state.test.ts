@@ -9,7 +9,6 @@
  */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { setAllFlagsOnForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { CompactionCircuit } from "../agent/compaction-circuit.js";
 import type { AgentEvent } from "../agent/loop.js";
 import type { AssistantEvent } from "../api/index.js";
@@ -187,8 +186,6 @@ function lastBuildDelegation(): unknown {
 
 beforeEach(() => {
   // Real flag resolution replaces the former blanket module mock.
-  setAllFlagsOnForTesting();
-
   builtWith = [];
   throwOnBuild = false;
 });

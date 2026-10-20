@@ -19,18 +19,17 @@ function printAppHelp(): void {
     `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop`,
   );
   console.log("");
-  console.log("Start or stop the local app edge (nginx).");
   console.log(
-    "The edge serves the app shell + web UI and proxies the gateway's /v1 and",
+    "The App server hosts the assistant-agnostic frontend bundle, is the home",
   );
   console.log(
-    "webhook routes; it is the TLS tunnel's target, and runs on loopback only.",
+    "for assistant management commands, and proxies all assistant-specific",
   );
+  console.log("APIs & webhooks to the correct Cadet.");
   console.log("");
   console.log(
-    "It fronts the active (or sole local) assistant's gateway; a tunnel is",
+    `The App server is spun up automatically as part of the \`${cliCommand()} tunnel start\` command.`,
   );
-  console.log(`separate — bring one up with \`${cliCommand()} tunnel start\`.`);
   process.exit(0);
 }
 

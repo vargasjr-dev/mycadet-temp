@@ -39,13 +39,6 @@ function ensureTestDir(): void {
   }
 }
 
-mock.module("../assistant-feature-flags.js", () => ({
-  isAssistantFeatureFlagEnabled: () => true,
-  clearFeatureFlagOverridesCache: () => {},
-  initFeatureFlagOverrides: async () => {},
-  getAssistantFeatureFlagDefaults: () => ({}),
-}));
-
 // Restore all mocked modules after this file's tests complete to prevent
 // cross-test contamination when running grouped with other test files.
 afterAll(() => {

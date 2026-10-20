@@ -68,7 +68,6 @@ import { installWindowAttentionFeature } from "./window-attention";
 import { installEscapeMonitor, setDictationRecording } from "./escape-monitor";
 import {
   installDiagnosticsIpc,
-  installFeatureFlagsIpc,
   installFeedbackIpc,
 } from "./desktop-diagnostics";
 import { installGlobalShortcuts } from "./global-shortcuts.client";
@@ -429,7 +428,6 @@ app
     installPermissionHandler(resolveAllowedOrigin);
     installCsp();
     installHotkeysIpc();
-    installFeatureFlagsIpc();
     installDiagnosticsIpc();
     installLocalMode();
     // Refresh the PATH-wrapper locator every launch so app moves and

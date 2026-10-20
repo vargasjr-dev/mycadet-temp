@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, mock, spyOn, test } from "bun:test";
 
-import { setOverridesForTesting } from "../__tests__/feature-flag-test-helpers.js";
 import { newFakeDesktop, newViewer, settle } from "./__tests__/fake-desktop.js";
 import {
   type DesktopSessionManager,
@@ -130,7 +129,6 @@ describe("DesktopStreamBridge", () => {
     } finally {
       b.bridge.handleClose();
       await h.manager.destroy();
-      setOverridesForTesting({});
       if (originalContainerized === undefined) {
         delete process.env.IS_CONTAINERIZED;
       } else {
