@@ -41,6 +41,8 @@ import {
   authorizePairedForwardHeaders,
   type CliInvocation,
 } from "@mycadet/local-mode";
+import { displayVersion } from "../../cli/src/lib/local-version";
+import cliPkg from "../../cli/package.json";
 
 const GUARDIAN_TOKEN_PATTERN =
   /^(?:\/assistant)?\/__local\/guardian-token\/([^/]+)$/;
@@ -82,9 +84,13 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   // The `/assistant/__config` document, also injected into the index. No
   // `assistantId`: the dev server fronts every assistant in the lockfile at
   // once, so it has no single identity to report the way an nginx edge does.
+  // `version` is stamped here the same way `cadet --version` stamps itself,
+  // so the page's version row answers the same thing `cadet-local --version`
+  // does and nothing can override it out of band.
   const configJson = JSON.stringify({
     webUrl: config.webUrl,
     cloudUrl: config.cloudUrl,
+    version: displayVersion(cliPkg.version),
   });
 
   return {

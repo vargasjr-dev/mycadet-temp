@@ -6,10 +6,9 @@ import { type ThemePreference } from "@/utils/theme-preferences";
 import { SegmentControl } from "@mycadet/design-library/components/segment-control";
 
 /**
- * Theme picker (System / Light / Dark), shown
- * inline in the Preferences card on Settings → General. Not Electron-gated —
- * theme applies on every platform. Shares `useThemePreference` with the
- * sidebar `ThemeToggle`, so the two surfaces stay in sync.
+ * Theme picker (System / Light / Dark), shown inline in the Preferences card
+ * on Settings → General. Not Electron-gated — theme applies on every platform.
+ * This card owns the theme UI; the chat menu's Theme section was removed.
  */
 export function ThemePicker() {
   const { t } = useTranslation("settings");

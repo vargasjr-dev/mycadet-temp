@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # clients/ios setup — ensures the iOS toolchain (xcodegen via Homebrew) and
-# regenerates App.xcodeproj from project.yml. Run via `bun run setup` from
-# clients/ios/ — the root ./setup.sh invokes it for every subpackage that
-# defines a setup script.
+# the workspace dependencies, then delegates the build + sync core to
+# scripts/build.sh. Run via `bun run dev` from clients/ios/ — which opens
+# Xcode once this settles.
 #
 set -euo pipefail
 
@@ -12,8 +12,8 @@ IOS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 info()  { echo "==> $*"; }
 error() { echo "error: $*" >&2; exit 1; }
 
-# — iOS builds are macOS-only; exit cleanly elsewhere so the root setup.sh
-#   fan-out stays harmless on Linux —
+# — iOS builds are macOS-only; exit cleanly elsewhere so scripted callers
+#   stay harmless on Linux —
 if [ "$(uname -s)" != "Darwin" ]; then
   echo "skipping: iOS development requires macOS (Xcode + xcodegen)" >&2
   exit 0
@@ -34,13 +34,5 @@ fi
 info "Installing workspace dependencies"
 (cd "${IOS_DIR}" && bun install)
 
-# — Sync the Capacitor shell: bakes `server.url` (defaults to the local
-#   environment) and copies the webDir placeholder into the Xcode project —
-info "Syncing Capacitor iOS project"
-(cd "${IOS_DIR}" && bunx --bun cap sync ios)
-
-# — Regenerate App.xcodeproj from App/project.yml —
-info "Generating Xcode project"
-(cd "${IOS_DIR}/App" && xcodegen generate --spec project.yml)
-
-info "iOS setup complete — open App/App.xcodeproj to build."
+# — The build itself (boot bundle + cap sync + xcodegen) —
+bash "${IOS_DIR}/scripts/build.sh"

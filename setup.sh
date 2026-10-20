@@ -49,9 +49,9 @@ info "Installing workspace dependencies"
 info "Installing dependencies in scripts/"
 (cd "${REPO_ROOT}/scripts" && bun install)
 
-# — Run `bun run setup` in every subpackage that defines one (currently
-#   clients/ios: xcodegen install + Capacitor sync + Xcode project
-#   generation; the script skips itself off macOS) —
+# — Run `bun run setup` in every subpackage that defines one (the Electron
+#   shells install their web dependencies; iOS no longer defines one — its
+#   flow is `bun run dev` / `bun run build` from clients/ios) —
 info "Running subpackage setups"
 for package_dir in "${REPO_ROOT}"/clients/*/; do
   [ -f "${package_dir}package.json" ] || continue

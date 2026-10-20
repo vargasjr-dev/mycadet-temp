@@ -26,7 +26,7 @@ export interface AssistantRequest {
 }
 
 const unauthenticated = Symbol("unauthenticated");
-const starting = Symbol("starting");
+const notReady = Symbol("not ready");
 const unavailable = Symbol("unavailable");
 
 function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
@@ -45,7 +45,7 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
       return unauthenticated;
     }
     if (detail && response.status === 409) {
-      return starting;
+      return notReady;
     }
     if (detail && response.status === 410) {
       return unavailable;
@@ -122,8 +122,8 @@ export async function resolveAssistant(
   if (payload === unauthenticated) {
     return { status: "unauthenticated" };
   }
-  if (payload === starting) {
-    return { status: "starting" };
+  if (payload === notReady) {
+    return { status: "notReady" };
   }
   if (payload === unavailable) {
     return { status: "unavailable" };

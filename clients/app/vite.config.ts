@@ -17,7 +17,16 @@ const DESIGN_SRC = path.resolve(
 );
 
 export default defineConfig(({ mode, command }) => {
-  const library = process.env.APP_BUILD_TARGET === "package";
+  // The app package target builds the publishable library, the capacitor
+  // target builds the baked mobile boot shell, and everything else is the
+  // standalone SPA the edges serve.
+  const target =
+    process.env.APP_BUILD_TARGET === "package"
+      ? "package"
+      : process.env.APP_BUILD_TARGET === "capacitor"
+        ? "capacitor"
+        : "standalone";
+  const library = target === "package";
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined) {
@@ -40,12 +49,21 @@ export default defineConfig(({ mode, command }) => {
     plugins: [
       tailwindcss(),
       react(),
-      ...(library ? [appPackage()] : cloud ? [] : [localModePlugin(env)]),
+      // The boot bundle's config comes from the `build:capacitor` stamp, not
+      // the local-mode shim — a second injected `__CADET_CONFIG__` here would
+      // race the stamp on read order.
+      ...(library
+        ? [appPackage()]
+        : target === "capacitor" || cloud
+          ? []
+          : [localModePlugin(env)]),
     ],
     // The app owns its public assets (favicon, the signup media) — the
     // standalone bundle must be self-contained so a published @mycadet/app
-    // package carries everything the edge-served shell needs.
-    publicDir: true,
+    // package carries everything the edge-served shell needs. The boot
+    // bundle ships inside the IPA/APK, so it carries none of that: the
+    // signup media alone would add megabytes a splash never loads.
+    publicDir: target !== "capacitor",
     resolve: {
       alias: [
         ...(command === "serve"
@@ -123,7 +141,12 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     build: {
-      outDir: library ? "dist/package" : "dist/standalone",
+      outDir:
+        target === "package"
+          ? "dist/package"
+          : target === "capacitor"
+            ? "dist/capacitor"
+            : "dist/standalone",
       ...(library
         ? {
             lib: {
@@ -142,9 +165,20 @@ export default defineConfig(({ mode, command }) => {
               ],
             },
           }
-        : {}),
+        : target === "capacitor"
+          ? {
+              // The root index.html is the standalone entry; the boot
+              // bundle builds from its own document instead.
+              rolldownOptions: {
+                input: path.resolve(import.meta.dirname, "capacitor.html"),
+              },
+            }
+          : {}),
       emptyOutDir: true,
-      sourcemap: true,
+      // Served bundles keep maps unconditionally (the #384 debugging
+      // posture); the boot bundle rides inside the native download, where
+      // 1.7MB of maps on a splash bundle is pure bloat.
+      sourcemap: target !== "capacitor",
     },
   };
 });

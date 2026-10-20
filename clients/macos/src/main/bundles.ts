@@ -11,7 +11,7 @@ import {
 } from "@mycadet/electron-desktop/bundle-flow";
 import { createBundleHostProvider } from "@mycadet/electron-desktop/bundle-host";
 
-import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
+import { RENDERER_BASE_PROD } from "./app-config";
 import { handle, on } from "./ipc";
 import { resolveCliInvocation } from "./local-mode.client";
 
@@ -19,8 +19,7 @@ export const installMacBundleWorkflow = (): void => {
   configureBundlePlatform({
     ...createBundleHostProvider(resolveCliInvocation),
     bundlesRoot: () => path.join(app.getPath("userData"), BUNDLES_DIR_NAME),
-    rendererBase: () =>
-      app.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
+    rendererBase: () => RENDERER_BASE_PROD,
     ipc: { handle, on },
   });
   installBundleFlow();

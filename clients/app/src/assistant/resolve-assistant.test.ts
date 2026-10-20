@@ -130,7 +130,7 @@ test("validates identities, response fields, and API URL configuration", async (
 
 test("409 and 410 detail responses never mount a stale UI, regardless of body", async () => {
   for (const [code, status] of [
-    [409, "starting"],
+    [409, "notReady"],
     [410, "unavailable"],
   ] as const) {
     for (const body of [null, JSON.stringify(detail), "not JSON"]) {

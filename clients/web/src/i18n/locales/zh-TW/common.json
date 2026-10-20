@@ -832,12 +832,6 @@
     "tertiaryText": "第三層文字 - 標題、標籤和預留位置。",
     "userBubble": "使用者在其對話框中的訊息。"
   },
-  "themeToggle": {
-    "dark": "深色",
-    "label": "主題",
-    "light": "淺色",
-    "system": "系統"
-  },
   "ttsProviderForm": {
     "apiKey": "API 金鑰",
     "apiKeyRequired": "測試前請為此供應商儲存 API 金鑰。",

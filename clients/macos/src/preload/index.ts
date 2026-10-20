@@ -760,6 +760,7 @@ const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
   webUrl: string;
   cloudUrl: string;
   deviceId: string | null;
+  version?: string;
 } | null;
 if (cadetConfig) {
   contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);

@@ -134,27 +134,6 @@ function getButton(label: string): HTMLButtonElement {
   return match;
 }
 
-function providerTrigger(): HTMLButtonElement {
-  const trigger = document.querySelector<HTMLButtonElement>(
-    'button[role="combobox"][aria-labelledby="profile-editor-provider-label"]',
-  );
-  if (!trigger) {
-    throw new Error("expected the Provider dropdown trigger");
-  }
-  return trigger;
-}
-
-function pickOption(trigger: HTMLButtonElement, optionLabel: string): void {
-  fireEvent.click(trigger);
-  const option = Array.from(
-    document.querySelectorAll<HTMLElement>('[role="option"]'),
-  ).find((o) => o.textContent?.trim() === optionLabel);
-  if (!option) {
-    throw new Error(`expected option "${optionLabel}"`);
-  }
-  fireEvent.click(option);
-}
-
 /** The Model field is a filter input; focusing it opens the list. */
 function selectModel(label: string): void {
   const field = document.querySelector<HTMLInputElement>(
@@ -203,14 +182,16 @@ describe("ProfileDetailPanel - create flow", () => {
       closed += 1;
     });
 
-    pickOption(providerTrigger(), "Anthropic");
-    selectModel("Claude Opus 4.8");
-
-    // Picking the model fills the Name in; the key follows it, so nothing
-    // else has to be typed for the form to be complete.
+    // Create is model-first now (the provider follows the model): picking
+    // the model fills the Name in; the key follows it, so nothing else
+    // has to be typed for the form to be complete.
+    selectModel("Claude Opus 5.5");
+    // The name derives from the picked model's display name; the input's
+    // placeholder is the STATIC i18n example ("e.g. Claude Opus 4.8"), not
+    // model-derived.
     await waitFor(() => {
       expect(getInputByPlaceholder("e.g. Claude Opus 4.8").value).toBe(
-        "Claude Opus 4.8",
+        "Claude Opus 5.5",
       );
     });
     fireEvent.change(getInputByPlaceholder("e.g. Claude Opus 4.8"), {

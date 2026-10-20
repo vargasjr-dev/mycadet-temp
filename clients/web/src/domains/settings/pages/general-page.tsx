@@ -128,6 +128,10 @@ export function GeneralPage() {
     });
   }, [assistant]);
 
+  // The version rows read assistant state only — the serving host's own
+  // healthz version first, the platform's release version as fallback. The
+  // upgrade panels need a release version for comparisons, so they keep
+  // `versionValue` too.
   const versionValue =
     healthz?.version ?? assistant?.current_release_version ?? null;
 
@@ -180,8 +184,10 @@ export function GeneralPage() {
       )}
 
       <ProfileCard
-        // Handles are platform-only — withhold the prop for self-hosted assistants.
-        assistant={isCloudHosted ? cloudAssistant : null}
+        // The assistant-handle section doubles as the self-hosted identity
+        // row — local assistants surface their id as the handle (assistant
+        // state carries it).
+        assistant={isCloudHosted ? cloudAssistant : assistant}
         showHandles={isAuthenticated && cloudGate === "full"}
       >
         <TimezoneSection />

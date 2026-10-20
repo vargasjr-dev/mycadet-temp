@@ -37,17 +37,17 @@ beforeEach(() => {
 
 describe("useAssistantFeatureFlagStore", () => {
   test("keeps an optimistic assistant flag update when the server accepts it", async () => {
-    store().setFlag("fastMode", true, "assistant-123");
+    store().setFlag("osBeta", true, "assistant-123");
 
-    expect(store().fastMode).toBe(true);
+    expect(store().osBeta).toBe(true);
     await Promise.resolve();
 
-    expect(store().fastMode).toBe(true);
+    expect(store().osBeta).toBe(true);
     const request = patchMock.mock.calls[0]?.[0];
     expect(request).toMatchObject({
       path: {
         assistant_id: "assistant-123",
-        flag_key: "fast-mode",
+        flag_key: "os-beta",
       },
       body: { enabled: true },
       throwOnError: false,
@@ -63,13 +63,13 @@ describe("useAssistantFeatureFlagStore", () => {
         }),
     );
 
-    store().setFlag("fastMode", true, "assistant-123");
-    expect(store().fastMode).toBe(true);
+    store().setFlag("osBeta", true, "assistant-123");
+    expect(store().osBeta).toBe(true);
 
     resolvePatch?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
 
-    expect(store().fastMode).toBe(false);
+    expect(store().osBeta).toBe(false);
     expect(toastErrorMock).toHaveBeenCalledTimes(1);
   });
 
@@ -82,19 +82,19 @@ describe("useAssistantFeatureFlagStore", () => {
         }),
     );
 
-    store().setFlag("fastMode", true, "assistant-123");
-    expect(store().fastMode).toBe(true);
+    store().setFlag("osBeta", true, "assistant-123");
+    expect(store().osBeta).toBe(true);
 
-    store().setFlag("fastMode", false, "assistant-123");
-    expect(store().fastMode).toBe(false);
+    store().setFlag("osBeta", false, "assistant-123");
+    expect(store().osBeta).toBe(false);
 
     resolvePatches[0]?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
-    expect(store().fastMode).toBe(false);
+    expect(store().osBeta).toBe(false);
 
     resolvePatches[1]?.({ response: new Response(null, { status: 400 }) });
     await Promise.resolve();
-    expect(store().fastMode).toBe(false);
+    expect(store().osBeta).toBe(false);
   });
 
   test("is a no-op for an assistant flag when there is no assistant id", async () => {

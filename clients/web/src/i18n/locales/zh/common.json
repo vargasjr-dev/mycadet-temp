@@ -832,12 +832,6 @@
     "tertiaryText": "三级文本 - 字幕、标签和占位符。",
     "userBubble": "用户在其气泡中的消息。"
   },
-  "themeToggle": {
-    "dark": "深色",
-    "label": "主题",
-    "light": "浅色",
-    "system": "系统"
-  },
   "ttsProviderForm": {
     "apiKey": "API 密钥",
     "apiKeyRequired": "测试前请为此提供商保存 API 密钥。",

@@ -23,7 +23,6 @@ import {
   prefetchShareFeedbackModal,
   ShareFeedbackModalLazy,
 } from "@/components/share-feedback-modal-lazy";
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import { usePreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import { useBillingBalanceStatus } from "@/hooks/use-billing-balance-status";
@@ -313,10 +312,6 @@ function PreferencesMenuContent({
 
   return (
     <>
-      <ThemeToggle className="px-2 py-0" />
-
-      <div className="my-1 h-px bg-[var(--border-base)]" />
-
       <PreferencesUsagePanel
         conversationId={activeConversationId}
         onOpenBilling={() => {

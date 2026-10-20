@@ -1,60 +1,12 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 
-// `resolveAllowedOrigin` branches on `app.isPackaged`, so the electron
-// stub exposes it as a mutable getter the tests flip per case.
-const appState = { isPackaged: false };
-mock.module("electron", () => ({
-  app: {
-    get isPackaged() {
-      return appState.isPackaged;
-    },
-  },
-}));
-
-const { isAllowedOrigin, resolveAllowedOrigin } = await import("./app-origin");
-
-const ORIGINAL_DEV_URL = process.env.CADET_DEV_URL;
-
-beforeEach(() => {
-  appState.isPackaged = false;
-  delete process.env.CADET_DEV_URL;
-});
-
-afterEach(() => {
-  if (ORIGINAL_DEV_URL === undefined) {
-    delete process.env.CADET_DEV_URL;
-  } else {
-    process.env.CADET_DEV_URL = ORIGINAL_DEV_URL;
-  }
-});
+import { isAllowedOrigin, resolveAllowedOrigin } from "./app-origin";
 
 describe("resolveAllowedOrigin", () => {
-  test("packaged builds resolve to the app://mycadet.ai tuple origin", () => {
-    appState.isPackaged = true;
-    expect(resolveAllowedOrigin()).toEqual({
-      protocol: "app:",
-      host: "mycadet.ai",
-    });
-  });
-
-  test("dev falls back to the local Vite origin when CADET_DEV_URL is unset", () => {
-    expect(resolveAllowedOrigin()).toEqual({
-      protocol: "http:",
-      host: "localhost:5173",
-    });
-  });
-
-  test("dev honors CADET_DEV_URL, including a non-default port in the host", () => {
-    process.env.CADET_DEV_URL = "http://localhost:3000/assistant";
-    expect(resolveAllowedOrigin()).toEqual({
-      protocol: "http:",
-      host: "localhost:3000",
-    });
-  });
-
-  test("the packaged-vs-dev decision is read at call time, not cached", () => {
-    expect(resolveAllowedOrigin().protocol).toBe("http:");
-    appState.isPackaged = true;
+  test("resolves the app://mycadet.ai tuple origin in every build", () => {
+    // `bun run dev` packs the renderer dists and serves them through the
+    // same `app://` protocol handler as packaged builds, so there is no
+    // dev branch — the origin is a constant.
     expect(resolveAllowedOrigin()).toEqual({
       protocol: "app:",
       host: "mycadet.ai",
@@ -71,9 +23,9 @@ describe("isAllowedOrigin", () => {
   });
 
   test("accepts an already-parsed URL navigation target", () => {
-    expect(isAllowedOrigin(new URL("http://localhost:5173/assistant"), dev)).toBe(
-      true,
-    );
+    expect(
+      isAllowedOrigin(new URL("http://localhost:5173/assistant"), dev),
+    ).toBe(true);
   });
 
   test("rejects a foreign host on the right protocol", () => {

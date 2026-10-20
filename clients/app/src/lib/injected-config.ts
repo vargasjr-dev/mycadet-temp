@@ -22,6 +22,8 @@ export const InjectedConfigSchema = z.object({
   webUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
+  /** Version of the shell bundle serving this page (stamped by the host). */
+  version: z.string().optional(),
   /** Serving assistant's id (remote-web ingress configs only). */
   assistantId: z.string().optional(),
   /** Serving assistant's display name (remote-web ingress configs only). */

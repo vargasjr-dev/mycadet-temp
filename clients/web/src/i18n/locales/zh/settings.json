@@ -1240,18 +1240,13 @@
   },
   "profileEditorFields": {
     "activeLabel": "启用",
-    "addApiKey": "添加 API 密钥",
     "advanced": "高级",
-    "createNewProvider": "+ 创建新提供商",
     "descriptionLabel": "描述 <optional>(可选)</optional>",
     "descriptionPlaceholder": "描述何时使用此配置文件",
     "displayNameLabel": "显示名称",
     "displayNamePlaceholder": "例如 Claude Opus 4.8",
     "nameLabel": "名称",
-    "newProviderNote": "新的提供商连接将显示在“提供商”部分。",
-    "providerLabel": "提供商",
-    "selectProviderPlaceholder": "选择提供商…",
-    "setUp": "设置"
+    "newProviderNote": "新的提供商连接将显示在“提供商”部分。"
   },
   "profileEditorModal": {
     "cancel": "取消",

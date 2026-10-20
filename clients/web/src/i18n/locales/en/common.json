@@ -832,12 +832,6 @@
     "tertiaryText": "Tertiary text - captions, labels, and placeholders.",
     "userBubble": "A message from the user, in its bubble."
   },
-  "themeToggle": {
-    "dark": "Dark",
-    "label": "Theme",
-    "light": "Light",
-    "system": "System"
-  },
   "ttsProviderForm": {
     "apiKey": "API Key",
     "apiKeyRequired": "Save an API key for this provider before testing.",

@@ -6,12 +6,18 @@ import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
 import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/inline-deps";
 
+// Build-time reuse of the CLI's version stamper: the local (dev) build bakes
+// the exact string `cadet-local --version` prints, so the About panel and the
+// injected config agree with the CLI (see resolveCliDisplayVersion below).
+import { displayVersion } from "../../cli/src/lib/local-version";
+
 // Reference: https://electron-vite.org/config/
 //
 // No renderer config: the MAIN window renders the @mycadet/app standalone
-// bundle (served in dev via http://localhost:3001 and in prod via the custom
-// `app://` protocol; see clients/README.md). The auxiliary
-// windows still render web routes off clients/web's build.
+// bundle over the custom `app://` protocol in every build — `bun run dev`
+// packs the same dists from the source trees and serves them through the
+// same handler (see clients/README.md). The auxiliary windows still render
+// web routes off clients/web's build.
 //
 // Dependencies that must be bundled inline rather than externalized as
 // runtime `require(...)` calls. The cross-client rules (and the sandboxed
@@ -60,12 +66,31 @@ const LOCAL_CLI_ENTRY =
     ? path.resolve(__dirname, "../../cli/src/index.ts")
     : "";
 
+// The version the About panel + injected config report for local builds:
+// the repo CLI's display version — the exact string `cadet-local --version`
+// prints (`<base>-local.<stamp>.<sha>`, see cli/src/lib/local-version.ts).
+// Release builds bake "" and fall back to the packaged app version the
+// release pipeline stamps.
+const resolveCliDisplayVersion = (): string => {
+  if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return "";
+  try {
+    const pkg = JSON.parse(
+      readFileSync(path.resolve(__dirname, "../../cli/package.json"), "utf8"),
+    ) as { version?: string };
+    if (!pkg.version) return "";
+    return displayVersion(pkg.version);
+  } catch {
+    return "";
+  }
+};
+
 const BUILD_DEFINES = {
   __CADET_BUILD_SHA__: JSON.stringify(resolveBuildSha()),
   __CADET_ENVIRONMENT__: JSON.stringify(
     process.env.CADET_ENVIRONMENT || "local",
   ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
+  __CADET_VERSION_DISPLAY__: JSON.stringify(resolveCliDisplayVersion()),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||

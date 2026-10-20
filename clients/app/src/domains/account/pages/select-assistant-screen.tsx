@@ -38,7 +38,7 @@ export function SelectAssistantScreen() {
                 });
               }}
             >
-              {assistant.name || assistant.id}
+              {assistant.name}
             </Button>
           ))}
         {status !== "selection" && (

@@ -51,6 +51,7 @@ const WEBSITE = "https://mycadet.ai";
 // Injected by `electron.vite.config.ts` at build time.
 declare const __CADET_BUILD_SHA__: string;
 declare const __CADET_ENVIRONMENT__: string;
+declare const __CADET_VERSION_DISPLAY__: string;
 
 const CADET_ENV: string =
   typeof __CADET_ENVIRONMENT__ === "string"
@@ -62,16 +63,26 @@ const APP_NAME =
     ? "Cadet"
     : `Cadet ${CADET_ENV.charAt(0).toUpperCase() + CADET_ENV.slice(1)}`;
 
+// Local (dev) builds bake the repo CLI's display version — the exact string
+// `cadet-local --version` prints (`<base>-local.<stamp>.<sha>`, see
+// `cli/src/lib/local-version.ts`) — so the About panel and the CLI agree.
+// Release builds bake "" and fall back to the packaged app version the
+// release pipeline stamps.
+const VERSION: string =
+  typeof __CADET_VERSION_DISPLAY__ === "string" && __CADET_VERSION_DISPLAY__
+    ? __CADET_VERSION_DISPLAY__
+    : app.getVersion();
+
 const COMMIT_SHA: string =
   typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown";
 
-const COPYRIGHT = (): string => `© ${new Date().getFullYear()} ${APP_NAME}`;
+const COPYRIGHT = (): string => `© ${new Date().getFullYear()} Vargas JR LLC`;
 
 export type { AppVersionInfo };
 
 export const getVersionInfo = (): AppVersionInfo => ({
   appName: APP_NAME,
-  version: app.getVersion(),
+  version: VERSION,
   commitSha: COMMIT_SHA,
   copyright: COPYRIGHT(),
   website: WEBSITE,
@@ -141,7 +152,7 @@ export const openAboutWindow = (): void => {
 const applyAboutPanelOptions = (): void => {
   app.setAboutPanelOptions({
     applicationName: runtime.getAssistantName?.() ?? APP_NAME,
-    applicationVersion: app.getVersion(),
+    applicationVersion: VERSION,
     // The native panel renders `version` after an em-dash; the commit SHA
     // identifies the exact build.
     version: COMMIT_SHA,

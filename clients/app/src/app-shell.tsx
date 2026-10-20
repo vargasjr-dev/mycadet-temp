@@ -1,5 +1,6 @@
 "use client";
 
+import { CloudOff } from "lucide-react";
 import { useState } from "react";
 import { useAssistantRequest } from "./assistant/use-assistant-request";
 import { AppI18nProvider } from "./i18n/provider";
@@ -43,8 +44,12 @@ function AssistantShell({
   });
   if (state.status !== "ready") {
     return (
-      <div role="status">
-        <p>{t(`appShell.${state.status}`)}</p>
+      <div role={state.status === "notReady" ? "alert" : "status"}>
+        {state.status === "notReady" ? (
+          <NotReadyBody />
+        ) : (
+          <p>{t(`appShell.${state.status}`)}</p>
+        )}
         {state.status === "selection" &&
           state.assistants.map((assistant) => (
             <button
@@ -52,7 +57,7 @@ function AssistantShell({
               type="button"
               onClick={() => select(assistant.id)}
             >
-              {assistant.name || assistant.id}
+              {assistant.name}
             </button>
           ))}
         {!assistantId && selectedId && (
@@ -79,5 +84,32 @@ function AssistantShell({
       onNavigate={onNavigate}
       title={title ?? t("appShell.title")}
     />
+  );
+}
+
+/** The 409 "assistant is not ready" resolution — deliberately NOT the
+ * starting sentiment: the API only reports that the assistant isn't ready
+ * (never hatched, stopped, or mid-release-resolution), so the panel says
+ * exactly that and retry is the action. Modeled on the web app's
+ * ActiveAssistantGate error panel (CloudOff + title + body); inline styles
+ * so the portable bundle and the standalone build render it identically.
+ */
+function NotReadyBody() {
+  const { t } = useTranslation("account");
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 8,
+      }}
+    >
+      <CloudOff size={20} aria-hidden="true" />
+      <p style={{ margin: 0, fontWeight: 600 }}>
+        {t("appShell.notReadyTitle")}
+      </p>
+      <p style={{ margin: 0, maxWidth: 420 }}>{t("appShell.notReadyBody")}</p>
+    </div>
   );
 }

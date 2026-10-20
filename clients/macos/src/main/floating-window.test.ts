@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import type { FloatingWindowDependencies } from "@mycadet/electron-desktop/floating-window";
 
-import { RENDERER_BASE_PROD, getDevRendererBase } from "./app-config";
+import { RENDERER_BASE_PROD } from "./app-config";
 
 type Listener = () => void;
 
@@ -128,9 +128,7 @@ configureFloatingWindows({
   createWindow:
     createWindowMock as unknown as FloatingWindowDependencies["createWindow"],
   platform: "darwin",
-  resolveRoute: createWindowRouteResolver(() =>
-    appState.isPackaged ? RENDERER_BASE_PROD : getDevRendererBase(),
-  ),
+  resolveRoute: createWindowRouteResolver(() => RENDERER_BASE_PROD),
 });
 
 let nextKind = 1;
@@ -140,7 +138,6 @@ beforeEach(() => {
   created.length = 0;
   createWindowMock.mockClear();
   appState.isPackaged = false;
-  delete process.env.CADET_DEV_URL;
 });
 
 afterEach(() => {
@@ -151,8 +148,6 @@ afterEach(() => {
 
 describe("createFloatingWindow", () => {
   test("creates floating panels with the shared defaults and deny-all navigation", () => {
-    process.env.CADET_DEV_URL = "http://localhost:4242/assistant/";
-
     const win = createFloatingWindow({
       kind: kind("defaults"),
       route: "dictation-overlay",
@@ -184,7 +179,7 @@ describe("createFloatingWindow", () => {
       ],
     ]);
     expect(win.loadURL.mock.calls[0]?.[0]).toBe(
-      "http://localhost:4242/assistant/dictation-overlay",
+      "app://mycadet.ai/assistant/dictation-overlay",
     );
   });
 

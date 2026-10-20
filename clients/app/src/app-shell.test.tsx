@@ -142,7 +142,7 @@ test("host navigation updates the active frame without another API lookup", asyn
 
 for (const [status, message] of [
   [401, "Please sign in to continue."],
-  [409, "Your assistant is starting."],
+  [409, "Your assistant isn't ready."],
   [410, "This assistant is unavailable."],
   [200, "Unable to load assistant."],
 ] as const) {
@@ -154,12 +154,12 @@ for (const [status, message] of [
   });
 }
 
-test("retries a starting assistant and mounts it once ready", async () => {
+test("retries a not-ready assistant and mounts it once ready", async () => {
   request
     .mockResolvedValueOnce(new Response(null, { status: 409 }))
     .mockResolvedValueOnce(json(detail()));
   render(<AppShell {...props()} />);
-  await screen.findByText("Your assistant is starting.");
+  await screen.findByText("Your assistant isn't ready.");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   await screen.findByTitle("Assistant");
   expect(request).toHaveBeenCalledTimes(2);

@@ -88,11 +88,11 @@ jobs:
         working-directory: clients/android
         run: bun install --frozen-lockfile --filter=@mycadet/android
 
-      - name: Sync Android project
+      - name: Build and sync Android project
         working-directory: clients/android
         env:
           CADET_ENVIRONMENT: ${{ inputs.environment }}
-        run: bun run android:sync
+        run: bun run build
 
       - name: Restore optional Firebase configuration
         env:

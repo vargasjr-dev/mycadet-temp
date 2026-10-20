@@ -30,14 +30,28 @@ const DOCK_BUST_MARKER = path.join(
 // Electron app on the machine, which routinely lands in a denied state and
 // makes `new Notification().show()` fail with `UNErrorDomain error 1`
 // (notificationsNotAllowed). Stamp our own owned identifier so the dev app
-// gets a clean authorization prompt, mirroring electron-builder's dev scheme
-// (`ai.mycadet.electron-${env}`) in electron-builder.config.cjs.
+// gets a clean authorization prompt. The env rides as a subdomain of the
+// packaged prod id (`ai.mycadet.electron.<env>`); prod itself carries no
+// subdomain prefix (electron-builder.config.cjs).
 const CADET_ENVIRONMENT = process.env.CADET_ENVIRONMENT || "local";
-const DEV_BUNDLE_ID = `ai.mycadet.electron-${CADET_ENVIRONMENT}`;
+const DEV_BUNDLE_ID =
+  CADET_ENVIRONMENT === "production"
+    ? "ai.mycadet.electron"
+    : `ai.mycadet.electron.${CADET_ENVIRONMENT}`;
+
+// Same env→name scheme as electron-builder.config.cjs's productName, so the
+// dev menu bar / Dock label reads "Cadet Local" (etc.) the way a packaged
+// build of the same environment does. `app.setName` in src/main/index.ts
+// stays "Cadet Electron" on purpose: the dev userData dir keeps its
+// separation from packaged installs of every environment.
+const DEV_APP_NAME =
+  CADET_ENVIRONMENT === "production"
+    ? "Cadet"
+    : `Cadet ${CADET_ENVIRONMENT.charAt(0).toUpperCase()}${CADET_ENVIRONMENT.slice(1)}`;
 
 const REQUIRED_PLIST_STRINGS: Record<string, string> = {
-  CFBundleDisplayName: "Cadet Electron",
-  CFBundleName: "Cadet Electron",
+  CFBundleDisplayName: DEV_APP_NAME,
+  CFBundleName: DEV_APP_NAME,
   CFBundleIdentifier: DEV_BUNDLE_ID,
   NSUserNotificationAlertStyle: "alert",
 };

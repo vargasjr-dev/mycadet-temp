@@ -18,11 +18,13 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 //
 // ws://localhost / ws://127.0.0.1 in connect-src: the self-hosted gateway's
 // WebSocket endpoints (/v1/stt/stream dictation partials, /v1/live-voice).
-// HTTP gateway traffic rides the app:// protocol forward in main and stays
-// within 'self', but WebSocket upgrades can't take that path — the local
-// loopback ingress is the one shape a static CSP can allowlist. A REMOTE
-// self-hosted ingress (e.g. an ngrok wss:// URL) still can't be — those
-// connections need the planned proxy-through-main follow-up.
+// http://localhost / http://127.0.0.1: the app shell addresses the local
+// gateway's HTTP API directly (its apiBaseUrl rides the desktop config's
+// cloudUrl, which is the loopback gateway in local mode) — that fetch can't
+// take the app:// protocol forward, so the local loopback ingress is the one
+// shape a static CSP can allowlist. A REMOTE self-hosted ingress (e.g. an
+// ngrok wss:// URL) still can't be — those connections need the planned
+// proxy-through-main follow-up.
 //
 // Signed cloud archive downloads and diagnostic uploads use Google storage
 // hosts directly. Their URLs carry storage authorization.
@@ -69,7 +71,7 @@ export const CSP_POLICY = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com",
   "style-src 'self' 'unsafe-inline'",
-  `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:*`,
+  `connect-src 'self' blob: data: https://${WILDCARD_HOST} wss://${WILDCARD_HOST} https://api.elevenlabs.io https://api.deepgram.com https://storage.googleapis.com https://*.storage.googleapis.com https://api.stripe.com https://link.com https://*.link.com ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:*`,
   `frame-src 'self' https://${WILDCARD_HOST} https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://link.com https://*.link.com`,
   "img-src 'self' https: data: blob:",
   // Hosted voice-preview samples: ElevenLabs premades live in the

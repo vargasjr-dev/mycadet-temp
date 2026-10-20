@@ -162,6 +162,10 @@ export async function getAssistant(
         status: 200,
         data: {
           id: lockfileAssistant.assistantId,
+          // The handle doubles as the self-hosted identity row — assistant
+          // state carries it so settings pages never re-read the injected
+          // config for it.
+          handle: lockfileAssistant.assistantId,
           name: lockfileAssistant.name ?? lockfileAssistant.assistantId,
           status: "active",
           is_local: true,

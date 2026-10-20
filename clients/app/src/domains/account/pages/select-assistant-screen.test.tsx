@@ -68,7 +68,7 @@ afterEach(() => {
 });
 afterAll(() => request.mockRestore());
 
-test("the account route lists names and IDs, then resolves only the selected iframe", async () => {
+test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
   request
     .mockResolvedValueOnce(
       Response.json({
@@ -79,7 +79,7 @@ test("the account route lists names and IDs, then resolves only the selected ifr
   const router = setup(undefined, true);
   expect(await screen.findByRole("button", { name: "One" })).toBeDefined();
   expect(request).toHaveBeenCalledTimes(1);
-  fireEvent.click(screen.getByRole("button", { name: "assistant-2" }));
+  fireEvent.click(screen.getByRole("button", { name: "New Assistant" }));
   const frame = await screen.findByTitle("Assistant");
   expect(frame.getAttribute("src")).toBe(
     "https://host.example/admin/proxy/web/1.2.3/assistant/",

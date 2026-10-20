@@ -26,8 +26,8 @@ function portBlock(base: number): PortMap {
 
 /**
  * Base URL of the cloud-hosted assistant SPA (the "hub") for a deployment
- * environment: always `${SEEDS[env].webUrl}/assistant`. The Capacitor mobile
- * shell bakes this into native builds as `server.url`, and the CLI's
+ * environment: always `${SEEDS[env].webUrl}/assistant`. The Capacitor boot
+ * bundle stamps this into baked mobile builds as `handoffUrl`, and the CLI's
  * remote-web edge stamps it into the served config as `hubUrl`, so the
  * environment-to-hub mapping lives here exactly once. Unknown environment
  * names fall back to the dev SPA defensively.

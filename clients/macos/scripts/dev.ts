@@ -1,83 +1,55 @@
 #!/usr/bin/env bun
 /**
- * Probe-and-dispatch shim for `bun run dev`.
+ * The one dev flow.
  *
- * Decides whether `vel up` is running by probing its edge proxy at
- * http://localhost:3000 (the URL Swift Cadet hits today; see
- * `cli/commands/up.ts::ensureEdgeProxyRunning` in Cadet Cloud
- * repo) and dispatches accordingly:
- *
- *   - vel up detected → `bun run dev:electron-only` with
- *     `CADET_DEV_URL=http://localhost:3000/assistant`. The renderer
- *     attaches to the running stack and the BrowserWindow loads the
- *     edge proxy at the `/assistant` path (the bare root is the
- *     marketing site), so backend calls work the same way they do for
- *     the Swift app.
- *   - no vel up        → `bun run dev:standalone`. Spawns our own Vite
- *     on :5173 plus Electron. No backends, but the shell — menus, IPC
- *     bridge, window chrome, settings — is fully exercisable.
- *
- * This is intentionally NOT a process supervisor — it's a single
- * routing decision that delegates to scripts that already use
- * concurrently for the actual orchestration.
+ * Packs the renderer bundles from the source trees — the `@mycadet/app`
+ * standalone build (the main window's app shell) and the `clients/web`
+ * build (the auxiliary windows' `/assistant` mount) — prepares the dev
+ * Electron.app, then launches `electron-vite dev`. No dev servers run:
+ * the renderer loads the same `app://mycadet.ai` origin packaged builds
+ * serve, with the protocol handler in `src/main/index.ts` reading the
+ * freshly built source-tree dists (see `resolveAppDistRoot` /
+ * `resolveWebDistRoot`).
  */
-import { spawn } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import path from "node:path";
 
-// Edge-proxy origin used by the probe — vel up serves the marketing site
-// at the bare root and reverse-proxies `/assistant/*` to clients/web's Vite,
-// so we probe the origin and load `/assistant` (the renderer path) when
-// attaching. clients/web's `vite.config.ts` declares `base: "/assistant/"`,
-// which is the same path Swift Cadet hits today.
-const VEL_EDGE_PROXY_ORIGIN = "http://localhost:3000";
-const VEL_RENDERER_URL = `${VEL_EDGE_PROXY_ORIGIN}/assistant`;
-const PROBE_TIMEOUT_MS = 1_500;
+// Match the native Swift app's default of "local". Everything downstream
+// reads it — the electron-vite `define` block, the dev plist patcher, and
+// the main process's local-config resolution (which otherwise falls back
+// to the persisted CLI default, then "production").
+process.env.CADET_ENVIRONMENT ||= "local";
 
-async function isVelUp(): Promise<boolean> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
-  try {
-    const res = await fetch(VEL_EDGE_PROXY_ORIGIN, {
-      signal: controller.signal,
-    });
-    // Any non-5xx response counts — even a 404 means something is
-    // listening on that port and serving HTTP, which is enough signal
-    // that we're not running cold.
-    return res.status < 500;
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
+const MACOS_DIR = path.resolve(import.meta.dir, "..");
+const CLIENTS_DIR = path.resolve(MACOS_DIR, "..");
+
+const run = (label: string, cwd: string, cmd: [string, ...string[]]): void => {
+  console.log(`[dev] ${label}…`);
+  const [bin, ...args] = cmd;
+  const result = spawnSync(bin, args, { cwd, stdio: "inherit" });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
   }
-}
-
-const velRunning = await isVelUp();
-const downstreamScript = velRunning ? "dev:electron-only" : "dev:standalone";
-
-// Match the native Swift app's default of "local".
-const env: NodeJS.ProcessEnv = {
-  ...process.env,
-  CADET_ENVIRONMENT: process.env.CADET_ENVIRONMENT || "local",
-  ...(velRunning ? { CADET_DEV_URL: VEL_RENDERER_URL } : {}),
 };
 
-if (velRunning) {
-  console.log(
-    `[dev] detected vel up at ${VEL_EDGE_PROXY_ORIGIN} — attaching Electron to ${VEL_RENDERER_URL} (env: ${env.CADET_ENVIRONMENT})`,
-  );
-} else {
-  console.log(
-    `[dev] no vel up at ${VEL_EDGE_PROXY_ORIGIN} — running standalone (Vite :5173, no backends)`,
-  );
-}
+// Setup owns the workspace install, the Electron binary, and the native
+// helper builds — it is idempotent, so kick it off unconditionally. In the
+// future, this should hash `bun.lock` to determine whether we even need to.
+run("setting up the package", MACOS_DIR, ["bun", "run", "setup"]);
 
-const child = spawn("bun", ["run", downstreamScript], {
-  stdio: "inherit",
-  env,
-});
-child.once("error", (err) => {
-  console.error(`[dev] failed to spawn ${downstreamScript}:`, err);
-  process.exit(1);
-});
-child.once("exit", (code) => {
-  process.exit(code ?? 0);
-});
+run(
+  "building @mycadet/app (the main window's app shell)",
+  path.join(CLIENTS_DIR, "app"),
+  ["bun", "run", "build"],
+);
+run(
+  "building the web bundle (auxiliary windows' /assistant mount)",
+  path.join(CLIENTS_DIR, "web"),
+  ["bun", "run", "build"],
+);
+run("preparing the dev Electron.app", MACOS_DIR, [
+  "bun",
+  "run",
+  "prepare:electron-dev",
+]);
+run("launching electron-vite dev", MACOS_DIR, ["bunx", "electron-vite", "dev"]);

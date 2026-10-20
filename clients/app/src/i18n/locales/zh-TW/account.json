@@ -96,7 +96,9 @@
   "appShell": {
     "loading": "正在載入助理…",
     "error": "無法載入助理。",
-    "starting": "你的助理正在啟動。",
+    "notReady": "你的助理尚未就緒。",
+    "notReadyTitle": "你的助理尚未就緒。",
+    "notReadyBody": "它目前無法使用。請稍後重試，或從你的 Cadet 帳號啟動它。",
     "empty": "沒有可用的助理。",
     "unauthenticated": "請登入以繼續。",
     "retry": "重試",
