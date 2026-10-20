@@ -368,7 +368,7 @@ describe("buildIngressNginxConfig", () => {
       },
     });
     expect(named).toContain(
-      'return 200 "{\\"remote\\":\\"custom\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\"}";',
+      'return 200 "{\\"remote\\":\\"custom\\",\\"assistantName\\":\\"Homelab\\",\\"assistantId\\":\\"assistant-1\\",\\"hubUrl\\":\\"https://mycadet.ai/assistant\\",\\"version\\":\\"1.2.3\\"}";',
     );
   });
 
