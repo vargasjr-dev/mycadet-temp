@@ -132,7 +132,16 @@ export function SelectAssistantScreen() {
             {t("appShell.retry")}
           </Button>
         )}
-        {status === "empty" && (
+        {/* A dead list still leaves a way forward: hatch a new assistant
+            from the chooser itself (the dialog's failures toast on their
+            own), so an unreachable API reads as a degraded chooser rather
+            than a dead end. */}
+        {status === "error" && (
+          <Button variant="primary" onClick={() => setCreating(true)}>
+            {t("selectAssistantScreen.create")}
+          </Button>
+        )}
+        {(status === "empty" || status === "error") && (
           <CreateAssistantDialog
             open={creating}
             onClose={() => setCreating(false)}
