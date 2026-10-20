@@ -36,14 +36,14 @@ function inPackages(...names: string[]): (id: string) => boolean {
 
 // Truthy semantics for build-shape knobs that aren't about where the bundle
 // is served from (e.g. VITE_WEB_MINIFY picks the minified prod build).
-const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
+const ENV_FLAG_TRUTHY = new Set(["1", "true", "yes"]);
 function isTruthyBuildFlag(raw: string | undefined): boolean {
-  return !!raw && PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
+  return !!raw && ENV_FLAG_TRUTHY.has(raw.toLowerCase());
 }
 
 /**
  * Proxy configure hook (local mode) that authenticates upstream requests with
- * the loopback platform session token the SPA registered. No browser cookie is
+ * the loopback cloud session token the SPA registered. No browser cookie is
  * involved.
  *
  * The DRF API (`/v1`) authenticates by header (X-Session-Token); sending a
@@ -52,7 +52,7 @@ function isTruthyBuildFlag(raw: string | undefined): boolean {
  * a matching Origin/Referer. The allauth / accounts session endpoints need the
  * Django session cookie instead.
  */
-function injectPlatformToken(apiMode: boolean) {
+function injectCloudSessionToken(apiMode: boolean) {
   return (proxy: {
     on: (event: string, cb: (...args: unknown[]) => void) => void;
   }): void => {
@@ -156,17 +156,17 @@ export default defineConfig(({ mode }) => {
         "/v1": {
           target: apiProxyTarget,
           changeOrigin: true,
-          configure: injectPlatformToken(true),
+          configure: injectCloudSessionToken(true),
         },
         "/_allauth": {
           target: apiProxyTarget,
           changeOrigin: true,
-          configure: injectPlatformToken(false),
+          configure: injectCloudSessionToken(false),
         },
         "/accounts": {
           target: apiProxyTarget,
           changeOrigin: true,
-          configure: injectPlatformToken(false),
+          configure: injectCloudSessionToken(false),
         },
         "/auth": { target: gatewayProxyTarget, changeOrigin: true },
       },

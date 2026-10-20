@@ -194,7 +194,7 @@ describe("resolveEdgeClientDists", () => {
     });
     const builds = bunCalls();
     expect(builds).toHaveLength(2);
-    for (const [command, args, options] of builds) {
+    for (const [command, args] of builds) {
       expect(command).toBe("bun");
       expect(args).toEqual(["run", "build"]);
     }
