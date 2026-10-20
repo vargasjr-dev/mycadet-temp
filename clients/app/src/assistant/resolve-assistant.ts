@@ -35,7 +35,8 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
   const headers = new Headers({ Accept: "application/json" });
   async function get(path: string, detail = false) {
     signal.throwIfAborted();
-    const response = await fetch(new URL(path, base), {
+    const requestUrl = new URL(path, base);
+    const response = await fetch(requestUrl, {
       headers,
       signal,
       credentials: "include",
@@ -51,9 +52,17 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
       return unavailable;
     }
     if (!response.ok) {
+      console.error(
+        `Assistant request failed: ${response.status} ${response.headers.get("content-type") ?? ""} from ${requestUrl.href}`,
+      );
       throw new Error(`Assistant request failed: ${response.status}`);
     }
-    const payload: unknown = await response.json();
+    const payload: unknown = await response.json().catch((error) => {
+      console.error(
+        `Assistant response was not JSON from ${requestUrl.href}: ${error}`,
+      );
+      throw error;
+    });
     signal.throwIfAborted();
     return payload;
   }
