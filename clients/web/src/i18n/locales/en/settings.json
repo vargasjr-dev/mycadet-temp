@@ -266,6 +266,10 @@
     "backgroundConfirmTitle": "Continue in the background?"
   },
   "billingPage": {
+    "accountCta": "Manage account",
+    "billingCta": "Manage billing",
+    "linkOutBody": "Plans, payment methods, invoices, and usage all live on the Cadet Cloud account pages.",
+    "linkOutTitle": "Manage billing in your Cadet account",
     "billingTab": "Billing",
     "billingUnavailable": "Billing isn't available for the current assistant state.",
     "loadingBilling": "Loading billing…",

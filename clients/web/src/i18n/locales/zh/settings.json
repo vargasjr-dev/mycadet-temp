@@ -266,6 +266,10 @@
     "backgroundConfirmTitle": "在后台继续？"
   },
   "billingPage": {
+    "accountCta": "管理账号",
+    "billingCta": "管理账单",
+    "linkOutBody": "套餐、付款方式、账单和用量均在 Cadet Cloud 账号页面中管理。",
+    "linkOutTitle": "在 Cadet 账号中管理账单",
     "billingTab": "账单",
     "billingUnavailable": "当前助手状态下无法使用账单功能。",
     "loadingBilling": "加载账单中…",

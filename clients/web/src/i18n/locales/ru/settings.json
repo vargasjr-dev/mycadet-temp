@@ -252,6 +252,10 @@
     "backgroundConfirmTitle": "Продолжить в фоне?"
   },
   "billingPage": {
+    "accountCta": "Управление аккаунтом",
+    "billingCta": "Управление оплатой",
+    "linkOutBody": "Тарифы, способы оплаты, счета и статистика использования — на страницах вашего аккаунта Cadet Cloud.",
+    "linkOutTitle": "Управляйте оплатой в своём аккаунте Cadet",
     "billingTab": "Оплата",
     "billingUnavailable": "Оплата недоступна при текущем состоянии ассистента.",
     "loadingBilling": "Загрузка оплаты…",

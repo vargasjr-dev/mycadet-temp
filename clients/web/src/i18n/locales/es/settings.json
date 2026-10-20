@@ -266,6 +266,10 @@
     "backgroundConfirmTitle": "¿Continuar en segundo plano?"
   },
   "billingPage": {
+    "accountCta": "Administrar cuenta",
+    "billingCta": "Administrar facturación",
+    "linkOutBody": "Los planes, los métodos de pago, las facturas y el uso se administran en las páginas de tu cuenta de Cadet Cloud.",
+    "linkOutTitle": "Administra la facturación en tu cuenta de Cadet",
     "billingTab": "Facturación",
     "billingUnavailable": "La facturación no está disponible para el estado actual del asistente.",
     "loadingBilling": "Cargando facturación…",
