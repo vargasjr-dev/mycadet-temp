@@ -1,5 +1,4 @@
 import { disposeAcpSessionManager } from "../acp/index.js";
-import { stopConsentRefresh } from "../cloud/consent-cache.js";
 import { stopCes } from "../credential-execution/ces-runtime.js";
 import { stopHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { stopCliIpcServer } from "../ipc/assistant-server.js";
@@ -92,9 +91,6 @@ async function shutdown(): Promise<void> {
   forceTimer.unref();
 
   await stopHeartbeatService();
-
-  // Stop the periodic consent-cache refresh (a daemon-owned interval).
-  await stopConsentRefresh();
 
   // Fire plugin / user / workspace / skill `shutdown` hooks through the unified
   // hook pipeline — the same dispatch path every other lifecycle hook uses —

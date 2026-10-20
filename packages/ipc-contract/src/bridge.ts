@@ -521,6 +521,14 @@ export interface CadetBridge {
     ensureVisible(): Promise<void>;
     setOnboarding(active: boolean): Promise<void>;
     /**
+     * Load the main window at a remote https origin — the chooser's
+     * switch-to-origin. Deliberately main-process-driven: `loadURL` does not
+     * fire `will-navigate`, so the shell's same-origin guard (which ejects
+     * renderer-initiated cross-origin navigations to the system browser)
+     * stays intact for everything but this one deliberate escape.
+     */
+    navigateTo(url: string): Promise<void>;
+    /**
      * Paint the native caption buttons in the active theme's colors. Windows
      * only: the title-bar overlay is a Windows and Linux surface, and macOS
      * draws traffic lights the system themes itself, so the macOS preload

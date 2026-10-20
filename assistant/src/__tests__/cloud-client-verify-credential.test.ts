@@ -52,14 +52,14 @@ async function createClient() {
 }
 
 describe("CadetCloudClient.verifyCredential", () => {
-  test("an accepted request is a valid credential, asked on the owner-consent carrier with the stored key", async () => {
+  test("an accepted request is a valid credential, asked on the detail-endpoint carrier with the stored key", async () => {
     const client = await createClient();
 
     expect(await client.verifyCredential()).toBe("valid");
 
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0]?.url).toBe(
-      "https://platform.test/v1/assistants/asst_123/owner-consent/",
+      "https://platform.test/v1/assistants/asst_123/",
     );
     const headers = new Headers(fetchCalls[0]?.init?.headers);
     expect(headers.get("Authorization")).toBe("Api-Key assistant-key");

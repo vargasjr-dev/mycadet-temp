@@ -1,4 +1,4 @@
-import { afterAll, afterEach, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, describe, expect, spyOn, test } from "bun:test";
 import {
   act,
   cleanup,
@@ -13,6 +13,10 @@ import { SelectAssistantScreen } from "./select-assistant-screen";
 import { accountRoute } from "../account-route";
 import { AssistantPage } from "@app/shell/assistant-page";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
+import {
+  REMEMBERED_ORIGINS_STORAGE_KEY,
+  resetRememberedOriginsForTesting,
+} from "@app/stores/remembered-origins-store";
 
 const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
@@ -82,6 +86,10 @@ afterEach(() => {
   }
 });
 afterAll(() => request.mockRestore());
+afterEach(() => {
+  localStorage.clear();
+  resetRememberedOriginsForTesting();
+});
 
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
   request
@@ -423,4 +431,92 @@ test("browser history restores selection and frame navigation retains it", async
     assistantSelectionState("assistant-2"),
   );
   expect(request).toHaveBeenCalledTimes(1);
+});
+
+function seedOrigin(url: string, name?: string): void {
+  localStorage.setItem(
+    REMEMBERED_ORIGINS_STORAGE_KEY,
+    JSON.stringify([
+      { url, ...(name ? { name } : {}), addedAt: "2026-01-01T00:00:00.000Z" },
+    ]),
+  );
+}
+
+describe("remembered origins", () => {
+  test("the chooser lists remembered origins under the assistants", async () => {
+    seedOrigin("https://workshop.example/assistant-9");
+    setup("/account/select-assistant", false, async () =>
+      Response.json({ results: [] }),
+    );
+    expect(await screen.findByText("Remote · workshop.example")).toBeTruthy();
+    expect(screen.getByText("workshop.example")).toBeTruthy();
+  });
+
+  test("selecting a remembered origin navigates the window to its assistant entry", async () => {
+    seedOrigin("https://workshop.example/assistant-9", "Workshop");
+    const assign = spyOn(window.location, "assign").mockImplementation(
+      () => {},
+    );
+    try {
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      await act(async () => {
+        fireEvent.click(await screen.findByText("Workshop"));
+      });
+      expect(assign).toHaveBeenCalledWith(
+        "https://workshop.example/assistant-9/assistant",
+      );
+    } finally {
+      assign.mockRestore();
+    }
+  });
+
+  test("the add dialog remembers an origin and rides its device code out of the navigation", async () => {
+    const assign = spyOn(window.location, "assign").mockImplementation(
+      () => {},
+    );
+    try {
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      fireEvent.click(await screen.findByText("Add a remote assistant"));
+      fireEvent.change(screen.getByLabelText("Assistant address"), {
+        target: {
+          value: "https://workshop.example/assistant/pair#device_code=CODE-1",
+        },
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: "Add" }));
+      });
+      expect(assign).toHaveBeenCalledWith(
+        "https://workshop.example/assistant/pair#device_code=CODE-1",
+      );
+      // The dialog closed and the remembered card took its place in the list.
+      expect(await screen.findByText("Remote · workshop.example")).toBeTruthy();
+    } finally {
+      assign.mockRestore();
+    }
+  });
+
+  test("a remembered origin can be removed from this device", async () => {
+    seedOrigin("https://workshop.example/assistant-9", "Workshop");
+    setup("/account/select-assistant", false, async () =>
+      Response.json({ results: [] }),
+    );
+    // Radix menus open on pointerdown, not click.
+    fireEvent.pointerDown(
+      await screen.findByRole("button", { name: "Actions for Workshop" }),
+    );
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Remove from this device…" }),
+    );
+    // The confirm modal aria-hides the page behind it, so the row is
+    // asserted by text rather than role.
+    const dialog = await screen.findByRole("dialog");
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
+    });
+    await waitFor(() => expect(screen.queryByText("Workshop")).toBeNull());
+  });
 });

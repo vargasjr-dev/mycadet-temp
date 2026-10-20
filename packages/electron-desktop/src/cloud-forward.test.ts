@@ -22,15 +22,15 @@ const request = (
     origin?: string;
     headers?: Record<string, string>;
   } = {},
-) => ({
-  url: `app://mycadet.ai${pathname}`,
-  method: init.method ?? "GET",
-  headers: new Headers({
-    ...(init.origin !== undefined ? { origin: init.origin } : {}),
-    ...init.headers,
-  }),
-  body: null,
-});
+) =>
+  new Request(`app://mycadet.ai${pathname}`, {
+    method: init.method ?? "GET",
+    headers: new Headers({
+      ...(init.origin !== undefined ? { origin: init.origin } : {}),
+      ...init.headers,
+    }),
+    body: null,
+  });
 
 /** Fake fetcher recording what the forward would have sent. */
 const recorder = () => {
@@ -330,14 +330,13 @@ describe("forwardCloudRequest", () => {
   test("rejects source-less unsafe requests from a foreign request URL", async () => {
     const { calls, fetcher } = recorder();
     const response = await forwardCloudRequest({
-      request: {
-        url: "app://evil.example/v1/assistants",
+      request: new Request("app://evil.example/v1/assistants", {
         method: "POST",
         headers: new Headers({
           [ELECTRON_RENDERER_ORIGIN_HEADER]: "app://mycadet.ai",
         }),
         body: null,
-      },
+      }),
       cloudBase: PLATFORM,
       fetcher,
       allowedOrigin,

@@ -1003,5 +1003,13 @@
     "dragError": "No se puede arrastrar. Inténtalo desde Finder.",
     "showInFinder": "Mostrar en Finder",
     "inputLabel": "Monitorización de entrada"
+  },
+  "pairDeviceUrl": {
+    "loopback": "Esta es una dirección de loopback que otros dispositivos no pueden alcanzar. Introduce la URL https pública del asistente.",
+    "nonHttps": "La URL debe usar https para que tus dispositivos se conecten de forma segura.",
+    "privateAddress": "Esta dirección apunta a una dirección de red privada. Introduce la URL https pública del asistente para que tus dispositivos puedan alcanzarlo.",
+    "serviceFallbackName": "el proveedor del túnel",
+    "serviceWebsite": "Este es el sitio web de {service}, no la dirección de tu asistente. Inicia un túnel en el host para obtener una; `cadet tunnel --help` lista los proveedores.",
+    "unparseable": "Introduce una URL válida, p. ej. https://your-assistant.ts.net."
   }
 }

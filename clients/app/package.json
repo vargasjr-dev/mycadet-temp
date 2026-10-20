@@ -6,7 +6,7 @@
     "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
   },
   "type": "module",
-  "description": "Cadet account/client shell — portable package plus a standalone bundle for self-hosted edges",
+  "description": "Cadet account/client shell \u2014 portable package plus a standalone bundle for self-hosted edges",
   "license": "MIT",
   "files": [
     "dist/package",
@@ -30,6 +30,7 @@
     "@mycadet/design-library": "workspace:*",
     "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
+    "@mycadet/service-contracts": "workspace:*",
     "i18next": "26.3.6",
     "i18next-icu": "2.4.4",
     "lucide-react": "1.16.0",

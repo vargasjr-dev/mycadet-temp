@@ -17,6 +17,8 @@ export interface AppElectronBridge {
   mainWindow: {
     ensureVisible(): Promise<void>;
     setOnboarding(active: boolean): Promise<void>;
+    /** The chooser's switch-to-origin: main loads the target itself. */
+    navigateTo(url: string): Promise<void>;
   };
 }
 

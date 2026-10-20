@@ -3,6 +3,7 @@ import {
   IDENTITY_NAME,
   MAIN_WINDOW_ENSURE_VISIBLE,
   MAIN_WINDOW_SET_ONBOARDING,
+  MAIN_WINDOW_NAVIGATE_TO,
   MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,
   titleBarOverlayThemeSchema,
   type ColorScheme,
@@ -235,6 +236,23 @@ export const installMainWindow = (): void => {
   });
   handle(MAIN_WINDOW_SET_ONBOARDING, z.tuple([z.boolean()]), ([active]) => {
     setOnboarding(active);
+  });
+  // The chooser's switch-to-origin: the renderer hands over a remembered
+  // https base and the window loads it itself. `loadURL` does not fire
+  // `will-navigate`, so the same-origin guard above — which ejects
+  // renderer-initiated cross-origin navigations to the system browser —
+  // stays intact for everything but this one deliberate escape.
+  handle(MAIN_WINDOW_NAVIGATE_TO, z.tuple([z.string()]), ([url]) => {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      return;
+    }
+    if (parsed.protocol !== "https:") {
+      return;
+    }
+    void mainWindow?.loadURL(url);
   });
   handle(
     MAIN_WINDOW_SET_TITLE_BAR_OVERLAY,

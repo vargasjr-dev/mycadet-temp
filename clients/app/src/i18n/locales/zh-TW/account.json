@@ -97,7 +97,12 @@
     "listAriaLabel": "助理",
     "create": "建立助理",
     "rowActionsAriaLabel": "{name} 的動作",
-    "retire": "停用助理"
+    "retire": "停用助理",
+    "addRemote": "新增遠端助理",
+    "currentWithHost": "目前 · {host}",
+    "remoteWithHost": "遠端 · {host}",
+    "removeFromDevice": "從此裝置移除…",
+    "unnamedAssistant": "該助理"
   },
   "appShell": {
     "loading": "正在載入助理…",
@@ -117,5 +122,16 @@
     "title": "助理",
     "selection": "選擇一個助理。",
     "unavailable": "此助理無法使用。"
+  },
+  "actions": {
+    "cancel": "取消",
+    "add": "新增",
+    "adding": "正在新增…"
+  },
+  "addRemoteOriginDialog": {
+    "title": "新增遠端助理",
+    "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
+    "addressLabel": "助理位址",
+    "addFailed": "新增助理失敗。請再試一次。"
   }
 }
