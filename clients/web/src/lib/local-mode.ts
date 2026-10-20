@@ -154,14 +154,12 @@ const commitLockfile = (data: Lockfile): void => {
 // Core helpers
 // ---------------------------------------------------------------------------
 
-const PLATFORM_MODE_TRUTHY = new Set(["1", "true", "yes"]);
-
 export function isLocalClient(): boolean {
-  const raw = import.meta.env.VITE_CLOUD_MODE;
-  if (!raw) {
-    return true;
-  }
-  return !PLATFORM_MODE_TRUTHY.has(raw.toLowerCase());
+  // The serving host stamps the runtime truth: the platform's cloud-served SPA
+  // carries remote "cloud"; the desktop shim, dev servers, and every
+  // self-hosted surface resolve to a local arm (or inject nothing at all,
+  // which reads as local too).
+  return readInjectedConfig()?.remote !== "cloud";
 }
 
 export function isCloudDisabled(): boolean {

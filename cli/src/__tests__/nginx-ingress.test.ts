@@ -1121,7 +1121,6 @@ describe("startRemoteWebIngress", () => {
     expect(buildCalls).toHaveLength(1);
     const [, buildArgs, buildOptions] = buildCalls[0] ?? [];
     expect(buildArgs).toEqual(["run", "build"]);
-    expect(buildOptions?.env?.VITE_CLOUD_MODE).toBe("false");
     expect(String(buildOptions?.cwd).endsWith(join("clients", "web"))).toBe(
       true,
     );
@@ -1151,7 +1150,7 @@ describe("startRemoteWebIngress", () => {
         gatewayPort: 7830,
         listenPort: 7845,
       }),
-    ).rejects.toThrow("cd clients/web && VITE_CLOUD_MODE=false bun run build");
+    ).rejects.toThrow("cd clients/web && bun run build");
   });
 
   test("already-running carries the recorded listen port over the requested one", async () => {

@@ -375,7 +375,13 @@ jobs:
   # ── Docker Images ──────────────────────────────────────────────────────
 
   push-assistant-image:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
@@ -983,7 +989,6 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: dev
           # Environment-scoped secret (pk_test_ on dev); requires the job's
@@ -1166,7 +1171,13 @@ jobs:
   # ── Dev npm publishing ─────────────────────────────────────────────────
 
   publish-npm-assistant-dev:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1349,7 +1360,13 @@ jobs:
   # `npm pack` consumes directly, so it keeps its own combined build/publish job
   # instead of a slot in the npm publish family. Mirrors build/publish-plugin-api-* in release.yml.
   publish-plugin-api-dev:
-    needs: [compute-version, ci-assistant-lint, ci-assistant-types, ci-assistant-tests]
+    needs:
+      [
+        compute-version,
+        ci-assistant-lint,
+        ci-assistant-types,
+        ci-assistant-tests,
+      ]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -1421,7 +1438,6 @@ jobs:
       - name: Build
         working-directory: clients/web
         env:
-          VITE_CLOUD_MODE: "false"
           VITE_WEB_MODE: "full"
           VITE_APP_VERSION: ${{ needs.compute-version.outputs.version }}
         run: bun run build
@@ -1603,4 +1619,3 @@ jobs:
     secrets: inherit
 
   # ── Slack notification (first failure only) ──────────────────────────
-

@@ -34,10 +34,7 @@ const main = async (): Promise<void> => {
   }
 
   const platformOrigin = platformOriginFromDevUrl(remoteUrl);
-  const buildExitCode = await run(["run", "build:web"], {
-    ...process.env,
-    VITE_CLOUD_MODE: "false",
-  });
+  const buildExitCode = await run(["run", "build:web"], { ...process.env });
   if (buildExitCode !== 0) {
     process.exit(buildExitCode);
   }

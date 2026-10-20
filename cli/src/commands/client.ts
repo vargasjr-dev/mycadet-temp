@@ -1565,7 +1565,6 @@ async function runViteDevServer(
       ...flagEnvVars,
       ...viteFlagVars,
       ...(disableCloud ? { VITE_CADET_DISABLE_CLOUD: "true" } : {}),
-      VITE_CLOUD_MODE: "false",
       VITE_WEB_MODE: "full",
       API_PROXY_TARGET: cloudUrl,
       CADET_WEB_URL: getWebUrl(),

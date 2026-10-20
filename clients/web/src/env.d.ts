@@ -18,7 +18,6 @@ declare global {
     /** Release channel this bundle was built as. `"preview"` or stable otherwise. */
     readonly VITE_CHANNEL?: string;
     /** When set, the app runs in platform (cloud-hosted) mode. Unset = local mode. */
-    readonly VITE_CLOUD_MODE?: string;
     /** When truthy ("1", "true", "yes"), disables platform connectivity in local mode. */
     readonly VITE_CADET_DISABLE_CLOUD?: string;
     /**

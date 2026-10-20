@@ -87,7 +87,6 @@ jobs:
 
       - name: Build
         env:
-          VITE_CLOUD_MODE: "true"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: ${{ vars.VITE_ENVIRONMENT }}
           VITE_APP_VERSION: ${{ github.sha }}

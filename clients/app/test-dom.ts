@@ -3,7 +3,6 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 GlobalRegistrator.register();
 window.location.href = "http://localhost:3001";
-process.env.VITE_CLOUD_MODE = "true";
 
 plugin({
   name: "app-vite-asset-urls",

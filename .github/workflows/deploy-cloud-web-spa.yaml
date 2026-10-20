@@ -74,7 +74,6 @@ jobs:
       # same-origin paths, so each bucket's origin reaches its own backend.
       - name: Build
         env:
-          VITE_CLOUD_MODE: "true"
           VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: ${{ vars.VITE_ENVIRONMENT }}
           VITE_ANDROID_PLAY_STORE_URL: ${{ vars.VITE_ANDROID_PLAY_STORE_URL }}

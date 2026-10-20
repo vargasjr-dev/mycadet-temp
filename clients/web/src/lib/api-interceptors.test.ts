@@ -28,7 +28,7 @@ import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
 import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
-const isLocalClientMock = mock(() => !process.env.VITE_CLOUD_MODE);
+const isLocalClientMock = mock(() => false);
 const isCloudDisabledMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
 const servedGatewayRuntimeFromConfig = (): boolean => {
@@ -989,21 +989,16 @@ describe("api-interceptors / remote gateway direct requests", () => {
 // In local mode with platform features disabled, the abort interceptor
 // must NOT kill requests already rewritten to the self-hosted gateway.
 //
-// The test preload sets VITE_CLOUD_MODE=true (platform mode).
-// These tests temporarily clear it so isLocalClient() returns true.
+// The test setup stamps remote "cloud" (platform mode).
+// These tests flip the isLocalClient mock so it returns true.
 
 describe("api-interceptors / platform features gate", () => {
-  let savedPlatformMode: string | undefined;
-
   beforeAll(() => {
-    savedPlatformMode = process.env.VITE_CLOUD_MODE;
-    delete process.env.VITE_CLOUD_MODE;
+    isLocalClientMock.mockImplementation(() => true);
   });
 
   afterAll(() => {
-    if (savedPlatformMode !== undefined) {
-      process.env.VITE_CLOUD_MODE = savedPlatformMode;
-    }
+    isLocalClientMock.mockImplementation(() => false);
   });
 
   afterEach(() => {
@@ -1342,7 +1337,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       configurable: true,
       value: originalReload,
     });
-    isLocalClientMock.mockImplementation(() => !process.env.VITE_CLOUD_MODE);
+    isLocalClientMock.mockImplementation(() => false);
     isCadetCloudRemoteMock.mockImplementation(() => false);
     isServedGatewayRuntimeMock.mockImplementation(
       servedGatewayRuntimeFromConfig,
@@ -2095,22 +2090,17 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
 // the local consumer (a busy dev server) drains the pipe slowly — the symptom
 // being image/file uploads above ~1.5 MB hanging on "Stalled". A Blob is
 // passed by reference (blob handle), so there is no renderer-side data pipe to
-// block on. The preload sets VITE_CLOUD_MODE=true; these tests clear it so
-// isLocalClient() returns true and the buffering path runs.
+// block on. The test setup stamps remote "cloud"; these tests flip the
+// isLocalClient mock so it returns true and the buffering path runs.
 
 describe("api-interceptors / local-mode body buffering", () => {
-  let savedPlatformMode: string | undefined;
-
   beforeAll(() => {
-    savedPlatformMode = process.env.VITE_CLOUD_MODE;
-    delete process.env.VITE_CLOUD_MODE;
+    isLocalClientMock.mockImplementation(() => true);
     useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
   });
 
   afterAll(() => {
-    if (savedPlatformMode !== undefined) {
-      process.env.VITE_CLOUD_MODE = savedPlatformMode;
-    }
+    isLocalClientMock.mockImplementation(() => false);
   });
 
   afterEach(() => {
