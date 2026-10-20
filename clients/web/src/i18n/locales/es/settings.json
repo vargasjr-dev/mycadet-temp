@@ -16,25 +16,6 @@
     "toastKeptOn": "El acceso de administración a los datos permanecerá activado hasta que lo desactives.",
     "toastUpdateFailed": "No se pudo actualizar el consentimiento de acceso a los registros."
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "Ya estás en Pro.",
-    "back": "Atrás",
-    "cancel": "Cancelar",
-    "confirmDowngrade": "Confirmar bajada de plan",
-    "creditBundleUpdated": "Paquete de créditos actualizado.",
-    "downgradeIntro": "Al bajar de plan se eliminan las siguientes funciones Pro:",
-    "downgradeTitle": "¿Bajar a Base?",
-    "footerNote": "Puedes cambiar o cancelar tu plan en cualquier momento desde la configuración de facturación.",
-    "heroSubtitle": "Elige el plan que mejor se adapte a ti y a tu asistente.",
-    "heroTitle": "Tu asistente, a tu manera",
-    "loadPlansError": "No se pudieron cargar los planes. Inténtalo de nuevo más tarde.",
-    "loadingPlans": "Cargando planes...",
-    "machineDowngradeFeature": "Menos CPU y memoria para tu asistente: se redimensionará al perfil de cómputo más pequeño.",
-    "pickTiersError": "Elige un nivel de máquina y de almacenamiento para continuar.",
-    "planUpdated": "Plan actualizado.",
-    "upgradeFailed": "No se pudo iniciar la mejora. Inténtalo de nuevo.",
-    "upgradePlanTitle": "Mejorar plan"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "Elegir perfil…",
     "description": "El perfil que tu asistente consulta para una segunda opinión cuando quiere revisar un plan o su propio trabajo.",
@@ -188,77 +169,9 @@
     "updateToVersion": "Actualizar a {version}",
     "updating": "Actualizando..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "Añadir una tarjeta de crédito",
-    "addPaymentMethod": "Añadir método de pago",
-    "adjust": "Ajustar",
-    "capProgress": " / {cap} este mes",
-    "connectCardBanner": "La recarga automática requiere vincular una tarjeta de crédito.",
-    "dailyLimitLookupError": "No se pudo comprobar tu límite diario de créditos, que la recarga automática requiere. Reintenta para continuar.",
-    "declinedCutoffNotice": "Pausamos las recargas automáticas tras varios pagos rechazados. Añade un nuevo método de pago para volver a activar la recarga automática.",
-    "disableError": "No se pudo desactivar la recarga automática. Inténtalo de nuevo.",
-    "dismiss": "Descartar",
-    "loadError": "No se pudo cargar la configuración de la recarga automática.",
-    "loading": "Cargando…",
-    "retry": "Reintentar",
-    "summary": "Añadir {amount} cuando el saldo baje de {threshold}",
-    "toggleHelper": "Las recargas automáticas solo ocurren cuando se agota el uso incluido en tu plan",
-    "toggleLabel": "Activar recarga automática",
-    "updateError": "No se pudo guardar la configuración de la recarga automática. Inténtalo de nuevo."
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "Desactivar la recarga automática",
-    "message": "La recarga automática requiere un límite diario de créditos. Establece uno para guardar la configuración de recarga automática, o desactiva la recarga automática.",
-    "save": "Guardar",
-    "saving": "Guardando…",
-    "title": "Establece un límite diario de créditos"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "Desactivar",
-    "disabling": "Desactivando…",
-    "keepEnabled": "Mantener activado",
-    "message": "La recarga automática se detendrá. Los métodos de pago guardados se conservarán.",
-    "title": "¿Desactivar la recarga automática?"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "Importe de recarga automática",
-    "cancel": "Cancelar",
-    "capLabel": "Límite de gasto mensual",
-    "save": "Guardar",
-    "thresholdLabel": "Recargar automáticamente cuando el saldo esté por debajo de"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "Se guarda para la recarga automática y tu plan Pro.",
-    "addTitle": "Añadir una tarjeta",
-    "addressFormLoadError": "No se pudo cargar el formulario de dirección de facturación. Inténtalo de nuevo.",
-    "cancel": "Cancelar",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "Cerrar",
-    "confirmFailed": "No se pudo guardar el método de pago.",
-    "confirmingWithBank": "Confirmando con tu banco…",
-    "declined": "Tu banco rechazó esta tarjeta. Prueba con otra o comunícate con ellos.",
-    "loadingLabel": "Cargando los campos de pago",
-    "paymentFormLoadError": "No se pudo cargar el formulario de pago. Inténtalo de nuevo.",
-    "primaryAdd": "Guardar tarjeta",
-    "primaryReplace": "Reemplazar tarjeta",
-    "primarySubmitting": "Guardando",
-    "replaceSubtitle": "La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCard": "Reemplazando la tarjeta {brand} •••• {last4}. La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCardExpiry": "Reemplazando la tarjeta {brand} •••• {last4} · {month} / {year}. La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCardNoBrand": "Reemplazando la tarjeta terminada en {last4}. La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCardNoBrandExpiry": "Reemplazando la tarjeta terminada en {last4} · {month} / {year}. La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCardNoLast4": "Reemplazando tu tarjeta {brand}. La nueva tarjeta se aplica de inmediato.",
-    "replaceSubtitleCardNoLast4Expiry": "Reemplazando tu tarjeta {brand} · {month} / {year}. La nueva tarjeta se aplica de inmediato.",
-    "replaceTitle": "Reemplaza tu tarjeta",
-    "savedSubtitle": "La recarga automática está activa de nuevo",
-    "savedTitle": "{brand} •••• {last4} guardada",
-    "savedTitleGeneric": "Tarjeta guardada",
-    "savedTitleNoBrand": "Tarjeta terminada en {last4} guardada",
-    "setupError": "No se pudo iniciar la configuración de la tarjeta. Inténtalo de nuevo.",
-    "termsAdd": "Cadet puede cobrar en esta tarjeta la recarga automática y las renovaciones de la suscripción. Puedes eliminarla cuando quieras desde Facturación.",
-    "termsReplace": "Tu tarjeta anterior seguirá en Stripe hasta que la elimines desde Facturación; Cadet deja de cobrarla ahora.",
-    "tryAgain": "Intentar de nuevo",
-    "unavailable": "La configuración del método de pago no está disponible en este momento. Inténtalo de nuevo más tarde."
+    "loadingLabel": "Cargando los campos de pago"
   },
   "billingOnboardingModal": {
     "backgroundConfirmContinue": "Continuar",
@@ -269,51 +182,10 @@
     "accountCta": "Administrar cuenta",
     "billingCta": "Administrar facturación",
     "linkOutBody": "Los planes, los métodos de pago, las facturas y el uso se administran en las páginas de tu cuenta de Cadet Cloud.",
-    "linkOutTitle": "Administra la facturación en tu cuenta de Cadet",
-    "billingTab": "Facturación",
-    "billingUnavailable": "La facturación no está disponible para el estado actual del asistente.",
-    "loadingBilling": "Cargando facturación…",
-    "platformLoginNotice": "Inicia sesión en la plataforma Cadet para administrar la facturación y el uso.",
-    "usageTab": "Uso"
-  },
-  "billingPanel": {
-    "addCreditsButton": "Añadir créditos",
-    "balanceLabel": "Créditos",
-    "degradedNotice": "No se pudieron calcular los cargos pendientes. El saldo mostrado puede estar incompleto.",
-    "loadError": "No se pudo cargar el resumen de facturación. Inténtalo de nuevo más tarde.",
-    "loading": "Cargando resumen de facturación...",
-    "lowBalanceToggle": "Alerta personalizada de saldo bajo",
-    "noInfo": "No hay información de facturación disponible.",
-    "subtitle": "Créditos que se usan al alcanzar el límite de uso",
-    "title": "Créditos de uso adicional"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "el final de tu período de facturación",
-    "proCanceled": "Plan Pro cancelado. Tendrás acceso hasta {date}.",
-    "proReactivated": "Plan Pro reactivado.",
-    "subscriptionUpdated": "Suscripción actualizada."
+    "linkOutTitle": "Administra la facturación en tu cuenta de Cadet"
   },
   "billingStatusHandler": {
-    "successToast": "¡Pago recibido! Tu saldo de créditos se actualizará en breve.",
-    "topUpCancelToast": "Se canceló el pago. No se añadieron créditos.",
-    "upgradeCancelToast": "Mejora cancelada. No hay cambios en tu plan."
-  },
-  "billingUsageChart": {
-    "empty": "No hay datos de uso para este período"
-  },
-  "billingUsagePanel": {
-    "backToAllUsage": "Volver a todo el uso",
-    "chartMetricAria": "Métrica del gráfico",
-    "eventsLabel": "Eventos",
-    "llmDimensionAria": "Dimensión del gasto de LLM",
-    "llmSpend": "Gasto de LLM",
-    "loadError": "No se pudieron cargar los datos de uso.",
-    "metricEvents": "Eventos",
-    "metricSpend": "Gasto ($)",
-    "oauthSpend": "Gasto de OAuth",
-    "spendLabel": "Gasto",
-    "subtitle": "Resumen de tus hábitos de gasto.",
-    "title": "Uso de créditos"
+    "successToast": "¡Pago recibido! Tu saldo de créditos se actualizará en breve."
   },
   "biometricSettingsCard": {
     "description": "Cuando expire tu sesión, verifica con {label} en lugar de iniciar sesión de nuevo.",
@@ -383,15 +255,6 @@
     "step3": "3. Copia la URL completa de la barra de direcciones de esa página y pégala abajo",
     "tryAgain": "Intentar de nuevo",
     "urlPlaceholder": "Pega aquí la URL de devolución de llamada..."
-  },
-  "checkoutBonusModal": {
-    "body": "Reclama {amount} de uso adicional por única vez y lo añadiremos directamente a tu saldo de uso. No se requiere ningún pago.",
-    "claim": "Reclamar {amount} en uso adicional",
-    "decline": "No, gracias",
-    "errorToast": "No se pudo añadir el uso adicional. Inténtalo de nuevo.",
-    "grantedToast": "Se añadieron {amount} en uso adicional a tu saldo de uso.",
-    "title": "Aquí tienes {amount} de uso adicional de nuestra parte",
-    "unavailableToast": "Esta oferta ya no está disponible."
   },
   "checkoutPage": {
     "awaitingReturnMessage": "El pago se abrió en tu navegador. Complétalo allí para finalizar la mejora.",
@@ -554,25 +417,6 @@
     "prompt": "¿Necesitas algo más adaptado a tus necesidades?",
     "title": "Plan personalizado"
   },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "Usa como máximo dos decimales",
-    "errorEmpty": "Introduce un límite diario",
-    "errorMin": "Debe ser al menos $1",
-    "helperText": "Se restablece a diario a las {time}.",
-    "inputLabel": "Dejar de gastar créditos de Cadet después de",
-    "loadError": "No se pudo cargar la configuración del límite diario de créditos.",
-    "loading": "Cargando…",
-    "progress": "{spent} de {limit} gastados hoy",
-    "reachedNotice": "El gasto de créditos de Cadet de hoy ha alcanzado este límite. La generación se reanuda a las {time} o cuando subas el límite.",
-    "requiredNote": "Se requiere un límite diario de créditos mientras la recarga automática está activada.",
-    "resumeError": "No se pudo reanudar el límite diario de créditos. Inténtalo de nuevo.",
-    "resumeNow": "Reanudar ahora",
-    "save": "Guardar",
-    "saveError": "No se pudo guardar el límite diario de créditos. Inténtalo de nuevo.",
-    "skippedNotice": "Omitido por hoy. Este límite se reanuda a las {time}.",
-    "toggleLabel": "Límite diario de créditos",
-    "toggleSubtitle": "El límite diario solo se aplica a los créditos de uso adicional"
-  },
   "debugBundleExport": {
     "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
     "export": "Exportar paquete de depuración",
@@ -700,11 +544,6 @@
     "versionSubtitle": "Administra la versión de software de tu asistente y las actualizaciones.",
     "versionTitle": "Versión"
   },
-  "gracePeriodBanner": {
-    "body": "Conservarás las funciones Pro hasta entonces.",
-    "reactivate": "Reactivar",
-    "title": "Tu plan Pro terminará el {date}."
-  },
   "imageGenerationCard": {
     "activeModelLabel": "Modelo activo",
     "apiKeyLabel": "Clave de API",
@@ -765,27 +604,6 @@
     "sectionAvailable": "Disponibles",
     "sectionConfigured": "Tus integraciones"
   },
-  "invoicesTable": {
-    "columnAction": "Acción",
-    "columnAmount": "Importe",
-    "columnDate": "Fecha",
-    "columnStatus": "Estado",
-    "downloadAll": "Descargar todas",
-    "downloadAllFailed": "No se pudieron descargar las facturas.",
-    "downloadPdfAriaLabel": "Descargar PDF de la factura",
-    "empty": "No se encontraron facturas",
-    "hideButton": "Ocultar facturas",
-    "loadError": "No se pudieron cargar las facturas.",
-    "loadMore": "Cargar más",
-    "loadMoreError": "No se pudieron cargar más facturas.",
-    "loading": "Cargando facturas...",
-    "retry": "Reintentar",
-    "showButton": "Mostrar facturas",
-    "showLess": "Mostrar menos",
-    "showMore": "Mostrar más ({count} más)",
-    "title": "Facturas",
-    "view": "Ver"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "Tu proveedor predeterminado no está disponible.",
     "manage": "Administrar",
@@ -797,17 +615,6 @@
     "change": "Cambiar",
     "subtitle": "El idioma en el que hablas con tu asistente. Se aplica a partir de tu próximo turno hablado.",
     "title": "Idioma de escucha"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "Usa como máximo dos decimales",
-    "errorRange": "Debe estar entre $1 y $1,000",
-    "helperText": "El valor predeterminado es {amount} si no se establece",
-    "label": "Avisarme cuando mi saldo baje de",
-    "loadError": "No se pudo cargar la configuración de alerta de saldo bajo.",
-    "loading": "Cargando…",
-    "reset": "Restablecer al valor predeterminado",
-    "save": "Guardar",
-    "saveError": "No se pudo guardar la alerta de saldo bajo. Inténtalo de nuevo."
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "Anulaciones de acciones",
@@ -1062,16 +869,7 @@
     "title": "Dispositivos vinculados ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "Termina en {last4}",
-    "replaceCard": "Reemplazar tarjeta",
     "savedCard": "Tarjeta guardada"
-  },
-  "paymentMethodsCard": {
-    "addButton": "Añadir método de pago",
-    "empty": "No hay ningún método de pago guardado. Añade uno para usar la recarga automática.",
-    "loadError": "No se pudieron cargar los métodos de pago.",
-    "loading": "Cargando…",
-    "title": "Método de pago"
   },
   "pendingPairingRequests": {
     "approveButton": "Aprobar",
@@ -1082,52 +880,13 @@
     "title": "Solicitudes de vinculación"
   },
   "planCard": {
-    "alreadyOnPlanToast": "Ya estás en este plan.",
-    "checkoutFailedToast": "No se pudo iniciar el pago de la mejora. Inténtalo de nuevo.",
-    "current": "Actual",
-    "dailyUsageBar": "Uso diario, se reinicia a las {resetPhrase}",
-    "dailyUsageExhausted": "Has usado el uso gratuito de hoy. Añade créditos para seguir usando tu asistente",
-    "dailyUsageResets": "Se reinicia a las {resetPhrase}",
-    "dailyUsageTitle": "Uso diario",
-    "endsOn": "Tu plan termina el {date}.",
-    "freeForever": "Gratis para siempre",
-    "heading": "Plan",
-    "loadError": "No se pudo cargar el plan.",
-    "loading": "Cargando plan...",
-    "manageSubscription": "Gestionar suscripción",
-    "nextPlan": "Siguiente plan",
-    "powerUp": "Potenciar",
-    "powerUpFor": "Potenciar por +{amount}/mes",
     "usageBalanceAddCredits": "Añadir",
     "usageBalanceBarRenews": "Uso mensual, se renueva el {date}",
     "usageBalanceBarResets": "Uso mensual, se restablece el {date}",
     "usageBalanceExhausted": "Añade créditos para seguir usando tu asistente",
     "usageBalancePctUsed": "{pct}% usado",
     "usageBalanceRenews": "Se renueva el {date}",
-    "usageBalanceResets": "Se restablece el {date}",
-    "usageBalanceTitleMonthly": "Uso mensual",
-    "usageBalanceTitleOverall": "Uso total",
-    "usageChip": "Uso de {name}, se restablece cada mes",
-    "viewAllPlans": "Ver todos los planes"
-  },
-  "planCardContent": {
-    "baseFee": "{amount} de tarifa base",
-    "baseTagline": "Todo lo que necesitas para un asistente capaz",
-    "creditsNotIncluded": "*Créditos no incluidos",
-    "current": "Actual",
-    "currentlyPrice": "Actualmente {price}",
-    "downgradeToBase": "Bajar a Base",
-    "forever": "Para siempre",
-    "free": "Gratis",
-    "fromPrice": "Desde {price}",
-    "keepPlan": "Conservar tu plan",
-    "loadingPlan": "Cargando tu plan...",
-    "planEndsOn": "Tu plan termina el {date}",
-    "pricingUnavailable": "Precio del plan actual no disponible",
-    "proTagline": "Más funciones, más cómputo, más almacenamiento",
-    "subscriptionChangeTitle": "Tu suscripción del Plan Pro cambiará de {from} a {to}.",
-    "updatePlan": "Actualizar plan",
-    "upgradeToPro": "Mejorar a Pro"
+    "usageBalanceResets": "Se restablece el {date}"
   },
   "planColumnCard": {
     "currentPlan": "Plan actual",
@@ -1787,54 +1546,6 @@
     "processingFallback": "Estamos procesando su actualización. Actualice en un momento para ver su nuevo plan.",
     "successBody": "Su plan Pro está activo. Será redirigido a facturación en un momento.",
     "welcomeTitle": "Bienvenido a Pro"
-  },
-  "usageTab": {
-    "analyzeCostsButton": "Analizar costos con el asistente",
-    "breakdownTitle": "Desglose",
-    "cacheCreatedLabel": "Caché creada",
-    "cacheReadLabel": "Caché leída",
-    "costAssistantSubtitle": "Revise el gasto reciente y ajuste las opciones de perfil del modelo.",
-    "costAssistantTitle": "Asistente de costos",
-    "costLabel": "Costo",
-    "dailyTrend": "Tendencia diaria",
-    "dailyTrendBy": "Tendencia diaria por {group}",
-    "directInputTokensLabel": "Tokens de entrada directa",
-    "failedToLoadUsage": "No se pudo cargar el uso.",
-    "groupByActor": "Actor",
-    "groupByConversation": "Conversación",
-    "groupByModel": "Modelo",
-    "groupByProfile": "Perfil",
-    "groupByProvider": "Proveedor",
-    "groupBySchedule": "Programación",
-    "groupByTask": "Acción",
-    "groupColumnLabel": "Grupo",
-    "hourlyTrend": "Tendencia por hora",
-    "hourlyTrendBy": "Tendencia por hora por {group}",
-    "inferenceUsageTitle": "Uso de inferencia",
-    "llmCallsLabel": "Llamadas LLM",
-    "noBreakdownDataSubtitle": "No hay uso registrado para esta agrupación",
-    "noBreakdownDataTitle": "Sin datos de desglose",
-    "optimizeSettingsButton": "Optimizar ajustes",
-    "outputTokensLabel": "Tokens de salida",
-    "percentOfTotalLabel": "% del total",
-    "range30d": "Últimos 30 días",
-    "range7d": "Últimos 7 días",
-    "range90d": "Últimos 90 días",
-    "rangeAll": "Todo el tiempo",
-    "rangeToday": "Hoy",
-    "rangeYesterday": "Ayer",
-    "retry": "Reintentar",
-    "title": "Uso",
-    "tokensLabel": "Tokens",
-    "totalsAriaLabel": "Totales",
-    "turnsLabel": "Turnos",
-    "unknownSchedule": "Programación desconocida ({scheduleId})"
-  },
-  "usageTrendChart": {
-    "noDailyData": "Sin datos diarios",
-    "noHourlyData": "Sin datos por hora",
-    "noUsageInRange": "No hay uso registrado en este intervalo",
-    "total": "Total"
   },
   "useBillingPortalSession": {
     "openError": "No se pudo abrir el portal de facturación. Inténtalo de nuevo."

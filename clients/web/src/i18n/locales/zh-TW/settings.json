@@ -16,25 +16,6 @@
     "toastKeptOn": "管理員資料存取將保持開啟，直到您關閉為止。",
     "toastUpdateFailed": "無法更新記錄存取同意。"
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "您已是專業版使用者。",
-    "back": "返回",
-    "cancel": "取消",
-    "confirmDowngrade": "確認降級",
-    "creditBundleUpdated": "點數組合包已更新。",
-    "downgradeIntro": "降級將移除以下專業版功能：",
-    "downgradeTitle": "降級至基本版？",
-    "footerNote": "您可以隨時從帳單設定中變更或取消您的方案。",
-    "heroSubtitle": "選擇最適合您和您的助理的方案。",
-    "heroTitle": "您的助理，由您掌控",
-    "loadPlansError": "無法載入方案。請稍後再試。",
-    "loadingPlans": "正在載入方案...",
-    "machineDowngradeFeature": "您的助理將減少 CPU 和記憶體 - 它將調整為較小的運算設定檔。",
-    "pickTiersError": "請選擇機器和儲存層級以繼續。",
-    "planUpdated": "方案已更新。",
-    "upgradeFailed": "無法開始升級。請再試一次。",
-    "upgradePlanTitle": "升級方案"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "選擇設定檔…",
     "description": "當您的助理想要檢查方案或審查自己的工作時，它會諮詢此設定檔以獲得第二意見。",
@@ -188,77 +169,9 @@
     "updateToVersion": "更新至版本 {version}",
     "updating": "更新中..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "新增信用卡",
-    "addPaymentMethod": "新增付款方式",
-    "adjust": "調整",
-    "capProgress": " / 本月 {cap}",
-    "connectCardBanner": "自動加值需要您綁定一張信用卡。",
-    "dailyLimitLookupError": "無法檢查每日點數限制，自動加值需要該限制。請重試以繼續。",
-    "declinedCutoffNotice": "多次付款失敗後，我們已暫停自動加值。請新增付款方式以重新開啟自動加值。",
-    "disableError": "無法停用自動加值。請再試一次。",
-    "dismiss": "關閉",
-    "loadError": "無法載入自動加值設定。",
-    "loading": "載入中…",
-    "retry": "重試",
-    "summary": "當餘額低於 {threshold} 時，自動加值 {amount}",
-    "toggleHelper": "自動加值僅在方案用量耗盡時發生",
-    "toggleLabel": "啟用自動加值",
-    "updateError": "無法儲存自動加值設定。請再試一次。"
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "停用自動加值",
-    "message": "自動加值需要設定每日點數限制。請設定一個限制以儲存自動加值設定，或停用自動加值。",
-    "save": "儲存",
-    "saving": "儲存中…",
-    "title": "設定每日點數限制"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "停用",
-    "disabling": "停用中…",
-    "keepEnabled": "保持啟用",
-    "message": "自動加值將停止。所有已儲存的付款方式將保留在檔案中。",
-    "title": "停用自動加值？"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "自動加值金額",
-    "cancel": "取消",
-    "capLabel": "每月消費上限",
-    "save": "儲存",
-    "thresholdLabel": "當餘額低於此值時自動加值"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "將保留在檔案中，供自動加值和您的專業版方案使用。",
-    "addTitle": "新增信用卡",
-    "addressFormLoadError": "無法載入帳單地址表單。請再試一次。",
-    "cancel": "取消",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "關閉",
-    "confirmFailed": "無法儲存付款方式。",
-    "confirmingWithBank": "正在與您的銀行確認…",
-    "declined": "您的銀行拒絕了這張卡。請改用其他卡片，或與銀行聯絡。",
-    "loadingLabel": "正在載入付款欄位",
-    "paymentFormLoadError": "無法載入付款表單。請再試一次。",
-    "primaryAdd": "儲存信用卡",
-    "primaryReplace": "替換信用卡",
-    "primarySubmitting": "正在儲存",
-    "replaceSubtitle": "新的信用卡將立即生效。",
-    "replaceSubtitleCard": "正在替換 {brand} •••• {last4}。新的信用卡將立即生效。",
-    "replaceSubtitleCardExpiry": "正在替換 {brand} •••• {last4}·{month}/{year}。新的信用卡將立即生效。",
-    "replaceSubtitleCardNoBrand": "正在替換卡號末四碼為 {last4} 的信用卡。新的信用卡將立即生效。",
-    "replaceSubtitleCardNoBrandExpiry": "正在替換卡號末四碼為 {last4} 的信用卡·{month}/{year}。新的信用卡將立即生效。",
-    "replaceSubtitleCardNoLast4": "正在替換您的 {brand} 信用卡。新的信用卡將立即生效。",
-    "replaceSubtitleCardNoLast4Expiry": "正在替換您的 {brand} 信用卡·{month}/{year}。新的信用卡將立即生效。",
-    "replaceTitle": "替換您的信用卡",
-    "savedSubtitle": "自動加值已重新啟用",
-    "savedTitle": "{brand} •••• {last4} 已儲存",
-    "savedTitleGeneric": "信用卡已儲存",
-    "savedTitleNoBrand": "卡號末四碼為 {last4} 的信用卡已儲存",
-    "setupError": "無法啟動信用卡設定。請再試一次。",
-    "termsAdd": "Cadet 可以使用這張卡收取自動加值和訂閱續訂的費用。您可以隨時從帳單設定中移除它。",
-    "termsReplace": "在您從帳單設定中移除之前，舊卡會保留在 Stripe；Cadet 從現在起不再向這張卡收取費用。",
-    "tryAgain": "再試一次",
-    "unavailable": "付款方式設定目前無法使用。請稍後再試。"
+    "loadingLabel": "正在載入付款欄位"
   },
   "billingOnboardingModal": {
     "backgroundConfirmContinue": "繼續",
@@ -269,51 +182,10 @@
     "accountCta": "管理帳號",
     "billingCta": "管理帳單",
     "linkOutBody": "方案、付款方式、帳單和用量均在 Cadet Cloud 帳號頁面中管理。",
-    "linkOutTitle": "在 Cadet 帳號中管理帳單",
-    "billingTab": "帳單",
-    "billingUnavailable": "目前助理狀態下無法使用帳單功能。",
-    "loadingBilling": "載入帳單中…",
-    "platformLoginNotice": "登入 Cadet 平台以管理帳單和用量。",
-    "usageTab": "用量"
-  },
-  "billingPanel": {
-    "addCreditsButton": "新增點數",
-    "balanceLabel": "點數",
-    "degradedNotice": "待處理費用無法計算。顯示的餘額可能不完整。",
-    "loadError": "載入帳務摘要失敗。請稍後再試。",
-    "loading": "正在載入帳務摘要...",
-    "lowBalanceToggle": "自訂低餘額提醒",
-    "noInfo": "無可用的帳務資訊。",
-    "subtitle": "達到使用上限時所使用的點數",
-    "title": "額外使用點數"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "您的帳單週期結束時",
-    "proCanceled": "專業版方案已取消。您將可使用至 {date}。",
-    "proReactivated": "專業版方案已重新啟用。",
-    "subscriptionUpdated": "訂閱已更新。"
+    "linkOutTitle": "在 Cadet 帳號中管理帳單"
   },
   "billingStatusHandler": {
-    "successToast": "付款成功！您的點數餘額將很快更新。",
-    "topUpCancelToast": "結帳已取消。未新增任何點數。",
-    "upgradeCancelToast": "升級已取消。您的方案未作任何變更。"
-  },
-  "billingUsageChart": {
-    "empty": "此期間無使用資料"
-  },
-  "billingUsagePanel": {
-    "backToAllUsage": "返回所有使用情況",
-    "chartMetricAria": "圖表指標",
-    "eventsLabel": "事件",
-    "llmDimensionAria": "LLM 支出維度",
-    "llmSpend": "LLM 支出",
-    "loadError": "載入使用資料失敗。",
-    "metricEvents": "事件",
-    "metricSpend": "支出 ($)",
-    "oauthSpend": "OAuth 支出",
-    "spendLabel": "支出",
-    "subtitle": "您的消費習慣概覽。",
-    "title": "點數使用情況"
+    "successToast": "付款成功！您的點數餘額將很快更新。"
   },
   "biometricSettingsCard": {
     "description": "當您的工作階段過期時，請使用 {label} 驗證，而無需再次登入。",
@@ -383,15 +255,6 @@
     "step3": "3. 從該頁面的網址列複製完整的 URL 並貼到下方",
     "tryAgain": "再試一次",
     "urlPlaceholder": "在此貼上回呼 URL..."
-  },
-  "checkoutBonusModal": {
-    "body": "領取一次性 {amount} 額外用量，我們將直接將其新增至您的使用餘額。無需付款。",
-    "claim": "領取 {amount} 額外用量",
-    "decline": "不用了，謝謝",
-    "errorToast": "無法新增額外用量。請再試一次。",
-    "grantedToast": "{amount} 額外用量已新增至您的使用餘額。",
-    "title": "我們贈送您 {amount} 額外用量",
-    "unavailableToast": "此優惠已不再提供。"
   },
   "checkoutPage": {
     "awaitingReturnMessage": "結帳頁面已在您的瀏覽器中開啟。請在那裡完成以升級。",
@@ -554,25 +417,6 @@
     "prompt": "需要更符合您需求的服務嗎？",
     "title": "自訂方案"
   },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "最多使用兩位小數",
-    "errorEmpty": "輸入每日限制",
-    "errorMin": "必須至少為 $1",
-    "helperText": "每日 {time} 重設。",
-    "inputLabel": "Cadet 點數支出達到此額度後停止",
-    "loadError": "載入每日點數限制設定失敗。",
-    "loading": "載入中…",
-    "progress": "今日已支出 {limit} 中的 {spent}",
-    "reachedNotice": "今日 Cadet 點數支出已達到此限制。生成將於 {time} 恢復，或在您提高限制後恢復。",
-    "requiredNote": "啟用自動儲值時，需要設定每日點數限制。",
-    "resumeError": "恢復每日點數限制失敗。請再試一次。",
-    "resumeNow": "立即恢復",
-    "save": "儲存",
-    "saveError": "儲存每日點數限制失敗。請再試一次。",
-    "skippedNotice": "今日已跳過。此限制將於 {time} 恢復。",
-    "toggleLabel": "每日點數限制",
-    "toggleSubtitle": "每日限制僅適用於額外用量點數"
-  },
   "debugBundleExport": {
     "description": "向 Cadet 支援傳送診斷記錄和已清理的設定。不包含憑證。上傳內容保留七天。",
     "export": "匯出偵錯套件",
@@ -700,11 +544,6 @@
     "versionSubtitle": "管理助理的軟體版本和更新。",
     "versionTitle": "版本"
   },
-  "gracePeriodBanner": {
-    "body": "在此之前，您將保留專業版功能。",
-    "reactivate": "重新啟用",
-    "title": "您的專業版方案將於 {date} 結束。"
-  },
   "imageGenerationCard": {
     "activeModelLabel": "作用中的模型",
     "apiKeyLabel": "API 金鑰",
@@ -765,27 +604,6 @@
     "sectionAvailable": "可用",
     "sectionConfigured": "你的整合"
   },
-  "invoicesTable": {
-    "columnAction": "動作",
-    "columnAmount": "金額",
-    "columnDate": "日期",
-    "columnStatus": "狀態",
-    "downloadAll": "下載全部",
-    "downloadAllFailed": "下載發票失敗。",
-    "downloadPdfAriaLabel": "下載發票 PDF",
-    "empty": "找不到任何發票",
-    "hideButton": "隱藏發票",
-    "loadError": "載入發票失敗。",
-    "loadMore": "載入更多",
-    "loadMoreError": "載入更多發票失敗。",
-    "loading": "正在載入發票...",
-    "retry": "重試",
-    "showButton": "顯示發票",
-    "showLess": "顯示較少",
-    "showMore": "顯示更多 (還有 {count} 個)",
-    "title": "發票",
-    "view": "檢視"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "您的預設供應商無法使用。",
     "manage": "管理",
@@ -797,17 +615,6 @@
     "change": "變更",
     "subtitle": "您與助理對話的語言。從您下一次語音輸入開始生效。",
     "title": "聆聽語言"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "最多使用兩位小數",
-    "errorRange": "必須介於 $1 到 $1,000 之間",
-    "helperText": "未設定時，預設為 {amount}",
-    "label": "當我的餘額低於以下金額時提醒我",
-    "loadError": "載入低餘額提醒設定失敗。",
-    "loading": "正在載入…",
-    "reset": "重設為預設值",
-    "save": "儲存",
-    "saveError": "儲存低餘額提醒失敗。請再試一次。"
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "動作覆寫",
@@ -1062,16 +869,7 @@
     "title": "已配對裝置 ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "末四碼 {last4}",
-    "replaceCard": "替換卡片",
     "savedCard": "已儲存卡片"
-  },
-  "paymentMethodsCard": {
-    "addButton": "新增付款方式",
-    "empty": "未儲存任何付款方式。新增一個以使用自動儲值。",
-    "loadError": "載入付款方式失敗。",
-    "loading": "載入中…",
-    "title": "付款方式"
   },
   "pendingPairingRequests": {
     "approveButton": "核准",
@@ -1082,52 +880,13 @@
     "title": "配對請求"
   },
   "planCard": {
-    "alreadyOnPlanToast": "您已是此方案。",
-    "checkoutFailedToast": "無法啟動升級結帳。請再試一次。",
-    "current": "目前",
-    "dailyUsageBar": "每日使用量，{resetPhrase} 重設",
-    "dailyUsageExhausted": "您已用完今日的免費用量。新增點數以繼續使用您的助理",
-    "dailyUsageResets": "{resetPhrase} 重設",
-    "dailyUsageTitle": "每日使用量",
-    "endsOn": "您的方案將於 {date} 結束。",
-    "freeForever": "永久免費",
-    "heading": "方案",
-    "loadError": "載入方案失敗。",
-    "loading": "正在載入方案...",
-    "manageSubscription": "管理訂閱",
-    "nextPlan": "下一個方案",
-    "powerUp": "升級",
-    "powerUpFor": "升級至 +{amount}/月",
     "usageBalanceAddCredits": "新增",
     "usageBalanceBarRenews": "每月使用量，{date} 續訂",
     "usageBalanceBarResets": "每月使用量，{date} 重設",
     "usageBalanceExhausted": "新增點數以繼續使用您的助理",
     "usageBalancePctUsed": "已使用 {pct}%",
     "usageBalanceRenews": "{date} 續訂",
-    "usageBalanceResets": "{date} 重設",
-    "usageBalanceTitleMonthly": "每月使用量",
-    "usageBalanceTitleOverall": "總使用量",
-    "usageChip": "{name} 使用量，每月重設",
-    "viewAllPlans": "檢視所有方案"
-  },
-  "planCardContent": {
-    "baseFee": "{amount} 基本費用",
-    "baseTagline": "擁有強大助理所需的一切",
-    "creditsNotIncluded": "*不包含點數",
-    "current": "目前",
-    "currentlyPrice": "目前價格 {price}",
-    "downgradeToBase": "降級至基本版",
-    "forever": "永久",
-    "free": "免費",
-    "fromPrice": "從 {price} 起",
-    "keepPlan": "保留您的方案",
-    "loadingPlan": "正在載入您的方案...",
-    "planEndsOn": "您的方案將於 {date} 結束",
-    "pricingUnavailable": "目前方案價格不可用",
-    "proTagline": "更多功能、更強運算能力、更大儲存空間",
-    "subscriptionChangeTitle": "您的專業版方案訂閱將從 {from} 變更為 {to}。",
-    "updatePlan": "更新方案",
-    "upgradeToPro": "升級至專業版"
+    "usageBalanceResets": "{date} 重設"
   },
   "planColumnCard": {
     "currentPlan": "目前方案",
@@ -1765,54 +1524,6 @@
     "processingFallback": "我們正在處理您的升級。請稍後重新整理以查看您的新方案。",
     "successBody": "您的專業版方案已啟用。您將很快被重新導向回帳單頁面。",
     "welcomeTitle": "歡迎使用專業版"
-  },
-  "usageTab": {
-    "analyzeCostsButton": "使用助理分析成本",
-    "breakdownTitle": "明細",
-    "cacheCreatedLabel": "快取已建立",
-    "cacheReadLabel": "快取已讀取",
-    "costAssistantSubtitle": "檢視近期支出並調整模型設定檔選擇。",
-    "costAssistantTitle": "成本助理",
-    "costLabel": "成本",
-    "dailyTrend": "每日趨勢",
-    "dailyTrendBy": "依 {group} 的每日趨勢",
-    "directInputTokensLabel": "直接輸入權杖",
-    "failedToLoadUsage": "無法載入使用情況。",
-    "groupByActor": "執行者",
-    "groupByConversation": "對話",
-    "groupByModel": "模型",
-    "groupByProfile": "設定檔",
-    "groupByProvider": "供應商",
-    "groupBySchedule": "排程",
-    "groupByTask": "動作",
-    "groupColumnLabel": "群組",
-    "hourlyTrend": "每小時趨勢",
-    "hourlyTrendBy": "依 {group} 的每小時趨勢",
-    "inferenceUsageTitle": "推論使用情況",
-    "llmCallsLabel": "LLM 呼叫",
-    "noBreakdownDataSubtitle": "此群組沒有記錄使用情況",
-    "noBreakdownDataTitle": "無明細資料",
-    "optimizeSettingsButton": "最佳化設定",
-    "outputTokensLabel": "輸出權杖",
-    "percentOfTotalLabel": "總計百分比",
-    "range30d": "最近 30 天",
-    "range7d": "最近 7 天",
-    "range90d": "最近 90 天",
-    "rangeAll": "所有時間",
-    "rangeToday": "今天",
-    "rangeYesterday": "昨天",
-    "retry": "重試",
-    "title": "使用情況",
-    "tokensLabel": "權杖",
-    "totalsAriaLabel": "總計",
-    "turnsLabel": "回合",
-    "unknownSchedule": "未知排程 ({scheduleId})"
-  },
-  "usageTrendChart": {
-    "noDailyData": "無每日資料",
-    "noHourlyData": "無每小時資料",
-    "noUsageInRange": "此時間範圍內沒有記錄使用情況",
-    "total": "總計"
   },
   "useBillingPortalSession": {
     "openError": "無法開啟帳單入口網站。請再試一次。"

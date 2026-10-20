@@ -16,25 +16,6 @@
     "toastKeptOn": "管理员数据访问将保持开启，直到您关闭为止。",
     "toastUpdateFailed": "未能更新日志访问同意。"
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "您已是专业版用户。",
-    "back": "返回",
-    "cancel": "取消",
-    "confirmDowngrade": "确认降级",
-    "creditBundleUpdated": "积分包已更新。",
-    "downgradeIntro": "降级将移除以下专业版功能：",
-    "downgradeTitle": "降级到基础版？",
-    "footerNote": "您可以随时在账单设置中更改或取消您的套餐。",
-    "heroSubtitle": "选择最适合您和您的助手的套餐。",
-    "heroTitle": "您的助手，由您掌控",
-    "loadPlansError": "未能加载套餐。请稍后重试。",
-    "loadingPlans": "正在加载套餐...",
-    "machineDowngradeFeature": "您的助手将减少 CPU 和内存 - 它将调整为更小的计算配置文件。",
-    "pickTiersError": "请选择机器和存储层级以继续。",
-    "planUpdated": "套餐已更新。",
-    "upgradeFailed": "未能开始升级。请重试。",
-    "upgradePlanTitle": "升级套餐"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "选择配置文件…",
     "description": "当您的助手想要检查计划或审查自己的工作时，它会咨询此配置文件以获取第二意见。",
@@ -188,77 +169,9 @@
     "updateToVersion": "更新到版本 {version}",
     "updating": "更新中..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "添加信用卡",
-    "addPaymentMethod": "添加付款方式",
-    "adjust": "调整",
-    "capProgress": " / 本月 {cap}",
-    "connectCardBanner": "自动充值需要您绑定一张信用卡。",
-    "dailyLimitLookupError": "无法检查每日积分限额，自动充值需要该限额。请重试以继续。",
-    "declinedCutoffNotice": "多次付款失败后，我们已暂停自动充值。请添加新的付款方式以重新开启自动充值。",
-    "disableError": "未能禁用自动充值。请重试。",
-    "dismiss": "忽略",
-    "loadError": "未能加载自动充值配置。",
-    "loading": "加载中…",
-    "retry": "重试",
-    "summary": "当余额低于 {threshold} 时，自动充值 {amount}",
-    "toggleHelper": "自动充值仅在套餐用量耗尽时发生",
-    "toggleLabel": "启用自动充值",
-    "updateError": "未能保存自动充值设置。请重试。"
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "禁用自动充值",
-    "message": "自动充值需要设置每日积分限额。请设置一个限额以保存自动充值设置，或禁用自动充值。",
-    "save": "保存",
-    "saving": "保存中…",
-    "title": "设置每日积分限额"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "禁用",
-    "disabling": "禁用中…",
-    "keepEnabled": "保持启用",
-    "message": "自动充值将停止。所有已保存的付款方式将保留在文件中。",
-    "title": "禁用自动充值？"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "自动充值金额",
-    "cancel": "取消",
-    "capLabel": "每月消费上限",
-    "save": "保存",
-    "thresholdLabel": "当余额低于此值时自动充值"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "保存后用于自动充值和您的专业版套餐。",
-    "addTitle": "添加银行卡",
-    "addressFormLoadError": "未能加载账单地址表单。请重试。",
-    "cancel": "取消",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "关闭",
-    "confirmFailed": "未能保存付款方式。",
-    "confirmingWithBank": "正在与您的银行确认…",
-    "declined": "您的银行拒绝了这张卡。请换一张卡，或联系银行。",
-    "loadingLabel": "正在加载付款字段",
-    "paymentFormLoadError": "未能加载付款表单。请重试。",
-    "primaryAdd": "保存银行卡",
-    "primaryReplace": "替换银行卡",
-    "primarySubmitting": "保存中",
-    "replaceSubtitle": "新卡将立即生效。",
-    "replaceSubtitleCard": "正在替换 {brand} •••• {last4}。新卡将立即生效。",
-    "replaceSubtitleCardExpiry": "正在替换 {brand} •••• {last4}·{month}/{year}。新卡将立即生效。",
-    "replaceSubtitleCardNoBrand": "正在替换尾号为 {last4} 的银行卡。新卡将立即生效。",
-    "replaceSubtitleCardNoBrandExpiry": "正在替换尾号为 {last4} 的银行卡·{month}/{year}。新卡将立即生效。",
-    "replaceSubtitleCardNoLast4": "正在替换您的 {brand} 卡。新卡将立即生效。",
-    "replaceSubtitleCardNoLast4Expiry": "正在替换您的 {brand} 卡·{month}/{year}。新卡将立即生效。",
-    "replaceTitle": "替换您的银行卡",
-    "savedSubtitle": "自动充值已重新启用",
-    "savedTitle": "{brand} •••• {last4} 已保存",
-    "savedTitleGeneric": "银行卡已保存",
-    "savedTitleNoBrand": "尾号为 {last4} 的银行卡已保存",
-    "setupError": "未能启动银行卡设置。请重试。",
-    "termsAdd": "Cadet 可以使用这张卡收取自动充值和订阅续费的费用。您可以随时在账单设置中移除它。",
-    "termsReplace": "在您从账单设置中移除之前，旧卡会保留在 Stripe；Cadet 现在起不再从旧卡扣款。",
-    "tryAgain": "重试",
-    "unavailable": "付款方式设置目前不可用。请稍后重试。"
+    "loadingLabel": "正在加载付款字段"
   },
   "billingOnboardingModal": {
     "backgroundConfirmContinue": "继续",
@@ -269,51 +182,10 @@
     "accountCta": "管理账号",
     "billingCta": "管理账单",
     "linkOutBody": "套餐、付款方式、账单和用量均在 Cadet Cloud 账号页面中管理。",
-    "linkOutTitle": "在 Cadet 账号中管理账单",
-    "billingTab": "账单",
-    "billingUnavailable": "当前助手状态下无法使用账单功能。",
-    "loadingBilling": "加载账单中…",
-    "platformLoginNotice": "登录 Cadet 平台以管理账单和用量。",
-    "usageTab": "用量"
-  },
-  "billingPanel": {
-    "addCreditsButton": "添加积分",
-    "balanceLabel": "积分",
-    "degradedNotice": "待处理费用无法计算。显示的余额可能不完整。",
-    "loadError": "加载账单摘要失败。请稍后重试。",
-    "loading": "正在加载账单摘要...",
-    "lowBalanceToggle": "自定义低余额提醒",
-    "noInfo": "无可用账单信息。",
-    "subtitle": "达到使用限制后使用的积分",
-    "title": "额外使用积分"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "您的账单周期结束时",
-    "proCanceled": "专业版计划已取消。您将拥有访问权限直至 {date}。",
-    "proReactivated": "专业版计划已重新激活。",
-    "subscriptionUpdated": "订阅已更新。"
+    "linkOutTitle": "在 Cadet 账号中管理账单"
   },
   "billingStatusHandler": {
-    "successToast": "付款成功！您的积分余额将很快更新。",
-    "topUpCancelToast": "结账已取消。未添加任何积分。",
-    "upgradeCancelToast": "升级已取消。您的计划未作任何更改。"
-  },
-  "billingUsageChart": {
-    "empty": "此期间无使用数据"
-  },
-  "billingUsagePanel": {
-    "backToAllUsage": "返回所有使用情况",
-    "chartMetricAria": "图表指标",
-    "eventsLabel": "事件",
-    "llmDimensionAria": "LLM支出维度",
-    "llmSpend": "LLM支出",
-    "loadError": "加载使用数据失败。",
-    "metricEvents": "事件",
-    "metricSpend": "支出 ($)",
-    "oauthSpend": "OAuth支出",
-    "spendLabel": "支出",
-    "subtitle": "您的消费习惯概览。",
-    "title": "积分使用情况"
+    "successToast": "付款成功！您的积分余额将很快更新。"
   },
   "biometricSettingsCard": {
     "description": "当您的会话过期时，使用 {label} 进行验证，而无需再次登录。",
@@ -383,15 +255,6 @@
     "step3": "3. 从该页面的地址栏复制完整的 URL 并粘贴到下方",
     "tryAgain": "重试",
     "urlPlaceholder": "在此处粘贴回调 URL..."
-  },
-  "checkoutBonusModal": {
-    "body": "领取一次性 {amount} 额外用量，我们将直接将其添加到您的使用余额中。无需支付。",
-    "claim": "领取 {amount} 额外用量",
-    "decline": "不用了，谢谢",
-    "errorToast": "无法添加额外用量。请重试。",
-    "grantedToast": "{amount} 额外用量已添加到您的使用余额。",
-    "title": "我们赠送您 {amount} 额外用量",
-    "unavailableToast": "此优惠已不再可用。"
   },
   "checkoutPage": {
     "awaitingReturnMessage": "结账页面已在您的浏览器中打开。请在那里完成操作以完成升级。",
@@ -554,25 +417,6 @@
     "prompt": "需要更符合您需求的服务吗？",
     "title": "自定义计划"
   },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "最多使用两位小数",
-    "errorEmpty": "输入每日限额",
-    "errorMin": "必须至少为 $1",
-    "helperText": "每日 {time} 重置。",
-    "inputLabel": "Cadet 积分支出达到此额度后停止",
-    "loadError": "加载每日积分限额设置失败。",
-    "loading": "加载中…",
-    "progress": "今日已支出 {limit} 中的 {spent}",
-    "reachedNotice": "今日 Cadet 积分支出已达到此限额。生成将在 {time} 恢复，或在您提高限额后恢复。",
-    "requiredNote": "启用自动充值时，需要设置每日积分限额。",
-    "resumeError": "恢复每日积分限额失败。请重试。",
-    "resumeNow": "立即恢复",
-    "save": "保存",
-    "saveError": "保存每日积分限额失败。请重试。",
-    "skippedNotice": "今日已跳过。此限额将在 {time} 恢复。",
-    "toggleLabel": "每日积分限额",
-    "toggleSubtitle": "每日限额仅适用于额外用量积分"
-  },
   "debugBundleExport": {
     "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
     "export": "导出调试包",
@@ -700,11 +544,6 @@
     "versionSubtitle": "管理助手的软件版本和更新。",
     "versionTitle": "版本"
   },
-  "gracePeriodBanner": {
-    "body": "在此之前，您将保留专业版功能。",
-    "reactivate": "重新激活",
-    "title": "您的专业版计划将于 {date} 结束。"
-  },
   "imageGenerationCard": {
     "activeModelLabel": "活动模型",
     "apiKeyLabel": "API 密钥",
@@ -765,27 +604,6 @@
     "sectionAvailable": "可用",
     "sectionConfigured": "你的集成"
   },
-  "invoicesTable": {
-    "columnAction": "操作",
-    "columnAmount": "金额",
-    "columnDate": "日期",
-    "columnStatus": "状态",
-    "downloadAll": "下载全部",
-    "downloadAllFailed": "下载发票失败。",
-    "downloadPdfAriaLabel": "下载发票 PDF",
-    "empty": "未找到发票",
-    "hideButton": "隐藏发票",
-    "loadError": "加载发票失败。",
-    "loadMore": "加载更多",
-    "loadMoreError": "加载更多发票失败。",
-    "loading": "正在加载发票...",
-    "retry": "重试",
-    "showButton": "显示发票",
-    "showLess": "显示更少",
-    "showMore": "显示更多（还有 {count} 个）",
-    "title": "发票",
-    "view": "查看"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "您的默认提供商不可用。",
     "manage": "管理",
@@ -797,17 +615,6 @@
     "change": "更改",
     "subtitle": "您与助手对话的语言。从您下一次语音输入开始生效。",
     "title": "听力语言"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "最多使用两位小数",
-    "errorRange": "必须介于 $1 和 $1,000 之间",
-    "helperText": "未设置时默认为 {amount}",
-    "label": "当我的余额低于以下金额时提醒我",
-    "loadError": "加载低余额提醒设置失败。",
-    "loading": "正在加载…",
-    "reset": "重置为默认值",
-    "save": "保存",
-    "saveError": "保存低余额提醒失败。请重试。"
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "操作覆盖",
@@ -1062,16 +869,7 @@
     "title": "已配对设备 ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "尾号 {last4}",
-    "replaceCard": "替换卡片",
     "savedCard": "已保存卡片"
-  },
-  "paymentMethodsCard": {
-    "addButton": "添加支付方式",
-    "empty": "未保存支付方式。添加一个以使用自动充值。",
-    "loadError": "加载支付方式失败。",
-    "loading": "正在加载…",
-    "title": "支付方式"
   },
   "pendingPairingRequests": {
     "approveButton": "批准",
@@ -1082,52 +880,13 @@
     "title": "配对请求"
   },
   "planCard": {
-    "alreadyOnPlanToast": "您已是此套餐。",
-    "checkoutFailedToast": "未能启动升级结账。请重试。",
-    "current": "当前",
-    "dailyUsageBar": "每日使用量，{resetPhrase}重置",
-    "dailyUsageExhausted": "您已用完今日的免费用量。添加点数以继续使用您的助手",
-    "dailyUsageResets": "{resetPhrase}重置",
-    "dailyUsageTitle": "每日使用量",
-    "endsOn": "您的套餐将于 {date} 结束。",
-    "freeForever": "永久免费",
-    "heading": "套餐",
-    "loadError": "加载套餐失败。",
-    "loading": "正在加载套餐...",
-    "manageSubscription": "管理订阅",
-    "nextPlan": "下一套餐",
-    "powerUp": "升级",
-    "powerUpFor": "升级至 +{amount}/月",
     "usageBalanceAddCredits": "添加",
     "usageBalanceBarRenews": "每月使用量，{date} 续订",
     "usageBalanceBarResets": "每月使用量，{date} 重置",
     "usageBalanceExhausted": "添加点数以继续使用您的助手",
     "usageBalancePctUsed": "已使用 {pct}%",
     "usageBalanceRenews": "{date} 续订",
-    "usageBalanceResets": "{date} 重置",
-    "usageBalanceTitleMonthly": "每月使用量",
-    "usageBalanceTitleOverall": "总使用量",
-    "usageChip": "{name} 使用量，每月重置",
-    "viewAllPlans": "查看所有套餐"
-  },
-  "planCardContent": {
-    "baseFee": "{amount} 基本费用",
-    "baseTagline": "拥有强大助手所需的一切",
-    "creditsNotIncluded": "*不包含点数",
-    "current": "当前",
-    "currentlyPrice": "当前价格 {price}",
-    "downgradeToBase": "降级至基础版",
-    "forever": "永久",
-    "free": "免费",
-    "fromPrice": "起价 {price}",
-    "keepPlan": "保留您的套餐",
-    "loadingPlan": "正在加载您的套餐...",
-    "planEndsOn": "您的套餐将于 {date} 结束",
-    "pricingUnavailable": "当前套餐价格不可用",
-    "proTagline": "更多功能、更强算力、更大存储空间",
-    "subscriptionChangeTitle": "您的专业版套餐订阅将从 {from} 更改为 {to}。",
-    "updatePlan": "更新套餐",
-    "upgradeToPro": "升级至专业版"
+    "usageBalanceResets": "{date} 重置"
   },
   "planColumnCard": {
     "currentPlan": "当前套餐",
@@ -1765,54 +1524,6 @@
     "processingFallback": "正在处理您的升级。请稍后刷新以查看您的新套餐。",
     "successBody": "您的专业版套餐已激活。您将很快被重定向回账单页面。",
     "welcomeTitle": "欢迎使用专业版"
-  },
-  "usageTab": {
-    "analyzeCostsButton": "使用助手分析成本",
-    "breakdownTitle": "明细",
-    "cacheCreatedLabel": "缓存创建",
-    "cacheReadLabel": "缓存读取",
-    "costAssistantSubtitle": "查看近期支出并调整模型配置文件选择。",
-    "costAssistantTitle": "成本助手",
-    "costLabel": "成本",
-    "dailyTrend": "每日趋势",
-    "dailyTrendBy": "按 {group} 的每日趋势",
-    "directInputTokensLabel": "直接输入 Token",
-    "failedToLoadUsage": "未能加载使用情况。",
-    "groupByActor": "执行者",
-    "groupByConversation": "对话",
-    "groupByModel": "模型",
-    "groupByProfile": "配置文件",
-    "groupByProvider": "提供商",
-    "groupBySchedule": "定时任务",
-    "groupByTask": "操作",
-    "groupColumnLabel": "分组",
-    "hourlyTrend": "每小时趋势",
-    "hourlyTrendBy": "按 {group} 的每小时趋势",
-    "inferenceUsageTitle": "推理使用情况",
-    "llmCallsLabel": "LLM 调用",
-    "noBreakdownDataSubtitle": "此分组没有记录使用情况",
-    "noBreakdownDataTitle": "无明细数据",
-    "optimizeSettingsButton": "优化设置",
-    "outputTokensLabel": "输出 Token",
-    "percentOfTotalLabel": "占总计百分比",
-    "range30d": "最近 30 天",
-    "range7d": "最近 7 天",
-    "range90d": "最近 90 天",
-    "rangeAll": "所有时间",
-    "rangeToday": "今天",
-    "rangeYesterday": "昨天",
-    "retry": "重试",
-    "title": "使用情况",
-    "tokensLabel": "Token",
-    "totalsAriaLabel": "总计",
-    "turnsLabel": "轮次",
-    "unknownSchedule": "未知定时任务 ({scheduleId})"
-  },
-  "usageTrendChart": {
-    "noDailyData": "无每日数据",
-    "noHourlyData": "无每小时数据",
-    "noUsageInRange": "此时间范围内无使用情况记录",
-    "total": "总计"
   },
   "useBillingPortalSession": {
     "openError": "无法打开账单门户。请重试。"

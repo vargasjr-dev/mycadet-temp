@@ -16,25 +16,6 @@
     "toastKeptOn": "Admin data access will stay on until you turn it off.",
     "toastUpdateFailed": "Failed to update log access consent."
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "You're already on Pro.",
-    "back": "Back",
-    "cancel": "Cancel",
-    "confirmDowngrade": "Confirm Downgrade",
-    "creditBundleUpdated": "Credit bundle updated.",
-    "downgradeIntro": "Downgrading removes the following Pro features:",
-    "downgradeTitle": "Downgrade to Base?",
-    "footerNote": "You can change or cancel your plan at any time from billing settings.",
-    "heroSubtitle": "Choose the plan that works best for you and your assistant.",
-    "heroTitle": "Your Assistant, Your Way",
-    "loadPlansError": "Failed to load plans. Please try again later.",
-    "loadingPlans": "Loading plans...",
-    "machineDowngradeFeature": "Reduced CPU and memory for your assistant - it will resize to the smaller compute profile.",
-    "pickTiersError": "Pick a machine and storage tier to continue.",
-    "planUpdated": "Plan updated.",
-    "upgradeFailed": "Failed to start upgrade. Please try again.",
-    "upgradePlanTitle": "Upgrade Plan"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "Choose profile…",
     "description": "The profile your assistant consults for a second opinion when it wants to check a plan or review its own work.",
@@ -188,77 +169,9 @@
     "updateToVersion": "Update to {version}",
     "updating": "Updating..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "Add a Credit Card",
-    "addPaymentMethod": "Add payment method",
-    "adjust": "Adjust",
-    "capProgress": " / {cap} this month",
-    "connectCardBanner": "Auto-reload requires you to connect a credit card.",
-    "dailyLimitLookupError": "Couldn't check your daily credit limit, which auto-reload requires. Retry to continue.",
-    "declinedCutoffNotice": "We paused automatic reloads after several declined payments. Add a new payment method to turn auto-reload back on.",
-    "disableError": "Failed to disable auto-reload. Please try again.",
-    "dismiss": "Dismiss",
-    "loadError": "Failed to load auto-reload configuration.",
-    "loading": "Loading…",
-    "retry": "Retry",
-    "summary": "Add {amount} when balance falls under {threshold}",
-    "toggleHelper": "Auto reloads only occur when plan based usage is exhausted",
-    "toggleLabel": "Enable auto-reload",
-    "updateError": "Failed to save auto-reload settings. Please try again."
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "Turn off auto-reload",
-    "message": "Auto-reload requires a daily credit limit. Set one to save your auto-reload settings, or turn auto-reload off.",
-    "save": "Save",
-    "saving": "Saving…",
-    "title": "Set a daily credit limit"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "Disable",
-    "disabling": "Disabling…",
-    "keepEnabled": "Keep enabled",
-    "message": "Auto-reload will stop. Any saved payment method stays on file.",
-    "title": "Disable auto-reload?"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "Auto-reload amount",
-    "cancel": "Cancel",
-    "capLabel": "Monthly spending cap",
-    "save": "Save",
-    "thresholdLabel": "Auto-reload when balance below"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "Kept on file for auto-reload and your Pro plan.",
-    "addTitle": "Add a card",
-    "addressFormLoadError": "Failed to load the billing address form. Please try again.",
-    "cancel": "Cancel",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "Close",
-    "confirmFailed": "Failed to save payment method.",
-    "confirmingWithBank": "Confirming with your bank…",
-    "declined": "Your bank declined this card. Try another, or contact them.",
-    "loadingLabel": "Loading payment fields",
-    "paymentFormLoadError": "Failed to load the payment form. Please try again.",
-    "primaryAdd": "Save card",
-    "primaryReplace": "Replace card",
-    "primarySubmitting": "Saving",
-    "replaceSubtitle": "The new card takes over immediately.",
-    "replaceSubtitleCard": "Replacing {brand} •••• {last4}. The new card takes over immediately.",
-    "replaceSubtitleCardExpiry": "Replacing {brand} •••• {last4} · {month} / {year}. The new card takes over immediately.",
-    "replaceSubtitleCardNoBrand": "Replacing the card ending in {last4}. The new card takes over immediately.",
-    "replaceSubtitleCardNoBrandExpiry": "Replacing the card ending in {last4} · {month} / {year}. The new card takes over immediately.",
-    "replaceSubtitleCardNoLast4": "Replacing your {brand} card. The new card takes over immediately.",
-    "replaceSubtitleCardNoLast4Expiry": "Replacing your {brand} card · {month} / {year}. The new card takes over immediately.",
-    "replaceTitle": "Replace your card",
-    "savedSubtitle": "Auto-reload is active again",
-    "savedTitle": "{brand} •••• {last4} saved",
-    "savedTitleGeneric": "Card saved",
-    "savedTitleNoBrand": "Card ending in {last4} saved",
-    "setupError": "Failed to start card setup. Please try again.",
-    "termsAdd": "Cadet can charge this card for auto-reload and subscription renewals. Remove it any time from Billing.",
-    "termsReplace": "Your old card stays with Stripe until you remove it from Billing; Cadet stops charging it now.",
-    "tryAgain": "Try again",
-    "unavailable": "Payment method setup is currently unavailable. Please try again later."
+    "loadingLabel": "Loading payment fields"
   },
   "billingOnboardingModal": {
     "backgroundConfirmContinue": "Continue",
@@ -269,51 +182,10 @@
     "accountCta": "Manage account",
     "billingCta": "Manage billing",
     "linkOutBody": "Plans, payment methods, invoices, and usage all live on the Cadet Cloud account pages.",
-    "linkOutTitle": "Manage billing in your Cadet account",
-    "billingTab": "Billing",
-    "billingUnavailable": "Billing isn't available for the current assistant state.",
-    "loadingBilling": "Loading billing…",
-    "platformLoginNotice": "Log in to Cadet Cloud to manage billing and usage.",
-    "usageTab": "Usage"
-  },
-  "billingPanel": {
-    "addCreditsButton": "Add Credits",
-    "balanceLabel": "Credits",
-    "degradedNotice": "Pending charges could not be calculated. The balance shown may be incomplete.",
-    "loadError": "Failed to load billing summary. Please try again later.",
-    "loading": "Loading billing summary...",
-    "lowBalanceToggle": "Custom Low Balance Alert",
-    "noInfo": "No billing information available.",
-    "subtitle": "Credits used when usage limit is reached",
-    "title": "Extra Usage Credits"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "the end of your billing period",
-    "proCanceled": "Pro plan canceled. You'll have access until {date}.",
-    "proReactivated": "Pro plan reactivated.",
-    "subscriptionUpdated": "Subscription updated."
+    "linkOutTitle": "Manage billing in your Cadet account"
   },
   "billingStatusHandler": {
-    "successToast": "Payment received! Your credit balance will update shortly.",
-    "topUpCancelToast": "Checkout was cancelled. No credits were added.",
-    "upgradeCancelToast": "Upgrade canceled. No changes to your plan."
-  },
-  "billingUsageChart": {
-    "empty": "No usage data for this period"
-  },
-  "billingUsagePanel": {
-    "backToAllUsage": "Back to all usage",
-    "chartMetricAria": "Chart metric",
-    "eventsLabel": "Events",
-    "llmDimensionAria": "LLM spend dimension",
-    "llmSpend": "LLM Spend",
-    "loadError": "Failed to load usage data.",
-    "metricEvents": "Events",
-    "metricSpend": "Spend ($)",
-    "oauthSpend": "OAuth Spend",
-    "spendLabel": "Spend",
-    "subtitle": "Overview of your spending habits.",
-    "title": "Credit Usage"
+    "successToast": "Payment received! Your credit balance will update shortly."
   },
   "biometricSettingsCard": {
     "description": "When your session expires, verify with {label} instead of signing in again.",
@@ -383,15 +255,6 @@
     "step3": "3. Copy the full URL from that page's address bar and paste it below",
     "tryAgain": "Try Again",
     "urlPlaceholder": "Paste callback URL here..."
-  },
-  "checkoutBonusModal": {
-    "body": "Claim {amount} in one-time extra usage and we'll add it straight to your usage balance. No payment required.",
-    "claim": "Claim {amount} in extra usage",
-    "decline": "No thanks",
-    "errorToast": "Could not add the extra usage. Please try again.",
-    "grantedToast": "{amount} in extra usage added to your usage balance.",
-    "title": "Here's {amount} of extra usage on us",
-    "unavailableToast": "This offer is no longer available."
   },
   "checkoutPage": {
     "awaitingReturnMessage": "Checkout opened in your browser. Finish there to complete your upgrade.",
@@ -561,25 +424,6 @@
     "prompt": "Need something more tailored to your needs?",
     "title": "Custom Plan"
   },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "Use at most two decimal places",
-    "errorEmpty": "Enter a daily limit",
-    "errorMin": "Must be at least $1",
-    "helperText": "Resets daily at {time}.",
-    "inputLabel": "Stop spending Cadet credits after",
-    "loadError": "Failed to load daily credit limit settings.",
-    "loading": "Loading…",
-    "progress": "{spent} of {limit} spent today",
-    "reachedNotice": "Today's Cadet credit spend has reached this limit. Generation resumes at {time} or when you raise the limit.",
-    "requiredNote": "A daily credit limit is required while auto-reload is enabled.",
-    "resumeError": "Failed to resume the daily credit limit. Please try again.",
-    "resumeNow": "Resume now",
-    "save": "Save",
-    "saveError": "Failed to save daily credit limit. Please try again.",
-    "skippedNotice": "Skipped for today. This limit resumes at {time}.",
-    "toggleLabel": "Daily Credit Limit",
-    "toggleSubtitle": "Daily limit only applies to extra usage credits"
-  },
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
@@ -706,11 +550,6 @@
     "updatesLoginNotice": "Log in to Cadet Cloud to manage software updates.",
     "versionSubtitle": "Manage your assistant's software version and updates.",
     "versionTitle": "Version"
-  },
-  "gracePeriodBanner": {
-    "body": "You'll keep Pro features until then.",
-    "reactivate": "Reactivate",
-    "title": "Your Pro plan will end on {date}."
   },
   "imageGenerationCard": {
     "activeModelLabel": "Active Model",
@@ -839,27 +678,6 @@
     "sectionAvailable": "Available",
     "sectionConfigured": "Your integrations"
   },
-  "invoicesTable": {
-    "columnAction": "Action",
-    "columnAmount": "Amount",
-    "columnDate": "Date",
-    "columnStatus": "Status",
-    "downloadAll": "Download all",
-    "downloadAllFailed": "Failed to download invoices.",
-    "downloadPdfAriaLabel": "Download invoice PDF",
-    "empty": "No Invoices Found",
-    "hideButton": "Hide Invoices",
-    "loadError": "Failed to load invoices.",
-    "loadMore": "Load more",
-    "loadMoreError": "Failed to load more invoices.",
-    "loading": "Loading invoices...",
-    "retry": "Retry",
-    "showButton": "Show Invoices",
-    "showLess": "Show less",
-    "showMore": "Show more ({count} more)",
-    "title": "Invoices",
-    "view": "View"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "Your default provider is not available.",
     "manage": "Manage",
@@ -871,17 +689,6 @@
     "change": "Change",
     "subtitle": "The language you speak to your assistant. Applies from your next spoken turn.",
     "title": "Listening language"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "Use at most two decimal places",
-    "errorRange": "Must be between $1 and $1,000",
-    "helperText": "Default is {amount} when unset",
-    "label": "Alert me when my balance drops below",
-    "loadError": "Failed to load low-balance alert settings.",
-    "loading": "Loading…",
-    "reset": "Reset to default",
-    "save": "Save",
-    "saveError": "Failed to save low-balance alert. Please try again."
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "Action overrides",
@@ -1136,16 +943,7 @@
     "title": "Paired devices ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "Ending in {last4}",
-    "replaceCard": "Replace card",
     "savedCard": "Saved card"
-  },
-  "paymentMethodsCard": {
-    "addButton": "Add Payment Method",
-    "empty": "No payment method on file. Add one to use auto-reload.",
-    "loadError": "Failed to load payment methods.",
-    "loading": "Loading…",
-    "title": "Payment Method"
   },
   "pendingPairingRequests": {
     "approveButton": "Approve",
@@ -1156,52 +954,13 @@
     "title": "Pairing requests"
   },
   "planCard": {
-    "alreadyOnPlanToast": "You're already on this plan.",
-    "checkoutFailedToast": "Failed to start the upgrade checkout. Please try again.",
-    "current": "Current",
-    "dailyUsageBar": "Daily Usage, resets at {resetPhrase}",
-    "dailyUsageExhausted": "You've used today's free usage. Add credits to keep using your assistant",
-    "dailyUsageResets": "Resets at {resetPhrase}",
-    "dailyUsageTitle": "Daily Usage",
-    "endsOn": "Your plan ends on {date}.",
-    "freeForever": "Free Forever",
-    "heading": "Plan",
-    "loadError": "Failed to load plan.",
-    "loading": "Loading plan...",
-    "manageSubscription": "Manage Subscription",
-    "nextPlan": "Next Plan",
-    "powerUp": "Power Up",
-    "powerUpFor": "Power Up for +{amount}/month",
     "usageBalanceAddCredits": "Add",
     "usageBalanceBarRenews": "Monthly Usage, renews on {date}",
     "usageBalanceBarResets": "Monthly Usage, resets on {date}",
     "usageBalanceExhausted": "Add credits to continue using your assistant",
     "usageBalancePctUsed": "{pct}% used",
     "usageBalanceRenews": "Renews on {date}",
-    "usageBalanceResets": "Resets on {date}",
-    "usageBalanceTitleMonthly": "Monthly Usage",
-    "usageBalanceTitleOverall": "Overall Usage",
-    "usageChip": "{name} usage, reset monthly",
-    "viewAllPlans": "View All Plans"
-  },
-  "planCardContent": {
-    "baseFee": "{amount} base fee",
-    "baseTagline": "All you need for a capable assistant",
-    "creditsNotIncluded": "*Credits not included",
-    "current": "Current",
-    "currentlyPrice": "Currently {price}",
-    "downgradeToBase": "Downgrade to Base",
-    "forever": "Forever",
-    "free": "Free",
-    "fromPrice": "From {price}",
-    "keepPlan": "Keep your Plan",
-    "loadingPlan": "Loading your plan...",
-    "planEndsOn": "Your plan ends on {date}",
-    "pricingUnavailable": "Current plan pricing unavailable",
-    "proTagline": "More features, more compute, more storage",
-    "subscriptionChangeTitle": "Your Pro Plan subscription will change from {from} to {to}.",
-    "updatePlan": "Update Plan",
-    "upgradeToPro": "Upgrade to Pro"
+    "usageBalanceResets": "Resets on {date}"
   },
   "planColumnCard": {
     "currentPlan": "Current Plan",
@@ -1861,54 +1620,6 @@
     "processingFallback": "We're processing your upgrade. Refresh in a moment to see your new plan.",
     "successBody": "Your Pro plan is active. You'll be redirected back to billing in a moment.",
     "welcomeTitle": "Welcome to Pro"
-  },
-  "usageTab": {
-    "analyzeCostsButton": "Analyze costs with assistant",
-    "breakdownTitle": "Breakdown",
-    "cacheCreatedLabel": "Cache Created",
-    "cacheReadLabel": "Cache Read",
-    "costAssistantSubtitle": "Review recent spend and tune model profile choices.",
-    "costAssistantTitle": "Cost assistant",
-    "costLabel": "Cost",
-    "dailyTrend": "Daily Trend",
-    "dailyTrendBy": "Daily Trend by {group}",
-    "directInputTokensLabel": "Direct Input Tokens",
-    "failedToLoadUsage": "Failed to load usage.",
-    "groupByActor": "Actor",
-    "groupByConversation": "Conversation",
-    "groupByModel": "Model",
-    "groupByProfile": "Profile",
-    "groupByProvider": "Provider",
-    "groupBySchedule": "Schedule",
-    "groupByTask": "Action",
-    "groupColumnLabel": "Group",
-    "hourlyTrend": "Hourly Trend",
-    "hourlyTrendBy": "Hourly Trend by {group}",
-    "inferenceUsageTitle": "Inference Usage",
-    "llmCallsLabel": "LLM Calls",
-    "noBreakdownDataSubtitle": "No usage recorded for this grouping",
-    "noBreakdownDataTitle": "No breakdown data",
-    "optimizeSettingsButton": "Optimize settings",
-    "outputTokensLabel": "Output Tokens",
-    "percentOfTotalLabel": "% of total",
-    "range30d": "Last 30 days",
-    "range7d": "Last 7 days",
-    "range90d": "Last 90 days",
-    "rangeAll": "All time",
-    "rangeToday": "Today",
-    "rangeYesterday": "Yesterday",
-    "retry": "Retry",
-    "title": "Usage",
-    "tokensLabel": "Tokens",
-    "totalsAriaLabel": "Totals",
-    "turnsLabel": "Turns",
-    "unknownSchedule": "Unknown schedule ({scheduleId})"
-  },
-  "usageTrendChart": {
-    "noDailyData": "No daily data",
-    "noHourlyData": "No hourly data",
-    "noUsageInRange": "No usage recorded in this time range",
-    "total": "Total"
   },
   "useBillingPortalSession": {
     "openError": "Couldn't open the billing portal. Please try again."

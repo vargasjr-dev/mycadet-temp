@@ -16,25 +16,6 @@
     "toastKeptOn": "Доступ администраторов к данным останется включённым, пока вы его не отключите.",
     "toastUpdateFailed": "Не удалось обновить согласие на доступ к журналам."
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "План Pro уже активен.",
-    "back": "Назад",
-    "cancel": "Отмена",
-    "confirmDowngrade": "Подтвердить понижение",
-    "creditBundleUpdated": "Пакет кредитов обновлён.",
-    "downgradeIntro": "При понижении пропадут эти функции Pro:",
-    "downgradeTitle": "Перейти на Base?",
-    "footerNote": "План можно сменить или отменить в любой момент в настройках оплаты.",
-    "heroSubtitle": "Выбор плана для ассистента.",
-    "heroTitle": "Ассистент по своему вкусу",
-    "loadPlansError": "Не удалось загрузить планы. Повторить позже.",
-    "loadingPlans": "Загрузка планов...",
-    "machineDowngradeFeature": "Меньше CPU и памяти у ассистента: он перейдёт на меньший вычислительный профиль.",
-    "pickTiersError": "Нужен выбор уровня машины и хранилища, чтобы продолжить.",
-    "planUpdated": "План обновлён.",
-    "upgradeFailed": "Не удалось начать повышение. Повторите попытку.",
-    "upgradePlanTitle": "Повысить план"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "Выбор профиля…",
     "description": "Профиль, к которому ассистент обращается за вторым мнением, когда хочет проверить план или свою работу.",
@@ -174,77 +155,9 @@
     "updateToVersion": "Обновить до {version}",
     "updating": "Обновление..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "Добавить карту",
-    "addPaymentMethod": "Добавить способ оплаты",
-    "adjust": "Изменить",
-    "capProgress": " / {cap} в этом месяце",
-    "connectCardBanner": "Для автопополнения нужно привязать карту.",
-    "dailyLimitLookupError": "Не удалось проверить дневной лимит кредитов, который нужен для автопополнения. Повторите попытку, чтобы продолжить.",
-    "declinedCutoffNotice": "Автопополнение приостановлено после нескольких отклонённых платежей. Добавление нового способа оплаты снова его включит.",
-    "disableError": "Не удалось выключить автопополнение. Повторите попытку.",
-    "dismiss": "Скрыть",
-    "loadError": "Не удалось загрузить настройки автопополнения.",
-    "loading": "Загрузка…",
-    "retry": "Повторить",
-    "summary": "Добавлять {amount}, когда баланс опускается ниже {threshold}",
-    "toggleHelper": "Автопополнение срабатывает только после исчерпания лимита использования по плану",
-    "toggleLabel": "Включить автопополнение",
-    "updateError": "Не удалось сохранить настройки автопополнения. Повторите попытку."
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "Выключить автопополнение",
-    "message": "Для автопополнения нужен дневной лимит кредитов. Задайте его, чтобы сохранить настройки автопополнения, или выключите автопополнение.",
-    "save": "Сохранить",
-    "saving": "Сохранение…",
-    "title": "Задайте дневной лимит кредитов"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "Выключить",
-    "disabling": "Выключение…",
-    "keepEnabled": "Оставить включённым",
-    "message": "Автопополнение остановится. Сохранённый способ оплаты останется в аккаунте.",
-    "title": "Выключить автопополнение?"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "Сумма автопополнения",
-    "cancel": "Отмена",
-    "capLabel": "Месячный лимит трат",
-    "save": "Сохранить",
-    "thresholdLabel": "Пополнять, когда баланс ниже"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "Карта сохранится для автопополнения и плана Pro.",
-    "addTitle": "Добавить карту",
-    "addressFormLoadError": "Не удалось загрузить форму адреса для оплаты. Повторите попытку.",
-    "cancel": "Отмена",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "Закрыть",
-    "confirmFailed": "Не удалось сохранить способ оплаты.",
-    "confirmingWithBank": "Подтверждение в банке…",
-    "declined": "Банк отклонил эту карту. Попробуйте другую или свяжитесь с банком.",
-    "loadingLabel": "Загрузка полей оплаты",
-    "paymentFormLoadError": "Не удалось загрузить форму оплаты. Повторите попытку.",
-    "primaryAdd": "Сохранить карту",
-    "primaryReplace": "Заменить карту",
-    "primarySubmitting": "Сохранение",
-    "replaceSubtitle": "Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCard": "Заменяем карту {brand} •••• {last4}. Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCardExpiry": "Заменяем карту {brand} •••• {last4} · {month} / {year}. Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCardNoBrand": "Заменяем карту, оканчивающуюся на {last4}. Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCardNoBrandExpiry": "Заменяем карту, оканчивающуюся на {last4} · {month} / {year}. Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCardNoLast4": "Заменяем вашу карту {brand}. Новая карта начнёт действовать сразу.",
-    "replaceSubtitleCardNoLast4Expiry": "Заменяем вашу карту {brand} · {month} / {year}. Новая карта начнёт действовать сразу.",
-    "replaceTitle": "Замена карты",
-    "savedSubtitle": "Автопополнение снова активно",
-    "savedTitle": "{brand} •••• {last4} сохранена",
-    "savedTitleGeneric": "Карта сохранена",
-    "savedTitleNoBrand": "Карта, оканчивающаяся на {last4}, сохранена",
-    "setupError": "Не удалось начать привязку карты. Повторите попытку.",
-    "termsAdd": "Cadet может списывать с этой карты оплату за автопополнение и продление подписки. Удалить её можно в любой момент в разделе «Оплата».",
-    "termsReplace": "Старая карта останется в Stripe, пока вы не удалите её в разделе «Оплата»; Cadet больше не будет с неё списывать.",
-    "tryAgain": "Попробовать снова",
-    "unavailable": "Привязка способа оплаты сейчас недоступна. Повторить позже."
+    "loadingLabel": "Загрузка полей оплаты"
   },
   "billingOnboardingModal": {
     "backgroundConfirmContinue": "Продолжить",
@@ -255,51 +168,10 @@
     "accountCta": "Управление аккаунтом",
     "billingCta": "Управление оплатой",
     "linkOutBody": "Тарифы, способы оплаты, счета и статистика использования — на страницах вашего аккаунта Cadet Cloud.",
-    "linkOutTitle": "Управляйте оплатой в своём аккаунте Cadet",
-    "billingTab": "Оплата",
-    "billingUnavailable": "Оплата недоступна при текущем состоянии ассистента.",
-    "loadingBilling": "Загрузка оплаты…",
-    "platformLoginNotice": "Вход на платформу Cadet для управления оплатой и использованием.",
-    "usageTab": "Использование"
-  },
-  "billingPanel": {
-    "addCreditsButton": "Добавить кредиты",
-    "balanceLabel": "Кредиты",
-    "degradedNotice": "Не удалось посчитать ожидающие списания. Показанный баланс может быть неполным.",
-    "loadError": "Не удалось загрузить сводку по оплате. Повторить позже.",
-    "loading": "Загрузка сводки по оплате...",
-    "lowBalanceToggle": "Своё оповещение о низком балансе",
-    "noInfo": "Нет сведений об оплате.",
-    "subtitle": "Кредиты, используемые при достижении лимита использования",
-    "title": "Кредиты дополнительного использования"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "конца расчётного периода",
-    "proCanceled": "План Pro отменён. Доступ сохранится до {date}.",
-    "proReactivated": "План Pro снова активен.",
-    "subscriptionUpdated": "Подписка обновлена."
+    "linkOutTitle": "Управляйте оплатой в своём аккаунте Cadet"
   },
   "billingStatusHandler": {
-    "successToast": "Оплата получена! Баланс кредитов скоро обновится.",
-    "topUpCancelToast": "Оплату отменили. Кредиты не добавлены.",
-    "upgradeCancelToast": "Повышение отменено. План не изменился."
-  },
-  "billingUsageChart": {
-    "empty": "Нет данных об использовании за этот период"
-  },
-  "billingUsagePanel": {
-    "backToAllUsage": "Ко всему использованию",
-    "chartMetricAria": "Метрика графика",
-    "eventsLabel": "События",
-    "llmDimensionAria": "Измерение расходов LLM",
-    "llmSpend": "Расход LLM",
-    "loadError": "Не удалось загрузить данные об использовании.",
-    "metricEvents": "События",
-    "metricSpend": "Расход ($)",
-    "oauthSpend": "Расход OAuth",
-    "spendLabel": "Расход",
-    "subtitle": "Обзор расходов.",
-    "title": "Расход кредитов"
+    "successToast": "Оплата получена! Баланс кредитов скоро обновится."
   },
   "biometricSettingsCard": {
     "description": "Когда сессия истечёт, подтверди вход через {label}, а не заново.",
@@ -369,15 +241,6 @@
     "step3": "3. Копирование полного URL из адресной строки этой страницы и вставка ниже",
     "tryAgain": "Попробовать снова",
     "urlPlaceholder": "Callback URL..."
-  },
-  "checkoutBonusModal": {
-    "body": "Разовое дополнительное использование на {amount}: сразу зачислим его на баланс использования. Платить не нужно.",
-    "claim": "Забрать {amount} дополнительного использования",
-    "decline": "Нет, спасибо",
-    "errorToast": "Не удалось добавить дополнительное использование. Повторите попытку.",
-    "grantedToast": "На баланс использования добавлено {amount} дополнительного использования.",
-    "title": "Держи {amount} дополнительного использования от нас",
-    "unavailableToast": "Это предложение больше недоступно."
   },
   "checkoutPage": {
     "awaitingReturnMessage": "Оплата открылась в браузере. Завершение там повышает план.",
@@ -540,25 +403,6 @@
     "prompt": "Нужно что-то ближе к текущим задачам?",
     "title": "Свой план"
   },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "Не больше двух знаков после запятой",
-    "errorEmpty": "Ввод дневного лимита",
-    "errorMin": "Не меньше $1",
-    "helperText": "Сбрасывается каждый день в {time}.",
-    "inputLabel": "Перестать тратить кредиты Cadet после",
-    "loadError": "Не удалось загрузить настройки дневного лимита кредитов.",
-    "loading": "Загрузка…",
-    "progress": "сегодня потрачено {spent} из {limit}",
-    "reachedNotice": "Сегодняшний расход кредитов Cadet достиг этого лимита. Генерация возобновится в {time} или после повышения лимита.",
-    "requiredNote": "Пока включено автопополнение, дневной лимит кредитов обязателен.",
-    "resumeError": "Не удалось возобновить дневной лимит кредитов. Повторите попытку.",
-    "resumeNow": "Возобновить сейчас",
-    "save": "Сохранить",
-    "saveError": "Не удалось сохранить дневной лимит кредитов. Повторите попытку.",
-    "skippedNotice": "На сегодня пропущен. Этот лимит снова заработает в {time}.",
-    "toggleLabel": "Дневной лимит кредитов",
-    "toggleSubtitle": "Дневной лимит действует только для кредитов за дополнительное использование"
-  },
   "debugBundleExport": {
     "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
     "export": "Экспортировать отладочный пакет",
@@ -686,11 +530,6 @@
     "versionSubtitle": "Управление версией ПО ассистента и обновлениями.",
     "versionTitle": "Версия"
   },
-  "gracePeriodBanner": {
-    "body": "Функции Pro сохранятся до этой даты.",
-    "reactivate": "Возобновить",
-    "title": "План Pro закончится {date}."
-  },
   "imageGenerationCard": {
     "activeModelLabel": "Активная модель",
     "apiKeyLabel": "API-ключ",
@@ -751,27 +590,6 @@
     "sectionAvailable": "Доступные",
     "sectionConfigured": "Ваши интеграции"
   },
-  "invoicesTable": {
-    "columnAction": "Действие",
-    "columnAmount": "Сумма",
-    "columnDate": "Дата",
-    "columnStatus": "Статус",
-    "downloadAll": "Скачать все",
-    "downloadAllFailed": "Не удалось скачать счета.",
-    "downloadPdfAriaLabel": "Скачать PDF счёта",
-    "empty": "Счетов нет",
-    "hideButton": "Скрыть счета",
-    "loadError": "Не удалось загрузить счета.",
-    "loadMore": "Загрузить ещё",
-    "loadMoreError": "Не удалось загрузить ещё счета.",
-    "loading": "Загрузка счетов...",
-    "retry": "Повторить",
-    "showButton": "Показать счета",
-    "showLess": "Свернуть",
-    "showMore": "Ещё ({count})",
-    "title": "Счета",
-    "view": "Открыть"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "Провайдер по умолчанию недоступен.",
     "manage": "Управлять",
@@ -783,17 +601,6 @@
     "change": "Сменить",
     "subtitle": "Язык речи для ассистента. Применится со следующего сообщения с голосом.",
     "title": "Язык прослушивания"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "Не больше двух знаков после запятой",
-    "errorRange": "Должно быть от $1 до $1,000",
-    "helperText": "Если не задано, по умолчанию {amount}",
-    "label": "Оповестить, когда баланс опустится ниже",
-    "loadError": "Не удалось загрузить настройки оповещения о низком балансе.",
-    "loading": "Загрузка…",
-    "reset": "Сбросить к значению по умолчанию",
-    "save": "Сохранить",
-    "saveError": "Не удалось сохранить оповещение о низком балансе. Повторите попытку."
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "Переопределения действий",
@@ -1047,16 +854,7 @@
     "title": "Привязанные устройства ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "Оканчивается на {last4}",
-    "replaceCard": "Заменить карту",
     "savedCard": "Сохранённая карта"
-  },
-  "paymentMethodsCard": {
-    "addButton": "Добавить способ оплаты",
-    "empty": "Способа оплаты нет. Добавление для автопополнения.",
-    "loadError": "Не удалось загрузить способы оплаты.",
-    "loading": "Загрузка…",
-    "title": "Способ оплаты"
   },
   "pendingPairingRequests": {
     "approveButton": "Одобрить",
@@ -1067,52 +865,13 @@
     "title": "Запросы на привязку"
   },
   "planCard": {
-    "alreadyOnPlanToast": "Этот план уже активен.",
-    "checkoutFailedToast": "Не удалось начать оплату повышения. Повторите попытку.",
-    "current": "Текущий",
-    "dailyUsageBar": "Дневное использование, сброс в {resetPhrase}",
-    "dailyUsageExhausted": "Вы использовали бесплатный лимит на сегодня. Добавьте кредиты, чтобы продолжить пользоваться ассистентом",
-    "dailyUsageResets": "Сброс в {resetPhrase}",
-    "dailyUsageTitle": "Дневное использование",
-    "endsOn": "План закончится {date}.",
-    "freeForever": "Бесплатно навсегда",
-    "heading": "План",
-    "loadError": "Не удалось загрузить план.",
-    "loading": "Загрузка плана...",
-    "manageSubscription": "Управление подпиской",
-    "nextPlan": "Следующий план",
-    "powerUp": "Усилить",
-    "powerUpFor": "Усилить за +{amount}/мес",
     "usageBalanceAddCredits": "Добавить",
     "usageBalanceBarRenews": "Месячное использование, продлится {date}",
     "usageBalanceBarResets": "Месячное использование, сброс {date}",
     "usageBalanceExhausted": "Добавление кредитов, чтобы продолжить пользоваться ассистентом",
     "usageBalancePctUsed": "использовано {pct}%",
     "usageBalanceRenews": "Продлится {date}",
-    "usageBalanceResets": "Сброс {date}",
-    "usageBalanceTitleMonthly": "Месячное использование",
-    "usageBalanceTitleOverall": "Общее использование",
-    "usageChip": "Использование {name}, сброс каждый месяц",
-    "viewAllPlans": "Все планы"
-  },
-  "planCardContent": {
-    "baseFee": "базовая плата {amount}",
-    "baseTagline": "Всё нужное для сильного ассистента",
-    "creditsNotIncluded": "*Кредиты не входят",
-    "current": "Текущий",
-    "currentlyPrice": "Сейчас {price}",
-    "downgradeToBase": "Перейти на Base",
-    "forever": "Навсегда",
-    "free": "Бесплатно",
-    "fromPrice": "От {price}",
-    "keepPlan": "Оставить план",
-    "loadingPlan": "Загрузка плана...",
-    "planEndsOn": "План закончится {date}",
-    "pricingUnavailable": "Цена текущего плана недоступна",
-    "proTagline": "Больше функций, больше вычислений, больше хранилища",
-    "subscriptionChangeTitle": "Подписка Pro изменится с {from} на {to}.",
-    "updatePlan": "Обновить план",
-    "upgradeToPro": "Перейти на Pro"
+    "usageBalanceResets": "Сброс {date}"
   },
   "planColumnCard": {
     "currentPlan": "Текущий план",
@@ -1765,54 +1524,6 @@
     "processingFallback": "Обработка повышения. Обновление чуть позже покажет новый план.",
     "successBody": "План Pro активен. Скоро откроется оплата.",
     "welcomeTitle": "Добро пожаловать в Pro"
-  },
-  "usageTab": {
-    "analyzeCostsButton": "Разобрать расходы с ассистентом",
-    "breakdownTitle": "По действиям",
-    "cacheCreatedLabel": "Записей в кэш",
-    "cacheReadLabel": "Чтений кэша",
-    "costAssistantSubtitle": "Недавние траты и правка выбора профилей модели.",
-    "costAssistantTitle": "Ассистент по расходам",
-    "costLabel": "Стоимость",
-    "dailyTrend": "Дневной тренд",
-    "dailyTrendBy": "Дневной тренд по {group}",
-    "directInputTokensLabel": "Входные токены",
-    "failedToLoadUsage": "Не удалось загрузить использование.",
-    "groupByActor": "Актор",
-    "groupByConversation": "Диалог",
-    "groupByModel": "Модель",
-    "groupByProfile": "Профиль",
-    "groupByProvider": "Провайдер",
-    "groupBySchedule": "Расписание",
-    "groupByTask": "Действие",
-    "groupColumnLabel": "Группа",
-    "hourlyTrend": "Часовой тренд",
-    "hourlyTrendBy": "Часовой тренд по {group}",
-    "inferenceUsageTitle": "Использование ИИ",
-    "llmCallsLabel": "Вызовы LLM",
-    "noBreakdownDataSubtitle": "Для этой группировки использования нет",
-    "noBreakdownDataTitle": "Нет данных разбивки",
-    "optimizeSettingsButton": "Оптимизировать настройки",
-    "outputTokensLabel": "Выходные токены",
-    "percentOfTotalLabel": "% от всего",
-    "range30d": "Последние 30 дней",
-    "range7d": "Последние 7 дней",
-    "range90d": "Последние 90 дней",
-    "rangeAll": "За всё время",
-    "rangeToday": "Сегодня",
-    "rangeYesterday": "Вчера",
-    "retry": "Повторить",
-    "title": "Использование",
-    "tokensLabel": "Токены",
-    "totalsAriaLabel": "Итого",
-    "turnsLabel": "Ходы",
-    "unknownSchedule": "Неизвестное расписание ({scheduleId})"
-  },
-  "usageTrendChart": {
-    "noDailyData": "Нет дневных данных",
-    "noHourlyData": "Нет почасовых данных",
-    "noUsageInRange": "В этом диапазоне использования нет",
-    "total": "Итого"
   },
   "useBillingPortalSession": {
     "openError": "Не удалось открыть портал оплаты. Повторите попытку."
