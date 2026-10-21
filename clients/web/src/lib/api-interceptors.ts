@@ -1101,11 +1101,7 @@ async function recoverFromCloudSessionRejection(): Promise<void> {
       !isAuthenticated(useAuthStore.getState().sessionStatus) &&
       claimCloudAuthRedirect()
     ) {
-      hardNavigate(
-        `${routes.account.login}?returnTo=${encodeURIComponent(
-          window.location.pathname + window.location.search,
-        )}`,
-      );
+      hardNavigate(routes.remotePair);
     }
   } finally {
     cloudAuthRecoveryFired = false;

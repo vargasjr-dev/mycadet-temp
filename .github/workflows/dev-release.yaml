@@ -129,7 +129,6 @@ jobs:
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
 
-
       - name: Lint
         run: bun run lint
         working-directory: assistant
@@ -156,7 +155,6 @@ jobs:
             [ -f "${dir}/package.json" ] || continue
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
-
 
       - name: Typecheck
         run: bunx tsc --noEmit
@@ -191,7 +189,6 @@ jobs:
             (cd "${dir}" && bun install --frozen-lockfile 2>/dev/null || bun install)
           done
 
-
       - name: Test (shard ${{ matrix.shard }} of 8)
         run: bun run test
         working-directory: assistant
@@ -215,7 +212,6 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile --filter=@mycadet/gateway
         working-directory: gateway
-
 
       - name: Lint
         run: bun run lint
@@ -400,7 +396,6 @@ jobs:
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' assistant/package.json > assistant/package.json.tmp && mv assistant/package.json.tmp assistant/package.json
 
-
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
@@ -538,7 +533,6 @@ jobs:
 
       - name: Stamp dev version into package.json
         run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' gateway/package.json > gateway/package.json.tmp && mv gateway/package.json.tmp gateway/package.json
-
 
       - name: Build and push by digest
         id: build
@@ -971,7 +965,6 @@ jobs:
       - name: Build and package Electron app
         env:
           CSC_NAME: Developer ID Application
-          VITE_WEB_MODE: "full"
           VITE_ENVIRONMENT: dev
           # Environment-scoped secret (pk_test_ on dev); requires the job's
           # `environment: dev` above, else it resolves empty and the
@@ -1412,7 +1405,6 @@ jobs:
       - name: Build
         working-directory: clients/web
         env:
-          VITE_WEB_MODE: "full"
           VITE_APP_VERSION: ${{ needs.compute-version.outputs.version }}
         run: bun run build
       - name: Rewrite package.json for publish

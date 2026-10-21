@@ -4,9 +4,11 @@ import { useOnboardingWindowSize } from "@/hooks/use-onboarding-window-size";
 
 /**
  * Layout for the `/account/*` auth screens that render in the MAIN window —
- * post-nuke, password reset (the reset-email links' target). These live
- * outside `RootLayout`, so this is where the compact-window sizing hook is
- * mounted for them: they use the same small (440×630) window as onboarding.
+ * post-nuke, the provider tier only (the provider callback + its signup
+ * completion, driven by the auth-logic tier until the auth store dies).
+ * These live outside `RootLayout`, so this is where the compact-window
+ * sizing hook is mounted for them: they use the same small (440×630) window
+ * as onboarding.
  *
  * Deliberately does NOT wrap the OAuth popup relay (`oauth/popup-complete`).
  * It renders inside an OAuth popup child window, and the sizing IPC targets

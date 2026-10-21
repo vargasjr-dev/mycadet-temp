@@ -194,7 +194,7 @@ function formatProviderName(provider: string): string {
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export function OAuthPopupCompletePage() {
-  const { t } = useTranslation("account");
+  const { t } = useTranslation("onboarding");
   const [searchParams] = useSearchParams();
   const requestId = searchParams.get("requestId");
   const oauthStatus = searchParams.get("oauth_status");

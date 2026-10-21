@@ -33,7 +33,7 @@ import { textLinkVariants } from "@mycadet/design-library/components/text-link";
  * callback to `/accounts/native/callback` without loading any SPA.
  */
 export function ProviderCallbackPage() {
-  const { t } = useTranslation("account");
+  const { t } = useTranslation("onboarding");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const refreshSession = useAuthStore.use.refreshSession();
@@ -120,7 +120,7 @@ export function ProviderCallbackPage() {
         />
         <div className="flex flex-col items-center gap-4">
           <Link
-            to={routes.account.login}
+            to={routes.remotePair}
             className={cn(
               textLinkVariants({ tone: "quiet" }),
               "text-sm font-medium text-[var(--content-emphasised)]",
@@ -142,7 +142,7 @@ export function ProviderCallbackPage() {
         />
         <div className="flex flex-col items-center gap-4">
           <Link
-            to={routes.account.login}
+            to={routes.remotePair}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--primary-base)] px-6 py-3 text-sm font-medium text-[var(--content-inset)] no-underline transition-colors hover:bg-[var(--primary-hover)]"
           >
             {t("providerCallbackPage.backToSignIn")}

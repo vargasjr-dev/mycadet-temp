@@ -363,7 +363,7 @@ describe("authMiddleware — app-access admit gate", () => {
     if (!outcome.admitted) {
       expect(outcome.response.status).toBe(302);
       expect(outcome.response.headers.get("Location")).toBe(
-        `${routes.account.login}?returnTo=${encodeURIComponent("/assistant/identity")}`,
+        `${routes.remotePair}?returnTo=${encodeURIComponent("/assistant/identity")}`,
       );
     }
   });
