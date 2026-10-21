@@ -5,12 +5,14 @@ import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RouteErrorBoundary } from "@app/components/route-error-boundary";
 import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
+import { useConnectDeepLinkDrain } from "@app/domains/account/hooks/use-connect-deep-link-drain";
 import { accountRoute } from "@app/domains/account/account-route";
 import { AssistantPage } from "@app/shell/assistant-page";
 
 export function DesktopChrome() {
   const [createOpen, setCreateOpen] = useState(false);
   useCadetCommands({ createAssistant: () => setCreateOpen(true) });
+  useConnectDeepLinkDrain();
   return (
     <>
       <CreateAssistantDialog
