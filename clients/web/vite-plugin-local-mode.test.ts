@@ -55,7 +55,7 @@ const env = {
   XDG_DATA_HOME: path.join(tempDir, "data-home"),
 };
 const configDir = path.join(tempDir, "cadet");
-const lockfilePath = path.join(tempDir, ".cadet.lock.json");
+const lockfilePath = path.join(tempDir, "lockfile.json");
 
 // Capture the plugin's middleware chain from a fake dev server so requests
 // can be dispatched through it without booting Vite.
@@ -220,9 +220,7 @@ describe("guardian-token middleware", () => {
 
 describe("avatar middleware", () => {
   const instanceDir = path.join(tempDir, "instances", "asst-a");
-  const avatarDir = resolveAvatarDir(
-    path.join(instanceDir, ".cadet", "workspace"),
-  );
+  const avatarDir = resolveAvatarDir(path.join(instanceDir, "workspace"));
   const traits = { bodyShape: "round", eyeStyle: "dot", color: "#123456" };
 
   beforeEach(() => {
@@ -278,7 +276,12 @@ describe("avatar middleware", () => {
   });
 
   test("serves an image avatar as base64", async () => {
-    const png = Buffer.from("not-really-a-png");
+    // A real PNG header — the reader only serves bytes that sniff as a
+    // raster (PNG/JPEG/GIF/WebP magic), so fake text never round-trips.
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+      "base64",
+    );
     fs.writeFileSync(path.join(avatarDir, AVATAR_IMAGE_FILENAME), png);
     fs.writeFileSync(
       path.join(avatarDir, AVATAR_MANIFEST_FILENAME),
@@ -331,7 +334,6 @@ describe("avatar middleware", () => {
         "cadet",
         "assistants",
         "asst-a",
-        ".cadet",
         "workspace",
       ),
     );

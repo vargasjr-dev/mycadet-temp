@@ -161,11 +161,12 @@ describe("buildSttStreamWsUrl", () => {
     // the id-keyed path resolves the port through the lockfile entry.
     useLockfileStore.setState({
       lockfile: {
+        activeAssistant: null,
         assistants: [
           {
             assistantId: "stt-1",
             cloud: "local",
-            resources: { gatewayPort: 8500 },
+            resources: { gatewayPort: 8500, daemonPort: 8501 },
           },
         ],
       },

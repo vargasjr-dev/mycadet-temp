@@ -73,7 +73,9 @@ afterEach(() => {
  * tests read the same source the hosts do.
  */
 function setLockfile(assistants: LockfileAssistant[]): void {
-  useLockfileStore.setState({ lockfile: { assistants } });
+  useLockfileStore.setState({
+    lockfile: { assistants, activeAssistant: null },
+  });
 }
 
 describe("mintTunnelWsToken", () => {
@@ -453,7 +455,9 @@ describe("isPairedGatewayIngress", () => {
       } as LockfileAssistant,
     ]);
     expect(
-      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/asst-1"),
+      isPairedGatewayIngress(
+        "http://localhost:3000/assistant/__gateway/asst-1",
+      ),
     ).toBe(true);
     expect(
       isPairedGatewayIngress("app://cadet/assistant/__gateway/asst-1"),
@@ -469,7 +473,9 @@ describe("isPairedGatewayIngress", () => {
       } as LockfileAssistant,
     ]);
     expect(
-      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/asst-1"),
+      isPairedGatewayIngress(
+        "http://localhost:3000/assistant/__gateway/asst-1",
+      ),
     ).toBe(false);
     expect(
       isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/who"),
