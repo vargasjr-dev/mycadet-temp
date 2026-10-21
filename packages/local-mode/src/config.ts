@@ -63,15 +63,6 @@ export function resolveLockfilePaths(
     ];
   }
 
-  if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
-    // Canonical: the XDG config dir, where every other environment keeps
-    // its lockfile. Installs that predate the move are handled by the
-    // vellum → cadet migration, which moves the home-level file into
-    // place — no legacy candidates here.
-    const dir = lockfileDir ?? resolveConfigDir(env, options);
-    return [joinLocalPath(options, dir, "lockfile.json")];
-  }
-
   const dir = lockfileDir ?? resolveConfigDir(env, options);
   return [joinLocalPath(options, dir, "lockfile.json")];
 }
