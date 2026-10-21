@@ -73,7 +73,7 @@ const NgrokTunnelsResponseSchema = z.object({
 });
 
 /**
- * The ingress block of the workspace config, as read by the tunnel edge:
+ * The ingress block of the workspace config, as read by the app server:
  * explicitly enabled with a saved public URL.
  */
 export const IngressConfigSchema = z.object({

@@ -172,7 +172,7 @@ mock.module("../lib/ingress-config.js", () => ({
   loadRawConfig: loadRawConfigMock,
 }));
 
-const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
+const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
   async () => ({ port: 7840, started: true, shellMode: "web" }),
 );
 const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
@@ -184,7 +184,7 @@ const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
 
 mock.module("../lib/nginx-ingress.js", () => ({
   ...realNginxIngress,
-  ensureTunnelEdge: ensureTunnelEdgeMock,
+  ensureAppServer: ensureAppServerMock,
   isIngressRunning: isIngressRunningMock,
   readIngressState: readIngressStateMock,
 }));
@@ -300,8 +300,8 @@ beforeEach(() => {
   maybeStartNgrokTunnelMock.mockResolvedValue(null);
   loadRawConfigMock.mockReset();
   loadRawConfigMock.mockReturnValue({});
-  ensureTunnelEdgeMock.mockReset();
-  ensureTunnelEdgeMock.mockResolvedValue({
+  ensureAppServerMock.mockReset();
+  ensureAppServerMock.mockResolvedValue({
     port: 7840,
     started: true,
   });
@@ -887,7 +887,7 @@ describe("cadet wake: daemon startup failure", () => {
   });
 });
 
-describe("cadet wake — tunnel edge restore", () => {
+describe("cadet wake — app server restore", () => {
   const webhookConfig = { telegram: { botUsername: "bot" } };
   const enabledConfig = {
     ingress: { enabled: true, publicBaseUrl: "https://assistant.example.com" },
@@ -903,7 +903,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     await wake();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "local-assistant",
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
@@ -921,7 +921,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     await wake();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "local-assistant",
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
@@ -950,7 +950,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+      expect(ensureAppServerMock).toHaveBeenCalledWith({
         assistantId: "docker-1",
         workspaceDir: defaultWorkspace,
         gatewayPort: 7930,
@@ -1036,7 +1036,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -1064,9 +1064,9 @@ describe("cadet wake — tunnel edge restore", () => {
       listenPort: 7840,
       gatewayPort: 7930,
     });
-    // Ownership clears the restore, and `ensureTunnelEdge` is what decides the
+    // Ownership clears the restore, and `ensureAppServer` is what decides the
     // running edge still matches: it reports the reuse rather than a restart.
-    ensureTunnelEdgeMock.mockResolvedValue({
+    ensureAppServerMock.mockResolvedValue({
       port: 7840,
       started: false,
     });
@@ -1075,7 +1075,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+      expect(ensureAppServerMock).toHaveBeenCalledWith({
         assistantId: "docker-1",
         workspaceDir: defaultWorkspace,
         gatewayPort: 7930,
@@ -1104,9 +1104,7 @@ describe("cadet wake — tunnel edge restore", () => {
       ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
-    ensureTunnelEdgeMock.mockRejectedValue(
-      new Error("nginx is not installed."),
-    );
+    ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -1158,7 +1156,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -1187,7 +1185,7 @@ describe("cadet wake — tunnel edge restore", () => {
       await wake();
 
       expect(waitForDaemonReadyMock).toHaveBeenCalledWith(7930, 5 * 60_000);
-      expect(ensureTunnelEdgeMock).toHaveBeenCalled();
+      expect(ensureAppServerMock).toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;
@@ -1215,7 +1213,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
       expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("did not come up"),
       );
@@ -1245,7 +1243,7 @@ describe("cadet wake — tunnel edge restore", () => {
       await wake();
 
       expect(waitForDaemonReadyMock).not.toHaveBeenCalled();
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;
@@ -1281,7 +1279,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+      expect(ensureAppServerMock).toHaveBeenCalledWith({
         assistantId: "docker-1",
         workspaceDir: defaultWorkspace,
         gatewayPort: 7930,
@@ -1320,7 +1318,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;
@@ -1346,7 +1344,7 @@ describe("cadet wake — tunnel edge restore", () => {
     try {
       await wake();
 
-      expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+      expect(ensureAppServerMock).not.toHaveBeenCalled();
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -1361,7 +1359,7 @@ describe("cadet wake — tunnel edge restore", () => {
   test("skips the edge and tunnels the gateway port when nothing wants an edge", async () => {
     await wake();
 
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,
       workspaceDirOf(tempDir),
@@ -1374,7 +1372,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     await wake();
 
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,
       workspaceDirOf(tempDir),
@@ -1387,12 +1385,12 @@ describe("cadet wake — tunnel edge restore", () => {
 
     await wake();
 
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
   });
 
-  test("a running edge is rebuilt through ensureTunnelEdge, never adopted at its recorded port", async () => {
+  test("a running edge is rebuilt through ensureAppServer, never adopted at its recorded port", async () => {
     // Recorded mode and gateway port are not a licence to reuse: only
-    // ensureTunnelEdge compares the injected-config fingerprint, so an edge
+    // ensureAppServer compares the injected-config fingerprint, so an edge
     // predating the current edge template (one serving no assistantId, which
     // makes the identity probe degrade to always-healthy) must be rebuilt
     // rather than carried across the wake at its recorded listen port.
@@ -1406,7 +1404,7 @@ describe("cadet wake — tunnel edge restore", () => {
 
     await wake();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "local-assistant",
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
@@ -1430,7 +1428,7 @@ describe("cadet wake — tunnel edge restore", () => {
       gatewayPort: 7830,
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
     });
-    ensureTunnelEdgeMock.mockRejectedValue(
+    ensureAppServerMock.mockRejectedValue(
       new Error(
         "The nginx edge is still serving an outdated remote web config and could not be restarted with the updated one. Cadet could not stop the nginx process (PID 4242), even with SIGKILL. Stop it by hand and retry, or run `cadet sleep` to shut the assistant down entirely.",
       ),
@@ -1458,7 +1456,7 @@ describe("cadet wake — tunnel edge restore", () => {
       listenPort: 7845,
       gatewayPort: 7831,
     });
-    ensureTunnelEdgeMock.mockRejectedValue(
+    ensureAppServerMock.mockRejectedValue(
       new Error("The nginx edge is still proxying gateway port 7831."),
     );
 
@@ -1473,9 +1471,9 @@ describe("cadet wake — tunnel edge restore", () => {
 
   test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
     loadRawConfigMock.mockReturnValue(webhookConfig);
-    ensureTunnelEdgeMock.mockRejectedValue(
+    ensureAppServerMock.mockRejectedValue(
       new Error(
-        "nginx is not installed, so the tunnel edge cannot start. See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
+        "nginx is not installed, so the app server cannot start. See https://nginx.org/en/docs/install.html for how to install, or point NGINX_BIN at an existing binary.",
       ),
     );
 
@@ -1487,7 +1485,9 @@ describe("cadet wake — tunnel edge restore", () => {
     // No tunnel is recorded here, so no provider can be named and the advice
     // points at the help that lists them.
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Run `cadet tunnel --help` to rebuild the edge."),
+      expect.stringContaining(
+        "Run `cadet tunnel --help` to rebuild the app server.",
+      ),
     );
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,
@@ -1507,13 +1507,13 @@ describe("cadet wake — tunnel edge restore", () => {
         },
       },
     });
-    ensureTunnelEdgeMock.mockRejectedValue(new Error("edge rebuild failed"));
+    ensureAppServerMock.mockRejectedValue(new Error("edge rebuild failed"));
 
     await wake();
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Run `cadet tunnel start --provider cloudflare` to rebuild the edge.",
+        "Run `cadet tunnel start --provider cloudflare` to rebuild the app server.",
       ),
     );
   });
@@ -1534,20 +1534,20 @@ describe("cadet wake — tunnel edge restore", () => {
         },
       },
     });
-    ensureTunnelEdgeMock.mockRejectedValue(new Error("edge rebuild failed"));
+    ensureAppServerMock.mockRejectedValue(new Error("edge rebuild failed"));
 
     await wake();
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Run `cadet tunnel start --provider tailscale` to rebuild the edge.",
+        "Run `cadet tunnel start --provider tailscale` to rebuild the app server.",
       ),
     );
   });
 
   test("a reused edge still points the tunnel at its listen port", async () => {
     loadRawConfigMock.mockReturnValue(enabledConfig);
-    ensureTunnelEdgeMock.mockResolvedValue({
+    ensureAppServerMock.mockResolvedValue({
       port: 7841,
       started: false,
     });

@@ -45,8 +45,8 @@ import {
 } from "../lib/local";
 import {
   DOCKER_GATEWAY_READY_TIMEOUT_MS,
-  restoreContainerTunnelEdge,
-  restoreTunnelEdgeAndAutoTunnel,
+  restoreContainerAppServer,
+  restoreAppServerAndAutoTunnel,
 } from "../lib/tunnel.js";
 
 export const wake = Object.assign(
@@ -232,7 +232,7 @@ export async function wakeAssistant(
       await recreateDockerContainers(entry);
     }
     console.log("Docker containers started.");
-    await restoreContainerTunnelEdge(entry, DOCKER_GATEWAY_READY_TIMEOUT_MS);
+    await restoreContainerAppServer(entry, DOCKER_GATEWAY_READY_TIMEOUT_MS);
     console.log("Wake complete.");
     return;
   }
@@ -580,7 +580,7 @@ export async function wakeAssistant(
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.
   const workspaceDir = join(resources.instanceDir, "workspace");
-  await restoreTunnelEdgeAndAutoTunnel(
+  await restoreAppServerAndAutoTunnel(
     entry.assistantId,
     resources.gatewayPort,
     workspaceDir,

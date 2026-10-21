@@ -16,7 +16,7 @@ import {
 } from "../lib/drain.js";
 import { loadGuardianToken } from "../lib/guardian-token.js";
 import {
-  stopContainerTunnelEdge,
+  stopContainerAppServer,
   stopIngressNginx,
 } from "../lib/nginx-ingress.js";
 import {
@@ -253,8 +253,8 @@ export async function sleepAssistant(
     const res = dockerResourceNames(entry.assistantId);
     await sleepContainers(res);
     console.log("Docker containers stopped.");
-    if (await stopContainerTunnelEdge(entry)) {
-      console.log("Tunnel edge stopped.");
+    if (await stopContainerAppServer(entry)) {
+      console.log("App server stopped.");
     }
     return;
   }

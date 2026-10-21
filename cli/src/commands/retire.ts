@@ -29,7 +29,7 @@ import {
   readCloudToken,
 } from "../lib/cloud-client.js";
 import { retireDocker, dockerResourceNames } from "../lib/docker.js";
-import { stopContainerTunnelEdge } from "../lib/nginx-ingress.js";
+import { stopContainerAppServer } from "../lib/nginx-ingress.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { retireAppleContainer } from "../lib/retire-apple-container.js";
 import { exec } from "../lib/step-runner.js";
@@ -349,10 +349,10 @@ async function retireInner(): Promise<void> {
 
   if (cloud === "apple-container") {
     await retireAppleContainer(assistantId, entry);
-    await stopContainerTunnelEdge(entry);
+    await stopContainerAppServer(entry);
   } else if (cloud === "docker") {
     await retireDocker(assistantId);
-    await stopContainerTunnelEdge(entry);
+    await stopContainerAppServer(entry);
   } else if (cloud === "local") {
     try {
       await unregisterSelfHostedLocalPlatformRecord(entry);

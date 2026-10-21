@@ -12,7 +12,7 @@ import type { Readable, Writable } from "node:stream";
 export interface EnsureBinaryOptions {
   /** The binary as invoked on PATH, e.g. "nginx". */
   binary: string;
-  /** What the running command needs it for, e.g. "the tunnel edge". */
+  /** What the running command needs it for, e.g. "the app server". */
   purpose: string;
   /**
    * Package-manager name → full install argv (sudo included where needed),

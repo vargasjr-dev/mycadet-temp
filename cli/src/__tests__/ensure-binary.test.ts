@@ -20,7 +20,7 @@ describe("ensureBinaryInstalled", () => {
     const output = makeOutput();
     const version = await ensureBinaryInstalled({
       binary: "nginx",
-      purpose: "the tunnel edge",
+      purpose: "the app server",
       packages: { brew: ["brew", "install", "nginx"] },
       manualHint: "install nginx",
       probe: () => "nginx version 1.2",
@@ -39,7 +39,7 @@ describe("ensureBinaryInstalled", () => {
     let probeCalls = 0;
     const version = await ensureBinaryInstalled({
       binary: "nginx",
-      purpose: "the tunnel edge",
+      purpose: "the app server",
       packages: {
         brew: ["brew", "install", "nginx"],
         "apt-get": ["sudo", "apt-get", "install", "-y", "nginx"],
@@ -69,7 +69,7 @@ describe("ensureBinaryInstalled", () => {
     let probeCalls = 0;
     const pending = ensureBinaryInstalled({
       binary: "nginx",
-      purpose: "the tunnel edge",
+      purpose: "the app server",
       packages: { brew: ["brew", "install", "nginx"] },
       manualHint: "install nginx yourself",
       probe: () => (++probeCalls > 1 ? "nginx version 1.2" : null),
@@ -111,7 +111,7 @@ describe("ensureBinaryInstalled", () => {
     const output = makeOutput();
     const version = await ensureBinaryInstalled({
       binary: "nginx",
-      purpose: "the tunnel edge",
+      purpose: "the app server",
       packages: { brew: ["brew", "install", "nginx"] },
       manualHint: "install nginx yourself",
       probe: () => null,
@@ -148,7 +148,7 @@ describe("ensureBinaryInstalled", () => {
   test("a non-interactive terminal declines instead of hanging", async () => {
     const version = await ensureBinaryInstalled({
       binary: "nginx",
-      purpose: "the tunnel edge",
+      purpose: "the app server",
       packages: { brew: ["brew", "install", "nginx"] },
       manualHint: "install nginx yourself",
       probe: () => null,
@@ -188,7 +188,7 @@ test("a Mac without Homebrew asks separately before bootstrapping and installing
   let brewPrompts = 0;
   const version = await ensureBinaryInstalled({
     binary: "nginx",
-    purpose: "the tunnel edge",
+    purpose: "the app server",
     platform: "darwin",
     packages: { brew: ["brew", "install", "nginx"] },
     manualHint: "install nginx",

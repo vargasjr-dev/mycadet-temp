@@ -11,7 +11,7 @@ import { RemoteSchema } from "@mycadet/local-mode/contract";
  * `cloudUrl` is the cloud backend base — the account session, auth
  * endpoints, and the cloud-hosted assistant list. It is never the API base
  * for a local assistant: the shell resolves assistants same-origin, and the
- * serving origin routes `/v1` to the right control plane (the tunnel edge
+ * serving origin routes `/v1` to the right control plane (the app server
  * proxies it to the local gateway; the desktop protocol forwards it; the
  * cloud takeover proxies it). The native boot bundle is the one host with
  * no `/v1` router at its origin, so it resolves assistants against
