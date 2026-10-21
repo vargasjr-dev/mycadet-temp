@@ -16,7 +16,6 @@ import {
 import { requestVoiceStart } from "@/domains/chat/voice/live-voice/start-voice-request";
 import { ensureMainWindowVisible } from "@/runtime/main-window";
 import { consumeShareInbox, readShareInboxFiles } from "@/runtime/share-inbox";
-import { useConnectDialogStore } from "@/stores/connect-dialog-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { usePendingDeepLinkStore } from "@/stores/pending-deep-link-store";
 import {
@@ -25,7 +24,6 @@ import {
   navigateToNewConversation,
   revealConversationView,
 } from "@/utils/conversation-navigation";
-import { pairingLinkForBase } from "@/utils/pairing-address";
 import { conversationIdForPath, routes } from "@/utils/routes";
 
 /**
@@ -73,14 +71,6 @@ import { conversationIdForPath, routes } from "@/utils/routes";
  *   the chat if the current route is not already a conversation, and park the
  *   request for `ChatLayout` to drain into the conversation list (the mobile
  *   drawer, or the sidebar on a wider window).
- * - `deeplink.connect` → `ensureMainWindowVisible()` + park the request
- *   in the connect-dialog store + navigate to the assistant chooser,
- *   which opens its Connect a Remote Assistant dialog off that store.
- *   A `url`+`code` link recomposes into the pairing link and prefills the
- *   address field, so the pair completes on one click; a link carrying
- *   only a base prefills that, and the dialog mints its own approval
- *   code. A link with no usable base gets guidance instead of a prefill,
- *   naming its legacy pairing bundle when it carried one.
  * - `deeplink.share` → consume the App Group inbox (by id, or the newest
  *   item when the command URL never arrived), then park a send for
  *   `useShareInboxSend` and land on a new draft or the chosen thread.
@@ -136,29 +126,6 @@ import { conversationIdForPath, routes } from "@/utils/routes";
  * generic; chat-specific store handling lives in the shared
  * `navigateToConversation` util.
  */
-
-/**
- * The address a `connect` deep link asks the dialog to pair with. A link
- * carrying a device code recomposes into the pairing link the local-mode host
- * exchanges outright; a link carrying only a base becomes the bare address,
- * which mints its own approval code. `null` when the link carried no usable
- * base, leaving the dialog nothing to submit.
- */
-function connectAddress(
-  url: string | null,
-  code: string | null,
-): string | null {
-  if (url === null) {
-    return null;
-  }
-  if (code === null) {
-    return url;
-  }
-  // The link the user sees in the address field, so it has to be one they can
-  // also paste into another device's browser: the base plus the pair route,
-  // not the base with a bare fragment hung off it.
-  return pairingLinkForBase(url, code) ?? url;
-}
 
 export function useGlobalDeepLinkConsumer(): void {
   const navigate = useNavigate();
@@ -406,32 +373,6 @@ export function useGlobalDeepLinkConsumer(): void {
       void openExternalUrl(cloudAccountBillingUrl());
     },
   );
-
-  // A usable address prefills the field and stops there. A custom URL scheme
-  // carries no caller identity (see the provenance note above the hook) and a
-  // pairing is an authority grant: submitting one unattended would let any page
-  // that can open a URL attach an assistant of its choosing and have the
-  // chooser connect to it. Prefilling retypes nothing, shows the user the host
-  // they are about to pair with, and leaves the grant one click away.
-  //
-  // With nothing to submit the dialog explains the link instead. `legacy`
-  // marks app versions whose connect dialog took a pasted pairing bundle; the
-  // payload never crosses the bridge, so only the flag is read. The kind is
-  // parked rather than the copy, so the dialog resolves it reactively.
-  useBusSubscription("deeplink.connect", ({ url, code, legacy }) => {
-    void ensureMainWindowVisible();
-    const address = connectAddress(url, code);
-    // Park before navigating so the chooser mounts with the dialog
-    // already open (its auto-skip stands down while it is).
-    useConnectDialogStore
-      .getState()
-      .openConnectDialog(
-        address !== null
-          ? { initialAddress: address }
-          : { guidanceKind: legacy ? "legacy" : "generic" },
-      );
-    navigateRef.current(routes.selectAssistant);
-  });
 
   useBusSubscription("deeplink.share", ({ inboxId }) => {
     void (async () => {

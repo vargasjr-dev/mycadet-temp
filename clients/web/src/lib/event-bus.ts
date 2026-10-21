@@ -310,23 +310,6 @@ export interface BusEventMap {
    * existence is the send-authorization. A forged id finds nothing.
    */
   "deeplink.share": { inboxId: string | null };
-  /**
-   * Electron host only: inbound `<scheme>://connect` URL from the pair
-   * page's "Open in the Cadet app" button or a `cadet pair --app`
-   * QR code. `url` is the validated https server base and `code` the
-   * device code the link carried; together they are the pairing link the
-   * connect dialog hands to the local-mode host. `code` is credential
-   * material, so consumers must never log or breadcrumb it. `legacy`
-   * marks a link that carried an older version's pairing bundle, whose
-   * payload the main-process parser drops. `useGlobalDeepLinkConsumer`
-   * parks the request in the connect-dialog store and navigates to the
-   * assistant chooser.
-   */
-  "deeplink.connect": {
-    url: string | null;
-    code: string | null;
-    legacy: boolean;
-  };
   "deeplink.unknown": { url: string };
   /**
    * Connectivity state change from the Electron host. Main fuses

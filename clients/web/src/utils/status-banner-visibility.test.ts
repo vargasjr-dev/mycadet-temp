@@ -17,11 +17,7 @@ describe("shouldSuppressRootStatusBanner", () => {
   });
 
   test("suppresses setup routes around onboarding", () => {
-    for (const pathname of [
-      routes.welcome,
-      routes.selectAssistant,
-      routes.reviewTerms,
-    ]) {
+    for (const pathname of [routes.welcome, routes.reviewTerms]) {
       expect(shouldSuppressRootStatusBanner(pathname, "")).toBe(true);
     }
   });

@@ -94,21 +94,10 @@ if (__INCLUDES_ACCOUNT__) {
       "/account/oauth/complete",
       "/account/oauth/desktop-complete",
       "/account/cloud-callback",
-      // Assistant selection moved here from /assistant: account-level flows
-      // are shell territory. A standalone screen, not compact auth chrome.
-      "/account/select-assistant",
     ])("%s is NOT sized by AccountLayout", (path) => {
       expect(isUnderComponent(path, "AccountLayout")).toBe(false);
     });
 
-    test("select-assistant moved out of /assistant into /account", () => {
-      // The old path now falls through to the NotFound splat; the new path
-      // keeps the auth contract it inherited from the /assistant subtree.
-      const oldMatches =
-        matchRoutes(routeTree as never, "/assistant/select-assistant") ?? [];
-      expect(oldMatches.at(-1)?.route.path).toBe("*");
-      expect(hasRouteMiddleware("/account/select-assistant")).toBe(true);
-    });
   });
 } else {
   describe("account routes", () => {
@@ -117,7 +106,6 @@ if (__INCLUDES_ACCOUNT__) {
       "/account",
       "/account/login",
       "/account/signup",
-      "/account/select-assistant",
       "/logout",
     ])("%s falls through to the NotFound splat", (path) => {
       const matches = matchRoutes(routeTree as never, path) ?? [];

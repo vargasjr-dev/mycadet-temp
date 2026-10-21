@@ -6,8 +6,6 @@
     "cancel": "取消",
     "add": "新增",
     "adding": "正在新增…",
-    "connect": "連線",
-    "connecting": "正在連線…",
     "tryAgain": "再試一次",
     "remove": "移除 {value}",
     "logIn": "登入",
@@ -52,21 +50,6 @@
     "noKeyPrompt": "沒有金鑰？",
     "getKeyLink": "在此取得 API 金鑰"
   },
-  "selectAssistantScreen": {
-    "title": "選擇助理",
-    "listAriaLabel": "助理列表",
-    "createNew": "建立新助理",
-    "connectRemote": "連線遠端助理",
-    "addRemote": "新增遠端助理",
-    "unnamedAssistant": "該助理",
-    "connectingToAssistant": "正在連線至您的助理…",
-    "rowActionsAriaLabel": "{name} 的動作",
-    "removeFromDevice": "從此裝置移除…",
-    "selfHosted": "自行託管",
-    "selfHostedWithHost": "自行託管 · {host}",
-    "currentWithHost": "目前 · {host}",
-    "remoteWithHost": "遠端 · {host}"
-  },
   "hatchingScreen": {
     "apiKeyFailed": "您的 API 金鑰無效",
     "genericFailure": "發生了一些錯誤",
@@ -89,32 +72,6 @@
     "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
     "addressLabel": "助理位址",
     "addFailed": "新增助理失敗。請再試一次。"
-  },
-  "connectAssistantDialog": {
-    "title": "連接遠端助理",
-    "instruction": "請從助理的「配對裝置」設定中貼上配對連結，或直接貼上其位址，然後在助理端核准請求。",
-    "linkGuidance": "此連結來自配對 QR 碼。若要連接此裝置，請在此處貼上來自助理裝置的配對連結。",
-    "legacyLinkGuidance": "此連結來自舊版應用程式，已無法使用。請在助理裝置上產生新的配對連結並貼到此處。",
-    "addressLabel": "位址或配對連結",
-    "addressPlaceholder": "https://your-assistant.ts.net",
-    "nameLabel": "名稱（選填）",
-    "approveOnHost": "請在助理裝置上核准此代碼以完成連接。",
-    "waitingForApproval": "等待核准中…",
-    "retrying": "助理尚未準備好配對。正在重試，直到代碼過期。",
-    "expiresIn": "將於 {time} 後過期",
-    "retryExpired": "配對代碼在助理準備好配對之前已過期。請重新開始以取得新的代碼。",
-    "submitError": "無法連接到該助理。請再試一次。",
-    "importedTitle": "配對已匯入",
-    "importedBody": "此配對僅限存取：它現在可用，但其存取權限會過期且無法自動續訂。過期後，請在助理裝置上產生新的配對連結並貼到此處以重新配對。"
-  },
-  "connectRecoveryDialog": {
-    "repairTitle": "修復助理？",
-    "repairBody": "修復會重新配置此助理的驗證憑證。任何連接到此助理的其他裝置或瀏覽器工作階段都將登出，需要重新連接。",
-    "repairConfirm": "修復",
-    "authFailedTitle": "無法驗證助理身分",
-    "authFailedBody": "{name} 的驗證憑證遺失或無法再重新整理，因此無法連接此助理。您可以修復它、停用它或選擇不同的助理。",
-    "wakeAndRepair": "喚醒並修復",
-    "retire": "停用助理"
   },
   "consentControls": {
     "whatsChanged": "更新內容",

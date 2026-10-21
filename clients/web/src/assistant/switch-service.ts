@@ -4,7 +4,6 @@ import { setSelectedAssistant } from "@/assistant/selection";
 import { forgetAssistantAvatar } from "@/hooks/use-chooser-row-avatar";
 import {
   getLockfileAssistant,
-  getSelectedAssistant,
   isLocalClient,
   isPairedAssistant,
   loadLockfile,
@@ -16,7 +15,6 @@ import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
 } from "@/stores/resolved-assistants-store";
-import { routes } from "@/utils/routes";
 
 /**
  * Host-command (tray, command palette) entry points for switching to and
@@ -102,7 +100,6 @@ export async function removePairedAssistant(
   queryClient: QueryClient,
   assistantId: string,
 ): Promise<RemovePairedOutcome> {
-  const wasSelected = getSelectedAssistant()?.assistantId === assistantId;
   let result: Awaited<ReturnType<typeof removePairedAssistantFromLockfile>>;
   try {
     result = await removePairedAssistantFromLockfile(assistantId);
@@ -120,6 +117,9 @@ export async function removePairedAssistant(
   }
   return {
     ok: true,
-    nextRoute: wasSelected ? `${routes.selectAssistant}?noAutoSkip=1` : null,
+    // The chooser route is gone (the app bundle owns the picker); the
+    // unpaired frame settles through the navigation resolver's funnel
+    // instead of a dedicated route.
+    nextRoute: null,
   };
 }

@@ -147,7 +147,7 @@ export function GeneralPage() {
       );
       return;
     }
-    void navigate(`${routes.selectAssistant}?noAutoSkip=1`);
+    void navigate(routes.assistant);
   };
 
   const showRetire =

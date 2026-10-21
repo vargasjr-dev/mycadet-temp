@@ -31,18 +31,10 @@ const consoleWarnMock = mock(() => {});
 console.warn = consoleWarnMock as typeof console.warn;
 
 import * as eventBus from "@/lib/event-bus";
-import {
-  __resetConnectDialogForTesting,
-  useConnectDialogStore,
-} from "@/stores/connect-dialog-store";
-
 const publishSpy = spyOn(eventBus, "publish");
 
 const { publishElectronDeepLinksSource } =
   await import("@/runtime/event-sources/electron-deep-links");
-
-/** Flush the drain promise chain (then/catch/finally). */
-const settleDrain = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(() => {
   activeCallback = null;
@@ -52,7 +44,6 @@ beforeEach(() => {
   drainPendingDeepLinksMock.mockClear();
   unsubscribeMock.mockClear();
   publishSpy.mockClear();
-  __resetConnectDialogForTesting();
 });
 
 describe("publishElectronDeepLinksSource", () => {
@@ -73,12 +64,6 @@ describe("publishElectronDeepLinksSource", () => {
       sessionId: null,
       flow: "top_up",
     });
-    activeCallback!({ kind: "connect", legacy: true });
-    activeCallback!({
-      kind: "connect",
-      url: "https://assistant.example.com",
-      code: "DEVICE-CODE-1",
-    });
     activeCallback!({ kind: "unknown", url: "javascript:alert(1)" });
 
     expect(publishSpy.mock.calls).toEqual([
@@ -91,15 +76,6 @@ describe("publishElectronDeepLinksSource", () => {
       [
         "deeplink.billingCheckoutComplete",
         { status: "cancel", sessionId: null, flow: "top_up" },
-      ],
-      ["deeplink.connect", { url: null, code: null, legacy: true }],
-      [
-        "deeplink.connect",
-        {
-          url: "https://assistant.example.com",
-          code: "DEVICE-CODE-1",
-          legacy: false,
-        },
       ],
       ["deeplink.unknown", { url: "javascript:alert(1)" }],
     ]);
@@ -144,38 +120,6 @@ describe("publishElectronDeepLinksSource", () => {
       drainError,
       "",
     );
-  });
-
-  test("latches the drain-settled flag only after the backlog has published", async () => {
-    pendingFixture = [
-      { kind: "connect", url: "https://assistant.example.com", code: "CODE-1" },
-    ];
-
-    publishElectronDeepLinksSource();
-    expect(useConnectDialogStore.getState().deepLinkDrainSettled).toBe(false);
-
-    await settleDrain();
-
-    expect(publishSpy.mock.calls).toEqual([
-      [
-        "deeplink.connect",
-        {
-          url: "https://assistant.example.com",
-          code: "CODE-1",
-          legacy: false,
-        },
-      ],
-    ]);
-    expect(useConnectDialogStore.getState().deepLinkDrainSettled).toBe(true);
-  });
-
-  test("a drain failure still latches the drain-settled flag", async () => {
-    drainError = new Error("ipc transport failed");
-
-    publishElectronDeepLinksSource();
-    await settleDrain();
-
-    expect(useConnectDialogStore.getState().deepLinkDrainSettled).toBe(true);
   });
 
   test("returns the subscribe-side unsubscribe so cleanup detaches the live bridge", () => {

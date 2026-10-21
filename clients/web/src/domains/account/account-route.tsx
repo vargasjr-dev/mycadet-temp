@@ -2,7 +2,6 @@ import { Navigate, useSearchParams } from "react-router";
 
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
-import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { routes } from "@/utils/routes";
 
 import { AccountLayout } from "@/domains/account/account-layout";
@@ -144,19 +143,6 @@ export const accountRoute = {
             Component: () =>
               import("@/domains/account/pages/cloud-loopback-page").then(
                 (m) => m.CloudLoopbackPage,
-              ),
-          },
-        },
-        // Assistant selection: which assistant this device talks to. Was
-        // /assistant/select-assistant; account-level flows are shell
-        // territory, so it lives under /account now.
-        {
-          path: "select-assistant",
-          middleware: [authMiddleware],
-          lazy: {
-            Component: () =>
-              import("@/domains/onboarding/pages/select-assistant-screen").then(
-                (m) => m.SelectAssistantScreen,
               ),
           },
         },

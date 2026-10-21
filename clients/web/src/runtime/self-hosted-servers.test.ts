@@ -353,10 +353,10 @@ describe("nativeSwitchToOrigin", () => {
 
   test("switches to a relative path atomically", async () => {
     expect(
-      await nativeSwitchToOriginPath(null, "select-assistant?noAutoSkip=1"),
+      await nativeSwitchToOriginPath(null, "select-assistant?from=pairing"),
     ).toBe(true);
     expect(switchToPathMock).toHaveBeenCalledWith({
-      path: "select-assistant?noAutoSkip=1",
+      path: "select-assistant?from=pairing",
     });
   });
 
@@ -364,7 +364,7 @@ describe("nativeSwitchToOrigin", () => {
     bridgeRejects = true;
 
     expect(
-      await nativeSwitchToOriginPath(null, "select-assistant?noAutoSkip=1"),
+      await nativeSwitchToOriginPath(null, "select-assistant?from=pairing"),
     ).toBe(false);
     expect(consoleDebugSpy).toHaveBeenCalled();
   });
@@ -395,7 +395,7 @@ describe("nativeSwitchToOrigin", () => {
   });
 
   test("drops the widget snapshot before a path switch too", async () => {
-    await nativeSwitchToOriginPath(null, "select-assistant?noAutoSkip=1");
+    await nativeSwitchToOriginPath(null, "select-assistant?from=pairing");
 
     expect(bridgeOrder).toEqual(["clearWidgetSnapshot", "switchToPath"]);
   });

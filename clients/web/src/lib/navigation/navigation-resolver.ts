@@ -275,12 +275,7 @@ export function resolveLoginReturnTo(
   fromPath: string,
 ): string {
   if (fromPath === routes.welcome) {
-    return state.hasAssistants
-      ? routes.selectAssistant
-      : routes.onboarding.hosting;
-  }
-  if (fromPath === routes.selectAssistant) {
-    return `${fromPath}?fromLogin=1`;
+    return state.hasAssistants ? routes.assistant : routes.onboarding.hosting;
   }
   return fromPath;
 }
@@ -534,13 +529,6 @@ function requireRemoteGatewayPairing(
  * the assistant and consent gates: it is itself an onboarding surface,
  * reachable before there is a cloud session to gate on.
  */
-function localChooserDecision(state: NavigationState): NavigationDecision {
-  if (!state.hasAssistants) {
-    return { action: "redirect", to: routes.onboarding.hosting };
-  }
-  return { action: "allow" };
-}
-
 function requireAuth(
   state: NavigationState,
   path: string,
@@ -552,20 +540,15 @@ function requireAuth(
 
   if (
     state.isLocalClient &&
-    (isOnboardingPath(path) ||
-      LOCAL_ONLY_STANDALONE_PATHS.has(path) ||
-      path === routes.selectAssistant)
+    (isOnboardingPath(path) || LOCAL_ONLY_STANDALONE_PATHS.has(path))
   ) {
-    if (path === routes.selectAssistant) {
-      return localChooserDecision(state);
-    }
     return { action: "allow" };
   }
   if (state.isLocalClient && !state.hasAssistants) {
     return { action: "redirect", to: routes.welcome };
   }
   if (state.isLocalClient) {
-    return { action: "redirect", to: routes.selectAssistant };
+    return { action: "redirect", to: routes.assistant };
   }
   return {
     action: "redirect",
@@ -577,15 +560,6 @@ function enforceModeBoundary(
   state: NavigationState,
   path: string,
 ): NavigationDecision | null {
-  // The chooser is reachable in every mode: local clients keep their
-  // lockfile-driven picker, and the cloud build hosts the hub chooser. The
-  // non-local case falls through rather than allowing, so `requireConsent`
-  // below still binds on this route; `requireAssistant` exempts it on purpose
-  // (see NO_ASSISTANT_EXEMPT_PATHS).
-  if (path === routes.selectAssistant) {
-    return state.isLocalClient ? localChooserDecision(state) : null;
-  }
-
   if (LOCAL_ONLY_STANDALONE_PATHS.has(path)) {
     if (!state.isLocalClient) {
       return { action: "redirect", to: routes.assistant };
@@ -738,18 +712,13 @@ function enforceFunnelConsent(
  *
  * `checkout` is where the marketing pricing CTAs deep-link a brand-new user to
  * start Stripe checkout for a chosen package; every other billing surface still
- * provisions first. `selectAssistant` is the hub chooser, the one screen that
- * answers the empty state for an account whose assistants are all self-hosted:
- * remembered origins are client-local, so they never reach `hasAssistants`, and
- * a `?register=` handoff arriving from a self-hosted origin would be lost on the
- * funnel bounce before the chooser could record it.
+ * provisions first.
  *
- * Only the funnel is lifted. `requireConsent` runs after this step, so neither
- * route can be reached on unaccepted or stale terms.
+ * Only the funnel is lifted. `requireConsent` runs after this step, so the
+ * route can't be reached on unaccepted or stale terms.
  */
 const NO_ASSISTANT_EXEMPT_PATHS: ReadonlySet<string> = new Set([
   routes.checkout,
-  routes.selectAssistant,
 ]);
 
 function requireAssistant(
@@ -970,11 +939,9 @@ function resolvePostAuth(
 
 function resolvePostRetire(state: NavigationState): NavigationDecision {
   if (state.hasAssistants) {
-    // Platform users land on /assistant post-retire; the chooser is an
-    // explicit destination there, not the retire landing.
     return {
       action: "redirect",
-      to: state.isLocalClient ? routes.selectAssistant : routes.assistant,
+      to: routes.assistant,
     };
   }
   if (!state.isLocalClient) {

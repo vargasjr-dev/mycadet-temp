@@ -2,7 +2,7 @@
  * Unit tests for the host-command switch/remove service. Pins the two
  * behaviors the tray commands rely on: a paired entry connects through
  * `connectPairedAssistant` (never the bare selection write), and a paired
- * removal clears the lifecycle's active id and routes to the chooser when
+ * removal clears the lifecycle's active id; a removed selected pairing stays
  * the removed entry was the effective selection.
  */
 
@@ -83,12 +83,6 @@ mock.module("@/stores/resolved-assistants-store", () => ({
       activeAssistantId,
       setActiveAssistantId: setActiveAssistantIdMock,
     }),
-  },
-}));
-
-mock.module("@/utils/routes", () => ({
-  routes: {
-    selectAssistant: "/assistant/select-assistant",
   },
 }));
 
@@ -253,7 +247,7 @@ describe("switchToResolvedAssistant", () => {
 });
 
 describe("removePairedAssistant", () => {
-  test("removing the selected pairing clears the active id and routes to the chooser", async () => {
+  test("removing the selected pairing clears the active id and stays put", async () => {
     lockfileAssistants = [{ assistantId: "pr1", cloud: "paired" }];
     selectedAssistant = { assistantId: "pr1" };
     activeAssistantId = "pr1";
@@ -265,9 +259,7 @@ describe("removePairedAssistant", () => {
     expect(setActiveAssistantIdMock).toHaveBeenCalledWith(null);
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
-      expect(outcome.nextRoute).toBe(
-        "/assistant/select-assistant?noAutoSkip=1",
-      );
+      expect(outcome.nextRoute).toBe(null);
     }
   });
 
