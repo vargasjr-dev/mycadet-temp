@@ -12,9 +12,8 @@
  * Population:
  *  - Local mode: assistant list auto-syncs with the lockfile store via
  *    subscription, so every hatch / sync / retire is reflected.
- *  - Platform mode: populated from the `listAssistants` API by
- *    `reloadCloudAssistants` (assistant/cloud-assistants-sync.ts),
- *    which runs whenever the cloud session becomes present.
+ *  - Platform mode: not populated by this bundle — the app bundle's
+ *    assistant chooser owns the cloud assistant list.
  *
  * Do NOT confuse with `lockfile-store.ts`, which is the raw on-disk
  * lockfile cache used internally by `lib/local-mode.ts` for host IPC.

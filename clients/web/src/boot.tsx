@@ -25,7 +25,6 @@ import { isLocalClient, loadLockfile } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { setupCloudAssistantsSync } from "@/assistant/cloud-assistants-sync";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
 import { setupOrganizationStore } from "@/stores/organization-store";
 import { createBrowserRouter } from "react-router";
@@ -76,9 +75,6 @@ async function boot(router: Router) {
   }
 
   setupOrganizationStore();
-  // Register before initSession so the boot `unknown → present` transition it
-  // drives is caught and the cloud assistants list is loaded.
-  setupCloudAssistantsSync();
   // The camera gates are built outside React, so what a restored tuning
   // session applies to them is decided here rather than by a mounted panel.
   setupCameraGateHudAccessSync();

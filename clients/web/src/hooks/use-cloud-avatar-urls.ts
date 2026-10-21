@@ -115,8 +115,8 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  * many rows mount. Enabled only when a live platform session exists outside
  * the cloud-remote bundle; elsewhere the resolved store already carries
  * `avatarUrl` and this resolves to an empty map. Never writes the resolved
- * store: `reloadCloudAssistants` deliberately skips those modes so the
- * API list cannot clobber their rows, and this lookup keeps that contract.
+ * store: the API list must not clobber their rows, and this lookup keeps
+ * that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
   const hasCloudSession = useHasCloudSession();

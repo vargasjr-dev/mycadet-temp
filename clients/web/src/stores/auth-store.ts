@@ -457,9 +457,8 @@ function broadcastAuthChange(): void {
  * conclusively rejected the session (a settled 401/403/410 from
  * the org or assistants call). Only that settled evidence may end a cloud
  * session; transport failures and other errors prove nothing (LUM-2412) and
- * leave cached lockfile data standing. Cloud mode loads assistants via
- * `reloadCloudAssistants` (cloud-assistants-sync), which has no
- * lockfile and stays outside this evidence rule.
+ * leave cached lockfile data standing. Loading the cloud assistants list
+ * is a separate concern outside this evidence rule.
  */
 async function reconcileCloudAssistants(
   syncIsCurrent?: () => boolean,
@@ -856,9 +855,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       if (result.ok && result.data.user) {
         const user = toAuthUser(result.data.user);
         await syncUserScopedState(user?.id ?? null);
-        // The resolved assistants list is loaded by the cloud-session
-        // subscription (setupCloudAssistantsSync), which fires when the
-        // transition below flips `cloudSession` to "present".
         set(authenticatedPlatformUser(user));
         return;
       }
@@ -886,9 +882,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           if (retryResult.ok && retryResult.data.user) {
             const user = toAuthUser(retryResult.data.user);
             await syncUserScopedState(user?.id ?? null);
-            // The resolved assistants list loads via the cloud-session
-            // subscription (setupCloudAssistantsSync) when the transition
-            // below flips `cloudSession` to "present".
             set(authenticatedPlatformUser(user));
             return;
           }

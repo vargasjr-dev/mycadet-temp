@@ -189,8 +189,8 @@ function canReadRowAvatarViaHost(row: ResolvedAssistant): boolean {
 /**
  * Whether `row` should consult {@link useCloudAvatarUrls}: outside the
  * cloud-remote bundle no row kind carries `avatarUrl` (cloud-hosted rows
- * included, since `reloadCloudAssistants` skips the API write there) and
- * the thumbnail is only reachable by platform id. A row that does carry one
+ * included, since the API list is never written into the resolved store)
+ * and the thumbnail is only reachable by platform id. A row that does carry one
  * renders it directly. The cloud-remote bundle never gets here: the lookup
  * query is disabled and the map stays empty.
  */

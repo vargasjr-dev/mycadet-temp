@@ -271,9 +271,8 @@ function seedNotificationIdentityMemory() {
 }
 
 // Use the REAL resolved-assistants store: it's dependency-light, so loading it
-// for real is cheap, and the `beforeEach` resets it between tests. (The list is
-// now loaded by the cloud-assistants-sync subscription, not the auth store —
-// see cloud-assistants-sync.test.ts for that coverage.)
+// for real is cheap, and the `beforeEach` resets it between tests. (The list
+// is not loaded by the auth store.)
 
 // Auth-store writes the selection through the public wrapper, not the store
 // action — mock the wrapper module so the real one (and its local-mode deps)
