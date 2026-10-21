@@ -26,23 +26,17 @@ describe("getSettingsRouteForClientTab — Debug page", () => {
     );
   });
 
-  test("routes the Billing tab to the Usage page's Billing sub-tab", () => {
-    // The Billing & Usage page moved to /assistant/settings/usage; model- and
-    // native-driven "Billing" navigation must carry ?tab=billing to reach the
-    // Billing panel rather than the page's default tab.
+  test("routes the Billing and Usage tabs to the usage page", () => {
+    // The usage page is de-tabbed (the billing panels live in the cloud's
+    // account surface), so every legacy tab name lands on the bare page.
     expect(getSettingsRouteForClientTab("Billing")).toBe(
-      "/assistant/settings/usage?tab=billing",
+      "/assistant/settings/usage",
     );
     expect(getSettingsRouteForClientTab("Billing & Usage")).toBe(
-      "/assistant/settings/usage?tab=billing",
+      "/assistant/settings/usage",
     );
-  });
-
-  test("routes the Usage tab to the Usage sub-tab, not the page default", () => {
-    // The bare Usage page defaults to the Billing sub-tab for a signed-in
-    // viewer, so a "Usage" lookup must carry ?tab=usage to land on Usage.
     expect(getSettingsRouteForClientTab("Usage")).toBe(
-      "/assistant/settings/usage?tab=usage",
+      "/assistant/settings/usage",
     );
   });
 
