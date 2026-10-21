@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 /**
@@ -69,7 +69,7 @@ function headCommitTime(root: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-export function displayVersion(
+export function stampedVersion(
   base: string,
   now: Date = new Date(),
   entryPath: string = import.meta.path,
@@ -84,4 +84,24 @@ export function displayVersion(
   // git-less-tail case only.
   const stamp = headCommitTime(root) ?? now;
   return `${base}-local.${utcStamp(stamp)}.${sha}`;
+}
+
+/**
+ * The version the calling package reports: its own package.json version,
+ * stamped for local-environment source builds, plain otherwise — release
+ * versions are decided by the release pipeline, never the machine.
+ */
+export function resolveVersion(packageRoot: string = process.cwd()): string {
+  let base = "";
+  try {
+    const pkg = JSON.parse(
+      readFileSync(join(packageRoot, "package.json"), "utf8"),
+    ) as { version?: string };
+    base = typeof pkg.version === "string" ? pkg.version : "";
+  } catch {
+    return "";
+  }
+  if (!base) return "";
+  if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return base;
+  return stampedVersion(base, new Date(), import.meta.path);
 }

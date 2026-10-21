@@ -1,4 +1,4 @@
-import { Globe, Link2 } from "lucide-react";
+import { CloudOff, Globe, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
@@ -33,7 +33,6 @@ import {
 } from "@app/stores/remembered-origins-store";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
-import { readInjectedConfig } from "@app/lib/injected-config";
 import { useAssistantChoices } from "@app/assistant/use-assistant-choices";
 import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
@@ -93,7 +92,6 @@ function DashedActionButton({
 
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
-  const config = readInjectedConfig();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
@@ -112,7 +110,6 @@ export function SelectAssistantScreen() {
     null,
   );
   const { state, retry } = useAssistantChoices({
-    apiBaseUrl: config?.cloudUrl,
     origin: window.location.origin,
   });
   const status =
@@ -423,6 +420,19 @@ export function SelectAssistantScreen() {
               }}
             />
           ))}
+        {status === "error" && (
+          <ChooserCard
+            icon={
+              <CloudOff
+                size={22}
+                aria-hidden="true"
+                className="text-[var(--content-tertiary)]"
+              />
+            }
+            title={t("appShell.error")}
+            disabled
+          />
+        )}
         {lockfileEntries.map((entry, index) => {
           const paired = isPairedAssistant(entry);
           const label = entry.name ?? entry.assistantId;
@@ -518,7 +528,7 @@ export function SelectAssistantScreen() {
             onClick={() => setAddOriginOpen(true)}
           />
         )}
-        {status !== "selection" && (
+        {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
         )}
         {status === "unauthenticated" && (

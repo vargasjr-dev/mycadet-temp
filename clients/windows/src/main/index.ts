@@ -191,7 +191,7 @@ const registerAppProtocol = (): void => {
       cloudBase: resolvedConfig.cloudUrl,
       fetcher: net.fetch,
       allowedOrigin: resolveAllowedOrigin(),
-      log: log.error,
+      log,
     });
     if (cloudProxied) {
       return cloudProxied;

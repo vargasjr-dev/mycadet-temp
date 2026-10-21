@@ -9,7 +9,7 @@ import {
 } from "@mycadet/local-mode";
 
 import { emitCliError } from "./lib/cli-error.js";
-import { displayVersion } from "./lib/local-version.js";
+import { stampedVersion } from "@mycadet/shared/version";
 
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
@@ -212,7 +212,7 @@ async function main() {
   process.argv = [...process.argv.slice(0, 2), ...filteredArgs];
 
   if (commandName === "--version" || commandName === "-v") {
-    console.log(`@mycadet/cli v${displayVersion(cliPkg.version)}`);
+    console.log(`@mycadet/cli v${stampedVersion(cliPkg.version)}`);
     process.exit(0);
   }
 
