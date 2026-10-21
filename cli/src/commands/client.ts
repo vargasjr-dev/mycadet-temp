@@ -44,12 +44,9 @@ import {
   unpairAssistant,
   getGuardianAccessToken,
   getPairedGuardianAccessToken,
-  parseGatewayUrl,
-  parsePairedGatewayUrl,
+  parseAssistantGatewayUrl,
   resolveGatewayProxyTarget,
-  resolvePairedGatewayProxyTarget,
-  readAllowedGatewayPorts,
-  readPairedGatewayTargets,
+  readGatewayTargets,
   authorizePairedForwardHeaders,
   isLoopbackAddr,
   headerHostIsLoopback,
@@ -522,8 +519,7 @@ async function handleLocalEndpoints(
     PAIRING_CANCEL_PATTERN.test(pathname) ||
     GUARDIAN_TOKEN_PATTERN.test(pathname) ||
     CLOUD_SESSION_PATTERN.test(pathname) ||
-    parseGatewayUrl(pathname).match ||
-    parsePairedGatewayUrl(pathname).match;
+    parseAssistantGatewayUrl(pathname).match;
 
   if (!isLocalRoute) return null;
 
@@ -910,43 +906,32 @@ async function handleLocalEndpoints(
     return Response.json({ error: result.error }, { status: result.status });
   }
 
-  // Gateway proxy — same allowlist decision the web (Vite middleware) and
-  // Electron (`app://` handler) hosts use, so all three can't drift.
-  const gatewayDecision = resolveGatewayProxyTarget(pathname, () =>
-    readAllowedGatewayPorts(lockfilePaths),
+  // Gateway proxy — the id-keyed same-origin data plane, one decision shared
+  // with the web (Vite middleware) and Electron (`app://` handler) hosts so
+  // all three can't drift. The lockfile resolves the id to a loopback port
+  // (locally hatched) or a recorded remote `runtimeUrl` (imported pairing);
+  // that target map is the allowlist. Loopback hops forward the renderer's
+  // headers (notably its minted gateway bearer) with the Host rewritten;
+  // remote hops strip renderer authorization and browser-ambient headers on
+  // the server-to-server hop, and this CLI host reads the paired guardian
+  // bearer from disk and installs it after sanitization.
+  const gatewayDecision = resolveGatewayProxyTarget(
+    pathname + url.search,
+    () => readGatewayTargets(lockfilePaths),
   );
-  if (gatewayDecision.kind === "invalid-port") {
-    return new Response("Port must be between 1024 and 65535", { status: 400 });
-  }
-  if (gatewayDecision.kind === "forbidden-port") {
-    return new Response("Gateway port is not active in lockfile", {
-      status: 403,
+  if (gatewayDecision.kind === "reject") {
+    return new Response(gatewayDecision.message, {
+      status: gatewayDecision.status,
     });
   }
   if (gatewayDecision.kind === "forward") {
-    const { target: gatewayTarget } = gatewayDecision;
-    const targetUrl = `http://127.0.0.1:${gatewayTarget.port}${gatewayTarget.path}${url.search}`;
-    const headers = new Headers(req.headers);
-    headers.set("host", `127.0.0.1:${gatewayTarget.port}`);
-    return proxyGatewayFetch(req, targetUrl, headers, "Gateway proxy error");
-  }
-
-  // Paired-gateway proxy: same shared decision as the web (Vite middleware)
-  // and Electron (`app://` handler) hosts, forwarding to the remote gateway an
-  // imported pairing recorded as its `runtimeUrl`. The lockfile's paired
-  // entries are the allowlist. Renderer authorization and browser-ambient
-  // headers are stripped on the server-to-server hop. This CLI host reads the
-  // paired guardian bearer from disk and installs it after sanitization.
-  const pairedDecision = resolvePairedGatewayProxyTarget(
-    pathname + url.search,
-    () => readPairedGatewayTargets(lockfilePaths),
-  );
-  if (pairedDecision.kind === "reject") {
-    return new Response(pairedDecision.message, {
-      status: pairedDecision.status,
-    });
-  }
-  if (pairedDecision.kind === "forward") {
+    if (gatewayDecision.target.kind === "loopback") {
+      const { port } = gatewayDecision.target;
+      const targetUrl = `http://127.0.0.1:${port}${gatewayDecision.path}`;
+      const headers = new Headers(req.headers);
+      headers.set("host", `127.0.0.1:${port}`);
+      return proxyGatewayFetch(req, targetUrl, headers, "Gateway proxy error");
+    }
     if (!isSameOriginRequest(req)) {
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -960,8 +945,8 @@ async function handleLocalEndpoints(
     }
     const headers = new Headers(req.headers);
     const tokenResult = await authorizePairedForwardHeaders(
-      pairedDecision.assistantId,
-      pairedDecision.runtimeUrl,
+      gatewayDecision.assistantId,
+      gatewayDecision.target.runtimeUrl,
       headers,
       (assistantId, runtimeUrl) =>
         getPairedGuardianAccessToken(
@@ -976,10 +961,10 @@ async function handleLocalEndpoints(
     if (!tokenResult.ok) {
       return new Response(tokenResult.error, { status: tokenResult.status });
     }
-    headers.set("host", new URL(pairedDecision.url).host);
+    headers.set("host", new URL(gatewayDecision.target.runtimeUrl).host);
     return proxyGatewayFetch(
       req,
-      pairedDecision.url,
+      `${gatewayDecision.target.runtimeUrl.replace(/\/+$/, "")}${gatewayDecision.path}${gatewayDecision.search}`,
       headers,
       "Paired gateway proxy error",
     );

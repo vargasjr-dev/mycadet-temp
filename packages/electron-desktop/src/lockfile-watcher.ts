@@ -46,7 +46,7 @@ export const configureLockfileWatcher = (
 /**
  * Parse the first readable candidate lockfile, canonical first. The first
  * readable file is authoritative even when its entry list is empty, matching
- * `readPairedGatewayTargets` in @mycadet/local-mode: an unpair leaves a
+ * `readGatewayTargets` in @mycadet/local-mode: an unpair leaves a
  * readable canonical file with the entry removed, so a stale legacy fallback
  * can never resurrect it. The fallback keeps legacy-only installs (no
  * canonical file yet) populated. Returns EMPTY_LOCKFILE when no candidate

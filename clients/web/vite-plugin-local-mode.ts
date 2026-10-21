@@ -35,9 +35,7 @@ import {
   getGuardianAccessToken,
   getPairedGuardianAccessToken,
   resolveGatewayProxyTarget,
-  resolvePairedGatewayProxyTarget,
-  readAllowedGatewayPorts,
-  readPairedGatewayTargets,
+  readGatewayTargets,
   authorizePairedForwardHeaders,
   type CliInvocation,
 } from "@mycadet/local-mode";
@@ -136,9 +134,8 @@ export function localModePlugin(env: Record<string, string>): Plugin {
           env,
         ),
       );
-      server.middlewares.use(gatewayProxyMiddleware(config.lockfilePaths));
       server.middlewares.use(
-        pairedGatewayProxyMiddleware(
+        gatewayProxyMiddleware(
           config.lockfilePaths,
           config.configDir,
           baseDir,
@@ -1117,63 +1114,22 @@ function guardianTokenMiddleware(
 
 function gatewayProxyMiddleware(
   lockfilePaths: string[],
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
-      readAllowedGatewayPorts(lockfilePaths),
-    );
-    if (decision.kind === "pass") {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (decision.kind === "invalid-port") {
-      res.statusCode = 400;
-      res.end("Port must be between 1024 and 65535");
-      return;
-    }
-
-    if (decision.kind === "forbidden-port") {
-      res.statusCode = 403;
-      res.end("Gateway port is not active in lockfile");
-      return;
-    }
-
-    const { target } = decision;
-    pipeGatewayProxy(
-      req,
-      res,
-      http,
-      {
-        hostname: "127.0.0.1",
-        port: target.port,
-        path: target.path,
-        method: req.method,
-        headers: { ...req.headers, host: `127.0.0.1:${target.port}` },
-      },
-      "Gateway proxy error",
-    );
-  };
-}
-
-// Paired-gateway data plane (`/__gateway-paired/{assistantId}/*`): same
-// posture as the loopback gateway proxy above, but the target is the remote
-// gateway an imported pairing recorded as its `runtimeUrl`. The lockfile's
-// paired entries are the allowlist. Renderer authorization and browser-ambient
-// headers are stripped on this server-to-server hop. The dev-server host reads
-// the paired guardian bearer from disk and installs it after sanitization.
-function pairedGatewayProxyMiddleware(
-  lockfilePaths: string[],
   configDir: string,
   baseDir: string,
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
-    const decision = resolvePairedGatewayProxyTarget(req.url ?? "", () =>
-      readPairedGatewayTargets(lockfilePaths),
+    // Gateway data plane (`/__gateway/{assistantId}/*`, plus the deprecated
+    // `/__gateway-paired/{assistantId}` alias): one id-keyed proxy for every
+    // assistant gateway. The lockfile resolves the id to a loopback port
+    // (locally hatched) or a recorded remote `runtimeUrl` (imported pairing)
+    // — that target map is the allowlist. Loopback hops forward the renderer's
+    // headers (notably its minted gateway bearer) with the Host rewritten;
+    // remote hops strip renderer authorization and browser-ambient headers on
+    // this server-to-server hop, and the dev-server host reads the paired
+    // guardian bearer from disk and installs it after sanitization.
+    const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
+      readGatewayTargets(lockfilePaths),
     );
     if (decision.kind === "pass") {
       return next();
@@ -1186,6 +1142,27 @@ function pairedGatewayProxyMiddleware(
     if (decision.kind === "reject") {
       res.statusCode = decision.status;
       res.end(decision.message);
+      return;
+    }
+
+    if (decision.target.kind === "loopback") {
+      const { port } = decision.target;
+      pipeGatewayProxy(
+        req,
+        res,
+        http,
+        {
+          hostname: "127.0.0.1",
+          port,
+          path: decision.path,
+          method: req.method,
+          headers: {
+            ...req.headers,
+            host: `127.0.0.1:${port}`,
+          },
+        },
+        "Gateway proxy error",
+      );
       return;
     }
 
@@ -1204,7 +1181,7 @@ function pairedGatewayProxyMiddleware(
       return;
     }
 
-    const target = new URL(decision.url);
+    const target = new URL(decision.target.runtimeUrl);
     const headers = new Headers();
     for (const [name, value] of Object.entries(req.headers)) {
       if (value === undefined) {
@@ -1220,7 +1197,7 @@ function pairedGatewayProxyMiddleware(
     }
     void authorizePairedForwardHeaders(
       decision.assistantId,
-      decision.runtimeUrl,
+      decision.target.runtimeUrl,
       headers,
       (assistantId, runtimeUrl) =>
         getPairedGuardianAccessToken(
@@ -1246,7 +1223,7 @@ function pairedGatewayProxyMiddleware(
           protocol: target.protocol,
           hostname: target.hostname,
           port: target.port || undefined,
-          path: target.pathname + target.search,
+          path: decision.path + decision.search,
           method: req.method,
           headers: Object.fromEntries(headers.entries()),
         },

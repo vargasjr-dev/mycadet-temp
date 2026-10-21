@@ -9,7 +9,6 @@ import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
   forwardGatewayRequest,
-  forwardPairedGatewayRequest,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
@@ -18,11 +17,10 @@ import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
+  gatewayTargetsFromLockfile,
   getLockfileData,
   getLoopbackGatewayPort,
-  pairedGatewayTargetsFromLockfile,
-  readAllowedGatewayPorts,
-  readPairedGatewayTargets,
+  readGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
@@ -282,15 +280,13 @@ const registerAppProtocol = (): void => {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const lockfilePaths = resolveLockfilePaths(process.env);
-  const getAllowedGatewayPorts = (): Set<number> =>
-    readAllowedGatewayPorts(lockfilePaths);
-  // Prefer the watcher's in-memory snapshot so paired requests never read
+  // Prefer the watcher's in-memory snapshot so gateway requests never read
   // disk; the direct read covers only the window before the watcher installs.
-  const getPairedGatewayTargets = (): Map<string, string> => {
+  const getGatewayTargets = () => {
     const watched = getWatchedLockfileSnapshot();
     return watched
-      ? pairedGatewayTargetsFromLockfile(watched)
-      : readPairedGatewayTargets(lockfilePaths);
+      ? gatewayTargetsFromLockfile(watched)
+      : readGatewayTargets(lockfilePaths);
   };
   const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
 
@@ -317,32 +313,21 @@ const registerAppProtocol = (): void => {
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
-    // The renderer addresses local gateways at the same `app://` origin via
-    // `/assistant/__gateway/{port}/*`. Forward those to loopback here so the
-    // secure renderer never touches an insecure `http://127.0.0.1` origin
-    // directly; the lockfile allowlist is the security boundary. Mirrors the
-    // Vite dev-server proxy (`clients/web/vite-plugin-local-mode.ts`).
+    // The renderer addresses every assistant gateway at the same `app://`
+    // origin via the id-keyed `/assistant/__gateway/{assistantId}/*` — the
+    // lockfile resolves the id to a loopback port (hatched) or a recorded
+    // remote `runtimeUrl` (imported pairing). Forward here so the secure
+    // renderer never touches an insecure `http://127.0.0.1` origin directly
+    // and never holds a paired credential; the lockfile target map is the
+    // security boundary. Mirrors the Vite dev-server proxy
+    // (`clients/web/vite-plugin-local-mode.ts`).
     const proxied = await forwardGatewayRequest(
       request,
-      getAllowedGatewayPorts,
-      net.fetch,
-    );
-    if (proxied) return proxied;
-
-    // Paired remote gateways ride the same-origin path too, via
-    // `/assistant/__gateway-paired/{assistantId}/*`: the packaged app's CSP
-    // pins `connect-src` to Cadet origins, so the renderer cannot reach a
-    // paired gateway directly. The WebRequest guard admits only trusted app
-    // frames, and the lockfile's paired entries allowlist the remote targets.
-    const pairedProxied = await forwardPairedGatewayRequest(
-      request,
-      getPairedGatewayTargets,
+      getGatewayTargets,
       getPairedGuardianAccessToken,
       net.fetch,
     );
-    if (pairedProxied) {
-      return pairedProxied;
-    }
+    if (proxied) return proxied;
 
     // Cloud API and authentication routes forward through the shared
     // cloud forward: the login surfaces ride the cloud, same-origin

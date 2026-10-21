@@ -2,19 +2,16 @@ import { describe, expect, mock, spyOn, test } from "bun:test";
 
 import {
   forwardGatewayRequest,
-  forwardPairedGatewayRequest,
   type GatewayForwardFetcher,
 } from "./gateway-forward";
 import { PROXY_ERROR_HEADER, PROXY_NETWORK_ERROR_CODE } from "./cloud-forward";
 
-const allow =
-  (...ports: number[]) =>
-  () =>
-    new Set(ports);
-const pair =
-  (entries: Record<string, string> = { abc: "https://gw.example.com" }) =>
+const targets =
+  (entries: Record<string, { kind: "loopback"; port: number } | { kind: "remote"; runtimeUrl: string }>) =>
   () =>
     new Map(Object.entries(entries));
+const localOnly = targets({ abc: { kind: "loopback", port: 8080 } });
+const pairedOnly = targets({ abc: { kind: "remote", runtimeUrl: "https://gw.example.com" } });
 const guardianToken = async () => ({
   ok: true as const,
   accessToken: "host-token",
@@ -26,40 +23,42 @@ const recorder = (response = new Response("ok")) => {
   return { fetcher, response };
 };
 
-describe("forwardGatewayRequest", () => {
+describe("forwardGatewayRequest — loopback forwards", () => {
   test("passes non-gateway requests through without fetching", async () => {
     const { fetcher } = recorder();
     expect(
       await forwardGatewayRequest(
         request("/assistant/assets/app.js"),
-        allow(8080),
+        localOnly,
+        guardianToken,
         fetcher,
       ),
     ).toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  test.each([
-    ["/__gateway/80/v1", 400, "Port must be between 1024 and 65535"],
-    ["/__gateway/9999/v1", 403, "Gateway port is not active in lockfile"],
-  ] as const)("rejects %s before fetching", async (path, status, message) => {
+  test("rejects an id that is not active in the lockfile before fetching", async () => {
     const { fetcher } = recorder();
+    const token = mock(guardianToken);
     const response = await forwardGatewayRequest(
-      request(path),
-      allow(80, 8080),
+      request("/__gateway/unknown/v1"),
+      localOnly,
+      token,
       fetcher,
     );
-    expect(response?.status).toBe(status);
-    expect(await response?.text()).toBe(message);
+    expect(response?.status).toBe(403);
+    expect(await response?.text()).toBe("Assistant is not active in lockfile");
+    expect(token).not.toHaveBeenCalled();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  test("forwards an allowlisted port and preserves the query", async () => {
+  test("forwards to the recorded loopback port and preserves the query", async () => {
     const { fetcher, response } = recorder();
     expect(
       await forwardGatewayRequest(
-        request("/assistant/__gateway/8080/v1/assistants?x=1"),
-        allow(8080),
+        request("/assistant/__gateway/abc/v1/assistants?x=1"),
+        localOnly,
+        guardianToken,
         fetcher,
       ),
     ).toBe(response);
@@ -76,11 +75,12 @@ describe("forwardGatewayRequest", () => {
     async (origin) => {
       const { fetcher } = recorder();
       await forwardGatewayRequest(
-        request("/__gateway/8080/auth/token", {
+        request("/__gateway/abc/auth/token", {
           method: "POST",
           headers: origin ? { origin } : {},
         }),
-        allow(8080),
+        localOnly,
+        guardianToken,
         fetcher,
       );
       expect(new Headers(fetcher.mock.calls[0]![1].headers).get("origin")).toBe(
@@ -89,32 +89,33 @@ describe("forwardGatewayRequest", () => {
     },
   );
 
-  test("preserves non-Origin headers", async () => {
+  test("preserves the renderer-minted gateway bearer and other headers", async () => {
     const { fetcher } = recorder();
     await forwardGatewayRequest(
-      request("/__gateway/8080/auth/token", {
+      request("/__gateway/abc/auth/token", {
         method: "POST",
         headers: {
           origin: "app://mycadet.ai",
-          authorization: "Bearer guardian-token",
+          authorization: "Bearer gateway-token",
           "content-type": "application/json",
         },
       }),
-      allow(8080),
+      localOnly,
+      guardianToken,
       fetcher,
     );
     const headers = new Headers(fetcher.mock.calls[0]![1].headers);
-    expect(headers.get("authorization")).toBe("Bearer guardian-token");
+    expect(headers.get("authorization")).toBe("Bearer gateway-token");
     expect(headers.get("content-type")).toBe("application/json");
   });
 
   test("forwards a half-duplex streamed body with manual redirects", async () => {
     const { fetcher } = recorder();
-    const req = request("/__gateway/8080/v1/foo", {
+    const req = request("/__gateway/abc/v1/foo", {
       method: "POST",
       body: new ReadableStream<Uint8Array>(),
     });
-    await forwardGatewayRequest(req, allow(8080), fetcher);
+    await forwardGatewayRequest(req, localOnly, guardianToken, fetcher);
     const init = fetcher.mock.calls[0]![1];
     expect(init.method).toBe("POST");
     expect(init.body).toBe(req.body);
@@ -129,8 +130,9 @@ describe("forwardGatewayRequest", () => {
     await expect(
       Promise.resolve().then(() =>
         forwardGatewayRequest(
-          request("/__gateway/8080/v1/foo"),
-          allow(8080),
+          request("/__gateway/abc/v1/foo"),
+          localOnly,
+          guardianToken,
           fetcher,
         ),
       ),
@@ -139,54 +141,18 @@ describe("forwardGatewayRequest", () => {
   });
 });
 
-describe("forwardPairedGatewayRequest", () => {
-  test.each(["/assistant/assets/app.js", "/__gateway/8080/v1"])(
-    "passes %s through without credentials or fetching",
-    async (path) => {
-      const { fetcher } = recorder();
-      const token = mock(guardianToken);
-      expect(
-        await forwardPairedGatewayRequest(
-          request(path),
-          pair(),
-          token,
-          fetcher,
-        ),
-      ).toBeNull();
-      expect(token).not.toHaveBeenCalled();
-      expect(fetcher).not.toHaveBeenCalled();
-    },
-  );
-
-  test.each([
-    "/__gateway-paired/unknown/v1",
-    "/__gateway-paired/abc/%2e%2e/secrets",
-  ])("rejects %s before credentials or fetching", async (path) => {
+describe("forwardGatewayRequest — remote (paired) forwards", () => {
+  test("accepts the deprecated `-paired` alias through the same planner", async () => {
     const { fetcher } = recorder();
     const token = mock(guardianToken);
-    const response = await forwardPairedGatewayRequest(
-      request(path),
-      pair({ abc: "https://gw.example.com/edge" }),
-      token,
-      fetcher,
-    );
-    expect(response?.status).toBe(403);
-    expect(await response?.text()).toBe("Assistant is not paired in lockfile");
-    expect(token).not.toHaveBeenCalled();
-    expect(fetcher).not.toHaveBeenCalled();
-  });
-
-  test("forwards to the paired runtime with its host-owned bearer and query", async () => {
-    const { fetcher } = recorder();
-    const token = mock(guardianToken);
-    await forwardPairedGatewayRequest(
+    await forwardGatewayRequest(
       request("/assistant/__gateway-paired/abc/v1/foo?x=1", {
         headers: {
           authorization: "Bearer renderer-token",
           accept: "text/event-stream",
         },
       }),
-      pair(),
+      pairedOnly,
       token,
       fetcher,
     );
@@ -194,18 +160,31 @@ describe("forwardPairedGatewayRequest", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
     const [url, init] = fetcher.mock.calls[0]!;
     expect(url).toBe("https://gw.example.com/v1/foo?x=1");
-    expect(init.method).toBe("GET");
-    expect(init.body).toBeUndefined();
-    expect(init.duplex).toBeUndefined();
     expect(init.redirect).toBe("manual");
     const headers = new Headers(init.headers);
     expect(headers.get("authorization")).toBe("Bearer host-token");
     expect(headers.get("accept")).toBe("text/event-stream");
   });
 
+  test("forwards to the paired runtime with its host-owned bearer and query", async () => {
+    const { fetcher } = recorder();
+    const token = mock(guardianToken);
+    await forwardGatewayRequest(
+      request("/__gateway/abc/v1/foo?x=1", {
+        headers: { authorization: "Bearer renderer-token" },
+      }),
+      pairedOnly,
+      token,
+      fetcher,
+    );
+    expect(token).toHaveBeenCalledWith("abc", "https://gw.example.com");
+    const [url] = fetcher.mock.calls[0]!;
+    expect(url).toBe("https://gw.example.com/v1/foo?x=1");
+  });
+
   test("strips browser-ambient headers and streams the request body", async () => {
     const { fetcher } = recorder();
-    const req = request("/__gateway-paired/abc/v1/events", {
+    const req = request("/__gateway/abc/v1/events", {
       method: "POST",
       headers: {
         origin: "app://mycadet.ai",
@@ -216,7 +195,7 @@ describe("forwardPairedGatewayRequest", () => {
       },
       body: new ReadableStream<Uint8Array>(),
     });
-    await forwardPairedGatewayRequest(req, pair(), guardianToken, fetcher);
+    await forwardGatewayRequest(req, pairedOnly, guardianToken, fetcher);
     const init = fetcher.mock.calls[0]![1];
     const headers = new Headers(init.headers);
     for (const name of [
@@ -235,9 +214,9 @@ describe("forwardPairedGatewayRequest", () => {
 
   test("rejects before fetching when the host cannot read the bearer", async () => {
     const { fetcher } = recorder();
-    const response = await forwardPairedGatewayRequest(
-      request("/__gateway-paired/abc/v1/foo"),
-      pair(),
+    const response = await forwardGatewayRequest(
+      request("/__gateway/abc/v1/foo"),
+      pairedOnly,
       async () => ({
         ok: false,
         status: 404,
@@ -256,9 +235,9 @@ describe("forwardPairedGatewayRequest", () => {
     });
     const { fetcher } = recorder(upstream);
     expect(
-      await forwardPairedGatewayRequest(
-        request("/__gateway-paired/abc/v1/events"),
-        pair(),
+      await forwardGatewayRequest(
+        request("/__gateway/abc/v1/events"),
+        pairedOnly,
         guardianToken,
         fetcher,
       ),
@@ -278,9 +257,9 @@ describe("forwardPairedGatewayRequest", () => {
         const fetcher = mock(async () => {
           throw new Error(message);
         });
-        const response = await forwardPairedGatewayRequest(
-          request("/__gateway-paired/abc/v1/foo", { method }),
-          pair(),
+        const response = await forwardGatewayRequest(
+          request("/__gateway/abc/v1/foo", { method }),
+          pairedOnly,
           guardianToken,
           fetcher,
         );

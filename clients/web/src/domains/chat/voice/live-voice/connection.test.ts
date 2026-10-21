@@ -16,7 +16,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { client } from "@/generated/api/client.gen";
+import type { LockfileAssistant } from "@/lib/local-mode";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { useLockfileStore } from "@/stores/lockfile-store";
 
 import {
   buildSelfHostedGatewayWsUrl,
@@ -62,7 +64,17 @@ afterEach(() => {
   client.post = originalPost;
   setSelfHostedConnection(null);
   window.__CADET_CONFIG__ = undefined;
+  useLockfileStore.setState({ lockfile: null });
 });
+
+/**
+ * Seed the real lockfile store — the unified id-keyed proxy resolves the
+ * loopback port and pairedness through the entry the path names, so the WS
+ * tests read the same source the hosts do.
+ */
+function setLockfile(assistants: LockfileAssistant[]): void {
+  useLockfileStore.setState({ lockfile: { assistants } });
+}
 
 describe("mintTunnelWsToken", () => {
   test("POSTs the documented mint endpoint with the assistantId body", async () => {
@@ -173,14 +185,22 @@ describe("getTunnelWsScheme", () => {
 describe("buildSelfHostedGatewayWsUrl", () => {
   const args = { routePath: "/v1/live-voice", token: "actor-tok" };
 
-  test("local __gateway proxy path: dials the loopback gateway port directly", () => {
+  test("local __gateway proxy path: dials the entry's recorded loopback port", () => {
     // The HTTP-only __gateway proxy can't carry a WS upgrade, so the socket
-    // bypasses it and hits 127.0.0.1:<port>. Origin host, prefix, query, and
-    // hash are all dropped; the bypass keys off the path, not the scheme.
+    // bypasses it and hits 127.0.0.1:<port> — the port resolved from the
+    // entry the id-keyed path names. Origin host, prefix, query, and hash are
+    // all dropped; the bypass keys off the path, not the scheme.
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "local",
+        resources: { gatewayPort: 7821 },
+      } as LockfileAssistant,
+    ]);
     const url = new URL(
       buildSelfHostedGatewayWsUrl({
         ...args,
-        ingressUrl: "https://app.example/assistant/__gateway/7821?a=1#frag",
+        ingressUrl: "https://app.example/assistant/__gateway/asst-1?a=1#frag",
         params: { conversationId: "conv-xyz" },
       }),
     );
@@ -191,6 +211,36 @@ describe("buildSelfHostedGatewayWsUrl", () => {
     expect(url.searchParams.get("a")).toBeNull();
     expect(url.searchParams.get("token")).toBe("actor-tok");
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
+  });
+
+  test("local __gateway proxy path with no recorded port throws", () => {
+    setLockfile([
+      { assistantId: "asst-1", cloud: "local" } as LockfileAssistant,
+    ]);
+    expect(() =>
+      buildSelfHostedGatewayWsUrl({
+        ...args,
+        ingressUrl: "https://app.example/assistant/__gateway/asst-1",
+      }),
+    ).toThrow("Local gateway has no recorded port yet.");
+  });
+
+  test("a unified proxy path naming a paired entry throws PairedVoiceUnavailableError", () => {
+    // The id-keyed path no longer encodes the local/paired split; pairedness
+    // is read from the entry, and paired gateways have no loopback to dial.
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "paired",
+        runtimeUrl: "https://gw.example.com",
+      } as LockfileAssistant,
+    ]);
+    expect(() =>
+      buildSelfHostedGatewayWsUrl({
+        ...args,
+        ingressUrl: "https://app.example/assistant/__gateway/asst-1",
+      }),
+    ).toThrow(PairedVoiceUnavailableError);
   });
 
   test("paired __gateway-paired path throws PairedVoiceUnavailableError on any origin", () => {
@@ -394,9 +444,35 @@ describe("isPairedGatewayIngress", () => {
     ).toBe(true);
   });
 
-  test("does not match local proxy paths, remote ingresses, or junk", () => {
+  test("matches the unified proxy path when the entry is paired", () => {
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "paired",
+        runtimeUrl: "https://gw.example.com",
+      } as LockfileAssistant,
+    ]);
     expect(
-      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/7821"),
+      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/asst-1"),
+    ).toBe(true);
+    expect(
+      isPairedGatewayIngress("app://cadet/assistant/__gateway/asst-1"),
+    ).toBe(true);
+  });
+
+  test("does not match local entries, unknown ids, remote ingresses, or junk", () => {
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "local",
+        resources: { gatewayPort: 7821 },
+      } as LockfileAssistant,
+    ]);
+    expect(
+      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/asst-1"),
+    ).toBe(false);
+    expect(
+      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/who"),
     ).toBe(false);
     expect(isPairedGatewayIngress("https://x.ngrok-free.app")).toBe(false);
     expect(isPairedGatewayIngress("not a url")).toBe(false);

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
+import { useLockfileStore } from "@/stores/lockfile-store";
+
 import type {
   LiveVoiceAudioCaptureOptions,
   LiveVoiceCaptureResult,
@@ -12,6 +14,9 @@ let pcmSupported = true;
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => ingressUrl,
   getSelfHostedActorToken: () => actorToken,
+  // local-mode.ts (reached through live-voice/connection's lockfile imports)
+  // statically references the setter; these tests never prime a connection.
+  setSelfHostedConnection: () => {},
 }));
 
 // The real module imports an AudioWorklet asset via Vite's `?worker&url`
@@ -139,6 +144,7 @@ async function startWithFakes(
 const flushMicrotasks = () => Promise.resolve();
 
 afterEach(() => {
+  useLockfileStore.setState({ lockfile: null });
   ingressUrl = "http://localhost:8500";
   actorToken = "actor-jwt";
   pcmSupported = true;
@@ -149,12 +155,24 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("buildSttStreamWsUrl", () => {
-  test("local __gateway proxy path dials the loopback gateway directly", () => {
+  test("local __gateway proxy path dials the entry's recorded loopback port", () => {
     // The HTTP-only __gateway proxy can't carry a WS upgrade, so the dictation
-    // stream must bypass it and hit 127.0.0.1:<port> directly (shared bypass).
+    // stream must bypass it and hit 127.0.0.1:<port> directly (shared bypass);
+    // the id-keyed path resolves the port through the lockfile entry.
+    useLockfileStore.setState({
+      lockfile: {
+        assistants: [
+          {
+            assistantId: "stt-1",
+            cloud: "local",
+            resources: { gatewayPort: 8500 },
+          },
+        ],
+      },
+    });
     const url = new URL(
       buildSttStreamWsUrl({
-        ingressUrl: "http://localhost:3000/assistant/__gateway/8500/",
+        ingressUrl: "http://localhost:3000/assistant/__gateway/stt-1/",
         token: "tok en",
       }),
     );

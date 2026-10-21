@@ -682,7 +682,7 @@ describe("assistant classification", () => {
 describe("getLocalGatewayUrl", () => {
   test("resolves the gateway proxy URL for a local assistant with a recorded port", () => {
     enableLocalMode();
-    expect(getLocalGatewayUrl(localA)).toBe("/assistant/__gateway/7830");
+    expect(getLocalGatewayUrl(localA)).toBe("/assistant/__gateway/local-a");
   });
 
   test("is undefined for a local assistant with no recorded gateway port", () => {
@@ -700,7 +700,7 @@ describe("getLocalGatewayUrl", () => {
       cloud: "docker",
       runtimeUrl: "http://localhost:7930",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/7930");
+    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/dk");
   });
 
   test("accepts 127.0.0.1 as a loopback runtimeUrl host", () => {
@@ -710,7 +710,7 @@ describe("getLocalGatewayUrl", () => {
       cloud: "docker",
       runtimeUrl: "http://127.0.0.1:7931",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/7931");
+    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/dk");
   });
 
   test("prefers a recorded resources.gatewayPort over the runtimeUrl port", () => {
@@ -721,7 +721,7 @@ describe("getLocalGatewayUrl", () => {
       runtimeUrl: "http://localhost:9999",
       resources: { gatewayPort: 7830 },
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(entry)).toBe("/assistant/__gateway/7830");
+    expect(getLocalGatewayUrl(entry)).toBe("/assistant/__gateway/x");
   });
 
   test("never resolves a gateway from a non-loopback runtimeUrl", () => {
@@ -761,7 +761,7 @@ describe("getPairedGatewayUrl", () => {
   test("resolves the same-origin proxy path for a usable paired entry", () => {
     enableLocalMode();
     expect(getPairedGatewayUrl(pairedEntry)).toBe(
-      "/assistant/__gateway-paired/paired-a",
+      "/assistant/__gateway/paired-a",
     );
   });
 
@@ -772,7 +772,7 @@ describe("getPairedGatewayUrl", () => {
       assistantId: "paired/one two",
     } as LockfileAssistant;
     expect(getPairedGatewayUrl(paired)).toBe(
-      "/assistant/__gateway-paired/paired%2Fone%20two",
+      "/assistant/__gateway/paired%2Fone%20two",
     );
   });
 
@@ -784,7 +784,7 @@ describe("getPairedGatewayUrl", () => {
     ]) {
       const paired = { ...pairedEntry, runtimeUrl } as LockfileAssistant;
       expect(getPairedGatewayUrl(paired)).toBe(
-        "/assistant/__gateway-paired/paired-a",
+        "/assistant/__gateway/paired-a",
       );
     }
   });
@@ -832,14 +832,14 @@ describe("getAuthGatewayIngressUrl", () => {
   test("returns origin + gateway proxy for a local entry", () => {
     enableLocalMode();
     expect(getAuthGatewayIngressUrl(localA)).toBe(
-      `${window.location.origin}/assistant/__gateway/7830`,
+      `${window.location.origin}/assistant/__gateway/local-a`,
     );
   });
 
   test("returns origin + paired gateway proxy for a paired entry", () => {
     enableLocalMode();
     expect(getAuthGatewayIngressUrl(pairedEntry)).toBe(
-      `${window.location.origin}/assistant/__gateway-paired/paired-a`,
+      `${window.location.origin}/assistant/__gateway/paired-a`,
     );
   });
 
@@ -852,7 +852,7 @@ describe("getAuthGatewayIngressUrl", () => {
     enableLocalMode();
     setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
     expect(getAuthGatewayIngressUrl(getSelectedAssistant())).toBe(
-      `${window.location.origin}/assistant/__gateway-paired/paired-a`,
+      `${window.location.origin}/assistant/__gateway/paired-a`,
     );
   });
 });
@@ -957,7 +957,7 @@ describe("primeLocalGatewayConnection", () => {
     seedGatewayToken({
       token: "legacy-paired-guardian",
       expiresAtEpochSeconds: Math.floor(Date.now() / 1000) + 3600,
-      source: "/assistant/__gateway-paired/paired-a/auth/token",
+      source: "/assistant/__gateway/paired-a/auth/token",
     });
     const fetchSpy = mock(async () =>
       Response.json({ status: "ok", ready: true }),
@@ -966,14 +966,14 @@ describe("primeLocalGatewayConnection", () => {
     await primeLocalGatewayConnection(pairedEntry);
 
     expect(fetchSpy).toHaveBeenCalledWith(
-      "/assistant/__gateway-paired/paired-a/readyz",
+      "/assistant/__gateway/paired-a/readyz",
     );
     expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
     expect(getGatewayToken()).toBeNull();
     // The connection rides the same-origin host proxy, never the remote
     // runtimeUrl directly (packaged-app CSP and browser CORS both block it).
     expect(getSelfHostedIngressUrl()).toBe(
-      `${window.location.origin}/assistant/__gateway-paired/paired-a`,
+      `${window.location.origin}/assistant/__gateway/paired-a`,
     );
     expect(getSelfHostedActorToken()).toBeNull();
     expect(isGatewayAuthMode()).toBe(true);
@@ -987,7 +987,7 @@ describe("primeLocalGatewayConnection", () => {
     // through to the cloud and gateway-auth predicates would read false.
     enableLocalMode();
     setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
-    const ingressUrl = `${window.location.origin}/assistant/__gateway-paired/paired-a`;
+    const ingressUrl = `${window.location.origin}/assistant/__gateway/paired-a`;
     setSelfHostedConnection({ url: ingressUrl, token: null });
 
     let ingressDuringProbe: string | null | undefined;
@@ -1041,7 +1041,7 @@ describe("primeLocalGatewayConnection", () => {
       source: "/assistant/__gateway/7830/auth/token",
     });
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway/7830`,
+      url: `${window.location.origin}/assistant/__gateway/local-a`,
       token: "local-actor-token",
     });
     globalThis.fetch = mock(async () =>
@@ -1054,7 +1054,7 @@ describe("primeLocalGatewayConnection", () => {
 
     expect(getGatewayToken()).toBe("local-actor-token");
     expect(getSelfHostedIngressUrl()).toBe(
-      `${window.location.origin}/assistant/__gateway/7830`,
+      `${window.location.origin}/assistant/__gateway/local-a`,
     );
     expect(getSelfHostedActorToken()).toBe("local-actor-token");
     expect(isGatewayAuthMode()).toBe(true);

@@ -11,6 +11,9 @@ const createPairedGatewayRequestFilter = (
   appOrigin: AllowedOrigin,
 ): WebRequestFilter => ({
   urls: [
+    `${appOrigin.protocol}//${appOrigin.host}/assistant/__gateway/*`,
+    `${appOrigin.protocol}//${appOrigin.host}/__gateway/*`,
+    // The deprecated paired-only alias still routes through the same proxy.
     `${appOrigin.protocol}//${appOrigin.host}/assistant/__gateway-paired/*`,
     `${appOrigin.protocol}//${appOrigin.host}/__gateway-paired/*`,
   ],
