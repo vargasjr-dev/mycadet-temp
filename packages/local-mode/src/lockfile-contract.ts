@@ -120,7 +120,7 @@ export function isCloudHome(cloud: unknown): boolean {
  * absolute http(s) URL. Shared by the renderer's paired-gateway URL derivation
  * and the host-side paired allowlist reader so the two can't drift.
  */
-export function isUsableRuntimeUrl(url: unknown): boolean {
+export function isUsableRuntimeUrl(url: unknown): url is string {
   if (typeof url !== "string" || url === "") {
     return false;
   }

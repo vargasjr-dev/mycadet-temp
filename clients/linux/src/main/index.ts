@@ -161,8 +161,7 @@ const registerAppProtocol = (): void => {
   });
 };
 
-// Synchronous config snapshot the preload reads at startup and exposes to the
-// renderer as `window.__CADET_CONFIG__`.
+// Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
     cloudUrl: resolvedConfig.cloudUrl,
