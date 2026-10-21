@@ -102,7 +102,11 @@
     "currentWithHost": "当前 · {host}",
     "remoteWithHost": "远程 · {host}",
     "removeFromDevice": "从本设备移除…",
-    "unnamedAssistant": "该助手"
+    "unnamedAssistant": "该助手",
+    "connectRemote": "连接远程助手",
+    "pairedWithHost": "已配对 · {host}",
+    "paired": "已配对",
+    "localAssistant": "在这台电脑上"
   },
   "appShell": {
     "loading": "正在加载助手…",
@@ -126,12 +130,43 @@
   "actions": {
     "cancel": "取消",
     "add": "添加",
-    "adding": "正在添加…"
+    "adding": "正在添加…",
+    "connect": "连接",
+    "connecting": "正在连接…",
+    "continue": "继续"
   },
   "addRemoteOriginDialog": {
     "title": "添加远程助手",
     "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
     "addressLabel": "助手地址",
     "addFailed": "添加助手失败。请重试。"
+  },
+  "connectAssistantDialog": {
+    "title": "连接远程助手",
+    "instruction": "请从助手的“配对设备”设置中粘贴配对链接，或直接粘贴其地址，然后在助手端批准请求。",
+    "linkGuidance": "此链接来自配对二维码。要连接此设备，请在此处粘贴来自助手设备的配对链接。",
+    "legacyLinkGuidance": "此链接来自旧版应用，已无法使用。请在助手设备上生成新的配对链接并粘贴到此处。",
+    "addressLabel": "地址或配对链接",
+    "addressPlaceholder": "https://your-assistant.ts.net",
+    "nameLabel": "名称（可选）",
+    "approveOnHost": "请在助手设备上批准此代码以完成连接。",
+    "waitingForApproval": "等待批准…",
+    "retrying": "助手尚未准备好配对。正在重试，直到代码过期。",
+    "expiresIn": "将在 {time} 后过期",
+    "retryExpired": "配对代码在助手准备好配对之前已过期。请重新开始以获取新代码。",
+    "submitError": "无法连接到该助手。请重试。",
+    "importedTitle": "配对已导入",
+    "importedBody": "此配对仅限访问：它现在可用，但其访问权限会过期且无法自动续订。过期后，请在助手设备上生成新的配对链接并粘贴到此处以重新配对。"
+  },
+  "connectRecoveryDialog": {
+    "repairTitle": "修复助手？",
+    "repairBody": "修复会重新配置此助手的身份验证令牌。任何连接到此助手的其他设备或浏览器会话都将被注销，需要重新连接。",
+    "repairConfirm": "修复",
+    "authFailedTitle": "无法验证助手身份",
+    "authFailedBody": "{name} 的身份验证令牌缺失或无法再刷新，因此无法连接此助手。您可以修复它、停用它或选择其他助手。",
+    "wakeAndRepair": "唤醒并修复",
+    "retire": "停用助手",
+    "repairFailed": "修复失败，请重试。",
+    "retireFailed": "移除助手失败，请重试。"
   }
 }

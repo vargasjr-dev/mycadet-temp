@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { HardDrive, Loader2, RefreshCw, Server, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
 
 import type { Assistant } from "@/assistant/api";
 import { DetailCard } from "@/components/detail-card";
@@ -22,7 +21,9 @@ import {
   SIZE_LABEL,
 } from "@/lib/billing/machine-sizes";
 import { Trans, useTranslation } from "@/i18n";
-import { routes } from "@/utils/routes";
+import { ExternalAnchor } from "@/components/external-anchor";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { Button } from "@mycadet/design-library/components/button";
 import { textLinkVariants } from "@mycadet/design-library/components/text-link";
 import { cn } from "@mycadet/design-library/utils/cn";
@@ -57,7 +58,6 @@ export function ResizeCard({
   refetchUntilResized,
 }: ResizeCardProps) {
   const { t } = useTranslation("settings");
-  const navigate = useNavigate();
   const subscriptionQuery = useQuery(
     organizationsBillingSubscriptionRetrieveOptions(),
   );
@@ -405,7 +405,7 @@ export function ResizeCard({
             <Button
               onClick={() => {
                 setUpgradeModalOpen(false);
-                void navigate(routes.plans);
+                void openExternalUrl(cloudAccountBillingUrl());
               }}
             >
               {t("resizeCard.upgrade")}
@@ -482,13 +482,13 @@ export function ResizeCard({
                 i18nKey="resizeCard.needMore"
                 components={{
                   upgradeLink: (
-                    <Link
-                      to={routes.plans}
+                    <ExternalAnchor
+                      href={cloudAccountBillingUrl()}
+                      onOpen={() => setResizeModalOpen(false)}
                       className={cn(
                         textLinkVariants({ tone: "quiet" }),
                         "text-[var(--content-secondary)] decoration-[var(--border-element)] underline-offset-2",
                       )}
-                      onClick={() => setResizeModalOpen(false)}
                     />
                   ),
                 }}

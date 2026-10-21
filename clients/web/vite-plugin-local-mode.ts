@@ -41,7 +41,7 @@ import {
   authorizePairedForwardHeaders,
   type CliInvocation,
 } from "@mycadet/local-mode";
-import { displayVersion } from "../../cli/src/lib/local-version";
+import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
 
 const GUARDIAN_TOKEN_PATTERN =
@@ -89,7 +89,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   // does and nothing can override it out of band.
   const configJson = JSON.stringify({
     cloudUrl: config.cloudUrl,
-    version: displayVersion(cliPkg.version),
+    version: stampedVersion(cliPkg.version),
   });
 
   return {

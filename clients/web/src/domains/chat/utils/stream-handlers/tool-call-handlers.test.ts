@@ -210,65 +210,9 @@ describe("handleToolResult", () => {
   });
 });
 
-describe("the reply tool in the live turn", () => {
-  /** The daemon's own label for a turn whose last completed tool was the
-   *  reply channel: the tool name, humanised. */
-  const REPLY_TOOL_STATUS = "Processing send user message results";
-
-  function replyToolTurn(ctx: ReturnType<typeof makeCtx>): void {
-    handleToolUseStart(
-      {
-        type: "tool_use_start",
-        toolName: "send_user_message",
-        input: { message: "on it" },
-        toolUseId: "tc-send",
-      },
-      ctx,
-    );
-    handleToolResult(
-      {
-        type: "tool_result",
-        toolName: "send_user_message",
-        toolUseId: "tc-send",
-        result: "delivered",
-      },
-      ctx,
-    );
-  }
-
-  it("claims no slot in the in-flight tool count", () => {
-    const ctx = makeCtx();
-    replyToolTurn(ctx);
-    expect(ctx.turnActions.onToolUseStart).not.toHaveBeenCalled();
-    expect(ctx.turnActions.onToolResult).not.toHaveBeenCalled();
-  });
-
-  it("never names itself in the live status label", () => {
-    const ctx = makeCtx();
-    replyToolTurn(ctx);
-    handleAssistantActivityState(
-      {
-        type: "assistant_activity_state",
-        activityVersion: 1,
-        phase: "thinking",
-        anchor: "assistant_turn",
-        reason: "tool_result_received",
-        statusText: REPLY_TOOL_STATUS,
-        conversationId: "conv-1",
-      },
-      ctx,
-    );
-    const labels = (
-      ctx.turnActions.onActivityThinking as unknown as {
-        mock: { calls: unknown[][] };
-      }
-    ).mock.calls.map((call) => call[0]);
-    expect(labels).toEqual([undefined]);
-  });
-
+describe("tool status labels in the live turn", () => {
   it("leaves a real tool's status label alone", () => {
     const ctx = makeCtx();
-    replyToolTurn(ctx);
     handleToolResult(
       {
         type: "tool_result",

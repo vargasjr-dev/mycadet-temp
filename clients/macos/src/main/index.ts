@@ -353,7 +353,7 @@ const registerAppProtocol = (): void => {
       gatewayBase: getActiveGatewayBase(),
       fetcher: net.fetch,
       allowedOrigin: resolveAllowedOrigin(),
-      log: console.error,
+      log,
     });
     if (cloudProxied) return cloudProxied;
 
@@ -379,7 +379,7 @@ const registerAppProtocol = (): void => {
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
-    cloudUrl: resolvedConfig.cloudUrl,
+  cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),
   version: getVersionInfo().version,
 }));

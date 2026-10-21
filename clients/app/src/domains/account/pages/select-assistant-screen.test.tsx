@@ -17,6 +17,8 @@ import {
   REMEMBERED_ORIGINS_STORAGE_KEY,
   resetRememberedOriginsForTesting,
 } from "@app/stores/remembered-origins-store";
+import { __resetConnectDialogForTesting } from "@app/stores/connect-dialog-store";
+import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
 
 const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
@@ -110,14 +112,14 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
-  // The account picker lists from the cloud base; the shell resolves the
-  // chosen assistant from its own origin, which routes /v1 to the gateway.
+  // Every chooser fetch is same-origin: the serving layer (desktop
+  // forward, edge proxy, cloud takeover) routes /v1 and owns credentials.
   expect(
     request.mock.calls
       .map(([url]) => String(url))
       .filter((url) => url.includes("/v1/")),
   ).toEqual([
-    "https://host.example/admin/proxy/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "http://localhost:3001/v1/assistants/assistant-2/",
   ]);
   expect(request.mock.calls[0][1]?.credentials).toBe("include");
@@ -273,7 +275,7 @@ test("an empty list offers creation and lands in the created assistant", async (
       // the platform session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
-    "https://host.example/admin/proxy/v1/assistants/?limit=100&offset=0",
+    "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "/v1/organizations/?limit=100&offset=0",
     "/v1/assistants/hatch/?mode=create",
     "http://localhost:3001/v1/assistants/assistant-2/",
@@ -356,16 +358,22 @@ test("a failed retire keeps the dialog open with the cloud's detail", async () =
   expect(screen.getByText("One")).toBeDefined();
 });
 
-test("a malformed list produces an error and retry can recover", async () => {
-  request
-    .mockResolvedValueOnce(Response.json({ results: [{ name: "Missing ID" }] }))
-    .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
-    );
+test("a failed list renders a degraded disabled row plus the way forward", async () => {
+  request.mockResolvedValueOnce(
+    Response.json({ results: [{ name: "Missing ID" }] }),
+  );
   setup();
-  await screen.findByText("Unable to load assistant.");
-  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-  await screen.findByRole("radio", { name: /^One/ });
+  const row = await screen.findByRole("radio", {
+    name: "Unable to load assistant.",
+  });
+  expect(row.getAttribute("aria-disabled")).toBe("true");
+  expect(row.getAttribute("tabindex")).toBe("-1");
+  // The row is inert chrome; recovery lives beside it — the create/retry
+  // affordances (#449's colocated way forward) survive the dead list.
+  expect(screen.getByRole("button", { name: "Retry" })).toBeDefined();
+  expect(
+    screen.getByRole("button", { name: "Create an assistant" }),
+  ).toBeDefined();
 });
 
 test("a dead list still offers hatching from the chooser", async () => {
@@ -518,5 +526,120 @@ describe("remembered origins", () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
     });
     await waitFor(() => expect(screen.queryByText("Workshop")).toBeNull());
+  });
+
+  describe("with a local-mode host", () => {
+    const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
+
+    function stubCadet(lockfile: unknown, status: unknown): void {
+      Object.defineProperty(window, "cadet", {
+        configurable: true,
+        value: {
+          platform: "electron",
+          localMode: {
+            // Availability is detected on the pairing channel itself.
+            pairingStart: async () => ({ ok: false, error: "unused" }),
+            readLockfile: async () => lockfile,
+            status: async () => status,
+          },
+        },
+      });
+    }
+
+    afterEach(() => {
+      if (originalCadet) {
+        Object.defineProperty(window, "cadet", originalCadet);
+      } else {
+        Reflect.deleteProperty(window, "cadet");
+      }
+      __resetConnectDialogForTesting();
+      __resetLocalLockfileForTesting();
+    });
+
+    const pairedLockfile = {
+      assistants: [
+        {
+          assistantId: "paired-1",
+          name: "Office",
+          cloud: "paired",
+          runtimeUrl: "https://office.example.com",
+        },
+      ],
+      activeAssistant: null,
+    };
+
+    test("the pairing affordance replaces the add-origin affordance, and opens the connect dialog", async () => {
+      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      expect(
+        await screen.findByText("Connect a remote assistant"),
+      ).toBeDefined();
+      // Hostless surfaces add an origin instead; with a host the dialog owns
+      // pairing.
+      expect(screen.queryByText("Add a remote assistant")).toBeNull();
+      expect(
+        await screen.findByText("Paired · office.example.com"),
+      ).toBeDefined();
+      fireEvent.click(screen.getByText("Connect a remote assistant"));
+      expect(
+        await screen.findByText("Connect a Remote Assistant"),
+      ).toBeDefined();
+    });
+
+    test("a paired entry connects through the shell's paired-gateway path", async () => {
+      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
+      setup("/account/select-assistant", false, async (url) => {
+        if (String(url).includes("/v1/assistants/paired-1")) {
+          return Response.json({
+            id: "paired-1",
+            status: "active",
+            version: "1.2.3",
+            url: "web/1.2.3/assistant/",
+          });
+        }
+        return iframeDocument.clone();
+      });
+      fireEvent.click(await screen.findByRole("radio", { name: /^Office/ }));
+      // The selection state carries the paired base, so the shell's
+      // resolution fetch rides the paired-gateway path instead of the
+      // default same-origin /v1.
+      await waitFor(() => {
+        expect(
+          request.mock.calls.some(([url]) =>
+            String(url).includes(
+              "/assistant/__gateway-paired/paired-1/v1/assistants/paired-1",
+            ),
+          ),
+        ).toBe(true);
+      });
+    });
+
+    test("a local assistant that is not healthy opens the recovery dialog", async () => {
+      stubCadet(
+        {
+          assistants: [
+            {
+              assistantId: "local-1",
+              name: "Workbench",
+              cloud: "local",
+            },
+          ],
+          activeAssistant: null,
+        },
+        { ok: true, state: "crashed" },
+      );
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      fireEvent.click(await screen.findByRole("radio", { name: /^Workbench/ }));
+      expect(
+        await screen.findByText("Can\u2019t Authenticate Assistant"),
+      ).toBeDefined();
+      expect(
+        screen.getByText(/authentication token for Workbench/),
+      ).toBeDefined();
+    });
   });
 });

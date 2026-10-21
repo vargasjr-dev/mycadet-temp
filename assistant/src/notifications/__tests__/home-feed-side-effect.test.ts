@@ -606,9 +606,7 @@ describe("writeHomeFeedItemForSignal", () => {
         conversationId: "conv-source-1",
         role: "assistant",
         content: "Three things today.",
-        // Bookkeeping about the conversation, so it never resurfaces a
-        // chat the user marked Done.
-        options: { skipIndexing: true, skipResurface: true },
+        options: { skipIndexing: true },
       });
       expect(item?.metadata?.notificationConversationMessageId).toBe("msg-1");
       // A client with the conversation open refetches only on the messages

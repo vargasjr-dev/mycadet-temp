@@ -142,14 +142,10 @@ describe("requiresCloudSession", () => {
   test.each([
     [routes.checkout],
     [`${routes.checkout}?package=mighty`],
-    [routes.plans],
-    [`${routes.plans}?package=mighty`],
     [BILLING_LANDING],
     [`${BILLING_LANDING}?${STRIPE_RETURN}`],
     [routes.settings.upgradeSuccess],
-    [routes.settings.upgradeCancel],
     [`${routes.settings.usage}?${STRIPE_RETURN}`],
-    [`${routes.settings.usage}?tab=billing&${STRIPE_RETURN}`],
     [PAID_HATCH],
     [routes.account.root],
     ["/import?foo=1"],
@@ -163,10 +159,9 @@ describe("requiresCloudSession", () => {
     [routes.assistant],
     [routes.settings.general],
     ["/assistant/conversations/abc"],
-    // The Usage tab reads from the local daemon, so only its Stripe return leg
-    // is platform-bound.
+    // The usage page reads from the local daemon, so only its Stripe return
+    // leg is platform-bound.
     [routes.settings.usage],
-    [routes.settings.usageBilling],
     // A managed hatch a free user chose carries no purchase to lose.
     [routes.onboarding.hatching],
     [`${routes.onboarding.hatching}?hosting=cadet-cloud`],
@@ -175,8 +170,8 @@ describe("requiresCloudSession", () => {
   });
 
   test("matches sub-paths, not siblings that merely share a prefix", () => {
-    expect(requiresCloudSession(`${routes.plans}/detail`)).toBe(true);
-    expect(requiresCloudSession(`${routes.plans}-archive`)).toBe(false);
+    expect(requiresCloudSession(`${routes.checkout}/detail`)).toBe(true);
+    expect(requiresCloudSession(`${routes.checkout}-archive`)).toBe(false);
     expect(requiresCloudSession(`${routes.account.root}/login`)).toBe(true);
     expect(requiresCloudSession("/accountant")).toBe(false);
   });

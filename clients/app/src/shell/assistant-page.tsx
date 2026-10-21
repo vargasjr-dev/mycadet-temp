@@ -4,7 +4,7 @@ import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
 import {
   assistantSelectionState,
-  selectedAssistantId,
+  selectedAssistantState,
 } from "@app/assistant/assistant-selection";
 
 export function AssistantPage() {
@@ -12,16 +12,19 @@ export function AssistantPage() {
   const config = readInjectedConfig();
   const location = useLocation();
   const navigate = useNavigate();
-  const selection = selectedAssistantId(location.state);
+  const selection = selectedAssistantState(location.state);
   return (
     <AppShell
-      assistantId={selection ?? config?.assistantId}
+      assistantId={selection?.id ?? config?.assistantId}
+      apiBaseUrl={selection?.apiBase}
       location={`${location.pathname}${location.search}${location.hash}`}
       origin={window.location.origin}
       onNavigate={(path, options) => {
         void navigate(path, {
           ...options,
-          state: selection ? assistantSelectionState(selection) : undefined,
+          state: selection
+            ? assistantSelectionState(selection.id, selection.apiBase)
+            : undefined,
         });
       }}
     />

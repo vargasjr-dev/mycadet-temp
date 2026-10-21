@@ -1,18 +1,17 @@
-import { useNavigate } from "react-router";
-
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { BillingErrorBanner } from "@/domains/chat/components/billing-error-banner";
 import { useIsFreePlan } from "@/hooks/use-is-free-plan";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useAddCreditsModalStore } from "@/stores/add-credits-modal-store";
-import { routes } from "@/utils/routes";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { useTranslation } from "@/i18n";
 
 /** Free-plan copy: the wall points at plans rather than at credits. */
 export const UPGRADE_COPY = {
   title: "You’re out of Free credits",
   subtitle: "Upgrade your plan to keep the conversation going.",
-  ctaLabel: "View plans",
+  ctaLabel: "Upgrade",
 };
 
 /** The default credit-wall copy: any paid or unresolved plan. */
@@ -33,7 +32,6 @@ export const ADD_CREDITS_COPY = {
  */
 export function CreditsUpsellCard() {
   const { t } = useTranslation("chat");
-  const navigate = useNavigate();
 
   // Managed credits are cloud-hosted billing, so the card follows the
   // cloud-hosted gate (like `MaintenanceModeBanner` and the billing
@@ -78,7 +76,7 @@ export function CreditsUpsellCard() {
       action={{
         label: copy.ctaLabel,
         onClick: isUpgrade
-          ? () => void navigate(routes.plans)
+          ? () => void openExternalUrl(cloudAccountBillingUrl())
           : () => useAddCreditsModalStore.getState().setOpen(true),
       }}
       detached={true}

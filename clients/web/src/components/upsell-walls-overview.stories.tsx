@@ -6,8 +6,7 @@
  * above the real component rendering it. Individual story files drill into the
  * per-wall variants (dismissible/not, pending, error). Native Android renders
  * every wall exactly as iOS does; only the purchase CTAs behave differently
- * there, handing off to the web app's billing page in the browser
- * (`lib/billing/android-billing-handoff.ts`).
+ * there, opening the cloud's billing page in the browser instead of in-app.
  *
  * It lives outside `src/domains/` deliberately: the walls span chat, settings
  * and billing, and `local/no-cross-domain-imports` only constrains files that
@@ -18,15 +17,13 @@
  *   - **Add credits vs Upgrade is one branch, not a redesign.** Every credit
  *     wall says "Add credits" unless the org is on the free (`base`) plan.
  *     Paid orgs keep "Add credits".
- *   - **Every non-credit upsell in the app routes to `routes.plans`**, the
- *     plans takeover. There is no second upsell destination.
+ *   - **Every non-credit upsell in the app routes to the cloud's
+ *     `/account/billing` page.** There is no second upsell destination.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { CalendarClock, KeyRound, Sparkles } from "lucide-react";
+import { CalendarClock, KeyRound } from "lucide-react";
 
 import type { DiskPressureStatus } from "@mycadet/assistant-api";
-import { Button } from "@mycadet/design-library/components/button";
-import { Tag } from "@mycadet/design-library/components/tag";
 import { withQueryCache } from "@/lib/story-query-cache";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
@@ -37,13 +34,6 @@ import {
   UPGRADE_COPY,
 } from "@/domains/chat/components/credits-upsell-card";
 import { EmailCloudContent } from "@/domains/channels/components/email-cloud-content";
-import { packageSpecs } from "@/domains/settings/billing/plan-spec";
-import { PlanTile } from "@/domains/settings/billing/plan-tile";
-import {
-  makeProPackage,
-  makeSuperPackage,
-} from "@/domains/settings/billing/plans/pro-package-test-fixtures";
-import { formatDollars } from "@/domains/settings/components/tier-pricing";
 import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import type { SubscriptionResponse } from "@/generated/api/types.gen";
 
@@ -87,16 +77,6 @@ const DISK_STATUS: DiskPressureStatus = {
   blockedCapabilities: [],
   error: null,
 };
-
-/**
- * The plan tile's CTA quotes the real price delta between the current package
- * and the next one up, so the story derives it from the same fixtures the
- * billing suites use rather than hardcoding a number that can drift.
- */
-const SUPER_PACKAGE = makeSuperPackage();
-const POWER_UP_LABEL = `Power Up for +${formatDollars(
-  SUPER_PACKAGE.total_price_cents - makeProPackage().total_price_cents,
-)}/month`;
 
 interface WallCaseProps {
   wall: string;
@@ -196,7 +176,7 @@ export const CreditWalls: Story = {
           wall="Out of credits (free plan)"
           trigger="Balance ≤ 0 AND plan_id = base."
           cta={UPGRADE_COPY.ctaLabel}
-          destination="/assistant/plans (plans takeover)"
+          destination="/account/billing (cloud)"
         >
           <BillingErrorBanner
             ariaLabel={`${UPGRADE_COPY.title}. ${UPGRADE_COPY.subtitle}`}
@@ -227,7 +207,7 @@ export const CreditWalls: Story = {
           wall="Daily credit limit reached"
           trigger="User's own daily spend cap hit. Not a plan wall."
           cta="Adjust Limit"
-          destination="/assistant/settings/usage?tab=billing"
+          destination="/account/billing (cloud)"
         >
           <BillingErrorBanner
             ariaLabel="Daily credit limit reached"
@@ -286,7 +266,7 @@ export const ResourceAndEntitlementWalls: Story = {
           wall="Storage almost full"
           trigger="Disk usage crosses the warn threshold on a cloud-hosted assistant."
           cta="Manage Storage + Upgrade"
-          destination="/workspace?sort=size · /assistant/plans"
+          destination="/workspace?sort=size · /account/billing"
         >
           <DiskPressureBanner
             status={DISK_STATUS}
@@ -318,7 +298,7 @@ export const ResourceAndEntitlementWalls: Story = {
           wall="Storage critically low"
           trigger="Disk usage crosses the critical threshold; the assistant will lock if it runs out."
           cta="Review (the Upgrade CTA lives in the modal it opens)"
-          destination="/assistant/plans"
+          destination="/account/billing"
         >
           <DiskPressureBanner
             status={{ ...DISK_STATUS, state: "critical", usagePercent: 99 }}
@@ -334,55 +314,13 @@ export const ResourceAndEntitlementWalls: Story = {
           wall="Managed email not included"
           trigger="entitlements.cloud_email is false on the subscription. Read off the entitlement, not the plan. An admin override can grant it to a Base org."
           cta="Upgrade"
-          destination="/assistant/plans"
+          destination="/account/billing"
         >
           <EmailCloudContent
             assistantId="story-assistant"
             assistantHandle="ada"
             emailRootDomain="mycadet.ai"
           />
-        </WallCase>
-      </Group>
-
-      <Group heading="Plan management upsell">
-        <WallCase
-          wall="Next plan tile"
-          trigger="A higher package exists in the catalog and the relation is not a lateral switch. A Pro user at the top of the catalog, or one whose tiers match no package, gets no tile at all; the plans takeover keeps the customize path."
-          cta={POWER_UP_LABEL}
-          destination="Stripe checkout (base) or package-switch confirm (pro)"
-        >
-          <div className="w-[360px]">
-            <PlanTile
-              theme="dark"
-              tierKey={SUPER_PACKAGE.key}
-              name={SUPER_PACKAGE.name}
-              tag={
-                <Tag
-                  className="bg-[var(--feed-digest-weak)] text-[var(--credits-accent)]"
-                  leftIcon={
-                    <Sparkles
-                      className="text-[var(--credits-accent)]"
-                      aria-hidden
-                    />
-                  }
-                >
-                  Next Plan
-                </Tag>
-              }
-              specs={packageSpecs(SUPER_PACKAGE, "Super usage, reset monthly")}
-              footer={
-                <Button
-                  variant="primary"
-                  fullWidth
-                  tintColor="var(--aux-white)"
-                  className="h-10 border-transparent bg-[var(--system-positive-strong)] hover:bg-[var(--system-positive-strong)] hover:opacity-90 active:bg-[var(--system-positive-strong)]"
-                  onClick={() => {}}
-                >
-                  {POWER_UP_LABEL}
-                </Button>
-              }
-            />
-          </div>
         </WallCase>
       </Group>
     </div>

@@ -130,13 +130,12 @@ export function UpgradeSuccessPage() {
       return;
     }
     const t = setTimeout(() => {
-      navigate(routes.settings.usageBilling, { replace: true });
+      navigate(routes.settings.usage, { replace: true });
     }, SUCCESS_REDIRECT_DELAY_MS);
     return () => clearTimeout(t);
   }, [reachedPro, navigate]);
 
-  const goToBilling = () =>
-    navigate(routes.settings.usageBilling, { replace: true });
+  const goToBilling = () => navigate(routes.settings.usage, { replace: true });
 
   // Whole-page gates: same Navigate/chrome pattern as `billing-page.tsx`. The
   // hooks above all ran (with `enabled: false` for the query) so React's

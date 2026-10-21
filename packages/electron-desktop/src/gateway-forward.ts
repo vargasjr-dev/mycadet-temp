@@ -67,7 +67,7 @@ export type GatewayForwardPlan =
  * the packaged app's origin with 403. Only `Origin` is gated, so the remaining
  * headers (notably the guardian `Authorization` bearer) pass through unchanged.
  */
-export function planGatewayForward(
+function planGatewayForward(
   request: Request,
   getAllowedPorts: () => Set<number>,
 ): GatewayForwardPlan {
@@ -124,7 +124,7 @@ export function planGatewayForward(
  * compromised trusted renderer retains access through the running proxy but
  * cannot read or reuse the guardian credential outside it.
  */
-export function planPairedGatewayForward(
+function planPairedGatewayForward(
   request: Request,
   getTargets: () => Map<string, string>,
 ): GatewayForwardPlan {

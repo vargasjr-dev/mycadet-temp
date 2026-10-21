@@ -9,9 +9,17 @@ import {
 import { MemoryRouter } from "react-router";
 
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { stubModule } from "@/utils/module-mock.test-helper";
 import type { ResourcePressureStatus } from "@mycadet/assistant-api";
 
 let nativeAndroid = false;
+
+const openExternalUrlMock = mock(async (_url: string) => undefined);
+const actualBrowser = await import("@/runtime/browser");
+stubModule("@/runtime/browser", actualBrowser, {
+  openExternalUrl: openExternalUrlMock,
+});
 
 mock.module("@/runtime/platform-detection", () => ({
   useIsNativeAndroid: () => nativeAndroid,
@@ -45,7 +53,6 @@ mock.module("@/utils/local-settings", () => ({
 
 const { ResourcePressureBannerSlot } =
   await import("@/domains/chat/components/resource-pressure-banner-slot");
-const { routes } = await import("@/utils/routes");
 const { getResourcePressureMonitorMode } =
   await import("@/assistant/resource-pressure");
 
@@ -131,7 +138,7 @@ describe("ResourcePressureBannerSlot", () => {
 
     expect(queryBanner()).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Upgrade" }));
-    expect(navigateMock).toHaveBeenCalledWith(routes.plans);
+    expect(openExternalUrlMock).toHaveBeenCalledWith(cloudAccountBillingUrl());
   });
 
   test("keeps the Upgrade action on native Android, same as iOS", () => {

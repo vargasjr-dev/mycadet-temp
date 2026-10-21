@@ -26,13 +26,13 @@ import {
 import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
-import * as localVersionModule from "../lib/local-version.js";
+import * as versionModule from "@mycadet/shared/version";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
 const realHttpClient = { ...httpClient };
-const realLocalVersion = { ...localVersionModule };
+const realVersionModule = { ...versionModule };
 
 const execFileSyncMock = mock(childProcess.execFileSync);
 const spawnSyncMock = mock(childProcess.spawnSync);
@@ -78,12 +78,12 @@ mock.module("../lib/http-client.js", () => ({
   waitForDaemonReady: waitForDaemonReadyMock,
 }));
 
-// The edge stamps the CLI's own displayVersion as the served version — a
+// The edge stamps the CLI's own stampedVersion as the served version — a
 // fixed value here keeps the fingerprint replicas below exact.
-const displayVersionMock = mock(() => "1.2.3");
+const stampedVersionMock = mock(() => "1.2.3");
 
-mock.module("../lib/local-version.js", () => ({
-  displayVersion: displayVersionMock,
+mock.module("@mycadet/shared/version", () => ({
+  stampedVersion: stampedVersionMock,
 }));
 
 // Restore the real modules once this file finishes so the mocks do not leak
@@ -92,7 +92,7 @@ afterAll(() => {
   mock.module("node:child_process", () => realChildProcess);
   mock.module("node:fs", () => realFs);
   mock.module("../lib/http-client.js", () => realHttpClient);
-  mock.module("../lib/local-version.js", () => realLocalVersion);
+  mock.module("@mycadet/shared/version", () => realVersionModule);
 });
 
 import {
@@ -151,8 +151,8 @@ afterEach(() => {
   existsSyncMock.mockImplementation(realFs.existsSync);
   readFileSyncMock.mockReset();
   readFileSyncMock.mockImplementation(realFs.readFileSync);
-  displayVersionMock.mockReset();
-  displayVersionMock.mockImplementation(() => "1.2.3");
+  stampedVersionMock.mockReset();
+  stampedVersionMock.mockImplementation(() => "1.2.3");
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   for (const dir of workspaces.splice(0)) {

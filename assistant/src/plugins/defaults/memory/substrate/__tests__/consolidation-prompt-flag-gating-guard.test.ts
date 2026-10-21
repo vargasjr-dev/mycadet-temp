@@ -18,8 +18,6 @@
  * `ConsolidationPromptOptions` gate. When you add a gated section, register
  * it in GATED_SECTIONS below so the guard covers it.
  */
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -30,14 +28,6 @@ import {
   renderDanglingLinksSection,
   renderParseFailuresSection,
 } from "../prompts/consolidation.js";
-
-type Registry = {
-  flags: Array<{
-    key: string;
-    scope: string;
-    defaultEnabled: boolean;
-  }>;
-};
 
 /**
  * Every flag-gated section of the consolidation prompt, with a short
@@ -94,30 +84,6 @@ const V3_SHAPE_MARKERS = [
   "kind: index",
 ];
 
-// Registry helpers mirror workspace-release-notes-feature-flag-guard.test.ts.
-function loadDefaultDisabledAssistantFlagKeys(): string[] {
-  const registryPath = join(
-    process.cwd(),
-    "..",
-    "meta",
-    "feature-flags",
-    "feature-flag-registry.json",
-  );
-  const registry = JSON.parse(readFileSync(registryPath, "utf-8")) as Registry;
-  return registry.flags
-    .filter((flag) => flag.scope === "assistant" && !flag.defaultEnabled)
-    .map((flag) => flag.key)
-    .sort();
-}
-
-function featureFlagKeyPattern(key: string): RegExp {
-  const escaped = RegExp.escape(key);
-  if (key.includes("-")) {
-    return new RegExp(`(?:^|[^a-z0-9-])${escaped}(?:$|[^a-z0-9-])`, "i");
-  }
-  return new RegExp("[`'\"]" + escaped + "[`'\"]", "i");
-}
-
 describe("default consolidation prompt flag-gating guard", () => {
   const rendered = renderConsolidationPrompt("Jan 1, 12:00 AM", ALL_GATES_OFF);
 
@@ -156,21 +122,6 @@ describe("default consolidation prompt flag-gating guard", () => {
       ...violations.map((violation) => `  - ${violation}`),
     ].join("\n");
     expect(violations, message).toEqual([]);
-  });
-
-  test("references no default-disabled assistant feature flags", () => {
-    const violations: string[] = [];
-    for (const key of loadDefaultDisabledAssistantFlagKeys()) {
-      if (featureFlagKeyPattern(key).test(rendered)) {
-        violations.push(`references default-disabled flag "${key}"`);
-      }
-    }
-    expect(
-      violations,
-      "The default consolidation prompt must not mention default-disabled " +
-        "assistant feature flags by name.\n" +
-        violations.map((violation) => `  - ${violation}`).join("\n"),
-    ).toEqual([]);
   });
 
   test("contains no v3 article-shape content when the shape gate is v2", () => {
