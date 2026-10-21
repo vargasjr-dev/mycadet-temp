@@ -69,63 +69,64 @@ function leafRouteComponentName(path: string): string | undefined {
   return leaf?.Component?.name;
 }
 
-if (__INCLUDES_ACCOUNT__) {
-  describe("account route compact-window grouping", () => {
-    // The auth screens that render in the main window opt into the compact
-    // (440×630) window via AccountLayout's sizing hook.
-    test.each([
-      "/account",
-      "/account/login",
-      "/account/signup",
-      "/account/provider/callback",
-      "/account/provider/signup",
-      "/account/password/reset",
-      "/account/password/reset/key/abc123",
-    ])("%s is sized by AccountLayout", (path) => {
-      expect(isUnderComponent(path, "AccountLayout")).toBe(true);
-    });
+describe("account route compact-window grouping", () => {
+  // The auth screens that render in the main window opt into the compact
+  // (440×630) window via AccountLayout's sizing hook. Post-nuke that's
+  // password reset only — the login/signup/provider pages moved to the app
+  // bundle and their old paths redirect (see the removed-page tests below).
+  test.each([
+    "/account/password/reset",
+    "/account/password/reset/key/abc123",
+    "/account/provider/callback",
+    "/account/provider/signup",
+  ])("%s is sized by AccountLayout", (path) => {
+    expect(isUnderComponent(path, "AccountLayout")).toBe(true);
+  });
 
-    // The OAuth completion / loopback pages render inside a popup child window
-    // (or are transient redirects). They must stay OUT of AccountLayout — the
-    // resize IPC targets the main window, so sizing from a popup would shrink
-    // the wrong window and persist `onboardingActive`.
-    test.each([
-      "/account/oauth/popup-complete",
-      "/account/oauth/complete",
-      "/account/oauth/desktop-complete",
-      "/account/cloud-callback",
-      // Assistant selection moved here from /assistant: account-level flows
-      // are shell territory. A standalone screen, not compact auth chrome.
-      "/account/select-assistant",
-    ])("%s is NOT sized by AccountLayout", (path) => {
+  // The OAuth popup relay renders inside a popup child window (or the native
+  // SFSafariViewController). It must stay OUT of AccountLayout — the resize
+  // IPC targets the main window, so sizing from a popup would shrink the
+  // wrong window and persist `onboardingActive`.
+  test.each(["/account/oauth/popup-complete", "/account/select-assistant"])(
+    "%s is NOT sized by AccountLayout",
+    (path) => {
       expect(isUnderComponent(path, "AccountLayout")).toBe(false);
-    });
+    },
+  );
 
-    test("select-assistant moved out of /assistant into /account", () => {
-      // The old path now falls through to the NotFound splat; the new path
-      // keeps the auth contract it inherited from the /assistant subtree.
-      const oldMatches =
-        matchRoutes(routeTree as never, "/assistant/select-assistant") ?? [];
-      expect(oldMatches.at(-1)?.route.path).toBe("*");
-      expect(hasRouteMiddleware("/account/select-assistant")).toBe(true);
-    });
+  test("select-assistant moved out of /assistant into /account", () => {
+    // The old path now falls through to the NotFound splat; the new path
+    // keeps the auth contract it inherited from the /assistant subtree.
+    const oldMatches =
+      matchRoutes(routeTree as never, "/assistant/select-assistant") ?? [];
+    expect(oldMatches.at(-1)?.route.path).toBe("*");
+    expect(hasRouteMiddleware("/account/select-assistant")).toBe(true);
   });
-} else {
-  describe("account routes", () => {
-    // Assistant builds omit account routes.
-    test.each([
-      "/account",
-      "/account/login",
-      "/account/signup",
-      "/account/select-assistant",
-      "/logout",
-    ])("%s falls through to the NotFound splat", (path) => {
-      const matches = matchRoutes(routeTree as never, path) ?? [];
-      expect(matches.at(-1)?.route.path).toBe("*");
-      expect(hasRouteMiddleware(path)).toBe(false);
-    });
+});
+
+describe("nuked account auth pages", () => {
+  // The auth pages this bundle used to own are deleted (their maintained
+  // ports live in the app bundle). Their paths land on a one-release
+  // redirect to the pairing page — the unauthenticated in-SPA front door —
+  // so the exits that still navigate to `/account/login` (requireAuth, the
+  // 401 interceptor, handle-logout) don't dead-end. The PR that rewires
+  // those exits deletes these redirects too.
+  test.each([
+    "/account",
+    "/account/login",
+    "/account/signup",
+    "/account/oauth/complete",
+    "/account/oauth/desktop-complete",
+    "/account/cloud-callback",
+  ])("%s redirects to the pairing page", (path) => {
+    expect(leafRouteComponentName(path)).toBe("RemovedAuthPage");
   });
-}
+
+  test("/logout is gone entirely — nothing in-repo navigates to it", () => {
+    const matches = matchRoutes(routeTree as never, "/logout") ?? [];
+    expect(matches.at(-1)?.route.path).toBe("*");
+  });
+});
 
 describe("remote web pairing route", () => {
   test("stays outside the auth-protected assistant app tree", () => {
@@ -238,7 +239,6 @@ describe("app viewer route", () => {
     expect(isUnderComponent(appPath, "ActiveAssistantGate")).toBe(false);
     expect(isUnderComponent(appPath, "ChatLayoutRoute")).toBe(true);
   });
-
 });
 
 describe("skills routes", () => {

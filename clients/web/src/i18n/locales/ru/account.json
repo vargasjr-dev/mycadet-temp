@@ -1,49 +1,4 @@
 {
-  "authWaitSpinner": {
-    "loading": "Загрузка"
-  },
-  "signupScreen": {
-    "headlineLead": "Знакомство с новым",
-    "headlineRoles": {
-      "personalIntelligence": "личным интеллектом",
-      "softwareEngineer": "инженером-разработчиком",
-      "financeOps": "специалистом по финансам",
-      "householdManager": "управляющим домом",
-      "gtmEngineer": "инженером GTM",
-      "productLead": "продакт-лидом"
-    },
-    "subtitle": "Самый мощный ассистент для рабочих задач и бытовых дел.",
-    "continue": "Продолжить",
-    "downloadMac": "Скачать для macOS",
-    "haveAccountPrompt": "Уже есть аккаунт? <signIn>Войти</signIn>"
-  },
-  "signupClosedScreen": {
-    "title": "Регистрация сейчас закрыта",
-    "message": "К сожалению, Cadet сейчас не принимает новые регистрации. Попробуйте снова позже. Вы также можете развернуть Cadet самостоятельно. Подробнее о самостоятельном размещении <selfHostingLink>здесь</selfHostingLink>.",
-    "haveAccountPrompt": "Уже есть аккаунт? <signIn>Войти</signIn>"
-  },
-  "accountPage": {
-    "loading": "Загрузка...",
-    "welcomeTitle": "Добро пожаловать в Cadet",
-    "welcomeSubtitle": "Войдите чтобы начать.",
-    "signIn": "Войти",
-    "signedInTitle": "Привет!",
-    "signedInTitleNamed": "Привет, {name}!",
-    "signedInSubtitle": "Вход выполнен.",
-    "goToAssistant": "Перейти к ассистенту",
-    "signOut": "Выйти"
-  },
-  "loginPage": {
-    "signUp": "Регистрация",
-    "signIn": "Войти"
-  },
-  "logoutPage": {
-    "title": "Выходим..."
-  },
-  "platformLoopbackPage": {
-    "backToWelcome": "Назад к приветствию",
-    "completing": "Завершаем вход..."
-  },
   "oauthComplete": {
     "errorCode": "Ошибка: {code}"
   },
@@ -82,9 +37,6 @@
     "signupClosed": "К сожалению, Cadet сейчас не принимает новые регистрации. Попробуйте снова позже.",
     "providerSignup": "К этому входу ещё не привязан аккаунт Cadet. Сначала регистрация, потом вход.",
     "loginIncomplete": "Чтобы закончить вход, аккаунту нужен ещё один шаг. Войдите в веб-версию и повторите попытку.",
-    "desktopUpdateRequired": "Эта версия приложения Cadet для компьютера не может войти. Обновите приложение и повторите попытку.",
-    "loopbackStateMismatch": "Не удалось войти: не совпало состояние. Повторите попытку.",
-    "loopbackNoToken": "Не удалось войти: не получен токен сессии. Повторите попытку.",
-    "loopbackInvalidToken": "Не удалось войти: недействительный токен сессии."
+    "desktopUpdateRequired": "Эта версия приложения Cadet для компьютера не может войти. Обновите приложение и повторите попытку."
   }
 }

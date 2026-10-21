@@ -106,8 +106,3 @@ await i18next
   .use(new ICU())
   .use(initReactI18next)
   .init(i18nextInitOptions("en", { en: FALLBACK_CATALOGS }));
-
-// Route suites can select either surface in their isolated process.
-Object.assign(globalThis, {
-  __INCLUDES_ACCOUNT__: process.env.VITE_WEB_MODE !== "assistant",
-});
