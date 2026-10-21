@@ -95,6 +95,17 @@ export function readPrivacyConsent(): boolean {
 }
 
 /**
+ * SSR-safe, non-hook read of whether the cloud has any consent record for this
+ * user. Used by the navigation guard to tell a never-consented user (no
+ * record — consent is trivially current) from a user whose accepted versions
+ * went stale (record present — a re-review is owed). Mirrors
+ * `useHasConsentRecord` for gates outside React render.
+ */
+export function readHasConsentRecord(): boolean {
+  return useOnboardingStore.getState().hasConsentRecord;
+}
+
+/**
  * SSR-safe, non-hook read of whether the consent flags reflect a completed
  * session sync (or an explicit user acceptance). Used by the navigation guard
  * to defer consent-based redirects until the flags are trustworthy — the

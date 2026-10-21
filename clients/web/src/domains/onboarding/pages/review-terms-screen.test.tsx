@@ -29,6 +29,7 @@ mock.module("@/domains/onboarding/prefs", () => ({
   useTosAccepted: () => [tosAccepted, setTosAccepted],
   usePrivacyConsent: () => [privacyConsent, setPrivacyConsent],
   useHasConsentRecord: () => hasConsentRecord,
+  readHasConsentRecord: () => hasConsentRecord,
   readConsentHydrated: () => true,
 }));
 
@@ -180,9 +181,12 @@ describe("ReviewTermsScreen", () => {
 
   test("Continue persists the legal acceptance", () => {
     tosAccepted = false;
-    render(<ReviewTermsScreen />);
+    const { rerender } = render(<ReviewTermsScreen />);
 
     fireEvent.click(screen.getByLabelText(TOS_LABEL));
+    // The prefs mock isn't wired to React state — re-render so the checkbox
+    // tick takes effect and Continue re-enables.
+    rerender(<ReviewTermsScreen />);
     fireEvent.click(continueButton());
 
     expect(saveConsentMock).toHaveBeenCalledTimes(1);

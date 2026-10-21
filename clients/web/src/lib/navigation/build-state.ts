@@ -4,6 +4,7 @@ import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
 import {
+  readHasConsentRecord,
   readTosAccepted,
   readPrivacyConsent,
   readConsentHydrated,
@@ -68,6 +69,7 @@ export function buildNavigationState(
     isAuthenticated: isAuthenticated(sessionStatus),
     cloudSession,
     tosAccepted: readTosAccepted(),
+    hasConsentRecord: readHasConsentRecord(),
     privacyConsent: readPrivacyConsent(),
     consentHydrated: readConsentHydrated(),
     assistantsHydrated,

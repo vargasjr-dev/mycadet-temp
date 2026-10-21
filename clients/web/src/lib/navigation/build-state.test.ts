@@ -23,6 +23,7 @@ mock.module("@/lib/auth/gateway-session", () => ({
 mock.module("@/domains/onboarding/prefs", () => ({
   readTosAccepted: () => true,
   readPrivacyConsent: () => true,
+  readHasConsentRecord: () => true,
   readAnalyticsConsentCurrent: () => true,
   readDiagnosticsConsentCurrent: () => true,
   readConsentHydrated: () => true,
