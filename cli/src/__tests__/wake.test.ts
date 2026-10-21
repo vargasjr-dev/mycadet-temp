@@ -1104,9 +1104,7 @@ describe("cadet wake — app server restore", () => {
       ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
-    ensureAppServerMock.mockRejectedValue(
-      new Error("nginx is not installed."),
-    );
+    ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -1487,7 +1485,9 @@ describe("cadet wake — app server restore", () => {
     // No tunnel is recorded here, so no provider can be named and the advice
     // points at the help that lists them.
     expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Run `cadet tunnel --help` to rebuild the app server."),
+      expect.stringContaining(
+        "Run `cadet tunnel --help` to rebuild the app server.",
+      ),
     );
     expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
       7830,

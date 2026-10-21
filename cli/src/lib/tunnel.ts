@@ -792,6 +792,10 @@ export async function restoreAppServerAndAutoTunnel(
   const maybeAutoStart =
     TUNNEL_PROVIDER_HOOKS[DEFAULT_TUNNEL_PROVIDER].maybeAutoStart;
   if (maybeAutoStart) {
-    await maybeAutoStart(appServerPort ?? gatewayPort, workspaceDir, assistantId);
+    await maybeAutoStart(
+      appServerPort ?? gatewayPort,
+      workspaceDir,
+      assistantId,
+    );
   }
 }
