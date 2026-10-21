@@ -4,7 +4,6 @@ const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
 
 const STATUS_BANNER_SETUP_PATHS: ReadonlySet<string> = new Set([
   routes.welcome,
-  routes.selectAssistant,
   routes.reviewTerms,
 ]);
 

@@ -69,8 +69,6 @@ describe("useOnboardingWindowSize", () => {
       "/account/signup",
       "/account/provider/callback",
       "/account/password/reset",
-      // Assistant selection moved here from /assistant: same compact chrome.
-      "/account/select-assistant",
     ]) {
       setOnboardingWindowMock.mockClear();
       currentPath = path;

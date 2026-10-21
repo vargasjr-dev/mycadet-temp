@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, Cloud, Laptop } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "react-router";
 
 import { ExternalAnchor } from "@/components/external-anchor";
 import { OnboardingLayout } from "@/components/onboarding-layout";
@@ -61,14 +61,10 @@ function useHostingOptions(): HostingOption[] {
 export function HostingScreen() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const fromSelectAssistant = searchParams.get("from") === "select-assistant";
   const hasCloudSession = useHasCloudSession();
   const electron = isElectron();
   const options = useHostingOptions();
-  const cloudDisabled = options.find(
-    (o) => o.mode === "cadet-cloud",
-  )?.disabled;
+  const cloudDisabled = options.find((o) => o.mode === "cadet-cloud")?.disabled;
   const [selected, setSelected] = useState<HostingMode>(
     hasCloudSession && !cloudDisabled ? "cadet-cloud" : "local",
   );
@@ -84,11 +80,11 @@ export function HostingScreen() {
     error: loginError,
     login,
     cancel: cancelLogin,
-  } = useOnboardingLogin(`${routes.onboarding.hosting}?from=select-assistant`);
+  } = useOnboardingLogin(routes.onboarding.hosting);
 
   // Electron mirrors the Swift client's Hosting step, which has no login
   // affordance; its login lives on the wake-up step instead.
-  const showLogin = fromSelectAssistant && !hasCloudSession && !electron;
+  const showLogin = !hasCloudSession && !electron;
 
   const onContinue = () => {
     if (selected === "cadet-cloud") {
@@ -112,10 +108,7 @@ export function HostingScreen() {
   };
 
   const onBack = () => {
-    void navigate(
-      fromSelectAssistant ? routes.selectAssistant : routes.welcome,
-      SETUP_NAVIGATE,
-    );
+    void navigate(routes.welcome, SETUP_NAVIGATE);
   };
 
   return (

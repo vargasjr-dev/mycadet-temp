@@ -185,8 +185,7 @@ function buildAppHandoffUrl(
  * The hub's chooser on its own origin, or `null` when the served config names
  * no hub. Abandoning a pairing has to leave this origin: the chooser sits
  * behind `requireRemoteGatewayPairing`, which bounces a sessionless visit
- * straight back here and mints a fresh code. `noAutoSkip` keeps the hub on the
- * chooser instead of skipping through a lone assistant.
+ * straight back here and mints a fresh code.
  */
 function hubChooserUrl(): string | null {
   const hubUrl = getRemoteGatewayHubUrl();
@@ -194,7 +193,10 @@ function hubChooserUrl(): string | null {
     return null;
   }
   try {
-    return `${new URL(hubUrl).origin}${routes.selectAssistant}?noAutoSkip=1`;
+    // The path is served by the hub's app shell (its SPA fallback resolves
+    // every account route to the app bundle's own chooser), so the hand-off
+    // keeps landing on a chooser after web's own one came down.
+    return `${new URL(hubUrl).origin}${routes.selectAssistant}`;
   } catch {
     return null;
   }
@@ -387,14 +389,13 @@ export function RemoteWebPairingPage() {
 
   const cancelUrl = useMemo(() => hubChooserUrl(), []);
   const handleCancel = useCallback(() => {
-    void nativeSwitchToOriginPath(
-      null,
-      `account/select-assistant?noAutoSkip=1`,
-    ).then((switched) => {
-      if (!switched && cancelUrl) {
-        window.location.assign(cancelUrl);
-      }
-    });
+    void nativeSwitchToOriginPath(null, `account/select-assistant`).then(
+      (switched) => {
+        if (!switched && cancelUrl) {
+          window.location.assign(cancelUrl);
+        }
+      },
+    );
   }, [cancelUrl]);
 
   if (!enabled) {

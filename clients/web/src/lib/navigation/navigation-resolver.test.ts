@@ -64,14 +64,6 @@ const RESEARCH_FUNNEL_URL =
 const HATCHING_FUNNEL_URL =
   "/assistant/onboarding/hatching?hosting=cadet-cloud&post_checkout=1";
 
-const CHOOSER = "/account/select-assistant";
-/** A platform account with nothing resolved: the chooser's empty state. */
-const NO_ASSISTANTS: Partial<NavigationState> = {
-  isLocalClient: false,
-  hasAssistants: false,
-  hasCloudHostedAssistant: false,
-};
-
 const ALLOW: NavigationDecision = { action: "allow" };
 const WAIT: NavigationDecision = { action: "wait" };
 // The auth middleware awaits the probe only for a wait that names it, so the
@@ -182,32 +174,6 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("allows unauthenticated local-mode user on select-assistant screen", () => {
-      expect(
-        guard(
-          s({
-            isAuthenticated: false,
-            isLocalClient: true,
-            hasAssistants: true,
-          }),
-          "/account/select-assistant",
-        ),
-      ).toEqual(ALLOW);
-    });
-
-    test("redirects unauthenticated local-mode user from select-assistant to hosting when no assistants", () => {
-      expect(
-        guard(
-          s({
-            isAuthenticated: false,
-            isLocalClient: true,
-            hasAssistants: false,
-          }),
-          "/account/select-assistant",
-        ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
-    });
-
     test("redirects unauthenticated local-mode fresh user to welcome", () => {
       expect(
         guard(
@@ -220,7 +186,7 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: "/assistant/welcome" });
     });
 
-    test("redirects unauthenticated local-mode returning user (has assistants) to select-assistant", () => {
+    test("redirects unauthenticated local-mode returning user (has assistants) to the assistant", () => {
       expect(
         guard(
           s({
@@ -229,7 +195,7 @@ describe("resolveNavigation", () => {
             hasAssistants: true,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/account/select-assistant" });
+      ).toEqual({ action: "redirect", to: "/assistant" });
     });
 
     // -- authenticated, onboarding routes ---------------------------------
@@ -271,8 +237,7 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    // The loop the exemption above exists for.
-    test("without the marker the bounce lands a local client back on the chooser", () => {
+    test("bounces an onboarded selection off a local privacy visit", () => {
       const state = s({
         isLocalClient: true,
         isAuthenticated: false,
@@ -285,10 +250,6 @@ describe("resolveNavigation", () => {
           "/assistant/onboarding/privacy?hosting=local",
         ),
       ).toEqual({ action: "redirect", to: "/assistant" });
-      expect(guard(state, "/assistant")).toEqual({
-        action: "redirect",
-        to: "/account/select-assistant",
-      });
     });
 
     test("resumes a paid hatch when bouncing an onboarded selection off privacy", () => {
@@ -328,15 +289,6 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("redirects authenticated user from select-assistant to hosting when no assistants", () => {
-      expect(
-        guard(
-          s({ isLocalClient: true, hasAssistants: false }),
-          "/account/select-assistant",
-        ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
-    });
-
     test("redirects non-local user from local-only onboarding screen", () => {
       expect(guard(s({ isLocalClient: false }), "/assistant/welcome")).toEqual({
         action: "redirect",
@@ -348,136 +300,6 @@ describe("resolveNavigation", () => {
       expect(
         guard(s({ isLocalClient: false }), "/assistant/onboarding/api-key"),
       ).toEqual({ action: "redirect", to: "/assistant" });
-    });
-
-    // The cloud build hosts the hub chooser: the route admits a settled
-    // authenticated user in every mode.
-    test("allows a consented authenticated non-local user on select-assistant", () => {
-      expect(guard(s({ isLocalClient: false }), CHOOSER)).toEqual(ALLOW);
-    });
-
-    // Opening the chooser to non-local clients does not lift the consent gate
-    // that runs after the mode boundary: the route falls through to it like
-    // every other platform surface.
-    test("sends a stale-consent platform user off select-assistant to review-terms", () => {
-      expect(
-        guard(s({ isLocalClient: false, privacyConsent: false }), CHOOSER),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
-      });
-      expect(
-        guard(
-          s({
-            isLocalClient: false,
-            tosAccepted: false,
-            privacyConsent: false,
-          }),
-          CHOOSER,
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
-      });
-    });
-
-    // The chooser is exempt from the no-assistant funnel: an account whose
-    // assistants are all self-hosted has none in `hasAssistants` (remembered
-    // origins are client-local), and the funnel would also drop a `?register=`
-    // handoff before the chooser could record it.
-    test("keeps a zero-assistant cloud user on select-assistant", () => {
-      expect(guard(s(NO_ASSISTANTS), CHOOSER)).toEqual(ALLOW);
-      // Nothing is held for the assistants list here: with no funnel to decide,
-      // an unhydrated read has nothing to get wrong.
-      expect(
-        guard(s({ ...NO_ASSISTANTS, assistantsHydrated: false }), CHOOSER),
-      ).toEqual(ALLOW);
-    });
-
-    // The exemption lifts the funnel only. Consent runs after it, so terms
-    // still gate the chooser for a zero-assistant user.
-    test("keeps consent binding on select-assistant with no assistants", () => {
-      expect(
-        guard(s({ ...NO_ASSISTANTS, privacyConsent: false }), CHOOSER),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
-      });
-      expect(
-        guard(
-          s({ ...NO_ASSISTANTS, tosAccepted: false, privacyConsent: false }),
-          CHOOSER,
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Faccount%2Fselect-assistant",
-      });
-      // Stale-looking flags that have not hydrated still wait rather than
-      // bouncing a consented user off the chooser.
-      expect(
-        guard(
-          s({
-            ...NO_ASSISTANTS,
-            privacyConsent: false,
-            consentHydrated: false,
-          }),
-          CHOOSER,
-        ),
-      ).toEqual(WAIT);
-    });
-
-    // The local chooser is an onboarding surface reachable before there is a
-    // session to gate on, so it short-circuits ahead of the assistant and
-    // consent gates that bind on the cloud hub.
-    test("keeps the local chooser open ahead of the consent gate", () => {
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            cloudSession: "present",
-            privacyConsent: false,
-          }),
-          CHOOSER,
-        ),
-      ).toEqual(ALLOW);
-    });
-
-    test("sends an unauthenticated non-local select-assistant visit to pairing with returnTo", () => {
-      expect(
-        guard(s({ isLocalClient: false, isAuthenticated: false }), CHOOSER),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/pair?returnTo=%2Faccount%2Fselect-assistant",
-      });
-    });
-
-    test("sends an unpaired remote-gateway chooser visit to pairing", () => {
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            isRemoteGateway: true,
-            isAuthenticated: false,
-          }),
-          CHOOSER,
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/pair?returnTo=%2Faccount%2Fselect-assistant",
-      });
-    });
-
-    test("allows a gateway-auth remote-gateway chooser visit", () => {
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            isRemoteGateway: true,
-            isGatewayAuth: true,
-          }),
-          CHOOSER,
-        ),
-      ).toEqual(ALLOW);
     });
 
     test("allows non-local user on onboarding screens regardless of assistant count", () => {
@@ -1749,12 +1571,12 @@ describe("resolveNavigation", () => {
     const postRetire = (state: NavigationState) =>
       resolveNavigation(state, { kind: "post-retire" });
 
-    test("redirects to select-assistant in local mode when other assistants remain", () => {
+    test("redirects to the assistant in local mode when other assistants remain", () => {
       expect(
         postRetire(s({ hasAssistants: true, isLocalClient: true })),
       ).toEqual({
         action: "redirect",
-        to: "/account/select-assistant",
+        to: "/assistant",
       });
     });
 
@@ -2023,10 +1845,10 @@ describe("resolveNavigation", () => {
   // resolveLoginReturnTo
   // -----------------------------------------------------------------------
   describe("resolveLoginReturnTo", () => {
-    test("returns select-assistant from welcome when assistants exist", () => {
+    test("returns the assistant from welcome when assistants exist", () => {
       expect(
         resolveLoginReturnTo(s({ hasAssistants: true }), "/assistant/welcome"),
-      ).toBe("/account/select-assistant");
+      ).toBe("/assistant");
     });
 
     test("returns hosting from welcome when no assistants", () => {
@@ -2036,12 +1858,6 @@ describe("resolveNavigation", () => {
           "/assistant/onboarding/hosting",
         ),
       ).toBe("/assistant/onboarding/hosting");
-    });
-
-    test("appends fromLogin param when logging in from select-assistant", () => {
-      expect(resolveLoginReturnTo(s({}), "/account/select-assistant")).toBe(
-        "/account/select-assistant?fromLogin=1",
-      );
     });
 
     test("returns the same path for other non-welcome pages", () => {

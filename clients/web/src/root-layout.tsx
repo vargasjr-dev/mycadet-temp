@@ -36,11 +36,7 @@ import {
   useHasCloudSession,
 } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import {
-  getLockfileAssistant,
-  getSelectedAssistant,
-  isLocalClient,
-} from "@/lib/local-mode";
+import { getLockfileAssistant } from "@/lib/local-mode";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
 import { useCadetCommands } from "@/runtime/cadet-commands";
@@ -102,10 +98,7 @@ import { RoutePendingIndicator } from "@/components/route-pending-indicator";
 import { StatusBanner } from "@/components/status-banner";
 import { UpdateToast } from "@/components/update-toast";
 import { retireAssistant } from "@/assistant/retire-service";
-import {
-  removePairedAssistant,
-  switchToAssistant,
-} from "@/assistant/switch-service";
+import { removePairedAssistant } from "@/assistant/switch-service";
 import { RemoveFromDeviceDialog } from "@/components/remove-from-device-dialog";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
 import { useTranslation } from "@/i18n";
@@ -400,46 +393,7 @@ export function RootLayout() {
     logout: () => {
       void handleLogout(navigate);
     },
-    rePair: () => {
-      const id = getSelectedAssistant()?.assistantId;
-      if (id) {
-        // connectLocalAssistant rethrows (e.g. GuardianTokenError) so callers
-        // can offer recovery; route to the chooser, whose connect path owns
-        // the recovery dialog, instead of dead-ending on a silent rejection.
-        useAuthStore
-          .getState()
-          .connectLocalAssistant(id)
-          .catch((err: unknown) => {
-            console.error("rePair.connectLocalAssistant failed", err);
-            toast.error(t("assistantConnect.failed"));
-            void navigate(routes.selectAssistant);
-          });
-      }
-    },
     shareFeedback: () => setFeedbackOpen(true),
-    selectAssistant: (command) => {
-      if (command.kind === "selectAssistant") {
-        // Paired-aware switch: paired entries connect through
-        // connectPairedAssistant, managed ones through the cloud
-        // selection path (see switch-service).
-        void switchToAssistant(command.assistantId).then((outcome) => {
-          if (!outcome.ok) {
-            toast.error(outcome.error);
-            void navigate(routes.selectAssistant);
-          }
-        });
-      }
-    },
-    chooseAssistant: () => {
-      // The chooser route is local-only — navigation-resolver redirects
-      // platform users away — so platform sessions switch via the Switch
-      // Assistant picker on the settings page instead.
-      if (isLocalClient()) {
-        void navigate(`${routes.selectAssistant}?noAutoSkip=1`);
-      } else {
-        void navigate(routes.settings.general);
-      }
-    },
     retireAssistant: (command) => {
       if (command.kind === "retireAssistant") {
         setRetireId(command.assistantId);

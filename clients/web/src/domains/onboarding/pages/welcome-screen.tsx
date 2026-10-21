@@ -20,7 +20,7 @@ export function WelcomeScreen() {
     // single history entry so a Back press can never re-enter it (see
     // `SETUP_NAVIGATE` in `onboarding-navigation.ts`).
     if (hasAssistants()) {
-      void navigate(routes.selectAssistant, SETUP_NAVIGATE);
+      void navigate(routes.assistant, SETUP_NAVIGATE);
     } else {
       void navigate(routes.onboarding.hosting, SETUP_NAVIGATE);
     }

@@ -69,32 +69,19 @@ function leafRouteComponentName(path: string): string | undefined {
   return leaf?.Component?.name;
 }
 
-describe("account route leftovers", () => {
-  // The account route FILE is nuked — the provider tier and the OAuth popup
-  // relay are deleted (their maintained ports live in the app bundle), so
-  // nothing in web sizes or renders them anymore. The chooser survives as a
-  // standalone route until the chooser-deletion PR deletes it with its
-  // consumers, keeping the auth contract it inherited from the subtree.
-  test("select-assistant moved out of /assistant into /account", () => {
-    // The old path now falls through to the NotFound splat; the new path
-    // keeps the auth contract it inherited from the /assistant subtree.
-    const oldMatches =
-      matchRoutes(routeTree as never, "/assistant/select-assistant") ?? [];
-    expect(oldMatches.at(-1)?.route.path).toBe("*");
-    expect(hasRouteMiddleware("/account/select-assistant")).toBe(true);
-  });
-});
-
-describe("nuked account auth pages", () => {
-  // The auth pages this bundle used to own are deleted (their maintained
+describe("nuked account pages", () => {
+  // The account pages this bundle used to own are deleted (their maintained
   // ports live in the app bundle) and NOTHING redirects their old paths —
   // all surfaces are committing to the app shell bundle, so a stray visit
   // falls through to the NotFound splat. The exits were rewired off
-  // `/account/login` to the remote-web pairing page in the same change.
+  // `/account/login` to the remote-web pairing page in the same change, and
+  // the chooser's standalone mount left with the screen's deletion — the
+  // app bundle's chooser answers that path at the hub level.
   test.each([
     "/account",
     "/account/login",
     "/account/signup",
+    "/account/select-assistant",
     "/account/provider/callback",
     "/account/provider/signup",
     "/account/oauth/complete",
