@@ -257,7 +257,10 @@ describe("remote web pairing token exchange", () => {
     for (const cookie of cookies) {
       expect(cookie).toContain("HttpOnly");
       expect(cookie).toContain("Secure");
-      expect(cookie).toContain("SameSite=Strict");
+      // Cross-site pairing storage: Strict/Lax cookies from a cross-site
+      // response are refused storage, which lost the pairing on refresh.
+      expect(cookie).toContain("SameSite=None");
+      expect(cookie).toContain("Partitioned");
       expect(cookie).toContain("Path=/");
     }
 

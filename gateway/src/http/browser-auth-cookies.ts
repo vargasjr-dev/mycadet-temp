@@ -12,7 +12,16 @@ function browserAuthCookie(
     `${name}=${encodeURIComponent(value)}`,
     "HttpOnly",
     "Secure",
-    "SameSite=Strict",
+    // The remote-web flow is cross-site by construction: the paired browser
+    // lives on another origin (the hub, or localhost during development) and
+    // exchanges/refreshes over cross-origin fetches with
+    // `credentials: "include"`. Browsers refuse to STORE a Strict/Lax cookie
+    // from a cross-site response, so pairing silently failed to persist and
+    // every refresh demanded a re-pair. None is the only mode a cross-site
+    // response may store; Partitioned keys it per top-level site so it also
+    // survives third-party-cookie phase-outs (CHIPS).
+    "SameSite=None",
+    "Partitioned",
     `Path=${BROWSER_REFRESH_COOKIE_PATH}`,
     `Max-Age=${Math.max(0, Math.floor(maxAgeSeconds))}`,
   ].join("; ");
