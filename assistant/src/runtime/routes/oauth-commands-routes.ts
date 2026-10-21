@@ -1,6 +1,6 @@
 /**
- * Route handlers for OAuth CLI command operations: disconnect, mode, status,
- * ping, token, and request.
+ * Route handlers for OAuth CLI command operations: disconnect, status, ping,
+ * token, and request.
  *
  * These routes back the thin IPC wrappers in assistant/src/cli/commands/oauth/.
  */
@@ -9,18 +9,6 @@ import { readFileSync } from "node:fs";
 
 import { channelForBotProvider } from "@mycadet/service-contracts/channels";
 
-import { CadetCloudClient } from "../../cloud/client.js";
-import {
-  getConfig,
-  loadRawConfig,
-  saveRawConfig,
-  setNestedValue,
-} from "../../config/loader.js";
-import {
-  getServiceMode,
-  type Services,
-  ServicesSchema,
-} from "../../config/schemas/services.js";
 import type {
   OAuthConnectionRequest,
   OAuthConnectionResponse,
@@ -50,7 +38,6 @@ import { missingScopesForStoredToken } from "../../oauth/scope-utils.js";
 import { withValidToken } from "../../security/token-manager.js";
 import { matchHostPattern } from "../../tools/credentials/host-pattern-match.js";
 import { parseJsonSafe } from "../../util/json.js";
-import { getLogger } from "../../util/logger.js";
 import {
   findContentTypeHeader,
   parseRequestBodyBytes,
@@ -61,100 +48,9 @@ import { BadRequestError, InternalError, NotFoundError } from "./errors.js";
 import { composeRequestHint } from "./oauth-request-hints.js";
 import type { RouteDefinition, RouteHandlerArgs } from "./types.js";
 
-const log = getLogger("oauth-commands-routes");
-
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
-
-interface PlatformConnectionEntry {
-  id: string;
-  account_label?: string;
-  scopes_granted?: string[];
-  provider_params?: Record<string, string> | null;
-  status?: string;
-}
-
-function getManagedServiceConfigKey(provider: string): string | null {
-  const providerRow = getProvider(provider);
-  const managedKey = providerRow?.cloudServiceConfigKey;
-  if (!managedKey || !(managedKey in ServicesSchema.shape)) {
-    return null;
-  }
-  return managedKey;
-}
-
-function isCloudMode(provider: string): boolean {
-  const managedKey = getManagedServiceConfigKey(provider);
-  if (!managedKey) {
-    return false;
-  }
-  try {
-    const services: Services = getConfig().services;
-    return getServiceMode(services, managedKey as keyof Services) === "managed";
-  } catch {
-    return false;
-  }
-}
-
-async function requireCloudClient(): Promise<CadetCloudClient> {
-  const client = await CadetCloudClient.create();
-  if (!client) {
-    throw new BadRequestError(
-      "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
-    );
-  }
-  if (!client.cloudAssistantId) {
-    throw new BadRequestError(
-      "Connected to Cadet Cloud but no assistant ID is configured. Ensure the assistant is registered on the cloud.",
-    );
-  }
-  return client;
-}
-
-async function fetchActiveConnections(
-  client: CadetCloudClient,
-  provider: string,
-): Promise<PlatformConnectionEntry[]> {
-  const params = new URLSearchParams();
-  params.set("provider", provider);
-  params.set("status", "ACTIVE");
-
-  const path = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/?${params.toString()}`;
-  const response = await client.fetch(path);
-
-  if (!response.ok) {
-    const hint =
-      response.status === 401 || response.status === 403
-        ? `. Your cloud session may have expired. Run \`cadet cloud connect\` to reconnect.`
-        : "";
-    throw new InternalError(`Platform returned HTTP ${response.status}${hint}`);
-  }
-
-  const body = (await response.json()) as unknown;
-  return (
-    Array.isArray(body)
-      ? body
-      : ((body as Record<string, unknown>).results ?? [])
-  ) as PlatformConnectionEntry[];
-}
-
-/**
- * Best-effort helper to count active cloud connections for a provider.
- * Returns 0 if the cloud client cannot be created or the fetch fails.
- */
-async function countManagedConnections(provider: string): Promise<number> {
-  try {
-    const client = await CadetCloudClient.create();
-    if (!client || !client.cloudAssistantId) {
-      return 0;
-    }
-    const entries = await fetchActiveConnections(client, provider);
-    return entries.length;
-  } catch {
-    return 0;
-  }
-}
 
 function parseUrl(value: string | null | undefined): URL | undefined {
   if (!value) {
@@ -312,73 +208,6 @@ async function handleDisconnect({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  const managed = isCloudMode(b.provider);
-
-  if (managed) {
-    const client = await requireCloudClient();
-    const entries = await fetchActiveConnections(client, b.provider);
-
-    let connectionId: string | undefined;
-    let accountLabel: string | undefined;
-
-    if (b.account) {
-      const matching = entries.filter((c) => c.account_label === b.account);
-      if (matching.length === 0) {
-        throw new NotFoundError(
-          `No active connection found for "${b.provider}" with account "${b.account}".`,
-        );
-      }
-      connectionId = matching[0].id;
-      accountLabel = matching[0].account_label;
-    } else if (b.connection_id) {
-      const match = entries.find((c) => c.id === b.connection_id);
-      if (!match) {
-        throw new NotFoundError(
-          `Connection "${b.connection_id}" is not an active ${b.provider} connection.`,
-        );
-      }
-      connectionId = match.id;
-      accountLabel = match.account_label;
-    } else {
-      if (entries.length === 0) {
-        throw new NotFoundError(
-          `No active connections found for "${b.provider}".`,
-        );
-      }
-      if (entries.length > 1) {
-        throw new BadRequestError(
-          `Multiple active connections for "${b.provider}". Specify which one to disconnect with account or connection_id. ` +
-            `Run 'assistant oauth status ${b.provider}' to see connected accounts and IDs.`,
-        );
-      }
-      connectionId = entries[0].id;
-      accountLabel = entries[0].account_label;
-    }
-
-    const disconnectPath = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/${encodeURIComponent(connectionId!)}/disconnect/`;
-    const disconnectResponse = await client.fetch(disconnectPath, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (!disconnectResponse.ok) {
-      const errorText = await disconnectResponse.text().catch(() => "");
-      throw new InternalError(
-        `Platform returned HTTP ${disconnectResponse.status}${errorText ? `: ${errorText}` : ""}`,
-      );
-    }
-
-    const result: Record<string, unknown> = {
-      ok: true,
-      provider: b.provider,
-      connectionId,
-    };
-    if (accountLabel) {
-      result.account = accountLabel;
-    }
-    return result;
-  }
-
   // BYO path
   let connectionId: string | undefined;
   let accountLabel: string | undefined;
@@ -441,139 +270,6 @@ async function handleDisconnect({ body = {} }: RouteHandlerArgs) {
 }
 
 // ---------------------------------------------------------------------------
-// Mode handlers
-// ---------------------------------------------------------------------------
-
-function handleModeGet({ queryParams = {} }: RouteHandlerArgs) {
-  const provider = queryParams.provider;
-  if (!provider) {
-    throw new BadRequestError("provider query param is required");
-  }
-
-  const providerRow = getProvider(provider);
-  if (!providerRow) {
-    throw new NotFoundError(
-      `Unknown provider "${provider}". Run 'assistant oauth providers list' to see available providers.`,
-    );
-  }
-
-  const managedKey = getManagedServiceConfigKey(provider);
-  if (managedKey === null) {
-    return {
-      ok: true,
-      provider,
-      mode: "your-own",
-      managedModeSupported: false,
-    };
-  }
-
-  const services: Services = getConfig().services;
-  const currentMode = getServiceMode(services, managedKey as keyof Services);
-
-  return {
-    ok: true,
-    provider,
-    mode: currentMode,
-    managedModeSupported: true,
-  };
-}
-
-async function handleModeSet({ body = {} }: RouteHandlerArgs) {
-  const b = body as { provider: string; mode: string };
-  if (!b.provider) {
-    throw new BadRequestError("provider is required");
-  }
-  if (!b.mode) {
-    throw new BadRequestError("mode is required");
-  }
-
-  const providerRow = getProvider(b.provider);
-  if (!providerRow) {
-    throw new NotFoundError(
-      `Unknown provider "${b.provider}". Run 'assistant oauth providers list' to see available providers.`,
-    );
-  }
-
-  if (b.mode !== "managed" && b.mode !== "your-own") {
-    throw new BadRequestError(
-      `Invalid mode "${b.mode}". Valid values are "managed" or "your-own".`,
-    );
-  }
-
-  const managedKey = getManagedServiceConfigKey(b.provider);
-
-  if (managedKey === null) {
-    if (b.mode === "your-own") {
-      return {
-        ok: true,
-        provider: b.provider,
-        mode: "your-own",
-        changed: false,
-        managedModeSupported: false,
-      };
-    }
-    throw new BadRequestError(
-      `Managed mode is not available for ${b.provider}. Only providers with cloud OAuth support can be switched to managed mode.`,
-    );
-  }
-
-  // Require cloud connection when switching to managed mode
-  if (b.mode === "managed") {
-    const client = await CadetCloudClient.create();
-    if (!client) {
-      throw new BadRequestError(
-        "Not connected to Cadet Cloud. Run `cadet cloud connect` to connect first.",
-      );
-    }
-  }
-
-  const services: Services = getConfig().services;
-  const currentMode = getServiceMode(services, managedKey as keyof Services);
-
-  if (currentMode === b.mode) {
-    return {
-      ok: true,
-      provider: b.provider,
-      mode: b.mode,
-      changed: false,
-      managedModeSupported: true,
-    };
-  }
-
-  const raw = loadRawConfig();
-  setNestedValue(raw, `services.${managedKey}.mode`, b.mode);
-  saveRawConfig(raw);
-
-  // Best-effort check for active connections on old and new modes
-  let oldModeConnections = 0;
-  let newModeConnections = 0;
-  if (currentMode === "managed") {
-    oldModeConnections = await countManagedConnections(b.provider);
-    newModeConnections = listActiveConnectionsByProvider(b.provider).length;
-  } else {
-    oldModeConnections = listActiveConnectionsByProvider(b.provider).length;
-    newModeConnections = await countManagedConnections(b.provider);
-  }
-
-  let hint: string | undefined;
-  if (oldModeConnections > 0 && newModeConnections === 0) {
-    hint = `No active connections in ${b.mode} mode. Run 'assistant oauth connect ${b.provider}' to connect.`;
-  }
-
-  const result: Record<string, unknown> = {
-    ok: true,
-    provider: b.provider,
-    mode: b.mode,
-    changed: true,
-    managedModeSupported: true,
-  };
-  if (hint) {
-    result.hint = hint;
-  }
-  return result;
-}
-
-// ---------------------------------------------------------------------------
 // Status handler
 // ---------------------------------------------------------------------------
 
@@ -588,30 +284,6 @@ async function handleStatus({ queryParams = {} }: RouteHandlerArgs) {
     throw new NotFoundError(
       `Unknown provider "${provider}". Run 'assistant oauth providers list' to see available providers.`,
     );
-  }
-
-  const managed = isCloudMode(provider);
-
-  if (managed) {
-    const client = await requireCloudClient();
-    const rawEntries = await fetchActiveConnections(client, provider);
-
-    const connections = rawEntries.map((c) => ({
-      id: c.id,
-      account: c.account_label ?? null,
-      grantedScopes: c.scopes_granted ?? [],
-      status: c.status ?? "ACTIVE",
-      // Values the provider scopes the connection by (QuickBooks' realm id),
-      // so a caller can address resources the proxy's base URL does not.
-      providerParams: c.provider_params ?? {},
-    }));
-
-    return {
-      ok: true,
-      provider,
-      mode: "managed",
-      connections,
-    };
   }
 
   // BYO path
@@ -643,7 +315,6 @@ async function handleStatus({ queryParams = {} }: RouteHandlerArgs) {
   return {
     ok: true,
     provider,
-    mode: "byo",
     connections,
   };
 }
@@ -762,16 +433,6 @@ async function handleToken({ body = {} }: RouteHandlerArgs) {
     throw new BadRequestError("provider is required");
   }
 
-  if (isCloudMode(b.provider)) {
-    throw new BadRequestError(
-      "Token retrieval is not supported for cloud providers. " +
-        "When a provider is in managed mode, Cadet handles OAuth tokens on your behalf — " +
-        "they are not exposed directly.\n\n" +
-        `To verify your connection is working, run 'assistant oauth ping ${b.provider}'.\n` +
-        `To make authenticated requests, use 'assistant oauth request --provider ${b.provider} <url>'.`,
-    );
-  }
-
   let tokenOpts: string | { connectionId: string } | undefined;
 
   if (b.account || b.client_id) {
@@ -858,18 +519,12 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  const managed = isCloudMode(b.provider);
-
   if (b.client_id) {
-    if (managed) {
-      log.info("--client-id is ignored for cloud providers");
-    } else {
-      const app = getAppByProviderAndClientId(b.provider, b.client_id);
-      if (!app) {
-        throw new NotFoundError(
-          `No registered OAuth app found for "${b.provider}" with client ID "${b.client_id}".`,
-        );
-      }
+    const app = getAppByProviderAndClientId(b.provider, b.client_id);
+    if (!app) {
+      throw new NotFoundError(
+        `No registered OAuth app found for "${b.provider}" with client ID "${b.client_id}".`,
+      );
     }
   }
 
@@ -992,7 +647,7 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
 
   // Resolve connection and make request
   const resolveOptions: ResolveOAuthConnectionOptions = {};
-  if (b.client_id && !managed) {
+  if (b.client_id) {
     resolveOptions.clientId = b.client_id;
   }
   if (b.account) {
@@ -1047,7 +702,6 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
     headers: response.headers,
     reportedFailure: verdict.reportedFailure,
     botChannel: channelForBotProvider(b.provider),
-    managed,
     resolvedBaseUrl: baseUrl ?? providerRow.baseUrl ?? undefined,
     missingScopes: missingScopesForConnection(providerRow, connection.id),
   });
@@ -1056,91 +710,6 @@ export async function handleRequest({ body = {} }: RouteHandlerArgs) {
   }
 
   return result;
-}
-
-// ---------------------------------------------------------------------------
-// Connect handler (managed path for platform OAuth)
-// ---------------------------------------------------------------------------
-
-async function handleManagedConnect({ body = {} }: RouteHandlerArgs) {
-  const b = body as {
-    provider: string;
-    scopes?: string[];
-    redirect_after_connect?: string;
-    /** Per-tenant providers (Shopify): the customer's own host. */
-    tenant_host?: string;
-  };
-
-  if (!b.provider) {
-    throw new BadRequestError("provider is required");
-  }
-
-  const client = await requireCloudClient();
-
-  const startPath = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/${encodeURIComponent(b.provider)}/start/`;
-
-  const reqBody: Record<string, unknown> = {};
-  if (b.scopes && b.scopes.length > 0) {
-    reqBody.requested_scopes = b.scopes;
-  }
-  reqBody.redirect_after_connect =
-    b.redirect_after_connect ?? "/account/oauth/complete";
-  // Only forwarded when present: the cloud validates it against the
-  // provider's pattern and rejects per-tenant providers that omit it.
-  const tenantHost =
-    typeof b.tenant_host === "string" ? b.tenant_host.trim() : "";
-  if (tenantHost) {
-    reqBody.tenant_host = tenantHost;
-  }
-
-  const response = await client.fetch(startPath, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(reqBody),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "");
-    const baseMsg = `Platform returned HTTP ${response.status}${errorText ? `: ${errorText}` : ""}`;
-    if (response.status === 401 || response.status === 403) {
-      throw new InternalError(
-        `${baseMsg}. Your cloud session may have expired. Run \`cadet cloud connect\` to reconnect.`,
-      );
-    }
-    throw new InternalError(baseMsg);
-  }
-
-  const result = (await response.json()) as { connect_url?: string };
-
-  if (!result.connect_url) {
-    throw new InternalError(
-      "Platform did not return a connect URL — the OAuth flow could not be started",
-    );
-  }
-
-  return { ok: true, connect_url: result.connect_url };
-}
-
-async function handleManagedConnectPoll({
-  queryParams = {},
-}: RouteHandlerArgs) {
-  const provider = queryParams.provider;
-  if (!provider) {
-    throw new BadRequestError("provider query param is required");
-  }
-
-  const client = await requireCloudClient();
-  const entries = await fetchActiveConnections(client, provider);
-
-  return {
-    ok: true,
-    connections: entries.map((e) => ({
-      id: e.id,
-      account_label: e.account_label ?? null,
-      scopes_granted: e.scopes_granted ?? [],
-      provider_params: e.provider_params ?? {},
-    })),
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1158,44 +727,9 @@ export const ROUTES: RouteDefinition[] = [
     },
     summary: "Disconnect OAuth provider",
     description:
-      "Disconnect an OAuth provider and remove associated credentials (BYO or managed).",
+      "Disconnect an OAuth provider and remove associated credentials.",
     tags: ["oauth"],
     handler: handleDisconnect,
-  },
-  {
-    operationId: "oauth_mode_get",
-    endpoint: "oauth/mode",
-    method: "GET",
-    policy: {
-      requiredScopes: ["settings.read"],
-      allowedPrincipalTypes: LOCAL_PRINCIPALS,
-    },
-    summary: "Get OAuth mode",
-    description:
-      "Get the current OAuth mode (managed or your-own) for a provider.",
-    tags: ["oauth"],
-    queryParams: [
-      {
-        name: "provider",
-        type: "string",
-        required: true,
-        description: "Provider key",
-      },
-    ],
-    handler: handleModeGet,
-  },
-  {
-    operationId: "oauth_mode_set",
-    endpoint: "oauth/mode",
-    method: "POST",
-    policy: {
-      requiredScopes: ["settings.write"],
-      allowedPrincipalTypes: LOCAL_PRINCIPALS,
-    },
-    summary: "Set OAuth mode",
-    description: "Set the OAuth mode (managed or your-own) for a provider.",
-    tags: ["oauth"],
-    handler: handleModeSet,
   },
   {
     operationId: "oauth_status",
@@ -1206,8 +740,7 @@ export const ROUTES: RouteDefinition[] = [
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
     summary: "Get OAuth status",
-    description:
-      "Show OAuth connection status for a specified provider (BYO or managed).",
+    description: "Show OAuth connection status for a specified provider.",
     tags: ["oauth"],
     queryParams: [
       {
@@ -1242,7 +775,7 @@ export const ROUTES: RouteDefinition[] = [
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
     summary: "Get OAuth token",
-    description: "Retrieve a valid OAuth access token for a BYO-mode provider.",
+    description: "Retrieve a valid OAuth access token for a provider.",
     tags: ["oauth"],
     handler: handleToken,
   },
@@ -1259,41 +792,5 @@ export const ROUTES: RouteDefinition[] = [
       "Make an authenticated HTTP request through an OAuth connection (supports curl-like interface).",
     tags: ["oauth"],
     handler: handleRequest,
-  },
-  {
-    operationId: "oauth_managed_connect_start",
-    endpoint: "oauth/managed-connect/start",
-    method: "POST",
-    policy: {
-      requiredScopes: ["settings.write"],
-      allowedPrincipalTypes: LOCAL_PRINCIPALS,
-    },
-    summary: "Start cloud OAuth connect",
-    description:
-      "Start a cloud (platform) OAuth connect flow and return the connect URL.",
-    tags: ["oauth"],
-    handler: handleManagedConnect,
-  },
-  {
-    operationId: "oauth_managed_connect_poll",
-    endpoint: "oauth/managed-connect/poll",
-    method: "GET",
-    policy: {
-      requiredScopes: ["settings.read"],
-      allowedPrincipalTypes: LOCAL_PRINCIPALS,
-    },
-    summary: "Poll cloud OAuth connections",
-    description:
-      "Fetch active cloud connections for a provider (used to detect new connections after managed connect).",
-    tags: ["oauth"],
-    queryParams: [
-      {
-        name: "provider",
-        type: "string",
-        required: true,
-        description: "Provider key",
-      },
-    ],
-    handler: handleManagedConnectPoll,
   },
 ];

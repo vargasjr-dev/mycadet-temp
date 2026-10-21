@@ -10,23 +10,13 @@ export const oauthHelp: CliCommandHelp = {
     { flags: "--json", description: "Machine-readable compact JSON output" },
   ],
   helpText: `
-OAuth providers may support up to two modes – "managed" and "your-own".
-  managed:
-    Requires a Cadet Cloud account. For providers that support it, managed mode offloads the burden of needing to create and register an oauth app.
-    Cadet Cloud manages oauth token management and refresh and proxies requests to the provier.
-  you-own:
-    Provides ultimate control and removes dependency on Cadet Cloud, but requires that you set up your own oauth app and register it
-    via \`assistant oauth apps upsert\`.
-All commands are intended to work regardless of the provider's mode. Check and set the mode for a given provider with \`assistant oauth mode\`.
-
 You can define entirely new oauth providers to integrate with even if they do not show up using \`assistant oauth providers list\` using
-\`assistant oauth providers register\`. Custom-registered providers only support "your-own" mode.
+\`assistant oauth providers register\`.
 
 
 Examples:
   assistant oauth providers list
   assistant oauth providers get google
-  assistant oauth mode google --set=managed
   assistant oauth connect google
   assistant oauth status google
   assistant oauth ping google
@@ -56,10 +46,6 @@ Each provider is identified by a provider key (e.g. "google").`,
               description:
                 'Filter by provider key substring (case-insensitive). Comma-separated values are OR\'d (e.g. "google,slack")',
             },
-            {
-              flags: "--supports-managed",
-              description: "Only show providers that support managed mode",
-            },
           ],
           helpText: `
 Returns registered OAuth providers, including both built-in providers
@@ -79,8 +65,7 @@ Examples:
   $ assistant oauth providers list --provider-key google
   $ assistant oauth providers list --provider-key "google,slack"
   $ assistant oauth providers list --provider-key notion --json
-  $ assistant oauth providers list --supports-managed
-  $ assistant oauth providers list --supports-managed --json`,
+  $ assistant oauth providers list --provider-key notion --json`,
         },
         {
           name: "get",
@@ -498,41 +483,12 @@ Examples:
       ],
     },
     {
-      name: "mode",
-      args: "<provider>",
-      description: "Get or set the OAuth mode for a provider",
-      options: [
-        {
-          flags: "--set <mode>",
-          description:
-            'Set the mode to "managed" (platform-handled credentials) or "your-own" (bring-your-own client ID and secret). Omit to show the current mode.',
-        },
-      ],
-      helpText: `
-Arguments:
-  provider   Provider name (e.g. google, slack).
-             Run "assistant oauth providers list" to see available providers.
-
-Modes:
-  managed    OAuth credentials are managed by Cadet Cloud. The
-             assistant connects via a cloud-hosted authorization flow.
-             No local client ID or secret is needed.
-  your-own   You supply your own OAuth app credentials (client ID and
-             secret). The assistant runs the OAuth flow locally.
-
-Examples:
-  $ assistant oauth mode google
-  $ assistant oauth mode google --set your-own
-  $ assistant oauth mode google --set managed`,
-    },
-    {
       name: "apps",
       description: "Manage custom OAuth app registrations",
       helpText: `
 Apps represent custom OAuth client registrations — a client_id and optional
 client_secret linked to a provider. Each provider can have multiple apps
-(e.g. different client IDs for different environments). Only needed if using
-a provider with a mode of "your-own" set.
+(e.g. different client IDs for different environments).
 
 Examples:
   $ assistant oauth apps list
@@ -698,14 +654,6 @@ By default, the browser opens automatically and the command waits for
 completion. Use --no-browser to print the URL instead (useful for headless
 or SSH sessions).
 
-Important for chat/UI turns: do not run this command just to let the user
-connect a cloud provider. Render the first-class connect surface instead:
-call \`ui_show\` with surface_type "oauth_connect" and data.providerKey set to
-the provider (for example, "google"). That surface starts the cloud OAuth UI
-and avoids pasting raw authorization links into the conversation. If the user
-needs non-default scopes, also pass data.requestedScopes as a full replacement
-set (list every scope the connection should keep, not just the new ones).
-
 Examples:
   $ assistant oauth connect google
   $ assistant oauth connect google --no-browser
@@ -775,8 +723,8 @@ to an OAuth provider. By using this CLI, you follow security best-practices
 regarding how the OAuth token is used. This approach is preferred over retrieving
 the token (using \`assistant oauth token\`) and making the request directly.
 
-This command resolves the OAuth connection automatically (regardless of whether
-the provider's mode is set to "managed" or "your-own") and injects tokens transparently.
+This command resolves the OAuth connection automatically and injects
+tokens transparently.
 
 URL can be absolute (https://api.x.com/2/tweets) or relative (/2/tweets).
 An absolute URL sets the host and full path explicitly. A relative path is
@@ -842,7 +790,7 @@ Examples:
       name: "token",
       args: "<provider>",
       description:
-        'An escape hatch to retrieve a valid OAuth access token for a provider whose mode is "your-own" for direct use.',
+        'An escape hatch to retrieve a valid OAuth access token for direct use.',
       options: [
         {
           flags: "--account <account>",
@@ -864,12 +812,6 @@ Arguments:
 This command is discouraged and should be used sparingly. Only use if you
 need direct access to the token (i.e. \`assistant oauth request\` is
 insufficient) and you are comfortable with the security implications.
-
-Token retrieval is only supported for providers with mode set to "your-own".
-Cloud providers handle tokens internally — use
-'assistant oauth ping <provider>' to verify connectivity or
-'assistant oauth request --provider <provider> <url>' to make
-authenticated requests.
 
 Use 'assistant oauth status <provider>' to find account identifiers for
 --account.

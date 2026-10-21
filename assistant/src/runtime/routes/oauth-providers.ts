@@ -69,13 +69,6 @@ function handleListProviders({ queryParams = {} }: RouteHandlerArgs) {
     .map((row) => serializeProviderSummary(row))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
-  const supportsManagedMode = queryParams.supports_cloud_mode;
-  if (supportsManagedMode === "true") {
-    serialized = serialized.filter((p) => p.supports_cloud_mode);
-  } else if (supportsManagedMode === "false") {
-    serialized = serialized.filter((p) => !p.supports_cloud_mode);
-  }
-
   return { providers: serialized };
 }
 
@@ -377,8 +370,6 @@ export const oauthProviderSummarySchema = z.object({
   client_id_placeholder: z.string().nullable(),
   requires_client_secret: z.boolean(),
   logo_url: z.string().nullable(),
-  supports_cloud_mode: z.boolean(),
-  managed_service_is_paid: z.boolean(),
   category: z
     .enum(INTEGRATION_CATEGORIES)
     .nullable()
@@ -421,13 +412,6 @@ export const ROUTES: RouteDefinition[] = [
     description: "List all registered OAuth providers with optional filtering.",
     tags: ["oauth"],
     handler: handleListProviders,
-    queryParams: [
-      {
-        name: "supports_cloud_mode",
-        schema: { type: "string" },
-        description: "Filter by managed mode support (true/false)",
-      },
-    ],
     responseBody: z.object({
       providers: z.array(oauthProviderSummarySchema),
     }),

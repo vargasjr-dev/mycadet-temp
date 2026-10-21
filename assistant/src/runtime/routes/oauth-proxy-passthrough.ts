@@ -8,10 +8,6 @@
  */
 
 import {
-  CredentialRequiredError,
-  InsufficientBalanceError,
-} from "../../oauth/cloud-connection.js";
-import {
   isBinaryOAuthBody,
   type OAuthConnectionResponse,
 } from "../../oauth/connection.js";
@@ -423,7 +419,7 @@ export function mapProxyRequestError(
   provider: string,
   audience: ProxyErrorAudience = "grant-holder",
 ): RouteError {
-  if (err instanceof CredentialRequiredError || isBYOCredentialFailure(err)) {
+  if (isBYOCredentialFailure(err)) {
     return new FailedDependencyError(
       audienceMessage(
         audience,
@@ -432,9 +428,6 @@ export function mapProxyRequestError(
       ),
       reconnectDetails(provider),
     );
-  }
-  if (err instanceof InsufficientBalanceError) {
-    return new PaymentRequiredError(err.message);
   }
   if (err instanceof RouteError) {
     return err;

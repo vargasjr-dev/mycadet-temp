@@ -17,8 +17,6 @@ interface SerializedProvider {
   actsAs?: "user" | "assistant";
   displayName?: string | null;
   description?: string | null;
-  supportsManagedMode?: boolean;
-  managedServiceIsPaid?: boolean;
   defaultScopes?: string[];
   authUrl?: string;
   tokenUrl?: string;
@@ -88,13 +86,12 @@ function formatAvailableScopes(
 function formatProviderSummary(p: SerializedProvider): string {
   const name = p.displayName ?? p.providerKey;
   const desc = p.description ? ` — ${p.description}` : "";
-  const managed = p.supportsManagedMode ? " [managed]" : "";
   const scopes =
     (p.defaultScopes as string[])?.length > 0
       ? `  Scopes: ${(p.defaultScopes as string[]).join(", ")}`
       : "";
   return (
-    `${p.providerKey} (${name})${desc}${managed}` +
+    `${p.providerKey} (${name})${desc}` +
     `${scopes ? "\n" + scopes : ""}` +
     `\n  Run \`assistant oauth providers get ${p.providerKey}\` for full details.`
   );
@@ -114,12 +111,6 @@ function formatProviderDetail(p: SerializedProvider): string {
   lines.push(`${p.providerKey} (${name})`);
   if (p.description) {
     lines.push(`  Description: ${p.description}`);
-  }
-  if (p.supportsManagedMode) {
-    lines.push(`  Managed mode: yes`);
-  }
-  if (p.managedServiceIsPaid) {
-    lines.push(`  Managed service is paid: yes`);
   }
   if (p.dashboardUrl) {
     lines.push(`  Dashboard: ${p.dashboardUrl}`);
@@ -272,14 +263,8 @@ export function registerProviderCommands(oauth: Command): void {
   // -----------------------------------------------------------------------
 
   subcommand(providers, "list").action(
-    async (
-      opts: { providerKey?: string; supportsManaged?: boolean },
-      cmd: Command,
-    ) => {
+    async (opts: { providerKey?: string }, cmd: Command) => {
       const queryParams: Record<string, string> = {};
-      if (opts.supportsManaged) {
-        queryParams.supports_cloud_mode = "true";
-      }
       const r = await cliIpcCall<{
         providers: Array<Record<string, unknown>>;
       }>("oauth_providers_get", {
@@ -296,8 +281,6 @@ export function registerProviderCommands(oauth: Command): void {
         providerKey: p.provider_key as string,
         displayName: p.display_name as string | null,
         description: p.description as string | null,
-        supportsManagedMode: p.supports_cloud_mode as boolean,
-        managedServiceIsPaid: p.managed_service_is_paid as boolean,
         requiresClientSecret: p.requires_client_secret as boolean,
         logoUrl: p.logo_url as string | null,
         dashboardUrl: p.dashboard_url as string | null,
