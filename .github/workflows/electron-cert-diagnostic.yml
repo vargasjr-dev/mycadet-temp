@@ -1,0 +1,83 @@
+name: Electron cert diagnostic
+
+# Read-only ground truth for the DEVID signing secrets — the dev release's
+# build-electron fails at the security import with "Unknown format in
+# import." Runs the same decode+inspect at two scopes (dev environment and
+# repo level) so a stale environment-scoped shadow of the repo secret
+# betrays itself as a sha mismatch. Never prints secret bytes.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  probe-dev-environment:
+    name: probe (dev environment scope)
+    runs-on: macos-26
+    environment: dev
+    steps:
+      - name: Inspect DEVID_CERTIFICATE_P12
+        env:
+          CERT_P12: ${{ secrets.DEVID_CERTIFICATE_P12 }}
+          CERT_PASSWORD: ${{ secrets.DEVID_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CERT_P12:-}" ]; then
+            echo "RESULT secret=UNSET_OR_EMPTY"
+            exit 0
+          fi
+          echo "RESULT b64_length=${#CERT_P12}"
+          echo "$CERT_P12" | base64 -D > /tmp/certificate.p12
+          SIZE=$(wc -c < /tmp/certificate.p12 | tr -d ' ')
+          echo "RESULT decoded_size=${SIZE}"
+          echo "RESULT first8_hex=$(xxd -p -l 8 /tmp/certificate.p12)"
+          if [ "$SIZE" -gt 0 ] && LC_ALL=C grep -q '[^[:print:][:space:]]' /tmp/certificate.p12; then
+            echo "RESULT looks_binary=yes"
+          else
+            echo "RESULT looks_binary=no (decoded bytes are TEXT — double-encoded base64?)"
+          fi
+          echo "RESULT sha256_prefix=$(shasum -a 256 /tmp/certificate.p12 | cut -c1-16)"
+          if openssl pkcs12 -info -in /tmp/certificate.p12 -passin "pass:${CERT_PASSWORD}" -noout 2>/tmp/openssl-err.txt; then
+            echo "RESULT pkcs12_password_check=VALID (DER parses, MAC verifies with the password)"
+          else
+            echo "RESULT pkcs12_password_check=FAILED — $(tail -1 /tmp/openssl-err.txt | cut -c1-120)"
+          fi
+          SUBJECT=$(openssl pkcs12 -in /tmp/certificate.p12 -passin "pass:${CERT_PASSWORD}" -clcerts -nokeys 2>/dev/null | openssl x509 -noout -subject 2>/dev/null || true)
+          echo "RESULT cert_subject=${SUBJECT:-unavailable}"
+          rm -f /tmp/certificate.p12 /tmp/openssl-err.txt
+
+  probe-repo:
+    name: probe (repo scope)
+    runs-on: macos-26
+    steps:
+      - name: Inspect DEVID_CERTIFICATE_P12
+        env:
+          CERT_P12: ${{ secrets.DEVID_CERTIFICATE_P12 }}
+          CERT_PASSWORD: ${{ secrets.DEVID_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CERT_P12:-}" ]; then
+            echo "RESULT secret=UNSET_OR_EMPTY"
+            exit 0
+          fi
+          echo "RESULT b64_length=${#CERT_P12}"
+          echo "$CERT_P12" | base64 -D > /tmp/certificate.p12
+          SIZE=$(wc -c < /tmp/certificate.p12 | tr -d ' ')
+          echo "RESULT decoded_size=${SIZE}"
+          echo "RESULT first8_hex=$(xxd -p -l 8 /tmp/certificate.p12)"
+          if [ "$SIZE" -gt 0 ] && LC_ALL=C grep -q '[^[:print:][:space:]]' /tmp/certificate.p12; then
+            echo "RESULT looks_binary=yes"
+          else
+            echo "RESULT looks_binary=no (decoded bytes are TEXT — double-encoded base64?)"
+          fi
+          echo "RESULT sha256_prefix=$(shasum -a 256 /tmp/certificate.p12 | cut -c1-16)"
+          if openssl pkcs12 -info -in /tmp/certificate.p12 -passin "pass:${CERT_PASSWORD}" -noout 2>/tmp/openssl-err.txt; then
+            echo "RESULT pkcs12_password_check=VALID (DER parses, MAC verifies with the password)"
+          else
+            echo "RESULT pkcs12_password_check=FAILED — $(tail -1 /tmp/openssl-err.txt | cut -c1-120)"
+          fi
+          SUBJECT=$(openssl pkcs12 -in /tmp/certificate.p12 -passin "pass:${CERT_PASSWORD}" -clcerts -nokeys 2>/dev/null | openssl x509 -noout -subject 2>/dev/null || true)
+          echo "RESULT cert_subject=${SUBJECT:-unavailable}"
+          rm -f /tmp/certificate.p12 /tmp/openssl-err.txt
