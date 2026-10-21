@@ -78,7 +78,6 @@ import {
   reconcileSelectedAssistant,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
-  UnresolvedPairedGatewayError,
 } from "@/lib/local-mode";
 import {
   clearGatewayToken,
