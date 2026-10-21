@@ -18,7 +18,6 @@ import {
   BadRequestError,
   ConflictError,
   FailedDependencyError,
-  PaymentRequiredError,
   RouteError,
 } from "./errors.js";
 import { RouteResponse } from "./types.js";
@@ -432,8 +431,8 @@ export function mapProxyRequestError(
   if (err instanceof RouteError) {
     return err;
   }
-  // Everything left is an upstream failure, `ProviderUnreachableError` and a
-  // platform envelope this daemon could not parse alike.
+  // Everything left is an upstream failure: a connection whose fetch died
+  // or an upstream envelope this daemon could not parse.
   return new BadGatewayError(
     audienceMessage(audience, err, `The ${provider} API could not be reached.`),
   );

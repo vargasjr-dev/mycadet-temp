@@ -70,11 +70,8 @@ mock.module("../cloud/client.js", () => ({
 // Import the module under test (after all mocks are registered)
 // ---------------------------------------------------------------------------
 
-import { setConfig } from "../__tests__/helpers/set-config.js";
 import { BYOOAuthConnection } from "./byo-connection.js";
-import { CloudOAuthConnection } from "./cloud-connection.js";
 import {
-  cloudProxyBaseUrl,
   formatNoConnectionError,
   resolveEffectiveBaseUrl,
   resolveOAuthConnection,
@@ -83,15 +80,6 @@ import {
 } from "./connection-resolver.js";
 
 /** Seed `services.<key>.mode` entries into the workspace config for real. */
-function seedServiceModes(modes: Record<string, "managed" | "your-own">): void {
-  setConfig(
-    "services",
-    Object.fromEntries(
-      Object.entries(modes).map(([key, mode]) => [key, { mode }]),
-    ),
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -117,7 +105,6 @@ function setupDefaults(): void {
     provider: "google",
     baseUrl: "https://gmail.googleapis.com/gmail/v1/users/me",
     authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-    cloudServiceConfigKey: null,
   };
   mockConnection = {
     id: "conn-1",
@@ -129,7 +116,6 @@ function setupDefaults(): void {
     clientId: "client-1",
   };
   mockAccessToken = "tok-valid";
-  seedServiceModes({ "google-oauth": "managed" });
   mockConnections = undefined;
   mockCloudClient = makeMockClient();
   syncManualTokenCalls = [];
@@ -149,100 +135,6 @@ describe("resolveOAuthConnection", () => {
     expect(result).toBeInstanceOf(BYOOAuthConnection);
     expect(result.id).toBe("conn-1");
     expect(result.provider).toBe("google");
-  });
-
-  test("returns CloudOAuthConnection when managed mode is active", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-
-    const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-    expect(result.id).toBe("google");
-    expect(result.provider).toBe("google");
-    expect(result.accountInfo).toBeNull();
-  });
-
-  test("passes account through to CloudOAuthConnection", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-
-    const result = await resolveOAuthConnection("google", {
-      account: "user@example.com",
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-    expect(result.accountInfo).toBe("user@example.com");
-  });
-
-  test("managed path falls back to displayed account label when account_identifier does not match", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    const fetchPaths: string[] = [];
-    mockCloudClient = {
-      ...makeMockClient(),
-      fetch: mock(async (path: string) => {
-        fetchPaths.push(path);
-        if (path.includes("account_identifier=alice%40example.com")) {
-          return new Response(JSON.stringify({ results: [] }), { status: 200 });
-        }
-        return new Response(
-          JSON.stringify({
-            results: [
-              {
-                id: "platform-conn-1",
-                account_label: "alice@example.com",
-              },
-            ],
-          }),
-          { status: 200 },
-        );
-      }),
-    };
-
-    const result = await resolveOAuthConnection("google", {
-      account: "alice@example.com",
-    });
-
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-    expect(result.accountInfo).toBe("alice@example.com");
-    expect(fetchPaths).toEqual([
-      "/v1/assistants/asst-123/oauth/connections/?provider=google&status=ACTIVE&account_identifier=alice%40example.com",
-      "/v1/assistants/asst-123/oauth/connections/?provider=google&status=ACTIVE",
-    ]);
-  });
-
-  test("returns CloudOAuthConnection when GitHub is in managed mode", async () => {
-    mockProvider!.provider = "github";
-    mockProvider!.cloudServiceConfigKey = "github-oauth";
-    seedServiceModes({ "google-oauth": "managed", "github-oauth": "managed" });
-
-    const result = await resolveOAuthConnection("github");
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-    expect(result.id).toBe("github");
-    expect(result.provider).toBe("github");
-  });
-
-  test("returns BYOOAuthConnection when service config mode is your-own", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    seedServiceModes({ "google-oauth": "your-own" });
-
-    const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
-    expect(result.id).toBe("conn-1");
-  });
-
-  test("managed path does not require a local connection row", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    mockConnection = undefined;
-    mockAccessToken = undefined;
-
-    const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-  });
-
-  test("managed path ignores clientId option", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-
-    const result = await resolveOAuthConnection("google", {
-      clientId: "some-client-id",
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("BYO path narrows by clientId when provided", async () => {
@@ -266,7 +158,6 @@ describe("resolveOAuthConnection", () => {
       provider: "telegram",
       baseUrl: "https://api.telegram.org",
       authorizeUrl: "urn:manual-token",
-      cloudServiceConfigKey: null,
     };
     mockConnection = {
       id: "conn-telegram",
@@ -299,93 +190,11 @@ describe("resolveOAuthConnection scope-awareness", () => {
   ];
   const FULL_BUNDLE = [GMAIL_SCOPE, ...CALENDAR_ONLY];
 
-  function clientReturning(results: unknown[]) {
-    return {
-      ...makeMockClient(),
-      fetch: mock(
-        async () => new Response(JSON.stringify({ results }), { status: 200 }),
-      ),
-    };
-  }
-
   beforeEach(() => {
     setupDefaults();
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-  });
-
-  test("managed: rejects a Calendar-only connection when Gmail scope is required", async () => {
-    mockCloudClient = clientReturning([
-      { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
-    ]);
-
-    await expect(
-      resolveOAuthConnection("google", { requiredScopes: [GMAIL_SCOPE] }),
-    ).rejects.toThrow(/missing required access.*gmail\.readonly/s);
-  });
-
-  test("managed: resolves when a connection carries the required Gmail scope", async () => {
-    mockCloudClient = clientReturning([
-      { id: "full", account_label: null, scopes_granted: FULL_BUNDLE },
-    ]);
-
-    const result = await resolveOAuthConnection("google", {
-      requiredScopes: [GMAIL_SCOPE],
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-  });
-
-  test("managed: treats full Gmail access as covering Gmail read access", async () => {
-    mockCloudClient = clientReturning([
-      {
-        id: "full-gmail-access",
-        account_label: null,
-        scopes_granted: [GMAIL_FULL_ACCESS_SCOPE],
-      },
-    ]);
-
-    const result = await resolveOAuthConnection("google", {
-      requiredScopes: [GMAIL_SCOPE],
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-  });
-
-  test("managed: unknown scope data never blocks (back-compat)", async () => {
-    // Older connections report no scopes_granted — must not be rejected.
-    mockCloudClient = clientReturning([{ id: "legacy", account_label: null }]);
-
-    const result = await resolveOAuthConnection("google", {
-      requiredScopes: [GMAIL_SCOPE],
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-  });
-
-  test("managed: prefers a scope-satisfying connection over a narrow one", async () => {
-    const fullClient = clientReturning([
-      { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
-      { id: "full", account_label: null, scopes_granted: FULL_BUNDLE },
-    ]);
-    mockCloudClient = fullClient;
-
-    const result = await resolveOAuthConnection("google", {
-      requiredScopes: [GMAIL_SCOPE],
-    });
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
-    // CloudOAuthConnection is keyed by provider, so assert resolution
-    // succeeded (it would have thrown if only the narrow connection matched).
-    expect(result.provider).toBe("google");
-  });
-
-  test("managed: no requiredScopes preserves prior behavior", async () => {
-    mockCloudClient = clientReturning([
-      { id: "cal-only", account_label: null, scopes_granted: CALENDAR_ONLY },
-    ]);
-
-    const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(CloudOAuthConnection);
   });
 
   test("BYO: rejects when granted scopes are known and missing the requirement", async () => {
-    seedServiceModes({ "google-oauth": "your-own" });
     mockConnection!.grantedScopes = JSON.stringify(CALENDAR_ONLY);
 
     await expect(
@@ -394,7 +203,6 @@ describe("resolveOAuthConnection scope-awareness", () => {
   });
 
   test("BYO: treats full Gmail access as covering Gmail read access", async () => {
-    seedServiceModes({ "google-oauth": "your-own" });
     mockConnection!.grantedScopes = JSON.stringify([GMAIL_FULL_ACCESS_SCOPE]);
 
     const result = await resolveOAuthConnection("google", {
@@ -404,7 +212,6 @@ describe("resolveOAuthConnection scope-awareness", () => {
   });
 
   test("BYO: unknown granted scopes never block", async () => {
-    seedServiceModes({ "google-oauth": "your-own" });
     mockConnection!.grantedScopes = JSON.stringify([]);
 
     const result = await resolveOAuthConnection("google", {
@@ -414,7 +221,6 @@ describe("resolveOAuthConnection scope-awareness", () => {
   });
 
   test("BYO: picks an older scope-satisfying connection over a newer narrow one", async () => {
-    seedServiceModes({ "google-oauth": "your-own" });
     // Newest first (matching the store's ordering): a Calendar-only row, then
     // an older row that carries the Gmail scope. The narrow row must not win.
     mockConnections = [
@@ -443,59 +249,8 @@ describe("resolveOAuthConnection scope-awareness", () => {
 });
 
 describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
-  function clientReturning(results: unknown[]) {
-    return {
-      ...makeMockClient(),
-      fetch: mock(
-        async () => new Response(JSON.stringify({ results }), { status: 200 }),
-      ),
-    };
-  }
-
   beforeEach(() => {
     setupDefaults();
-  });
-
-  test("managed: multiple connections + no account surfaces ambiguity and the selected label", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    mockCloudClient = clientReturning([
-      { id: "conn-personal", account_label: "user@example.com" },
-      { id: "conn-work", account_label: "work@example.com" },
-    ]);
-
-    const { connection, ambiguous, allAccounts } =
-      await resolveOAuthConnectionWithMeta("google");
-
-    expect(ambiguous).toBe(true);
-    expect(allAccounts).toEqual(["user@example.com", "work@example.com"]);
-    // The most-recently-created connection (first) serves the request.
-    expect(connection.accountInfo).toBe("user@example.com");
-  });
-
-  test("managed: account passed disambiguates and clears the warning", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    mockCloudClient = clientReturning([
-      { id: "conn-work", account_label: "work@example.com" },
-    ]);
-
-    const { ambiguous } = await resolveOAuthConnectionWithMeta("google", {
-      account: "work@example.com",
-    });
-
-    expect(ambiguous).toBe(false);
-  });
-
-  test("managed: single connection is never ambiguous", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    mockCloudClient = clientReturning([
-      { id: "conn-only", account_label: "user@example.com" },
-    ]);
-
-    const { ambiguous, allAccounts } =
-      await resolveOAuthConnectionWithMeta("google");
-
-    expect(ambiguous).toBe(false);
-    expect(allAccounts).toEqual(["user@example.com"]);
   });
 
   test("BYO: multiple connections + no account surfaces ambiguity and the selected label", async () => {
@@ -556,23 +311,6 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
 });
 
 describe("no-match error lists available accounts", () => {
-  function clientReturning(results: unknown[]) {
-    return {
-      ...makeMockClient(),
-      fetch: mock(
-        async (path: string) =>
-          new Response(
-            JSON.stringify({
-              // Filtered lookups (account_identifier present) return nothing;
-              // the unfiltered fallback returns the real connections.
-              results: path.includes("account_identifier=") ? [] : results,
-            }),
-            { status: 200 },
-          ),
-      ),
-    };
-  }
-
   beforeEach(() => {
     setupDefaults();
   });
@@ -627,29 +365,6 @@ describe("no-match error lists available accounts", () => {
     expect(message).toContain(
       "The google service needs to be connected before it can be used.",
     );
-  });
-
-  test("managed: names the provider's active accounts when the requested account misses", async () => {
-    mockProvider!.cloudServiceConfigKey = "google-oauth";
-    mockCloudClient = clientReturning([
-      { id: "conn-personal", account_label: "user@example.com" },
-      { id: "conn-work", account_label: "other@example.org" },
-    ]);
-
-    let message = "";
-    try {
-      await resolveOAuthConnection("google", {
-        account: "missing@example.com",
-      });
-    } catch (error) {
-      message = (error as Error).message;
-    }
-
-    expect(message).toContain('account "missing@example.com"');
-    expect(message).toContain(
-      "Active google connections: user@example.com, other@example.org",
-    );
-    expect(message).toContain("Check the account spelling.");
   });
 });
 
@@ -753,32 +468,6 @@ describe("resolveEffectiveBaseUrl", () => {
         metadata,
       ),
     ).toBe("https://gmail.googleapis.com/gmail/v1/users/me");
-  });
-});
-
-describe("cloudProxyBaseUrl", () => {
-  test("forwards a concrete seed base URL", () => {
-    expect(cloudProxyBaseUrl("https://api.figma.com")).toBe(
-      "https://api.figma.com",
-    );
-  });
-
-  test("withholds a templated base URL so the cloud fills it", () => {
-    // Shopify's host and QuickBooks' realm are pinned to the connection on
-    // the cloud. Forwarding the unfilled template would fail the proxy's
-    // allowlist check and shadow the cloud's own default.
-    expect(cloudProxyBaseUrl("https://{tenant_host}")).toBeUndefined();
-    expect(
-      cloudProxyBaseUrl(
-        "https://quickbooks.api.intuit.com/v3/company/{realm_id}",
-      ),
-    ).toBeUndefined();
-  });
-
-  test("treats a missing base URL as no override", () => {
-    expect(cloudProxyBaseUrl(undefined)).toBeUndefined();
-    expect(cloudProxyBaseUrl(null)).toBeUndefined();
-    expect(cloudProxyBaseUrl("")).toBeUndefined();
   });
 });
 

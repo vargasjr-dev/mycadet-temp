@@ -26,14 +26,12 @@
 import { isTokenExpired } from "@mycadet/credential-storage";
 
 import { getCloudAssistantId } from "../config/env.js";
-import type { Services } from "../config/schemas/services.js";
 import { getConnectionAccessTokenResult } from "../oauth/credential-token-resolver.js";
 import {
   getProvider,
   listActiveConnectionsByProvider,
   listProviders,
   type OAuthConnectionRow,
-  type OAuthProviderRow,
 } from "../oauth/oauth-store.js";
 import { missingScopesForStoredToken } from "../oauth/scope-utils.js";
 import { credentialKey } from "../security/credential-key.js";

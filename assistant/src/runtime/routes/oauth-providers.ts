@@ -63,9 +63,9 @@ function serializeProviderFull(row: ReturnType<typeof getProvider>) {
 // Handlers
 // ---------------------------------------------------------------------------
 
-function handleListProviders({ queryParams = {} }: RouteHandlerArgs) {
+function handleListProviders(_args: RouteHandlerArgs) {
   const rows = listProviders();
-  let serialized = rows
+  const serialized = rows
     .map((row) => serializeProviderSummary(row))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 

@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { z } from "zod";
-
 import { credentialKey } from "../security/credential-key.js";
 import { useMemorySecureKeyMap } from "./helpers/secure-keys.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -14,23 +12,6 @@ function seedTwilioAccountSid(accountSid: string): void {
 }
 
 const connectedProviders = new Set<string>();
-const managedProviders = new Set<string>();
-const platformConnectedProviders = new Set<string>();
-
-// `getServiceMode` consults the test's `managedProviders` set. The real
-// `ServicesSchema` is extended with the test-fiction "google"/"slack" keys so
-// the `managedKey in ServicesSchema.shape` gate passes while the real config
-// loader (which parses this schema) keeps working.
-const realServicesSchemaModule = await import("../config/schemas/services.js");
-mock.module("../config/schemas/services.js", () => ({
-  ...realServicesSchemaModule,
-  getServiceMode: (_services: unknown, key: string) =>
-    managedProviders.has(key) ? "managed" : "your-own",
-  ServicesSchema: realServicesSchemaModule.ServicesSchema.extend({
-    google: z.object({}).optional(),
-    slack: z.object({}).optional(),
-  }),
-}));
 
 mock.module("../oauth/oauth-store.js", () => ({
   isProviderConnected: (provider: string) =>
@@ -39,42 +20,10 @@ mock.module("../oauth/oauth-store.js", () => ({
     connectedProviders.has(provider)
       ? { id: `conn-${provider}`, status: "active" }
       : undefined,
-  getProvider: (provider: string) => {
-    const managedKeys: Record<string, string> = {
-      google: "google",
-      slack: "slack",
-    };
-    return managedKeys[provider]
-      ? { cloudServiceConfigKey: managedKeys[provider] }
-      : undefined;
-  },
-}));
-
-mock.module("../cloud/client.js", () => ({
-  CadetCloudClient: {
-    create: async () => ({
-      cloudAssistantId: "test-assistant",
-      fetch: async (path: string) => {
-        const url = new URL(`http://localhost${path}`);
-        const provider = url.searchParams.get("provider");
-        const hasConnections =
-          provider && platformConnectedProviders.has(provider);
-        return {
-          ok: true,
-          json: async () => (hasConnections ? [{ id: "conn-1" }] : []),
-        };
-      },
-    }),
-  },
 }));
 
 function setOAuthConnected(provider: string): void {
   connectedProviders.add(provider);
-}
-
-function setPlatformConnected(provider: string, configKey: string): void {
-  managedProviders.add(configKey);
-  platformConnectedProviders.add(provider);
 }
 
 const { getIntegrationSummary, formatIntegrationSummary, hasCapability } =
@@ -84,8 +33,6 @@ describe("integration-status", () => {
   beforeEach(() => {
     secureKeyValues.clear();
     connectedProviders.clear();
-    managedProviders.clear();
-    platformConnectedProviders.clear();
     // The schema default ("") reads as "not configured" on the Twilio path.
     seedTwilioAccountSid("");
   });
@@ -208,46 +155,6 @@ describe("integration-status", () => {
 
     test("email category checks Gmail", async () => {
       setOAuthConnected("google");
-      expect(await hasCapability("email")).toBe(true);
-    });
-  });
-
-  describe("managed mode", () => {
-    test("Gmail shows connected when platform has active connection", async () => {
-      setPlatformConnected("google", "google");
-
-      const summary = await getIntegrationSummary();
-      const gmail = summary.find((s: { name: string }) => s.name === "Gmail");
-      expect(gmail?.connected).toBe(true);
-    });
-
-    test("Gmail shows disconnected when managed but no cloud connection", async () => {
-      managedProviders.add("google");
-
-      const summary = await getIntegrationSummary();
-      const gmail = summary.find((s: { name: string }) => s.name === "Gmail");
-      expect(gmail?.connected).toBe(false);
-    });
-
-    test("Slack shows connected when platform has active connection", async () => {
-      setPlatformConnected("slack", "slack");
-
-      const summary = await getIntegrationSummary();
-      const slack = summary.find((s: { name: string }) => s.name === "Slack");
-      expect(slack?.connected).toBe(true);
-    });
-
-    test("formatIntegrationSummary reflects cloud connections", async () => {
-      setPlatformConnected("google", "google");
-      setPlatformConnected("slack", "slack");
-
-      const result = await formatIntegrationSummary();
-      expect(result).toContain("Gmail \u2713");
-      expect(result).toContain("Slack \u2713");
-    });
-
-    test("hasCapability returns true for managed email connection", async () => {
-      setPlatformConnected("google", "google");
       expect(await hasCapability("email")).toBe(true);
     });
   });

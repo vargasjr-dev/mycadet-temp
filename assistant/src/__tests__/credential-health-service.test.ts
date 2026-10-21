@@ -45,17 +45,6 @@ let mockFetchThrows = false;
 type RefreshOutcome = "ok" | "refresh_failed";
 let mockRefreshOutcome: RefreshOutcome = "ok";
 
-// Managed-path mock state.
-let managedListResponse: {
-  ok: boolean;
-  status: number;
-  body?: unknown;
-} = { ok: true, status: 200, body: { results: [] } };
-let managedPingOutcome:
-  | { kind: "status"; status: number }
-  | { kind: "credential_required" }
-  | { kind: "throw"; message: string } = { kind: "status", status: 200 };
-
 // Cloud assistant-credential mock state. The verdict is what the cloud
 // answers about the stored assistant API key; `cloudClientAvailable` covers
 // the case where the client cannot be built at all.
@@ -113,10 +102,8 @@ mock.module("../security/token-manager.js", () => ({
   },
 }));
 
-// Managed-path mocks: platform client and CloudOAuthConnection. The
-// managed code path uses dynamic imports for these so they only matter when
-// a cloud test scenario is exercised. The cloud/your-own service mode is
-// seeded into the real workspace config via `seedGoogleOAuthMode` below.
+// The cloud assistant-credential check builds the real cloud client, so
+// the module is mocked to hand back the verdict the test seeds.
 mock.module("../cloud/client.js", () => ({
   CadetCloudClient: {
     create: async () => {
@@ -125,46 +112,13 @@ mock.module("../cloud/client.js", () => ({
       }
       return {
         cloudAssistantId: "test-assistant",
-        fetch: async (_path: string) => ({
-          ok: managedListResponse.ok,
-          status: managedListResponse.status,
-          json: async () => managedListResponse.body ?? { results: [] },
-        }),
         verifyCredential: async () => assistantKeyVerdict,
       };
     },
   },
 }));
 
-class MockCredentialRequiredError extends Error {
-  constructor() {
-    super("credential required");
-    this.name = "CredentialRequiredError";
-  }
-}
-
-mock.module("../oauth/cloud-connection.js", () => ({
-  CloudOAuthConnection: class {
-    constructor(_opts: unknown) {}
-    async request(_req: unknown) {
-      if (managedPingOutcome.kind === "credential_required") {
-        throw new MockCredentialRequiredError();
-      }
-      if (managedPingOutcome.kind === "throw") {
-        throw new Error(managedPingOutcome.message);
-      }
-      return {
-        status: managedPingOutcome.status,
-        headers: {},
-        body: {},
-      };
-    }
-  },
-}));
-
 // ── Import under test ────────────────────────────────────────────────
-
-import { setConfig } from "./helpers/set-config.js";
 
 const {
   checkAllCredentials,
@@ -172,11 +126,6 @@ const {
   checkCredentialForProvider,
   _setFetchFn,
 } = await import("../credential-health/credential-health-service.js");
-
-/** Seed the real workspace config's `services.google-oauth.mode`. */
-function seedGoogleOAuthMode(mode: "managed" | "your-own"): void {
-  setConfig("services", { "google-oauth": { mode } });
-}
 
 // Inject mock fetch via the test helper (Bun's global fetch can't be
 // overridden via globalThis assignment).
@@ -262,9 +211,6 @@ describe("credential-health-service", () => {
     mockFetchResponse = { ok: true, status: 200 };
     mockFetchThrows = false;
     mockRefreshOutcome = "ok";
-    seedGoogleOAuthMode("your-own");
-    managedListResponse = { ok: true, status: 200, body: { results: [] } };
-    managedPingOutcome = { kind: "status", status: 200 };
     assistantKeyVerdict = "valid";
     cloudClientAvailable = true;
     setCloudAssistantId(undefined);
@@ -658,90 +604,6 @@ describe("credential-health-service", () => {
       expect(report.results).toHaveLength(1);
       expect(report.results[0]!.status).toBe("unreachable");
       expect(report.results[0]!.canAutoRecover).toBe(true);
-    });
-  });
-
-  describe("managed-provider path", () => {
-    // Distinguishing managed-path failure modes: a 424 from the cloud
-    // proxy (CredentialRequiredError) means the cloud tried and gave up
-    // on refresh — actionable, fire reconnect alert. A bare 401/403 from
-    // the upstream provider could be a transient platform-side miss (proxy
-    // didn't refresh-before-forward) and should NOT fire reconnect alerts
-    // without further evidence — demote to ping_failed.
-
-    function setupManagedGoogle(opts?: { hasActiveConnection?: boolean }) {
-      addProvider("google", {
-        pingUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
-        cloudServiceConfigKey: "google-oauth",
-      });
-      seedGoogleOAuthMode("managed");
-      if (opts?.hasActiveConnection !== false) {
-        managedListResponse = {
-          ok: true,
-          status: 200,
-          body: {
-            results: [
-              {
-                id: "platform-conn-1",
-                account_label: "user@example.com",
-                status: "ACTIVE",
-              },
-            ],
-          },
-        };
-      }
-    }
-
-    test("managed 2xx ping → healthy", async () => {
-      setupManagedGoogle();
-      managedPingOutcome = { kind: "status", status: 200 };
-
-      const report = await checkAllCredentials();
-      const google = report.results.find((r) => r.provider === "google");
-      expect(google!.status).toBe("healthy");
-    });
-
-    test("managed 424 (CredentialRequiredError) → revoked", async () => {
-      setupManagedGoogle();
-      managedPingOutcome = { kind: "credential_required" };
-
-      const report = await checkAllCredentials();
-      const google = report.results.find((r) => r.provider === "google");
-      expect(google!.status).toBe("revoked");
-      expect(google!.canAutoRecover).toBe(false);
-      expect(google!.details).toContain("cannot be refreshed");
-    });
-
-    test("managed 401 from upstream → ping_failed, not revoked", async () => {
-      // This is the key change: previously this would fire a user-facing
-      // reconnect alert (because "revoked" is in hardFailureStatuses). Now
-      // we treat upstream 401 as potentially transient — only a 424 from
-      // the cloud proxy is trusted enough to trigger the alert.
-      setupManagedGoogle();
-      managedPingOutcome = { kind: "status", status: 401 };
-
-      const report = await checkAllCredentials();
-      const google = report.results.find((r) => r.provider === "google");
-      expect(google!.status).toBe("ping_failed");
-      expect(google!.status).not.toBe("revoked");
-    });
-
-    test("managed 403 from upstream → ping_failed, not revoked", async () => {
-      setupManagedGoogle();
-      managedPingOutcome = { kind: "status", status: 403 };
-
-      const report = await checkAllCredentials();
-      const google = report.results.find((r) => r.provider === "google");
-      expect(google!.status).toBe("ping_failed");
-    });
-
-    test("managed 500 from upstream → ping_failed", async () => {
-      setupManagedGoogle();
-      managedPingOutcome = { kind: "status", status: 500 };
-
-      const report = await checkAllCredentials();
-      const google = report.results.find((r) => r.provider === "google");
-      expect(google!.status).toBe("ping_failed");
     });
   });
 

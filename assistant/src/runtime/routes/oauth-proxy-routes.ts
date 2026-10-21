@@ -25,7 +25,6 @@ import {
   BadRequestError,
   ForbiddenError,
   HttpTransportRequiredError,
-  MethodNotAllowedError,
   NotFoundError,
 } from "./errors.js";
 import {
@@ -98,7 +97,7 @@ export async function handleOAuthProxy(
   }
   const path = normalizeProxyPath(remainder);
   const query = parseProxyQuery(args.rawUrl.search);
-  let headers = sanitizeInboundHeaders(args.headers ?? {});
+  const headers = sanitizeInboundHeaders(args.headers ?? {});
 
   let resolution: OAuthConnectionResolution;
   try {

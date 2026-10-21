@@ -790,7 +790,7 @@ Examples:
       name: "token",
       args: "<provider>",
       description:
-        'An escape hatch to retrieve a valid OAuth access token for direct use.',
+        "An escape hatch to retrieve a valid OAuth access token for direct use.",
       options: [
         {
           flags: "--account <account>",

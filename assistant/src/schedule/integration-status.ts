@@ -1,7 +1,6 @@
 import { hasTwilioCredentials } from "../calls/twilio-rest.js";
 import {
   getConnectionByProvider,
-  getProvider,
   isProviderConnected,
 } from "../oauth/oauth-store.js";
 

@@ -149,7 +149,6 @@ describe("GET /v1/oauth/providers", () => {
         dashboard_url: string | null;
         client_id_placeholder: string | null;
         requires_client_secret: boolean;
-        supports_cloud_mode: boolean;
       }>;
     };
 
@@ -175,8 +174,6 @@ describe("GET /v1/oauth/providers", () => {
       "client_id_placeholder",
       "requires_client_secret",
       "logo_url",
-      "supports_cloud_mode",
-      "managed_service_is_paid",
       "category",
       "tenant_host",
       "acts_as",
@@ -204,44 +201,6 @@ describe("GET /v1/oauth/providers", () => {
     expect(providers[0]!.logo_url).toBe("https://cdn.simpleicons.org/google");
     expect(providers[1]!.logo_url).toBeNull();
   });
-
-  test("supports_cloud_mode=true returns only cloud providers", async () => {
-    const { status, body } = await callRoute(
-      getRoute("GET", "oauth/providers"),
-      { queryParams: { supports_cloud_mode: "true" } },
-    );
-
-    expect(status).toBe(200);
-    const { providers } = body as {
-      providers: Array<{
-        provider_key: string;
-        supports_cloud_mode: boolean;
-      }>;
-    };
-
-    expect(providers).toHaveLength(1);
-    expect(providers[0]!.provider_key).toBe("google");
-    expect(providers[0]!.supports_cloud_mode).toBe(true);
-  });
-
-  test("supports_cloud_mode=false returns only non-cloud providers", async () => {
-    const { status, body } = await callRoute(
-      getRoute("GET", "oauth/providers"),
-      { queryParams: { supports_cloud_mode: "false" } },
-    );
-
-    expect(status).toBe(200);
-    const { providers } = body as {
-      providers: Array<{
-        provider_key: string;
-        supports_cloud_mode: boolean;
-      }>;
-    };
-
-    expect(providers).toHaveLength(1);
-    expect(providers[0]!.provider_key).toBe("github");
-    expect(providers[0]!.supports_cloud_mode).toBe(false);
-  });
 });
 
 describe("GET /v1/oauth/providers/:providerKey", () => {
@@ -264,13 +223,11 @@ describe("GET /v1/oauth/providers/:providerKey", () => {
         dashboardUrl: string | null;
         clientIdPlaceholder: string | null;
         requiresClientSecret: boolean;
-        supportsManagedMode: boolean;
       };
     };
 
     expect(provider.providerKey).toBe("google");
     expect(provider.displayName).toBe("Google");
-    expect(provider.supportsManagedMode).toBe(true);
     expect(provider.requiresClientSecret).toBe(true);
   });
 
