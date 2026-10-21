@@ -55,8 +55,8 @@ function hasDotSegment(path: string): boolean {
 /**
  * Parse a gateway-proxy URL given as `pathname + search` (a `#fragment`
  * suffix is tolerated and dropped), so every host hands over the same shape
- * and the decision is host-independent. Accepts only the unified
- * `/__gateway/{assistantId}`.
+ * and the decision is host-independent. Accepts the unified
+ * `/__gateway/{assistantId}` with or without the `/assistant` prefix.
  */
 export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
   const delimiter = url.search(/[?#]/);

@@ -1,7 +1,7 @@
 /**
  * Browser side of the `cadet pair` flow. In desktop/local mode the SPA
  * reaches the same-machine gateway over its loopback proxy
- * (`/assistant/__gateway/<port>`) and drives the two loopback-only routes the
+ * (`/assistant/__gateway/<assistantId>`) and drives the two loopback-only routes the
  * CLI uses:
  *   1. `POST /v1/remote-web/pairing-challenge` — mint a device-code challenge.
  *   2. `POST /v1/remote-web/pairing-verification` — approve it with the user

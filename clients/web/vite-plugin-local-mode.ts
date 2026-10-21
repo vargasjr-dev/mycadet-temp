@@ -1119,7 +1119,8 @@ function gatewayProxyMiddleware(
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
-    // Gateway data plane (`/__gateway/{assistantId}/*`): one id-keyed proxy
+    // Gateway data plane (`/assistant/__gateway/{assistantId}/*`, with or
+    // without the `/assistant` prefix): one id-keyed proxy
     // for every assistant gateway. The lockfile resolves the id to a loopback port
     // (locally hatched) or a recorded remote `runtimeUrl` (imported pairing)
     // — that target map is the allowlist. Loopback hops forward the renderer's
