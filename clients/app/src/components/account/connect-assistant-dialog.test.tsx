@@ -57,10 +57,18 @@ function stubBridge(): BridgeCalls {
         pairingPoll: async (handle: string, name?: string) => {
           calls.poll.push([handle, name]);
           const reply = calls.pollReplies.shift();
-          if (!reply) {
-            throw new Error("unexpected poll");
+          if (reply) {
+            return reply;
           }
-          return reply;
+          // Replies exhausted: stay pending (1s cadence) rather than
+          // throwing — an exhausted mock would error-state the dialog mid
+          // test, racing the teardown this assertion pins.
+          return {
+            ok: true,
+            status: "pending",
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+            intervalSeconds: 1,
+          };
         },
         pairingCancel: async (handle: string) => {
           calls.cancel.push(handle);
