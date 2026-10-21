@@ -185,14 +185,6 @@
     "woke": "您的助理剛剛醒來",
     "wokeNamed": "{name} 剛剛醒來"
   },
-  "assistantSwitcher": {
-    "collapse": "隱藏助理",
-    "currentAssistant": "{name}，目前助理",
-    "expand": "切換助理",
-    "switchFailed": "無法切換助理。請再試一次。",
-    "switchTo": "切換至 {name}",
-    "unnamedAssistant": "未命名助理"
-  },
   "attachmentChip": {
     "removeAria": "移除 {filename}"
   },

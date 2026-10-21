@@ -1,8 +1,7 @@
-
 import { SIDEBAR_STACK_GAP } from "@/components/sidebar-nav-geometry";
 import { useNavigate } from "react-router";
 
-import { AssistantSwitcher } from "@/domains/chat/components/assistant-switcher";
+import { AssistantNavItem } from "@/domains/chat/components/assistant-nav-item";
 import { EmailNavItem } from "@/domains/chat/components/email-nav-item";
 import { PinnedAppNavItem } from "@/domains/chat/components/pinned-app-nav-item";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
@@ -74,7 +73,7 @@ export function SideMenuBuiltInNav({
           Chat button: its floating New Chat pill already owns that action
           in the thumb zone. */}
       <div>
-        <AssistantSwitcher
+        <AssistantNavItem
           assistantId={assistantId}
           label={assistantName || t("sideMenuBuiltInNav.yourAssistant")}
           active={isIntelligenceActive}
@@ -95,7 +94,6 @@ export function SideMenuBuiltInNav({
                 }
               : undefined
           }
-          onSwitched={onClose}
         />
       </div>
       {pinnedApps.length > 0 || showsEmailPin ? (

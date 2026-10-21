@@ -189,14 +189,6 @@
     "woke": "Your assistant just woke up",
     "wokeNamed": "{name} just woke up"
   },
-  "assistantSwitcher": {
-    "collapse": "Hide assistants",
-    "currentAssistant": "{name}, current assistant",
-    "expand": "Switch assistant",
-    "switchFailed": "Couldn't switch assistants. Try again.",
-    "switchTo": "Switch to {name}",
-    "unnamedAssistant": "Unnamed assistant"
-  },
   "attachmentChip": {
     "removeAria": "Remove {filename}"
   },

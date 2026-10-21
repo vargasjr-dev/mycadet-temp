@@ -36,9 +36,8 @@ mock.module("@/hooks/use-is-mobile", () => ({
   MOBILE_MEDIA_QUERY: "(max-width: 767px)",
 }));
 
-/* `AssistantSwitcher` (inside `SideMenuBuiltInNav`) reads the route and
-   navigates after a successful switch, and its hooks run on every sidebar
-   render; these tests mount no router, so hand it no-ops. */
+/* `SideMenuBuiltInNav` reads the route and navigates (the email pin, the
+   pinned apps); these tests mount no router, so hand it no-ops. */
 mock.module("react-router", () => ({
   ...reactRouter,
   useNavigate: () => () => {},
