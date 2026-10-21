@@ -75,7 +75,6 @@ const persistConsentForUserMock = mock(
   (_userId: string | null, _tos: boolean, _privacy: boolean) => {},
 );
 
-
 const clearOrganizationMock = mock(() => {});
 const logoutMock = mock(async () => {});
 const deleteBiometricTokenMock = mock(async () => {});
@@ -1235,8 +1234,10 @@ function holdOrgFetch(): () => void {
 // signed-in surfaces after they pressed Log Out.
 describe("explicit logout supersedes an in-flight refresh", () => {
   test("a refresh that began before logout abandons its authenticated write", async () => {
-    mockIsLocalClient = false;
-    mockCloudAssistants = [];
+    // A LOCAL client: the refresh's reconcile sync is the path's longest
+    // await, so holdOrgFetch can actually suspend it between the session
+    // response and the authenticated write.
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
@@ -1271,8 +1272,10 @@ describe("explicit logout supersedes an in-flight refresh", () => {
   });
 
   test("a refresh that starts midway through a logout is superseded too", async () => {
-    mockIsLocalClient = false;
-    mockCloudAssistants = [];
+    // A LOCAL client: the refresh's reconcile sync is the path's longest
+    // await, so holdOrgFetch can actually suspend it between the session
+    // response and the authenticated write.
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
@@ -1300,8 +1303,10 @@ describe("explicit logout supersedes an in-flight refresh", () => {
   });
 
   test("a refresh that completes with no logout still authenticates", async () => {
-    mockIsLocalClient = false;
-    mockCloudAssistants = [];
+    // A LOCAL client: the refresh's reconcile sync is the path's longest
+    // await, so holdOrgFetch can actually suspend it between the session
+    // response and the authenticated write.
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
