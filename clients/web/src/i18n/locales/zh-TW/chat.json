@@ -227,9 +227,6 @@
   "billingErrorBanner": {
     "dismiss": "關閉"
   },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, other {# 個事件已記錄。}}"
-  },
   "cameraDeepLink": {
     "captureFailed": "無法拍攝該照片。請再試一次。",
     "close": "關閉相機",
@@ -319,8 +316,8 @@
     "discordConnected": "Discord 已連線。將機器人新增至伺服器後，它將開始在那裡回覆。"
   },
   "chatAttachments": {
-    "dismiss": "關閉",
     "attachFileAria": "附加檔案",
+    "dismiss": "關閉",
     "removeAria": "移除 {filename}"
   },
   "emailReferenceChip": {
@@ -891,7 +888,6 @@
   "missingApiKeyBanner": {
     "ariaLabel": "需要 API 金鑰",
     "body": "請在「設定」→「模型與服務」中新增 API 金鑰以開始聊天。",
-    "dismiss": "關閉",
     "dismissAria": "關閉需要 API 金鑰的提示",
     "openSettings": "開啟設定",
     "title": "需要 API 金鑰"
@@ -1413,7 +1409,6 @@
     "unmuteMicrophone": "解除麥克風靜音"
   },
   "voiceSessionPill": {
-    "dismiss": "關閉",
     "endSession": "結束語音會話",
     "goToThreadAria": "前往語音會話討論串",
     "groupAria": "語音會話",

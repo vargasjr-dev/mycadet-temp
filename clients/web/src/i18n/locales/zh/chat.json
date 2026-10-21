@@ -227,9 +227,6 @@
   "billingErrorBanner": {
     "dismiss": "忽略"
   },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, one {# 条事件已记录。} other {# 条事件已记录。}}"
-  },
   "cameraDeepLink": {
     "captureFailed": "无法拍摄照片。请重试。",
     "close": "关闭相机",
@@ -319,8 +316,8 @@
     "discordConnected": "Discord 已连接。将机器人添加到服务器后，它将开始在那里回复。"
   },
   "chatAttachments": {
-    "dismiss": "忽略",
     "attachFileAria": "附加文件",
+    "dismiss": "关闭",
     "removeAria": "移除 {filename}"
   },
   "emailReferenceChip": {
@@ -891,7 +888,6 @@
   "missingApiKeyBanner": {
     "ariaLabel": "需要 API 密钥",
     "body": "请在“设置”→“模型与服务”中添加 API 密钥以开始聊天。",
-    "dismiss": "忽略",
     "dismissAria": "忽略需要 API 密钥的提醒",
     "openSettings": "打开设置",
     "title": "需要 API 密钥"
@@ -1413,7 +1409,6 @@
     "unmuteMicrophone": "取消静音麦克风"
   },
   "voiceSessionPill": {
-    "dismiss": "关闭",
     "endSession": "结束语音会话",
     "goToThreadAria": "前往语音会话线程",
     "groupAria": "语音会话",

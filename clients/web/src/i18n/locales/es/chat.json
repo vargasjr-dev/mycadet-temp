@@ -227,9 +227,6 @@
   "billingErrorBanner": {
     "dismiss": "Descartar"
   },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, one {# evento} other {# eventos}} registrados."
-  },
   "cameraDeepLink": {
     "captureFailed": "No se pudo tomar esa foto. Inténtalo de nuevo.",
     "close": "Cerrar cámara",
@@ -319,8 +316,8 @@
     "discordConnected": "Discord esta conectado. Anade el bot a un servidor y empezara a responder alli."
   },
   "chatAttachments": {
-    "dismiss": "Descartar",
     "attachFileAria": "Adjuntar archivo",
+    "dismiss": "Descartar",
     "removeAria": "Quitar {filename}"
   },
   "emailReferenceChip": {
@@ -853,7 +850,6 @@
   "missingApiKeyBanner": {
     "ariaLabel": "Se requiere una clave API",
     "body": "Añade una clave API en Ajustes → Modelos y servicios para empezar a chatear.",
-    "dismiss": "Descartar",
     "dismissAria": "Descartar la alerta de clave API requerida",
     "openSettings": "Abrir ajustes",
     "title": "Se requiere una clave API"
@@ -1378,7 +1374,6 @@
     "unmuteMicrophone": "Activar el micrófono"
   },
   "voiceSessionPill": {
-    "dismiss": "Descartar",
     "endSession": "Terminar sesión de voz",
     "goToThreadAria": "Ir al hilo de la sesión de voz",
     "groupAria": "Sesión de voz",

@@ -2,6 +2,9 @@
   "askQuestionDetail": {
     "heading": "{count, plural, one {Question} other {Questions}}"
   },
+  "callSummarySurface": {
+    "eventsRecorded": "{count, plural, one {# event} other {# events}} recorded."
+  },
   "documentChat": {
     "saveFailed": "Couldn't save the document. Your message is still here. Try sending again.",
     "viewConversation": "View conversation",
@@ -190,7 +193,6 @@
     "wokeNamed": "{name} just woke up"
   },
   "attachmentChip": {
-    "dismiss": "Dismiss",
     "removeAria": "Remove {filename}"
   },
   "attachmentDownloadOverlay": {
@@ -231,9 +233,6 @@
   },
   "billingErrorBanner": {
     "dismiss": "Dismiss"
-  },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, one {# event} other {# events}} recorded."
   },
   "cameraDeepLink": {
     "captureFailed": "Could not take that photo. Please try again.",
@@ -324,8 +323,8 @@
     "discordConnected": "Discord is connected. Add the bot to a server and it will start answering there."
   },
   "chatAttachments": {
-    "dismiss": "Dismiss",
     "attachFileAria": "Attach file",
+    "dismiss": "Dismiss",
     "removeAria": "Remove {filename}"
   },
   "emailReferenceChip": {
