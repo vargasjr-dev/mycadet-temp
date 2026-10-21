@@ -288,14 +288,6 @@
     "startFailed": "Не удалось запустить Connect Claude. Повторите попытку.",
     "timedOut": "Время ожидания подключения Claude истекло. Повторите попытку."
   },
-  "useOauthConnect": {
-    "accountConnected": "Аккаунт {name} подключён.",
-    "authorizationError": "Ошибка {name}: {code}",
-    "authorizationFailed": "Авторизация {name} не удалась",
-    "popupBlocked": "Всплывающее окно заблокировано. Разрешите всплывающие окна и повторите попытку.",
-    "startFailed": "Не удалось начать авторизацию {name}.",
-    "startFailedWithReason": "Не удалось начать авторизацию {name}: {reason}"
-  },
   "useOpenUrlDirectives": {
     "blocked": "Браузер заблокировал страницу, которую ассистент пытался открыть.",
     "openPage": "Открыть страницу"

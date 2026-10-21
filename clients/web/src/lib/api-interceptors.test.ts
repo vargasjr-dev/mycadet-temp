@@ -1751,7 +1751,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     primeGatewayWithRepairImpl = async () => {
       selectedAssistantImpl = () => ({
         assistantId: "asst-platform",
-        cloud: "cadet",
+        cloud: "cloud",
       });
       setSelfHostedConnection(null);
       throw new Error("readyz failed");

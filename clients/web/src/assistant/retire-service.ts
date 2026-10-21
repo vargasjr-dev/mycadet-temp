@@ -17,7 +17,7 @@ import { buildNavigationState } from "@/lib/navigation/build-state";
 import { forgetAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { clearResearchSnapshot } from "@/domains/onboarding/research-onboarding-persistence";
 import { removeLocalSetting } from "@/utils/local-settings";
-import { useGatewayIdentityKey } from "@/stores/gateway-session-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 
@@ -35,7 +35,8 @@ const MARKETING_ASSISTANT_NAME_CACHE_KEY = "cadet_assistant_name";
  * service can't own routing). On failure carries a user-facing message.
  */
 export type RetireOutcome =
-  { ok: true; nextRoute: string } | { ok: false; error: string };
+  | { ok: true; nextRoute: string }
+  | { ok: false; error: string };
 
 /**
  * Resolve where to send the user after a retire. Reads `hasAssistants`
@@ -113,7 +114,7 @@ export async function retireAssistant(
     // research-onboarding resume snapshot so the next onboarding starts at the
     // form instead of resuming the retired assistant's run deep in the flow
     // (e.g. straight onto the wake gate).
-    clearResearchSnapshot(useGatewayIdentityKey());
+    clearResearchSnapshot(useGatewaySessionStore.getState().identityKey);
     // The completion record goes with it, so a reused id is never pre-marked.
     forgetAssistantOnboarded(assistantId);
     // Drop the marketing nav's cached assistant name (same-origin localStorage,

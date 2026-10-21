@@ -250,6 +250,7 @@ export function SystemPermissionsCard({
     useResolvedAssistantsStore.use.selectedAssistantId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const requestOrganizationId = useRequestOrganizationId();
+  const identityKey = useGatewayIdentityKey();
 
   const hostOS = detectElectronHostOS();
   const isWindowsHost = hostOS === "windows";
@@ -353,7 +354,7 @@ export function SystemPermissionsCard({
         );
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
-          useGatewayIdentityKey(),
+          identityKey,
           requestOrganizationId,
           getSelfHostedIngressUrl() ??
             (typeof globalThis.location === "undefined"

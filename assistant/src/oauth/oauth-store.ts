@@ -56,7 +56,6 @@ export type OAuthConnectionRow = typeof oauthConnections.$inferSelect;
  * CONFLICT DO UPDATE so that implementation fields (authorizeUrl, tokenExchangeUrl,
  * refreshUrl, tokenEndpointAuthMethod, userinfoUrl, authorizeParams,
  * pingUrl, pingMethod, pingHeaders, pingBody, revokeUrl, revokeBodyTemplate,
- * cloudServiceConfigKey,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
  * identityResponsePaths, identityFormat, identityOkField, responseOkField,
@@ -87,8 +86,6 @@ export function seedProviders(
     availableScopes?: AvailableScopes;
     scopeSeparator?: string;
     authorizeParams?: Record<string, string>;
-    cloudServiceConfigKey?: string;
-    managedServiceIsPaid?: boolean;
     displayLabel?: string;
     description?: string;
     dashboardUrl?: string | null;
@@ -149,8 +146,6 @@ export function seedProviders(
     const authorizeParams = p.authorizeParams
       ? JSON.stringify(p.authorizeParams)
       : null;
-    const cloudServiceConfigKey = p.cloudServiceConfigKey ?? null;
-    const managedServiceIsPaid = p.managedServiceIsPaid === true;
     const displayLabel = p.displayLabel ?? null;
     const description = p.description ?? null;
     const dashboardUrl = p.dashboardUrl ?? null;
@@ -197,8 +192,6 @@ export function seedProviders(
         pingBody,
         revokeUrl,
         revokeBodyTemplate,
-        cloudServiceConfigKey,
-        managedServiceIsPaid,
         displayLabel,
         description,
         dashboardUrl,
@@ -240,8 +233,6 @@ export function seedProviders(
           pingBody,
           revokeUrl,
           revokeBodyTemplate,
-          cloudServiceConfigKey,
-          managedServiceIsPaid,
           displayLabel,
           description,
           dashboardUrl,
@@ -335,8 +326,6 @@ export function registerProvider(params: {
   availableScopes?: AvailableScopes;
   scopeSeparator?: string;
   authorizeParams?: Record<string, string>;
-  cloudServiceConfigKey?: string;
-  managedServiceIsPaid?: boolean;
   displayLabel?: string;
   description?: string;
   dashboardUrl?: string;
@@ -397,8 +386,6 @@ export function registerProvider(params: {
     revokeBodyTemplate: params.revokeBodyTemplate
       ? JSON.stringify(params.revokeBodyTemplate)
       : null,
-    cloudServiceConfigKey: params.cloudServiceConfigKey ?? null,
-    managedServiceIsPaid: params.managedServiceIsPaid === true,
     displayLabel: params.displayLabel ?? null,
     description: params.description ?? null,
     dashboardUrl: params.dashboardUrl ?? null,
@@ -487,7 +474,6 @@ export function updateProvider(
     identityFormat: string;
     identityOkField: string;
     responseOkField: string;
-    managedServiceIsPaid: boolean;
   }>,
 ): OAuthProviderRow | undefined {
   const existing = getProvider(provider);
@@ -612,9 +598,6 @@ export function updateProvider(
   }
   if (params.responseOkField !== undefined) {
     set.responseOkField = params.responseOkField;
-  }
-  if (params.managedServiceIsPaid !== undefined) {
-    set.managedServiceIsPaid = params.managedServiceIsPaid;
   }
 
   db.update(oauthProviders)

@@ -3,30 +3,9 @@ import type { Command } from "commander";
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
-import {
-  buildOAuthConnectSurfaceNextAction,
-  oauthConnectSurfaceHint,
-  type OAuthConnectSurfaceNextAction,
-} from "./connect-surface-guidance.js";
 
-/**
- * Message shown when a provider has no active connections. Weak open models
- * loop through redundant discovery commands (channel checks, `oauth providers
- * get`, loading the OAuth setup skill) before rendering the connect button, so
- * they get an explicit single next action: render the core `oauth_connect`
- * surface directly. Capable models keep the terse default.
- */
-export async function noConnectionsMessage(
-  provider: string,
-  mode = "managed",
-): Promise<string> {
-  const base = `No active connections for ${provider}.`;
-  const { isWeakOpenModel } =
-    await import("../../../providers/weak-open-model.js");
-  if (mode === "managed" && isWeakOpenModel(process.env.__RESOLVED_MODEL)) {
-    return `${base}\n${oauthConnectSurfaceHint(provider)}\n`;
-  }
-  return `${base}\nConnect with \`assistant oauth connect ${provider}\`.\n`;
+export async function noConnectionsMessage(provider: string): Promise<string> {
+  return `No active connections for ${provider}.\nConnect with \`assistant oauth connect ${provider}\`.\n`;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,51 +19,20 @@ interface ConnectionSummary {
   status: string;
   expiresAt?: string | null;
   hasRefreshToken?: boolean;
-  /** Values the provider scopes the connection by (QuickBooks' realm id). */
-  providerParams?: Record<string, string>;
 }
 
 interface OAuthStatusResponse {
   ok: boolean;
   provider: string;
-  mode: string;
   connections: ConnectionSummary[];
   hint?: string;
-  nextAction?: OAuthConnectSurfaceNextAction;
-}
-
-/**
- * JSON status output is often fed back to the model. For weak open models,
- * include the same next-action steering as the human text path so a follow-up
- * "yes" renders the first-class OAuth surface instead of a raw CLI URL.
- */
-export async function decorateStatusJsonForModel(
-  result: OAuthStatusResponse,
-): Promise<OAuthStatusResponse> {
-  if (result.connections.length > 0) {
-    return result;
-  }
-  if (result.mode !== "managed") {
-    return result;
-  }
-  const { isWeakOpenModel } =
-    await import("../../../providers/weak-open-model.js");
-  if (!isWeakOpenModel(process.env.__RESOLVED_MODEL)) {
-    return result;
-  }
-  return {
-    ...result,
-    hint: result.hint ?? oauthConnectSurfaceHint(result.provider),
-    nextAction:
-      result.nextAction ?? buildOAuthConnectSurfaceNextAction(result.provider),
-  };
 }
 
 // ---------------------------------------------------------------------------
 // Text formatting helpers
 // ---------------------------------------------------------------------------
 
-function formatConnection(c: ConnectionSummary, mode: string): string {
+function formatConnection(c: ConnectionSummary): string {
   const lines: string[] = [];
   lines.push(`  ${c.account ?? "(no account)"}`);
   lines.push(`    Connection ID: ${c.id}`);
@@ -94,16 +42,11 @@ function formatConnection(c: ConnectionSummary, mode: string): string {
   } else {
     lines.push(`    Granted scopes: (none)`);
   }
-  for (const [key, value] of Object.entries(c.providerParams ?? {})) {
-    lines.push(`    ${key}: ${value}`);
+  if (c.expiresAt) {
+    lines.push(`    Expires: ${c.expiresAt}`);
   }
-  if (mode === "byo") {
-    if (c.expiresAt) {
-      lines.push(`    Expires: ${c.expiresAt}`);
-    }
-    if (c.hasRefreshToken !== undefined) {
-      lines.push(`    Refresh token: ${c.hasRefreshToken ? "yes" : "no"}`);
-    }
+  if (c.hasRefreshToken !== undefined) {
+    lines.push(`    Refresh token: ${c.hasRefreshToken ? "yes" : "no"}`);
   }
   return lines.join("\n");
 }
@@ -119,7 +62,6 @@ export function registerStatusCommand(oauth: Command): void {
         const r = await cliIpcCall<{
           ok: boolean;
           provider: string;
-          mode: string;
           connections: ConnectionSummary[];
         }>("oauth_status", {
           queryParams: { provider },
@@ -130,22 +72,22 @@ export function registerStatusCommand(oauth: Command): void {
         }
 
         const result = r.result! as OAuthStatusResponse;
-        const { connections, mode } = result;
+        const { connections } = result;
 
         if (shouldOutputJson(cmd)) {
-          writeOutput(cmd, await decorateStatusJsonForModel(result));
+          writeOutput(cmd, result);
           return;
         }
 
         // Text output
         if (connections.length === 0) {
-          process.stdout.write(await noConnectionsMessage(provider, mode));
+          process.stdout.write(await noConnectionsMessage(provider));
           return;
         }
 
-        const blocks = connections.map((c) => formatConnection(c, mode));
+        const blocks = connections.map((c) => formatConnection(c));
         process.stdout.write(
-          `${provider} (${mode}) — ${connections.length} active connection(s):\n\n${blocks.join("\n\n")}\n`,
+          `${provider} — ${connections.length} active connection(s):\n\n${blocks.join("\n\n")}\n`,
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

@@ -79,7 +79,7 @@ EXAMPLES:
 function resolveLoopbackBase(entry: AssistantEntry): string {
   const displayName = getAssistantDisplayName(entry);
 
-  if (entry.cloud === "paired") {
+  if (entry.paired === true) {
     console.error(
       `Error: '${displayName}' is a paired connection imported from another machine.`,
     );

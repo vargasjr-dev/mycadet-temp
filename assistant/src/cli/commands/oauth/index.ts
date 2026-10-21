@@ -6,7 +6,6 @@ import { registerAppCommands } from "./apps.js";
 import { registerConnectCommand } from "./connect.js";
 import { registerDisconnectCommand } from "./disconnect.js";
 import { oauthHelp } from "./index.help.js";
-import { registerModeCommand } from "./mode.js";
 import { registerPingCommand } from "./ping.js";
 import { registerProviderCommands } from "./providers.js";
 import { registerProxyUrlCommand } from "./proxy-url.js";
@@ -29,19 +28,13 @@ export function registerOAuthCommand(program: Command): void {
       registerProviderCommands(oauth);
 
       // -----------------------------------------------------------------------
-      // mode — get or set OAuth mode (managed vs your-own) for a provider
-      // -----------------------------------------------------------------------
-
-      registerModeCommand(oauth);
-
-      // -----------------------------------------------------------------------
       // apps — subcommand group
       // -----------------------------------------------------------------------
 
       registerAppCommands(oauth);
 
       // -----------------------------------------------------------------------
-      // connect — unified connect command (auto-detects managed vs BYO)
+      // connect — connect a provider via OAuth
       // -----------------------------------------------------------------------
 
       registerConnectCommand(oauth);
@@ -65,13 +58,13 @@ export function registerOAuthCommand(program: Command): void {
       registerRequestCommand(oauth);
 
       // -----------------------------------------------------------------------
-      // disconnect — unified disconnect with auto-detected managed/BYO routing
+      // disconnect — disconnect a provider and remove its credentials
       // -----------------------------------------------------------------------
 
       registerDisconnectCommand(oauth);
 
       // -----------------------------------------------------------------------
-      // token — retrieve a valid oauth token (your-own mode only)
+      // token — retrieve a valid oauth token
       // -----------------------------------------------------------------------
 
       registerTokenCommand(oauth);

@@ -129,6 +129,7 @@ export {
   resolveGatewayProxyTarget,
   gatewayTargetsFromLockfile,
   sanitizePairedForwardHeaders,
+  FLATTENED_FIRST_SEGMENTS,
 } from "./gateway-proxy";
 export type {
   GatewayTarget,

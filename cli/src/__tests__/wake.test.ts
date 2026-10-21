@@ -1617,7 +1617,8 @@ describe("cadet wake — tunnel edge restore", () => {
       entries[1] = {
         assistantId: "paired-one",
         runtimeUrl: "http://127.0.0.1:1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
       };
       loadAllAssistantsMock.mockReturnValue(entries);
       process.argv = ["bun", "cadet", "wake", "--all"];

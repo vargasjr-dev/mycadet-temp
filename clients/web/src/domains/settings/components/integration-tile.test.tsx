@@ -3,11 +3,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { HoverCapabilityOverride } from "@mycadet/design-library/utils/hover-capability";
 
 import {
-  GOOGLE_PROVIDER,
   NOTION_PROVIDER,
   googlePlan,
   linearMcpPlan,
-  mcpServer,
   notionPlan,
   planFor,
   pluginDefinition,
@@ -77,87 +75,9 @@ describe("IntegrationTile", () => {
     });
 
     openMenu("Other ways to connect Notion");
-    for (const label of [
-      "Notion MCP server",
-      "Sign in through Cadet",
-      "Use your own OAuth app",
-    ]) {
+    for (const label of ["Notion MCP server", "Use your own OAuth app"]) {
       await screen.findByRole("menuitem", { name: label });
     }
-  });
-
-  test("offers the way back to the recommended path when an alternative fails", async () => {
-    const plan = planFor({
-      providers: [NOTION_PROVIDER],
-      definitions: [pluginDefinition()],
-      ownOAuthAvailable: true,
-    });
-    // The cloud sign-in is an alternative here: the provider's own MCP
-    // server leads. Failing it must not strand the user on the two ways in
-    // that are left.
-    const failed = plan.alternatives.find(
-      (method) => method.kind === "cloud-oauth",
-    );
-    if (!failed) {
-      throw new Error("expected a cloud alternative in the fixture plan");
-    }
-    tile({
-      plan,
-      showAlternatives: true,
-      state: {
-        phase: "failed",
-        error: "Notion rejected the sign-in.",
-        methodId: failed.id,
-        methodKind: failed.kind,
-      },
-    });
-
-    openMenu("Other ways to connect Notion");
-    await screen.findByRole("menuitem", { name: "Notion MCP server" });
-    await screen.findByRole("menuitem", { name: "Use your own OAuth app" });
-    expect(
-      screen.queryByRole("menuitem", { name: "Sign in through Cadet" }),
-    ).toBeNull();
-  });
-
-  test("never offers an MCP server the plugin has already installed", () => {
-    const plan = planFor({
-      providers: [NOTION_PROVIDER],
-      servers: [mcpServer("notion-mcp", { id: "notion" })],
-      definitions: [pluginDefinition()],
-    });
-    const failed = plan.alternatives.find(
-      (method) => method.kind === "cloud-oauth",
-    );
-    if (!failed) {
-      throw new Error("expected a cloud alternative in the fixture plan");
-    }
-    tile({
-      plan,
-      state: {
-        phase: "failed",
-        error: "Notion rejected the sign-in.",
-        methodId: failed.id,
-        methodKind: failed.kind,
-      },
-    });
-
-    expect(
-      screen.queryByRole("button", { name: "Other ways to connect Notion" }),
-    ).toBeNull();
-  });
-
-  test("sends a connect with no platform session to the login flow", () => {
-    tile({
-      plan: planFor({
-        providers: [GOOGLE_PROVIDER],
-        cloudGate: "disabled",
-      }),
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Connect Google" }));
-    expect(handlers.onLogin).toHaveBeenCalledTimes(1);
-    expect(handlers.onConnect).not.toHaveBeenCalled();
   });
 
   test("cancels from the action slot once the X is showing", () => {
@@ -323,10 +243,9 @@ describe("IntegrationTile", () => {
     });
 
     screen.getByText("Linear rejected the sign-in.");
-    // Both of them behind the retry's chevron, where they cost the tile no
-    // height at all.
+    // The setup guide sits behind the retry's chevron, where it costs the
+    // tile no height at all.
     openMenu("Other ways to connect Linear");
-    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
     fireEvent.click(screen.getByRole("menuitem", { name: "Setup guide" }));
     expect(handlers.onOpenSetupGuide).toHaveBeenCalledWith(
       "https://example.com/docs/linear-mcp",
@@ -340,7 +259,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -362,7 +281,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: popupBlocked,
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -378,7 +297,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: paragraph,
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -398,7 +317,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -412,7 +331,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 

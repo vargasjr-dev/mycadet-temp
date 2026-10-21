@@ -285,11 +285,6 @@ export const terminal = Object.assign(
     process.exit(1);
   }
 
-  if (cloud === "aws") {
-    console.error("Terminals on AWS instances are not yet supported.");
-    process.exit(1);
-  }
-
   // Apple container: connect to the management socket for an interactive shell.
   if (cloud === "apple-container") {
     await sshAppleContainer(entry);
@@ -303,29 +298,6 @@ export const terminal = Object.assign(
     const child = spawn(
       "docker",
       ["exec", "-it", res.assistantContainer, "/bin/sh"],
-      { stdio: "inherit", windowsHide: true },
-    );
-    await waitForExit(child);
-    return;
-  }
-
-  if (cloud === "gcp") {
-    const project = entry.project;
-    const zone = entry.zone;
-    if (!project || !zone) {
-      console.error("Error: GCP project and zone not found in assistant config.");
-      process.exit(1);
-    }
-
-    const sshTarget = entry.sshUser
-      ? `${entry.sshUser}@${entry.assistantId}`
-      : entry.assistantId;
-
-    console.log(`🔗 Connecting to ${entry.assistantId} via gcloud...\n`);
-
-    const child = spawn(
-      "gcloud",
-      ["compute", "ssh", sshTarget, `--project=${project}`, `--zone=${zone}`],
       { stdio: "inherit", windowsHide: true },
     );
     await waitForExit(child);

@@ -43,6 +43,7 @@ import {
 } from "@/lib/auth/gateway-session";
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import { ApiError, toApiError } from "@/utils/api-errors";
+import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
   getSelectedAssistant,
   isLocalClient,
@@ -67,11 +68,7 @@ import { getActiveOrganizationIdForRequests } from "@/stores/organization-store"
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
 import { useGatewaySessionStore } from "@/stores/gateway-session-store";
-import {
-  hasLiveCloudSession,
-  isAuthenticated,
-  isSettledSessionRejection,
-} from "@/stores/session-status";
+import { isSettledSessionRejection } from "@/stores/session-status";
 import { routes } from "@/utils/routes";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -157,18 +154,6 @@ const ASSISTANT_PATH_RE = /^\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
  * path prefix (`/assistant-123/v1/assistants/...`).
  */
 const ASSISTANT_RESOURCE_RE = /\/v1\/assistants\/[^/]+\/(([^/?#]+)(?:\/.*)?)$/;
-
-/**
- * First segments whose `/v1/assistants/{id}/` prefix is stripped before
- * forwarding to the ingress. The gateway serves the contact family on
- * flat `/v1/...` control-plane routes only, so the rewrite delivers the
- * same flat shape cloud's Django `RuntimeProxyView` does. Flattened
- * segments are forwarded by every client, allowlist or not.
- */
-const FLATTENED_FIRST_SEGMENTS = new Set<string>([
-  "contacts",
-  "contact-channels",
-]);
 
 function currentSelfHostedBearer(): string | null {
   const token = getSelfHostedActorToken();

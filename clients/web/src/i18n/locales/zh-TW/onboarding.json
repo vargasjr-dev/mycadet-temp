@@ -13,8 +13,7 @@
     "loginToUse": "登入以使用",
     "downloadMacOSApp": "下載 macOS 應用程式",
     "downloadWindowsApp": "下載 Windows 應用程式",
-    "claim": "認領",
-    "skipForNow": "暫時跳過"
+    "claim": "認領"
   },
   "welcome": {
     "title": "歡迎使用 Cadet",
@@ -152,17 +151,7 @@
     "hobbiesLabel": "有什麼嗜好嗎？",
     "hobbiesPlaceholder": "汽車、書籍、種植番茄？"
   },
-  "letsChatTomorrowStep": {
-    "wakingTitle": "正在喚醒",
-    "missingScopeTitle": "未啟用存取權",
-    "title": "讓我來簡化一切",
-    "wakingBody": "您的助理正在準備中",
-    "missingScopeBody": "請勾選 Google 日曆權限旁的方塊，這樣我才能預訂報到。",
-    "body": "連接您的 Google 日曆，這樣我才能找到時間進行報到並開始提供協助。",
-    "startingAssistant": "正在啟動助理…",
-    "waitingAuthorization": "正在等待授權…",
-    "connectCalendar": "連接日曆 →"
-  },
+
   "existingAssistantStep": {
     "titleNamed": "{name} 已啟動並正在執行",
     "title": "您的助理已啟動並正在執行",
@@ -173,18 +162,7 @@
     "redoNamed": "重新開始並重建 {name} 的個性",
     "redo": "重新開始並重建其個性"
   },
-  "checkinConnectScreen": {
-    "title": "我們明天聊",
-    "body": "在您的日曆中新增一個會議，這樣我們就能從上次中斷的地方繼續。",
-    "permissionBody": "{name} 將新增一個單獨的「第 2 天報到」活動。它將獲得管理您的日曆活動和查看您的電子郵件地址的權限，而不是您的收件匣或檔案，並且您可以隨時中斷連線。",
-    "unnamedAssistant": "您的助理",
-    "waitingAuthorization": "正在等待授權...",
-    "connectGoogleCalendar": "連接 Google 日曆"
-  },
-  "meetingCreatedStep": {
-    "titleWithTime": "報到已排定在明天 {time}！",
-    "title": "報到已排定！"
-  },
+
   "lookingYouUpStep": {
     "searching": "正在搜尋網路以了解您…",
     "readingProfiles": "正在閱讀公開個人資料…",
@@ -235,9 +213,7 @@
       }
     }
   },
-  "googleCalendar": {
-    "providerLabel": "Google 日曆"
-  },
+
   "authErrors": {
     "genericFailure": "發生錯誤。請再試一次。",
     "signupClosed": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",

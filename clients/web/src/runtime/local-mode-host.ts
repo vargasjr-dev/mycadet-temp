@@ -46,11 +46,11 @@ import { isElectron } from "@/runtime/is-electron";
  * a desktop-only nicety.
  *
  * The gateway *data plane* deliberately has no seam function: callers fetch
- * the same-origin `/assistant/__gateway/{port}/*` URL on both hosts, and each
- * host proxies it to the local gateway transparently (the Vite dev middleware
- * on web/dev; the Electron `app://` protocol handler in the desktop shell).
- * The transport branch lives in the host, not the renderer, so the data-plane
- * URL stays byte-identical everywhere.
+ * plain same-origin `/v1/assistants/{assistantId}/...` on both hosts, and each
+ * host routes it by the id in the path to the local gateway transparently (the
+ * Vite dev middleware on web/dev; the Electron `app://` protocol handler in
+ * the desktop shell). The transport branch lives in the host, not the
+ * renderer, so the data-plane URL stays byte-identical everywhere.
  */
 
 export type {
@@ -278,7 +278,7 @@ export async function retireLocalAssistantHost(
 }
 
 /**
- * Forget a paired assistant (`cloud: "paired"`): remove its lockfile entry and
+ * Forget a paired assistant (the `paired` flag): remove its lockfile entry and
  * delete its stored guardian token on this machine. Client-side only: the
  * remote assistant is never touched. Both hosts run the shared package op in a
  * trusted process and return the same `LockfileWriteResult` contract; hosts
@@ -341,8 +341,8 @@ export async function pairingStartHost(
 
 /**
  * One exchange attempt for a live pairing session. An approved code persists
- * the guardian token and creates a `cloud: "paired"` lockfile entry in the
- * same call, the write counterpart of {@link unpairAssistantHost}; a still
+ * the guardian token and creates a paired (`paired: true`) lockfile entry in
+ * the same call, the write counterpart of {@link unpairAssistantHost}; a still
  * pending one carries the cadence to wait before the next attempt.
  */
 export async function pairingPollHost(

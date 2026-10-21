@@ -775,10 +775,6 @@
     "stepConnect": "Conectar",
     "stepCreate": "Crear bot"
   },
-  "tenantHost": {
-    "shopifyLabel": "Dominio de la tienda",
-    "shopifyPlaceholder": "tu-tienda.myshopify.com"
-  },
   "terminalPanel": {
     "recoveryModeBanner": "Modo de recuperación activo: esta sesión está conectada al terminal de depuración."
   },
@@ -873,14 +869,6 @@
     "popupBlocked": "Tu navegador bloqueó la pestaña de inicio de sesión. Permite las ventanas emergentes para este sitio y vuelve a hacer clic en Conectar.",
     "startFailed": "No se pudo iniciar Connect Claude. Inténtalo de nuevo.",
     "timedOut": "Se agotó el tiempo de espera para conectar Claude. Inténtalo de nuevo."
-  },
-  "useOauthConnect": {
-    "accountConnected": "Cuenta de {name} conectada.",
-    "authorizationError": "Error de {name}: {code}",
-    "authorizationFailed": "La autorización de {name} falló",
-    "popupBlocked": "Ventana emergente bloqueada. Permite las ventanas emergentes e inténtalo de nuevo.",
-    "startFailed": "No se pudo iniciar la autorización de {name}.",
-    "startFailedWithReason": "No se pudo iniciar la autorización de {name}: {reason}"
   },
   "useOpenUrlDirectives": {
     "blocked": "Tu navegador bloqueó una página que el asistente intentó abrir.",

@@ -1,13 +1,5 @@
-import { CadetCloudClient } from "../cloud/client.js";
-import { getConfig } from "../config/loader.js";
-import {
-  getServiceMode,
-  type Services,
-  ServicesSchema,
-} from "../config/schemas/services.js";
 import { getLogger } from "../util/logger.js";
 import { BYOOAuthConnection, type BYOTokenHeader } from "./byo-connection.js";
-import { CloudOAuthConnection } from "./cloud-connection.js";
 import type { OAuthConnection } from "./connection.js";
 import { getConnectionAccessTokenResult } from "./credential-token-resolver.js";
 import { syncManualTokenConnection } from "./manual-token-connection.js";
@@ -68,7 +60,7 @@ export interface OAuthConnectionResolution {
  *   Maps to the `provider_key` primary key in the `oauth_providers` table.
  * @param options.clientId - Optional OAuth app client ID. When multiple BYO
  *   apps exist for the same provider, narrows the connection lookup to the
- *   app matching this client ID. Ignored for cloud providers.
+ *   app matching this client ID.
  * @param options.account - Optional account identifier to disambiguate
  *   multi-account connections.
  */
@@ -87,11 +79,8 @@ export async function resolveOAuthConnection(
  * Resolve an OAuthConnection along with the account that served it and whether
  * the selection was ambiguous.
  *
- * Cloud providers (where the service config `mode` is `"managed"`) are
- * routed through the cloud proxy with no local state required.
- *
- * BYO providers resolve from the local SQLite oauth-store and require an
- * active connection row and a stored access token.
+ * Resolution reads the local SQLite oauth-store and requires an active
+ * connection row and a stored access token.
  */
 export async function resolveOAuthConnectionWithMeta(
   provider: string,
@@ -99,49 +88,6 @@ export async function resolveOAuthConnectionWithMeta(
 ): Promise<OAuthConnectionResolution> {
   const { clientId, account, requiredScopes } = options ?? {};
   const providerRow = getProvider(provider);
-  const managedKey = providerRow?.cloudServiceConfigKey;
-
-  if (managedKey && managedKey in ServicesSchema.shape) {
-    const services: Services = getConfig().services;
-    if (getServiceMode(services, managedKey as keyof Services) === "managed") {
-      const client = await CadetCloudClient.create();
-      if (!client || !client.cloudAssistantId) {
-        const detail = !client
-          ? "missing platform prerequisites"
-          : "missing assistant ID";
-        throw new Error(
-          `Cloud connection for "${provider}" cannot be created: ${detail}. ` +
-            `Log in to Cadet Cloud or switch to using your own OAuth app.`,
-        );
-      }
-
-      const resolution = await resolvePlatformConnectionId({
-        client,
-        provider,
-        account,
-        requiredScopes,
-      });
-
-      const connection = new CloudOAuthConnection({
-        id: provider,
-        provider,
-        externalId: provider,
-        accountInfo: resolution.accountLabel ?? account ?? null,
-        client,
-        connectionId: resolution.id,
-        // A templated base URL (`https://{tenant_host}`, `.../{realm_id}`) is
-        // filled in by the cloud from what it pinned to the connection;
-        // sent as-is it would fail the proxy's allowlist and shadow that.
-        baseUrl: cloudProxyBaseUrl(providerRow?.baseUrl),
-      });
-      return {
-        connection,
-        ambiguous: resolution.ambiguous,
-        allAccounts: resolution.allAccountLabels,
-      };
-    }
-  }
-
   // BYO path — requires a local connection row, access token, and base URL.
   if (providerRow?.authorizeUrl === "urn:manual-token") {
     await syncManualTokenConnection(provider);
@@ -321,24 +267,6 @@ function hostMatchesPattern(host: string, pattern: string): boolean {
 }
 
 /**
- * The base URL a cloud connection sends to the cloud proxy, or
- * `undefined` to let the proxy use the provider's configured default.
- *
- * Per-tenant and per-realm providers seed a template the cloud fills from
- * the connection (`{tenant_host}`, `{realm_id}`). Forwarding the unfilled
- * template would fail the proxy's allowlist check, so those fall through to
- * the cloud's own default.
- */
-export function cloudProxyBaseUrl(
-  seedBaseUrl: string | null | undefined,
-): string | undefined {
-  if (!seedBaseUrl || /\{[a-z_]+\}/.test(seedBaseUrl)) {
-    return undefined;
-  }
-  return seedBaseUrl;
-}
-
-/**
  * Resolve the effective API base URL for a connection, preferring per-tenant
  * values stored on the connection's `metadata` over the provider's static
  * seed value when applicable.
@@ -396,164 +324,6 @@ function parseConnectionMetadata(
   } catch {
     return undefined;
   }
-}
-
-// ---------------------------------------------------------------------------
-// Platform connection ID resolution
-// ---------------------------------------------------------------------------
-
-interface ResolvePlatformConnectionIdOptions {
-  client: CadetCloudClient;
-  provider: string;
-  account?: string;
-  requiredScopes?: string[];
-}
-
-interface PlatformConnectionEntry {
-  id: string;
-  account_label?: string | null;
-  /** Scopes the cloud actually granted this connection. May be absent for
-   *  older connections or providers that don't report scopes. */
-  scopes_granted?: string[] | null;
-  /** Provider-supplied values the connection is scoped by (QuickBooks'
-   *  `realm_id`). Absent from older platforms; empty for most providers. */
-  provider_params?: Record<string, string> | null;
-}
-
-interface PlatformConnectionResolution {
-  /** Platform-side connection ID used in the proxy URL path. */
-  id: string;
-  /** Human-readable account label of the connection that served the request. */
-  accountLabel: string | null;
-  /** Labels (falling back to IDs) of every connection considered, most-recent first. */
-  allAccountLabels: string[];
-  /** True when more than one active connection matched and no account was pinned. */
-  ambiguous: boolean;
-}
-
-/** Human-readable label for a cloud connection, falling back to its ID. */
-function platformConnectionLabel(entry: PlatformConnectionEntry): string {
-  return entry.account_label ?? entry.id;
-}
-
-/**
- * Fetch active cloud connections for a cloud provider by calling the
- * List Connections endpoint.
- */
-async function fetchPlatformConnections(options: {
-  client: CadetCloudClient;
-  provider: string;
-  accountIdentifier?: string;
-}): Promise<PlatformConnectionEntry[]> {
-  const { client, provider, accountIdentifier } = options;
-  const params = new URLSearchParams();
-  params.set("provider", provider);
-  params.set("status", "ACTIVE");
-  if (accountIdentifier) {
-    params.set("account_identifier", accountIdentifier);
-  }
-
-  const path = `/v1/assistants/${client.cloudAssistantId}/oauth/connections/?${params.toString()}`;
-  const response = await client.fetch(path);
-
-  if (!response.ok) {
-    log.error(
-      { status: response.status, provider },
-      "Failed to list platform OAuth connections",
-    );
-    throw new Error(
-      `Failed to resolve cloud connection for "${provider}": HTTP ${response.status}`,
-    );
-  }
-
-  const body = (await response.json()) as unknown;
-  return (
-    Array.isArray(body)
-      ? body
-      : ((body as Record<string, unknown>).results ?? [])
-  ) as PlatformConnectionEntry[];
-}
-
-/**
- * Fetch the cloud-side connection ID for a cloud provider by calling
- * the List Connections endpoint.
- */
-async function resolvePlatformConnectionId(
-  options: ResolvePlatformConnectionIdOptions,
-): Promise<PlatformConnectionResolution> {
-  const { client, provider, account, requiredScopes } = options;
-
-  let connections = await fetchPlatformConnections({
-    client,
-    provider,
-    accountIdentifier: account,
-  });
-
-  // Holds the provider's full active-connection list once a filtered lookup
-  // comes back empty, so the no-match error can name the accounts that exist.
-  let unfilteredConnections: PlatformConnectionEntry[] | undefined;
-  if (account && connections.length === 0) {
-    unfilteredConnections = await fetchPlatformConnections({
-      client,
-      provider,
-    });
-    connections = unfilteredConnections.filter(
-      (connection) =>
-        connection.account_label === account || connection.id === account,
-    );
-  }
-
-  if (connections.length === 0) {
-    const availableLabels = (unfilteredConnections ?? []).map(
-      platformConnectionLabel,
-    );
-    throw new Error(
-      formatNoConnectionError({ provider, account, availableLabels }),
-    );
-  }
-
-  // Narrow to connections that actually carry the scopes the caller needs.
-  // This is what keeps a narrowly-scoped Google connection (e.g. Calendar-only,
-  // created by the onboarding check-in flow) from being resolved as a full
-  // Gmail connection and 403-ing on the first Gmail API call.
-  if (requiredScopes?.length) {
-    const { eligible, missingScopes } = partitionByScopes(
-      connections,
-      requiredScopes,
-      (c) => c.scopes_granted ?? [],
-    );
-    if (eligible.length === 0) {
-      log.warn(
-        { provider, count: connections.length, requiredScopes, missingScopes },
-        "Active cloud connection(s) found but none carry the required scopes",
-      );
-      throw new Error(missingScopesMessage(provider, missingScopes));
-    }
-    connections = eligible;
-  }
-
-  const allAccountLabels = connections.map(platformConnectionLabel);
-  const ambiguous = connections.length > 1 && !account;
-  if (ambiguous) {
-    log.warn(
-      {
-        provider,
-        count: connections.length,
-        selectedId: connections[0].id,
-        allAccounts: allAccountLabels.join(", "),
-      },
-      "Multiple active cloud connections found; using the most recently created. " +
-        "Pass an account option to select a specific connection.",
-    );
-  }
-
-  const selected = connections[0];
-  return {
-    id: selected.id,
-    accountLabel: selected.account_label ?? null,
-    allAccountLabels,
-    ambiguous,
-  };
 }
 
 /**

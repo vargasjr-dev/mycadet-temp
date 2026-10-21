@@ -1,8 +1,5 @@
 import { fetchCloudStatus, isUuid } from "@/lib/local-cloud-identity";
-import {
-  getLockfileAssistant,
-  getPairedGatewayUrl,
-} from "@/lib/local-mode";
+import { getLockfileAssistant, getPairedGatewayUrl } from "@/lib/local-mode";
 
 /**
  * One resolved UUID per paired target per session. A miss (unreachable,
@@ -63,8 +60,10 @@ async function fetchAndPersistPairedCloudId(
   if (!pairedUrl) {
     return null;
   }
+  // The scoped data plane is plain same-origin /v1 — the trusted host routes
+  // it by the id in the path and injects the paired guardian bearer itself.
   const status = await fetchCloudStatus(
-    { gatewayUrl: `${window.location.origin}${pairedUrl}`, actorToken: null },
+    { gatewayUrl: window.location.origin, actorToken: null },
     assistantId,
   );
   const cloudAssistantId = status?.assistantId ?? null;
@@ -75,7 +74,7 @@ async function fetchAndPersistPairedCloudId(
   const current = getLockfileAssistant(assistantId);
   if (
     !current ||
-    current.cloud !== "paired" ||
+    current.paired !== true ||
     current.runtimeUrl !== entry.runtimeUrl
   ) {
     return null;

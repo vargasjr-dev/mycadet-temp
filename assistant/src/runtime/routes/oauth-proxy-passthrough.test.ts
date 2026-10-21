@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  CredentialRequiredError,
-  InsufficientBalanceError,
-  ProviderUnreachableError,
-} from "../../oauth/cloud-connection.js";
 import { BackendError } from "../../util/errors.js";
 import { BadRequestError, ForbiddenError, RouteError } from "./errors.js";
 import {
@@ -796,7 +791,6 @@ describe("mapProxyRequestError", () => {
   };
 
   const credentialFailures = (): Error[] => [
-    new CredentialRequiredError("Token revoked"),
     tokenExpiredError(
       'Token refresh failed for "stripe_link": {"error":"invalid_grant"}.',
     ),
@@ -808,10 +802,6 @@ describe("mapProxyRequestError", () => {
   ];
 
   const upstreamFailures = (): Error[] => [
-    new ProviderUnreachableError(
-      "The external service provider is temporarily unreachable (HTTP 502). " +
-        "Detail: upstream said no",
-    ),
     new BackendError("Platform proxy returned unexpected status 500"),
     new TypeError("fetch failed"),
     withStatus(403),
@@ -860,22 +850,6 @@ describe("mapProxyRequestError", () => {
     }
   });
 
-  test("an insufficient balance reads the same to both audiences", () => {
-    // Raised on a bare platform status with a fixed message about this
-    // install's own balance, so there is nothing upstream to withhold.
-    for (const audience of ["grant-holder", "operator"] as const) {
-      const mapped = mapProxyRequestError(
-        new InsufficientBalanceError(),
-        "stripe_link",
-        audience,
-      );
-
-      expect(mapped.statusCode).toBe(402);
-      expect(mapped.code).toBe("PAYMENT_REQUIRED");
-      expect(mapped.message).toBe(new InsufficientBalanceError().message);
-    }
-  });
-
   test("returns a RouteError unchanged for either audience", () => {
     const original = new RouteError("teapot", "TEAPOT", 418);
     expect(mapProxyRequestError(original, "stripe_link")).toBe(original);
@@ -885,7 +859,7 @@ describe("mapProxyRequestError", () => {
   });
 
   test("the grant holder is the default audience", () => {
-    const err = new CredentialRequiredError("Token revoked");
+    const err = tokenExpiredError("token expired");
     expect(mapProxyRequestError(err, "stripe_link").message).toBe(
       mapProxyRequestError(err, "stripe_link", "grant-holder").message,
     );

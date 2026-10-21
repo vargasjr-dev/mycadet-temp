@@ -1,5 +1,4 @@
 import { CloudOff, Globe, Link2 } from "lucide-react";
-import { gatewayProxyUrl } from "@mycadet/local-mode/contract";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
@@ -25,10 +24,7 @@ import {
   unpairLocalAssistant,
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
-import {
-  entryApiBase,
-  resolveLockfileEntryConnect,
-} from "@app/assistant/connect-lockfile-entry";
+import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import {
@@ -216,7 +212,7 @@ export function SelectAssistantScreen() {
 
   const connectEntry = (entry: LockfileAssistant): void => {
     void navigate(routes.assistant, {
-      state: assistantSelectionState(entry.assistantId, entryApiBase(entry)),
+      state: assistantSelectionState(entry.assistantId),
     });
   };
 
@@ -338,10 +334,7 @@ export function SelectAssistantScreen() {
         return;
       }
       void navigate(routes.assistant, {
-        state: assistantSelectionState(
-          assistantId,
-          gatewayProxyUrl(assistantId),
-        ),
+        state: assistantSelectionState(assistantId),
       });
     })();
   };

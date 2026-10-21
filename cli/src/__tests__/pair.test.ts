@@ -1246,7 +1246,7 @@ describe("pair command", () => {
           {
             assistantId: "pair-test",
             runtimeUrl: RUNTIME_URL,
-            cloud: "paired",
+            paired: true,
           },
         ],
         activeAssistant: "pair-test",

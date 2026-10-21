@@ -34,59 +34,109 @@ const targets =
     new Map(Object.entries(map));
 
 describe("parseAssistantGatewayUrl", () => {
-  test("parses the unified id-keyed path", () => {
-    expect(
-      parseAssistantGatewayUrl("/__gateway/abc-123/v1/assistants"),
-    ).toEqual({
+  test("parses the scoped SDK surface and forwards the full path", () => {
+    expect(parseAssistantGatewayUrl("/v1/assistants/abc-123")).toEqual({
       match: true,
       valid: true,
-      target: { assistantId: "abc-123", path: "/v1/assistants", search: "" },
-    });
-  });
-
-  test("accepts the renderer's `/assistant` mount prefix", () => {
-    expect(
-      parseAssistantGatewayUrl("/assistant/__gateway/abc-123/auth/token"),
-    ).toEqual({
-      match: true,
-      valid: true,
-      target: { assistantId: "abc-123", path: "/auth/token", search: "" },
-    });
-  });
-
-  test("preserves the query and drops the fragment", () => {
-    expect(
-      parseAssistantGatewayUrl("/__gateway/abc-123/v1/messages?x=1#frag"),
-    ).toEqual({
-      match: true,
-      valid: true,
+      legacy: false,
       target: {
         assistantId: "abc-123",
-        path: "/v1/messages",
+        path: "/v1/assistants/abc-123",
+        search: "",
+      },
+    });
+    expect(
+      parseAssistantGatewayUrl("/v1/assistants/abc-123/conversations"),
+    ).toEqual({
+      match: true,
+      valid: true,
+      legacy: false,
+      target: {
+        assistantId: "abc-123",
+        path: "/v1/assistants/abc-123/conversations",
+        search: "",
+      },
+    });
+  });
+
+  test("preserves the query and drops the fragment on the scoped surface", () => {
+    expect(
+      parseAssistantGatewayUrl("/v1/assistants/abc-123/messages?x=1#frag"),
+    ).toEqual({
+      match: true,
+      valid: true,
+      legacy: false,
+      target: {
+        assistantId: "abc-123",
+        path: "/v1/assistants/abc-123/messages",
         search: "?x=1",
       },
     });
   });
 
-  test("decodes a percent-encoded id", () => {
-    expect(parseAssistantGatewayUrl("/__gateway/a%20b/v1")).toEqual({
+  test("flattens the contact family to the gateway's flat routes", () => {
+    expect(
+      parseAssistantGatewayUrl("/v1/assistants/abc-123/contacts/x"),
+    ).toEqual({
       match: true,
       valid: true,
-      target: { assistantId: "a b", path: "/v1", search: "" },
+      legacy: false,
+      target: {
+        assistantId: "abc-123",
+        path: "/v1/contacts/x",
+        search: "",
+      },
+    });
+    expect(
+      parseAssistantGatewayUrl("/v1/assistants/abc-123/contact-channels/y?z=1"),
+    ).toEqual({
+      match: true,
+      valid: true,
+      legacy: false,
+      target: {
+        assistantId: "abc-123",
+        path: "/v1/contact-channels/y",
+        search: "?z=1",
+      },
     });
   });
 
-  test("rejects dot-segment tails (raw and percent-encoded)", () => {
-    expect(parseAssistantGatewayUrl("/__gateway/abc/../secret")).toMatchObject({
+  test("parses the legacy unscoped prefix and forwards the tail", () => {
+    expect(parseAssistantGatewayUrl("/__gateway/abc-123/auth/token")).toEqual({
+      match: true,
+      valid: true,
+      legacy: true,
+      target: { assistantId: "abc-123", path: "/auth/token", search: "" },
+    });
+    expect(
+      parseAssistantGatewayUrl("/assistant/__gateway/abc-123/readyz"),
+    ).toEqual({
+      match: true,
+      valid: true,
+      legacy: true,
+      target: { assistantId: "abc-123", path: "/readyz", search: "" },
+    });
+  });
+
+  test("rejects dot segments on both shapes (raw and percent-encoded)", () => {
+    expect(parseAssistantGatewayUrl("/v1/assistants/../secret")).toMatchObject({
       match: true,
       valid: false,
     });
     expect(
-      parseAssistantGatewayUrl("/__gateway/abc/%2e%2e/secret"),
+      parseAssistantGatewayUrl("/v1/assistants/abc/%2e%2e/secret"),
     ).toMatchObject({ match: true, valid: false });
+    expect(parseAssistantGatewayUrl("/__gateway/abc/../secret")).toMatchObject({
+      match: true,
+      valid: false,
+    });
   });
 
   test("rejects malformed percent-encoding as an invalid parse", () => {
+    expect(parseAssistantGatewayUrl("/v1/assistants/%zz/x")).toEqual({
+      match: true,
+      valid: false,
+    });
     expect(parseAssistantGatewayUrl("/__gateway/%zz/v1")).toEqual({
       match: true,
       valid: false,
@@ -116,31 +166,65 @@ describe("resolveGatewayProxyTarget", () => {
     ).toEqual({ kind: "pass" });
   });
 
-  test("forwards an active loopback id to its port target", () => {
+  test("forwards a scoped path for an active loopback id to its port", () => {
     expect(
-      resolveGatewayProxyTarget("/__gateway/abc-123/v1/assistants", entry),
+      resolveGatewayProxyTarget("/v1/assistants/abc-123/conversations", entry),
     ).toEqual({
       kind: "forward",
       assistantId: "abc-123",
-      path: "/v1/assistants",
+      path: "/v1/assistants/abc-123/conversations",
       search: "",
       target: loopback(8080),
     });
   });
 
-  test("forwards an imported pairing to its recorded runtimeUrl", () => {
+  test("forwards a scoped path for an imported pairing to its runtimeUrl", () => {
     expect(
-      resolveGatewayProxyTarget("/__gateway/def-456/v1/messages?x=1", entry),
+      resolveGatewayProxyTarget("/v1/assistants/def-456/messages?x=1", entry),
     ).toEqual({
       kind: "forward",
       assistantId: "def-456",
-      path: "/v1/messages",
+      path: "/v1/assistants/def-456/messages",
       search: "?x=1",
       target: remote("https://gw.example.com"),
     });
   });
 
-  test("rejects an id that is not active in the lockfile", () => {
+  test("flattens the contact family in the forward path", () => {
+    expect(
+      resolveGatewayProxyTarget("/v1/assistants/abc-123/contacts/x", entry),
+    ).toEqual({
+      kind: "forward",
+      assistantId: "abc-123",
+      path: "/v1/contacts/x",
+      search: "",
+      target: loopback(8080),
+    });
+  });
+
+  test("passes an unknown id on the scoped surface through", () => {
+    // Cloud assistants and stale ids ride the host's generic /v1 handling.
+    expect(
+      resolveGatewayProxyTarget("/v1/assistants/zzz-999/messages", entry),
+    ).toEqual({ kind: "pass" });
+    expect(
+      resolveGatewayProxyTarget("/v1/assistants/zzz-999/x", targets({})),
+    ).toEqual({ kind: "pass" });
+  });
+
+  test("forwards the legacy prefix for unscoped gateway routes", () => {
+    expect(
+      resolveGatewayProxyTarget("/__gateway/abc-123/auth/token", entry),
+    ).toEqual({
+      kind: "forward",
+      assistantId: "abc-123",
+      path: "/auth/token",
+      search: "",
+      target: loopback(8080),
+    });
+  });
+
+  test("rejects an unknown id on the legacy prefix", () => {
     expect(resolveGatewayProxyTarget("/__gateway/zzz-999/v1", entry)).toEqual(
       rejection,
     );
@@ -157,7 +241,7 @@ describe("gatewayTargetsFromLockfile", () => {
         assistants: [
           {
             assistantId: "abc-123",
-            cloud: "paired",
+            paired: true,
             runtimeUrl: "https://gw.example.com",
           },
         ],
@@ -169,8 +253,8 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "abc-123", cloud: "paired", runtimeUrl: "not a url" },
-          { assistantId: "def-456", cloud: "paired" },
+          { assistantId: "abc-123", paired: true, runtimeUrl: "not a url" },
+          { assistantId: "def-456", paired: true },
         ],
       }),
     ).toEqual(new Map());
@@ -241,23 +325,16 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "a", cloud: "cadet" },
+          { assistantId: "a", cloud: "cloud" },
           { assistantId: "b", cloud: "apple-container" },
           {
             assistantId: "c",
-            cloud: "gcp",
-            runtimeUrl: "https://gw.example.com",
-          },
-          {
-            assistantId: "d",
-            cloud: "aws",
-            runtimeUrl: "https://gw.example.com",
-          },
-          {
-            assistantId: "e",
             cloud: "custom",
             runtimeUrl: "https://gw.example.com",
           },
+          // A retired spelling parses as "local": loopback-gated, and with no
+          // loopback port it is omitted.
+          { assistantId: "d", cloud: "gcp" },
         ],
       }),
     ).toEqual(new Map());
@@ -270,7 +347,7 @@ describe("gatewayTargetsFromLockfile", () => {
           null,
           42,
           { noId: true },
-          { assistantId: "", cloud: "paired" },
+          { assistantId: "", paired: true },
           {
             assistantId: "abc-123",
             cloud: "local",
@@ -297,7 +374,7 @@ describe("readGatewayTargets", () => {
           },
           {
             assistantId: "def-456",
-            cloud: "paired",
+            paired: true,
             runtimeUrl: "https://gw.example.com",
           },
         ],

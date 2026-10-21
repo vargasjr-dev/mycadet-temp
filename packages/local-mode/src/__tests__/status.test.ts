@@ -214,7 +214,7 @@ describe("getLocalAssistantStatus", () => {
   test("rejects non-local assistants", async () => {
     writeLockfile({
       assistantId: "platform-1",
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://example.com",
     });
 

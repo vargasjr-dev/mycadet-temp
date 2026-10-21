@@ -49,7 +49,8 @@ describe("paired selection", () => {
   function selectPaired(runtimeUrl?: string): void {
     const paired = {
       assistantId: "paired-a",
-      cloud: "paired",
+      cloud: "local",
+      paired: true,
       ...(runtimeUrl != null && { runtimeUrl }),
     } as LockfileAssistant;
     useLockfileStore.setState({
@@ -88,23 +89,12 @@ describe("paired selection", () => {
     expect(isGatewayAuthMode()).toBe(false);
 
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway/paired-a`,
+      url: window.location.origin,
       token: null,
     });
 
     expect(isGatewayAuthMode()).toBe(true);
     expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
-  test("paired auth mode rejects a primed connection for another assistant", () => {
-    window.__CADET_CONFIG__ = undefined;
-    selectPaired("https://gw.example.com");
-    setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway/paired-b`,
-      token: null,
-    });
-
-    expect(isGatewayAuthMode()).toBe(false);
   });
 });
 

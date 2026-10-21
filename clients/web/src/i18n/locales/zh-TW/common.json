@@ -777,10 +777,6 @@
     "stepConnect": "連接",
     "stepCreate": "建立機器人"
   },
-  "tenantHost": {
-    "shopifyLabel": "商店網域",
-    "shopifyPlaceholder": "your-store.myshopify.com"
-  },
   "terminalPanel": {
     "recoveryModeBanner": "復原模式已啟用：此工作階段已連接到偵錯終端機。"
   },
@@ -875,14 +871,6 @@
     "popupBlocked": "您的瀏覽器阻擋了登入分頁。請允許此網站的彈出視窗，然後再按一下「連線」。",
     "startFailed": "無法啟動連線 Claude。請再試一次。",
     "timedOut": "等待 Claude 連線逾時。請再試一次。"
-  },
-  "useOauthConnect": {
-    "accountConnected": "{name} 帳號已連線。",
-    "authorizationError": "{name} 錯誤：{code}",
-    "authorizationFailed": "{name} 授權失敗",
-    "popupBlocked": "彈出視窗已阻擋。請啟用彈出視窗，然後再試一次。",
-    "startFailed": "無法啟動 {name} 授權。",
-    "startFailedWithReason": "無法啟動 {name} 授權：{reason}"
   },
   "useOpenUrlDirectives": {
     "blocked": "您的瀏覽器阻擋了助理嘗試開啟的頁面。",

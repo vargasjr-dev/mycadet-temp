@@ -16,7 +16,6 @@ import { Button } from "@mycadet/design-library/components/button";
 import { Checkbox } from "@mycadet/design-library/components/checkbox";
 import { Collapsible } from "@mycadet/design-library/components/collapsible";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
-import { Input } from "@mycadet/design-library/components/input";
 import { ListRow } from "@mycadet/design-library/components/list-row";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { Notice } from "@mycadet/design-library/components/notice";
@@ -24,10 +23,6 @@ import { SplitButton } from "@mycadet/design-library/components/split-button";
 import { Tag } from "@mycadet/design-library/components/tag";
 
 import { IntegrationIcon } from "@/components/integrations/integration-icon";
-import {
-  useTenantHostInput,
-  type TenantHostRequirement,
-} from "@/hooks/use-tenant-host-input";
 import { useTranslation } from "@/i18n";
 
 import {
@@ -98,10 +93,9 @@ export interface IntegrationConnectModalProps {
    * pointed at, because the provider's OAuth endpoints live on the customer's
    * own domain. Absent for providers with one global host.
    */
-  tenantHost?: TenantHostRequirement | null;
   onConnect: (
     method: ConnectMethod,
-    options?: { acknowledged?: boolean; tenantHost?: string },
+    options?: { acknowledged?: boolean },
   ) => void;
   onLogin: () => void;
   onCancelAttempt: () => void;
@@ -184,7 +178,6 @@ export function IntegrationConnectModal({
   callbackCopied = false,
   toolsByConnectionId,
   ownOAuthContent,
-  tenantHost,
   onConnect,
   onLogin,
   onCancelAttempt,
@@ -236,8 +229,6 @@ export function IntegrationConnectModal({
       case "mcp-oauth":
       case "mcp-manual":
         return t("integrationConnect.tagMcp");
-      case "cloud-oauth":
-        return t("integrationConnect.tagCadet");
       case "own-oauth":
         return t("integrationConnect.tagOwnApp");
     }
@@ -325,7 +316,6 @@ export function IntegrationConnectModal({
             callbackUrl={callbackUrl}
             callbackCopied={callbackCopied}
             ownOAuthContent={ownOAuthContent}
-            tenantHost={tenantHost}
             acknowledged={acknowledged}
             hasConnections={connections.length > 0}
             methodItems={methodItems}
@@ -408,7 +398,6 @@ function ConnectView({
   callbackUrl,
   callbackCopied,
   ownOAuthContent,
-  tenantHost,
   acknowledged,
   hasConnections,
   setupGuide,
@@ -430,7 +419,6 @@ function ConnectView({
   callbackUrl?: CallbackUrlState;
   callbackCopied: boolean;
   ownOAuthContent?: ReactNode;
-  tenantHost?: TenantHostRequirement | null;
   acknowledged: boolean;
   hasConnections: boolean;
   setupGuide: ReactNode;
@@ -443,7 +431,7 @@ function ConnectView({
   onBack: () => void;
   onConnect: (
     method: ConnectMethod,
-    options?: { acknowledged?: boolean; tenantHost?: string },
+    options?: { acknowledged?: boolean },
   ) => void;
   onLogin: () => void;
   onCancelAttempt: () => void;
@@ -452,11 +440,6 @@ function ConnectView({
   onClose: () => void;
 }) {
   const { t } = useTranslation("settings");
-  // Only the cloud path opens an authorization on the provider's own
-  // domain, so only it has to ask which one. The hook is inert without a
-  // requirement, so every other method passes its result straight through.
-  const hostNeeded = method.kind === "cloud-oauth" ? tenantHost : null;
-  const hostInput = useTenantHostInput(hostNeeded);
   const methodAttempt = attempt?.methodId === method.id ? attempt : null;
   const inFlight = methodAttempt !== null && methodAttempt.phase !== "error";
   const loginRequired = method.availability === "login-required";
@@ -503,30 +486,6 @@ function ConnectView({
           />
         ) : null}
 
-        {hostNeeded ? (
-          <Input
-            label={hostNeeded.label}
-            type="text"
-            value={hostInput.value}
-            onChange={(event) => hostInput.setValue(event.target.value)}
-            placeholder={hostNeeded.placeholder}
-            aria-invalid={hostInput.showsInvalid || undefined}
-            helperText={
-              hostInput.showsInvalid
-                ? t("integrationConnect.tenantHostInvalid", {
-                    label: hostNeeded.label,
-                    placeholder: hostNeeded.placeholder,
-                  })
-                : undefined
-            }
-            disabled={inFlight}
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            fullWidth
-          />
-        ) : null}
-
         {method.kind === "mcp-manual" ? (
           <ManualSteps
             instructions={method.instructions}
@@ -555,7 +514,7 @@ function ConnectView({
         {method.kind === "own-oauth" ? null : (
           <SplitButton
             className="min-h-11"
-            disabled={inFlight || manualIncomplete || !hostInput.valid}
+            disabled={inFlight || manualIncomplete}
             // The steps above are what blocks Connect, and picking another way
             // in is one of the ways out of them, so the chevron stays live
             // while the main half waits.
@@ -567,12 +526,7 @@ function ConnectView({
             })}
             menuItems={methodItems(others, onPickMethod)}
             onClick={() =>
-              loginRequired
-                ? onLogin()
-                : onConnect(method, {
-                    acknowledged,
-                    tenantHost: hostInput.normalized,
-                  })
+              loginRequired ? onLogin() : onConnect(method, { acknowledged })
             }
           >
             {loginRequired

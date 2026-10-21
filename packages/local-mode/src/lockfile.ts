@@ -4,7 +4,6 @@ import path from "node:path";
 import {
   LockfileAssistantSchema,
   parseLockfile,
-  resolveCloud,
   type Lockfile,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
@@ -59,8 +58,7 @@ export function isPairedLockfileEntry(
     : [];
   return assistants.some(
     (assistant) =>
-      assistant?.assistantId === assistantId &&
-      (resolveCloud(assistant) === "paired" || assistant.paired === true),
+      assistant?.assistantId === assistantId && assistant.paired === true,
   );
 }
 
@@ -291,8 +289,12 @@ export function upsertLockfileAssistant(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
+// `cloud` is host-owned classification, so a renderer payload never writes it
+// — and the schema's `catch` would otherwise materialize a spurious "local"
+// into every upsert, clobbering the recorded topology on merge.
 const RendererAssistantUpdateSchema = LockfileAssistantSchema.omit({
   resources: true,
+  cloud: true,
 });
 
 const PAIRED_LOCKFILE_WRITE_ERROR =
@@ -328,20 +330,17 @@ export function upsertRendererLockfileAssistant(
       (entry) => entry?.assistantId === assistant.assistantId,
     );
     const merged = { ...existing, ...assistant };
-    const existingIsPaired =
-      existing != null &&
-      (resolveCloud(existing) === "paired" || existing.paired === true);
-    const mergedIsPaired =
-      resolveCloud(merged) === "paired" || merged.paired === true;
+    const existingIsPaired = existing?.paired === true;
+    const mergedIsPaired = merged.paired === true;
 
     if (!existingIsPaired && mergedIsPaired) {
       return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
     }
     if (
       existingIsPaired &&
-      (resolveCloud(merged) !== "paired" ||
-        merged.runtimeUrl !== existing.runtimeUrl ||
-        merged.paired !== existing.paired)
+      (merged.paired !== true ||
+        merged.cloud !== existing.cloud ||
+        merged.runtimeUrl !== existing.runtimeUrl)
     ) {
       return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
     }
@@ -387,7 +386,7 @@ export function replaceCloudAssistants(
       (assistant) =>
         typeof assistant?.assistantId !== "string" ||
         assistant.assistantId === "" ||
-        !isCloudHome(resolveCloud(assistant)) ||
+        !isCloudHome(assistant.cloud) ||
         assistant.paired === true,
     )
   ) {

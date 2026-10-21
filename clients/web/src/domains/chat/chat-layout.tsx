@@ -85,7 +85,6 @@ import { useCommandPaletteOrchestrator } from "@/domains/chat/hooks/use-command-
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { ResearchResultsOverlay } from "@/domains/chat/onboarding-research/research-results-overlay";
 import { AssistantEmailIntro } from "@/components/feature-intro/assistant-email-intro";
-import { OnboardingCheckinOverlay } from "@/components/onboarding-checkin-overlay";
 import { OnboardingAvatarApplier } from "@/components/onboarding-avatar-applier";
 import { VoiceSessionPillHost } from "@/domains/chat/components/voice-session-pill-host";
 import { AssistantDesktopPreview } from "@/domains/chat/desktop/assistant-desktop-preview";
@@ -1120,7 +1119,6 @@ export function ChatLayout({
       {/* First step of the focused flow: the gcal "Let's chat tomorrow" page,
           shown over the streaming research output until connect/skip. Self-gates
           on `checkinPending`; top-level so it can compose the onboarding screen. */}
-      <OnboardingCheckinOverlay />
       {/* The one-time intro to Assistant Email, over the chat on the first
           open after the feature lands; gates itself on the device's memory,
           the flag, the inbox's state and the onboarding takeover. */}

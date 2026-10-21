@@ -18,10 +18,7 @@ import {
   assistantSelectionState,
   selectedAssistantState,
 } from "@app/assistant/assistant-selection";
-import {
-  entryApiBase,
-  resolveLockfileEntryConnect,
-} from "@app/assistant/connect-lockfile-entry";
+import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
@@ -50,10 +47,7 @@ export function DesktopChrome() {
         );
       if (entry && (await resolveLockfileEntryConnect(entry)) === "connect") {
         navigate(routes.assistant, {
-          state: assistantSelectionState(
-            entry.assistantId,
-            entryApiBase(entry),
-          ),
+          state: assistantSelectionState(entry.assistantId),
         });
         return;
       }

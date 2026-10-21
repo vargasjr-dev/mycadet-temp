@@ -30,7 +30,7 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";

@@ -2,11 +2,10 @@
  * Route handler tests for the OAuth CLI command endpoints exposed by
  * `assistant/src/runtime/routes/oauth-commands-routes.ts`.
  *
- * Scope: argument validation, provider / mode dispatch, and the shape of
- * returned payloads for the 9 endpoints (oauth_disconnect, oauth_mode_get,
- * oauth_mode_set, oauth_status, oauth_ping, oauth_token, oauth_request,
- * oauth_managed_connect_start, oauth_managed_connect_poll). These routes
- * back the thin IPC wrappers in `assistant/src/cli/commands/oauth/`.
+ * Scope: argument validation, provider dispatch, and the shape of returned
+ * payloads for the endpoints (oauth_disconnect, oauth_status, oauth_ping,
+ * oauth_token, oauth_request). These routes back the thin IPC wrappers in
+ * `assistant/src/cli/commands/oauth/`.
  *
  * Deeper coverage of the underlying store / token-refresh / platform logic
  * lives in `oauth-store.test.ts`, `credential-vault.test.ts`, and the other
@@ -22,7 +21,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 interface MockProviderRow {
   provider: string;
   authorizeUrl: string;
-  cloudServiceConfigKey: string | null;
   baseUrl: string | null;
   injectionTemplates: string | null;
   defaultScopes?: string;
@@ -38,7 +36,6 @@ interface MockProviderRow {
 const baseProvider: MockProviderRow = {
   provider: "google",
   authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
-  cloudServiceConfigKey: "google-oauth",
   baseUrl: "https://api.google.com",
   injectionTemplates: null,
   pingUrl: null,
@@ -164,13 +161,8 @@ mock.module("../security/token-manager.js", () => ({
     fn(mockTokenValue),
 }));
 
-import { loadRawConfig } from "../config/loader.js";
 import { PROVIDER_SEED_DATA } from "../oauth/seed-providers.js";
-import {
-  BadRequestError,
-  InternalError,
-  NotFoundError,
-} from "../runtime/routes/errors.js";
+import { BadRequestError, NotFoundError } from "../runtime/routes/errors.js";
 import { ROUTES } from "../runtime/routes/oauth-commands-routes.js";
 import type { RouteHandlerArgs } from "../runtime/routes/types.js";
 import { setConfig } from "./helpers/set-config.js";
@@ -237,14 +229,10 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("oauth-commands-routes route registry", () => {
-  test("registers all 9 IPC endpoints", () => {
+  test("registers all IPC endpoints", () => {
     const ops = ROUTES.map((r) => r.operationId).sort();
     expect(ops).toEqual([
       "oauth_disconnect",
-      "oauth_managed_connect_poll",
-      "oauth_managed_connect_start",
-      "oauth_mode_get",
-      "oauth_mode_set",
       "oauth_ping",
       "oauth_request",
       "oauth_status",
@@ -318,123 +306,15 @@ describe("POST oauth/disconnect", () => {
       ),
     ).rejects.toBeInstanceOf(NotFoundError);
   });
-
-  test("managed mode with multiple connections demands disambiguation", async () => {
-    seedServiceModes({ "google-oauth": "managed" });
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => [
-        { id: "conn-a", account_label: "a@example.com" },
-        { id: "conn-b", account_label: "b@example.com" },
-      ],
-      text: async () => "",
-    });
-    await expect(
-      getRoute("POST", "oauth/disconnect").handler(
-        makeArgs({ body: { provider: "google" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
 });
 
 // ---------------------------------------------------------------------------
 // GET oauth/mode
 // ---------------------------------------------------------------------------
 
-describe("GET oauth/mode", () => {
-  test("rejects missing provider", () => {
-    // handleModeGet is synchronous — use toThrow rather than rejects.
-    expect(() =>
-      getRoute("GET", "oauth/mode").handler(makeArgs({ queryParams: {} })),
-    ).toThrow(BadRequestError);
-  });
-
-  test("returns managed-supported provider mode", async () => {
-    seedServiceModes({ "google-oauth": "managed" });
-    const result = (await getRoute("GET", "oauth/mode").handler(
-      makeArgs({ queryParams: { provider: "google" } }),
-    )) as { mode: string; managedModeSupported: boolean };
-    expect(result.mode).toBe("managed");
-    expect(result.managedModeSupported).toBe(true);
-  });
-
-  test("BYO-only provider returns your-own with managedModeSupported=false", async () => {
-    mockProviders.byo = {
-      ...baseProvider,
-      provider: "byo",
-      cloudServiceConfigKey: null,
-    };
-    const result = (await getRoute("GET", "oauth/mode").handler(
-      makeArgs({ queryParams: { provider: "byo" } }),
-    )) as { mode: string; managedModeSupported: boolean };
-    expect(result.mode).toBe("your-own");
-    expect(result.managedModeSupported).toBe(false);
-  });
-});
-
 // ---------------------------------------------------------------------------
 // POST oauth/mode
 // ---------------------------------------------------------------------------
-
-describe("POST oauth/mode", () => {
-  test("rejects invalid mode value", async () => {
-    await expect(
-      getRoute("POST", "oauth/mode").handler(
-        makeArgs({ body: { provider: "google", mode: "bogus" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
-  test("rejects switching to managed on BYO-only provider", async () => {
-    mockProviders.byo = {
-      ...baseProvider,
-      provider: "byo",
-      cloudServiceConfigKey: null,
-    };
-    await expect(
-      getRoute("POST", "oauth/mode").handler(
-        makeArgs({ body: { provider: "byo", mode: "managed" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
-  test("switching to your-own on BYO-only provider is a no-op success", async () => {
-    mockProviders.byo = {
-      ...baseProvider,
-      provider: "byo",
-      cloudServiceConfigKey: null,
-    };
-    const rawBefore = JSON.stringify(loadRawConfig());
-    const result = (await getRoute("POST", "oauth/mode").handler(
-      makeArgs({ body: { provider: "byo", mode: "your-own" } }),
-    )) as { changed: boolean };
-    expect(result.changed).toBe(false);
-    // The no-op path must not write the config file.
-    expect(JSON.stringify(loadRawConfig())).toBe(rawBefore);
-  });
-
-  test("requires cloud connection when switching to managed", async () => {
-    platformAvailable = false;
-    await expect(
-      getRoute("POST", "oauth/mode").handler(
-        makeArgs({ body: { provider: "google", mode: "managed" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
-  test("persists mode change when current differs from new", async () => {
-    seedServiceModes({ "google-oauth": "your-own" });
-    const result = (await getRoute("POST", "oauth/mode").handler(
-      makeArgs({ body: { provider: "google", mode: "managed" } }),
-    )) as { changed: boolean };
-    expect(result.changed).toBe(true);
-    const raw = loadRawConfig() as {
-      services?: Record<string, { mode?: string }>;
-    };
-    expect(raw.services?.["google-oauth"]?.mode).toBe("managed");
-  });
-});
 
 // ---------------------------------------------------------------------------
 // GET oauth/status
@@ -470,10 +350,8 @@ describe("GET oauth/status", () => {
     const result = (await getRoute("GET", "oauth/status").handler(
       makeArgs({ queryParams: { provider: "google" } }),
     )) as {
-      mode: string;
       connections: Array<{ id: string; grantedScopes: string[] }>;
     };
-    expect(result.mode).toBe("byo");
     expect(result.connections).toHaveLength(1);
     expect(result.connections[0]!.id).toBe("conn-1");
     expect(result.connections[0]!.grantedScopes).toEqual(["email", "profile"]);
@@ -501,7 +379,6 @@ describe("GET oauth/status", () => {
       ...baseProvider,
       provider: "telegram",
       authorizeUrl: "urn:manual-token",
-      cloudServiceConfigKey: null,
       baseUrl: "https://api.telegram.org",
     };
     mockAllConnections.telegram = [
@@ -521,28 +398,6 @@ describe("GET oauth/status", () => {
 
     expect(mockSyncManualTokenCalls).toEqual(["telegram"]);
     expect(result.connections[0]!.account).toBe("@example_bot");
-  });
-
-  test("managed mode surfaces cloud connections", async () => {
-    seedServiceModes({ "google-oauth": "managed" });
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => [
-        {
-          id: "conn-platform",
-          account_label: "alice@example.com",
-          scopes_granted: ["email"],
-          status: "ACTIVE",
-        },
-      ],
-      text: async () => "",
-    });
-    const result = (await getRoute("GET", "oauth/status").handler(
-      makeArgs({ queryParams: { provider: "google" } }),
-    )) as { mode: string; connections: Array<{ id: string }> };
-    expect(result.mode).toBe("managed");
-    expect(result.connections[0]!.id).toBe("conn-platform");
   });
 });
 
@@ -626,15 +481,6 @@ describe("POST oauth/ping", () => {
 // ---------------------------------------------------------------------------
 
 describe("POST oauth/token", () => {
-  test("rejects managed-mode providers", async () => {
-    seedServiceModes({ "google-oauth": "managed" });
-    await expect(
-      getRoute("POST", "oauth/token").handler(
-        makeArgs({ body: { provider: "google" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
   test("returns token from withValidToken in BYO mode", async () => {
     mockTokenValue = "tok-real";
     const result = (await getRoute("POST", "oauth/token").handler(
@@ -877,7 +723,6 @@ describe("POST oauth/request", () => {
     mockProviders.slack_channel = {
       ...baseProvider,
       provider: "slack_channel",
-      cloudServiceConfigKey: null,
       baseUrl: "https://slack.com/api",
       injectionTemplates: JSON.stringify([
         {
@@ -906,7 +751,6 @@ describe("POST oauth/request", () => {
     mockProviders.slack_channel = {
       ...baseProvider,
       provider: "slack_channel",
-      cloudServiceConfigKey: null,
       baseUrl: "https://slack.com/api",
       injectionTemplates: JSON.stringify([
         {
@@ -943,7 +787,6 @@ describe("POST oauth/request", () => {
     return {
       ...baseProvider,
       provider,
-      cloudServiceConfigKey: null,
       baseUrl: seed.baseUrl ?? null,
       injectionTemplates: JSON.stringify(seed.injectionTemplates),
       responseOkField: seed.responseOkField ?? null,
@@ -1161,159 +1004,6 @@ describe("POST oauth/request", () => {
 // POST oauth/managed-connect/start
 // ---------------------------------------------------------------------------
 
-describe("POST oauth/managed-connect/start", () => {
-  test("returns connect_url on platform 200", async () => {
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ connect_url: "https://mycadet.ai/connect/abc" }),
-      text: async () => "",
-    });
-    const result = (await getRoute(
-      "POST",
-      "oauth/managed-connect/start",
-    ).handler(
-      makeArgs({ body: { provider: "google", scopes: ["email"] } }),
-    )) as { ok: boolean; connect_url: string };
-    expect(result.connect_url).toBe("https://mycadet.ai/connect/abc");
-  });
-
-  test("forwards tenant_host to the cloud only when one is supplied", async () => {
-    // Shopify's endpoints live on the merchant's host, which the cloud
-    // substitutes into its templates; other providers must not see the key.
-    const bodies: Array<Record<string, unknown>> = [];
-    mockFetchImpl = async (_path, init) => {
-      bodies.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({
-          connect_url: "https://mycadet.ai/connect/abc",
-        }),
-        text: async () => "",
-      };
-    };
-    await getRoute("POST", "oauth/managed-connect/start").handler(
-      makeArgs({
-        body: { provider: "shopify", tenant_host: " my-store.myshopify.com " },
-      }),
-    );
-    await getRoute("POST", "oauth/managed-connect/start").handler(
-      makeArgs({ body: { provider: "google", tenant_host: "   " } }),
-    );
-    expect(bodies[0]?.tenant_host).toBe("my-store.myshopify.com");
-    expect(bodies[1]).not.toHaveProperty("tenant_host");
-  });
-
-  test("raises InternalError when platform returns 401", async () => {
-    mockFetchImpl = async () => ({
-      ok: false,
-      status: 401,
-      json: async () => ({}),
-      text: async () => "unauthorized",
-    });
-    await expect(
-      getRoute("POST", "oauth/managed-connect/start").handler(
-        makeArgs({ body: { provider: "google" } }),
-      ),
-    ).rejects.toBeInstanceOf(InternalError);
-  });
-
-  test("raises InternalError when platform omits connect_url", async () => {
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({}),
-      text: async () => "",
-    });
-    await expect(
-      getRoute("POST", "oauth/managed-connect/start").handler(
-        makeArgs({ body: { provider: "google" } }),
-      ),
-    ).rejects.toBeInstanceOf(InternalError);
-  });
-});
-
 // ---------------------------------------------------------------------------
 // GET oauth/managed-connect/poll
 // ---------------------------------------------------------------------------
-
-describe("GET oauth/managed-connect/poll", () => {
-  test("rejects missing provider", async () => {
-    await expect(
-      getRoute("GET", "oauth/managed-connect/poll").handler(
-        makeArgs({ queryParams: {} }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
-  test("returns cloud connections list", async () => {
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => [
-        {
-          id: "conn-1",
-          account_label: "alice@example.com",
-          scopes_granted: ["email"],
-        },
-      ],
-      text: async () => "",
-    });
-    const result = (await getRoute("GET", "oauth/managed-connect/poll").handler(
-      makeArgs({ queryParams: { provider: "google" } }),
-    )) as {
-      ok: boolean;
-      connections: Array<{
-        id: string;
-        account_label: string | null;
-        scopes_granted: string[];
-        provider_params: Record<string, string>;
-      }>;
-    };
-    expect(result.ok).toBe(true);
-    expect(result.connections).toEqual([
-      {
-        id: "conn-1",
-        account_label: "alice@example.com",
-        scopes_granted: ["email"],
-        provider_params: {},
-      },
-    ]);
-  });
-
-  test("raises BadRequestError when platform unavailable", async () => {
-    platformAvailable = false;
-    await expect(
-      getRoute("GET", "oauth/managed-connect/poll").handler(
-        makeArgs({ queryParams: { provider: "google" } }),
-      ),
-    ).rejects.toBeInstanceOf(BadRequestError);
-  });
-
-  test("passes through the provider params a connection is scoped by", async () => {
-    // QuickBooks pins the company (realm) the user picked to the connection;
-    // a caller addressing /companyinfo/<realmId> needs it back.
-    mockFetchImpl = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => [
-        {
-          id: "conn-qb",
-          account_label: "Acme Widgets",
-          scopes_granted: ["com.intuit.quickbooks.accounting"],
-          provider_params: { realm_id: "9130357849012345" },
-        },
-      ],
-      text: async () => "",
-    });
-    const result = (await getRoute("GET", "oauth/managed-connect/poll").handler(
-      makeArgs({ queryParams: { provider: "quickbooks" } }),
-    )) as {
-      connections: Array<{ provider_params: Record<string, string> }>;
-    };
-    expect(result.connections[0]?.provider_params).toEqual({
-      realm_id: "9130357849012345",
-    });
-  });
-});

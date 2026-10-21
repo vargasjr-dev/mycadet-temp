@@ -16,7 +16,6 @@ import type {
   FileUploadSurfaceData,
   FormSurfaceData,
   ListSurfaceData,
-  OAuthConnectSurfaceData,
   SurfaceData,
   SurfaceDataByType,
   SurfaceType,
@@ -45,7 +44,6 @@ export {
   FormSurfaceDataSchema,
   type ListItem,
   ListSurfaceDataSchema,
-  OAuthConnectSurfaceDataSchema,
   safeParseSurfaceData,
   SURFACE_TYPES,
   SurfaceTypeSchema,
@@ -75,7 +73,6 @@ export type {
   FileUploadSurfaceData,
   FormSurfaceData,
   ListSurfaceData,
-  OAuthConnectSurfaceData,
   SurfaceData,
   SurfaceDataByType,
   SurfaceType,
@@ -88,7 +85,6 @@ export type {
 
 export const INTERACTIVE_SURFACE_TYPES: SurfaceType[] = [
   "choice",
-  "oauth_connect",
   "form",
   "confirmation",
   "dynamic_page",
@@ -143,7 +139,6 @@ export type UiSurfaceShow = {
 export type UiSurfaceShowCard = UiSurfaceShowFor<"card">;
 export type UiSurfaceShowChoice = UiSurfaceShowFor<"choice">;
 export type UiSurfaceShowCopyBlock = UiSurfaceShowFor<"copy_block">;
-export type UiSurfaceShowOAuthConnect = UiSurfaceShowFor<"oauth_connect">;
 export type UiSurfaceShowForm = UiSurfaceShowFor<"form">;
 export type UiSurfaceShowList = UiSurfaceShowFor<"list">;
 export type UiSurfaceShowConfirmation = UiSurfaceShowFor<"confirmation">;

@@ -16940,13 +16940,8 @@ paths:
                     type: array
                     items: {}
                     description: Local credentials with metadata
-                  cloudCredentials:
-                    type: array
-                    items: {}
-                    description: Cloud credentials
                 required:
                   - credentials
-                  - cloudCredentials
                 additionalProperties: false
   /v1/credentials/prompt:
     post:
@@ -30055,10 +30050,6 @@ paths:
                             anyOf:
                               - type: string
                               - type: "null"
-                          supports_cloud_mode:
-                            type: boolean
-                          managed_service_is_paid:
-                            type: boolean
                           category:
                             anyOf:
                               - type: string
@@ -30104,8 +30095,6 @@ paths:
                           - client_id_placeholder
                           - requires_client_secret
                           - logo_url
-                          - supports_cloud_mode
-                          - managed_service_is_paid
                           - category
                           - tenant_host
                           - acts_as
@@ -30498,60 +30487,7 @@ paths:
     post:
       operationId: oauth_disconnect_post
       summary: Disconnect OAuth provider
-      description: Disconnect an OAuth provider and remove associated credentials (BYO or managed).
-      tags:
-        - oauth
-      responses:
-        "200":
-          description: Successful response
-  /v1/oauth/managed-connect/poll:
-    get:
-      operationId: oauth_managedconnect_poll_get
-      summary: Poll cloud OAuth connections
-      description: Fetch active cloud connections for a provider (used to detect new connections after managed connect).
-      tags:
-        - oauth
-      parameters:
-        - name: provider
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Provider key
-      responses:
-        "200":
-          description: Successful response
-  /v1/oauth/managed-connect/start:
-    post:
-      operationId: oauth_managedconnect_start_post
-      summary: Start cloud OAuth connect
-      description: Start a cloud (platform) OAuth connect flow and return the connect URL.
-      tags:
-        - oauth
-      responses:
-        "200":
-          description: Successful response
-  /v1/oauth/mode:
-    get:
-      operationId: oauth_mode_get
-      summary: Get OAuth mode
-      description: Get the current OAuth mode (managed or your-own) for a provider.
-      tags:
-        - oauth
-      parameters:
-        - name: provider
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Provider key
-      responses:
-        "200":
-          description: Successful response
-    post:
-      operationId: oauth_mode_post
-      summary: Set OAuth mode
-      description: Set the OAuth mode (managed or your-own) for a provider.
+      description: Disconnect an OAuth provider and remove associated credentials.
       tags:
         - oauth
       responses:
@@ -30574,13 +30510,6 @@ paths:
       description: List all registered OAuth providers with optional filtering.
       tags:
         - oauth
-      parameters:
-        - name: supports_cloud_mode
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter by managed mode support (true/false)
       responses:
         "200":
           description: Successful response
@@ -30618,10 +30547,6 @@ paths:
                           anyOf:
                             - type: string
                             - type: "null"
-                        supports_cloud_mode:
-                          type: boolean
-                        managed_service_is_paid:
-                          type: boolean
                         category:
                           anyOf:
                             - type: string
@@ -30667,8 +30592,6 @@ paths:
                         - client_id_placeholder
                         - requires_client_secret
                         - logo_url
-                        - supports_cloud_mode
-                        - managed_service_is_paid
                         - category
                         - tenant_host
                         - acts_as
@@ -30852,7 +30775,7 @@ paths:
                 type: string
                 format: binary
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -30896,7 +30819,7 @@ paths:
             application/octet-stream:
               schema: *a1
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -30940,7 +30863,7 @@ paths:
             application/octet-stream:
               schema: *a1
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -30984,7 +30907,7 @@ paths:
             application/octet-stream:
               schema: *a1
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -31028,7 +30951,7 @@ paths:
             application/octet-stream:
               schema: *a1
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -31072,7 +30995,7 @@ paths:
             application/octet-stream:
               schema: *a1
         "400":
-          description: Malformed provider segment or proxied path, or request headers unsupported by a cloud connection
+          description: Malformed provider segment or proxied path
         "402":
           description: The cloud account is out of balance
         "403":
@@ -31128,7 +31051,7 @@ paths:
     get:
       operationId: oauth_status_get
       summary: Get OAuth status
-      description: Show OAuth connection status for a specified provider (BYO or managed).
+      description: Show OAuth connection status for a specified provider.
       tags:
         - oauth
       parameters:
@@ -31145,62 +31068,12 @@ paths:
     post:
       operationId: oauth_token_post
       summary: Get OAuth token
-      description: Retrieve a valid OAuth access token for a BYO-mode provider.
+      description: Retrieve a valid OAuth access token for a provider.
       tags:
         - oauth
       responses:
         "200":
           description: Successful response
-  /v1/onboarding/checkin:
-    post:
-      operationId: onboarding_checkin_post
-      summary: Schedule the onboarding Day 2 check-in
-      description:
-        "Find the first open 15-minute slot between 12pm and 5pm tomorrow (widening to 8am–8pm if booked) on the
-        user's Google Calendar and create the Day 2 Check-in event. Best-effort: returns scheduled=false when no
-        calendar is connected or the calendar scope wasn't granted."
-      tags:
-        - onboarding
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userName:
-                  type: string
-                assistantName:
-                  type: string
-                timezone:
-                  type: string
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  scheduled:
-                    type: boolean
-                  reason:
-                    type: string
-                  eventId:
-                    type: string
-                  htmlLink:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  start:
-                    type: string
-                  end:
-                    type: string
-                  timeZone:
-                    type: string
-                required:
-                  - scheduled
-                additionalProperties: false
   /v1/pages/{appId}:
     get:
       operationId: pages_by_appId_get

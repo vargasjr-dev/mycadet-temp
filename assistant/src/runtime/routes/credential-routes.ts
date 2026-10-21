@@ -17,10 +17,6 @@
 import { z } from "zod";
 
 import { AcpCredentialFormatError } from "../../acp/acp-credentials.js";
-import {
-  type CloudCredentialDescriptor,
-  fetchCloudCatalog,
-} from "../../credential-execution/cloud-catalog.js";
 import { invalidateEmailReadinessForByoCredential } from "../../email/byo-email-credential.js";
 import {
   disconnectOAuthProvider,
@@ -129,20 +125,6 @@ function buildCredentialOutput(
   }
 
   return output;
-}
-
-function buildCloudCredentialOutput(
-  descriptor: CloudCredentialDescriptor,
-): Record<string, unknown> {
-  return {
-    source: "platform",
-    handle: descriptor.handle,
-    provider: descriptor.provider,
-    connectionId: descriptor.connectionId,
-    accountInfo: descriptor.accountInfo,
-    grantedScopes: descriptor.grantedScopes,
-    status: descriptor.status,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -287,24 +269,7 @@ async function handleCredentialsList({ body }: RouteHandlerArgs) {
     }),
   );
 
-  // Fetch cloud credentials (best-effort).
-  const managedResult = await fetchCloudCatalog();
-  let cloudCredentials: Record<string, unknown>[] = [];
-  if (managedResult.ok && managedResult.descriptors.length > 0) {
-    let descriptors = managedResult.descriptors;
-    if (search) {
-      const query = search.toLowerCase();
-      descriptors = descriptors.filter(
-        (d) =>
-          d.provider.toLowerCase().includes(query) ||
-          d.handle.toLowerCase().includes(query) ||
-          (d.accountInfo ?? "").toLowerCase().includes(query),
-      );
-    }
-    cloudCredentials = descriptors.map(buildCloudCredentialOutput);
-  }
-
-  return { credentials, cloudCredentials };
+  return { credentials };
 }
 
 async function handleCredentialsInspect({ body }: RouteHandlerArgs) {
@@ -582,7 +547,6 @@ export const ROUTES: RouteDefinition[] = [
       credentials: z
         .array(z.unknown())
         .describe("Local credentials with metadata"),
-      cloudCredentials: z.array(z.unknown()).describe("Cloud credentials"),
     }),
     handler: handleCredentialsList,
   },

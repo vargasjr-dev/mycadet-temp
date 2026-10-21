@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  CloudSchema,
   KNOWN_CLOUDS,
   pairedHostLabel,
   parseLockfile,
-  resolveCloud,
   SENSITIVE_KEYS,
   type Lockfile,
 } from "./lockfile-contract";
@@ -17,7 +17,7 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           name: "Alice",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://127.0.0.1:7777",
           hatchedAt: "2026-01-01T00:00:00.000Z",
           cloudAssistantId: "platform-assistant-1",
@@ -36,7 +36,7 @@ describe("parseLockfile", () => {
     const raw = {
       activeAssistant: null,
       assistants: [
-        { assistantId: "asst_1", cloud: "cadet", runtimeUrl: "https://x" },
+        { assistantId: "asst_1", cloud: "cloud", runtimeUrl: "https://x" },
       ],
     };
 
@@ -44,7 +44,7 @@ describe("parseLockfile", () => {
     expect(parsed.assistants).toHaveLength(1);
     expect(parsed.assistants[0]).toEqual({
       assistantId: "asst_1",
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://x",
     });
   });
@@ -140,10 +140,10 @@ describe("parseLockfile", () => {
     expect(parseLockfile(123)).toEqual(empty);
   });
 
-  test("drops a mistyped optional field but keeps the entry", () => {
-    // assistantId is the only required field. A mistyped optional field is
-    // dropped from the result, but the entry survives on the strength of its
-    // identity. (A mistyped `cloud` is dropped, then re-normalized to `local`.)
+  test("absorbs a mistyped cloud as local; drops an entry whose other fields are mistyped", () => {
+    // Entries parse whole: a mistyped modeled field invalidates the entry
+    // (dropped, never partially salvaged). `cloud` is the exception — its
+    // catch absorbs any malformed value as "local".
     const raw = {
       assistants: [
         { assistantId: "asst_1", cloud: 7, runtimeUrl: "http://a" }, // cloud not a string
@@ -153,7 +153,6 @@ describe("parseLockfile", () => {
     };
     expect(parseLockfile(raw).assistants).toEqual([
       { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
-      { assistantId: "asst_2", cloud: "local" },
     ]);
   });
 
@@ -168,9 +167,10 @@ describe("parseLockfile", () => {
     expect(parseLockfile(raw).assistants).toEqual([]);
   });
 
-  test("keeps a well-typed ingressUrl and drops it when mistyped", () => {
+  test("keeps a well-typed ingressUrl; a mistyped one drops the entry", () => {
     // The tunnel-recorded public URL rides the entry so remote-web pairing
-    // surfaces can prefill it; a mistyped value is dropped, entry preserved.
+    // surfaces can prefill it; entries parse whole, so a mistyped value
+    // invalidates the entry.
     const raw = {
       assistants: [
         {
@@ -188,11 +188,10 @@ describe("parseLockfile", () => {
         cloud: "local",
         ingressUrl: "https://tunnel.example.ts.net",
       },
-      { assistantId: "asst_2", cloud: "local" },
     ]);
   });
 
-  test("drops a resources object missing its numeric ports", () => {
+  test("drops an entry whose resources are mistyped", () => {
     const raw = {
       assistants: [
         {
@@ -204,13 +203,7 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    const [assistant] = parseLockfile(raw).assistants;
-    expect(assistant).toEqual({
-      assistantId: "asst_1",
-      cloud: "local",
-      runtimeUrl: "http://a",
-    });
-    expect(assistant?.resources).toBeUndefined();
+    expect(parseLockfile(raw).assistants).toEqual([]);
   });
 
   test("keeps local runtime resource fields when well-typed", () => {
@@ -267,53 +260,37 @@ describe("parseLockfile", () => {
     });
   });
 
-  test("resolves cloud from legacy remote markers when the field is absent", () => {
-    // Pre-`cloud` remote entries encode topology in `project` (gcp) / `sshUser`
-    // (custom). The parser resolves these so a cloudless remote entry is never
-    // mistaken for a local one; a cloudless entry with no markers normalizes to
-    // `local`. The raw markers are not carried through.
+  test("ignores legacy remote markers; a cloudless entry is local", () => {
+    // Pre-union entries encoded topology in `project`/`sshUser` markers and a
+    // retired `paired` cloud spelling; the unified taxonomy has no legacy
+    // reading — a cloudless or unknown cloud parses as "local".
     const raw = {
       assistants: [
         { assistantId: "gcp_1", project: "my-proj", runtimeUrl: "https://a" },
         { assistantId: "ssh_1", sshUser: "deploy", runtimeUrl: "https://b" },
-        { assistantId: "local_1", runtimeUrl: "http://localhost:7830" },
+        { assistantId: "legacy_1", cloud: "paired", paired: true },
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "gcp_1", cloud: "gcp", runtimeUrl: "https://a" },
-      { assistantId: "ssh_1", cloud: "custom", runtimeUrl: "https://b" },
-      {
-        assistantId: "local_1",
-        cloud: "local",
-        runtimeUrl: "http://localhost:7830",
-      },
+      { assistantId: "gcp_1", cloud: "local", runtimeUrl: "https://a" },
+      { assistantId: "ssh_1", cloud: "local", runtimeUrl: "https://b" },
+      { assistantId: "legacy_1", cloud: "local", paired: true },
     ]);
   });
 
-  test("prefers an explicit cloud over legacy remote markers", () => {
+  test("parses the known clouds; a future writer's value degrades to local", () => {
     const raw = {
-      assistants: [{ assistantId: "a", cloud: "cadet", project: "stale-proj" }],
+      assistants: [
+        { assistantId: "a", cloud: "cloud", project: "stale-proj" },
+        { assistantId: "c", cloud: "quantum" }, // unknown to this build
+      ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "a", cloud: "cadet" },
+      { assistantId: "a", cloud: "cloud" },
+      { assistantId: "c", cloud: "local" },
     ]);
-  });
-});
-
-describe("resolveCloud", () => {
-  test("prefers an explicit cloud", () => {
-    expect(resolveCloud({ cloud: "cadet", project: "p", sshUser: "u" })).toBe(
-      "cadet",
-    );
-  });
-
-  test("falls back to legacy markers, then local", () => {
-    expect(resolveCloud({ project: "p" })).toBe("gcp");
-    expect(resolveCloud({ sshUser: "u" })).toBe("custom");
-    expect(resolveCloud({})).toBe("local");
-    expect(resolveCloud({ cloud: "" })).toBe("local");
   });
 });
 
@@ -341,12 +318,12 @@ describe("taxonomy", () => {
       "docker",
       "apple-container",
       "cloud",
-      "cadet",
-      "gcp",
-      "aws",
       "custom",
-      "paired",
     ]);
+  });
+
+  test("CloudSchema is the enum the lockfile and injected config share", () => {
+    expect([...CloudSchema.options]).toEqual([...KNOWN_CLOUDS]);
   });
 
   test("SENSITIVE_KEYS lists the redacted secrets", () => {

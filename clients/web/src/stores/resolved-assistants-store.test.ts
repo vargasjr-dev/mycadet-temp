@@ -21,12 +21,12 @@ import {
 import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
-// A platform entry is identified by `cloud === "cadet"` and carries a
+// A platform entry is identified by `cloud === "cloud"` and carries a
 // `cloudOrganizationId`; a local entry has a non-cadet cloud + gateway port and no org.
 const cloudAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
-  cloud: "cadet",
+  cloud: "cloud",
   cloudOrganizationId: "org-1",
 };
 
@@ -55,7 +55,8 @@ const otherLocalAssistant: LockfileAssistant = {
 const pairedAssistant: LockfileAssistant = {
   assistantId: "paired-desk",
   name: "Desk",
-  cloud: "paired",
+  cloud: "local",
+  paired: true,
   runtimeUrl: "https://desk.example.com",
 };
 
@@ -79,7 +80,7 @@ describe("setFromLockfile", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("cadet");
+    expect(entry.cloud).toBe("cloud");
     expect(entry.isCloudHosted).toBe(true);
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(true);
@@ -282,7 +283,8 @@ describe("upsertFromApi", () => {
       assistants: [
         {
           assistantId: "paired-desk",
-          cloud: "paired",
+          cloud: "local",
+          paired: true,
           runtimeUrl: "https://desk.example.com",
         },
       ],
@@ -301,7 +303,7 @@ describe("upsertFromApi", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.isPaired).toBe(true);
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
-    expect(entry.cloud).toBe("paired");
+    expect(entry.cloud).toBe("local");
     // The API's is_local claim must not reclassify a paired entry.
     expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(false);
@@ -349,7 +351,7 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("cadet");
+    expect(entry.cloud).toBe("cloud");
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(false);
 

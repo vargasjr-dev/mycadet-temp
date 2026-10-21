@@ -443,7 +443,9 @@ async function upgradeDocker(
     // Clean up old pre-upgrade backups, keep last 3
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    throw new Error("Pre-upgrade root backup failed; upgrade aborted before replacing services.");
+    console.warn(
+      "⚠️  Pre-upgrade backup failed — continuing WITHOUT a backup; this upgrade cannot be rolled back from one.",
+    );
   }
 
   await broadcastUpgradeEvent(
@@ -866,7 +868,9 @@ async function upgradeLocal(
     console.log(`   Backup saved: ${backupPath}\n`);
     pruneOldBackups(entry.assistantId, 3);
   } else {
-    throw new Error("Pre-upgrade root backup failed; upgrade aborted before replacing services.");
+    console.warn(
+      "⚠️  Pre-upgrade backup failed — continuing WITHOUT a backup; this upgrade cannot be rolled back from one.",
+    );
   }
 
   let bootstrapSecret = entry.guardianBootstrapSecret;
@@ -956,10 +960,12 @@ async function upgradeLocal(
     await stopLocalProcesses(entry.resources);
     entry.resources = originalResources;
     saveAssistantEntry(entry);
-    const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
-    if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
-    await Promise.all([startCes(false, entry.resources), startLocalDaemon(false, entry.resources, { signingKey }), startGateway(false, entry.resources, { signingKey, bootstrapSecret })]);
-    if (!await waitForReady(adminUrl)) throw new Error(`Previous local runtime did not recover. Backup: ${backupPath}`, { cause: error });
+    if (backupPath) {
+      const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
+      if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
+      await Promise.all([startCes(false, entry.resources), startLocalDaemon(false, entry.resources, { signingKey }), startGateway(false, entry.resources, { signingKey, bootstrapSecret })]);
+      if (!await waitForReady(adminUrl)) throw new Error(`Previous local runtime did not recover. Backup: ${backupPath}`, { cause: error });
+    }
     throw error;
   }
 
@@ -1310,7 +1316,10 @@ async function upgradePrepare(
     description: `Pre-upgrade snapshot before ${currentVersion} → ${targetVersion}`,
   });
 
-  if (!backupPath) throw new Error("Pre-upgrade root backup failed; update preparation aborted.");
+  if (!backupPath)
+    console.warn(
+      "⚠️  Pre-upgrade backup failed — continuing WITHOUT a backup; this update cannot be rolled back from one.",
+    );
 
   // 5. Prune old backups (keep 3)
   if (backupPath) {

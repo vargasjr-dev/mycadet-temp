@@ -218,7 +218,8 @@ mock.module("@/domains/onboarding/prechat", () => ({
   setPendingPreChatContext: () => {},
 }));
 
-const research_prompt_actual = await import("@/domains/onboarding/research-prompt");
+const research_prompt_actual =
+  await import("@/domains/onboarding/research-prompt");
 mock.module("@/domains/onboarding/research-prompt", () => ({
   ...research_prompt_actual,
   buildResearchPrompt: () => "research prompt",
@@ -226,25 +227,29 @@ mock.module("@/domains/onboarding/research-prompt", () => ({
 
 let adoptExistingAssistant = false;
 
-const adopt_existing_assistant_actual = await import("@/domains/onboarding/adopt-existing-assistant");
+const adopt_existing_assistant_actual =
+  await import("@/domains/onboarding/adopt-existing-assistant");
 mock.module("@/domains/onboarding/adopt-existing-assistant", () => ({
   ...adopt_existing_assistant_actual,
   shouldAdoptExistingAssistant: () => adoptExistingAssistant,
 }));
 
-const use_background_hatch_actual = await import("@/domains/onboarding/use-background-hatch");
+const use_background_hatch_actual =
+  await import("@/domains/onboarding/use-background-hatch");
 mock.module("@/domains/onboarding/use-background-hatch", () => ({
   ...use_background_hatch_actual,
   useBackgroundHatch: useBackgroundHatchMock,
 }));
 
-const research_runner_actual = await import("@/domains/onboarding/research-runner");
+const research_runner_actual =
+  await import("@/domains/onboarding/research-runner");
 mock.module("@/domains/onboarding/research-runner", () => ({
   ...research_runner_actual,
   useResearchRunner: () => researchRunner,
 }));
 
-const send_research_correction_actual = await import("@/domains/onboarding/send-research-correction");
+const send_research_correction_actual =
+  await import("@/domains/onboarding/send-research-correction");
 mock.module("@/domains/onboarding/send-research-correction", () => ({
   ...send_research_correction_actual,
   sendResearchCorrection: async () => {},
@@ -252,13 +257,15 @@ mock.module("@/domains/onboarding/send-research-correction", () => ({
 
 const applyPersonalityMock = mock(async (_options: unknown) => {});
 
-const apply_personality_actual = await import("@/domains/onboarding/apply-personality");
+const apply_personality_actual =
+  await import("@/domains/onboarding/apply-personality");
 mock.module("@/domains/onboarding/apply-personality", () => ({
   ...apply_personality_actual,
   applyPersonality: applyPersonalityMock,
 }));
 
-const lets_chat_kickoff_actual = await import("@/domains/onboarding/lets-chat-kickoff");
+const lets_chat_kickoff_actual =
+  await import("@/domains/onboarding/lets-chat-kickoff");
 mock.module("@/domains/onboarding/lets-chat-kickoff", () => ({
   ...lets_chat_kickoff_actual,
   buildLetsChatKickoffMessage: () => "kickoff",
@@ -272,32 +279,8 @@ mock.module("@/domains/onboarding/funnel-events", () => ({
   ),
 }));
 
-const checkin_scheduler_actual = await import("@/domains/onboarding/checkin-scheduler");
-mock.module("@/domains/onboarding/checkin-scheduler", () => ({
-  ...checkin_scheduler_actual,
-  scheduleCheckin: async () => ({ scheduled: false }),
-}));
-
-const use_google_calendar_connect_actual = await import("@/domains/onboarding/hooks/use-google-calendar-connect");
-mock.module("@/domains/onboarding/hooks/use-google-calendar-connect", () => ({
-  ...use_google_calendar_connect_actual,
-  GOOGLE_CALENDAR_EVENTS_SCOPE:
-    "https://www.googleapis.com/auth/calendar.events",
-}));
-
-const format_checkin_time_actual = await import("@/domains/onboarding/format-checkin-time");
-mock.module("@/domains/onboarding/format-checkin-time", () => ({
-  ...format_checkin_time_actual,
-  formatCheckinTime: () => "2:30 PM",
-}));
-
-const browser_timezone_actual = await import("@/utils/browser-timezone");
-mock.module("@/utils/browser-timezone", () => ({
-  ...browser_timezone_actual,
-  getBrowserTimezone: () => "UTC",
-}));
-
-const onboarding_focus_store_actual = await import("@/stores/onboarding-focus-store");
+const onboarding_focus_store_actual =
+  await import("@/stores/onboarding-focus-store");
 mock.module("@/stores/onboarding-focus-store", () => ({
   ...onboarding_focus_store_actual,
   useOnboardingFocusStore: {
@@ -311,7 +294,8 @@ mock.module("@/stores/onboarding-focus-store", () => ({
   },
 }));
 
-const established_assistant_actual = await import("@/domains/onboarding/established-assistant");
+const established_assistant_actual =
+  await import("@/domains/onboarding/established-assistant");
 mock.module("@/domains/onboarding/established-assistant", () => ({
   ...established_assistant_actual,
   checkEstablishedAssistant: checkEstablishedAssistantMock,
@@ -397,20 +381,7 @@ mock.module("@/domains/onboarding/screens/create-personality-step", () => ({
   ),
 }));
 
-// Only the skip escape matters here — when it is revealed is the step's own
-// concern (see lets-chat-tomorrow-step.test.tsx).
-mock.module("@/domains/onboarding/screens/lets-chat-tomorrow-step", () => ({
-  LetsChatTomorrowStep: (props: { onSkip: () => void }) => (
-    <div data-testid="letschat-step">
-      <button type="button" data-testid="letschat-skip" onClick={props.onSkip}>
-        Skip for now
-      </button>
-    </div>
-  ),
-}));
-
 mock.module("@/domains/onboarding/screens/research-result-steps", () => ({
-  MeetingCreatedStep: () => <div data-testid="meeting-step" />,
   // Surfaces the `ready` gate so a test can pin when the carousel is allowed to
   // advance out of the loading state.
   LookingYouUpStep: (props: { ready: boolean }) => (
@@ -490,8 +461,6 @@ function postFormSnapshot(
       hobbies: ["chess"],
     },
     faceValues: null,
-    checkinTime: null,
-    checkinBooked: false,
     research: null,
     ...overrides,
   };
@@ -899,7 +868,7 @@ describe("ResearchOnboardingRoute paid return", () => {
   // from assistive tech nor swallow the escapes the steps deliberately expose
   // while the hatch is dead.
   test("leaves the funnel's own escapes usable behind the failure banner", async () => {
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "letschat" }));
+    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
     backgroundHatch.error = "Failed to start your assistant. Please try again.";
     backgroundHatch.ready = false;
     backgroundHatch.assistantId = null;
@@ -910,10 +879,8 @@ describe("ResearchOnboardingRoute paid return", () => {
     // The funnel behind is still exposed, not inerted by a modal layer.
     expect(container.getAttribute("aria-hidden")).toBeNull();
 
-    // The calendar step reveals "Skip for now" precisely because the hatch
-    // failed — and the banner leaves it clickable, so the skip lands.
-    fireEvent.click(await screen.findByTestId("letschat-skip"));
-    expect(screen.getByTestId("looking-step")).toBeTruthy();
+    // The funnel behind is the resumed journey's own step (not a modal
+    // shell), so the user keeps every escape the step itself offers.
   });
 
   // The banner blocks input, not the step machine — so the auto-advancing

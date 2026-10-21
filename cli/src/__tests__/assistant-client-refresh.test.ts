@@ -40,7 +40,7 @@ function seedPaired(refreshToken: string, opts?: { due?: boolean }): void {
     assistantId: "px",
     name: "Paired",
     runtimeUrl: RUNTIME,
-    cloud: "paired",
+    cloud: "local",
     paired: true,
   });
   saveGuardianToken("px", {

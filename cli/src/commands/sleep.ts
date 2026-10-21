@@ -206,9 +206,11 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
   for (const entry of entries) {
     if (seen.has(entry.assistantId)) continue;
     seen.add(entry.assistantId);
-    if (entry.cloud === "apple-container" || entry.cloud === "paired") {
+    if (entry.cloud === "apple-container" || entry.paired === true) {
+      const reason =
+        entry.cloud === "apple-container" ? "apple-container" : "paired";
       console.log(
-        `Skipping '${entry.assistantId}' (${entry.cloud}) — its lifecycle is managed elsewhere.`,
+        `Skipping '${entry.assistantId}' (${reason}) — its lifecycle is managed elsewhere.`,
       );
       continue;
     }
@@ -265,7 +267,7 @@ export async function sleepAssistant(
     );
   }
 
-  if (entry.cloud === "paired") {
+  if (entry.paired === true) {
     throw new Error(
       `'${entry.assistantId}' is a remote assistant paired from another machine — its lifecycle is managed on its host machine, not here. Use \`cadet client ${entry.assistantId}\` to chat with it.`,
     );

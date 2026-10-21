@@ -455,7 +455,7 @@ export interface CadetBridge {
       hashedDeviceId: string,
     ): Promise<LocalRevokeDeviceResult>;
     /**
-     * Forget a paired assistant (`cloud: "paired"`): remove its lockfile
+     * Forget a paired assistant (the `paired` flag): remove its lockfile
      * entry and stored guardian token on this machine. Client-side only:
      * the remote assistant is never touched.
      */
@@ -469,10 +469,10 @@ export interface CadetBridge {
     pairingStart(address: string): Promise<LocalPairingStartResult>;
     /**
      * One exchange attempt for a live pairing session. An approved code
-     * persists the guardian token and creates a `cloud: "paired"` lockfile
-     * entry in the same call, the write counterpart of `unpair`. `name` picks
-     * the local id (its slug); omitted, the id derives from the assistant's
-     * address.
+     * persists the guardian token and creates a paired lockfile entry
+     * (`paired: true`) in the same call, the write counterpart of `unpair`.
+     * `name` picks the local id (its slug); omitted, the id derives from
+     * the assistant's address.
      */
     pairingPoll(handle: string, name?: string): Promise<LocalPairingPollResult>;
     /** Forget a pending pairing session. */

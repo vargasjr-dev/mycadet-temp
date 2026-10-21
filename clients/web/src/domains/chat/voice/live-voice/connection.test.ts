@@ -24,7 +24,7 @@ import {
   buildSelfHostedGatewayWsUrl,
   buildTunnelWsUrl,
   getTunnelWsScheme,
-  isPairedGatewayIngress,
+  isPairedGatewayAssistant,
   TunnelWsTokenError,
   mintTunnelWsToken,
   PairedVoiceUnavailableError,
@@ -185,13 +185,17 @@ describe("getTunnelWsScheme", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildSelfHostedGatewayWsUrl", () => {
-  const args = { routePath: "/v1/live-voice", token: "actor-tok" };
+  const args = {
+    assistantId: "asst-1",
+    routePath: "/v1/live-voice",
+    token: "actor-tok",
+  };
 
-  test("local __gateway proxy path: dials the entry's recorded loopback port", () => {
-    // The HTTP-only __gateway proxy can't carry a WS upgrade, so the socket
-    // bypasses it and hits 127.0.0.1:<port> — the port resolved from the
-    // entry the id-keyed path names. Origin host, prefix, query, and hash are
-    // all dropped; the bypass keys off the path, not the scheme.
+  test("a local entry dials its recorded loopback port", () => {
+    // The same-origin HTTP proxies can't carry a WS upgrade, so the socket
+    // bypasses them and hits 127.0.0.1:<port> — the port resolved from the
+    // entry's lockfile record. The bare-origin ingress (the local prime's
+    // shape) carries nothing the dial needs; the entry is the source of truth.
     setLockfile([
       {
         assistantId: "asst-1",
@@ -202,7 +206,7 @@ describe("buildSelfHostedGatewayWsUrl", () => {
     const url = new URL(
       buildSelfHostedGatewayWsUrl({
         ...args,
-        ingressUrl: "https://app.example/assistant/__gateway/asst-1?a=1#frag",
+        ingressUrl: "https://app.example?a=1#frag",
         params: { conversationId: "conv-xyz" },
       }),
     );
@@ -215,33 +219,28 @@ describe("buildSelfHostedGatewayWsUrl", () => {
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
   });
 
-  test("local __gateway proxy path with no recorded port throws", () => {
+  test("a local entry with no recorded port throws", () => {
     setLockfile([
       { assistantId: "asst-1", cloud: "local" } as LockfileAssistant,
     ]);
     expect(() =>
-      buildSelfHostedGatewayWsUrl({
-        ...args,
-        ingressUrl: "https://app.example/assistant/__gateway/asst-1",
-      }),
+      buildSelfHostedGatewayWsUrl({ ...args, ingressUrl: "https://app.example" }),
     ).toThrow("Local gateway has no recorded port yet.");
   });
 
-  test("a unified proxy path naming a paired entry throws PairedVoiceUnavailableError", () => {
-    // The id-keyed path no longer encodes the local/paired split; pairedness
-    // is read from the entry, and paired gateways have no loopback to dial.
+  test("a paired entry throws PairedVoiceUnavailableError", () => {
+    // Pairedness is read from the entry, and paired transports have no
+    // loopback to dial.
     setLockfile([
       {
         assistantId: "asst-1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
     expect(() =>
-      buildSelfHostedGatewayWsUrl({
-        ...args,
-        ingressUrl: "https://app.example/assistant/__gateway/asst-1",
-      }),
+      buildSelfHostedGatewayWsUrl({ ...args, ingressUrl: "https://app.example" }),
     ).toThrow(PairedVoiceUnavailableError);
   });
 
@@ -299,12 +298,13 @@ describe("resolveGatewayWsUrl", () => {
     setLockfile([
       {
         assistantId: "asst-1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
     setSelfHostedConnection({
-      url: "http://localhost:3000/assistant/__gateway/asst-1",
+      url: "http://localhost:3000",
       token: "actor-jwt",
     });
 
@@ -400,19 +400,20 @@ describe("resolveLiveVoiceWsUrl", () => {
     setLockfile([
       {
         assistantId: "asst-1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
     setSelfHostedConnection({
-      url: "http://localhost:3000/assistant/__gateway/asst-1",
+      url: "http://localhost:3000",
       token: "actor-tok",
     });
 
     // THEN the resolve fails typed with the user-facing reason live-voice
     // surfaces via Error.message, and no tunnel token is minted
     await expect(
-      resolveLiveVoiceWsUrl({ assistantId: "assistant-1" }),
+      resolveLiveVoiceWsUrl({ assistantId: "asst-1" }),
     ).rejects.toThrow("Voice isn't available for paired assistants yet.");
     expect(captured).toBeNull();
   });
@@ -421,17 +422,18 @@ describe("resolveLiveVoiceWsUrl", () => {
     setLockfile([
       {
         assistantId: "asst-1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
     setSelfHostedConnection({
-      url: "app://cadet/assistant/__gateway/asst-1",
+      url: "app://cadet",
       token: null,
     });
 
     await expect(
-      resolveLiveVoiceWsUrl({ assistantId: "assistant-1" }),
+      resolveLiveVoiceWsUrl({ assistantId: "asst-1" }),
     ).rejects.toBeInstanceOf(PairedVoiceUnavailableError);
     expect(captured).toBeNull();
   });
@@ -441,26 +443,21 @@ describe("resolveLiveVoiceWsUrl", () => {
 // isPairedGatewayIngress
 // ---------------------------------------------------------------------------
 
-describe("isPairedGatewayIngress", () => {
-  test("matches the unified proxy path when the entry is paired", () => {
+describe("isPairedGatewayAssistant", () => {
+  test("true exactly when the lockfile entry is paired", () => {
     setLockfile([
       {
         assistantId: "asst-1",
-        cloud: "paired",
+        cloud: "local",
+        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
-    expect(
-      isPairedGatewayIngress(
-        "http://localhost:3000/assistant/__gateway/asst-1",
-      ),
-    ).toBe(true);
-    expect(
-      isPairedGatewayIngress("app://cadet/assistant/__gateway/asst-1"),
-    ).toBe(true);
+    expect(isPairedGatewayAssistant("asst-1")).toBe(true);
+    expect(isPairedGatewayAssistant("who")).toBe(false);
   });
 
-  test("does not match local entries, unknown ids, remote ingresses, or junk", () => {
+  test("local entries and unknown ids are not paired", () => {
     setLockfile([
       {
         assistantId: "asst-1",
@@ -468,15 +465,7 @@ describe("isPairedGatewayIngress", () => {
         resources: { gatewayPort: 7821 },
       } as LockfileAssistant,
     ]);
-    expect(
-      isPairedGatewayIngress(
-        "http://localhost:3000/assistant/__gateway/asst-1",
-      ),
-    ).toBe(false);
-    expect(
-      isPairedGatewayIngress("http://localhost:3000/assistant/__gateway/who"),
-    ).toBe(false);
-    expect(isPairedGatewayIngress("https://x.ngrok-free.app")).toBe(false);
-    expect(isPairedGatewayIngress("not a url")).toBe(false);
+    expect(isPairedGatewayAssistant("asst-1")).toBe(false);
+    expect(isPairedGatewayAssistant("who")).toBe(false);
   });
 });

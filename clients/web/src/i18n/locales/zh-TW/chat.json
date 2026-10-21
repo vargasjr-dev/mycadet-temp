@@ -117,6 +117,7 @@
     "terminal": "執行命令"
   },
   "sessionGroupRow": {
+    "waiting": "等待中",
     "mode": {
       "computerUse": "電腦工作階段",
       "browser": "瀏覽器工作階段",
@@ -127,7 +128,6 @@
     "durationMinutes": "{count, plural, other {# 分鐘}}",
     "working": "處理中",
     "workingWithDuration": "處理中 · {duration}",
-    "waiting": "等待中",
     "waitingWithDuration": "等待中 · {duration}",
     "finishing": "即將完成",
     "finishingWithDuration": "即將完成 · {duration}",
@@ -226,9 +226,6 @@
   },
   "billingErrorBanner": {
     "dismiss": "關閉"
-  },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, other {# 個事件已記錄。}}"
   },
   "cameraDeepLink": {
     "captureFailed": "無法拍攝該照片。請再試一次。",
@@ -891,7 +888,6 @@
   "missingApiKeyBanner": {
     "ariaLabel": "需要 API 金鑰",
     "body": "請在「設定」→「模型與服務」中新增 API 金鑰以開始聊天。",
-    "dismiss": "關閉",
     "dismissAria": "關閉需要 API 金鑰的提示",
     "openSettings": "開啟設定",
     "title": "需要 API 金鑰"
@@ -931,20 +927,7 @@
     "name": "名稱",
     "noIcon": "無圖示"
   },
-  "oauthConnectSurface": {
-    "approvalAria": "關於助理核准",
-    "approvalTooltip": "未經您的核准，{name} 絕不會代表您行事",
-    "connect": "連線",
-    "connectTitle": "連線 {name}",
-    "connected": "已連線",
-    "defaultDescription": "連線 {name}，以便我能將其用於此任務。",
-    "dismiss": "關閉",
-    "missingDetails": "缺少助理或供應商詳細資訊。",
-    "tenantHostInvalid": "請輸入有效的{label}，例如 {placeholder}",
-    "thisAccount": "此帳號",
-    "waiting": "等待中...",
-    "yourAssistant": "您的助理"
-  },
+
   "onboardingChoiceCard": {
     "continue": "繼續",
     "helpWithHeading": "我能為您提供什麼協助？",
@@ -1426,7 +1409,6 @@
     "unmuteMicrophone": "解除麥克風靜音"
   },
   "voiceSessionPill": {
-    "dismiss": "關閉",
     "endSession": "結束語音會話",
     "goToThreadAria": "前往語音會話討論串",
     "groupAria": "語音會話",

@@ -434,7 +434,7 @@ describe("migrateLegacyEntry", () => {
     const entry: Record<string, unknown> = {
       assistantId: "gcp-assistant",
       runtimeUrl: "https://example.com",
-      cloud: "gcp",
+      cloud: "custom",
     };
 
     // WHEN we attempt to migrate it

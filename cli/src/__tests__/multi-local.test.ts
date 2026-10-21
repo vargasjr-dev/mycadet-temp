@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeEach, afterAll, mock } from "bun:test";
+import type { Cloud } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -56,7 +57,7 @@ function readLockfileRaw(): Record<string, unknown> {
 
 const makeEntry = (
   id: string,
-  cloud = "local",
+  cloud: Cloud = "local",
   extra?: Partial<AssistantEntry>,
 ): AssistantEntry => ({
   assistantId: id,
@@ -323,7 +324,7 @@ describe("multi-local", () => {
     test("resolveTargetAssistant works with remote entries", () => {
       writeLockfile({
         assistants: [
-          makeEntry("my-remote", "gcp", {
+          makeEntry("my-remote", "custom", {
             runtimeUrl: "http://10.0.0.1:7821",
           }),
         ],
@@ -331,11 +332,11 @@ describe("multi-local", () => {
       });
       const result = resolveTargetAssistant();
       expect(result.assistantId).toBe("my-remote");
-      expect(result.cloud).toBe("gcp");
+      expect(result.cloud).toBe("custom");
     });
 
     test("remote entries don't get resources applied", () => {
-      const remoteEntry = makeEntry("cloud-box", "aws", {
+      const remoteEntry = makeEntry("cloud-box", "custom", {
         runtimeUrl: "http://10.0.0.2:7821",
       });
       writeLockfile({ assistants: [remoteEntry] });

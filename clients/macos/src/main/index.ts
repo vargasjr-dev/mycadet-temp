@@ -7,9 +7,7 @@ import { installCsp } from "@mycadet/electron-desktop/csp";
 import { installCommandPaletteWindow } from "@mycadet/electron-desktop/command-palette-window";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
-import {
-  forwardGatewayRequest,
-} from "@mycadet/electron-desktop/gateway-forward";
+import { forwardGatewayRequest } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
@@ -288,7 +286,7 @@ const registerAppProtocol = (): void => {
           (a) => a.assistantId === read.data.activeAssistant,
         )
       : read.data.assistants[0];
-    if (!entry || entry.cloud === "paired") {
+    if (!entry || entry.paired === true) {
       return undefined;
     }
     const port = getLoopbackGatewayPort(entry);

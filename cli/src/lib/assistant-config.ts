@@ -12,7 +12,6 @@ import { dirname, join } from "path";
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import { withLockfileLock } from "@mycadet/local-mode";
 import {
-  resolveCloud,
   type LocalAssistantResources,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
@@ -105,8 +104,7 @@ export type AssistantEntry = Omit<
   localUrl?: string;
   bearerToken?: string;
   /** True when this entry was registered via `cadet connect import` (a remote
-   *  pairing). Set alongside `cloud: "paired"`; also backs the re-import /
-   *  overwrite guard in connect import. */
+   *  pairing); also backs the re-import / overwrite guard in connect import. */
   paired?: boolean;
   project?: string;
   region?: string;
@@ -494,9 +492,9 @@ export function loadAllAssistants(): AssistantEntry[] {
     ) {
       continue;
     }
-    // Normalize `cloud` once, at the read seam every reader shares, so
-    // downstream code reads `entry.cloud` instead of re-deriving the topology.
-    entry.cloud = resolveCloud(entry);
+    // Default `cloud` once, at the read seam every reader shares, so
+    // downstream code reads `entry.cloud` without special-casing absence.
+    entry.cloud ??= "local";
     result.push(entry as AssistantEntry);
   }
   return result;
@@ -669,7 +667,7 @@ export function loadAllAssistantsAcrossEnvs(
       ) {
         continue;
       }
-      entry.cloud = resolveCloud(entry);
+      entry.cloud ??= "local";
       all.push(entry);
     }
   }

@@ -74,6 +74,7 @@
     "terminal": "Выполнение команды"
   },
   "sessionGroupRow": {
+    "waiting": "Ожидание",
     "mode": {
       "computerUse": "Сеанс работы с компьютером",
       "browser": "Сеанс браузера",
@@ -84,7 +85,6 @@
     "durationMinutes": "{count, plural, one {# мин} few {# мин} many {# мин} other {# мин}}",
     "working": "Работаю",
     "workingWithDuration": "Работаю · {duration}",
-    "waiting": "Ожидание",
     "waitingWithDuration": "Ожидание · {duration}",
     "finishing": "Завершение",
     "finishingWithDuration": "Завершение · {duration}",

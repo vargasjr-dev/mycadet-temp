@@ -2,32 +2,50 @@ import fs from "node:fs";
 
 import type { TokenResult } from "./guardian-token";
 import {
+  FLATTENED_FIRST_SEGMENTS,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   LockfileAssistantSchema,
-  resolveCloud,
 } from "./lockfile-contract";
 
+export { FLATTENED_FIRST_SEGMENTS };
+
 /**
- * The unified, id-keyed gateway proxy paths. The data-plane proxy is addressed
- * by assistant id — the lockfile resolves the id to the entry's loopback port
- * (locally hatched gateways) or recorded remote `runtimeUrl` (imported
- * pairings) — so the renderer never encodes a port and the local/paired split
+ * The assistant gateway's data-plane surfaces. The generated SDK addresses
+ * the gateway at the scoped `/v1/assistants/{assistantId}/...` routes — the
+ * ONE client surface — and the serving host (the Electron `app://` protocol
+ * handler, the Vite dev middleware) resolves the id from the path against the
+ * lockfile target map: the id resolves to the entry's loopback port (locally
+ * hatched gateways) or recorded remote `runtimeUrl` (imported pairings), so
+ * the renderer never encodes a port or a host and the local/paired split
  * lives entirely host-side.
+ *
+ * The legacy `/assistant/__gateway/{assistantId}` prefix survives only as
+ * transport for the gateway's UNSCOPED routes (`/auth/token` mint, `/readyz`
+ * probes, the lifecycle trio) until they fold into `/v1` too; it forwards the
+ * tail after the prefix.
  */
-const GATEWAY_PATTERN = /^(?:\/assistant)?\/__gateway\/([^/?#]+)(\/.*)?$/;
+const GATEWAY_PATTERN = /^\/v1\/assistants\/([^/?#]+)(?:\/(.*))?$/;
+const LEGACY_GATEWAY_PATTERN =
+  /^(?:\/assistant)?\/__gateway\/([^/?#]+)(\/.*)?$/;
 
 export interface GatewayTarget {
   assistantId: string;
-  /** Pathname tail forwarded onto the target, without the query. */
+  /** Pathname forwarded onto the target, without the query. */
   path: string;
   /** Query string including the leading `?`, or empty. */
   search: string;
 }
 
 export type GatewayParseResult =
-  | { match: true; valid: true; target: GatewayTarget }
+  | {
+      match: true;
+      valid: true;
+      /** False for the scoped surface, true for the legacy prefix. */
+      legacy: boolean;
+      target: GatewayTarget;
+    }
   | { match: true; valid: false }
   | { match: false };
 
@@ -53,10 +71,16 @@ function hasDotSegment(path: string): boolean {
 }
 
 /**
- * Parse a gateway-proxy URL given as `pathname + search` (a `#fragment`
- * suffix is tolerated and dropped), so every host hands over the same shape
- * and the decision is host-independent. Accepts only the unified
- * `/__gateway/{assistantId}`.
+ * Parse an assistant gateway's data-plane URL given as `pathname + search` (a
+ * `#fragment` suffix is tolerated and dropped), so every host hands over the
+ * same shape and the decision is host-independent. Two shapes parse:
+ *
+ *   - the scoped SDK surface `/v1/assistants/{assistantId}[/rest]` — the
+ *     forward path is the scoped path itself (flattened for the contact
+ *     family), so the gateway receives exactly what the SDK addressed;
+ *   - the legacy `/assistant/__gateway/{assistantId}[/tail]` prefix (with or
+ *     without the `/assistant` mount) — the forward path is the tail after
+ *     the prefix, the transport for the gateway's unscoped routes.
  */
 export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
   const delimiter = url.search(/[?#]/);
@@ -64,20 +88,45 @@ export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
   const suffix = delimiter === -1 ? "" : url.slice(delimiter);
   const search = suffix.startsWith("?") ? (suffix.split("#")[0] ?? "") : "";
 
-  const match = pathname.match(GATEWAY_PATTERN);
-  if (!match) {
+  const scoped = GATEWAY_PATTERN.exec(pathname);
+  if (scoped) {
+    let assistantId: string;
+    try {
+      assistantId = decodeURIComponent(scoped[1]!);
+    } catch {
+      // Malformed percent-encoding is an invalid parse, not a crash.
+      return { match: true, valid: false };
+    }
+    const rest = scoped[2];
+    if (hasDotSegment(assistantId) || hasDotSegment(rest ?? "")) {
+      return { match: true, valid: false };
+    }
+    const firstSegment = rest?.split("/")[0];
+    const path =
+      firstSegment !== undefined && FLATTENED_FIRST_SEGMENTS.has(firstSegment)
+        ? `/v1/${rest}`
+        : pathname;
+    return {
+      match: true,
+      valid: true,
+      legacy: false,
+      target: { assistantId, path, search },
+    };
+  }
+
+  const legacy = LEGACY_GATEWAY_PATTERN.exec(pathname);
+  if (!legacy) {
     return { match: false };
   }
 
   let assistantId: string;
   try {
-    assistantId = decodeURIComponent(match[1]!);
+    assistantId = decodeURIComponent(legacy[1]!);
   } catch {
-    // Malformed percent-encoding is an invalid parse, not a crash.
     return { match: true, valid: false };
   }
 
-  const path = match[2] || "/";
+  const path = legacy[2] || "/";
   if (hasDotSegment(path)) {
     return { match: true, valid: false };
   }
@@ -85,6 +134,7 @@ export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
   return {
     match: true,
     valid: true,
+    legacy: true,
     target: { assistantId, path, search },
   };
 }
@@ -100,17 +150,21 @@ export type GatewayEntryTarget =
   | { kind: "remote"; runtimeUrl: string };
 
 /**
- * Verdict for a gateway-proxy URL, combining the URL parse with the
+ * Verdict for an assistant gateway data-plane URL, combining the URL parse
+ * with the
  * lockfile target-map check into one decision a host can act on without
  * re-deriving the rules.
  *
  *   - `pass`     — not a gateway URL; the host serves it normally.
  *   - `reject`   — a gateway URL whose id is malformed, whose tail is a
- *                  traversal attempt, or whose id is not active in the
- *                  lockfile (the security boundary: the proxy only reaches
- *                  gateways of assistants the user actually hatched or
- *                  imported, never arbitrary loopback services or URLs).
- *                  Carries the status and message the host answers with.
+ *                  traversal attempt, or — on the legacy prefix only — whose
+ *                  id is not active in the lockfile (the security boundary:
+ *                  the proxy only reaches gateways of assistants the user
+ *                  actually hatched or imported, never arbitrary loopback
+ *                  services or URLs). An unknown id on the scoped surface is
+ *                  `pass` instead: cloud assistants' SDK routes and stale ids
+ *                  fall through to the host's generic `/v1` handling. Carries
+ *                  the status and message the host answers with.
  *   - `forward`  — forward to the entry's resolved target, carrying the
  *                  assistant id so the trusted host can resolve its bearer.
  */
@@ -132,10 +186,10 @@ const GATEWAY_REJECTION: GatewayProxyDecision = {
 };
 
 /**
- * Resolve a gateway-proxy URL, given as `pathname + search`, to a proxy
- * verdict. Identical across every host that proxies the data plane (the
- * Electron `app://` protocol handler, the Vite dev middleware, the CLI web
- * server) so the security boundary is defined once and the hosts can't drift.
+ * Resolve an assistant gateway data-plane URL, given as `pathname + search`,
+ * to a proxy verdict. Identical across every host that proxies the data plane
+ * (the Electron `app://` protocol handler, the Vite dev middleware) so the
+ * security boundary is defined once and the hosts can't drift.
  *
  * `getTargets` is a thunk (typically `() => readGatewayTargets(...)`) so the
  * lockfile is read only once a gateway URL is matched — the hot path of
@@ -154,6 +208,9 @@ export function resolveGatewayProxyTarget(
   }
   const target = getTargets().get(parsed.target.assistantId);
   if (!target) {
+    if (!parsed.legacy) {
+      return { kind: "pass" };
+    }
     return GATEWAY_REJECTION;
   }
   return {
@@ -172,12 +229,12 @@ const MAX_GATEWAY_PORT = 65535;
  * Compute the id-keyed gateway-target map from a lockfile's assistant
  * entries. Each entry parses through {@link LockfileAssistantSchema}; an
  * entry that fails the parse (or carries no usable id) is skipped. A paired
- * entry resolves to its recorded remote `runtimeUrl` (usable http(s) only);
- * a loopback-gateway cloud (`local`, `docker`) resolves to its recorded
- * loopback port via {@link getLoopbackGatewayPort}. Everything else —
- * externally-managed containers, the platform cloud, remote self-hosted
- * clouds the SPA doesn't drive — is left out, and an absent id is a proxy
- * rejection.
+ * entry (the `paired` connect-import flag) resolves to its recorded remote
+ * `runtimeUrl` (usable http(s) only); a loopback-gateway cloud (`local`,
+ * `docker`) resolves to its recorded loopback port via
+ * {@link getLoopbackGatewayPort}. Everything else — the platform cloud,
+ * remote self-hosted clouds the SPA doesn't drive — is left out, and an
+ * absent id is a proxy rejection.
  *
  * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
  * lockfile watcher) derives the map without touching disk on the request
@@ -192,18 +249,17 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!parsed.success) {
       continue;
     }
-    const { assistantId, cloud, resources, runtimeUrl } = parsed.data;
+    const { assistantId, cloud, paired, resources, runtimeUrl } = parsed.data;
     if (!assistantId) {
       continue;
     }
-    const cloudValue = resolveCloud({ cloud });
-    if (cloudValue === "paired") {
+    if (paired === true) {
       if (isUsableRuntimeUrl(runtimeUrl)) {
         targets.set(assistantId, { kind: "remote", runtimeUrl });
       }
       continue;
     }
-    if (!isLoopbackGatewayCloud(cloudValue)) {
+    if (!isLoopbackGatewayCloud(cloud)) {
       continue;
     }
     const port = getLoopbackGatewayPort({ resources, runtimeUrl });

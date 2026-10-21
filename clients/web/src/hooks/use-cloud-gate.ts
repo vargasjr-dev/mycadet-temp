@@ -59,7 +59,7 @@ export interface CloudGateOptions {
    * the app running in local mode?" Two cases this matters for:
    *
    *   1. A **local-mode app** can be acting on a cloud-hosted
-   *      assistant (lockfile entry with `cloud === "cadet"`). The
+   *      assistant (lockfile entry with `cloud === "cloud"`). The
    *      platform billing/plan UI for that assistant IS meaningful.
    *   2. A **platform-mode app** can be acting on a self-hosted
    *      assistant — when the cloud API returns `is_local: true`,

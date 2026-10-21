@@ -10,11 +10,9 @@
  * and streams the reply — rendered chrome-less by `ChatLayout` because the
  * focus flag is set.
  *
- * `beginCheckin` flips the focused overlay to its first step — the "Let's chat
- * tomorrow" Google Calendar page — which is shown WHILE the research streams in
- * behind it. So the research pass starts the instant the form is submitted; the
- * gcal step just gates when the results are revealed. The user reads the output,
- * then clicks "Continue" to drop into the full workspace on the same conversation.
+ * The research pass starts the instant the form is submitted; the result steps
+ * gate when the reveal happens. The user reads the output, then clicks
+ * "Continue" to drop into the full workspace on the same conversation.
  */
 
 import {
@@ -64,9 +62,6 @@ import {
 } from "@/domains/onboarding/research-onboarding-persistence";
 import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { shouldSkipOnboardingResearch } from "@/domains/onboarding/should-skip-onboarding-research";
-import { scheduleCheckin } from "@/domains/onboarding/checkin-scheduler";
-import { GOOGLE_CALENDAR_EVENTS_SCOPE } from "@/domains/onboarding/hooks/use-google-calendar-connect";
-import { formatCheckinTime } from "@/domains/onboarding/format-checkin-time";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
 import {
   ResearchOnboardingScreen,
@@ -80,9 +75,7 @@ import { IntroductionScreen } from "@/domains/onboarding/screens/introduction-sc
 import { PitchStep } from "@/domains/onboarding/screens/intro-pitch-steps";
 import { IntegrationStep } from "@/domains/onboarding/screens/integration-step";
 import { CreatePersonalityStep } from "@/domains/onboarding/screens/create-personality-step";
-import { LetsChatTomorrowStep } from "@/domains/onboarding/screens/lets-chat-tomorrow-step";
 import {
-  MeetingCreatedStep,
   LookingYouUpStep,
   FinishingUpStep,
   ResearchResultsStep,
@@ -240,23 +233,6 @@ export function ResearchOnboardingRoute() {
   const [researchConversationId, setResearchConversationId] = useState<
     string | null
   >(null);
-  // Formatted booked check-in time ("2:30 PM"), set when scheduleCheckin lands;
-  // null until then (or if booking failed) → confirmation shows generic copy.
-  const [checkinTime, setCheckinTime] = useState<string | null>(null);
-  // True while the booking request is in flight, so the confirmation step can
-  // hold (capped) until the booked time is known instead of advancing early.
-  const [checkinPending, setCheckinPending] = useState(false);
-  // True only once the daemon confirms the check-in was booked. Persisted so a
-  // refresh that interrupts the in-flight booking POST doesn't resume past the
-  // calendar step as if it succeeded (the endpoint is non-idempotent — a blind
-  // retry would double-book), and resumes back to the calendar step instead.
-  const [checkinBooked, setCheckinBooked] = useState(false);
-  // Set when the Google grant landed WITHOUT the calendar.events scope (the user
-  // didn't tick the calendar box on Google's granular-consent screen). The
-  // connection succeeds but no event can be booked, so we keep the user on the
-  // "let's chat tomorrow" step with a recoverable re-prompt instead of advancing
-  // to a false confirmation.
-  const [missingCalendarScope, setMissingCalendarScope] = useState(false);
   // Bumped by the integration step's coin to jolt the bottom eyes.
   const [eyesBump, setEyesBump] = useState(0);
   // Extra edge characters revealed so far — grows as the looking-you-up
@@ -290,13 +266,6 @@ export function ResearchOnboardingRoute() {
   // purchased resize, so the paid user never starts on a baseline assistant.
   const postCheckoutReturn =
     searchParams.get(POST_CHECKOUT_HATCH_PARAM) === "1";
-  // The day-2 check-in offer ("letschat" → "meeting") books through the
-  // platform's managed Google Calendar OAuth. A local-hosting onboarding can
-  // run with no platform session at all (the assistant itself is fully
-  // local), where that connect can only fail — skip the calendar steps
-  // entirely and go straight to the research reveal. Cadet-cloud onboarding
-  // keeps them: a cloud hatch implies a cloud session.
-  const skipCheckinSteps = adoptExistingAssistant;
   // The claim-credits step ("integration") promises managed free credits,
   // which only a cloud account can hold. A self-hosted onboarding with no
   // platform login has no account to credit, so the promise would be empty:
@@ -395,9 +364,7 @@ export function ResearchOnboardingRoute() {
   const noClaims = !researchLoading && research.claims.length === 0;
   const stepBeforeResearchReveal: ResearchStep = skipClaimCreditsStep
     ? "personality"
-    : skipCheckinSteps
-      ? "integration"
-      : "letschat";
+    : "integration";
   const stepBeforeSuggestions: ResearchStep = skipResearchReveal
     ? stepBeforeResearchReveal
     : noClaims
@@ -523,8 +490,6 @@ export function ResearchOnboardingRoute() {
     if (snapshot?.formValues) {
       setFormValues(snapshot.formValues);
       setFaceValues(snapshot.faceValues);
-      setCheckinTime(snapshot.checkinTime);
-      setCheckinBooked(snapshot.checkinBooked);
       setKeptFindings(snapshot.keptClaims ?? null);
       setResearchConversationId(snapshot.researchConversationId ?? null);
       // Re-enqueue the named plugin installs against the re-hatched assistant so
@@ -555,9 +520,7 @@ export function ResearchOnboardingRoute() {
       // it: remap to the research reveal the skips land on.
       const resumeStep = resolveResumeStep(snapshot);
       const resumeStepDropped =
-        (skipCheckinSteps &&
-          (resumeStep === "letschat" || resumeStep === "meeting")) ||
-        (skipClaimCreditsStep && resumeStep === "integration");
+        skipClaimCreditsStep && resumeStep === "integration";
       setStep(
         resumeStepDropped
           ? researchRevealStep(
@@ -573,7 +536,6 @@ export function ResearchOnboardingRoute() {
     userId,
     hydrateResearch,
     awaitHatchReady,
-    skipCheckinSteps,
     skipClaimCreditsStep,
     syncDroppedClaimsScrubbed,
   ]);
@@ -591,8 +553,6 @@ export function ResearchOnboardingRoute() {
       step,
       formValues,
       faceValues,
-      checkinTime,
-      checkinBooked,
       research:
         research.status === "done"
           ? {
@@ -616,8 +576,6 @@ export function ResearchOnboardingRoute() {
     keptFindings,
     formValues,
     faceValues,
-    checkinTime,
-    checkinBooked,
     researchConversationId,
     research.status,
     research.claims,
@@ -640,8 +598,7 @@ export function ResearchOnboardingRoute() {
   //   - a turn hydrated straight to "done" from the snapshot: nothing re-fires,
   //     but it lands on a later step and could otherwise walk into the chat
   //     handoff ungated — so the guard still runs.
-  // (Running/error are transient, not resume entry points.) The meeting is never
-  // re-booked here: that only fires from the calendar step, which a resume skips.
+  // (Running/error are transient, not resume entry points.)
   //
   // When established, divert to the keep/redo screen and move the values into
   // `gatedFormValues` — clearing `formValues` so the persistence effect can't
@@ -951,37 +908,6 @@ export function ResearchOnboardingRoute() {
   // scope data — so treat it as unknown and fall through to the best-effort
   // schedule. This mirrors the daemon resolver, which rejects only when a
   // connection positively lacks a required scope and never on unknown data.
-  function handleCheckinConnected(scopes: string[]) {
-    const calendarDenied =
-      scopes.length > 0 && !scopes.includes(GOOGLE_CALENDAR_EVENTS_SCOPE);
-    if (calendarDenied) {
-      setMissingCalendarScope(true);
-      return;
-    }
-    setMissingCalendarScope(false);
-    if (hatchedAssistantId && formValues) {
-      const fullName = [formValues.firstName.trim(), formValues.lastName.trim()]
-        .filter(Boolean)
-        .join(" ");
-      setCheckinTime(null);
-      setCheckinBooked(false);
-      setCheckinPending(true);
-      void scheduleCheckin({
-        assistantId: hatchedAssistantId,
-        userName: fullName || undefined,
-        assistantName: faceValues?.name?.trim() || undefined,
-      })
-        .then((result) => {
-          if (result.scheduled) {
-            setCheckinBooked(true);
-            setCheckinTime(formatCheckinTime(result.start, result.timeZone));
-          }
-        })
-        .finally(() => setCheckinPending(false));
-    }
-    goForwardTo("meeting");
-  }
-
   // "Try again" restarts the hatch AND everything that resolved against the
   // dead one. Reaching this handler proves no attempt has ever readied (the
   // hatch settles once, and a ready one can't later error), so every
@@ -1032,8 +958,6 @@ export function ResearchOnboardingRoute() {
     "different",
     "personality",
     "integration",
-    "letschat",
-    "meeting",
     "looking",
     "results",
     "suggestions",
@@ -1044,7 +968,6 @@ export function ResearchOnboardingRoute() {
     // eyes collapse into the small avatar beside the text. Extra edge
     // characters are revealed by the looking-you-up carousel (see edgeAvatars).
     const postCalendar = [
-      "meeting",
       "looking",
       "results",
       "suggestions",
@@ -1115,42 +1038,11 @@ export function ResearchOnboardingRoute() {
         )}
         {step === "integration" && (
           <IntegrationStep
-            onClaim={() =>
-              goForwardTo(
-                skipCheckinSteps
-                  ? researchRevealStep(skipResearchReveal)
-                  : "letschat",
-              )
-            }
+            onClaim={() => goForwardTo(researchRevealStep(skipResearchReveal))}
             onBumpEyes={() => setEyesBump((n) => n + 1)}
             onBack={() =>
               goBackTo(personalityEnabled ? "personality" : "different")
             }
-            onForward={onForward}
-          />
-        )}
-        {step === "letschat" && (
-          <LetsChatTomorrowStep
-            assistantId={hatchedAssistantId}
-            assistantReady={hatchReady}
-            hatchError={hatchError}
-            onConnected={handleCheckinConnected}
-            missingCalendarScope={missingCalendarScope}
-            onRetry={() => setMissingCalendarScope(false)}
-            onSkip={() => {
-              setMissingCalendarScope(false);
-              goForwardTo(researchRevealStep(skipResearchReveal));
-            }}
-            onBack={() => goBackTo("integration")}
-            onForward={onForward}
-          />
-        )}
-        {step === "meeting" && (
-          <MeetingCreatedStep
-            scheduledTime={checkinTime ?? undefined}
-            awaitingTime={checkinPending}
-            onDone={() => goForwardTo(researchRevealStep(skipResearchReveal))}
-            onBack={() => goBackTo("letschat")}
             onForward={onForward}
           />
         )}

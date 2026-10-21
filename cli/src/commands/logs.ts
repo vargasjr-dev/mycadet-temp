@@ -440,112 +440,12 @@ function buildRemoteLogCommand(opts: LogsArgs): string {
   return parts.join(" ");
 }
 
-async function showGcpLogs(
-  entry: AssistantEntry,
-  opts: LogsArgs,
-): Promise<void> {
-  const project = entry.project;
-  const zone = entry.zone;
-  if (!project || !zone) {
-    console.error("Error: GCP project and zone not found in assistant config.");
-    process.exit(1);
-  }
-
-  const remoteCmd = buildRemoteLogCommand(opts);
-  const sshTarget = entry.sshUser
-    ? `${entry.sshUser}@${entry.assistantId}`
-    : entry.assistantId;
-
-  const args = [
-    "compute",
-    "ssh",
-    sshTarget,
-    `--project=${project}`,
-    `--zone=${zone}`,
-    "--ssh-flag=-o StrictHostKeyChecking=no",
-    "--ssh-flag=-o UserKnownHostsFile=/dev/null",
-    "--ssh-flag=-o ConnectTimeout=10",
-    "--ssh-flag=-o LogLevel=ERROR",
-    `--command=${remoteCmd}`,
-  ];
-
-  if (opts.follow) {
-    // For follow mode, stream output directly to terminal
-    const child = spawn("gcloud", args, {
-      stdio: "inherit",
-      windowsHide: true,
-    });
-    await new Promise<void>((resolve, reject) => {
-      child.on("close", (code) => {
-        if (code !== 0 && code !== null) {
-          reject(new Error(`gcloud ssh exited with code ${code}`));
-        } else {
-          resolve();
-        }
-      });
-      child.on("error", (err) => reject(err));
-    });
-  } else {
-    try {
-      const output = await execOutput("gcloud", args);
-      console.log(output);
-    } catch (err) {
-      console.error(
-        `Failed to fetch logs: ${err instanceof Error ? err.message : err}`,
-      );
-      process.exit(1);
-    }
-  }
-}
-
 async function showCustomLogs(
   entry: AssistantEntry,
   opts: LogsArgs,
 ): Promise<void> {
   const host = extractHostFromUrl(entry.runtimeUrl);
   const sshUser = entry.sshUser ?? "root";
-  const sshTarget = `${sshUser}@${host}`;
-
-  const remoteCmd = buildRemoteLogCommand(opts);
-
-  if (opts.follow) {
-    const child = spawn("ssh", [...SSH_OPTS, sshTarget, remoteCmd], {
-      stdio: "inherit",
-      windowsHide: true,
-    });
-    await new Promise<void>((resolve, reject) => {
-      child.on("close", (code) => {
-        if (code !== 0 && code !== null) {
-          reject(new Error(`ssh exited with code ${code}`));
-        } else {
-          resolve();
-        }
-      });
-      child.on("error", (err) => reject(err));
-    });
-  } else {
-    try {
-      const output = await execOutput("ssh", [
-        ...SSH_OPTS,
-        sshTarget,
-        remoteCmd,
-      ]);
-      console.log(output);
-    } catch (err) {
-      console.error(
-        `Failed to fetch logs: ${err instanceof Error ? err.message : err}`,
-      );
-      process.exit(1);
-    }
-  }
-}
-
-async function showAwsLogs(
-  entry: AssistantEntry,
-  opts: LogsArgs,
-): Promise<void> {
-  const host = extractHostFromUrl(entry.runtimeUrl);
-  const sshUser = entry.sshUser ?? "admin";
   const sshTarget = `${sshUser}@${host}`;
 
   const remoteCmd = buildRemoteLogCommand(opts);
@@ -610,19 +510,11 @@ export const logs = Object.assign(
       await showDockerLogs(entry, opts);
       break;
 
-    case "gcp":
-      await showGcpLogs(entry, opts);
-      break;
-
     case "custom":
       await showCustomLogs(entry, opts);
       break;
 
-    case "aws":
-      await showAwsLogs(entry, opts);
-      break;
-
-    case "cadet":
+    case "cloud":
       console.error(
         "Logs for Cadet Cloud instances are not yet supported.\n" +
           "View logs in the Cadet Cloud dashboard.",

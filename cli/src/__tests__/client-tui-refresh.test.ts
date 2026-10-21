@@ -4,6 +4,7 @@
  * session auth, ephemeral --token overrides, and still-fresh tokens untouched.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import type { Cloud } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -23,13 +24,15 @@ const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
 /** Persist a lockfile entry so the refresh URL-binding check has a trusted
  *  runtimeUrl to compare against (refresh is bound to the persisted entry). */
-function seedEntry(cloud: string): void {
+function seedEntry(cloud: Cloud | "paired"): void {
+  // "paired" is not a topology: it seeds the connect-import flag on an
+  // otherwise-local-defaulted entry.
+  const isPaired = cloud === "paired";
   saveAssistantEntry({
     assistantId: "px",
     name: "Paired",
     runtimeUrl: RUNTIME,
-    cloud,
-    paired: cloud === "paired",
+    ...(isPaired ? { cloud: "local" as const, paired: true } : { cloud }),
   });
 }
 

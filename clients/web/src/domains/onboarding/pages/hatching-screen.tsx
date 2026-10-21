@@ -58,7 +58,6 @@ import { useDesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { setSelectedAssistant } from "@/assistant/selection";
 import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { isSessionSettled } from "@/stores/session-status";
 import type { CharacterTraits } from "@/types/avatar";
 import { extractErrorMessage } from "@/utils/api-errors";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";

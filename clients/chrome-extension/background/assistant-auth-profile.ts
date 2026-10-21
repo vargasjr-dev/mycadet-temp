@@ -11,7 +11,10 @@
  * - `unsupported` — the topology is not recognised by this version of
  *   the extension.
  */
-export type AssistantAuthProfile = 'self-hosted' | 'cadet-cloud' | 'unsupported';
+export type AssistantAuthProfile =
+  | "self-hosted"
+  | "cadet-cloud"
+  | "unsupported";
 
 /**
  * The subset of topology fields needed to derive the auth profile.
@@ -22,20 +25,22 @@ export interface LockfileTopology {
 }
 
 /** Cloud values that map to self-hosted direct pairing. */
-const LOCAL_CLOUD_VALUES = new Set(['local', 'apple-container']);
+const LOCAL_CLOUD_VALUES = new Set(["local", "apple-container"]);
 
 /** Cloud values that map to Cadet-cloud (WorkOS session auth). */
-const CADET_CLOUD_VALUES = new Set(['cadet', 'platform']);
+const CADET_CLOUD_VALUES = new Set(["cloud"]);
 
 /**
  * Derive the auth profile for a given topology.
  */
-export function resolveAuthProfile(topology: LockfileTopology): AssistantAuthProfile {
+export function resolveAuthProfile(
+  topology: LockfileTopology,
+): AssistantAuthProfile {
   if (LOCAL_CLOUD_VALUES.has(topology.cloud)) {
-    return 'self-hosted';
+    return "self-hosted";
   }
   if (CADET_CLOUD_VALUES.has(topology.cloud)) {
-    return 'cadet-cloud';
+    return "cadet-cloud";
   }
-  return 'unsupported';
+  return "unsupported";
 }

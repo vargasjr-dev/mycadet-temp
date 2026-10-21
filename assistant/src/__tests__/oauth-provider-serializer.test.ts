@@ -28,8 +28,6 @@ function makeRow(overrides: Partial<OAuthProviderRow> = {}): OAuthProviderRow {
     pingBody: null,
     revokeUrl: null,
     revokeBodyTemplate: null,
-    cloudServiceConfigKey: null,
-    managedServiceIsPaid: false,
     displayLabel: null,
     description: null,
     dashboardUrl: null,
@@ -111,18 +109,6 @@ describe("serializeProvider", () => {
     expect(result.identityHeaders).toBeNull();
     expect(result.identityBody).toBeNull();
     expect(result.identityResponsePaths).toBeNull();
-  });
-
-  test("supportsManagedMode is true when cloudServiceConfigKey is non-null", () => {
-    const row = makeRow({ cloudServiceConfigKey: "google-managed" });
-    const result = serializeProvider(row)!;
-    expect(result.supportsManagedMode).toBe(true);
-  });
-
-  test("supportsManagedMode is false when cloudServiceConfigKey is null", () => {
-    const row = makeRow({ cloudServiceConfigKey: null });
-    const result = serializeProvider(row)!;
-    expect(result.supportsManagedMode).toBe(false);
   });
 
   test("requiresClientSecret defaults to true when value is 1", () => {
@@ -275,7 +261,6 @@ describe("serializeProviderSummary", () => {
       dashboardUrl: "https://console.cloud.google.com",
       clientIdPlaceholder: "your-client-id.apps.googleusercontent.com",
       requiresClientSecret: 1,
-      cloudServiceConfigKey: "google-managed",
     });
 
     const result = serializeProviderSummary(row)!;
@@ -288,8 +273,6 @@ describe("serializeProviderSummary", () => {
       client_id_placeholder: "your-client-id.apps.googleusercontent.com",
       requires_client_secret: true,
       logo_url: null,
-      supports_cloud_mode: true,
-      managed_service_is_paid: false,
       category: "productivity",
       tenant_host: null,
       acts_as: "user",
@@ -364,12 +347,6 @@ describe("serializeProviderSummary", () => {
     const row = makeRow({ requiresClientSecret: 0 });
     const result = serializeProviderSummary(row)!;
     expect(result.requires_client_secret).toBe(false);
-  });
-
-  test("supports_cloud_mode is false when cloudServiceConfigKey is null", () => {
-    const row = makeRow({ cloudServiceConfigKey: null });
-    const result = serializeProviderSummary(row)!;
-    expect(result.supports_cloud_mode).toBe(false);
   });
 
   test("returns null for null input", () => {

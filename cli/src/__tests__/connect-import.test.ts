@@ -213,7 +213,7 @@ describe("connect import", () => {
     const entry = findAssistantByName("link-box");
     expect(entry).not.toBeNull();
     expect(entry!.runtimeUrl).toBe(HOST);
-    expect(entry!.cloud).toBe("paired");
+    expect(entry!.paired).toBe(true);
     const token = loadGuardianToken("link-box");
     expect(token?.accessToken).toBe("acc-tok");
     expect(token?.refreshToken).toBe("refresh-tok");

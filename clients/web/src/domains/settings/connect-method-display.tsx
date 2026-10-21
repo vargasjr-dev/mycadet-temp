@@ -1,4 +1,4 @@
-import { Cable, KeyRound, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Cable, KeyRound, type LucideIcon } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
 
 import { ActionMenu } from "@mycadet/design-library/components/action-menu";
@@ -18,7 +18,6 @@ import type { ConnectMethod, ConnectMethodKind } from "./connect-plan";
 export const CONNECT_METHOD_ICONS: Record<ConnectMethodKind, LucideIcon> = {
   "mcp-oauth": Cable,
   "mcp-manual": Cable,
-  "cloud-oauth": ShieldCheck,
   "own-oauth": KeyRound,
 };
 
@@ -41,8 +40,6 @@ export function useConnectMethodLabel(
           return t("connectMethod.mcp", { name });
         case "mcp-manual":
           return t("connectMethod.mcpManual");
-        case "cloud-oauth":
-          return t("connectMethod.managed");
         case "own-oauth":
           return t("connectMethod.own");
       }

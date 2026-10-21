@@ -18,7 +18,10 @@ import { getPairedGuardianAccessToken } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
- * id-keyed `/assistant/__gateway/{assistantId}/*` forward. The lockfile
+ * id-keyed forward. The scoped SDK surface (`/v1/assistants/{assistantId}/*`)
+ * forwards the scoped path verbatim (contact-family flattened); the legacy
+ * unscoped prefix (`/assistant/__gateway/{assistantId}/*` — the `/auth/token`
+ * mint, `/readyz`, the lifecycle trio) forwards the tail. The lockfile
  * resolves the id to a loopback port (locally hatched gateways) or a recorded
  * remote `runtimeUrl` (imported pairings), so the local/paired split lives
  * host-side and the renderer never encodes either.

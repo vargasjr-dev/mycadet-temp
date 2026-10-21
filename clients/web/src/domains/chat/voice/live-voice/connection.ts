@@ -47,7 +47,12 @@ import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
-import { getLockfileAssistant, isPairedAssistant } from "@/lib/local-mode";
+import {
+  getLockfileAssistant,
+  isLocalClient,
+  isPairedAssistant,
+  isServedGatewayRuntime,
+} from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -222,42 +227,15 @@ export function buildTunnelWsUrl({
 }
 
 /**
- * Local gateway proxy path (`/assistant/__gateway/<assistantId>`) as produced
- * by `gatewayProxyUrl` in local-mode. HTTP gateway traffic rides this
- * same-origin proxy, but a live-voice WebSocket cannot: both hosts that serve
- * the proxy — the Vite dev-server middleware and the Electron `app://`
- * protocol forward — proxy HTTP only and drop the WS upgrade, so a WS dialled
- * at the proxy path never reaches the gateway. When the ingress is this proxy
- * path we therefore bypass it and dial the entry's recorded loopback gateway
- * port directly (the `ws://127.0.0.1:*` shape the desktop CSP already
- * allowlists); the id in the path is what the lockfile lookup goes by.
+ * Whether `assistantId`'s gateway is a paired one, which cannot carry a
+ * WebSocket upgrade. Voice entry points use this to degrade cleanly instead
+ * of dialling an unusable socket. The ingress slot no longer encodes the
+ * local/paired split (every local-mode prime carries the bare same-origin),
+ * so pairedness is read from the lockfile entry directly.
  */
-const LOCAL_GATEWAY_PROXY_PATH = /^\/assistant\/__gateway\/([^/]+)\/?$/;
-
-/**
- * Whether a self-hosted ingress URL reaches a paired assistant's gateway,
- * which cannot carry a WebSocket upgrade. Voice entry points use this to
- * degrade cleanly instead of dialling an unusable socket. The id-keyed proxy
- * path no longer encodes the local/paired split (the lockfile resolves it
- * host-side), so pairedness is read from the entry the path names.
- */
-export function isPairedGatewayIngress(ingressUrl: string): boolean {
-  try {
-    const match = new URL(ingressUrl).pathname.match(LOCAL_GATEWAY_PROXY_PATH);
-    if (!match) {
-      return false;
-    }
-    let assistantId: string;
-    try {
-      assistantId = decodeURIComponent(match[1]!);
-    } catch {
-      return false;
-    }
-    const entry = getLockfileAssistant(assistantId);
-    return entry != null && isPairedAssistant(entry);
-  } catch {
-    return false;
-  }
+export function isPairedGatewayAssistant(assistantId: string): boolean {
+  const entry = getLockfileAssistant(assistantId);
+  return entry != null && isPairedAssistant(entry);
 }
 
 /**
@@ -273,9 +251,11 @@ export class PairedVoiceUnavailableError extends Error {
 }
 
 export interface BuildSelfHostedGatewayWsUrlArgs {
+  /** The session's assistant id — its lockfile entry picks the transport. */
+  assistantId: string;
   /**
-   * The user's gateway ingress URL (e.g. `https://x.ngrok-free.app` or the local
-   * `/assistant/__gateway/<assistantId>` proxy path), from {@link getSelfHostedIngressUrl}.
+   * The user's gateway ingress URL (e.g. `https://x.ngrok-free.app`) or, in
+   * local mode, the bare page origin — from {@link getSelfHostedIngressUrl}.
    */
   ingressUrl: string;
   /** Gateway route to open, e.g. `/v1/live-voice` or `/v1/stt/stream`. */
@@ -296,48 +276,43 @@ export interface BuildSelfHostedGatewayWsUrlArgs {
  * - **The token is the actor edge JWT**, not a minted tunnel token. It rides in
  *   `?token=` because the browser WebSocket API can't set an `Authorization`
  *   header; the gateway's non-managed auth reads it there.
- * - **Local `/assistant/__gateway/<assistantId>` proxy path → direct loopback
- *   dial** (`ws://127.0.0.1:<port>{routePath}` with the port resolved from the
- *   entry's lockfile record), since that HTTP-only proxy can't carry the WS
- *   upgrade — see {@link LOCAL_GATEWAY_PROXY_PATH}.
- * - **Paired proxy paths (the unified id-keyed path naming a paired entry) →
- *   throws {@link PairedVoiceUnavailableError}**: the proxy is HTTP-only and
- *   there is no direct dial to fall back to, so no usable WS URL exists.
- * - **Remote ingress** (e.g. an ngrok `wss://` URL) keeps its host and path
- *   prefix, with `routePath` appended. Any query/hash on the ingress is dropped.
+ * - **Local assistants → direct loopback dial** (`ws://127.0.0.1:<port>`
+ *   `{routePath}`, port resolved from the entry's lockfile record): the
+ *   same-origin HTTP proxies can't carry a WS upgrade, and the bare-origin
+ *   ingress slot doesn't encode the port — the entry does. The
+ *   `ws://127.0.0.1:*` shape is what the desktop CSP already allowlists.
+ * - **Paired entries → throws {@link PairedVoiceUnavailableError}**: the
+ *   paired transport is HTTP-only and there is no direct dial to fall back
+ *   to, so no usable WS URL exists.
+ * - **Remote ingress** (e.g. an ngrok `wss://` URL, or the served-gateway
+ *   origin) keeps its host and path prefix, with `routePath` appended. Any
+ *   query/hash on the ingress is dropped.
  */
 export function buildSelfHostedGatewayWsUrl({
+  assistantId,
   ingressUrl,
   routePath,
   token,
   params,
 }: BuildSelfHostedGatewayWsUrlArgs): string {
-  const ingress = new URL(ingressUrl);
-  const localProxy = ingress.pathname.match(LOCAL_GATEWAY_PROXY_PATH);
-
+  const entry = getLockfileAssistant(assistantId);
+  if (entry != null && isPairedAssistant(entry)) {
+    // A paired entry degrades typed: the paired transport is HTTP-only with
+    // no loopback port to bypass to.
+    throw new PairedVoiceUnavailableError();
+  }
   let target: URL;
-  if (localProxy) {
-    // The proxy path carries the assistant id, not the port — resolve the
-    // recorded loopback gateway port from the lockfile entry.
-    let assistantId: string;
-    try {
-      assistantId = decodeURIComponent(localProxy[1]!);
-    } catch {
-      throw new Error("Local gateway proxy URL is malformed.");
-    }
-    const entry = getLockfileAssistant(assistantId);
-    if (entry && isPairedAssistant(entry)) {
-      // A paired entry reached through the unified id-keyed path degrades
-      // typed: the paired gateway is HTTP-only with no loopback port to
-      // bypass to.
-      throw new PairedVoiceUnavailableError();
-    }
-    const port = entry ? getLoopbackGatewayPort(entry) : undefined;
+  if (isLocalClient() && !isServedGatewayRuntime() && entry != null) {
+    // A local assistant dials its recorded loopback port directly: the
+    // same-origin HTTP proxies can't carry a WS upgrade, and the bare-origin
+    // ingress slot doesn't encode the port — the entry does.
+    const port = getLoopbackGatewayPort(entry);
     if (port == null) {
       throw new Error("Local gateway has no recorded port yet.");
     }
     target = new URL(`ws://127.0.0.1:${port}${routePath}`);
   } else {
+    const ingress = new URL(ingressUrl);
     ingress.protocol = ingress.protocol === "http:" ? "ws:" : "wss:";
     const prefix = ingress.pathname.replace(/\/+$/, "");
     ingress.pathname = `${prefix}${routePath}`;
@@ -387,7 +362,9 @@ export async function resolveGatewayWsUrl({
 }: ResolveGatewayWsUrlArgs): Promise<string> {
   const ingressUrl = getSelfHostedIngressUrl();
   if (ingressUrl) {
-    if (isPairedGatewayIngress(ingressUrl)) {
+    // The paired check fires before the token check: a paired slot carries
+    // no renderer token by design.
+    if (isPairedGatewayAssistant(assistantId)) {
       throw new PairedVoiceUnavailableError();
     }
     const token = getSelfHostedActorToken();
@@ -398,6 +375,7 @@ export async function resolveGatewayWsUrl({
       );
     }
     return buildSelfHostedGatewayWsUrl({
+      assistantId,
       ingressUrl,
       routePath,
       token,

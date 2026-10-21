@@ -14,7 +14,6 @@ import {
   selectCommandPaletteCommand,
 } from "@/runtime/command-palette-window";
 import type { CadetCommand } from "@/runtime/is-electron";
-import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 const noop = (): void => undefined;

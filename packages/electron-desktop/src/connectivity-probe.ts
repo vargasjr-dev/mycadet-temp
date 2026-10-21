@@ -5,7 +5,6 @@ import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
-  resolveCloud,
 } from "@mycadet/local-mode/contract";
 
 import { setBackendReachable } from "./status";
@@ -58,19 +57,22 @@ function resolveProbeTarget(lockfilePaths: string[]): ProbeTarget {
   if (!entry) {
     return { kind: "unknown" };
   }
+  // Paired entries probe their remote runtimeUrl; the paired flag decides —
+  // legacy paired rows parse their retired `cloud: "paired"` value as
+  // "local", which would otherwise fall into the loopback arm below.
+  if (entry.paired === true) {
+    const { runtimeUrl } = entry;
+    if (typeof runtimeUrl !== "string" || !isUsableRuntimeUrl(runtimeUrl)) {
+      return { kind: "unreachable" };
+    }
+    return {
+      kind: "paired",
+      url: `${runtimeUrl.replace(/\/+$/, "")}/healthz`,
+    };
+  }
   // Cloud wins over resources: merges can leave a stale gatewayPort on a
   // non-local entry, and it must not be loopback-probed.
   if (!isLoopbackGatewayCloud(entry.cloud)) {
-    if (resolveCloud(entry) === "paired") {
-      const { runtimeUrl } = entry;
-      if (typeof runtimeUrl !== "string" || !isUsableRuntimeUrl(runtimeUrl)) {
-        return { kind: "unreachable" };
-      }
-      return {
-        kind: "paired",
-        url: `${runtimeUrl.replace(/\/+$/, "")}/healthz`,
-      };
-    }
     return { kind: "non-local" };
   }
   const port = getLoopbackGatewayPort(entry);

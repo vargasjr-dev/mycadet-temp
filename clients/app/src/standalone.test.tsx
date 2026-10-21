@@ -136,7 +136,7 @@ describe("the shell's assistant commands", () => {
     });
   });
 
-  test("selectAssistant rides the paired-gateway path for paired entries", async () => {
+  test("selectAssistant connects paired entries same-origin (the host routes by path-id)", async () => {
     const sink = stubCadet({ lockfile: localLockfile });
     const router = renderChrome();
     await act(async () => {
@@ -146,10 +146,7 @@ describe("the shell's assistant commands", () => {
       expect(router.state.location.pathname).toBe("/assistant"),
     );
     expect(router.state.location.state).toEqual({
-      assistantSelection: {
-        id: "paired-1",
-        apiBase: "/assistant/__gateway/paired-1",
-      },
+      assistantSelection: { id: "paired-1" },
     });
   });
 

@@ -211,14 +211,12 @@ describe("pairAssistant", () => {
       assistantId: DEFAULT_PAIRED_ID,
       name: "paired (10.0.0.5:7830)",
       runtimeUrl: "http://10.0.0.5:7830",
-      cloud: "paired",
       paired: true,
     });
     expect(Object.keys(entry)).toEqual([
       "assistantId",
       "name",
       "runtimeUrl",
-      "cloud",
       "paired",
     ]);
     // Importing never reassigns the active assistant.
@@ -661,9 +659,8 @@ describe("pairAssistant", () => {
     });
     expect(first.ok).toBe(true);
     const cached = readLockfileFromDisk();
-    (
-      cached.assistants as Array<Record<string, unknown>>
-    )[0]!.cloudAssistantId = "11111111-1111-4111-8111-111111111111";
+    (cached.assistants as Array<Record<string, unknown>>)[0]!.cloudAssistantId =
+      "11111111-1111-4111-8111-111111111111";
     fs.writeFileSync(lockfilePath, JSON.stringify(cached, null, 2));
 
     const second = pairAssistant([lockfilePath], configDir, {
@@ -1116,7 +1113,6 @@ describe("pairingPoll", () => {
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
     expect(entry).toMatchObject({
-      cloud: "paired",
       paired: true,
       // The pair-page path is stripped back to the public base.
       runtimeUrl: "https://gw.example.com",
@@ -1737,7 +1733,7 @@ describe("pairingCancel", () => {
     const entry = (
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
-    expect(entry).toMatchObject({ cloud: "paired", paired: true });
+    expect(entry).toMatchObject({ paired: true });
     expect(readGuardianToken(entry.assistantId as string).accessToken).toBe(
       "acc-tok",
     );
@@ -1818,7 +1814,6 @@ describe("connectImport", () => {
     )[0]!;
     expect(entry).toMatchObject({
       assistantId: "desk-box",
-      cloud: "paired",
       paired: true,
       runtimeUrl: "https://gw.example.com",
     });
@@ -1837,7 +1832,6 @@ describe("connectImport", () => {
       assistants: [
         {
           assistantId: "paired-dev-legacy",
-          cloud: "paired",
           paired: true,
           runtimeUrl: "https://gw.example.com",
         },
@@ -1867,7 +1861,6 @@ describe("connectImport", () => {
       assistants: [
         {
           assistantId: "paired-dev-legacy",
-          cloud: "paired",
           paired: true,
           runtimeUrl: "https://other.example.com",
         },

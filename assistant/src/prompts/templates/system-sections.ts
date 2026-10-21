@@ -27,7 +27,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { getCachedManagedConnections } from "../../credential-execution/cloud-catalog.js";
 import { listConnections } from "../../oauth/oauth-store.js";
 import type { OnboardingContext } from "../../types/onboarding-context.js";
 import { stripCommentLines } from "../../util/strip-comment-lines.js";
@@ -134,15 +133,13 @@ function renderFirstRunUserContext(onboarding: OnboardingContext): string {
 }
 
 /**
- * Builds the `# Connected Services` block from the live OAuth caches.
- * Reads local (BYO) connections from the SQLite store via
- * `listConnections()` and cloud connections from the
- * in-memory cache populated at daemon startup.  Provider-level dedup
- * is intentional: this block is a summary for the model, not an
- * exhaustive account list, so multiple accounts on the same provider
- * (e.g. two Google logins) collapse to a single line.
+ * Builds the `# Connected Services` block from the live OAuth store.
+ * Reads connections from the SQLite store via `listConnections()`.
+ * Provider-level dedup is intentional: this block is a summary for the
+ * model, not an exhaustive account list, so multiple accounts on the same
+ * provider (e.g. two Google logins) collapse to a single line.
  *
- * Returns `null` when neither source has an active connection so the
+ * Returns `null` when there are no active connections so the
  * `14-connected-services` transform gates the section off entirely.
  */
 function renderConnectedServices(): string | null {
@@ -152,12 +149,6 @@ function renderConnectedServices(): string | null {
     entries.push(...listConnections().filter((c) => c.status === "active"));
   } catch {
     // OAuth DB unavailable — local connections skipped.
-  }
-
-  for (const mc of getCachedManagedConnections()) {
-    if (!entries.some((e) => e.provider === mc.provider)) {
-      entries.push(mc);
-    }
   }
 
   if (entries.length === 0) {
@@ -548,12 +539,10 @@ You can still be genuinely helpful — answer general questions, do research, an
   },
   {
     // Runtime-computed summary of OAuth connections.  Body is empty
-    // because the content is derived from live caches rather than a
+    // because the content is derived from the live store rather than a
     // workspace file — the transform pulls from `listConnections()`
-    // (SQLite OAuth store) and `getCachedManagedConnections()`
-    // (in-memory cache populated by the cloud-catalog refresh job).
-    // Returns null when no active connections exist so the renderer's
-    // empty-body gate omits the section entirely.
+    // (SQLite OAuth store). Returns null when no active connections
+    // exist so the renderer's empty-body gate omits the section entirely.
     id: "14-connected-services",
     body: "",
     dynamic: true,

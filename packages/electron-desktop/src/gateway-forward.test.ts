@@ -82,6 +82,45 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  test("passes a scoped path for an unknown id through to the generic /v1 arm", async () => {
+    const { fetcher } = recorder();
+    expect(
+      await forwardGatewayRequest(
+        request("/v1/assistants/unknown/messages"),
+        fetcher,
+      ),
+    ).toBeNull();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
+  });
+
+  test("forwards the scoped SDK surface verbatim to the recorded port", async () => {
+    const { fetcher, response } = recorder();
+    expect(
+      await forwardGatewayRequest(
+        request("/v1/assistants/abc/conversations?x=1"),
+        fetcher,
+      ),
+    ).toBe(response);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    const [url, init] = fetcher.mock.calls[0]!;
+    expect(url).toBe(
+      "http://127.0.0.1:8080/v1/assistants/abc/conversations?x=1",
+    );
+    expect(init.method).toBe("GET");
+  });
+
+  test("flattens the contact family in the scoped forward", async () => {
+    const { fetcher } = recorder();
+    await forwardGatewayRequest(
+      request("/v1/assistants/abc/contacts/x"),
+      fetcher,
+    );
+    expect(fetcher.mock.calls[0]![0]).toBe(
+      "http://127.0.0.1:8080/v1/contacts/x",
+    );
+  });
+
   test("forwards to the recorded loopback port and preserves the query", async () => {
     const { fetcher, response } = recorder();
     expect(

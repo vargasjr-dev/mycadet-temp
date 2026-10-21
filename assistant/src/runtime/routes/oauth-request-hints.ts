@@ -26,8 +26,6 @@ export interface RequestHintFacts {
    * request acted as a person through their OAuth integration.
    */
   botChannel?: string;
-  /** The provider runs in cloud-managed mode. */
-  managed: boolean;
   /**
    * The base URL the request resolved against: an absolute URL's own origin,
    * otherwise the provider's configured base. Absent when neither is set.
@@ -87,13 +85,9 @@ export const REQUEST_HINT_RULES: readonly RequestHintRule[] = [
         ? `Request returned HTTP ${facts.status}. The ${facts.botChannel} bot credential was rejected; it may have been revoked or reinstalled with fewer scopes.\n\n` +
           `Run 'assistant channels get ${facts.botChannel}' to re-probe the channel and see what it reports.\n` +
           `To reconnect, run the channel's setup skill again.`
-        : facts.managed
-          ? `Request returned HTTP ${facts.status}. The OAuth token may be expired or revoked.\n\n` +
-            `Run 'assistant oauth status ${facts.provider}' to check connection health.\n` +
-            `To reconnect, run 'assistant oauth connect --help'.`
-          : `Request returned HTTP ${facts.status}. The OAuth token may be expired or revoked.\n\n` +
-            `Run 'assistant oauth status ${facts.provider}' to check connection status.\n` +
-            `To reconnect, run 'assistant oauth connect --help'.`,
+        : `Request returned HTTP ${facts.status}. The OAuth token may be expired or revoked.\n\n` +
+          `Run 'assistant oauth status ${facts.provider}' to check connection status.\n` +
+          `To reconnect, run 'assistant oauth connect --help'.`,
   },
   {
     // An HTML 404 (rather than a JSON API error) is the signature of a request

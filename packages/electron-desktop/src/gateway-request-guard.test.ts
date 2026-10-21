@@ -29,13 +29,14 @@ beforeEach(() => {
 });
 
 describe("installGatewayRequestGuard", () => {
-  test("gates both supported gateway proxy paths by frame origin", () => {
+  test("gates the scoped data plane and both legacy proxy paths by frame origin", () => {
     const remove = installGatewayRequestGuard({
       appOrigin: APP_ORIGIN,
       resolveAllowedOrigin: () => APP_ORIGIN,
     });
 
     expect(registeredFilter?.urls).toEqual([
+      "app://mycadet.ai/v1/assistants/*",
       "app://mycadet.ai/assistant/__gateway/*",
       "app://mycadet.ai/__gateway/*",
     ]);

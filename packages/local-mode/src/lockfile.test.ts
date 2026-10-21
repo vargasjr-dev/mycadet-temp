@@ -123,7 +123,7 @@ describe("isPairedLockfileEntry", () => {
   test("classifies paired cloud entries and host pairing markers as paired", () => {
     writeOnDisk({
       assistants: [
-        { assistantId: "paired-1", cloud: "paired" },
+        { assistantId: "paired-1", paired: true },
         { assistantId: "paired-marker", cloud: "local", paired: true },
         { assistantId: "local-1", cloud: "local" },
       ],
@@ -166,7 +166,7 @@ describe("upsertLockfileAssistant", () => {
       assistants: [
         {
           assistantId: "asst_old",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://old",
           futureField: "keep-me",
         },
@@ -195,7 +195,7 @@ describe("upsertLockfileAssistant", () => {
       );
       expect(wireOld).toEqual({
         assistantId: "asst_old",
-        cloud: "cadet",
+        cloud: "cloud",
         runtimeUrl: "http://old",
       });
     }
@@ -551,7 +551,7 @@ describe("lockfile writers under lock contention", () => {
 
     const result = replaceCloudAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://p" }],
+      [{ assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://p" }],
     );
 
     expect(result).toMatchObject({ ok: false, status: 423 });
@@ -575,7 +575,6 @@ describe("lockfile writers under lock contention", () => {
 describe("upsertRendererLockfileAssistant", () => {
   const paired = {
     assistantId: "paired-1",
-    cloud: "paired",
     paired: true,
     runtimeUrl: "https://gateway.example.com",
     name: "Paired assistant",
@@ -595,7 +594,7 @@ describe("upsertRendererLockfileAssistant", () => {
         [lockfilePath],
         {
           assistantId: "local-1",
-          cloud: "paired",
+          paired: true,
           runtimeUrl: "https://gateway.example.com",
         },
         undefined,
@@ -633,7 +632,7 @@ describe("upsertRendererLockfileAssistant", () => {
       [lockfilePath],
       {
         assistantId: "paired-1",
-        cloud: "paired",
+        paired: true,
         runtimeUrl: "https://gateway.example.com",
         name: "Renamed pairing",
       },
@@ -663,7 +662,6 @@ describe("replaceCloudAssistants", () => {
         [
           {
             assistantId: "asst_local",
-            cloud: "paired",
             paired: true,
             runtimeUrl: "https://attacker.example.com",
           },
@@ -687,7 +685,7 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_p",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://old",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
@@ -696,14 +694,14 @@ describe("replaceCloudAssistants", () => {
 
     const result = replaceCloudAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_p", cloud: "cadet", runtimeUrl: "http://new" }],
+      [{ assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://new" }],
     );
 
     expect(result.ok).toBe(true);
     expect(readOnDisk().assistants).toEqual([
       {
         assistantId: "asst_p",
-        cloud: "cadet",
+        cloud: "cloud",
         runtimeUrl: "http://new",
         onboardedAt: "2026-08-01T00:00:00.000Z",
       },
@@ -716,7 +714,7 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_p",
-          cloud: "cadet",
+          cloud: "cloud",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
       ],
@@ -727,7 +725,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_p",
-          cloud: "cadet",
+          cloud: "cloud",
           onboardedAt: "2026-08-31T00:00:00.000Z",
         },
       ],
@@ -745,7 +743,7 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_a",
-          cloud: "cadet",
+          cloud: "cloud",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
       ],
@@ -753,11 +751,11 @@ describe("replaceCloudAssistants", () => {
 
     replaceCloudAssistants(
       [lockfilePath],
-      [{ assistantId: "asst_b", cloud: "cadet" }],
+      [{ assistantId: "asst_b", cloud: "cloud" }],
     );
 
     expect(readOnDisk().assistants).toEqual([
-      { assistantId: "asst_b", cloud: "cadet" },
+      { assistantId: "asst_b", cloud: "cloud" },
     ]);
   });
 
@@ -769,7 +767,7 @@ describe("replaceCloudAssistants", () => {
         { assistantId: "asst_local", cloud: "local", runtimeUrl: "http://l" },
         {
           assistantId: "asst_old_platform",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://op",
         },
       ],
@@ -780,7 +778,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_new_platform",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://np",
         },
       ],
@@ -802,13 +800,13 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_a",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b_old",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_b",
           runtimeUrl: "http://bo",
         },
@@ -820,7 +818,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_org_b_new",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_b",
           runtimeUrl: "http://bn",
         },
@@ -840,7 +838,7 @@ describe("replaceCloudAssistants", () => {
       activeAssistant: null,
       assistants: [
         // Legacy platform entry with no organizationId, same id as the sync.
-        { assistantId: "asst_dup", cloud: "cadet", runtimeUrl: "http://old" },
+        { assistantId: "asst_dup", cloud: "cloud", runtimeUrl: "http://old" },
       ],
     });
 
@@ -849,7 +847,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_dup",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://new",
         },
@@ -874,13 +872,13 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_a",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_b",
           runtimeUrl: "http://b",
         },
@@ -892,7 +890,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_new",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://np",
         },
       ],
@@ -911,7 +909,7 @@ describe("replaceCloudAssistants", () => {
         { assistantId: "asst_local", cloud: "local", runtimeUrl: "http://l" },
         {
           assistantId: "asst_org_a",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
@@ -923,7 +921,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_org_a_new",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://an",
         },
@@ -943,7 +941,7 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_org_b_old",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_b",
           runtimeUrl: "http://bo",
         },
@@ -955,7 +953,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_org_a",
-          cloud: "cadet",
+          cloud: "cloud",
           organizationId: "org_a",
           runtimeUrl: "http://a",
         },
@@ -973,7 +971,7 @@ describe("replaceCloudAssistants", () => {
       assistants: [
         {
           assistantId: "asst_old_platform",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://op",
         },
       ],
@@ -984,7 +982,7 @@ describe("replaceCloudAssistants", () => {
       [
         {
           assistantId: "asst_new_platform",
-          cloud: "cadet",
+          cloud: "cloud",
           runtimeUrl: "http://np",
         },
       ],
