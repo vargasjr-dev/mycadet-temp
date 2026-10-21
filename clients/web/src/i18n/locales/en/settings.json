@@ -1,21 +1,4 @@
 {
-  "accessConsentSetting": {
-    "description": "When enabled, Cadet Staff will be able to access your assistant and its data for debugging purposes. It's suggested that you leave this off and only turn it on temporarily if you need Cadet Support's help in investigating an issue.",
-    "expireAgain": "Expire after 24 hours",
-    "expiresAt": "Staff access ends {when}.",
-    "extend": "Extend 24 hours",
-    "keepOn": "Keep on until I turn it off",
-    "loadError": "Failed to load consent setting.",
-    "loginNotice": "Log in to Cadet Cloud to manage admin data access.",
-    "staysOn": "Staff access stays on until you turn it off.",
-    "title": "Allow Staff Access",
-    "toastDisabled": "Admin data access disabled.",
-    "toastEnabled": "Admin data access enabled.",
-    "toastExpiring": "Admin data access will end in 24 hours.",
-    "toastExtended": "Admin data access extended.",
-    "toastKeptOn": "Admin data access will stay on until you turn it off.",
-    "toastUpdateFailed": "Failed to update log access consent."
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "Choose profile…",
     "description": "The profile your assistant consults for a second opinion when it wants to check a plan or review its own work.",
@@ -919,23 +902,6 @@
     "showContextWindow": "Show context window usage",
     "showContextWindowHelper": "Adds a ring to the composer tracking how full the context window is. Your assistant compacts its context automatically either way.",
     "title": "Preferences"
-  },
-  "privacyPage": {
-    "llmLogRetentionDescription": "How long to keep LLM request and response logs on this device. These logs record the prompts and completions sent to model providers and are used for debugging. Shorter retention improves privacy; longer retention helps troubleshoot issues.",
-    "llmLogRetentionLabel": "LLM Request Log Retention",
-    "retentionDontRetain": "Don't retain",
-    "retentionKeepForever": "Keep forever",
-    "retentionNinetyDays": "90 days",
-    "retentionOneDay": "1 day",
-    "retentionOneHour": "1 hour",
-    "retentionSevenDays": "7 days",
-    "retentionThirtyDays": "30 days",
-    "shareAnalyticsHelper": "Send aggregated product usage data",
-    "shareAnalyticsLabel": "Share Analytics",
-    "shareDiagnosticsHelper": "Send crash reports and conversation traces",
-    "shareDiagnosticsLabel": "Share Diagnostics",
-    "subtitleWithPolicy": "View details about what data we collect and how it's used in our <policyLink>privacy policy</policyLink>.",
-    "title": "Privacy"
   },
   "profileAdvancedParams": {
     "contextWindowLabel": "Context Window",

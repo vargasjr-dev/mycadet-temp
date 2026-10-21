@@ -32,14 +32,21 @@ export interface NavigationState {
   cloudSession: CloudSessionStatus;
   tosAccepted: boolean;
   privacyConsent: boolean;
-  analyticsConsentCurrent: boolean;
-  diagnosticsConsentCurrent: boolean;
   /**
    * Whether the consent flags above reflect a completed session sync (or an
    * explicit acceptance). They boot `false`, so acting on them before
    * hydration would misread an established user as un-onboarded.
    */
   consentHydrated: boolean;
+  /**
+   * Whether the cloud has any consent record for this user (a first consent
+   * or later). Both acceptance flags above boot `false` and stay `false` for
+   * a never-consented user AND for an established user whose accepted
+   * versions went stale — this flag is the discriminator between the two,
+   * which is what decides a first-consent funnel versus a re-review.
+   */
+  hasConsentRecord: boolean;
+
   /**
    * Whether `consentHydrated` above was forced by the auth middleware after its
    * hydration wait timed out. The consent flags then still read their boot
@@ -104,19 +111,6 @@ export type NavigationDecision =
 
 function hasCompletedOnboarding(state: NavigationState): boolean {
   return state.tosAccepted && state.privacyConsent;
-}
-
-/**
- * Onboarding is complete AND every consent toggle is for the current version.
- * A stale toggle means the user must re-review the terms even though they
- * already finished onboarding.
- */
-function consentIsCurrent(state: NavigationState): boolean {
-  return (
-    hasCompletedOnboarding(state) &&
-    state.analyticsConsentCurrent &&
-    state.diagnosticsConsentCurrent
-  );
 }
 
 const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
@@ -676,7 +670,10 @@ function enforceFunnelConsent(
     }
   }
 
-  if (!hasCompletedOnboarding(state)) {
+  // First consent only: a user with no consent record at all. A
+  // record-holder whose acceptance went stale is handled below (research)
+  // or by the hatching screen's own hatch-gate.
+  if (!state.hasConsentRecord && !hasCompletedOnboarding(state)) {
     return {
       action: "redirect",
       to: consentBounceDestination(state, pathnameWithSearch),
@@ -694,7 +691,7 @@ function enforceFunnelConsent(
     path === routes.onboarding.research &&
     postCheckoutHatchReturnTo(pathnameWithSearch) &&
     state.cloudSession === "present" &&
-    !consentIsCurrent(state)
+    !hasCompletedOnboarding(state)
   ) {
     const returnTo = encodeURIComponent(pathnameWithSearch);
     return {
@@ -753,15 +750,17 @@ function requireAssistant(
   }
 
   if (!hasCompletedOnboarding(state)) {
+    // No consent record = first consent: the privacy screen starts the
+    // onboarding funnel. A record + a stale acceptance = a re-review of the
+    // terms before provisioning an assistant.
+    if (state.hasConsentRecord) {
+      const returnTo = encodeURIComponent(pathnameWithSearch);
+      return {
+        action: "redirect",
+        to: `${routes.reviewTerms}?returnTo=${returnTo}`,
+      };
+    }
     return { action: "redirect", to: routes.onboarding.privacy };
-  }
-  // A stale toggle must be re-reviewed before provisioning an assistant.
-  if (!consentIsCurrent(state)) {
-    const returnTo = encodeURIComponent(pathnameWithSearch);
-    return {
-      action: "redirect",
-      to: `${routes.reviewTerms}?returnTo=${returnTo}`,
-    };
   }
   // A consented user with no assistant goes to the standard hatching screen.
   return { action: "redirect", to: routes.onboarding.hatching };
@@ -777,7 +776,7 @@ function requireConsent(
   // absent/unknown session has no server consent record to gate on. Note this
   // is NOT gated on isLocalClient — a local-mode client with a cloud session
   // still re-reviews stale terms.
-  if (state.cloudSession !== "present" || consentIsCurrent(state)) {
+  if (state.cloudSession !== "present" || hasCompletedOnboarding(state)) {
     return null;
   }
 
@@ -808,7 +807,11 @@ function resolveOnboardingIntercept(
   if (state.isLocalClient && state.hasAssistants) {
     return { action: "allow" };
   }
-  if (hasCompletedOnboarding(state) || state.userHasOnboardedAssistant) {
+  if (
+    hasCompletedOnboarding(state) ||
+    state.hasConsentRecord ||
+    state.userHasOnboardedAssistant
+  ) {
     return { action: "allow" };
   }
 
@@ -841,14 +844,18 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
     return { action: "redirect", to: routes.account.login };
   }
   if (!hasCompletedOnboarding(state)) {
-    return {
-      action: "redirect",
-      to: onboardingEntrypoint(state.isLocalClient),
-    };
-  }
-  // A stale toggle must be re-reviewed before hatching, even via direct navigation.
-  if (!state.isLocalClient && !consentIsCurrent(state)) {
-    return { action: "redirect", to: routes.reviewTerms };
+    // A user with no consent record owes first consent. A record-holder's
+    // acceptance flags only went stale — platform users re-review the terms
+    // (even via direct navigation); local mode is not gated on staleness.
+    if (!state.hasConsentRecord) {
+      return {
+        action: "redirect",
+        to: onboardingEntrypoint(state.isLocalClient),
+      };
+    }
+    if (!state.isLocalClient) {
+      return { action: "redirect", to: routes.reviewTerms };
+    }
   }
   return { action: "allow" };
 }

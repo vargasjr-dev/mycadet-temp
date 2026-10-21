@@ -16,7 +16,7 @@ import type { IntegrationsIngressStatusGetResponse } from "@/generated/daemon/ty
 
 /** Local-gateway base URL used across the pair-device tests. */
 export const TEST_GATEWAY_BASE =
-  "http://localhost:3000/assistant/__gateway/20100";
+  "http://localhost:3000/assistant/__gateway/test-assistant";
 
 /** An assistant version below the ingress-status floor, so no probe goes out. */
 export const VERSION_BELOW_INGRESS_STATUS = "0.11.5";

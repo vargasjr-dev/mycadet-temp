@@ -2,27 +2,20 @@ import { ShieldCheck } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import {
-  AgreementsCard,
-  PrivacyPreferencesCard,
-} from "@/domains/onboarding/components/consent-controls";
+import { AgreementsCard } from "@/domains/onboarding/components/consent-controls";
 import {
   privacyChangeNotes,
   tosChangeNotes,
 } from "@/domains/onboarding/consent-changelog";
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import {
-  useAnalyticsConsentCurrent,
-  useDiagnosticsConsentCurrent,
   useHasConsentRecord,
   usePrivacyConsent,
-  useShareAnalytics,
-  useShareDiagnostics,
   useTosAccepted,
 } from "@/domains/onboarding/prefs";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { isElectron } from "@/runtime/is-electron";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   PRIVACY_CONSENT_VERSION,
   TOS_CONSENT_VERSION,
@@ -40,94 +33,47 @@ export function ReviewTermsScreen() {
   const userId = useAuthStore.use.user()?.id ?? null;
   const logout = useAuthStore.use.logout();
   const electron = isElectron();
-  const hasCloudSession = useHasCloudSession();
 
   const [tosAccepted, setTosAccepted] = useTosAccepted();
   const [privacyConsent, setPrivacyConsent] = usePrivacyConsent();
-  const [shareAnalytics, setShareAnalytics] = useShareAnalytics();
-  const [shareDiagnostics, setShareDiagnostics] = useShareDiagnostics();
-  const [analyticsConsentCurrent] = useAnalyticsConsentCurrent();
-  const [diagnosticsConsentCurrent] = useDiagnosticsConsentCurrent();
   const hasConsentRecord = useHasConsentRecord();
-  // Never-asked (null) displays as on: both toggles are opt-out, so an
-  // unchosen toggle is effectively enabled.
-  const shareAnalyticsChecked = shareAnalytics ?? true;
-  const shareDiagnosticsChecked = shareDiagnostics ?? true;
 
   // Snapshot staleness at mount: these are the sections the user was routed
   // here to address. Gating render on live values would unmount a checkbox the
   // instant it's checked, so the user never sees the checked state.
   const [tosStaleAtMount] = useState(() => !tosAccepted);
   const [privacyStaleAtMount] = useState(() => !privacyConsent);
-  const [analyticsStaleAtMount] = useState(() => !analyticsConsentCurrent);
-  const [diagnosticsStaleAtMount] = useState(() => !diagnosticsConsentCurrent);
 
   // Direct navigation to this route with everything already current would
   // otherwise render an empty page. Treat that as a full review surface: show
   // every section so the page is meaningful and re-confirmable.
-  const nothingStaleAtMount =
-    !tosStaleAtMount &&
-    !privacyStaleAtMount &&
-    !analyticsStaleAtMount &&
-    !diagnosticsStaleAtMount;
+  const nothingStaleAtMount = !tosStaleAtMount && !privacyStaleAtMount;
   // No consent record at all means this user never consented (e.g. arrived
   // with an assistant via the bring-your-agent import, which replaces
   // onboarding). Present first-time consent framing, not the "we've updated
   // our terms" re-review framing — there is no baseline to diff against.
-  //
-  // Keyed off the explicit record signal, NOT off the two staleness flags:
-  // those carry version currency, so an established user whose acceptances
-  // predate BOTH current required versions has both stale and would otherwise
-  // be misread as never-consented — losing the "what's changed" notes that are
-  // the whole point of their re-review.
-  //
-  // Snapshotted at mount for the same reason as the staleness flags above: a
-  // sync landing mid-visit must not re-frame the page or unmount the
-  // diagnostics toggle while the user is using it.
+  // Snapshotted at mount so a restore landing mid-visit cannot re-frame the
+  // page.
   const [firstConsentAtMount] = useState(() => !hasConsentRecord);
   const showTos = tosStaleAtMount || nothingStaleAtMount;
   const showPrivacy = privacyStaleAtMount || nothingStaleAtMount;
-  const showAnalytics = analyticsStaleAtMount || nothingStaleAtMount;
-  // A first-consent user (bring-your-agent) skips the onboarding privacy
-  // screen entirely, so review-terms is where they first choose diagnostics
-  // sharing. Their *Current flags read never-asked as "nothing to re-review"
-  // (true), so diagnosticsStaleAtMount is false — surface the toggle anyway to
-  // match the onboarding privacy screen (diagnostics-only; analytics stays
-  // null until an explicit opt-in, so showAnalytics is deliberately not forced
-  // here).
-  const showDiagnostics =
-    diagnosticsStaleAtMount || nothingStaleAtMount || firstConsentAtMount;
-  const onlyTogglesStaleAtMount =
-    !nothingStaleAtMount && !tosStaleAtMount && !privacyStaleAtMount;
 
   const heading = nothingStaleAtMount
-    ? "Terms & privacy"
-    : onlyTogglesStaleAtMount
-      ? "Review your privacy preferences"
-      : firstConsentAtMount
-        ? "Before You Start"
-        : "Updated terms";
+    ? "Terms"
+    : firstConsentAtMount
+      ? "Before You Start"
+      : "Updated terms";
   const subheading = nothingStaleAtMount
-    ? "Review your terms and privacy preferences anytime."
-    : onlyTogglesStaleAtMount
-      ? "Confirm your privacy preferences to continue."
-      : firstConsentAtMount
-        ? "Review and accept the terms to start using your assistant. You can update your preferences anytime in Settings."
-        : "We've updated our terms. Please review and accept to continue.";
+    ? "Review your terms anytime."
+    : firstConsentAtMount
+      ? "Review and accept the terms to start using your assistant."
+      : "We've updated our terms. Please review and accept to continue.";
 
   const onContinue = useCallback(() => {
-    // Only persist a share toggle when it was actually on screen — a user
-    // routed here for other stale sections must not silently grant (or
-    // re-stamp) consent for a toggle they never saw; the server keeps null
-    // until they choose. A toggle that WAS on screen persists on Continue
-    // even if untouched — shown + acknowledged is an explicit choice.
     saveConsent({
       userId,
       tos: tosAccepted,
       privacy: privacyConsent,
-      shareAnalytics: showAnalytics ? shareAnalyticsChecked : null,
-      shareDiagnostics: showDiagnostics ? shareDiagnosticsChecked : null,
-      hasCloudSession,
     });
 
     const destination = sanitizeReturnTo(
@@ -135,18 +81,7 @@ export function ReviewTermsScreen() {
       routes.assistant,
     );
     void navigate(destination, { replace: true });
-  }, [
-    privacyConsent,
-    hasCloudSession,
-    navigate,
-    searchParams,
-    shareAnalyticsChecked,
-    shareDiagnosticsChecked,
-    showAnalytics,
-    showDiagnostics,
-    tosAccepted,
-    userId,
-  ]);
+  }, [privacyConsent, navigate, searchParams, tosAccepted, userId]);
 
   const handleLogout = useCallback(async () => {
     await logout();
@@ -154,7 +89,7 @@ export function ReviewTermsScreen() {
   }, [logout]);
 
   // Only the legal checkboxes shown at mount gate Continue, driven by their
-  // live checked values. Toggles never block — off is a valid choice.
+  // live checked values.
   const continueDisabled =
     (showTos && !tosAccepted) || (showPrivacy && !privacyConsent);
 
@@ -185,21 +120,7 @@ export function ReviewTermsScreen() {
           {subheading}
         </p>
 
-        {(showAnalytics || showDiagnostics) && (
-          <PrivacyPreferencesCard
-            electron={electron}
-            showAnalytics={showAnalytics}
-            showDiagnostics={showDiagnostics}
-            shareAnalytics={shareAnalyticsChecked}
-            shareDiagnostics={shareDiagnosticsChecked}
-            onShareAnalyticsChange={setShareAnalytics}
-            onShareDiagnosticsChange={setShareDiagnostics}
-            className="mt-9 w-full"
-            style={{ animation: "fadeInUp 0.5s ease-out 0.28s both" }}
-          />
-        )}
-
-        {(showPrivacy || showTos) && (
+         {(showPrivacy || showTos) && (
           <AgreementsCard
             electron={electron}
             showPrivacy={showPrivacy}

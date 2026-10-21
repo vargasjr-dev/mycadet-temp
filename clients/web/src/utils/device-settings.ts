@@ -36,13 +36,6 @@ interface DeviceSettingEntry {
  */
 const DEVICE_SETTINGS = {
   theme: { key: "device:theme" },
-  shareAnalytics: { key: "device:share_analytics" },
-  shareDiagnostics: { key: "device:share_diagnostics" },
-  // Effective diagnostics reporting gate: tracks the saved preference
-  // with opt-out semantics, closing only for an explicit opt-out; absent reads
-  // open once consent has hydrated. Decoupled from `shareDiagnostics` (the
-  // saved preference) so consent-resolution paths can write it independently.
-  diagnosticsReporting: { key: "device:diagnostics_reporting" },
   biometricEnabled: { key: "device:biometric_enabled" },
   llmLogRetention: { key: "device:llm_log_retention" },
   timezone: { key: "device:timezone" },

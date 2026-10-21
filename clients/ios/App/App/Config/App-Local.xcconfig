@@ -17,10 +17,10 @@ BUNDLE_URL_SCHEME = cadet-local
 CODE_SIGN_ENTITLEMENTS = App/App-Local.entitlements
 PRODUCT_BUNDLE_IDENTIFIER = ai.mycadet.ios.local
 
-# Local-only ATS exception: the loopback control plane is plain http, and the
-# shared Info.plist ships with no ATS entry at all. This target builds against
-# a generated plist variant (scripts/build.sh) that adds just
-# NSAllowsLocalNetworking — no released environment gets localhost support.
+// Local-only ATS exception: the loopback control plane is plain http, and the
+// shared Info.plist ships with no ATS entry at all. This target builds against
+// a generated plist variant (scripts/build.sh) that adds just
+// NSAllowsLocalNetworking — no released environment gets localhost support.
 INFOPLIST_FILE = App/App-Local-Info.plist
 
 // Exact portal profile name; must equal release-ios.yaml's `profile_name`.

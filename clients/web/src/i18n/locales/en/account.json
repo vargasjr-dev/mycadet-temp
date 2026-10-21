@@ -1,49 +1,4 @@
 {
-  "authWaitSpinner": {
-    "loading": "Loading"
-  },
-  "signupScreen": {
-    "headlineLead": "Meet your new",
-    "headlineRoles": {
-      "personalIntelligence": "Personal Intelligence",
-      "softwareEngineer": "Software Engineer",
-      "financeOps": "Finance Ops",
-      "householdManager": "Household Manager",
-      "gtmEngineer": "GTM Engineer",
-      "productLead": "Product Lead"
-    },
-    "subtitle": "The most powerful assistant that can handle your work and life admin tasks.",
-    "continue": "Continue",
-    "downloadMac": "Download for macOS",
-    "haveAccountPrompt": "Already have an account? <signIn>Sign in</signIn>"
-  },
-  "signupClosedScreen": {
-    "title": "Signups are currently closed",
-    "message": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later. Alternatively, you can self-host Cadet. Learn more about self-hosting <selfHostingLink>here</selfHostingLink>.",
-    "haveAccountPrompt": "Already have an account? <signIn>Sign in</signIn>"
-  },
-  "accountPage": {
-    "loading": "Loading...",
-    "welcomeTitle": "Welcome to Cadet",
-    "welcomeSubtitle": "Sign in to get started.",
-    "signIn": "Sign in",
-    "signedInTitle": "Welcome!",
-    "signedInTitleNamed": "Welcome, {name}!",
-    "signedInSubtitle": "You are signed in.",
-    "goToAssistant": "Go to your assistant",
-    "signOut": "Sign out"
-  },
-  "loginPage": {
-    "signUp": "Sign up",
-    "signIn": "Sign in"
-  },
-  "logoutPage": {
-    "title": "Signing out..."
-  },
-  "platformLoopbackPage": {
-    "backToWelcome": "Back to Welcome",
-    "completing": "Completing login..."
-  },
   "oauthComplete": {
     "errorCode": "Error: {code}"
   },
@@ -82,9 +37,6 @@
     "signupClosed": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",
     "providerSignup": "No Cadet account is linked to that login yet. Sign up first, then sign in.",
     "loginIncomplete": "Your account needs another step to finish signing in. Please sign in on the web, then try again.",
-    "desktopUpdateRequired": "This version of the Cadet desktop app can't sign in. Update the app, then try again.",
-    "loopbackStateMismatch": "Login failed: state mismatch. Please try again.",
-    "loopbackNoToken": "Login failed: no session token received. Please try again.",
-    "loopbackInvalidToken": "Login failed: invalid session token."
+    "desktopUpdateRequired": "This version of the Cadet desktop app can't sign in. Update the app, then try again."
   }
 }

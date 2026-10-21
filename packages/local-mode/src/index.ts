@@ -124,18 +124,16 @@ export type {
 } from "./guardian-token";
 export {
   authorizePairedForwardHeaders,
-  parseGatewayUrl,
-  readAllowedGatewayPorts,
+  parseAssistantGatewayUrl,
+  readGatewayTargets,
   resolveGatewayProxyTarget,
-  parsePairedGatewayUrl,
-  pairedGatewayTargetsFromLockfile,
-  readPairedGatewayTargets,
-  resolvePairedGatewayProxyTarget,
+  gatewayTargetsFromLockfile,
   sanitizePairedForwardHeaders,
 } from "./gateway-proxy";
 export type {
-  GatewayTarget,
-  GatewayParseResult,
+  AssistantGatewayTarget,
+  AssistantGatewayParseResult,
+  GatewayEntryTarget,
   GatewayProxyDecision,
   PairedForwardAuthorizationResult,
   PairedGuardianTokenProvider,

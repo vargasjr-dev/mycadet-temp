@@ -1,9 +1,7 @@
 import type { CSSProperties } from "react";
 
 import { ExternalAnchor } from "@/components/external-anchor";
-import { SettingRow } from "@/components/setting-row";
 import { legalUrl, routes } from "@/utils/routes";
-import { Card } from "@mycadet/design-library/components/card";
 import { Checkbox } from "@mycadet/design-library/components/checkbox";
 import { Trans, useTranslation } from "@/i18n";
 
@@ -12,7 +10,6 @@ import { Trans, useTranslation } from "@/i18n";
  * review-terms screen so both surfaces present the toggles and legal
  * agreements identically.
  *
- * - `PrivacyPreferencesCard` — the Share Analytics / Share Diagnostics toggles.
  * - `AgreementsCard`         — the legal consent checkboxes.
  */
 
@@ -84,12 +81,6 @@ function ConsentCheckbox({
   );
 }
 
-function Divider() {
-  return (
-    <div className="h-px bg-[var(--surface-active)] dark:bg-[var(--surface-lift)]" />
-  );
-}
-
 // A short "what's changed" summary shown above a consent checkbox when the
 // policy version was bumped. A recessed, left-ruled callout that promotes the
 // change itself to the most legible line in the card — it's why the user is
@@ -125,58 +116,6 @@ function PolicyChangeNotes({ notes }: { notes?: string[] }) {
         </ul>
       )}
     </div>
-  );
-}
-
-export function PrivacyPreferencesCard({
-  electron,
-  showAnalytics = true,
-  showDiagnostics = true,
-  shareAnalytics,
-  shareDiagnostics,
-  onShareAnalyticsChange,
-  onShareDiagnosticsChange,
-  className,
-  style,
-}: {
-  electron: boolean;
-  showAnalytics?: boolean;
-  showDiagnostics?: boolean;
-  shareAnalytics: boolean;
-  shareDiagnostics: boolean;
-  onShareAnalyticsChange: (next: boolean) => void;
-  onShareDiagnosticsChange: (next: boolean) => void;
-  className?: string;
-  style?: CSSProperties;
-}) {
-  const { t } = useTranslation("onboarding");
-  return (
-    <section className={className} style={style}>
-      <p className={SECTION_LABEL_CLASS}>
-        {t("consentControls.privacyPreferences")}
-      </p>
-      <Card padding={electron ? "sm" : "md"} className="w-full">
-        <div className={`flex flex-col ${electron ? "gap-3" : "gap-4"}`}>
-          {showAnalytics && (
-            <SettingRow
-              label={t("consentControls.analyticsLabel")}
-              helperText={t("consentControls.analyticsHelp")}
-              checked={shareAnalytics}
-              onChange={onShareAnalyticsChange}
-            />
-          )}
-          {showAnalytics && showDiagnostics && <Divider />}
-          {showDiagnostics && (
-            <SettingRow
-              label={t("consentControls.diagnosticsLabel")}
-              helperText={t("consentControls.diagnosticsHelp")}
-              checked={shareDiagnostics}
-              onChange={onShareDiagnosticsChange}
-            />
-          )}
-        </div>
-      </Card>
-    </section>
   );
 }
 

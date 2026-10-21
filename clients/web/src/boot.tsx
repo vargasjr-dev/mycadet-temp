@@ -21,7 +21,6 @@ import { initI18n } from "@/i18n";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
-import { installConsentRefreshListeners } from "@/lib/consent/consent-refresh";
 import { isLocalClient, loadLockfile } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
@@ -75,7 +74,6 @@ async function boot(router: Router) {
   } catch (error) {
     captureError(error, { context: "restore_pending_native_login" });
   }
-  installConsentRefreshListeners();
 
   setupOrganizationStore();
   // Register before initSession so the boot `unknown → present` transition it

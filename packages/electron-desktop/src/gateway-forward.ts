@@ -1,8 +1,8 @@
 import {
   authorizePairedForwardHeaders,
   resolveGatewayProxyTarget,
-  resolvePairedGatewayProxyTarget,
   sanitizePairedForwardHeaders,
+  type GatewayEntryTarget,
   type PairedGuardianTokenProvider,
 } from "@mycadet/local-mode";
 
@@ -12,9 +12,12 @@ import {
 } from "./cloud-forward";
 
 /**
- * Planning and execution for the gateway data-plane proxies: the loopback
- * `/assistant/__gateway/{port}/*` forward and the paired-remote
- * `/assistant/__gateway-paired/{assistantId}/*` forward.
+ * Planning and execution for the gateway data-plane proxy: the same-origin
+ * id-keyed `/assistant/__gateway/{assistantId}/*` forward (the deprecated
+ * `/__gateway-paired/{assistantId}` alias resolves through the same path).
+ * The lockfile resolves the id to a loopback port (locally hatched gateways)
+ * or a recorded remote `runtimeUrl` (imported pairings), so the local/paired
+ * split lives host-side and the renderer never encodes either.
  *
  * Lives in its own file — like `app-protocol.ts` — so the URL/header logic is
  * testable without importing `src/main/index.ts` (which evaluates the full
@@ -32,12 +35,15 @@ export type GatewayForwardPlan =
       method: string;
       headers: Headers;
       hasBody: boolean;
+      assistantId: string;
       /**
-       * Remote hops (paired gateways reached over a tunnel) collapse
-       * transport failures into the structured proxy 502 with a bounded
-       * GET/HEAD retry; loopback hops propagate rejections untouched.
+       * Loopback hops propagate transport failures untouched; remote hops
+       * (paired gateways reached over a tunnel) collapse them into the
+       * structured proxy 502 with a bounded GET/HEAD retry.
        */
       remote: false;
+      /** Loopback target port; the plan's Origin is rewritten to it. */
+      target: { kind: "loopback"; port: number };
     }
   | {
       kind: "forward";
@@ -45,91 +51,46 @@ export type GatewayForwardPlan =
       method: string;
       headers: Headers;
       hasBody: boolean;
-      remote: true;
-      /** Paired assistant whose guardian bearer the trusted host injects. */
       assistantId: string;
+      remote: true;
       /** Imported gateway URL bound to that assistant's guardian bearer. */
-      runtimeUrl: string;
+      target: { kind: "remote"; runtimeUrl: string };
     };
 
 /**
  * Resolve a renderer request to a gateway-proxy plan, reusing the shared
- * lockfile-allowlist decision so the security boundary is defined once for
- * both this handler and the Vite dev proxy.
+ * lockfile decision so the security boundary is defined once for this handler,
+ * the Vite dev proxy, and the CLI web server: only assistants the user
+ * actually hatched or imported are reachable.
  *
- * On `forward`, the request's `Origin` is rewritten to the gateway's own
- * loopback origin. The gateway token route (`/auth/token`) only accepts
+ * On a loopback forward, the request's `Origin` is rewritten to the gateway's
+ * own loopback origin. The gateway token route (`/auth/token`) only accepts
  * loopback web origins (`http(s)://localhost|127.0.0.1`) as a CSRF defense
  * against arbitrary web pages; the renderer issues this request from the
  * packaged app's `app://mycadet.ai` origin, but the main process is itself the
  * trusted loopback client making the hop — exactly as the dev server's browser
  * presents `http://localhost:<port>`. Without the rewrite the gateway rejects
  * the packaged app's origin with 403. Only `Origin` is gated, so the remaining
- * headers (notably the guardian `Authorization` bearer) pass through unchanged.
- */
-function planGatewayForward(
-  request: Request,
-  getAllowedPorts: () => Set<number>,
-): GatewayForwardPlan {
-  const url = new URL(request.url);
-  const decision = resolveGatewayProxyTarget(
-    url.pathname + url.search,
-    getAllowedPorts,
-  );
-
-  switch (decision.kind) {
-    case "pass":
-      return { kind: "pass" };
-    case "invalid-port":
-      return {
-        kind: "reject",
-        status: 400,
-        message: "Port must be between 1024 and 65535",
-      };
-    case "forbidden-port":
-      return {
-        kind: "reject",
-        status: 403,
-        message: "Gateway port is not active in lockfile",
-      };
-    case "forward": {
-      const { port, path: targetPath } = decision.target;
-      const headers = new Headers(request.headers);
-      headers.set("origin", `http://127.0.0.1:${port}`);
-      return {
-        kind: "forward",
-        url: `http://127.0.0.1:${port}${targetPath}`,
-        method: request.method,
-        headers,
-        hasBody: request.method !== "GET" && request.method !== "HEAD",
-        remote: false,
-      };
-    }
-  }
-}
-
-/**
- * Resolve a renderer request to a paired-gateway proxy plan
- * (`/assistant/__gateway-paired/{assistantId}/*`), reusing the shared
- * lockfile-pairing decision so the security boundary is defined once for every
- * host: only assistants the user actually imported are reachable.
+ * headers (notably the gateway `Authorization` bearer the renderer minted)
+ * pass through unchanged.
  *
- * On `forward`, renderer-controlled authorization and browser-ambient headers
- * (`Origin`, `Referer`, `Cookie`, `Sec-Fetch-*`) are stripped via the shared
- * `sanitizePairedForwardHeaders`. The trusted main process installs the
- * paired assistant's guardian bearer before executing the plan.
+ * On a remote forward, renderer-controlled authorization and browser-ambient
+ * headers (`Origin`, `Referer`, `Cookie`, `Sec-Fetch-*`) are stripped via the
+ * shared `sanitizePairedForwardHeaders`, and the trusted main process installs
+ * the paired assistant's guardian bearer via
+ * {@link authorizeGatewayForwardPlan} before the plan executes.
  *
  * Electron's WebRequest boundary verifies the requesting frame before this
- * planner runs. The lockfile pairing then constrains the remote destination. A
+ * planner runs. The lockfile target map then constrains the destination. A
  * compromised trusted renderer retains access through the running proxy but
  * cannot read or reuse the guardian credential outside it.
  */
-function planPairedGatewayForward(
+export function planGatewayForward(
   request: Request,
-  getTargets: () => Map<string, string>,
+  getTargets: () => Map<string, GatewayEntryTarget>,
 ): GatewayForwardPlan {
   const url = new URL(request.url);
-  const decision = resolvePairedGatewayProxyTarget(
+  const decision = resolveGatewayProxyTarget(
     url.pathname + url.search,
     getTargets,
   );
@@ -141,23 +102,38 @@ function planPairedGatewayForward(
       return decision;
     case "forward": {
       const headers = new Headers(request.headers);
+      if (decision.target.kind === "loopback") {
+        const { port } = decision.target;
+        headers.set("origin", `http://127.0.0.1:${port}`);
+        return {
+          kind: "forward",
+          url: `http://127.0.0.1:${port}${decision.path}${decision.search}`,
+          method: request.method,
+          headers,
+          hasBody: request.method !== "GET" && request.method !== "HEAD",
+          assistantId: decision.assistantId,
+          remote: false,
+          target: decision.target,
+        };
+      }
       sanitizePairedForwardHeaders(headers);
+      const runtimeUrl = decision.target.runtimeUrl.replace(/\/+$/, "");
       return {
         kind: "forward",
-        url: decision.url,
+        url: `${runtimeUrl}${decision.path}${decision.search}`,
         method: request.method,
         headers,
         hasBody: request.method !== "GET" && request.method !== "HEAD",
-        remote: true,
         assistantId: decision.assistantId,
-        runtimeUrl: decision.runtimeUrl,
+        remote: true,
+        target: decision.target,
       };
     }
   }
 }
 
-/** Resolve and install the host-owned bearer required by a paired plan. */
-export async function authorizePairedGatewayForwardPlan(
+/** Resolve and install the host-owned bearer required by a remote plan. */
+export async function authorizeGatewayForwardPlan(
   plan: GatewayForwardPlan,
   getGuardianToken: PairedGuardianTokenProvider,
 ): Promise<GatewayForwardPlan> {
@@ -166,7 +142,7 @@ export async function authorizePairedGatewayForwardPlan(
   }
   const result = await authorizePairedForwardHeaders(
     plan.assistantId,
-    plan.runtimeUrl,
+    plan.target.runtimeUrl,
     plan.headers,
     getGuardianToken,
   );
@@ -182,25 +158,14 @@ export type GatewayForwardFetcher = (
   init: RequestInit & { duplex?: "half" },
 ) => Promise<Response>;
 
-export const forwardGatewayRequest = (
+export const forwardGatewayRequest = async (
   request: Request,
-  getAllowedPorts: () => Set<number>,
-  fetcher: GatewayForwardFetcher,
-): Promise<Response> | Response | null =>
-  executeGatewayForwardPlan(
-    planGatewayForward(request, getAllowedPorts),
-    request,
-    fetcher,
-  );
-
-export const forwardPairedGatewayRequest = async (
-  request: Request,
-  getTargets: () => Map<string, string>,
+  getTargets: () => Map<string, GatewayEntryTarget>,
   getGuardianToken: PairedGuardianTokenProvider,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
-  const plan = await authorizePairedGatewayForwardPlan(
-    planPairedGatewayForward(request, getTargets),
+  const plan = await authorizeGatewayForwardPlan(
+    planGatewayForward(request, getTargets),
     getGuardianToken,
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
@@ -213,11 +178,11 @@ export const forwardPairedGatewayRequest = async (
  * SSE and chunked transfers (Electron's `stream: true` scheme privilege).
  * The plan owns the allowlist and header decisions.
  *
- * Remote (paired) hops ride a tunnel that can drop mid-session, so their
- * transport failures become the structured proxy 502 (with one in-proxy
- * retry for transient GET/HEAD failures) instead of a rejected promise the
- * renderer would render as a raw `net::ERR_*` string. No overall response
- * timeout is applied: SSE streams over this forward are long-lived.
+ * Remote hops ride a tunnel that can drop mid-session, so their transport
+ * failures become the structured proxy 502 (with one in-proxy retry for
+ * transient GET/HEAD failures) instead of a rejected promise the renderer
+ * would render as a raw `net::ERR_*` string. No overall response timeout is
+ * applied: SSE streams over this forward are long-lived.
  */
 export function executeGatewayForwardPlan(
   plan: GatewayForwardPlan,

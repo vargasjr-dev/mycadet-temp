@@ -3,6 +3,10 @@ import {
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
+
+// The live-voice WS bypass resolves the entry's recorded loopback port from
+// the id-keyed proxy path; re-exported so voice modules share one import.
+export { getLoopbackGatewayPort };
 import { readInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
@@ -398,7 +402,7 @@ export function isLocalAssistant(a: LockfileAssistant): boolean {
 
 /**
  * An assistant this runtime connects to over the local gateway proxy
- * (`/assistant/__gateway/<port>`) with gateway auth: a plain on-machine
+ * (`/assistant/__gateway/<assistantId>`) with gateway auth: a plain on-machine
  * assistant (`local`) or a local Docker instance (`docker`). Both run their
  * gateway on a loopback port of this machine and lease guardian tokens under
  * the CLI config dir, so the SPA can mint a gateway token for them without a
@@ -537,8 +541,15 @@ export function reconcileSelectedAssistant(): void {
 // URL helpers
 // ---------------------------------------------------------------------------
 
-export function gatewayProxyUrl(port: number): string {
-  return `/assistant/__gateway/${port}`;
+/**
+ * The id-keyed, same-origin gateway proxy base for any assistant entry: the
+ * serving host (Electron `app://` handler, Vite dev middleware, CLI web
+ * server) resolves the id through the lockfile to a loopback port (locally
+ * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
+ * renderer never encodes either.
+ */
+export function gatewayProxyUrl(assistantId: string): string {
+  return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
 }
 
 /**
@@ -561,7 +572,8 @@ function expectsLocalGateway(
 /**
  * Return the local gateway proxy URL for the given assistant (default: the
  * selected one), or `undefined` when this runtime doesn't reach it over a local
- * gateway or the gateway port hasn't been recorded yet.
+ * gateway or the gateway port hasn't been recorded yet (the same resolvability
+ * gate as before — only the URL shape changed; the host resolves the port).
  */
 export function getLocalGatewayUrl(
   assistant: LockfileAssistant | undefined = getSelectedAssistant(),
@@ -573,7 +585,7 @@ export function getLocalGatewayUrl(
   if (gatewayPort == null) {
     return undefined;
   }
-  return gatewayProxyUrl(gatewayPort);
+  return gatewayProxyUrl(assistant.assistantId);
 }
 
 /**
@@ -589,11 +601,6 @@ function expectsPairedGateway(assistant: LockfileAssistant): boolean {
   );
 }
 
-/** Same-origin proxy path for a paired assistant's remote gateway. */
-function pairedGatewayProxyUrl(assistantId: string): string {
-  return `/assistant/__gateway-paired/${encodeURIComponent(assistantId)}`;
-}
-
 /**
  * The same-origin proxy path this runtime reaches a paired assistant's remote
  * gateway through, or `undefined` when the entry isn't paired, isn't usable in
@@ -605,7 +612,7 @@ function pairedGatewayProxyUrl(assistantId: string): string {
  * stopped by the remote gateway's CORS. Instead the serving host (the Electron
  * `app://` handler, the Vite dev middleware, the CLI web server) resolves the
  * entry's recorded `runtimeUrl` and forwards, exactly like the loopback
- * `__gateway/{port}` data-plane proxy.
+ * data-plane half of the same id-keyed `__gateway` proxy.
  */
 export function getPairedGatewayUrl(
   assistant: LockfileAssistant | undefined,
@@ -616,7 +623,7 @@ export function getPairedGatewayUrl(
   if (!isUsableRuntimeUrl(assistant.runtimeUrl)) {
     return undefined;
   }
-  return pairedGatewayProxyUrl(assistant.assistantId);
+  return gatewayProxyUrl(assistant.assistantId);
 }
 
 /**

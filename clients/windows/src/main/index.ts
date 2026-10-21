@@ -12,7 +12,6 @@ import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   forwardGatewayRequest,
-  forwardPairedGatewayRequest,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { getPairedGuardianAccessToken } from "@mycadet/electron-desktop/local-mode";
 import { getWatchedLockfileSnapshot } from "@mycadet/electron-desktop/lockfile-watcher";
@@ -22,9 +21,8 @@ import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
-  pairedGatewayTargetsFromLockfile,
-  readAllowedGatewayPorts,
-  readPairedGatewayTargets,
+  gatewayTargetsFromLockfile,
+  readGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
@@ -144,44 +142,32 @@ const registerAppProtocol = (): void => {
   const rendererRoot = resolveRendererRoot();
   const indexHtml = path.join(rendererRoot, "index.html");
   const lockfilePaths = resolveLockfilePaths(process.env);
-  const getAllowedGatewayPorts = (): Set<number> =>
-    readAllowedGatewayPorts(lockfilePaths);
-  // Prefer the watcher's in-memory snapshot so paired requests never read
+  // Prefer the watcher's in-memory snapshot so gateway requests never read
   // disk; the direct read covers only the window before the watcher installs.
-  const getPairedGatewayTargets = (): Map<string, string> => {
+  const getGatewayTargets = () => {
     const watched = getWatchedLockfileSnapshot();
     return watched
-      ? pairedGatewayTargetsFromLockfile(watched)
-      : readPairedGatewayTargets(lockfilePaths);
+      ? gatewayTargetsFromLockfile(watched)
+      : readGatewayTargets(lockfilePaths);
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
-    // The renderer addresses local gateways at the same `app://` origin via
-    // `/assistant/__gateway/{port}/*`. Forward those to loopback here so the
-    // secure renderer never touches an insecure `http://127.0.0.1` origin
-    // directly; the lockfile allowlist is the security boundary. Mirrors the
-    // Vite dev-server proxy (`clients/web/vite-plugin-local-mode.ts`).
+    // The renderer addresses every assistant gateway at the same `app://`
+    // origin via the id-keyed `/assistant/__gateway/{assistantId}/*` — the
+    // lockfile resolves the id to a loopback port (hatched) or a recorded
+    // remote `runtimeUrl` (imported pairing). Forward here so the secure
+    // renderer never touches an insecure `http://127.0.0.1` origin directly
+    // and never holds a paired credential; the lockfile target map is the
+    // security boundary. Mirrors the Vite dev-server proxy
+    // (`clients/web/vite-plugin-local-mode.ts`).
     const proxied = await forwardGatewayRequest(
       request,
-      getAllowedGatewayPorts,
+      getGatewayTargets,
+      getPairedGuardianAccessToken,
       net.fetch,
     );
     if (proxied) {
       return proxied;
-    }
-
-    // Paired remote gateways ride the same-origin path too, via
-    // `/assistant/__gateway-paired/{assistantId}/*`; the WebRequest guard
-    // admits only trusted app frames, and the lockfile's paired entries
-    // allowlist the remote targets.
-    const pairedProxied = await forwardPairedGatewayRequest(
-      request,
-      getPairedGatewayTargets,
-      getPairedGuardianAccessToken,
-      net.fetch,
-    );
-    if (pairedProxied) {
-      return pairedProxied;
     }
 
     // `/v1/*`, `/_allauth/*`, `/accounts/*` forward to the

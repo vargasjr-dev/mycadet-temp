@@ -75,11 +75,6 @@
   },
   "consentControls": {
     "whatsChanged": "Что изменилось",
-    "privacyPreferences": "Настройки приватности",
-    "analyticsLabel": "Отправлять аналитику",
-    "analyticsHelp": "Отправлять обезличенные данные об использовании",
-    "diagnosticsLabel": "Отправлять диагностику",
-    "diagnosticsHelp": "Отправлять отчёты о сбоях, трассы диалогов и записи сессий",
     "agreements": "Соглашения",
     "agreeTo": "Я принимаю <link>{policy}</link>"
   },

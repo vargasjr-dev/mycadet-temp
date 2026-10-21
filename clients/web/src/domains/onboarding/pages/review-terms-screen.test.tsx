@@ -12,14 +12,10 @@ mock.module("react-router", () => ({
 // Prefs hooks — mutable per-test so we can model each staleness combination.
 let tosAccepted = true;
 let privacyConsent = true;
-let shareAnalytics = true;
-let shareDiagnostics = true;
-let analyticsConsentCurrent = true;
-let diagnosticsConsentCurrent = true;
-// Whether the cloud holds ANY consent record for this user. Independent of
+// Whether the device holds ANY consent record for this user. Independent of
 // the two legal flags above, which carry version CURRENCY only — both go false
 // for a never-consented user AND for an established user whose acceptances
-// predate both current required versions.
+// predate the current required versions.
 let hasConsentRecord = true;
 const setTosAccepted = mock((next: boolean) => {
   tosAccepted = next;
@@ -27,29 +23,13 @@ const setTosAccepted = mock((next: boolean) => {
 const setPrivacyConsent = mock((next: boolean) => {
   privacyConsent = next;
 });
-const setShareAnalytics = mock((next: boolean) => {
-  shareAnalytics = next;
-});
-const setShareDiagnostics = mock((next: boolean) => {
-  shareDiagnostics = next;
-});
 mock.module("@/domains/onboarding/prefs", () => ({
-  readAnalyticsConsentCurrent: () => false,
   readTosAccepted: () => false,
-  readDiagnosticsConsentCurrent: () => false,
   readPrivacyConsent: () => false,
   useTosAccepted: () => [tosAccepted, setTosAccepted],
   usePrivacyConsent: () => [privacyConsent, setPrivacyConsent],
-  useShareAnalytics: () => [shareAnalytics, setShareAnalytics],
-  useShareDiagnostics: () => [shareDiagnostics, setShareDiagnostics],
-  useAnalyticsConsentCurrent: () => [analyticsConsentCurrent, mock(() => {})],
-  useDiagnosticsConsentCurrent: () => [
-    diagnosticsConsentCurrent,
-    mock(() => {}),
-  ],
   useHasConsentRecord: () => hasConsentRecord,
-  // Non-hook reader consumed by consent-gate (diagnostics gate); the
-  // reviewed screen keys off the hook mocks above, not this flag.
+  readHasConsentRecord: () => hasConsentRecord,
   readConsentHydrated: () => true,
 }));
 
@@ -108,25 +88,6 @@ mock.module("@mycadet/design-library/components/checkbox", () => ({
     />
   ),
 }));
-mock.module("@mycadet/design-library/components/toggle", () => ({
-  Toggle: ({
-    checked,
-    onChange,
-    id,
-  }: {
-    checked: boolean;
-    onChange: (next: boolean) => void;
-    id?: string;
-  }) => (
-    <input
-      type="checkbox"
-      role="switch"
-      id={id}
-      checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
-    />
-  ),
-}));
 
 const { ReviewTermsScreen } =
   await import("@/domains/onboarding/pages/review-terms-screen");
@@ -143,14 +104,9 @@ describe("ReviewTermsScreen", () => {
   beforeEach(() => {
     navigateMock.mockClear();
     saveConsentMock.mockClear();
-    setShareAnalytics.mockClear();
     searchParamsValue = new URLSearchParams();
     tosAccepted = true;
     privacyConsent = true;
-    shareAnalytics = true;
-    shareDiagnostics = true;
-    analyticsConsentCurrent = true;
-    diagnosticsConsentCurrent = true;
     hasConsentRecord = true;
   });
   afterEach(cleanup);
@@ -162,45 +118,11 @@ describe("ReviewTermsScreen", () => {
     // Every section is shown rather than an empty page.
     expect(screen.getByLabelText(TOS_LABEL)).toBeTruthy();
     expect(screen.getByLabelText(AI_LABEL)).toBeTruthy();
-    expect(screen.getAllByRole("switch").length).toBe(2);
     // Copy is the neutral review variant, not the "we've updated" wording.
-    expect(screen.getByText("Terms & privacy")).toBeTruthy();
-    expect(
-      screen.getByText("Review your terms and privacy preferences anytime."),
-    ).toBeTruthy();
+    expect(screen.getByText("Terms")).toBeTruthy();
+    expect(screen.getByText("Review your terms anytime.")).toBeTruthy();
     // Already-accepted consent means Continue is enabled immediately.
     expect(continueButton().disabled).toBe(false);
-  });
-
-  test("toggle-only staleness renders the toggle, no legal checkboxes, and Continue enabled", () => {
-    analyticsConsentCurrent = false; // analytics stale; tos/ai current
-    render(<ReviewTermsScreen />);
-
-    // The analytics toggle is shown.
-    expect(screen.getByRole("switch")).toBeTruthy();
-    // No legal checkboxes.
-    expect(screen.queryByLabelText(TOS_LABEL)).toBeNull();
-    expect(screen.queryByLabelText(AI_LABEL)).toBeNull();
-    // Continue is enabled.
-    expect(continueButton().disabled).toBe(false);
-  });
-
-  test("flipping a toggle then Continue calls saveConsent with the chosen value", () => {
-    analyticsConsentCurrent = false;
-    shareAnalytics = true;
-    const { rerender } = render(<ReviewTermsScreen />);
-
-    fireEvent.click(screen.getByRole("switch"));
-    expect(setShareAnalytics).toHaveBeenCalledWith(false);
-
-    // Re-render so the component picks up the new store value before Continue.
-    rerender(<ReviewTermsScreen />);
-    fireEvent.click(continueButton());
-
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    expect(saveConsentMock.mock.calls[0]?.[0]).toMatchObject({
-      shareAnalytics: false,
-    });
   });
 
   test("stale TOS renders its checkbox and gates Continue until checked", () => {
@@ -226,7 +148,7 @@ describe("ReviewTermsScreen", () => {
   test("first consent (nothing ever accepted) shows consent framing, no changelog", () => {
     // A user who arrived with an assistant but never consented — e.g. via the
     // bring-your-agent import, which replaces onboarding. No consent record is
-    // what makes this first consent, not the two stale legal flags.
+    // what makes this first consent, not the stale legal flags.
     tosAccepted = false;
     privacyConsent = false;
     hasConsentRecord = false;
@@ -255,52 +177,39 @@ describe("ReviewTermsScreen", () => {
 
     // Heading must not flip mid-flow once the box is checked.
     expect(screen.getByText("Updated terms")).toBeTruthy();
-    expect(screen.queryByText("Review your privacy preferences")).toBeNull();
   });
 
-  test("first consent surfaces the diagnostics toggle even when it isn't stale", () => {
-    // Bring-your-agent skips the onboarding privacy screen, so review-terms is
-    // where this user first chooses diagnostics sharing. Their *Current flags
-    // read never-asked as "nothing to re-review" (true), so the toggle is not
-    // stale — it must still be shown, or the choice is never offered.
+  test("Continue persists the legal acceptance", () => {
     tosAccepted = false;
-    privacyConsent = false;
-    hasConsentRecord = false;
-    analyticsConsentCurrent = true;
-    diagnosticsConsentCurrent = true;
-    render(<ReviewTermsScreen />);
+    const { rerender } = render(<ReviewTermsScreen />);
 
-    expect(screen.getByText("Privacy preferences")).toBeTruthy();
-    // Diagnostics only — analytics stays null until an explicit opt-in, matching
-    // the onboarding privacy screen.
-    expect(screen.getAllByRole("switch").length).toBe(1);
-    expect(
-      screen.getByText(
-        "Send crash reports and conversation traces",
-      ),
-    ).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(TOS_LABEL));
+    // The prefs mock isn't wired to React state — re-render so the checkbox
+    // tick takes effect and Continue re-enables.
+    rerender(<ReviewTermsScreen />);
+    fireEvent.click(continueButton());
+
+    expect(saveConsentMock).toHaveBeenCalledTimes(1);
+    expect(saveConsentMock.mock.calls[0]?.[0]).toMatchObject({
+      tos: true,
+      privacy: true,
+    });
   });
 
   test("both legal versions bumped for an EXISTING user is not first consent", () => {
     // Regression: `firstConsentAtMount` must key off the consent-record signal,
     // not off the two legal flags. Those carry version currency, so an
-    // established user whose acceptances predate BOTH current required versions
+    // established user whose acceptances predate the current required versions
     // has both stale — previously misread as never-consented, which swapped in
-    // first-time framing, suppressed the "what's changed" notes that are the
-    // entire point of the re-review, and forced an unrelated diagnostics toggle
-    // into the flow.
+    // first-time framing and suppressed the "what's changed" notes that are
+    // the entire point of the re-review.
     tosAccepted = false;
     privacyConsent = false;
     hasConsentRecord = true; // they HAVE consented before
-    analyticsConsentCurrent = true;
-    diagnosticsConsentCurrent = true;
     render(<ReviewTermsScreen />);
 
     // Re-review framing, not first-time framing.
     expect(screen.getByText("Updated terms")).toBeTruthy();
     expect(screen.queryByText("Before You Start")).toBeNull();
-    // The diagnostics toggle is not dragged into a purely legal re-review.
-    expect(screen.queryByText("Privacy preferences")).toBeNull();
-    expect(screen.queryAllByRole("switch").length).toBe(0);
   });
 });

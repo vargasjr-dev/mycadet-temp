@@ -75,11 +75,6 @@
   },
   "consentControls": {
     "whatsChanged": "更新內容",
-    "privacyPreferences": "隱私權偏好設定",
-    "analyticsLabel": "分享分析資料",
-    "analyticsHelp": "傳送彙總的產品使用資料",
-    "diagnosticsLabel": "分享診斷資料",
-    "diagnosticsHelp": "傳送當機報告、對話追蹤和工作階段重播資料",
     "agreements": "協議",
     "agreeTo": "我同意 <link>{policy}</link>"
   },

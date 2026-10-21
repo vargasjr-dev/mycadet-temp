@@ -1,32 +1,35 @@
-import { Navigate, useSearchParams } from "react-router";
+import { Navigate } from "react-router";
 
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
-import { routes } from "@/utils/routes";
 
 import { AccountLayout } from "@/domains/account/account-layout";
 
 /**
- * Redirects legacy `/account/oauth/desktop-complete` to the canonical
- * `/account/oauth/complete`, preserving all query parameters. Older macOS
- * and iOS Capacitor builds have the old path baked in.
+ * One-release landing for the account auth pages this bundle no longer
+ * owns. Cloud login/signup/OAuth moved off web — the cloud's own account
+ * pages are that surface now (the billing tab's hand-off in #451 is the
+ * pattern), and the unauthenticated in-SPA front door is the remote-web
+ * pairing page. Everything that still navigates to the old paths
+ * (bookmarks, the resolver's `requireAuth` bounce, the 401 interceptor's
+ * re-entry, `handle-logout`) lands here until those exits are rewired off
+ * `/account` entirely.
  */
-function OAuthDesktopCompleteRedirect() {
-  const [searchParams] = useSearchParams();
-  const qs = searchParams.toString();
-  return (
-    <Navigate
-      to={`${routes.account.oauth.complete}${qs ? `?${qs}` : ""}`}
-      replace
-    />
-  );
+function RemovedAuthPage() {
+  return <Navigate to="/assistant/pair" replace />;
 }
 
 /**
- * The whole /account route subtree: standalone auth pages, no app chrome.
- * Lazy-loaded — only needed for unauthenticated flows.
+ * The /account route subtree, post-nuke. The auth pages this bundle used to
+ * own are deleted — their maintained ports live in the app bundle — and the
+ * old paths redirect to the pairing page for one release. What survives:
  *
- * Full web builds include this subtree; assistant builds omit it.
+ *   - the assistant chooser (load-bearing: pairing-page hub link, deep
+ *     links, guardian-repair, root-layout's `noAutoSkip`),
+ *   - password reset (still the target of the reset-email links),
+ *   - the OAuth popup relay (`oauth/popup-complete`) — NOT login
+ *     machinery: it's the completion page the managed integration-connect
+ *     flows (settings tiles, google-calendar) point their popups at.
  */
 export const accountRoute = {
   path: "/account",
@@ -39,35 +42,29 @@ export const accountRoute = {
     {
       ErrorBoundary: RouteErrorBoundary,
       children: [
-        // Auth screens that render in the MAIN window. AccountLayout sizes
-        // it compact (440×630) for these, matching onboarding.
+        // Password reset + the provider tier render in the MAIN window.
+        // AccountLayout sizes them compact (440×630), matching onboarding.
+        // The provider pages stay because the surviving auth-logic tier
+        // (login-flow, native-auth) still drives the provider callback —
+        // they die with the auth store, not here.
         {
           Component: AccountLayout,
           children: [
             {
-              index: true,
+              path: "password/reset",
               lazy: {
                 Component: () =>
-                  import("@/domains/account/pages/account-page").then(
-                    (m) => m.AccountPage,
+                  import("@/domains/account/pages/password-reset-page").then(
+                    (m) => m.PasswordResetPage,
                   ),
               },
             },
             {
-              path: "login",
+              path: "password/reset/key/:key",
               lazy: {
                 Component: () =>
-                  import("@/domains/account/pages/login-page").then(
-                    (m) => m.LoginPage,
-                  ),
-              },
-            },
-            {
-              path: "signup",
-              lazy: {
-                Component: () =>
-                  import("@/domains/account/pages/signup-page").then(
-                    (m) => m.SignupPage,
+                  import("@/domains/account/pages/password-reset-page").then(
+                    (m) => m.PasswordResetPage,
                   ),
               },
             },
@@ -89,60 +86,29 @@ export const accountRoute = {
                   ),
               },
             },
-            {
-              path: "password/reset",
-              lazy: {
-                Component: () =>
-                  import("@/domains/account/pages/password-reset-page").then(
-                    (m) => m.PasswordResetPage,
-                  ),
-              },
-            },
-            {
-              path: "password/reset/key/:key",
-              lazy: {
-                Component: () =>
-                  import("@/domains/account/pages/password-reset-page").then(
-                    (m) => m.PasswordResetPage,
-                  ),
-              },
-            },
           ],
         },
-        // OAuth completion / loopback machinery. These render inside the
-        // OAuth popup child window (or are transient redirects), NOT the
-        // main window — so they're deliberately OUTSIDE AccountLayout and
-        // never mount the sizing hook. The resize IPC targets the
-        // module-scoped main window, so sizing from a popup would shrink
-        // the wrong window. See `use-onboarding-window-size`.
+        // The nuked auth pages. Redirects, not 404s: the in-SPA exits
+        // (requireAuth, the 401 handler, handle-logout) still navigate to
+        // `/account/login` until their rewiring lands.
+        { index: true, Component: RemovedAuthPage },
+        { path: "login", Component: RemovedAuthPage },
+        { path: "signup", Component: RemovedAuthPage },
+        { path: "oauth/complete", Component: RemovedAuthPage },
+        { path: "oauth/desktop-complete", Component: RemovedAuthPage },
+        { path: "cloud-callback", Component: RemovedAuthPage },
+        // OAuth completion relay — rendered inside the OAuth popup child
+        // window (or the native SFSafariViewController), NOT the main
+        // window — so it's deliberately OUTSIDE AccountLayout and never
+        // mounts the sizing hook. The resize IPC targets the module-scoped
+        // main window, so sizing from a popup would shrink the wrong
+        // window. See `use-onboarding-window-size`.
         {
           path: "oauth/popup-complete",
           lazy: {
             Component: () =>
               import("@/domains/account/pages/oauth-popup-complete-page").then(
                 (m) => m.OAuthPopupCompletePage,
-              ),
-          },
-        },
-        {
-          path: "oauth/complete",
-          lazy: {
-            Component: () =>
-              import("@/domains/account/pages/oauth-complete-page").then(
-                (m) => m.OAuthCompletePage,
-              ),
-          },
-        },
-        {
-          path: "oauth/desktop-complete",
-          Component: OAuthDesktopCompleteRedirect,
-        },
-        {
-          path: "cloud-callback",
-          lazy: {
-            Component: () =>
-              import("@/domains/account/pages/cloud-loopback-page").then(
-                (m) => m.CloudLoopbackPage,
               ),
           },
         },

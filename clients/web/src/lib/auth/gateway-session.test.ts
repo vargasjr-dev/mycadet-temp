@@ -88,7 +88,7 @@ describe("paired selection", () => {
     expect(isGatewayAuthMode()).toBe(false);
 
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway-paired/paired-a`,
+      url: `${window.location.origin}/assistant/__gateway/paired-a`,
       token: null,
     });
 

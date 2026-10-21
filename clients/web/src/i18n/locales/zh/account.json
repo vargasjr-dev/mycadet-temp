@@ -1,49 +1,4 @@
 {
-  "authWaitSpinner": {
-    "loading": "加载中"
-  },
-  "signupScreen": {
-    "headlineLead": "认识你的新",
-    "headlineRoles": {
-      "personalIntelligence": "个人智能",
-      "softwareEngineer": "软件工程师",
-      "financeOps": "财务运营",
-      "householdManager": "家庭管家",
-      "gtmEngineer": "市场推广工程师",
-      "productLead": "产品负责人"
-    },
-    "subtitle": "最强大的助手，可处理您的工作和生活管理任务。",
-    "continue": "继续",
-    "downloadMac": "下载 macOS 版",
-    "haveAccountPrompt": "已有账户？<signIn>登录</signIn>"
-  },
-  "signupClosedScreen": {
-    "title": "注册目前已关闭",
-    "message": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。你也可以自行托管 Cadet。<selfHostingLink>点击此处</selfHostingLink>了解自托管的更多信息。",
-    "haveAccountPrompt": "已有账户？<signIn>登录</signIn>"
-  },
-  "accountPage": {
-    "loading": "加载中...",
-    "welcomeTitle": "欢迎使用 Cadet",
-    "welcomeSubtitle": "请登录以开始使用。",
-    "signIn": "登录",
-    "signedInTitle": "欢迎！",
-    "signedInTitleNamed": "欢迎，{name}！",
-    "signedInSubtitle": "您已登录。",
-    "goToAssistant": "前往您的助手",
-    "signOut": "退出登录"
-  },
-  "loginPage": {
-    "signUp": "注册",
-    "signIn": "登录"
-  },
-  "logoutPage": {
-    "title": "正在退出登录..."
-  },
-  "platformLoopbackPage": {
-    "backToWelcome": "返回欢迎页",
-    "completing": "正在完成登录..."
-  },
   "oauthComplete": {
     "errorCode": "错误：{code}"
   },
@@ -82,9 +37,6 @@
     "signupClosed": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",
     "providerSignup": "该登录尚未关联 Cadet 账户。请先注册，然后登录。",
     "loginIncomplete": "您的账户需要额外步骤才能完成登录。请在网页上登录，然后重试。",
-    "desktopUpdateRequired": "此版本的 Cadet 桌面应用无法登录。请更新应用，然后重试。",
-    "loopbackStateMismatch": "登录失败：状态不匹配。请重试。",
-    "loopbackNoToken": "登录失败：未收到会话令牌。请重试。",
-    "loopbackInvalidToken": "登录失败：会话令牌无效。"
+    "desktopUpdateRequired": "此版本的 Cadet 桌面应用无法登录。请更新应用，然后重试。"
   }
 }

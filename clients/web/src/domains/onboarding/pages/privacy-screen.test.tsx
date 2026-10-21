@@ -19,17 +19,11 @@ mock.module("react-router", () => ({
 }));
 
 // Consent setters — spied so we can assert they are NOT persisted in preview.
-const setShareAnalytics = mock((_next: boolean) => {});
-const setShareDiagnostics = mock((_next: boolean) => {});
 const setTosAccepted = mock((_next: boolean) => {});
 const setPrivacyConsent = mock((_next: boolean) => {});
 mock.module("@/domains/onboarding/prefs", () => ({
-  useShareAnalytics: () => [false, setShareAnalytics],
-  useShareDiagnostics: () => [false, setShareDiagnostics],
   useTosAccepted: () => [true, setTosAccepted],
   usePrivacyConsent: () => [true, setPrivacyConsent],
-  useAnalyticsConsentCurrent: () => [true, mock(() => {})],
-  useDiagnosticsConsentCurrent: () => [true, mock(() => {})],
 }));
 
 const saveConsentMock = mock((_args: unknown) => {});

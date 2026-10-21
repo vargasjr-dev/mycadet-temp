@@ -145,15 +145,20 @@ export const routes = {
     systemEvents: r("/assistant/logs/system-events"),
   },
   account: {
+    // The surviving keys only. `login` is where the in-SPA exits (the
+    // resolver's requireAuth, the 401 interceptor, handle-logout) still send
+    // people; the route itself is a one-release redirect to the pairing
+    // page. The provider tier + `oauth.popupComplete` stay because the
+    // auth-logic tier they serve (login-flow, native-auth, the
+    // install-referrer) is still live — it dies with the auth store in the
+    // plan's store-PR, not here. `signup` and the login-OAuth returns are
+    // gone entirely: their maintained ports live in the app bundle.
     root: r("/account"),
     login: r("/account/login"),
-    signup: r("/account/signup"),
     providerSignup: r("/account/provider/signup"),
     providerCallback: r("/account/provider/callback"),
     oauth: {
       popupComplete: r("/account/oauth/popup-complete"),
-      complete: r("/account/oauth/complete"),
-      desktopComplete: r("/account/oauth/desktop-complete"),
     },
   },
 
@@ -282,7 +287,6 @@ export const routes = {
     notifications: r("/assistant/settings/notifications"),
     voice: r("/assistant/settings/voice"),
     sounds: r("/assistant/settings/sounds"),
-    privacy: r("/assistant/settings/privacy"),
     usage: SETTINGS_USAGE_PATH,
     usageForSchedule: (scheduleId: string) => {
       const params = new URLSearchParams({

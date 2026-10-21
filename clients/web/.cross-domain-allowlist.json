@@ -41,8 +41,5 @@
   ],
   "src/domains/schedules/schedules-page.tsx": [
     "settings"
-  ],
-  "src/domains/settings/pages/privacy-page.tsx": [
-    "onboarding"
   ]
 }

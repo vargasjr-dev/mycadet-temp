@@ -4,10 +4,9 @@ import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
 import {
+  readHasConsentRecord,
   readTosAccepted,
   readPrivacyConsent,
-  readAnalyticsConsentCurrent,
-  readDiagnosticsConsentCurrent,
   readConsentHydrated,
 } from "@/domains/onboarding/prefs";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
@@ -70,9 +69,8 @@ export function buildNavigationState(
     isAuthenticated: isAuthenticated(sessionStatus),
     cloudSession,
     tosAccepted: readTosAccepted(),
+    hasConsentRecord: readHasConsentRecord(),
     privacyConsent: readPrivacyConsent(),
-    analyticsConsentCurrent: readAnalyticsConsentCurrent(),
-    diagnosticsConsentCurrent: readDiagnosticsConsentCurrent(),
     consentHydrated: readConsentHydrated(),
     assistantsHydrated,
     userHasOnboardedAssistant: userHasOnboardedAssistant(assistants),

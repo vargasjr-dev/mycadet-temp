@@ -75,11 +75,6 @@
   },
   "consentControls": {
     "whatsChanged": "更新内容",
-    "privacyPreferences": "隐私偏好设置",
-    "analyticsLabel": "分享分析数据",
-    "analyticsHelp": "发送汇总的产品使用数据",
-    "diagnosticsLabel": "分享诊断数据",
-    "diagnosticsHelp": "发送崩溃报告、对话跟踪和会话回放数据",
     "agreements": "协议",
     "agreeTo": "我同意<link>{policy}</link>"
   },

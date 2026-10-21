@@ -99,7 +99,6 @@ import { StatusBanner } from "@/components/status-banner";
 import { UpdateToast } from "@/components/update-toast";
 import { retireAssistant } from "@/assistant/retire-service";
 import { removePairedAssistant } from "@/assistant/switch-service";
-import { CreateAssistantDialog } from "@/components/create-assistant-dialog";
 import { RemoveFromDeviceDialog } from "@/components/remove-from-device-dialog";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
 import { useTranslation } from "@/i18n";
@@ -382,7 +381,6 @@ export function RootLayout() {
   // Id of the paired assistant a tray "Remove from this Mac…" command targets.
   const [removePairedId, setRemovePairedId] = useState<string | null>(null);
   const [removePairedPending, setRemovePairedPending] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
   const { login } = useOnboardingLogin();
 
   useCadetCommands({
@@ -396,9 +394,6 @@ export function RootLayout() {
       void handleLogout(navigate);
     },
     shareFeedback: () => setFeedbackOpen(true),
-    ...(__INCLUDES_ACCOUNT__
-      ? { createAssistant: () => setCreateOpen(true) }
-      : {}),
     retireAssistant: (command) => {
       if (command.kind === "retireAssistant") {
         setRetireId(command.assistantId);
@@ -718,13 +713,6 @@ export function RootLayout() {
         onConfirm={() => void handleConfirmRemovePaired()}
         onCancel={() => setRemovePairedId(null)}
       />
-
-      {__INCLUDES_ACCOUNT__ && (
-        <CreateAssistantDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-        />
-      )}
     </div>
   );
 }
