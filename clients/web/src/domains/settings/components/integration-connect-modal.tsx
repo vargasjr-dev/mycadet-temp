@@ -86,7 +86,7 @@ export interface IntegrationConnectModalProps {
       endpointUrl?: string;
     }
   >;
-  /** The bring-your-own OAuth form, rendered when that path is picked. */
+  /** The own-app OAuth form, rendered when that path is picked. */
   ownOAuthContent?: ReactNode;
   /**
    * Per-tenant providers (Shopify): the host the cloud sign-in has to be

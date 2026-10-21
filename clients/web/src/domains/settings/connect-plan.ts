@@ -77,7 +77,7 @@ export interface ConnectPlan {
 }
 
 export interface ConnectPlanContext {
-  /** Bring-your-own OAuth apps only exist on self-hosted assistants. */
+  /** Own-app OAuth only exists on self-hosted assistants. */
   ownOAuthAvailable: boolean;
   /**
    * Whether the MCP server list has actually been read. An installed plugin
@@ -187,7 +187,7 @@ function pluginMethod(
  * Decide which path to put in front of the user and which to tuck away.
  *
  * Order of preference: the provider's MCP server (works everywhere, the
- * provider maintains it), then bring-your-own OAuth.
+ * provider maintains it), then own-app OAuth.
  *
  * Returns `null` when every path was dropped, which a gated organization can
  * reach with an ordinary catalog. The caller leaves the integration out of

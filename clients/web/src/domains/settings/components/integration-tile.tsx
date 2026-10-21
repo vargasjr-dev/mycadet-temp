@@ -100,7 +100,7 @@ export interface IntegrationTileProps {
  * The whole happy path is a single `+`: the waiting and the failing both land
  * in the tile rather than in a dialog the user has to keep open to watch. A
  * modal is for the two jobs that need a page of their own, the manual
- * allowlisting steps and the bring-your-own OAuth form.
+ * allowlisting steps and the own-app OAuth form.
  *
  * The tile is the same height in every one of those states, and that is the
  * point. These are grid cells, and a grid row stretches to its tallest cell,

@@ -404,7 +404,7 @@ export function useIntegrationConnect({
       plan: ConnectPlan,
       method: ConnectMethod,
     ) => {
-      // A manual allowlisting checklist and a bring-your-own OAuth form are
+      // A manual allowlisting checklist and an own-app OAuth form are
       // the two paths that need more room than a tile has. Everything else
       // runs where the user clicked.
       if (method.kind === "mcp-manual" || method.kind === "own-oauth") {
