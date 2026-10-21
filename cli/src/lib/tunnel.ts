@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { join } from "path";
+import type { ChildProcess } from "node:child_process";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
@@ -66,6 +67,57 @@ import {
  * default, at which point only this constant flips.
  */
 export const DEFAULT_TUNNEL_PROVIDER: TunnelProviderName = "ngrok";
+
+/**
+ * Per-provider hooks for the automatic restore paths (wake, upgrade, and the
+ * container counterparts), keyed by provider name so every entry in
+ * `TUNNEL_PROVIDERS` states its role in one place. A new provider adds a row
+ * here rather than a new hard-coded call in the restore paths.
+ */
+interface TunnelProviderHooks {
+  /**
+   * Re-record this provider's ingress URL when a gateway start cleared it,
+   * for providers whose mapping outlives the gateway process (a tailnet
+   * serve: tailscaled keeps it). Runs for every provider that declares it,
+   * so it must self-gate: no-op unless the saved last-tunnel record is this
+   * provider's and the mapping is still live. Returns the recovered URL, or
+   * null when nothing needed recovering.
+   */
+  recoverIngressUrl?: (opts: {
+    workspaceDir: string;
+    assistantId?: string;
+  }) => Promise<string | null>;
+
+  /**
+   * Auto-start this provider's tunnel at the restored edge, keeping webhook
+   * delivery alive. Keeps its own gates (webhook integrations configured,
+   * containerized deployments, an already-saved foreign URL). Returns the
+   * spawned agent process, or null.
+   */
+  maybeAutoStart?: (
+    targetPort: number,
+    workspaceDir: string,
+    assistantId?: string,
+  ) => Promise<ChildProcess | null>;
+}
+
+const TUNNEL_PROVIDER_HOOKS: Record<TunnelProviderName, TunnelProviderHooks> = {
+  cadet: {},
+  ngrok: {
+    // Accessors, not captured values: they read the module binding at call
+    // time, so tests that re-mock a provider's module after this module has
+    // been evaluated still land on the mock.
+    get maybeAutoStart() {
+      return maybeStartNgrokTunnel;
+    },
+  },
+  cloudflare: {},
+  tailscale: {
+    get recoverIngressUrl() {
+      return recoverTailscaleIngressUrl;
+    },
+  },
+};
 
 /**
  * Confirm-first heal for a held ngrok domain, run by the FOREGROUND `cadet
@@ -566,24 +618,28 @@ export async function restoreAppServer(
   gatewayFallback = true,
 ): Promise<number | null> {
   // The gateway clears a tunnel-managed ingress URL whenever it starts, and
-  // the local gateway has just been started. A tailnet serve outlives that
-  // (tailscaled keeps the mapping), so put its URL back before deciding
-  // whether anything wants the edge. Non-fatal: a failed probe just leaves
-  // the config as the gateway left it.
-  try {
-    const recovered = await recoverTailscaleIngressUrl({
-      workspaceDir,
-      assistantId,
-    });
-    if (recovered) {
-      console.log(
-        `   Restored the tailnet ingress URL ${recovered} (the gateway start had cleared it).`,
+  // the local gateway has just been started. A provider whose mapping
+  // outlives that (a tailnet serve: tailscaled keeps it) can have its URL
+  // put back before deciding whether anything wants the app server. Non-fatal: a
+  // failed probe just leaves the config as the gateway left it.
+  for (const provider of TUNNEL_PROVIDERS) {
+    const recoverIngressUrl = TUNNEL_PROVIDER_HOOKS[provider].recoverIngressUrl;
+    if (!recoverIngressUrl) continue;
+    try {
+      const recovered = await recoverIngressUrl({
+        workspaceDir,
+        assistantId,
+      });
+      if (recovered) {
+        console.log(
+          `   Restored the ${provider} ingress URL ${recovered} (the gateway start had cleared it).`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `   Could not check the saved ${provider} tunnel: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
-  } catch (err) {
-    console.warn(
-      `   Could not check the saved tailnet serve: ${err instanceof Error ? err.message : String(err)}`,
-    );
   }
   if (!wantsAppServer(workspaceDir)) {
     return null;
@@ -733,9 +789,9 @@ export async function restoreAppServerAndAutoTunnel(
     gatewayPort,
     workspaceDir,
   );
-  await maybeStartNgrokTunnel(
-    edgePort ?? gatewayPort,
-    workspaceDir,
-    assistantId,
-  );
+  const maybeAutoStart =
+    TUNNEL_PROVIDER_HOOKS[DEFAULT_TUNNEL_PROVIDER].maybeAutoStart;
+  if (maybeAutoStart) {
+    await maybeAutoStart(edgePort ?? gatewayPort, workspaceDir, assistantId);
+  }
 }
