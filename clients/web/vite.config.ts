@@ -1,24 +1,14 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import webPackage from "./package.json";
-import type http from "node:http";
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
-import {
-  localModePlugin,
-  getDevCloudSessionToken,
-  isSameOriginProxyRequest,
-} from "./vite-plugin-local-mode";
+import { localModePlugin } from "./vite-plugin-local-mode";
 
 const DESIGN_LIBRARY_SRC = path.resolve(
   import.meta.dirname,
   "../../packages/design-library/src",
 );
-const ASSISTANT_API_SRC = path.resolve(
-  import.meta.dirname,
-  "../../assistant/src/api",
-);
-
 /**
  * Chunk-group predicate matching a module by the package directory that owns
  * it. The trailing separator is what keeps `react` from also capturing
@@ -41,60 +31,10 @@ function isTruthyBuildFlag(raw: string | undefined): boolean {
   return !!raw && ENV_FLAG_TRUTHY.has(raw.toLowerCase());
 }
 
-/**
- * Proxy configure hook (local mode) that authenticates upstream requests with
- * the loopback cloud session token the SPA registered. No browser cookie is
- * involved.
- *
- * The DRF API (`/v1`) authenticates by header (X-Session-Token); sending a
- * `sessionid` cookie would engage Django's SessionAuthentication, which enforces
- * CSRF and rejects unsafe (POST/PUT/PATCH) requests when the proxy can't supply
- * a matching Origin/Referer. The allauth / accounts session endpoints need the
- * Django session cookie instead.
- */
-function injectCloudSessionToken(apiMode: boolean) {
-  return (proxy: {
-    on: (event: string, cb: (...args: unknown[]) => void) => void;
-  }): void => {
-    proxy.on("proxyReq", (...args: unknown[]) => {
-      const proxyReq = args[0] as http.ClientRequest;
-      const req = args[1] as http.IncomingMessage;
-      if (!isSameOriginProxyRequest(req)) {
-        return;
-      }
-      const token = getDevCloudSessionToken();
-      if (apiMode) {
-        // Header-only auth; drop any browser cookie so it can't re-engage the
-        // session-cookie (CSRF-enforcing) path.
-        proxyReq.removeHeader("Cookie");
-        // Server-side proxy injection of the loopback token, not browser auth —
-        // the centralized interceptor can't reach this Node proxy hook.
-        if (token) {
-          // eslint-disable-next-line no-restricted-syntax
-          proxyReq.setHeader("X-Session-Token", token);
-        }
-        return;
-      }
-      if (token) {
-        proxyReq.setHeader(
-          "Cookie",
-          `sessionid=${token}; __Secure-sessionid=${token}`,
-        );
-      }
-    });
-  };
-}
-
 // Reference: https://vite.dev/config/#using-environment-variables-in-config
 export default defineConfig(({ mode }) => {
   // loadEnv with empty prefix loads all .env variables, not just VITE_-prefixed ones.
   const env = { ...process.env, ...loadEnv(mode, process.cwd(), "") };
-
-  // Server-only proxy targets — never embedded in the client bundle.
-  // Reference: https://vite.dev/config/server-options#server-proxy
-  const apiProxyTarget = env.API_PROXY_TARGET || "http://localhost:8000";
-  const gatewayProxyTarget =
-    env.GATEWAY_PROXY_TARGET || "http://localhost:7830";
 
   return {
     base: "/assistant/",
@@ -124,46 +64,6 @@ export default defineConfig(({ mode }) => {
         },
       ],
       dedupe: ["react", "react-dom"],
-    },
-    optimizeDeps: {
-      // Deep `@mycadet/design-library/components/*` imports resolve to .tsx
-      // source, which the dep optimizer won't auto-prebundle — those modules
-      // are served raw. A bare import in a raw-served module is rewritten to
-      // a prebundled chunk only when the specifier is already in the
-      // optimized set; otherwise it resolves into design-library's nested
-      // node_modules and is served untransformed, and any CommonJS module in
-      // that chain (e.g. micromark's `debug`) is a browser SyntaxError →
-      // white screen in dev. List every bare specifier that design-library
-      // source imports but clients/web source does not import itself.
-      include: ["rehype-katex", "remark-math", "remark-parse", "unified"],
-    },
-    server: {
-      port: parseInt(env.PORT || "3000"),
-      strictPort: true,
-      host: true,
-      // These workspace siblings resolve outside Vite's auto-detected root
-      // and would be blocked in dev without an explicit allow.
-      fs: {
-        allow: [import.meta.dirname, DESIGN_LIBRARY_SRC, ASSISTANT_API_SRC],
-      },
-      proxy: {
-        "/v1": {
-          target: apiProxyTarget,
-          changeOrigin: true,
-          configure: injectCloudSessionToken(true),
-        },
-        "/_allauth": {
-          target: apiProxyTarget,
-          changeOrigin: true,
-          configure: injectCloudSessionToken(false),
-        },
-        "/accounts": {
-          target: apiProxyTarget,
-          changeOrigin: true,
-          configure: injectCloudSessionToken(false),
-        },
-        "/auth": { target: gatewayProxyTarget, changeOrigin: true },
-      },
     },
     build: {
       outDir: "dist",

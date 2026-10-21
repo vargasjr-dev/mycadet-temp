@@ -5,7 +5,7 @@ Cadet assistant web app (chat, settings, library, docs).
 
 ## Stack
 
-- [Vite](https://vite.dev/) for dev server and build.
+- [Vite](https://vite.dev/) for the production build — serving is the cadet app server's job.
 - [React 19](https://react.dev/) +
   [React Router v7](https://reactrouter.com/start/modes) in
   **library / data-router mode** (`createBrowserRouter` +
@@ -24,79 +24,45 @@ Cadet assistant web app (chat, settings, library, docs).
 
 ## Local development
 
+`clients/web` has no Vite dev server — the **cadet app server** is how
+app/web assets load now (`bun run dev` here prints a pointer and exits).
+
 ```bash
 cd clients/web
-bun install   # installs the whole workspace
-bun run openapi-ts  # generate API client (required before typecheck/dev)
-bun run dev         # Vite dev server on localhost:3000
+bun install        # installs the whole workspace
+bun run openapi-ts # generate API client (required before typecheck)
+bun run build      # production build to dist/
+
+# from the repo root — build and serve both bundles:
+cadet app start    # nginx edge for the active local assistant
+                   # (rebuilds either bundle from source when stale)
+cadet tunnel       # adds a public URL: app shell at the origin root,
+                   # web iframed at /web/assistant/
 ```
 
 ### Web surface and app development
 
-`VITE_WEB_MODE` selects the UI included in a build:
+`clients/app` remains an experimental client with its own account screens
+and i18n, and it keeps a Vite dev server for that standalone surface: run
+`bun run dev` there (port 3001). Its current composition includes web's
+assistant routes while excluding web's account routes. The account screen
+copies are intentionally independent so app changes do not alter the
+stable web client.
 
-- `full` (default) includes account login, signup, OAuth, logout, assistant
-  selection, and the assistant UI. Desktop clients, CLI web mode, and the
-  hosted mobile hub use this surface while app is developed separately.
-- `assistant` omits account routes and the tray's New Assistant dialog for
-  hosts that provide their own account UI.
+### Same-origin by construction
 
-`VITE_CLOUD_MODE` independently selects cloud versus local runtime behavior.
-For example, `VITE_CLOUD_MODE=true VITE_WEB_MODE=full bun run build` builds the
-hosted full client; changing `VITE_WEB_MODE` to `assistant` builds the iframe
-surface. Use `VITE_CLOUD_MODE=false` for a local client.
-
-`clients/app` remains an experimental client with its own account screens and
-i18n. Run `bun run dev` there on port 3001 alongside web on port 3000. Its
-current composition includes web's assistant routes while excluding web's
-account routes. The account screen copies are intentionally independent so
-app changes do not alter the stable web client.
-
-### Connecting to a backend
-
-The Vite dev server includes a built-in
-[reverse proxy](https://vite.dev/config/server-options#server-proxy)
-that forwards API paths (`/v1/*`, `/_allauth/*`, `/accounts/*`) to the
-Django backend. This keeps all requests same-origin so session cookies
-work automatically — no CORS configuration or HTTPS setup needed.
-
-By default the proxy targets `http://localhost:8000`. To change it,
-set `API_PROXY_TARGET` in a `.env` file (see
-[`.env.example`](./.env.example)):
-
-```bash
-# .env (not committed)
-API_PROXY_TARGET=http://localhost:8000
-```
-
-Browse to **http://localhost:3000** and log in normally.
-
-> **Note:** Some API endpoints (avatar, feed, assistant state) return
-> 404 unless the assistant daemon is running. This is expected in
-> frontend-only mode — the core UI and auth flow work without the
-> daemon.
-
-### How the proxy works
-
-The client makes relative API requests (e.g. `fetch("/v1/feed")`).
-In development, Vite's proxy intercepts these and forwards them to
-the backend. In production, an infrastructure reverse proxy (nginx,
-cloud LB, etc.) does the same routing. The client code is identical
-in both environments — no environment-specific base URLs.
-
-```
-Development:   Browser ─► Vite :3000 ─(proxy)─► Django :8000
-Production:    Browser ─► Reverse proxy ─► Django
-```
-
-Reference: [Vite server.proxy docs](https://vite.dev/config/server-options#server-proxy)
+The client makes relative API requests (e.g. `fetch("/v1/feed")`) — no
+environment-specific base URLs. Whatever serves the bundle routes the API
+paths at that same origin: the app server's nginx edge proxies `/v1/*` to
+the active assistant's gateway, the cloud serving layer proxies to the
+cloud API, and the desktop's protocol handler forwards `/v1/*` the same
+way. The client code is identical in every environment.
 
 ### Other commands
 
 ```bash
 bun run build      # Production build to dist/
-bun run preview    # Serve the production build locally
-bun run typecheck  # bunx tsc --noEmit
+bun run typecheck  # bunx tsgo --noEmit
 bun run lint       # eslint
 ```
 

@@ -12,11 +12,9 @@
     "dist"
   ],
   "scripts": {
-    "predev": "bun run openapi-ts && node scripts/copy-skill-assets.mjs",
-    "dev": "bun --bun vite",
+    "dev": "echo 'clients/web has no vite dev server — the cadet app server is how app/web assets load now. Run `cadet app start` (builds both bundles from source and serves them locally) or `cadet tunnel` for a public URL. See clients/web/README.md.' && exit 1",
     "prebuild": "node scripts/copy-skill-assets.mjs",
     "build": "bun install && bun --bun vite build",
-    "preview": "bun --bun vite preview",
     "lint": "eslint",
     "audit:cross-domain": "node scripts/audit-cross-domain-imports.mjs",
     "audit:cross-domain:check": "node scripts/audit-cross-domain-imports.mjs --check",

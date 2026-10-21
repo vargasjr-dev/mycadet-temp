@@ -1036,21 +1036,19 @@ automatically via [npm lifecycle hooks](https://docs.npmjs.com/cli/v10/using-npm
   (~2s, idempotent) so a stale `src/generated/` from an older checkout or
   worktree can't survive an install and cause phantom `tsc` errors that
   never reproduce in CI.
-- **`predev`**: runs before every `bun run dev`; regenerates so the
-  client stays in sync with the committed specs.
 - **`pretypecheck`**: runs before every `bun run typecheck`; regenerates
   for the same reason. A bare `bunx tsc --noEmit` bypasses this hook, so
   prefer `bun run typecheck`.
 
-No manual codegen step is needed — `bun install` + `bun run dev` triggers
-these hooks automatically. Cadet maintainers using the internal `vel`
+No manual codegen step is needed — `bun install` triggers these hooks
+automatically. Cadet maintainers using the internal `vel`
 CLI also get codegen via `vel up --vite`.
 
 **Cadet maintainers** updating the specs after backend API changes:
 
 ```bash
 ./scripts/sync-openapi-specs.sh   # copies from sibling platform checkout
-bun run dev                       # predev regenerates automatically
+bun run typecheck                 # pretypecheck regenerates automatically
 ```
 
 Plugins (configured in `openapi-ts.config.ts`):
