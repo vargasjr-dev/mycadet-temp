@@ -9,9 +9,7 @@
  * relative path like `../../<y>/foo`. These create hidden
  * couplings between features that are supposed to be independent.
  * The fix is to lift the shared code up to a top-level shared
- * directory, or compose at the page level. See
- * `clients/web/docs/CONVENTIONS.md` → "How to decide where the
- * domain split is" for the reasoning.
+ * directory, or compose at the page level.
  *
  * This script is the source-of-truth generator for the lint
  * allow-list. The ESLint rule

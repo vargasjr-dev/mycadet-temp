@@ -11,8 +11,7 @@ Cadet assistant web app (chat, settings, library, docs).
   **library / data-router mode** (`createBrowserRouter` +
   `<RouterProvider>`).
 - [Zustand](https://zustand.docs.pmnd.rs/) for shared client state
-  (messages, streaming, interactions, conversations). See
-  [`docs/STATE_MANAGEMENT.md`](./docs/STATE_MANAGEMENT.md) for store patterns.
+  (messages, streaming, interactions, conversations).
 - [TanStack React Query](https://tanstack.com/query/latest) for server
   state (API calls, caching, mutations).
 - [HeyAPI](https://heyapi.dev/) for OpenAPI client generation with
@@ -125,14 +124,6 @@ deterministic results are required.
 
 ## Architecture
 
-See [`docs/CONVENTIONS.md`](./docs/CONVENTIONS.md) for code organization
-(domain-based architecture), component conventions, and framework strategy.
-See [`docs/STATE_MANAGEMENT.md`](./docs/STATE_MANAGEMENT.md) for state
-patterns (Zustand + TanStack Query).
-
-See [`docs/STYLE_GUIDE.md`](./docs/STYLE_GUIDE.md) for naming, imports,
-TypeScript rules, and formatting.
-
 **Feature boundaries are enforced by lint.** Each folder under
 `src/domains/` is meant to be a self-contained feature — its own data,
 components, hooks, and tests. When one feature reaches into another's
@@ -145,8 +136,7 @@ listed in [`.cross-domain-allowlist.json`](./.cross-domain-allowlist.json)
 while we lift the shared pieces up to the top-level shared directories
 (`hooks/`, `stores/`, `utils/`, `types/`, `components/`). That file
 shrinks toward zero over time — fix violations rather than adding
-entries to it. See [docs/CONVENTIONS.md](./docs/CONVENTIONS.md#how-to-decide-where-the-domain-split-is)
-for the full reasoning and the lift-vs-compose decision tree.
+entries to it.
 
 ## Directory structure
 

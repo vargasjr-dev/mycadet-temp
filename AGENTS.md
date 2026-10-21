@@ -115,7 +115,7 @@ Don't copy-paste logic. Duplicated logic drifts: a bug gets fixed in one copy an
 
 - Extract on the **second** occurrence, not the fifth — two copies is the signal, not a milestone to pass.
 - Share **behavior**, not just shapes: reusing a type while re-implementing the logic around it still drifts.
-- Put the extracted code at the right layer (see the package's own docs — e.g. `clients/web/docs/CONVENTIONS.md` "Top-level shared directories"): used by one area → inside it; used by two or more → a shared module. Then delete the originals in the same change.
+- Put the extracted code at the right layer (used by one area → inside it; used by two or more → a shared module). Then delete the originals in the same change.
 
 ## Dead Code Removal
 

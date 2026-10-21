@@ -36,7 +36,7 @@
  *
  * No autofix. Which primitive replaces a raw control depends on what the
  * control is (an action, a link, a row, a toggle), and the swap usually moves
- * props around. See the "Which primitive" table in `docs/STYLE_GUIDE.md`.
+ * props around.
  *
  * Escape hatch, for a control the library genuinely cannot express (a colour
  * swatch, a drag handle, a canvas overlay, a whole-surface hit area):
@@ -49,7 +49,7 @@
 
 const MESSAGES = {
   rawButton:
-    'Raw <button>. Use Button from @mycadet/design-library (iconOnly for a glyph, variant="link" for a link-shaped action), or a row or chip primitive. See docs/STYLE_GUIDE.md, "Which primitive".',
+    'Raw <button>. Use Button from @mycadet/design-library (iconOnly for a glyph, variant="link" for a link-shaped action), or a row or chip primitive.',
   blankAnchor:
     '<a target="_blank"> does nothing inside the iOS and Android shells. Use ExternalAnchor from @/components/external-anchor, which carries the native click handler and the rel hardening.',
   roleButton:

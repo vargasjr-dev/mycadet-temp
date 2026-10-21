@@ -9,8 +9,7 @@
  * This rule is enabled for all of `src/` (except generated) via
  * `i18nEnforcedPaths` in `eslint.config.mjs`. A clean lint is not proof
  * every user-facing string is translated: the rule reads JSX, toast call
- * sites, and copy-shaped props, not every helper return value. See
- * `docs/I18N.md`.
+ * sites, and copy-shaped props, not every helper return value.
  *
  * What it reports:
  * - JSX text children that contain a word character
@@ -30,8 +29,6 @@
  * code identifiers, protocol tokens):
  *
  *   // eslint-disable-next-line local/no-untranslated-strings -- brand name
- *
- * See `clients/web/docs/I18N.md` for how to add a string properly.
  */
 
 /**
@@ -253,13 +250,13 @@ export const noUntranslatedStrings = {
     messages: {
       jsxText:
         'Untranslated copy: "{{text}}". Move it to a catalog under ' +
-        "src/i18n/locales/ and read it with t(). See docs/I18N.md.",
+        "src/i18n/locales/ and read it with t().",
       prop:
         'Untranslated copy in the `{{prop}}` prop: "{{text}}". Move it to a ' +
-        "catalog under src/i18n/locales/ and read it with t(). See docs/I18N.md.",
+        "catalog under src/i18n/locales/ and read it with t().",
       toast:
         'Untranslated toast copy: "{{text}}". Move it to a catalog under ' +
-        "src/i18n/locales/ and read it with t(). See docs/I18N.md.",
+        "src/i18n/locales/ and read it with t().",
     },
   },
   create(context) {

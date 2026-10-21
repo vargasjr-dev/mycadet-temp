@@ -16,9 +16,8 @@ Implement one focused PR, with production changes centered on two files:
 Use the existing store, upload lifecycle, media query, and reconciliation
 paths. Keep this change free of new persistence, state managers, feature flags,
 orientation listeners, breakpoint changes, and native/backend changes. Limit
-cleanup to duplicated layout code removed by the fix. Add a short note to
-`clients/web/docs/CLOUD_ADAPTATION.md` about preserving stateful route
-ancestry; a broader architecture rewrite is unnecessary.
+cleanup to duplicated layout code removed by the fix; a broader architecture
+rewrite is unnecessary.
 
 ## Evidence and limits
 

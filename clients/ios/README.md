@@ -265,10 +265,9 @@ a breakpoint.
 ## How it's set up
 
 > **Web-side conventions for iOS code paths**: any change to the web app
-> that might run inside this WKWebView shell needs to follow the patterns
-> in [`clients/web/docs/CAPACITOR.md`](../web/docs/CAPACITOR.md) — Capacitor plugin
-> lazy imports, native auth, deep links, the native voice bridge,
-> autogrowing textareas, streaming watchdogs, OS permission UI, etc.
+> that might run inside this WKWebView shell follows the shell's patterns —
+> Capacitor plugin lazy imports, native auth, deep links, the native voice
+> bridge, autogrowing textareas, streaming watchdogs, OS permission UI, etc.
 > For the native half of voice mode, see
 > [`docs/NATIVE_VOICE.md`](docs/NATIVE_VOICE.md).
 

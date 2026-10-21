@@ -21,9 +21,6 @@
  * hand — fix the import instead. After removing one:
  *
  *   bun run audit:cross-domain
- *
- * See `clients/web/docs/CONVENTIONS.md` → "How to decide where the
- * domain split is" for the full reasoning.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -61,8 +58,7 @@ export const noCrossDomainImports = {
       crossDomain:
         "Cross-domain import: '{{owner}}' should not import from '{{target}}'. " +
         "Lift the shared code to a top-level dir (hooks/, stores/, utils/, " +
-        "types/, components/), or compose at the page level. See CONVENTIONS.md " +
-        "→ 'Top-level shared directories'.",
+        "types/, components/), or compose at the page level.",
     },
   },
   create(context) {

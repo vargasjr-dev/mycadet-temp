@@ -206,8 +206,7 @@ ruleTester.run("no-untranslated-strings", noUntranslatedStrings, {
     {
       name: "a sentence assembled with +",
       filename: COMPONENT,
-      // The same untranslatable shape as the template form, and the one
-      // `I18N.md` calls the most common of all.
+      // The same untranslatable shape as the template form.
       code: `const C = () => <button aria-label={"Delete " + name} />;`,
       errors: [{ messageId: "prop" }],
     },

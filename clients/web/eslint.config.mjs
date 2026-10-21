@@ -25,7 +25,7 @@ import { preferDesignLibraryControls } from "./eslint-rules/prefer-design-librar
  * The `dark:` custom variant only matches `[data-theme=dark]`, not
  * `[data-theme=velvet]`, so any paired utility silently breaks velvet
  * contrast. Use semantic tokens (`--surface-*`, `--content-*`,
- * `--border-*`) instead. See `clients/web/docs/STYLE_GUIDE.md`.
+ * `--border-*`) instead.
  */
 /**
  * Typography variant names that do not exist.
@@ -106,13 +106,13 @@ const darkPairedColorScaleRules = [
     selector:
       "Literal[value=/\\bdark:(\\w+:)*(bg|text|border|divide|ring|fill|stroke|outline|decoration|placeholder|accent|caret)-[a-z]+-\\d+/]",
     message:
-      "Use a semantic token (e.g. bg-[var(--surface-lift)], text-[var(--content-default)]) instead of dark: paired with a color-scale utility. Semantic tokens are defined in packages/design-library/src/tokens.css and switch per data-theme automatically, including velvet. See clients/web/docs/STYLE_GUIDE.md.",
+      "Use a semantic token (e.g. bg-[var(--surface-lift)], text-[var(--content-default)]) instead of dark: paired with a color-scale utility. Semantic tokens are defined in packages/design-library/src/tokens.css and switch per data-theme automatically, including velvet.",
   },
   {
     selector:
       "TemplateElement[value.raw=/\\bdark:(\\w+:)*(bg|text|border|divide|ring|fill|stroke|outline|decoration|placeholder|accent|caret)-[a-z]+-\\d+/]",
     message:
-      "Use a semantic token (e.g. bg-[var(--surface-lift)], text-[var(--content-default)]) instead of dark: paired with a color-scale utility. Semantic tokens are defined in packages/design-library/src/tokens.css and switch per data-theme automatically, including velvet. See clients/web/docs/STYLE_GUIDE.md.",
+      "Use a semantic token (e.g. bg-[var(--surface-lift)], text-[var(--content-default)]) instead of dark: paired with a color-scale utility. Semantic tokens are defined in packages/design-library/src/tokens.css and switch per data-theme automatically, including velvet.",
   },
 ];
 
@@ -125,8 +125,6 @@ const darkPairedColorScaleRules = [
  *   bypass the interceptors just as badly as one outside it.
  * - Tokens, credentials, and secrets do not belong in JS-readable
  *   storage anywhere, regardless of which module is doing the writing.
- *
- * See `clients/web/docs/CONVENTIONS.md` → "Authentication".
  */
 const universalAuthRules = [
   // No new `createClient(...)` outside generated/. There must be exactly
@@ -483,7 +481,7 @@ const eslintConfig = defineConfig([
   // stores/root routes followed so this glob could widen without a flood of
   // pre-existing literals. A clean lint here is not proof every user-facing
   // string is translated: the rule reads JSX, toast call sites, and
-  // copy-shaped props, not every helper return value. See `docs/I18N.md`.
+  // copy-shaped props, not every helper return value.
   //
   // Never shrink this glob to silence a violation. Fix the copy, or add an
   // eslint-disable with a reason for brand names / protocol tokens.

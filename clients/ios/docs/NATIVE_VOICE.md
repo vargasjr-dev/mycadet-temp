@@ -4,9 +4,8 @@ How a live-voice session — which runs entirely in the web layer — reaches th
 Dynamic Island, the Lock Screen, Siri, Spotlight, the Action Button, and
 Control Center.
 
-Read [`clients/web/docs/CAPACITOR.md` § Native voice bridge](../../web/docs/CAPACITOR.md#native-voice-bridge)
-first if you are touching the web half. That document owns the skew rule; this
-one owns the native contracts.
+This document owns the native contracts; the web side owns the matching TS
+types — keep the two in skew.
 
 ---
 
@@ -831,7 +830,6 @@ Web-side counterparts:
 ## See also
 
 - [`clients/ios/README.md`](../README.md) — shell setup, targets, release pipeline, portal checklist.
-- [`clients/web/docs/CAPACITOR.md`](../../web/docs/CAPACITOR.md) — the web-side rules, including the skew rule.
 - [Apple — ActivityKit](https://developer.apple.com/documentation/activitykit)
 - [Apple — App Intents](https://developer.apple.com/documentation/appintents)
 - [Apple — `AVAudioSession`](https://developer.apple.com/documentation/avfaudio/avaudiosession)

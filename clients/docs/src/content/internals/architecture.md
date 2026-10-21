@@ -10,9 +10,7 @@ This file is the cross-system architecture index. Detailed designs live in domai
 | Gateway ingress/webhooks                    | [`gateway/ARCHITECTURE.md`](gateway/ARCHITECTURE.md)                                               |
 | Browser extension                           | [`clients/chrome-extension/README.md`](clients/chrome-extension/README.md)                         |
 | Clients (web, iOS, Android, macOS, Windows) | [`clients/README.md`](clients/README.md)                                                           |
-| Mobile document chat session                | [`clients/web/docs/DOCUMENT_CHAT.md`](clients/web/docs/DOCUMENT_CHAT.md)                           |
 | Native live camera sampling                 | [`clients/android/README.md`](clients/android/README.md#live-camera-sampling)                      |
-| Conversation assets                         | [`clients/web/docs/CONVERSATION_ASSETS.md`](clients/web/docs/CONVERSATION_ASSETS.md)               |
 | Public docs site (`clients/docs`)           | [`clients/docs/README.md`](clients/docs/README.md)                                                 |
 | Assistant memory deep dive                  | [`assistant/docs/architecture/memory.md`](assistant/docs/architecture/memory.md)                   |
 | Assistant integrations deep dive            | [`assistant/docs/architecture/integrations.md`](assistant/docs/architecture/integrations.md)       |
@@ -1045,8 +1043,6 @@ flowchart LR
     Local --> Desktop[Electron notification owner]
     Local --> Browser[Browser tab delivery owner]
 ```
-
-See [notification delivery](assistant/src/notifications/README.md) and [web lifecycle events](clients/web/docs/EVENT_BUS.md).
 
 ## From Me Chat Notifications
 

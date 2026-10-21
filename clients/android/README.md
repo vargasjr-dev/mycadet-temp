@@ -80,7 +80,7 @@ Older Android shells and iOS ignore `pairSpacingMs` and return a single `value`.
 The web sampler accepts that response through its serial two-capture path.
 Calling `captureSample` without spacing and taking a shutter photo retain their
 existing contracts. Paired capture requires both an updated Android APK and the
-updated hosted web UI. See the [camera QA guide](../web/docs/CAMERA_MODE_QA.md).
+updated hosted web UI.
 
 ## Launcher Icons
 
