@@ -37,7 +37,7 @@ async function serve(
     throw requestError;
   }
   if (upstreamBytes) {
-    // Same branch `BYOOAuthConnection.buildResponse` takes: raw bytes only
+    // Same branch `UserOAuthConnection.buildResponse` takes: raw bytes only
     // when the caller asked for them, otherwise the decoded value.
     return {
       ...upstream,
@@ -52,8 +52,8 @@ async function serve(
   return upstream;
 }
 
-const byoConnection: OAuthConnection = {
-  id: "conn-byo",
+const userConnection: OAuthConnection = {
+  id: "conn-user",
   provider: "stripe_link",
   accountInfo: null,
   request: serve,
@@ -239,7 +239,7 @@ beforeEach(() => {
   resolverCalls.length = 0;
   providerLookups.length = 0;
   resolution = {
-    connection: byoConnection,
+    connection: userConnection,
     ambiguous: false,
     allAccounts: ["user@example.com"],
   };
@@ -488,7 +488,7 @@ describe("header handling", () => {
     expect(headers.accept).toBe("application/json");
   });
 
-  test("preserves conditional and custom headers on a BYO connection", async () => {
+  test("preserves conditional and custom headers on a user connection", async () => {
     const headers = {
       "if-match": '"version-1"',
       "idempotency-key": "request-123",
@@ -540,7 +540,7 @@ describe("response emission", () => {
     );
   });
 
-  test("round-trips a BYO JSON payload byte for byte", async () => {
+  test("round-trips a JSON payload byte for byte", async () => {
     // Whitespace, a repeated key, and an integer past 2^53: all three are lost
     // or corrupted by a JSON.parse/JSON.stringify round trip.
     const raw = Buffer.from(
@@ -618,7 +618,7 @@ describe("response emission", () => {
 describe("connection selection", () => {
   test("refuses to pick when several accounts match", async () => {
     resolution = {
-      connection: byoConnection,
+      connection: userConnection,
       ambiguous: true,
       allAccounts: ["a@example.com", "b@example.com"],
     };

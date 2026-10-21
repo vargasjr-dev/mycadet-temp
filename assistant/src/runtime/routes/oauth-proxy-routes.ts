@@ -114,8 +114,7 @@ export async function handleOAuthProxy(
 
   const { connection } = resolution;
 
-  // A Buffer travels as raw bytes on BYO and as base64 on the cloud, in
-  // both cases under the caller's own Content-Type.
+  // A Buffer travels as raw bytes under the caller's own Content-Type.
   const body =
     carriesBody(method) && args.rawBody?.byteLength
       ? Buffer.from(args.rawBody)
@@ -132,8 +131,7 @@ export async function handleOAuthProxy(
       headers,
       body,
       signal: args.abortSignal,
-      // Byte-exact passthrough. Honored by BYO connections; a cloud
-      // connection is parsed platform-side and cannot offer it.
+      // Byte-exact passthrough.
       rawResponseBody: true,
       // The caller's own HTTP client decides what to do with a 3xx; the
       // proxy never makes an upstream hop on its behalf.
@@ -143,8 +141,7 @@ export async function handleOAuthProxy(
       // the other idempotent methods keep their retries.
       singleAttempt: !isIdempotentHttpMethod(method),
       // The provider signing this query sees the bytes the caller wrote: key
-      // order, `%20`, and valueless flags all survive. Cloud connections
-      // have no raw mode and send `query` instead.
+      // order, `%20`, and valueless flags all survive.
       rawQuery: args.rawUrl.search,
     });
   } catch (err) {

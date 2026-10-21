@@ -208,7 +208,6 @@ async function handleDisconnect({ body = {} }: RouteHandlerArgs) {
     );
   }
 
-  // BYO path
   let connectionId: string | undefined;
   let accountLabel: string | undefined;
 
@@ -286,7 +285,6 @@ async function handleStatus({ queryParams = {} }: RouteHandlerArgs) {
     );
   }
 
-  // BYO path
   if (providerRow.authorizeUrl === "urn:manual-token") {
     await syncManualTokenConnection(provider);
   }

@@ -7,9 +7,7 @@ export interface OAuthConnectionRequest {
    * text already wire-encoded. For callers forwarding a query a provider signs,
    * where rebuilding {@link OAuthConnectionRequest.query} would reorder
    * interleaved repeated keys, rewrite `%20` as `+`, and give a valueless flag
-   * an `=`. An empty one falls through to `query`. Honored by BYO connections;
-   * a cloud connection sends `query` to the cloud proxy, which rebuilds
-   * it.
+   * an `=`. An empty one falls through to `query`.
    */
   rawQuery?: string;
   headers?: Record<string, string>;
@@ -45,7 +43,7 @@ export interface OAuthConnectionRequest {
    * When true the connection makes exactly one upstream attempt and surfaces a
    * retryable status to the caller instead of replaying the request. For
    * callers forwarding writes they cannot safely repeat. Governs status-driven
-   * retries only: a BYO connection's refresh-and-retry follows a provider 401,
+   * retries only: the connection's refresh-and-retry follows a provider 401,
    * which rejected the request before it took effect.
    */
   singleAttempt?: boolean;

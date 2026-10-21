@@ -694,7 +694,7 @@ export const PROVIDER_SEED_DATA: Record<
     // to ``/services/data/...`` go to the per-org instance host returned in
     // the token response as ``instance_url`` and stored on
     // ``oauth_connection.metadata``. ``connection-resolver.ts`` substitutes
-    // that instance URL when constructing the BYO connection so callers
+    // that instance URL when constructing the connection so callers
     // don't need to override ``baseUrl`` per request.
     baseUrl: "https://login.salesforce.com",
     displayLabel: "Salesforce",
@@ -1017,7 +1017,7 @@ export const PROVIDER_SEED_DATA: Record<
     refreshUrl: "https://api.figma.com/v1/oauth/refresh",
     // Granular scopes only. The legacy `files:read` scope is deprecated by
     // Figma in favour of the narrower `file_*` scopes and is deliberately
-    // absent here; it stays in availableScopes for BYO apps that still rely
+    // absent here; it stays in availableScopes for apps that still rely
     // on it. Enterprise-only and org-admin-only scopes (file_variables:*,
     // library_analytics:read, org:*) are offered but not requested by
     // default, because Figma rejects the whole authorization request if the
@@ -1028,7 +1028,7 @@ export const PROVIDER_SEED_DATA: Record<
     // offers `folder_metadata:read` under Folders. `file_code_connect:write`
     // is withheld because Figma only offers it to apps owned by an
     // Organization-plan team, which not every managed app is, and nothing
-    // here uses Code Connect; it stays in availableScopes for BYO apps.
+    // here uses Code Connect; it stays in availableScopes for apps.
     defaultScopes: [
       "current_user:read",
       "file_content:read",

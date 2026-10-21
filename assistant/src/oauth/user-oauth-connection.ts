@@ -1,5 +1,5 @@
 /**
- * BYO (Bring-Your-Own) OAuth connection implementation.
+ * OAuth connection implementation backed by the user's own registered app.
  *
  * Wraps the existing `withValidToken` token management infrastructure to
  * provide the OAuthConnection interface. Delegates all token resolution,
@@ -16,7 +16,7 @@ import type {
 } from "./connection.js";
 import { decodeOAuthResponseBytes, isBinaryOAuthBody } from "./connection.js";
 
-const log = getLogger("byo-oauth-connection");
+const log = getLogger("user-oauth-connection");
 
 /** Default per-request timeout to prevent hung requests from blocking indefinitely. */
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -28,13 +28,13 @@ const REQUEST_TIMEOUT_MS = 30_000;
  * Authorization entirely). Derived from the provider's header-type injection
  * template so the seed is the single source of truth.
  */
-export interface BYOTokenHeader {
+export interface UserTokenHeader {
   name: string;
   /** Text placed before the token, e.g. `"Bearer "`, `"Bot "`, or `""`. */
   valuePrefix: string;
 }
 
-export interface BYOOAuthConnectionOptions {
+export interface UserOAuthConnectionOptions {
   id: string;
   provider: string;
   baseUrl: string;
@@ -43,18 +43,18 @@ export interface BYOOAuthConnectionOptions {
    * Token header override. When omitted the connection falls back to
    * `Authorization: Bearer` (or `Bot` for discord_channel).
    */
-  tokenHeader?: BYOTokenHeader | null;
+  tokenHeader?: UserTokenHeader | null;
 }
 
-export class BYOOAuthConnection implements OAuthConnection {
+export class UserOAuthConnection implements OAuthConnection {
   readonly id: string;
   readonly provider: string;
   readonly accountInfo: string | null;
 
   private readonly baseUrl: string;
-  private readonly tokenHeader: BYOTokenHeader | null;
+  private readonly tokenHeader: UserTokenHeader | null;
 
-  constructor(opts: BYOOAuthConnectionOptions) {
+  constructor(opts: UserOAuthConnectionOptions) {
     this.id = opts.id;
     this.provider = opts.provider;
     this.baseUrl = opts.baseUrl;
@@ -73,7 +73,7 @@ export class BYOOAuthConnection implements OAuthConnection {
         // credential and comes back 401, which reads as a revoked token.
         // Providers with their own token header (Shopify) override the
         // whole thing via `tokenHeader`.
-        const tokenHeader: BYOTokenHeader = this.tokenHeader ?? {
+        const tokenHeader: UserTokenHeader = this.tokenHeader ?? {
           name: "Authorization",
           valuePrefix: this.provider === "discord_channel" ? "Bot " : "Bearer ",
         };

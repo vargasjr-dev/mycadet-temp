@@ -24,7 +24,7 @@ import { _resetBackend } from "../security/secure-keys.js";
 
 const TEST_DIR = join(
   tmpdir(),
-  `cadet-byo-conn-test-${randomBytes(4).toString("hex")}`,
+  `cadet-conn-test-${randomBytes(4).toString("hex")}`,
 );
 const STORE_PATH = join(TEST_DIR, "keys.enc");
 
@@ -150,7 +150,7 @@ import {
   _setMetadataPath,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { BYOOAuthConnection } from "./byo-connection.js";
+import { UserOAuthConnection } from "./user-oauth-connection.js";
 import { resolveOAuthConnection } from "./connection-resolver.js";
 
 // ---------------------------------------------------------------------------
@@ -259,8 +259,8 @@ async function setupCredential(
   upsertCredentialMetadata(service, "access_token", {});
 }
 
-function createConnection(service = "google"): BYOOAuthConnection {
-  return new BYOOAuthConnection({
+function createConnection(service = "google"): UserOAuthConnection {
+  return new UserOAuthConnection({
     id: `conn-${service}`,
     provider: service,
     baseUrl:
@@ -283,7 +283,7 @@ async function setupTelegramCredential() {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe("BYOOAuthConnection", () => {
+describe("UserOAuthConnection", () => {
   describe("request()", () => {
     test("makes authenticated request with Bearer token", async () => {
       await setupCredential("google");
@@ -346,7 +346,7 @@ describe("BYOOAuthConnection", () => {
       });
 
       try {
-        const conn = new BYOOAuthConnection({
+        const conn = new UserOAuthConnection({
           id: "conn-google",
           provider: "google",
           baseUrl: `http://127.0.0.1:${origin.port}`,
@@ -507,7 +507,7 @@ describe("BYOOAuthConnection", () => {
 
     test("joins a Gmail media upload onto the host-only Google API base", async () => {
       await setupCredential("google");
-      const conn = new BYOOAuthConnection({
+      const conn = new UserOAuthConnection({
         id: "conn-google",
         provider: "google",
         baseUrl: "https://www.googleapis.com",
@@ -801,7 +801,7 @@ describe("BYOOAuthConnection", () => {
       // Shopify's Admin API reads X-Shopify-Access-Token and ignores
       // Authorization, so a Bearer header reaches the shop unauthenticated.
       await setupCredential("google");
-      const conn = new BYOOAuthConnection({
+      const conn = new UserOAuthConnection({
         id: "conn-google",
         provider: "google",
         baseUrl: "https://example-store.myshopify.com",
@@ -827,7 +827,7 @@ describe("BYOOAuthConnection", () => {
 
     test("keeps the value prefix from the token header template", async () => {
       await setupCredential("google");
-      const conn = new BYOOAuthConnection({
+      const conn = new UserOAuthConnection({
         id: "conn-google",
         provider: "google",
         baseUrl: "https://discord.com/api",
@@ -965,11 +965,11 @@ describe("BYOOAuthConnection", () => {
 });
 
 describe("resolveOAuthConnection", () => {
-  test("returns a BYOOAuthConnection for valid credential", async () => {
+  test("returns a UserOAuthConnection for valid credential", async () => {
     await setupCredential("google");
     const conn = await resolveOAuthConnection("google");
 
-    expect(conn).toBeInstanceOf(BYOOAuthConnection);
+    expect(conn).toBeInstanceOf(UserOAuthConnection);
     expect(conn.provider).toBe("google");
   });
 

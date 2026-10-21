@@ -63,10 +63,9 @@ const TEXT_ENCODER = new TextEncoder();
 
 /**
  * Statuses the `Response` constructor refuses a body on, limited to the ones
- * this route can emit. The interim 1xx statuses are absent: a BYO `fetch`
- * never surfaces one as a final response and the cloud envelope refuses a
- * status outside 200 to 599, so a `RouteResponse` carrying one would only make
- * the adapter's `Response` constructor throw.
+ * this route can emit. The interim 1xx statuses are absent: a connection's `fetch`
+ * never surfaces one as a final response, so a `RouteResponse` carrying one
+ * would only make the adapter's `Response` constructor throw.
  */
 const NULL_BODY_STATUSES = new Set([204, 205, 304]);
 
@@ -402,12 +401,11 @@ export function mapProxyResolveError(
 /**
  * Map a connection-layer failure onto the status the caller should see.
  *
- * Upstream text arrives here verbatim: a BYO refresh failure carries the
- * provider token endpoint's own response and the refresh breaker's state, and
- * a cloud provider that could not be reached carries the cloud proxy's
- * body. The grant holder learns which dependency failed and what repairs it,
- * and nothing the provider or the cloud wrote; the route logs the verbatim
- * text so the operator still has it.
+ * Upstream text arrives here verbatim: a refresh failure carries the
+ * provider token endpoint's own response and the refresh breaker's state.
+ * The grant holder learns which dependency failed and what repairs it, and
+ * nothing the provider wrote; the route logs the verbatim text so the
+ * operator still has it.
  *
  * `InsufficientBalanceError` is the exception: it is raised on a bare status
  * with a fixed message about this install's own balance, so both audiences
@@ -418,7 +416,7 @@ export function mapProxyRequestError(
   provider: string,
   audience: ProxyErrorAudience = "grant-holder",
 ): RouteError {
-  if (isBYOCredentialFailure(err)) {
+  if (isUserCredentialFailure(err)) {
     return new FailedDependencyError(
       audienceMessage(
         audience,
@@ -495,12 +493,12 @@ function pinningProviderSegment(
 }
 
 /**
- * A BYO connection reports a dead credential either as `TokenExpiredError`
+ * A user connection reports a dead credential either as `TokenExpiredError`
  * (no token, or a refresh that cannot succeed) or, when a refreshed request
  * still comes back 401, as an error carrying `status: 401`. Both mean the same
  * thing the cloud's `CredentialRequiredError` does: reconnect.
  */
-function isBYOCredentialFailure(err: unknown): boolean {
+function isUserCredentialFailure(err: unknown): boolean {
   return isTokenExpiredError(err) || hasUnauthorizedStatus(err);
 }
 

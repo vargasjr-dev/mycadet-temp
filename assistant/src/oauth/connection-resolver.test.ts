@@ -70,7 +70,7 @@ mock.module("../cloud/client.js", () => ({
 // Import the module under test (after all mocks are registered)
 // ---------------------------------------------------------------------------
 
-import { BYOOAuthConnection } from "./byo-connection.js";
+import { UserOAuthConnection } from "./user-oauth-connection.js";
 import {
   formatNoConnectionError,
   resolveEffectiveBaseUrl,
@@ -130,22 +130,22 @@ describe("resolveOAuthConnection", () => {
     setupDefaults();
   });
 
-  test("returns BYOOAuthConnection when provider has no cloudServiceConfigKey", async () => {
+  test("returns UserOAuthConnection when provider has no cloudServiceConfigKey", async () => {
     const result = await resolveOAuthConnection("google");
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
     expect(result.id).toBe("conn-1");
     expect(result.provider).toBe("google");
   });
 
-  test("BYO path narrows by clientId when provided", async () => {
+  test("narrows by clientId when provided", async () => {
     const result = await resolveOAuthConnection("google", {
       clientId: "client-1",
     });
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
     expect(result.id).toBe("conn-1");
   });
 
-  test("BYO path returns no credential when clientId does not match", async () => {
+  test("returns no credential when clientId does not match", async () => {
     await expect(
       resolveOAuthConnection("google", {
         clientId: "wrong-client",
@@ -153,7 +153,7 @@ describe("resolveOAuthConnection", () => {
     ).rejects.toThrow(/No active OAuth connection found/);
   });
 
-  test("BYO path reconciles manual-token providers before exact account lookup", async () => {
+  test("reconciles manual-token providers before exact account lookup", async () => {
     mockProvider = {
       provider: "telegram",
       baseUrl: "https://api.telegram.org",
@@ -176,7 +176,7 @@ describe("resolveOAuthConnection", () => {
 
     expect(syncManualTokenCalls).toEqual(["telegram"]);
     expect(mockConnection.accountInfo).toBe("@example_bot");
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
     expect(result.id).toBe("conn-telegram");
   });
 });
@@ -194,7 +194,7 @@ describe("resolveOAuthConnection scope-awareness", () => {
     setupDefaults();
   });
 
-  test("BYO: rejects when granted scopes are known and missing the requirement", async () => {
+  test("rejects when granted scopes are known and missing the requirement", async () => {
     mockConnection!.grantedScopes = JSON.stringify(CALENDAR_ONLY);
 
     await expect(
@@ -202,25 +202,25 @@ describe("resolveOAuthConnection scope-awareness", () => {
     ).rejects.toThrow(/missing required access/);
   });
 
-  test("BYO: treats full Gmail access as covering Gmail read access", async () => {
+  test("treats full Gmail access as covering Gmail read access", async () => {
     mockConnection!.grantedScopes = JSON.stringify([GMAIL_FULL_ACCESS_SCOPE]);
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
   });
 
-  test("BYO: unknown granted scopes never block", async () => {
+  test("unknown granted scopes never block", async () => {
     mockConnection!.grantedScopes = JSON.stringify([]);
 
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
   });
 
-  test("BYO: picks an older scope-satisfying connection over a newer narrow one", async () => {
+  test("picks an older scope-satisfying connection over a newer narrow one", async () => {
     // Newest first (matching the store's ordering): a Calendar-only row, then
     // an older row that carries the Gmail scope. The narrow row must not win.
     mockConnections = [
@@ -243,7 +243,7 @@ describe("resolveOAuthConnection scope-awareness", () => {
     const result = await resolveOAuthConnection("google", {
       requiredScopes: [GMAIL_SCOPE],
     });
-    expect(result).toBeInstanceOf(BYOOAuthConnection);
+    expect(result).toBeInstanceOf(UserOAuthConnection);
     expect(result.id).toBe("full");
   });
 });
@@ -253,7 +253,7 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
     setupDefaults();
   });
 
-  test("BYO: multiple connections + no account surfaces ambiguity and the selected label", async () => {
+  test("multiple connections + no account surfaces ambiguity and the selected label", async () => {
     mockConnections = [
       {
         id: "conn-personal",
@@ -276,12 +276,12 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
 
     expect(ambiguous).toBe(true);
     expect(allAccounts).toEqual(["user@example.com", "work@example.com"]);
-    expect(connection).toBeInstanceOf(BYOOAuthConnection);
+    expect(connection).toBeInstanceOf(UserOAuthConnection);
     expect(connection.id).toBe("conn-personal");
     expect(connection.accountInfo).toBe("user@example.com");
   });
 
-  test("BYO: account passed disambiguates and clears the warning", async () => {
+  test("account passed disambiguates and clears the warning", async () => {
     mockConnections = [
       {
         id: "conn-work",
@@ -301,7 +301,7 @@ describe("resolveOAuthConnectionWithMeta multi-account visibility", () => {
     expect(connection.id).toBe("conn-work");
   });
 
-  test("BYO: single connection is never ambiguous", async () => {
+  test("single connection is never ambiguous", async () => {
     const { ambiguous, allAccounts } =
       await resolveOAuthConnectionWithMeta("google");
 
@@ -315,7 +315,7 @@ describe("no-match error lists available accounts", () => {
     setupDefaults();
   });
 
-  test("BYO: names the provider's active accounts when the requested account misses", async () => {
+  test("names the provider's active accounts when the requested account misses", async () => {
     mockConnections = [
       {
         id: "conn-personal",
@@ -349,7 +349,7 @@ describe("no-match error lists available accounts", () => {
     expect(message).toContain("Check the account spelling.");
   });
 
-  test("BYO: zero connections keeps the plain 'needs to be connected' shape", async () => {
+  test("zero connections keeps the plain 'needs to be connected' shape", async () => {
     mockConnections = [];
 
     let message = "";

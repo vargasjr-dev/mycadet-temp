@@ -1,5 +1,5 @@
 import { getLogger } from "../util/logger.js";
-import { BYOOAuthConnection, type BYOTokenHeader } from "./byo-connection.js";
+import { UserOAuthConnection, type UserTokenHeader } from "./user-oauth-connection.js";
 import type { OAuthConnection } from "./connection.js";
 import { getConnectionAccessTokenResult } from "./credential-token-resolver.js";
 import { syncManualTokenConnection } from "./manual-token-connection.js";
@@ -9,10 +9,10 @@ import { scopeDifference } from "./scope-utils.js";
 const log = getLogger("connection-resolver");
 
 export interface ResolveOAuthConnectionOptions {
-  /** OAuth app client ID — narrows to a specific app when multiple BYO apps
+  /** OAuth app client ID — narrows to a specific app when multiple apps
    *  exist for the same provider. */
   clientId?: string;
-  /** Account label (e.g. email, username) or connection ID. BYO label matches
+  /** Account label (e.g. email, username) or connection ID. Label matches
    *  take precedence over IDs within the provider and client filters. */
   account?: string;
   /**
@@ -58,7 +58,7 @@ export interface OAuthConnectionResolution {
  *
  * @param provider - Provider identifier (e.g. "google").
  *   Maps to the `provider_key` primary key in the `oauth_providers` table.
- * @param options.clientId - Optional OAuth app client ID. When multiple BYO
+ * @param options.clientId - Optional OAuth app client ID. When multiple
  *   apps exist for the same provider, narrows the connection lookup to the
  *   app matching this client ID.
  * @param options.account - Optional account identifier to disambiguate
@@ -88,7 +88,6 @@ export async function resolveOAuthConnectionWithMeta(
 ): Promise<OAuthConnectionResolution> {
   const { clientId, account, requiredScopes } = options ?? {};
   const providerRow = getProvider(provider);
-  // BYO path — requires a local connection row, access token, and base URL.
   if (providerRow?.authorizeUrl === "urn:manual-token") {
     await syncManualTokenConnection(provider);
   }
@@ -169,7 +168,7 @@ export async function resolveOAuthConnectionWithMeta(
     baseUrl,
     conn.metadata,
   );
-  const connection = new BYOOAuthConnection({
+  const connection = new UserOAuthConnection({
     id: conn.id,
     provider: conn.provider,
     baseUrl: effectiveBaseUrl,
@@ -189,7 +188,7 @@ export async function resolveOAuthConnectionWithMeta(
  * Prefers the template whose `hostPattern` matches the base URL's host
  * (`*.myshopify.com` style globs included), then falls back to the first
  * header template. Returns `null` when the provider declares none, which
- * leaves `BYOOAuthConnection` on its `Authorization: Bearer` default.
+ * leaves `UserOAuthConnection` on its `Authorization: Bearer` default.
  *
  * Shopify is why this exists: its Admin API reads `X-Shopify-Access-Token`
  * and ignores `Authorization`, so a Bearer header reaches the shop as an
@@ -198,7 +197,7 @@ export async function resolveOAuthConnectionWithMeta(
 export function resolveTokenHeader(
   rawTemplates: string | null | undefined,
   baseUrl: string,
-): BYOTokenHeader | null {
+): UserTokenHeader | null {
   if (!rawTemplates) {
     return null;
   }

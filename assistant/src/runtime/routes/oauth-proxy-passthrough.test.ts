@@ -574,7 +574,7 @@ describe("materializeProxyResponse", () => {
     ).toBe(null);
   });
 
-  test("a 205 carrying the BYO empty-byte body still has no body", () => {
+  test("a 205 carrying the empty-byte body still has no body", () => {
     // `new Response(new Uint8Array(0), { status: 205 })` is a TypeError under
     // a spec-strict Response, and a 205 may not carry content on the wire.
     const response = materializeProxyResponse(

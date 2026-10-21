@@ -17,7 +17,7 @@
  * header by `runtime/channel-readiness-service.ts`, which is the only source
  * of truth available for a credential this service never negotiated.
  *
- * Designed to run during the heartbeat cycle. The BYO liveness ping is
+ * Designed to run during the heartbeat cycle. The liveness ping is
  * routed through `withValidToken`, so a stale-but-refreshable access token
  * is refreshed transparently before the ping fires — this prevents the
  * heartbeat from misreporting a refreshable connection as `"revoked"`.
@@ -312,7 +312,7 @@ async function checkConnection(
   // expired-but-refreshable token gets refreshed before the ping fires.
   // Without this wrapping, the ping would hit 401 on a stale token and the
   // connection would be misreported as "revoked" — even though the next real
-  // API call (which goes through BYOOAuthConnection.request → withValidToken)
+  // API call (which goes through UserOAuthConnection.request → withValidToken)
   // would have refreshed and succeeded.
   if (pingUrl) {
     const runPing = (t: string) =>
@@ -496,8 +496,7 @@ export async function checkAssistantApiKey(): Promise<CredentialHealthResult | n
  * validates each one. Returns a structured report with overall results
  * and a filtered list of unhealthy credentials.
  *
- * Checks both BYO (local SQLite) and managed (cloud-hosted)
- * connections.
+ * Checks every active connection in the local SQLite store.
  */
 export async function checkAllCredentials(): Promise<CredentialHealthReport> {
   const checkedAt = Date.now();
@@ -582,7 +581,7 @@ export async function checkCredentialForProvider(
     return null;
   }
 
-  // Fall back to BYO (local) connection check.
+  // Fall back to the local connection check.
   let connections: OAuthConnectionRow[];
   try {
     connections = listActiveConnectionsByProvider(provider);
