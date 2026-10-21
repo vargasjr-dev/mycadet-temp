@@ -196,7 +196,7 @@ function hubChooserUrl(): string | null {
     // The path is served by the hub's app shell (its SPA fallback resolves
     // every account route to the app bundle's own chooser), so the hand-off
     // keeps landing on a chooser after web's own one came down.
-    return `${new URL(hubUrl).origin}${routes.selectAssistant}`;
+    return `${new URL(hubUrl).origin}/account/select-assistant`;
   } catch {
     return null;
   }

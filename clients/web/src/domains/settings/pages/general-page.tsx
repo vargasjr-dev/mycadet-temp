@@ -142,7 +142,7 @@ export function GeneralPage() {
       }
       const hubOrigin = new URL(hubUrl).origin;
       window.location.assign(
-        `${hubOrigin}${routes.selectAssistant}?${params.toString()}`,
+        `${hubOrigin}/account/select-assistant?${params.toString()}`,
       );
       return;
     }

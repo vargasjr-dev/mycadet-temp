@@ -161,11 +161,6 @@ export const routes = {
   },
 
   welcome: r("/assistant/welcome"),
-  // Not a web route anymore — web's own chooser came down. The app bundle's
-  // chooser answers the path (the shell's SPA fallback covers /account/*), so
-  // cross-bundle hand-offs (the pairing page, the hub chooser link) still
-  // compose their target off it.
-  selectAssistant: r("/account/select-assistant"),
   reviewTerms: r("/assistant/review-terms"),
 
   onboarding: {
