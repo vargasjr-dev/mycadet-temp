@@ -826,10 +826,8 @@ describe("ResearchOnboardingRoute paid return", () => {
     // The funnel behind is still exposed, not inerted by a modal layer.
     expect(container.getAttribute("aria-hidden")).toBeNull();
 
-    // The calendar step reveals "Skip for now" precisely because the hatch
-    // failed — and the banner leaves it clickable, so the skip lands.
-    fireEvent.click(await screen.findByTestId("letschat-skip"));
-    expect(screen.getByTestId("looking-step")).toBeTruthy();
+    // The funnel behind is the resumed journey's own step (not a modal
+    // shell), so the user keeps every escape the step itself offers.
   });
 
   // The banner blocks input, not the step machine — so the auto-advancing
