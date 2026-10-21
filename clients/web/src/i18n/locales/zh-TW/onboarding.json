@@ -38,6 +38,7 @@
     "optionsAriaLabel": "託管選項"
   },
   "apiKeyScreen": {
+    "providerLabel": "供應商",
     "title": "連線模型供應商",
     "body": "選擇您的助理應使用的模型供應商。",
     "modelLabel": "模型",

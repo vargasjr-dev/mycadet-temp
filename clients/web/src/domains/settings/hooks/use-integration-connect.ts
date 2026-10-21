@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePluginsInstallPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";

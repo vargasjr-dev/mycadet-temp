@@ -117,6 +117,7 @@
     "terminal": "執行命令"
   },
   "sessionGroupRow": {
+    "waiting": "等待中",
     "mode": {
       "computerUse": "電腦工作階段",
       "browser": "瀏覽器工作階段",
@@ -326,6 +327,7 @@
     "discordConnected": "Discord 已連線。將機器人新增至伺服器後，它將開始在那裡回覆。"
   },
   "chatAttachments": {
+    "dismiss": "關閉",
     "attachFileAria": "附加檔案",
     "removeAria": "移除 {filename}"
   },

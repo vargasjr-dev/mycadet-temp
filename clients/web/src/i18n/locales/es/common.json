@@ -876,6 +876,8 @@
     "failed": "No se pudo conectar Claude. Inténtalo de nuevo.",
     "notStarted": "Primero inicia el flujo de Connect Claude.",
     "pasteEmpty": "Pega el código que se muestra en la página de Claude.",
+    "popupBlocked": "Tu navegador bloqueó la pestaña de inicio de sesión. Permite las ventanas emergentes para este sitio y vuelve a hacer clic en Conectar.",
+    "startFailed": "No se pudo iniciar Connect Claude. Inténtalo de nuevo.",
     "timedOut": "Se agotó el tiempo de espera para conectar Claude. Inténtalo de nuevo."
   },
   "useOpenUrlDirectives": {

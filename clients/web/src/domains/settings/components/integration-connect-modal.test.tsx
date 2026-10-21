@@ -5,7 +5,6 @@ import {
   NOTION_PROVIDER,
   mcpServer,
   notionPlan,
-  oauthConnection,
   planFor,
   pluginDefinition,
 } from "../integration-story-fixtures";
@@ -43,14 +42,11 @@ const manualPlan = planFor({
   ],
 });
 
-/** Cadet's hosted sign-in and nothing else, the shape a host is asked for. */
-const hostedOnlyPlan = planFor({ providers: [NOTION_PROVIDER] });
-
-/** Notion over both its MCP server and a Cadet-hosted account. */
+/** Notion over its MCP server, with the server's sign-in needing attention. */
 const connectedPlan = planFor({
   providers: [NOTION_PROVIDER],
-  connections: [oauthConnection("notion", { connected: false })],
-  servers: [mcpServer("notion-mcp", { id: "notion" })],
+  ownOAuthAvailable: true,
+  servers: [mcpServer("notion-mcp", { id: "notion", status: "error" })],
   definitions: [pluginDefinition()],
 });
 
@@ -81,9 +77,6 @@ describe("IntegrationConnectModal", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Connect" }));
     expect(handlers.onConnect).toHaveBeenCalledTimes(1);
-
-    openMenu("Other ways to connect Notion");
-    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
   });
 
   test("opens on the method the caller picked", () => {
@@ -150,40 +143,18 @@ describe("IntegrationConnectModal", () => {
     expect(handlers.onDisconnect).not.toHaveBeenCalled();
   });
 
-  test("asks an account the same question, and removes it on confirm", async () => {
-    modal({ plan: connectedPlan });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Remove user@example.com" }),
-    );
-
-    await screen.findByText("Remove user@example.com?");
-    screen.getByText("Are you sure?");
-
-    fireEvent.click(screen.getByRole("button", { name: "Remove" }));
-    expect(handlers.onDisconnect).toHaveBeenCalledTimes(1);
-  });
-
-  test("stays open on the connections the answer leaves behind", async () => {
-    modal({ plan: connectedPlan });
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Remove user@example.com" }),
-    );
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
-
-    // Answering the question closes the question, not the dialog that asked
-    // it: the other connection still has a row to act on.
-    expect(handlers.onClose).not.toHaveBeenCalled();
-    screen.getByText("Notion MCP server");
-    expect(screen.queryByText("Are you sure?")).toBeNull();
-  });
-
   test("leaves out an MCP server a plugin has already installed", async () => {
-    modal({ plan: connectedPlan });
+    modal({
+      plan: planFor({
+        providers: [NOTION_PROVIDER],
+        ownOAuthAvailable: true,
+        servers: [mcpServer("notion-mcp", { id: "notion" })],
+        definitions: [pluginDefinition()],
+      }),
+    });
 
     openMenu("Connect another");
-    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
+    await screen.findByRole("menuitem", { name: "Use your own OAuth app" });
     expect(
       screen.queryByRole("menuitem", { name: "Notion MCP server" }),
     ).toBeNull();
@@ -197,14 +168,14 @@ describe("IntegrationConnectModal", () => {
     // the click lands on the backdrop showing through it. A backdrop press is
     // the only gesture that dismisses, and this is not one.
     openMenu("Connect another");
-    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
+    await screen.findByRole("menuitem", { name: "Use your own OAuth app" });
 
     const overlay = document.body.querySelector('[data-slot="modal-overlay"]');
     expect(overlay).not.toBeNull();
     fireEvent.click(overlay as Element);
 
     expect(handlers.onClose).not.toHaveBeenCalled();
-    screen.getByRole("menuitem", { name: "Sign in through Cadet" });
+    screen.getByRole("menuitem", { name: "Use your own OAuth app" });
   });
 
   test("drops Connect another when the only path is already connected", () => {
@@ -328,16 +299,17 @@ describe("IntegrationConnectModal", () => {
   });
 
   test("connect another leads back out to a method", async () => {
-    modal({ plan: connectedPlan });
+    modal({
+      plan: connectedPlan,
+      ownOAuthContent: <p>Your own OAuth app</p>,
+    });
 
     openMenu("Connect another");
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Sign in through Cadet" }),
+      await screen.findByRole("menuitem", { name: "Use your own OAuth app" }),
     );
 
-    await screen.findByRole("heading", { name: "Connect Notion" });
-    fireEvent.click(screen.getByRole("button", { name: "Connect" }));
-    expect(handlers.onConnect).toHaveBeenCalledTimes(1);
+    await screen.findByText("Your own OAuth app");
   });
 
   test("falls back to the connect view when nothing is connected any more", () => {

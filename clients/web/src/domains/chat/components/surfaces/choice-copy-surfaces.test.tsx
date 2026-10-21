@@ -1,7 +1,5 @@
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactElement } from "react";
 
 // Records the assistant id the surface threads through, so the router → surface
 // wiring for workspace file references is assertable without the real renderer.
@@ -29,7 +27,6 @@ mock.module("@/lib/local-cloud-identity", () => ({
 import { ChoiceSurface } from "@/domains/chat/components/surfaces/choice-surface";
 import { CopyBlockSurface } from "@/domains/chat/components/surfaces/copy-block-surface";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";
-import type { OAuthConnection } from "@/generated/api/types.gen";
 import type { Surface } from "@/domains/chat/types/types";
 
 afterAll(() => {
@@ -43,20 +40,6 @@ afterEach(() => {
 // The OAuth connect surface reads `useQueryClient()` to refresh the connections
 // list after a successful connect, so its renders need a provider. The returned
 // `invalidateQueries` spy lets tests assert the cache refresh (or its absence).
-function renderWithQueryClient(ui: ReactElement) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  const invalidateQueries = mock(() => Promise.resolve());
-  client.invalidateQueries = invalidateQueries as never;
-  // `wrap` keeps the provider in place on a rerender: dropping it would remount
-  // the card rather than re-render it, which is a different assertion.
-  const wrap = (node: ReactElement) => (
-    <QueryClientProvider client={client}>{node}</QueryClientProvider>
-  );
-  return { invalidateQueries, wrap, ...render(wrap(ui)) };
-}
-
 function makeSurface(overrides: Partial<Surface>): Surface {
   return {
     surfaceId: "surface-1",

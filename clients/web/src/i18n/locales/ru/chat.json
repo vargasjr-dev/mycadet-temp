@@ -74,6 +74,7 @@
     "terminal": "Выполнение команды"
   },
   "sessionGroupRow": {
+    "waiting": "Ожидание",
     "mode": {
       "computerUse": "Сеанс работы с компьютером",
       "browser": "Сеанс браузера",

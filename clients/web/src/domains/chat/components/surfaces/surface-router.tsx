@@ -56,7 +56,6 @@ function SurfaceRouterInner({
   surface,
   onAction,
   assistantId,
-  assistantDisplayName,
   onOpenApp,
   onOpenDocument,
   toolCalls,

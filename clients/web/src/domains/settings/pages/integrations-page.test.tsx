@@ -713,18 +713,6 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("starts a cloud authorization from a tile with no other way in", async () => {
-    seededProviders = [provider()];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByText("Notion");
-    fireEvent.click(screen.getByRole("button", { name: "Connect Notion" }));
-
-    await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
-    await screen.findByText("Finish signing in to Notion in your browser.");
-    await settle();
-  });
-
   test("gives a self-hosted assistant the split connect action", async () => {
     cloudHosted = false;
     seededProviders = [provider()];
@@ -748,11 +736,7 @@ describe("IntegrationsPage", () => {
 
     // Radix opens a menu on pointer-down, not on a synthetic click.
     fireEvent.pointerDown(chevron, { button: 0, ctrlKey: false });
-    for (const label of [
-      "Notion MCP server",
-      "Sign in through Cadet",
-      "Use your own OAuth app",
-    ]) {
+    for (const label of ["Notion MCP server", "Use your own OAuth app"]) {
       await screen.findByRole("menuitem", { name: label });
     }
     await settle();
@@ -796,38 +780,9 @@ describe("IntegrationsPage", () => {
     await settle();
   });
 
-  test("holds every other connect action while a cloud authorization is open", async () => {
-    seededProviders = [provider()];
-    seededServers = [server({ id: "custom-mcp", status: "needs-auth" })];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByText("Notion");
-    fireEvent.click(screen.getByRole("button", { name: "Connect Notion" }));
-    await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
-
-    // The rows and cards that predate the tiles gate on the MCP machine
-    // alone, which a cloud authorization never touches.
-    await waitFor(() =>
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "Add custom integration",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(true),
-    );
-    expect(
-      (
-        screen.getByRole("button", {
-          name: "Finish connecting",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(true);
-    await settle();
-  });
-
   test("replaces a failed method with the alternative picked after it", async () => {
     mcpAuthFails = true;
+    cloudHosted = false;
     seededProviders = [provider()];
     seededCatalog = [
       catalogMatch({
@@ -848,11 +803,11 @@ describe("IntegrationsPage", () => {
 
     openTileMenu("Notion");
     fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Sign in through Cadet" }),
+      await screen.findByRole("menuitem", { name: "Use your own OAuth app" }),
     );
 
-    await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
-    await screen.findByText("Finish signing in to Notion in your browser.");
+    // The BYO form lives in the modal; the tile's failed attempt is replaced
+    // the moment the method is picked.
     expect(
       screen.queryByRole("button", { name: "Retry connecting Notion" }),
     ).toBeNull();
@@ -878,17 +833,6 @@ describe("IntegrationsPage", () => {
     expect(
       screen.queryByRole("button", { name: "Other ways to connect Notion" }),
     ).toBeNull();
-  });
-
-  test("sends a connect with no platform session to the login flow", async () => {
-    cloudGate = "disabled";
-    seededProviders = [provider()];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByText("Notion");
-    fireEvent.click(screen.getByRole("button", { name: "Connect Notion" }));
-    await waitFor(() => expect(startLogin).toHaveBeenCalledTimes(1));
-    expect(managedConnect).not.toHaveBeenCalled();
   });
 
   test("groups an installed plugin with its mapped provider", async () => {
@@ -988,39 +932,8 @@ describe("IntegrationsPage", () => {
     await screen.findByText('No integrations matched "nothing matches this"');
   });
 
-  test("provider deep links ask a per-tenant provider for its host", async () => {
-    seededProviders = [
-      provider({
-        tenant_host: {
-          pattern: "^[a-z0-9-]+\\.example\\.com$",
-          label: "Store domain",
-          placeholder: "store.example.com",
-        },
-      }),
-    ];
-    render(<IntegrationsPage />, {
-      wrapper: ({ children }) => (
-        <Wrapper initialEntry="/assistant/settings/integrations?provider=notion">
-          {children}
-        </Wrapper>
-      ),
-    });
-
-    const host = await screen.findByLabelText("Store domain");
-    // Nothing to authorize until the merchant says whose domain it is.
-    expect(
-      (screen.getByRole("button", { name: "Connect" }) as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
-
-    fireEvent.change(host, { target: { value: "shop.example.com" } });
-    fireEvent.click(screen.getByRole("button", { name: "Connect" }));
-    await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
-    expect(managedConnect).toHaveBeenCalledWith(undefined, "shop.example.com");
-    await settle();
-  });
-
   test("provider deep links open after the unified page is already mounted", async () => {
+    cloudHosted = false;
     seededProviders = [provider()];
     render(
       <>
@@ -1040,6 +953,7 @@ describe("IntegrationsPage", () => {
   });
 
   test("closing a provider deep link allows the same link to reopen", async () => {
+    cloudHosted = false;
     seededProviders = [provider()];
     render(
       <>
@@ -1066,55 +980,6 @@ describe("IntegrationsPage", () => {
       screen.getByRole("button", { name: "Open provider deep link" }),
     );
     await screen.findByRole("heading", { name: "Connect Notion" });
-    await settle();
-  });
-
-  test("a deep link to a connected provider opens on what it has", async () => {
-    seededProviders = [provider()];
-    seededConnections = [connection()];
-    render(<IntegrationsPage />, {
-      wrapper: ({ children }) => (
-        <Wrapper initialEntry="/assistant/settings/integrations?provider=notion">
-          {children}
-        </Wrapper>
-      ),
-    });
-
-    await screen.findByText("Manage how Cadet connects to Notion.");
-    screen.getByText("user@example.com");
-    await settle();
-  });
-
-  test("the gear on a connected integration opens its connections", async () => {
-    seededProviders = [provider()];
-    seededConnections = [connection()];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByRole("heading", { name: /Your integrations/ });
-    fireEvent.click(screen.getByRole("button", { name: "Configure Notion" }));
-
-    await screen.findByText("Manage how Cadet connects to Notion.");
-    screen.getByText("user@example.com");
-    await settle();
-  });
-
-  test("disconnecting a cloud account revokes it at the cloud", async () => {
-    seededProviders = [provider()];
-    seededConnections = [connection()];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByRole("heading", { name: /Your integrations/ });
-    fireEvent.click(screen.getByRole("button", { name: "Configure Notion" }));
-    await screen.findByText("user@example.com");
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Remove user@example.com" }),
-    );
-    fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
-
-    await waitFor(() =>
-      expect(disconnectedConnectionIds).toEqual(["connection-1"]),
-    );
     await settle();
   });
 
@@ -1368,34 +1233,6 @@ describe("IntegrationsPage", () => {
         ).disabled,
       ).toBe(true),
     );
-    await settle();
-  });
-
-  test("closing the dialog gives up the sign-in it was reporting", async () => {
-    seededProviders = [provider()];
-    seededConnections = [connection({ status: "ERROR", connected: false })];
-    render(<IntegrationsPage />, { wrapper: Wrapper });
-
-    await screen.findByRole("heading", { name: /Your integrations/ });
-    fireEvent.click(screen.getByRole("button", { name: "Configure Notion" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Reconnect" }));
-    await waitFor(() => expect(managedConnect).toHaveBeenCalledTimes(1));
-
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-    // Nothing is left holding the other integrations against a wait that has
-    // no surface to report it.
-    await waitFor(() =>
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "Add custom integration",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(false),
-    );
-    screen.getByRole("heading", { name: /Your integrations/ });
-    expect(screen.queryByRole("heading", { name: /Available/ })).toBeNull();
     await settle();
   });
 

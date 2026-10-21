@@ -38,6 +38,7 @@
     "optionsAriaLabel": "Opciones de alojamiento"
   },
   "apiKeyScreen": {
+    "providerLabel": "Proveedor",
     "title": "Conectar un proveedor de modelos",
     "body": "Elige el proveedor de modelos que debe usar tu asistente.",
     "modelLabel": "Modelo",

@@ -121,14 +121,14 @@ describe("buildConnectPlan", () => {
   });
 
   test("offers a bring-your-own OAuth app only where one can exist", () => {
+    // No MCP server and no BYO path: the integration has no way in at all,
+    // so there is no plan.
     expect(
-      planMethods(
-        planOf(oauthItem([]), {
-          ownOAuthAvailable: false,
-          mcpServersLoaded: true,
-        }),
-      ).map((method) => method.kind),
-    ).toEqual([]);
+      buildConnectPlan(oauthItem([]), {
+        ownOAuthAvailable: false,
+        mcpServersLoaded: true,
+      }),
+    ).toBeNull();
 
     expect(
       planMethods(

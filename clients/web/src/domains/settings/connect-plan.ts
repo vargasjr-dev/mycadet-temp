@@ -1,6 +1,3 @@
-import type { OAuthConnection } from "@/generated/api/types.gen";
-import type { CloudGateState } from "@/hooks/use-cloud-gate";
-
 import {
   integrationHostname,
   type IntegrationItem,

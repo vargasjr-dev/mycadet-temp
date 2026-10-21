@@ -1,4 +1,4 @@
-import { Cable, KeyRound, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Cable, KeyRound, type LucideIcon } from "lucide-react";
 import { useCallback, type ReactNode } from "react";
 
 import { ActionMenu } from "@mycadet/design-library/components/action-menu";

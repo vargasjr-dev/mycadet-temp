@@ -38,6 +38,7 @@
     "optionsAriaLabel": "Hosting options"
   },
   "apiKeyScreen": {
+    "providerLabel": "Provider",
     "title": "Connect a Model Provider",
     "body": "Choose the model provider your assistant should use.",
     "modelLabel": "Model",

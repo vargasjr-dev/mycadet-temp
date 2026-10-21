@@ -16,7 +16,6 @@ import { Button } from "@mycadet/design-library/components/button";
 import { Checkbox } from "@mycadet/design-library/components/checkbox";
 import { Collapsible } from "@mycadet/design-library/components/collapsible";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
-import { Input } from "@mycadet/design-library/components/input";
 import { ListRow } from "@mycadet/design-library/components/list-row";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { Notice } from "@mycadet/design-library/components/notice";
@@ -527,9 +526,7 @@ function ConnectView({
             })}
             menuItems={methodItems(others, onPickMethod)}
             onClick={() =>
-              loginRequired
-                ? onLogin()
-                : onConnect(method, { acknowledged })
+              loginRequired ? onLogin() : onConnect(method, { acknowledged })
             }
           >
             {loginRequired

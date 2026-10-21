@@ -1,10 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, useRef } from "react";
 
 import { usePluginUninstall } from "@/hooks/use-plugin-actions";
 import { useTranslation } from "@/i18n";
-import { extractErrorMessage } from "@/utils/api-errors";
 
 import { isMcpMethodKind, type ConnectionSummary } from "../connect-plan";
 
@@ -43,7 +41,6 @@ export function useIntegrationDisconnect({
   onPluginRemoved,
 }: UseIntegrationDisconnectOptions) {
   const { t } = useTranslation("settings");
-  const queryClient = useQueryClient();
   // The name is read when the request settles, which is after the dialog that
   // knew it has closed.
   const name = useRef("");

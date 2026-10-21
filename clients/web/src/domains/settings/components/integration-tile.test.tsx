@@ -3,11 +3,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { HoverCapabilityOverride } from "@mycadet/design-library/utils/hover-capability";
 
 import {
-  GOOGLE_PROVIDER,
   NOTION_PROVIDER,
   googlePlan,
   linearMcpPlan,
-  mcpServer,
   notionPlan,
   planFor,
   pluginDefinition,
@@ -77,25 +75,9 @@ describe("IntegrationTile", () => {
     });
 
     openMenu("Other ways to connect Notion");
-    for (const label of [
-      "Notion MCP server",
-      "Sign in through Cadet",
-      "Use your own OAuth app",
-    ]) {
+    for (const label of ["Notion MCP server", "Use your own OAuth app"]) {
       await screen.findByRole("menuitem", { name: label });
     }
-  });
-
-  test("sends a connect with no platform session to the login flow", () => {
-    tile({
-      plan: planFor({
-        providers: [GOOGLE_PROVIDER],
-      }),
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Connect Google" }));
-    expect(handlers.onLogin).toHaveBeenCalledTimes(1);
-    expect(handlers.onConnect).not.toHaveBeenCalled();
   });
 
   test("cancels from the action slot once the X is showing", () => {
@@ -261,10 +243,9 @@ describe("IntegrationTile", () => {
     });
 
     screen.getByText("Linear rejected the sign-in.");
-    // Both of them behind the retry's chevron, where they cost the tile no
-    // height at all.
+    // The setup guide sits behind the retry's chevron, where it costs the
+    // tile no height at all.
     openMenu("Other ways to connect Linear");
-    await screen.findByRole("menuitem", { name: "Sign in through Cadet" });
     fireEvent.click(screen.getByRole("menuitem", { name: "Setup guide" }));
     expect(handlers.onOpenSetupGuide).toHaveBeenCalledWith(
       "https://example.com/docs/linear-mcp",

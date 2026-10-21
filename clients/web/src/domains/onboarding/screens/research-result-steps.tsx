@@ -28,7 +28,6 @@ import {
   useOnboardingTone,
   type OnboardingTone,
 } from "@/domains/onboarding/onboarding-tone";
-import { useLayoutViewportSize } from "@/hooks/use-element-size";
 import { Trans, useTranslation } from "@/i18n";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import {
@@ -85,19 +84,6 @@ export function MiniAssistant({
 const AVATAR_HEADING_CLASS = "pt-[0.7rem] text-[2.6rem] leading-none";
 
 // ---------------------------------------------------------------------------
-// Meeting Created
-// ---------------------------------------------------------------------------
-
-// Matches the carousel/result steps' avatar size so the avatar doesn't jump
-// between the meeting step and the looking-you-up step that follows it.
-const MINI = 64;
-
-// The confirmation animation runs ~1.3s to reveal the title; hold well past it
-// so the booked time stays readable for ~3s before advancing.
-const MEETING_MIN_MS = 4500;
-// Cap how long we hold for a slow-but-pending booking before advancing anyway.
-const MEETING_MAX_MS = 7000;
-
 /**
  * Reverse of the Introduction grow-in. The toned backdrop (behind) blends to
  * black and hides its bottom eyes; here the eyes lead — shrinking and rising

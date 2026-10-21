@@ -117,6 +117,7 @@
     "terminal": "Ejecutando un comando"
   },
   "sessionGroupRow": {
+    "waiting": "Esperando",
     "mode": {
       "computerUse": "Sesión de ordenador",
       "browser": "Sesión del navegador",
@@ -326,6 +327,7 @@
     "discordConnected": "Discord esta conectado. Anade el bot a un servidor y empezara a responder alli."
   },
   "chatAttachments": {
+    "dismiss": "Descartar",
     "attachFileAria": "Adjuntar archivo",
     "removeAria": "Quitar {filename}"
   },

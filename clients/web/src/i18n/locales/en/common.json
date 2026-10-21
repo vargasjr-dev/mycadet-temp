@@ -878,6 +878,8 @@
     "failed": "Connecting Claude failed. Please try again.",
     "notStarted": "Start the Connect Claude flow first.",
     "pasteEmpty": "Paste the code shown on the Claude page.",
+    "popupBlocked": "Your browser blocked the sign-in tab. Allow pop-ups for this site, then click Connect again.",
+    "startFailed": "Couldn't start Connect Claude. Please try again.",
     "timedOut": "Timed out waiting for Claude to connect. Please try again."
   },
   "useOpenUrlDirectives": {

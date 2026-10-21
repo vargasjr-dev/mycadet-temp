@@ -878,6 +878,8 @@
     "failed": "连接 Claude 失败。请重试。",
     "notStarted": "请先启动连接 Claude 流程。",
     "pasteEmpty": "请粘贴 Claude 页面上显示的代码。",
+    "popupBlocked": "您的浏览器阻止了登录标签页。请允许此站点的弹窗，然后再次点击连接。",
+    "startFailed": "无法启动连接 Claude。请重试。",
     "timedOut": "等待 Claude 连接超时。请重试。"
   },
   "useOpenUrlDirectives": {

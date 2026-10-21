@@ -117,6 +117,7 @@
     "terminal": "运行命令"
   },
   "sessionGroupRow": {
+    "waiting": "等待中",
     "mode": {
       "computerUse": "计算机会话",
       "browser": "浏览器会话",
@@ -326,6 +327,7 @@
     "discordConnected": "Discord 已连接。将机器人添加到服务器后，它将开始在那里回复。"
   },
   "chatAttachments": {
+    "dismiss": "忽略",
     "attachFileAria": "附加文件",
     "removeAria": "移除 {filename}"
   },

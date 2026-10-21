@@ -349,29 +349,6 @@ const { VoiceStateCaption } =
   await import("@/domains/chat/voice/voice-room/voice-room-eyes");
 const { useChatSessionStore } =
   await import("@/domains/chat/chat-session-store");
-const { attachSurface } =
-  await import("@/domains/chat/utils/stream-updaters/surface-updaters");
-const { completeSurface } =
-  await import("@/domains/chat/utils/stream-updaters/surface-updaters");
-
-type TestSurface = Parameters<typeof attachSurface>[1];
-
-/** Seed the transcript snapshot with a single assistant message + surface. */
-function seedTranscriptSurface(surface: TestSurface, completed = false): void {
-  let messages = attachSurface([], surface, "assistant-msg-1");
-  if (completed) {
-    messages = completeSurface(messages, surface.surfaceId);
-  }
-  useChatSessionStore.setState({
-    snapshot: {
-      messages,
-      seq: null,
-      hasMore: false,
-      oldestTimestamp: null,
-      oldestMessageId: null,
-    },
-  });
-}
 
 const controls = makeControlsSpies();
 
