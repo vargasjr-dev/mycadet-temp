@@ -62,9 +62,7 @@ export function suppressPlatformAvatarUrl(
 
 /**
  * Everything a fresher local avatar read outranks for `assistantId`: the
- * row's synced `avatarUrl` and its platform lookup entry. A paired row keyed
- * by its local slug is also suppressed under its platform UUID once the
- * paired daemon answers, since that is the key the list carries.
+ * row's synced `avatarUrl` and its platform lookup entry.
  */
 export function supersedeCloudAvatar(
   queryClient: QueryClient,
@@ -76,18 +74,6 @@ export function supersedeCloudAvatar(
     queryClient,
     resolveCloudAssistantId(assistantId),
   );
-  const row = store.assistants.find((a) => a.id === assistantId);
-  if (row?.isPaired && !row.cloudAssistantId) {
-    // Dynamic: the resolver reaches the auth store, which reaches this
-    // module through the avatar hooks.
-    void import("@/lib/paired-cloud-identity")
-      .then((m) => m.resolvePairedAssistantCloudId(assistantId))
-      .then((platformId) => {
-        if (platformId) {
-          suppressPlatformAvatarUrl(queryClient, platformId);
-        }
-      });
-  }
 }
 
 /**

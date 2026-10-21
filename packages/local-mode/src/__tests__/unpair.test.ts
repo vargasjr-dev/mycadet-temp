@@ -149,6 +149,20 @@ describe("unpairAssistant", () => {
     }
   });
 
+  test("unpairs a local entry too — the gateway refuses what it must", () => {
+    writeLockfile({
+      assistants: [{ assistantId: "local-1", cloud: "local" }],
+      activeAssistant: null,
+    });
+    const tokenPath = seedGuardianToken("local-1");
+
+    const result = unpairAssistant([lockfilePath], configDir, "local-1");
+
+    expect(result.ok).toBe(true);
+    expect(fs.existsSync(tokenPath)).toBe(false);
+    expect(readLockfileFromDisk().assistants).toEqual([]);
+  });
+
   test("leaves the active pointer alone when it names another assistant", () => {
     writeLockfile({
       assistants: [
@@ -192,42 +206,6 @@ describe("unpairAssistant", () => {
       error: "No such assistant",
     });
     expect(readLockfileFromDisk().activeAssistant).toBe("paired-1");
-  });
-
-  test("refuses a non-paired assistant and leaves its entry and token alone", () => {
-    writeLockfile({
-      assistants: [{ assistantId: "local-1", cloud: "local" }],
-      activeAssistant: "local-1",
-    });
-    const tokenPath = seedGuardianToken("local-1");
-
-    const result = unpairAssistant([lockfilePath], configDir, "local-1");
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.status).toBe(400);
-    expect(result.error).toContain("paired");
-    expect(fs.existsSync(tokenPath)).toBe(true);
-    expect(readLockfileFromDisk().assistants).toEqual([
-      { assistantId: "local-1", cloud: "local" },
-    ]);
-  });
-
-  test("refuses a cloudless entry (defaults to local) rather than treating it as paired", () => {
-    writeLockfile({
-      assistants: [{ assistantId: "bare-1" }],
-      activeAssistant: null,
-    });
-
-    const result = unpairAssistant([lockfilePath], configDir, "bare-1");
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.status).toBe(400);
   });
 
   test("refuses with 423 under a held write lock, leaving entry and token alone", () => {

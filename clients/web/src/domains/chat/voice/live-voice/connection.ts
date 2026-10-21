@@ -46,12 +46,17 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import {
+  getLoopbackGatewayPort,
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import {
   getLockfileAssistant,
   isLocalClient,
-  isPairedAssistant,
   isServedGatewayRuntime,
+  type LockfileAssistant,
 } from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
@@ -227,6 +232,19 @@ export function buildTunnelWsUrl({
 }
 
 /**
+ * Whether the entry's gateway lives on another machine (a connect import):
+ * a loopback-gateway cloud whose `runtimeUrl` points off this machine. Such
+ * a gateway cannot carry this runtime's direct WebSocket dial.
+ */
+function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud) &&
+    isUsableRuntimeUrl(entry.runtimeUrl) &&
+    !isLoopbackPublicUrl(entry.runtimeUrl)
+  );
+}
+
+/**
  * Whether `assistantId`'s gateway is a paired one, which cannot carry a
  * WebSocket upgrade. Voice entry points use this to degrade cleanly instead
  * of dialling an unusable socket. The ingress slot no longer encodes the
@@ -235,7 +253,7 @@ export function buildTunnelWsUrl({
  */
 export function isPairedGatewayAssistant(assistantId: string): boolean {
   const entry = getLockfileAssistant(assistantId);
-  return entry != null && isPairedAssistant(entry);
+  return entry != null && isRemoteGatewayEntry(entry);
 }
 
 /**
@@ -296,7 +314,7 @@ export function buildSelfHostedGatewayWsUrl({
   params,
 }: BuildSelfHostedGatewayWsUrlArgs): string {
   const entry = getLockfileAssistant(assistantId);
-  if (entry != null && isPairedAssistant(entry)) {
+  if (entry != null && isRemoteGatewayEntry(entry)) {
     // A paired entry degrades typed: the paired transport is HTTP-only with
     // no loopback port to bypass to.
     throw new PairedVoiceUnavailableError();

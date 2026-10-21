@@ -12,7 +12,9 @@ import { dirname, join } from "path";
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import { withLockfileLock } from "@mycadet/local-mode";
 import {
+  LockfileSchema,
   type LocalAssistantResources,
+  type Lockfile,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 
@@ -35,10 +37,7 @@ import { probePort } from "./port-probe.js";
  * signing key. Host-only and same-process, so it is a plain type — the
  * renderer-facing shape is the one with a Zod contract.
  */
-export type LocalInstanceResources = Omit<
-  LocalAssistantResources,
-  "instanceDir"
-> & {
+export type LocalInstanceResources = LocalAssistantResources & {
   /**
    * Instance-specific data root. New local assistants are placed under
    * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/` with state flattened
@@ -89,10 +88,7 @@ export interface ContainerInfo {
  * `loadAllAssistants`). The index signature preserves unknown on-disk fields so a
  * read→write round-trip never drops a newer writer's data.
  */
-export type AssistantEntry = Omit<
-  LockfileAssistant,
-  "runtimeUrl" | "resources"
-> & {
+export type AssistantEntry = LockfileAssistant & {
   runtimeUrl: string;
   /** Per-instance resource config. Present for local entries in multi-instance setups. */
   resources?: LocalInstanceResources;
@@ -123,15 +119,6 @@ export type AssistantLookupResult =
   | { status: "found"; entry: AssistantEntry }
   | { status: "not_found" }
   | { status: "ambiguous"; matches: AssistantEntry[] };
-
-interface LockfileData {
-  assistants?: Record<string, unknown>[];
-  activeAssistant?: string;
-  cloudBaseUrl?: string;
-  tunnel?: TunnelProcessRecord;
-  app?: AppProcessRecord;
-  [key: string]: unknown;
-}
 
 /**
  * A CLI-managed OS process recorded at the lockfile root under `tunnel`:
@@ -204,23 +191,24 @@ export function getDaemonPidPath(resources?: LocalInstanceResources): string {
   return join(cadetDir, "workspace", "cadet.pid");
 }
 
-function readLockfile(): LockfileData {
+function readLockfile(): Lockfile {
   for (const lockfilePath of getLockfilePaths(getCurrentEnvironment())) {
     if (!existsSync(lockfilePath)) continue;
     try {
-      const raw = readFileSync(lockfilePath, "utf-8");
-      const parsed = JSON.parse(raw) as unknown;
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as LockfileData;
+      const parsed = LockfileSchema.safeParse(
+        JSON.parse(readFileSync(lockfilePath, "utf-8")),
+      );
+      if (parsed.success) {
+        return parsed.data;
       }
     } catch {
       // Malformed lockfile; try next
     }
   }
-  return {};
+  return LockfileSchema.parse({});
 }
 
-function writeLockfileUnlocked(data: LockfileData): void {
+function writeLockfileUnlocked(data: Lockfile): void {
   const lockfilePath = getLockfilePath(getCurrentEnvironment());
   mkdirSync(dirname(lockfilePath), { recursive: true });
   const tmpPath = `${lockfilePath}.${randomBytes(4).toString("hex")}.tmp`;
@@ -291,7 +279,7 @@ export function clearRootProcess(
  * a concurrently-updating lockfile is fine — the pid is verified separately.
  */
 export function readRootProcesses(): RootProcessRecords {
-  const data = readLockfile() as LockfileData & RootProcessRecords;
+  const data = readLockfile();
   return { tunnel: data.tunnel, app: data.app };
 }
 
@@ -352,25 +340,15 @@ export function clearAppProcessRecord(expectedPid?: number): void {
 
 export function loadAllAssistants(): AssistantEntry[] {
   const data = readLockfile();
-  const entries = data.assistants;
-  if (!Array.isArray(entries)) {
-    return [];
-  }
+  return data.assistants.filter(isAssistantEntry);
+}
 
-  const result: AssistantEntry[] = [];
-  for (const entry of entries) {
-    if (
-      typeof entry.assistantId !== "string" ||
-      typeof entry.runtimeUrl !== "string"
-    ) {
-      continue;
-    }
-    // Default `cloud` once, at the read seam every reader shares, so
-    // downstream code reads `entry.cloud` without special-casing absence.
-    entry.cloud ??= "local";
-    result.push(entry as AssistantEntry);
-  }
-  return result;
+/**
+ * `assistantId` is the schema's job; `runtimeUrl` stays a plain read because
+ * only entries that carry one are addressable.
+ */
+function isAssistantEntry(entry: LockfileAssistant): entry is AssistantEntry {
+  return typeof entry.runtimeUrl === "string";
 }
 
 function writeAssistants(entries: AssistantEntry[]): void {
@@ -466,7 +444,7 @@ export function formatAssistantLookupError(
 export function removeAssistantEntry(assistantId: string): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
-    const entries = (data.assistants ?? []).filter(
+    const entries = data.assistants.filter(
       (e) => e.assistantId !== assistantId,
     );
     data.assistants = entries;
@@ -476,7 +454,7 @@ export function removeAssistantEntry(assistantId: string): void {
       if (remaining) {
         data.activeAssistant = String(remaining.assistantId);
       } else {
-        delete data.activeAssistant;
+        data.activeAssistant = null;
       }
     }
     writeLockfileUnlocked(data);
@@ -492,20 +470,21 @@ export function removeAssistantEntry(assistantId: string): void {
  * persisted default. Migrations are skipped because we never want to write
  * to another env's lockfile from the current env's process.
  */
-function readLockfileForEnv(env: EnvironmentDefinition): LockfileData {
+function readLockfileForEnv(env: EnvironmentDefinition): Lockfile {
   for (const lockfilePath of getLockfilePaths(env)) {
     if (!existsSync(lockfilePath)) continue;
     try {
-      const raw = readFileSync(lockfilePath, "utf-8");
-      const parsed = JSON.parse(raw) as unknown;
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as LockfileData;
+      const parsed = LockfileSchema.safeParse(
+        JSON.parse(readFileSync(lockfilePath, "utf-8")),
+      );
+      if (parsed.success) {
+        return parsed.data;
       }
     } catch {
       // Malformed; try next candidate
     }
   }
-  return {};
+  return LockfileSchema.parse({});
 }
 
 /**
@@ -528,21 +507,7 @@ export function loadAllAssistantsAcrossEnvs(
   const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
   const all: AssistantEntry[] = [];
   for (const env of envList) {
-    const data = readLockfileForEnv(env);
-    const entries = data.assistants;
-    if (!Array.isArray(entries)) continue;
-    for (const raw of entries) {
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) continue;
-      const entry = raw as AssistantEntry;
-      if (
-        typeof entry.assistantId !== "string" ||
-        typeof entry.runtimeUrl !== "string"
-      ) {
-        continue;
-      }
-      entry.cloud ??= "local";
-      all.push(entry);
-    }
+    all.push(...readLockfileForEnv(env).assistants.filter(isAssistantEntry));
   }
   return all;
 }

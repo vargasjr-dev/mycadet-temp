@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
+  isLoopbackPublicUrl,
   parsePairingAddress,
   REMOTE_WEB_PAIRING_CODE_TTL_MS,
   resolveRemoteWebPairingPlatform,
@@ -16,13 +17,8 @@ import {
 import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
-import {
-  isConfidentialRefreshUrl,
-  isLoopbackUrl,
-  saveGuardianToken,
-} from "./guardian-token";
+import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
 import { readRawLockfile, upsertLockfileAssistant } from "./lockfile";
-import { isPairedEntry } from "./lockfile-contract";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -70,15 +66,6 @@ export interface PairOptions {
   credentials: PairedAssistantCredentials;
   /** Optional local name; its slug becomes the entry's assistantId. */
   name?: string;
-  /**
-   * The device id a legacy base64 bundle carries, which only
-   * {@link connectImport} passes. It adopts the `paired-<deviceId>` entry a
-   * previous release keyed that same bundle on, so a nameless re-import
-   * updates it instead of adding a second entry (see
-   * {@link findLegacyDeviceScopedId}). The pairing-link flow mints a device id
-   * per attempt, so keying on it there would strand every earlier pairing.
-   */
-  legacyDeviceId?: string;
 }
 
 /**
@@ -160,53 +147,10 @@ function findRawAssistant(
 }
 
 /**
- * The `paired-<deviceId>` entry an earlier release wrote for this same
- * bundle, or undefined when there is none. That release keyed a nameless
- * bundle import on the bundle's own device id, so honoring the key here is
- * what makes a re-import of that bundle update its entry rather than register
- * a duplicate under the {@link gatewayLabel} id and leave the original holding
- * stale credentials.
- *
- * Only a paired entry (a connect import — its remote `runtimeUrl` is what
- * marks it, see {@link isPairedEntry}) whose runtimeUrl names the same
- * gateway is adopted. The device id is untrusted bundle input, so an unmatched one would
- * let a crafted bundle take over an unrelated pairing and repoint it at
- * another host; requiring the match means the adopted id is always one this
- * machine already minted for this gateway.
- */
-function findLegacyDeviceScopedId(
-  lockfilePaths: string[],
-  deviceId: string,
-  gatewayUrl: string,
-): string | undefined {
-  const slug = slugify(deviceId);
-  if (!slug) {
-    return undefined;
-  }
-  const legacyId = `paired-${slug}`;
-  const existing = findRawAssistant(lockfilePaths, legacyId);
-  if (!existing || !isPairedEntry(existing)) {
-    return undefined;
-  }
-  if (typeof existing.runtimeUrl !== "string" || !existing.runtimeUrl) {
-    return undefined;
-  }
-  try {
-    if (gatewayLabel(existing.runtimeUrl) !== gatewayLabel(gatewayUrl)) {
-      return undefined;
-    }
-  } catch {
-    return undefined;
-  }
-  return legacyId;
-}
-
-/**
  * Why `localId` may not be registered, or null when it is free. An id that
- * slugifies to nothing is unusable, and an id already held by a NON-paired
- * assistant is refused rather than clobbered: overwriting would drop that
- * assistant's resources/runtime metadata. An existing PAIRED entry is a
- * re-import and updates in place.
+ * slugifies to nothing is unusable, and an id already held by an assistant is
+ * refused rather than clobbered: overwriting would drop that assistant's
+ * resources/runtime metadata.
  */
 function refusePairedAssistantId(
   localId: string,
@@ -219,7 +163,7 @@ function refusePairedAssistantId(
       error: "Name must contain at least one alphanumeric character",
     };
   }
-  if (existing && !isPairedEntry(existing)) {
+  if (existing) {
     return {
       ok: false,
       status: 409,
@@ -246,25 +190,13 @@ interface PairedDestination {
  * A pre-check is not a reservation: another process can claim the id in
  * between. It closes the common case; the check inside `pairAssistant` is
  * still what guarantees the id.
- *
- * `legacyDeviceId` is the bundle path's opt-in to
- * {@link findLegacyDeviceScopedId}; an explicit name outranks it.
  */
 function resolvePairedDestination(
   lockfilePaths: string[],
   name: string | undefined,
   gatewayUrl?: string,
-  legacyDeviceId?: string,
 ): PairedDestination {
-  let localId: string | undefined;
-  if (!name && legacyDeviceId && gatewayUrl) {
-    localId = findLegacyDeviceScopedId(
-      lockfilePaths,
-      legacyDeviceId,
-      gatewayUrl,
-    );
-  }
-  localId ??= derivePairedAssistantId(name, gatewayUrl);
+  const localId = derivePairedAssistantId(name, gatewayUrl);
   const existing = findRawAssistant(lockfilePaths, localId);
   return {
     localId,
@@ -288,8 +220,8 @@ export function checkPairedAssistantName(
 
 /**
  * Register a pairing on this machine: persist the guardian token and upsert a
- * paired lockfile entry (its remote `runtimeUrl` is what marks it paired —
- * {@link isPairedEntry}), the write counterpart of `unpairAssistant`.
+ * paired lockfile entry (its remote `runtimeUrl` is what marks it paired),
+ * the write counterpart of `unpairAssistant`.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -300,7 +232,7 @@ export function checkPairedAssistantName(
 export function pairAssistant(
   lockfilePaths: string[],
   configDir: string,
-  { credentials, name, legacyDeviceId }: PairOptions,
+  { credentials, name }: PairOptions,
 ): PairResult {
   let label: string;
   try {
@@ -317,7 +249,7 @@ export function pairAssistant(
   // loopback URLs), and a loopback runtimeUrl in the lockfile would otherwise
   // read as a local gateway to loopback-port consumers. Refuse it outright so
   // a crafted address cannot point a pairing at this machine's own services.
-  if (isLoopbackUrl(credentials.gatewayUrl)) {
+  if (isLoopbackPublicUrl(credentials.gatewayUrl)) {
     return {
       ok: false,
       status: 422,
@@ -331,7 +263,6 @@ export function pairAssistant(
     lockfilePaths,
     name,
     credentials.gatewayUrl,
-    legacyDeviceId,
   );
   if (refusal) {
     return refusal;
@@ -386,11 +317,10 @@ export function pairAssistant(
       name: name ?? `paired (${label})`,
       runtimeUrl: credentials.gatewayUrl,
       // No pairing flag is stored: paired-ness derives from this remote
-      // runtimeUrl ({@link isPairedEntry}), so re-imports update in place and
-      // lifecycle/status readers recognize the remote pairing without one.
-      // A re-pair may point at a different gateway, so the cloud id the
-      // web resolver cached for the old target is dropped; the upsert merge
-      // would otherwise keep it and the resolver would never re-probe.
+      // runtimeUrl, so lifecycle/status readers recognize the remote
+      // pairing without one. The cloud id the web resolver cached for an
+      // earlier target is dropped; the upsert merge would otherwise keep it
+      // and the resolver would never re-probe.
       cloudAssistantId: undefined,
     },
     undefined,
@@ -1305,7 +1235,6 @@ export function connectImport(
   const result = pairAssistant(lockfilePaths, configDir, {
     credentials: decoded.credentials,
     name: typeof name === "string" && name ? name : undefined,
-    legacyDeviceId: decoded.credentials.deviceId,
   });
   if (!result.ok) {
     return { ok: false, status: result.status, error: result.error };

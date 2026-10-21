@@ -237,29 +237,6 @@ describe("retireAssistant", () => {
     expect(outcome.ok).toBe(true);
   });
 
-  test("a paired target is refused before any retire path runs", async () => {
-    // GIVEN a paired target in local mode
-    isLocalClientValue = true;
-    lockfileAssistants = [{ assistantId: "pr1", cloud: "paired" }];
-    storeAssistants = [{ id: "pr1" }];
-
-    // WHEN retiring it
-    const outcome = await retireAssistant(queryClient, "pr1");
-
-    // THEN the guard fails fast: neither retire path ran and nothing was
-    // cleaned up (the assistant still exists on its host machine).
-    expect(outcome.ok).toBe(false);
-    if (!outcome.ok) {
-      expect(outcome.error).toBe(
-        "This is a paired assistant. Remove it from this device instead of retiring it.",
-      );
-    }
-    expect(retireLocalAssistantMock).not.toHaveBeenCalled();
-    expect(retireAssistantByIdMock).not.toHaveBeenCalled();
-    expect(removeMock).not.toHaveBeenCalled();
-    expect(clearResearchSnapshotMock).not.toHaveBeenCalled();
-  });
-
   test("routes by the TARGET assistant, not local-mode alone", async () => {
     // GIVEN local mode but the *target* is a cloud assistant
     isLocalClientValue = true;

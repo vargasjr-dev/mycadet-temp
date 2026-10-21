@@ -346,17 +346,32 @@ describe("gatewayTargetsFromLockfile", () => {
         assistants: [
           { assistantId: "a", cloud: "cloud" },
           { assistantId: "b", cloud: "apple-container" },
-          {
-            assistantId: "c",
-            cloud: "custom",
-            runtimeUrl: "https://gw.example.com",
-          },
           // A retired spelling parses as "local": loopback-gated, and with no
           // loopback port it is omitted.
           { assistantId: "d", cloud: "gcp" },
         ],
       }),
     ).toEqual(new Map());
+  });
+
+  test("a custom entry's off-machine runtimeUrl is targetable by addressing", () => {
+    // Targeting keys on the addressing alone: an entry whose runtimeUrl
+    // points off this machine resolves as remote, whatever its cloud says.
+    expect(
+      gatewayTargetsFromLockfile({
+        assistants: [
+          {
+            assistantId: "c",
+            cloud: "custom",
+            runtimeUrl: "https://gw.example.com",
+          },
+        ],
+      }),
+    ).toEqual(
+      new Map([
+        ["c", { kind: "remote", runtimeUrl: "https://gw.example.com" }],
+      ]),
+    );
   });
 
   test("tolerates malformed entries", () => {

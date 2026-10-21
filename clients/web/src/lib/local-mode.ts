@@ -2,12 +2,14 @@ import {
   getLoopbackGatewayPort,
   gatewayProxyUrl,
   isLoopbackGatewayCloud,
-  isPairedEntry,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
+import {
+  isLoopbackPublicUrl,
+  isRetryablePairingReason,
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { readInjectedConfig } from "@/lib/injected-config";
-import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { isPublicBaseUrlRejection } from "@/utils/pairing-address";
@@ -253,9 +255,6 @@ export async function removePairedAssistantFromLockfile(
   if (!entry) {
     return { ok: false, error: "This assistant isn't in the local list." };
   }
-  if (!isPairedAssistant(entry)) {
-    return { ok: false, error: "This assistant isn't paired on this device." };
-  }
   const wasSelected = getSelectedAssistant()?.assistantId === assistantId;
   const result = await unpairAssistantHost(assistantId);
   if (!result.ok) {
@@ -380,60 +379,22 @@ export function hasAssistants(): boolean {
 }
 
 /**
- * A local-kind assistant, by origin: a plain on-machine assistant the web client
- * drives through its full set of local lifecycle flows (wake, local retire) —
- * cloud `"local"` without the connect-import flag (a paired entry's cloud
- * defaults to `"local"` too, so the flag is what excludes it here). Identity
- * only — whether it currently has a reachable gateway is a separate,
- * connect-time question (see `getLocalGatewayUrl`).
+ * A local-kind assistant, by origin: a plain on-machine assistant the web
+ * client drives through its full set of local lifecycle flows (wake, local
+ * retire). Identity only — whether it currently has a reachable gateway is a
+ * separate, connect-time question (see `getLocalGatewayUrl`).
  *
- * Deliberately excludes the externally-managed container runtimes (`docker`,
- * `apple-container`), the remote self-hosted cloud (`custom`, reached at its
- * own `runtimeUrl`), platform (`cloud`), and paired connect-imports: the web
- * client manages none of those through its lifecycle flows. Docker instances
- * ARE still reachable over the local gateway proxy — that broader,
- * connect-only set is {@link isLocalGatewayAssistant}. See the `KNOWN_CLOUDS`
- * taxonomy in `@mycadet/local-mode/contract`.
+ * Deliberately excludes the externally-managed container runtimes
+ * (`docker`, `apple-container`), the remote self-hosted cloud (`custom`,
+ * reached at its own `runtimeUrl`), and platform (`cloud`). See the
+ * `KNOWN_REMOTES` taxonomy in `@mycadet/local-mode/contract`.
  */
 export function isLocalAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "local" && !isPairedAssistant(a);
-}
-
-/**
- * An assistant this runtime connects to over the local gateway proxy
- * (`/assistant/__gateway/<assistantId>`) with gateway auth: a plain on-machine
- * assistant (`local`) or a local Docker instance (`docker`). Both run their
- * gateway on a loopback port of this machine and lease guardian tokens under
- * the CLI config dir, so the SPA can mint a gateway token for them without a
- * platform session.
- *
- * Connect-only — a superset of {@link isLocalAssistant} that does NOT extend to
- * the lifecycle flows (wake, local retire), which stay `cloud === "local"`.
- * Excludes `apple-container` (its entries are managed by the macOS app and
- * record no renderer-resolvable loopback gateway), the remote self-hosted
- * clouds, platform (`cloud`), and paired connect-imports (whose defaulted
- * cloud reads "local" — the derived remote runtimeUrl is what excludes them).
- */
-export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
-  return isLoopbackGatewayCloud(a.cloud) && !isPairedAssistant(a);
+  return a.cloud === "local";
 }
 
 export function isCloudAssistant(a: LockfileAssistant): boolean {
   return a.cloud === "cloud";
-}
-
-/**
- * A remote assistant paired from another machine via `cadet connect import`:
- * reached directly at its own `runtimeUrl` with the stored guardian access
- * token as the bearer. The lockfile stores no pairing flag — paired-ness is
- * derived from the entry's addressing ({@link isPairedEntry}). Not local (no
- * lifecycle flows, wake/retire refuse it) and not platform (no platform
- * session involved).
- */
-export function isPairedAssistant(
-  a: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
-): boolean {
-  return isPairedEntry(a);
 }
 
 /**
@@ -546,10 +507,22 @@ export function reconcileSelectedAssistant(): void {
 
 /**
  * Whether this runtime should reach `assistant` over a local gateway: a
- * local-gateway assistant ({@link isLocalGatewayAssistant}), in local
+ * local-kind assistant ({@link isLocalAssistant}), in local
  * (non-remote-gateway) mode. Whether that gateway is currently resolvable — a
  * recorded port — is a separate question answered by `getLocalGatewayUrl`.
  */
+/**
+ * Whether the entry's gateway lives on another machine (a connect import):
+ * a loopback-gateway cloud whose `runtimeUrl` points off this machine.
+ */
+function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud) &&
+    isUsableRuntimeUrl(entry.runtimeUrl) &&
+    !isLoopbackPublicUrl(entry.runtimeUrl)
+  );
+}
+
 function expectsLocalGateway(
   assistant: LockfileAssistant | undefined,
 ): assistant is LockfileAssistant {
@@ -557,7 +530,8 @@ function expectsLocalGateway(
     !!assistant &&
     isLocalClient() &&
     !isServedGatewayRuntime() &&
-    isLocalGatewayAssistant(assistant)
+    isLoopbackGatewayCloud(assistant.cloud) &&
+    !isRemoteGatewayEntry(assistant)
   );
 }
 
@@ -586,14 +560,17 @@ export function getLocalGatewayUrl(
 
 /**
  * Whether this runtime should reach `assistant` at a remote paired gateway: a
- * paired entry ({@link isPairedAssistant}), in local (non-remote-gateway) mode.
+ * loopback-gateway entry whose `runtimeUrl` points off this machine, in local
+ * (non-remote-gateway) mode.
  * Whether the entry records a usable `runtimeUrl` is a separate question
  * answered by `getPairedGatewayUrl`. Deliberately not a type predicate: its
  * false branch must not narrow `assistant` (a local entry also lands there).
  */
 function expectsPairedGateway(assistant: LockfileAssistant): boolean {
   return (
-    isLocalClient() && !isServedGatewayRuntime() && isPairedAssistant(assistant)
+    isLocalClient() &&
+    !isServedGatewayRuntime() &&
+    isRemoteGatewayEntry(assistant)
   );
 }
 

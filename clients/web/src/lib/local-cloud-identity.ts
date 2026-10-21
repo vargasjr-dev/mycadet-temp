@@ -11,10 +11,10 @@ import {
   getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,
-  isLocalGatewayAssistant,
   primeLocalGatewayConnectionWithRepair,
   type LockfileAssistant,
 } from "@/lib/local-mode";
+import { isLoopbackGatewayCloud } from "@mycadet/local-mode/contract";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -125,7 +125,7 @@ export async function resolveLocalAssistantCloudIdentity(
   const assistant = resolveLocalAssistant(
     assistantId,
     options.rotateRejectedCredential
-      ? isLocalGatewayAssistant
+      ? (a) => isLoopbackGatewayCloud(a.cloud)
       : isLocalAssistant,
   );
   if (!assistant) {
@@ -222,7 +222,7 @@ function recoverableLocalAssistant(
   if (!target || !isLocalClient() || isUuid(target)) {
     return null;
   }
-  return resolveLocalAssistant(target, isLocalGatewayAssistant);
+  return resolveLocalAssistant(target, (a) => isLoopbackGatewayCloud(a.cloud));
 }
 
 /** Whether {@link recoverLocalAssistantCloudCredential} can act here. */

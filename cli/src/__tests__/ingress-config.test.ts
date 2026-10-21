@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-
-// Real assistant-config reads the lockfile from CADET_LOCKFILE_DIR.
-const testDir = mkdtempSync(join(tmpdir(), "ingress-config-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
 
 import {
   parseTunnelRecord,
@@ -13,27 +9,14 @@ import {
 } from "@mycadet/service-contracts/ingress";
 
 import type { AssistantEntry } from "../lib/assistant-config.js";
+
 import {
   clearIngressUrl,
+  readIngressPublicBaseUrl,
   parseGatewayPortFromEntryUrls,
-  readLockfileIngressUrl,
   saveIngressUrl,
   savePairingTunnel,
 } from "../lib/ingress-config.js";
-
-function writeLockfile(entry: Record<string, unknown>): void {
-  writeFileSync(
-    join(testDir, "lockfile.json"),
-    JSON.stringify({ assistants: [entry], activeAssistant: "ingress-test" }),
-  );
-}
-
-function readLockfileEntry(): Record<string, unknown> {
-  const data = JSON.parse(
-    readFileSync(join(testDir, "lockfile.json"), "utf-8"),
-  ) as { assistants: Record<string, unknown>[] };
-  return data.assistants[0];
-}
 
 const tempDirs: string[] = [];
 
@@ -49,85 +32,16 @@ afterEach(() => {
   }
 });
 
-describe("ingress lockfile mirroring", () => {
-  test("saveIngressUrl stamps the entry's ingressUrl when given an assistantId", () => {
-    writeLockfile({
-      assistantId: "ingress-test",
-      runtimeUrl: "http://192.168.1.50:7830",
-      cloud: "local",
-    });
+describe("readIngressPublicBaseUrl", () => {
+  test("reads back what saveIngressUrl saved", () => {
     const ws = makeWorkspace();
-
-    saveIngressUrl(ws, "https://tunnel.example.ts.net", "ingress-test");
-
-    // Both contracts are written: workspace config (gateway-facing)...
-    const config = JSON.parse(readFileSync(join(ws, "config.json"), "utf-8"));
-    expect(config.ingress.publicBaseUrl).toBe("https://tunnel.example.ts.net");
-    // ...and the lockfile entry (CLI-facing).
-    expect(readLockfileEntry().ingressUrl).toBe(
-      "https://tunnel.example.ts.net",
-    );
-  });
-
-  test("clearIngressUrl removes the entry's ingressUrl", () => {
-    writeLockfile({
-      assistantId: "ingress-test",
-      runtimeUrl: "http://192.168.1.50:7830",
-      cloud: "local",
-      ingressUrl: "https://tunnel.example.ts.net",
-    });
-    const ws = makeWorkspace();
-    saveIngressUrl(ws, "https://tunnel.example.ts.net");
-
-    clearIngressUrl(ws, "ingress-test");
-
-    const config = JSON.parse(readFileSync(join(ws, "config.json"), "utf-8"));
-    expect(config.ingress.publicBaseUrl).toBeUndefined();
-    expect(readLockfileEntry().ingressUrl).toBeUndefined();
-  });
-
-  test("without an assistantId the lockfile is untouched", () => {
-    writeLockfile({
-      assistantId: "ingress-test",
-      runtimeUrl: "http://192.168.1.50:7830",
-      cloud: "local",
-    });
-    const ws = makeWorkspace();
+    expect(readIngressPublicBaseUrl(ws)).toBeNull();
 
     saveIngressUrl(ws, "https://tunnel.example.ts.net");
 
-    expect(readLockfileEntry().ingressUrl).toBeUndefined();
-  });
-
-  test("readLockfileIngressUrl reads back what was stamped", () => {
-    writeLockfile({
-      assistantId: "ingress-test",
-      runtimeUrl: "http://192.168.1.50:7830",
-      cloud: "local",
-    });
-    const ws = makeWorkspace();
-    expect(readLockfileIngressUrl("ingress-test")).toBeNull();
-
-    saveIngressUrl(ws, "https://tunnel.example.ts.net", "ingress-test");
-
-    expect(readLockfileIngressUrl("ingress-test")).toBe(
-      "https://tunnel.example.ts.net",
-    );
-    expect(readLockfileIngressUrl("no-such-assistant")).toBeNull();
-  });
-
-  test("an unknown assistantId is a no-op, not an error", () => {
-    writeLockfile({
-      assistantId: "ingress-test",
-      runtimeUrl: "http://192.168.1.50:7830",
-      cloud: "local",
-    });
-    const ws = makeWorkspace();
-
-    expect(() => {
-      saveIngressUrl(ws, "https://tunnel.example.ts.net", "no-such-assistant");
-    }).not.toThrow();
-    expect(readLockfileEntry().ingressUrl).toBeUndefined();
+    expect(readIngressPublicBaseUrl(ws)).toBe("https://tunnel.example.ts.net");
+    clearIngressUrl(ws);
+    expect(readIngressPublicBaseUrl(ws)).toBeNull();
   });
 });
 

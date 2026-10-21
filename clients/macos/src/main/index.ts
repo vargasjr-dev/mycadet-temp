@@ -15,9 +15,6 @@ import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
-  getLockfileData,
-  getLoopbackGatewayPort,
-  isPairedEntry,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
@@ -269,30 +266,7 @@ const registerAppProtocol = (): void => {
   const appIndexHtml = path.join(appDistRoot, "index.html");
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
-  const lockfilePaths = resolveLockfilePaths(process.env);
   const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
-
-  // Same-origin `/v1/*` rides the active local assistant's gateway — the
-  // same contract the CLI edge implements by proxying `/v1` there — while
-  // the platform's login surfaces always ride the cloud (the forward
-  // resolves that by path). The env-resolved seed covers the no-lockfile
-  // window.
-  const getActiveGatewayBase = (): string | undefined => {
-    const read = getLockfileData(lockfilePaths);
-    if (!read.ok) {
-      return undefined;
-    }
-    const entry = read.data.activeAssistant
-      ? read.data.assistants.find(
-          (a) => a.assistantId === read.data.activeAssistant,
-        )
-      : read.data.assistants[0];
-    if (!entry || isPairedEntry(entry)) {
-      return undefined;
-    }
-    const port = getLoopbackGatewayPort(entry);
-    return port ? `http://127.0.0.1:${port}` : undefined;
-  };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
@@ -301,12 +275,10 @@ const registerAppProtocol = (): void => {
     if (proxied) return proxied;
 
     // Cloud API and authentication routes forward through the shared
-    // cloud forward: the login surfaces ride the cloud, same-origin
-    // `/v1/*` rides the active local assistant's gateway.
+    // cloud forward — everything it matches rides the cloud.
     const cloudProxied = await forwardCloudRequest({
       request,
       cloudBase: cloudUrl,
-      gatewayBase: getActiveGatewayBase(),
       fetcher: net.fetch,
       allowedOrigin: resolveAllowedOrigin(),
       log,

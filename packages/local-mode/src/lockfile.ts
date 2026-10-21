@@ -2,12 +2,16 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  isPairedEntry,
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
   LockfileAssistantSchema,
   parseLockfile,
   type Lockfile,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
+import { z } from "zod";
+
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { withLockfileLock } from "./lockfile-lock";
 import { stripSensitiveFields } from "./util";
 
@@ -46,9 +50,9 @@ export function getLockfileData(lockfilePaths: string[]): LockfileResult {
 
 /**
  * Whether this assistant is a paired (connect-imported) entry — derived from
- * its remote addressing ({@link isPairedEntry}), never a stored flag. Paired
- * entries have no local daemon, so guardian-token failure guidance must say
- * re-pair rather than hatch/wake.
+ * its remote addressing, never a stored flag. Paired entries have no local
+ * daemon, so guardian-token failure guidance must say re-pair rather than
+ * hatch/wake.
  */
 export function isPairedLockfileEntry(
   lockfilePaths: string[],
@@ -58,10 +62,21 @@ export function isPairedLockfileEntry(
   const assistants = Array.isArray(lockfile.assistants)
     ? (lockfile.assistants as Array<Record<string, unknown>>)
     : [];
-  return assistants.some(
-    (assistant) =>
-      assistant?.assistantId === assistantId && isPairedEntry(assistant),
-  );
+  return assistants.some((assistant) => {
+    if (assistant?.assistantId !== assistantId) {
+      return false;
+    }
+    const parsed = LockfileAssistantSchema.safeParse(assistant);
+    if (!parsed.success) {
+      return false;
+    }
+    const { cloud, runtimeUrl } = parsed.data;
+    return (
+      isLoopbackGatewayCloud(cloud) &&
+      isUsableRuntimeUrl(runtimeUrl) &&
+      !isLoopbackPublicUrl(runtimeUrl)
+    );
+  });
 }
 
 export type WriteResult =
@@ -293,20 +308,18 @@ export function upsertLockfileAssistant(
 
 // `cloud` is host-owned classification, so a renderer payload never writes it
 // — and the schema's `catch` would otherwise materialize a spurious "local"
-// into every upsert, clobbering the recorded topology on merge.
-const RendererAssistantUpdateSchema = LockfileAssistantSchema.omit({
-  resources: true,
-  cloud: true,
-});
-
-const PAIRED_LOCKFILE_WRITE_ERROR =
-  "Paired assistant identity can only be changed through the connect flow";
+// into every upsert, clobbering the recorded topology on merge. The entry
+// schema is loose (a CLI read-modify-write round-trips its host-only fields),
+// so the update schema is rebuilt CLOSED over the modeled shape: `resources`
+// and `cloud` are omitted AND everything unmodeled (the secrets) strips
+// instead of riding the loose passthrough.
+const RendererAssistantUpdateSchema = z.object(
+  LockfileAssistantSchema.omit({ resources: true, cloud: true }).shape,
+);
 
 /**
- * Apply a renderer-originated lockfile upsert without allowing it to create,
- * retarget, or reclassify a paired assistant. Existing paired entries may
- * still update non-security fields and become the active assistant.
- * Resources and secrets are host-owned and never accepted from a renderer.
+ * Apply a renderer-originated lockfile upsert. Resources and secrets are
+ * host-owned and never accepted from a renderer.
  */
 export function upsertRendererLockfileAssistant(
   lockfilePaths: string[],
@@ -317,35 +330,10 @@ export function upsertRendererLockfileAssistant(
     return { ok: false, status: 400, error: "Missing assistant.assistantId" };
   }
 
-  // Lock spans the paired-guard read and the upsert (which reenters) so the
-  // guard cannot be judged against a snapshot another writer replaces.
   const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
     const read = readRawLockfileStrict(lockfilePaths);
     if (!read.ok) {
       return { ok: false, status: 409, error: read.error };
-    }
-    const lockfile = read.lockfile;
-    const assistants = Array.isArray(lockfile.assistants)
-      ? (lockfile.assistants as Array<Record<string, unknown>>)
-      : [];
-    const existing = assistants.find(
-      (entry) => entry?.assistantId === assistant.assistantId,
-    );
-    const merged = { ...existing, ...assistant };
-    const existingIsPaired = isPairedEntry(existing);
-    const mergedIsPaired = isPairedEntry(merged);
-
-    if (!existingIsPaired && mergedIsPaired) {
-      return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
-    }
-    if (
-      existing &&
-      existingIsPaired &&
-      (!mergedIsPaired ||
-        merged.cloud !== existing.cloud ||
-        merged.runtimeUrl !== existing.runtimeUrl)
-    ) {
-      return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
     }
 
     const update = RendererAssistantUpdateSchema.safeParse(assistant);

@@ -10,7 +10,6 @@ import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { lookupAssistantByIdentifier } from "../lib/assistant-config";
-import { isPairedEntry } from "@mycadet/local-mode/contract";
 import { checkHealth } from "../lib/health-check";
 import {
   guardianTokenDueForRenewal,
@@ -209,10 +208,10 @@ export async function maybeRefreshAuthHeaders(
   const bearer = auth["Authorization"]?.replace(/^Bearer /, "");
   if (!bearer) return false;
 
-  // Only paired (remote-on-another-machine) assistants use refreshable pair
-  // tokens; don't perturb the local/docker session flow.
+  // The guardian-token lookup below gates what can refresh; refresh
+  // mechanics that outgrow the stored refresh token come later.
   const lookup = lookupAssistantByIdentifier(assistantId);
-  if (lookup.status !== "found" || !isPairedEntry(lookup.entry)) {
+  if (lookup.status !== "found") {
     return false;
   }
 

@@ -54,7 +54,6 @@ import {
   getCloudAssistants,
   getLocalAssistants,
   getSelectedAssistant,
-  isPairedAssistant,
   isCadetCloudRemote,
   isServedGatewayRuntime,
   primeLocalGatewayConnection,
@@ -62,6 +61,24 @@ import {
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
+import {
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
+
+/**
+ * Whether the entry's gateway lives on another machine (a connect import):
+ * the paired-gateway transport's eligibility, derived from the addressing.
+ */
+function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud) &&
+    isUsableRuntimeUrl(entry.runtimeUrl) &&
+    !isLoopbackPublicUrl(entry.runtimeUrl)
+  );
+}
 import { listAssistants } from "@/assistant/api";
 import { deleteBiometricToken } from "@/runtime/native-biometric";
 import { unregisterLiveActivityPushToken } from "@/domains/chat/voice/live-voice/live-activity-push-registration";
@@ -969,7 +986,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
    */
   connectPairedAssistant: async (assistantId: string) => {
     const target = getLockfileAssistant(assistantId);
-    if (!target || !isPairedAssistant(target)) {
+    if (!target || !isRemoteGatewayEntry(target)) {
       throw new Error("Not a paired assistant");
     }
     await primeLocalGatewayConnection(target);
@@ -1054,7 +1071,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     if (isGatewayAuthMode()) {
       try {
         const selected = getSelectedAssistant();
-        if (selected && isPairedAssistant(selected)) {
+        if (selected && isRemoteGatewayEntry(selected)) {
           // A paired selection uses its host-authorized proxy and has no
           // renderer gateway token. `getLocalTokenUrl()` is undefined for it,
           // so `ensureGatewayToken` would target the SPA origin's unrelated

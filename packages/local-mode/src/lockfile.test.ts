@@ -80,33 +80,13 @@ describe("getLockfileData", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.assistants).toEqual([
-        { assistantId: "asst_legacy", cloud: "local" },
+        {
+          assistantId: "asst_legacy",
+          cloud: "local",
+          localUrl: "http://127.0.0.1:7777",
+        },
       ]);
       expect(result.data.activeAssistant).toBe("asst_legacy");
-    }
-  });
-
-  test("surfaces a tunnel-recorded ingressUrl to the renderer", () => {
-    // The exact read the "Pair a device" card relies on: `cadet tunnel` stamps
-    // ingressUrl onto the entry, and the host read must carry it through.
-    writeOnDisk({
-      activeAssistant: "asst_1",
-      assistants: [
-        {
-          assistantId: "asst_1",
-          cloud: "local",
-          runtimeUrl: "http://127.0.0.1:7777",
-          ingressUrl: "https://tunnel.example.ts.net",
-        },
-      ],
-    });
-
-    const result = getLockfileData([lockfilePath]);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.assistants[0]?.ingressUrl).toBe(
-        "https://tunnel.example.ts.net",
-      );
     }
   });
 
@@ -192,7 +172,8 @@ describe("upsertLockfileAssistant", () => {
     const old = assistants.find((a) => a.assistantId === "asst_old");
     expect(old?.futureField).toBe("keep-me");
 
-    // The returned wire value is the validated shape (unknown fields stripped).
+    // The returned wire value is the parsed shape — loose, so the unknown
+    // fields ride it like the file does.
     if (result.ok) {
       expect(result.lockfile.activeAssistant).toBe("asst_new");
       const wireOld = result.lockfile.assistants.find(
@@ -202,6 +183,7 @@ describe("upsertLockfileAssistant", () => {
         assistantId: "asst_old",
         cloud: "cloud",
         runtimeUrl: "http://old",
+        futureField: "keep-me",
       });
     }
   });
@@ -584,51 +566,6 @@ describe("upsertRendererLockfileAssistant", () => {
     runtimeUrl: "https://gateway.example.com",
     name: "Paired assistant",
   };
-
-  test("rejects creating or reclassifying an entry as paired", () => {
-    expect(
-      upsertRendererLockfileAssistant([lockfilePath], paired, "paired-1"),
-    ).toMatchObject({ ok: false, status: 403 });
-
-    writeOnDisk({
-      assistants: [{ assistantId: "local-1", cloud: "local" }],
-      activeAssistant: "local-1",
-    });
-    expect(
-      upsertRendererLockfileAssistant(
-        [lockfilePath],
-        {
-          assistantId: "local-1",
-          paired: true,
-          runtimeUrl: "https://gateway.example.com",
-        },
-        undefined,
-      ),
-    ).toMatchObject({ ok: false, status: 403 });
-  });
-
-  test("rejects retargeting or reclassifying an existing paired entry", () => {
-    writeOnDisk({ assistants: [paired], activeAssistant: "paired-1" });
-
-    expect(
-      upsertRendererLockfileAssistant(
-        [lockfilePath],
-        { assistantId: "paired-1", runtimeUrl: "https://attacker.example.com" },
-        undefined,
-      ),
-    ).toMatchObject({ ok: false, status: 403 });
-    expect(
-      upsertRendererLockfileAssistant(
-        [lockfilePath],
-        { assistantId: "paired-1", cloud: "local" },
-        undefined,
-      ),
-    ).toMatchObject({ ok: false, status: 403 });
-    expect(readOnDisk()).toEqual({
-      assistants: [paired],
-      activeAssistant: "paired-1",
-    });
-  });
 
   test("allows non-security updates and activation of an existing pairing", () => {
     writeOnDisk({ assistants: [paired], activeAssistant: null });

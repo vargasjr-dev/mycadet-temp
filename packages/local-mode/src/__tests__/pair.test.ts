@@ -433,10 +433,7 @@ describe("pairAssistant", () => {
     expect(result.assistantId).toMatch(/^paired-[A-Za-z0-9_-]{21}$/);
   });
 
-  test("re-pairing with no name updates the entry instead of adding another", () => {
-    // Every attempt mints a fresh device id, so keying the default id on it
-    // would strand the previous pairing in the lockfile (and its guardian
-    // token on disk) every time a user re-paired the same assistant.
+  (test("re-pairing the same gateway is refused with the entry and token untouched", () => {
     const first = pairAssistant([lockfilePath], configDir, {
       credentials: credentials({ deviceId: "dev-one", token: "t1" }),
     });
@@ -450,109 +447,69 @@ describe("pairAssistant", () => {
       credentials: credentials({ deviceId: "dev-two", token: "t2" }),
     });
 
-    expect(second.ok).toBe(true);
-    if (!second.ok) {
+    expect(second.ok).toBe(false);
+    if (second.ok) {
       return;
     }
+    expect(second.status).toBe(409);
     expect(second.assistantId).toBe(first.assistantId);
-    expect(second.updated).toBe(true);
-
-    const assistants = readLockfileFromDisk().assistants as Array<
-      Record<string, unknown>
-    >;
-    expect(assistants).toHaveLength(1);
-    // One credential on disk, holding the newest pairing's device.
-    expect(fs.readdirSync(path.join(configDir, "assistants"))).toEqual([
-      DEFAULT_PAIRED_ID,
-    ]);
-    const token = readGuardianToken(DEFAULT_PAIRED_ID);
-    expect(token.accessToken).toBe("t2");
-    expect(token.deviceId).toBe("dev-two");
-  });
-
-  test("two path-prefixed deployments on one host get distinct ids", () => {
-    // `normalizePairingBaseUrl` keeps a deployment path prefix, so these are
-    // two different assistants reached through one host. An id keyed on the
-    // host alone would read the second nameless import as a re-pair of the
-    // first: it would take over the entry, overwrite the guardian token, and
-    // leave the user unable to reach the first assistant at all.
-    const first = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({
-        gatewayUrl: "https://gw.example.com/assistant-1",
-        deviceId: "dev-one",
-        token: "t1",
-      }),
-    });
-    const second = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({
-        gatewayUrl: "https://gw.example.com/assistant-2",
-        deviceId: "dev-two",
-        token: "t2",
-      }),
-    });
-
-    expect(first.ok).toBe(true);
-    expect(second.ok).toBe(true);
-    if (!first.ok || !second.ok) {
-      return;
-    }
-    expect(first.assistantId).toBe("paired-gw-example-com-assistant-1");
-    expect(second.assistantId).toBe("paired-gw-example-com-assistant-2");
-    // Neither import read as a re-pair of the other.
-    expect(first.updated).toBe(false);
-    expect(second.updated).toBe(false);
-
-    // Both pairings survive: two entries, two guardian tokens, each still
-    // holding its own credential and address.
-    const assistants = readLockfileFromDisk().assistants as Array<
-      Record<string, unknown>
-    >;
-    expect(assistants).toHaveLength(2);
-    expect(assistants.map((a) => a.runtimeUrl)).toEqual([
-      "https://gw.example.com/assistant-1",
-      "https://gw.example.com/assistant-2",
-    ]);
-    expect(readGuardianToken(first.assistantId).accessToken).toBe("t1");
-    expect(readGuardianToken(second.assistantId).accessToken).toBe("t2");
-    expect(readGuardianToken(first.assistantId).deviceId).toBe("dev-one");
-    // The display names distinguish them too, or the chooser would show one
-    // entry twice under the same label.
-    expect(assistants.map((a) => a.name)).toEqual([
-      "paired (gw.example.com/assistant-1)",
-      "paired (gw.example.com/assistant-2)",
-    ]);
-  });
-
-  test("re-pairing a path-prefixed deployment still updates in place", () => {
-    // The prefix is part of the identity, not a nonce: the same address twice
-    // is the same assistant, so the second import updates rather than adds.
-    const first = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({
-        gatewayUrl: "https://gw.example.com/assistant-1",
-        deviceId: "dev-one",
-        token: "t1",
-      }),
-    });
-    const second = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({
-        gatewayUrl: "https://gw.example.com/assistant-1",
-        deviceId: "dev-two",
-        token: "t2",
-      }),
-    });
-
-    expect(first.ok).toBe(true);
-    expect(second.ok).toBe(true);
-    if (!first.ok || !second.ok) {
-      return;
-    }
-    expect(second.assistantId).toBe(first.assistantId);
-    expect(second.updated).toBe(true);
     expect(readLockfileFromDisk().assistants).toHaveLength(1);
-    expect(readGuardianToken(first.assistantId).accessToken).toBe("t2");
-  });
+    expect(readGuardianToken(first.assistantId).accessToken).toBe("t1");
+  }),
+    test("two path-prefixed deployments on one host get distinct ids", () => {
+      // `normalizePairingBaseUrl` keeps a deployment path prefix, so these are
+      // two different assistants reached through one host. An id keyed on the
+      // host alone would read the second nameless import as a re-pair of the
+      // first: it would take over the entry, overwrite the guardian token, and
+      // leave the user unable to reach the first assistant at all.
+      const first = pairAssistant([lockfilePath], configDir, {
+        credentials: credentials({
+          gatewayUrl: "https://gw.example.com/assistant-1",
+          deviceId: "dev-one",
+          token: "t1",
+        }),
+      });
+      const second = pairAssistant([lockfilePath], configDir, {
+        credentials: credentials({
+          gatewayUrl: "https://gw.example.com/assistant-2",
+          deviceId: "dev-two",
+          token: "t2",
+        }),
+      });
 
-  test("a trailing slash names the same deployment as no path at all", () => {
+      expect(first.ok).toBe(true);
+      expect(second.ok).toBe(true);
+      if (!first.ok || !second.ok) {
+        return;
+      }
+      expect(first.assistantId).toBe("paired-gw-example-com-assistant-1");
+      expect(second.assistantId).toBe("paired-gw-example-com-assistant-2");
+      // Neither import read as a re-pair of the other.
+      expect(first.updated).toBe(false);
+      expect(second.updated).toBe(false);
+
+      // Both pairings survive: two entries, two guardian tokens, each still
+      // holding its own credential and address.
+      const assistants = readLockfileFromDisk().assistants as Array<
+        Record<string, unknown>
+      >;
+      expect(assistants).toHaveLength(2);
+      expect(assistants.map((a) => a.runtimeUrl)).toEqual([
+        "https://gw.example.com/assistant-1",
+        "https://gw.example.com/assistant-2",
+      ]);
+      expect(readGuardianToken(first.assistantId).accessToken).toBe("t1");
+      expect(readGuardianToken(second.assistantId).accessToken).toBe("t2");
+      expect(readGuardianToken(first.assistantId).deviceId).toBe("dev-one");
+      // The display names distinguish them too, or the chooser would show one
+      // entry twice under the same label.
+      expect(assistants.map((a) => a.name)).toEqual([
+        "paired (gw.example.com/assistant-1)",
+        "paired (gw.example.com/assistant-2)",
+      ]);
+    }));
+
+  (test("a trailing slash names the same deployment as no path at all", () => {
     const bare = pairAssistant([lockfilePath], configDir, {
       credentials: credentials({ gatewayUrl: "https://gw.example.com" }),
     });
@@ -561,27 +518,25 @@ describe("pairAssistant", () => {
     });
 
     expect(bare.ok).toBe(true);
-    expect(slashed.ok).toBe(true);
-    if (!bare.ok || !slashed.ok) {
+    expect(slashed.ok).toBe(false);
+    if (!bare.ok || slashed.ok) {
       return;
     }
-    expect(bare.assistantId).toBe("paired-gw-example-com");
+    // The refusal names the id the slash-variant derives: the same deployment.
     expect(slashed.assistantId).toBe(bare.assistantId);
-    expect(slashed.updated).toBe(true);
-  });
+  }),
+    test("a --name still wins over the gateway-derived default", () => {
+      const result = pairAssistant([lockfilePath], configDir, {
+        credentials: credentials(),
+        name: "Desk",
+      });
 
-  test("a --name still wins over the gateway-derived default", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials(),
-      name: "Desk",
-    });
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.assistantId).toBe("desk");
-  });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.assistantId).toBe("desk");
+    }));
 
   test("refuses to clobber an existing non-paired assistant", () => {
     writeLockfile({
@@ -617,7 +572,7 @@ describe("pairAssistant", () => {
     expect(fs.existsSync(guardianTokenPath(configDir, "desk"))).toBe(false);
   });
 
-  test("re-importing under the same name updates it in place, address and all", () => {
+  (test("re-importing under the same name is refused with the old address intact", () => {
     const first = pairAssistant([lockfilePath], configDir, {
       credentials: credentials({ deviceId: "dev-re", token: "t1" }),
       name: "desk",
@@ -633,91 +588,37 @@ describe("pairAssistant", () => {
       name: "desk",
     });
 
-    expect(second.ok).toBe(true);
-    if (!second.ok) {
+    expect(second.ok).toBe(false);
+    if (second.ok) {
       return;
     }
-    expect(second.updated).toBe(true);
+    expect(second.status).toBe(409);
     const assistants = readLockfileFromDisk().assistants as Array<
       Record<string, unknown>
     >;
     expect(assistants).toHaveLength(1);
-    expect(assistants[0]!.runtimeUrl).toBe("https://new.example.com");
-    expect(readGuardianToken("desk").accessToken).toBe("t2");
-  });
+    expect(assistants[0]!.runtimeUrl).toBe("http://10.0.0.5:7830");
+    expect(readGuardianToken("desk").accessToken).toBe("t1");
+  }),
+    test("deletes the just-written token when the lockfile write fails", () => {
+      // A lockfile path whose parent is a regular file makes the write fail
+      // deterministically (unlike chmod, which root ignores) after the token
+      // has already been written.
+      const notADir = path.join(tmpDir, "not-a-dir");
+      fs.writeFileSync(notADir, "");
+      const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
 
-  test("re-pairing to a new gateway drops a cached cloudAssistantId", () => {
-    const first = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({ deviceId: "dev-re", token: "t1" }),
-      name: "desk",
-    });
-    expect(first.ok).toBe(true);
-    const cached = readLockfileFromDisk();
-    (cached.assistants as Array<Record<string, unknown>>)[0]!.cloudAssistantId =
-      "11111111-1111-4111-8111-111111111111";
-    fs.writeFileSync(lockfilePath, JSON.stringify(cached, null, 2));
+      const result = pairAssistant(
+        [path.join(notADir, "lockfile.json")],
+        configDir,
+        { credentials: credentials() },
+      );
 
-    const second = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({
-        deviceId: "dev-re",
-        token: "t2",
-        gatewayUrl: "https://new.example.com",
-      }),
-      name: "desk",
-    });
-
-    expect(second.ok).toBe(true);
-    const assistants = readLockfileFromDisk().assistants as Array<
-      Record<string, unknown>
-    >;
-    expect(assistants).toHaveLength(1);
-    expect(assistants[0]!.runtimeUrl).toBe("https://new.example.com");
-    expect(assistants[0]!).not.toHaveProperty("cloudAssistantId");
-  });
-
-  test("deletes the just-written token when the lockfile write fails", () => {
-    // A lockfile path whose parent is a regular file makes the write fail
-    // deterministically (unlike chmod, which root ignores) after the token
-    // has already been written.
-    const notADir = path.join(tmpDir, "not-a-dir");
-    fs.writeFileSync(notADir, "");
-    const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
-
-    const result = pairAssistant(
-      [path.join(notADir, "lockfile.json")],
-      configDir,
-      { credentials: credentials() },
-    );
-
-    expect(result.ok).toBe(false);
-    expect(fs.existsSync(tokenPath)).toBe(false);
-    // The per-assistant directory is cleaned up too.
-    expect(fs.existsSync(path.dirname(tokenPath))).toBe(false);
-  });
-
-  test("restores the prior token when a re-import's lockfile write fails", () => {
-    const first = pairAssistant([lockfilePath], configDir, {
-      credentials: credentials({ deviceId: "dev-re", token: "t1" }),
-    });
-    expect(first.ok).toBe(true);
-    const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
-    const priorContents = fs.readFileSync(tokenPath, "utf-8");
-
-    // Reads fall back to the real lockfile (so the existing entry is found
-    // and this is a genuine re-import) while the write targets a path whose
-    // parent is a regular file and fails deterministically (unlike chmod,
-    // which root ignores).
-    const notADir = path.join(tmpDir, "not-a-dir");
-    fs.writeFileSync(notADir, "");
-    const result = pairAssistant(
-      [path.join(notADir, "lockfile.json"), lockfilePath],
-      configDir,
-      { credentials: credentials({ deviceId: "dev-re", token: "t2" }) },
-    );
-
-    expect(result.ok).toBe(false);
-    expect(fs.readFileSync(tokenPath, "utf-8")).toBe(priorContents);
-  });
+      expect(result.ok).toBe(false);
+      expect(fs.existsSync(tokenPath)).toBe(false);
+      // The per-assistant directory is cleaned up too.
+      expect(fs.existsSync(path.dirname(tokenPath))).toBe(false);
+    }));
 
   test("an unparseable gatewayUrl is refused, not thrown", () => {
     const result = pairAssistant([lockfilePath], configDir, {
@@ -768,7 +669,7 @@ describe("checkPairedAssistantName", () => {
     expect(refusal?.status).toBe(400);
   });
 
-  test("a free name and an existing paired entry both pass", () => {
+  test("a free name passes and an existing entry refuses", () => {
     expect(checkPairedAssistantName([lockfilePath], "fresh")).toBeNull();
 
     const imported = pairAssistant([lockfilePath], configDir, {
@@ -776,8 +677,8 @@ describe("checkPairedAssistantName", () => {
       name: "fresh",
     });
     expect(imported.ok).toBe(true);
-    // A re-import updates in place, so the name is still usable.
-    expect(checkPairedAssistantName([lockfilePath], "fresh")).toBeNull();
+    // An id already held by an assistant is refused rather than clobbered.
+    expect(checkPairedAssistantName([lockfilePath], "fresh")).not.toBeNull();
   });
 });
 
@@ -1275,10 +1176,7 @@ describe("pairingPoll", () => {
     expect(fetchCalls).toHaveLength(1);
   });
 
-  test("re-pairing the same assistant with no name updates its entry", async () => {
-    // Each attempt mints its own device id, so a default id keyed on that
-    // would register a second entry (and a second guardian token) for the
-    // assistant the user was told to re-pair.
+  (test("re-pairing the same assistant with no name is refused", async () => {
     respond = () => json(200, approvedBody({ accessToken: "acc-1" }));
     const first = await pairingPoll([lockfilePath], configDir, {
       handle: await startFromLink(),
@@ -1287,43 +1185,38 @@ describe("pairingPoll", () => {
     if (!first.ok || first.status !== "imported") {
       return;
     }
-    expect(first.updated).toBe(false);
 
     respond = () => json(200, approvedBody({ accessToken: "acc-2" }));
     const second = await pairingPoll([lockfilePath], configDir, {
       handle: await startFromLink(),
     });
 
-    expect(second.ok).toBe(true);
-    if (!second.ok || second.status !== "imported") {
+    expect(second.ok).toBe(false);
+    if (second.ok) {
       return;
     }
-    expect(second.assistantId).toBe(first.assistantId);
-    expect(second.updated).toBe(true);
+    expect(second.reason).toBe("import-precheck");
+    expect(second.status).toBe(409);
     expect(readLockfileFromDisk().assistants).toHaveLength(1);
-    expect(fs.readdirSync(path.join(configDir, "assistants"))).toEqual([
-      first.assistantId,
-    ]);
-    expect(readGuardianToken(first.assistantId).accessToken).toBe("acc-2");
-  });
+    expect(readGuardianToken(first.assistantId).accessToken).toBe("acc-1");
+  }),
+    test("records the cloud the caller names, defaulting to desktop", async () => {
+      respond = () => json(202, pendingBody());
 
-  test("records the cloud the caller names, defaulting to desktop", async () => {
-    respond = () => json(202, pendingBody());
+      const cliHandle = await startFromLink();
+      await pairingPoll([lockfilePath], configDir, {
+        handle: cliHandle,
+        platform: "cli",
+      });
+      expect(fetchCalls[0]!.body.platform).toBe("cli");
 
-    const cliHandle = await startFromLink();
-    await pairingPoll([lockfilePath], configDir, {
-      handle: cliHandle,
-      platform: "cli",
-    });
-    expect(fetchCalls[0]!.body.platform).toBe("cli");
-
-    const unknownHandle = await startFromLink();
-    await pairingPoll([lockfilePath], configDir, {
-      handle: unknownHandle,
-      platform: "toaster",
-    });
-    expect(fetchCalls[1]!.body.platform).toBe("desktop");
-  });
+      const unknownHandle = await startFromLink();
+      await pairingPoll([lockfilePath], configDir, {
+        handle: unknownHandle,
+        platform: "toaster",
+      });
+      expect(fetchCalls[1]!.body.platform).toBe("desktop");
+    }));
 
   test("an expired challenge is refused without spending a request", async () => {
     respond = () =>
@@ -1809,40 +1702,6 @@ describe("connectImport", () => {
       assistantId: "desk-box",
       runtimeUrl: "https://gw.example.com",
     });
-  });
-
-  test("a nameless re-import adopts the entry the previous release keyed", () => {
-    // The previous release keyed a nameless bundle import on the bundle's own
-    // device id. Re-importing that bundle updates that entry rather than
-    // registering a second one under the gateway-derived id.
-    const bundle = encodeBundle({
-      gatewayUrl: "https://gw.example.com",
-      token: "tok-1",
-      deviceId: "dev-legacy",
-    });
-    writeLockfile({
-      assistants: [
-        {
-          assistantId: "paired-dev-legacy",
-          runtimeUrl: "https://gw.example.com",
-        },
-      ],
-    });
-
-    const result = connectImport([lockfilePath], configDir, { bundle });
-
-    expect(result).toMatchObject({
-      ok: true,
-      assistantId: "paired-dev-legacy",
-      updated: true,
-    });
-    const entries = readLockfileFromDisk().assistants as Array<
-      Record<string, unknown>
-    >;
-    expect(entries).toHaveLength(1);
-    expect(
-      fs.existsSync(guardianTokenPath(configDir, "paired-dev-legacy")),
-    ).toBe(true);
   });
 
   test("a legacy id naming another gateway is not adopted", () => {

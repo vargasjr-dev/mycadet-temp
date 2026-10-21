@@ -31,9 +31,26 @@ import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import {
   isLocalClient,
   isLocalAssistant,
-  isPairedAssistant,
   isCloudAssistant,
 } from "@/lib/local-mode";
+import {
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+  type LockfileAssistant,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
+
+/**
+ * Whether the entry's gateway lives on another machine (a connect import):
+ * the paired transport's eligibility, derived from the addressing.
+ */
+function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud) &&
+    isUsableRuntimeUrl(entry.runtimeUrl) &&
+    !isLoopbackPublicUrl(entry.runtimeUrl)
+  );
+}
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
   clearSelectedAssistantId,
@@ -199,7 +216,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         isActiveLockfileAssistant: activeLockfileAssistantId === a.assistantId,
         isLocal: isLocalAssistant(a),
         isCloudHosted: isCloudAssistant(a),
-        isPaired: isPairedAssistant(a),
+        isPaired: isRemoteGatewayEntry(a),
         runtimeUrl: a.runtimeUrl,
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
@@ -411,7 +428,7 @@ function getLockfileFields(assistantId: string): {
     runtimeVersion: entry?.resources?.runtimeVersion,
     runtimeUrl: entry?.runtimeUrl,
     cloudAssistantId: entry?.cloudAssistantId,
-    isPaired: entry ? isPairedAssistant(entry) : undefined,
+    isPaired: entry ? isRemoteGatewayEntry(entry) : undefined,
     isActiveLockfileAssistant: lockfile
       ? activeLockfileAssistantId === assistantId
       : undefined,

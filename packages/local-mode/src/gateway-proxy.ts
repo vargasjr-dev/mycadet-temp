@@ -5,10 +5,10 @@ import {
   FLATTENED_FIRST_SEGMENTS,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
-  isPairedEntry,
   isUsableRuntimeUrl,
   LockfileAssistantSchema,
 } from "./lockfile-contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 export { FLATTENED_FIRST_SEGMENTS };
 
@@ -236,14 +236,13 @@ const MAX_GATEWAY_PORT = 65535;
 /**
  * Compute the id-keyed gateway-target map from a lockfile's assistant
  * entries. Each entry parses through {@link LockfileAssistantSchema}; an
- * entry that fails the parse (or carries no usable id) is skipped. A paired
- * entry ({@link isPairedEntry} — a connect import, derived from its remote
- * addressing, no stored flag) resolves to its recorded remote
- * `runtimeUrl` (usable http(s) only); a loopback-gateway cloud (`local`,
- * `docker`) resolves to its recorded loopback port via
- * {@link getLoopbackGatewayPort}. Everything else — the platform cloud,
- * remote self-hosted clouds the SPA doesn't drive — is left out, and an
- * absent id is a proxy rejection.
+ * entry that fails the parse (or carries no usable id) is skipped. An
+ * off-machine `runtimeUrl` (an absolute http(s) address that is not
+ * loopback — a connect import's remote gateway) resolves to it directly;
+ * otherwise a loopback-gateway cloud (`local`, `docker`) resolves to its
+ * recorded loopback port via {@link getLoopbackGatewayPort}. Everything
+ * else — the platform cloud — is left out, and an absent id is a proxy
+ * rejection.
  *
  * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
  * lockfile watcher) derives the map without touching disk on the request
@@ -262,10 +261,8 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!assistantId) {
       continue;
     }
-    if (isPairedEntry(parsed.data)) {
-      if (isUsableRuntimeUrl(runtimeUrl)) {
-        targets.set(assistantId, { kind: "remote", runtimeUrl });
-      }
+    if (isUsableRuntimeUrl(runtimeUrl) && !isLoopbackPublicUrl(runtimeUrl)) {
+      targets.set(assistantId, { kind: "remote", runtimeUrl });
       continue;
     }
     if (!isLoopbackGatewayCloud(cloud)) {

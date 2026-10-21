@@ -4,9 +4,10 @@ import {
   LockfileAssistantSchema,
   LockfileSchema,
   RemoteSchema,
-  KNOWN_CLOUDS,
+  KNOWN_REMOTES,
   pairedHostLabel,
   parseLockfile,
+  stripSensitiveFields,
   SENSITIVE_KEYS,
   type Lockfile,
 } from "./lockfile-contract";
@@ -25,7 +26,6 @@ describe("parseLockfile", () => {
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
-          ingressUrl: "https://tunnel.example.ts.net",
           resources: { gatewayPort: 7777, daemonPort: 7778 },
         },
       ],
@@ -75,7 +75,11 @@ describe("parseLockfile", () => {
       ],
     });
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local" },
+      {
+        assistantId: "asst_1",
+        cloud: "local",
+        localUrl: "http://127.0.0.1:7777",
+      },
     ]);
   });
 
@@ -111,15 +115,21 @@ describe("parseLockfile", () => {
       ],
     };
 
-    // A newer writer's extra fields must never make an older reader reject the
-    // entry. The entry survives with its modeled fields; the wire value is the
-    // validated shape (extra fields are stripped from it — the on-disk file
-    // keeps them, see lockfile.test.ts).
+    // A newer writer's extra fields must never make an older reader reject
+    // the entry — and the schema is loose, so the parsed value carries them
+    // through a read-modify-write intact (the on-disk file keeps them; see
+    // lockfile.test.ts).
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
+      {
+        assistantId: "asst_1",
+        cloud: "local",
+        runtimeUrl: "http://a",
+        futureField: { nested: true },
+      },
     ]);
     expect(parsed.activeAssistant).toBe("asst_1");
+    expect(parsed.schemaVersion).toBe(99);
   });
 
   test("defaults missing or non-array assistants to an empty list", () => {
@@ -169,30 +179,6 @@ describe("parseLockfile", () => {
     expect(parseLockfile(raw).assistants).toEqual([]);
   });
 
-  test("keeps a well-typed ingressUrl; a mistyped one drops the entry", () => {
-    // The tunnel-recorded public URL rides the entry so remote-web pairing
-    // surfaces can prefill it; entries parse whole, so a mistyped value
-    // invalidates the entry.
-    const raw = {
-      assistants: [
-        {
-          assistantId: "asst_1",
-          cloud: "local",
-          ingressUrl: "https://tunnel.example.ts.net",
-        },
-        { assistantId: "asst_2", cloud: "local", ingressUrl: 7 }, // mistyped
-      ],
-      activeAssistant: null,
-    };
-    expect(parseLockfile(raw).assistants).toEqual([
-      {
-        assistantId: "asst_1",
-        cloud: "local",
-        ingressUrl: "https://tunnel.example.ts.net",
-      },
-    ]);
-  });
-
   test("drops an entry whose resources are mistyped", () => {
     const raw = {
       assistants: [
@@ -233,7 +219,11 @@ describe("parseLockfile", () => {
     });
   });
 
-  test("strips sensitive and host-only fields from resources", () => {
+  test("the resources parse is loose; the secrets leave at the hosts' strip", () => {
+    // The schema preserves what the writer wrote (the CLI's read-modify-write
+    // round-trips its host-only ports and signing key); the renderer boundary
+    // is `stripSensitiveFields`, which every host runs on the raw JSON before
+    // this parse ever sees it.
     const raw = {
       assistants: [
         {
@@ -253,12 +243,17 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+    expect(parseLockfile(raw).assistants[0]?.resources?.qdrantPort).toBe(7779);
+    const stripped = structuredClone(raw);
+    stripSensitiveFields(stripped);
+    expect(parseLockfile(stripped).assistants[0]?.resources).toEqual({
       instanceDir: "/data",
       gatewayPort: 7777,
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
+      qdrantPort: 7779,
+      cesPort: 7780,
     });
   });
 
@@ -275,8 +270,18 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "gcp_1", cloud: "local", runtimeUrl: "https://a" },
-      { assistantId: "ssh_1", cloud: "local", runtimeUrl: "https://b" },
+      {
+        assistantId: "gcp_1",
+        cloud: "local",
+        runtimeUrl: "https://a",
+        project: "my-proj",
+      },
+      {
+        assistantId: "ssh_1",
+        cloud: "local",
+        runtimeUrl: "https://b",
+        sshUser: "deploy",
+      },
       { assistantId: "legacy_1", cloud: "local" },
     ]);
   });
@@ -310,9 +315,51 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "a", cloud: "cloud" },
+      { assistantId: "a", cloud: "cloud", project: "stale-proj" },
       { assistantId: "c", cloud: "local" },
     ]);
+  });
+
+  test("carries the CLI's root process records through the parse", () => {
+    const raw = {
+      assistants: [{ assistantId: "a" }],
+      activeAssistant: null,
+      tunnel: {
+        pid: 4242,
+        provider: "ngrok",
+        assistantId: "a",
+        startedAt: "2026-10-21T00:00:00.000Z",
+        publicUrl: "https://tunnel.example.ts.net",
+        previous: { pid: 1, provider: "ngrok", startedAt: "earlier" },
+      },
+      app: { pid: 51, port: 7840, builtSha: "abc1234" },
+    };
+    expect(parseLockfile(raw).tunnel).toEqual(raw.tunnel);
+    expect(parseLockfile(raw).app).toEqual(raw.app);
+  });
+
+  test("drops a mistyped root process record, never the file", () => {
+    const raw = {
+      assistants: [{ assistantId: "a" }],
+      activeAssistant: null,
+      tunnel: { pid: "not-a-pid", provider: "ngrok", startedAt: "x" },
+      app: 42,
+    };
+    const parsed = parseLockfile(raw);
+    expect(parsed.tunnel).toBeUndefined();
+    expect(parsed.app).toBeUndefined();
+    expect(parsed.assistants).toEqual([{ assistantId: "a", cloud: "local" }]);
+  });
+});
+
+describe("LockfileSchema defaults", () => {
+  test("the empty-lockfile fallback is defined on the schema itself", () => {
+    // parseLockfile's torn-file fallback parses an empty object through the
+    // schema, so the default data lives in exactly one place.
+    expect(LockfileSchema.parse({})).toEqual({
+      assistants: [],
+      activeAssistant: null,
+    });
   });
 });
 
@@ -334,8 +381,8 @@ describe("pairedHostLabel", () => {
 });
 
 describe("taxonomy", () => {
-  test("KNOWN_CLOUDS covers the documented topologies", () => {
-    expect(KNOWN_CLOUDS).toEqual([
+  test("KNOWN_REMOTES covers the documented topologies", () => {
+    expect(KNOWN_REMOTES).toEqual([
       "local",
       "docker",
       "apple-container",
@@ -344,8 +391,8 @@ describe("taxonomy", () => {
     ]);
   });
 
-  test("CloudSchema is the enum the lockfile and injected config share", () => {
-    expect([...RemoteSchema.options]).toEqual([...KNOWN_CLOUDS]);
+  test("RemoteSchema is the enum the lockfile and injected config share", () => {
+    expect([...RemoteSchema.options]).toEqual([...KNOWN_REMOTES]);
   });
 
   test("SENSITIVE_KEYS lists the redacted secrets", () => {

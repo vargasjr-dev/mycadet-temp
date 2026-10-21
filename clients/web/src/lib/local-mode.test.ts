@@ -66,8 +66,6 @@ import {
   startAssistantPairing,
   isCliWakeableAssistant,
   isLocalAssistant,
-  isLocalGatewayAssistant,
-  isPairedAssistant,
   isCadetCloudRemote,
   isCloudAssistant,
   isRetryablePairingFailure,
@@ -277,20 +275,6 @@ describe("removePairedAssistantFromLockfile", () => {
     expect(unpairAssistantHost).toHaveBeenCalledWith("paired-a");
     expect(useLockfileStore.getState().lockfile).toEqual(resulting);
     expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("refuses non-paired entries without calling the host", async () => {
-    setLockfile({
-      assistants: [localA, platform],
-      activeAssistant: "local-a",
-    });
-
-    for (const id of ["local-a", "platform-a"]) {
-      const result = await removePairedAssistantFromLockfile(id);
-      expect(result.ok).toBe(false);
-      expect(result.error).toBeTruthy();
-    }
-    expect(unpairAssistantHost).not.toHaveBeenCalled();
   });
 
   test("refuses an unknown id without calling the host", async () => {
@@ -617,8 +601,7 @@ describe("assistant classification", () => {
   test("externally-managed container runtimes are not web-client local", () => {
     // Docker and apple-container are managed by the CLI / macOS app, not the
     // web client's lifecycle flows — so restart/retire/logout routing must keep
-    // treating them as non-local. (Docker is still gateway-reachable; see the
-    // isLocalGatewayAssistant tests.)
+    // treating them as non-local.
     const docker = { assistantId: "d", cloud: "docker" } as LockfileAssistant;
     const appleContainer = {
       assistantId: "a",
@@ -626,16 +609,6 @@ describe("assistant classification", () => {
     } as LockfileAssistant;
     expect(isLocalAssistant(docker)).toBe(false);
     expect(isLocalAssistant(appleContainer)).toBe(false);
-  });
-
-  test("local and docker assistants are local-gateway assistants; others are not", () => {
-    const docker = { assistantId: "d", cloud: "docker" } as LockfileAssistant;
-    expect(isLocalGatewayAssistant(localA)).toBe(true);
-    expect(isLocalGatewayAssistant(docker)).toBe(true);
-    for (const cloud of ["apple-container", "cadet", "paired", "gcp"]) {
-      const other = { assistantId: `o-${cloud}`, cloud } as LockfileAssistant;
-      expect(isLocalGatewayAssistant(other)).toBe(false);
-    }
   });
 
   test("a legacy entry with no cloud normalizes to local at the parse seam", () => {
@@ -658,22 +631,7 @@ describe("assistant classification", () => {
     expect(isCloudAssistant(remote)).toBe(false);
   });
 
-  test("paired-ness derives from a remote runtimeUrl on a loopback cloud", () => {
-    expect(
-      isPairedAssistant({
-        assistantId: "p",
-        cloud: "local",
-        runtimeUrl: "https://h.example",
-      }),
-    ).toBe(true);
-    for (const runtimeUrl of [undefined, "http://127.0.0.1:7830"]) {
-      expect(
-        isPairedAssistant({ assistantId: "p", cloud: "local", runtimeUrl }),
-      ).toBe(false);
-    }
-  });
-
-  test("getLocalAssistants / getCloudAssistants partition by cloud, excluding remote", () => {
+  test("getLocalAssistants / getCloudAssistants partition by cloud", () => {
     const paired = {
       assistantId: "paired-a",
       cloud: "local",
@@ -683,7 +641,7 @@ describe("assistant classification", () => {
       assistants: [localA, platform, paired],
       activeAssistant: null,
     });
-    expect(getLocalAssistants()).toEqual([localA]);
+    expect(getLocalAssistants()).toEqual([localA, paired]);
     expect(getCloudAssistants()).toEqual([platform]);
   });
 });

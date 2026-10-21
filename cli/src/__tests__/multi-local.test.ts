@@ -57,12 +57,14 @@ function readLockfileRaw(): Record<string, unknown> {
 
 const makeEntry = (
   id: string,
-  cloud: Remote = "local",
+  remote: Remote = "local",
   extra?: Partial<AssistantEntry>,
 ): AssistantEntry => ({
   assistantId: id,
   runtimeUrl: `http://localhost:${DEFAULT_DAEMON_PORT}`,
-  cloud,
+  // The AssistantEntry field is `cloud` — the rename happens only here,
+  // where the type forces it.
+  cloud: remote,
   ...extra,
 });
 

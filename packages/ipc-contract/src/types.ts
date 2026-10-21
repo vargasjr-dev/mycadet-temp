@@ -1090,16 +1090,6 @@ export interface AppVersionInfo {
   website: string;
 }
 
-// ---------------------------------------------------------------------------
-// Lockfile — the canonical contract types re-exported for the bridge surface
-// (the duplicate interface that carried `paired`/`ingressUrl` is gone).
-export type {
-  LocalAssistantResources,
-  Lockfile,
-  LockfileAssistant,
-  LockfileWriteResult,
-} from "@mycadet/local-mode/contract";
-
 export type LocalAssistantRuntimeState =
   | "healthy"
   /** Alive and serving, but DB migrations failed — restart to recover. */

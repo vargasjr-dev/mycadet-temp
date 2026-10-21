@@ -17,13 +17,16 @@ import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav"
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
   isLocalModeHostAvailable,
-  isPairedAssistant,
-  isLocalGatewayAssistant,
   wakeLocalAssistantHost,
   retireLocalAssistantHost,
   unpairLocalAssistant,
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
+import {
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
@@ -141,11 +144,11 @@ export function SelectAssistantScreen() {
   const connectGuidanceKind = useConnectDialogStore.use.guidanceKind();
   const lockfile = useLocalLockfileStore.use.lockfile();
 
-  // The lockfile arm: entries connect can import (paired) plus the machine's
-  // own local assistants — the connectable sets of the shell's lockfile.
+  // The lockfile arm: every entry whose gateway this machine can address —
+  // the machine's own local assistants and connect imports alike.
   const lockfileEntries =
-    lockfile?.assistants.filter(
-      (entry) => isPairedAssistant(entry) || isLocalGatewayAssistant(entry),
+    lockfile?.assistants.filter((entry) =>
+      isLoopbackGatewayCloud(entry.cloud),
     ) ?? [];
 
   // The lockfile hydrates on mount (Electron only — a no-op elsewhere), so a
@@ -409,7 +412,11 @@ export function SelectAssistantScreen() {
           />
         )}
         {lockfileEntries.map((entry, index) => {
-          const paired = isPairedAssistant(entry);
+          // A connect import: its gateway lives on another machine, reached
+          // through the paired-gateway path.
+          const paired =
+            isUsableRuntimeUrl(entry.runtimeUrl) &&
+            !isLoopbackPublicUrl(entry.runtimeUrl);
           const label = entry.name ?? entry.assistantId;
           return (
             <ChooserCard

@@ -147,53 +147,6 @@ describe("forwardCloudRequest", () => {
     );
   });
 
-  test("forwards /v1/* to the gateway when one is set", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/v1/assistants"),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe("http://127.0.0.1:20100/v1/assistants");
-    expect(header(calls[0]?.init, "origin")).toBe("http://127.0.0.1:20100");
-  });
-
-  test("rides the cloud for /_allauth even when a gateway is set", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/_allauth/browser/v1/auth/session"),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe(
-      "https://cloud.mycadet.ai/_allauth/browser/v1/auth/session",
-    );
-    expect(header(calls[0]?.init, "origin")).toBe("https://cloud.mycadet.ai");
-  });
-
-  test("rides the cloud for /accounts even when a gateway is set", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/accounts/login"),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/accounts/login");
-  });
-
-  test("rides the cloud for /v1 when no gateway is set", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/v1/assistants"),
-      cloudBase: PLATFORM,
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe("https://cloud.mycadet.ai/v1/assistants");
-  });
-
   test("rewrites Origin from app:// to the cloud origin", async () => {
     const { calls, fetcher } = recorder();
     await forwardCloudRequest({
@@ -476,51 +429,6 @@ describe("forwardCloudRequest", () => {
     expect(levels).toEqual(["error"]);
   });
 });
-
-  test("gateway-bound forwards carry the injected bearer, stripping any inbound one", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/v1/assistants", {
-        headers: { authorization: "Bearer stale-renderer-token" },
-      }),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      gatewayBearer: "guardian-token",
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe(`${GATEWAY}/v1/assistants`);
-    expect(header(calls[0]?.init, "authorization")).toBe("Bearer guardian-token");
-  });
-
-  test("auth paths ride the cloud and never carry the gateway bearer", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/_allauth/browser/v1/auth/session"),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      gatewayBearer: "guardian-token",
-      fetcher,
-    });
-    expect(calls[0]?.url).toBe(
-      `${PLATFORM}/_allauth/browser/v1/auth/session`,
-    );
-    expect(header(calls[0]?.init, "authorization")).toBeNull();
-  });
-
-  test("gateway forwards without a bearer keep the inbound headers", async () => {
-    const { calls, fetcher } = recorder();
-    await forwardCloudRequest({
-      request: request("/v1/assistants", {
-        headers: { authorization: "Bearer renderer-supplied" },
-      }),
-      cloudBase: PLATFORM,
-      gatewayBase: GATEWAY,
-      fetcher,
-    });
-    expect(header(calls[0]?.init, "authorization")).toBe(
-      "Bearer renderer-supplied",
-    );
-  });
 
 // ---------------------------------------------------------------------------
 // Transient-failure retry + structured proxy error (LUM-2402)

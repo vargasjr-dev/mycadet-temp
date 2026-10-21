@@ -188,7 +188,7 @@ export async function runCloudflareTunnel(
     if (child.pid) clearRootProcess("tunnel", child.pid);
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
-      clearIngressUrl(workspaceDir, opts.assistantId);
+      clearIngressUrl(workspaceDir);
     }
   };
 
@@ -211,7 +211,7 @@ export async function runCloudflareTunnel(
     // Always clear the saved ingress URL when the tunnel process ends so
     // webhook integrations don't keep hitting a dead endpoint.
     if (publicUrl !== undefined) {
-      clearIngressUrl(workspaceDir, opts.assistantId);
+      clearIngressUrl(workspaceDir);
     }
     if (code !== null && code !== 0) {
       console.error(`\ncloudflared exited with code ${code}.`);

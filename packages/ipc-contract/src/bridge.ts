@@ -62,8 +62,6 @@ import type {
   HelperState,
   HotkeyEvent,
   HotkeySelectionResult,
-  Lockfile,
-  LockfileWriteResult,
   LocalAssistantStatusResult,
   NotificationActionEvent,
   PrepareNotificationIdentityPayload,
@@ -88,6 +86,10 @@ import type {
   VoiceActivityStart,
   WindowAttentionPayload,
 } from "./types";
+import type {
+  Lockfile,
+  LockfileWriteResult,
+} from "@mycadet/local-mode/contract";
 
 /**
  * Options for `localMode.wake`. `repairGuardian` re-provisions a

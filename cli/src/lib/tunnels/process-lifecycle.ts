@@ -17,10 +17,6 @@ export async function stopOwnedTunnelAgent(
       );
     }
   }
-  if (opts.workspaceDir)
-    clearIngressUrl(
-      opts.workspaceDir,
-      opts.assistantId ?? opts.record.assistantId,
-    );
+  if (opts.workspaceDir) clearIngressUrl(opts.workspaceDir);
   return stopped;
 }

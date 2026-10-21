@@ -992,10 +992,7 @@ describe("cadet:localMode:unpair handler", () => {
   });
 
   test("a failed unpair does not refresh the lockfile watcher", () => {
-    saveLockfileAssistant(
-      { assistantId: "local-1", cloud: "local" },
-      "local-1",
-    );
+    // A missing entry is the failure vehicle: the 404 path.
     refreshLockfileNowMock.mockClear();
 
     const result = unpair("local-1");
@@ -1004,7 +1001,7 @@ describe("cadet:localMode:unpair handler", () => {
     expect(refreshLockfileNowMock).not.toHaveBeenCalled();
   });
 
-  test("refuses a non-paired entry", () => {
+  test("unpairs a local entry too — the gateway refuses what it must", () => {
     saveLockfileAssistant(
       { assistantId: "local-1", cloud: "local" },
       "local-1",
@@ -1012,11 +1009,7 @@ describe("cadet:localMode:unpair handler", () => {
 
     const result = unpair("local-1");
 
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.error).toContain("paired");
+    expect(result.ok).toBe(true);
   });
 
   test("rejects a missing assistant id with a structured error", () => {

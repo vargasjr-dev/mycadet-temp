@@ -36,12 +36,6 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
 }));
 
-const resolvePairedAssistantCloudId = mock(
-  async (_id: string): Promise<string | null> => null,
-);
-mock.module("@/lib/paired-cloud-identity", () => ({
-  resolvePairedAssistantCloudId,
-}));
 
 const listAssistants = mock(
   async (): Promise<AssistantApi.ListAssistantsResult> => ({
@@ -108,7 +102,6 @@ beforeEach(() => {
   cloudRemote = false;
   orgReady = true;
   resetAvatarSupersedeForTests();
-  resolvePairedAssistantCloudId.mockClear();
   signIn();
   listAssistants.mockResolvedValue({
     ok: true,
@@ -368,40 +361,7 @@ describe("suppressPlatformAvatarUrl", () => {
 describe("supersedeCloudAvatar", () => {
   const PAIRED_UUID = "11111111-2222-4333-8444-555555555555";
 
-  test("a paired row without a persisted UUID is suppressed under the UUID the daemon answers", async () => {
-    resolvePairedAssistantCloudId.mockResolvedValueOnce(PAIRED_UUID);
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        {
-          id: "paired-slug",
-          isLocal: false,
-          isCloudHosted: false,
-          isPaired: true,
-          cloud: "paired",
-        },
-      ],
-    });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const key = cloudAvatarUrlsQueryKey("user-1", null);
-    queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
-
-    act(() => supersedeCloudAvatar(queryClient, "paired-slug"));
-
-    await waitFor(() => {
-      expect(resolvePairedAssistantCloudId).toHaveBeenCalledWith(
-        "paired-slug",
-      );
-    });
-    await waitFor(() => {
-      expect(
-        queryClient.getQueryData<Map<string, string>>(key)?.has(PAIRED_UUID),
-      ).toBe(false);
-    });
-  });
-
-  test("a row with a known platform id never asks the paired daemon", () => {
+  test("a row with a known platform id is suppressed under it", () => {
     useResolvedAssistantsStore.setState({
       assistants: [
         {
@@ -420,7 +380,6 @@ describe("supersedeCloudAvatar", () => {
 
     supersedeCloudAvatar(queryClient, "paired-slug");
 
-    expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     expect(
       queryClient.getQueryData<Map<string, string>>(key)?.has(PAIRED_UUID),
     ).toBe(false);

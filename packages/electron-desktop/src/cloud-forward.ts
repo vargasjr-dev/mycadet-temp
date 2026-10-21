@@ -31,15 +31,6 @@ export interface ForwardCloudRequestArgs {
   request: Request;
   /** Login surfaces (`/_allauth`, `/accounts`) always forward here. */
   cloudBase: string;
-  /** Same-origin `/v1/*` forwards here when set, the cloud otherwise. */
-  gatewayBase?: string;
-  /**
-   * Guardian bearer stamped onto gateway-bound forwards — the paired arm's
-   * `getPairedGuardianAccessToken` equivalent for the local assistant's
-   * gateway, whose edge auth demands the bearer. Any inbound
-   * `Authorization` is replaced; the token never reaches the renderer.
-   */
-  gatewayBearer?: string;
   allowedOrigin?: CloudForwardAllowedOrigin;
   /** The caller's `net.fetch`; tests inject a recorder. */
   fetcher: CloudForwardFetcher;
@@ -66,12 +57,6 @@ const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 function isCloudPath(pathname: string): boolean {
   return CLOUD_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
-
-function isAuthPath(pathname: string): boolean {
-  return AUTH_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
@@ -182,10 +167,7 @@ type CloudForwardPlan =
  */
 function planCloudForward(
   request: Request,
-  targets: Pick<
-    ForwardCloudRequestArgs,
-    "cloudBase" | "gatewayBase" | "gatewayBearer"
-  >,
+  targets: Pick<ForwardCloudRequestArgs, "cloudBase">,
   allowedOrigin?: CloudForwardAllowedOrigin,
 ): CloudForwardPlan {
   const url = new URL(request.url);
@@ -204,18 +186,10 @@ function planCloudForward(
     };
   }
 
-  const authPath = isAuthPath(url.pathname);
-  const base = authPath
-    ? targets.cloudBase
-    : (targets.gatewayBase ?? targets.cloudBase);
-  const target = new URL(base);
+  const target = new URL(targets.cloudBase);
   const headers = new Headers(request.headers);
   headers.delete(ELECTRON_RENDERER_ORIGIN_HEADER);
   headers.set("origin", target.origin);
-  if (!authPath && targets.gatewayBase && targets.gatewayBearer) {
-    headers.delete("authorization");
-    headers.set("authorization", `Bearer ${targets.gatewayBearer}`);
-  }
 
   return {
     kind: "forward",

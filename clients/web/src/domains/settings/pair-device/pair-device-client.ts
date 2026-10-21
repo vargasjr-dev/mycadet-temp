@@ -94,11 +94,6 @@ export interface PairDeviceTarget {
   base: string;
   /** The paired assistant's display name, or `null` when it has none. */
   assistantName: string | null;
-  /**
-   * The public https URL `cadet tunnel` recorded for this assistant, or `null`
-   * when none is recorded — used to prefill the URL field.
-   */
-  ingressUrl: string | null;
 }
 
 /**
@@ -121,7 +116,6 @@ export function resolvePairDeviceTarget(): PairDeviceTarget | null {
   return {
     base: `${window.location.origin}${path}`,
     assistantName: assistant?.name?.trim() || null,
-    ingressUrl: assistant?.ingressUrl?.trim() || null,
   };
 }
 

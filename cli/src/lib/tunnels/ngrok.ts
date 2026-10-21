@@ -1120,7 +1120,7 @@ export async function runNgrokTunnel(
     clearRootProcess("tunnel");
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
-      clearIngressUrl(workspaceDir, opts.assistantId);
+      clearIngressUrl(workspaceDir);
     }
   };
 

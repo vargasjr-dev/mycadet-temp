@@ -13,7 +13,7 @@ import {
 import { relaunchDetached } from "../lib/detached-process.js";
 import {
   getDefaultWorkspaceDir,
-  readLockfileIngressUrl,
+  readIngressPublicBaseUrl,
 } from "../lib/ingress-config.js";
 import { readLineText } from "../lib/ensure-binary.js";
 import { ensureTunnelEdge, type TunnelEdge } from "../lib/nginx-ingress.js";
@@ -373,19 +373,20 @@ async function spawnDetachedTunnel(): Promise<void> {
  */
 async function offerStopUntrackedNgrokHolder(): Promise<boolean> {
   for (const entry of loadAllAssistants()) {
-    if (!toLocalTunnelTarget(entry)) continue;
-    const ingressUrl = readLockfileIngressUrl(entry.assistantId);
-    if (!ingressUrl) continue;
+    const target = toLocalTunnelTarget(entry);
+    if (!target) continue;
+    const publicBaseUrl = readIngressPublicBaseUrl(target.workspaceDir);
+    if (!publicBaseUrl) continue;
     let host: string | null = null;
     try {
-      host = new URL(ingressUrl).hostname;
+      host = new URL(publicBaseUrl).hostname;
     } catch {
       continue;
     }
     const pid = await ngrokHolderPid(host);
     if (pid === null) continue;
     console.log(
-      `No Cadet-managed tunnel is recorded, but an ngrok agent (pid ${pid}) is serving ${ingressUrl}.`,
+      `No Cadet-managed tunnel is recorded, but an ngrok agent (pid ${pid}) is serving ${publicBaseUrl}.`,
     );
     const answer = await readLineText("Stop it? [Y/n] ");
     if (!confirmStopAnswer(answer)) return false;

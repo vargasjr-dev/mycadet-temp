@@ -63,13 +63,6 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
 }));
 
-// A paired daemon registered under the row's own id, until a test says otherwise.
-const resolvePairedAssistantCloudId = mock(
-  async (id: string): Promise<string | null> => id,
-);
-mock.module("@/lib/paired-cloud-identity", () => ({
-  resolvePairedAssistantCloudId,
-}));
 
 type HostAvatarResult = LocalReadAssistantAvatarResult;
 let hostAvailable = false;
@@ -306,8 +299,6 @@ afterEach(() => {
   readAssistantAvatarHost.mockReset();
   listAssistants.mockReset();
   listAssistants.mockResolvedValue({ ok: true, status: 200, data: [] });
-  resolvePairedAssistantCloudId.mockReset();
-  resolvePairedAssistantCloudId.mockImplementation(async (id) => id);
   useAuthStore.setState(initialAuthState, true);
   useOrganizationStore.setState(initialOrganizationState, true);
   readAssistantAvatarHost.mockResolvedValue({ ok: true, avatar: null });
@@ -697,58 +688,6 @@ describe("useChooserRowAvatar", () => {
       expect(listAssistants).toHaveBeenCalledTimes(1);
     });
 
-    test("a paired row resolves its platform id from the paired daemon first", async () => {
-      resolvePairedAssistantCloudId.mockResolvedValue("uuid-other");
-      listAssistants.mockResolvedValue({
-        ok: true,
-        status: 200,
-        data: [apiAssistant("uuid-other", LOOKUP_URL)],
-      });
-      const { result, rerender } = renderHook(
-        () => useChooserRowAvatar(pairedRow("other")),
-        { wrapper: createWrapper() },
-      );
-      await waitFor(() => {
-        expect(result.current.imageUrl).toBe(LOOKUP_URL);
-      });
-      rerender();
-      await settle();
-      expect(resolvePairedAssistantCloudId).toHaveBeenCalledTimes(1);
-      expect(resolvePairedAssistantCloudId).toHaveBeenCalledWith("other");
-    });
-
-    test("a paired row that already carries its platform id skips the daemon", async () => {
-      listAssistants.mockResolvedValue({
-        ok: true,
-        status: 200,
-        data: [apiAssistant("uuid-other", LOOKUP_URL)],
-      });
-      const { result } = renderHook(
-        () =>
-          useChooserRowAvatar(
-            pairedRow("other", { cloudAssistantId: "uuid-other" }),
-          ),
-        { wrapper: createWrapper() },
-      );
-      await waitFor(() => {
-        expect(result.current.imageUrl).toBe(LOOKUP_URL);
-      });
-      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
-    });
-
-    test("a paired row with no resolvable platform id falls through to the cache", async () => {
-      resolvePairedAssistantCloudId.mockResolvedValue(null);
-      readLastSeenAvatar.mockResolvedValue({ kind: "character", traits });
-      const { result } = renderHook(
-        () => useChooserRowAvatar(pairedRow("other")),
-        { wrapper: createWrapper() },
-      );
-      await waitFor(() => {
-        expect(result.current.traits).toEqual(traits);
-      });
-      expect(result.current.imageUrl).toBeNull();
-    });
-
     test("a lockfile-managed platform row resolves through the lookup", async () => {
       const { result } = renderHook(
         () => useChooserRowAvatar(cloudRow("other", { cloud: "cadet" })),
@@ -757,7 +696,6 @@ describe("useChooserRowAvatar", () => {
       await waitFor(() => {
         expect(result.current.imageUrl).toBe(LOOKUP_URL);
       });
-      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     });
 
     test("a cloud row that carries avatarUrl renders it, not the lookup", async () => {
@@ -783,7 +721,6 @@ describe("useChooserRowAvatar", () => {
         await settle();
         expect(result.current.imageUrl).not.toBe(LOOKUP_URL);
         expect(listAssistants).not.toHaveBeenCalled();
-        expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
       },
     );
 
@@ -796,7 +733,6 @@ describe("useChooserRowAvatar", () => {
       await settle();
       expect(result.current.imageUrl).not.toBe(LOOKUP_URL);
       expect(listAssistants).not.toHaveBeenCalled();
-      expect(resolvePairedAssistantCloudId).not.toHaveBeenCalled();
     });
 
     test("the connected row prefers its live read over the lookup", async () => {

@@ -39,7 +39,13 @@ let mockIsLocalClient = false;
 let mockIsCadetCloudRemote = false;
 let mockIsServedGatewayRuntime = false;
 // The assistant `getSelectedAssistant()` resolves; `undefined` means none selected.
-let mockSelectedAssistant: { assistantId: string; cloud: string } | undefined;
+let mockSelectedAssistant:
+  | {
+      assistantId: string;
+      cloud: string;
+      runtimeUrl?: string;
+    }
+  | undefined;
 // The entries `getLockfileAssistant(id)` resolves against.
 let mockLockfileAssistants: Array<{ assistantId: string; cloud: string }> = [];
 let mockCloudAssistants: unknown[] = [];
@@ -141,11 +147,15 @@ mock.module("@/runtime/session-token", () => ({
   __resetForTesting: () => {},
 }));
 
+/** The paired test's own addressing derivation, mirroring the store's. */
+const mockPairedSelection = () =>
+  mockIsGatewayAuth &&
+  mockSelectedAssistant?.runtimeUrl != null &&
+  !/\/\/127\.0\.0\.1|\/\/localhost/.test(mockSelectedAssistant.runtimeUrl);
+
 mock.module("@/lib/auth/gateway-session", () => ({
   isGatewayAuthEnabled: () => mockIsGatewayAuth,
-  isGatewayAuthMode: () =>
-    mockIsGatewayAuth &&
-    (mockGatewayToken !== null || mockSelectedAssistant?.cloud === "paired"),
+  isGatewayAuthMode: () => mockGatewayToken !== null || mockPairedSelection(),
   ensureGatewayToken: ensureGatewayTokenMock,
   clearGatewayToken: () => {},
   getGatewayToken: () => mockGatewayToken,
@@ -161,7 +171,6 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => mockIsLocalClient,
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isCloudAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
-  isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   isCadetCloudRemote: () => mockIsCadetCloudRemote,
   isServedGatewayRuntime: () => mockIsServedGatewayRuntime,
   getCloudAssistants: () => mockCloudAssistants,
@@ -194,9 +203,6 @@ mock.module("@/lib/cloud-assistant-id", () => ({
   resolveCloudAssistantId: async (id: string) => id,
 }));
 
-mock.module("@/lib/paired-cloud-identity", () => ({
-  resolvePairedAssistantCloudId: async () => null,
-}));
 
 mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => mockIsNativePlatform,
@@ -885,7 +891,11 @@ describe("session cleanup on logout", () => {
 
   test("gateway logout clears paired proxy authorization", async () => {
     mockIsGatewayAuth = true;
-    mockSelectedAssistant = { assistantId: "paired-1", cloud: "paired" };
+    mockSelectedAssistant = {
+      assistantId: "paired-1",
+      cloud: "local",
+      runtimeUrl: "https://gw.example.com",
+    };
     setSelfHostedConnection({
       url: `${window.location.origin}/assistant/__gateway/paired-1`,
       token: null,
@@ -1895,7 +1905,13 @@ describe("connectLocalAssistant", () => {
 });
 
 describe("connectPairedAssistant", () => {
-  const pairedEntry = { assistantId: "paired-a", cloud: "paired" };
+  // The modern connect import: cloud reads local; the off-machine runtimeUrl
+  // is what makes it a paired target.
+  const pairedEntry = {
+    assistantId: "paired-a",
+    cloud: "local",
+    runtimeUrl: "https://gw.example.com",
+  };
 
   test("primes the host proxy before selecting, then logs in and checks the assistant", async () => {
     mockIsLocalClient = true;
@@ -1930,7 +1946,7 @@ describe("connectPairedAssistant", () => {
 
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "paired-a", cloud: "paired" }),
+      expect.objectContaining({ assistantId: "paired-a", cloud: "local" }),
     );
     expect(primeLocalGatewayConnectionWithRepairMock).not.toHaveBeenCalled();
     expect(
@@ -1992,7 +2008,11 @@ describe("connectPairedAssistant", () => {
 });
 
 describe("paired selection in the gateway-auth session paths", () => {
-  const pairedSelection = { assistantId: "paired-a", cloud: "paired" };
+  const pairedSelection = {
+    assistantId: "paired-a",
+    cloud: "local",
+    runtimeUrl: "https://gw.example.com",
+  };
 
   test("refreshSession re-primes a paired selection and never fetches the SPA origin's /auth/token", async () => {
     mockIsLocalClient = true;
@@ -2015,7 +2035,7 @@ describe("paired selection in the gateway-auth session paths", () => {
 
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "paired-a", cloud: "paired" }),
+      expect.objectContaining({ assistantId: "paired-a", cloud: "local" }),
     );
     // The undefined-token-URL fallback would mint at the SPA's own origin.
     expect(ensureGatewayTokenMock).not.toHaveBeenCalled();

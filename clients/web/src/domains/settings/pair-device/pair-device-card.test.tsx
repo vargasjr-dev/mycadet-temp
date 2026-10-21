@@ -32,7 +32,6 @@ let selectedAssistant: {
   assistantId: string;
   cloud: string;
   name?: string;
-  ingressUrl?: string;
 } = { assistantId: "self", cloud: "local" };
 
 // Spread the real module so transitive consumers (e.g. the pending-request
@@ -92,7 +91,6 @@ const PUBLIC_URL = "https://foo.ts.net";
 const PAIR_URL = "https://foo.ts.net/assistant/pair#device_code=DEV-123";
 const ASSISTANT_ID = "self";
 const TUNNEL_URL = "https://tunnel.example.ts.net";
-const RECORDED_INGRESS_URL = "https://recorded.example.ts.net";
 /** Where `usePairDevice` remembers the last URL that minted a code. */
 const STORED_URL_KEY = "cadet:pair-device:public-base-url";
 const STORED_URL = "https://stored.example.ts.net";
@@ -345,22 +343,6 @@ describe("PairDeviceCard", () => {
       ),
     ).toBeTruthy();
     expect(mintCalls()).toHaveLength(0);
-  });
-
-  test("prefills the URL field from the assistant's recorded tunnel URL", () => {
-    selectedAssistant = {
-      assistantId: "self",
-      cloud: "local",
-      ingressUrl: "https://tunnel.example.ts.net",
-    };
-    renderCard();
-
-    const input = screen.getByLabelText("Public URL") as HTMLInputElement;
-    expect(input.value).toBe("https://tunnel.example.ts.net");
-    // Helper text explains the prefilled address came from `cadet tunnel`.
-    expect(screen.getByText(/comes from/)).toBeTruthy();
-    // A recorded tunnel URL suppresses the no-tunnel empty state.
-    expect(screen.queryByText("Open a tunnel first")).toBeNull();
   });
 
   test("shows honest no-tunnel guidance when no ingress URL and no stored value", () => {
@@ -712,7 +694,6 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
     };
     probeAnswers(healthyStatus());
     renderCard();
@@ -730,7 +711,6 @@ describe("PairDeviceCard: tunnel status", () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
     };
     probeAnswers({ state: "unconfigured" });
     renderCard();
@@ -911,13 +891,11 @@ describe("PairDeviceCard: tunnel status", () => {
   });
 
   // Reachable after ingress is switched off with no tunnel left on record.
-  // The daemon answered, so its verdict stands: falling back here would
-  // re-advertise the recorded ingress URL the probe exists to replace.
+  // The daemon answered, so its verdict stands.
   test("trusts a stopped verdict the daemon remembers no tunnel for", async () => {
     selectedAssistant = {
       assistantId: ASSISTANT_ID,
       cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
     };
     probeAnswers({ state: "stopped" });
     renderCard();
@@ -1047,27 +1025,6 @@ describe("PairDeviceCard: when the tunnel probe gives up", () => {
     probeFails(new Error("connection refused"));
   });
 
-  test("falls back to the recorded ingress URL, notice and all", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
-    };
-    renderCard();
-
-    await waitFor(() => expect(urlField().value).toBe(RECORDED_INGRESS_URL));
-    expect(
-      (
-        screen.getByRole("button", {
-          name: "Generate pairing QR",
-        }) as HTMLButtonElement
-      ).disabled,
-    ).toBe(false);
-    expect(screen.queryByText("Open a tunnel first")).toBeNull();
-    // Nothing to report and nothing to re-check from: the row stays silent.
-    expect(recheckButton()).toBeNull();
-  });
-
   test("falls back to the field-derived empty state with nothing recorded", async () => {
     renderCard();
 
@@ -1087,30 +1044,6 @@ describe("PairDeviceCard: when the tunnel probe gives up", () => {
 });
 
 describe("PairDeviceCard: without the ingress-status route", () => {
-  test("never probes and keeps the recorded ingress URL as the prefill", async () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
-    };
-    probeAnswers(healthyStatus());
-    renderCard();
-
-    expect(urlField().value).toBe(RECORDED_INGRESS_URL);
-    expect(recheckButton()).toBeNull();
-    // A recorded URL is the pre-probe evidence of a tunnel, so no first-run
-    // notice even though the probe never reported one.
-    expect(screen.queryByText("Open a tunnel first")).toBeNull();
-
-    act(() => publish("app.resume", { signal: "visibility" }));
-    await waitFor(() =>
-      expect(
-        fetchLog.some((r) => r.url.endsWith("/v1/remote-web/pairing-requests")),
-      ).toBe(true),
-    );
-    expect(probeMock).not.toHaveBeenCalled();
-  });
-
   test("keeps the field-derived first-run notice with nothing recorded", () => {
     renderCard();
 
@@ -1119,23 +1052,5 @@ describe("PairDeviceCard: without the ingress-status route", () => {
     // there, so the notice offers none.
     expect(recheckButton()).toBeNull();
     expect(probeMock).not.toHaveBeenCalled();
-  });
-
-  test("leaves the URL field in the open under a primary Generate button", () => {
-    selectedAssistant = {
-      assistantId: ASSISTANT_ID,
-      cloud: "local",
-      ingressUrl: RECORDED_INGRESS_URL,
-    };
-    renderCard();
-
-    // No verdict to steer on: the card behaves as it does without the probe.
-    expect(urlField().value).toBe(RECORDED_INGRESS_URL);
-    expect(urlDisclosure()).toBeNull();
-    const button = screen.getByRole("button", {
-      name: "Generate pairing QR",
-    }) as HTMLButtonElement;
-    expect(button.disabled).toBe(false);
-    expect(button.className).toContain("bg-[var(--primary-base)]");
   });
 });

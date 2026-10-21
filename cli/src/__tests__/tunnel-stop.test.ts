@@ -102,7 +102,6 @@ test("stop terminates the owned agent and clears ingress, retaining nginx and do
   expect(stop).toHaveBeenCalledWith(424242, "tunnel");
   expect(readRootProcesses().tunnel).toBeUndefined();
   expect(readRootProcesses().app?.pid).toBe(424243);
-  expect(findAssistantByName("fixture")?.ingressUrl).toBeUndefined();
   expect(
     JSON.parse(readFileSync(join(workspace, "config.json"), "utf8")).ingress
       .publicBaseUrl,
@@ -139,7 +138,6 @@ test("Cloudflare dispatch stops cloudflared and clears its ingress", async () =>
   await tunnel();
   expect(stop).toHaveBeenCalledWith(424242, "tunnel");
   expect(readRootProcesses().tunnel).toBeUndefined();
-  expect(findAssistantByName("fixture")?.ingressUrl).toBeUndefined();
 });
 
 test("Tailscale dispatch disables serve and preserves a separate webhook ingress", async () => {

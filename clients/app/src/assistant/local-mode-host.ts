@@ -21,14 +21,12 @@ import type {
   LocalAssistantStatusResult,
   LocalPairingPollResult,
   LocalPairingStartResult,
-  LockfileWriteResult,
 } from "@mycadet/ipc-contract";
 import {
-  isLoopbackGatewayCloud,
-  isPairedEntry,
   parseLockfile,
   type Lockfile,
   type LockfileAssistant,
+  type LockfileWriteResult,
 } from "@mycadet/local-mode/contract";
 import { isPublicBaseUrlRejection } from "@app/utils/pairing-address";
 
@@ -197,31 +195,4 @@ export async function readLockfileHost(): Promise<Lockfile> {
     throw new Error("The local assistant host isn't available here.");
   }
   return parseLockfile(await readLockfile());
-}
-
-/**
- * An assistant paired from another machine via `cadet connect import`:
- * its gateway is remote, reachable through the shell's paired-gateway
- * same-origin path. The lockfile stores no pairing flag — paired-ness is
- * derived from the entry's addressing ({@link isPairedEntry}).
- */
-export function isPairedAssistant(
-  entry: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
-): boolean {
-  return isPairedEntry(entry);
-}
-
-/**
- * An assistant connectable over this machine's local gateway proxy (a
- * plain on-machine assistant or a local Docker instance — never a paired
- * connect-import, whose defaulted cloud reads "local"; the derived remote
- * runtimeUrl excludes it). The lifecycle set (`wake`, local retire) is
- * narrower — `cloud === "local"` without a remote runtimeUrl only.
- */
-export function isLocalGatewayAssistant(
-  entry: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
-): boolean {
-  return (
-    isLoopbackGatewayCloud(entry.cloud ?? "local") && !isPairedAssistant(entry)
-  );
 }

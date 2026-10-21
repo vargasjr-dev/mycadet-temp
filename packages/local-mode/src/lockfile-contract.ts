@@ -23,22 +23,14 @@ import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairi
 import { z } from "zod";
 
 /**
- * Known deployment topologies. The set is enumerated here so callers switch
- * on it exhaustively instead of matching string literals scattered across the
- * codebase — and so the lockfile's `cloud` field and the clients' injected
- * `remote` field are the same schema and type:
- *  - `local` — on-machine daemon
- *  - `docker` — local container
+ * Known deployment topologies of a Cadet:
+ *  - `local` — on-machine bare-metal processes
+ *  - `docker` — docker-managed container
  *  - `apple-container` — macOS-app-managed container
- *  - `cloud` — cloud-managed (uses the X-Session-Token auth path)
- *  - `custom` — remote, user-managed (e.g. SSH)
- *
- * Pairing is not a topology: a paired entry is distinguished by its `paired`
- * flag and reached through its `runtimeUrl`, never by a `cloud` value.
- * Unknown on-disk values — including the retired `cadet`, `gcp`, `aws`, and
- * `paired` spellings — parse through the lockfile field's `catch` as "local".
+ *  - `cloud` — managed by Cadet Cloud
+ *  - `custom` — remote VM accessible via SSH
  */
-export const KNOWN_CLOUDS = [
+export const KNOWN_REMOTES = [
   "local",
   "docker",
   "apple-container",
@@ -51,7 +43,7 @@ export const KNOWN_CLOUDS = [
  * wraps it in a `catch`) and the clients' injected-config schema, so the two
  * can never drift.
  */
-export const RemoteSchema = z.enum(KNOWN_CLOUDS);
+export const RemoteSchema = z.enum(KNOWN_REMOTES);
 export type Remote = z.infer<typeof RemoteSchema>;
 
 /**
@@ -199,10 +191,11 @@ export function getLoopbackGatewayPort(entry: {
 /**
  * Per-instance resources for a local assistant: the renderer-facing subset of
  * ports, the instance directory, and the local runtime install metadata.
- * Richer host-only fields (other ports, the signing key) live on the CLI's
- * type and are stripped from this shape.
+ * Loose so a CLI read-modify-write round-trip preserves the host-only ports
+ * and the signing key; the secrets are stripped from renderer reads by
+ * {@link stripSensitiveFields} before the parse ever sees them.
  */
-export const LocalAssistantResourcesSchema = z.object({
+export const LocalAssistantResourcesSchema = z.looseObject({
   instanceDir: z.string().optional(),
   gatewayPort: z.number(),
   daemonPort: z.number(),
@@ -214,13 +207,14 @@ export type LocalAssistantResources = z.infer<
 >;
 
 /**
- * The renderer-safe shape of one assistant entry. `assistantId` is the only
+ * The shape of one assistant entry. `assistantId` is the only
  * strictly-required field — the identity every reader looks entries up by —
  * and `cloud` always parses (absent and unknown values default to "local").
- * The CLI extends this with its host-only and sensitive fields; this base
- * carries only what is safe to surface in the renderer.
+ * Loose so a read-modify-write round-trip preserves the CLI's host-only and
+ * sensitive fields; the renderer boundary is enforced by
+ * {@link stripSensitiveFields} on the hosts, before this parse runs.
  */
-export const LockfileAssistantSchema = z.object({
+export const LockfileAssistantSchema = z.looseObject({
   assistantId: z.string(),
   name: z.string().optional(),
   /** Deployment topology; absent or unknown on-disk values parse as "local". */
@@ -239,13 +233,6 @@ export const LockfileAssistantSchema = z.object({
   cloudBaseUrl: z.string().optional(),
   /** Platform organization UUID used for a self-hosted local assistant registration. */
   cloudOrganizationId: z.string().optional(),
-  /**
-   * Public https URL a `cadet tunnel` provider recorded for this assistant
-   * (mirrored from the workspace ingress config). A public address, so it is
-   * renderer-safe: remote-web pairing surfaces (the `cadet pair` flow, the web
-   * "Pair a device" card) default to it instead of asking the user to retype it.
-   */
-  ingressUrl: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
 });
 
@@ -256,41 +243,70 @@ export const LockfileAssistantSchema = z.object({
  */
 export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
 
-export interface Lockfile {
-  assistants: LockfileAssistant[];
-  activeAssistant: string | null;
+/**
+ * A CLI-managed OS process recorded at the lockfile root under `tunnel`:
+ * the auto-tunnel agent fronting the edge. `cadet ps` renders it alongside
+ * the per-assistant process trees, and the stop paths verify the pid before
+ * signaling it.
+ */
+export interface TunnelProcessRecord {
+  pid: number;
+  /** Which tunnel provider owns the process. */
+  provider: string;
+  /** The assistant the process fronts, so `cadet ps` can nest the row. */
+  assistantId?: string;
+  startedAt: string;
+  /** The public URL the tunnel agent serves. */
+  publicUrl?: string;
+  /** Tunnel temporarily displaced by a pairing-only tunnel. */
+  previous?: TunnelProcessRecord;
 }
 
 /**
- * Whether a URL's host is loopback, judged wide; false for unparseable URLs.
- * Delegates to the shared pairing predicate so the lockfile's pairing
- * derivation and the address checks in `@mycadet/service-contracts` judge a
- * host by the same rules.
+ * A CLI-managed OS process recorded at the lockfile root under `app`: the
+ * nginx ingress edge (web artifacts, `/v1` proxying, the outer shell).
+ * Shares nothing with the tunnel record beyond the pid bookkeeping — a
+ * tunnel serves a URL, the edge serves a port.
  */
-export function isLoopbackUrl(url: string): boolean {
-  return isLoopbackPublicUrl(url);
+export interface AppProcessRecord {
+  /**
+   * The edge process's bookkeeping, present while the edge runs. Absent on
+   * a stamp-only entry: the built-sha stamp below survives the edge's own
+   * stop, so between runs the `app` entry may carry only that.
+   */
+  pid?: number;
+  /** The assistant the edge fronts, so `cadet ps` can nest the row. */
+  assistantId?: string;
+  startedAt?: string;
+  /** Listening port for the nginx edge. */
+  port?: number;
+  /**
+   * The commit the edge's source-built client bundles were last built from
+   * — the auto-build staleness stamp. Lives on the edge's own record rather
+   * than beside each dist so the CLI lockfile is the single home for edge
+   * state, and survives the edge's own stop (a build-cache fact, not a
+   * process fact) so restarting the edge never pays a needless rebuild.
+   */
+  builtSha?: string;
 }
 
-/**
- * Whether an entry is a connect-imported ("paired") remote assistant: a
- * loopback-gateway cloud whose `runtimeUrl` points off this machine. The
- * lockfile stores no pairing flag — `cloud` describes the assistant itself,
- * and the client↔assistant relationship is derived from its addressing — so
- * every reader judges paired-ness through this one predicate. An entry that
- * fails the schema parse is never paired.
- */
-export function isPairedEntry(entry: unknown): boolean {
-  const parsed = LockfileAssistantSchema.safeParse(entry);
-  if (!parsed.success) {
-    return false;
-  }
-  const { cloud, runtimeUrl } = parsed.data;
-  return (
-    isLoopbackGatewayCloud(cloud) &&
-    isUsableRuntimeUrl(runtimeUrl) &&
-    !isLoopbackUrl(runtimeUrl)
-  );
-}
+export const TunnelProcessRecordSchema: z.ZodType<TunnelProcessRecord> =
+  z.object({
+    pid: z.number(),
+    provider: z.string(),
+    assistantId: z.string().optional(),
+    startedAt: z.string(),
+    publicUrl: z.string().optional(),
+    previous: z.lazy(() => TunnelProcessRecordSchema).optional(),
+  });
+
+export const AppProcessRecordSchema: z.ZodType<AppProcessRecord> = z.object({
+  pid: z.number().optional(),
+  assistantId: z.string().optional(),
+  startedAt: z.string().optional(),
+  port: z.number().optional(),
+  builtSha: z.string().optional(),
+});
 
 /**
  * Renderer-facing result of a lockfile write, returned across the host bridge.
@@ -301,7 +317,7 @@ export type LockfileWriteResult =
   | { ok: true; lockfile: Lockfile }
   | { ok: false; error: string };
 
-export const LockfileSchema = z.object({
+export const LockfileSchema = z.looseObject({
   assistants: z
     .array(LockfileAssistantSchema.nullable().catch(null))
     .catch([])
@@ -309,7 +325,17 @@ export const LockfileSchema = z.object({
       entries.filter((entry): entry is LockfileAssistant => entry !== null),
     ),
   activeAssistant: z.union([z.string(), z.null()]).catch(null),
+  tunnel: TunnelProcessRecordSchema.optional().catch(undefined),
+  app: AppProcessRecordSchema.optional().catch(undefined),
 });
+
+/**
+ * A validated, normalized lockfile — this schema's own output. Loose at the
+ * root so the CLI's read-modify-write round-trip preserves the root keys it
+ * owns (`cloudBaseUrl`) and anything a newer writer added; readers key on the
+ * modeled fields.
+ */
+export type Lockfile = z.infer<typeof LockfileSchema>;
 
 /**
  * Coerce parsed JSON into a validated {@link Lockfile}. Total and non-throwing:
@@ -321,7 +347,5 @@ export const LockfileSchema = z.object({
  */
 export function parseLockfile(raw: unknown): Lockfile {
   const parsed = LockfileSchema.safeParse(raw);
-  return parsed.success
-    ? parsed.data
-    : { assistants: [], activeAssistant: null };
+  return parsed.success ? parsed.data : LockfileSchema.parse({});
 }

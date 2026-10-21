@@ -201,7 +201,9 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("paired-desk");
     expect(entry.isPaired).toBe(true);
-    expect(entry.isLocal).toBe(false);
+    // The paired entry's cloud reads "local", so it is local-kind by origin;
+    // the paired transport is what isPaired marks.
+    expect(entry.isLocal).toBe(true);
     expect(entry.isCloudHosted).toBe(false);
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
   });

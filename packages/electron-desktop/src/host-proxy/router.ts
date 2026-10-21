@@ -13,9 +13,10 @@
 
 import {
   isLoopbackGatewayCloud,
-  isPairedEntry,
+  isUsableRuntimeUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { HostProxySseClient, type HostProxySseMessage } from "./sse";
 import { HostProxyPoster, type PresenceState } from "./poster";
@@ -880,12 +881,18 @@ function handleLockfileChange(lockfile: Lockfile): void {
   for (const assistant of lockfile.assistants) {
     // Cloud wins over resources: a merge can leave a stale gatewayPort on a
     // non-loopback entry, and such an entry must never be classified as a
-    // loopback connection. Paired entries (derived from the remote
-    // runtimeUrl — {@link isPairedEntry}) intentionally match neither branch.
-    const port =
-      !isPairedEntry(assistant) && isLoopbackGatewayCloud(assistant.cloud)
-        ? assistant.resources?.gatewayPort
-        : undefined;
+    // loopback connection. A connect import's cloud reads "local" too (its
+    // on-disk entry stores none), so the off-machine `runtimeUrl` is what
+    // excludes it — not the cloud value alone.
+    const isMachineLocalEntry =
+      isLoopbackGatewayCloud(assistant.cloud) &&
+      !(
+        isUsableRuntimeUrl(assistant.runtimeUrl) &&
+        !isLoopbackPublicUrl(assistant.runtimeUrl)
+      );
+    const port = isMachineLocalEntry
+      ? assistant.resources?.gatewayPort
+      : undefined;
     const isCloud =
       assistant.cloud === "cloud" && assistant.runtimeUrl && hasSessionToken;
     if (!port && !isCloud) continue;

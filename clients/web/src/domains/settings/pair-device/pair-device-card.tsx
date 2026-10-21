@@ -114,7 +114,7 @@ export function PairDeviceCard() {
       : statusPublicBaseUrl(tunnel.status);
   const pair = usePairDevice(
     target?.base ?? null,
-    probeAnswered ? statusAddress : (target?.ingressUrl ?? null),
+    probeAnswered ? statusAddress : null,
   );
   // Bumped when the pending-request flow pairs a device, so the device list
   // below refetches without waiting for a live-code poll.

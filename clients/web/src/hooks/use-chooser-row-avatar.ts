@@ -28,7 +28,6 @@ import {
   isLocalClient,
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
-import { resolvePairedAssistantCloudId } from "@/lib/paired-cloud-identity";
 import {
   chooserRowAvatarCacheQueryKey,
   persistLastSeenAvatar,
@@ -38,7 +37,6 @@ import {
   canReadAvatarFromLocalHost,
   readAssistantAvatarHost,
 } from "@/runtime/local-mode-host";
-import { useHasCloudSession } from "@/stores/auth-store";
 import {
   type ResolvedAssistant,
   useResolvedAssistantsStore,
@@ -198,43 +196,14 @@ function canLookUpRowAvatarByCloudId(row: ResolvedAssistant): boolean {
   return !row.avatarUrl && !isCadetCloudRemote();
 }
 
-/** Under the row prefix so `forgetAssistantAvatar` drops it with the rest. */
-function pairedCloudIdQueryKey(assistantId: string, runtimeUrl?: string) {
-  return [
-    ...chooserRowAvatarQueryKeyPrefix(assistantId),
-    "platformId",
-    runtimeUrl ?? null,
-  ] as const;
-}
-
 /**
- * The id to look `row` up by in the cloud list. A cloud-hosted row's
- * `id` is its UUID; a local row's is `cloudAssistantId`; a paired row's
- * lockfile entry starts without one, so it is resolved lazily from the paired
- * daemon and persisted (see {@link resolvePairedAssistantCloudId}). Until
- * that lands the row falls through to its other sources.
+ * The id to look `row` up by in the cloud list: the row's own assistant id.
+ * A cloud-hosted row's `id` is its UUID and a local row's registration lands
+ * under `cloudAssistantId`; the avatar sources are assistant-rooted, so the
+ * row id is the lookup key everywhere.
  */
-function usePlatformLookupId(
-  row: ResolvedAssistant,
-  canLookUp: boolean,
-): string | null {
-  const hasCloudSession = useHasCloudSession();
-  const needsPairedResolve =
-    row.isPaired && !row.cloudAssistantId && canLookUp;
-  const pairedQuery = useQuery<string | null>({
-    queryKey: pairedCloudIdQueryKey(row.id, row.runtimeUrl),
-    queryFn: () => resolvePairedAssistantCloudId(row.id),
-    enabled: needsPairedResolve && hasCloudSession,
-    // A miss goes stale so a later mount or resume probes again.
-    staleTime: (query) =>
-      query.state.data ? Infinity : EMPTY_AVATAR_STALE_TIME_MS,
-    refetchOnWindowFocus: (query) => !query.state.data,
-    retry: false,
-  });
-  if (row.cloudAssistantId) {
-    return row.cloudAssistantId;
-  }
-  return row.isPaired ? (pairedQuery.data ?? null) : row.id;
+function usePlatformLookupId(row: ResolvedAssistant): string | null {
+  return row.cloudAssistantId ?? row.id;
 }
 
 function conclusive(read: AvatarRead): LegacyAvatarRead {
@@ -456,7 +425,7 @@ export function useChooserRowAvatar(
 
   const cloudAvatarUrls = useCloudAvatarUrls();
   const canLookUp = canLookUpRowAvatarByCloudId(assistant);
-  const lookupId = usePlatformLookupId(assistant, canLookUp);
+  const lookupId = usePlatformLookupId(assistant);
   const lookupCandidate =
     canLookUp && lookupId !== null
       ? (cloudAvatarUrls.get(lookupId) ?? null)

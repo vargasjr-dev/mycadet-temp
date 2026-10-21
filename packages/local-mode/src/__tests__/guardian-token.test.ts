@@ -10,10 +10,10 @@ import {
   PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   isConfidentialRefreshUrl,
-  isLoopbackUrl,
   saveGuardianToken,
   type GuardianTokenData,
 } from "../guardian-token";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import type { CliInvocation } from "../util";
 
 // An invocation that would fail loudly if any tested branch spawned the CLI.
@@ -278,7 +278,7 @@ describe("isConfidentialRefreshUrl", () => {
       // The pairing side still refuses it as loopback: a name that might be
       // local is refused by the guards that refuse loopback and denied by the
       // guards that reward it.
-      expect(isLoopbackUrl(url)).toBe(true);
+      expect(isLoopbackPublicUrl(url)).toBe(true);
     }
   });
 

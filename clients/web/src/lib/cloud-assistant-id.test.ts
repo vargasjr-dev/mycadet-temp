@@ -5,9 +5,6 @@ const PLATFORM_ASSISTANT_ID = "11111111-1111-4111-8111-111111111111";
 const resolveLocalAssistantCloudIdentityMock = mock(
   async (assistantId: string) => assistantId,
 );
-const resolvePairedAssistantCloudIdMock = mock(
-  async (_assistantId: string) => null as string | null,
-);
 const fetchCloudStatusMock = mock(
   async (): Promise<{ assistantId: string } | null> => null,
 );
@@ -26,11 +23,15 @@ mock.module("@/lib/local-cloud-identity", () => ({
     resolveLocalAssistantCloudIdentityMock,
   fetchCloudStatus: fetchCloudStatusMock,
 }));
-mock.module("@/lib/paired-cloud-identity", () => ({
-  resolvePairedAssistantCloudId: resolvePairedAssistantCloudIdMock,
-}));
+/** The paired lockfile entry the private paired leg resolves against. */
+let mockPairedEntry: { assistantId: string; cloud: string; runtimeUrl: string } | null =
+  null;
 mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
+  getLockfileAssistant: (id: string) =>
+    mockPairedEntry && mockPairedEntry.assistantId === id ? mockPairedEntry : null,
+  getPairedGatewayUrl: (entry: { runtimeUrl?: string }) =>
+    entry.runtimeUrl ? "/assistant/__gateway/x" : undefined,
 }));
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedActorToken: () => "actor-token",
@@ -46,10 +47,9 @@ beforeEach(() => {
   resolveLocalAssistantCloudIdentityMock.mockImplementation(
     async (assistantId: string) => assistantId,
   );
-  resolvePairedAssistantCloudIdMock.mockClear();
-  resolvePairedAssistantCloudIdMock.mockImplementation(async () => null);
   fetchCloudStatusMock.mockClear();
   fetchCloudStatusMock.mockImplementation(async () => null);
+  mockPairedEntry = null;
 });
 
 describe("resolveCloudAssistantId", () => {
@@ -68,13 +68,17 @@ describe("resolveCloudAssistantId", () => {
     await expect(resolveCloudAssistantId("local-slug")).resolves.toBe(
       PLATFORM_ASSISTANT_ID,
     );
-    expect(resolvePairedAssistantCloudIdMock).not.toHaveBeenCalled();
   });
 
   test("falls through to the paired lookup when local identity is not a UUID", async () => {
-    resolvePairedAssistantCloudIdMock.mockImplementationOnce(
-      async () => PLATFORM_ASSISTANT_ID,
-    );
+    mockPairedEntry = {
+      assistantId: "paired-slug",
+      cloud: "local",
+      runtimeUrl: "https://gw.example.com",
+    };
+    fetchCloudStatusMock.mockImplementationOnce(async () => ({
+      assistantId: PLATFORM_ASSISTANT_ID,
+    }));
 
     await expect(resolveCloudAssistantId("paired-slug")).resolves.toBe(
       PLATFORM_ASSISTANT_ID,
@@ -96,7 +100,6 @@ describe("resolveCloudAssistantId", () => {
     await expect(resolveCloudAssistantId("local-slug")).resolves.toBe(
       PLATFORM_ASSISTANT_ID,
     );
-    expect(resolvePairedAssistantCloudIdMock).not.toHaveBeenCalled();
   });
 
   test("continues after a local-identity throw", async () => {
@@ -105,9 +108,14 @@ describe("resolveCloudAssistantId", () => {
         throw new Error("no lockfile");
       },
     );
-    resolvePairedAssistantCloudIdMock.mockImplementationOnce(
-      async () => PLATFORM_ASSISTANT_ID,
-    );
+    mockPairedEntry = {
+      assistantId: "paired-slug",
+      cloud: "local",
+      runtimeUrl: "https://gw.example.com",
+    };
+    fetchCloudStatusMock.mockImplementationOnce(async () => ({
+      assistantId: PLATFORM_ASSISTANT_ID,
+    }));
 
     await expect(resolveCloudAssistantId("paired-slug")).resolves.toBe(
       PLATFORM_ASSISTANT_ID,

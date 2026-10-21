@@ -9,11 +9,7 @@ import {
   type TunnelRecord,
 } from "@mycadet/service-contracts/ingress";
 
-import {
-  lookupAssistantByIdentifier,
-  saveAssistantEntry,
-  type AssistantEntry,
-} from "./assistant-config.js";
+import type { AssistantEntry } from "./assistant-config.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 
@@ -21,10 +17,8 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
  * Shared workspace-config helpers for tunnel providers and the nginx ingress
  * proxy. Each provider fronts the local edge and records the resulting public
  * URL under `ingress.publicBaseUrl` so webhook integrations can reach the
- * assistant. The workspace config is the gateway-facing contract; when an
- * `assistantId` is supplied, the URL is also mirrored onto the lockfile entry
- * (`ingressUrl`) — the CLI-owned contract that CLI features (e.g. remote-web
- * pairing defaults) read, per the no-`.cadet/`-reads boundary in cli/AGENTS.md.
+ * assistant. The workspace config is the gateway-facing contract, per the
+ * no-`.cadet/`-reads boundary in cli/AGENTS.md.
  */
 
 function parsePortFromUrl(url: unknown): number | undefined {
@@ -92,39 +86,19 @@ export function saveRawConfig(
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
 }
 
-/** The ingress URL mirrored onto the lockfile entry, or null when it has none. */
-export function readLockfileIngressUrl(assistantId: string): string | null {
-  const result = lookupAssistantByIdentifier(assistantId);
-  return result.status === "found" ? (result.entry.ingressUrl ?? null) : null;
-}
-
-/**
- * Mirror the ingress URL onto the lockfile entry; null removes it. Exported on
- * its own for tunnels that publish an address to pair against while leaving the
- * workspace `ingress` record (the webhook callback base) alone.
- */
-export function stampLockfileIngressUrl(
-  assistantId: string,
-  publicUrl: string | null,
-): void {
-  const result = lookupAssistantByIdentifier(assistantId);
-  if (result.status !== "found") {
-    return;
-  }
-  const entry = result.entry;
-  if (publicUrl) {
-    entry.ingressUrl = publicUrl;
-  } else {
-    delete entry.ingressUrl;
-  }
-  saveAssistantEntry(entry);
+/** The saved public base URL from the workspace `ingress` record, or null. */
+export function readIngressPublicBaseUrl(workspaceDir: string): string | null {
+  const config = loadRawConfig(workspaceDir);
+  const ingress = config.ingress as Record<string, unknown> | undefined;
+  const url = ingress?.publicBaseUrl;
+  return typeof url === "string" && url.trim() ? url : null;
 }
 
 /**
  * Persist a public ingress URL to the workspace config and enable ingress.
  * `provider`/`assistantId` also land under `ingress.lastTunnel` and
- * `ingress.assistantId`: workspace-only records the daemon reads to report
- * tunnel health, deliberately not mirrored onto the lockfile.
+ * `ingress.assistantId`, the workspace-only records the daemon reads to
+ * report tunnel health.
  */
 export function saveIngressUrl(
   workspaceDir: string,
@@ -151,9 +125,6 @@ export function saveIngressUrl(
   delete ingress[INGRESS_PAIRING_TUNNEL_KEY];
   config.ingress = ingress;
   saveRawConfig(workspaceDir, config);
-  if (assistantId) {
-    stampLockfileIngressUrl(assistantId, publicUrl);
-  }
 }
 
 /**
@@ -161,10 +132,9 @@ export function saveIngressUrl(
  * the assistant it fronts; null drops the record.
  *
  * A tunnel that cannot carry webhook callbacks leaves `ingress.publicBaseUrl`
- * alone, so the lockfile mirror alone would leave it invisible to the daemon,
- * which reads only the workspace config. `ingress.assistantId` rides along
- * because the daemon's probe needs it to tell this assistant's edge from
- * someone else's, and it names the same assistant either record fronts.
+ * alone so the webhook callbacks keep resolving. `ingress.assistantId` rides
+ * along because the daemon's probe needs it to tell this assistant's edge
+ * from someone else's, and it names the same assistant either record fronts.
  */
 export function savePairingTunnel(
   workspaceDir: string,
@@ -186,10 +156,7 @@ export function savePairingTunnel(
 }
 
 /** Clear the ingress public base URL from the workspace config. */
-export function clearIngressUrl(
-  workspaceDir: string,
-  assistantId?: string,
-): void {
+export function clearIngressUrl(workspaceDir: string): void {
   const config = loadRawConfig(workspaceDir);
   const ingress = (config.ingress ?? {}) as Record<string, unknown>;
   // `lastTunnel`/`assistantId` survive teardown on purpose: readers name the
@@ -197,7 +164,4 @@ export function clearIngressUrl(
   delete ingress.publicBaseUrl;
   config.ingress = ingress;
   saveRawConfig(workspaceDir, config);
-  if (assistantId) {
-    stampLockfileIngressUrl(assistantId, null);
-  }
 }

@@ -88,28 +88,6 @@ function makeDeps(opts: {
   return { deps, calls };
 }
 
-/** Point the lockfile at a temp dir holding one entry; returns its path. */
-function useTempLockfile(assistantId: string, ingressUrl?: string): string {
-  const lockfileDir = makeWorkspace();
-  process.env.CADET_LOCKFILE_DIR = lockfileDir;
-  const lockfilePath = join(lockfileDir, "lockfile.json");
-  writeFileSync(
-    lockfilePath,
-    JSON.stringify({
-      activeAssistant: assistantId,
-      assistants: [
-        {
-          assistantId,
-          runtimeUrl: "http://127.0.0.1:7830",
-          cloud: "local",
-          ...(ingressUrl ? { ingressUrl } : {}),
-        },
-      ],
-    }),
-  );
-  return lockfilePath;
-}
-
 interface WorkspaceIngressConfig {
   ingress: {
     enabled?: boolean;
@@ -138,13 +116,6 @@ function writePreservedConfig(workspaceDir: string, webhookBase: string): void {
       },
     }),
   );
-}
-
-function readLockfileEntry(lockfilePath: string): Record<string, unknown> {
-  const data = JSON.parse(readFileSync(lockfilePath, "utf-8")) as {
-    assistants: Record<string, unknown>[];
-  };
-  return data.assistants[0];
 }
 
 const restoreEnv = snapshotEnv(["CADET_LOCKFILE_DIR"]);
@@ -270,7 +241,6 @@ describe("startTailscaleServe", () => {
     const workspaceDir = makeWorkspace();
     const webhookBase = "https://existing.ngrok.app";
     writePreservedConfig(workspaceDir, webhookBase);
-    const lockfilePath = useTempLockfile("ts-1");
     const { deps } = makeDeps({
       responses: {
         "status --json": ok(RUNNING_STATUS),
@@ -278,7 +248,7 @@ describe("startTailscaleServe", () => {
       },
     });
 
-    const info = await startTailscaleServe(
+    await startTailscaleServe(
       {
         port: 7840,
         workspaceDir,
@@ -299,33 +269,6 @@ describe("startTailscaleServe", () => {
       publicBaseUrl: TAILNET_URL,
     });
     expect(config.ingress.assistantId).toBe("ts-1");
-    // ...and on the lockfile entry, where CLI pairing reads its default.
-    expect(readLockfileEntry(lockfilePath).ingressUrl).toBe(TAILNET_URL);
-    expect(info.previousLockfileIngressUrl).toBeNull();
-  });
-
-  test("preserveIngressUrl reports the lockfile URL it replaced", async () => {
-    const workspaceDir = makeWorkspace();
-    writePreservedConfig(workspaceDir, "https://existing.ngrok.app");
-    useTempLockfile("ts-1", "https://existing.ngrok.app");
-    const { deps } = makeDeps({
-      responses: {
-        "status --json": ok(RUNNING_STATUS),
-        "serve --bg 7840": ok(),
-      },
-    });
-
-    const info = await startTailscaleServe(
-      {
-        port: 7840,
-        workspaceDir,
-        assistantId: "ts-1",
-        preserveIngressUrl: true,
-      },
-      deps,
-    );
-
-    expect(info.previousLockfileIngressUrl).toBe("https://existing.ngrok.app");
   });
 
   test("surfaces tailscale's enable-URL guidance when serve is not enabled", async () => {
@@ -369,33 +312,17 @@ describe("stopTailscaleServe", () => {
 describe("retractServeUrl", () => {
   const PRESERVE_OPTS = { assistantId: "ts-1", preserveIngressUrl: true };
 
-  test("puts back the lockfile URL the run replaced", () => {
-    // The preserved webhook tunnel may still be serving that address, and the
-    // flows that read the lockfile would otherwise lose a live one.
+  test("drops the pairing record and leaves the webhook callback base", () => {
     const workspaceDir = makeWorkspace();
     writePreservedConfig(workspaceDir, "https://existing.ngrok.app");
-    const lockfilePath = useTempLockfile("ts-1", TAILNET_URL);
 
-    retractServeUrl(PRESERVE_OPTS, workspaceDir, "https://existing.ngrok.app");
+    retractServeUrl(PRESERVE_OPTS, workspaceDir);
 
-    expect(readLockfileEntry(lockfilePath).ingressUrl).toBe(
-      "https://existing.ngrok.app",
-    );
     // The pairing record goes, the webhook callback base stays.
     const config = readConfig(workspaceDir);
     expect(config.ingress.pairingTunnel).toBeUndefined();
     expect(config.ingress.publicBaseUrl).toBe("https://existing.ngrok.app");
     expect(config.ingress.lastTunnel?.provider).toBe("ngrok");
-  });
-
-  test("clears the lockfile URL when the run replaced none", () => {
-    const workspaceDir = makeWorkspace();
-    writePreservedConfig(workspaceDir, "https://existing.ngrok.app");
-    const lockfilePath = useTempLockfile("ts-1", TAILNET_URL);
-
-    retractServeUrl(PRESERVE_OPTS, workspaceDir, null);
-
-    expect(readLockfileEntry(lockfilePath).ingressUrl).toBeUndefined();
   });
 
   test("clears the ingress URL outright when it owns it", () => {
@@ -406,12 +333,10 @@ describe("retractServeUrl", () => {
         ingress: { enabled: true, publicBaseUrl: TAILNET_URL },
       }),
     );
-    const lockfilePath = useTempLockfile("ts-1", TAILNET_URL);
 
-    retractServeUrl({ assistantId: "ts-1" }, workspaceDir, TAILNET_URL);
+    retractServeUrl({ assistantId: "ts-1" }, workspaceDir);
 
     expect(readConfig(workspaceDir).ingress.publicBaseUrl).toBeUndefined();
-    expect(readLockfileEntry(lockfilePath).ingressUrl).toBeUndefined();
   });
 });
 

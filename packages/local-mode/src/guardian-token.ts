@@ -83,8 +83,6 @@ export function isConfidentialRefreshUrl(gatewayUrl: string): boolean {
   }
 }
 
-export { isLoopbackUrl } from "./lockfile-contract";
-
 function isAccessTokenExpired(data: GuardianTokenData): boolean {
   const expiresAt = new Date(data.accessTokenExpiresAt).getTime();
   if (!Number.isFinite(expiresAt)) return true;

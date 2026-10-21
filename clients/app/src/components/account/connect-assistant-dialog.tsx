@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   cancelAssistantPairing,
-  isLocalGatewayAssistant,
   pollAssistantPairing,
   startAssistantPairing,
 } from "@app/assistant/local-mode-host";

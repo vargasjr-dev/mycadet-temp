@@ -40,7 +40,7 @@ import {
 } from "../lib/assistant-config.js";
 import { GATEWAY_PORT } from "../lib/constants.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { isLoopbackUrl, loopbackSafeFetch } from "../lib/loopback-fetch.js";
+import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { gatewayCliInvocation } from "../lib/local.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
@@ -49,30 +49,6 @@ import { execOutput } from "../lib/step-runner.js";
 
 function assistantDisplayName(entry: AssistantEntry): string {
   return entry.name || entry.assistantName || entry.assistantId;
-}
-
-/**
- * The tunnel-recorded ingress URL from this entry's own lockfile record, when
- * usable as the pairing link's advertised address: https and non-loopback (the
- * bar a pairing URL must clear). The lockfile is the CLI-owned contract:
- * `cadet tunnel` providers mirror the URL onto the entry when they save it.
- */
-function usableEntryIngressUrl(entry: AssistantEntry): string | null {
-  const saved = entry.ingressUrl?.trim();
-  if (!saved) {
-    return null;
-  }
-  try {
-    if (new URL(saved).protocol !== "https:") {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-  if (isLoopbackUrl(saved)) {
-    return null;
-  }
-  return saved;
 }
 
 /**
@@ -451,27 +427,18 @@ export const pair = Object.assign(
 
   // Mint over loopback (localUrl avoids mDNS for same-machine calls), but
   // advertise a REACHABLE url in the link, since the loopback url would point
-  // the other device at its own localhost. Prefer an explicit --url, then the
-  // ingress URL a tunnel provider saved, then the runtime (LAN/tunnel) url.
+  // the other device at its own localhost. An explicit --url wins, else the
+  // runtime (LAN/tunnel) url.
   const mintUrl = (
     entry.localUrl ||
     entry.runtimeUrl ||
     `http://127.0.0.1:${GATEWAY_PORT}`
   ).replace(/\/+$/, "");
-  const savedIngressUrl =
-    !urlOverride && !webApproveCode ? usableEntryIngressUrl(entry) : null;
   const advertisedUrl = (
     urlOverride ||
-    savedIngressUrl ||
     entry.runtimeUrl ||
     mintUrl
   ).replace(/\/+$/, "");
-  if (savedIngressUrl && !jsonOutput) {
-    console.log(
-      `Using saved ingress URL ${savedIngressUrl} ` +
-        "(from cadet tunnel; override with --url).",
-    );
-  }
 
   if (webApproveCode) {
     // Rejections are diagnosed here rather than by exitOnHttpError: a
