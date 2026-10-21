@@ -62,6 +62,6 @@ export async function handleLogout(navigate: NavigateFunction): Promise<void> {
     // travelling over a signed-out app, since the surface is opened by a flag
     // and the tray preference rather than by the window that was publishing.
     clearCompanionWorking();
-    hardNavigate(routes.account.login);
+    hardNavigate(routes.remotePair);
   }
 }

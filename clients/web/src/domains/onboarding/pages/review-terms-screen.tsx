@@ -85,7 +85,7 @@ export function ReviewTermsScreen() {
 
   const handleLogout = useCallback(async () => {
     await logout();
-    hardNavigate(routes.account.login);
+    hardNavigate(routes.remotePair);
   }, [logout]);
 
   // Only the legal checkboxes shown at mount gate Continue, driven by their
@@ -120,7 +120,7 @@ export function ReviewTermsScreen() {
           {subheading}
         </p>
 
-         {(showPrivacy || showTos) && (
+        {(showPrivacy || showTos) && (
           <AgreementsCard
             electron={electron}
             showPrivacy={showPrivacy}

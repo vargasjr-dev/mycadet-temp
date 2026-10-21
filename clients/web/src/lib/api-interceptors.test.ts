@@ -2134,7 +2134,7 @@ describe("api-interceptors / local-mode body buffering", () => {
 
 describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   const PLATFORM_URL = "https://platform.test/v1/assistants/123/messages";
-  const LOGIN_PREFIX = "/account/login?returnTo=";
+  const PAIR_URL = "/assistant/pair";
 
   function makeResponse(status: number, url: string): Response {
     const response = new Response(null, { status });
@@ -2219,7 +2219,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     await flush();
   };
 
-  test("401 while authenticated re-verifies; a dead session redirects to login", async () => {
+  test("401 while authenticated re-verifies; a dead session bounces to the pairing page", async () => {
     const refreshSession = mock(async () => {
       mockAuthState.sessionStatus = "unauthenticated";
       return false;
@@ -2232,9 +2232,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 
     expect(refreshSession).toHaveBeenCalledTimes(1);
     expect(hardNavigateMock).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock.mock.calls[0][0].startsWith(LOGIN_PREFIX)).toBe(
-      true,
-    );
+    expect(hardNavigateMock.mock.calls[0][0]).toBe(PAIR_URL);
   });
 
   test("cloud-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
@@ -2258,9 +2256,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 
     expect(refreshSession).toHaveBeenCalledTimes(1);
     expect(hardNavigateMock).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock.mock.calls[0][0].startsWith(LOGIN_PREFIX)).toBe(
-      true,
-    );
+    expect(hardNavigateMock.mock.calls[0][0]).toBe(PAIR_URL);
     isCadetCloudRemoteMock.mockImplementation(() => false);
   });
 

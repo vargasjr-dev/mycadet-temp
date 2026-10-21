@@ -38,7 +38,7 @@ import { textLinkVariants } from "@mycadet/design-library/components/text-link";
  * so the user can still complete signup.
  */
 export function ProviderSignupPage() {
-  const { t } = useTranslation("account");
+  const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refreshSession = useAuthStore.use.refreshSession();
@@ -66,7 +66,7 @@ export function ProviderSignupPage() {
       try {
         const result = await getProviderSignup();
         if (!result.ok) {
-          navigate(routes.account.login, { replace: true });
+          navigate(routes.remotePair, { replace: true });
           return;
         }
 
@@ -76,7 +76,7 @@ export function ProviderSignupPage() {
         setLastName(result.data.user.last_name ?? "");
         setIsLoadingContext(false);
       } catch {
-        navigate(routes.account.login, { replace: true });
+        navigate(routes.remotePair, { replace: true });
       }
     })();
   }, [navigate]);
@@ -259,7 +259,7 @@ export function ProviderSignupPage() {
         isSubmitting={isSubmitting}
         footer={
           <Link
-            to={routes.account.login}
+            to={routes.remotePair}
             className={cn(
               textLinkVariants({ tone: "quiet" }),
               "text-sm text-[var(--content-secondary)]",

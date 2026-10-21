@@ -561,9 +561,15 @@ function requireAuth(
   if (state.isLocalClient) {
     return { action: "redirect", to: routes.selectAssistant };
   }
+  // No web surface offers cloud login anymore — the unauthenticated bounce
+  // lands on the remote-web pairing page, the same front door
+  // `requireRemoteGatewayPairing` uses, returnTo preserved so a successful
+  // exchange returns the visit to where it was headed.
   return {
     action: "redirect",
-    to: `${routes.account.login}?returnTo=${encodeURIComponent(pathnameWithSearch)}`,
+    to: `${routes.remotePair}?returnTo=${encodeURIComponent(
+      stripRemoteGatewayPublicPathPrefix(state, pathnameWithSearch),
+    )}`,
   };
 }
 
@@ -872,7 +878,7 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
     return { action: "wait" };
   }
   if (!state.isAuthenticated && !state.isLocalClient) {
-    return { action: "redirect", to: routes.account.login };
+    return { action: "redirect", to: routes.remotePair };
   }
   if (!hasCompletedOnboarding(state)) {
     // A user with no consent record owes first consent. A record-holder's

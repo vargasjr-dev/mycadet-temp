@@ -34,7 +34,11 @@ const recorder = (response = new Response("ok")) => {
 
 const localLockfile = {
   assistants: [
-    { assistantId: "abc", cloud: "local", resources: { gatewayPort: 8080 } },
+    {
+      assistantId: "abc",
+      cloud: "local",
+      resources: { gatewayPort: 8080, daemonPort: 8501 },
+    },
   ],
 };
 const pairedLockfile = {

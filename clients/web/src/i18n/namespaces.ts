@@ -43,7 +43,6 @@ export const NAMESPACES = [
   "common",
   "chat",
   "schedules",
-  "account",
   "channels",
   "settings",
   "workspace",

@@ -125,7 +125,8 @@
     "switchAssistant": "切换助手",
     "title": "助手",
     "selection": "选择一个助手。",
-    "unavailable": "此助手不可用。"
+    "unavailable": "此助手不可用。",
+    "assistantSwitchFailed": "无法切换到该助手。"
   },
   "actions": {
     "cancel": "取消",

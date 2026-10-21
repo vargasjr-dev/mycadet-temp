@@ -1,12 +1,11 @@
 import fs from "node:fs";
 
-import { z } from "zod";
-
 import type { TokenResult } from "./guardian-token";
 import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
+  LockfileAssistantSchema,
   resolveCloud,
 } from "./lockfile-contract";
 
@@ -170,33 +169,15 @@ const MIN_GATEWAY_PORT = 1024;
 const MAX_GATEWAY_PORT = 65535;
 
 /**
- * Exception-handling read of one raw lockfile entry for gateway targeting:
- * each modeled field is salvaged independently (a malformed field degrades to
- * `undefined` rather than discarding the entry), so a partially corrupt
- * lockfile still yields the targets its well-typed fields support. A
- * non-object fails the parse outright and the entry is skipped.
- */
-const GatewayTargetEntrySchema = z.object({
-  assistantId: z.string().optional().catch(undefined),
-  cloud: z.string().optional().catch(undefined),
-  project: z.string().optional().catch(undefined),
-  sshUser: z.string().optional().catch(undefined),
-  runtimeUrl: z.string().optional().catch(undefined),
-  resources: z
-    .object({ gatewayPort: z.number() })
-    .partial()
-    .optional()
-    .catch(undefined),
-});
-
-/**
  * Compute the id-keyed gateway-target map from a lockfile's assistant
- * entries. A paired entry resolves to its recorded remote `runtimeUrl`
- * (usable http(s) only); a loopback-gateway cloud (`local`, `docker`)
- * resolves to its recorded loopback port via {@link getLoopbackGatewayPort}.
- * Everything else — externally-managed containers, the platform cloud,
- * remote self-hosted clouds the SPA doesn't drive, malformed entries — is
- * left out, and an absent id is a proxy rejection.
+ * entries. Each entry parses through {@link LockfileAssistantSchema}; an
+ * entry that fails the parse (or carries no usable id) is skipped. A paired
+ * entry resolves to its recorded remote `runtimeUrl` (usable http(s) only);
+ * a loopback-gateway cloud (`local`, `docker`) resolves to its recorded
+ * loopback port via {@link getLoopbackGatewayPort}. Everything else —
+ * externally-managed containers, the platform cloud, remote self-hosted
+ * clouds the SPA doesn't drive — is left out, and an absent id is a proxy
+ * rejection.
  *
  * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
  * lockfile watcher) derives the map without touching disk on the request
@@ -207,16 +188,15 @@ export function gatewayTargetsFromLockfile(lockfile: {
 }): Map<string, GatewayEntryTarget> {
   const targets = new Map<string, GatewayEntryTarget>();
   for (const rawEntry of lockfile.assistants) {
-    const parsed = GatewayTargetEntrySchema.safeParse(rawEntry);
+    const parsed = LockfileAssistantSchema.safeParse(rawEntry);
     if (!parsed.success) {
       continue;
     }
-    const { assistantId, cloud, project, sshUser, runtimeUrl, resources } =
-      parsed.data;
+    const { assistantId, cloud, resources, runtimeUrl } = parsed.data;
     if (!assistantId) {
       continue;
     }
-    const cloudValue = resolveCloud({ cloud, project, sshUser });
+    const cloudValue = resolveCloud({ cloud });
     if (cloudValue === "paired") {
       if (isUsableRuntimeUrl(runtimeUrl)) {
         targets.set(assistantId, { kind: "remote", runtimeUrl });
