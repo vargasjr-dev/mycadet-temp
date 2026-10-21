@@ -12,7 +12,6 @@
  *
  * Reference: https://www.i18next.com/overview/typescript
  */
-import type account from "@/i18n/locales/en/account.json";
 import type assistantInbox from "@/i18n/locales/en/assistant-inbox.json";
 import type channels from "@/i18n/locales/en/channels.json";
 import type contacts from "@/i18n/locales/en/contacts.json";
@@ -40,7 +39,6 @@ declare module "i18next" {
     common: typeof common;
     chat: typeof chat;
     schedules: typeof schedules;
-    account: typeof account;
     channels: typeof channels;
     settings: typeof settings;
     workspace: typeof workspace;

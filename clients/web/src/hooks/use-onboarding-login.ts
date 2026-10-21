@@ -44,7 +44,10 @@ export function useOnboardingLogin(
       returnToOverride !== undefined
         ? returnToOverride
         : resolveLoginReturnTo(
-            buildNavigationState({ sessionSettled: true, isAuthenticated: true }),
+            buildNavigationState({
+              sessionSettled: true,
+              isAuthenticated: true,
+            }),
             location.pathname,
           );
 
@@ -62,7 +65,7 @@ export function useOnboardingLogin(
         context: options.errorContext ?? "onboarding_login",
         tags: { authError: nativeAuthErrorDetail(err) ?? "unclassified" },
       });
-      setError(t(`account:${nativeAuthErrorKey(err)}`));
+      setError(t(`onboarding:${nativeAuthErrorKey(err)}`));
       setLoading(false);
     }
   };

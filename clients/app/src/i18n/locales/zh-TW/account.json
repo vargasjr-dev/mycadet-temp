@@ -125,7 +125,8 @@
     "switchAssistant": "切換助理",
     "title": "助理",
     "selection": "選擇一個助理。",
-    "unavailable": "此助理無法使用。"
+    "unavailable": "此助理無法使用。",
+    "assistantSwitchFailed": "無法切換至該助理。"
   },
   "actions": {
     "cancel": "取消",

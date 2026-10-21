@@ -125,7 +125,8 @@
     "switchAssistant": "Cambiar de asistente",
     "title": "Asistente",
     "selection": "Elige un asistente.",
-    "unavailable": "Este asistente no está disponible."
+    "unavailable": "Este asistente no está disponible.",
+    "assistantSwitchFailed": "No se pudo cambiar a ese asistente."
   },
   "actions": {
     "cancel": "Cancelar",

@@ -125,7 +125,8 @@
     "switchAssistant": "Switch assistant",
     "title": "Assistant",
     "selection": "Choose an assistant.",
-    "unavailable": "This assistant is unavailable."
+    "unavailable": "This assistant is unavailable.",
+    "assistantSwitchFailed": "Couldn't switch to that assistant."
   },
   "actions": {
     "cancel": "Cancel",
