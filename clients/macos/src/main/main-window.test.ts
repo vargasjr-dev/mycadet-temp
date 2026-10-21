@@ -489,6 +489,35 @@ describe("installMainWindow", () => {
     expect(ipcHandlers.has("cadet:mainWindow:ensureVisible")).toBe(true);
   });
 
+  test("registers the cadet:mainWindow:navigateTo IPC handler", () => {
+    installMainWindow();
+    expect(ipcHandlers.has("cadet:mainWindow:navigateTo")).toBe(true);
+  });
+
+  test("the navigateTo handler loads an https target in the window and ignores the rest", async () => {
+    installMainWindow();
+    const win = constructed[0];
+    if (!win) throw new Error("expected a window");
+    const loadsBefore = win.stub.loadURL.mock.calls.length;
+
+    // The recorded handler is the raw `ipcMain.handle` callback: the event
+    // rides first, then the channel's args variadic.
+    const handler = ipcHandlers.get("cadet:mainWindow:navigateTo") as (
+      event: unknown,
+      ...args: [string]
+    ) => Promise<void>;
+    await handler(allowedEvent, "https://assistant.example/assistant");
+    expect(win.stub.loadURL.mock.calls.length).toBe(loadsBefore + 1);
+    expect(win.stub.loadURL.mock.lastCall?.[0]).toBe(
+      "https://assistant.example/assistant",
+    );
+
+    // A non-https (or unparseable) target is refused outright.
+    await handler(allowedEvent, "http://assistant.example/assistant");
+    await handler(allowedEvent, "not a url");
+    expect(win.stub.loadURL.mock.calls.length).toBe(loadsBefore + 1);
+  });
+
   test("the IPC handler routes through ensureVisible (recreating if destroyed, showing + focusing otherwise)", async () => {
     installMainWindow();
     const win = constructed[0];

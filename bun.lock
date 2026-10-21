@@ -168,6 +168,7 @@
         "@mycadet/design-library": "workspace:*",
         "@mycadet/environments": "workspace:*",
         "@mycadet/ipc-contract": "workspace:*",
+        "@mycadet/service-contracts": "workspace:*",
         "i18next": "26.3.6",
         "i18next-icu": "2.4.4",
         "lucide-react": "1.16.0",

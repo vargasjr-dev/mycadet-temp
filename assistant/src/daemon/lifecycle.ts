@@ -6,7 +6,6 @@ import { reconcileCallsOnStartup } from "../calls/call-recovery.js";
 import { TwilioVoiceProvider } from "../calls/twilio-provider.js";
 import { expireInteractionBoundGuardianRequests } from "../channels/gateway-guardian-requests.js";
 import { isCloudClientConfigured } from "../cloud/client.js";
-import { startConsentRefresh } from "../cloud/consent-cache.js";
 import { syncWorkspaceIdentityToPlatform } from "../cloud/sync-identity.js";
 import { setIngressPublicBaseUrl, validateEnv } from "../config/env.js";
 import {
@@ -611,12 +610,6 @@ export async function runDaemon(): Promise<void> {
       retentionDays: config.logFile.retentionDays,
     });
   }
-
-  // Refresh the consent cache (gates crash-diagnostics sharing) regardless of
-  // dev mode so the cache is warm in dev too. Fire-and-forget:
-  // startConsentRefresh() runs an immediate non-blocking refresh, so the
-  // startup hot path is never blocked.
-  startConsentRefresh();
 
   // Open the assistant's CES RPC client (handshake + reconnect wiring).
   // Blocks up to a 20s timeout so credential reads route through CES before

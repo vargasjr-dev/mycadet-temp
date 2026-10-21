@@ -83,12 +83,6 @@ mock.module("../persistence/tool-audit.js", () => ({
   },
 }));
 
-// Analytics consent is granted so any consent-gated telemetry path the audit
-// terminals consult sees the opted-in state.
-mock.module("../cloud/consent-cache.js", () => ({
-  getRawShareAnalytics: () => true,
-}));
-
 mock.module("../permissions/checker.js", () => ({
   isDynamicSkillLoadInvocation: () => false,
   // Mirrors the real classifier's two failure modes: it throws on an aborted

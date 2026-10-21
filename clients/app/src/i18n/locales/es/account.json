@@ -97,7 +97,12 @@
     "listAriaLabel": "Asistentes",
     "create": "Crear un asistente",
     "rowActionsAriaLabel": "Acciones de {name}",
-    "retire": "Retirar asistente"
+    "retire": "Retirar asistente",
+    "addRemote": "Añadir un asistente remoto",
+    "currentWithHost": "Actual · {host}",
+    "remoteWithHost": "Remoto · {host}",
+    "removeFromDevice": "Quitar de este dispositivo…",
+    "unnamedAssistant": "el asistente"
   },
   "appShell": {
     "loading": "Cargando asistente…",
@@ -117,5 +122,16 @@
     "title": "Asistente",
     "selection": "Elige un asistente.",
     "unavailable": "Este asistente no está disponible."
+  },
+  "actions": {
+    "cancel": "Cancelar",
+    "add": "Añadir",
+    "adding": "Añadiendo…"
+  },
+  "addRemoteOriginDialog": {
+    "title": "Añadir un asistente remoto",
+    "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
+    "addressLabel": "Dirección del asistente",
+    "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
   }
 }

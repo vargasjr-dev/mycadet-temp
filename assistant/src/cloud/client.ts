@@ -17,24 +17,6 @@ const log = getLogger("cloud-client");
 
 let _missingPrereqsWarned = false;
 
-export interface OwnerConsent {
-  /**
-   * Telemetry is opt-out: the owner-consent endpoint returns effective
-   * values (a never-chose null is served as consented), so an explicit
-   * `false` is the only thing that disables sharing.
-   */
-  shareAnalytics: boolean;
-  /** Same opt-out semantics as {@link shareAnalytics}. */
-  shareDiagnostics: boolean;
-  /**
-   * Version of the diagnostics-sharing consent the owner accepted
-   * ("YYYY-MM-DD", or "" if never accepted). Composes the per-turn
-   * trace-collection gate: traces are only collected once this is >= the
-   * disclosing version (see telemetry/trace-collection-policy.ts).
-   */
-  shareDiagnosticsAcceptedVersion: string;
-}
-
 interface CloudClientConfig {
   baseUrl: string;
   apiKey: string;
@@ -237,64 +219,6 @@ export class CadetCloudClient {
   }
 
   /**
-   * Fetch the cloud owner's telemetry consent for this assistant.
-   *
-   * The endpoint returns effective consent values (a never-chose null is
-   * served as consented); an explicit `false` is the only disable.
-   *
-   * Returns `null` whenever the consent is unknown — missing assistant id,
-   * any non-2xx response, a malformed body, or a network error. Never throws.
-   */
-  async getOwnerConsent(): Promise<OwnerConsent | null> {
-    if (!this.assistantId) {
-      return null;
-    }
-
-    try {
-      const res = await this.fetch(
-        `/v1/assistants/${this.assistantId}/owner-consent/`,
-      );
-      if (!res.ok) {
-        log.debug(
-          { status: res.status },
-          "owner-consent fetch returned non-2xx — treating as unknown",
-        );
-        return null;
-      }
-
-      const body = (await res.json()) as {
-        share_analytics?: unknown;
-        share_diagnostics?: unknown;
-        share_diagnostics_accepted_version?: unknown;
-      };
-      if (
-        (typeof body.share_analytics !== "boolean" &&
-          body.share_analytics !== null) ||
-        (typeof body.share_diagnostics !== "boolean" &&
-          body.share_diagnostics !== null)
-      ) {
-        log.debug("owner-consent body malformed — treating as unknown");
-        return null;
-      }
-
-      return {
-        // Opt-out: anything but an explicit false enables sharing.
-        shareAnalytics: body.share_analytics !== false,
-        shareDiagnostics: body.share_diagnostics !== false,
-        // Back-compat: an older platform that doesn't return this field yields
-        // "" → fails the trace-collection version gate → fail-closed (no trace).
-        shareDiagnosticsAcceptedVersion:
-          typeof body.share_diagnostics_accepted_version === "string"
-            ? body.share_diagnostics_accepted_version
-            : "",
-      };
-    } catch (err) {
-      log.debug({ err }, "owner-consent fetch failed — treating as unknown");
-      return null;
-    }
-  }
-
-  /**
    * Ask the cloud whether this client's assistant API key still
    * authenticates.
    *
@@ -306,11 +230,12 @@ export class CadetCloudClient {
    * `"unknown"` covers every unsettled case (no assistant id, transport
    * failure, server error) and means "ask again later", never "broken".
    *
-   * The carrier is the owner-consent endpoint. Nothing here reads consent:
-   * the request is a side-effect-free authenticated GET this client already
-   * makes, and the only thing inspected is whether authentication succeeded.
-   * The cloud exposes no dedicated credential-verification endpoint, so
-   * the carrier is named here rather than left implicit at call sites.
+   * The carrier is the assistants detail endpoint. Nothing here reads the
+   * response: the request is a side-effect-free authenticated GET against an
+   * implemented cloud route, and the only thing inspected is whether
+   * authentication succeeded. The cloud exposes no dedicated
+   * credential-verification endpoint, so the carrier is named here rather
+   * than left implicit at call sites.
    */
   async verifyCredential(): Promise<CloudCredentialVerificationStatus> {
     if (!this.assistantId) {
@@ -319,7 +244,7 @@ export class CadetCloudClient {
 
     try {
       const res = await this.fetch(
-        `/v1/assistants/${this.assistantId}/owner-consent/`,
+        `/v1/assistants/${this.assistantId}/`,
         // The heartbeat awaits this check, so an unanswered request must
         // settle as unknown rather than hold the credential pass open.
         { signal: AbortSignal.timeout(CREDENTIAL_VERIFY_TIMEOUT_MS) },

@@ -1041,5 +1041,13 @@
     "dragError": "無法拖移。請嘗試從 Finder 中拖移。",
     "showInFinder": "在 Finder 中顯示",
     "inputLabel": "輸入監控"
+  },
+  "pairDeviceUrl": {
+    "loopback": "這是其他裝置無法連線的迴路位址。請輸入助理的公開 HTTPS URL。",
+    "nonHttps": "URL 必須使用 HTTPS，以便您的裝置可以安全連線。",
+    "privateAddress": "此位址指向私人網路位址。請輸入助理的公開 HTTPS URL，以便您的裝置可以連線至它。",
+    "serviceFallbackName": "通道提供者",
+    "serviceWebsite": "這是 {service} 的網站，而不是您的助理位址。請在主機上啟動通道以取得一個；`cadet tunnel --help` 列出提供者。",
+    "unparseable": "請輸入有效的 URL，例如 https://your-assistant.ts.net。"
   }
 }
