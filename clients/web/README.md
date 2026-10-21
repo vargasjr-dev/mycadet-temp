@@ -5,7 +5,7 @@ Cadet assistant web app (chat, settings, library, docs).
 
 ## Stack
 
-- [Vite](https://vite.dev/) for the production build — serving is the cadet app server's job.
+- [Vite](https://vite.dev/) for the production build.
 - [React 19](https://react.dev/) +
   [React Router v7](https://reactrouter.com/start/modes) in
   **library / data-router mode** (`createBrowserRouter` +
@@ -24,30 +24,14 @@ Cadet assistant web app (chat, settings, library, docs).
 
 ## Local development
 
-`clients/web` has no Vite dev server — the **cadet app server** is how
-app/web assets load now (`bun run dev` here prints a pointer and exits).
+`clients/web` has no Vite dev server as it gets loaded dynamically based on the assistant version.
 
 ```bash
 cd clients/web
 bun install        # installs the whole workspace
 bun run openapi-ts # generate API client (required before typecheck)
 bun run build      # production build to dist/
-
-# from the repo root — build and serve both bundles:
-cadet app start    # nginx edge for the active local assistant
-                   # (rebuilds either bundle from source when stale)
-cadet tunnel       # adds a public URL: app shell at the origin root,
-                   # web iframed at /web/assistant/
 ```
-
-### Web surface and app development
-
-`clients/app` remains an experimental client with its own account screens
-and i18n, and it keeps a Vite dev server for that standalone surface: run
-`bun run dev` there (port 3001). Its current composition includes web's
-assistant routes while excluding web's account routes. The account screen
-copies are intentionally independent so app changes do not alter the
-stable web client.
 
 ### Same-origin by construction
 

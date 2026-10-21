@@ -1,11 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 import {
@@ -19,47 +12,21 @@ import {
   writeNativeAppDownloaded,
 } from "@/hooks/use-native-app-nudge";
 
-const IOS_STORE_URL =
-  "https://apps.apple.com/us/app/mycadet/id6759934423";
-const PLAY_STORE_URL =
-  "https://play.google.com/store/apps/details?id=ai.mycadet.android";
+const IOS_STORE_URL = "https://apps.apple.com/us/app/mycadet/id6759934423";
 const DOWNLOADS_URL = "https://www.mycadet.ai/downloads";
 
-const env = import.meta.env as Record<string, string | undefined>;
-const originalPlayStoreUrl = env.VITE_ANDROID_PLAY_STORE_URL;
 const originalWindowOpen = window.open;
 
 beforeEach(() => {
   localStorage.clear();
-  delete env.VITE_ANDROID_PLAY_STORE_URL;
 });
 
 afterEach(() => {
   cleanup();
   window.open = originalWindowOpen;
-  if (originalPlayStoreUrl === undefined) {
-    delete env.VITE_ANDROID_PLAY_STORE_URL;
-  } else {
-    env.VITE_ANDROID_PLAY_STORE_URL = originalPlayStoreUrl;
-  }
 });
 
 describe("Android promotion readiness", () => {
-  test("stays generic until the expected Play listing is configured", () => {
-    expect(resolveMobilePromotion("android").target).toBe("generic");
-
-    env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://example.com/store/apps/details?id=ai.mycadet.android";
-    expect(resolveMobilePromotion("android").target).toBe("generic");
-
-    env.VITE_ANDROID_PLAY_STORE_URL = `${PLAY_STORE_URL}&hl=en`;
-    expect(resolveMobilePromotion("android")).toEqual({
-      target: "android",
-      appName: "Android",
-      storeUrl: ANDROID_PLAY_STORE_URL,
-    });
-  });
-
   test("tags the listing with an install referrer", () => {
     const url = new URL(ANDROID_PLAY_STORE_URL);
 
@@ -70,13 +37,13 @@ describe("Android promotion readiness", () => {
     );
   });
 
-  test("sends Android to the downloads page when no Play listing is configured", () => {
+  test("sends Android to the Play listing", () => {
     const open = mock(() => null);
     window.open = open as typeof window.open;
 
     openNativeAppStore("android");
     expect(open).toHaveBeenCalledWith(
-      DOWNLOADS_URL,
+      ANDROID_PLAY_STORE_URL,
       "_blank",
       "noopener,noreferrer",
     );
@@ -92,29 +59,11 @@ describe("resolveMobilePromotion", () => {
     });
   });
 
-  test("promotes the Play listing on Android once it is configured", () => {
-    env.VITE_ANDROID_PLAY_STORE_URL = PLAY_STORE_URL;
-
+  test("promotes the Play listing on Android", () => {
     expect(resolveMobilePromotion("android")).toEqual({
       target: "android",
       appName: "Android",
       storeUrl: ANDROID_PLAY_STORE_URL,
-    });
-  });
-
-  test("falls back to generic on Android without a valid Play listing", () => {
-    expect(resolveMobilePromotion("android")).toEqual({
-      target: "generic",
-      appName: null,
-      storeUrl: DOWNLOADS_URL,
-    });
-
-    env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://example.com/store/apps/details?id=ai.mycadet.android";
-    expect(resolveMobilePromotion("android")).toEqual({
-      target: "generic",
-      appName: null,
-      storeUrl: DOWNLOADS_URL,
     });
   });
 
@@ -153,7 +102,6 @@ describe("native app nudge state", () => {
   });
 
   test("keeps Android state separate from iOS", () => {
-    env.VITE_ANDROID_PLAY_STORE_URL = PLAY_STORE_URL;
     const { result } = renderHook(() => useNativeAppNudgeState("android"));
 
     act(() => result.current.handleBannerDismiss());
@@ -210,7 +158,6 @@ describe("cross-target nudge reads", () => {
   });
 
   test("carries a generic dismissal back to the Android banner", () => {
-    env.VITE_ANDROID_PLAY_STORE_URL = PLAY_STORE_URL;
     localStorage.setItem("app.mobileNudge.bannerDismissed", "true");
 
     const { result } = renderHook(() => useNativeAppNudgeState("android"));

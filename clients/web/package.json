@@ -12,7 +12,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "echo 'clients/web has no vite dev server — the cadet app server is how app/web assets load now. Run `cadet app start` (builds both bundles from source and serves them locally) or `cadet tunnel` for a public URL. See clients/web/README.md.' && exit 1",
+    "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
     "prebuild": "node scripts/copy-skill-assets.mjs",
     "build": "bun install && bun --bun vite build",
     "lint": "eslint",

@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import webPackage from "./package.json";
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
-import { localModePlugin } from "./vite-plugin-local-mode";
 
 const DESIGN_LIBRARY_SRC = path.resolve(
   import.meta.dirname,
@@ -53,8 +52,7 @@ export default defineConfig(({ mode }) => {
           });
         },
       } satisfies Plugin,
-      localModePlugin(env),
-    ].filter(Boolean),
+    ],
     resolve: {
       alias: [
         { find: /^@design\//, replacement: DESIGN_LIBRARY_SRC + "/" },

@@ -48,13 +48,10 @@ function setPlatform(platform: string): void {
   });
 }
 
-const env = import.meta.env as Record<string, string | undefined>;
-const originalPlayStoreUrl = env.VITE_ANDROID_PLAY_STORE_URL;
 const originalWindowOpen = window.open;
 
 beforeEach(() => {
   localStorage.clear();
-  delete env.VITE_ANDROID_PLAY_STORE_URL;
   setUserAgent(DESKTOP_CHROME_UA);
   setPlatform("Win32");
 });
@@ -64,11 +61,6 @@ afterEach(() => {
   window.open = originalWindowOpen;
   setUserAgent(ORIGINAL_UA);
   setPlatform(ORIGINAL_PLATFORM);
-  if (originalPlayStoreUrl === undefined) {
-    delete env.VITE_ANDROID_PLAY_STORE_URL;
-  } else {
-    env.VITE_ANDROID_PLAY_STORE_URL = originalPlayStoreUrl;
-  }
 });
 
 describe("NativeAppCard", () => {
@@ -114,10 +106,8 @@ describe("NativeAppCard", () => {
     );
   });
 
-  test("opens a configured Android listing and records the action", () => {
+  test("opens the Android listing and records the action", () => {
     setUserAgent(ANDROID_UA);
-    env.VITE_ANDROID_PLAY_STORE_URL =
-      "https://play.google.com/store/apps/details?id=ai.mycadet.android";
     const open = mock(() => null);
     window.open = open as typeof window.open;
     render(<NativeAppCard />);
@@ -133,29 +123,6 @@ describe("NativeAppCard", () => {
     );
     expect(localStorage.getItem("app.androidNudge.downloaded")).toBe("true");
     expect(localStorage.getItem("app.iosNudge.downloaded")).toBeNull();
-  });
-
-  test("offers the downloads page when no Play listing is configured", () => {
-    setUserAgent(ANDROID_UA);
-    const open = mock(() => null);
-    window.open = open as typeof window.open;
-
-    render(<NativeAppCard />);
-
-    expect(screen.getByText("Get the Cadet Mobile App")).toBeDefined();
-    expect(
-      screen.getByText("The Cadet mobile app gives you a native experience."),
-    ).toBeDefined();
-
-    fireEvent.click(screen.getByRole("button", { name: "Download" }));
-
-    expect(open).toHaveBeenCalledWith(
-      "https://www.mycadet.ai/downloads",
-      "_blank",
-      "noopener,noreferrer",
-    );
-    expect(localStorage.getItem("app.mobileNudge.downloaded")).toBe("true");
-    expect(localStorage.getItem("app.androidNudge.downloaded")).toBeNull();
   });
 
   test("promotes the app on a mobile browser it cannot identify", () => {

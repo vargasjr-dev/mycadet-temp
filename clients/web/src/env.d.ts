@@ -18,11 +18,6 @@ declare global {
     /** Release channel this bundle was built as. `"preview"` or stable otherwise. */
     readonly VITE_CHANNEL?: string;
     /**
-     * Live Google Play listing for ai.mycadet.android. Android install
-     * promotion remains hidden when this is unset or invalid.
-     */
-    readonly VITE_ANDROID_PLAY_STORE_URL?: string;
-    /**
      * Override for the live-voice tunnel host (no scheme), e.g. `localhost:8501`
      * for a local `vel up` tunnel. When unset the host is derived at runtime from
      * the cloud host (`tunnel.mycadet.ai`, `tunnel-{env}.mycadet.ai`). See

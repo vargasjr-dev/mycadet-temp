@@ -3,32 +3,16 @@
  *
  * `resolveMobilePromotion` picks one of three targets, and the banner reads
  * the copy off the one it is handed. iOS and Android name their platform and
- * link their store listing. Generic names neither, and covers the two cases
- * where naming one would be wrong: a mobile browser the OS checks could not
- * identify, and Android on a deployment with no Play Store listing
- * configured. It sends those readers to the Cadet downloads page instead.
+ * link their store listing. Generic names neither — for the mobile browsers
+ * the OS checks could not identify — and sends those readers to the Cadet
+ * downloads page instead.
  *
  * The subtitle and the CTA label are shared by all three.
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { NativeAppBanner } from "@/components/nudges/native-app-banner";
-import {
-  getNativeAppName,
-  resolveMobilePromotion,
-  type NativeAppPromotion,
-} from "@/hooks/use-native-app-nudge";
-
-/**
- * `resolveMobilePromotion("android")` answers with the generic promotion
- * unless `VITE_ANDROID_PLAY_STORE_URL` is configured, which Storybook does not
- * set, so the configured Android case is spelled out to keep it storyable.
- */
-const ANDROID_PROMOTION: NativeAppPromotion = {
-  target: "android",
-  appName: getNativeAppName("android"),
-  storeUrl: "https://play.google.com/store/apps/details?id=ai.mycadet.android",
-};
+import { resolveMobilePromotion } from "@/hooks/use-native-app-nudge";
 
 const meta: Meta<typeof NativeAppBanner> = {
   title: "Nudges/NativeAppBanner",
@@ -62,7 +46,7 @@ export const IOS: Story = {
  */
 export const Android: Story = {
   name: "Android · Play Store",
-  args: { promotion: ANDROID_PROMOTION },
+  args: { promotion: resolveMobilePromotion("android") },
 };
 
 /**

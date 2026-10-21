@@ -56,28 +56,6 @@ const STORAGE_KEYS: Record<
 
 const NUDGE_TARGETS: readonly NudgeTarget[] = ["ios", "android", "generic"];
 
-function resolveAndroidPlayStoreUrl(): string | null {
-  const configuredUrl = import.meta.env.VITE_ANDROID_PLAY_STORE_URL?.trim();
-  if (!configuredUrl) {
-    return null;
-  }
-
-  try {
-    const url = new URL(configuredUrl);
-    const isExpectedListing =
-      url.protocol === "https:" &&
-      url.hostname === "play.google.com" &&
-      url.pathname === "/store/apps/details" &&
-      url.searchParams.get("id") === ANDROID_PACKAGE_ID;
-    return isExpectedListing ? ANDROID_PLAY_STORE_URL : null;
-  } catch (error) {
-    if (error instanceof TypeError) {
-      return null;
-    }
-    throw error;
-  }
-}
-
 export function getNativeAppName(platform: NativeAppPlatform): string {
   return platform === "ios" ? "iOS" : "Android";
 }
@@ -94,14 +72,11 @@ export function resolveMobilePromotion(
   }
 
   if (platform === "android") {
-    const storeUrl = resolveAndroidPlayStoreUrl();
-    if (storeUrl) {
-      return {
-        target: "android",
-        appName: getNativeAppName("android"),
-        storeUrl,
-      };
-    }
+    return {
+      target: "android",
+      appName: getNativeAppName("android"),
+      storeUrl: ANDROID_PLAY_STORE_URL,
+    };
   }
 
   return {
@@ -202,9 +177,3 @@ export function useNativeAppNudgeState(target: NudgeTarget): {
     [downloaded, bannerDismissed, handleDownload, handleBannerDismiss],
   );
 }
-
-export const __testing = {
-  readNativeAppBannerDismissed,
-  writeNativeAppBannerDismissed,
-  resolveAndroidPlayStoreUrl,
-};

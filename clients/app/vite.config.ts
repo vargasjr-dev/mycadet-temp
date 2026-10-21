@@ -7,7 +7,7 @@ import { injectCloudSessionToken } from "./vite/cloud-proxy";
 import {
   localModePlugin,
   getDevCloudSessionToken,
-} from "../web/vite-plugin-local-mode";
+} from "./vite-plugin-local-mode";
 
 const APP_SRC = path.resolve(import.meta.dirname, "src");
 const WEB_SRC = path.resolve(import.meta.dirname, "../web/src");
