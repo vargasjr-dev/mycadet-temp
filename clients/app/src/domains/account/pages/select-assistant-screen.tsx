@@ -1,4 +1,5 @@
 import { CloudOff, Globe, Link2 } from "lucide-react";
+import { gatewayProxyUrl } from "@mycadet/local-mode/contract";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
@@ -213,10 +214,10 @@ export function SelectAssistantScreen() {
   /** Where a lockfile entry's same-origin API base lives. */
   const entryApiBase = (entry: LockfileAssistant): string | undefined =>
     isPairedAssistant(entry)
-      ? // Paired gateways ride the shell's paired-forward path: same-origin,
-        // allowlisted by the lockfile entry, guardian credential injected
-        // server-side.
-        `/assistant/__gateway-paired/${entry.assistantId}`
+      ? // Paired gateways ride the shell's id-keyed gateway-forward path:
+        // same-origin, allowlisted by the lockfile entry, guardian credential
+        // injected server-side.
+        gatewayProxyUrl(entry.assistantId)
       : undefined;
 
   const connectEntry = (entry: LockfileAssistant): void => {
@@ -358,7 +359,7 @@ export function SelectAssistantScreen() {
       void navigate(routes.assistant, {
         state: assistantSelectionState(
           assistantId,
-          `/assistant/__gateway-paired/${assistantId}`,
+          gatewayProxyUrl(assistantId),
         ),
       });
     })();

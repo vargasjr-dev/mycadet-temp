@@ -11,16 +11,14 @@ import {
   forwardGatewayRequest,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
-import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
+import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { installPopoutWindows } from "@mycadet/electron-desktop/popout-window";
 import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
-  gatewayTargetsFromLockfile,
   getLockfileData,
   getLoopbackGatewayPort,
-  readGatewayTargets,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
@@ -73,16 +71,9 @@ import { installHotkeyHelper } from "./hotkey-helper";
 import { installHotkeysIpc } from "./hotkeys.client";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
-import {
-  getPairedGuardianAccessToken,
-  installLocalMode,
-  resolveCliInvocation,
-} from "./local-mode.client";
+import { installLocalMode, resolveCliInvocation } from "./local-mode.client";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
-import {
-  getWatchedLockfileSnapshot,
-  installLockfileWatcher,
-} from "./lockfile-watcher.client";
+import { installLockfileWatcher } from "./lockfile-watcher.client";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "./logger";
 import {
@@ -280,14 +271,6 @@ const registerAppProtocol = (): void => {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const lockfilePaths = resolveLockfilePaths(process.env);
-  // Prefer the watcher's in-memory snapshot so gateway requests never read
-  // disk; the direct read covers only the window before the watcher installs.
-  const getGatewayTargets = () => {
-    const watched = getWatchedLockfileSnapshot();
-    return watched
-      ? gatewayTargetsFromLockfile(watched)
-      : readGatewayTargets(lockfilePaths);
-  };
   const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
 
   // Same-origin `/v1/*` rides the active local assistant's gateway — the
@@ -313,20 +296,9 @@ const registerAppProtocol = (): void => {
   };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
-    // The renderer addresses every assistant gateway at the same `app://`
-    // origin via the id-keyed `/assistant/__gateway/{assistantId}/*` — the
-    // lockfile resolves the id to a loopback port (hatched) or a recorded
-    // remote `runtimeUrl` (imported pairing). Forward here so the secure
-    // renderer never touches an insecure `http://127.0.0.1` origin directly
-    // and never holds a paired credential; the lockfile target map is the
-    // security boundary. Mirrors the Vite dev-server proxy
-    // (`clients/web/vite-plugin-local-mode.ts`).
-    const proxied = await forwardGatewayRequest(
-      request,
-      getGatewayTargets,
-      getPairedGuardianAccessToken,
-      net.fetch,
-    );
+    // Forward the id-keyed gateway proxy to its lockfile-resolved target
+    // (mirrors the Vite dev-server proxy).
+    const proxied = await forwardGatewayRequest(request, net.fetch);
     if (proxied) return proxied;
 
     // Cloud API and authentication routes forward through the shared
@@ -401,9 +373,9 @@ app
 
     // Dev packs the renderer dists (see `bun run dev`) and serves them
     // through the same `app://mycadet.ai` origin as packaged builds, so
-    // the handler and the paired-gateway guard are unconditional.
+    // the handler and the gateway guard are unconditional.
     registerAppProtocol();
-    installPairedGatewayRequestGuard({
+    installGatewayRequestGuard({
       appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
       resolveAllowedOrigin,
     });

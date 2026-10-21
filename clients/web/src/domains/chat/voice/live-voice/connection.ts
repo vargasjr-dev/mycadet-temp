@@ -238,28 +238,15 @@ export function buildTunnelWsUrl({
 const LOCAL_GATEWAY_PROXY_PATH = /^\/assistant\/__gateway\/([^/]+)\/?$/;
 
 /**
- * The deprecated `/__gateway-paired/` alias. Like the local proxy, the hosts
- * serving it forward HTTP only and drop WS upgrades; unlike the local proxy
- * there is no loopback port to bypass to (the real gateway lives on another
- * machine), so no WebSocket transport exists for a paired assistant.
- */
-const PAIRED_GATEWAY_PROXY_PATH = /^\/assistant\/__gateway-paired\//;
-
-/**
  * Whether a self-hosted ingress URL reaches a paired assistant's gateway,
  * which cannot carry a WebSocket upgrade. Voice entry points use this to
  * degrade cleanly instead of dialling an unusable socket. The id-keyed proxy
  * path no longer encodes the local/paired split (the lockfile resolves it
- * host-side), so pairedness is read from the entry the path names; the
- * deprecated `-paired` alias still names it directly.
+ * host-side), so pairedness is read from the entry the path names.
  */
 export function isPairedGatewayIngress(ingressUrl: string): boolean {
   try {
-    const pathname = new URL(ingressUrl).pathname;
-    if (PAIRED_GATEWAY_PROXY_PATH.test(pathname)) {
-      return true;
-    }
-    const match = pathname.match(LOCAL_GATEWAY_PROXY_PATH);
+    const match = new URL(ingressUrl).pathname.match(LOCAL_GATEWAY_PROXY_PATH);
     if (!match) {
       return false;
     }
@@ -316,11 +303,9 @@ export interface BuildSelfHostedGatewayWsUrlArgs {
  *   dial** (`ws://127.0.0.1:<port>{routePath}` with the port resolved from the
  *   entry's lockfile record), since that HTTP-only proxy can't carry the WS
  *   upgrade — see {@link LOCAL_GATEWAY_PROXY_PATH}.
- * - **Paired proxy paths (the unified id-keyed path naming a paired entry, or
- *   the deprecated `/__gateway-paired/<id>` alias) → throws
- *   {@link PairedVoiceUnavailableError}**: the proxy is HTTP-only and there is
- *   no direct dial to fall back to, so no usable WS URL exists (see
- *   {@link PAIRED_GATEWAY_PROXY_PATH}).
+ * - **Paired proxy paths (the unified id-keyed path naming a paired entry) →
+ *   throws {@link PairedVoiceUnavailableError}**: the proxy is HTTP-only and
+ *   there is no direct dial to fall back to, so no usable WS URL exists.
  * - **Remote ingress** (e.g. an ngrok `wss://` URL) keeps its host and path
  *   prefix, with `routePath` appended. Any query/hash on the ingress is dropped.
  */
@@ -331,9 +316,6 @@ export function buildSelfHostedGatewayWsUrl({
   params,
 }: BuildSelfHostedGatewayWsUrlArgs): string {
   const ingress = new URL(ingressUrl);
-  if (PAIRED_GATEWAY_PROXY_PATH.test(ingress.pathname)) {
-    throw new PairedVoiceUnavailableError();
-  }
   const localProxy = ingress.pathname.match(LOCAL_GATEWAY_PROXY_PATH);
 
   let target: URL;
@@ -349,8 +331,8 @@ export function buildSelfHostedGatewayWsUrl({
     const entry = getLockfileAssistant(assistantId);
     if (entry && isPairedAssistant(entry)) {
       // A paired entry reached through the unified id-keyed path degrades
-      // typed, exactly like the legacy `-paired` alias: the paired gateway is
-      // HTTP-only with no loopback port to bypass to.
+      // typed: the paired gateway is HTTP-only with no loopback port to
+      // bypass to.
       throw new PairedVoiceUnavailableError();
     }
     const port = entry ? getLoopbackGatewayPort(entry) : undefined;

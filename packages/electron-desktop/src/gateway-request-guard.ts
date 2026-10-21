@@ -2,35 +2,32 @@ import { session, type WebRequestFilter } from "electron";
 
 import { isAllowedOrigin, type AllowedOrigin } from "./app-origin";
 
-export interface PairedGatewayRequestGuardOptions {
+export interface GatewayRequestGuardOptions {
   appOrigin: AllowedOrigin;
   resolveAllowedOrigin: () => AllowedOrigin;
 }
 
-const createPairedGatewayRequestFilter = (
+const createGatewayRequestFilter = (
   appOrigin: AllowedOrigin,
 ): WebRequestFilter => ({
   urls: [
     `${appOrigin.protocol}//${appOrigin.host}/assistant/__gateway/*`,
     `${appOrigin.protocol}//${appOrigin.host}/__gateway/*`,
-    // The deprecated paired-only alias still routes through the same proxy.
-    `${appOrigin.protocol}//${appOrigin.host}/assistant/__gateway-paired/*`,
-    `${appOrigin.protocol}//${appOrigin.host}/__gateway-paired/*`,
   ],
 });
 
 /**
- * Restrict the packaged app's paired gateway proxy to requests initiated by a
- * trusted renderer frame. Electron custom protocol requests omit Origin,
- * Referer, and Fetch Metadata headers, while WebRequest retains the requesting
- * frame's browser-controlled origin.
+ * Restrict the packaged app's gateway proxy to requests initiated by a trusted
+ * renderer frame. Electron custom protocol requests omit Origin, Referer, and
+ * Fetch Metadata headers, while WebRequest retains the requesting frame's
+ * browser-controlled origin.
  */
-export function installPairedGatewayRequestGuard({
+export function installGatewayRequestGuard({
   appOrigin,
   resolveAllowedOrigin,
-}: PairedGatewayRequestGuardOptions): () => void {
+}: GatewayRequestGuardOptions): () => void {
   const webRequest = session.defaultSession.webRequest;
-  const filter = createPairedGatewayRequestFilter(appOrigin);
+  const filter = createGatewayRequestFilter(appOrigin);
   webRequest.onBeforeRequest(filter, (details, callback) => {
     callback({
       cancel: !isAllowedOrigin(details.frame?.origin, resolveAllowedOrigin()),

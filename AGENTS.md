@@ -274,7 +274,7 @@ Docker instances use six per-service volumes enforcing least-privilege at the co
 **Never store secrets, API keys, or sensitive credentials in the workspace directory.**
 
 Paired guardian credentials are host-only. Renderer code sends paired traffic
-through `/assistant/__gateway-paired/<assistantId>` without a bearer. The
+through `/assistant/__gateway/<assistantId>` without a bearer. The
 Electron main process, CLI web host, or Vite development host must remove any
 renderer-provided `Authorization` header and inject the guardian bearer on the
 remote gateway hop. Renderer-facing guardian-token endpoints must reject

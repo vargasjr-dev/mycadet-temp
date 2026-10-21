@@ -47,19 +47,6 @@ describe("parseAssistantGatewayUrl", () => {
     });
   });
 
-  test("accepts the deprecated `-paired` alias with identical semantics", () => {
-    expect(
-      parseAssistantGatewayUrl("/assistant/__gateway-paired/abc-123/v1"),
-    ).toEqual(
-      parseAssistantGatewayUrl("/assistant/__gateway/abc-123/v1"),
-    );
-    expect(parseAssistantGatewayUrl("/__gateway-paired/abc-123")).toEqual({
-      match: true,
-      valid: true,
-      target: { assistantId: "abc-123", path: "/", search: "" },
-    });
-  });
-
   test("preserves the query and drops the fragment", () => {
     expect(
       parseAssistantGatewayUrl("/__gateway/abc-123/v1/messages?x=1#frag"),

@@ -18,7 +18,7 @@ const pairedEntry: LockfileAssistant = {
 
 let lockfileEntry: LockfileAssistant | undefined = pairedEntry;
 let pairedGatewayUrl: string | undefined =
-  "/assistant/__gateway-paired/paired-remote";
+  "/assistant/__gateway/paired-remote";
 mock.module("@/lib/local-mode", () => ({
   getLockfileAssistant: () => lockfileEntry,
   getPairedGatewayUrl: () => pairedGatewayUrl,
@@ -42,7 +42,7 @@ const {
 
 beforeEach(() => {
   lockfileEntry = pairedEntry;
-  pairedGatewayUrl = "/assistant/__gateway-paired/paired-remote";
+  pairedGatewayUrl = "/assistant/__gateway/paired-remote";
   fetchCloudStatus.mockResolvedValue({ assistantId: UUID });
 });
 
@@ -58,7 +58,7 @@ describe("resolvePairedAssistantCloudId", () => {
     ).resolves.toBe(UUID);
     expect(fetchCloudStatus).toHaveBeenCalledWith(
       {
-        gatewayUrl: `${window.location.origin}/assistant/__gateway-paired/paired-remote`,
+        gatewayUrl: `${window.location.origin}/assistant/__gateway/paired-remote`,
         actorToken: null,
       },
       "paired-remote",

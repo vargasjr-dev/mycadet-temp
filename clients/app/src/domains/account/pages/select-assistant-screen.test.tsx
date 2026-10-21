@@ -588,7 +588,7 @@ describe("remembered origins", () => {
       ).toBeDefined();
     });
 
-    test("a paired entry connects through the shell's paired-gateway path", async () => {
+    test("a paired entry connects through the shell's gateway path", async () => {
       stubCadet(pairedLockfile, { ok: true, state: "healthy" });
       setup("/account/select-assistant", false, async (url) => {
         if (String(url).includes("/v1/assistants/paired-1")) {
@@ -603,13 +603,13 @@ describe("remembered origins", () => {
       });
       fireEvent.click(await screen.findByRole("radio", { name: /^Office/ }));
       // The selection state carries the paired base, so the shell's
-      // resolution fetch rides the paired-gateway path instead of the
-      // default same-origin /v1.
+      // resolution fetch rides the gateway path instead of the default
+      // same-origin /v1.
       await waitFor(() => {
         expect(
           request.mock.calls.some(([url]) =>
             String(url).includes(
-              "/assistant/__gateway-paired/paired-1/v1/assistants/paired-1",
+              "/assistant/__gateway/paired-1/v1/assistants/paired-1",
             ),
           ),
         ).toBe(true);

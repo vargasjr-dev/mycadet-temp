@@ -133,6 +133,17 @@ export function isUsableRuntimeUrl(url: unknown): boolean {
 }
 
 /**
+ * The id-keyed, same-origin gateway proxy base for any assistant entry: the
+ * serving host (Electron `app://` handler, Vite dev middleware, CLI web
+ * server) resolves the id through the lockfile to a loopback port (locally
+ * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
+ * renderer never encodes either.
+ */
+export function gatewayProxyUrl(assistantId: string): string {
+  return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
+}
+
+/**
  * User-facing hosting label for a paired entry: "Paired · <hostname>" when
  * `runtimeUrl` names the remote host, plain "Paired" otherwise. Shared by the
  * macOS tray switcher and the web chooser so their renderings cannot drift.

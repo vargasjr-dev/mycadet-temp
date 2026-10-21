@@ -136,7 +136,6 @@ const SENSITIVE_GATEWAY_ROUTES = [
 const SENSITIVE_GATEWAY_PREFIXES = [
   "/assistant/__local/",
   "/assistant/__gateway/",
-  "/assistant/__gateway-paired/",
 ] as const;
 
 /**

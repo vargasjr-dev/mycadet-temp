@@ -1,12 +1,13 @@
 import fs from "node:fs";
 
+import { z } from "zod";
+
 import type { TokenResult } from "./guardian-token";
 import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   resolveCloud,
-  type LockfileAssistant,
 } from "./lockfile-contract";
 
 /**
@@ -15,18 +16,11 @@ import {
  * (locally hatched gateways) or recorded remote `runtimeUrl` (imported
  * pairings) — so the renderer never encodes a port and the local/paired split
  * lives entirely host-side.
- *
- * `/__gateway-paired/{assistantId}` stays accepted as a deprecated alias with
- * identical semantics (it is the strict subset the paired flow used before the
- * unification), so straggler producers and the Electron WebRequest guard
- * patterns keep matching through the same resolver.
  */
 const GATEWAY_PATTERN = /^(?:\/assistant)?\/__gateway\/([^/?#]+)(\/.*)?$/;
 
-const PAIRED_GATEWAY_PATTERN =
-  /^(?:\/assistant)?\/__gateway-paired\/([^/?#]+)(\/.*)?$/;
 
-export interface AssistantGatewayTarget {
+export interface GatewayTarget {
   assistantId: string;
   /** Pathname tail forwarded onto the target, without the query. */
   path: string;
@@ -34,8 +28,8 @@ export interface AssistantGatewayTarget {
   search: string;
 }
 
-export type AssistantGatewayParseResult =
-  | { match: true; valid: true; target: AssistantGatewayTarget }
+export type GatewayParseResult =
+  | { match: true; valid: true; target: GatewayTarget }
   | { match: true; valid: false }
   | { match: false };
 
@@ -63,20 +57,16 @@ function hasDotSegment(path: string): boolean {
 /**
  * Parse a gateway-proxy URL given as `pathname + search` (a `#fragment`
  * suffix is tolerated and dropped), so every host hands over the same shape
- * and the decision is host-independent. Accepts the unified
- * `/__gateway/{assistantId}` and the deprecated `/__gateway-paired/{assistantId}`
- * alias.
+ * and the decision is host-independent. Accepts only the unified
+ * `/__gateway/{assistantId}`.
  */
-export function parseAssistantGatewayUrl(
-  url: string,
-): AssistantGatewayParseResult {
+export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
   const delimiter = url.search(/[?#]/);
   const pathname = delimiter === -1 ? url : url.slice(0, delimiter);
   const suffix = delimiter === -1 ? "" : url.slice(delimiter);
   const search = suffix.startsWith("?") ? (suffix.split("#")[0] ?? "") : "";
 
-  const match =
-    pathname.match(GATEWAY_PATTERN) ?? pathname.match(PAIRED_GATEWAY_PATTERN);
+  const match = pathname.match(GATEWAY_PATTERN);
   if (!match) {
     return { match: false };
   }
@@ -181,6 +171,26 @@ const MIN_GATEWAY_PORT = 1024;
 const MAX_GATEWAY_PORT = 65535;
 
 /**
+ * Exception-handling read of one raw lockfile entry for gateway targeting:
+ * each modeled field is salvaged independently (a malformed field degrades to
+ * `undefined` rather than discarding the entry), so a partially corrupt
+ * lockfile still yields the targets its well-typed fields support. A
+ * non-object fails the parse outright and the entry is skipped.
+ */
+const GatewayTargetEntrySchema = z.object({
+  assistantId: z.string().optional().catch(undefined),
+  cloud: z.string().optional().catch(undefined),
+  project: z.string().optional().catch(undefined),
+  sshUser: z.string().optional().catch(undefined),
+  runtimeUrl: z.string().optional().catch(undefined),
+  resources: z
+    .object({ gatewayPort: z.number() })
+    .partial()
+    .optional()
+    .catch(undefined),
+});
+
+/**
  * Compute the id-keyed gateway-target map from a lockfile's assistant
  * entries. A paired entry resolves to its recorded remote `runtimeUrl`
  * (usable http(s) only); a loopback-gateway cloud (`local`, `docker`)
@@ -198,32 +208,27 @@ export function gatewayTargetsFromLockfile(lockfile: {
 }): Map<string, GatewayEntryTarget> {
   const targets = new Map<string, GatewayEntryTarget>();
   for (const rawEntry of lockfile.assistants) {
-    if (!rawEntry || typeof rawEntry !== "object") {
+    const parsed = GatewayTargetEntrySchema.safeParse(rawEntry);
+    if (!parsed.success) {
       continue;
     }
-    const entry = rawEntry as Partial<LockfileAssistant>;
-    const { assistantId } = entry;
-    if (typeof assistantId !== "string" || assistantId === "") {
+    const { assistantId, cloud, project, sshUser, runtimeUrl, resources } =
+      parsed.data;
+    if (!assistantId) {
       continue;
     }
-    if (resolveCloud(entry) === "paired") {
-      if (isUsableRuntimeUrl(entry.runtimeUrl)) {
-        targets.set(assistantId, {
-          kind: "remote",
-          runtimeUrl: entry.runtimeUrl as string,
-        });
+    const cloudValue = resolveCloud({ cloud, project, sshUser });
+    if (cloudValue === "paired") {
+      if (isUsableRuntimeUrl(runtimeUrl)) {
+        targets.set(assistantId, { kind: "remote", runtimeUrl });
       }
       continue;
     }
-    if (!isLoopbackGatewayCloud(resolveCloud(entry))) {
+    if (!isLoopbackGatewayCloud(cloudValue)) {
       continue;
     }
-    const port = getLoopbackGatewayPort(entry);
-    if (
-      port != null &&
-      port >= MIN_GATEWAY_PORT &&
-      port <= MAX_GATEWAY_PORT
-    ) {
+    const port = getLoopbackGatewayPort({ resources, runtimeUrl });
+    if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
       targets.set(assistantId, { kind: "loopback", port });
     }
   }

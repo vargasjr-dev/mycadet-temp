@@ -887,7 +887,7 @@ describe("session cleanup on logout", () => {
     mockIsGatewayAuth = true;
     mockSelectedAssistant = { assistantId: "paired-1", cloud: "paired" };
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway-paired/paired-1`,
+      url: `${window.location.origin}/assistant/__gateway/paired-1`,
       token: null,
     });
     setSelectedAssistantMock.mockImplementationOnce(async () => {

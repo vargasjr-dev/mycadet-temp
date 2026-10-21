@@ -442,7 +442,6 @@ describe("buildIngressNginxConfig", () => {
       "location = /v1/remote-web/pairing-requests/deny/ { return 404; }",
       "location ^~ /assistant/__local/ { return 404; }",
       "location ^~ /assistant/__gateway/ { return 404; }",
-      "location ^~ /assistant/__gateway-paired/ { return 404; }",
     ];
     for (const location of deniedLocations) {
       expect(remoteConf).toContain(location);

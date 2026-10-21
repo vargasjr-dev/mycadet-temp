@@ -1,21 +1,30 @@
-import { describe, expect, mock, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, mock, spyOn, test } from "bun:test";
 
-import {
-  forwardGatewayRequest,
-  type GatewayForwardFetcher,
-} from "./gateway-forward";
 import { PROXY_ERROR_HEADER, PROXY_NETWORK_ERROR_CODE } from "./cloud-forward";
+import type { GatewayForwardFetcher } from "./gateway-forward";
 
-const targets =
-  (entries: Record<string, { kind: "loopback"; port: number } | { kind: "remote"; runtimeUrl: string }>) =>
-  () =>
-    new Map(Object.entries(entries));
-const localOnly = targets({ abc: { kind: "loopback", port: 8080 } });
-const pairedOnly = targets({ abc: { kind: "remote", runtimeUrl: "https://gw.example.com" } });
-const guardianToken = async () => ({
-  ok: true as const,
-  accessToken: "host-token",
-});
+type TokenResult =
+  | { ok: true; accessToken: string }
+  | { ok: false; status: number; error: string };
+
+// The planner reads its target map from the watched lockfile snapshot (the
+// watcher seam) and resolves the paired guardian bearer through
+// electron-desktop's local-mode module — both are module-level dependencies
+// of `forwardGatewayRequest`, pinned here so tests never touch disk.
+let watchedSnapshot: { assistants: unknown[] } | null = null;
+mock.module("./lockfile-watcher", () => ({
+  getWatchedLockfileSnapshot: () => watchedSnapshot,
+}));
+
+let tokenResult: TokenResult = { ok: true, accessToken: "host-token" };
+const getPairedGuardianAccessToken = mock(
+  async (_assistantId: string, _runtimeUrl: string): Promise<TokenResult> =>
+    tokenResult,
+);
+mock.module("./local-mode", () => ({ getPairedGuardianAccessToken }));
+
+const { forwardGatewayRequest } = await import("./gateway-forward");
+
 const request = (path: string, init: RequestInit = {}) =>
   new Request(`app://mycadet.ai${path}`, init);
 const recorder = (response = new Response("ok")) => {
@@ -23,32 +32,49 @@ const recorder = (response = new Response("ok")) => {
   return { fetcher, response };
 };
 
+const localLockfile = {
+  assistants: [
+    { assistantId: "abc", cloud: "local", resources: { gatewayPort: 8080 } },
+  ],
+};
+const pairedLockfile = {
+  assistants: [
+    {
+      assistantId: "abc",
+      cloud: "paired",
+      runtimeUrl: "https://gw.example.com",
+    },
+  ],
+};
+
+beforeEach(() => {
+  tokenResult = { ok: true, accessToken: "host-token" };
+  getPairedGuardianAccessToken.mockClear();
+});
+
 describe("forwardGatewayRequest — loopback forwards", () => {
+  beforeEach(() => {
+    watchedSnapshot = localLockfile;
+  });
+
   test("passes non-gateway requests through without fetching", async () => {
     const { fetcher } = recorder();
     expect(
-      await forwardGatewayRequest(
-        request("/assistant/assets/app.js"),
-        localOnly,
-        guardianToken,
-        fetcher,
-      ),
+      await forwardGatewayRequest(request("/assistant/assets/app.js"), fetcher),
     ).toBeNull();
     expect(fetcher).not.toHaveBeenCalled();
+    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("rejects an id that is not active in the lockfile before fetching", async () => {
     const { fetcher } = recorder();
-    const token = mock(guardianToken);
     const response = await forwardGatewayRequest(
       request("/__gateway/unknown/v1"),
-      localOnly,
-      token,
       fetcher,
     );
     expect(response?.status).toBe(403);
     expect(await response?.text()).toBe("Assistant is not active in lockfile");
-    expect(token).not.toHaveBeenCalled();
+    expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
     expect(fetcher).not.toHaveBeenCalled();
   });
 
@@ -57,8 +83,6 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     expect(
       await forwardGatewayRequest(
         request("/assistant/__gateway/abc/v1/assistants?x=1"),
-        localOnly,
-        guardianToken,
         fetcher,
       ),
     ).toBe(response);
@@ -79,8 +103,6 @@ describe("forwardGatewayRequest — loopback forwards", () => {
           method: "POST",
           headers: origin ? { origin } : {},
         }),
-        localOnly,
-        guardianToken,
         fetcher,
       );
       expect(new Headers(fetcher.mock.calls[0]![1].headers).get("origin")).toBe(
@@ -100,8 +122,6 @@ describe("forwardGatewayRequest — loopback forwards", () => {
           "content-type": "application/json",
         },
       }),
-      localOnly,
-      guardianToken,
       fetcher,
     );
     const headers = new Headers(fetcher.mock.calls[0]![1].headers);
@@ -115,7 +135,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
       method: "POST",
       body: new ReadableStream<Uint8Array>(),
     });
-    await forwardGatewayRequest(req, localOnly, guardianToken, fetcher);
+    await forwardGatewayRequest(req, fetcher);
     const init = fetcher.mock.calls[0]![1];
     expect(init.method).toBe("POST");
     expect(init.body).toBe(req.body);
@@ -129,12 +149,7 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     });
     await expect(
       Promise.resolve().then(() =>
-        forwardGatewayRequest(
-          request("/__gateway/abc/v1/foo"),
-          localOnly,
-          guardianToken,
-          fetcher,
-        ),
+        forwardGatewayRequest(request("/__gateway/abc/v1/foo"), fetcher),
       ),
     ).rejects.toThrow("net::ERR_CONNECTION_REFUSED");
     expect(fetcher).toHaveBeenCalledTimes(1);
@@ -142,44 +157,31 @@ describe("forwardGatewayRequest — loopback forwards", () => {
 });
 
 describe("forwardGatewayRequest — remote (paired) forwards", () => {
-  test("accepts the deprecated `-paired` alias through the same planner", async () => {
+  beforeEach(() => {
+    watchedSnapshot = pairedLockfile;
+  });
+
+  test("forwards to the paired runtime with its host-owned bearer and query", async () => {
     const { fetcher } = recorder();
-    const token = mock(guardianToken);
     await forwardGatewayRequest(
-      request("/assistant/__gateway-paired/abc/v1/foo?x=1", {
+      request("/__gateway/abc/v1/foo?x=1", {
         headers: {
           authorization: "Bearer renderer-token",
           accept: "text/event-stream",
         },
       }),
-      pairedOnly,
-      token,
       fetcher,
     );
-    expect(token).toHaveBeenCalledWith("abc", "https://gw.example.com");
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(getPairedGuardianAccessToken).toHaveBeenCalledWith(
+      "abc",
+      "https://gw.example.com",
+    );
     const [url, init] = fetcher.mock.calls[0]!;
     expect(url).toBe("https://gw.example.com/v1/foo?x=1");
     expect(init.redirect).toBe("manual");
     const headers = new Headers(init.headers);
     expect(headers.get("authorization")).toBe("Bearer host-token");
     expect(headers.get("accept")).toBe("text/event-stream");
-  });
-
-  test("forwards to the paired runtime with its host-owned bearer and query", async () => {
-    const { fetcher } = recorder();
-    const token = mock(guardianToken);
-    await forwardGatewayRequest(
-      request("/__gateway/abc/v1/foo?x=1", {
-        headers: { authorization: "Bearer renderer-token" },
-      }),
-      pairedOnly,
-      token,
-      fetcher,
-    );
-    expect(token).toHaveBeenCalledWith("abc", "https://gw.example.com");
-    const [url] = fetcher.mock.calls[0]!;
-    expect(url).toBe("https://gw.example.com/v1/foo?x=1");
   });
 
   test("strips browser-ambient headers and streams the request body", async () => {
@@ -195,7 +197,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       },
       body: new ReadableStream<Uint8Array>(),
     });
-    await forwardGatewayRequest(req, pairedOnly, guardianToken, fetcher);
+    await forwardGatewayRequest(req, fetcher);
     const init = fetcher.mock.calls[0]![1];
     const headers = new Headers(init.headers);
     for (const name of [
@@ -214,14 +216,9 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
 
   test("rejects before fetching when the host cannot read the bearer", async () => {
     const { fetcher } = recorder();
+    tokenResult = { ok: false, status: 404, error: "Guardian token not found" };
     const response = await forwardGatewayRequest(
       request("/__gateway/abc/v1/foo"),
-      pairedOnly,
-      async () => ({
-        ok: false,
-        status: 404,
-        error: "Guardian token not found",
-      }),
       fetcher,
     );
     expect(response?.status).toBe(404);
@@ -235,12 +232,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
     });
     const { fetcher } = recorder(upstream);
     expect(
-      await forwardGatewayRequest(
-        request("/__gateway/abc/v1/events"),
-        pairedOnly,
-        guardianToken,
-        fetcher,
-      ),
+      await forwardGatewayRequest(request("/__gateway/abc/v1/events"), fetcher),
     ).toBe(upstream);
     expect(upstream.bodyUsed).toBe(false);
   });
@@ -259,8 +251,6 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
         });
         const response = await forwardGatewayRequest(
           request("/__gateway/abc/v1/foo", { method }),
-          pairedOnly,
-          guardianToken,
           fetcher,
         );
         expect(fetcher).toHaveBeenCalledTimes(attempts);
