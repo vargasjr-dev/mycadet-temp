@@ -20,13 +20,14 @@ import { useLocation, useNavigate } from "react-router";
 
 import { cn, toast } from "@mycadet/design-library";
 
-import { switchToResolvedAssistant } from "@/assistant/switch-service";
 import { useSwitchableAssistants } from "@/assistant/use-switchable-assistants";
 import { AssistantNavItem } from "@/domains/chat/components/assistant-nav-item";
 import { AssistantSwitcherRow } from "@/domains/chat/components/assistant-switcher-row";
 import { canFetchRowAvatarViaCloudProxy } from "@/hooks/use-chooser-row-avatar";
 import { versionSupportsAvatarStateManifest } from "@/lib/backwards-compat/avatar-state-manifest";
 import { captureError } from "@/lib/error-reporting/capture-error";
+import { isLocalClient } from "@/lib/local-mode";
+import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
@@ -137,7 +138,18 @@ export function AssistantSwitcher({
          the route. Inside the try so an aborted navigation takes the same
          restore path a failed connect does. */
       await navigate(routes.assistant, { replace: true });
-      await switchToResolvedAssistant(assistant);
+      const {
+        connectPairedAssistant,
+        connectLocalAssistant,
+        connectCloudAssistant,
+      } = useAuthStore.getState();
+      if (assistant.isPaired) {
+        await connectPairedAssistant(assistant.id);
+      } else if (assistant.isLocal && isLocalClient()) {
+        await connectLocalAssistant(assistant.id);
+      } else {
+        await connectCloudAssistant(assistant.id);
+      }
       setExpanded(false);
       requestChevronFocus();
       /* The old assistant's loader may have landed somewhere while the

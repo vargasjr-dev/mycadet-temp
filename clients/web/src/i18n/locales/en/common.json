@@ -66,9 +66,7 @@
   "appViewerContainer": {
     "exitFullscreen": "Exit fullscreen"
   },
-  "assistantConnect": {
-    "failed": "Failed to connect to the assistant."
-  },
+
   "assistantEmailIntroModal": {
     "setUp": "Set up email"
   },
@@ -532,13 +530,7 @@
     "placeholder": "Ask Cadet anything...",
     "send": "Send message"
   },
-  "removeFromDeviceDialog": {
-    "confirm": "Remove",
-    "messageOrigin": "This won't affect {assistantName} or sign you out there. It only forgets the entry on this device. Add it again anytime.",
-    "messagePaired": "This won't affect {assistantName} on its host machine. It only forgets the pairing on this device. Pair again anytime with cadet connect import.",
-    "messagePlatform": "This won't delete {assistantName}. It only removes it from this device. Logging in will make it available again.",
-    "title": "Remove from this device?"
-  },
+
   "resourcePressureBanner": {
     "body": "Your assistant is working hard and reaching its current resource limits. Upgrade to keep it running smoothly.",
     "bodyNoUpgrade": "Your assistant is working hard and reaching its current resource limits.",
@@ -558,9 +550,7 @@
   "routePendingIndicator": {
     "loadingAria": "Loading"
   },
-  "rootLayout": {
-    "unnamedAssistant": "the assistant"
-  },
+
   "routeErrorBoundary": {
     "chunkFailBody": "This section couldn't load. Likely a network blip or a stale version. Reload the page to try again.",
     "reload": "Reload"

@@ -36,7 +36,6 @@ import {
   useHasCloudSession,
 } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import { getLockfileAssistant } from "@/lib/local-mode";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
 import { useCadetCommands } from "@/runtime/cadet-commands";
@@ -98,10 +97,7 @@ import { RoutePendingIndicator } from "@/components/route-pending-indicator";
 import { StatusBanner } from "@/components/status-banner";
 import { UpdateToast } from "@/components/update-toast";
 import { retireAssistant } from "@/assistant/retire-service";
-import { removePairedAssistant } from "@/assistant/switch-service";
-import { RemoveFromDeviceDialog } from "@/components/remove-from-device-dialog";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
-import { useTranslation } from "@/i18n";
 import { toast } from "@mycadet/design-library/components/toast";
 import { answerDictationOffer } from "@/domains/chat/voice/dictation-offer-actions";
 import { answerCompanionPopover } from "@/domains/chat/companion-popover-actions";
@@ -137,7 +133,6 @@ import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notificat
  */
 export function RootLayout() {
   useAppTheme();
-  const { t } = useTranslation();
   const keyboardOpen = useKeyboardOpen();
   const visibleViewport = useVisibleViewport();
 
@@ -378,9 +373,6 @@ export function RootLayout() {
   // the retire can run without first routing the user to settings.
   const [retireId, setRetireId] = useState<string | null>(null);
   const [retirePending, setRetirePending] = useState(false);
-  // Id of the paired assistant a tray "Remove from this Mac…" command targets.
-  const [removePairedId, setRemovePairedId] = useState<string | null>(null);
-  const [removePairedPending, setRemovePairedPending] = useState(false);
   const { login } = useOnboardingLogin();
 
   useCadetCommands({
@@ -397,11 +389,6 @@ export function RootLayout() {
     retireAssistant: (command) => {
       if (command.kind === "retireAssistant") {
         setRetireId(command.assistantId);
-      }
-    },
-    removePairedAssistant: (command) => {
-      if (command.kind === "removePairedAssistant") {
-        setRemovePairedId(command.assistantId);
       }
     },
     quickInputSubmit: (command) => {
@@ -537,23 +524,6 @@ export function RootLayout() {
       void navigate(`${routes.onboarding.hatching}?preview=true&fail=1`);
     },
   });
-
-  const handleConfirmRemovePaired = async () => {
-    if (!removePairedId) {
-      return;
-    }
-    setRemovePairedPending(true);
-    const outcome = await removePairedAssistant(queryClient, removePairedId);
-    setRemovePairedPending(false);
-    setRemovePairedId(null);
-    if (!outcome.ok) {
-      toast.error(outcome.error);
-      return;
-    }
-    if (outcome.nextRoute) {
-      void navigate(outcome.nextRoute, { replace: true });
-    }
-  };
 
   const handleConfirmRetire = async () => {
     if (!retireId) {
@@ -697,21 +667,6 @@ export function RootLayout() {
         isPending={retirePending}
         onConfirm={handleConfirmRetire}
         onCancel={() => setRetireId(null)}
-      />
-
-      {/* Confirmation for the tray "Remove from this Mac…" command. Shares
-          the chooser's remove dialog: forgetting the pairing on this device
-          never touches the assistant on its host machine. */}
-      <RemoveFromDeviceDialog
-        open={removePairedId !== null}
-        kind="paired"
-        assistantName={
-          (removePairedId && getLockfileAssistant(removePairedId)?.name) ||
-          t("rootLayout.unnamedAssistant")
-        }
-        isPending={removePairedPending}
-        onConfirm={() => void handleConfirmRemovePaired()}
-        onCancel={() => setRemovePairedId(null)}
       />
     </div>
   );

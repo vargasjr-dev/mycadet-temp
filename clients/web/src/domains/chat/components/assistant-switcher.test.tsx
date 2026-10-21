@@ -1,8 +1,9 @@
 /**
  * Tests for `AssistantSwitcher`: the chevron's visibility matrix (gate,
  * entry count, collapsed rail), the expanded card's contents, and what a
- * row selection does on success and on failure. The switchable list and the
- * switch call are mocked; the identity pill renders for real around them.
+ * row selection does on success and on failure. The switchable list is
+ * mocked and the connect dispatch is pinned through the auth store's
+ * connect actions; the identity pill renders for real around them.
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -10,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import * as reactRouter from "react-router";
 
+import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
@@ -50,10 +52,16 @@ mock.module("@/assistant/use-switchable-assistants", () => ({
   useSwitchableAssistants: () => switchable,
 }));
 
-const switchMock = mock(async (_assistant: ResolvedAssistant) => {});
-mock.module("@/assistant/switch-service", () => ({
-  switchToResolvedAssistant: switchMock,
-}));
+const connectAssistantMock = () => mock(async (_assistantId: string) => {});
+const connectCloudMock = connectAssistantMock();
+const connectPairedMock = connectAssistantMock();
+const connectLocalMock = connectAssistantMock();
+
+function expectNoConnect() {
+  expect(connectCloudMock).not.toHaveBeenCalled();
+  expect(connectPairedMock).not.toHaveBeenCalled();
+  expect(connectLocalMock).not.toHaveBeenCalled();
+}
 
 const captureErrorMock = mock(
   (_error: unknown, _context?: Record<string, unknown>) => {},
@@ -109,8 +117,19 @@ function renderSwitcher(
 
 beforeEach(() => {
   switchable = { assistants: [CURRENT, OTHER], canSwitch: true };
-  switchMock.mockClear();
-  switchMock.mockImplementation(async () => {});
+  for (const connectMock of [
+    connectCloudMock,
+    connectPairedMock,
+    connectLocalMock,
+  ]) {
+    connectMock.mockClear();
+    connectMock.mockImplementation(async () => {});
+  }
+  useAuthStore.setState({
+    connectCloudAssistant: connectCloudMock,
+    connectPairedAssistant: connectPairedMock,
+    connectLocalAssistant: connectLocalMock,
+  });
   captureErrorMock.mockClear();
   navigateMock.mockClear();
   avatarCalls.length = 0;
@@ -198,7 +217,7 @@ describe("AssistantSwitcher expanded card", () => {
     await flushSwitch();
     expect(onSwitched).toHaveBeenCalledTimes(1);
 
-    switchMock.mockImplementation(async () => {
+    connectCloudMock.mockImplementation(async () => {
       throw new Error("boom");
     });
     fireEvent.click(getByLabelText("Switch assistant"));
@@ -215,7 +234,7 @@ describe("AssistantSwitcher expanded card", () => {
        persist, a still-mounted old conversation against the new
        assistant. */
     let storeIdAtSwitch: string | null = "unset";
-    switchMock.mockImplementation(async () => {
+    connectCloudMock.mockImplementation(async () => {
       storeIdAtSwitch = useConversationStore.getState().activeConversationId;
     });
     const { getByLabelText, queryByText } = renderSwitcher();
@@ -230,18 +249,18 @@ describe("AssistantSwitcher expanded card", () => {
       routes.assistant,
       { replace: true },
     ]);
-    expect(switchMock).not.toHaveBeenCalled();
+    expectNoConnect();
 
     await flushSwitch();
-    expect(switchMock).toHaveBeenCalledTimes(1);
-    expect(switchMock.mock.calls[0]?.[0]).toEqual(OTHER);
+    expect(connectCloudMock).toHaveBeenCalledTimes(1);
+    expect(connectCloudMock.mock.calls[0]?.[0]).toEqual(OTHER.id);
     expect(storeIdAtSwitch).toBeNull();
     expect(queryByText("Bob")).toBeNull();
     expect(useConversationStore.getState().activeConversationId).toBeNull();
   });
 
   test("a failed switch reports, stays expanded, and restores the conversation", async () => {
-    switchMock.mockImplementation(async () => {
+    connectCloudMock.mockImplementation(async () => {
       throw new Error("boom");
     });
     useConversationStore.setState({ activeConversationId: "conv-old" });
@@ -338,9 +357,30 @@ describe("AssistantSwitcher expanded card", () => {
     ).toBe(true);
   });
 
+  test("a paired assistant connects through the paired flow", async () => {
+    const paired: ResolvedAssistant = {
+      id: "p1",
+      name: "Paired",
+      isLocal: false,
+      isCloudHosted: false,
+      isPaired: true,
+    };
+    switchable = { assistants: [CURRENT, paired], canSwitch: true };
+    const { getByLabelText } = renderSwitcher();
+
+    fireEvent.click(getByLabelText("Switch assistant"));
+    fireEvent.click(getByLabelText("Switch to Paired"));
+    await flushSwitch();
+
+    expect(connectPairedMock).toHaveBeenCalledTimes(1);
+    expect(connectPairedMock.mock.calls[0]?.[0]).toEqual("p1");
+    expect(connectCloudMock).not.toHaveBeenCalled();
+    expect(connectLocalMock).not.toHaveBeenCalled();
+  });
+
   test("a mid-switch assistant publication still hands focus to the chevron", async () => {
     let resolveSwitch: () => void = () => {};
-    switchMock.mockImplementation(
+    connectCloudMock.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
           resolveSwitch = resolve;
