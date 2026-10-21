@@ -20,6 +20,13 @@ export interface AppElectronBridge {
     /** The chooser's switch-to-origin: main loads the target itself. */
     navigateTo(url: string): Promise<void>;
   };
+  /**
+   * Deep-link bridge (deep-links.ts): `drain` returns links that arrived
+   * before the renderer existed, `onLink` subscribes to live ones. Optional
+   * so a renderer newer than its shell degrades to no links instead of
+   * throwing inside the effect.
+   */
+  deepLinks?: Pick<CadetBridge["deepLinks"], "drain" | "onLink">;
 }
 
 // Keep the adapter local to app instead of augmenting Window with web's full

@@ -52,6 +52,29 @@ export function pairingLinkForBase(
 }
 
 /**
+ * The address a `connect` deep link asks the dialog to pair with. A link
+ * carrying a device code recomposes into the pairing link the local-mode host
+ * exchanges outright; a link carrying only a base becomes the bare address,
+ * which mints its own approval code. `null` when the link carried no usable
+ * base, leaving the dialog nothing to submit.
+ */
+export function connectAddress(
+  url: string | null,
+  code: string | null,
+): string | null {
+  if (url === null) {
+    return null;
+  }
+  if (code === null) {
+    return url;
+  }
+  // The link the user sees in the address field, so it has to be one they can
+  // also paste into another device's browser: the base plus the pair route,
+  // not the base with a bare fragment hung off it.
+  return pairingLinkForBase(url, code) ?? url;
+}
+
+/**
  * The reasons {@link publicBaseUrlRejectionMessage} has copy for. A `Record`
  * rather than a list so a reason added to the contract fails to compile here
  * until it has copy.
