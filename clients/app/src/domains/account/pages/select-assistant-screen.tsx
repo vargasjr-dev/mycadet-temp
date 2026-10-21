@@ -19,12 +19,15 @@ import {
   isLocalModeHostAvailable,
   isPairedAssistant,
   isLocalGatewayAssistant,
-  statusLocalAssistantHost,
   wakeLocalAssistantHost,
   retireLocalAssistantHost,
   unpairLocalAssistant,
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
+import {
+  entryApiBase,
+  resolveLockfileEntryConnect,
+} from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import {
@@ -210,15 +213,6 @@ export function SelectAssistantScreen() {
     void switchToOrigin(origin, deviceCode ?? undefined);
   };
 
-  /** Where a lockfile entry's same-origin API base lives. */
-  const entryApiBase = (entry: LockfileAssistant): string | undefined =>
-    isPairedAssistant(entry)
-      ? // Paired gateways ride the shell's paired-forward path: same-origin,
-        // allowlisted by the lockfile entry, guardian credential injected
-        // server-side.
-        `/assistant/__gateway-paired/${entry.assistantId}`
-      : undefined;
-
   const connectEntry = (entry: LockfileAssistant): void => {
     void navigate(routes.assistant, {
       state: assistantSelectionState(entry.assistantId, entryApiBase(entry)),
@@ -230,35 +224,22 @@ export function SelectAssistantScreen() {
    * resolution rides the paired-gateway path. A local entry is probed
    * first: a healthy daemon connects by navigating, anything else opens
    * the recovery dialog, whose repair re-provisions and retries — the
-   * app-bundle analog of web's connect failing into recovery.
+   * app-bundle analog of web's connect failing into recovery. The verdict
+   * itself lives in `resolveLockfileEntryConnect` so the shell's assistant
+   * commands (the palette's switch action, re-pair) make the same call.
    */
   const handleConnectEntry = async (entry: LockfileAssistant) => {
     if (connectingEntryId != null || recoveryPending) {
       return;
     }
-    if (isPairedAssistant(entry)) {
+    setConnectingEntryId(entry.assistantId);
+    const verdict = await resolveLockfileEntryConnect(entry);
+    setConnectingEntryId(null);
+    if (verdict === "connect") {
       connectEntry(entry);
       return;
     }
-    setConnectingEntryId(entry.assistantId);
-    try {
-      const status = await statusLocalAssistantHost(entry.assistantId);
-      if (
-        status.ok &&
-        (status.state === "healthy" ||
-          status.state === "starting" ||
-          status.state === "upgrading")
-      ) {
-        setConnectingEntryId(null);
-        connectEntry(entry);
-        return;
-      }
-      setRecoveryEntry(entry);
-    } catch (error) {
-      console.error("selectAssistant.connectEntry failed", error);
-      setRecoveryEntry(entry);
-    }
-    setConnectingEntryId(null);
+    setRecoveryEntry(entry);
   };
 
   const clearRecoveryState = () => {
