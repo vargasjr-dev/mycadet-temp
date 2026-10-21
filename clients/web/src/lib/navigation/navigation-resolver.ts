@@ -104,15 +104,6 @@ function hasCompletedOnboarding(state: NavigationState): boolean {
   return state.tosAccepted && state.privacyConsent;
 }
 
-/**
- * Onboarding is complete AND every consent axis is for the current version.
- * A stale acceptance means the user must re-review the terms even though they
- * already finished onboarding.
- */
-function consentIsCurrent(state: NavigationState): boolean {
-  return hasCompletedOnboarding(state);
-}
-
 const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
 
 const LOCAL_ONLY_ONBOARDING_PATHS: Set<string> = new Set([
@@ -714,7 +705,7 @@ function enforceFunnelConsent(
     path === routes.onboarding.research &&
     postCheckoutHatchReturnTo(pathnameWithSearch) &&
     state.cloudSession === "present" &&
-    !consentIsCurrent(state)
+    !hasCompletedOnboarding(state)
   ) {
     const returnTo = encodeURIComponent(pathnameWithSearch);
     return {
@@ -781,7 +772,7 @@ function requireAssistant(
     return { action: "redirect", to: routes.onboarding.privacy };
   }
   // A stale toggle must be re-reviewed before provisioning an assistant.
-  if (!consentIsCurrent(state)) {
+  if (!hasCompletedOnboarding(state)) {
     const returnTo = encodeURIComponent(pathnameWithSearch);
     return {
       action: "redirect",
@@ -802,7 +793,7 @@ function requireConsent(
   // absent/unknown session has no server consent record to gate on. Note this
   // is NOT gated on isLocalClient — a local-mode client with a cloud session
   // still re-reviews stale terms.
-  if (state.cloudSession !== "present" || consentIsCurrent(state)) {
+  if (state.cloudSession !== "present" || hasCompletedOnboarding(state)) {
     return null;
   }
 
@@ -872,7 +863,7 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
     };
   }
   // A stale toggle must be re-reviewed before hatching, even via direct navigation.
-  if (!state.isLocalClient && !consentIsCurrent(state)) {
+  if (!state.isLocalClient && !hasCompletedOnboarding(state)) {
     return { action: "redirect", to: routes.reviewTerms };
   }
   return { action: "allow" };
