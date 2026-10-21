@@ -17,6 +17,8 @@ import {
   REMEMBERED_ORIGINS_STORAGE_KEY,
   resetRememberedOriginsForTesting,
 } from "@app/stores/remembered-origins-store";
+import { __resetConnectDialogForTesting } from "@app/stores/connect-dialog-store";
+import { __resetLocalLockfileForTesting } from "@app/stores/local-lockfile-store";
 
 const request = spyOn(globalThis, "fetch");
 const iframeDocument = new Response("<!doctype html><html></html>", {
@@ -518,5 +520,120 @@ describe("remembered origins", () => {
       fireEvent.click(within(dialog).getByRole("button", { name: "Remove" }));
     });
     await waitFor(() => expect(screen.queryByText("Workshop")).toBeNull());
+  });
+
+  describe("with a local-mode host", () => {
+    const originalCadet = Object.getOwnPropertyDescriptor(window, "cadet");
+
+    function stubCadet(lockfile: unknown, status: unknown): void {
+      Object.defineProperty(window, "cadet", {
+        configurable: true,
+        value: {
+          platform: "electron",
+          localMode: {
+            // Availability is detected on the pairing channel itself.
+            pairingStart: async () => ({ ok: false, error: "unused" }),
+            readLockfile: async () => lockfile,
+            status: async () => status,
+          },
+        },
+      });
+    }
+
+    afterEach(() => {
+      if (originalCadet) {
+        Object.defineProperty(window, "cadet", originalCadet);
+      } else {
+        Reflect.deleteProperty(window, "cadet");
+      }
+      __resetConnectDialogForTesting();
+      __resetLocalLockfileForTesting();
+    });
+
+    const pairedLockfile = {
+      assistants: [
+        {
+          assistantId: "paired-1",
+          name: "Office",
+          cloud: "paired",
+          runtimeUrl: "https://office.example.com",
+        },
+      ],
+      activeAssistant: null,
+    };
+
+    test("the pairing affordance replaces the add-origin affordance, and opens the connect dialog", async () => {
+      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      expect(
+        await screen.findByText("Connect a remote assistant"),
+      ).toBeDefined();
+      // Hostless surfaces add an origin instead; with a host the dialog owns
+      // pairing.
+      expect(screen.queryByText("Add a remote assistant")).toBeNull();
+      expect(
+        await screen.findByText("Paired · office.example.com"),
+      ).toBeDefined();
+      fireEvent.click(screen.getByText("Connect a remote assistant"));
+      expect(
+        await screen.findByText("Connect a Remote Assistant"),
+      ).toBeDefined();
+    });
+
+    test("a paired entry connects through the shell's paired-gateway path", async () => {
+      stubCadet(pairedLockfile, { ok: true, state: "healthy" });
+      setup("/account/select-assistant", false, async (url) => {
+        if (String(url).includes("/v1/assistants/paired-1")) {
+          return Response.json({
+            id: "paired-1",
+            status: "active",
+            version: "1.2.3",
+            url: "web/1.2.3/assistant/",
+          });
+        }
+        return iframeDocument.clone();
+      });
+      fireEvent.click(await screen.findByRole("radio", { name: /^Office/ }));
+      // The selection state carries the paired base, so the shell's
+      // resolution fetch rides the paired-gateway path instead of the
+      // default same-origin /v1.
+      await waitFor(() => {
+        expect(
+          request.mock.calls.some(([url]) =>
+            String(url).includes(
+              "/assistant/__gateway-paired/paired-1/v1/assistants/paired-1",
+            ),
+          ),
+        ).toBe(true);
+      });
+    });
+
+    test("a local assistant that is not healthy opens the recovery dialog", async () => {
+      stubCadet(
+        {
+          assistants: [
+            {
+              assistantId: "local-1",
+              name: "Workbench",
+              cloud: "local",
+            },
+          ],
+          activeAssistant: null,
+        },
+        { ok: true, state: "crashed" },
+      );
+      setup("/account/select-assistant", false, async () =>
+        Response.json({ results: [] }),
+      );
+      fireEvent.click(await screen.findByRole("radio", { name: /^Workbench/ }));
+      expect(
+        await screen.findByText("Can\u2019t Authenticate Assistant"),
+      ).toBeDefined();
+      expect(
+        screen.getByText(/authentication token for Workbench/),
+      ).toBeDefined();
+    });
   });
 });
