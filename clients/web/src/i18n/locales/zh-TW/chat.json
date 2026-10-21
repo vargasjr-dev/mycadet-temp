@@ -127,7 +127,6 @@
     "durationMinutes": "{count, plural, other {# 分鐘}}",
     "working": "處理中",
     "workingWithDuration": "處理中 · {duration}",
-    "waiting": "等待中",
     "waitingWithDuration": "等待中 · {duration}",
     "finishing": "即將完成",
     "finishingWithDuration": "即將完成 · {duration}",
@@ -328,7 +327,6 @@
   },
   "chatAttachments": {
     "attachFileAria": "附加檔案",
-    "dismiss": "關閉",
     "removeAria": "移除 {filename}"
   },
   "emailReferenceChip": {
@@ -939,20 +937,7 @@
     "name": "名稱",
     "noIcon": "無圖示"
   },
-  "oauthConnectSurface": {
-    "approvalAria": "關於助理核准",
-    "approvalTooltip": "未經您的核准，{name} 絕不會代表您行事",
-    "connect": "連線",
-    "connectTitle": "連線 {name}",
-    "connected": "已連線",
-    "defaultDescription": "連線 {name}，以便我能將其用於此任務。",
-    "dismiss": "關閉",
-    "missingDetails": "缺少助理或供應商詳細資訊。",
-    "tenantHostInvalid": "請輸入有效的{label}，例如 {placeholder}",
-    "thisAccount": "此帳號",
-    "waiting": "等待中...",
-    "yourAssistant": "您的助理"
-  },
+
   "onboardingChoiceCard": {
     "continue": "繼續",
     "helpWithHeading": "我能為您提供什麼協助？",

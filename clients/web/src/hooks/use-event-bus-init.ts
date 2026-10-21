@@ -39,7 +39,6 @@ import { sseService } from "@/assistant/sse-service";
 import { subscribeLifecycleDiagnostics } from "@/lib/lifecycle-diagnostics";
 import { setupQueryFocusManager } from "@/lib/query-focus-manager";
 import { publishCapacitorAppStateSource } from "@/runtime/event-sources/capacitor-app-state";
-import { publishCapacitorDeepLinksSource } from "@/runtime/event-sources/capacitor-deep-links";
 import { publishShareInboxSource } from "@/runtime/share-inbox";
 import { publishVisibilitySource } from "@/runtime/event-sources/dom-visibility";
 import { publishElectronConnectivitySource } from "@/runtime/event-sources/electron-connectivity";
@@ -79,7 +78,6 @@ export function useEventBusInit({
       publishVisibilitySource(),
       publishWindowOnlineSource(),
       publishCapacitorAppStateSource(),
-      publishCapacitorDeepLinksSource(),
       publishShareInboxSource(),
       publishElectronPowerSource(),
       publishElectronDeepLinksSource(),

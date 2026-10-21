@@ -1610,10 +1610,8 @@
     "deleteFailedToast": "Не удалось удалить OAuth-приложение",
     "disconnect": "Отключить",
     "disconnectAria": "Отключить {account}",
-    "disconnectFailedToast": "Не удалось отключить аккаунт",
     "disconnectMessage": "Отключить {account}? Потом можно подключить снова.",
     "disconnectTitle": "Отключить {name}?",
-    "disconnectedToast": "Аккаунт {name} отключён.",
     "redirectHint": "Этот URL: в настройки перенаправления OAuth-приложения.",
     "redirectUrl": "Redirect URL",
     "waitingAuthorization": "Ожидание авторизации..."

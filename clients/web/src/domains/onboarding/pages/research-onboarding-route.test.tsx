@@ -230,19 +230,6 @@ mock.module("@/domains/onboarding/funnel-events", () => ({
   ),
 }));
 
-mock.module("@/domains/onboarding/checkin-scheduler", () => ({
-  scheduleCheckin: async () => ({ scheduled: false }),
-}));
-
-mock.module("@/domains/onboarding/hooks/use-google-calendar-connect", () => ({
-  GOOGLE_CALENDAR_EVENTS_SCOPE:
-    "https://www.googleapis.com/auth/calendar.events",
-}));
-
-mock.module("@/domains/onboarding/format-checkin-time", () => ({
-  formatCheckinTime: () => "2:30 PM",
-}));
-
 mock.module("@/utils/browser-timezone", () => ({
   getBrowserTimezone: () => "UTC",
 }));
@@ -343,20 +330,7 @@ mock.module("@/domains/onboarding/screens/create-personality-step", () => ({
   ),
 }));
 
-// Only the skip escape matters here — when it is revealed is the step's own
-// concern (see lets-chat-tomorrow-step.test.tsx).
-mock.module("@/domains/onboarding/screens/lets-chat-tomorrow-step", () => ({
-  LetsChatTomorrowStep: (props: { onSkip: () => void }) => (
-    <div data-testid="letschat-step">
-      <button type="button" data-testid="letschat-skip" onClick={props.onSkip}>
-        Skip for now
-      </button>
-    </div>
-  ),
-}));
-
 mock.module("@/domains/onboarding/screens/research-result-steps", () => ({
-  MeetingCreatedStep: () => <div data-testid="meeting-step" />,
   // Surfaces the `ready` gate so a test can pin when the carousel is allowed to
   // advance out of the loading state.
   LookingYouUpStep: (props: { ready: boolean }) => (
@@ -434,8 +408,6 @@ function postFormSnapshot(
       hobbies: ["chess"],
     },
     faceValues: null,
-    checkinTime: null,
-    checkinBooked: false,
     research: null,
     ...overrides,
   };
@@ -843,7 +815,7 @@ describe("ResearchOnboardingRoute paid return", () => {
   // from assistive tech nor swallow the escapes the steps deliberately expose
   // while the hatch is dead.
   test("leaves the funnel's own escapes usable behind the failure banner", async () => {
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "letschat" }));
+    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
     backgroundHatch.error = "Failed to start your assistant. Please try again.";
     backgroundHatch.ready = false;
     backgroundHatch.assistantId = null;

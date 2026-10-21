@@ -787,10 +787,6 @@
     "stepConnect": "连接",
     "stepCreate": "创建机器人"
   },
-  "tenantHost": {
-    "shopifyLabel": "店铺域名",
-    "shopifyPlaceholder": "your-store.myshopify.com"
-  },
   "terminalPanel": {
     "recoveryModeBanner": "恢复模式已激活：此会话已连接到调试终端。"
   },
@@ -882,17 +878,7 @@
     "failed": "连接 Claude 失败。请重试。",
     "notStarted": "请先启动连接 Claude 流程。",
     "pasteEmpty": "请粘贴 Claude 页面上显示的代码。",
-    "popupBlocked": "您的浏览器阻止了登录标签页。请允许此站点的弹窗，然后再次点击连接。",
-    "startFailed": "无法启动连接 Claude。请重试。",
     "timedOut": "等待 Claude 连接超时。请重试。"
-  },
-  "useOauthConnect": {
-    "accountConnected": "{name} 账户已连接。",
-    "authorizationError": "{name} 错误：{code}",
-    "authorizationFailed": "{name} 授权失败",
-    "popupBlocked": "弹窗被阻止。请启用弹窗并重试。",
-    "startFailed": "启动 {name} 授权失败。",
-    "startFailedWithReason": "启动 {name} 授权失败：{reason}"
   },
   "useOpenUrlDirectives": {
     "blocked": "您的浏览器阻止了助手尝试打开的页面。",

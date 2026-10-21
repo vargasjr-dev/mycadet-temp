@@ -50,8 +50,6 @@ export type ResearchStep =
   | "different"
   | "personality"
   | "integration"
-  | "letschat"
-  | "meeting"
   | "looking"
   | "results"
   | "suggestions"
@@ -80,15 +78,6 @@ export interface ResearchOnboardingSnapshot {
   step: ResearchStep;
   formValues: ResearchOnboardingValues | null;
   faceValues: GiveMeAFaceValues | null;
-  /** Formatted booked check-in time ("2:30 PM"), or null when not booked. */
-  checkinTime: string | null;
-  /**
-   * True only once the day-2 check-in was confirmed booked by the daemon. Kept
-   * separate from the transient "meeting" confirmation step so a refresh that
-   * interrupts the in-flight (non-idempotent) booking POST doesn't resume PAST
-   * it as if it succeeded — see resolveResumeStep.
-   */
-  checkinBooked: boolean;
   /** Completed research output; null until the turn settles with results. */
   research: PersistedResearchResults | null;
   /**
@@ -181,15 +170,7 @@ export function clearResearchSnapshot(userId: string | null): void {
  * finished, jump straight to the suggestions — the saved results render without
  * re-running the search.
  *
- * Otherwise resume the saved step, with one guard around the "meeting"
- * confirmation: that step is the booking's loading state, written the moment we
- * fire the (non-idempotent, best-effort) check-in POST. A refresh there can
- * cancel that request before the daemon books anything. So resume "meeting" to
- * the looking-you-up carousel ONLY when the booking was confirmed; otherwise
- * fall back to the calendar step so the user can complete it — restoring the
- * pre-resume behavior (a refresh used to restart the whole flow back through the
- * calendar) without ever auto-rebooking (that step books only on an explicit
- * click, so a booking that did succeed can't be silently duplicated).
+ * Otherwise resume the saved step.
  */
 export function resolveResumeStep(
   snapshot: ResearchOnboardingSnapshot,
@@ -202,12 +183,6 @@ export function resolveResumeStep(
   const skipResearch =
     snapshot.formValues !== null &&
     shouldSkipOnboardingResearch(snapshot.formValues);
-  if (snapshot.step === "meeting") {
-    if (snapshot.checkinBooked) {
-      return skipResearch ? "suggestions" : "looking";
-    }
-    return "letschat";
-  }
   if (
     skipResearch &&
     (snapshot.step === "looking" || snapshot.step === "results")

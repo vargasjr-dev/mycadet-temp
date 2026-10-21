@@ -5,7 +5,6 @@ import type { Surface } from "@/domains/chat/types/types";
 
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 
-import { OAuthConnectSurface } from "./oauth-connect-surface";
 import { SurfaceRouter } from "./surface-router";
 
 const meta: Meta = {
@@ -72,44 +71,7 @@ function makeCopyBlockSurface(overrides: Partial<Surface> = {}): Surface {
   };
 }
 
-function makeOAuthConnectSurface(overrides: Partial<Surface> = {}): Surface {
-  return {
-    surfaceId: "oauth-connect-surface",
-    surfaceType: "oauth_connect",
-    title: "Connect Google",
-    data: {
-      providerKey: "google",
-      displayName: "Google",
-      description: "Connect Gmail, Calendar, and Drive for this task.",
-    },
-    ...overrides,
-  };
-}
-
-const storyFetchProvider = async () => ({
-  provider_key: "google",
-  display_name: "Google",
-  description: "Gmail, Calendar, and Drive",
-  dashboard_url: null,
-  client_id_placeholder: null,
-  requires_client_secret: false,
-  logo_url: null,
-  supports_cloud_mode: true,
-  managed_service_is_paid: false,
-  category: "productivity" as const,
-  tenant_host: null,
-  acts_as: "user" as const,
-});
-
 /** Renders the card's resting state; the story does not run a real connect. */
-const useStoryConnect = () => ({
-  connect: () => {},
-  dismiss: () => {},
-  status: "idle" as const,
-  connection: null,
-  errorMessage: null,
-});
-
 function InteractiveSurfacePreview({
   initialSurface,
 }: {
@@ -140,39 +102,6 @@ function InteractiveSurfacePreview({
           ...current,
           completed: true,
           completionSummary: `User chose: "${label}"`,
-        }));
-      }}
-    />
-  );
-}
-
-function OAuthSurfacePreview() {
-  const [surface, setSurface] = useState(makeOAuthConnectSurface());
-  if (surface.completed) {
-    return <SurfaceRouter surface={surface} onAction={() => {}} />;
-  }
-  return (
-    <OAuthConnectSurface
-      surface={surface}
-      assistantId="assistant-story"
-      assistantDisplayName="Assistant"
-      useConnect={useStoryConnect}
-      fetchProvider={storyFetchProvider}
-      onAction={(_surfaceId, _actionId, data) => {
-        const providerLabel =
-          typeof data?.providerLabel === "string"
-            ? data.providerLabel
-            : "Google";
-        const accountLabel =
-          typeof data?.accountLabel === "string"
-            ? data.accountLabel
-            : undefined;
-        setSurface((current) => ({
-          ...current,
-          completed: true,
-          completionSummary: accountLabel
-            ? `Connected ${providerLabel}: ${accountLabel}`
-            : `Connected ${providerLabel}`,
         }));
       }}
     />
@@ -226,17 +155,11 @@ export const CopyBlock: Story = {
   ),
 };
 
-export const OauthConnect: Story = {
-  name: "OAuth Connect",
-  render: () => <OAuthSurfacePreview />,
-};
-
 export const ActivationRailStack: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
       <SurfaceRouter surface={makeCopyBlockSurface()} onAction={() => {}} />
       <InteractiveSurfacePreview initialSurface={makeChoiceSurface()} />
-      <OAuthSurfacePreview />
     </div>
   ),
 };
@@ -247,19 +170,6 @@ export const CompletedChoice: Story = {
       surface={makeChoiceSurface({
         completed: true,
         completionSummary: 'User chose: "Clean up my inbox"',
-      })}
-      onAction={() => {}}
-    />
-  ),
-};
-
-export const CompletedOauthConnect: Story = {
-  name: "Completed OAuth Connect",
-  render: () => (
-    <SurfaceRouter
-      surface={makeOAuthConnectSurface({
-        completed: true,
-        completionSummary: "Connected Google: user@example.com",
       })}
       onAction={() => {}}
     />

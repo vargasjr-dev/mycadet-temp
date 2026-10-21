@@ -1612,10 +1612,8 @@
     "deleteFailedToast": "刪除 OAuth 應用程式失敗",
     "disconnect": "中斷連接",
     "disconnectAria": "中斷 {account} 的連接",
-    "disconnectFailedToast": "中斷帳戶連接失敗",
     "disconnectMessage": "中斷 {account} 的連接？您可以稍後重新連接。",
     "disconnectTitle": "中斷 {name} 的連接？",
-    "disconnectedToast": "{name} 帳戶已中斷連接。",
     "redirectHint": "將此網址新增至您的 OAuth 應用程式的重新導向設定中。",
     "redirectUrl": "重新導向網址",
     "waitingAuthorization": "等待授權中..."
@@ -1746,7 +1744,6 @@
     "playEnd": "播放結束提示音"
   },
   "connectMethod": {
-    "managed": "透過 Cadet 登入",
     "mcp": "{name} MCP 伺服器",
     "mcpManual": "手動設定",
     "otherWaysLabel": "連接 {name} 的其他方式",
@@ -1772,8 +1769,6 @@
     "connectionsDescription": "管理 Cadet 與 {name} 的連接方式。",
     "copied": "已複製",
     "copy": "複製",
-    "disconnectFailedToast": "Cadet 無法中斷 {name} 帳號的連接。",
-    "disconnectedToast": "已中斷 {name} 帳號的連接。",
     "done": "完成",
     "endpoint": "端點",
     "endpointUnknown": "不可用",
@@ -1799,8 +1794,6 @@
     "stopWaiting": "停止等待",
     "tagMcp": "MCP",
     "tagOwnApp": "自有應用程式",
-    "tagCadet": "Cadet",
-    "tenantHostInvalid": "請輸入有效的 {label}，例如 {placeholder}",
     "toolTokens": "~{tokens, number} 個權杖",
     "toolsAndDetails": "工具與詳情",
     "toolsAndDetailsLabel": "{label} 的工具與詳情",

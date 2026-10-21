@@ -203,9 +203,7 @@ export function buildIntegrationItems(
   );
   const groupedMethods = new Set<McpPluginMethod>();
   const matchedServers = new Set(methods.flatMap((method) => method.servers));
-  const oauth: IntegrationItem[] = providers
-    .filter((provider) => provider.supports_cloud_mode)
-    .flatMap((provider) => {
+  const oauth: IntegrationItem[] = providers.flatMap((provider) => {
       const accounts = connectionsForOAuthProvider(
         connections,
         provider.provider_key,

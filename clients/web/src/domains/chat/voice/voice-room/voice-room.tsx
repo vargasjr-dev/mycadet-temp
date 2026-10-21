@@ -152,10 +152,7 @@ import {
 } from "@/domains/chat/voice/live-voice/live-voice-store";
 import { FrameGateHud } from "@/domains/chat/frame-gate-hud";
 import { CameraShutter } from "@/domains/chat/voice/camera-shutter";
-import { OAuthConnectSurface } from "@/domains/chat/components/surfaces/oauth-connect-surface";
-import { handleSurfaceAction } from "@/domains/chat/surface-actions";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
-import { useSupportsNoninteractiveVoiceTurns } from "@/lib/backwards-compat/use-supports-noninteractive-voice-turns";
 import { useSupportsVoiceCamera } from "@/lib/backwards-compat/use-supports-voice-camera";
 import { scopedAvatarAccentVars } from "@/hooks/use-avatar-accent-var";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -184,7 +181,6 @@ import {
   useCameraStatusAnnouncement,
 } from "./camera-status-pill";
 import { VoiceRoomCaptureRow } from "./voice-room-capture-row";
-import { useActiveConnectSurface } from "./use-active-connect-surface";
 import { useCameraVoiceState } from "./use-camera-voice-state";
 import { useChatHeaderBottom } from "./use-chat-header-bottom";
 import { OVERLAY_HOST_ID, useInertBehindSheet } from "./use-inert-behind-sheet";
@@ -736,13 +732,6 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
   const [explainerHost, setExplainerHost] = useState<HTMLDivElement | null>(
     null,
   );
-
-  // Backwards-compat fallback for assistants that can still raise
-  // `oauth_connect` mid-call — see use-supports-noninteractive-voice-turns.ts
-  // (the canonical writeup); delete with the gate.
-  const voiceTurnsAreNoninteractive =
-    useSupportsNoninteractiveVoiceTurns(assistantId);
-  const connectSurface = useActiveConnectSurface(!voiceTurnsAreNoninteractive);
 
   // The camera. Offered only when the device has one AND the session's
   // assistant understands the `attach_image` frame. See
@@ -1447,33 +1436,6 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
           the centerpiece leaves free, so it never shifts the centered avatar
           and stays absent by default. */}
       <VoiceAmbientTranscript />
-
-      {/* Backwards-compat fallback card for assistants that can still raise
-          `oauth_connect` mid-call — see use-supports-noninteractive-voice-turns.ts;
-          delete this slot with the gate. */}
-      <AnimatePresence>
-        {connectSurface ? (
-          <motion.div
-            key={`connect-${connectSurface.surfaceId}`}
-            className="pointer-events-none absolute inset-x-0 z-20 flex justify-center px-4"
-            style={{ bottom: `calc(6rem + ${SAFE_AREA_BOTTOM})` }}
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            transition={{ duration: reduce ? 0 : 0.3 }}
-          >
-            <div className="pointer-events-auto w-full max-w-[28rem]">
-              <OAuthConnectSurface
-                surface={connectSurface}
-                assistantId={assistantId}
-                onAction={(surfaceId, actionId, data) => {
-                  void handleSurfaceAction(surfaceId, actionId, data);
-                }}
-              />
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
 
       {/* The sheet's grabber: the whole affordance for the pull-down, and the
           only thing on the surface that says the room can be pulled at all.

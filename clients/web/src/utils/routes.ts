@@ -148,15 +148,12 @@ export const routes = {
     // Triage: every key here still has a live consumer in this bundle, and
     // each leaves as its consumer does. `login` is gone — the exits
     // (requireAuth, the 401 interceptor, handle-logout) bounce to the
-    // remote-web pairing page now. The provider tier + `oauth.popupComplete`
-    // serve the auth-logic tier (login-flow, native-auth, install-referrer)
-    // and the integration-connect relay; they die with the auth store.
+    // Triage: the provider tier still has a live consumer in this bundle
+    // (the auth-logic tier — login-flow, native-auth, install-referrer);
+    // it dies with the auth store.
     root: r("/account"),
     providerSignup: r("/account/provider/signup"),
     providerCallback: r("/account/provider/callback"),
-    oauth: {
-      popupComplete: r("/account/oauth/popup-complete"),
-    },
   },
 
   welcome: r("/assistant/welcome"),

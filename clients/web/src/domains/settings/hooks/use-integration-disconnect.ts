@@ -2,11 +2,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@mycadet/design-library/components/toast";
 import { useCallback, useRef } from "react";
 
-import {
-  assistantsOauthConnectionsListQueryKey,
-  assistantsOauthConnectionsListSetQueryData,
-  useAssistantsOauthDisconnectByConnectionCreateMutation,
-} from "@/generated/api/@tanstack/react-query.gen";
 import { usePluginUninstall } from "@/hooks/use-plugin-actions";
 import { useTranslation } from "@/i18n";
 import { extractErrorMessage } from "@/utils/api-errors";
@@ -16,8 +11,6 @@ import { isMcpMethodKind, type ConnectionSummary } from "../connect-plan";
 export interface UseIntegrationDisconnectOptions {
   /** The assistant the plugins belong to. */
   assistantId: string;
-  /** The cloud assistant the cloud connections belong to. */
-  cloudAssistantId: string | null;
   /**
    * Ends a sign-in the removal would strand. It is handed the whole row
    * rather than one server id, because uninstalling a plugin takes every
@@ -37,15 +30,14 @@ export interface UseIntegrationDisconnectOptions {
 /**
  * Taking one connection away, whichever kind it is.
  *
- * A managed account is revoked at the cloud; an MCP server a plugin owns
- * goes with the plugin, because the plugin is what declared it and leaving it
- * installed would put the server straight back. The caller passes the
+ * An MCP server a plugin owns goes with the plugin, because the plugin is
+ * what declared it and leaving it installed would put the server straight
+ * back. The caller passes the
  * integration's display name along with the row, since the toast names the
  * integration rather than the plumbing behind it.
  */
 export function useIntegrationDisconnect({
   assistantId,
-  cloudAssistantId,
   onStopAuth,
   onRemoveServer,
   onPluginRemoved,
@@ -69,45 +61,12 @@ export function useIntegrationDisconnect({
       ),
   });
 
-  const connectionsOpts = {
-    path: { assistant_id: cloudAssistantId ?? "" },
-  };
-  const disconnectAccount =
-    useAssistantsOauthDisconnectByConnectionCreateMutation({
-      onSuccess(_data, variables) {
-        toast.success(
-          t("integrationConnect.disconnectedToast", { name: name.current }),
-        );
-        const connectionId = variables.path.connection_id;
-        assistantsOauthConnectionsListSetQueryData(
-          queryClient,
-          connectionsOpts,
-          (old) => old?.filter((entry) => entry.id !== connectionId),
-        );
-        void queryClient.invalidateQueries({
-          queryKey: assistantsOauthConnectionsListQueryKey(connectionsOpts),
-        });
-      },
-      onError(error) {
-        toast.error(
-          extractErrorMessage(
-            error,
-            undefined,
-            t("integrationConnect.disconnectFailedToast", {
-              name: name.current,
-            }),
-          ),
-        );
-      },
-    });
-
-  const mutateAccount = disconnectAccount.mutate;
   const removePlugin = uninstall.remove;
   // One removal at a time. The row stays on screen until the request settles
   // and the list reloads, so a second confirmation would send the same
   // uninstall twice and report the second one's "not found" as a failure of
   // a removal that worked.
-  const busy = uninstall.isRemoving || disconnectAccount.isPending;
+  const busy = uninstall.isRemoving;
   return useCallback(
     (connection: ConnectionSummary, displayName: string) => {
       if (busy) {
@@ -125,23 +84,7 @@ export function useIntegrationDisconnect({
         }
         return;
       }
-      if (!connection.accountId || !cloudAssistantId) {
-        return;
-      }
-      mutateAccount({
-        path: {
-          assistant_id: cloudAssistantId,
-          connection_id: connection.accountId,
-        },
-      });
     },
-    [
-      busy,
-      mutateAccount,
-      onRemoveServer,
-      onStopAuth,
-      cloudAssistantId,
-      removePlugin,
-    ],
+    [busy, onRemoveServer, onStopAuth, removePlugin],
   );
 }

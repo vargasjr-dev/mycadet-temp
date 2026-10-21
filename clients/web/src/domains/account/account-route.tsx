@@ -14,9 +14,6 @@ import { AccountLayout } from "@/domains/account/account-layout";
  *     links, guardian-repair, root-layout's `noAutoSkip`),
  *   - the provider tier (the auth-logic tier — login-flow, native-auth —
  *     still drives the provider callback; it dies with the auth store),
- *   - the OAuth popup relay (`oauth/popup-complete`) — NOT login
- *     machinery: it's the completion page the managed integration-connect
- *     flows (settings tiles, google-calendar) point their popups at.
  */
 export const accountRoute = {
   // Pathless: the surviving children carry absolute paths, so a visit to
@@ -65,13 +62,6 @@ export const accountRoute = {
         // main window, so sizing from a popup would shrink the wrong
         // window. See `use-onboarding-window-size`.
         {
-          path: "/account/oauth/popup-complete",
-          lazy: {
-            Component: () =>
-              import("@/domains/account/pages/oauth-popup-complete-page").then(
-                (m) => m.OAuthPopupCompletePage,
-              ),
-          },
         },
         // Assistant selection: which assistant this device talks to. Was
         // /assistant/select-assistant; account-level flows are shell

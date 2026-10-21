@@ -19,16 +19,10 @@ import { pluginLogoUrl } from "./mcp/plugin-logo";
  *   leads whenever the catalog has one.
  * - `mcp-manual`: a remote MCP server whose provider must allowlist our
  *   callback URL before sign-in can work.
- * - `cloud-oauth`: sign in through Cadet's hosted OAuth app. Needs a
- *   platform session.
  * - `own-oauth`: register an OAuth app at the provider and paste its client
  *   credentials. Self-hosted assistants only.
  */
-export type ConnectMethodKind =
-  | "mcp-oauth"
-  | "mcp-manual"
-  | "cloud-oauth"
-  | "own-oauth";
+export type ConnectMethodKind = "mcp-oauth" | "mcp-manual" | "own-oauth";
 
 export type ConnectAvailability = "available" | "login-required";
 
@@ -55,8 +49,6 @@ export interface ConnectionSummary {
   /** Set for MCP servers a plugin owns. Disconnecting removes that plugin. */
   pluginName?: string;
   serverId?: string;
-  /** Set for managed accounts: the cloud connection this row stands for. */
-  accountId?: string;
   canReconnect: boolean;
 }
 
@@ -88,7 +80,6 @@ export interface ConnectPlan {
 }
 
 export interface ConnectPlanContext {
-  cloudGate: CloudGateState;
   /** Bring-your-own OAuth apps only exist on self-hosted assistants. */
   ownOAuthAvailable: boolean;
   /**
@@ -172,21 +163,6 @@ function installedWithoutServers(
   };
 }
 
-function oauthConnections(
-  connections: OAuthConnection[],
-  methodId: string,
-): ConnectionSummary[] {
-  return connections.map((connection) => ({
-    id: `oauth:${connection.id}`,
-    methodId,
-    methodKind: "cloud-oauth",
-    label: connection.account_label,
-    accountId: connection.id,
-    status: connection.connected ? "connected" : "needs-attention",
-    canReconnect: !connection.connected,
-  }));
-}
-
 function pluginMethod(
   method: McpPluginMethod,
   mcpServersLoaded: boolean,
@@ -214,10 +190,7 @@ function pluginMethod(
  * Decide which path to put in front of the user and which to tuck away.
  *
  * Order of preference: the provider's MCP server (works everywhere, the
- * provider maintains it), then Cadet's cloud OAuth, then bring-your-own
- * OAuth. Managed OAuth still leads when it is the only path and the user
- * only needs to log in, because logging in is the fix. A managed method
- * that cannot work here at all (gated) is dropped.
+ * provider maintains it), then bring-your-own OAuth.
  *
  * Returns `null` when every path was dropped, which a gated organization can
  * reach with an ordinary catalog. The caller leaves the integration out of
@@ -238,16 +211,6 @@ export function buildConnectPlan(
     description = item.provider.description;
     for (const method of item.methods) {
       methods.push(pluginMethod(method, context.mcpServersLoaded));
-    }
-    if (context.cloudGate !== "gated") {
-      const managedId = `managed:${item.provider.provider_key}`;
-      methods.push({
-        id: managedId,
-        kind: "cloud-oauth",
-        availability:
-          context.cloudGate === "full" ? "available" : "login-required",
-        connections: oauthConnections(item.connections, managedId),
-      });
     }
     if (context.ownOAuthAvailable) {
       methods.push({

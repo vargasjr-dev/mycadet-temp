@@ -15,8 +15,7 @@
     "loginToUse": "Войти, чтобы пользоваться",
     "downloadMacOSApp": "Скачать приложение для macOS",
     "downloadWindowsApp": "Скачать приложение для Windows",
-    "claim": "Забрать",
-    "skipForNow": "Пока пропустить"
+    "claim": "Забрать"
   },
   "welcome": {
     "title": "Добро пожаловать в Cadet",
@@ -41,7 +40,6 @@
   "apiKeyScreen": {
     "title": "Подключение провайдера моделей",
     "body": "Выбор провайдера моделей для ассистента.",
-    "providerLabel": "Провайдер",
     "modelLabel": "Модель",
     "baseUrlLabel": "Базовый URL",
     "modelsLabel": "Модели",
@@ -195,17 +193,7 @@
     "hobbiesLabel": "Есть хобби?",
     "hobbiesPlaceholder": "Машины, книги, помидоры на подоконнике?"
   },
-  "letsChatTomorrowStep": {
-    "wakingTitle": "Просыпается",
-    "missingScopeTitle": "Доступ не включён",
-    "title": "Давай упростим",
-    "wakingBody": "Ассистент готовится",
-    "missingScopeBody": "Отметь разрешение Google Calendar, чтобы я мог назначить Check-in.",
-    "body": "Подключение Google Calendar, чтобы найти время для Check-in.",
-    "startingAssistant": "Запускаем ассистента…",
-    "waitingAuthorization": "Ждём авторизацию…",
-    "connectCalendar": "Подключить календарь →"
-  },
+
   "existingAssistantStep": {
     "titleNamed": "{name} уже запущен и работает",
     "title": "Ассистент уже запущен и работает",
@@ -216,18 +204,7 @@
     "redoNamed": "Начать заново и собрать характер {name} снова",
     "redo": "Начать заново и собрать характер заново"
   },
-  "checkinConnectScreen": {
-    "title": "Давай поговорим завтра",
-    "body": "Добавление встречи в календарь, чтобы продолжить с того же места.",
-    "permissionBody": "{name} добавит одно событие Check-in на второй день. Для этого нужен доступ к событиям календаря и адресу почты, но не к входящим и не к файлам. Отключить можно в любой момент.",
-    "unnamedAssistant": "ассистент",
-    "waitingAuthorization": "Ждём авторизацию...",
-    "connectGoogleCalendar": "Подключить Google Calendar"
-  },
-  "meetingCreatedStep": {
-    "titleWithTime": "Check-in назначен на завтра в {time}!",
-    "title": "Check-in назначен!"
-  },
+
   "lookingYouUpStep": {
     "searching": "Поиск в интернете…",
     "readingProfiles": "Читаю публичные профили…",
@@ -308,9 +285,7 @@
     "completeSignup": "Завершить регистрацию",
     "completingSignup": "Завершаем..."
   },
-  "oauthComplete": {
-    "errorCode": "Ошибка: {code}"
-  },
+
   "authErrors": {
     "genericFailure": "Что-то пошло не так. Повторите попытку.",
     "signupClosed": "К сожалению, Cadet сейчас не принимает новые регистрации. Попробуйте снова позже.",

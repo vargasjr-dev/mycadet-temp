@@ -86,72 +86,10 @@ describe("IntegrationTile", () => {
     }
   });
 
-  test("offers the way back to the recommended path when an alternative fails", async () => {
-    const plan = planFor({
-      providers: [NOTION_PROVIDER],
-      definitions: [pluginDefinition()],
-      ownOAuthAvailable: true,
-    });
-    // The cloud sign-in is an alternative here: the provider's own MCP
-    // server leads. Failing it must not strand the user on the two ways in
-    // that are left.
-    const failed = plan.alternatives.find(
-      (method) => method.kind === "cloud-oauth",
-    );
-    if (!failed) {
-      throw new Error("expected a cloud alternative in the fixture plan");
-    }
-    tile({
-      plan,
-      showAlternatives: true,
-      state: {
-        phase: "failed",
-        error: "Notion rejected the sign-in.",
-        methodId: failed.id,
-        methodKind: failed.kind,
-      },
-    });
-
-    openMenu("Other ways to connect Notion");
-    await screen.findByRole("menuitem", { name: "Notion MCP server" });
-    await screen.findByRole("menuitem", { name: "Use your own OAuth app" });
-    expect(
-      screen.queryByRole("menuitem", { name: "Sign in through Cadet" }),
-    ).toBeNull();
-  });
-
-  test("never offers an MCP server the plugin has already installed", () => {
-    const plan = planFor({
-      providers: [NOTION_PROVIDER],
-      servers: [mcpServer("notion-mcp", { id: "notion" })],
-      definitions: [pluginDefinition()],
-    });
-    const failed = plan.alternatives.find(
-      (method) => method.kind === "cloud-oauth",
-    );
-    if (!failed) {
-      throw new Error("expected a cloud alternative in the fixture plan");
-    }
-    tile({
-      plan,
-      state: {
-        phase: "failed",
-        error: "Notion rejected the sign-in.",
-        methodId: failed.id,
-        methodKind: failed.kind,
-      },
-    });
-
-    expect(
-      screen.queryByRole("button", { name: "Other ways to connect Notion" }),
-    ).toBeNull();
-  });
-
   test("sends a connect with no platform session to the login flow", () => {
     tile({
       plan: planFor({
         providers: [GOOGLE_PROVIDER],
-        cloudGate: "disabled",
       }),
     });
 
@@ -340,7 +278,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -362,7 +300,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: popupBlocked,
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -378,7 +316,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: paragraph,
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -398,7 +336,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 
@@ -412,7 +350,7 @@ describe("IntegrationTile", () => {
         phase: "failed",
         error: "Google did not return an account.",
         methodId: googlePlan.primary.id,
-        methodKind: "cloud-oauth",
+        methodKind: "own-oauth",
       },
     });
 

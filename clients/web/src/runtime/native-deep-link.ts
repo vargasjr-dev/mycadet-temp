@@ -1,5 +1,5 @@
 /**
- * Pure utilities for the Capacitor OAuth-completion deep link.
+ * Pure utilities for the Capacitor deep links.
  *
  * On Capacitor iOS, integration OAuth runs inside `SFSafariViewController`.
  * Apple's prescribed pattern for round-tripping back into a host app from
@@ -536,57 +536,4 @@ export function parseShareDeepLink(
   }
 
   return { inboxId };
-}
-
-export function buildOAuthCompleteDeepLink(
-  scheme: string,
-  payload: OAuthCompleteDeepLinkPayload,
-): string {
-  const params = new URLSearchParams();
-  params.set("requestId", payload.requestId);
-  if (payload.oauthStatus !== null) {
-    params.set("oauth_status", payload.oauthStatus);
-  }
-  if (payload.oauthProvider !== null) {
-    params.set("oauth_provider", payload.oauthProvider);
-  }
-  if (payload.oauthCode !== null) {
-    params.set("oauth_code", payload.oauthCode);
-  }
-  return `${scheme}://${OAUTH_COMPLETE_DEEP_LINK_HOST}?${params.toString()}`;
-}
-
-/**
- * Parse a `cadet://oauth-complete?…` deep link payload.
- * Returns `null` for any URL that is not an OAuth-complete deep link.
- */
-export function parseOAuthCompleteDeepLink(
-  rawUrl: string,
-): OAuthCompleteDeepLinkPayload | null {
-  let url: URL;
-  try {
-    url = new URL(rawUrl);
-  } catch {
-    return null;
-  }
-
-  if (!ALLOWED_NATIVE_URL_PROTOCOLS.has(url.protocol)) {
-    return null;
-  }
-
-  if (url.host !== OAUTH_COMPLETE_DEEP_LINK_HOST) {
-    return null;
-  }
-
-  const requestId = url.searchParams.get("requestId");
-  if (!requestId) {
-    return null;
-  }
-
-  return {
-    requestId,
-    oauthStatus: url.searchParams.get("oauth_status"),
-    oauthProvider: url.searchParams.get("oauth_provider"),
-    oauthCode: url.searchParams.get("oauth_code"),
-  };
 }

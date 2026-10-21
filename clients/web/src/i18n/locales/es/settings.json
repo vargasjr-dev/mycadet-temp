@@ -1633,10 +1633,8 @@
     "deleteFailedToast": "No se pudo eliminar la app OAuth",
     "disconnect": "Desconectar",
     "disconnectAria": "Desconectar {account}",
-    "disconnectFailedToast": "No se pudo desconectar la cuenta",
     "disconnectMessage": "¿Desconectar {account}? Puedes volver a conectarla más tarde.",
     "disconnectTitle": "¿Desconectar {name}?",
-    "disconnectedToast": "Cuenta de {name} desconectada.",
     "redirectHint": "Añade esta URL a la configuración de redirección de tu app OAuth.",
     "redirectUrl": "URL de redirección",
     "waitingAuthorization": "Esperando autorización..."

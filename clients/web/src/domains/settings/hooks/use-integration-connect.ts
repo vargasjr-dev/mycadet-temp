@@ -4,12 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { usePluginsInstallPostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
 import { usePluginUninstall } from "@/hooks/use-plugin-actions";
-import { requiresTenantHost } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
 import { invalidatePluginQueries } from "@/lib/invalidate-plugin-queries";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
-import type { ManagedConnectReport } from "../components/cloud-connect-controller";
 import type { ConnectAttempt } from "../components/integration-connect-modal";
 import type { TileConnectState } from "../components/integration-tile";
 import {
@@ -48,18 +46,6 @@ interface AttemptInstall {
   landed: Promise<boolean>;
 }
 
-/** The cloud authorization a tile started. */
-export interface ManagedAttemptRecord {
-  itemId: string;
-  methodId: string;
-  providerKey: string;
-  providerLabel: string;
-  /** The host a per-tenant provider's authorization has to be opened on. */
-  tenantHost?: string;
-  /** Bumped by a retry, so the controller starts a fresh authorization. */
-  restartToken: number;
-}
-
 /** The integration whose connect dialog is open. */
 export interface ConnectModalTarget {
   itemId: string;
@@ -71,12 +57,6 @@ export interface UseIntegrationConnectOptions {
   /** The assistant the MCP servers and plugins belong to. */
   assistantId: string;
   mcp: ReturnType<typeof useMcpConnections>;
-}
-
-/** What a surface with room to ask can supply along with the method. */
-export interface ConnectRunOptions {
-  /** The host a per-tenant provider's authorization has to be opened on. */
-  tenantHost?: string;
 }
 
 export interface IntegrationConnect {
@@ -91,7 +71,6 @@ export interface IntegrationConnect {
     item: ConnectableIntegrationItem,
     plan: ConnectPlan,
     method: ConnectMethod,
-    options?: ConnectRunOptions,
   ) => void;
   /** Sign in again on a connection that already exists. */
   reconnect: (
@@ -119,8 +98,6 @@ export interface IntegrationConnect {
    * under the pointer that is watching it.
    */
   attemptItemId: string | null;
-  managed: ManagedAttemptRecord | null;
-  onManagedReport: (report: ManagedConnectReport) => void;
   modal: ConnectModalTarget | null;
   /** Open the connect dialog for an integration, on a method or on its own. */
   openModal: (itemId: string, methodId?: string) => void;
@@ -150,9 +127,6 @@ export function useIntegrationConnect({
   const { mutateAsync: installPluginAsync } = usePluginsInstallPostMutation();
 
   const [mcpAttempt, setMcpAttempt] = useState<McpAttemptRecord | null>(null);
-  const [managed, setManaged] = useState<ManagedAttemptRecord | null>(null);
-  const [managedReport, setManagedReport] =
-    useState<ManagedConnectReport | null>(null);
   const [modal, setModal] = useState<ConnectModalTarget | null>(null);
   /** The integration whose cancelled install is still being taken back. */
   const [rollingBack, setRollingBack] = useState<string | null>(null);
@@ -212,22 +186,6 @@ export function useIntegrationConnect({
       attemptInstall.current = null;
     }
   }, [authAttempt?.phase]);
-
-  // The connection the cloud reports moves the integration to the
-  // connected list on its own; all that is left to say is that it landed.
-  useEffect(() => {
-    if (!managed || managedReport?.status !== "connected") {
-      return;
-    }
-    toast.success(
-      t("useOauthConnect.accountConnected", {
-        name: managed.providerLabel,
-        ns: "common",
-      }),
-    );
-    setManaged(null);
-    setManagedReport(null);
-  }, [managed, managedReport, t]);
 
   const loadPluginServers = useCallback(
     async (pluginName: string) => {
@@ -325,8 +283,6 @@ export function useIntegrationConnect({
     if (mcpAttempt) {
       authStopWaiting();
     }
-    setManaged(null);
-    setManagedReport(null);
     rollbackAttemptInstall();
   }, [authStopWaiting, mcpAttempt, rollbackAttemptInstall]);
 
@@ -396,56 +352,17 @@ export function useIntegrationConnect({
     [authIsBusy, claimMcp, installPlugin, loadPluginServers],
   );
 
-  const startManaged = useCallback(
-    (
-      item: ConnectableIntegrationItem,
-      plan: ConnectPlan,
-      method: ConnectMethod,
-      options?: ConnectRunOptions,
-    ) => {
-      if (item.kind !== "oauth" || authIsBusy) {
-        return;
-      }
-      const { provider } = item;
-      // A tile has nowhere to ask for the customer's own domain, so a
-      // per-tenant provider goes to the dialog that does rather than opening
-      // an authorization that cannot succeed.
-      if (
-        !options?.tenantHost &&
-        requiresTenantHost(provider.provider_key, provider.tenant_host)
-      ) {
-        setModal({ itemId: item.id, methodId: method.id });
-        return;
-      }
-      cancel();
-      setManaged({
-        itemId: item.id,
-        methodId: method.id,
-        providerKey: provider.provider_key,
-        providerLabel: plan.name,
-        tenantHost: options?.tenantHost,
-        restartToken: 0,
-      });
-    },
-    [authIsBusy, cancel],
-  );
-
   const run = useCallback(
     (
       item: ConnectableIntegrationItem,
       plan: ConnectPlan,
       method: ConnectMethod,
-      options?: ConnectRunOptions,
     ) => {
       if (isMcpMethodKind(method.kind)) {
         startMcp(item, plan, method);
-        return;
-      }
-      if (method.kind === "cloud-oauth") {
-        startManaged(item, plan, method, options);
       }
     },
-    [startManaged, startMcp],
+    [startMcp],
   );
 
   /**
@@ -463,9 +380,6 @@ export function useIntegrationConnect({
         (candidate) => candidate.id === connection.methodId,
       );
       if (!isMcpMethodKind(connection.methodKind)) {
-        if (method) {
-          startManaged(item, plan, method);
-        }
         return;
       }
       if (!connection.serverId || authIsBusy) {
@@ -482,7 +396,7 @@ export function useIntegrationConnect({
         plan.name,
       );
     },
-    [authIsBusy, claimMcp, startManaged],
+    [authIsBusy, claimMcp],
   );
 
   const start = useCallback(
@@ -521,12 +435,6 @@ export function useIntegrationConnect({
       authRetry();
       return;
     }
-    setManagedReport(null);
-    setManaged((current) =>
-      current
-        ? { ...current, restartToken: current.restartToken + 1 }
-        : current,
-    );
   }, [authAttempt, authRetry, mcpAttempt]);
 
   const stateFor = useCallback(
@@ -546,20 +454,9 @@ export function useIntegrationConnect({
           ? { phase: "connecting" }
           : { phase: "waiting", canCancel: true };
       }
-      if (managed?.itemId === itemId) {
-        if (managedReport?.errorMessage) {
-          return {
-            phase: "failed",
-            error: managedReport.errorMessage,
-            methodId: managed.methodId,
-            methodKind: "cloud-oauth",
-          };
-        }
-        return { phase: "waiting", canCancel: true };
-      }
       return IDLE;
     },
-    [authAttempt, managed, managedReport, mcpAttempt, t],
+    [authAttempt, mcpAttempt, t],
   );
 
   const attemptFor = useCallback(
@@ -572,25 +469,15 @@ export function useIntegrationConnect({
           canCancel: true,
         };
       }
-      if (managed?.itemId === itemId) {
-        return {
-          methodId: managed.methodId,
-          phase: managedReport?.errorMessage ? "error" : "waiting",
-          error: managedReport?.errorMessage ?? undefined,
-          canCancel: true,
-        };
-      }
       return null;
     },
-    [authAttempt, managed, managedReport, mcpAttempt],
+    [authAttempt, mcpAttempt],
   );
 
   const isBusyElsewhere = useCallback(
     (itemId: string) =>
-      (authIsBusy && mcpAttempt?.itemId !== itemId) ||
-      (managed !== null && managed.itemId !== itemId) ||
-      rollingBack === itemId,
-    [authIsBusy, managed, mcpAttempt, rollingBack],
+      (authIsBusy && mcpAttempt?.itemId !== itemId) || rollingBack === itemId,
+    [authIsBusy, mcpAttempt, rollingBack],
   );
 
   const openModal = useCallback(
@@ -609,9 +496,7 @@ export function useIntegrationConnect({
     attemptFor,
     isBusyElsewhere,
     ownsMcpAttempt: mcpAttempt !== null,
-    attemptItemId: mcpAttempt?.itemId ?? managed?.itemId ?? null,
-    managed,
-    onManagedReport: setManagedReport,
+    attemptItemId: mcpAttempt?.itemId ?? null,
     modal,
     openModal,
     closeModal,

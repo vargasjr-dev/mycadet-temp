@@ -787,10 +787,6 @@
     "stepConnect": "Connect",
     "stepCreate": "Create bot"
   },
-  "tenantHost": {
-    "shopifyLabel": "Shop domain",
-    "shopifyPlaceholder": "your-store.myshopify.com"
-  },
   "terminalPanel": {
     "recoveryModeBanner": "Recovery Mode active: this session is connected to the debug terminal."
   },
@@ -882,17 +878,7 @@
     "failed": "Connecting Claude failed. Please try again.",
     "notStarted": "Start the Connect Claude flow first.",
     "pasteEmpty": "Paste the code shown on the Claude page.",
-    "popupBlocked": "Your browser blocked the sign-in tab. Allow pop-ups for this site, then click Connect again.",
-    "startFailed": "Couldn't start Connect Claude. Please try again.",
     "timedOut": "Timed out waiting for Claude to connect. Please try again."
-  },
-  "useOauthConnect": {
-    "accountConnected": "{name} account connected.",
-    "authorizationError": "{name} error: {code}",
-    "authorizationFailed": "{name} authorization failed",
-    "popupBlocked": "Popup blocked. Please enable popups and try again.",
-    "startFailed": "Failed to start {name} authorization.",
-    "startFailedWithReason": "Couldn't start {name} authorization: {reason}"
   },
   "useOpenUrlDirectives": {
     "blocked": "Your browser blocked a page the assistant tried to open.",

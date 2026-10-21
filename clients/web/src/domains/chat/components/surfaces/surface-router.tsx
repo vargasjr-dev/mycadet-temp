@@ -17,7 +17,6 @@ import { DynamicPageSurface } from "@/domains/chat/components/surfaces/dynamic-p
 import { FileUploadSurface } from "@/domains/chat/components/surfaces/file-upload-surface";
 import { FormSurface } from "@/domains/chat/components/surfaces/form-surface";
 import { ListSurface } from "@/domains/chat/components/surfaces/list-surface";
-import { OAuthConnectSurface } from "@/domains/chat/components/surfaces/oauth-connect-surface";
 import { SkillCreatedCard } from "@/domains/chat/components/surfaces/skill-created-card";
 import { SurfaceContainer } from "@/domains/chat/components/surfaces/surface-container";
 import { TableSurface } from "@/domains/chat/components/surfaces/table-surface";
@@ -133,16 +132,6 @@ function SurfaceRouterInner({
 
     case "copy_block":
       return <CopyBlockSurface surface={surface} onAction={onAction} />;
-
-    case "oauth_connect":
-      return (
-        <OAuthConnectSurface
-          surface={surface}
-          onAction={onAction}
-          assistantId={assistantId}
-          assistantDisplayName={assistantDisplayName}
-        />
-      );
 
     case "list":
       return <ListSurface surface={surface} onAction={onAction} />;

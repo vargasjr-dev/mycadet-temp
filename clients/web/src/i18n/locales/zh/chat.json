@@ -127,7 +127,6 @@
     "durationMinutes": "{count, plural, other {# 分钟}}",
     "working": "正在工作",
     "workingWithDuration": "正在工作 · {duration}",
-    "waiting": "等待中",
     "waitingWithDuration": "等待中 · {duration}",
     "finishing": "正在结束",
     "finishingWithDuration": "正在结束 · {duration}",
@@ -328,7 +327,6 @@
   },
   "chatAttachments": {
     "attachFileAria": "附加文件",
-    "dismiss": "关闭",
     "removeAria": "移除 {filename}"
   },
   "emailReferenceChip": {
@@ -939,20 +937,7 @@
     "name": "名称",
     "noIcon": "无图标"
   },
-  "oauthConnectSurface": {
-    "approvalAria": "关于助手批准",
-    "approvalTooltip": "未经您的批准，{name} 绝不会代表您行事",
-    "connect": "连接",
-    "connectTitle": "连接 {name}",
-    "connected": "已连接",
-    "defaultDescription": "连接 {name}，以便我能将其用于此任务。",
-    "dismiss": "忽略",
-    "missingDetails": "缺少助手或提供商详细信息。",
-    "tenantHostInvalid": "请输入有效的{label}，例如 {placeholder}",
-    "thisAccount": "此账户",
-    "waiting": "等待中...",
-    "yourAssistant": "您的助手"
-  },
+
   "onboardingChoiceCard": {
     "continue": "继续",
     "helpWithHeading": "我能帮您什么？",

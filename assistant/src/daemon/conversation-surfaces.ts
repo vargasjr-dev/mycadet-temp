@@ -3326,22 +3326,22 @@ export async function surfaceProxyResolver(
         ? { surfaceType: "card", data: cardData }
         : choiceData !== undefined
           ? { surfaceType: "choice", data: choiceData }
-            : surfaceType === "copy_block"
+          : surfaceType === "copy_block"
+            ? {
+                surfaceType,
+                data: normalizeCopyBlockShowData(input, rawData),
+              }
+            : surfaceType === "dynamic_page"
               ? {
                   surfaceType,
-                  data: normalizeCopyBlockShowData(input, rawData),
+                  data: normalizeDynamicPageShowData(input, rawData),
                 }
-              : surfaceType === "dynamic_page"
+              : surfaceType === "visual"
                 ? {
                     surfaceType,
-                    data: normalizeDynamicPageShowData(input, rawData),
+                    data: normalizeVisualShowData(input, rawData),
                   }
-                : surfaceType === "visual"
-                  ? {
-                      surfaceType,
-                      data: normalizeVisualShowData(input, rawData),
-                    }
-                  : parseShowPairOrThrow(surfaceType, rawData);
+                : parseShowPairOrThrow(surfaceType, rawData);
     // Parse actions through the schema instead of typecasting raw model output.
     // The model may place actions inside `data` instead of the top-level
     // `actions` param — recover them so they aren't silently dropped.

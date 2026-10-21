@@ -31,7 +31,6 @@ import {
   useCloudGate,
 } from "@/hooks/use-cloud-gate";
 import { usePluginsList } from "@/hooks/use-plugins-list";
-import { useTenantHostRequirement } from "@/hooks/use-tenant-host-requirement";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
@@ -40,7 +39,6 @@ import { routes } from "@/utils/routes";
 import { IntegrationConnectModal } from "../components/integration-connect-modal";
 import { IntegrationRow } from "../components/integration-row";
 import { IntegrationTile } from "../components/integration-tile";
-import { ManagedConnectController } from "../components/cloud-connect-controller";
 import { YourOwnTab } from "../components/your-own-oauth-tab";
 import {
   buildConnectPlan,
@@ -315,7 +313,6 @@ function IntegrationsPanelInner({
         continue;
       }
       const plan = buildConnectPlan(item, {
-        cloudGate,
         ownOAuthAvailable: !isCloudHosted,
         mcpServersLoaded: mcp.list.isSuccess,
       });
@@ -324,7 +321,7 @@ function IntegrationsPanelInner({
       }
     }
     return byItemId;
-  }, [allItems, isCloudHosted, mcp.list.isSuccess, cloudGate]);
+  }, [allItems, isCloudHosted, mcp.list.isSuccess]);
   // A tile is for what is still to connect, plus whatever is being connected
   // right now with no dialog of its own to report it: a plugin counts as
   // configured the moment it installs, and an integration must not change
@@ -351,10 +348,9 @@ function IntegrationsPanelInner({
     cloudAssistantIdLoading ||
     mcp.list.isLoading ||
     ((plugins.isLoading || plugins.catalogLoading) && allItems.length === 0);
-  // One attempt at a time, on every surface: a cloud authorization is just
-  // as exclusive as an MCP one, and the rows and cards that predate the tiles
-  // only knew about the MCP machine.
-  const authBusy = mcp.auth.isBusy || connect.managed !== null;
+  // One attempt at a time, on every surface: the rows and cards that
+  // predate the tiles only knew about the MCP machine.
+  const authBusy = mcp.auth.isBusy;
   const oauthDisabled =
     assistantLoading ||
     !assistant ||
@@ -374,12 +370,6 @@ function IntegrationsPanelInner({
   const connectModalPlan = connectModalItem
     ? plans.get(connectModalItem.id)
     : undefined;
-  const connectModalProvider =
-    connectModalItem?.kind === "oauth" ? connectModalItem.provider : undefined;
-  const connectModalTenantHost = useTenantHostRequirement(
-    connectModalProvider?.provider_key ?? "",
-    connectModalProvider?.tenant_host,
-  );
 
   // A deep link names a provider, not an item, and the catalog it belongs to
   // arrives after the page mounts. The link is answered once the item it names
@@ -431,7 +421,6 @@ function IntegrationsPanelInner({
 
   const disconnectIntegration = useIntegrationDisconnect({
     assistantId: mcpAssistantId,
-    cloudAssistantId,
     onStopAuth: (connection) => {
       const waitingOn = mcp.auth.attempt?.serverId;
       if (!waitingOn) {
@@ -466,14 +455,10 @@ function IntegrationsPanelInner({
           key={item.id}
           plan={plan}
           state={connect.stateFor(item.id, plan.name)}
-          // The choice between the provider's own server, Cadet's hosted
-          // sign-in, and your own OAuth app is only a real one on a
-          // self-hosted assistant.
+          // The choice between the provider's own server and your own OAuth
+          // app is only a real one on a self-hosted assistant.
           showAlternatives={!isCloudHosted}
-          disabled={
-            connect.isBusyElsewhere(item.id) ||
-            (plan.primary.kind === "cloud-oauth" && oauthDisabled)
-          }
+          disabled={connect.isBusyElsewhere(item.id)}
           onConnect={(method) => connect.start(item, plan, method)}
           onLogin={startLogin}
           onCancel={connect.cancel}
@@ -602,18 +587,6 @@ function IntegrationsPanelInner({
         connections={mcp}
         attemptReportedElsewhere={inlineAttemptShown}
       />
-      {connect.managed && assistant ? (
-        <ManagedConnectController
-          key={connect.managed.providerKey}
-          assistantId={assistant.id}
-          providerKey={connect.managed.providerKey}
-          providerLabel={connect.managed.providerLabel}
-          tenantHost={connect.managed.tenantHost}
-          restartToken={connect.managed.restartToken}
-          onReport={connect.onManagedReport}
-        />
-      ) : null}
-
       {loading ? (
         <div
           role="status"
@@ -665,7 +638,6 @@ function IntegrationsPanelInner({
           plan={connectModalPlan}
           focusMethodId={connect.modal.methodId}
           attempt={connect.attemptFor(connectModalItem.id)}
-          tenantHost={connectModalTenantHost}
           toolsByConnectionId={toolsByConnectionId}
           ownOAuthContent={
             assistant && connectModalItem.kind === "oauth" ? (
@@ -677,8 +649,8 @@ function IntegrationsPanelInner({
               />
             ) : null
           }
-          onConnect={(method, options) =>
-            connect.run(connectModalItem, connectModalPlan, method, options)
+          onConnect={(method) =>
+            connect.run(connectModalItem, connectModalPlan, method)
           }
           onLogin={startLogin}
           onCancelAttempt={connect.cancel}

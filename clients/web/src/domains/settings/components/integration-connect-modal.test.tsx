@@ -340,32 +340,6 @@ describe("IntegrationConnectModal", () => {
     expect(handlers.onConnect).toHaveBeenCalledTimes(1);
   });
 
-  test("asks a per-tenant provider which host before it will connect", () => {
-    modal({
-      plan: hostedOnlyPlan,
-      tenantHost: {
-        pattern: "^[a-z0-9-]+\\.example\\.com$",
-        label: "Store domain",
-        placeholder: "store.example.com",
-      },
-    });
-
-    const connect = screen.getByRole("button", {
-      name: "Connect",
-    }) as HTMLButtonElement;
-    expect(connect.disabled).toBe(true);
-
-    fireEvent.change(screen.getByLabelText("Store domain"), {
-      target: { value: "shop.example.com" },
-    });
-    expect(connect.disabled).toBe(false);
-    fireEvent.click(connect);
-    expect(handlers.onConnect).toHaveBeenCalledWith(
-      hostedOnlyPlan.primary,
-      expect.objectContaining({ tenantHost: "shop.example.com" }),
-    );
-  });
-
   test("falls back to the connect view when nothing is connected any more", () => {
     const { rerender } = modal({ plan: connectedPlan });
     screen.getByText("Manage how Cadet connects to Notion.");

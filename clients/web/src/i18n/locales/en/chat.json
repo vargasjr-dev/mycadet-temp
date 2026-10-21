@@ -127,7 +127,6 @@
     "durationMinutes": "{count, plural, one {# min} other {# min}}",
     "working": "Working",
     "workingWithDuration": "Working · {duration}",
-    "waiting": "Waiting",
     "waitingWithDuration": "Waiting · {duration}",
     "finishing": "Finishing",
     "finishingWithDuration": "Finishing · {duration}",
@@ -332,7 +331,6 @@
   },
   "chatAttachments": {
     "attachFileAria": "Attach file",
-    "dismiss": "Dismiss",
     "removeAria": "Remove {filename}"
   },
   "emailReferenceChip": {
@@ -946,20 +944,7 @@
     "name": "Name",
     "noIcon": "No icon"
   },
-  "oauthConnectSurface": {
-    "approvalAria": "About assistant approval",
-    "approvalTooltip": "{name} never acts on your behalf without your approval",
-    "connect": "Connect",
-    "connectTitle": "Connect {name}",
-    "connected": "Connected",
-    "defaultDescription": "Connect {name} so I can use it for this task.",
-    "dismiss": "Dismiss",
-    "missingDetails": "Missing assistant or provider details.",
-    "tenantHostInvalid": "Enter a valid {label}, for example {placeholder}",
-    "thisAccount": "this account",
-    "waiting": "Waiting...",
-    "yourAssistant": "Your assistant"
-  },
+
   "onboardingChoiceCard": {
     "continue": "Continue",
     "helpWithHeading": "What can I help with?",

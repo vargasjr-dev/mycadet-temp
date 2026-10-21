@@ -314,8 +314,6 @@ function provider(overrides: Partial<OAuthProvider> = {}): OAuthProvider {
     client_id_placeholder: null,
     requires_client_secret: true,
     logo_url: null,
-    supports_cloud_mode: true,
-    managed_service_is_paid: false,
     category: "productivity",
     tenant_host: null,
     acts_as: "user",
