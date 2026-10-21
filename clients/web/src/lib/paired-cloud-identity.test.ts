@@ -17,8 +17,7 @@ const pairedEntry: LockfileAssistant = {
 };
 
 let lockfileEntry: LockfileAssistant | undefined = pairedEntry;
-let pairedGatewayUrl: string | undefined =
-  "/assistant/__gateway/paired-remote";
+let pairedGatewayUrl: string | undefined = "/assistant/__gateway/paired-remote";
 mock.module("@/lib/local-mode", () => ({
   getLockfileAssistant: () => lockfileEntry,
   getPairedGatewayUrl: () => pairedGatewayUrl,
@@ -53,9 +52,9 @@ afterEach(() => {
 
 describe("resolvePairedAssistantCloudId", () => {
   test("reads the paired daemon's status through the proxy and persists the UUID", async () => {
-    await expect(
-      resolvePairedAssistantCloudId("paired-remote"),
-    ).resolves.toBe(UUID);
+    await expect(resolvePairedAssistantCloudId("paired-remote")).resolves.toBe(
+      UUID,
+    );
     expect(fetchCloudStatus).toHaveBeenCalledWith(
       {
         gatewayUrl: `${window.location.origin}/assistant/__gateway/paired-remote`,
@@ -83,9 +82,9 @@ describe("resolvePairedAssistantCloudId", () => {
     await expect(
       resolvePairedAssistantCloudId("paired-remote"),
     ).resolves.toBeNull();
-    await expect(
-      resolvePairedAssistantCloudId("paired-remote"),
-    ).resolves.toBe(UUID);
+    await expect(resolvePairedAssistantCloudId("paired-remote")).resolves.toBe(
+      UUID,
+    );
     expect(fetchCloudStatus).toHaveBeenCalledTimes(2);
   });
 
@@ -99,9 +98,9 @@ describe("resolvePairedAssistantCloudId", () => {
 
   test("returns the persisted id without a daemon read", async () => {
     lockfileEntry = { ...pairedEntry, cloudAssistantId: UUID };
-    await expect(
-      resolvePairedAssistantCloudId("paired-remote"),
-    ).resolves.toBe(UUID);
+    await expect(resolvePairedAssistantCloudId("paired-remote")).resolves.toBe(
+      UUID,
+    );
     expect(fetchCloudStatus).not.toHaveBeenCalled();
   });
 
@@ -128,9 +127,9 @@ describe("resolvePairedAssistantCloudId", () => {
       lockfileEntry = { ...pairedEntry, name: "Renamed" };
       return { assistantId: UUID };
     });
-    await expect(
-      resolvePairedAssistantCloudId("paired-remote"),
-    ).resolves.toBe(UUID);
+    await expect(resolvePairedAssistantCloudId("paired-remote")).resolves.toBe(
+      UUID,
+    );
   });
 
   test.each([

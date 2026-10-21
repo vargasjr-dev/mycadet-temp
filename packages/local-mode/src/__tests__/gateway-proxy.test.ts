@@ -19,10 +19,17 @@ const rejection = {
 } as const;
 
 const loopback = (port: number) => ({ kind: "loopback", port }) as const;
-const remote = (runtimeUrl: string) => ({ kind: "remote", runtimeUrl }) as const;
+const remote = (runtimeUrl: string) =>
+  ({ kind: "remote", runtimeUrl }) as const;
 
 const targets =
-  (map: Record<string, { kind: "loopback"; port: number } | { kind: "remote"; runtimeUrl: string }>) =>
+  (
+    map: Record<
+      string,
+      | { kind: "loopback"; port: number }
+      | { kind: "remote"; runtimeUrl: string }
+    >,
+  ) =>
   () =>
     new Map(Object.entries(map));
 
@@ -137,9 +144,9 @@ describe("resolveGatewayProxyTarget", () => {
     expect(resolveGatewayProxyTarget("/__gateway/zzz-999/v1", entry)).toEqual(
       rejection,
     );
-    expect(resolveGatewayProxyTarget("/__gateway/abc/../secret", entry)).toEqual(
-      rejection,
-    );
+    expect(
+      resolveGatewayProxyTarget("/__gateway/abc/../secret", entry),
+    ).toEqual(rejection);
   });
 });
 
@@ -148,12 +155,14 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "abc-123", cloud: "paired", runtimeUrl: "https://gw.example.com" },
+          {
+            assistantId: "abc-123",
+            cloud: "paired",
+            runtimeUrl: "https://gw.example.com",
+          },
         ],
       }),
-    ).toEqual(
-      targets({ "abc-123": remote("https://gw.example.com") })(),
-    );
+    ).toEqual(targets({ "abc-123": remote("https://gw.example.com") })());
   });
 
   test("omits a paired entry whose runtimeUrl is unusable", () => {
@@ -234,9 +243,21 @@ describe("gatewayTargetsFromLockfile", () => {
         assistants: [
           { assistantId: "a", cloud: "cadet" },
           { assistantId: "b", cloud: "apple-container" },
-          { assistantId: "c", cloud: "gcp", runtimeUrl: "https://gw.example.com" },
-          { assistantId: "d", cloud: "aws", runtimeUrl: "https://gw.example.com" },
-          { assistantId: "e", cloud: "custom", runtimeUrl: "https://gw.example.com" },
+          {
+            assistantId: "c",
+            cloud: "gcp",
+            runtimeUrl: "https://gw.example.com",
+          },
+          {
+            assistantId: "d",
+            cloud: "aws",
+            runtimeUrl: "https://gw.example.com",
+          },
+          {
+            assistantId: "e",
+            cloud: "custom",
+            runtimeUrl: "https://gw.example.com",
+          },
         ],
       }),
     ).toEqual(new Map());

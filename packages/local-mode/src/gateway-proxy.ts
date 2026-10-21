@@ -19,7 +19,6 @@ import {
  */
 const GATEWAY_PATTERN = /^(?:\/assistant)?\/__gateway\/([^/?#]+)(\/.*)?$/;
 
-
 export interface GatewayTarget {
   assistantId: string;
   /** Pathname tail forwarded onto the target, without the query. */

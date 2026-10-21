@@ -18,8 +18,7 @@ mock.module("electron", () => ({
   session: { defaultSession: { webRequest: { onBeforeRequest } } },
 }));
 
-const { installGatewayRequestGuard } =
-  await import("./gateway-request-guard");
+const { installGatewayRequestGuard } = await import("./gateway-request-guard");
 
 const APP_ORIGIN = { protocol: "app:", host: "mycadet.ai" };
 
