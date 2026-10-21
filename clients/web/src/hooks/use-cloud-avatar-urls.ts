@@ -7,7 +7,10 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import {
+  useGatewayIdentityKey,
+  useGatewaySessionStore,
+} from "@/stores/gateway-session-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   resolveCloudAssistantId,
@@ -119,8 +122,10 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  * API list cannot clobber their rows, and this lookup keeps that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
-  const hasCloudSession = useHasCloudSession();
-  const userId = useAuthStore.use.user()?.id ?? null;
+  // The projection mirrors the cloud tri-state into cloudLive, and the
+  // identity key replaces the platform user id in the query scope.
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
+  const userId = useGatewayIdentityKey();
   const isOrgReady = useIsOrgReady();
   const organizationId = useRequestOrganizationId();
   const query = useQuery<CloudAvatarUrls>({

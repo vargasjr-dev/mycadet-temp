@@ -12,7 +12,7 @@ import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useTranslation } from "@/i18n";
 import { docsUrl, routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
@@ -31,7 +31,7 @@ interface HostingOption {
 const ICON_CLASS = "h-5 w-5 shrink-0";
 
 function useHostingOptions(): HostingOption[] {
-  const hasCloudSession = useHasCloudSession();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
   const cloudDisabled = !hasCloudSession;
 
   return [
@@ -61,7 +61,7 @@ function useHostingOptions(): HostingOption[] {
 export function HostingScreen() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
-  const hasCloudSession = useHasCloudSession();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
   const electron = isElectron();
   const options = useHostingOptions();
   const cloudDisabled = options.find((o) => o.mode === "cadet-cloud")?.disabled;

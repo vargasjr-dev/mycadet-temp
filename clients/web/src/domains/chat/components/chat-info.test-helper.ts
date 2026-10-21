@@ -21,7 +21,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { MIN_VERSION } from "@/lib/backwards-compat/use-supports-attachment-list";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import {
   type ConversationFileAsset,
@@ -277,17 +277,20 @@ const CHAT_INFO_QUERY_DEFAULTS = {
  * requested. Returns the restore fn.
  */
 export function holdOrgHeaderUnresolved(): () => void {
-  const { cloudSession } = useAuthStore.getState();
+  const seam = useGatewaySessionStore.getState();
   const { status, currentOrganizationId, persistedOrganizationId } =
     useOrganizationStore.getState();
-  useAuthStore.setState({ cloudSession: "present" });
+  useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
   useOrganizationStore.setState({
     status: "loading",
     currentOrganizationId: null,
     persistedOrganizationId: null,
   });
   return () => {
-    useAuthStore.setState({ cloudSession });
+    useGatewaySessionStore.setState({
+      cloudLive: seam.cloudLive,
+      cloudSettled: seam.cloudSettled,
+    });
     useOrganizationStore.setState({
       status,
       currentOrganizationId,

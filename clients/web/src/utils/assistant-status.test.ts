@@ -10,7 +10,8 @@ import {
 // single input it cares about.
 const working: AssistantStatusInputs = {
   lifecycleKind: "active",
-  sessionStatus: "authenticated",
+  sessionSettled: true,
+  sessionLive: true,
   isSSEConnected: true,
   turnPhase: "idle",
 };
@@ -21,12 +22,13 @@ describe("deriveAssistantStatus", () => {
   });
 
   test("authFailed outranks every other signal", () => {
-    // Even mid-error, mid-turn, disconnected — an unauthenticated session is
+    // Even mid-error, mid-turn, disconnected — a settled-dead session is
     // the most fundamental failure, so it wins.
     expect(
       deriveAssistantStatus({
         lifecycleKind: "error",
-        sessionStatus: "unauthenticated",
+        sessionSettled: true,
+        sessionLive: false,
         isSSEConnected: false,
         turnPhase: "thinking",
       }),
@@ -41,7 +43,7 @@ describe("deriveAssistantStatus", () => {
 
   test("disconnected while the session is still initializing", () => {
     expect(
-      deriveAssistantStatus({ ...working, sessionStatus: "initializing" }),
+      deriveAssistantStatus({ ...working, sessionSettled: false }),
     ).toBe("disconnected");
   });
 

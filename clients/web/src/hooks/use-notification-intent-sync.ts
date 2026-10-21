@@ -50,7 +50,10 @@ import {
   sendNotificationIntentAck,
   shouldSuppressFocusedNotificationDelivery,
 } from "@/runtime/notifications";
-import { useAuthStore } from "@/stores/auth-store";
+import {
+  useGatewayIdentityKey,
+  useGatewaySessionStore,
+} from "@/stores/gateway-session-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -68,28 +71,26 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const authUser = useAuthStore.use.user();
+  const sessionLive = useGatewaySessionStore.use.live();
   const requestOrganizationId = useRequestOrganizationId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const assistant = assistants.find(
     (candidate) => candidate.id === assistantId,
   );
-  const platformAccountId = authUser?.kind === "platform" ? authUser.id : null;
+  const platformAccountId = useGatewayIdentityKey();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
       ? null
       : globalThis.location.href);
-  const scopeId =
-    sessionStatus === "authenticated"
-      ? resolveAssistantAvatarOwnerScopeId(
-          assistant,
-          platformAccountId,
-          requestOrganizationId,
-          connectionFallback,
-        )
-      : null;
+  const scopeId = sessionLive
+    ? resolveAssistantAvatarOwnerScopeId(
+        assistant,
+        platformAccountId,
+        requestOrganizationId,
+        connectionFallback,
+      )
+    : null;
   const cloudAssistantId = resolveAssistantNotificationCloudId(assistant);
   const notificationIdentity = useMemo(
     () =>

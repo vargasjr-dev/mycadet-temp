@@ -49,7 +49,10 @@ mock.module("react-router", () => ({
 }));
 
 let localAssistants = false;
+const localModeActual = await import("@/lib/local-mode");
+
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   hasAssistants: () => localAssistants,
   isLocalClient: () => true,
 }));
@@ -86,7 +89,19 @@ mock.module("@/domains/onboarding/provider-key", () => ({
 }));
 
 mock.module("@/stores/auth-store", () => ({
+  useAuthStore: { use: { user: () => null }, getState: () => ({ user: null }) },
   useHasCloudSession: () => true,
+}));
+
+const seamMock = (): null => null;
+seamMock.use = {
+  settled: () => true,
+  live: () => true,
+  cloudLive: () => true,
+};
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: seamMock,
+  useIsSessionInitializing: () => false,
 }));
 mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {

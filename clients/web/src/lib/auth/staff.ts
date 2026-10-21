@@ -1,4 +1,5 @@
 import type { AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 
 /**
  * Whether a session belongs to Cadet staff.

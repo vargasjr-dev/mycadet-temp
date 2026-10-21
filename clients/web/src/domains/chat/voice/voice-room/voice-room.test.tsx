@@ -68,7 +68,7 @@ import {
   syncFrameGateDebugOptions,
 } from "@/lib/camera/frame-gate-debug";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
@@ -3908,18 +3908,15 @@ describe("VoiceRoom: camera", () => {
  * put it on screen.
  */
 describe("VoiceRoom: the frame gate's tuning readout", () => {
-  const STAFF_USER: AuthUser = {
-    kind: "platform",
-    id: "user-1",
-    username: "staffer",
-    email: "staffer@example.com",
+  const STAFF_SESSION = {
+    settled: true,
+    live: true,
     isStaff: true,
-    firstName: "Staff",
-    lastName: "Member",
+    identityKey: "user-1",
   };
 
   const hud = () => screen.queryByTestId("frame-gate-hud");
-  const initialAuth = useAuthStore.getState();
+  const initialSeam = useGatewaySessionStore.getState();
   const realRequestAnimationFrame = globalThis.requestAnimationFrame;
   let pendingFrames: Array<() => void> = [];
 
@@ -3929,7 +3926,7 @@ describe("VoiceRoom: the frame gate's tuning readout", () => {
       pendingFrames.push(() => callback(0));
       return pendingFrames.length;
     }) as typeof globalThis.requestAnimationFrame;
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
   });
 
   afterEach(() => {
@@ -3938,7 +3935,7 @@ describe("VoiceRoom: the frame gate's tuning readout", () => {
     restoreMediaDevices();
     useCameraGateDebugStore.getState().setHudEnabled(false);
     syncFrameGateDebugOptions(false, defaultFrameGateOverrides());
-    useAuthStore.setState(initialAuth, true);
+    useGatewaySessionStore.setState(initialSeam, true);
   });
 
   /**

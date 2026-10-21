@@ -16,53 +16,20 @@ import {
   syncFrameGateDebugOptions,
 } from "@/lib/camera/frame-gate-debug";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
 
 const STORAGE_KEY = "cadet:debug:cameraGateHud";
 
-const STAFF_USER: AuthUser = {
-  kind: "platform",
-  id: "user-1",
-  username: "staffer",
-  email: "staffer@mycadet.ai",
-  isStaff: true,
-  firstName: "Staff",
-  lastName: "Member",
-};
+const STAFF_ID = "user-1";
+const OTHER_STAFF_ID = "user-2";
 
-/**
- * The same account as {@link STAFF_USER}, no longer staff. Same id, so it
- * moves availability without moving identity, which is what the tests below
- * are about.
- */
-const DEMOTED_USER: AuthUser = {
-  ...STAFF_USER,
-  email: "person@example.com",
-  isStaff: false,
-};
+const STAFF_SESSION = { settled: true, live: true, isStaff: true, identityKey: STAFF_ID };
+/** The same identity, no longer staff — moves availability, not the claim. */
+const DEMOTED_SESSION = { settled: true, live: true, isStaff: false, identityKey: STAFF_ID };
+const OTHER_STAFF_SESSION = { settled: true, live: true, isStaff: true, identityKey: OTHER_STAFF_ID };
+const NO_SESSION = { settled: true, live: false, isStaff: false, identityKey: null };
 
-const OTHER_STAFF_USER: AuthUser = {
-  kind: "platform",
-  id: "user-2",
-  username: "colleague",
-  email: "colleague@mycadet.ai",
-  isStaff: true,
-  firstName: "Other",
-  lastName: "Staffer",
-};
-
-const LOCAL_USER: AuthUser = {
-  kind: "local",
-  id: "gateway-local",
-  username: null,
-  email: null,
-  isStaff: false,
-  firstName: "",
-  lastName: "",
-};
-
-const initialAuthState = useAuthStore.getState();
 const initialDebugState = useCameraGateDebugStore.getState();
 
 let stopAccessSync: (() => void) | null = null;
@@ -82,7 +49,7 @@ function resetStores(): void {
     },
     true,
   );
-  useAuthStore.setState({ user: LOCAL_USER });
+  useGatewaySessionStore.setState({ ...NO_SESSION });
 }
 
 beforeEach(() => {
@@ -96,19 +63,19 @@ afterEach(() => {
   stopAccessSync = null;
   resetStores();
   syncFrameGateDebugOptions(false, defaultFrameGateOverrides());
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState({ ...NO_SESSION });
   localStorage.removeItem(STORAGE_KEY);
 });
 
 describe("camera gate readout access", () => {
   test("a session that stops being staff stops tuning the gate", () => {
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
     const store = useCameraGateDebugStore.getState();
     store.setHudEnabled(true);
     store.setOverride("minDetail", 30);
     expect(FRAME_GATE_LIVE_OPTIONS.minDetail).toBe(30);
 
-    useAuthStore.setState({ user: DEMOTED_USER });
+    useGatewaySessionStore.setState({ ...DEMOTED_SESSION });
 
     expect({ ...FRAME_GATE_LIVE_OPTIONS }).toEqual({
       ...DEFAULT_FRAME_GATE_OPTIONS,
@@ -118,29 +85,29 @@ describe("camera gate readout access", () => {
   });
 
   test("access coming back puts the thresholds it was left on back on the gate", () => {
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
     const store = useCameraGateDebugStore.getState();
     store.setHudEnabled(true);
     store.setOverride("settleThreshold", 0.25);
-    useAuthStore.setState({ user: DEMOTED_USER });
+    useGatewaySessionStore.setState({ ...DEMOTED_SESSION });
     expect(FRAME_GATE_LIVE_OPTIONS.settleThreshold).toBe(
       DEFAULT_FRAME_GATE_OPTIONS.settleThreshold,
     );
 
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
 
     expect(FRAME_GATE_LIVE_OPTIONS.settleThreshold).toBe(0.25);
   });
 
   test("a session that expires without a logout leaves nothing for the next account", () => {
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
     const store = useCameraGateDebugStore.getState();
     store.setHudEnabled(true);
     store.setOverride("noveltyThreshold", 1.3);
 
     // An expired or revoked session ends without the logout sweep running.
-    useAuthStore.setState({ user: null });
-    useAuthStore.setState({ user: OTHER_STAFF_USER });
+    useGatewaySessionStore.setState({ ...NO_SESSION });
+    useGatewaySessionStore.setState({ ...OTHER_STAFF_SESSION });
 
     const state = useCameraGateDebugStore.getState();
     expect(state.hudEnabled).toBe(false);
@@ -152,12 +119,12 @@ describe("camera gate readout access", () => {
   });
 
   test("a different account signing in straight after another finds nothing of theirs", () => {
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
     const store = useCameraGateDebugStore.getState();
     store.setHudEnabled(true);
     store.setOverride("minDetail", 42);
 
-    useAuthStore.setState({ user: OTHER_STAFF_USER });
+    useGatewaySessionStore.setState({ ...OTHER_STAFF_SESSION });
 
     const state = useCameraGateDebugStore.getState();
     expect(state.hudEnabled).toBe(false);
@@ -174,7 +141,7 @@ describe("camera gate readout access", () => {
       JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId: STAFF_USER.id,
+          ownerUserId: STAFF_ID,
           overrides: { ...defaultFrameGateOverrides(), minDetail: 42 },
         },
         version: 0,
@@ -182,7 +149,7 @@ describe("camera gate readout access", () => {
     );
     await useCameraGateDebugStore.persist.rehydrate();
 
-    useAuthStore.setState({ user: OTHER_STAFF_USER });
+    useGatewaySessionStore.setState({ ...OTHER_STAFF_SESSION });
 
     const state = useCameraGateDebugStore.getState();
     expect(state.hudEnabled).toBe(false);
@@ -190,15 +157,15 @@ describe("camera gate readout access", () => {
   });
 
   test("the same account returning through a no-user window keeps its tuning", () => {
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
     const store = useCameraGateDebugStore.getState();
     store.setHudEnabled(true);
     store.setOverride("minDetail", 42);
 
     // Boot and a token refresh both pass through a window with no user, and
     // neither is a change of account.
-    useAuthStore.setState({ user: null });
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...NO_SESSION });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
 
     const state = useCameraGateDebugStore.getState();
     expect(state.hudEnabled).toBe(true);
@@ -212,7 +179,7 @@ describe("camera gate readout access", () => {
       JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId: STAFF_USER.id,
+          ownerUserId: STAFF_ID,
           overrides: { ...defaultFrameGateOverrides(), minDetail: 42 },
         },
         version: 0,
@@ -220,7 +187,7 @@ describe("camera gate readout access", () => {
     );
     await useCameraGateDebugStore.persist.rehydrate();
 
-    useAuthStore.setState({ user: STAFF_USER });
+    useGatewaySessionStore.setState({ ...STAFF_SESSION });
 
     const state = useCameraGateDebugStore.getState();
     expect(state.hudEnabled).toBe(true);
@@ -278,10 +245,10 @@ describe("camera gate readout access", () => {
     }
 
     test("from the same account reaches this tab, and the gate with it", async () => {
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       useCameraGateDebugStore.getState().setHudEnabled(false);
 
-      await arriveFromAnotherTab(STAFF_USER.id ?? "", 42);
+      await arriveFromAnotherTab(STAFF_ID, 42);
 
       const state = useCameraGateDebugStore.getState();
       expect(state.hudEnabled).toBe(true);
@@ -295,7 +262,7 @@ describe("camera gate readout access", () => {
       // claim that follows is what binds it, and binding a preference no
       // session recorded is what puts the switch back to shipped. That is the
       // store's standing rule for an unowned payload, not a new one.
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       const store = useCameraGateDebugStore.getState();
       store.setHudEnabled(true);
       store.setOverride("minDetail", 30);
@@ -316,7 +283,7 @@ describe("camera gate readout access", () => {
       await Promise.resolve();
 
       const state = useCameraGateDebugStore.getState();
-      expect(state.ownerUserId).toBe(STAFF_USER.id);
+      expect(state.ownerUserId).toBe(STAFF_ID);
       expect(state.hudEnabled).toBe(false);
       expect(state.overrides.minDetail).toBe(
         DEFAULT_FRAME_GATE_OPTIONS.minDetail,
@@ -328,12 +295,12 @@ describe("camera gate readout access", () => {
       // the other tab would read that and correct it back, and two signed-in
       // accounts would trade the key with nobody touching a switch. Refusing
       // to read it is what has no second half.
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       const store = useCameraGateDebugStore.getState();
       store.setHudEnabled(true);
       store.setOverride("minDetail", 30);
 
-      const foreign = payloadFrom(OTHER_STAFF_USER.id ?? "", 42);
+      const foreign = payloadFrom(OTHER_STAFF_ID, 42);
       localStorage.setItem(STORAGE_KEY, foreign);
 
       window.dispatchEvent(
@@ -350,7 +317,7 @@ describe("camera gate readout access", () => {
       const state = useCameraGateDebugStore.getState();
       expect(state.hudEnabled).toBe(true);
       expect(state.overrides.minDetail).toBe(30);
-      expect(state.ownerUserId).toBe(STAFF_USER.id);
+      expect(state.ownerUserId).toBe(STAFF_ID);
       expect(FRAME_GATE_LIVE_OPTIONS.minDetail).toBe(30);
       expect(localStorage.getItem(STORAGE_KEY)).toBe(foreign);
     });
@@ -361,7 +328,7 @@ describe("camera gate readout access", () => {
       // acted on, and none throws out of the handler. The last shape is the
       // one a restore would visibly take: it parses, so a handler that went
       // ahead would merge it and put this session's switch out.
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       useCameraGateDebugStore.getState().setHudEnabled(true);
 
       await arriveUnreadable(null);
@@ -376,13 +343,13 @@ describe("camera gate readout access", () => {
       // this handler running. The event still names this account, and the
       // restore would take the key, so trusting the event would smuggle the
       // other account's payload in behind a check that passed.
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       const store = useCameraGateDebugStore.getState();
       store.setHudEnabled(true);
       store.setOverride("minDetail", 30);
 
-      const announced = payloadFrom(STAFF_USER.id ?? "", 42);
-      const onDiskNow = payloadFrom(OTHER_STAFF_USER.id ?? "", 99);
+      const announced = payloadFrom(STAFF_ID, 42);
+      const onDiskNow = payloadFrom(OTHER_STAFF_ID, 99);
       localStorage.setItem(STORAGE_KEY, onDiskNow);
 
       window.dispatchEvent(
@@ -400,13 +367,13 @@ describe("camera gate readout access", () => {
     });
 
     test("under another key is not this store's to answer", async () => {
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       useCameraGateDebugStore.getState().setHudEnabled(true);
 
       // A payload nobody announced. Reading it would mean any key's event
       // restores this slice, which is a switch moving under a session that
       // changed nothing.
-      localStorage.setItem(STORAGE_KEY, payloadFrom(STAFF_USER.id ?? "", 42));
+      localStorage.setItem(STORAGE_KEY, payloadFrom(STAFF_ID, 42));
       localStorage.setItem("cadet:debug:somethingElse", "{}");
       window.dispatchEvent(
         new StorageEvent("storage", {
@@ -422,12 +389,12 @@ describe("camera gate readout access", () => {
     });
 
     test("stops arriving once the access sync is torn down", async () => {
-      useAuthStore.setState({ user: STAFF_USER });
+      useGatewaySessionStore.setState({ ...STAFF_SESSION });
       useCameraGateDebugStore.getState().setHudEnabled(false);
       stopAccessSync?.();
       stopAccessSync = null;
 
-      await arriveFromAnotherTab(STAFF_USER.id ?? "", 42);
+      await arriveFromAnotherTab(STAFF_ID, 42);
 
       expect(useCameraGateDebugStore.getState().hudEnabled).toBe(false);
     });

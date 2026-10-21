@@ -300,15 +300,46 @@ mock.module("@/domains/onboarding/plugin-attribution", () => ({
   ATTRIBUTED_PLUGIN_PARAM: "attributed_plugin",
 }));
 
+const localModeActual = await import("@/lib/local-mode");
+
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   isLocalClient: () => isLocalClientValue,
   loadLockfile: async () => {},
   primeLocalGatewayConnection: async () => {},
   probeLocalGatewayReady: async () => true,
 }));
 
+const gatewaySessionActual = await import("@/lib/auth/gateway-session");
 mock.module("@/lib/auth/gateway-session", () => ({
+  ...gatewaySessionActual,
   clearGatewayToken: clearGatewayTokenMock,
+}));
+
+const seamState = {
+  settled: true,
+  live: true,
+  cloudLive: true,
+  cloudSettled: true,
+  isStaff: false,
+  email: null,
+  identityKey: null,
+};
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: {
+    use: {
+      settled: () => seamState.settled,
+      live: () => seamState.live,
+      cloudLive: () => seamState.cloudLive,
+      identityKey: () => seamState.identityKey,
+    },
+    getState: () => ({
+      ...seamState,
+      connectLocalAssistant: async () => {},
+    }),
+    subscribe: () => () => {},
+  },
+  useIsSessionInitializing: () => !seamState.settled,
 }));
 
 mock.module("@/lib/self-hosted/connection", () => ({

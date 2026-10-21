@@ -9,6 +9,11 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { QueryClient } from "@tanstack/react-query";
 
+// Spread the real modules so the graph's other named imports stay available
+// (the gateway session seam widened this test's graph).
+const apiActual = await import("@/assistant/api");
+const localModeActual = await import("@/lib/local-mode");
+
 // --- mutable mock state (set per test) --- //
 
 let isLocalClientValue = false;
@@ -35,12 +40,14 @@ const listAssistantsMock = mock(async () => ({
   data: [{ id: "p1", is_local: false, created: "" }],
 }));
 mock.module("@/assistant/api", () => ({
+  ...apiActual,
   retireAssistantById: retireAssistantByIdMock,
   listAssistants: listAssistantsMock,
 }));
 
 const retireLocalAssistantMock = mock(async (_id: string) => retireLocalResult);
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   getLockfile: () => ({
     assistants: lockfileAssistants,
     activeAssistant: null,
@@ -64,6 +71,21 @@ mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
     getState: () => ({ user: { id: "user-1" } }),
   },
+}));
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: {
+    getState: () => ({
+      settled: true,
+      live: true,
+      cloudLive: true,
+      cloudSettled: true,
+      isStaff: false,
+      email: null,
+      identityKey: "user-1",
+    }),
+    subscribe: () => () => {},
+  },
+  useGatewayIdentityKey: () => "user-1",
 }));
 
 const clearResearchSnapshotMock = mock((_userId: string | null) => {});

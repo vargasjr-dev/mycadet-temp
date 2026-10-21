@@ -26,24 +26,25 @@
  * sessions that have no panel on screen.
  */
 
-import { isCadetStaff } from "@/lib/auth/staff";
 import { syncFrameGateDebugOptions } from "@/lib/camera/frame-gate-debug";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   useCameraGateDebugStore,
   watchCameraGateDebugStorage,
 } from "@/stores/camera-gate-debug-store";
 
 /**
- * Whether a session may reach the readout: staff only.
+ * Whether a session may reach the readout: staff only. The verdict rides the
+ * gateway session seam (the projection mirrors the signed-in user's staff
+ * bit; post-flip the session introspection carries it).
  */
-export function cameraGateHudAvailable(user: AuthUser | null): boolean {
-  return isCadetStaff(user);
+export function cameraGateHudAvailable(): boolean {
+  return useGatewaySessionStore.getState().isStaff;
 }
 
 /** The same answer read outside React, for the subscriptions below. */
 function availableNow(): boolean {
-  return cameraGateHudAvailable(useAuthStore.getState().user);
+  return cameraGateHudAvailable();
 }
 
 /**
@@ -62,11 +63,11 @@ function availableNow(): boolean {
  * stop reaching the gate.
  */
 function claimForCurrentUser(): void {
-  const userId = useAuthStore.getState().user?.id ?? null;
-  if (userId === null) {
+  const identityKey = useGatewaySessionStore.getState().identityKey;
+  if (identityKey === null) {
     return;
   }
-  useCameraGateDebugStore.getState().claimForUser(userId);
+  useCameraGateDebugStore.getState().claimForUser(identityKey);
 }
 
 /**
@@ -107,7 +108,7 @@ function ownsPersistedPreference(ownerUserId: string | null): boolean {
   if (ownerUserId === null) {
     return true;
   }
-  return ownerUserId === (useAuthStore.getState().user?.id ?? null);
+  return ownerUserId === useGatewaySessionStore.getState().identityKey;
 }
 
 /**
@@ -126,7 +127,9 @@ function ownsPersistedPreference(ownerUserId: string | null): boolean {
  */
 export function setupCameraGateHudAccessSync(): () => void {
   onAuthChange();
-  const unsubscribeAuth = useAuthStore.subscribe(onAuthChange);
+  // The seam fires on the same writes the store does (the projection
+  // mirrors them), so the subscription timing is unchanged.
+  const unsubscribeAuth = useGatewaySessionStore.subscribe(onAuthChange);
   const unsubscribeDebug = useCameraGateDebugStore.subscribe(
     applyEffectiveOptions,
   );

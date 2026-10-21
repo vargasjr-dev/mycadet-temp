@@ -29,7 +29,7 @@ import {
   BrowserNotificationDelivery,
 } from "@/runtime/browser-notification-delivery";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import {
@@ -245,17 +245,13 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   __resetForTesting();
-  useAuthStore.setState({
-    sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "account-1",
-      username: "user1",
-      email: "user@example.com",
-      isStaff: false,
-      firstName: "Example",
-      lastName: "User",
-    },
+  useGatewaySessionStore.setState({
+    settled: true,
+    live: true,
+    cloudLive: true,
+    cloudSettled: true,
+    isStaff: false,
+    identityKey: "account-1",
   });
   useOrganizationStore.setState({
     currentOrganizationId: "org-1",
@@ -422,7 +418,11 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useGatewaySessionStore.setState({
+        settled: true,
+        live: false,
+        identityKey: null,
+      });
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -442,16 +442,10 @@ describe("useNotificationIntentSync", () => {
       isPaired: true,
       runtimeUrl: "https://b.example.com/assistant",
     };
-    useAuthStore.setState({
-      user: {
-        kind: "local",
-        id: "gateway-local",
-        username: null,
-        email: null,
-        isStaff: false,
-        firstName: "",
-        lastName: "",
-      },
+    useGatewaySessionStore.setState({
+      settled: true,
+      live: true,
+      identityKey: "gateway-local",
     });
     useOrganizationStore.setState({
       currentOrganizationId: null,
@@ -639,7 +633,11 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useGatewaySessionStore.setState({
+        settled: true,
+        live: false,
+        identityKey: null,
+      });
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

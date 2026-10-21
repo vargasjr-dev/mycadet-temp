@@ -163,7 +163,9 @@ mock.module(
   }),
 );
 
-const { useAuthStore } = await import("@/stores/auth-store");
+const { useGatewaySessionStore } = await import(
+  "@/stores/gateway-session-store"
+);
 const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
@@ -179,7 +181,7 @@ const {
 } = await import("@/hooks/use-chooser-row-avatar");
 const { avatarQueryKey } = await import("@/hooks/use-assistant-avatar");
 
-const initialAuthState = useAuthStore.getState();
+const initialSeamState = useGatewaySessionStore.getState();
 const initialOrganizationState = useOrganizationStore.getState();
 const { chooserRowAvatarCacheQueryKey, persistLastSeenAvatar } =
   await import("@/lib/persist-last-seen-avatar");
@@ -239,17 +241,13 @@ function createWrapper(
 
 /** A signed-in platform account on this device, the state a `cadet login` leaves. */
 function signInToPlatform(): void {
-  useAuthStore.setState({
-    cloudSession: "present",
-    user: {
-      kind: "platform",
-      id: "user-1",
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
+  useGatewaySessionStore.setState({
+    settled: true,
+    live: true,
+    cloudLive: true,
+    cloudSettled: true,
+    isStaff: false,
+    identityKey: "user-1",
   });
 }
 
@@ -308,7 +306,7 @@ afterEach(() => {
   listAssistants.mockResolvedValue({ ok: true, status: 200, data: [] });
   resolvePairedAssistantCloudId.mockReset();
   resolvePairedAssistantCloudId.mockImplementation(async (id) => id);
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState(initialSeamState, true);
   useOrganizationStore.setState(initialOrganizationState, true);
   readAssistantAvatarHost.mockResolvedValue({ ok: true, avatar: null });
   readLastSeenAvatar.mockResolvedValue(null);
@@ -788,7 +786,13 @@ describe("useChooserRowAvatar", () => {
     );
 
     test("a signed-out device keeps the glyph", async () => {
-      useAuthStore.setState({ cloudSession: "absent", user: null });
+      useGatewaySessionStore.setState({
+        settled: true,
+        live: false,
+        cloudLive: false,
+        cloudSettled: true,
+        identityKey: null,
+      });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
         { wrapper: createWrapper() },

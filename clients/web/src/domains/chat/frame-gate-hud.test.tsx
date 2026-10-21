@@ -42,7 +42,7 @@ import {
   type FrameGateDebugSurface,
 } from "@/lib/camera/frame-gate-debug";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
 
 /** Whether the window is narrow enough to have no room for the card. */
@@ -55,28 +55,21 @@ mock.module("@/hooks/use-is-mobile", (): typeof UseIsMobileModule => ({
 
 const { FrameGateHud } = await import("@/domains/chat/frame-gate-hud");
 
-const STAFF_USER: AuthUser = {
-  kind: "platform",
-  id: "user-1",
-  username: "staffer",
-  email: "staffer@mycadet.ai",
+const STAFF_SESSION = {
+  settled: true,
+  live: true,
   isStaff: true,
-  firstName: "Staff",
-  lastName: "Member",
+  identityKey: "user-1",
 };
 
-const LOCAL_USER: AuthUser = {
-  kind: "local",
-  id: "gateway-local",
-  username: null,
-  email: null,
+const LOCAL_SESSION = {
+  settled: true,
+  live: true,
   isStaff: false,
-  firstName: "",
-  lastName: "",
+  identityKey: "gateway-local",
 };
 
 const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
-const initialAuthState = useAuthStore.getState();
 const initialDebugState = useCameraGateDebugStore.getState();
 
 let pendingFrames: Array<() => void> = [];
@@ -131,7 +124,7 @@ beforeEach(() => {
     pendingFrames.push(() => callback(0));
     return pendingFrames.length;
   }) as typeof globalThis.requestAnimationFrame;
-  useAuthStore.setState({ user: STAFF_USER });
+  useGatewaySessionStore.setState({ ...STAFF_SESSION });
   useCameraGateDebugStore.setState(
     { ...initialDebugState, overrides: defaultFrameGateOverrides() },
     true,
@@ -152,13 +145,13 @@ afterEach(() => {
     true,
   );
   syncFrameGateDebugOptions(false, defaultFrameGateOverrides());
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState({ ...LOCAL_SESSION });
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
 });
 
 describe("FrameGateHud gating", () => {
   test("renders nothing for a session that is neither staff nor flagged", () => {
-    useAuthStore.setState({ user: LOCAL_USER });
+    useGatewaySessionStore.setState({ ...LOCAL_SESSION });
     judge("voice", "novel", true);
 
     render(<FrameGateHud surface="voice" />);

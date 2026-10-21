@@ -1,11 +1,12 @@
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import {
+  useGatewaySessionStore,
+} from "@/stores/gateway-session-store";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
   useRequestOrganizationId,
   type OrganizationStatus,
 } from "@/stores/organization-store";
-import { hasLiveCloudSession } from "@/stores/session-status";
 
 /**
  * How close the `Cadet-Organization-Id` header source is to producing an id.
@@ -53,7 +54,7 @@ export function useOrgHeaderReadiness(): OrgHeaderReadiness {
   return resolveOrgHeaderReadiness(
     useRequestOrganizationId(),
     useOrganizationStore.use.status(),
-    useHasCloudSession(),
+    useGatewaySessionStore.use.cloudLive(),
   );
 }
 
@@ -67,7 +68,7 @@ export function getOrgHeaderReadiness(): OrgHeaderReadiness {
   return resolveOrgHeaderReadiness(
     getActiveOrganizationIdForRequests(),
     useOrganizationStore.getState().status,
-    hasLiveCloudSession(useAuthStore.getState().cloudSession),
+    useGatewaySessionStore.getState().cloudLive,
   );
 }
 

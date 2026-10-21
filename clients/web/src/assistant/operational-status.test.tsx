@@ -82,10 +82,10 @@ import {
   useAssistantOperationalStatus,
 } from "@/assistant/operational-status";
 import type { OperationalStatus } from "@/generated/api/types.gen";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
-const initialAuthState = useAuthStore.getState();
+const initialSeamState = useGatewaySessionStore.getState();
 const initialLifecycleState = useAssistantLifecycleStore.getState();
 
 function wrapper({ children }: { children: ReactNode }) {
@@ -124,11 +124,9 @@ beforeEach(() => {
   sseConnectedSnapshotMock = false;
   isLocalClientMock.mockImplementation(() => false);
   isOrgReadyMock = true;
-  useAuthStore.setState(
-    {
-      ...initialAuthState,
-      cloudSession: "present",
-    },
+  // The cloud gate reads the seam now: a live cloud session.
+  useGatewaySessionStore.setState(
+    { ...initialSeamState, settled: true, live: true, cloudLive: true, cloudSettled: true },
     true,
   );
   useAssistantLifecycleStore.setState(initialLifecycleState, true);

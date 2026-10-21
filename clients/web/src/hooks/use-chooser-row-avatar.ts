@@ -38,7 +38,7 @@ import {
   canReadAvatarFromLocalHost,
   readAssistantAvatarHost,
 } from "@/runtime/local-mode-host";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   type ResolvedAssistant,
   useResolvedAssistantsStore,
@@ -218,7 +218,7 @@ function usePlatformLookupId(
   row: ResolvedAssistant,
   canLookUp: boolean,
 ): string | null {
-  const hasCloudSession = useHasCloudSession();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
   const needsPairedResolve =
     row.isPaired && !row.cloudAssistantId && canLookUp;
   const pairedQuery = useQuery<string | null>({

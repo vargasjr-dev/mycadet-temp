@@ -45,7 +45,7 @@ import { buildDiagnosticsSnapshot } from "@/lib/diagnostics";
 import { isElectron } from "@/runtime/is-electron";
 import { saveFile } from "@/runtime/native-file";
 import { Trans, useTranslation } from "@/i18n";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
 import { Button } from "@mycadet/design-library/components/button";
 import {
@@ -692,9 +692,8 @@ export function ShareFeedbackModal({
 }: ShareFeedbackModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const authUser = useAuthStore.use.user();
-  const authEmail = authUser?.email;
-  const isStaff = authUser?.isStaff ?? false;
+  const authEmail = useGatewaySessionStore.use.email();
+  const isStaff = useGatewaySessionStore.use.isStaff();
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

@@ -15,7 +15,7 @@ import {
 } from "@/runtime/notification-avatar";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
@@ -28,15 +28,12 @@ import {
 const TAP_ACTIVATION_TIMEOUT_MS = 15_000;
 
 function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus === "unauthenticated") {
+  const seam = useGatewaySessionStore.getState();
+  if (seam.settled && !seam.live) {
     return true;
   }
   const assistantsState = useResolvedAssistantsStore.getState();
-  if (
-    auth.sessionStatus !== "authenticated" ||
-    !assistantsState.assistantsHydrated
-  ) {
+  if (!seam.live || !assistantsState.assistantsHydrated) {
     return false;
   }
   const assistant = assistantsState.assistants.find(
@@ -45,7 +42,7 @@ function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   if (!assistant || !assistant.isCloudHosted) {
     return true;
   }
-  if (auth.user?.kind !== "platform" || !auth.user.id) {
+  if (!seam.identityKey) {
     return true;
   }
   const organization = useOrganizationStore.getState();
@@ -75,7 +72,7 @@ function waitForTapResolutionReadiness(
       unsubscribeAssistants();
       resolve();
     };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfReady);
+    unsubscribeAuth = useGatewaySessionStore.subscribe(settleIfReady);
     unsubscribeOrganization = useOrganizationStore.subscribe(settleIfReady);
     unsubscribeAssistants = useResolvedAssistantsStore.subscribe(settleIfReady);
     settleIfReady();
@@ -88,7 +85,7 @@ function waitForActiveTapAssistant(
   lifecycleStateBeforeSwitch: AssistantState,
 ): Promise<boolean> {
   const readOutcome = (): boolean | null => {
-    if (useAuthStore.getState().sessionStatus !== "authenticated") {
+    if (!useGatewaySessionStore.getState().live) {
       return false;
     }
     if (!resolveCurrentTapAssistant(payload)) {
@@ -135,7 +132,7 @@ function waitForActiveTapAssistant(
       }
       finish(outcome);
     };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfComplete);
+    unsubscribeAuth = useGatewaySessionStore.subscribe(settleIfComplete);
     unsubscribeLifecycle =
       useAssistantLifecycleStore.subscribe(settleIfComplete);
     unsubscribeOrganization = useOrganizationStore.subscribe(settleIfComplete);
@@ -155,8 +152,7 @@ function resolveCurrentTapAssistant(
   if (!identity) {
     return null;
   }
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus !== "authenticated") {
+  if (!useGatewaySessionStore.getState().live) {
     return null;
   }
   const assistant = useResolvedAssistantsStore
@@ -165,7 +161,7 @@ function resolveCurrentTapAssistant(
   if (!assistant) {
     return null;
   }
-  const accountId = auth.user?.kind === "platform" ? auth.user.id : null;
+  const accountId = useGatewaySessionStore.getState().identityKey;
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
     accountId,
@@ -239,7 +235,7 @@ export function useNotificationTapNavigation(): void {
           connectPairedAssistant,
           connectLocalAssistant,
           connectCloudAssistant,
-        } = useAuthStore.getState();
+        } = useGatewaySessionStore.getState();
         if (assistant.isPaired) {
           await connectPairedAssistant(assistant.id);
         } else if (assistant.isLocal && isLocalClient()) {

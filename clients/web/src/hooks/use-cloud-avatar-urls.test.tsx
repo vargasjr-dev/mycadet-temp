@@ -53,7 +53,9 @@ const listAssistants = mock(
 const actualApi = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({ ...actualApi, listAssistants }));
 
-const { useAuthStore } = await import("@/stores/auth-store");
+const { useGatewaySessionStore } = await import(
+  "@/stores/gateway-session-store"
+);
 const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
@@ -66,7 +68,7 @@ const {
 const { AVATAR_SUPERSEDE_WINDOW_MS, resetAvatarSupersedeForTests } =
   await import("@/lib/avatar-supersede");
 
-const initialAuthState = useAuthStore.getState();
+const initialSeamState = useGatewaySessionStore.getState();
 
 const apiAssistant = (id: string, avatar_url: string | null): Assistant =>
   ({ id, avatar_url }) as Assistant;
@@ -90,17 +92,13 @@ async function settle(): Promise<void> {
 }
 
 function signIn(userId = "user-1"): void {
-  useAuthStore.setState({
-    cloudSession: "present",
-    user: {
-      kind: "platform",
-      id: userId,
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
+  useGatewaySessionStore.setState({
+    settled: true,
+    live: true,
+    cloudLive: true,
+    cloudSettled: true,
+    isStaff: false,
+    identityKey: userId,
   });
 }
 
@@ -125,7 +123,7 @@ afterEach(() => {
   cleanup();
   setSystemTime();
   listAssistants.mockReset();
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState(initialSeamState, true);
 });
 
 describe("useCloudAvatarUrls", () => {
@@ -144,11 +142,18 @@ describe("useCloudAvatarUrls", () => {
   test.each([
     [
       "no live platform session",
-      () => useAuthStore.setState({ cloudSession: "absent", user: null }),
+      () =>
+        useGatewaySessionStore.setState({
+          cloudLive: false,
+          cloudSettled: true,
+          live: false,
+          identityKey: null,
+        }),
     ],
     [
       "an unsettled platform session",
-      () => useAuthStore.setState({ cloudSession: "unknown" }),
+      () =>
+        useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false }),
     ],
     ["pure cloud mode", () => (cloudRemote = true)],
     ["an unready org header", () => (orgReady = false)],

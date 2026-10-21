@@ -53,6 +53,7 @@ import {
   isCloudSessionSettled,
   isSessionSettled,
 } from "@/stores/session-status";
+import { isCadetStaff } from "@/lib/auth/staff";
 
 export interface GatewaySessionState {
   /** True once `ensureSession`/`refresh` has concluded for this lifetime. */
@@ -74,6 +75,14 @@ export interface GatewaySessionState {
    * the recovery latch keep their mid-probe semantics until the flip.
    */
   cloudSettled: boolean;
+  /** Whether the session belongs to Cadet staff (the camera hud's gate). */
+  isStaff: boolean;
+  /**
+   * The session's email — the feedback modal's pre-fill and anything else
+   * that displayed the signed-in address. Post-flip the session
+   * introspection carries it; device sessions have none.
+   */
+  email: string | null;
   /**
    * Stable identity key for storage namespacing and hashing — the selected
    * assistant's cloud id when it has one, else its local id. Replaces the
@@ -124,6 +133,8 @@ const useGatewaySessionStoreBase = create<GatewaySessionStore>()(
     live: false,
     cloudLive: false,
     cloudSettled: false,
+    isStaff: false,
+    email: null,
     identityKey: null,
 
     ensureSession: async () => {
@@ -295,12 +306,15 @@ export function projectAuthStoreOntoSeam(): () => void {
   const project = (state: {
     sessionStatus: Parameters<typeof isSessionSettled>[0];
     cloudSession: Parameters<typeof hasLiveCloudSession>[0];
+    user: Parameters<typeof isCadetStaff>[0];
   }) => {
     useGatewaySessionStoreBase.setState({
       settled: isSessionSettled(state.sessionStatus),
       live: isAuthenticated(state.sessionStatus),
       cloudLive: hasLiveCloudSession(state.cloudSession),
       cloudSettled: isCloudSessionSettled(state.cloudSession),
+      isStaff: isCadetStaff(state.user),
+      email: state.user?.email ?? null,
       identityKey: resolveIdentityKey(),
     });
   };

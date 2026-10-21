@@ -1,13 +1,14 @@
 import type { AssistantState } from "@/assistant/types";
 import type { AssistantStatus } from "@/runtime/is-electron";
-import type { SessionStatus } from "@/stores/session-status";
 import type { TurnPhase } from "@/domains/chat/turn-store";
 
 export interface AssistantStatusInputs {
   /** Lifecycle phase the assistant is in (`useAssistantLifecycleStore`). */
   lifecycleKind: AssistantState["kind"];
-  /** Platform-session auth state (`useAuthStore`). */
-  sessionStatus: SessionStatus;
+  /** Whether the gateway session has concluded for this lifetime. */
+  sessionSettled: boolean;
+  /** Whether a session is live (the device-or-user session question). */
+  sessionLive: boolean;
   /** Whether the always-on SSE event stream is currently connected. */
   isSSEConnected: boolean;
   /** Phase of the active chat turn (`useTurnStore`). */
@@ -31,13 +32,14 @@ export interface AssistantStatusInputs {
  */
 export function deriveAssistantStatus({
   lifecycleKind,
-  sessionStatus,
+  sessionSettled,
+  sessionLive,
   isSSEConnected,
   turnPhase,
 }: AssistantStatusInputs): AssistantStatus {
   // Auth is the outermost gate: without an authenticated session the renderer
   // can't reach the assistant on the user's behalf at all.
-  if (sessionStatus === "unauthenticated") {
+  if (sessionSettled && !sessionLive) {
     return "authFailed";
   }
 
@@ -50,7 +52,7 @@ export function deriveAssistantStatus({
   // Session still settling, or the assistant hasn't reached `active` yet
   // (loading / initializing / hosted-but-not-connected):
   // there's no live data plane, so the honest state is disconnected.
-  if (sessionStatus === "initializing" || lifecycleKind !== "active") {
+  if (!sessionSettled || lifecycleKind !== "active") {
     return "disconnected";
   }
 

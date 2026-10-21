@@ -17,7 +17,7 @@ import {
   type NotificationTapHandler,
   type NotificationTapPayload,
 } from "@/runtime/notification-taps";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useOrganizationStore } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
@@ -128,17 +128,15 @@ beforeEach(() => {
     connectMock.mockReset();
   }
   window.history.pushState(null, "", "/");
-  useAuthStore.setState({
-    sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "account-1",
-      username: "user1",
-      email: "user@example.com",
-      isStaff: false,
-      firstName: "Example",
-      lastName: "User",
-    },
+  // The hook reads the gateway session seam: a live session under the
+  // account identity, with the connect actions mocked in place.
+  useGatewaySessionStore.setState({
+    settled: true,
+    live: true,
+    cloudLive: true,
+    cloudSettled: true,
+    isStaff: false,
+    identityKey: "account-1",
     connectCloudAssistant: connectCloudAssistantMock,
     connectLocalAssistant: connectLocalAssistantMock,
     connectPairedAssistant: connectPairedAssistantMock,
@@ -176,6 +174,17 @@ afterEach(() => {
   __resetForTesting();
   __resetNotificationTapsForTests();
   window.history.pushState(null, "", "/");
+  useGatewaySessionStore.setState({
+    settled: false,
+    live: false,
+    cloudLive: false,
+    cloudSettled: false,
+    isStaff: false,
+    identityKey: null,
+    connectCloudAssistant: async () => {},
+    connectLocalAssistant: async () => {},
+    connectPairedAssistant: async () => {},
+  });
 });
 
 describe("useNotificationTapNavigation", () => {

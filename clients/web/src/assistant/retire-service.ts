@@ -17,7 +17,7 @@ import { buildNavigationState } from "@/lib/navigation/build-state";
 import { forgetAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { clearResearchSnapshot } from "@/domains/onboarding/research-onboarding-persistence";
 import { removeLocalSetting } from "@/utils/local-settings";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewayIdentityKey } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";
 
@@ -113,7 +113,7 @@ export async function retireAssistant(
     // research-onboarding resume snapshot so the next onboarding starts at the
     // form instead of resuming the retired assistant's run deep in the flow
     // (e.g. straight onto the wake gate).
-    clearResearchSnapshot(useAuthStore.getState().user?.id ?? null);
+    clearResearchSnapshot(useGatewayIdentityKey());
     // The completion record goes with it, so a reused id is never pre-marked.
     forgetAssistantOnboarded(assistantId);
     // Drop the marketing nav's cached assistant name (same-origin localStorage,

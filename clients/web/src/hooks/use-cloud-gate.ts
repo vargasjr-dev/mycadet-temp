@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 
-import {
-  useHasCloudSession,
-  useIsCloudSessionSettled,
-} from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 
 /**
@@ -279,8 +276,9 @@ function useCloudGateDecision(
   // Gate on the bare cloud-session signal — deliberately not a per-assistant
   // reachability check, which would fork on hosting type and change the
   // self-hosted rows (states 3–5) of the truth table.
-  const hasCloudSession = useHasCloudSession();
-  const cloudSessionSettled = useIsCloudSessionSettled();
+  // The projection mirrors the cloud tri-state (live/settled) onto the seam.
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
+  const cloudSessionSettled = useGatewaySessionStore.use.cloudSettled();
   const activeIsSelfHosted = useActiveAssistantIsSelfHosted();
 
   // Only the negative branch consults the settle: `"present"` is a settled

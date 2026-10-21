@@ -6,9 +6,8 @@
  * is allowed even with nothing mounted.
  */
 
-import { cameraGateHudAvailable } from "@/lib/camera/frame-gate-debug-access";
 import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 
 /**
  * Whether this session may turn the readout on at all. The camera's view
@@ -16,8 +15,7 @@ import { useAuthStore } from "@/stores/auth-store";
  * the readout is not offered a switch for it.
  */
 export function useCameraGateHudAvailable(): boolean {
-  const user = useAuthStore.use.user();
-  return cameraGateHudAvailable(user);
+  return useGatewaySessionStore.use.isStaff();
 }
 
 /** Whether the panel should be collecting and on screen. */

@@ -24,7 +24,7 @@ import {
   syncFrameGateDebugOptions,
 } from "@/lib/camera/frame-gate-debug";
 import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   clearCameraGateDebug,
   useCameraGateDebugStore,
@@ -32,14 +32,11 @@ import {
 
 const STORAGE_KEY = "cadet:debug:cameraGateHud";
 
-const STAFF_USER: AuthUser = {
-  kind: "platform",
-  id: "user-1",
-  username: "staffer",
-  email: "staffer@mycadet.ai",
+const STAFF_SESSION = {
+  settled: true,
+  live: true,
   isStaff: true,
-  firstName: "Staff",
-  lastName: "Member",
+  identityKey: "user-1",
 };
 
 const initialState = useCameraGateDebugStore.getState();
@@ -60,7 +57,7 @@ beforeEach(() => {
   localStorage.removeItem(STORAGE_KEY);
   // Staff identity is what lets this session reach the readout, which is the
   // other half of what the gate is handed.
-  useAuthStore.setState({ user: STAFF_USER });
+  useGatewaySessionStore.setState({ ...STAFF_SESSION });
   stopAccessSync = setupCameraGateHudAccessSync();
 });
 

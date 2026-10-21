@@ -42,12 +42,13 @@ mock.module("@capacitor/core", () => ({
   registerPlugin: () => ({}),
 }));
 
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    use: {
-      user: () => (staffUser ? { isStaff: true, email: null } : null),
-    },
-  },
+const seamMock = () => null;
+seamMock.use = {
+  email: () => null,
+  isStaff: () => staffUser,
+};
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: seamMock,
 }));
 
 const { ShareFeedbackModal, stripBulkBase64, dedupeAgainstClientMessages } =

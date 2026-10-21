@@ -35,11 +35,8 @@ import {
 } from "@/lib/auth/signup-onboarding-handoff";
 import { isLocalClient } from "@/lib/local-mode";
 import { POST_CHECKOUT_HATCH_PARAM } from "@/lib/navigation/navigation-resolver";
-import {
-  useAuthStore,
-  useHasCloudSession,
-  useIsCloudSessionSettled,
-} from "@/stores/auth-store";
+import { useGatewayIdentityKey, useGatewaySessionStore } from "@/stores/gateway-session-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import { DEFAULT_GROUP_ID } from "@/domains/onboarding/prechat-names";
@@ -140,7 +137,7 @@ preloadBundledAvatarComponents();
 export function ResearchOnboardingRoute() {
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
-  const userId = user?.id ?? null;
+  const userId = useGatewayIdentityKey();
   const enterFocus = useOnboardingFocusStore.use.enterFocus();
   const exitFocus = useOnboardingFocusStore.use.exitFocus();
   const setPendingAvatarTraits =
@@ -309,8 +306,8 @@ export function ResearchOnboardingRoute() {
   // transition with no later correction, so only a settled absent session may
   // take it; every settle path resolves "unknown", including local gateway
   // boot, which settles "absent" directly.
-  const hasCloudSession = useHasCloudSession();
-  const cloudSessionSettled = useIsCloudSessionSettled();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
+  const cloudSessionSettled = useGatewaySessionStore.use.cloudSettled();
   const skipClaimCreditsStep =
     adoptExistingAssistant && cloudSessionSettled && !hasCloudSession;
   // Where "personality" advances to: the claim-credits step, or, when that's

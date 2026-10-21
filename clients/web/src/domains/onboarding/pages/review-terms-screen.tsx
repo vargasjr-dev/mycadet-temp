@@ -16,6 +16,7 @@ import {
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { isElectron } from "@/runtime/is-electron";
 import { useAuthStore } from "@/stores/auth-store";
+import { useGatewayIdentityKey } from "@/stores/gateway-session-store";
 import {
   PRIVACY_CONSENT_VERSION,
   TOS_CONSENT_VERSION,
@@ -30,7 +31,7 @@ export function ReviewTermsScreen() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const userId = useAuthStore.use.user()?.id ?? null;
+  const userId = useGatewayIdentityKey();
   const logout = useAuthStore.use.logout();
   const electron = isElectron();
 

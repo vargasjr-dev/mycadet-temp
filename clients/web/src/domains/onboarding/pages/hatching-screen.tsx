@@ -56,7 +56,7 @@ import { hatchLocalAssistant } from "@/runtime/local-mode-host";
 import { isElectron } from "@/runtime/is-electron";
 import { useDesktopAppPlatform } from "@/runtime/desktop-app-platform";
 import { setSelectedAssistant } from "@/assistant/selection";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { isSessionSettled } from "@/stores/session-status";
 import type { CharacterTraits } from "@/types/avatar";
@@ -186,14 +186,13 @@ export function HatchingScreen() {
   // names a hosting choice a free user can make too.
   const postCheckoutReturn =
     searchParams.get(POST_CHECKOUT_HATCH_PARAM) === "1";
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  // Local hatches drive `sessionStatus` themselves (`connectLocalAssistant`
-  // below flips it mid-handoff), so they gate on settled-ness to keep that flip
-  // out of the effect deps and avoid self-restarting. Platform hatches react to
-  // raw status so a mid-hatch session loss redirects to login.
-  const sessionGateKey = useLocalHatch
-    ? isSessionSettled(sessionStatus)
-    : sessionStatus;
+  const { settled: sessionSettled, live: sessionLive } =
+    useGatewaySessionStore.use;
+  // Local hatches flip the seam's live bit themselves (`connectLocalAssistant`
+  // below), so they gate on settled-ness to keep that flip out of the effect
+  // deps and avoid self-restarting. Platform hatches react to live-ness so a
+  // mid-hatch session loss redirects to login.
+  const sessionGateKey = useLocalHatch ? sessionSettled : sessionLive;
   const [hatchTraits] = useState<CharacterTraits>(
     () => (hatchTraitsCache ??= randomCharacterTraits(BUNDLED_COMPONENTS)),
   );
@@ -511,7 +510,7 @@ export function HatchingScreen() {
           // so `sessionStatus` is "authenticated" at hand-off to chat. This
           // keeps auth-gated UI such as the Preferences menu visible.
           if (result.assistantId) {
-            await useAuthStore
+            await useGatewaySessionStore
               .getState()
               .connectLocalAssistant(result.assistantId);
           }

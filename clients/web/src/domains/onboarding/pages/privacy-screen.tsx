@@ -28,7 +28,7 @@ import {
 } from "@/domains/onboarding/prefs";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativePlatform } from "@/runtime/native-auth";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewayIdentityKey } from "@/stores/gateway-session-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { saveConsent } from "@/lib/consent/consent-persistence";
 import { useTranslation } from "@/i18n";
@@ -39,7 +39,7 @@ export function PrivacyScreen() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const userId = useAuthStore.use.user()?.id ?? null;
+  const userId = useGatewayIdentityKey();
   const electron = isElectron();
   const isNative = useIsNativePlatform();
   const [tosAccepted, setTosAcceptedReal] = useTosAccepted();

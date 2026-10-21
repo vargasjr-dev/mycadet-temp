@@ -157,7 +157,10 @@ mock.module("@/runtime/native-auth", () => ({
   useIsNativePlatform: () => false,
 }));
 
+const localModeActual = await import("@/lib/local-mode");
+
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   isLocalClient: () => isLocalClientValue,
   isCadetCloudRemote: () => false,
   isServedGatewayRuntime: () => false,
@@ -241,6 +244,19 @@ mock.module("@/stores/auth-store", () => ({
     getState: () => ({ connectLocalAssistant: connectLocalAssistantMock }),
   },
   useIsAuthenticated: () => true,
+  useIsSessionInitializing: () => false,
+}));
+
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: {
+    use: {
+      settled: () => true,
+      live: () => true,
+      cloudLive: () => cloudSessionValue === "present",
+    },
+    getState: () => ({ connectLocalAssistant: connectLocalAssistantMock }),
+    subscribe: () => () => {},
+  },
   useIsSessionInitializing: () => false,
 }));
 

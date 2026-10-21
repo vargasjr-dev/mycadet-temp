@@ -8,13 +8,17 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { useEffect } from "react";
 import { act, cleanup, render } from "@testing-library/react";
 
-import * as authStore from "@/stores/auth-store";
+import * as seamStore from "@/stores/gateway-session-store";
 
 let hasCloudSessionMock = true;
 
-mock.module("@/stores/auth-store", () => ({
-  ...authStore,
-  useHasCloudSession: () => hasCloudSessionMock,
+mock.module("@/stores/gateway-session-store", () => ({
+  ...seamStore,
+  useGatewaySessionStore: {
+    getState: () => ({ cloudLive: hasCloudSessionMock }),
+    subscribe: () => () => {},
+    use: { cloudLive: () => hasCloudSessionMock },
+  },
 }));
 
 const { useIsOrgReady, useOrgHeaderReadiness } =

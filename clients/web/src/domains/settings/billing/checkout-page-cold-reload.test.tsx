@@ -54,10 +54,12 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useOrgHeaderReadiness: () => "ready",
 }));
 
-const { useAuthStore } = await import("@/stores/auth-store");
+const { useGatewaySessionStore } = await import(
+  "@/stores/gateway-session-store"
+);
 const { CheckoutPage } = await import("./checkout-page");
 
-const initialAuthState = useAuthStore.getState();
+const initialSeamState = useGatewaySessionStore.getState();
 
 function LocationProbe() {
   const location = useLocation();
@@ -85,7 +87,7 @@ beforeEach(() => {
   upgradeCalls.length = 0;
   openedUrl = null;
   sessionStorage.removeItem(INTENT_KEY);
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState(initialSeamState, true);
 });
 
 afterEach(() => {
@@ -95,9 +97,11 @@ afterEach(() => {
 describe("CheckoutPage — cold reload", () => {
   test("a probe that resolves present shortly after mount proceeds to checkout", async () => {
     // The reload window: signed in, platform liveness not yet known.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "unknown",
+    useGatewaySessionStore.setState({
+      settled: true,
+      live: true,
+      cloudLive: false,
+      cloudSettled: false,
     });
 
     const { getByLabelText, getByTestId } = renderCheckout();
@@ -109,7 +113,7 @@ describe("CheckoutPage — cold reload", () => {
     expect(getByTestId("loc").textContent).toBe(ENTRY);
 
     act(() => {
-      useAuthStore.setState({ cloudSession: "present" });
+      useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     });
 
     await waitFor(() => expect(upgradeCalls.length).toBe(1));
@@ -118,9 +122,11 @@ describe("CheckoutPage — cold reload", () => {
   });
 
   test("a settled-absent session still hands off to the cloud's billing page and drops the stash", async () => {
-    useAuthStore.setState({
-      sessionStatus: "unauthenticated",
-      cloudSession: "absent",
+    useGatewaySessionStore.setState({
+      settled: true,
+      live: false,
+      cloudLive: false,
+      cloudSettled: true,
     });
     saveCheckoutIntent({
       kind: "package",

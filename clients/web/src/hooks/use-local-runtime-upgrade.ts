@@ -4,7 +4,7 @@ import { lifecycleService } from "@/assistant/lifecycle-service";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { loadLockfile } from "@/lib/local-mode";
 import { upgradeLocalAssistantHost } from "@/runtime/local-mode-host";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 
 interface UseLocalRuntimeUpgradeOptions {
   assistantId: string | null;
@@ -44,7 +44,7 @@ export function useLocalRuntimeUpgrade({
       const result = await mutation.mutateAsync();
       await loadLockfile();
       clearGatewayToken();
-      await useAuthStore.getState().connectLocalAssistant(assistantId);
+      await useGatewaySessionStore.getState().connectLocalAssistant(assistantId);
       return result;
     },
   };

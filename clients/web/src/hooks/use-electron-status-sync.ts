@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useTurnStore } from "@/domains/chat/turn-store";
 import { setAssistantStatus } from "@/runtime/status";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useSSEConnectedStore } from "@/stores/sse-connected-store";
 import { deriveAssistantStatus } from "@/utils/assistant-status";
 
@@ -26,7 +26,8 @@ export function useElectronStatusSync(): void {
   const lifecycleKind = useAssistantLifecycleStore(
     (s) => s.assistantState.kind,
   );
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const sessionSettled = useGatewaySessionStore.use.settled();
+  const sessionLive = useGatewaySessionStore.use.live();
   const isSSEConnected = useSSEConnectedStore.use.isConnected();
   const turnPhase = useTurnStore.use.phase();
 
@@ -34,10 +35,11 @@ export function useElectronStatusSync(): void {
     setAssistantStatus(
       deriveAssistantStatus({
         lifecycleKind,
-        sessionStatus,
+        sessionSettled,
+        sessionLive,
         isSSEConnected,
         turnPhase,
       }),
     );
-  }, [lifecycleKind, sessionStatus, isSSEConnected, turnPhase]);
+  }, [lifecycleKind, sessionSettled, sessionLive, isSSEConnected, turnPhase]);
 }

@@ -31,7 +31,7 @@ import {
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
 import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
-import { useIsSessionInitializing } from "@/stores/gateway-session-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -136,19 +136,24 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const isSessionInitializing = useIsSessionInitializing();
-  const hasCloudSession = useHasCloudSession();
+  // The gateway session seam is the one session source.
+  const sessionSettled = useGatewaySessionStore.use.settled();
+  const sessionLive = useGatewaySessionStore.use.live();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
+  const isSessionInitializing = !sessionSettled;
+  // The lifecycle service keeps its three-word vocabulary until the flip.
+  const sessionStatus = !sessionSettled
+    ? "initializing"
+    : sessionLive
+      ? "authenticated"
+      : "unauthenticated";
   // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
   // on non-chat routes (e.g. Settings) where ChatLayout isn't mounted.
   useEffect(() => {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
-  useAssistantLifecycle({
-    sessionStatus,
-    hasCloudSession,
-  });
+  useAssistantLifecycle();
   useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered

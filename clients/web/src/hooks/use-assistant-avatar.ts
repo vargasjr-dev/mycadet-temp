@@ -14,7 +14,7 @@ import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewayIdentityKey } from "@/stores/gateway-session-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
@@ -403,7 +403,6 @@ export function useAssistantAvatar(
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const authUser = useAuthStore.use.user();
   const organizationId = useRequestOrganizationId();
   const assistant =
     options?.ownerAssistant === undefined
@@ -411,8 +410,10 @@ export function useAssistantAvatar(
       : options.ownerAssistant?.id === assistantId
         ? options.ownerAssistant
         : null;
-  const platformAccountId =
-    authUser?.kind === "platform" ? authUser.id : null;
+  // The avatar owner scope keys off the gateway session's identity — the
+  // selected assistant's cloud id when it has one, else its local id (the
+  // platform user id is gone from this bundle).
+  const platformAccountId = useGatewayIdentityKey();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"

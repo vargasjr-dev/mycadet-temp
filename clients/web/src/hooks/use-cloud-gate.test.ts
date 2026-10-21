@@ -6,7 +6,7 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
 }));
 
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { AssistantState } from "@/assistant/types";
 import {
@@ -16,7 +16,7 @@ import {
   useCloudGateWithPending,
 } from "@/hooks/use-cloud-gate";
 
-const initialAuthState = useAuthStore.getState();
+const initialSeamState = useGatewaySessionStore.getState();
 const initialLifecycleState = useAssistantLifecycleStore.getState();
 
 function setLifecycle(assistantState: AssistantState) {
@@ -25,7 +25,7 @@ function setLifecycle(assistantState: AssistantState) {
 
 beforeEach(() => {
   isLocalClientMock.mockImplementation(() => false);
-  useAuthStore.setState(initialAuthState, true);
+  useGatewaySessionStore.setState(initialSeamState, true);
   useAssistantLifecycleStore.setState(initialLifecycleState, true);
 });
 
@@ -35,20 +35,20 @@ afterEach(() => {
 
 describe("useCloudGate — default (standard pattern)", () => {
   test('returns "full" when cloud-hosted and logged in', () => {
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
   });
 
   test('returns "disabled" when cloud-hosted and not logged in', () => {
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
   });
 
   test('returns "full" in local mode when logged in', () => {
     isLocalClientMock.mockImplementation(() => true);
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
   });
@@ -60,28 +60,28 @@ describe("useCloudGate — documented user states (CONVENTIONS.md)", () => {
 
   test('1. cloud-hosted + logged in → "full"', () => {
     isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
   });
 
   test('2. cloud-hosted + NOT logged in → "disabled"', () => {
     isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
   });
 
   test('3. self-hosted + platform ON + logged in → "full"', () => {
     isLocalClientMock.mockImplementation(() => true);
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("full");
   });
 
   test('4. self-hosted + platform ON + NOT logged in → "disabled"', () => {
     isLocalClientMock.mockImplementation(() => true);
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
   });
@@ -90,7 +90,7 @@ describe("useCloudGate — documented user states (CONVENTIONS.md)", () => {
     // The optimistic tri-state: "unknown" is not a live session, so the
     // default branch treats it like "absent" until the probe settles.
     isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() => useCloudGate());
     expect(result.current).toBe("disabled");
   });
@@ -111,30 +111,30 @@ describe("useCloudGateWithPending", () => {
     );
 
   test('reports "pending" while the probe has not settled', () => {
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() => useCloudGateWithPending());
     expect(result.current).toBe("pending");
   });
 
   test('reports "disabled" once the probe settles absent', () => {
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() => useCloudGateWithPending());
     expect(result.current).toBe("disabled");
   });
 
   test('reports "full" once the probe settles present', () => {
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() => useCloudGateWithPending());
     expect(result.current).toBe("full");
   });
 
   test('an unsettled probe that lands present transitions "pending" → "full"', () => {
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() => useCloudGateWithPending());
     expect(result.current).toBe("pending");
 
     act(() => {
-      useAuthStore.setState({ cloudSession: "present" });
+      useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     });
     expect(result.current).toBe("full");
   });
@@ -144,7 +144,7 @@ describe("useCloudGateWithPending", () => {
     // request that never completes leaves `cloudSession` at `"unknown"`
     // forever. The bound turns that into the same settled-absent answer the
     // route guard falls back to, instead of an unbounded hold.
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() =>
       useCloudGateWithPending({ settleTimeoutMs: SETTLE_TIMEOUT_MS }),
     );
@@ -157,7 +157,7 @@ describe("useCloudGateWithPending", () => {
   test('the deadline never overrides a settled "present"', async () => {
     // An expired deadline must not survive into the settled window: the
     // decision belongs to the probe whenever the probe has one.
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() =>
       useCloudGateWithPending({ settleTimeoutMs: SETTLE_TIMEOUT_MS }),
     );
@@ -165,7 +165,7 @@ describe("useCloudGateWithPending", () => {
     expect(result.current).toBe("disabled");
 
     act(() => {
-      useAuthStore.setState({ cloudSession: "present" });
+      useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     });
     expect(result.current).toBe("full");
   });
@@ -182,7 +182,7 @@ describe("useCloudGateWithPending", () => {
 
   test('{ cloudHostedOnly: true } reports "pending" in the unsettled window', () => {
     setLifecycle({ kind: "active", isLocal: false });
-    useAuthStore.setState({ cloudSession: "unknown" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: false });
     const { result } = renderHook(() =>
       useCloudGateWithPending({ cloudHostedOnly: true }),
     );
@@ -193,7 +193,7 @@ describe("useCloudGateWithPending", () => {
 describe("useCloudGate — { cloudHostedOnly: true }", () => {
   test('returns "full" when lifecycle resolves to active+cloud-hosted and logged in', () => {
     setLifecycle({ kind: "active", isLocal: false });
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -202,7 +202,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
 
   test('returns "disabled" when lifecycle resolves to active+cloud-hosted and NOT logged in', () => {
     setLifecycle({ kind: "active", isLocal: false });
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -213,7 +213,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     // The "platform mode + self-hosted assistant" case: API returns
     // is_local: true, lifecycle projects { kind: "self_hosted" }.
     setLifecycle({ kind: "self_hosted" });
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -226,7 +226,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     // { kind: "active", isLocal: true }.
     isLocalClientMock.mockImplementation(() => true);
     setLifecycle({ kind: "active", isLocal: true });
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -239,7 +239,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     // in that case — cloud-hosted-only UI IS meaningful here.
     isLocalClientMock.mockImplementation(() => true);
     setLifecycle({ kind: "active", isLocal: false });
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -252,7 +252,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     // is self-hosted, so we resolve on session only — matching the
     // "none resolved" rows of the truth table.
     setLifecycle({ kind: "loading" });
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -261,7 +261,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
 
   test('returns "disabled" during loading lifecycle state when NOT logged in', () => {
     setLifecycle({ kind: "loading" });
-    useAuthStore.setState({ cloudSession: "absent" });
+    useGatewaySessionStore.setState({ cloudLive: false, cloudSettled: true });
     const { result } = renderHook(() =>
       useCloudGate({ cloudHostedOnly: true }),
     );
@@ -278,7 +278,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
       { kind: "cleaning_up" },
       { kind: "error", message: "boom" },
     ];
-    useAuthStore.setState({ cloudSession: "present" });
+    useGatewaySessionStore.setState({ cloudLive: true, cloudSettled: true });
     for (const assistantState of kinds) {
       setLifecycle(assistantState);
       const { result, unmount } = renderHook(() =>

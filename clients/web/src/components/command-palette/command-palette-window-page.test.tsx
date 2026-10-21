@@ -74,17 +74,16 @@ mock.module("@/lib/auth/gateway-session", () => ({
   getGatewayToken: () => null,
 }));
 
-mock.module("@/stores/auth-store", () => {
-  const useAuthStore = () => null;
-  useAuthStore.use = {
-    sessionStatus: () => authRef.sessionStatus,
-  };
-  return {
-    useAuthStore,
-    useHasCloudSession: () => authRef.hasCloudSession,
-    useIsSessionInitializing: () => authRef.isSessionInitializing,
-  };
-});
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: () => null,
+  useIsSessionInitializing: () => authRef.isSessionInitializing,
+  // The lifecycle hook reads the seam's bits directly.
+  use: {
+    settled: () => !authRef.isSessionInitializing,
+    live: () => authRef.sessionStatus === "authenticated",
+    cloudLive: () => authRef.hasCloudSession,
+  },
+}));
 
 mock.module("@/stores/organization-store", () => {
   const useOrganizationStore = () => null;
@@ -187,10 +186,8 @@ describe("CommandPaletteWindowPage", () => {
   test("bootstraps assistant context for the standalone floating window", () => {
     render(<CommandPaletteWindowPage />);
 
-    expect(useAssistantLifecycleMock).toHaveBeenCalledWith({
-      sessionStatus: "authenticated",
-      hasCloudSession: true,
-    });
+    // The lifecycle hook reads the session seam itself now.
+    expect(useAssistantLifecycleMock).toHaveBeenCalledWith();
     expect(useConversationListQueryMock).toHaveBeenCalledWith(
       "assistant-1",
       true,

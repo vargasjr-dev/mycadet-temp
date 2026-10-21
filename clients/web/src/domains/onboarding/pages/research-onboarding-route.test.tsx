@@ -130,7 +130,9 @@ const useBackgroundHatchMock = mock(
 
 const noop = () => {};
 
+const routerActual = await import("react-router");
 mock.module("react-router", () => ({
+  ...routerActual,
   useNavigate: () => navigateMock,
   useSearchParams: () => [searchParams],
 }));
@@ -142,24 +144,33 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
+const gatewaySessionActual = await import("@/lib/auth/gateway-session");
 mock.module("@/lib/auth/gateway-session", () => ({
+  ...gatewaySessionActual,
   isGatewayAuthMode: () => false,
 }));
 
+const localModeActual = await import("@/lib/local-mode");
+
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   isLocalClient: () => false,
 }));
 
 // The real module builds its destinations from `routes` at import time, and the
 // `@/utils/routes` stub below carries only the assistant path.
+const resolverActual = await import("@/lib/navigation/navigation-resolver");
 mock.module("@/lib/navigation/navigation-resolver", () => ({
+  ...resolverActual,
   POST_CHECKOUT_HATCH_PARAM: "post_checkout",
 }));
 
 let hasCloudSession = true;
 let cloudSessionSettled = true;
 
+const auth_store_actual = await import("@/stores/auth-store");
 mock.module("@/stores/auth-store", () => ({
+  ...auth_store_actual,
   useAuthStore: {
     use: {
       user: () => ({ id: USER_ID, firstName: "Alice", lastName: "Example" }),
@@ -167,6 +178,21 @@ mock.module("@/stores/auth-store", () => ({
   },
   useHasCloudSession: () => hasCloudSession,
   useIsCloudSessionSettled: () => cloudSessionSettled,
+}));
+
+// The route reads the session seam (cloudLive/cloudSettled mirror the same
+// lets the auth-store mock drives).
+const researchSeamMock = (): null => null;
+researchSeamMock.use = {
+  settled: () => true,
+  live: () => true,
+  cloudLive: () => hasCloudSession,
+  cloudSettled: () => cloudSessionSettled,
+  identityKey: () => USER_ID,
+};
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: researchSeamMock,
+  useIsSessionInitializing: () => false,
 }));
 
 mock.module("@/utils/routes", () => ({
@@ -185,40 +211,56 @@ mock.module("@/domains/onboarding/prechat-names", () => ({
   },
 }));
 
+const prechat_actual = await import("@/domains/onboarding/prechat");
 mock.module("@/domains/onboarding/prechat", () => ({
+  ...prechat_actual,
   setPendingAssistantName: () => {},
   setPendingPreChatContext: () => {},
 }));
 
+const research_prompt_actual = await import("@/domains/onboarding/research-prompt");
 mock.module("@/domains/onboarding/research-prompt", () => ({
+  ...research_prompt_actual,
   buildResearchPrompt: () => "research prompt",
 }));
 
 let adoptExistingAssistant = false;
 
+const adopt_existing_assistant_actual = await import("@/domains/onboarding/adopt-existing-assistant");
 mock.module("@/domains/onboarding/adopt-existing-assistant", () => ({
+  ...adopt_existing_assistant_actual,
   shouldAdoptExistingAssistant: () => adoptExistingAssistant,
 }));
 
+const use_background_hatch_actual = await import("@/domains/onboarding/use-background-hatch");
 mock.module("@/domains/onboarding/use-background-hatch", () => ({
+  ...use_background_hatch_actual,
   useBackgroundHatch: useBackgroundHatchMock,
 }));
 
+const research_runner_actual = await import("@/domains/onboarding/research-runner");
 mock.module("@/domains/onboarding/research-runner", () => ({
+  ...research_runner_actual,
   useResearchRunner: () => researchRunner,
 }));
 
+const send_research_correction_actual = await import("@/domains/onboarding/send-research-correction");
 mock.module("@/domains/onboarding/send-research-correction", () => ({
+  ...send_research_correction_actual,
   sendResearchCorrection: async () => {},
 }));
 
 const applyPersonalityMock = mock(async (_options: unknown) => {});
 
+const apply_personality_actual = await import("@/domains/onboarding/apply-personality");
 mock.module("@/domains/onboarding/apply-personality", () => ({
+  ...apply_personality_actual,
   applyPersonality: applyPersonalityMock,
 }));
 
+const lets_chat_kickoff_actual = await import("@/domains/onboarding/lets-chat-kickoff");
 mock.module("@/domains/onboarding/lets-chat-kickoff", () => ({
+  ...lets_chat_kickoff_actual,
   buildLetsChatKickoffMessage: () => "kickoff",
 }));
 
@@ -230,24 +272,34 @@ mock.module("@/domains/onboarding/funnel-events", () => ({
   ),
 }));
 
+const checkin_scheduler_actual = await import("@/domains/onboarding/checkin-scheduler");
 mock.module("@/domains/onboarding/checkin-scheduler", () => ({
+  ...checkin_scheduler_actual,
   scheduleCheckin: async () => ({ scheduled: false }),
 }));
 
+const use_google_calendar_connect_actual = await import("@/domains/onboarding/hooks/use-google-calendar-connect");
 mock.module("@/domains/onboarding/hooks/use-google-calendar-connect", () => ({
+  ...use_google_calendar_connect_actual,
   GOOGLE_CALENDAR_EVENTS_SCOPE:
     "https://www.googleapis.com/auth/calendar.events",
 }));
 
+const format_checkin_time_actual = await import("@/domains/onboarding/format-checkin-time");
 mock.module("@/domains/onboarding/format-checkin-time", () => ({
+  ...format_checkin_time_actual,
   formatCheckinTime: () => "2:30 PM",
 }));
 
+const browser_timezone_actual = await import("@/utils/browser-timezone");
 mock.module("@/utils/browser-timezone", () => ({
+  ...browser_timezone_actual,
   getBrowserTimezone: () => "UTC",
 }));
 
+const onboarding_focus_store_actual = await import("@/stores/onboarding-focus-store");
 mock.module("@/stores/onboarding-focus-store", () => ({
+  ...onboarding_focus_store_actual,
   useOnboardingFocusStore: {
     use: {
       enterFocus: () => noop,
@@ -259,7 +311,9 @@ mock.module("@/stores/onboarding-focus-store", () => ({
   },
 }));
 
+const established_assistant_actual = await import("@/domains/onboarding/established-assistant");
 mock.module("@/domains/onboarding/established-assistant", () => ({
+  ...established_assistant_actual,
   checkEstablishedAssistant: checkEstablishedAssistantMock,
   FRESH_ASSISTANT_CHECK: { established: false, assistantName: null },
 }));
@@ -415,7 +469,9 @@ mock.module("@/domains/onboarding/hooks/use-onboarding-stage-size", () => ({
 
 let desktopAppPlatform: "macos" | "windows" = "macos";
 
+const desktopPlatformActual = await import("@/runtime/desktop-app-platform");
 mock.module("@/runtime/desktop-app-platform", () => ({
+  ...desktopPlatformActual,
   useDesktopAppPlatform: () => desktopAppPlatform,
 }));
 
