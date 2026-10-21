@@ -621,7 +621,7 @@ describe("PairDeviceCard: pending pairing requests", () => {
     expect(screen.queryByText(/127\.0\.0\.1/)).toBeNull();
   });
 
-  test("a tunnel-edge request keeps showing the requester IP", async () => {
+  test("a app-server request keeps showing the requester IP", async () => {
     installPendingFetch({
       onPendingRequests: () =>
         jsonResponse({

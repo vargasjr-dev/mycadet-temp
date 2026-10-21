@@ -101,14 +101,14 @@ export interface RemoteWebPairingRequestSummary {
   /**
    * Client IP of the mint request: the loopback/host address when minted
    * locally, or the edge-observed client address when the mint arrived
-   * through the nginx tunnel edge (which stamps it via `proxy_set_header`,
+   * through the nginx app server (which stamps it via `proxy_set_header`,
    * so a remote client cannot smuggle a value).
    */
   requesterIp: string;
   /** User-Agent header of the mint request, or null when absent. */
   requesterUserAgent: string | null;
   /**
-   * Whether the mint arrived through the public tunnel edge rather than the
+   * Whether the mint arrived through the public app server rather than the
    * host itself.
    */
   viaEdgeProxy: boolean;

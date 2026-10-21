@@ -1,11 +1,11 @@
 import { loadAllAssistants } from "../lib/assistant-config";
 import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import {
-  ensureTunnelEdge,
+  ensureAppServer,
   isIngressRunning,
   readIngressState,
   stopIngressNginx,
-  type TunnelEdge,
+  type AppServer,
 } from "../lib/nginx-ingress.js";
 import {
   ensureNginxForEdge,
@@ -39,9 +39,9 @@ async function startAppEdge(): Promise<void> {
 
   const { entry, gatewayPort, workspaceDir } = resolveLocalTunnelTarget();
 
-  let edge: TunnelEdge;
+  let edge: AppServer;
   try {
-    edge = await ensureTunnelEdge({
+    edge = await ensureAppServer({
       assistantId: entry.assistantId,
       workspaceDir,
       gatewayPort,

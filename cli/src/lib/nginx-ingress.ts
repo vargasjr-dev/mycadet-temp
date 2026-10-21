@@ -52,7 +52,7 @@ export { findAppDistDir } from "./web-dist.js";
  * tunnel target: browser → tunnel (TLS) → nginx@127.0.0.1 → gateway@127.0.0.1.
  *
  * `cadet tunnel` (and the wake restore path) bring this edge up via
- * `ensureTunnelEdge` and always front its loopback listen port.
+ * `ensureAppServer` and always front its loopback listen port.
  */
 
 export const DEFAULT_NGINX_INGRESS_PORT = 7840;
@@ -481,7 +481,7 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
     .join("\n");
 }
 
-/** Build the nginx config for the tunnel edge and its public assistant metadata. */
+/** Build the nginx config for the app server and its public assistant metadata. */
 export function buildIngressNginxConfig(opts: {
   gatewayPort: number;
   listenPort: number;
@@ -1128,7 +1128,7 @@ const OWNERSHIP_SETTLE_INTERVAL_MS = 100;
 
 /**
  * Outcome of an attempt to bring up the nginx ingress edge. Callers render
- * their own messaging per variant: `ensureTunnelEdge` maps failure variants to
+ * their own messaging per variant: `ensureAppServer` maps failure variants to
  * thrown errors with actionable text, which `cadet tunnel` and
  * `nginx-ingress up` print before exiting non-zero while the wake restore path
  * warns and continues.
@@ -1383,7 +1383,7 @@ function lockfileAssistantName(assistantId: string): string | undefined {
 }
 
 /**
- * Stop the tunnel edge fronting a container assistant, if this assistant is
+ * Stop the app server fronting a container assistant, if this assistant is
  * the one it currently fronts.
  *
  * Container topologies share one default-workspace edge (one pidfile, one
@@ -1391,7 +1391,7 @@ function lockfileAssistantName(assistantId: string): string | undefined {
  * that check this would tear down another assistant's working tunnel; a record
  * with no recorded port cannot be attributed, so it is left alone.
  */
-export async function stopContainerTunnelEdge(
+export async function stopContainerAppServer(
   entry: AssistantEntry,
 ): Promise<boolean> {
   if (!isLocalContainerEntry(entry)) {
@@ -1433,7 +1433,7 @@ function stampAppProcessEntry(
 }
 
 /** Resolved edge a tunnel (or bring-your-own HTTPS front) should target. */
-export interface TunnelEdge {
+export interface AppServer {
   /** Loopback listen port the HTTPS front should forward to. */
   port: number;
   /** True when this call started the edge, false when a running one was reused. */
@@ -1469,7 +1469,7 @@ function stuckEdgeRecoveryHint(workspaceDir: string): string {
  * survives the restart attempt throws rather than reporting the wrong config.
  * Failures throw with actionable install or diagnostic text.
  */
-export async function ensureTunnelEdge(opts: {
+export async function ensureAppServer(opts: {
   assistantId: string | undefined;
   workspaceDir: string;
   gatewayPort: number;
@@ -1479,7 +1479,7 @@ export async function ensureTunnelEdge(opts: {
     webDistDir: string;
     listenPort: number;
   }) => void;
-}): Promise<TunnelEdge> {
+}): Promise<AppServer> {
   const assistantName = opts.assistantId
     ? lockfileAssistantName(opts.assistantId)
     : undefined;
@@ -1535,7 +1535,7 @@ export async function ensureTunnelEdge(opts: {
     }
     case "nginx-missing":
       throw new Error(
-        "nginx is not installed, so the tunnel edge cannot start. " +
+        "nginx is not installed, so the app server cannot start. " +
           "See https://nginx.org/en/docs/install.html for how to install, " +
           "or point NGINX_BIN at an existing binary.",
       );
@@ -1559,7 +1559,7 @@ export async function ensureTunnelEdge(opts: {
     case "port-conflict":
       throw new Error(
         `nginx edge exited on startup, most likely because 127.0.0.1:${result.listenPort} ` +
-          "is already in use (for example by another assistant's tunnel edge). " +
+          "is already in use (for example by another assistant's app server). " +
           "Stop whatever is bound to that port, or pick a different edge port by " +
           "setting the CADET_NGINX_INGRESS_PORT environment variable, then retry. " +
           `Check the nginx log: ${result.logPath}`,

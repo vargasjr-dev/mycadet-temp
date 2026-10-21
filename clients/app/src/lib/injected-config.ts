@@ -12,7 +12,7 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  * `cloudUrl` is the cloud backend base — the account session, auth
  * endpoints, and the cloud-hosted assistant list. It is never the API base
  * for a local assistant: the shell resolves assistants same-origin, and the
- * serving origin routes `/v1` to the right control plane (the tunnel edge
+ * serving origin routes `/v1` to the right control plane (the app server
  * proxies it to the local gateway; the desktop protocol forwards it; the
  * cloud takeover proxies it). `hubUrl` is the cloud hub SPA the
  * pairing/settings pages link back to. The platform login base is

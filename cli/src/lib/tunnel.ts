@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { join } from "path";
+import type { ChildProcess } from "node:child_process";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
@@ -21,11 +22,11 @@ import {
   parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
 import {
-  ensureTunnelEdge,
+  ensureAppServer,
   getNginxVersion,
   isIngressRunning,
   readIngressState,
-  type TunnelEdge,
+  type AppServer,
 } from "./nginx-ingress.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
@@ -66,6 +67,57 @@ import {
  * default, at which point only this constant flips.
  */
 export const DEFAULT_TUNNEL_PROVIDER: TunnelProviderName = "ngrok";
+
+/**
+ * Per-provider hooks for the automatic restore paths (wake, upgrade, and the
+ * container counterparts), keyed by provider name so every entry in
+ * `TUNNEL_PROVIDERS` states its role in one place. A new provider adds a row
+ * here rather than a new hard-coded call in the restore paths.
+ */
+interface TunnelProviderHooks {
+  /**
+   * Re-record this provider's ingress URL when a gateway start cleared it,
+   * for providers whose mapping outlives the gateway process (a tailnet
+   * serve: tailscaled keeps it). Runs for every provider that declares it,
+   * so it must self-gate: no-op unless the saved last-tunnel record is this
+   * provider's and the mapping is still live. Returns the recovered URL, or
+   * null when nothing needed recovering.
+   */
+  recoverIngressUrl?: (opts: {
+    workspaceDir: string;
+    assistantId?: string;
+  }) => Promise<string | null>;
+
+  /**
+   * Auto-start this provider's tunnel at the restored app server, keeping
+   * webhook delivery alive. Keeps its own gates (webhook integrations
+   * configured, containerized deployments, an already-saved foreign URL).
+   * Returns the spawned agent process, or null.
+   */
+  maybeAutoStart?: (
+    targetPort: number,
+    workspaceDir: string,
+    assistantId?: string,
+  ) => Promise<ChildProcess | null>;
+}
+
+const TUNNEL_PROVIDER_HOOKS: Record<TunnelProviderName, TunnelProviderHooks> = {
+  cadet: {},
+  ngrok: {
+    // Accessors, not captured values: they read the module binding at call
+    // time, so tests that re-mock a provider's module after this module has
+    // been evaluated still land on the mock.
+    get maybeAutoStart() {
+      return maybeStartNgrokTunnel;
+    },
+  },
+  cloudflare: {},
+  tailscale: {
+    get recoverIngressUrl() {
+      return recoverTailscaleIngressUrl;
+    },
+  },
+};
 
 /**
  * Confirm-first heal for a held ngrok domain, run by the FOREGROUND `cadet
@@ -238,7 +290,7 @@ export function describeUntunnelableEntry(entry: AssistantEntry): string {
 }
 
 /**
- * Resolve the assistant whose gateway and workspace the tunnel edge fronts.
+ * Resolve the assistant whose gateway and workspace the app server fronts.
  * Tunnels only make sense for assistants with a local gateway; when the
  * active assistant has none (e.g. it is cloud-hosted) fall back to the sole
  * local target, otherwise exit with an error naming the way to pick one.
@@ -276,7 +328,7 @@ export function resolveLocalTunnelTarget(): LocalTunnelTarget {
 }
 
 /**
- * Make sure nginx is installed for the tunnel edge, offering to install it
+ * Make sure nginx is installed for the app server, offering to install it
  * when missing. Exits the process when nginx cannot be found or installed —
  * every edge-starting command (`cadet tunnel start`, `cadet app start`)
  * shares the same requirement.
@@ -284,7 +336,7 @@ export function resolveLocalTunnelTarget(): LocalTunnelTarget {
 export async function ensureNginxForEdge(): Promise<string> {
   const nginxVersion = await ensureBinaryInstalled({
     binary: "nginx",
-    purpose: "the tunnel edge",
+    purpose: "the app server",
     packages: {
       brew: ["brew", "install", "nginx"],
       "apt-get": ["sudo", "apt-get", "install", "-y", "nginx"],
@@ -298,7 +350,7 @@ export async function ensureNginxForEdge(): Promise<string> {
     probe: getNginxVersion,
   });
   if (!nginxVersion) {
-    console.error("Error: nginx is required to run the tunnel edge.");
+    console.error("Error: nginx is required to run the app server.");
     process.exit(1);
   }
   return nginxVersion;
@@ -367,7 +419,7 @@ async function refreshEdgeWithEstablishedUrl(
     : null;
   if (state?.gatewayPort === undefined) return;
   try {
-    await ensureTunnelEdge({
+    await ensureAppServer({
       assistantId: opts.assistantId,
       workspaceDir: opts.workspaceDir,
       gatewayPort: state.gatewayPort,
@@ -489,7 +541,7 @@ function wantsWebIngress(config: Record<string, unknown>): boolean {
  * remote-web ingress config. One config read covers both checks;
  * `maybeStartNgrokTunnel` keeps its own webhook gate for its other callers.
  */
-function wantsTunnelEdge(workspaceDir: string): boolean {
+function wantsAppServer(workspaceDir: string): boolean {
   try {
     const config = loadRawConfig(workspaceDir);
     return hasWebhookIntegrations(config) || wantsWebIngress(config);
@@ -523,7 +575,7 @@ function tunnelRestartCommand(workspaceDir: string): string {
  * when nothing verifiably fronts that gateway (an unrecorded upstream port is
  * unverified, see `IngressState`).
  */
-function survivingSpaEdgePort(
+function survivingAppServerPort(
   workspaceDir: string,
   gatewayPort: number,
 ): number | null {
@@ -540,7 +592,7 @@ function survivingSpaEdgePort(
 /**
  * Bring the nginx edge back up after a wake or local upgrade. The edge is
  * wanted when webhook integrations are configured or the workspace ingress
- * config is enabled with a saved public URL. `ensureTunnelEdge` owns the reuse
+ * config is enabled with a saved public URL. `ensureAppServer` owns the reuse
  * decision, so a running edge is adopted only while its mode, gateway port,
  * and injected SPA config fingerprint all match what this restore asks for; an
  * edge that drifted in any of those respects (a renamed assistant, a changed
@@ -557,7 +609,7 @@ function survivingSpaEdgePort(
  * Returns the loopback port a tunnel should front, or null when no edge is
  * wanted and when none survives a failed rebuild.
  */
-export async function restoreTunnelEdge(
+export async function restoreAppServer(
   assistantId: string,
   gatewayPort: number,
   workspaceDir: string,
@@ -566,51 +618,55 @@ export async function restoreTunnelEdge(
   gatewayFallback = true,
 ): Promise<number | null> {
   // The gateway clears a tunnel-managed ingress URL whenever it starts, and
-  // the local gateway has just been started. A tailnet serve outlives that
-  // (tailscaled keeps the mapping), so put its URL back before deciding
-  // whether anything wants the edge. Non-fatal: a failed probe just leaves
-  // the config as the gateway left it.
-  try {
-    const recovered = await recoverTailscaleIngressUrl({
-      workspaceDir,
-      assistantId,
-    });
-    if (recovered) {
-      console.log(
-        `   Restored the tailnet ingress URL ${recovered} (the gateway start had cleared it).`,
+  // the local gateway has just been started. A provider whose mapping
+  // outlives that (a tailnet serve: tailscaled keeps it) can have its URL
+  // put back before deciding whether anything wants the app server.
+  // Non-fatal: a failed probe just leaves the config as the gateway left it.
+  for (const provider of TUNNEL_PROVIDERS) {
+    const recoverIngressUrl = TUNNEL_PROVIDER_HOOKS[provider].recoverIngressUrl;
+    if (!recoverIngressUrl) continue;
+    try {
+      const recovered = await recoverIngressUrl({
+        workspaceDir,
+        assistantId,
+      });
+      if (recovered) {
+        console.log(
+          `   Restored the ${provider} ingress URL ${recovered} (the gateway start had cleared it).`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `   Could not check the saved ${provider} tunnel: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
-  } catch (err) {
-    console.warn(
-      `   Could not check the saved tailnet serve: ${err instanceof Error ? err.message : String(err)}`,
-    );
   }
-  if (!wantsTunnelEdge(workspaceDir)) {
+  if (!wantsAppServer(workspaceDir)) {
     return null;
   }
-  let edge: TunnelEdge;
+  let edge: AppServer;
   try {
-    edge = await ensureTunnelEdge({
+    edge = await ensureAppServer({
       assistantId,
       workspaceDir,
       gatewayPort,
     });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    const survivingPort = survivingSpaEdgePort(workspaceDir, gatewayPort);
+    const survivingPort = survivingAppServerPort(workspaceDir, gatewayPort);
     const impact =
       survivingPort !== null
-        ? `The edge already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`
+        ? `The app server already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`
         : gatewayFallback
           ? "Webhooks still work, but the web app is not being served."
           : "The web app and webhook delivery are unavailable until it is rebuilt.";
     console.warn(
-      `   Could not restore the tunnel edge: ${detail} ${impact} Run \`${tunnelRestartCommand(workspaceDir)}\` to rebuild the edge.`,
+      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand(workspaceDir)}\` to rebuild the app server.`,
     );
     return survivingPort;
   }
   console.log(
-    `   Tunnel edge ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
+    `   App server ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
   );
   return edge.port;
 }
@@ -619,7 +675,7 @@ export async function restoreTunnelEdge(
  * Whether a container entry may restore the shared default-workspace edge.
  *
  * Waking one container must not repoint another's public endpoint at its own
- * gateway, and `ensureTunnelEdge` cannot make that call: it restarts an edge
+ * gateway, and `ensureAppServer` cannot make that call: it restarts an edge
  * whose recorded gateway port drifts, which is the hijack itself. Two records
  * establish ownership, and both have to hold because neither survives every
  * teardown: a running edge records its `gatewayPort`, while the saved
@@ -668,7 +724,7 @@ function ownsSharedIngress(
 }
 
 /**
- * Wake counterpart to `stopContainerTunnelEdge`: bring the shared
+ * Wake counterpart to `stopContainerAppServer`: bring the shared
  * default-workspace edge back for a container assistant, so a tunnel that
  * survived across sleep (a tailnet serve, a reserved ngrok domain) reaches the
  * gateway again without a manual `cadet tunnel`.
@@ -677,7 +733,7 @@ function ownsSharedIngress(
  * agent records itself in the root lockfile under `tunnel`, so `cadet ps` and
  * the stop paths can see it instead of it leaking past the next sleep.
  */
-export async function restoreContainerTunnelEdge(
+export async function restoreContainerAppServer(
   entry: AssistantEntry,
   gatewayReadyTimeoutMs = 0,
 ): Promise<void> {
@@ -694,7 +750,7 @@ export async function restoreContainerTunnelEdge(
   }
   // Gate before waiting: a container that was never tunneled wants no edge, and
   // must not pay the gateway-readiness wait to find that out.
-  if (!wantsTunnelEdge(workspaceDir)) {
+  if (!wantsAppServer(workspaceDir)) {
     return;
   }
   // `wakeContainers` returns once `docker start` is issued, so on a cold or
@@ -706,11 +762,11 @@ export async function restoreContainerTunnelEdge(
     !(await waitForDaemonReady(gatewayPort, gatewayReadyTimeoutMs))
   ) {
     console.warn(
-      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the tunnel edge was not restored. Run \`${tunnelRestartCommand(workspaceDir)}\` once it is running.`,
+      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the app server was not restored. Run \`${tunnelRestartCommand(workspaceDir)}\` once it is running.`,
     );
     return;
   }
-  await restoreTunnelEdgeAndAutoTunnel(
+  await restoreAppServerAndAutoTunnel(
     entry.assistantId,
     gatewayPort,
     workspaceDir,
@@ -718,24 +774,24 @@ export async function restoreContainerTunnelEdge(
 }
 
 /**
- * Restore the nginx edge, then start the default provider's tunnel at it
- * (the gateway port when the edge is down, keeping webhook delivery alive).
- * The spawned agent records itself in the root lockfile under `tunnel`;
- * adopting an already-running one clears any stale entry.
+ * Restore the app server, then start the default provider's tunnel at it
+ * (the gateway port when the app server is down, keeping webhook delivery
+ * alive). The spawned agent records itself in the root lockfile under
+ * `tunnel`; adopting an already-running one clears any stale entry.
  */
-export async function restoreTunnelEdgeAndAutoTunnel(
+export async function restoreAppServerAndAutoTunnel(
   assistantId: string,
   gatewayPort: number,
   workspaceDir: string,
 ): Promise<void> {
-  const edgePort = await restoreTunnelEdge(
+  const appServerPort = await restoreAppServer(
     assistantId,
     gatewayPort,
     workspaceDir,
   );
-  await maybeStartNgrokTunnel(
-    edgePort ?? gatewayPort,
-    workspaceDir,
-    assistantId,
-  );
+  const maybeAutoStart =
+    TUNNEL_PROVIDER_HOOKS[DEFAULT_TUNNEL_PROVIDER].maybeAutoStart;
+  if (maybeAutoStart) {
+    await maybeAutoStart(appServerPort ?? gatewayPort, workspaceDir, assistantId);
+  }
 }

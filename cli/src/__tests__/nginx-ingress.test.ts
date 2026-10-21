@@ -100,12 +100,12 @@ import {
   hasIpv6Loopback,
   buildRemoteWebIndexHtml,
   MAX_PRESERVED_MODULE_PRELOADS,
-  ensureTunnelEdge,
+  ensureAppServer,
   EDGE_TEMPLATE_VERSION,
   findAppDistDir,
   findWebDistDir,
   startRemoteWebIngress,
-  stopContainerTunnelEdge,
+  stopContainerAppServer,
   stopIngressNginx,
 } from "../lib/nginx-ingress.js";
 
@@ -1643,7 +1643,7 @@ describe("startRemoteWebIngress", () => {
   }, 10_000);
 });
 
-describe("ensureTunnelEdge", () => {
+describe("ensureAppServer", () => {
   const ASSISTANT_ID = "assistant-1";
   const REQUESTED_PORT = 7846;
   const originalIngressPort = process.env.CADET_NGINX_INGRESS_PORT;
@@ -1694,7 +1694,7 @@ describe("ensureTunnelEdge", () => {
       }),
     );
 
-    await ensureTunnelEdge({
+    await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1715,7 +1715,7 @@ describe("ensureTunnelEdge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
 
-    await ensureTunnelEdge({
+    await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1742,7 +1742,7 @@ describe("ensureTunnelEdge", () => {
     });
     const edge = mockKillableNginx(pid);
 
-    const result = await ensureTunnelEdge({
+    const result = await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1779,7 +1779,7 @@ describe("ensureTunnelEdge", () => {
       );
     writeLockfile("Homelab");
 
-    const first = await ensureTunnelEdge({
+    const first = await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1789,7 +1789,7 @@ describe("ensureTunnelEdge", () => {
     // Same port and mode, renamed assistant: the edge must restart so the
     // served index carries the new label instead of reporting already-running.
     writeLockfile("Renamed");
-    const second = await ensureTunnelEdge({
+    const second = await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1820,7 +1820,7 @@ describe("ensureTunnelEdge", () => {
     });
     mockUnkillableNginx(pid);
 
-    const promise = ensureTunnelEdge({
+    const promise = ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1845,7 +1845,7 @@ describe("ensureTunnelEdge", () => {
     });
     mockUnkillableNginx(pid);
 
-    const promise = ensureTunnelEdge({
+    const promise = ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1870,7 +1870,7 @@ describe("ensureTunnelEdge", () => {
     });
     const edge = mockKillableNginx(pid);
 
-    const result = await ensureTunnelEdge({
+    const result = await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1891,7 +1891,7 @@ describe("ensureTunnelEdge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
 
-    const result = await ensureTunnelEdge({
+    const result = await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1924,7 +1924,7 @@ describe("ensureTunnelEdge", () => {
       }) => {},
     );
 
-    await ensureTunnelEdge({
+    await ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1944,7 +1944,7 @@ describe("ensureTunnelEdge", () => {
     mockNginxSpawn();
     mockWebDistPresent();
 
-    const result = await ensureTunnelEdge({
+    const result = await ensureAppServer({
       assistantId: undefined,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1963,7 +1963,7 @@ describe("ensureTunnelEdge", () => {
     const ws = makeWorkspace();
     mockNginxMissing();
 
-    const promise = ensureTunnelEdge({
+    const promise = ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
@@ -1982,7 +1982,7 @@ describe("ensureTunnelEdge", () => {
     mockWebDistMissing();
 
     await expect(
-      ensureTunnelEdge({
+      ensureAppServer({
         assistantId: ASSISTANT_ID,
         workspaceDir: ws,
         gatewayPort: 7830,
@@ -1998,7 +1998,7 @@ describe("ensureTunnelEdge", () => {
     waitForDaemonReadyMock.mockImplementation(async () => false);
 
     await expect(
-      ensureTunnelEdge({
+      ensureAppServer({
         assistantId: ASSISTANT_ID,
         workspaceDir: ws,
         gatewayPort: 7830,
@@ -2013,14 +2013,14 @@ describe("ensureTunnelEdge", () => {
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => true);
 
-    const promise = ensureTunnelEdge({
+    const promise = ensureAppServer({
       assistantId: ASSISTANT_ID,
       workspaceDir: ws,
       gatewayPort: 7830,
     });
 
     await expect(promise).rejects.toThrow(
-      `already in use (for example by another assistant's tunnel edge)`,
+      `already in use (for example by another assistant's app server)`,
     );
     await expect(promise).rejects.toThrow(`127.0.0.1:${REQUESTED_PORT}`);
     await expect(promise).rejects.toThrow("CADET_NGINX_INGRESS_PORT");
@@ -2030,7 +2030,7 @@ describe("ensureTunnelEdge", () => {
   });
 });
 
-describe("stopContainerTunnelEdge", () => {
+describe("stopContainerAppServer", () => {
   const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
   afterEach(() => {
@@ -2056,7 +2056,7 @@ describe("stopContainerTunnelEdge", () => {
     const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
     const { killed } = mockKillableNginx(pid);
 
-    expect(await stopContainerTunnelEdge(containerEntry(7930))).toBe(true);
+    expect(await stopContainerAppServer(containerEntry(7930))).toBe(true);
     expect(killed()).toBe(true);
   });
 
@@ -2066,7 +2066,7 @@ describe("stopContainerTunnelEdge", () => {
     const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
     const { killed } = mockKillableNginx(pid);
 
-    expect(await stopContainerTunnelEdge(containerEntry(8030))).toBe(false);
+    expect(await stopContainerAppServer(containerEntry(8030))).toBe(false);
     expect(killed()).toBe(false);
   });
 
@@ -2076,7 +2076,7 @@ describe("stopContainerTunnelEdge", () => {
     const pid = mockRunningEdge(ws, { listenPort: 7840 });
     const { killed } = mockKillableNginx(pid);
 
-    expect(await stopContainerTunnelEdge(containerEntry(7930))).toBe(false);
+    expect(await stopContainerAppServer(containerEntry(7930))).toBe(false);
     expect(killed()).toBe(false);
   });
 
@@ -2087,7 +2087,7 @@ describe("stopContainerTunnelEdge", () => {
     const { killed } = mockKillableNginx(pid);
 
     expect(
-      await stopContainerTunnelEdge({
+      await stopContainerAppServer({
         assistantId: "docker-1",
         runtimeUrl: "https://runtime.example.com/docker-1",
         cloud: "docker",
@@ -2100,7 +2100,7 @@ describe("stopContainerTunnelEdge", () => {
     const ws = makeWorkspace();
     process.env.CADET_WORKSPACE_DIR = ws;
 
-    expect(await stopContainerTunnelEdge(containerEntry(7930))).toBe(false);
+    expect(await stopContainerAppServer(containerEntry(7930))).toBe(false);
   });
 });
 

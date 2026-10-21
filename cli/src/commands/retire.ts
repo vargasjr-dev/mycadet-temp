@@ -31,7 +31,7 @@ import {
 import { retireDocker, dockerResourceNames } from "../lib/docker.js";
 import { retireInstance as retireAwsInstance } from "../lib/aws.js";
 import { retireInstance as retireGcpInstance } from "../lib/gcp.js";
-import { stopContainerTunnelEdge } from "../lib/nginx-ingress.js";
+import { stopContainerAppServer } from "../lib/nginx-ingress.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { retireAppleContainer } from "../lib/retire-apple-container.js";
 import { exec } from "../lib/step-runner.js";
@@ -362,7 +362,7 @@ async function retireInner(): Promise<void> {
 
   if (cloud === "apple-container") {
     await retireAppleContainer(assistantId, entry);
-    await stopContainerTunnelEdge(entry);
+    await stopContainerAppServer(entry);
   } else if (cloud === "gcp") {
     const project = entry.project;
     const zone = entry.zone;
@@ -382,7 +382,7 @@ async function retireInner(): Promise<void> {
     await retireAwsInstance(assistantId, region, source);
   } else if (cloud === "docker") {
     await retireDocker(assistantId);
-    await stopContainerTunnelEdge(entry);
+    await stopContainerAppServer(entry);
   } else if (cloud === "local") {
     try {
       await unregisterSelfHostedLocalPlatformRecord(entry);

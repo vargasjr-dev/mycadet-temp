@@ -80,8 +80,8 @@ import {
   stopLocalProcesses,
 } from "../lib/local.js";
 import {
-  restoreContainerTunnelEdge,
-  restoreTunnelEdgeAndAutoTunnel,
+  restoreContainerAppServer,
+  restoreAppServerAndAutoTunnel,
 } from "../lib/tunnel.js";
 import {
   leaseGuardianToken,
@@ -490,7 +490,7 @@ async function upgradeDocker(
     };
     saveAssistantEntry(updatedEntry);
     // Refresh the host-served web bundle before clients reload on completion.
-    await restoreContainerTunnelEdge(updatedEntry);
+    await restoreContainerAppServer(updatedEntry);
 
     // Notify clients on the new service group that the upgrade succeeded.
     await broadcastUpgradeEvent(
@@ -933,7 +933,7 @@ async function upgradeLocal(
     console.log("✅ Local assistant processes started\n");
 
     const workspaceDir = join(entry.resources.instanceDir, "workspace");
-    await restoreTunnelEdgeAndAutoTunnel(
+    await restoreAppServerAndAutoTunnel(
       entry.assistantId,
       entry.resources.gatewayPort,
       workspaceDir,

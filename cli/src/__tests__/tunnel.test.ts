@@ -91,7 +91,7 @@ mock.module("../lib/tunnels/gateway-notify.js", () => ({
 
 const EDGE_PORT = 18080;
 
-const ensureTunnelEdgeMock = mock<typeof nginxIngress.ensureTunnelEdge>(
+const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
   async () => ({
     port: EDGE_PORT,
     started: true,
@@ -102,7 +102,7 @@ const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
 );
 mock.module("../lib/nginx-ingress.js", () => ({
   ...realNginxIngress,
-  ensureTunnelEdge: ensureTunnelEdgeMock,
+  ensureAppServer: ensureAppServerMock,
   getNginxVersion: getNginxVersionMock,
 }));
 
@@ -256,7 +256,7 @@ async function runTunnelCapturingLogs(): Promise<string> {
   return logs.join("\n");
 }
 
-describe("tunnel edge targeting", () => {
+describe("app server targeting", () => {
   beforeEach(() => {
     process.argv = [
       "bun",
@@ -289,8 +289,8 @@ describe("tunnel edge targeting", () => {
       fakeTunnelResult("https://test-machine.tailnet.ts.net"),
     );
     notifyGatewayOfPublicUrlMock.mockReset();
-    ensureTunnelEdgeMock.mockReset();
-    ensureTunnelEdgeMock.mockResolvedValue({
+    ensureAppServerMock.mockReset();
+    ensureAppServerMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
     });
@@ -327,7 +327,7 @@ describe("tunnel edge targeting", () => {
     mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   });
 
-  test("targets the edge port returned by ensureTunnelEdge for ngrok", async () => {
+  test("targets the edge port returned by ensureAppServer for ngrok", async () => {
     const entry = makeLocalEntry();
     entry.runtimeUrl = "https://stale-tunnel.ngrok-free.dev";
     writeLockfile(entry);
@@ -344,7 +344,7 @@ describe("tunnel edge targeting", () => {
     const logs = await runTunnelCapturingLogs();
 
     const workspaceDir = join(entry.resources!.instanceDir, "workspace");
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
       gatewayPort: 7830,
@@ -407,7 +407,7 @@ describe("tunnel edge targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'assistant-1' instead.",
     );
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
       gatewayPort: 7830,
@@ -435,7 +435,7 @@ describe("tunnel edge targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "docker-1",
       workspaceDir,
       gatewayPort: 7930,
@@ -463,7 +463,7 @@ describe("tunnel edge targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "docker-1",
       workspaceDir,
       gatewayPort: 7930,
@@ -521,7 +521,7 @@ describe("tunnel edge targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel.",
     );
     expect(errors).toContain("No local assistant found to tunnel");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
@@ -550,7 +550,7 @@ describe("tunnel edge targeting", () => {
     expect(errors).toContain(
       "Multiple local assistants found; set the one to front with `cadet use <name>`.",
     );
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
@@ -572,7 +572,7 @@ describe("tunnel edge targeting", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain("takes no assistant name");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
@@ -592,7 +592,7 @@ describe("tunnel edge targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "apple-1",
       workspaceDir,
       gatewayPort: 8030,
@@ -624,7 +624,7 @@ describe("tunnel edge targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'apple-1' instead.",
     );
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "apple-1",
       workspaceDir,
       gatewayPort: 8030,
@@ -671,7 +671,7 @@ describe("tunnel edge targeting", () => {
       "tailscale",
       "--foreground",
     ];
-    ensureTunnelEdgeMock.mockResolvedValue({
+    ensureAppServerMock.mockResolvedValue({
       port: EDGE_PORT,
       started: false,
     });
@@ -699,7 +699,7 @@ describe("tunnel edge targeting", () => {
       assistantId: "assistant-1",
       workspaceDir: join(entry.resources!.instanceDir, "workspace"),
     });
-    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
+    expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
@@ -803,9 +803,9 @@ describe("tunnel edge targeting", () => {
       "ngrok",
       "--foreground",
     ];
-    ensureTunnelEdgeMock.mockRejectedValue(
+    ensureAppServerMock.mockRejectedValue(
       new Error(
-        "nginx is not installed, so the tunnel edge cannot start. " +
+        "nginx is not installed, so the app server cannot start. " +
           "See https://nginx.org/en/docs/install.html for how to install, " +
           "or point NGINX_BIN at an existing binary.",
       ),
@@ -1031,7 +1031,7 @@ describe("tunnel edge targeting", () => {
     expect(err?.message).toContain("is not yet implemented");
     expect(err?.message).toContain("your CLI may be out of date");
     expect(err?.message).toContain("bun install -g cadet@latest");
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
@@ -1629,7 +1629,7 @@ describe("tunnel background mode", () => {
     }));
     mock.module("../lib/nginx-ingress.js", () => ({
       ...realNginxIngress,
-      ensureTunnelEdge: ensureTunnelEdgeMock,
+      ensureAppServer: ensureAppServerMock,
       getNginxVersion: getNginxVersionMock,
     }));
     mock.module("node:child_process", () => ({
@@ -1650,8 +1650,8 @@ describe("tunnel background mode", () => {
     runNgrokTunnelMock.mockResolvedValue(
       fakeTunnelResult("https://test.example.ngrok.dev"),
     );
-    ensureTunnelEdgeMock.mockReset();
-    ensureTunnelEdgeMock.mockResolvedValue({
+    ensureAppServerMock.mockReset();
+    ensureAppServerMock.mockResolvedValue({
       port: EDGE_PORT,
       started: true,
     });
@@ -1705,7 +1705,7 @@ describe("tunnel background mode", () => {
     // The parent hands the actual tunnel workflow off to the child: it never
     // runs the provider or edge setup itself.
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-    expect(ensureTunnelEdgeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
   });
 
   test("--foreground runs the tunnel in this process instead of a detached child", async () => {
@@ -1722,7 +1722,7 @@ describe("tunnel background mode", () => {
     await runTunnelCapturingLogs();
 
     expect(spawnMock).not.toHaveBeenCalled();
-    expect(ensureTunnelEdgeMock).toHaveBeenCalled();
+    expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runNgrokTunnelMock).toHaveBeenCalled();
   });
 

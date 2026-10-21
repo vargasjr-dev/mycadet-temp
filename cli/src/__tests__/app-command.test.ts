@@ -24,7 +24,7 @@ import * as nginxIngress from "../lib/nginx-ingress.js";
 const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
 const resolveLocalTunnelTargetMock = mock(tunnelLib.resolveLocalTunnelTarget);
 
-const ensureTunnelEdgeMock = mock(nginxIngress.ensureTunnelEdge);
+const ensureAppServerMock = mock(nginxIngress.ensureAppServer);
 const isIngressRunningMock = mock(nginxIngress.isIngressRunning);
 const readIngressStateMock = mock(nginxIngress.readIngressState);
 const stopIngressNginxMock = mock(nginxIngress.stopIngressNginx);
@@ -36,7 +36,7 @@ mock.module("../lib/tunnel.js", () => ({
 }));
 mock.module("../lib/nginx-ingress.js", () => ({
   ...nginxIngress,
-  ensureTunnelEdge: ensureTunnelEdgeMock,
+  ensureAppServer: ensureAppServerMock,
   isIngressRunning: isIngressRunningMock,
   readIngressState: readIngressStateMock,
   stopIngressNginx: stopIngressNginxMock,
@@ -68,7 +68,7 @@ beforeEach(() => {
   ensureNginxForEdgeMock.mockReset();
   ensureNginxForEdgeMock.mockResolvedValue("nginx/1.26.3");
   resolveLocalTunnelTargetMock.mockReset();
-  ensureTunnelEdgeMock.mockReset();
+  ensureAppServerMock.mockReset();
   isIngressRunningMock.mockReset();
   isIngressRunningMock.mockReturnValue(false);
   readIngressStateMock.mockReset();
@@ -104,13 +104,13 @@ describe("cadet app", () => {
       gatewayPort: 7830,
       workspaceDir,
     });
-    ensureTunnelEdgeMock.mockResolvedValue({ port: 7841, started: true });
+    ensureAppServerMock.mockResolvedValue({ port: 7841, started: true });
     process.argv = ["bun", "cadet", "app", "start"];
 
     await app();
 
     expect(ensureNginxForEdgeMock).toHaveBeenCalled();
-    expect(ensureTunnelEdgeMock).toHaveBeenCalledWith({
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
       gatewayPort: 7830,
@@ -126,7 +126,7 @@ describe("cadet app", () => {
       gatewayPort: 7830,
       workspaceDir: join(testDir, "workspace"),
     } as never);
-    ensureTunnelEdgeMock.mockResolvedValue({ port: 7841, started: false });
+    ensureAppServerMock.mockResolvedValue({ port: 7841, started: false });
     process.argv = ["bun", "cadet", "app", "start"];
 
     await app();

@@ -191,7 +191,7 @@ export function serveStatusListsUrl(stdout: string, publicUrl: string): boolean 
  *
  * tailscaled keeps a `serve` mapping across gateway restarts and reboots, but
  * the gateway drops every tunnel-managed `ingress.publicBaseUrl` when it
- * starts, which leaves the wake-time edge restore with nothing to front. When
+ * starts, which leaves the wake-time app-server restore with nothing to front. When
  * the last tunnel record is a tailscale serve that `tailscale serve status`
  * still lists, save its URL back as the ingress base URL. Returns the
  * recovered URL, or null when nothing needed recovering or the serve is gone.

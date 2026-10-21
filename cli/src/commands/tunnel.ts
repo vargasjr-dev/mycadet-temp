@@ -16,7 +16,7 @@ import {
   readLockfileIngressUrl,
 } from "../lib/ingress-config.js";
 import { readLineText } from "../lib/ensure-binary.js";
-import { ensureTunnelEdge, type TunnelEdge } from "../lib/nginx-ingress.js";
+import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   ADOPTED_TUNNEL_RE,
@@ -494,9 +494,9 @@ export const tunnel = Object.assign(
 
     await ensureNginxForEdge();
 
-    let edge: TunnelEdge;
+    let edge: AppServer;
     try {
-      edge = await ensureTunnelEdge({
+      edge = await ensureAppServer({
         assistantId: entry.assistantId,
         workspaceDir,
         gatewayPort,
