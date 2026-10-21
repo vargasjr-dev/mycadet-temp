@@ -47,7 +47,7 @@ test("localhost logout clears the proxy token and tolerates an offline host", as
   localHost = true;
   fetchSpy.mockRejectedValueOnce(new Error("Host offline"));
   await logoutAccount();
-  expect(fetchSpy).toHaveBeenCalledWith("/assistant/__local/cloud-session", {
+  expect(fetchSpy).toHaveBeenCalledWith("/v1/session", {
     method: "DELETE",
   });
   expect(deleteBiometricToken).toHaveBeenCalledTimes(1);

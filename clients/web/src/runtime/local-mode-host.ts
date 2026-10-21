@@ -30,10 +30,11 @@ import { isElectron } from "@/runtime/is-electron";
  * Cadet CLI and reading/writing its lockfile. That work runs in a trusted
  * host process, never the renderer: in the Electron desktop shell it runs in
  * the main process behind `window.cadet.localMode.*`; on the web/dev host it
- * runs in the Vite dev server behind `/assistant/__local/*` middleware. This
- * module is the single place that branch lives — feature code imports these
- * named functions and stays host-agnostic, mirroring the per-capability
- * `runtime/` wrapper rule in `clients/web/docs/ELECTRON.md`.
+ * runs in the Vite dev server behind same-origin `/v1` middleware at the
+ * conductor's route shapes. This module is the single place that branch
+ * lives — feature code imports these named functions and stays host-agnostic,
+ * mirroring the per-capability `runtime/` wrapper rule in
+ * `clients/web/docs/ELECTRON.md`.
  *
  * Both branches return the same wire contract, so callers never observe which
  * host they're on. The contract types are owned by `@mycadet/local-mode` —
@@ -146,9 +147,9 @@ const LOCAL_HOST_UNAVAILABLE_ERROR =
   "The local assistant host isn't available here.";
 
 /**
- * Whether a local-mode host (the Electron IPC bridge, the Vite dev server, or
- * the `cadet client` CLI server) backs this runtime and can serve
- * `/assistant/__local/*`. The cloud web build and the remote-web tunnel
+ * Whether a local-mode host (the Electron IPC bridge or the Vite dev server)
+ * backs this runtime and can serve the host's `/v1` lifecycle routes. The
+ * cloud web build and the remote-web tunnel
  * cannot, yet both still surface local / self-hosted assistants via the cloud
  * `is_local` flag — so callers and UI MUST consult this before offering a local
  * action (wake / hatch / retire).
@@ -167,7 +168,7 @@ export function isLocalModeHostAvailable(): boolean {
 }
 
 /**
- * Whether this host serves `/assistant/__local/avatar/{id}`: the Electron main
+ * Whether this host serves `/v1/assistants/{id}/avatar/get`: the Electron main
  * process and the Vite dev server do; the packaged `cadet client` web host
  * deliberately does not (its `.cadet` boundary), and its SPA fallback would
  * answer the request with HTML. `import.meta.env.DEV` is what separates the
@@ -223,8 +224,8 @@ async function requestLocalCommand<T extends { ok: boolean }>(
  *
  * Both hosts spawn the Cadet CLI in a trusted process and return the same
  * `{ ok, assistantId }` contract: the Electron main process behind
- * `window.cadet.localMode.hatch`, the Vite dev server behind the
- * `/assistant/__local/hatch` middleware. Callers reload the lockfile to
+ * `window.cadet.localMode.hatch`, the Vite dev server behind the conductor's
+ * `POST /v1/assistants/hatch`. Callers reload the lockfile to
  * discover the new assistant regardless of host.
  */
 export async function hatchLocalAssistant(
@@ -235,7 +236,7 @@ export async function hatchLocalAssistant(
   }
 
   return postLocalCommand<LocalHatchResult>(
-    "/assistant/__local/hatch",
+    "/v1/assistants/hatch",
     { remote },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -245,14 +246,14 @@ export async function hatchLocalAssistant(
  * Read the local-assistant lockfile (sensitive fields stripped by the host).
  * Throws on a transport/parse failure so callers can fall back to a cached
  * copy; the Electron main reads the file directly, the dev host serves it from
- * `/assistant/__local/lockfile`.
+ * the bare `/v1/assistants/` list route.
  */
 export async function loadLockfileHost(): Promise<Lockfile> {
   if (isElectron()) {
     return window.cadet!.localMode.readLockfile();
   }
 
-  const res = await fetch("/assistant/__local/lockfile");
+  const res = await fetch("/v1/assistants/");
   if (!res.ok) {
     throw new Error(`lockfile fetch failed: ${res.status}`);
   }
@@ -270,9 +271,9 @@ export async function retireLocalAssistantHost(
     return window.cadet!.localMode.retire(assistantId);
   }
 
-  return postLocalCommand<LocalRetireResult>(
-    "/assistant/__local/retire",
-    { assistantId },
+  return requestLocalCommand<LocalRetireResult>(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/retire/`,
+    { method: "DELETE" },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
 }
@@ -302,8 +303,8 @@ export async function unpairAssistantHost(
   }
 
   return postLocalCommand<LockfileWriteResult>(
-    "/assistant/__local/unpair",
-    { assistantId },
+    `/v1/assistants/${encodeURIComponent(assistantId)}/unpair`,
+    {},
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
 }
@@ -333,7 +334,7 @@ export async function pairingStartHost(
   }
 
   return postLocalCommand<LocalPairingStartResult>(
-    "/assistant/__local/pairing-start",
+    "/v1/remote-web/pairing-start",
     { address },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -358,7 +359,7 @@ export async function pairingPollHost(
   }
 
   return postLocalCommand<LocalPairingPollResult>(
-    "/assistant/__local/pairing-poll",
+    "/v1/remote-web/pairing-poll",
     { handle, name },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -375,7 +376,7 @@ export async function pairingCancelHost(handle: string): Promise<void> {
   }
 
   await postLocalCommand<{ ok: boolean }>(
-    "/assistant/__local/pairing-cancel",
+    "/v1/remote-web/pairing-cancel",
     { handle },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -406,7 +407,7 @@ export async function listPairedDevicesHost(
   }
 
   return postLocalCommand<LocalListDevicesResult>(
-    "/assistant/__local/devices",
+    "/v1/devices",
     { assistantId },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -429,7 +430,7 @@ export async function revokePairedDeviceHost(
   }
 
   return postLocalCommand<LocalRevokeDeviceResult>(
-    "/assistant/__local/devices-revoke",
+    "/v1/devices/revoke",
     { assistantId, hashedDeviceId },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -452,8 +453,8 @@ export async function sleepLocalAssistantHost(
   }
 
   return postLocalCommand<LocalSleepResult>(
-    "/assistant/__local/sleep",
-    { assistantId },
+    `/v1/assistants/${encodeURIComponent(assistantId)}/sleep`,
+    {},
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
 }
@@ -492,8 +493,8 @@ export async function wakeLocalAssistantHost(
   }
 
   return postLocalCommand<LocalWakeResult>(
-    "/assistant/__local/wake",
-    { assistantId, repairGuardian: options?.repairGuardian },
+    `/v1/assistants/${encodeURIComponent(assistantId)}/wake/`,
+    { repairGuardian: options?.repairGuardian },
     "Wake failed. Try running cadet wake in your terminal.",
   );
 }
@@ -520,11 +521,14 @@ export async function upgradeLocalAssistantHost(
     ...(options?.force ? { force: true } : {}),
   };
 
-  const res = await fetch("/assistant/__local/upgrade", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const res = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/upgrade`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
   return res.json() as Promise<LocalUpgradeResult>;
 }
 
@@ -548,9 +552,7 @@ export async function getLocalAssistantStatusHost(
   }
   let res: Response;
   try {
-    res = await fetch(
-      `/assistant/__local/status/${encodeURIComponent(assistantId)}`,
-    );
+    res = await fetch(`/v1/assistants/${encodeURIComponent(assistantId)}/`);
   } catch {
     return { ok: false, status: 0, error: LOCAL_HOST_UNAVAILABLE_ERROR };
   }
@@ -570,7 +572,7 @@ export async function getLocalAssistantStatusHost(
  * Read a local assistant's avatar straight off its workspace on disk, so a
  * sleeping sibling still has an avatar in the chooser. The Electron main
  * process serves it behind `window.cadet.localMode.readAssistantAvatar`, the
- * Vite dev server behind `/assistant/__local/avatar/{id}`; both return the
+ * Vite dev server behind `/v1/assistants/{id}/avatar/get`; both return the
  * ipc-contract shape. Never throws: an older Electron shell without the
  * channel, a rejected bridge call, and a host that cannot serve the read
  * ({@link canReadAvatarFromLocalHost}) all resolve `{ ok: false }`.
@@ -597,7 +599,7 @@ export async function readAssistantAvatarHost(
     return { ok: false, error: LOCAL_HOST_UNAVAILABLE_ERROR };
   }
   return requestLocalCommand<LocalReadAssistantAvatarResult>(
-    `/assistant/__local/avatar/${encodeURIComponent(assistantId)}`,
+    `/v1/assistants/${encodeURIComponent(assistantId)}/avatar/get`,
     { method: "GET" },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -608,7 +610,7 @@ export async function readAssistantAvatarHost(
  * authorize the gateway token exchange. Reading the token file and refreshing
  * it via the CLI is a trusted disk/CLI operation, so it runs in the host:
  * the Electron main process behind `window.cadet.localMode.guardianToken`,
- * the Vite dev server behind `/assistant/__local/guardian-token/{id}`. Throws
+ * the Vite dev server behind `/v1/assistants/{id}/guardian-token`. Throws
  * a {@link GuardianTokenError} carrying the host's status on failure, so
  * callers surface the same connect error — and can branch on the failure
  * class — regardless of host.
@@ -625,7 +627,7 @@ export async function fetchGuardianTokenHost(
   }
 
   const res = await fetch(
-    `/assistant/__local/guardian-token/${encodeURIComponent(assistantId)}`,
+    `/v1/assistants/${encodeURIComponent(assistantId)}/guardian-token`,
   );
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -648,7 +650,7 @@ export async function registerLocalCloudSession(
   token: string,
 ): Promise<boolean> {
   const res = await postLocalCommand<{ ok: boolean }>(
-    "/assistant/__local/cloud-session",
+    "/v1/session",
     { token },
     LOCAL_HOST_UNAVAILABLE_ERROR,
   );
@@ -663,7 +665,7 @@ export async function clearLocalCloudSession(): Promise<void> {
     return;
   }
   try {
-    await fetch("/assistant/__local/cloud-session", { method: "DELETE" });
+    await fetch("/v1/session", { method: "DELETE" });
   } catch {
     // best-effort — the server is going away or already cleared.
   }

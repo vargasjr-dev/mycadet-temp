@@ -68,7 +68,7 @@ describe("hatchLocalAssistant", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/hatch");
+    expect(url).toBe("/v1/assistants/hatch");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({ remote: undefined });
   });
@@ -148,7 +148,7 @@ describe("loadLockfileHost", () => {
 
     expect(await loadLockfileHost()).toEqual(lockfile);
     const [url] = fetchMock.mock.calls[0] as unknown as [string];
-    expect(url).toBe("/assistant/__local/lockfile");
+    expect(url).toBe("/v1/assistants/");
   });
 
   test("web/dev host throws on a non-ok response so callers can fall back", async () => {
@@ -176,7 +176,7 @@ describe("loadLockfileHost", () => {
 });
 
 describe("retireLocalAssistantHost", () => {
-  test("web/dev host POSTs the assistant id to the retire middleware", async () => {
+  test("web/dev host DELETEs the conductor's retire route for the assistant", async () => {
     const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
@@ -186,9 +186,8 @@ describe("retireLocalAssistantHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/retire");
-    expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({ assistantId: "a-1" });
+    expect(url).toBe("/v1/assistants/a-1/retire/");
+    expect(init.method).toBe("DELETE");
   });
 
   test("Electron host retires through the bridge and never touches fetch", async () => {
@@ -208,7 +207,7 @@ describe("retireLocalAssistantHost", () => {
 describe("unpairAssistantHost", () => {
   const emptyLockfile = { assistants: [], activeAssistant: null };
 
-  test("web/dev host POSTs the assistant id to the unpair middleware", async () => {
+  test("web/dev host POSTs the conductor's unpair route for the assistant", async () => {
     const fetchMock = mock(async () => ({
       json: async () => ({ ok: true, lockfile: emptyLockfile }),
     }));
@@ -222,9 +221,8 @@ describe("unpairAssistantHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/unpair");
+    expect(url).toBe("/v1/assistants/a-1/unpair");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({ assistantId: "a-1" });
   });
 
   test("web/dev host surfaces the host's structured refusal", async () => {
@@ -282,7 +280,7 @@ describe("pairing hosts", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/pairing-start");
+    expect(url).toBe("/v1/remote-web/pairing-start");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({
       address: "https://gw.example.com",
@@ -304,7 +302,7 @@ describe("pairing hosts", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/pairing-poll");
+    expect(url).toBe("/v1/remote-web/pairing-poll");
     expect(JSON.parse(init.body as string)).toEqual({
       handle: "handle-1",
       name: "desk",
@@ -426,7 +424,7 @@ describe("listPairedDevicesHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/devices");
+    expect(url).toBe("/v1/devices");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({ assistantId: "a-1" });
   });
@@ -475,7 +473,7 @@ describe("revokePairedDeviceHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/devices-revoke");
+    expect(url).toBe("/v1/devices/revoke");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({
       assistantId: "a-1",
@@ -518,7 +516,7 @@ describe("revokePairedDeviceHost", () => {
 });
 
 describe("wakeLocalAssistantHost", () => {
-  test("web/dev host POSTs the assistant id to the wake middleware", async () => {
+  test("web/dev host POSTs the conductor's wake route for the assistant", async () => {
     const fetchMock = mock(async () => ({ json: async () => ({ ok: true }) }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
@@ -527,9 +525,9 @@ describe("wakeLocalAssistantHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/wake");
+    expect(url).toBe("/v1/assistants/a-1/wake/");
     expect(init.method).toBe("POST");
-    expect(JSON.parse(init.body as string)).toEqual({ assistantId: "a-1" });
+    expect(JSON.parse(init.body as string)).toEqual({});
   });
 
   test("web/dev host forwards repairGuardian when the caller opts in", async () => {
@@ -543,7 +541,6 @@ describe("wakeLocalAssistantHost", () => {
       RequestInit,
     ];
     expect(JSON.parse(init.body as string)).toEqual({
-      assistantId: "a-1",
       repairGuardian: true,
     });
   });
@@ -601,7 +598,7 @@ describe("upgradeLocalAssistantHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/upgrade");
+    expect(url).toBe("/v1/assistants/a-1/upgrade");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string)).toEqual({
       assistantId: "a-1",
@@ -646,7 +643,7 @@ describe("getLocalAssistantStatusHost", () => {
       state: "sleeping",
     });
     const [url] = fetchMock.mock.calls[0] as unknown as [string];
-    expect(url).toBe("/assistant/__local/status/a%201");
+    expect(url).toBe("/v1/assistants/a%201/");
   });
 
   test("Electron host reads status through the bridge and never touches fetch", async () => {
@@ -683,7 +680,7 @@ describe("readAssistantAvatarHost", () => {
       string,
       RequestInit,
     ];
-    expect(url).toBe("/assistant/__local/avatar/a%201");
+    expect(url).toBe("/v1/assistants/a%201/avatar/get");
     expect(init.method).toBe("GET");
   });
 
@@ -777,7 +774,7 @@ describe("fetchGuardianTokenHost", () => {
 
     expect(await fetchGuardianTokenHost("a 1")).toBe("tok-web");
     const [url] = fetchMock.mock.calls[0] as unknown as [string];
-    expect(url).toBe("/assistant/__local/guardian-token/a%201");
+    expect(url).toBe("/v1/assistants/a%201/guardian-token");
   });
 
   test("web/dev host throws a GuardianTokenError carrying the response status", async () => {
@@ -865,7 +862,7 @@ describe("isLocalModeHostAvailable", () => {
     expect(isLocalModeHostAvailable()).toBe(false);
   });
 
-  test("false for a served remote — the ingress 404s /assistant/__local/*", () => {
+  test("false for a served remote — no local-mode host serves /v1 there", () => {
     (window as WindowWithConfig).__CADET_CONFIG__ = { remote: "docker" };
     expect(isLocalModeHostAvailable()).toBe(false);
   });

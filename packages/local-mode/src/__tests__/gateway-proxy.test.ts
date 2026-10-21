@@ -59,6 +59,15 @@ describe("parseAssistantGatewayUrl", () => {
     });
   });
 
+  test("forwards the scoped readyz tail to the gateway's root probe", () => {
+    expect(parseAssistantGatewayUrl("/v1/assistants/abc-123/readyz")).toEqual({
+      match: true,
+      valid: true,
+      legacy: false,
+      target: { assistantId: "abc-123", path: "/readyz", search: "" },
+    });
+  });
+
   test("preserves the query and drops the fragment on the scoped surface", () => {
     expect(
       parseAssistantGatewayUrl("/v1/assistants/abc-123/messages?x=1#frag"),

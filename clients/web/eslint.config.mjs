@@ -261,6 +261,25 @@ const authBoundaryAllowedPaths = [
 ];
 
 /**
+ * Paths that legitimately raw-fetch the local host's `/v1` routes.
+ *
+ * The local-mode seam talks to the local assistant HOST (the Vite dev
+ * middleware, the Electron IPC bridge) at the conductor's route shapes —
+ * lifecycle, pairing, devices, lockfile, readyz. Those endpoints are served
+ * by the host on this machine, never by the platform API, so they will never
+ * appear in platform.yaml and carry no generated client. Their
+ * authentication is the host's loopback/origin boundary, not the session
+ * interceptors the raw-fetch ban exists to protect.
+ *
+ * Exempt from `rawApiFetchRules` only; still subject to the auth-header and
+ * storage rules.
+ */
+const localModeHostAllowedPaths = [
+  "src/runtime/local-mode-host.ts",
+  "src/lib/local-mode.ts",
+];
+
+/**
  * Paths where user-facing copy must come from a translation catalog.
  *
  * Covers all of `src/` (generated excluded via `globalIgnores`). Entries are
@@ -437,6 +456,22 @@ const eslintConfig = defineConfig([
         ...unknownTypographyRules,
         ...universalAuthRules,
         ...rawApiFetchRules,
+      ],
+    },
+  },
+  // Override: the local-mode seam raw-fetches the local host's `/v1` routes
+  // (see `localModeHostAllowedPaths`). Restate `no-restricted-syntax` with
+  // everything EXCEPT the raw-fetch rules — the host's endpoints are not
+  // platform-API surfaces and never gain a generated client.
+  {
+    files: localModeHostAllowedPaths,
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...darkPairedColorScaleRules,
+        ...unknownTypographyRules,
+        ...universalAuthRules,
+        ...headerLiteralRules,
       ],
     },
   },

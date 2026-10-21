@@ -172,7 +172,7 @@ export async function loadLockfile(): Promise<Lockfile> {
   }
 
   // A cloud-hosted cadet has no local-mode host: the bundle is served by the
-  // platform, so /assistant/__local/* would land on the platform's web app
+  // platform, so a local lockfile fetch would land on the platform's web app
   // instead of a local daemon. Commit an empty lockfile without fetching —
   // the assistant list comes from the cloud API, and stale persisted local
   // entries must not leak into a cloud session.
@@ -562,9 +562,9 @@ function expectsLocalGateway(
  * gateway or the gateway port hasn't been recorded yet (the same resolvability
  * gate as before — only the URL shape changed; the host resolves the port).
  *
- * Serves the gateway's UNSCOPED routes only (`/auth/token` mint, `/readyz`
- * probes, the lifecycle trio): the scoped SDK data plane is plain same-origin
- * `/v1` — the serving host routes it by the id in the path.
+ * Serves the gateway's UNSCOPED routes only (the renderer's `/auth/token`
+ * mint and the local `/v1/pair` device flow); the scoped SDK data plane and
+ * the readiness probe are plain same-origin `/v1`.
  */
 export function getLocalGatewayUrl(
   assistant: LockfileAssistant | undefined = getSelectedAssistant(),
@@ -602,9 +602,9 @@ function expectsPairedGateway(assistant: LockfileAssistant): boolean {
  * CSP pins `connect-src` to Cadet origins, and a browser-served SPA would be
  * stopped by the remote gateway's CORS. Instead the serving host (the Electron
  * `app://` handler, the Vite dev middleware, the CLI web server) resolves the
- * entry's recorded `runtimeUrl` and forwards. Serves the gateway's UNSCOPED
- * routes only (the paired `/readyz` probe); the scoped SDK data plane is plain
- * same-origin `/v1` — the serving host routes it by the id in the path.
+ * entry's recorded `runtimeUrl` and forwards. The scoped SDK data plane and
+ * the readiness probe are plain same-origin `/v1` — the serving host routes
+ * by the id in the path.
  */
 export function getPairedGatewayUrl(
   assistant: LockfileAssistant | undefined,
@@ -620,11 +620,11 @@ export function getPairedGatewayUrl(
 
 /**
  * Absolute base URL this runtime reaches the given assistant's gateway's
- * UNSCOPED routes at (`/auth/token` mint, `/readyz` probes, the lifecycle
- * trio, until those fold into `/v1`): origin + local gateway proxy for
- * local/docker entries, origin + paired gateway proxy for paired entries,
- * `undefined` otherwise. The scoped SDK data plane doesn't ride this — it is
- * plain same-origin `/v1`.
+ * UNSCOPED routes at (the renderer's `/auth/token` mint and the local
+ * `/v1/pair` device flow): origin + local gateway proxy for local/docker
+ * entries, origin + paired gateway proxy for paired entries, `undefined`
+ * otherwise. The scoped SDK data plane doesn't ride this — it is plain
+ * same-origin `/v1`.
  */
 export function getAuthGatewayIngressUrl(
   assistant: LockfileAssistant | undefined,
@@ -637,10 +637,8 @@ export function getAuthGatewayIngressUrl(
 }
 
 /**
- * One-shot probe of the local gateway's `/readyz` (which reports gateway AND
- * upstream daemon readiness). True only when the gateway answers with an ok
- * body that does not report `ready: false`; false when the gateway URL is
- * unresolvable, the request fails, or the gateway is up but not yet ready.
+ * Whether a readyz body reports ready: the gateway answers `status: "ok"`
+ * with no `ready: false`.
  */
 function isReadyzResponseReady(body: unknown): boolean {
   if (body === null || typeof body !== "object") {
@@ -654,12 +652,17 @@ function isReadyzResponseReady(body: unknown): boolean {
 }
 
 export async function probeLocalGatewayReady(): Promise<boolean> {
-  const gatewayUrl = getLocalGatewayUrl();
-  if (!gatewayUrl) {
+  const assistant = getSelectedAssistant();
+  if (!assistant || !expectsLocalGateway(assistant)) {
     return false;
   }
   try {
-    const res = await fetch(`${gatewayUrl}/readyz`);
+    // Host-side probing: the serving host resolves the assistant's gateway
+    // from the id in the path and dials its root `/readyz` itself — the
+    // renderer never sees a port or an unscoped gateway path.
+    const res = await fetch(
+      `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/readyz`,
+    );
     if (!res.ok) {
       return false;
     }
@@ -723,8 +726,7 @@ export async function primeLocalGatewayConnection(
 ): Promise<void> {
   const assistant = target ?? getSelectedAssistant();
   if (assistant && expectsPairedGateway(assistant)) {
-    const pairedUrl = getPairedGatewayUrl(assistant);
-    if (!pairedUrl) {
+    if (!getPairedGatewayUrl(assistant)) {
       throw new UnresolvedPairedGatewayError(assistant.assistantId);
     }
     // A request through the paired proxy forces the trusted host to resolve
@@ -739,7 +741,12 @@ export async function primeLocalGatewayConnection(
     // the id in the path. It also clears credentials persisted by older
     // clients that placed paired guardian tokens in the gateway-session cache.
     try {
-      const response = await fetch(`${pairedUrl}/readyz`);
+      // Host-side probing through the scoped readyz route: the serving host
+      // resolves the paired gateway from the id in the path, dials its root
+      // `/readyz`, and injects the paired guardian bearer itself.
+      const response = await fetch(
+        `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/readyz`,
+      );
       if (!response.ok) {
         const message = await response.text();
         throw new GuardianTokenError(

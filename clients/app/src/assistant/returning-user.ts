@@ -62,7 +62,7 @@ async function findReturningUser(signal: AbortSignal): Promise<boolean> {
       if (bridge?.localMode) {
         payload = await bridge.localMode.readLockfile();
       } else {
-        const response = await fetch("/assistant/__local/lockfile", {
+        const response = await fetch("/v1/assistants/", {
           signal,
         });
         payload = response.ok ? await response.json() : null;

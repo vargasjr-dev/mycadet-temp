@@ -4,7 +4,7 @@ import { postLocalCommand } from "@app/runtime/local-host-transport";
 export async function registerLocalCloudSession(
   token: string,
 ): Promise<boolean> {
-  const result = await postLocalCommand("/assistant/__local/cloud-session", {
+  const result = await postLocalCommand("/v1/session", {
     token,
   });
   return result.ok;

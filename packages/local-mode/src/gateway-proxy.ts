@@ -78,7 +78,8 @@ function hasDotSegment(path: string): boolean {
  *
  *   - the scoped SDK surface `/v1/assistants/{assistantId}[/rest]` — the
  *     forward path is the scoped path itself (flattened for the contact
- *     family), so the gateway receives exactly what the SDK addressed;
+ *     family; the `readyz` tail forwards to the gateway's root `/readyz`),
+ *     so the gateway receives exactly what the SDK addressed;
  *   - the legacy `/assistant/__gateway/{assistantId}[/tail]` prefix (with or
  *     without the `/assistant` mount) — the forward path is the tail after
  *     the prefix, the transport for the gateway's unscoped routes.
@@ -104,9 +105,15 @@ export function parseAssistantGatewayUrl(url: string): GatewayParseResult {
     }
     const firstSegment = rest?.split("/")[0];
     const path =
-      firstSegment !== undefined && FLATTENED_FIRST_SEGMENTS.has(firstSegment)
-        ? `/v1/${rest}`
-        : pathname;
+      rest === "readyz"
+        ? // The readiness probe asks about the resolved assistant's gateway
+          // itself, and the gateway serves it at the root — not under the
+          // scoped prefix.
+          "/readyz"
+        : firstSegment !== undefined &&
+            FLATTENED_FIRST_SEGMENTS.has(firstSegment)
+          ? `/v1/${rest}`
+          : pathname;
     return {
       match: true,
       valid: true,

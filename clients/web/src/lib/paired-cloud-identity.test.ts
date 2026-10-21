@@ -41,7 +41,7 @@ const {
 
 beforeEach(() => {
   lockfileEntry = pairedEntry;
-  pairedGatewayUrl = "/assistant/__gateway/paired-remote"; // the unscoped /readyz probe still rides it
+  pairedGatewayUrl = "/v1/assistants/paired-remote";
   fetchCloudStatus.mockResolvedValue({ assistantId: UUID });
 });
 

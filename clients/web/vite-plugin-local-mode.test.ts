@@ -172,7 +172,7 @@ describe("guardian-token middleware", () => {
     writeLockfile([{ assistantId: "asst-g", cloud: "local" }]);
     writeToken("asst-g", {});
 
-    const result = await dispatch("/__local/guardian-token/asst-g");
+    const result = await dispatch("/v1/assistants/asst-g/guardian-token");
 
     expect(result.status).toBe(200);
     expect(JSON.parse(result.body)).toEqual({ accessToken: "stored-token" });
@@ -185,7 +185,7 @@ describe("guardian-token middleware", () => {
       refreshTokenExpiresAt: PAST,
     });
 
-    const result = await dispatch("/__local/guardian-token/asst-g");
+    const result = await dispatch("/v1/assistants/asst-g/guardian-token");
 
     expect(result.status).toBe(401);
     const { error } = JSON.parse(result.body) as { error: string };
@@ -197,7 +197,7 @@ describe("guardian-token middleware", () => {
     writeLockfile([{ assistantId: "paired-g", cloud: "paired" }]);
     writeToken("paired-g", {});
 
-    const result = await dispatch("/__local/guardian-token/paired-g");
+    const result = await dispatch("/v1/assistants/paired-g/guardian-token");
 
     expect(result.status).toBe(403);
     const { error } = JSON.parse(result.body) as { error: string };
@@ -210,7 +210,7 @@ describe("guardian-token middleware", () => {
       pairedGatewayUrl: "https://gateway.example.com",
     });
 
-    const result = await dispatch("/__local/guardian-token/paired-g");
+    const result = await dispatch("/v1/assistants/paired-g/guardian-token");
 
     expect(result.status).toBe(403);
     const { error } = JSON.parse(result.body) as { error: string };
@@ -233,7 +233,7 @@ describe("avatar middleware", () => {
 
   test("rejects non-loopback callers", async () => {
     const result = await dispatch(
-      "/__local/avatar/asst-a",
+      "/v1/assistants/asst-a/avatar/get",
       {},
       {
         remoteAddress: "10.0.0.7",
@@ -245,7 +245,7 @@ describe("avatar middleware", () => {
 
   test("rejects non-GET methods", async () => {
     const result = await dispatch(
-      "/__local/avatar/asst-a",
+      "/v1/assistants/asst-a/avatar/get",
       {},
       {
         method: "POST",
@@ -253,26 +253,6 @@ describe("avatar middleware", () => {
     );
 
     expect(result.status).toBe(405);
-  });
-
-  test("serves a character avatar from the manifest on the SPA-prefixed route", async () => {
-    fs.writeFileSync(
-      path.join(avatarDir, AVATAR_MANIFEST_FILENAME),
-      JSON.stringify({
-        kind: "character",
-        traits,
-        source: "builder",
-        image: null,
-      }),
-    );
-
-    const result = await dispatch("/assistant/__local/avatar/asst-a");
-
-    expect(result.status).toBe(200);
-    expect(JSON.parse(result.body)).toEqual({
-      ok: true,
-      avatar: { kind: "character", traits },
-    });
   });
 
   test("serves an image avatar as base64", async () => {
@@ -293,7 +273,7 @@ describe("avatar middleware", () => {
       }),
     );
 
-    const result = await dispatch("/__local/avatar/asst-a");
+    const result = await dispatch("/v1/assistants/asst-a/avatar/get");
 
     expect(result.status).toBe(200);
     expect(JSON.parse(result.body)).toEqual({
@@ -303,7 +283,7 @@ describe("avatar middleware", () => {
   });
 
   test("malformed percent-encoding is a 400", async () => {
-    const result = await dispatch("/__local/avatar/%E0%A4%A");
+    const result = await dispatch("/v1/assistants/%E0%A4%A/avatar/get");
 
     expect(result.status).toBe(400);
     expect(JSON.parse(result.body)).toEqual({
@@ -321,9 +301,9 @@ describe("avatar middleware", () => {
       }),
     );
 
-    expect(JSON.parse((await dispatch("/__local/avatar/asst-a")).body)).toEqual(
-      { ok: false, error: "avatar image unreadable" },
-    );
+    expect(
+      JSON.parse((await dispatch("/v1/assistants/asst-a/avatar/get")).body),
+    ).toEqual({ ok: false, error: "avatar image unreadable" });
   });
 
   test("entry without an instanceDir resolves the default dir from the plugin env", async () => {
@@ -343,18 +323,19 @@ describe("avatar middleware", () => {
       JSON.stringify(traits),
     );
 
-    expect(JSON.parse((await dispatch("/__local/avatar/asst-a")).body)).toEqual(
-      { ok: true, avatar: { kind: "character", traits } },
-    );
+    expect(
+      JSON.parse((await dispatch("/v1/assistants/asst-a/avatar/get")).body),
+    ).toEqual({ ok: true, avatar: { kind: "character", traits } });
   });
 
-  test("absent avatar and unknown assistant both resolve to null", async () => {
-    expect(JSON.parse((await dispatch("/__local/avatar/asst-a")).body)).toEqual(
-      { ok: true, avatar: null },
-    );
-    expect(JSON.parse((await dispatch("/__local/avatar/nobody")).body)).toEqual(
-      { ok: true, avatar: null },
-    );
+  test("absent avatar resolves to null; an unknown assistant passes through", async () => {
+    expect(
+      JSON.parse((await dispatch("/v1/assistants/asst-a/avatar/get")).body),
+    ).toEqual({ ok: true, avatar: null });
+    // An id the lockfile doesn't know is not this host's to serve — the
+    // request falls through to the id-keyed proxies (404 at the chain end).
+    const result = await dispatch("/__local/avatar/nobody");
+    expect(result.status).toBe(404);
   });
 });
 
@@ -426,7 +407,7 @@ describe("devices middleware", () => {
   describe("list endpoint", () => {
     test("rejects non-loopback callers", async () => {
       const result = await dispatch(
-        "/__local/devices",
+        "/v1/devices",
         {},
         {
           method: "POST",
@@ -440,7 +421,7 @@ describe("devices middleware", () => {
     });
 
     test("rejects non-POST methods", async () => {
-      const result = await dispatch("/__local/devices");
+      const result = await dispatch("/v1/devices");
 
       expect(result.status).toBe(405);
       expect(runDevicesListMock).not.toHaveBeenCalled();
@@ -448,7 +429,7 @@ describe("devices middleware", () => {
 
     test("400 when assistantId is missing", async () => {
       const result = await dispatch(
-        "/__local/devices",
+        "/v1/devices",
         {},
         {
           method: "POST",
@@ -463,11 +444,11 @@ describe("devices middleware", () => {
       });
     });
 
-    test("passes the device list through on the SPA-prefixed route", async () => {
+    test("passes the device list through", async () => {
       devicesListResult = { ok: true, devices: [DEVICE] };
 
       const result = await dispatch(
-        "/assistant/__local/devices",
+        "/v1/devices",
         {},
         {
           method: "POST",
@@ -487,7 +468,7 @@ describe("devices middleware", () => {
       devicesListResult = { ok: false, error: "gateway offline" };
 
       const result = await dispatch(
-        "/__local/devices",
+        "/v1/devices",
         {},
         {
           method: "POST",
@@ -506,7 +487,7 @@ describe("devices middleware", () => {
   describe("revoke endpoint", () => {
     test("rejects non-loopback callers", async () => {
       const result = await dispatch(
-        "/__local/devices-revoke",
+        "/v1/devices/revoke",
         {},
         {
           method: "POST",
@@ -520,7 +501,7 @@ describe("devices middleware", () => {
     });
 
     test("rejects non-POST methods", async () => {
-      const result = await dispatch("/__local/devices-revoke");
+      const result = await dispatch("/v1/devices/revoke");
 
       expect(result.status).toBe(405);
       expect(runDevicesRevokeMock).not.toHaveBeenCalled();
@@ -528,7 +509,7 @@ describe("devices middleware", () => {
 
     test("400 when assistantId is missing", async () => {
       const result = await dispatch(
-        "/__local/devices-revoke",
+        "/v1/devices/revoke",
         {},
         {
           method: "POST",
@@ -545,7 +526,7 @@ describe("devices middleware", () => {
 
     test("400 when hashedDeviceId is missing", async () => {
       const result = await dispatch(
-        "/__local/devices-revoke",
+        "/v1/devices/revoke",
         {},
         {
           method: "POST",
@@ -562,7 +543,7 @@ describe("devices middleware", () => {
 
     test("passes a successful revoke through", async () => {
       const result = await dispatch(
-        "/assistant/__local/devices-revoke",
+        "/v1/devices/revoke",
         {},
         {
           method: "POST",
@@ -583,7 +564,7 @@ describe("devices middleware", () => {
       devicesRevokeResult = { ok: false, error: "revoke failed" };
 
       const result = await dispatch(
-        "/__local/devices-revoke",
+        "/v1/devices/revoke",
         {},
         {
           method: "POST",

@@ -15,7 +15,7 @@ export async function logoutAccount(): Promise<void> {
       deleteBiometricToken(),
       setMenuCloudSession(false),
       !bridge && isLocalModeHostAvailable()
-        ? fetch("/assistant/__local/cloud-session", { method: "DELETE" })
+        ? fetch("/v1/session", { method: "DELETE" })
         : Promise.resolve(),
     ]);
   }

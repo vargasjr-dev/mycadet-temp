@@ -2,8 +2,9 @@
  * The app bundle's local-mode seam: typed wrappers over the `window.cadet`
  * local-mode bridge, the only local-mode transport this bundle has. Web's
  * twin module (clients/web/src/runtime/local-mode-host.ts) falls back to
- * same-origin `/assistant/__local/*` HTTP routes when no bridge exists;
- * the app bundle is never served by a web dev server or a local host, so
+ * same-origin `/v1` HTTP routes at the conductor's shapes when no bridge
+ * exists; the app bundle is never served by a web dev server or a local
+ * host, so
  * there is no HTTP arm here — availability is the bridge itself, detected
  * on the pairing channel so an older shell degrades to a structured
  * "unsupported" error instead of a thrown invoke.

@@ -49,7 +49,7 @@ test("local browser hosts receive the same cloud-session POST", async () => {
   requests.mockResolvedValue(new Response('{"ok":true}'));
   expect(readInjectedConfig()?.cloudUrl).toBe("https://mycadet.ai");
   expect(await registerLocalCloudSession("session123")).toBe(true);
-  expect(requests).toHaveBeenCalledWith("/assistant/__local/cloud-session", {
+  expect(requests).toHaveBeenCalledWith("/v1/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: '{"token":"session123"}',

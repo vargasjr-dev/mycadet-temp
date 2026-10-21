@@ -638,11 +638,6 @@ class AssistantLifecycleService {
     if (isServedGatewayRuntime()) {
       ingressUrl = getRemoteGatewayIngressUrl();
     } else {
-      // The scoped data plane is plain same-origin `/v1` — the serving host
-      // routes it by the id in the path — so the slot keeps the bare origin
-      // it already has. The selected entry still resolves the active id and
-      // the credential split: paired gateways carry no renderer token, the
-      // trusted host injects its own bearer.
       const assistant = getSelectedAssistant();
       if (getAuthGatewayIngressUrl(assistant) != null) {
         resolvedAssistantId = assistant?.assistantId ?? resolvedAssistantId;
