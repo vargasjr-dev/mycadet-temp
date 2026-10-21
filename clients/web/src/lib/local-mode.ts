@@ -381,21 +381,21 @@ export function hasAssistants(): boolean {
 /**
  * A local-kind assistant, by origin: a plain on-machine assistant the web client
  * drives through its full set of local lifecycle flows (wake, local retire) —
- * cloud `"local"`. (Legacy entries that predate the `cloud` field are normalized
- * to `"local"` at the parse seam, so `cloud` is always set by the time it
- * reaches here.) Identity only — whether it currently has a reachable gateway is
- * a separate, connect-time question (see `getLocalGatewayUrl`).
+ * cloud `"local"` without the connect-import flag (a paired entry's cloud
+ * defaults to `"local"` too, so the flag is what excludes it here). Identity
+ * only — whether it currently has a reachable gateway is a separate,
+ * connect-time question (see `getLocalGatewayUrl`).
  *
  * Deliberately excludes the externally-managed container runtimes (`docker`,
- * `apple-container`) and remote self-hosted clouds (`paired`/`gcp`/`aws`/
- * `custom`, reached at their own `runtimeUrl`), along with platform (`cadet`):
- * the web client manages none of those through its lifecycle flows. Docker
- * instances ARE still reachable over the local gateway proxy — that broader,
+ * `apple-container`), the remote self-hosted cloud (`custom`, reached at its
+ * own `runtimeUrl`), platform (`cloud`), and paired connect-imports: the web
+ * client manages none of those through its lifecycle flows. Docker instances
+ * ARE still reachable over the local gateway proxy — that broader,
  * connect-only set is {@link isLocalGatewayAssistant}. See the `KNOWN_CLOUDS`
  * taxonomy in `@mycadet/local-mode/contract`.
  */
 export function isLocalAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "local";
+  return a.cloud === "local" && a.paired !== true;
 }
 
 /**
@@ -410,10 +410,11 @@ export function isLocalAssistant(a: LockfileAssistant): boolean {
  * the lifecycle flows (wake, local retire), which stay `cloud === "local"`.
  * Excludes `apple-container` (its entries are managed by the macOS app and
  * record no renderer-resolvable loopback gateway), the remote self-hosted
- * clouds, and platform (`cadet`).
+ * clouds, platform (`cloud`), and paired connect-imports (whose defaulted
+ * cloud reads "local" — the flag is what excludes them).
  */
 export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
-  return isLoopbackGatewayCloud(a.cloud);
+  return isLoopbackGatewayCloud(a.cloud) && a.paired !== true;
 }
 
 export function isCloudAssistant(a: LockfileAssistant): boolean {

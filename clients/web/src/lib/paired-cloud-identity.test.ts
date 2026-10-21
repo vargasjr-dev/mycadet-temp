@@ -137,7 +137,7 @@ describe("resolvePairedAssistantCloudId", () => {
     ["removed", () => (lockfileEntry = undefined)],
     [
       "no longer paired",
-      () => (lockfileEntry = { ...pairedEntry, cloud: "local" }),
+      () => (lockfileEntry = { ...pairedEntry, paired: false }),
     ],
     [
       "retargeted",

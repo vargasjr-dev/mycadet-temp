@@ -80,7 +80,7 @@ describe("setFromLockfile", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("cadet");
+    expect(entry.cloud).toBe("cloud");
     expect(entry.isCloudHosted).toBe(true);
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(true);
@@ -303,7 +303,7 @@ describe("upsertFromApi", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.isPaired).toBe(true);
     expect(entry.runtimeUrl).toBe("https://desk.example.com");
-    expect(entry.cloud).toBe("paired");
+    expect(entry.cloud).toBe("local");
     // The API's is_local claim must not reclassify a paired entry.
     expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(false);
@@ -351,7 +351,7 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("cadet");
+    expect(entry.cloud).toBe("cloud");
     expect(entry.organizationId).toBe("org-1");
     expect(entry.isActiveLockfileAssistant).toBe(false);
 

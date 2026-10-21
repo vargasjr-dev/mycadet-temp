@@ -209,9 +209,16 @@ export function isPairedAssistant(entry: { paired?: boolean }): boolean {
 
 /**
  * An assistant connectable over this machine's local gateway proxy (a
- * plain on-machine assistant or a local Docker instance). The lifecycle
- * set (`wake`, local retire) is narrower — `cloud === "local"` only.
+ * plain on-machine assistant or a local Docker instance — never a paired
+ * connect-import, whose defaulted cloud reads "local"; the flag excludes it).
+ * The lifecycle set (`wake`, local retire) is narrower — `cloud === "local"`
+ * without the flag only.
  */
-export function isLocalGatewayAssistant(entry: { cloud?: Cloud }): boolean {
-  return isLoopbackGatewayCloud(entry.cloud ?? "local");
+export function isLocalGatewayAssistant(entry: {
+  cloud?: Cloud;
+  paired?: boolean;
+}): boolean {
+  return (
+    isLoopbackGatewayCloud(entry.cloud ?? "local") && entry.paired !== true
+  );
 }
