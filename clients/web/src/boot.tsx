@@ -27,6 +27,7 @@ import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { setupCloudAssistantsSync } from "@/assistant/cloud-assistants-sync";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
+import { projectAuthStoreOntoSeam } from "@/stores/gateway-session-store";
 import { setupOrganizationStore } from "@/stores/organization-store";
 import { createBrowserRouter } from "react-router";
 
@@ -88,8 +89,14 @@ async function boot(router: Router) {
   setupRemoteGatewayNavBridge();
   if (isLocalClient()) {
     await loadLockfile();
+    // The seam observes the store's state machine (TEMPORARY projection —
+    // dies with the store): it must be subscribed before the first session
+    // write so no consumer of the seam misses a transition. The projection
+    // lives for the page's lifetime, like the other setup* calls here.
+    projectAuthStoreOntoSeam();
     await useAuthStore.getState().initSession();
   } else {
+    projectAuthStoreOntoSeam();
     useAuthStore.getState().initSession();
   }
   setupAuthListeners();

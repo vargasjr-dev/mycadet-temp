@@ -30,11 +30,8 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import {
-  useAuthStore,
-  useIsSessionInitializing,
-  useHasCloudSession,
-} from "@/stores/auth-store";
+import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/stores/gateway-session-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";

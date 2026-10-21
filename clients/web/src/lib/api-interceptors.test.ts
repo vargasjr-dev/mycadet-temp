@@ -87,12 +87,43 @@ const mockAuthState: {
 let whenCloudSessionSettledImpl: () => Promise<void> = async () => {};
 const whenCloudSessionSettledMock = mock(() => whenCloudSessionSettledImpl());
 
+// The interceptor's gates read the gateway session seam, which in
+// production observes the store's machine through the TEMPORARY projection.
+// The test-side equivalent: the machine mock's getState syncs the seam mock
+// on every read, so the recovery suite keeps driving mockAuthState's
+// sessionStatus/cloudSession and the seam mirrors it — same mapping, same
+// timing as the projection's synchronous subscription.
+const mockSeamState = {
+  settled: false,
+  live: false,
+  cloudLive: false,
+  cloudSettled: true,
+  identityKey: null as string | null,
+};
+
+function syncSeamFromMachine() {
+  mockSeamState.settled = mockAuthState.sessionStatus !== "initializing";
+  mockSeamState.live = mockAuthState.sessionStatus === "authenticated";
+  mockSeamState.cloudLive = mockAuthState.cloudSession === "present";
+  mockSeamState.cloudSettled = mockAuthState.cloudSession !== "unknown";
+}
+
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
-    getState: () => mockAuthState,
+    getState: () => {
+      syncSeamFromMachine();
+      return mockAuthState;
+    },
     subscribe: () => () => {},
   },
   whenCloudSessionSettled: whenCloudSessionSettledMock,
+}));
+
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: {
+    getState: () => mockSeamState,
+    subscribe: () => () => {},
+  },
 }));
 
 const hardNavigateMock = mock((_url: string) => {});
@@ -2173,6 +2204,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   function armUnrefundedRefresh() {
     const refreshSession = mock(async () => {
       mockAuthState.cloudSession = "unknown";
+      syncSeamFromMachine();
       return true;
     });
     mockAuthState.refreshSession = refreshSession;
@@ -2188,7 +2220,9 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
     mockAuthState.sessionStatus = "authenticated";
     mockAuthState.cloudSession = "present";
+    syncSeamFromMachine();
     mockAuthState.refreshSession = mock(async () => true);
+    syncSeamFromMachine();
     whenCloudSessionSettledImpl = async () => {};
     hardNavigateMock.mockClear();
   });
@@ -2206,8 +2240,10 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   /** Drive one full rejection→recovery round trip against a dead session. */
   const rejectOnce = async (): Promise<void> => {
     mockAuthState.sessionStatus = "authenticated";
+    syncSeamFromMachine();
     mockAuthState.refreshSession = mock(async () => {
       mockAuthState.sessionStatus = "unauthenticated";
+      syncSeamFromMachine();
       return false;
     });
     // Keep the recovery cooldown and budget out of redirect-budget tests:
@@ -2222,6 +2258,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   test("401 while authenticated re-verifies; a dead session bounces to the pairing page", async () => {
     const refreshSession = mock(async () => {
       mockAuthState.sessionStatus = "unauthenticated";
+      syncSeamFromMachine();
       return false;
     });
     mockAuthState.refreshSession = refreshSession;
@@ -2246,6 +2283,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     });
     const refreshSession = mock(async () => {
       mockAuthState.sessionStatus = "unauthenticated";
+      syncSeamFromMachine();
       return false;
     });
     mockAuthState.refreshSession = refreshSession;
@@ -2296,6 +2334,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 
     for (const status of ["initializing", "unauthenticated"] as const) {
       mockAuthState.sessionStatus = status;
+      syncSeamFromMachine();
       cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
     }
     await flush();
@@ -2361,6 +2400,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     expect(hardNavigateMock).not.toHaveBeenCalled();
 
     mockAuthState.cloudSession = "present";
+    syncSeamFromMachine();
     cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
     expect(sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY)).toBeNull();
 
@@ -2373,6 +2413,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     // screen loads one: `AccountLayout` syncs client feature flags. Treating
     // that as proof of a live session would refill the budget on every bounce.
     mockAuthState.cloudSession = "absent";
+    syncSeamFromMachine();
     sessionStorage.setItem(
       PLATFORM_AUTH_REDIRECT_KEY,
       String(PLATFORM_AUTH_MAX_REDIRECTS),
@@ -2390,6 +2431,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
   test("a self-hosted gateway 2xx does not restore the cloud budget", async () => {
     setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
     mockAuthState.cloudSession = "present";
+    syncSeamFromMachine();
     sessionStorage.setItem(
       PLATFORM_AUTH_REDIRECT_KEY,
       String(PLATFORM_AUTH_MAX_REDIRECTS),
@@ -2439,6 +2481,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 
   test("a settled-absent platform session never triggers recovery", async () => {
     mockAuthState.cloudSession = "absent";
+    syncSeamFromMachine();
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
@@ -2454,6 +2497,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     // this same rejection evidence, so spending a claim here would only nest
     // a redundant refreshSession cycle on every dead-cookie boot.
     mockAuthState.cloudSession = "unknown";
+    syncSeamFromMachine();
     const refreshSession = mock(async () => true);
     mockAuthState.refreshSession = refreshSession;
 
@@ -2487,6 +2531,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
     // Each round expires the cooldown so only the budget can stop it.
     for (let i = 0; i < PLATFORM_RECOVERY_MAX_ATTEMPTS + 1; i++) {
       mockAuthState.cloudSession = "present";
+      syncSeamFromMachine();
       expireRecoveryCooldown();
       cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
       await flush();
@@ -2542,6 +2587,7 @@ describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
 
     // Inside the cooldown a rejection cannot recover.
     mockAuthState.cloudSession = "present";
+    syncSeamFromMachine();
     cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
     await flush();
     expect(refreshSession).toHaveBeenCalledTimes(1);

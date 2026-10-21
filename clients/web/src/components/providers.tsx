@@ -29,11 +29,8 @@ import { ProfileQuickAddProvider } from "@/components/profile-quick-add-provider
 import { useNativeLaunchScreenReady } from "@/hooks/use-native-launch-screen-ready";
 import { installAssetQueryDiagnostics } from "@/lib/asset-query-diagnostics";
 import { installQueryPressureProbe } from "@/lib/commit-pressure";
-import {
-  useAuthStore,
-  useIsAuthenticated,
-  useIsSessionInitializing,
-} from "@/stores/auth-store";
+import { useAuthStore, useIsAuthenticated } from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/stores/gateway-session-store";
 import { useRequestScopeKey } from "@/stores/request-scope";
 import { queryRetryDelay, shouldRetryQuery } from "@/utils/query-retry";
 

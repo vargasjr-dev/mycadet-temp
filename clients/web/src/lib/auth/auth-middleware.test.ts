@@ -87,9 +87,14 @@ import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import {
+  projectAuthStoreOntoSeam,
+  useGatewaySessionStore,
+} from "@/stores/gateway-session-store";
 import { routes } from "@/utils/routes";
 
 const initialAuthState = useAuthStore.getState();
+let unproject: (() => void) | undefined;
 const fakeUser = { id: "user-123" } as AuthUser;
 
 const localAssistant: LockfileAssistant = {
@@ -212,6 +217,10 @@ beforeEach(() => {
   revalidateMock.mockClear();
   liveRouter = null;
   useAuthStore.setState(initialAuthState, true);
+  // The middleware decides on the gateway session seam, which observes the
+  // store's state machine through the TEMPORARY projection — wire it per
+  // test (and detach per test) so store-driven pins land on the seam.
+  unproject = projectAuthStoreOntoSeam();
   useResolvedAssistantsStore.setState({
     assistants: [],
     activeAssistantId: null,
@@ -227,6 +236,14 @@ afterEach(async () => {
   useAuthStore.setState({ cloudSession: "absent" });
   await tick();
   useAuthStore.setState(initialAuthState, true);
+  unproject?.();
+  unproject = undefined;
+  useGatewaySessionStore.setState({
+    settled: false,
+    live: false,
+    cloudLive: false,
+    identityKey: null,
+  });
 });
 
 describe("authMiddleware — local-mode onboarding fork", () => {

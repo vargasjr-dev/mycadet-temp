@@ -23,7 +23,8 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 }));
 
 const { AppProviders } = await import("@/components/providers");
-const { useAuthStore } = await import("@/stores/auth-store");
+const { useGatewaySessionStore } =
+  await import("@/stores/gateway-session-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
 
 const ORGANIZATION_ID = "org-abc";
@@ -77,17 +78,14 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
-  useAuthStore.setState({
-    sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "user-123",
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
+  // The cache scope keys off the gateway session seam: a live session under
+  // a stable assistant/guardian identity. The platform user is gone.
+  useGatewaySessionStore.setState({
+    settled: true,
+    live: true,
+    cloudLive: true,
+    cloudSettled: true,
+    identityKey: "assistant-123",
   });
   useOrganizationStore.setState({
     organizations: [],
@@ -110,10 +108,11 @@ describe("AppProviders cache scope", () => {
       observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
     const previousEvents = assetEvents();
-    const previousUser = useAuthStore.getState().user;
     cleanup();
 
-    useAuthStore.setState({ sessionStatus: "initializing", user: null });
+    // The reload's initializing window: unsettled, but the identity the
+    // reload will resolve to is already the seam's.
+    useGatewaySessionStore.setState({ settled: false, live: false });
     renderProviders();
     expect(assetEvents()).toEqual(previousEvents);
     await expect(
@@ -122,10 +121,7 @@ describe("AppProviders cache scope", () => {
     expect(assetEvents()).toEqual(previousEvents);
 
     act(() => {
-      useAuthStore.setState({
-        sessionStatus: "authenticated",
-        user: previousUser,
-      });
+      useGatewaySessionStore.setState({ settled: true, live: true });
     });
     expect(assetEvents()).toEqual(previousEvents);
     await expect(
@@ -143,21 +139,22 @@ describe("AppProviders cache scope", () => {
         observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
       ).rejects.toThrow();
       const previousEvents = assetEvents();
-      const previousUser = useAuthStore.getState().user!;
       cleanup();
 
-      useAuthStore.setState({ sessionStatus: "initializing", user: null });
+      useGatewaySessionStore.setState({ settled: false, live: false });
       renderProviders();
       expect(assetEvents()).toEqual(previousEvents);
 
       act(() => {
-        useAuthStore.setState(
+        useGatewaySessionStore.setState(
           outcome === "another user"
-            ? {
-                sessionStatus: "authenticated",
-                user: { ...previousUser, id: "user-456" },
-              }
-            : { sessionStatus: "unauthenticated", user: null },
+            ? { settled: true, live: true, identityKey: "assistant-456" }
+            : {
+                settled: true,
+                live: false,
+                cloudLive: false,
+                identityKey: null,
+              },
         );
       });
       expect(assetEvents()).toHaveLength(0);

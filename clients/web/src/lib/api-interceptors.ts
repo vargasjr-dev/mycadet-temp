@@ -66,6 +66,7 @@ import { getElectronSessionToken } from "@/runtime/session-token";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   hasLiveCloudSession,
   isAuthenticated,
@@ -1094,13 +1095,10 @@ async function recoverFromCloudSessionRejection(): Promise<void> {
     // refreshSession may fire-and-forget the cloud probe; hold the latch
     // until it settles so the probe's own rejections cannot re-enter.
     await whenCloudSessionSettled();
-    if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
+    if (useGatewaySessionStore.getState().cloudLive) {
       refundPlatformRecoveryAttempt();
     }
-    if (
-      !isAuthenticated(useAuthStore.getState().sessionStatus) &&
-      claimCloudAuthRedirect()
-    ) {
+    if (!useGatewaySessionStore.getState().live && claimCloudAuthRedirect()) {
       hardNavigate(routes.remotePair);
     }
   } finally {
@@ -1149,7 +1147,7 @@ export function cloudAuthRecoveryInterceptor(response: Response): Response {
           clearPlatformRecoveryBudgetIfHealed(pathname);
         }
       }
-      if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
+      if (useGatewaySessionStore.getState().cloudLive) {
         clearCloudAuthRedirectBudget();
       }
     }
@@ -1164,14 +1162,14 @@ export function cloudAuthRecoveryInterceptor(response: Response): Response {
   if (cloudAuthRecoveryFired) {
     return response;
   }
-  const { sessionStatus, cloudSession } = useAuthStore.getState();
-  if (!isAuthenticated(sessionStatus)) {
+  const { live, cloudLive } = useGatewaySessionStore.getState();
+  if (!live) {
     return response;
   }
   if (fromSelfHostedGateway) {
     return response;
   }
-  if (!hasLiveCloudSession(cloudSession)) {
+  if (!cloudLive) {
     return response;
   }
   const rejectedPathname = responsePathname(response);

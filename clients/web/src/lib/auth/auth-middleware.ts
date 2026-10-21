@@ -1,10 +1,7 @@
-import {
-  redirect,
-  createContext as createRouterContext,
-  type MiddlewareFunction,
-} from "react-router";
+import { redirect, type MiddlewareFunction } from "react-router";
 
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { isAuthenticated, isSessionSettled } from "@/stores/session-status";
 import { isLocalClient, hasAssistants } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
@@ -13,8 +10,6 @@ import { captureError } from "@/lib/error-reporting/capture-error";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { whenStoreState } from "@/utils/when-store-state";
-
-export const authUserContext = createRouterContext<AuthUser | null>(null);
 
 const PLATFORM_SESSION_PROBE_TIMEOUT_MS = 5_000;
 const STATE_HYDRATION_TIMEOUT_MS = 5_000;
@@ -128,11 +123,13 @@ const resolveWithGuard = async (
       isLocalClient() &&
       (!hasAssistants() || decision.waitFor === "cloud-session")
     ) {
-      await whenStoreState(useAuthStore, (s) => s.cloudSession !== "unknown", {
+      // The probe's settle surfaces through the seam's `cloudSettled` (the
+      // projection mirrors it from the store's machine).
+      await whenStoreState(useGatewaySessionStore, (s) => s.cloudSettled, {
         timeoutMs: PLATFORM_SESSION_PROBE_TIMEOUT_MS,
       });
       platformProbeStillUnknown =
-        useAuthStore.getState().cloudSession === "unknown";
+        !useGatewaySessionStore.getState().cloudSettled;
       if (platformProbeStillUnknown) {
         revalidateWhenPlatformProbeSettles();
       }
@@ -194,6 +191,5 @@ const resolveWithGuard = async (
   // Reached only once every wait above has resolved or timed out, so this mark
   // is the cost of the whole serialized guard (session probe, consent
   // hydration, assistants hydration) as one number.
-  context.set(authUserContext, useAuthStore.getState().user);
   return next();
 };

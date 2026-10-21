@@ -1,5 +1,4 @@
-import { useAuthStore } from "@/stores/auth-store";
-import { isSessionSettled, isAuthenticated } from "@/stores/session-status";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
@@ -44,7 +43,11 @@ function hasCloudHostedAssistant(assistants: ResolvedAssistant[]): boolean {
 export function buildNavigationState(
   overrides?: Partial<NavigationState>,
 ): NavigationState {
-  const { sessionStatus, cloudSession } = useAuthStore.getState();
+  // The gateway session seam is the one session source: `live` is the
+  // device-or-user session question, `cloudLive` the resolver's cloud
+  // vocabulary until the billing slice retires it.
+  const { settled, live, cloudLive, cloudSettled } =
+    useGatewaySessionStore.getState();
   const { assistants, assistantsHydrated } =
     useResolvedAssistantsStore.getState();
   // The persisted key rather than the store slice: this runs inside route
@@ -60,14 +63,12 @@ export function buildNavigationState(
     isGatewayAuth: isGatewayAuthMode(),
     hasAssistants: assistants.length > 0,
     hasCloudHostedAssistant: hasCloudHostedAssistant(assistants),
-    sessionSettled: isSessionSettled(sessionStatus),
-    // `isAuthenticated` mirrors `sessionStatus`. The local gateway is the sole
-    // session authority (#35152), so a reachable local user is already
-    // `"authenticated"` — a cloud `getSession()` 401 drops only
-    // `cloudSession`, never `sessionStatus` (see `probeCloudSession`).
-    // Reading the one source keeps this from drifting from `useIsAuthenticated()`.
-    isAuthenticated: isAuthenticated(sessionStatus),
-    cloudSession,
+    sessionSettled: settled,
+    // `isAuthenticated` mirrors the seam's `live` — the device-or-user
+    // session question. Reading the one source keeps this from drifting
+    // from `useIsAuthenticated()`.
+    isAuthenticated: live,
+    cloudSession: !cloudSettled ? "unknown" : cloudLive ? "present" : "absent",
     tosAccepted: readTosAccepted(),
     hasConsentRecord: readHasConsentRecord(),
     privacyConsent: readPrivacyConsent(),
