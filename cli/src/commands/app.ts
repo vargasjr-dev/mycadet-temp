@@ -13,10 +13,11 @@ import {
   toLocalTunnelTarget,
 } from "../lib/tunnel.js";
 import { cliCommand } from "../lib/cli-name.js";
+import { printRootProcessDetail } from "./ps.js";
 
 function printAppHelp(): void {
   console.log(
-    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop`,
+    `Usage: ${cliCommand()} app start [options]\n       ${cliCommand()} app stop\n       ${cliCommand()} app status`,
   );
   console.log("");
   console.log(
@@ -106,6 +107,10 @@ export const app = Object.assign(
     }
     if (subcommand === "start") return startAppEdge();
     if (subcommand === "stop") return stopAppEdge();
+    if (subcommand === "status") {
+      await printRootProcessDetail("app");
+      return;
+    }
     console.error(`Error: Unknown argument '${subcommand}'.`);
     printAppHelp();
   },
