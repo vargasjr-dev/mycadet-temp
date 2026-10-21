@@ -440,8 +440,6 @@ describe("buildIngressNginxConfig", () => {
       "location = /v1/remote-web/pairing-requests/approve/ { return 404; }",
       "location = /v1/remote-web/pairing-requests/deny { return 404; }",
       "location = /v1/remote-web/pairing-requests/deny/ { return 404; }",
-      "location ^~ /assistant/__local/ { return 404; }",
-      "location ^~ /assistant/__gateway/ { return 404; }",
     ];
     for (const location of deniedLocations) {
       expect(remoteConf).toContain(location);
@@ -2323,9 +2321,6 @@ describe("the app shell edge", () => {
       expect(conf).toContain(`location = ${route} { return 404; }`);
       expect(conf).toContain(`location = /web${route} { return 404; }`);
     }
-    expect(conf).toContain(
-      "location ^~ /web/assistant/__local/ { return 404; }",
-    );
   });
 
   test("proxies runtime API paths verbatim for both surfaces", () => {

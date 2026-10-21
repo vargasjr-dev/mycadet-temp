@@ -132,12 +132,6 @@ const SENSITIVE_GATEWAY_ROUTES = [
   "/v1/shared/invites/redeem",
 ] as const;
 
-/** Sensitive path prefixes, blocked with a prefix match. */
-const SENSITIVE_GATEWAY_PREFIXES = [
-  "/assistant/__local/",
-  "/assistant/__gateway/",
-] as const;
-
 /**
  * Denylist locations for gateway paths under one public prefix. The edge
  * serves from the origin root (web mode) and — in app mode — from the
@@ -151,10 +145,7 @@ function denylistLocations(prefix = ""): string {
       `    location = ${prefix}${path} { return 404; }`;
     return `${block(route)}\n${block(`${route}/`)}`;
   });
-  const prefixes = SENSITIVE_GATEWAY_PREFIXES.map((route) => {
-    return `    location ^~ ${prefix}${route} { return 404; }`;
-  });
-  return [...exact, ...prefixes].join("\n");
+  return exact.join("\n");
 }
 
 const DENYLIST_LOCATIONS = denylistLocations();
