@@ -263,44 +263,6 @@ export const ChoiceSurfaceDataSchema = z.object({
 });
 export type ChoiceSurfaceData = z.infer<typeof ChoiceSurfaceDataSchema>;
 
-/**
- * Requested OAuth scopes for an `oauth_connect` surface.
- *
- * Unlike `FileUploadAcceptedTypesSchema`, a bare string is NOT split on
- * commas: OAuth scopes are opaque URIs, so only arrays are accepted.
- * Entries are stringified and trimmed, blanks are dropped, and an empty
- * result or any non-array value collapses to `undefined` (use defaults).
- */
-const RequestedScopesSchema = z.preprocess(
-  (value) => (Array.isArray(value) ? cleanedStringEntries(value) : undefined),
-  z.array(z.string()).optional(),
-);
-
-export const OAuthConnectSurfaceDataSchema = z.object({
-  /** OAuth provider key from the cloud provider catalog, e.g. "google". */
-  providerKey: z
-    .preprocess(
-      (value) => (typeof value === "string" ? value.trim() : value),
-      z.string(),
-    )
-    .catch(""),
-  /**
-   * Optional OAuth scopes to request for the cloud connection. A full
-   * replacement set: when present, the cloud uses exactly these scopes
-   * instead of its defaults (it does not merge). Omit to use the cloud's
-   * default scopes for the provider.
-   */
-  requestedScopes: RequestedScopesSchema,
-  /** Optional display label. The client falls back to the provider catalog. */
-  displayName: tolerantString(),
-  /** Optional helper text. The client falls back to the provider catalog. */
-  description: tolerantString(),
-  /** Optional provider logo URL. The client falls back to the provider catalog. */
-  logoUrl: z.string().nullable().optional().catch(undefined),
-});
-export type OAuthConnectSurfaceData = z.infer<
-  typeof OAuthConnectSurfaceDataSchema
->;
 
 export const FormFieldSchema = z.object({
   id: z.string().catch(""),
@@ -691,7 +653,6 @@ export const SURFACE_TYPES = [
   "channel_setup",
   "choice",
   "copy_block",
-  "oauth_connect",
   "form",
   "list",
   "table",
@@ -754,7 +715,6 @@ export type SurfaceData =
   | CardSurfaceData
   | ChoiceSurfaceData
   | CopyBlockSurfaceData
-  | OAuthConnectSurfaceData
   | FormSurfaceData
   | ListSurfaceData
   | TableSurfaceData
@@ -786,7 +746,6 @@ export interface SurfaceDataByType {
   channel_setup: Record<string, unknown>;
   choice: ChoiceSurfaceData;
   copy_block: CopyBlockSurfaceData;
-  oauth_connect: OAuthConnectSurfaceData;
   form: FormSurfaceData;
   list: ListSurfaceData;
   table: TableSurfaceData;
@@ -820,7 +779,6 @@ export const SURFACE_DATA_SCHEMAS: {
   channel_setup: z.record(z.string(), z.unknown()),
   choice: ChoiceSurfaceDataSchema,
   copy_block: CopyBlockSurfaceDataSchema,
-  oauth_connect: OAuthConnectSurfaceDataSchema,
   form: FormSurfaceDataSchema,
   list: ListSurfaceDataSchema,
   table: TableSurfaceDataSchema,

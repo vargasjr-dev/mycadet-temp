@@ -15,7 +15,6 @@ import {
   MODEL_INVOKABLE_SURFACE_TYPES,
   normalizeCopyBlockShowData,
   normalizeVisualShowData,
-  OAuthConnectSurfaceDataSchema,
   safeParseSurfaceData,
   SurfaceTypeSchema,
 } from "../api/surfaces.js";
@@ -1859,7 +1858,6 @@ function logSurfaceActionRejected(
 // accepted (they never accept further actions).
 const ONE_SHOT_SURFACE_TYPES = [
   "choice",
-  "oauth_connect",
   "form",
   "confirmation",
   "file_upload",
@@ -2681,15 +2679,6 @@ export function refreshSurfacesForApp(
   return refreshed;
 }
 
-/**
- * Strip a leading "Connect "/"Connected " verb from an OAuth provider label so
- * a supplied displayName like "Connect Gmail" doesn't double the verb when
- * prefixed (e.g. avoids "Connected Connect Gmail").
- */
-function stripConnectVerb(label: string): string {
-  return label.replace(/^connect(?:ed)?\s+/i, "");
-}
-
 export function buildCompletionSummary(
   surfaceType: string | undefined,
   actionId: string,
@@ -2749,34 +2738,6 @@ export function buildCompletionSummary(
         .join(", ")}`;
     }
     return `User chose: ${actionId}`;
-  }
-  if (surfaceType === "oauth_connect") {
-    const providerLabel =
-      typeof data?.providerLabel === "string"
-        ? data.providerLabel
-        : typeof data?.displayName === "string"
-          ? data.displayName
-          : typeof data?.providerKey === "string"
-            ? data.providerKey
-            : "OAuth";
-    // Strip the verb once so every branch (connected/cancelled/failed/
-    // fallback) is normalized — a displayName like "Connect Gmail" must not
-    // produce "Cancelled Connect Gmail connection".
-    const label = stripConnectVerb(providerLabel);
-    const accountLabel =
-      typeof data?.accountLabel === "string" ? data.accountLabel : undefined;
-    if (actionId === "connect" || data?.status === "connected") {
-      return accountLabel
-        ? `Connected ${label}: ${accountLabel}`
-        : `Connected ${label}`;
-    }
-    if (actionId === "cancel" || data?.status === "cancelled") {
-      return `Cancelled ${label} connection`;
-    }
-    if (data?.status === "error") {
-      return `${label} connection failed`;
-    }
-    return `${label} connection ${actionId}`;
   }
   if (surfaceType === "list" && data) {
     const selectedIds = data.selectedIds as string[] | undefined;
@@ -2860,34 +2821,6 @@ function buildUserFacingLabel(
     }
     return "Selected";
   }
-  if (surfaceType === "oauth_connect") {
-    const providerLabel =
-      typeof data?.providerLabel === "string"
-        ? data.providerLabel
-        : typeof data?.displayName === "string"
-          ? data.displayName
-          : typeof data?.providerKey === "string"
-            ? data.providerKey
-            : "OAuth";
-    // Strip the verb once so every branch is normalized (e.g. a displayName
-    // like "Connect Gmail" must not produce "Connect Gmail connection failed").
-    const label = stripConnectVerb(providerLabel);
-    const accountLabel =
-      typeof data?.accountLabel === "string" ? data.accountLabel : undefined;
-    if (actionId === "connect" || data?.status === "connected") {
-      return accountLabel
-        ? `Connected ${label}: ${accountLabel}`
-        : `Connected ${label}`;
-    }
-    if (actionId === "cancel" || data?.status === "cancelled") {
-      return "Cancelled";
-    }
-    if (data?.status === "error") {
-      return `${label} connection failed`;
-    }
-    return `Selected: ${actionId}`;
-  }
-
   // Table / list selection actions
   if (count) {
     const noun = count === 1 ? "item" : "items";
@@ -3378,7 +3311,7 @@ export async function surfaceProxyResolver(
     // copy_block, dynamic_page, and visual first run bespoke normalizers
     // that recover fields the model placed at the top level of the tool
     // input; the rest go straight through `safeParseSurfaceData`. Choice and
-    // oauth_connect parse into named bindings so their content guards below
+    // choice parse into named bindings so their content guards below
     // read typed data instead of re-narrowing the union.
     const cardData =
       surfaceType === "card"
@@ -3388,17 +3321,11 @@ export async function surfaceProxyResolver(
       surfaceType === "choice"
         ? ChoiceSurfaceDataSchema.parse(rawData)
         : undefined;
-    const oauthData =
-      surfaceType === "oauth_connect"
-        ? OAuthConnectSurfaceDataSchema.parse(rawData)
-        : undefined;
     const showPair: SurfaceShowPair =
       cardData !== undefined
         ? { surfaceType: "card", data: cardData }
         : choiceData !== undefined
           ? { surfaceType: "choice", data: choiceData }
-          : oauthData !== undefined
-            ? { surfaceType: "oauth_connect", data: oauthData }
             : surfaceType === "copy_block"
               ? {
                   surfaceType,
@@ -3475,12 +3402,6 @@ export async function surfaceProxyResolver(
           isError: true,
         };
       }
-    }
-    if (oauthData !== undefined && oauthData.providerKey.length === 0) {
-      return {
-        content: "oauth_connect surfaces require data.providerKey.",
-        isError: true,
-      };
     }
 
     const isInteractive =
