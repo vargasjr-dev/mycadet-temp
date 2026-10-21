@@ -183,7 +183,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -225,7 +225,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 80 },
+            resources: { gatewayPort: 80, daemonPort: 8501 },
           },
           {
             assistantId: "def-456",
@@ -274,7 +274,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -293,7 +293,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
           {
             assistantId: "def-456",
@@ -324,7 +324,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -345,7 +345,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
