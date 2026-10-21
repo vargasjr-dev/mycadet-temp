@@ -5,12 +5,6 @@ import {
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
 
-// The live-voice WS bypass resolves the entry's recorded loopback port from
-// the id-keyed proxy path; re-exported so voice modules share one import.
-export { getLoopbackGatewayPort };
-// The one id-keyed proxy-path producer, defined in the contract so the app
-// bundle (which never imports this module) shares it too.
-export { gatewayProxyUrl };
 import { readInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 

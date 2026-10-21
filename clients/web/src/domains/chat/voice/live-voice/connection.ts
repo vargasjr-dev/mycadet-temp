@@ -46,11 +46,8 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import {
-  getLockfileAssistant,
-  getLoopbackGatewayPort,
-  isPairedAssistant,
-} from "@/lib/local-mode";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import { getLockfileAssistant, isPairedAssistant } from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
