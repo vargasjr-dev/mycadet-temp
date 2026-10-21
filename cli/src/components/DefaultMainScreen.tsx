@@ -10,6 +10,7 @@ import { Box, render as inkRender, Text, useInput, useStdout } from "ink";
 
 import { HATCH_ART, HATCHED_EMOJI } from "../lib/constants";
 import { lookupAssistantByIdentifier } from "../lib/assistant-config";
+import { isPairedEntry } from "@mycadet/local-mode/contract";
 import { checkHealth } from "../lib/health-check";
 import {
   guardianTokenDueForRenewal,
@@ -182,8 +183,8 @@ function friendlyErrorMessage(status: number, body: string): string {
  * shared `auth` headers IN PLACE, returning true if the caller should retry.
  *
  * Scoped to paired assistants only (a remote assistant on another machine,
- * `cloud: "paired"`) — the local/docker TUI flow and platform sessions are left
- * untouched. Also self-gating: skips platform session auth (no `Authorization`
+ * derived from its remote runtimeUrl) — the local/docker TUI flow and platform
+ * sessions are left untouched. Also self-gating: skips platform session auth (no `Authorization`
  * header), ephemeral `--token` overrides (whose bearer won't match the store),
  * and access-only tokens. Because the TUI threads one shared `auth` object by
  * reference, mutating it here propagates to every later request and the SSE
@@ -211,7 +212,7 @@ export async function maybeRefreshAuthHeaders(
   // Only paired (remote-on-another-machine) assistants use refreshable pair
   // tokens; don't perturb the local/docker session flow.
   const lookup = lookupAssistantByIdentifier(assistantId);
-  if (lookup.status !== "found" || lookup.entry.paired !== true) {
+  if (lookup.status !== "found" || !isPairedEntry(lookup.entry)) {
     return false;
   }
 

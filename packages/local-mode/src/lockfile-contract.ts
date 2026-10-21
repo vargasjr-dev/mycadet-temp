@@ -19,6 +19,7 @@
  * path (see `lockfile.ts`); the validated value carries only the modeled,
  * renderer-safe shape.
  */
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { z } from "zod";
 
 /**
@@ -44,15 +45,14 @@ export const KNOWN_CLOUDS = [
   "cloud",
   "custom",
 ] as const;
-export type KnownCloud = (typeof KNOWN_CLOUDS)[number];
 
 /**
  * The topology values as one zod enum, shared by the lockfile schema (which
  * wraps it in a `catch`) and the clients' injected-config schema, so the two
  * can never drift.
  */
-export const CloudSchema = z.enum(KNOWN_CLOUDS);
-export type Cloud = z.infer<typeof CloudSchema>;
+export const RemoteSchema = z.enum(KNOWN_CLOUDS);
+export type Remote = z.infer<typeof RemoteSchema>;
 
 /**
  * Keys that must never cross the host→renderer boundary. Stripped from raw
@@ -161,9 +161,9 @@ export function pairedHostLabel(runtimeUrl: string | undefined): string {
  * Clouds whose gateway listens on a loopback port of this machine: the
  * on-machine daemon ("local") and local Docker instances ("docker").
  */
-export const LOOPBACK_GATEWAY_CLOUDS: readonly Cloud[] = ["local", "docker"];
+export const LOOPBACK_GATEWAY_CLOUDS: readonly Remote[] = ["local", "docker"];
 
-export function isLoopbackGatewayCloud(cloud: Cloud): boolean {
+export function isLoopbackGatewayCloud(cloud: Remote): boolean {
   return LOOPBACK_GATEWAY_CLOUDS.includes(cloud);
 }
 
@@ -224,7 +224,7 @@ export const LockfileAssistantSchema = z.object({
   assistantId: z.string(),
   name: z.string().optional(),
   /** Deployment topology; absent or unknown on-disk values parse as "local". */
-  cloud: CloudSchema.catch("local"),
+  cloud: RemoteSchema.catch("local"),
   runtimeUrl: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
@@ -246,12 +246,6 @@ export const LockfileAssistantSchema = z.object({
    * "Pair a device" card) default to it instead of asking the user to retype it.
    */
   ingressUrl: z.string().optional(),
-  /**
-   * The connect-import marker: this entry was created by pairing to a remote
-   * assistant from another machine (`cadet connect import`). Identity readers
-   * switch on this flag — the `cloud` value never encodes pairing.
-   */
-  paired: z.boolean().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
 });
 
@@ -268,6 +262,37 @@ export interface Lockfile {
 }
 
 /**
+ * Whether a URL's host is loopback, judged wide; false for unparseable URLs.
+ * Delegates to the shared pairing predicate so the lockfile's pairing
+ * derivation and the address checks in `@mycadet/service-contracts` judge a
+ * host by the same rules.
+ */
+export function isLoopbackUrl(url: string): boolean {
+  return isLoopbackPublicUrl(url);
+}
+
+/**
+ * Whether an entry is a connect-imported ("paired") remote assistant: a
+ * loopback-gateway cloud whose `runtimeUrl` points off this machine. The
+ * lockfile stores no pairing flag — `cloud` describes the assistant itself,
+ * and the client↔assistant relationship is derived from its addressing — so
+ * every reader judges paired-ness through this one predicate. An entry that
+ * fails the schema parse is never paired.
+ */
+export function isPairedEntry(entry: unknown): boolean {
+  const parsed = LockfileAssistantSchema.safeParse(entry);
+  if (!parsed.success) {
+    return false;
+  }
+  const { cloud, runtimeUrl } = parsed.data;
+  return (
+    isLoopbackGatewayCloud(cloud) &&
+    isUsableRuntimeUrl(runtimeUrl) &&
+    !isLoopbackUrl(runtimeUrl)
+  );
+}
+
+/**
  * Renderer-facing result of a lockfile write, returned across the host bridge.
  * Carries no HTTP-style status — hosts map that away because the renderer
  * surfaces failures by message alone.
@@ -276,26 +301,27 @@ export type LockfileWriteResult =
   | { ok: true; lockfile: Lockfile }
   | { ok: false; error: string };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+export const LockfileSchema = z.object({
+  assistants: z
+    .array(LockfileAssistantSchema.nullable().catch(null))
+    .catch([])
+    .transform((entries) =>
+      entries.filter((entry): entry is LockfileAssistant => entry !== null),
+    ),
+  activeAssistant: z.union([z.string(), z.null()]).catch(null),
+});
 
 /**
  * Coerce parsed JSON into a validated {@link Lockfile}. Total and non-throwing:
- * each assistant entry parses through {@link LockfileAssistantSchema} and an
- * entry that fails validation is dropped whole (one malformed entry can't
- * discard the file), a missing or non-array `assistants` becomes `[]`, and a
- * non-string `activeAssistant` becomes null.
+ * the whole file parses through {@link LockfileSchema} — an entry that fails
+ * validation is dropped whole (one malformed entry can't discard the file), a
+ * missing or non-array `assistants` becomes `[]`, a non-string
+ * `activeAssistant` becomes null, and a non-object root becomes an empty
+ * lockfile.
  */
 export function parseLockfile(raw: unknown): Lockfile {
-  const root = isRecord(raw) ? raw : {};
-  const rawAssistants = Array.isArray(root.assistants) ? root.assistants : [];
-  const assistants: LockfileAssistant[] = [];
-  for (const entry of rawAssistants) {
-    const parsed = LockfileAssistantSchema.safeParse(entry);
-    if (parsed.success) assistants.push(parsed.data);
-  }
-  const activeAssistant =
-    typeof root.activeAssistant === "string" ? root.activeAssistant : null;
-  return { assistants, activeAssistant };
+  const parsed = LockfileSchema.safeParse(raw);
+  return parsed.success
+    ? parsed.data
+    : { assistants: [], activeAssistant: null };
 }

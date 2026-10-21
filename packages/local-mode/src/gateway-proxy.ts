@@ -5,6 +5,7 @@ import {
   FLATTENED_FIRST_SEGMENTS,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
+  isPairedEntry,
   isUsableRuntimeUrl,
   LockfileAssistantSchema,
 } from "./lockfile-contract";
@@ -229,7 +230,8 @@ const MAX_GATEWAY_PORT = 65535;
  * Compute the id-keyed gateway-target map from a lockfile's assistant
  * entries. Each entry parses through {@link LockfileAssistantSchema}; an
  * entry that fails the parse (or carries no usable id) is skipped. A paired
- * entry (the `paired` connect-import flag) resolves to its recorded remote
+ * entry ({@link isPairedEntry} — a connect import, derived from its remote
+ * addressing, no stored flag) resolves to its recorded remote
  * `runtimeUrl` (usable http(s) only); a loopback-gateway cloud (`local`,
  * `docker`) resolves to its recorded loopback port via
  * {@link getLoopbackGatewayPort}. Everything else — the platform cloud,
@@ -249,11 +251,11 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!parsed.success) {
       continue;
     }
-    const { assistantId, cloud, paired, resources, runtimeUrl } = parsed.data;
+    const { assistantId, cloud, resources, runtimeUrl } = parsed.data;
     if (!assistantId) {
       continue;
     }
-    if (paired === true) {
+    if (isPairedEntry(parsed.data)) {
       if (isUsableRuntimeUrl(runtimeUrl)) {
         targets.set(assistantId, { kind: "remote", runtimeUrl });
       }

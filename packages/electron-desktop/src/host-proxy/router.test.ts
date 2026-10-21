@@ -1028,14 +1028,12 @@ describe("host-proxy-router", () => {
         {
           assistantId: "paired-https",
           cloud: "local",
-          paired: true,
           runtimeUrl: "https://tunnel.example.com",
           resources: { gatewayPort: 9001, daemonPort: 9002 },
         },
         {
           assistantId: "paired-http",
           cloud: "local",
-          paired: true,
           runtimeUrl: "http://192.0.2.10:7831",
         },
       ],

@@ -8,14 +8,15 @@ import {
   type WriteResult,
 } from "./lockfile";
 import { withLockfileLock } from "./lockfile-lock";
+import { isPairedEntry } from "./lockfile-contract";
 
 /**
  * Forget a paired assistant on this machine: remove its lockfile entry and
  * delete its stored guardian token. Client-side only, mirroring the CLI's
  * `cadet unpair`: the remote assistant itself is never touched (host-side
- * device revocation is `cadet devices`). Only pairing records (the `paired`
- * flag, set by `cadet connect import`) are forgettable this
- * way; local and cloud assistants go through retire.
+ * device revocation is `cadet devices`). Only pairing records (connect
+ * imports — a remote `runtimeUrl`, see {@link isPairedEntry}) are forgettable
+ * this way; local and cloud assistants go through retire.
  */
 export function unpairAssistant(
   lockfilePaths: string[],
@@ -49,7 +50,7 @@ function unpairAssistantLocked(
   if (!entry) {
     return { ok: false, status: 404, error: "No such assistant" };
   }
-  if (entry.paired !== true) {
+  if (!isPairedEntry(entry)) {
     return {
       ok: false,
       status: 400,

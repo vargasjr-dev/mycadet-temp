@@ -288,10 +288,10 @@ export const uninstall = Object.assign(
     }
 
     for (const entry of existing) {
-      if (entry.cloud === "apple-container" || entry.paired === true) {
-        const reason =
-          entry.cloud === "apple-container" ? "apple-container" : "paired";
-        console.log(`   Skipping '${entry.assistantId}' on ${reason} — its lifecycle is managed elsewhere.`);
+      if (entry.cloud === "apple-container") {
+        console.log(
+          `   Skipping '${entry.assistantId}' on apple-container — its lifecycle is managed elsewhere.`,
+        );
         continue;
       }
       try {

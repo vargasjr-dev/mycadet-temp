@@ -218,7 +218,6 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     const paired: LockfileAssistant = {
       assistantId: "paired-a",
       cloud: "local",
-      paired: true,
       runtimeUrl: "https://gw.example.com",
     } as LockfileAssistant;
     useLockfileStore.setState({

@@ -12,14 +12,16 @@ const UUID = "0f7c8b3e-2a41-4c1d-9b6e-1d2f3a4b5c6d";
 const pairedEntry: LockfileAssistant = {
   assistantId: "paired-remote",
   cloud: "local",
-  paired: true,
   runtimeUrl: "https://remote.example",
   hatchedAt: "2024-01-01T00:00:00Z",
 };
 
 let lockfileEntry: LockfileAssistant | undefined = pairedEntry;
 let pairedGatewayUrl: string | undefined = "/assistant/__gateway/paired-remote";
+import * as realLocalMode from "@/lib/local-mode";
+
 mock.module("@/lib/local-mode", () => ({
+  ...realLocalMode,
   getLockfileAssistant: () => lockfileEntry,
   getPairedGatewayUrl: () => pairedGatewayUrl,
 }));
@@ -137,7 +139,13 @@ describe("resolvePairedAssistantCloudId", () => {
     ["removed", () => (lockfileEntry = undefined)],
     [
       "no longer paired",
-      () => (lockfileEntry = { ...pairedEntry, paired: false }),
+      () =>
+        (lockfileEntry = {
+          ...pairedEntry,
+          // The entry stopped deriving as paired: its runtimeUrl went
+          // loopback, so it reads as a plain local assistant now.
+          runtimeUrl: "http://127.0.0.1:7830",
+        }),
     ],
     [
       "retargeted",

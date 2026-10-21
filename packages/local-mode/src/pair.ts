@@ -22,6 +22,7 @@ import {
   saveGuardianToken,
 } from "./guardian-token";
 import { readRawLockfile, upsertLockfileAssistant } from "./lockfile";
+import { isPairedEntry } from "./lockfile-contract";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -166,8 +167,9 @@ function findRawAssistant(
  * a duplicate under the {@link gatewayLabel} id and leave the original holding
  * stale credentials.
  *
- * Only a `paired: true` entry whose runtimeUrl names the same gateway is
- * adopted. The device id is untrusted bundle input, so an unmatched one would
+ * Only a paired entry (a connect import — its remote `runtimeUrl` is what
+ * marks it, see {@link isPairedEntry}) whose runtimeUrl names the same
+ * gateway is adopted. The device id is untrusted bundle input, so an unmatched one would
  * let a crafted bundle take over an unrelated pairing and repoint it at
  * another host; requiring the match means the adopted id is always one this
  * machine already minted for this gateway.
@@ -183,11 +185,10 @@ function findLegacyDeviceScopedId(
   }
   const legacyId = `paired-${slug}`;
   const existing = findRawAssistant(lockfilePaths, legacyId);
-  if (
-    existing?.paired !== true ||
-    typeof existing.runtimeUrl !== "string" ||
-    !existing.runtimeUrl
-  ) {
+  if (!existing || !isPairedEntry(existing)) {
+    return undefined;
+  }
+  if (typeof existing.runtimeUrl !== "string" || !existing.runtimeUrl) {
     return undefined;
   }
   try {
@@ -218,7 +219,7 @@ function refusePairedAssistantId(
       error: "Name must contain at least one alphanumeric character",
     };
   }
-  if (existing && existing.paired !== true) {
+  if (existing && !isPairedEntry(existing)) {
     return {
       ok: false,
       status: 409,
@@ -287,8 +288,8 @@ export function checkPairedAssistantName(
 
 /**
  * Register a pairing on this machine: persist the guardian token and upsert a
- * paired lockfile entry (`paired: true`), the write counterpart of
- * `unpairAssistant`.
+ * paired lockfile entry (its remote `runtimeUrl` is what marks it paired —
+ * {@link isPairedEntry}), the write counterpart of `unpairAssistant`.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -384,12 +385,9 @@ export function pairAssistant(
       // make them indistinguishable in a chooser.
       name: name ?? `paired (${label})`,
       runtimeUrl: credentials.gatewayUrl,
-      // Marks this entry as a connect-import so re-imports update in place,
-      // lifecycle/status commands (ps/wake/sleep) recognize it as a remote
-      // pairing rather than an on-machine process, and imports never silently
-      // overwrite a non-paired assistant (see guard above). Pairing is not a
-      // topology: the flag carries it, not `cloud`.
-      paired: true,
+      // No pairing flag is stored: paired-ness derives from this remote
+      // runtimeUrl ({@link isPairedEntry}), so re-imports update in place and
+      // lifecycle/status readers recognize the remote pairing without one.
       // A re-pair may point at a different gateway, so the cloud id the
       // web resolver cached for the old target is dropped; the upsert merge
       // would otherwise keep it and the resolver would never re-probe.

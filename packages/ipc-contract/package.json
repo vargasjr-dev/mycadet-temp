@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mycadet/avatar-manifest": "workspace:*",
+    "@mycadet/local-mode": "workspace:*",
     "@mycadet/service-contracts": "workspace:*"
   },
   "peerDependencies": {

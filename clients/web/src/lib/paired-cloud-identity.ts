@@ -1,5 +1,9 @@
 import { fetchCloudStatus, isUuid } from "@/lib/local-cloud-identity";
-import { getLockfileAssistant, getPairedGatewayUrl } from "@/lib/local-mode";
+import {
+  getLockfileAssistant,
+  getPairedGatewayUrl,
+  isPairedAssistant,
+} from "@/lib/local-mode";
 
 /**
  * One resolved UUID per paired target per session. A miss (unreachable,
@@ -74,7 +78,7 @@ async function fetchAndPersistPairedCloudId(
   const current = getLockfileAssistant(assistantId);
   if (
     !current ||
-    current.paired !== true ||
+    !isPairedAssistant(current) ||
     current.runtimeUrl !== entry.runtimeUrl
   ) {
     return null;

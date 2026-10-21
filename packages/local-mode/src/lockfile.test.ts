@@ -117,14 +117,19 @@ describe("getLockfileData", () => {
   });
 });
 
-// Hosts pass {paired} to getGuardianAccessToken so expired pairings get
-// re-pair guidance instead of hatch/wake; this pins the classification.
+// Hosts consult this so an expired pairing gets re-pair guidance instead of
+// hatch/wake; this pins the derivation — a remote runtimeUrl on a
+// loopback-cloud entry, never a stored flag.
 describe("isPairedLockfileEntry", () => {
-  test("classifies paired cloud entries and host pairing markers as paired", () => {
+  test("classifies remote-runtimeUrl entries as paired", () => {
     writeOnDisk({
       assistants: [
-        { assistantId: "paired-1", paired: true },
-        { assistantId: "paired-marker", cloud: "local", paired: true },
+        { assistantId: "paired-1", runtimeUrl: "https://h.example.com" },
+        {
+          assistantId: "paired-marker",
+          cloud: "local",
+          runtimeUrl: "https://other.example.com",
+        },
         { assistantId: "local-1", cloud: "local" },
       ],
       activeAssistant: "local-1",

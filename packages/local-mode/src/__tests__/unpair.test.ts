@@ -38,7 +38,7 @@ describe("unpairAssistant", () => {
   test("removes the paired entry, deletes its guardian token, and reassigns the active pointer", () => {
     writeLockfile({
       assistants: [
-        { assistantId: "paired-1", paired: true, runtimeUrl: "https://h" },
+        { assistantId: "paired-1", runtimeUrl: "https://h" },
         { assistantId: "local-1", cloud: "local", futureField: "keep-me" },
       ],
       activeAssistant: "paired-1",
@@ -69,7 +69,7 @@ describe("unpairAssistant", () => {
 
   test("removing the sole (active) entry leaves no active pointer", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: "paired-1",
     });
 
@@ -86,7 +86,7 @@ describe("unpairAssistant", () => {
   test("reassigns the active pointer past tolerated malformed entries", () => {
     writeLockfile({
       assistants: [
-        { assistantId: "paired-1", paired: true },
+        { assistantId: "paired-1", runtimeUrl: "https://h" },
         { notAnAssistant: true },
         { assistantId: "local-1", cloud: "local" },
       ],
@@ -104,7 +104,7 @@ describe("unpairAssistant", () => {
 
   test("a failed token delete aborts before touching the lockfile", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: "paired-1",
     });
     // A non-empty directory at the token path makes rmSync (non-recursive)
@@ -122,14 +122,14 @@ describe("unpairAssistant", () => {
     expect(result.error).toContain("guardian token");
     // The entry is untouched, so the unpair can be retried.
     expect(readLockfileFromDisk().assistants).toEqual([
-      { assistantId: "paired-1", paired: true },
+      { assistantId: "paired-1", runtimeUrl: "https://h" },
     ]);
     expect(readLockfileFromDisk().activeAssistant).toBe("paired-1");
   });
 
   test("restores the guardian token when the lockfile write fails", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: null,
     });
     const tokenPath = seedGuardianToken("paired-1");
@@ -152,7 +152,7 @@ describe("unpairAssistant", () => {
   test("leaves the active pointer alone when it names another assistant", () => {
     writeLockfile({
       assistants: [
-        { assistantId: "paired-1", paired: true },
+        { assistantId: "paired-1", runtimeUrl: "https://h" },
         { assistantId: "local-1", cloud: "local" },
       ],
       activeAssistant: "local-1",
@@ -169,7 +169,7 @@ describe("unpairAssistant", () => {
 
   test("succeeds when the guardian token file is already gone", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: null,
     });
 
@@ -180,7 +180,7 @@ describe("unpairAssistant", () => {
 
   test("refuses an unknown assistant without touching disk", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: "paired-1",
     });
 
@@ -232,7 +232,7 @@ describe("unpairAssistant", () => {
 
   test("refuses with 423 under a held write lock, leaving entry and token alone", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: "paired-1",
     });
     const tokenPath = seedGuardianToken("paired-1");
@@ -243,7 +243,7 @@ describe("unpairAssistant", () => {
       expect(result).toMatchObject({ ok: false, status: 423 });
       expect(fs.existsSync(tokenPath)).toBe(true);
       expect(readLockfileFromDisk().assistants).toEqual([
-        { assistantId: "paired-1", paired: true },
+        { assistantId: "paired-1", runtimeUrl: "https://h" },
       ]);
     } finally {
       fs.rmdirSync(`${lockfilePath}.lock`);
@@ -252,7 +252,7 @@ describe("unpairAssistant", () => {
 
   test("a successful unpair leaves no lock dir behind", () => {
     writeLockfile({
-      assistants: [{ assistantId: "paired-1", paired: true }],
+      assistants: [{ assistantId: "paired-1", runtimeUrl: "https://h" }],
       activeAssistant: "paired-1",
     });
     seedGuardianToken("paired-1");

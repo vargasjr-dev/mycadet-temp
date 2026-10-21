@@ -123,7 +123,6 @@ const platform: LockfileAssistant = {
 const pairedEntry: LockfileAssistant = {
   assistantId: "paired-a",
   cloud: "local",
-  paired: true,
   runtimeUrl: "https://gw.example.com",
 } as LockfileAssistant;
 
@@ -652,17 +651,26 @@ describe("assistant classification", () => {
   });
 
   test("remote self-hosted clouds are neither local nor platform", () => {
-    for (const cloud of ["paired", "gcp", "aws", "custom"]) {
-      const remote = { assistantId: `r-${cloud}`, cloud } as LockfileAssistant;
-      expect(isLocalAssistant(remote)).toBe(false);
-      expect(isCloudAssistant(remote)).toBe(false);
-    }
+    const remote = {
+      assistantId: "r-custom",
+      cloud: "custom",
+    } as LockfileAssistant;
+    expect(isLocalAssistant(remote)).toBe(false);
+    expect(isCloudAssistant(remote)).toBe(false);
   });
 
-  test("only flagged entries are paired assistants", () => {
-    expect(isPairedAssistant({ paired: true })).toBe(true);
-    for (const paired of [false, undefined]) {
-      expect(isPairedAssistant({ paired })).toBe(false);
+  test("paired-ness derives from a remote runtimeUrl on a loopback cloud", () => {
+    expect(
+      isPairedAssistant({
+        assistantId: "p",
+        cloud: "local",
+        runtimeUrl: "https://h.example",
+      }),
+    ).toBe(true);
+    for (const runtimeUrl of [undefined, "http://127.0.0.1:7830"]) {
+      expect(
+        isPairedAssistant({ assistantId: "p", cloud: "local", runtimeUrl }),
+      ).toBe(false);
     }
   });
 
@@ -670,7 +678,7 @@ describe("assistant classification", () => {
     const paired = {
       assistantId: "paired-a",
       cloud: "local",
-      paired: true,
+      runtimeUrl: "https://paired-a.example",
     } as LockfileAssistant;
     setLockfile({
       assistants: [localA, platform, paired],
@@ -752,7 +760,7 @@ describe("getLocalGatewayUrl", () => {
     const paired = {
       assistantId: "p",
       cloud: "local",
-      paired: true,
+      runtimeUrl: "https://p.example.com",
     } as LockfileAssistant;
     expect(getLocalGatewayUrl(paired)).toBeUndefined();
   });
@@ -807,7 +815,6 @@ describe("getPairedGatewayUrl", () => {
     const missing = {
       assistantId: "p",
       cloud: "local",
-      paired: true,
     } as LockfileAssistant;
     const malformed = {
       ...pairedEntry,
@@ -938,29 +945,6 @@ describe("primeLocalGatewayConnection", () => {
       primeLocalGatewayConnection(pairedEntry),
     ).resolves.toBeUndefined();
     expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-  });
-
-  test("throws UnresolvedPairedGatewayError for a paired assistant with no runtimeUrl", async () => {
-    enableLocalMode();
-    const paired = {
-      assistantId: "p",
-      cloud: "local",
-      paired: true,
-    } as LockfileAssistant;
-    await expect(primeLocalGatewayConnection(paired)).rejects.toBeInstanceOf(
-      UnresolvedPairedGatewayError,
-    );
-  });
-
-  test("throws UnresolvedPairedGatewayError for a paired assistant with a non-http runtimeUrl", async () => {
-    enableLocalMode();
-    const paired = {
-      ...pairedEntry,
-      runtimeUrl: "ftp://x",
-    } as LockfileAssistant;
-    await expect(primeLocalGatewayConnection(paired)).rejects.toBeInstanceOf(
-      UnresolvedPairedGatewayError,
-    );
   });
 
   test("paired prime reaches the host proxy without exposing a bearer", async () => {

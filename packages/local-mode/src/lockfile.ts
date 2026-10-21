@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
+  isPairedEntry,
   LockfileAssistantSchema,
   parseLockfile,
   type Lockfile,
@@ -44,7 +45,8 @@ export function getLockfileData(lockfilePaths: string[]): LockfileResult {
 }
 
 /**
- * Whether the lockfile records this assistant as a paired entry. Paired
+ * Whether this assistant is a paired (connect-imported) entry — derived from
+ * its remote addressing ({@link isPairedEntry}), never a stored flag. Paired
  * entries have no local daemon, so guardian-token failure guidance must say
  * re-pair rather than hatch/wake.
  */
@@ -58,7 +60,7 @@ export function isPairedLockfileEntry(
     : [];
   return assistants.some(
     (assistant) =>
-      assistant?.assistantId === assistantId && assistant.paired === true,
+      assistant?.assistantId === assistantId && isPairedEntry(assistant),
   );
 }
 
@@ -330,15 +332,16 @@ export function upsertRendererLockfileAssistant(
       (entry) => entry?.assistantId === assistant.assistantId,
     );
     const merged = { ...existing, ...assistant };
-    const existingIsPaired = existing?.paired === true;
-    const mergedIsPaired = merged.paired === true;
+    const existingIsPaired = isPairedEntry(existing);
+    const mergedIsPaired = isPairedEntry(merged);
 
     if (!existingIsPaired && mergedIsPaired) {
       return { ok: false, status: 403, error: PAIRED_LOCKFILE_WRITE_ERROR };
     }
     if (
+      existing &&
       existingIsPaired &&
-      (merged.paired !== true ||
+      (!mergedIsPaired ||
         merged.cloud !== existing.cloud ||
         merged.runtimeUrl !== existing.runtimeUrl)
     ) {
@@ -386,8 +389,7 @@ export function replaceCloudAssistants(
       (assistant) =>
         typeof assistant?.assistantId !== "string" ||
         assistant.assistantId === "" ||
-        !isCloudHome(assistant.cloud) ||
-        assistant.paired === true,
+        !isCloudHome(assistant.cloud),
     )
   ) {
     return {

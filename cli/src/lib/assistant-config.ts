@@ -16,7 +16,6 @@ import {
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 
-import { DAEMON_INTERNAL_ASSISTANT_ID } from "./constants.js";
 import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
   getDefaultPorts,
@@ -103,9 +102,6 @@ export type AssistantEntry = Omit<
    *  Avoids mDNS resolution issues when the machine checks its own gateway. */
   localUrl?: string;
   bearerToken?: string;
-  /** True when this entry was registered via `cadet connect import` (a remote
-   *  pairing); also backs the re-import / overwrite guard in connect import. */
-  paired?: boolean;
   project?: string;
   region?: string;
   sshUser?: string;
@@ -353,135 +349,12 @@ export function clearAppProcessRecord(expectedPid?: number): void {
  * Try to extract a port number from a URL string (e.g. `http://localhost:7830`).
  * Returns undefined if the URL is malformed or has no explicit port.
  */
-function parsePortFromUrl(url: unknown): number | undefined {
-  if (typeof url !== "string") return undefined;
-  try {
-    const parsed = new URL(url);
-    const port = parseInt(parsed.port, 10);
-    return isNaN(port) ? undefined : port;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Detect and migrate legacy lockfile entries to the current format.
- *
- * Legacy entries stored `baseDataDir` as a top-level field. The current
- * format nests this under `resources.instanceDir`. This function also
- * synthesises a full `resources` object when one is missing by inferring
- * ports from the entry's `runtimeUrl` and falling back to defaults.
- *
- * Returns `true` if the entry was mutated (so the caller can persist).
- */
-export function migrateLegacyEntry(raw: Record<string, unknown>): boolean {
-  if (typeof raw.cloud === "string" && raw.cloud !== "local") {
-    return false;
-  }
-
-  // Apple-containers entries are fully managed by the macOS app.
-  // Skip legacy migration to avoid corrupting their fields.
-  if (raw.cloud === "apple-container") {
-    return false;
-  }
-
-  const env = getCurrentEnvironment();
-  const defaultPorts = getDefaultPorts(env);
-  let mutated = false;
-
-  // Migrate top-level `baseDataDir` → `resources.instanceDir`
-  if (typeof raw.baseDataDir === "string" && raw.baseDataDir) {
-    if (!raw.resources || typeof raw.resources !== "object") {
-      raw.resources = {};
-    }
-    const res = raw.resources as Record<string, unknown>;
-    if (!res.instanceDir) {
-      res.instanceDir = raw.baseDataDir;
-      mutated = true;
-    }
-    delete raw.baseDataDir;
-    mutated = true;
-  }
-
-  // Synthesise missing `resources` for local entries
-  if (!raw.resources || typeof raw.resources !== "object") {
-    const gatewayPort =
-      parsePortFromUrl(raw.runtimeUrl) ?? defaultPorts.gateway;
-    const instanceDir = join(
-      getMultiInstanceDir(env),
-      typeof raw.assistantId === "string"
-        ? raw.assistantId
-        : DAEMON_INTERNAL_ASSISTANT_ID,
-    );
-    raw.resources = {
-      instanceDir,
-      daemonPort: defaultPorts.daemon,
-      gatewayPort,
-      qdrantPort: defaultPorts.qdrant,
-      cesPort: defaultPorts.ces,
-    };
-    mutated = true;
-  } else {
-    // Backfill any missing fields on an existing partial `resources` object
-    const res = raw.resources as Record<string, unknown>;
-    if (!res.instanceDir) {
-      res.instanceDir = join(
-        getMultiInstanceDir(env),
-        typeof raw.assistantId === "string"
-          ? raw.assistantId
-          : DAEMON_INTERNAL_ASSISTANT_ID,
-      );
-      mutated = true;
-    }
-    if (typeof res.daemonPort !== "number") {
-      res.daemonPort = defaultPorts.daemon;
-      mutated = true;
-    }
-    if (typeof res.gatewayPort !== "number") {
-      res.gatewayPort =
-        parsePortFromUrl(raw.runtimeUrl) ?? defaultPorts.gateway;
-      mutated = true;
-    }
-    if (typeof res.qdrantPort !== "number") {
-      res.qdrantPort = defaultPorts.qdrant;
-      mutated = true;
-    }
-    if (typeof res.cesPort !== "number") {
-      res.cesPort = defaultPorts.ces;
-      mutated = true;
-    }
-  }
-
-  return mutated;
-}
 
 export function loadAllAssistants(): AssistantEntry[] {
   const data = readLockfile();
   const entries = data.assistants;
   if (!Array.isArray(entries)) {
     return [];
-  }
-
-  let migrated = false;
-  for (const entry of entries) {
-    if (migrateLegacyEntry(entry)) {
-      migrated = true;
-    }
-  }
-
-  if (migrated) {
-    // Persist the backfill against a fresh read under the lock so this
-    // snapshot cannot clobber a concurrent writer; skip on contention (the
-    // in-memory result below is already migrated).
-    withLockfileLock([getLockfilePath(getCurrentEnvironment())], () => {
-      const fresh = readLockfile();
-      if (!Array.isArray(fresh.assistants)) return;
-      let freshMigrated = false;
-      for (const entry of fresh.assistants) {
-        if (migrateLegacyEntry(entry)) freshMigrated = true;
-      }
-      if (freshMigrated) writeLockfileUnlocked(fresh);
-    });
   }
 
   const result: AssistantEntry[] = [];

@@ -1238,50 +1238,6 @@ describe("pair command", () => {
     expect(minted).toBe(false);
   });
 
-  test("refuses a paired (connect-import) assistant before minting", async () => {
-    writeFileSync(
-      join(testDir, "lockfile.json"),
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "pair-test",
-            runtimeUrl: RUNTIME_URL,
-            paired: true,
-          },
-        ],
-        activeAssistant: "pair-test",
-      }),
-    );
-
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-    }
-
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("was paired as a remote");
-    // Keyed on the entry's cloud, not on which fields happen to exist.
-    expect(mintCalls).toHaveLength(0);
-  });
-
   test("a custom (ssh-managed) assistant keeps the loopback HTTP mint", async () => {
     writeFileSync(
       join(testDir, "lockfile.json"),

@@ -213,7 +213,6 @@ describe("connect import", () => {
     const entry = findAssistantByName("link-box");
     expect(entry).not.toBeNull();
     expect(entry!.runtimeUrl).toBe(HOST);
-    expect(entry!.paired).toBe(true);
     const token = loadGuardianToken("link-box");
     expect(token?.accessToken).toBe("acc-tok");
     expect(token?.refreshToken).toBe("refresh-tok");
@@ -667,6 +666,5 @@ describe("connect import", () => {
     expect(calls).toHaveLength(0);
     const entry = findAssistantByName("desk");
     expect(entry!.runtimeUrl).toBe("http://127.0.0.1:7830");
-    expect(entry!.paired).toBeUndefined();
   });
 });

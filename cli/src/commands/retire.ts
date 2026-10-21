@@ -327,16 +327,6 @@ async function retireInner(): Promise<void> {
   const assistantId = entry.assistantId;
   const cloud = entry.cloud;
 
-  if (entry.paired === true) {
-    // A remote assistant paired from another machine. Retiring tears the
-    // assistant down — that can only happen on its host machine, never from a
-    // paired machine, which holds nothing but a pairing record.
-    console.error(
-      `Error: '${assistantId}' is a remote assistant paired from another machine — it can't be retired from here. Retiring tears down the assistant, which can only be done on its host machine. To revoke this device's access, run \`cadet devices\` on the host that runs the assistant.`,
-    );
-    process.exit(1);
-  }
-
   printRetireTarget(entry, cloud);
 
   if (!parsed.yes) {

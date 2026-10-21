@@ -1611,28 +1611,6 @@ describe("cadet wake — tunnel edge restore", () => {
       expect(startGatewayMock).toHaveBeenCalledTimes(2);
     });
 
-    test("skips assistants whose lifecycle is managed elsewhere", async () => {
-      mockColdStart();
-      const entries = makeAllEntries();
-      entries[1] = {
-        assistantId: "paired-one",
-        runtimeUrl: "http://127.0.0.1:1",
-        cloud: "local",
-        paired: true,
-      };
-      loadAllAssistantsMock.mockReturnValue(entries);
-      process.argv = ["bun", "cadet", "wake", "--all"];
-
-      await wake();
-
-      expect(startCesMock).toHaveBeenCalledTimes(1);
-      expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
-      expect(startGatewayMock).toHaveBeenCalledTimes(1);
-      expect(logSpy.mock.calls.flat().join("\n")).toContain(
-        "Skipping 'paired-one' (paired) — its lifecycle is managed elsewhere.",
-      );
-    });
-
     test("continues past a failing assistant and exits 1", async () => {
       mockColdStart();
       loadAllAssistantsMock.mockReturnValue([

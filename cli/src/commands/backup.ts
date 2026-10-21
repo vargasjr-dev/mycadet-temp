@@ -35,11 +35,6 @@ export const backup = Object.assign(
       console.log("Cloud backup is ready.");
       return;
     }
-    if (entry.paired === true) {
-      throw new Error(
-        "Backup for 'paired' must run on its host; only local, Docker and cloud backups are supported.",
-      );
-    }
     if (entry.cloud && !["local", "docker"].includes(entry.cloud)) {
       throw new Error(
         `Backup for '${entry.cloud}' must run on its host; only local, Docker and cloud backups are supported.`,

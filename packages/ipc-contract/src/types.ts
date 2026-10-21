@@ -1091,52 +1091,14 @@ export interface AppVersionInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Lockfile (bridge-facing subset of @mycadet/local-mode/contract)
-// ---------------------------------------------------------------------------
-
-/**
- * Shape of the lockfile as returned across the Electron bridge.
- *
- * Matches the canonical `Lockfile` / `LockfileWriteResult` types in
- * `@mycadet/local-mode/contract`. Declared here so the contract package
- * has no `file:` dependency on local-mode (which carries a transitive
- * `file:` chain to `@mycadet/environments` that breaks lockfile
- * resolution in consumer packages).
- */
-
-export interface LocalAssistantResources {
-  instanceDir?: string;
-  gatewayPort: number;
-  daemonPort: number;
-  runtimeVersion?: string;
-  runtimeInstallDir?: string;
-}
-
-export interface LockfileAssistant {
-  assistantId: string;
-  name?: string;
-  /** Deployment topology; mirrors the lockfile contract's union. */
-  cloud: "local" | "docker" | "apple-container" | "cloud" | "custom";
-  runtimeUrl?: string;
-  hatchedAt?: string;
-  onboardedAt?: string;
-  cloudAssistantId?: string;
-  cloudBaseUrl?: string;
-  cloudOrganizationId?: string;
-  ingressUrl?: string;
-  /** The connect-import marker (pairing flow). */
-  paired?: boolean;
-  resources?: LocalAssistantResources;
-}
-
-export interface Lockfile {
-  assistants: LockfileAssistant[];
-  activeAssistant: string | null;
-}
-
-export type LockfileWriteResult =
-  | { ok: true; lockfile: Lockfile }
-  | { ok: false; error: string };
+// Lockfile — the canonical contract types re-exported for the bridge surface
+// (the duplicate interface that carried `paired`/`ingressUrl` is gone).
+export type {
+  LocalAssistantResources,
+  Lockfile,
+  LockfileAssistant,
+  LockfileWriteResult,
+} from "@mycadet/local-mode/contract";
 
 export type LocalAssistantRuntimeState =
   | "healthy"

@@ -73,21 +73,10 @@ EXAMPLES:
 
 /**
  * Resolve the LOOPBACK gateway base URL for a host-side assistant, or exit with
- * a helpful error. Refuses paired connections (they have no local gateway here)
- * and never falls back to a non-loopback URL.
+ * a helpful error. Never falls back to a non-loopback URL.
  */
 function resolveLoopbackBase(entry: AssistantEntry): string {
   const displayName = getAssistantDisplayName(entry);
-
-  if (entry.paired === true) {
-    console.error(
-      `Error: '${displayName}' is a paired connection imported from another machine.`,
-    );
-    console.error(
-      "Run `cadet devices` on the host that runs the assistant to manage its devices.",
-    );
-    process.exit(1);
-  }
 
   if (entry.cloud === "docker")
     return `http://127.0.0.1:${GATEWAY_INTERNAL_PORT}`;

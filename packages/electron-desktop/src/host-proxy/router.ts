@@ -13,6 +13,7 @@
 
 import {
   isLoopbackGatewayCloud,
+  isPairedEntry,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
 
@@ -879,10 +880,12 @@ function handleLockfileChange(lockfile: Lockfile): void {
   for (const assistant of lockfile.assistants) {
     // Cloud wins over resources: a merge can leave a stale gatewayPort on a
     // non-loopback entry, and such an entry must never be classified as a
-    // loopback connection. Paired entries intentionally match neither branch.
-    const port = isLoopbackGatewayCloud(assistant.cloud)
-      ? assistant.resources?.gatewayPort
-      : undefined;
+    // loopback connection. Paired entries (derived from the remote
+    // runtimeUrl — {@link isPairedEntry}) intentionally match neither branch.
+    const port =
+      !isPairedEntry(assistant) && isLoopbackGatewayCloud(assistant.cloud)
+        ? assistant.resources?.gatewayPort
+        : undefined;
     const isCloud =
       assistant.cloud === "cloud" && assistant.runtimeUrl && hasSessionToken;
     if (!port && !isCloud) continue;

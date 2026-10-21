@@ -341,9 +341,10 @@ export async function pairingStartHost(
 
 /**
  * One exchange attempt for a live pairing session. An approved code persists
- * the guardian token and creates a paired (`paired: true`) lockfile entry in
- * the same call, the write counterpart of {@link unpairAssistantHost}; a still
- * pending one carries the cadence to wait before the next attempt.
+ * the guardian token and creates a paired (connect-import) lockfile entry in
+ * the same call — its remote runtimeUrl is what marks it — the write
+ * counterpart of {@link unpairAssistantHost}; a still pending one carries the
+ * cadence to wait before the next attempt.
  */
 export async function pairingPollHost(
   handle: string,

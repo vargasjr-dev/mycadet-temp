@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  CloudSchema,
+  LockfileAssistantSchema,
+  LockfileSchema,
+  RemoteSchema,
   KNOWN_CLOUDS,
   pairedHostLabel,
   parseLockfile,
@@ -268,15 +270,35 @@ describe("parseLockfile", () => {
       assistants: [
         { assistantId: "gcp_1", project: "my-proj", runtimeUrl: "https://a" },
         { assistantId: "ssh_1", sshUser: "deploy", runtimeUrl: "https://b" },
-        { assistantId: "legacy_1", cloud: "paired", paired: true },
+        { assistantId: "legacy_1", cloud: "paired" },
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
       { assistantId: "gcp_1", cloud: "local", runtimeUrl: "https://a" },
       { assistantId: "ssh_1", cloud: "local", runtimeUrl: "https://b" },
-      { assistantId: "legacy_1", cloud: "local", paired: true },
+      { assistantId: "legacy_1", cloud: "local" },
     ]);
+  });
+
+  test("the root LockfileSchema parses the file shape directly", () => {
+    // parseLockfile is this schema's safeParse with an empty-lockfile
+    // fallback; pinning the schema itself keeps the export honest.
+    const parsed = LockfileSchema.safeParse({
+      assistants: [
+        { assistantId: "a", cloud: "local" },
+        { notAnAssistant: true },
+        null,
+      ],
+      activeAssistant: "a",
+    });
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.assistants).toEqual([
+      { assistantId: "a", cloud: "local" },
+    ]);
+    expect(parsed.data.activeAssistant).toBe("a");
+    expect(LockfileSchema.safeParse("not an object").success).toBe(false);
   });
 
   test("parses the known clouds; a future writer's value degrades to local", () => {
@@ -323,7 +345,7 @@ describe("taxonomy", () => {
   });
 
   test("CloudSchema is the enum the lockfile and injected config share", () => {
-    expect([...CloudSchema.options]).toEqual([...KNOWN_CLOUDS]);
+    expect([...RemoteSchema.options]).toEqual([...KNOWN_CLOUDS]);
   });
 
   test("SENSITIVE_KEYS lists the redacted secrets", () => {

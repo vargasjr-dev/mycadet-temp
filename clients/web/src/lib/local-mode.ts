@@ -2,6 +2,7 @@ import {
   getLoopbackGatewayPort,
   gatewayProxyUrl,
   isLoopbackGatewayCloud,
+  isPairedEntry,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
 
@@ -395,7 +396,7 @@ export function hasAssistants(): boolean {
  * taxonomy in `@mycadet/local-mode/contract`.
  */
 export function isLocalAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "local" && a.paired !== true;
+  return a.cloud === "local" && !isPairedAssistant(a);
 }
 
 /**
@@ -411,10 +412,10 @@ export function isLocalAssistant(a: LockfileAssistant): boolean {
  * Excludes `apple-container` (its entries are managed by the macOS app and
  * record no renderer-resolvable loopback gateway), the remote self-hosted
  * clouds, platform (`cloud`), and paired connect-imports (whose defaulted
- * cloud reads "local" — the flag is what excludes them).
+ * cloud reads "local" — the derived remote runtimeUrl is what excludes them).
  */
 export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
-  return isLoopbackGatewayCloud(a.cloud) && a.paired !== true;
+  return isLoopbackGatewayCloud(a.cloud) && !isPairedAssistant(a);
 }
 
 export function isCloudAssistant(a: LockfileAssistant): boolean {
@@ -422,13 +423,17 @@ export function isCloudAssistant(a: LockfileAssistant): boolean {
 }
 
 /**
- * A remote assistant paired from another machine via `cadet connect import`
- * (the `paired` flag): reached directly at its own `runtimeUrl` with the
- * stored guardian access token as the bearer. Not local (no lifecycle flows,
- * wake/retire refuse it) and not platform (no platform session involved).
+ * A remote assistant paired from another machine via `cadet connect import`:
+ * reached directly at its own `runtimeUrl` with the stored guardian access
+ * token as the bearer. The lockfile stores no pairing flag — paired-ness is
+ * derived from the entry's addressing ({@link isPairedEntry}). Not local (no
+ * lifecycle flows, wake/retire refuse it) and not platform (no platform
+ * session involved).
  */
-export function isPairedAssistant(a: { paired?: boolean }): boolean {
-  return a.paired === true;
+export function isPairedAssistant(
+  a: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
+): boolean {
+  return isPairedEntry(a);
 }
 
 /**

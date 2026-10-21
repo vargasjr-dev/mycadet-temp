@@ -432,46 +432,6 @@ describe("sleep command", () => {
       expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(6); // assistant+gateway+CES × 2
     });
 
-    test("skips assistants whose lifecycle is managed elsewhere", async () => {
-      writeMultiAssistantLockfile();
-      // Rewrite the lockfile with the second entry paired.
-      writeFileSync(
-        join(testDir, "lockfile.json"),
-        JSON.stringify({
-          assistants: [
-            {
-              assistantId: "sleep-all-1",
-              runtimeUrl: `http://127.0.0.1:${DEFAULT_DAEMON_PORT}`,
-              cloud: "local",
-              resources: {
-                instanceDir: join(testDir, "instance-1"),
-                daemonPort: DEFAULT_DAEMON_PORT,
-                gatewayPort: DEFAULT_GATEWAY_PORT,
-                qdrantPort: DEFAULT_QDRANT_PORT,
-              },
-            },
-            {
-              assistantId: "paired-one",
-              runtimeUrl: "http://127.0.0.1:1",
-              cloud: "local",
-              paired: true,
-            },
-          ],
-          activeAssistant: "sleep-all-1",
-        }),
-      );
-      process.argv = ["bun", "cadet", "sleep", "--all"];
-
-      const consoleLog = spyOn(console, "log").mockImplementation(() => {});
-      try {
-        await sleep();
-      } finally {
-        consoleLog.mockRestore();
-      }
-
-      expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(3); // assistant+gateway+CES, one local entry
-    });
-
     test("continues past a failing assistant and exits 1", async () => {
       writeMultiAssistantLockfile();
       // instance-1 hits an active-call lease refusal; instance-2 is fine.

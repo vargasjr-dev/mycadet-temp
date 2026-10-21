@@ -83,16 +83,7 @@ export function isConfidentialRefreshUrl(gatewayUrl: string): boolean {
   }
 }
 
-/**
- * Whether a URL's host is loopback, judged wide; false for unparseable URLs.
- * Delegates to the shared pairing predicate so this package's refusals and the
- * address checks in `@mycadet/service-contracts` judge a host by the same
- * rules. Callers refuse what this matches; a caller granting loopback a
- * privilege reads `isDnsIndependentLoopbackUrl` instead.
- */
-export function isLoopbackUrl(url: string): boolean {
-  return isLoopbackPublicUrl(url);
-}
+export { isLoopbackUrl } from "./lockfile-contract";
 
 function isAccessTokenExpired(data: GuardianTokenData): boolean {
   const expiresAt = new Date(data.accessTokenExpiresAt).getTime();

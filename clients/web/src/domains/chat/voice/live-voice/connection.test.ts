@@ -235,7 +235,6 @@ describe("buildSelfHostedGatewayWsUrl", () => {
       {
         assistantId: "asst-1",
         cloud: "local",
-        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
@@ -299,7 +298,6 @@ describe("resolveGatewayWsUrl", () => {
       {
         assistantId: "asst-1",
         cloud: "local",
-        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
@@ -401,7 +399,6 @@ describe("resolveLiveVoiceWsUrl", () => {
       {
         assistantId: "asst-1",
         cloud: "local",
-        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
@@ -423,7 +420,6 @@ describe("resolveLiveVoiceWsUrl", () => {
       {
         assistantId: "asst-1",
         cloud: "local",
-        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);
@@ -449,7 +445,6 @@ describe("isPairedGatewayAssistant", () => {
       {
         assistantId: "asst-1",
         cloud: "local",
-        paired: true,
         runtimeUrl: "https://gw.example.com",
       } as LockfileAssistant,
     ]);

@@ -41,7 +41,6 @@ function seedPaired(refreshToken: string, opts?: { due?: boolean }): void {
     name: "Paired",
     runtimeUrl: RUNTIME,
     cloud: "local",
-    paired: true,
   });
   saveGuardianToken("px", {
     guardianPrincipalId: "imported",

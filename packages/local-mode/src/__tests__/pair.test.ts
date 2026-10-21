@@ -211,14 +211,8 @@ describe("pairAssistant", () => {
       assistantId: DEFAULT_PAIRED_ID,
       name: "paired (10.0.0.5:7830)",
       runtimeUrl: "http://10.0.0.5:7830",
-      paired: true,
     });
-    expect(Object.keys(entry)).toEqual([
-      "assistantId",
-      "name",
-      "runtimeUrl",
-      "paired",
-    ]);
+    expect(Object.keys(entry)).toEqual(["assistantId", "name", "runtimeUrl"]);
     // Importing never reassigns the active assistant.
     expect(onDisk.activeAssistant ?? null).toBeNull();
 
@@ -1113,7 +1107,6 @@ describe("pairingPoll", () => {
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
     expect(entry).toMatchObject({
-      paired: true,
       // The pair-page path is stripped back to the public base.
       runtimeUrl: "https://gw.example.com",
     });
@@ -1733,7 +1726,7 @@ describe("pairingCancel", () => {
     const entry = (
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
-    expect(entry).toMatchObject({ paired: true });
+    expect(entry).toMatchObject({ runtimeUrl: "https://gw.example.com" });
     expect(readGuardianToken(entry.assistantId as string).accessToken).toBe(
       "acc-tok",
     );
@@ -1814,7 +1807,6 @@ describe("connectImport", () => {
     )[0]!;
     expect(entry).toMatchObject({
       assistantId: "desk-box",
-      paired: true,
       runtimeUrl: "https://gw.example.com",
     });
   });
@@ -1832,7 +1824,6 @@ describe("connectImport", () => {
       assistants: [
         {
           assistantId: "paired-dev-legacy",
-          paired: true,
           runtimeUrl: "https://gw.example.com",
         },
       ],
@@ -1861,7 +1852,6 @@ describe("connectImport", () => {
       assistants: [
         {
           assistantId: "paired-dev-legacy",
-          paired: true,
           runtimeUrl: "https://other.example.com",
         },
       ],

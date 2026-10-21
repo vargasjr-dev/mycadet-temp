@@ -90,7 +90,7 @@ test("cloud backup calls the cloud backup API with session authentication", asyn
   expect(guardianRead).not.toHaveBeenCalled();
 });
 
-test("rejects legacy output names and unsupported remote topology before capture", async () => {
+test("rejects legacy output names before capture", async () => {
   lookup.mockReturnValue({
     assistantId: "test",
     cloud: "local",
@@ -105,14 +105,6 @@ test("rejects legacy output names and unsupported remote topology before capture
     "legacy.vbundle",
   ];
   await expect(backup()).rejects.toThrow("Unknown backup option: --output");
-  lookup.mockReturnValue({
-    assistantId: "test",
-    cloud: "local",
-    paired: true,
-    runtimeUrl: "http://127.0.0.1:1",
-  });
-  process.argv = ["bun", "cadet", "backup", "test"];
-  await expect(backup()).rejects.toThrow("must run on its host");
   expect(capture).not.toHaveBeenCalled();
 });
 

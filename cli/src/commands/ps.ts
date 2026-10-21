@@ -510,21 +510,6 @@ async function getAssistantProcessRows(
   console.log(`Processes for ${formatAssistantReference(entry)} — ${cloud}:`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
-  // A paired entry (the connect-import flag) has no process here to list —
-  // probe the remote gateway's health over the bearer token instead.
-  if (entry.paired === true) {
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    const health = await checkHealth(entry.runtimeUrl, token);
-    return [
-      {
-        name: "gateway",
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(health.status),
-        info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
-      },
-    ];
-  }
-
   if (cloud === "local") {
     return getLocalProcesses(entry);
   }

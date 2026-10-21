@@ -288,7 +288,10 @@ describe("gatewayTargetsFromLockfile", () => {
     ).toEqual(new Map([["abc-123", loopback(9000)]]));
   });
 
-  test("omits a local entry whose runtimeUrl is remote", () => {
+  test("resolves a loopback-cloud entry whose runtimeUrl is remote as paired", () => {
+    // Paired-ness derives from the addressing (no stored flag): a
+    // loopback-gateway cloud whose runtimeUrl points off-machine is a
+    // connect import, so it targets that remote runtimeUrl.
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
@@ -299,7 +302,14 @@ describe("gatewayTargetsFromLockfile", () => {
           },
         ],
       }),
-    ).toEqual(new Map());
+    ).toEqual(
+      new Map([
+        [
+          "abc-123",
+          { kind: "remote", runtimeUrl: "https://elsewhere.example.com" },
+        ],
+      ]),
+    );
   });
 
   test("omits ports outside the 1024-65535 proxy range", () => {

@@ -56,7 +56,6 @@ const pairedAssistant: LockfileAssistant = {
   assistantId: "paired-desk",
   name: "Desk",
   cloud: "local",
-  paired: true,
   runtimeUrl: "https://desk.example.com",
 };
 
@@ -284,7 +283,6 @@ describe("upsertFromApi", () => {
         {
           assistantId: "paired-desk",
           cloud: "local",
-          paired: true,
           runtimeUrl: "https://desk.example.com",
         },
       ],

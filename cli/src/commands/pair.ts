@@ -447,20 +447,7 @@ export const pair = Object.assign(
   // Minting requires host presence on this machine. Native and docker
   // topologies qualify (the latter via docker exec); an assistant this
   // machine only knows through `connect import` has no host presence here
-  // at all, and `cadet pair` never worked against it (its loopback gate
-  // denied remote mints). Refuse clearly instead of a confusing mint
-  // failure.
-  if (entry.paired === true) {
-    console.error(
-      `Error: ${formatAssistantReference(entry)} was paired as a remote ` +
-        "assistant (cadet connect import), so this machine does not host it.",
-    );
-    console.error(
-      "Run `cadet pair` on the machine hosting the assistant, or approve " +
-        "a code it shows with `cadet pair --web-approve <code>`.",
-    );
-    process.exit(1);
-  }
+  // at all, and its mint fails on the loopback gate below.
 
   // Mint over loopback (localUrl avoids mDNS for same-machine calls), but
   // advertise a REACHABLE url in the link, since the loopback url would point

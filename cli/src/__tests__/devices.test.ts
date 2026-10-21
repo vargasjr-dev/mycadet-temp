@@ -426,7 +426,6 @@ describe("cadet devices", () => {
       name: "Paired Box",
       runtimeUrl: "http://10.0.0.9:7830",
       cloud: "local",
-      paired: true,
     });
 
     process.argv = ["bun", "cadet", "devices", "paired-box"];

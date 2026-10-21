@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterAll, mock } from "bun:test";
-import type { Cloud } from "@mycadet/local-mode/contract";
+import type { Remote } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -57,7 +57,7 @@ function readLockfileRaw(): Record<string, unknown> {
 
 const makeEntry = (
   id: string,
-  cloud: Cloud = "local",
+  cloud: Remote = "local",
   extra?: Partial<AssistantEntry>,
 ): AssistantEntry => ({
   assistantId: id,

@@ -17,6 +17,7 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
 import {
   getLockfileData,
   getLoopbackGatewayPort,
+  isPairedEntry,
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
 } from "@mycadet/local-mode";
@@ -286,7 +287,7 @@ const registerAppProtocol = (): void => {
           (a) => a.assistantId === read.data.activeAssistant,
         )
       : read.data.assistants[0];
-    if (!entry || entry.paired === true) {
+    if (!entry || isPairedEntry(entry)) {
       return undefined;
     }
     const port = getLoopbackGatewayPort(entry);

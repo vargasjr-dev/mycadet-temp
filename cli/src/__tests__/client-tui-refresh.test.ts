@@ -4,7 +4,6 @@
  * session auth, ephemeral --token overrides, and still-fresh tokens untouched.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import type { Cloud } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -23,16 +22,15 @@ const past = () => new Date(Date.now() - 60_000).toISOString();
 const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
 
 /** Persist a lockfile entry so the refresh URL-binding check has a trusted
- *  runtimeUrl to compare against (refresh is bound to the persisted entry). */
-function seedEntry(cloud: Cloud | "paired"): void {
-  // "paired" is not a topology: it seeds the connect-import flag on an
-  // otherwise-local-defaulted entry.
-  const isPaired = cloud === "paired";
+ *  runtimeUrl to compare against (refresh is bound to the persisted entry).
+ *  The paired shape is a loopback-cloud entry whose runtimeUrl points
+ *  off-machine — paired-ness derives from it, no stored flag. */
+function seedEntry(): void {
   saveAssistantEntry({
     assistantId: "px",
     name: "Paired",
     runtimeUrl: RUNTIME,
-    ...(isPaired ? { cloud: "local" as const, paired: true } : { cloud }),
+    cloud: "local",
   });
 }
 
@@ -101,7 +99,7 @@ describe("resolveFreshBearerToken", () => {
   });
 
   test("refreshes a stale stored token and returns the new access token", async () => {
-    seedEntry("paired");
+    seedEntry();
     seed({ accessToken: "old-acc", refreshToken: "ref", refreshAfter: past() });
     const refresh = stubRefresh(true);
 
@@ -109,7 +107,7 @@ describe("resolveFreshBearerToken", () => {
       RUNTIME,
       "px",
       "old-acc",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("new-acc");
@@ -119,7 +117,7 @@ describe("resolveFreshBearerToken", () => {
   test("does NOT refresh against an overridden/poisoned runtime URL (no credential leak)", async () => {
     // --url can override the runtime URL while still reusing the stored guardian
     // token; a stale token must NOT be refreshed against an attacker origin.
-    seedEntry("paired"); // persisted runtimeUrl = RUNTIME
+    seedEntry(); // persisted runtimeUrl = RUNTIME
     seed({ accessToken: "old-acc", refreshToken: "ref", refreshAfter: past() });
     const refresh = stubRefresh(true);
 
@@ -127,7 +125,7 @@ describe("resolveFreshBearerToken", () => {
       "http://attacker.example:7830",
       "px",
       "old-acc",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("old-acc"); // unchanged
@@ -146,7 +144,7 @@ describe("resolveFreshBearerToken", () => {
       RUNTIME,
       "px",
       "old-acc",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("old-acc");
@@ -162,7 +160,7 @@ describe("resolveFreshBearerToken", () => {
       RUNTIME,
       "px",
       "ephemeral-tok",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("ephemeral-tok");
@@ -185,7 +183,7 @@ describe("resolveFreshBearerToken", () => {
   });
 
   test("falls back to the existing token when refresh fails", async () => {
-    seedEntry("paired");
+    seedEntry();
     seed({ accessToken: "old-acc", refreshToken: "ref", refreshAfter: past() });
     stubRefresh(false); // refresh endpoint returns non-ok
 
@@ -193,7 +191,7 @@ describe("resolveFreshBearerToken", () => {
       RUNTIME,
       "px",
       "old-acc",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("old-acc");
@@ -207,7 +205,7 @@ describe("resolveFreshBearerToken", () => {
       RUNTIME,
       "px",
       "old-acc",
-      "paired",
+      "local",
     );
 
     expect(token).toBe("old-acc");

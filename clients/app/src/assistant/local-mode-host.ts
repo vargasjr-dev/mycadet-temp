@@ -24,8 +24,8 @@ import type {
 } from "@mycadet/ipc-contract";
 import {
   isLoopbackGatewayCloud,
+  isPairedEntry,
   parseLockfile,
-  type Cloud,
   type Lockfile,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
@@ -199,26 +199,28 @@ export async function readLockfileHost(): Promise<Lockfile> {
 }
 
 /**
- * An assistant paired from another machine via `cadet connect import` (the
- * `paired` flag): its gateway is remote, reachable through the shell's
- * paired-gateway same-origin path.
+ * An assistant paired from another machine via `cadet connect import`:
+ * its gateway is remote, reachable through the shell's paired-gateway
+ * same-origin path. The lockfile stores no pairing flag — paired-ness is
+ * derived from the entry's addressing ({@link isPairedEntry}).
  */
-export function isPairedAssistant(entry: { paired?: boolean }): boolean {
-  return entry.paired === true;
+export function isPairedAssistant(
+  entry: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
+): boolean {
+  return isPairedEntry(entry);
 }
 
 /**
  * An assistant connectable over this machine's local gateway proxy (a
  * plain on-machine assistant or a local Docker instance — never a paired
- * connect-import, whose defaulted cloud reads "local"; the flag excludes it).
- * The lifecycle set (`wake`, local retire) is narrower — `cloud === "local"`
- * without the flag only.
+ * connect-import, whose defaulted cloud reads "local"; the derived remote
+ * runtimeUrl excludes it). The lifecycle set (`wake`, local retire) is
+ * narrower — `cloud === "local"` without a remote runtimeUrl only.
  */
-export function isLocalGatewayAssistant(entry: {
-  cloud?: Cloud;
-  paired?: boolean;
-}): boolean {
+export function isLocalGatewayAssistant(
+  entry: Pick<LockfileAssistant, "assistantId" | "cloud" | "runtimeUrl">,
+): boolean {
   return (
-    isLoopbackGatewayCloud(entry.cloud ?? "local") && entry.paired !== true
+    isLoopbackGatewayCloud(entry.cloud ?? "local") && !isPairedAssistant(entry)
   );
 }
