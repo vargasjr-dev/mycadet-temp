@@ -281,39 +281,6 @@
   "googleCalendar": {
     "providerLabel": "Google 日历"
   },
-  "providerCallbackPage": {
-    "signupClosedTitle": "注册目前已关闭",
-    "signupClosedSubtitle": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",
-    "backToSignIn": "返回登录",
-    "failedTitle": "身份验证失败",
-    "failedSubtitle": "社交登录时出现问题。请重试或使用其他方式。",
-    "completingTitle": "正在完成登录...",
-    "completingSubtitle": "请稍候，我们正在完成您的身份验证。"
-  },
-  "providerSignupPage": {
-    "completingTitle": "正在完成注册...",
-    "completingSubtitle": "请稍候，我们正在加载您的信息。",
-    "headingLine1": "就快完成了，",
-    "headingLine2": "还差一步",
-    "firstNameQuestion": "我该如何称呼您？",
-    "firstNamePlaceholder": "名",
-    "lastNameQuestion": "您的姓氏是？",
-    "lastNamePlaceholder": "姓",
-    "roleQuestion": "您的角色",
-    "rolePlaceholder": "例如：软件工程师",
-    "submitting": "正在设置…",
-    "submit": "继续 →",
-    "completeAccountTitle": "完成您的账户设置",
-    "completeAccountSubtitle": "我们需要更多详细信息来完成您的账户设置。",
-    "backToSignIn": "← 返回登录",
-    "emailPlaceholder": "电子邮件",
-    "usernamePlaceholder": "用户名",
-    "completeSignup": "完成注册",
-    "completingSignup": "正在完成..."
-  },
-  "oauthComplete": {
-    "errorCode": "错误：{code}"
-  },
   "authErrors": {
     "genericFailure": "发生错误。请重试。",
     "signupClosed": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",

@@ -69,29 +69,12 @@ function leafRouteComponentName(path: string): string | undefined {
   return leaf?.Component?.name;
 }
 
-describe("account route compact-window grouping", () => {
-  // The auth screens that render in the main window opt into the compact
-  // (440×630) window via AccountLayout's sizing hook. Post-nuke that's
-  // password reset only — the login/signup/provider pages moved to the app
-  // bundle and their old paths redirect (see the removed-page tests below).
-  test.each(["/account/provider/callback", "/account/provider/signup"])(
-    "%s is sized by AccountLayout",
-    (path) => {
-      expect(isUnderComponent(path, "AccountLayout")).toBe(true);
-    },
-  );
-
-  // The OAuth popup relay renders inside a popup child window (or the native
-  // SFSafariViewController). It must stay OUT of AccountLayout — the resize
-  // IPC targets the main window, so sizing from a popup would shrink the
-  // wrong window and persist `onboardingActive`.
-  test.each(["/account/oauth/popup-complete", "/account/select-assistant"])(
-    "%s is NOT sized by AccountLayout",
-    (path) => {
-      expect(isUnderComponent(path, "AccountLayout")).toBe(false);
-    },
-  );
-
+describe("account route leftovers", () => {
+  // The account route FILE is nuked — the provider tier and the OAuth popup
+  // relay are deleted (their maintained ports live in the app bundle), so
+  // nothing in web sizes or renders them anymore. The chooser survives as a
+  // standalone route until the chooser-deletion PR deletes it with its
+  // consumers, keeping the auth contract it inherited from the subtree.
   test("select-assistant moved out of /assistant into /account", () => {
     // The old path now falls through to the NotFound splat; the new path
     // keeps the auth contract it inherited from the /assistant subtree.
@@ -112,7 +95,10 @@ describe("nuked account auth pages", () => {
     "/account",
     "/account/login",
     "/account/signup",
+    "/account/provider/callback",
+    "/account/provider/signup",
     "/account/oauth/complete",
+    "/account/oauth/popup-complete",
     "/account/oauth/desktop-complete",
     "/account/cloud-callback",
     "/logout",

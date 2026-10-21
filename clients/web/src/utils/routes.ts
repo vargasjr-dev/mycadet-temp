@@ -146,13 +146,14 @@ export const routes = {
   },
   account: {
     // Triage: every key here still has a live consumer in this bundle, and
-    // each leaves as its consumer does. `login` is gone — the exits
-    // (requireAuth, the 401 interceptor, handle-logout) bounce to the
-    // remote-web pairing page now. The provider tier + `oauth.popupComplete`
-    // serve the auth-logic tier (login-flow, native-auth, install-referrer)
-    // and the integration-connect relay; they die with the auth store.
+    // each leaves as its consumer does. The tier's PAGES are deleted from
+    // this bundle (their maintained ports live in the app bundle — these
+    // paths fall through to the NotFound splat when web serves at root),
+    // but the URL strings stay until their web consumers do: `root` +
+    // `providerCallback` feed the auth-logic tier (login-flow, native-auth,
+    // install-referrer), `oauth.popupComplete` is the integration-connect
+    // relay (cloud-oauth). They die with the auth store.
     root: r("/account"),
-    providerSignup: r("/account/provider/signup"),
     providerCallback: r("/account/provider/callback"),
     oauth: {
       popupComplete: r("/account/oauth/popup-complete"),

@@ -5,7 +5,6 @@ import {
   localModeOnlyMiddleware,
   onboardingCompletedMiddleware,
 } from "@/lib/onboarding-middleware";
-import { accountRoute } from "@/domains/account/account-route";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
@@ -90,7 +89,24 @@ function ChatLayoutRoute() {
 // (e.g. "the OAuth popup pages are NOT under AccountLayout") must run against
 // these raw definitions.
 export const routeTree = [
-  accountRoute,
+  // The account route FILE is nuked — the provider tier and the OAuth popup
+  // relay live in the app bundle now, and web's copies are deleted, so their
+  // paths fall through to the NotFound splat like the rest of the nuked auth
+  // pages. The assistant chooser is the one child that survives (it is
+  // deleted, consumers included, by the chooser-deletion PR), so it mounts
+  // standalone with the auth contract it inherited from the subtree.
+  {
+    path: "/account/select-assistant",
+    ErrorBoundary: RouteErrorBoundary,
+    HydrateFallback: RootHydrateFallback,
+    middleware: [authMiddleware],
+    lazy: {
+      Component: () =>
+        import("@/domains/onboarding/pages/select-assistant-screen").then(
+          (m) => m.SelectAssistantScreen,
+        ),
+    },
+  },
   // About — standalone metadata page rendered inside the Electron
   // About BrowserWindow. Declared as a sibling of `/assistant` (not
   // a child) so React Router's most-specific matcher picks it for

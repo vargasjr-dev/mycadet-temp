@@ -386,17 +386,6 @@
     "subtitle": "Administra copias de seguridad, reinicia tu asistente o entra en modo de recuperación para conectar al terminal de depuración.",
     "title": "General"
   },
-  "deleteAccountSection": {
-    "confirmLabel": "Eliminar cuenta",
-    "confirmMessage": "Esto eliminará permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
-    "confirmTitle": "Eliminar cuenta",
-    "deleteMyAccount": "Eliminar mi cuenta",
-    "description": "Elimina permanentemente tu cuenta y todos los datos asociados.",
-    "platformLoginNotice": "Inicia sesión en la plataforma de Cadet para eliminar tu cuenta.",
-    "title": "Eliminar cuenta",
-    "toastFailed": "No se pudo solicitar la eliminación de la cuenta. Inténtalo de nuevo.",
-    "toastRequested": "Eliminación de cuenta solicitada. Se cerrará tu sesión en breve."
-  },
   "doctorChatBlocks": {
     "allowOnce": "Permitir una vez",
     "alwaysAllow": "Permitir siempre",
