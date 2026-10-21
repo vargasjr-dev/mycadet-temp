@@ -6,7 +6,7 @@
  * The flow keeps its whole journey in React state, so a page refresh used to
  * remount at the form, re-fire the (expensive) "research me" background turn,
  * and risk re-booking the day-2 check-in. We snapshot the journey to
- * `localStorage` keyed by user (persists across reloads — and tab closes —
+ * `localStorage` keyed by assistant (persists across reloads — and tab closes —
  * until onboarding completes and the snapshot is cleared) so a refresh resumes
  * where the user left off:
  *   - the collected details (form + avatar/name) are restored, so the early
@@ -107,18 +107,18 @@ export interface ResearchOnboardingSnapshot {
   droppedClaimsScrubbed?: boolean;
 }
 
-function storageKey(userId: string | null): string | null {
-  return userId ? `research_onboarding:${userId}` : null;
+function storageKey(assistantId: string | null): string | null {
+  return assistantId ? `research_onboarding:${assistantId}` : null;
 }
 
 export function readResearchSnapshot(
-  userId: string | null,
+  assistantId: string | null,
 ): ResearchOnboardingSnapshot | null {
   // Desktop app: never resume — each launch starts onboarding fresh.
   if (isElectron()) {
     return null;
   }
-  const key = storageKey(userId);
+  const key = storageKey(assistantId);
   if (!key) {
     return null;
   }
@@ -135,14 +135,14 @@ export function readResearchSnapshot(
 }
 
 export function writeResearchSnapshot(
-  userId: string | null,
+  assistantId: string | null,
   snapshot: ResearchOnboardingSnapshot,
 ): void {
   // Desktop app: don't persist steps — nothing should survive a relaunch.
   if (isElectron()) {
     return;
   }
-  const key = storageKey(userId);
+  const key = storageKey(assistantId);
   if (!key) {
     return;
   }
@@ -153,8 +153,8 @@ export function writeResearchSnapshot(
   }
 }
 
-export function clearResearchSnapshot(userId: string | null): void {
-  const key = storageKey(userId);
+export function clearResearchSnapshot(assistantId: string | null): void {
+  const key = storageKey(assistantId);
   if (!key) {
     return;
   }

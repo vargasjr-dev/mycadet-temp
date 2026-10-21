@@ -508,7 +508,6 @@
     "checkAvailabilityFailed": "无法检查可用性。",
     "checkingAvailability": "正在检查可用性…",
     "chooseDifferentHandle": "请选择一个不同的句柄。",
-    "emailLabel": "电子邮件",
     "handleHelper": "小写字母、数字、连字符和下划线。3–30个字符。",
     "handleLocked": "您的助手句柄已锁定，因为它被用作其电子邮件子域名。要更改它，请先<releaseLink>释放子域名</releaseLink>。",
     "loading": "正在加载您的个人资料…",
@@ -574,7 +573,6 @@
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "关于诊断信息",
     "addFiles": "添加文件",
-    "adminOnlyHint": "仅限管理员 - 在本地构建诊断存档并下载，而不是提交反馈或通知 Slack。",
     "attachments": "附件",
     "bugTip": "提示：在我们的 <discordLink>Discord 社区</discordLink> 发布问题可获得更快的支持",
     "cancel": "取消",
@@ -585,7 +583,6 @@
     "downloadDiagnosticsAria": "直接下载诊断信息",
     "downloadDiagnosticsButton": "下载诊断信息",
     "dropFiles": "拖放文件以附加…",
-    "email": "电子邮件",
     "featureTip": "提示：在我们的 <roadmapLink>公开路线图</roadmapLink> 上为功能投票",
     "includeConversation": "包含最近的对话",
     "includeConversationAria": "包含最近的对话",

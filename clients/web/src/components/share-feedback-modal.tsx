@@ -11,7 +11,6 @@ import {
   Lightbulb,
   Loader2,
   type LucideIcon,
-  Mail,
   MessageCircle,
   Paperclip,
   Send,
@@ -45,14 +44,13 @@ import { buildDiagnosticsSnapshot } from "@/lib/diagnostics";
 import { isElectron } from "@/runtime/is-electron";
 import { saveFile } from "@/runtime/native-file";
 import { Trans, useTranslation } from "@/i18n";
-import { useAuthStore } from "@/stores/auth-store";
 import { CADET_COMMUNITY_URL } from "@/utils/external-urls";
 import { Button } from "@mycadet/design-library/components/button";
 import {
   Select,
   type SelectOption,
 } from "@mycadet/design-library/components/select";
-import { Input, Textarea } from "@mycadet/design-library/components/input";
+import { Textarea } from "@mycadet/design-library/components/input";
 import { Notice } from "@mycadet/design-library/components/notice";
 import { Toggle } from "@mycadet/design-library/components/toggle";
 import type { FeedbackReason } from "@/components/share-feedback-types";
@@ -692,14 +690,10 @@ export function ShareFeedbackModal({
 }: ShareFeedbackModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const authUser = useAuthStore.use.user();
-  const authEmail = authUser?.email;
-  const isStaff = authUser?.isStaff ?? false;
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
 
   const timeRangeOptions: SelectOption<TimeRange>[] = useMemo(
     () => [
@@ -723,7 +717,6 @@ export function ShareFeedbackModal({
     initialReason ?? "bug_report",
   );
   const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
   const [includeLogs, setIncludeLogs] = useState<boolean>(
     REASON_OPTIONS.find((r) => r.value === (initialReason ?? "bug_report"))
       ?.includesLogsByDefault ?? true,
@@ -734,19 +727,15 @@ export function ShareFeedbackModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [includeConversation, setIncludeConversation] = useState(false);
-  // Admin-only: build the diagnostics archive locally and download it
+  // Optional: build the diagnostics archive locally and download it
   // instead of submitting feedback (which notifies Slack).
-  const [adminDownloadMode, setAdminDownloadMode] = useState(false);
+  const [downloadMode, setDownloadMode] = useState(false);
 
   const mutation = useMutation(feedbackCreateMutation());
   const [isBuildingLogs, setIsBuildingLogs] = useState(false);
   const isSubmitting = mutation.isPending || isBuildingLogs;
 
-  const shouldShowEmail = !authEmail;
-  const canSend = useMemo(
-    () => message.trim().length > 0 && email.trim().length > 0,
-    [message, email],
-  );
+  const canSend = message.trim().length > 0;
 
   useEffect(() => {
     if (!open) {
@@ -755,7 +744,6 @@ export function ShareFeedbackModal({
     const reason = initialReason ?? "bug_report";
     setSelectedReason(reason);
     setMessage(initialMessage ?? "");
-    setEmail(authEmail ?? "");
     setIncludeLogs(
       REASON_OPTIONS.find((r) => r.value === reason)?.includesLogsByDefault ??
         true,
@@ -764,16 +752,12 @@ export function ShareFeedbackModal({
     setLogTimeRange("past_hour");
     setAttachments([]);
     setIncludeConversation(false);
-    setAdminDownloadMode(false);
+    setDownloadMode(false);
     setSubmitError(null);
     setIsBuildingLogs(false);
     mutation.reset();
     const t = setTimeout(() => {
-      if (!authEmail) {
-        emailRef.current?.focus();
-      } else {
-        messageRef.current?.focus();
-      }
+      messageRef.current?.focus();
     }, 50);
     return () => clearTimeout(t);
   }, [open]);
@@ -915,7 +899,6 @@ export function ShareFeedbackModal({
           body: {
             message: message.trim(),
             classification: CLASSIFICATION_MAP[selectedReason],
-            email: email.trim(),
             client,
             client_version: clientVersion,
             ...(assistantId ? { assistant_id: assistantId } : {}),
@@ -973,9 +956,8 @@ export function ShareFeedbackModal({
     }
   };
 
-  // Admin-only path: build the diagnostics archive client-side and hand it
-  // to the browser as a download. No feedback submission and no Slack
-  // notification.
+  // Build the diagnostics archive client-side and hand it to the browser
+  // as a download. No feedback submission and no Slack notification.
   const handleDownload = async () => {
     if (isSubmitting) {
       return;
@@ -1056,25 +1038,20 @@ export function ShareFeedbackModal({
         <div
           className={`flex flex-col gap-3.5 overflow-y-auto pt-4 ${isSubmitting ? "pointer-events-none opacity-60" : ""}`}
         >
-          {isStaff && (
-            <div className="flex flex-col gap-1.5 rounded-lg border border-[var(--border-base)] bg-[var(--surface-base)] px-3 py-2.5">
-              <label className="flex cursor-pointer items-center gap-3">
-                <Toggle
-                  checked={adminDownloadMode}
-                  onChange={() => setAdminDownloadMode((v) => !v)}
-                  aria-label={t("shareFeedbackModal.downloadDiagnosticsAria")}
-                />
-                <span className="text-body-medium-lighter text-[var(--content-default)]">
-                  {t("shareFeedbackModal.downloadDiagnostics")}
-                </span>
-              </label>
-              <span className="text-body-small-default text-[var(--content-secondary)]">
-                {t("shareFeedbackModal.adminOnlyHint")}
+          <div className="flex flex-col gap-1.5 rounded-lg border border-[var(--border-base)] bg-[var(--surface-base)] px-3 py-2.5">
+            <label className="flex cursor-pointer items-center gap-3">
+              <Toggle
+                checked={downloadMode}
+                onChange={() => setDownloadMode((v) => !v)}
+                aria-label={t("shareFeedbackModal.downloadDiagnosticsAria")}
+              />
+              <span className="text-body-medium-lighter text-[var(--content-default)]">
+                {t("shareFeedbackModal.downloadDiagnostics")}
               </span>
-            </div>
-          )}
+            </label>
+          </div>
 
-          {adminDownloadMode ? (
+          {downloadMode ? (
             <div className="flex items-center gap-3">
               <span className="text-body-medium-lighter text-[var(--content-default)]">
                 {t("shareFeedbackModal.timeRange")}
@@ -1088,20 +1065,6 @@ export function ShareFeedbackModal({
             </div>
           ) : (
             <>
-              {shouldShowEmail && (
-                <Input
-                  id={`${titleId}-email`}
-                  ref={emailRef}
-                  label={t("shareFeedbackModal.email")}
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  leftIcon={<Mail className="h-4 w-4" aria-hidden />}
-                  fullWidth
-                />
-              )}
-
               <div className="flex flex-col gap-1.5">
                 <span className="text-body-small-default text-[var(--content-secondary)]">
                   {t("shareFeedbackModal.category")}
@@ -1296,7 +1259,7 @@ export function ShareFeedbackModal({
           {isSubmitting ? (
             <span className="inline-flex items-center gap-2 text-body-medium-lighter text-[var(--content-secondary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {adminDownloadMode
+              {downloadMode
                 ? t("shareFeedbackModal.preparingDiagnostics")
                 : t("shareFeedbackModal.sendingFeedback")}
             </span>
@@ -1305,7 +1268,7 @@ export function ShareFeedbackModal({
               <Button variant="ghost" onClick={onClose}>
                 {t("shareFeedbackModal.cancel")}
               </Button>
-              {adminDownloadMode ? (
+              {downloadMode ? (
                 <Button
                   variant="primary"
                   leftIcon={<Download />}

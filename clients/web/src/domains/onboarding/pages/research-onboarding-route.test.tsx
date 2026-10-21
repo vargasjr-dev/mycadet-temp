@@ -46,7 +46,7 @@ import {
   type ResearchOnboardingSnapshot,
 } from "@/domains/onboarding/research-onboarding-persistence";
 
-const USER_ID = "user-1";
+const ASSISTANT_ID = "asst-1";
 
 const navigateMock = mock((_to: string, _opts?: unknown) => {});
 const searchParams = new URLSearchParams();
@@ -162,7 +162,11 @@ let cloudSessionSettled = true;
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
     use: {
-      user: () => ({ id: USER_ID, firstName: "Alice", lastName: "Example" }),
+      user: () => ({
+        id: ASSISTANT_ID,
+        firstName: "Alice",
+        lastName: "Example",
+      }),
     },
   },
   useHasCloudSession: () => hasCloudSession,
@@ -465,7 +469,7 @@ afterEach(() => {
 describe("ResearchOnboardingRoute resume guard", () => {
   test("a restored post-form snapshot diverts to the decision screen when the assistant is established", async () => {
     establishedResult = { established: true, assistantName: "Viper" };
-    writeResearchSnapshot(USER_ID, postFormSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -480,7 +484,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
 
   test("a restored post-form snapshot resumes research when the assistant is fresh", async () => {
     establishedResult = { established: false, assistantName: null };
-    writeResearchSnapshot(USER_ID, postFormSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -509,7 +513,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
   test("a restored completed snapshot diverts to the decision screen when the assistant is established", async () => {
     establishedResult = { established: true, assistantName: "Viper" };
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -524,7 +528,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
   test("a restored completed snapshot resumes without the guard when the assistant is fresh", async () => {
     establishedResult = { established: false, assistantName: null };
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -545,7 +549,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     armDelayedEstablishedCheck();
     establishedResult = { established: true, assistantName: "Viper" };
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -560,7 +564,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     // Triggering the held handoff does nothing: no handoff navigation, snapshot intact.
     fireEvent.click(screen.getByTestId("finishing-done"));
     expect(navigateMock).not.toHaveBeenCalled();
-    expect(readResearchSnapshot(USER_ID)).not.toBeNull();
+    expect(readResearchSnapshot(ASSISTANT_ID)).not.toBeNull();
 
     // Releasing an established verdict still diverts to the keep/redo screen.
     releaseEstablishedCheck();
@@ -576,7 +580,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     armDelayedEstablishedCheck();
     establishedResult = { established: false, assistantName: null };
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
     render(<ResearchOnboardingRoute />);
 
@@ -607,7 +611,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
   // finished onboarding is known, so it is where the stamp has to happen.
   test("handing off to chat stamps the assistant as onboarded", async () => {
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
     backgroundHatch.ready = true;
     backgroundHatch.assistantId = "asst-1";
 
@@ -628,7 +632,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
 
   test("keeping an established assistant stamps it too", async () => {
     establishedResult = { established: true, assistantName: "Viper" };
-    writeResearchSnapshot(USER_ID, postFormSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
     backgroundHatch.ready = true;
     backgroundHatch.assistantId = "asst-1";
 
@@ -644,7 +648,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
 
   test("parking on the guard from a resume never persists a resumable 'existing' snapshot", async () => {
     establishedResult = { established: true, assistantName: "Viper" };
-    writeResearchSnapshot(USER_ID, postFormSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
     render(<ResearchOnboardingRoute />);
     await waitFor(() =>
@@ -654,7 +658,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     // The parked-on-guard journey clears formValues, so the persistence effect
     // can't write a `step: "existing"` snapshot carrying post-form values — the
     // persisted step stays the pre-guard one.
-    expect(readResearchSnapshot(USER_ID)?.step).not.toBe("existing");
+    expect(readResearchSnapshot(ASSISTANT_ID)?.step).not.toBe("existing");
 
     // A refresh (fresh mount, same snapshot) re-lands on the keep/redo choice
     // rather than auto-resuming past the guard.
@@ -755,50 +759,46 @@ describe("ResearchOnboardingRoute paid return", () => {
     expect(banner?.className).toContain("safe-area-inset-top");
   });
 
-  // A resumed COMPLETED snapshot lands straight on the terminal handoff, past
-  // the carousel that otherwise gates on the hatch. Handing off there clears
-  // the resume snapshot and navigates with a null assistant id — into nothing,
-  // with no way back.
-  test("holds the terminal handoff while the hatch is dead, and releases it after a retry", async () => {
+  // The snapshot is keyed by the assistant id, so a dead hatch has nothing to
+  // key the resume on: the journey waits at the form with the snapshot intact,
+  // and a recovered hatch lands the resume straight on the terminal handoff —
+  // held until the hatch has an assistant to hand off to.
+  test("waits for the hatch before resuming, and releases the handoff once it is ready", async () => {
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, doneSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
     backgroundHatch.error = "Failed to start your assistant. Please try again.";
     backgroundHatch.ready = false;
     backgroundHatch.assistantId = null;
 
     const { rerender } = render(<ResearchOnboardingRoute />);
 
+    // Nothing to key the resume on yet: the form shows (banner up), and the
+    // journey's resume state survives for the retry.
+    await screen.findByRole("alert");
+    expect(screen.queryByTestId("finishing-done")).toBeNull();
+    expect(readResearchSnapshot(ASSISTANT_ID)).not.toBeNull();
+
+    // "Try again" clears the terminal error synchronously; the fresh attempt
+    // provisions, and once the assistant id lands the resume restores.
+    onRetryHatch = () => {
+      backgroundHatch.error = null;
+      backgroundHatch.assistantId = "asst-1";
+    };
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    rerender(<ResearchOnboardingRoute />);
+
+    // The hatch hasn't passed its health check yet — releasing the handoff
+    // would enter an assistant that isn't up.
     await waitFor(() =>
       expect(
         (screen.getByTestId("finishing-done") as HTMLButtonElement).disabled,
       ).toBe(true),
     );
-
-    // Triggering the held handoff hands off to nothing: no navigation, and the
-    // journey's resume state survives for the retry.
     fireEvent.click(screen.getByTestId("finishing-done"));
     expect(navigateMock).not.toHaveBeenCalled();
-    expect(readResearchSnapshot(USER_ID)).not.toBeNull();
-
-    // "Try again" clears the terminal error synchronously, but the fresh
-    // attempt has to provision before it has an assistant.
-    onRetryHatch = () => {
-      backgroundHatch.error = null;
-    };
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    rerender(<ResearchOnboardingRoute />);
-
-    // The retry window: no error left, still nothing to hand off to. Releasing
-    // the handoff here would enter a null assistant, exactly as the dead hatch did.
-    expect(
-      (screen.getByTestId("finishing-done") as HTMLButtonElement).disabled,
-    ).toBe(true);
-    fireEvent.click(screen.getByTestId("finishing-done"));
-    expect(navigateMock).not.toHaveBeenCalled();
-    expect(readResearchSnapshot(USER_ID)).not.toBeNull();
+    expect(readResearchSnapshot(ASSISTANT_ID)).not.toBeNull();
 
     backgroundHatch.ready = true;
-    backgroundHatch.assistantId = "asst-1";
     rerender(<ResearchOnboardingRoute />);
 
     // A recovered hatch has an assistant to hand off to again.
@@ -815,7 +815,10 @@ describe("ResearchOnboardingRoute paid return", () => {
   // from assistive tech nor swallow the escapes the steps deliberately expose
   // while the hatch is dead.
   test("leaves the funnel's own escapes usable behind the failure banner", async () => {
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "integration" }),
+    );
     backgroundHatch.error = "Failed to start your assistant. Please try again.";
     backgroundHatch.ready = false;
     backgroundHatch.assistantId = null;
@@ -826,8 +829,9 @@ describe("ResearchOnboardingRoute paid return", () => {
     // The funnel behind is still exposed, not inerted by a modal layer.
     expect(container.getAttribute("aria-hidden")).toBeNull();
 
-    // The funnel behind is the resumed journey's own step (not a modal
-    // shell), so the user keeps every escape the step itself offers.
+    // The funnel behind is still its own step surface (not a modal shell) —
+    // with the hatch dead the resume waits at the form — so the user keeps
+    // every escape the step itself offers.
   });
 
   // The banner blocks input, not the step machine — so the auto-advancing
@@ -835,7 +839,7 @@ describe("ResearchOnboardingRoute paid return", () => {
   // walked past the result steps and a recovered turn has nowhere to show.
   test("holds the looking carousel while the hatch is dead, and resumes after a retry", async () => {
     researchStatus = "error";
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "looking" }));
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot({ step: "looking" }));
     backgroundHatch.error = "Failed to start your assistant. Please try again.";
 
     const { rerender } = render(<ResearchOnboardingRoute />);
@@ -863,7 +867,7 @@ describe("ResearchOnboardingRoute paid return", () => {
 
   test("skips the results step when research settles with no claims", async () => {
     researchStatus = "done";
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "results" }));
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot({ step: "results" }));
 
     render(<ResearchOnboardingRoute />);
 
@@ -899,7 +903,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
 
   test("a restored looking snapshot with empty role and hobbies skips the reveal", async () => {
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({ step: "looking", formValues: nameOnly }),
     );
 
@@ -923,7 +927,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
 
   test("a restored snapshot with last name and a role still starts research", async () => {
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({
         formValues: { ...nameOnly, lastName: "Example", role: "Engineer" },
       }),
@@ -937,7 +941,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
 
   test("a restored snapshot with last name and hobbies still starts research", async () => {
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({
         formValues: { ...nameOnly, lastName: "Example", hobbies: ["chess"] },
       }),
@@ -951,7 +955,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
 
   test("a restored snapshot with role and hobbies but no last name skips research", async () => {
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({
         step: "looking",
         formValues: { ...nameOnly, role: "Engineer", hobbies: ["chess"] },
@@ -1061,7 +1065,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
   // conversation while the first is still there.
   test("re-attaches the retried turn to the conversation the journey already minted", async () => {
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({ researchConversationId: "conv-1" }),
     );
 
@@ -1114,7 +1118,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
     researchStatus = "done";
     installedPlugins = ["admin-copilot"];
     writeResearchSnapshot(
-      USER_ID,
+      ASSISTANT_ID,
       postFormSnapshot({
         step: "suggestions",
         research: {
@@ -1152,7 +1156,10 @@ describe("ResearchOnboardingRoute hatch retry", () => {
   // that dies while the user walks the later steps leaves the sliders locked as
   // if the persona had been rewritten — it never was.
   test("re-applies the personality that died with the hatch", async () => {
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "personality" }),
+    );
 
     const { rerender } = render(<ResearchOnboardingRoute />);
     fireEvent.click(await screen.findByTestId("personality-slide"));
@@ -1177,7 +1184,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
 
   test("does not apply a personality the user never chose", async () => {
     failFirstHatch();
-    writeResearchSnapshot(USER_ID, postFormSnapshot());
+    writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
     render(<ResearchOnboardingRoute />);
     await screen.findByRole("alert");
@@ -1203,7 +1210,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
   test("self-hosted without a cloud session skips the claim-credits step", async () => {
     adoptExistingAssistant = true;
     hasCloudSession = false;
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "personality" }),
+    );
 
     render(<ResearchOnboardingRoute />);
     fireEvent.click(await screen.findByTestId("personality-continue"));
@@ -1219,7 +1229,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
   test("self-hosted WITH a cloud session keeps the claim-credits step", async () => {
     adoptExistingAssistant = true;
     hasCloudSession = true;
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "personality" }),
+    );
 
     render(<ResearchOnboardingRoute />);
     fireEvent.click(await screen.findByTestId("personality-continue"));
@@ -1233,7 +1246,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
     adoptExistingAssistant = true;
     hasCloudSession = false;
     cloudSessionSettled = false;
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "personality" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "personality" }),
+    );
 
     render(<ResearchOnboardingRoute />);
     fireEvent.click(await screen.findByTestId("personality-continue"));
@@ -1249,7 +1265,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
     adoptExistingAssistant = true;
     hasCloudSession = false;
     cloudSessionSettled = false;
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "integration" }),
+    );
 
     const { rerender } = render(<ResearchOnboardingRoute />);
     await waitFor(() =>
@@ -1267,7 +1286,10 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
   test("a snapshot resuming onto the skipped claim-credits step remaps to the research reveal", async () => {
     adoptExistingAssistant = true;
     hasCloudSession = false;
-    writeResearchSnapshot(USER_ID, postFormSnapshot({ step: "integration" }));
+    writeResearchSnapshot(
+      ASSISTANT_ID,
+      postFormSnapshot({ step: "integration" }),
+    );
 
     render(<ResearchOnboardingRoute />);
 

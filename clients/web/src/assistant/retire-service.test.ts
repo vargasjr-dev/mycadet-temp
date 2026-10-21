@@ -60,12 +60,6 @@ mock.module("@/stores/organization-store", () => ({
     getState: () => ({ currentOrganizationId: "org-test" }),
   },
 }));
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    getState: () => ({ user: { id: "user-1" } }),
-  },
-}));
-
 const clearResearchSnapshotMock = mock((_userId: string | null) => {});
 mock.module("@/domains/onboarding/research-onboarding-persistence", () => ({
   clearResearchSnapshot: clearResearchSnapshotMock,
@@ -205,7 +199,7 @@ describe("retireAssistant", () => {
     // start at the form, not resume the retired assistant's run deep in the
     // flow (e.g. straight onto the wake gate).
     expect(outcome.ok).toBe(true);
-    expect(clearResearchSnapshotMock).toHaveBeenCalledWith("user-1");
+    expect(clearResearchSnapshotMock).toHaveBeenCalledWith("p1");
   });
 
   test("a failed retire keeps the research-onboarding resume snapshot", async () => {

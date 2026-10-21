@@ -10,7 +10,6 @@ import { ApiError } from "@/utils/api-errors";
 const feedbackRequests: unknown[] = [];
 let capacitorPlatform: "web" | "ios" | "android" = "web";
 let rejectAndroidFeedbackClient = false;
-let staffUser = false;
 const downloadedFiles: File[] = [];
 
 mock.module("@/runtime/native-file", () => ({
@@ -42,14 +41,6 @@ mock.module("@capacitor/core", () => ({
   registerPlugin: () => ({}),
 }));
 
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    use: {
-      user: () => (staffUser ? { isStaff: true, email: null } : null),
-    },
-  },
-}));
-
 const { ShareFeedbackModal, stripBulkBase64, dedupeAgainstClientMessages } =
   await import("@/components/share-feedback-modal");
 
@@ -58,7 +49,6 @@ afterEach(() => {
   feedbackRequests.length = 0;
   capacitorPlatform = "web";
   rejectAndroidFeedbackClient = false;
-  staffUser = false;
   downloadedFiles.length = 0;
   delete (window as unknown as { _cadetDebug?: unknown })._cadetDebug;
   delete (window as unknown as { cadet?: unknown }).cadet;
@@ -87,7 +77,6 @@ async function submitAndGetLogsText(
     </QueryClientProvider>,
   );
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Email"), "user@example.com");
   await user.click(screen.getByRole("button", { name: "Submit" }));
   await waitFor(() => expect(feedbackRequests).toHaveLength(1));
   const request = feedbackRequests[0] as { body: { logs_file?: File } };
@@ -97,7 +86,6 @@ async function submitAndGetLogsText(
 
 describe("ShareFeedbackModal", () => {
   test("includes the asset snapshot in the direct diagnostic download", async () => {
-    staffUser = true;
     const client = new QueryClient();
     client.setQueryData(
       attachmentsGetInfiniteQueryKey({
@@ -201,7 +189,6 @@ describe("ShareFeedbackModal", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
@@ -228,7 +215,6 @@ describe("ShareFeedbackModal", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(2));
@@ -261,7 +247,6 @@ describe("ShareFeedbackModal", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
@@ -293,7 +278,6 @@ describe("ShareFeedbackModal", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));
@@ -330,7 +314,6 @@ describe("ShareFeedbackModal", () => {
     );
 
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText("Email"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "Submit" }));
 
     await waitFor(() => expect(feedbackRequests).toHaveLength(1));

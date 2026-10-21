@@ -508,7 +508,6 @@
     "checkAvailabilityFailed": "無法檢查可用性。",
     "checkingAvailability": "正在檢查可用性…",
     "chooseDifferentHandle": "請選擇不同的識別名稱。",
-    "emailLabel": "電子郵件",
     "handleHelper": "小寫字母、數字、連字號和底線。3–30 個字元。",
     "handleLocked": "您的助理識別名稱已鎖定，因為它被用作電子郵件子網域。若要變更，請先<releaseLink>釋放子網域</releaseLink>。",
     "loading": "正在載入您的個人資料…",
@@ -574,7 +573,6 @@
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "關於診斷資訊",
     "addFiles": "新增檔案",
-    "adminOnlyHint": "僅限管理員 - 在本機建立診斷封存檔並下載，而非提交意見回饋或通知 Slack。",
     "attachments": "附件",
     "bugTip": "提示：在我們的 <discordLink>Discord 社群</discordLink> 發文可獲得更快的支援",
     "cancel": "取消",
@@ -585,7 +583,6 @@
     "downloadDiagnosticsAria": "直接下載診斷資訊",
     "downloadDiagnosticsButton": "下載診斷資訊",
     "dropFiles": "拖曳檔案以附加…",
-    "email": "電子郵件",
     "featureTip": "提示：在我們的 <roadmapLink>公開藍圖</roadmapLink> 上為功能投票",
     "includeConversation": "包含最近的對話",
     "includeConversationAria": "包含最近的對話",

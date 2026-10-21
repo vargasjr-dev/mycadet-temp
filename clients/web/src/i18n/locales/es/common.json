@@ -506,7 +506,6 @@
     "checkAvailabilityFailed": "No se pudo comprobar la disponibilidad.",
     "checkingAvailability": "Comprobando disponibilidad…",
     "chooseDifferentHandle": "Elige un identificador diferente.",
-    "emailLabel": "Correo electrónico",
     "handleHelper": "Letras minúsculas, dígitos, guiones y guiones bajos. De 3 a 30 caracteres.",
     "handleLocked": "El identificador de tu asistente está bloqueado porque se usa como su subdominio de correo. Para cambiarlo, <releaseLink>libera el subdominio</releaseLink> primero.",
     "loading": "Cargando tu perfil…",
@@ -572,7 +571,6 @@
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "Acerca de los diagnósticos",
     "addFiles": "Añadir archivos",
-    "adminOnlyHint": "Solo para administradores: crea el archivo de diagnósticos en local y lo descarga en lugar de enviar comentarios o notificar a Slack.",
     "attachments": "Adjuntos",
     "bugTip": "Consejo: obtén soporte más rápido publicando en nuestra <discordLink>comunidad de Discord</discordLink>",
     "cancel": "Cancelar",
@@ -583,7 +581,6 @@
     "downloadDiagnosticsAria": "Descargar diagnósticos directamente",
     "downloadDiagnosticsButton": "Descargar diagnósticos",
     "dropFiles": "Suelta archivos para adjuntarlos…",
-    "email": "Correo electrónico",
     "featureTip": "Consejo: vota funciones en nuestro <roadmapLink>roadmap público</roadmapLink>",
     "includeConversation": "Incluir la conversación más reciente",
     "includeConversationAria": "Incluir la conversación más reciente",

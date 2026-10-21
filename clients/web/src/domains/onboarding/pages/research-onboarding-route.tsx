@@ -133,7 +133,6 @@ preloadBundledAvatarComponents();
 export function ResearchOnboardingRoute() {
   const navigate = useNavigate();
   const user = useAuthStore.use.user();
-  const userId = user?.id ?? null;
   const enterFocus = useOnboardingFocusStore.use.enterFocus();
   const exitFocus = useOnboardingFocusStore.use.exitFocus();
   const setPendingAvatarTraits =
@@ -473,21 +472,23 @@ export function ResearchOnboardingRoute() {
   );
 
   // Resume a journey saved by a previous session (a page refresh). Runs once,
-  // as soon as the user id is known, BEFORE the persistence write / research
-  // re-fire effects below (which gate on `restored`). useLayoutEffect so we
-  // never paint the form for a journey that should resume deeper in. Restores
-  // the collected details + any completed research output and jumps to the
-  // right step (the suggestions once research finished — see resolveResumeStep).
+  // as soon as the hatch has resolved the assistant (the snapshot is keyed by
+  // assistant id), BEFORE the persistence write / research re-fire effects
+  // below (which gate on `restored`). Restores the collected details + any
+  // completed research output and jumps to the right step (the suggestions
+  // once research finished — see resolveResumeStep).
   useLayoutEffect(() => {
     if (restored) {
       return;
     }
-    // Wait for auth to resolve the user so the snapshot key is correct; the
-    // effect re-runs when `userId` lands.
-    if (!userId) {
+    // Wait for the hatch to resolve the assistant so the snapshot key is
+    // correct; the effect re-runs when `hatchedAssistantId` lands. On a
+    // refresh the background hatch re-resolves the SAME assistant (the
+    // platform hatch answers 200 for the existing one), so the key is stable.
+    if (!hatchedAssistantId) {
       return;
     }
-    const snapshot = readResearchSnapshot(userId);
+    const snapshot = readResearchSnapshot(hatchedAssistantId);
     // Only resume a journey that got past the form; anything else is a fresh
     // start (the form collects the details the rest of the flow needs).
     if (snapshot?.formValues) {
@@ -536,7 +537,7 @@ export function ResearchOnboardingRoute() {
     setRestored(true);
   }, [
     restored,
-    userId,
+    hatchedAssistantId,
     hydrateResearch,
     awaitHatchReady,
     skipClaimCreditsStep,
@@ -552,7 +553,7 @@ export function ResearchOnboardingRoute() {
     if (!restored || !formValues) {
       return;
     }
-    writeResearchSnapshot(userId, {
+    writeResearchSnapshot(hatchedAssistantId, {
       step,
       formValues,
       faceValues,
@@ -574,7 +575,7 @@ export function ResearchOnboardingRoute() {
     });
   }, [
     restored,
-    userId,
+    hatchedAssistantId,
     step,
     keptFindings,
     formValues,
@@ -729,7 +730,7 @@ export function ResearchOnboardingRoute() {
   ) {
     // Handing off to the chat ends the research-onboarding journey — drop the
     // resume snapshot so a later visit starts clean instead of resuming this one.
-    clearResearchSnapshot(userId);
+    clearResearchSnapshot(hatchedAssistantId);
     // The completion record this assistant is judged by from here on.
     if (hatchedAssistantId) {
       markAssistantOnboarded(hatchedAssistantId);
@@ -1186,7 +1187,7 @@ export function ResearchOnboardingRoute() {
       <ExistingAssistantStep
         assistantName={establishedCheck?.assistantName ?? null}
         onKeep={() => {
-          clearResearchSnapshot(userId);
+          clearResearchSnapshot(hatchedAssistantId);
           // Keeping an established assistant settles its onboarding too.
           if (hatchedAssistantId) {
             markAssistantOnboarded(hatchedAssistantId);

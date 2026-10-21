@@ -508,7 +508,6 @@
     "checkAvailabilityFailed": "Couldn't check availability.",
     "checkingAvailability": "Checking availability…",
     "chooseDifferentHandle": "Please choose a different handle.",
-    "emailLabel": "Email",
     "handleHelper": "Lowercase letters, digits, hyphens, and underscores. 3–30 characters.",
     "handleLocked": "Your assistant's handle is locked because it's used as its email subdomain. To change it, <releaseLink>release the subdomain</releaseLink> first.",
     "loading": "Loading your profile…",
@@ -574,7 +573,6 @@
   "shareFeedbackModal": {
     "aboutDiagnosticsAria": "About diagnostics",
     "addFiles": "Add files",
-    "adminOnlyHint": "Admin only - builds the diagnostics archive locally and downloads it instead of submitting feedback or notifying Slack.",
     "attachments": "Attachments",
     "bugTip": "Tip: Get faster support by posting in our <discordLink>Discord community</discordLink>",
     "cancel": "Cancel",
@@ -585,7 +583,6 @@
     "downloadDiagnosticsAria": "Download diagnostics directly",
     "downloadDiagnosticsButton": "Download diagnostics",
     "dropFiles": "Drop files to attach…",
-    "email": "Email",
     "featureTip": "Tip: Vote on features on our <roadmapLink>public roadmap</roadmapLink>",
     "includeConversation": "Include the most recent conversation",
     "includeConversationAria": "Include the most recent conversation",

@@ -1,6 +1,6 @@
 /**
  * Tests for the research-onboarding resume persistence: the round-trip
- * read/write/clear contract (user-scoped key, privacy-mode tolerance) and the
+ * read/write/clear contract (assistant-scoped key, privacy-mode tolerance) and the
  * resolveResumeStep routing — jump to suggestions once research finished,
  * otherwise resume where we were.
  */
@@ -15,7 +15,7 @@ import {
   type ResearchOnboardingSnapshot,
 } from "@/domains/onboarding/research-onboarding-persistence";
 
-const USER = "user-123";
+const ASSISTANT = "user-123";
 
 function baseSnapshot(
   overrides: Partial<ResearchOnboardingSnapshot> = {},
@@ -45,40 +45,40 @@ afterEach(() => {
 describe("read/write/clear round-trip", () => {
   test("writes then reads back the same snapshot", () => {
     const snapshot = baseSnapshot();
-    writeResearchSnapshot(USER, snapshot);
-    expect(readResearchSnapshot(USER)).toEqual(snapshot);
+    writeResearchSnapshot(ASSISTANT, snapshot);
+    expect(readResearchSnapshot(ASSISTANT)).toEqual(snapshot);
   });
 
   test("returns null when nothing was written", () => {
-    expect(readResearchSnapshot(USER)).toBeNull();
+    expect(readResearchSnapshot(ASSISTANT)).toBeNull();
   });
 
-  test("is user-scoped — another user can't read this user's snapshot", () => {
-    writeResearchSnapshot(USER, baseSnapshot());
+  test("is assistant-scoped — another assistant can't read this assistant's snapshot", () => {
+    writeResearchSnapshot(ASSISTANT, baseSnapshot());
     expect(readResearchSnapshot("someone-else")).toBeNull();
   });
 
   test("clear removes the snapshot", () => {
-    writeResearchSnapshot(USER, baseSnapshot());
-    clearResearchSnapshot(USER);
-    expect(readResearchSnapshot(USER)).toBeNull();
+    writeResearchSnapshot(ASSISTANT, baseSnapshot());
+    clearResearchSnapshot(ASSISTANT);
+    expect(readResearchSnapshot(ASSISTANT)).toBeNull();
   });
 
-  test("a null user id is a no-op for read/write/clear (never throws)", () => {
+  test("a null assistant id is a no-op for read/write/clear (never throws)", () => {
     expect(() => writeResearchSnapshot(null, baseSnapshot())).not.toThrow();
     expect(readResearchSnapshot(null)).toBeNull();
     expect(() => clearResearchSnapshot(null)).not.toThrow();
   });
 
   test("malformed stored JSON reads as null rather than throwing", () => {
-    localStorage.setItem(`research_onboarding:${USER}`, "{not json");
-    expect(readResearchSnapshot(USER)).toBeNull();
+    localStorage.setItem(`research_onboarding:${ASSISTANT}`, "{not json");
+    expect(readResearchSnapshot(ASSISTANT)).toBeNull();
   });
 
   test("round-trips the research conversation id for mid-search resume", () => {
     const snapshot = baseSnapshot({ researchConversationId: "conv-abc" });
-    writeResearchSnapshot(USER, snapshot);
-    expect(readResearchSnapshot(USER)?.researchConversationId).toBe("conv-abc");
+    writeResearchSnapshot(ASSISTANT, snapshot);
+    expect(readResearchSnapshot(ASSISTANT)?.researchConversationId).toBe("conv-abc");
   });
 
   test("round-trips dropped claims and the scrub flag on completed research", () => {
@@ -96,8 +96,8 @@ describe("read/write/clear round-trip", () => {
       },
       droppedClaimsScrubbed: true,
     });
-    writeResearchSnapshot(USER, snapshot);
-    const read = readResearchSnapshot(USER);
+    writeResearchSnapshot(ASSISTANT, snapshot);
+    const read = readResearchSnapshot(ASSISTANT);
     expect(read?.research?.droppedClaims).toEqual(["Lives in Dallas"]);
     expect(read?.droppedClaimsScrubbed).toBe(true);
   });
@@ -118,25 +118,25 @@ describe("Electron host", () => {
   });
 
   test("never writes a snapshot", () => {
-    writeResearchSnapshot(USER, baseSnapshot());
-    expect(localStorage.getItem(`research_onboarding:${USER}`)).toBeNull();
+    writeResearchSnapshot(ASSISTANT, baseSnapshot());
+    expect(localStorage.getItem(`research_onboarding:${ASSISTANT}`)).toBeNull();
   });
 
   test("never reads a snapshot, even one written by an older build", () => {
     localStorage.setItem(
-      `research_onboarding:${USER}`,
+      `research_onboarding:${ASSISTANT}`,
       JSON.stringify(baseSnapshot()),
     );
-    expect(readResearchSnapshot(USER)).toBeNull();
+    expect(readResearchSnapshot(ASSISTANT)).toBeNull();
   });
 
   test("clear still removes a stale snapshot", () => {
     localStorage.setItem(
-      `research_onboarding:${USER}`,
+      `research_onboarding:${ASSISTANT}`,
       JSON.stringify(baseSnapshot()),
     );
-    clearResearchSnapshot(USER);
-    expect(localStorage.getItem(`research_onboarding:${USER}`)).toBeNull();
+    clearResearchSnapshot(ASSISTANT);
+    expect(localStorage.getItem(`research_onboarding:${ASSISTANT}`)).toBeNull();
   });
 });
 

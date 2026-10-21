@@ -635,8 +635,8 @@ interface ProfileCardProps {
   /**
    * Render the handle editors. Handles live on the user's platform
    * account, so parents withhold them when there is no usable platform
-   * session. The card itself still renders — the email row and any
-   * extra sections (e.g. timezone) work for every assistant.
+   * session. The card itself still renders — any extra sections
+   * (e.g. timezone) work for every assistant.
    */
   showHandles?: boolean;
   /** Extra sections rendered after the handles, divider-separated. */
@@ -648,8 +648,8 @@ function SectionDivider() {
 }
 
 /**
- * Settings card for the user's account details: email, public handles,
- * and any extra sections the parent supplies (e.g. timezone).
+ * Settings card for the user's public handles and any extra sections
+ * the parent supplies (e.g. timezone).
  *
  * The handle block renders two independently-saveable sections:
  *
@@ -669,7 +669,6 @@ export function ProfileCard({
   children,
 }: ProfileCardProps = {}) {
   const { t } = useTranslation();
-  const email = useAuthStore.use.user?.()?.email ?? null;
 
   return (
     <DetailCard
@@ -677,25 +676,10 @@ export function ProfileCard({
       subtitle={t("profileCard.subtitle")}
     >
       <div className="flex flex-col gap-6">
-        {email && (
-          <div className="max-w-[420px]">
-            <Input
-              label={t("profileCard.emailLabel")}
-              value={email}
-              disabled
-              readOnly
-            />
-          </div>
-        )}
-        {showHandles && (
-          <>
-            {email && <SectionDivider />}
-            <ProfileHandles assistant={assistant} />
-          </>
-        )}
+        {showHandles && <ProfileHandles assistant={assistant} />}
         {children != null && (
           <>
-            {(email || showHandles) && <SectionDivider />}
+            {showHandles && <SectionDivider />}
             {children}
           </>
         )}

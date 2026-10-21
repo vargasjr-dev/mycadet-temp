@@ -1,9 +1,10 @@
 /**
  * Root provider composition for the web SPA.
  *
- * Wraps the app in auth-scoped → org-scoped QueryClients so that
- * switching users or orgs yields a fresh React Query cache instead of
- * leaking stale data.
+ * Wraps the app in an auth-scoped → request-scoped QueryClient chain;
+ * the request-scoped boundary re-keys on identity moves, so switching
+ * users or orgs yields a fresh React Query cache instead of leaking
+ * stale data.
  *
  * Third-party library providers (React Query, Radix Tooltip) belong here.
  * Ordinary app state still lives in Zustand stores — see `src/stores/`.
@@ -29,11 +30,7 @@ import { ProfileQuickAddProvider } from "@/components/profile-quick-add-provider
 import { useNativeLaunchScreenReady } from "@/hooks/use-native-launch-screen-ready";
 import { installAssetQueryDiagnostics } from "@/lib/asset-query-diagnostics";
 import { installQueryPressureProbe } from "@/lib/commit-pressure";
-import {
-  useAuthStore,
-  useIsAuthenticated,
-  useIsSessionInitializing,
-} from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/stores/auth-store";
 import { useRequestScopeKey } from "@/stores/request-scope";
 import { queryRetryDelay, shouldRetryQuery } from "@/utils/query-retry";
 
@@ -101,15 +98,10 @@ function ScopeKeyedQueryClientProvider({ children }: { children: ReactNode }) {
 
 export function AppProviders({ children }: { children: ReactNode }) {
   useNativeLaunchScreenReady();
-  const isAuthenticated = useIsAuthenticated();
-  const user = useAuthStore.use.user();
-  const authScopeKey = isAuthenticated
-    ? `user:${user?.id ?? "unknown"}`
-    : "anonymous";
 
   return (
     <TooltipProvider delayDuration={200} skipDelayDuration={300}>
-      <AuthScopedQueryClientProvider key={authScopeKey}>
+      <AuthScopedQueryClientProvider>
         <ScopeKeyedQueryClientProvider>
           {children}
         </ScopeKeyedQueryClientProvider>
