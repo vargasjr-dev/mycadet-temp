@@ -1,7 +1,4 @@
 {
-  "src/domains/account/account-route.tsx": [
-    "onboarding"
-  ],
   "src/domains/assistant-inbox/assistant-inbox.stories.tsx": [
     "chat",
     "settings"
