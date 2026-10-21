@@ -561,6 +561,10 @@ function expectsLocalGateway(
  * selected one), or `undefined` when this runtime doesn't reach it over a local
  * gateway or the gateway port hasn't been recorded yet (the same resolvability
  * gate as before — only the URL shape changed; the host resolves the port).
+ *
+ * Serves the gateway's UNSCOPED routes only (`/auth/token` mint, `/readyz`
+ * probes, the lifecycle trio): the scoped SDK data plane is plain same-origin
+ * `/v1` — the serving host routes it by the id in the path.
  */
 export function getLocalGatewayUrl(
   assistant: LockfileAssistant | undefined = getSelectedAssistant(),
@@ -598,8 +602,9 @@ function expectsPairedGateway(assistant: LockfileAssistant): boolean {
  * CSP pins `connect-src` to Cadet origins, and a browser-served SPA would be
  * stopped by the remote gateway's CORS. Instead the serving host (the Electron
  * `app://` handler, the Vite dev middleware, the CLI web server) resolves the
- * entry's recorded `runtimeUrl` and forwards, exactly like the loopback
- * data-plane half of the same id-keyed `__gateway` proxy.
+ * entry's recorded `runtimeUrl` and forwards. Serves the gateway's UNSCOPED
+ * routes only (the paired `/readyz` probe); the scoped SDK data plane is plain
+ * same-origin `/v1` — the serving host routes it by the id in the path.
  */
 export function getPairedGatewayUrl(
   assistant: LockfileAssistant | undefined,
@@ -614,9 +619,12 @@ export function getPairedGatewayUrl(
 }
 
 /**
- * Absolute base URL this runtime reaches the given assistant's gateway at:
- * origin + local gateway proxy for local/docker entries, origin + paired
- * gateway proxy for paired entries, `undefined` otherwise.
+ * Absolute base URL this runtime reaches the given assistant's gateway's
+ * UNSCOPED routes at (`/auth/token` mint, `/readyz` probes, the lifecycle
+ * trio, until those fold into `/v1`): origin + local gateway proxy for
+ * local/docker entries, origin + paired gateway proxy for paired entries,
+ * `undefined` otherwise. The scoped SDK data plane doesn't ride this — it is
+ * plain same-origin `/v1`.
  */
 export function getAuthGatewayIngressUrl(
   assistant: LockfileAssistant | undefined,
@@ -719,17 +727,17 @@ export async function primeLocalGatewayConnection(
     if (!pairedUrl) {
       throw new UnresolvedPairedGatewayError(assistant.assistantId);
     }
-    const ingressUrl = getAuthGatewayIngressUrl(assistant)!;
     // A request through the paired proxy forces the trusted host to resolve
     // the credential and proves the remote gateway is reachable. The renderer
-    // sends no bearer. A connection to this same paired gateway stays live
-    // while the probe is in flight (a re-prime must not open a window in
-    // which requests fall through to the cloud and gateway-auth predicates
-    // read false) and is dropped only if the probe fails, so a failed prime
-    // never leaves the app believing it is connected. A slot pointing at some
-    // other assistant is left alone either way. It also clears credentials
-    // persisted by older clients that placed paired guardian tokens in the
-    // gateway-session cache.
+    // sends no bearer — the trusted host injects its own on the data plane.
+    // A connection to this same paired gateway stays live while the probe is
+    // in flight (a re-prime must not open a window in which requests fall
+    // through to the cloud and gateway-auth predicates read false) and is
+    // dropped only if the probe fails, so a failed prime never leaves the app
+    // believing it is connected. The slot carries the bare page origin: the
+    // scoped data plane is plain same-origin /v1, routed by the host through
+    // the id in the path. It also clears credentials persisted by older
+    // clients that placed paired guardian tokens in the gateway-session cache.
     try {
       const response = await fetch(`${pairedUrl}/readyz`);
       if (!response.ok) {
@@ -744,14 +752,17 @@ export async function primeLocalGatewayConnection(
         throw new Error("Paired assistant is not ready");
       }
     } catch (error) {
-      if (getSelfHostedIngressUrl() === ingressUrl) {
+      // The slot no longer encodes which assistant primed it (every local/
+      // paired prime carries the same bare origin), so a failed probe clears
+      // any same-origin slot — a connect flow re-primes on retry.
+      if (getSelfHostedIngressUrl() === window.location.origin) {
         setSelfHostedConnection(null);
       }
       throw error;
     }
     clearGatewayToken();
     setSelfHostedConnection({
-      url: ingressUrl,
+      url: window.location.origin,
       token: null,
     });
     return;
@@ -772,12 +783,11 @@ export async function primeLocalGatewayConnection(
   await ensureGatewayToken(tokenUrl, guardianToken, {
     forceMint: options.forceMint,
   });
-  const ingressUrl = getAuthGatewayIngressUrl(assistant);
-  if (!ingressUrl) {
-    return;
-  }
+  // The scoped data plane is plain same-origin /v1 — the slot carries the
+  // bare origin and the renderer-minted gateway bearer rides the host's
+  // id-keyed loopback forward.
   setSelfHostedConnection({
-    url: ingressUrl,
+    url: window.location.origin,
     token: getGatewayToken(),
   });
 }

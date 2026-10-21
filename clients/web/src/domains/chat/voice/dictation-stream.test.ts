@@ -173,7 +173,8 @@ describe("buildSttStreamWsUrl", () => {
     });
     const url = new URL(
       buildSttStreamWsUrl({
-        ingressUrl: "http://localhost:3000/assistant/__gateway/stt-1/",
+        assistantId: "stt-1",
+        ingressUrl: "http://localhost:3000",
         token: "tok en",
       }),
     );
@@ -189,6 +190,7 @@ describe("buildSttStreamWsUrl", () => {
   test("https ingress maps to wss and drops query/hash", () => {
     const url = new URL(
       buildSttStreamWsUrl({
+        assistantId: "stt-1",
         ingressUrl: "https://x.example.com?foo=1#bar",
         token: "t",
       }),

@@ -78,12 +78,11 @@ export function isGatewayAuthMode(): boolean {
   }
   if (!isServedGatewayRuntime()) {
     const selectedAssistant = getSelectedAssistant();
-    const pairedGatewayUrl = getPairedGatewayUrl(selectedAssistant);
-    if (pairedGatewayUrl != null) {
-      return (
-        getSelfHostedIngressUrl() ===
-        `${window.location.origin}${pairedGatewayUrl}`
-      );
+    if (getPairedGatewayUrl(selectedAssistant) != null) {
+      // Paired gateways carry no renderer token — the trusted host injects
+      // its own bearer — so gateway-auth mode is on while the shared
+      // same-origin data-plane slot is primed.
+      return getSelfHostedIngressUrl() != null;
     }
   }
   return getGatewayToken() !== null;

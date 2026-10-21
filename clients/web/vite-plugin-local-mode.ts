@@ -1119,15 +1119,19 @@ function gatewayProxyMiddleware(
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
-    // Gateway data plane (`/assistant/__gateway/{assistantId}/*`, with or
-    // without the `/assistant` prefix): one id-keyed proxy
-    // for every assistant gateway. The lockfile resolves the id to a loopback port
-    // (locally hatched) or a recorded remote `runtimeUrl` (imported pairing)
-    // — that target map is the allowlist. Loopback hops forward the renderer's
-    // headers (notably its minted gateway bearer) with the Host rewritten;
-    // remote hops strip renderer authorization and browser-ambient headers on
-    // this server-to-server hop, and the dev-server host reads the paired
-    // guardian bearer from disk and installs it after sanitization.
+    // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
+    // and the legacy unscoped prefix (`/assistant/__gateway/{id}/*`,
+    // `/auth/token` mint and `/readyz` until they fold into `/v1`) share one
+    // id-keyed proxy for every assistant gateway. The lockfile resolves the
+    // id to a loopback port (locally hatched) or a recorded remote
+    // `runtimeUrl` (imported pairing) — that target map is the allowlist.
+    // Loopback hops forward the renderer's headers (notably its minted
+    // gateway bearer) with the Host rewritten; remote hops strip renderer
+    // authorization and browser-ambient headers on this server-to-server
+    // hop, and the dev-server host reads the paired guardian bearer from
+    // disk and installs it after sanitization. An unknown id on the scoped
+    // surface passes through to the dev `/v1` proxy (the cloud), so cloud
+    // assistants keep their platform-served routes.
     const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
       readGatewayTargets(lockfilePaths),
     );
@@ -1154,7 +1158,7 @@ function gatewayProxyMiddleware(
         {
           hostname: "127.0.0.1",
           port,
-          path: decision.path,
+          path: decision.path + decision.search,
           method: req.method,
           headers: {
             ...req.headers,

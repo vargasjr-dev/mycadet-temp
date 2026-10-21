@@ -8,7 +8,6 @@ import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
 import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/credential-verification";
 import {
   getActiveAssistant,
-  getLocalGatewayUrl,
   getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,
@@ -570,10 +569,9 @@ async function ensureGatewayAccess(
   }
 
   if (!gatewayUrl || !actorToken) {
-    const localGateway = getLocalGatewayUrl(assistant);
-    if (localGateway) {
-      gatewayUrl = `${window.location.origin}${localGateway}`;
-    }
+    // The scoped data plane is plain same-origin /v1 — the host routes it by
+    // the id in the path, so the bare origin reaches any local assistant.
+    gatewayUrl = window.location.origin;
   }
 
   if (!gatewayUrl || !actorToken) {

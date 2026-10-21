@@ -41,7 +41,7 @@ const {
 
 beforeEach(() => {
   lockfileEntry = pairedEntry;
-  pairedGatewayUrl = "/assistant/__gateway/paired-remote";
+  pairedGatewayUrl = "/assistant/__gateway/paired-remote"; // the unscoped /readyz probe still rides it
   fetchCloudStatus.mockResolvedValue({ assistantId: UUID });
 });
 
@@ -57,7 +57,7 @@ describe("resolvePairedAssistantCloudId", () => {
     );
     expect(fetchCloudStatus).toHaveBeenCalledWith(
       {
-        gatewayUrl: `${window.location.origin}/assistant/__gateway/paired-remote`,
+        gatewayUrl: window.location.origin,
         actorToken: null,
       },
       "paired-remote",

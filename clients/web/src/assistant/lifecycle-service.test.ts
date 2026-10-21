@@ -468,7 +468,7 @@ describe("lifecycleService — bootstrap branches", () => {
     });
   });
 
-  test("gateway-auth short-circuit resolves a paired selection to the gateway proxy URL", async () => {
+  test("gateway-auth short-circuit resolves a paired selection to the bare-origin slot", async () => {
     isGatewayAuthModeMock.mockImplementation(() => true);
     getSelectedAssistantMock.mockImplementation(() => ({
       assistantId: "asst-paired",
@@ -485,7 +485,7 @@ describe("lifecycleService — bootstrap branches", () => {
 
     expect(getAssistantMock).not.toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).toHaveBeenCalledWith({
-      url: `${window.location.origin}/assistant/__gateway/asst-paired`,
+      url: window.location.origin,
       token: null,
     });
     expect(useResolvedAssistantsStore.getState().activeAssistantId).toBe(
@@ -1494,10 +1494,10 @@ describe("lifecycleService — selection subscription", () => {
     const arg = setSelfHostedConnectionMock.mock.calls[0]![0] as {
       url: string;
     };
-    expect(arg.url).toContain("/assistant/__gateway/2222");
+    expect(arg.url).toBe(window.location.origin);
   });
 
-  test("switch from a local to a paired assistant republishes the gateway proxy URL", async () => {
+  test("switch from a local to a paired assistant republishes the bare-origin slot", async () => {
     await driveGatewayActive("asst-local");
     getLocalGatewayUrlMock.mockImplementation(() => undefined);
     getPairedGatewayUrlMock.mockImplementation(
@@ -1518,9 +1518,7 @@ describe("lifecycleService — selection subscription", () => {
       url: string;
       token: string | null;
     };
-    expect(arg.url).toBe(
-      `${window.location.origin}/assistant/__gateway/asst-paired`,
-    );
+    expect(arg.url).toBe(window.location.origin);
     expect(arg.token).toBeNull();
   });
 

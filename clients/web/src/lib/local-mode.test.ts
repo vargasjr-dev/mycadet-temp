@@ -970,11 +970,10 @@ describe("primeLocalGatewayConnection", () => {
     );
     expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
     expect(getGatewayToken()).toBeNull();
-    // The connection rides the same-origin host proxy, never the remote
-    // runtimeUrl directly (packaged-app CSP and browser CORS both block it).
-    expect(getSelfHostedIngressUrl()).toBe(
-      `${window.location.origin}/assistant/__gateway/paired-a`,
-    );
+    // The connection rides the same-origin scoped data plane (`/v1`, routed
+    // by the host through the id in the path) — never the remote runtimeUrl
+    // directly (packaged-app CSP and browser CORS both block it).
+    expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
     expect(getSelfHostedActorToken()).toBeNull();
     expect(isGatewayAuthMode()).toBe(true);
     expect(localStorage.getItem("cadet:gw:token")).toBeNull();
@@ -982,12 +981,12 @@ describe("primeLocalGatewayConnection", () => {
   });
 
   test("paired re-prime keeps the connection live while the readiness probe is in flight", async () => {
-    // A re-prime of the assistant the slot already points at must not open a
-    // window in which the slot is empty: requests issued then would fall
-    // through to the cloud and gateway-auth predicates would read false.
+    // A re-prime while a same-origin slot is primed must not open a window
+    // in which the slot is empty: requests issued then would fall through to
+    // the cloud and gateway-auth predicates would read false.
     enableLocalMode();
     setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
-    const ingressUrl = `${window.location.origin}/assistant/__gateway/paired-a`;
+    const ingressUrl = window.location.origin;
     setSelfHostedConnection({ url: ingressUrl, token: null });
 
     let ingressDuringProbe: string | null | undefined;

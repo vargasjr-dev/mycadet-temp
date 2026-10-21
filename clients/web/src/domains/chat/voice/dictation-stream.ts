@@ -41,7 +41,7 @@ import {
 import {
   buildSelfHostedGatewayWsUrl,
   buildTunnelWsUrl,
-  isPairedGatewayIngress,
+  isPairedGatewayAssistant,
   mintTunnelWsToken,
   PairedVoiceUnavailableError,
   TunnelWsTokenError,
@@ -98,7 +98,9 @@ export async function resolveDictationStreamWsUrl(
 ): Promise<string> {
   const ingressUrl = getSelfHostedIngressUrl();
   if (ingressUrl) {
-    if (isPairedGatewayIngress(ingressUrl)) {
+    // The paired check fires before the token check: a paired slot carries
+    // no renderer token by design.
+    if (isPairedGatewayAssistant(assistantId)) {
       throw new PairedVoiceUnavailableError();
     }
     const token = getSelfHostedActorToken();
@@ -108,7 +110,7 @@ export async function resolveDictationStreamWsUrl(
         "Self-hosted dictation has no actor token yet; the gateway isn't ready.",
       );
     }
-    return buildSttStreamWsUrl({ ingressUrl, token });
+    return buildSttStreamWsUrl({ assistantId, ingressUrl, token });
   }
 
   const { token } = await mintTunnelWsToken(assistantId);
@@ -140,18 +142,21 @@ export interface DictationStreamOptions {
  *   ws(s)://<ingressHost>/v1/stt/stream?token=…&mimeType=audio/pcm&sampleRate=16000
  *
  * Delegates to {@link buildSelfHostedGatewayWsUrl} so this dictation stream and
- * live-voice share one transport rule set — including the local
- * `/assistant/__gateway/<assistantId>` → loopback bypass (the HTTP-only proxy can't
- * carry a WS upgrade). Exported for unit tests.
+ * live-voice share one transport rule set — including the local entry's direct
+ * loopback dial (the HTTP-only same-origin proxies can't carry a WS upgrade).
+ * Exported for unit tests.
  */
 export function buildSttStreamWsUrl({
+  assistantId,
   ingressUrl,
   token,
 }: {
+  assistantId: string;
   ingressUrl: string;
   token: string;
 }): string {
   return buildSelfHostedGatewayWsUrl({
+    assistantId,
     ingressUrl,
     routePath: STT_STREAM_ROUTE,
     token,

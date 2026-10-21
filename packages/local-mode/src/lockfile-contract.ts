@@ -139,6 +139,18 @@ export function isUsableRuntimeUrl(url: unknown): url is string {
  * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
  * renderer never encodes either.
  */
+/**
+ * First segments whose scoped `/v1/assistants/{id}/` prefix the gateway does
+ * not serve: the contact family lives on flat `/v1/...` control-plane routes
+ * (the shape the cloud's Django `RuntimeProxyView` strip delivers). Every
+ * forwarder to the gateway — the scoped host proxy and the request
+ * interceptor's remote-ingress rewrite alike — flattens them to match.
+ */
+export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
+  "contacts",
+  "contact-channels",
+]);
+
 export function gatewayProxyUrl(assistantId: string): string {
   return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
 }
