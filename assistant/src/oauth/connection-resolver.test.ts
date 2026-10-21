@@ -70,7 +70,6 @@ mock.module("../cloud/client.js", () => ({
 // Import the module under test (after all mocks are registered)
 // ---------------------------------------------------------------------------
 
-import { UserOAuthConnection } from "./user-oauth-connection.js";
 import {
   formatNoConnectionError,
   resolveEffectiveBaseUrl,
@@ -78,6 +77,7 @@ import {
   resolveOAuthConnectionWithMeta,
   resolveTokenHeader,
 } from "./connection-resolver.js";
+import { UserOAuthConnection } from "./user-oauth-connection.js";
 
 /** Seed `services.<key>.mode` entries into the workspace config for real. */
 // ---------------------------------------------------------------------------

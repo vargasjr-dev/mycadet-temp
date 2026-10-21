@@ -150,8 +150,8 @@ import {
   _setMetadataPath,
   upsertCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
-import { UserOAuthConnection } from "./user-oauth-connection.js";
 import { resolveOAuthConnection } from "./connection-resolver.js";
+import { UserOAuthConnection } from "./user-oauth-connection.js";
 
 // ---------------------------------------------------------------------------
 // Mock fetch

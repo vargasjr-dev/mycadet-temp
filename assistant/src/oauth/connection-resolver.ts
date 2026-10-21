@@ -1,10 +1,13 @@
 import { getLogger } from "../util/logger.js";
-import { UserOAuthConnection, type UserTokenHeader } from "./user-oauth-connection.js";
 import type { OAuthConnection } from "./connection.js";
 import { getConnectionAccessTokenResult } from "./credential-token-resolver.js";
 import { syncManualTokenConnection } from "./manual-token-connection.js";
 import { getActiveConnections, getProvider } from "./oauth-store.js";
 import { scopeDifference } from "./scope-utils.js";
+import {
+  UserOAuthConnection,
+  type UserTokenHeader,
+} from "./user-oauth-connection.js";
 
 const log = getLogger("connection-resolver");
 
