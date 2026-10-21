@@ -1,6 +1,9 @@
 import {
   authorizePairedForwardHeaders,
+  gatewayTargetsFromLockfile,
+  readGatewayTargets,
   resolveGatewayProxyTarget,
+  resolveLockfilePaths,
   sanitizePairedForwardHeaders,
   type GatewayEntryTarget,
   type PairedGuardianTokenProvider,
@@ -10,14 +13,15 @@ import {
   fetchForwardPlanWithRetry,
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
+import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
+import { getPairedGuardianAccessToken } from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
- * id-keyed `/assistant/__gateway/{assistantId}/*` forward (the deprecated
- * `/__gateway-paired/{assistantId}` alias resolves through the same path).
- * The lockfile resolves the id to a loopback port (locally hatched gateways)
- * or a recorded remote `runtimeUrl` (imported pairings), so the local/paired
- * split lives host-side and the renderer never encodes either.
+ * id-keyed `/assistant/__gateway/{assistantId}/*` forward. The lockfile
+ * resolves the id to a loopback port (locally hatched gateways) or a recorded
+ * remote `runtimeUrl` (imported pairings), so the local/paired split lives
+ * host-side and the renderer never encodes either.
  *
  * Lives in its own file — like `app-protocol.ts` — so the URL/header logic is
  * testable without importing `src/main/index.ts` (which evaluates the full
@@ -85,7 +89,7 @@ export type GatewayForwardPlan =
  * compromised trusted renderer retains access through the running proxy but
  * cannot read or reuse the guardian credential outside it.
  */
-export function planGatewayForward(
+function planGatewayForward(
   request: Request,
   getTargets: () => Map<string, GatewayEntryTarget>,
 ): GatewayForwardPlan {
@@ -133,7 +137,7 @@ export function planGatewayForward(
 }
 
 /** Resolve and install the host-owned bearer required by a remote plan. */
-export async function authorizeGatewayForwardPlan(
+async function authorizeGatewayForwardPlan(
   plan: GatewayForwardPlan,
   getGuardianToken: PairedGuardianTokenProvider,
 ): Promise<GatewayForwardPlan> {
@@ -158,15 +162,25 @@ export type GatewayForwardFetcher = (
   init: RequestInit & { duplex?: "half" },
 ) => Promise<Response>;
 
+/**
+ * The gateway target map for a forward: prefer the watcher's in-memory
+ * snapshot so gateway requests never read disk; the direct read covers only
+ * the window before the watcher installs.
+ */
+const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
+  const watched = getWatchedLockfileSnapshot();
+  return watched
+    ? gatewayTargetsFromLockfile(watched)
+    : readGatewayTargets(resolveLockfilePaths(process.env));
+};
+
 export const forwardGatewayRequest = async (
   request: Request,
-  getTargets: () => Map<string, GatewayEntryTarget>,
-  getGuardianToken: PairedGuardianTokenProvider,
   fetcher: GatewayForwardFetcher,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
-    planGatewayForward(request, getTargets),
-    getGuardianToken,
+    planGatewayForward(request, readForwardTargets),
+    getPairedGuardianAccessToken,
   );
   return executeGatewayForwardPlan(plan, request, fetcher);
 };

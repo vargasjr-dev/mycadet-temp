@@ -120,7 +120,7 @@ export function isCloudHome(cloud: unknown): boolean {
  * absolute http(s) URL. Shared by the renderer's paired-gateway URL derivation
  * and the host-side paired allowlist reader so the two can't drift.
  */
-export function isUsableRuntimeUrl(url: unknown): boolean {
+export function isUsableRuntimeUrl(url: unknown): url is string {
   if (typeof url !== "string" || url === "") {
     return false;
   }
@@ -130,6 +130,17 @@ export function isUsableRuntimeUrl(url: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The id-keyed, same-origin gateway proxy base for any assistant entry: the
+ * serving host (Electron `app://` handler, Vite dev middleware, CLI web
+ * server) resolves the id through the lockfile to a loopback port (locally
+ * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
+ * renderer never encodes either.
+ */
+export function gatewayProxyUrl(assistantId: string): string {
+  return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
 }
 
 /**

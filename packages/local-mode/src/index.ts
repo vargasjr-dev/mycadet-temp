@@ -131,8 +131,8 @@ export {
   sanitizePairedForwardHeaders,
 } from "./gateway-proxy";
 export type {
-  AssistantGatewayTarget,
-  AssistantGatewayParseResult,
+  GatewayTarget,
+  GatewayParseResult,
   GatewayEntryTarget,
   GatewayProxyDecision,
   PairedForwardAuthorizationResult,

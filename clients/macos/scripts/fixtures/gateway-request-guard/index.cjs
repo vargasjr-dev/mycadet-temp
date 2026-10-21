@@ -2,10 +2,10 @@ const http = require("node:http");
 const fs = require("node:fs");
 const { app, BrowserWindow, protocol, session } = require("electron");
 
-const SCHEME = "paired-probe";
+const SCHEME = "gateway-probe";
 const HOST = "mycadet.ai";
-const PAIRED_PATH = "/assistant/__gateway-paired/asst-1/readyz";
-const RESULT_PATH = process.env.PAIRED_GATEWAY_GUARD_RESULT_PATH;
+const GATEWAY_PATH = "/assistant/__gateway/asst-1/readyz";
+const RESULT_PATH = process.env.GATEWAY_GUARD_RESULT_PATH;
 
 app.commandLine.appendSwitch("use-mock-keychain");
 
@@ -29,11 +29,11 @@ const listen = (server) =>
 
 app.whenReady().then(async () => {
   const observations = [];
-  let pairedHandlerCalls = 0;
+  let gatewayHandlerCalls = 0;
   let protocolHeaders = null;
 
   session.defaultSession.webRequest.onBeforeRequest(
-    { urls: [`${SCHEME}://${HOST}${PAIRED_PATH}`] },
+    { urls: [`${SCHEME}://${HOST}${GATEWAY_PATH}`] },
     (details, callback) => {
       const frameOrigin = details.frame?.origin ?? null;
       observations.push({ frameOrigin });
@@ -43,8 +43,8 @@ app.whenReady().then(async () => {
 
   protocol.handle(SCHEME, async (request) => {
     const url = new URL(request.url);
-    if (url.pathname === PAIRED_PATH) {
-      pairedHandlerCalls += 1;
+    if (url.pathname === GATEWAY_PATH) {
+      gatewayHandlerCalls += 1;
       protocolHeaders = {
         origin: request.headers.get("origin"),
         referer: request.headers.get("referer"),
@@ -63,7 +63,7 @@ app.whenReady().then(async () => {
   });
   await trustedWindow.loadURL(`${SCHEME}://${HOST}/assistant`);
   const trustedStatus = await trustedWindow.webContents.executeJavaScript(
-    `fetch(${JSON.stringify(`${SCHEME}://${HOST}${PAIRED_PATH}`)}).then((response) => response.status)`,
+    `fetch(${JSON.stringify(`${SCHEME}://${HOST}${GATEWAY_PATH}`)}).then((response) => response.status)`,
   );
 
   const server = http.createServer((_request, response) => {
@@ -77,7 +77,7 @@ app.whenReady().then(async () => {
   });
   await foreignWindow.loadURL(`http://127.0.0.1:${port}`);
   const foreignStatus = await foreignWindow.webContents.executeJavaScript(
-    `fetch(${JSON.stringify(`${SCHEME}://${HOST}${PAIRED_PATH}`)})
+    `fetch(${JSON.stringify(`${SCHEME}://${HOST}${GATEWAY_PATH}`)})
       .then((response) => response.status)
       .catch(() => 0)`,
   );
@@ -85,14 +85,14 @@ app.whenReady().then(async () => {
   const result = JSON.stringify({
     trustedStatus,
     foreignStatus,
-    pairedHandlerCalls,
+    gatewayHandlerCalls,
     protocolHeaders,
     observations,
   });
   if (RESULT_PATH) {
     fs.writeFileSync(RESULT_PATH, result);
   } else {
-    console.log("PAIRED_GATEWAY_GUARD_RESULT", result);
+    console.log("GATEWAY_GUARD_RESULT", result);
   }
 
   server.close();
@@ -101,6 +101,6 @@ app.whenReady().then(async () => {
 });
 
 const timeout = setTimeout(() => {
-  console.error("paired gateway request guard fixture timed out");
+  console.error("gateway request guard fixture timed out");
   app.exit(1);
 }, 15_000);

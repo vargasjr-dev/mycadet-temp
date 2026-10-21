@@ -148,7 +148,7 @@ describe("the shell's assistant commands", () => {
     expect(router.state.location.state).toEqual({
       assistantSelection: {
         id: "paired-1",
-        apiBase: "/assistant/__gateway-paired/paired-1",
+        apiBase: "/assistant/__gateway/paired-1",
       },
     });
   });

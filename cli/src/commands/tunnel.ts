@@ -41,6 +41,7 @@ import {
   stopNgrokHolderPid,
 } from "../lib/tunnels/ngrok.js";
 import { cliCommand } from "../lib/cli-name.js";
+import { printRootProcessDetail } from "./ps.js";
 
 // The accepted `--provider` values ARE the shared registry, so validation
 // here cannot drift from what the workspace config accepts.
@@ -457,6 +458,10 @@ export const tunnel = Object.assign(
       await stopTunnelFlow();
       return;
     }
+    if (subcommand === "status") {
+      await printRootProcessDetail("tunnel");
+      return;
+    }
     if (subcommand !== "start") {
       if (
         subcommand !== undefined &&
@@ -468,6 +473,7 @@ export const tunnel = Object.assign(
       console.error(
         `Usage: ${cliCommand()} tunnel start --provider <provider> [options]`,
       );
+      console.error(`       ${cliCommand()} tunnel status`);
       console.error(`       ${cliCommand()} tunnel stop`);
       process.exit(1);
     }

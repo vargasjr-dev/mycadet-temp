@@ -69,42 +69,23 @@ function leafRouteComponentName(path: string): string | undefined {
   return leaf?.Component?.name;
 }
 
-describe("account route compact-window grouping", () => {
-  // The auth screens that render in the main window opt into the compact
-  // (440×630) window via AccountLayout's sizing hook. Post-nuke that's
-  // password reset only — the login/signup/provider pages moved to the app
-  // bundle and their old paths redirect (see the removed-page tests below).
-  test.each(["/account/provider/callback", "/account/provider/signup"])(
-    "%s is sized by AccountLayout",
-    (path) => {
-      expect(isUnderComponent(path, "AccountLayout")).toBe(true);
-    },
-  );
-
-  // The OAuth popup relay renders inside a popup child window (or the native
-  // SFSafariViewController). It must stay OUT of AccountLayout — the resize
-  // IPC targets the main window, so sizing from a popup would shrink the
-  // wrong window and persist `onboardingActive`.
-  test.each(["/account/oauth/popup-complete"])(
-    "%s is NOT sized by AccountLayout",
-    (path) => {
-      expect(isUnderComponent(path, "AccountLayout")).toBe(false);
-    },
-  );
-
-});
-
-describe("nuked account auth pages", () => {
-  // The auth pages this bundle used to own are deleted (their maintained
+describe("nuked account pages", () => {
+  // The account pages this bundle used to own are deleted (their maintained
   // ports live in the app bundle) and NOTHING redirects their old paths —
   // all surfaces are committing to the app shell bundle, so a stray visit
   // falls through to the NotFound splat. The exits were rewired off
-  // `/account/login` to the remote-web pairing page in the same change.
+  // `/account/login` to the remote-web pairing page in the same change, and
+  // the chooser's standalone mount left with the screen's deletion — the
+  // app bundle's chooser answers that path at the hub level.
   test.each([
     "/account",
     "/account/login",
     "/account/signup",
+    "/account/select-assistant",
+    "/account/provider/callback",
+    "/account/provider/signup",
     "/account/oauth/complete",
+    "/account/oauth/popup-complete",
     "/account/oauth/desktop-complete",
     "/account/cloud-callback",
     "/logout",

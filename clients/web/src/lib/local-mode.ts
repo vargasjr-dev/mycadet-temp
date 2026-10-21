@@ -1,12 +1,10 @@
 import {
   getLoopbackGatewayPort,
+  gatewayProxyUrl,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
 
-// The live-voice WS bypass resolves the entry's recorded loopback port from
-// the id-keyed proxy path; re-exported so voice modules share one import.
-export { getLoopbackGatewayPort };
 import { readInjectedConfig } from "@/lib/injected-config";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
@@ -540,17 +538,6 @@ export function reconcileSelectedAssistant(): void {
 // ---------------------------------------------------------------------------
 // URL helpers
 // ---------------------------------------------------------------------------
-
-/**
- * The id-keyed, same-origin gateway proxy base for any assistant entry: the
- * serving host (Electron `app://` handler, Vite dev middleware, CLI web
- * server) resolves the id through the lockfile to a loopback port (locally
- * hatched) or a recorded remote `runtimeUrl` (imported pairing), so the
- * renderer never encodes either.
- */
-export function gatewayProxyUrl(assistantId: string): string {
-  return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
-}
 
 /**
  * Whether this runtime should reach `assistant` over a local gateway: a

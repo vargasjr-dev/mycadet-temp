@@ -100,7 +100,7 @@ describe("paired selection", () => {
     window.__CADET_CONFIG__ = undefined;
     selectPaired("https://gw.example.com");
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway-paired/paired-b`,
+      url: `${window.location.origin}/assistant/__gateway/paired-b`,
       token: null,
     });
 

@@ -5,7 +5,6 @@ import {
   localModeOnlyMiddleware,
   onboardingCompletedMiddleware,
 } from "@/lib/onboarding-middleware";
-import { accountRoute } from "@/domains/account/account-route";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
@@ -90,7 +89,11 @@ function ChatLayoutRoute() {
 // (e.g. "the OAuth popup pages are NOT under AccountLayout") must run against
 // these raw definitions.
 export const routeTree = [
-  accountRoute,
+  // The account route FILE is nuked — the provider tier, the OAuth popup
+  // relay, and the assistant chooser all live in the app bundle now (the
+  // chooser's screen is deleted; the shell's SPA fallback hands the path to
+  // the app bundle's chooser), so their paths fall through to the NotFound
+  // splat like the rest of the nuked auth pages.
   // About — standalone metadata page rendered inside the Electron
   // About BrowserWindow. Declared as a sibling of `/assistant` (not
   // a child) so React Router's most-specific matcher picks it for

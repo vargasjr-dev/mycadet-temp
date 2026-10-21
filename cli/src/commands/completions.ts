@@ -22,8 +22,8 @@ const ASSISTANT_NAME_COMMANDS = new Set([
 
 /** First-positional subcommands, for commands that take no assistant name. */
 const SUBCOMMAND_COMPLETIONS: Record<string, string[]> = {
-  app: ["start", "stop"],
-  tunnel: ["start", "stop"],
+  app: ["start", "stop", "status"],
+  tunnel: ["start", "stop", "status"],
 };
 
 /** Assistant names known to this CLI's lockfile; [] when the lockfile is unreadable. */

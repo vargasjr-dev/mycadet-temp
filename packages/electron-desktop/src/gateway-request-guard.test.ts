@@ -18,8 +18,7 @@ mock.module("electron", () => ({
   session: { defaultSession: { webRequest: { onBeforeRequest } } },
 }));
 
-const { installPairedGatewayRequestGuard } =
-  await import("./paired-gateway-request-guard");
+const { installGatewayRequestGuard } = await import("./gateway-request-guard");
 
 const APP_ORIGIN = { protocol: "app:", host: "mycadet.ai" };
 
@@ -29,16 +28,16 @@ beforeEach(() => {
   onBeforeRequest.mockClear();
 });
 
-describe("installPairedGatewayRequestGuard", () => {
-  test("gates both supported paired proxy paths by frame origin", () => {
-    const remove = installPairedGatewayRequestGuard({
+describe("installGatewayRequestGuard", () => {
+  test("gates both supported gateway proxy paths by frame origin", () => {
+    const remove = installGatewayRequestGuard({
       appOrigin: APP_ORIGIN,
       resolveAllowedOrigin: () => APP_ORIGIN,
     });
 
     expect(registeredFilter?.urls).toEqual([
-      "app://mycadet.ai/assistant/__gateway-paired/*",
-      "app://mycadet.ai/__gateway-paired/*",
+      "app://mycadet.ai/assistant/__gateway/*",
+      "app://mycadet.ai/__gateway/*",
     ]);
 
     let cancel: boolean | undefined;

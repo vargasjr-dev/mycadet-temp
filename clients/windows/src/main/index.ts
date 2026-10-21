@@ -13,19 +13,12 @@ import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   forwardGatewayRequest,
 } from "@mycadet/electron-desktop/gateway-forward";
-import { getPairedGuardianAccessToken } from "@mycadet/electron-desktop/local-mode";
-import { getWatchedLockfileSnapshot } from "@mycadet/electron-desktop/lockfile-watcher";
-import { installPairedGatewayRequestGuard } from "@mycadet/electron-desktop/paired-gateway-request-guard";
+import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
-import {
-  gatewayTargetsFromLockfile,
-  readGatewayTargets,
-  resolveLocalConfigFromEnv,
-  resolveLockfilePaths,
-} from "@mycadet/local-mode";
+import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import {
   APP_HOST,
@@ -141,31 +134,11 @@ const resolveRendererRoot = (): string => {
 const registerAppProtocol = (): void => {
   const rendererRoot = resolveRendererRoot();
   const indexHtml = path.join(rendererRoot, "index.html");
-  const lockfilePaths = resolveLockfilePaths(process.env);
-  // Prefer the watcher's in-memory snapshot so gateway requests never read
-  // disk; the direct read covers only the window before the watcher installs.
-  const getGatewayTargets = () => {
-    const watched = getWatchedLockfileSnapshot();
-    return watched
-      ? gatewayTargetsFromLockfile(watched)
-      : readGatewayTargets(lockfilePaths);
-  };
 
   protocol.handle(APP_PROTOCOL, async (request) => {
-    // The renderer addresses every assistant gateway at the same `app://`
-    // origin via the id-keyed `/assistant/__gateway/{assistantId}/*` — the
-    // lockfile resolves the id to a loopback port (hatched) or a recorded
-    // remote `runtimeUrl` (imported pairing). Forward here so the secure
-    // renderer never touches an insecure `http://127.0.0.1` origin directly
-    // and never holds a paired credential; the lockfile target map is the
-    // security boundary. Mirrors the Vite dev-server proxy
-    // (`clients/web/vite-plugin-local-mode.ts`).
-    const proxied = await forwardGatewayRequest(
-      request,
-      getGatewayTargets,
-      getPairedGuardianAccessToken,
-      net.fetch,
-    );
+    // Forward the id-keyed gateway proxy to its lockfile-resolved target
+    // (mirrors the Vite dev-server proxy).
+    const proxied = await forwardGatewayRequest(request, net.fetch);
     if (proxied) {
       return proxied;
     }
@@ -200,8 +173,7 @@ const registerAppProtocol = (): void => {
   });
 };
 
-// Synchronous config snapshot the preload reads at startup and exposes to the
-// renderer as `window.__CADET_CONFIG__`.
+// Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
 handleSync("cadet:config:get", () => ({
   cloudUrl: resolvedConfig.cloudUrl,
@@ -218,7 +190,7 @@ app
     log.info("[app] ready");
     if (usesAppProtocolRenderer(app.isPackaged)) {
       registerAppProtocol();
-      installPairedGatewayRequestGuard({
+      installGatewayRequestGuard({
         appOrigin: { protocol: `${APP_PROTOCOL}:`, host: APP_HOST },
         resolveAllowedOrigin,
       });
