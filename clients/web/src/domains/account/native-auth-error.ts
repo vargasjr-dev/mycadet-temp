@@ -17,7 +17,7 @@
  * those causes into copy, so the three entry points cannot drift apart.
  */
 
-/** Catalog keys this module can name, all under the `account` namespace. */
+/** Catalog keys this module can name, all under the `onboarding` namespace. */
 export type AuthErrorKey =
   | "authErrors.genericFailure"
   | "authErrors.signupClosed"

@@ -93,10 +93,10 @@ describe("resolveNavigation", () => {
 
     // -- unauthenticated --------------------------------------------------
 
-    test("redirects unauthenticated platform user to login", () => {
+    test("redirects unauthenticated platform user to the pairing page", () => {
       expect(guard(s({ isAuthenticated: false }))).toEqual({
         action: "redirect",
-        to: "/account/login?returnTo=%2Fassistant",
+        to: "/assistant/pair?returnTo=%2Fassistant",
       });
     });
 
@@ -107,7 +107,7 @@ describe("resolveNavigation", () => {
       );
       expect(result).toEqual({
         action: "redirect",
-        to: "/account/login?returnTo=%2Fassistant%2Fidentity%3Ftab%3D1",
+        to: "/assistant/pair?returnTo=%2Fassistant%2Fidentity%3Ftab%3D1",
       });
     });
 
@@ -910,7 +910,7 @@ describe("resolveNavigation", () => {
 
     // Signed out, the return must still reach login with `session_id` intact,
     // so the decision is retaken once the session lands.
-    test("sends a signed-out post-checkout return to login with session_id preserved", () => {
+    test("sends a signed-out post-checkout return to pairing with session_id preserved", () => {
       expect(
         guard(
           s({ ...EMPTY_ORG, isAuthenticated: false }),
@@ -918,7 +918,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/account/login?returnTo=%2Fassistant%2Fsettings%2Fbilling%3Fsession_id%3Dcs_test_123",
+        to: "/assistant/pair?returnTo=%2Fassistant%2Fsettings%2Fbilling%3Fsession_id%3Dcs_test_123",
       });
       expect(
         guard(
@@ -927,7 +927,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/account/login?returnTo=%2Fassistant%2Fsettings%2Fbilling%3Fsession_id%3Dcs_test_123",
+        to: "/assistant/pair?returnTo=%2Fassistant%2Fsettings%2Fbilling%3Fsession_id%3Dcs_test_123",
       });
     });
 
@@ -1463,12 +1463,12 @@ describe("resolveNavigation", () => {
       expect(hatch(s({ sessionSettled: false }))).toEqual(WAIT);
     });
 
-    test("redirects unauthenticated platform-mode user to login", () => {
+    test("redirects unauthenticated platform-mode user to the pairing page", () => {
       expect(
         hatch(s({ isAuthenticated: false, isLocalClient: false })),
       ).toEqual({
         action: "redirect",
-        to: "/account/login",
+        to: "/assistant/pair",
       });
     });
 

@@ -43,7 +43,7 @@ export function DeleteAccountSection() {
       toast.success(t("deleteAccountSection.toastRequested"));
       clearConsentForUser(userId);
       await logout();
-      hardNavigate(routes.account.login);
+      hardNavigate(routes.remotePair);
     },
     onError: () => {
       toast.error(t("deleteAccountSection.toastFailed"));

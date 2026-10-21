@@ -145,16 +145,13 @@ export const routes = {
     systemEvents: r("/assistant/logs/system-events"),
   },
   account: {
-    // The surviving keys only. `login` is where the in-SPA exits (the
-    // resolver's requireAuth, the 401 interceptor, handle-logout) still send
-    // people; the route itself is a one-release redirect to the pairing
-    // page. The provider tier + `oauth.popupComplete` stay because the
-    // auth-logic tier they serve (login-flow, native-auth, the
-    // install-referrer) is still live — it dies with the auth store in the
-    // plan's store-PR, not here. `signup` and the login-OAuth returns are
-    // gone entirely: their maintained ports live in the app bundle.
+    // Triage: every key here still has a live consumer in this bundle, and
+    // each leaves as its consumer does. `login` is gone — the exits
+    // (requireAuth, the 401 interceptor, handle-logout) bounce to the
+    // remote-web pairing page now. The provider tier + `oauth.popupComplete`
+    // serve the auth-logic tier (login-flow, native-auth, install-referrer)
+    // and the integration-connect relay; they die with the auth store.
     root: r("/account"),
-    login: r("/account/login"),
     providerSignup: r("/account/provider/signup"),
     providerCallback: r("/account/provider/callback"),
     oauth: {

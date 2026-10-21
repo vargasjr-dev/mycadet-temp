@@ -33,7 +33,6 @@
  *
  * Reference: https://vite.dev/guide/features#dynamic-import
  */
-import enAccount from "@/i18n/locales/en/account.json";
 import enAssistantInbox from "@/i18n/locales/en/assistant-inbox.json";
 import enChannels from "@/i18n/locales/en/channels.json";
 import enContacts from "@/i18n/locales/en/contacts.json";
@@ -73,7 +72,6 @@ export const FALLBACK_CATALOGS: LocaleCatalogs = {
   common: enCommon,
   chat: enChat,
   schedules: enSchedules,
-  account: enAccount,
   channels: enChannels,
   settings: enSettings,
   workspace: enWorkspace,
@@ -98,7 +96,6 @@ const CATALOG_LOADERS: Record<
     common: () => import("@/i18n/locales/es/common.json"),
     chat: () => import("@/i18n/locales/es/chat.json"),
     schedules: () => import("@/i18n/locales/es/schedules.json"),
-    account: () => import("@/i18n/locales/es/account.json"),
     channels: () => import("@/i18n/locales/es/channels.json"),
     settings: () => import("@/i18n/locales/es/settings.json"),
     workspace: () => import("@/i18n/locales/es/workspace.json"),
@@ -118,7 +115,6 @@ const CATALOG_LOADERS: Record<
     common: () => import("@/i18n/locales/ru/common.json"),
     chat: () => import("@/i18n/locales/ru/chat.json"),
     schedules: () => import("@/i18n/locales/ru/schedules.json"),
-    account: () => import("@/i18n/locales/ru/account.json"),
     channels: () => import("@/i18n/locales/ru/channels.json"),
     settings: () => import("@/i18n/locales/ru/settings.json"),
     workspace: () => import("@/i18n/locales/ru/workspace.json"),
@@ -138,7 +134,6 @@ const CATALOG_LOADERS: Record<
     common: () => import("@/i18n/locales/zh/common.json"),
     chat: () => import("@/i18n/locales/zh/chat.json"),
     schedules: () => import("@/i18n/locales/zh/schedules.json"),
-    account: () => import("@/i18n/locales/zh/account.json"),
     channels: () => import("@/i18n/locales/zh/channels.json"),
     settings: () => import("@/i18n/locales/zh/settings.json"),
     workspace: () => import("@/i18n/locales/zh/workspace.json"),
@@ -158,7 +153,6 @@ const CATALOG_LOADERS: Record<
     common: () => import("@/i18n/locales/zh-TW/common.json"),
     chat: () => import("@/i18n/locales/zh-TW/chat.json"),
     schedules: () => import("@/i18n/locales/zh-TW/schedules.json"),
-    account: () => import("@/i18n/locales/zh-TW/account.json"),
     channels: () => import("@/i18n/locales/zh-TW/channels.json"),
     settings: () => import("@/i18n/locales/zh-TW/settings.json"),
     workspace: () => import("@/i18n/locales/zh-TW/workspace.json"),

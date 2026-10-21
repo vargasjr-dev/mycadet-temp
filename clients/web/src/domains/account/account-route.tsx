@@ -1,38 +1,26 @@
-import { Navigate } from "react-router";
-
 import { RouteErrorBoundary } from "@/components/route-error-boundary";
 import { RootHydrateFallback } from "@/components/root-hydrate-fallback";
 
 import { AccountLayout } from "@/domains/account/account-layout";
 
 /**
- * One-release landing for the account auth pages this bundle no longer
- * owns. Cloud login/signup/OAuth moved off web — the cloud's own account
- * pages are that surface now (the billing tab's hand-off in #451 is the
- * pattern), and the unauthenticated in-SPA front door is the remote-web
- * pairing page. Everything that still navigates to the old paths
- * (bookmarks, the resolver's `requireAuth` bounce, the 401 interceptor's
- * re-entry, `handle-logout`) lands here until those exits are rewired off
- * `/account` entirely.
- */
-function RemovedAuthPage() {
-  return <Navigate to="/assistant/pair" replace />;
-}
-
-/**
- * The /account route subtree, post-nuke. The auth pages this bundle used to
- * own are deleted — their maintained ports live in the app bundle — and the
- * old paths redirect to the pairing page for one release. What survives:
+ * The /account route subtree. The auth pages this bundle used to own are
+ * deleted — their maintained ports live in the app bundle — and their old
+ * paths fall through to the NotFound splat (all surfaces are committing to
+ * the app shell bundle; nothing redirects them). What survives:
  *
  *   - the assistant chooser (load-bearing: pairing-page hub link, deep
  *     links, guardian-repair, root-layout's `noAutoSkip`),
- *   - password reset (still the target of the reset-email links),
+ *   - the provider tier (the auth-logic tier — login-flow, native-auth —
+ *     still drives the provider callback; it dies with the auth store),
  *   - the OAuth popup relay (`oauth/popup-complete`) — NOT login
  *     machinery: it's the completion page the managed integration-connect
  *     flows (settings tiles, google-calendar) point their popups at.
  */
 export const accountRoute = {
-  path: "/account",
+  // Pathless: the surviving children carry absolute paths, so a visit to
+  // bare `/account` falls through to the NotFound splat like the rest of
+  // the nuked auth paths.
   ErrorBoundary: RouteErrorBoundary,
   HydrateFallback: RootHydrateFallback,
   children: [
@@ -42,34 +30,15 @@ export const accountRoute = {
     {
       ErrorBoundary: RouteErrorBoundary,
       children: [
-        // Password reset + the provider tier render in the MAIN window.
-        // AccountLayout sizes them compact (440×630), matching onboarding.
-        // The provider pages stay because the surviving auth-logic tier
-        // (login-flow, native-auth) still drives the provider callback —
-        // they die with the auth store, not here.
+        // The provider tier renders in the MAIN window; AccountLayout sizes
+        // it compact (440×630), matching onboarding. It stays because the
+        // auth-logic tier (login-flow, native-auth) still drives the
+        // provider callback — it dies with the auth store, not here.
         {
           Component: AccountLayout,
           children: [
             {
-              path: "password/reset",
-              lazy: {
-                Component: () =>
-                  import("@/domains/account/pages/password-reset-page").then(
-                    (m) => m.PasswordResetPage,
-                  ),
-              },
-            },
-            {
-              path: "password/reset/key/:key",
-              lazy: {
-                Component: () =>
-                  import("@/domains/account/pages/password-reset-page").then(
-                    (m) => m.PasswordResetPage,
-                  ),
-              },
-            },
-            {
-              path: "provider/callback",
+              path: "/account/provider/callback",
               lazy: {
                 Component: () =>
                   import("@/domains/account/pages/provider-callback-page").then(
@@ -78,7 +47,7 @@ export const accountRoute = {
               },
             },
             {
-              path: "provider/signup",
+              path: "/account/provider/signup",
               lazy: {
                 Component: () =>
                   import("@/domains/account/pages/provider-signup-page").then(
@@ -88,23 +57,14 @@ export const accountRoute = {
             },
           ],
         },
-        // The nuked auth pages. Redirects, not 404s: the in-SPA exits
-        // (requireAuth, the 401 handler, handle-logout) still navigate to
-        // `/account/login` until their rewiring lands.
-        { index: true, Component: RemovedAuthPage },
-        { path: "login", Component: RemovedAuthPage },
-        { path: "signup", Component: RemovedAuthPage },
-        { path: "oauth/complete", Component: RemovedAuthPage },
-        { path: "oauth/desktop-complete", Component: RemovedAuthPage },
-        { path: "cloud-callback", Component: RemovedAuthPage },
-        // OAuth completion relay — rendered inside the OAuth popup child
+        // The OAuth completion relay — rendered inside the OAuth popup child
         // window (or the native SFSafariViewController), NOT the main
         // window — so it's deliberately OUTSIDE AccountLayout and never
         // mounts the sizing hook. The resize IPC targets the module-scoped
         // main window, so sizing from a popup would shrink the wrong
         // window. See `use-onboarding-window-size`.
         {
-          path: "oauth/popup-complete",
+          path: "/account/oauth/popup-complete",
           lazy: {
             Component: () =>
               import("@/domains/account/pages/oauth-popup-complete-page").then(
