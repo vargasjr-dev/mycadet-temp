@@ -331,7 +331,7 @@ const MIXED_LOCKFILE: Lockfile = {
     },
     {
       assistantId: "cloud-1",
-      cloud: "cadet",
+      cloud: "cloud",
       runtimeUrl: "https://cloud.mycadet.ai",
     },
   ],
@@ -746,7 +746,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -768,7 +768,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
             cloudOrganizationId: "org-from-lockfile",
           },
@@ -789,7 +789,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
             cloudOrganizationId: "org-a",
           },
@@ -803,7 +803,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
             cloudOrganizationId: "org-b",
           },
@@ -826,7 +826,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -843,7 +843,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -871,7 +871,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -897,7 +897,7 @@ describe("host-proxy-router", () => {
           },
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -922,7 +922,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://old.mycadet.ai",
           },
         ],
@@ -935,7 +935,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://new.mycadet.ai",
           },
         ],
@@ -975,7 +975,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
             resources: { gatewayPort: 9001, daemonPort: 9002 },
           },
@@ -996,7 +996,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -1027,13 +1027,15 @@ describe("host-proxy-router", () => {
       assistants: [
         {
           assistantId: "paired-https",
-          cloud: "paired",
+          cloud: "local",
+          paired: true,
           runtimeUrl: "https://tunnel.example.com",
           resources: { gatewayPort: 9001, daemonPort: 9002 },
         },
         {
           assistantId: "paired-http",
-          cloud: "paired",
+          cloud: "local",
+          paired: true,
           runtimeUrl: "http://192.0.2.10:7831",
         },
       ],
@@ -1304,7 +1306,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
           },
         ],
@@ -1880,7 +1882,7 @@ describe("host-proxy-router", () => {
         assistants: [
           {
             assistantId: "cloud-1",
-            cloud: "cadet",
+            cloud: "cloud",
             runtimeUrl: "https://cloud.mycadet.ai",
             cloudOrganizationId: "org-b",
           },

@@ -29,8 +29,6 @@ import {
   readCloudToken,
 } from "../lib/cloud-client.js";
 import { retireDocker, dockerResourceNames } from "../lib/docker.js";
-import { retireInstance as retireAwsInstance } from "../lib/aws.js";
-import { retireInstance as retireGcpInstance } from "../lib/gcp.js";
 import { stopContainerTunnelEdge } from "../lib/nginx-ingress.js";
 import { retireLocal } from "../lib/retire-local.js";
 import { retireAppleContainer } from "../lib/retire-apple-container.js";
@@ -327,10 +325,9 @@ async function retireInner(): Promise<void> {
 
   const entry = lookup.entry;
   const assistantId = entry.assistantId;
-  const source = parsed.source;
   const cloud = entry.cloud;
 
-  if (cloud === "paired") {
+  if (entry.paired === true) {
     // A remote assistant paired from another machine. Retiring tears the
     // assistant down — that can only happen on its host machine, never from a
     // paired machine, which holds nothing but a pairing record.
@@ -363,23 +360,6 @@ async function retireInner(): Promise<void> {
   if (cloud === "apple-container") {
     await retireAppleContainer(assistantId, entry);
     await stopContainerTunnelEdge(entry);
-  } else if (cloud === "gcp") {
-    const project = entry.project;
-    const zone = entry.zone;
-    if (!project || !zone) {
-      console.error(
-        "Error: GCP project and zone not found in assistant config.",
-      );
-      process.exit(1);
-    }
-    await retireGcpInstance(assistantId, project, zone, source);
-  } else if (cloud === "aws") {
-    const region = entry.region;
-    if (!region) {
-      console.error("Error: AWS region not found in assistant config.");
-      process.exit(1);
-    }
-    await retireAwsInstance(assistantId, region, source);
   } else if (cloud === "docker") {
     await retireDocker(assistantId);
     await stopContainerTunnelEdge(entry);

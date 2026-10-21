@@ -453,7 +453,8 @@ describe("sleep command", () => {
             {
               assistantId: "paired-one",
               runtimeUrl: "http://127.0.0.1:1",
-              cloud: "paired",
+              cloud: "local",
+              paired: true,
             },
           ],
           activeAssistant: "sleep-all-1",

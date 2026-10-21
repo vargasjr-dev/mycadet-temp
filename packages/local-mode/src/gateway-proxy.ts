@@ -6,7 +6,6 @@ import {
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   LockfileAssistantSchema,
-  resolveCloud,
 } from "./lockfile-contract";
 
 /**
@@ -172,12 +171,12 @@ const MAX_GATEWAY_PORT = 65535;
  * Compute the id-keyed gateway-target map from a lockfile's assistant
  * entries. Each entry parses through {@link LockfileAssistantSchema}; an
  * entry that fails the parse (or carries no usable id) is skipped. A paired
- * entry resolves to its recorded remote `runtimeUrl` (usable http(s) only);
- * a loopback-gateway cloud (`local`, `docker`) resolves to its recorded
- * loopback port via {@link getLoopbackGatewayPort}. Everything else —
- * externally-managed containers, the platform cloud, remote self-hosted
- * clouds the SPA doesn't drive — is left out, and an absent id is a proxy
- * rejection.
+ * entry (the `paired` connect-import flag) resolves to its recorded remote
+ * `runtimeUrl` (usable http(s) only); a loopback-gateway cloud (`local`,
+ * `docker`) resolves to its recorded loopback port via
+ * {@link getLoopbackGatewayPort}. Everything else — the platform cloud,
+ * remote self-hosted clouds the SPA doesn't drive — is left out, and an
+ * absent id is a proxy rejection.
  *
  * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron
  * lockfile watcher) derives the map without touching disk on the request
@@ -192,18 +191,17 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!parsed.success) {
       continue;
     }
-    const { assistantId, cloud, resources, runtimeUrl } = parsed.data;
+    const { assistantId, cloud, paired, resources, runtimeUrl } = parsed.data;
     if (!assistantId) {
       continue;
     }
-    const cloudValue = resolveCloud({ cloud });
-    if (cloudValue === "paired") {
+    if (paired === true) {
       if (isUsableRuntimeUrl(runtimeUrl)) {
         targets.set(assistantId, { kind: "remote", runtimeUrl });
       }
       continue;
     }
-    if (!isLoopbackGatewayCloud(cloudValue)) {
+    if (!isLoopbackGatewayCloud(cloud)) {
       continue;
     }
     const port = getLoopbackGatewayPort({ resources, runtimeUrl });

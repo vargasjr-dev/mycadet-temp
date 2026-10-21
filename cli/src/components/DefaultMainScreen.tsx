@@ -211,7 +211,7 @@ export async function maybeRefreshAuthHeaders(
   // Only paired (remote-on-another-machine) assistants use refreshable pair
   // tokens; don't perturb the local/docker session flow.
   const lookup = lookupAssistantByIdentifier(assistantId);
-  if (lookup.status !== "found" || lookup.entry.cloud !== "paired") {
+  if (lookup.status !== "found" || lookup.entry.paired !== true) {
     return false;
   }
 

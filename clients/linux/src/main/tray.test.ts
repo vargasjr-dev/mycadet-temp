@@ -13,7 +13,7 @@ mock.module("electron", () => ({
 }));
 
 let currentLockfile: Lockfile = {
-  assistants: [{ assistantId: "assistant-1", cloud: "cadet" }],
+  assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
   activeAssistant: "assistant-1",
 };
 const getWatchedLockfile = mock(() => currentLockfile);
@@ -61,7 +61,7 @@ const { installLinuxTray } = await import("./tray");
 beforeEach(() => {
   trayRuntime = null;
   currentLockfile = {
-    assistants: [{ assistantId: "assistant-1", cloud: "cadet" }],
+    assistants: [{ assistantId: "assistant-1", cloud: "cloud" }],
     activeAssistant: "assistant-1",
   };
   getWatchedLockfile.mockClear();

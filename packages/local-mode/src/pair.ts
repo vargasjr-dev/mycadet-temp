@@ -287,7 +287,7 @@ export function checkPairedAssistantName(
 
 /**
  * Register a pairing on this machine: persist the guardian token and upsert a
- * `cloud: "paired"` lockfile entry, the write counterpart of
+ * paired lockfile entry (`paired: true`), the write counterpart of
  * `unpairAssistant`.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
@@ -384,14 +384,11 @@ export function pairAssistant(
       // make them indistinguishable in a chooser.
       name: name ?? `paired (${label})`,
       runtimeUrl: credentials.gatewayUrl,
-      // Paired entries are reached by bearer token at the remote runtimeUrl
-      // (a non-"cadet" cloud selects the bearer-token auth path in client.ts).
-      // The "paired" topology lets lifecycle/status commands (ps/wake/sleep)
-      // recognize this as a remote pairing rather than an on-machine process.
-      cloud: "paired",
-      // Marks this entry as a connect-import so re-imports update in place
-      // while imports never silently overwrite a non-paired assistant (see
-      // guard above).
+      // Marks this entry as a connect-import so re-imports update in place,
+      // lifecycle/status commands (ps/wake/sleep) recognize it as a remote
+      // pairing rather than an on-machine process, and imports never silently
+      // overwrite a non-paired assistant (see guard above). Pairing is not a
+      // topology: the flag carries it, not `cloud`.
       paired: true,
       // A re-pair may point at a different gateway, so the cloud id the
       // web resolver cached for the old target is dropped; the upsert merge

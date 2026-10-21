@@ -49,7 +49,8 @@ describe("paired selection", () => {
   function selectPaired(runtimeUrl?: string): void {
     const paired = {
       assistantId: "paired-a",
-      cloud: "paired",
+      cloud: "local",
+      paired: true,
       ...(runtimeUrl != null && { runtimeUrl }),
     } as LockfileAssistant;
     useLockfileStore.setState({

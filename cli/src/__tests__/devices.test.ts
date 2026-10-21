@@ -425,7 +425,7 @@ describe("cadet devices", () => {
       assistantId: "paired-box",
       name: "Paired Box",
       runtimeUrl: "http://10.0.0.9:7830",
-      cloud: "paired",
+      cloud: "local",
       paired: true,
     });
 

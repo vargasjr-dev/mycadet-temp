@@ -450,7 +450,7 @@ export const pair = Object.assign(
   // at all, and `cadet pair` never worked against it (its loopback gate
   // denied remote mints). Refuse clearly instead of a confusing mint
   // failure.
-  if (entry.cloud === "paired") {
+  if (entry.paired === true) {
     console.error(
       `Error: ${formatAssistantReference(entry)} was paired as a remote ` +
         "assistant (cadet connect import), so this machine does not host it.",

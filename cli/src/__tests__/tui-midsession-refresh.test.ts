@@ -5,6 +5,7 @@
  * --token, and access-only tokens.
  */
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import type { Cloud } from "@mycadet/local-mode/contract";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -22,14 +23,16 @@ const RUNTIME = "https://gw.example.com";
 const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const past = () => new Date(Date.now() - 60_000).toISOString();
 
-function seedEntry(cloud: string, localUrl?: string): void {
+function seedEntry(cloud: Cloud | "paired", localUrl?: string): void {
+  // "paired" is not a topology: it seeds the connect-import flag on an
+  // otherwise-local-defaulted entry.
+  const isPaired = cloud === "paired";
   saveAssistantEntry({
     assistantId: "px",
     name: "Paired",
     runtimeUrl: RUNTIME,
     ...(localUrl ? { localUrl } : {}),
-    cloud,
-    paired: cloud === "paired",
+    ...(isPaired ? { cloud: "local" as const, paired: true } : { cloud }),
   });
 }
 

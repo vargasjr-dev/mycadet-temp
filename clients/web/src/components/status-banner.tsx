@@ -554,9 +554,8 @@ function useAssistantBannerConfig(): BannerConfig | null {
     // cases; if the brief wrong-assistant poll while lifecycle is unresolved
     // ever matters, fix it with a selector in assistant/selection.ts.
     return (
-      cloudAssistants.find(
-        (assistant) => assistant.id === selectedAssistantId,
-      )?.id ??
+      cloudAssistants.find((assistant) => assistant.id === selectedAssistantId)
+        ?.id ??
       cloudAssistants[0]?.id ??
       null
     );
@@ -565,7 +564,7 @@ function useAssistantBannerConfig(): BannerConfig | null {
     operationalStatusAssistantId ??
     activeAssistantId ??
     selectedOperationalStatusAssistantId;
-  // Paired entries (`cloud: "paired"`) are reached over a tunnel to a remote
+  // Paired entries (the `paired` flag) are reached over a tunnel to a remote
   // host; their local-health banners get link-down copy and no wake action.
   const isPairedActiveAssistant = useMemo(
     () =>

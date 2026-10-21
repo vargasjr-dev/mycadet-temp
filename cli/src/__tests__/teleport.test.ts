@@ -59,7 +59,7 @@ test("cloud destination refuses before starting any host operation", async () =>
   );
 });
 test("cloud source refuses before starting any host operation", async () => {
-  find.mockReturnValue({ ...entry, cloud: "cadet" });
+  find.mockReturnValue({ ...entry, cloud: "cloud" });
   await expect(teleport()).rejects.toThrow("exit:1");
   expect(move).not.toHaveBeenCalled();
 });

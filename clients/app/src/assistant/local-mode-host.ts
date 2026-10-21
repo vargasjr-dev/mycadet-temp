@@ -25,6 +25,7 @@ import type {
 import {
   isLoopbackGatewayCloud,
   parseLockfile,
+  type Cloud,
   type Lockfile,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
@@ -198,12 +199,12 @@ export async function readLockfileHost(): Promise<Lockfile> {
 }
 
 /**
- * An assistant paired from another machine via `cadet connect import`:
- * its gateway is remote, reachable through the shell's paired-gateway
- * same-origin path.
+ * An assistant paired from another machine via `cadet connect import` (the
+ * `paired` flag): its gateway is remote, reachable through the shell's
+ * paired-gateway same-origin path.
  */
-export function isPairedAssistant(entry: { cloud?: string }): boolean {
-  return entry.cloud === "paired";
+export function isPairedAssistant(entry: { paired?: boolean }): boolean {
+  return entry.paired === true;
 }
 
 /**
@@ -211,6 +212,6 @@ export function isPairedAssistant(entry: { cloud?: string }): boolean {
  * plain on-machine assistant or a local Docker instance). The lifecycle
  * set (`wake`, local retire) is narrower — `cloud === "local"` only.
  */
-export function isLocalGatewayAssistant(entry: { cloud?: string }): boolean {
+export function isLocalGatewayAssistant(entry: { cloud?: Cloud }): boolean {
   return isLoopbackGatewayCloud(entry.cloud ?? "local");
 }

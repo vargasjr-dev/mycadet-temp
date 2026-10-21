@@ -417,18 +417,17 @@ export function isLocalGatewayAssistant(a: LockfileAssistant): boolean {
 }
 
 export function isCloudAssistant(a: LockfileAssistant): boolean {
-  return a.cloud === "cadet";
+  return a.cloud === "cloud";
 }
 
 /**
  * A remote assistant paired from another machine via `cadet connect import`
- * (`cloud === "paired"`): reached directly at its own `runtimeUrl` with the
+ * (the `paired` flag): reached directly at its own `runtimeUrl` with the
  * stored guardian access token as the bearer. Not local (no lifecycle flows,
  * wake/retire refuse it) and not platform (no platform session involved).
- * See the `KNOWN_CLOUDS` taxonomy in `@mycadet/local-mode/contract`.
  */
-export function isPairedAssistant(a: { cloud?: string }): boolean {
-  return a.cloud === "paired";
+export function isPairedAssistant(a: { paired?: boolean }): boolean {
+  return a.paired === true;
 }
 
 /**

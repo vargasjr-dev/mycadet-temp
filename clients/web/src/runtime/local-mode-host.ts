@@ -278,7 +278,7 @@ export async function retireLocalAssistantHost(
 }
 
 /**
- * Forget a paired assistant (`cloud: "paired"`): remove its lockfile entry and
+ * Forget a paired assistant (the `paired` flag): remove its lockfile entry and
  * delete its stored guardian token on this machine. Client-side only: the
  * remote assistant is never touched. Both hosts run the shared package op in a
  * trusted process and return the same `LockfileWriteResult` contract; hosts
@@ -341,8 +341,8 @@ export async function pairingStartHost(
 
 /**
  * One exchange attempt for a live pairing session. An approved code persists
- * the guardian token and creates a `cloud: "paired"` lockfile entry in the
- * same call, the write counterpart of {@link unpairAssistantHost}; a still
+ * the guardian token and creates a paired (`paired: true`) lockfile entry in
+ * the same call, the write counterpart of {@link unpairAssistantHost}; a still
  * pending one carries the cadence to wait before the next attempt.
  */
 export async function pairingPollHost(

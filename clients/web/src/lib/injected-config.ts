@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { CloudSchema, type Cloud } from "@mycadet/local-mode/contract";
+
 /** Where the cadet comes from — the same values `cadet hatch --remote` records. */
-export type Remote = "local" | "docker" | "custom" | "cloud";
+export type Remote = Cloud;
 
 /**
  * The runtime config a shell injects (`window.__CADET_CONFIG__`). This schema
@@ -17,7 +19,7 @@ export type Remote = "local" | "docker" | "custom" | "cloud";
  */
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
-  remote: z.enum(["local", "docker", "custom", "cloud"]).default("local"),
+  remote: CloudSchema.default("local"),
   /** Cloud API base (auth endpoints + assistant API). */
   cloudUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */

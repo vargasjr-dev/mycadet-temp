@@ -217,7 +217,8 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     window.__CADET_CONFIG__ = undefined;
     const paired: LockfileAssistant = {
       assistantId: "paired-a",
-      cloud: "paired",
+      cloud: "local",
+      paired: true,
       runtimeUrl: "https://gw.example.com",
     } as LockfileAssistant;
     useLockfileStore.setState({

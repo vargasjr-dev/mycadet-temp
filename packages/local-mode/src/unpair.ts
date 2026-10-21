@@ -7,15 +7,14 @@ import {
   writeRawLockfile,
   type WriteResult,
 } from "./lockfile";
-import { resolveCloud } from "./lockfile-contract";
 import { withLockfileLock } from "./lockfile-lock";
 
 /**
  * Forget a paired assistant on this machine: remove its lockfile entry and
  * delete its stored guardian token. Client-side only, mirroring the CLI's
  * `cadet unpair`: the remote assistant itself is never touched (host-side
- * device revocation is `cadet devices`). Only pairing records
- * (`cloud: "paired"`, created by `cadet connect import`) are forgettable this
+ * device revocation is `cadet devices`). Only pairing records (the `paired`
+ * flag, set by `cadet connect import`) are forgettable this
  * way; local and cloud assistants go through retire.
  */
 export function unpairAssistant(
@@ -26,8 +25,10 @@ export function unpairAssistant(
   // The whole transaction holds the shared write lock so a concurrent
   // read-modify-write (e.g. a persona-name rename) cannot restore the entry
   // after its credential is deleted.
-  const locked = withLockfileLock(lockfilePaths, (): WriteResult =>
-    unpairAssistantLocked(lockfilePaths, configDir, assistantId),
+  const locked = withLockfileLock(
+    lockfilePaths,
+    (): WriteResult =>
+      unpairAssistantLocked(lockfilePaths, configDir, assistantId),
   );
   if (!locked.ok) {
     return { ok: false, status: 423, error: locked.error };
@@ -48,7 +49,7 @@ function unpairAssistantLocked(
   if (!entry) {
     return { ok: false, status: 404, error: "No such assistant" };
   }
-  if (resolveCloud(entry) !== "paired") {
+  if (entry.paired !== true) {
     return {
       ok: false,
       status: 400,

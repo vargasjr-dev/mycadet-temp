@@ -21,12 +21,12 @@ import {
 import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
-// A platform entry is identified by `cloud === "cadet"` and carries a
+// A platform entry is identified by `cloud === "cloud"` and carries a
 // `cloudOrganizationId`; a local entry has a non-cadet cloud + gateway port and no org.
 const cloudAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
-  cloud: "cadet",
+  cloud: "cloud",
   cloudOrganizationId: "org-1",
 };
 
@@ -55,7 +55,8 @@ const otherLocalAssistant: LockfileAssistant = {
 const pairedAssistant: LockfileAssistant = {
   assistantId: "paired-desk",
   name: "Desk",
-  cloud: "paired",
+  cloud: "local",
+  paired: true,
   runtimeUrl: "https://desk.example.com",
 };
 
@@ -282,7 +283,8 @@ describe("upsertFromApi", () => {
       assistants: [
         {
           assistantId: "paired-desk",
-          cloud: "paired",
+          cloud: "local",
+          paired: true,
           runtimeUrl: "https://desk.example.com",
         },
       ],

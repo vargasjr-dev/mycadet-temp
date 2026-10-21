@@ -884,7 +884,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
       ? assistant.resources?.gatewayPort
       : undefined;
     const isCloud =
-      assistant.cloud === "cadet" && assistant.runtimeUrl && hasSessionToken;
+      assistant.cloud === "cloud" && assistant.runtimeUrl && hasSessionToken;
     if (!port && !isCloud) continue;
 
     activeIds.add(assistant.assistantId);

@@ -191,7 +191,7 @@ function probeDaemonReadyz(port: number): Promise<DaemonReadyzClassification> {
 function localOnlyEntry(
   entry: LockfileAssistant | undefined,
 ): LockfileAssistant | null {
-  if (!entry || (entry.cloud != null && entry.cloud !== "local")) return null;
+  if (!entry || entry.cloud !== "local") return null;
   return entry;
 }
 

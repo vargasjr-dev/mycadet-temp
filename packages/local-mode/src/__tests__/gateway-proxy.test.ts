@@ -157,7 +157,7 @@ describe("gatewayTargetsFromLockfile", () => {
         assistants: [
           {
             assistantId: "abc-123",
-            cloud: "paired",
+            paired: true,
             runtimeUrl: "https://gw.example.com",
           },
         ],
@@ -169,8 +169,8 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "abc-123", cloud: "paired", runtimeUrl: "not a url" },
-          { assistantId: "def-456", cloud: "paired" },
+          { assistantId: "abc-123", paired: true, runtimeUrl: "not a url" },
+          { assistantId: "def-456", paired: true },
         ],
       }),
     ).toEqual(new Map());
@@ -241,23 +241,16 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "a", cloud: "cadet" },
+          { assistantId: "a", cloud: "cloud" },
           { assistantId: "b", cloud: "apple-container" },
           {
             assistantId: "c",
-            cloud: "gcp",
-            runtimeUrl: "https://gw.example.com",
-          },
-          {
-            assistantId: "d",
-            cloud: "aws",
-            runtimeUrl: "https://gw.example.com",
-          },
-          {
-            assistantId: "e",
             cloud: "custom",
             runtimeUrl: "https://gw.example.com",
           },
+          // A retired spelling parses as "local": loopback-gated, and with no
+          // loopback port it is omitted.
+          { assistantId: "d", cloud: "gcp" },
         ],
       }),
     ).toEqual(new Map());
@@ -270,7 +263,7 @@ describe("gatewayTargetsFromLockfile", () => {
           null,
           42,
           { noId: true },
-          { assistantId: "", cloud: "paired" },
+          { assistantId: "", paired: true },
           {
             assistantId: "abc-123",
             cloud: "local",
@@ -297,7 +290,7 @@ describe("readGatewayTargets", () => {
           },
           {
             assistantId: "def-456",
-            cloud: "paired",
+            paired: true,
             runtimeUrl: "https://gw.example.com",
           },
         ],

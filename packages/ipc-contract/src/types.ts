@@ -1115,14 +1115,17 @@ export interface LocalAssistantResources {
 export interface LockfileAssistant {
   assistantId: string;
   name?: string;
-  cloud?: string;
+  /** Deployment topology; mirrors the lockfile contract's union. */
+  cloud: "local" | "docker" | "apple-container" | "cloud" | "custom";
   runtimeUrl?: string;
   hatchedAt?: string;
   onboardedAt?: string;
-  organizationId?: string;
   cloudAssistantId?: string;
   cloudBaseUrl?: string;
   cloudOrganizationId?: string;
+  ingressUrl?: string;
+  /** The connect-import marker (pairing flow). */
+  paired?: boolean;
   resources?: LocalAssistantResources;
 }
 

@@ -107,7 +107,8 @@ test("rejects legacy output names and unsupported remote topology before capture
   await expect(backup()).rejects.toThrow("Unknown backup option: --output");
   lookup.mockReturnValue({
     assistantId: "test",
-    cloud: "paired",
+    cloud: "local",
+    paired: true,
     runtimeUrl: "http://127.0.0.1:1",
   });
   process.argv = ["bun", "cadet", "backup", "test"];

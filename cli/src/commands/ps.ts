@@ -242,25 +242,6 @@ const REMOTE_PS_CMD = [
 
 const REMOTE_SSH_TIMEOUT_MS = 30_000;
 
-async function getRemoteProcessesGcp(entry: AssistantEntry): Promise<string> {
-  return execOutput(
-    "gcloud",
-    [
-      "compute",
-      "ssh",
-      `${entry.sshUser ?? entry.assistantId}@${entry.assistantId}`,
-      `--zone=${entry.zone}`,
-      `--project=${entry.project}`,
-      `--command=${REMOTE_PS_CMD}`,
-      "--ssh-flag=-o StrictHostKeyChecking=no",
-      "--ssh-flag=-o UserKnownHostsFile=/dev/null",
-      "--ssh-flag=-o ConnectTimeout=10",
-      "--ssh-flag=-o LogLevel=ERROR",
-    ],
-    { timeoutMs: REMOTE_SSH_TIMEOUT_MS },
-  );
-}
-
 async function getRemoteProcessesCustom(
   entry: AssistantEntry,
 ): Promise<string> {
@@ -529,6 +510,21 @@ async function getAssistantProcessRows(
   console.log(`Processes for ${formatAssistantReference(entry)} — ${cloud}:`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
+  // A paired entry (the connect-import flag) has no process here to list —
+  // probe the remote gateway's health over the bearer token instead.
+  if (entry.paired === true) {
+    const token = loadGuardianToken(entry.assistantId)?.accessToken;
+    const health = await checkHealth(entry.runtimeUrl, token);
+    return [
+      {
+        name: "gateway",
+        type: ASSISTANT_TYPE,
+        status: withStatusEmoji(health.status),
+        info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
+      },
+    ];
+  }
+
   if (cloud === "local") {
     return getLocalProcesses(entry);
   }
@@ -582,26 +578,9 @@ async function getAssistantProcessRows(
     return rows;
   }
 
-  if (cloud === "paired") {
-    // A remote assistant paired from another machine: no local process to
-    // list — probe the remote gateway's health over the bearer token instead.
-    const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    const health = await checkHealth(entry.runtimeUrl, token);
-    return [
-      {
-        name: "gateway",
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(health.status),
-        info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
-      },
-    ];
-  }
-
   let output: string;
   try {
-    if (cloud === "gcp") {
-      output = await getRemoteProcessesGcp(entry);
-    } else if (cloud === "custom") {
+    if (cloud === "custom") {
       output = await getRemoteProcessesCustom(entry);
     } else {
       console.error(`Unsupported cloud type '${cloud}' for process listing.`);
