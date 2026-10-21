@@ -5,10 +5,6 @@ import { subcommand } from "../../lib/cli-command-help.js";
 import { openInHostBrowser } from "../../lib/open-browser.js";
 import { getCliLogger } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
-import {
-  buildOAuthConnectSurfaceRedirect,
-  isModelSpawnedConversationShell,
-} from "./connect-surface-guidance.js";
 
 const log = getCliLogger("cli");
 
@@ -119,285 +115,111 @@ export function registerConnectCommand(oauth: Command): void {
             | undefined;
           const authorizeUrl = providerRow?.authUrl as string | undefined;
 
-          // ---------------------------------------------------------------
-          // 2. Detect mode via IPC
-          // ---------------------------------------------------------------
-          const modeResult = await cliIpcCall<{
-            ok: boolean;
-            mode: string;
-          }>("oauth_mode_get", {
-            queryParams: { provider },
-          });
-
-          if (!modeResult.ok) {
-            return exitFromIpcResult(modeResult);
+          // Manual-token providers don't use OAuth2 browser flows
+          if (authorizeUrl === "urn:manual-token") {
+            writeError(
+              `"${provider}" uses manual token configuration, not an OAuth browser flow. ` +
+                `Collect the token securely with: assistant credentials prompt --service ${provider} --field <field_name> --label "<label>"`,
+            );
+            return;
           }
 
-          const managed = modeResult.result?.mode === "managed";
+          // Use daemon-orchestrated path via existing internal routes
+          const startBody: Record<string, unknown> = {
+            service: provider,
+            callbackTransport: opts.callbackTransport,
+          };
+          if (opts.clientId) {
+            startBody.clientId = opts.clientId;
+          }
+          if (opts.scopes) {
+            startBody.requestedScopes = opts.scopes;
+          }
 
-          if (managed) {
-            // =============================================================
-            // MANAGED PATH
-            // =============================================================
+          const startResult = await cliIpcCall<{
+            auth_url: string;
+            state: string;
+          }>("internal_oauth_connect_start", {
+            body: startBody,
+          });
 
-            if (isModelSpawnedConversationShell()) {
-              const redirect = buildOAuthConnectSurfaceRedirect(
-                provider,
-                opts.scopes,
-              );
-              writeOutput(cmd, redirect);
-              process.exitCode = 1;
-              return;
-            }
-
-            if (opts.clientId) {
-              log.info(
-                `Warning: --client-id is ignored for cloud providers. The cloud manages OAuth apps for "${provider}".`,
-              );
-            }
-
-            const startBody: Record<string, unknown> = { provider };
-            if (opts.scopes && opts.scopes.length > 0) {
-              startBody.scopes = opts.scopes;
-            }
-
-            const startResult = await cliIpcCall<{
-              ok: boolean;
-              connect_url: string;
-            }>("oauth_managed_connect_start", {
-              body: startBody,
-            });
-
-            if (!startResult.ok) {
-              return exitFromIpcResult(startResult);
-            }
-
-            const connectUrl = startResult.result!.connect_url;
+          if (startResult.ok && startResult.result?.auth_url) {
+            const { auth_url, state } = startResult.result;
 
             if (opts.browser !== false) {
-              // Snapshot existing connection IDs before opening browser
-              const snapshotResult = await cliIpcCall<{
-                ok: boolean;
-                connections: Array<{
-                  id: string;
-                  account_label?: string;
-                  scopes_granted?: string[];
-                }>;
-              }>("oauth_managed_connect_poll", {
-                queryParams: { provider },
-              });
-
-              if (!snapshotResult.ok) {
-                return exitFromIpcResult(snapshotResult);
-              }
-
-              const snapshotIds = new Set(
-                (snapshotResult.result?.connections ?? []).map((e) => e.id),
-              );
-
-              openInHostBrowser(connectUrl);
+              openInHostBrowser(auth_url);
 
               if (!jsonMode) {
                 log.info(
-                  `Opening browser to connect ${provider}. Waiting for authorization...`,
+                  "Waiting for authorization in browser... (press Ctrl+C to cancel)",
                 );
               }
+              const final = await pollOAuthConnectStatus(state, {
+                intervalMs: 2000,
+                timeoutMs: 5 * 60 * 1000,
+              });
 
-              // Poll for a new connection every 2s for up to 5 minutes
-              const pollIntervalMs = 2000;
-              const timeoutMs = 5 * 60 * 1000;
-              const deadline = Date.now() + timeoutMs;
-              let newConnection: {
-                id: string;
-                account_label?: string;
-                scopes_granted?: string[];
-              } | null = null;
-
-              while (Date.now() < deadline) {
-                await new Promise((r) => setTimeout(r, pollIntervalMs));
-
-                const currentResult = await cliIpcCall<{
-                  ok: boolean;
-                  connections: Array<{
-                    id: string;
-                    account_label?: string;
-                    scopes_granted?: string[];
-                  }>;
-                }>("oauth_managed_connect_poll", {
-                  queryParams: { provider },
-                });
-
-                if (!currentResult.ok || !currentResult.result) {
-                  continue;
-                }
-
-                const found = currentResult.result.connections.find(
-                  (e) => !snapshotIds.has(e.id),
-                );
-                if (found) {
-                  newConnection = found;
-                  break;
-                }
-              }
-
-              if (newConnection) {
+              if (final.status === "complete") {
                 if (jsonMode) {
                   writeOutput(cmd, {
                     ok: true,
-                    provider: provider,
-                    connectionId: newConnection.id,
-                    accountLabel: newConnection.account_label ?? null,
-                    scopesGranted: newConnection.scopes_granted ?? [],
-                  });
-                } else {
-                  const label = newConnection.account_label
-                    ? ` as ${newConnection.account_label}`
-                    : "";
-                  process.stdout.write(`Connected to ${provider}${label}\n`);
-                }
-              } else {
-                if (jsonMode) {
-                  writeOutput(cmd, {
-                    ok: true,
-                    deferred: true,
-                    provider: provider,
-                    connectUrl,
-                    message:
-                      "Authorization may still be in progress. Check with 'assistant oauth status <provider>'.",
+                    grantedScopes: final.granted_scopes ?? [],
+                    accountInfo: final.account_info,
                   });
                 } else {
                   process.stdout.write(
-                    `Timed out waiting for authorization. It may still be in progress.\n` +
-                      `Check with: assistant oauth status ${provider}\n`,
+                    `Connected to ${provider}${final.account_info ? ` as ${final.account_info}` : ""}\n`,
                   );
                 }
+                return;
               }
+
+              if (final.status === "error") {
+                writeError(final.error ?? "OAuth connect failed");
+                return;
+              }
+
+              writeError("OAuth connect ended in an unexpected pending state");
+              return;
             } else {
-              // --no-browser: output the connect URL
+              // --no-browser: return the URL immediately
               if (jsonMode) {
                 writeOutput(cmd, {
                   ok: true,
                   deferred: true,
-                  connectUrl,
-                  provider: provider,
+                  authUrl: auth_url,
+                  state,
+                  service: provider,
                 });
               } else {
-                process.stdout.write(connectUrl + "\n");
-              }
-            }
-          } else {
-            // =============================================================
-            // BYO PATH
-            // =============================================================
-
-            // Manual-token providers don't use OAuth2 browser flows
-            if (authorizeUrl === "urn:manual-token") {
-              writeError(
-                `"${provider}" uses manual token configuration, not an OAuth browser flow. ` +
-                  `Collect the token securely with: assistant credentials prompt --service ${provider} --field <field_name> --label "<label>"`,
-              );
-              return;
-            }
-
-            // Use daemon-orchestrated path via existing internal routes
-            const startBody: Record<string, unknown> = {
-              service: provider,
-              callbackTransport: opts.callbackTransport,
-            };
-            if (opts.clientId) {
-              startBody.clientId = opts.clientId;
-            }
-            if (opts.scopes) {
-              startBody.requestedScopes = opts.scopes;
-            }
-
-            const startResult = await cliIpcCall<{
-              auth_url: string;
-              state: string;
-            }>("internal_oauth_connect_start", {
-              body: startBody,
-            });
-
-            if (startResult.ok && startResult.result?.auth_url) {
-              const { auth_url, state } = startResult.result;
-
-              if (opts.browser !== false) {
-                openInHostBrowser(auth_url);
-
-                if (!jsonMode) {
-                  log.info(
-                    "Waiting for authorization in browser... (press Ctrl+C to cancel)",
-                  );
-                }
-                const final = await pollOAuthConnectStatus(state, {
-                  intervalMs: 2000,
-                  timeoutMs: 5 * 60 * 1000,
-                });
-
-                if (final.status === "complete") {
-                  if (jsonMode) {
-                    writeOutput(cmd, {
-                      ok: true,
-                      grantedScopes: final.granted_scopes ?? [],
-                      accountInfo: final.account_info,
-                    });
-                  } else {
-                    process.stdout.write(
-                      `Connected to ${provider}${final.account_info ? ` as ${final.account_info}` : ""}\n`,
-                    );
-                  }
-                  return;
-                }
-
-                if (final.status === "error") {
-                  writeError(final.error ?? "OAuth connect failed");
-                  return;
-                }
-
-                writeError(
-                  "OAuth connect ended in an unexpected pending state",
+                process.stdout.write(
+                  `\nAuthorize with ${provider}:\n\n${auth_url}\n\nThe connection will complete automatically once you authorize.\n`,
                 );
-                return;
-              } else {
-                // --no-browser: return the URL immediately
-                if (jsonMode) {
-                  writeOutput(cmd, {
-                    ok: true,
-                    deferred: true,
-                    authUrl: auth_url,
-                    state,
-                    service: provider,
-                  });
-                } else {
-                  process.stdout.write(
-                    `\nAuthorize with ${provider}:\n\n${auth_url}\n\nThe connection will complete automatically once you authorize.\n`,
-                  );
-                }
-                return;
               }
-            }
-
-            if (startResult.ok && !startResult.result?.auth_url) {
-              writeError(
-                "assistant returned unexpected response for OAuth connect start",
-              );
               return;
             }
+          }
 
-            if (!startResult.ok && startResult.statusCode !== undefined) {
-              writeError(
-                startResult.error ?? "OAuth connect failed (assistant error)",
-              );
-              return;
-            }
-
+          if (startResult.ok && !startResult.result?.auth_url) {
             writeError(
-              startResult.error
-                ? `Could not reach the assistant: ${startResult.error}. Is the assistant running?`
-                : "Could not reach the assistant. Is the assistant running?",
+              "assistant returned unexpected response for OAuth connect start",
             );
             return;
           }
+
+          if (!startResult.ok && startResult.statusCode !== undefined) {
+            writeError(
+              startResult.error ?? "OAuth connect failed (assistant error)",
+            );
+            return;
+          }
+
+          writeError(
+            startResult.error
+              ? `Could not reach the assistant: ${startResult.error}. Is the assistant running?`
+              : "Could not reach the assistant. Is the assistant running?",
+          );
+          return;
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           writeError(message);

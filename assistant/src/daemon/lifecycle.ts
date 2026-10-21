@@ -15,7 +15,6 @@ import {
 } from "../config/loader.js";
 import { seedInferenceProfiles } from "../config/seed-inference-profiles.js";
 import { startCes } from "../credential-execution/ces-runtime.js";
-import { refreshManagedConnectionCache } from "../credential-execution/cloud-catalog.js";
 import { startHeartbeatService } from "../heartbeat/heartbeat-service.js";
 import { backfillRelationshipStateIfMissing } from "../home/relationship-state-writer.js";
 import { startCliIpcServer } from "../ipc/assistant-server.js";
@@ -455,26 +454,6 @@ export async function runDaemon(): Promise<void> {
       log.warn({ err }, "Call recovery failed — continuing startup");
     }
   } // end if (dbReady)
-
-  // Populate the cloud-connection cache so the `14-connected-services`
-  // bundled section (rendered by `renderConnectedServices()` in
-  // system-sections.ts) can include cloud OAuth connections
-  // (e.g. Twitter) in the system prompt from the first turn.  This is
-  // an HTTP-only call with no DB dependency, so it runs regardless of
-  // dbReady.  A periodic refresh keeps the cache current when users
-  // connect/disconnect cloud providers while the assistant is running.
-  void refreshManagedConnectionCache().catch((err) =>
-    log.warn(
-      { err },
-      "Cloud connection cache refresh failed — continuing startup",
-    ),
-  );
-  const MANAGED_CONNECTION_REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-  setInterval(() => {
-    void refreshManagedConnectionCache().catch((err) =>
-      log.warn({ err }, "Periodic cloud connection cache refresh failed"),
-    );
-  }, MANAGED_CONNECTION_REFRESH_INTERVAL_MS);
 
   // Merge CLI-provided default config (from CADET_DEFAULT_WORKSPACE_CONFIG_PATH)
   // into the workspace config file before profile seeding and the first

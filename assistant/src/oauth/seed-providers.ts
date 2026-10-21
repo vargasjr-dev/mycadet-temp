@@ -42,7 +42,6 @@ const SLACK_PROVIDER_INJECTION_TEMPLATES: NonNullable<
  * every startup. Only Cadet implementation fields (authorizeUrl, tokenExchangeUrl,
  * refreshUrl, tokenEndpointAuthMethod, userinfoUrl, authorizeParams,
  * pingUrl, pingMethod, pingHeaders, pingBody, revokeUrl, revokeBodyTemplate,
- * cloudServiceConfigKey, managedServiceIsPaid,
  * loopbackPort, injectionTemplates, appType, setupNotes,
  * identityUrl, identityMethod, identityHeaders, identityBody,
  * identityResponsePaths, identityFormat, identityOkField,
@@ -76,8 +75,6 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes?: AvailableScopes;
     scopeSeparator?: string;
     authorizeParams?: Record<string, string>;
-    cloudServiceConfigKey?: string;
-    managedServiceIsPaid?: boolean;
     displayLabel: string;
     description: string;
     /** Where the integrations catalog files this provider. */
@@ -154,7 +151,6 @@ export const PROVIDER_SEED_DATA: Record<
       "https://developers.google.com/identity/protocols/oauth2/scopes",
     authorizeParams: { access_type: "offline", prompt: "consent" },
     loopbackPort: 17321,
-    cloudServiceConfigKey: "google-oauth",
     injectionTemplates: [
       {
         hostPattern: "gmail.googleapis.com",
@@ -291,7 +287,6 @@ export const PROVIDER_SEED_DATA: Record<
     authorizeParams: { owner: "user" },
     tokenEndpointAuthMethod: "client_secret_basic",
     tokenExchangeBodyFormat: "json",
-    cloudServiceConfigKey: "notion-oauth",
     loopbackPort: 17323,
     injectionTemplates: [
       {
@@ -334,8 +329,6 @@ export const PROVIDER_SEED_DATA: Record<
       "https://developer.x.com/en/docs/authentication/oauth-2-0/authorization-code",
     tokenEndpointAuthMethod: "client_secret_basic",
     loopbackPort: 17335,
-    cloudServiceConfigKey: "twitter-oauth",
-    managedServiceIsPaid: true,
     injectionTemplates: [
       {
         hostPattern: "api.x.com",
@@ -371,7 +364,6 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: ["repo", "read:user", "notifications"],
     availableScopes:
       "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps",
-    cloudServiceConfigKey: "github-oauth",
     loopbackPort: 17332,
     injectionTemplates: [
       {
@@ -420,7 +412,6 @@ export const PROVIDER_SEED_DATA: Record<
     scopeSeparator: ",",
     authorizeParams: { prompt: "consent" },
     loopbackPort: 17324,
-    cloudServiceConfigKey: "linear-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.linear.app",
@@ -505,7 +496,6 @@ export const PROVIDER_SEED_DATA: Record<
       { scope: "project:delete", description: "Delete entire projects" },
     ],
     loopbackPort: 17325,
-    cloudServiceConfigKey: "todoist-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.todoist.com",
@@ -542,7 +532,6 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes:
       "https://discord.com/developers/docs/topics/oauth2#shared-resources-oauth2-scopes",
     loopbackPort: 17326,
-    cloudServiceConfigKey: "discord-oauth",
     injectionTemplates: [
       {
         hostPattern: "discord.com",
@@ -613,7 +602,6 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: ["default"],
     availableScopes: "https://developers.asana.com/docs/oauth-scopes",
     loopbackPort: 17328,
-    cloudServiceConfigKey: "asana-oauth",
     injectionTemplates: [
       {
         hostPattern: "app.asana.com",
@@ -682,7 +670,6 @@ export const PROVIDER_SEED_DATA: Record<
     availableScopes:
       "https://developers.hubspot.com/docs/guides/apps/authentication/scopes",
     loopbackPort: 17330,
-    cloudServiceConfigKey: "hubspot-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.hubapi.com",
@@ -859,7 +846,6 @@ export const PROVIDER_SEED_DATA: Record<
     // time); 17339 is the real next-free slot once all three are seeded
     // together.
     loopbackPort: 17339,
-    cloudServiceConfigKey: "monday-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.monday.com",
@@ -900,7 +886,6 @@ export const PROVIDER_SEED_DATA: Record<
     defaultScopes: [],
     tokenEndpointAuthMethod: "client_secret_post",
     loopbackPort: 17337,
-    cloudServiceConfigKey: "eventbrite-oauth",
     injectionTemplates: [
       {
         hostPattern: "www.eventbriteapi.com",
@@ -998,7 +983,6 @@ export const PROVIDER_SEED_DATA: Record<
     // independently picked the next free port at the time); 17338 is the
     // real next-free slot once both are seeded together.
     loopbackPort: 17338,
-    cloudServiceConfigKey: "calendly-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.calendly.com",
@@ -1170,7 +1154,6 @@ export const PROVIDER_SEED_DATA: Record<
     ],
     tokenEndpointAuthMethod: "client_secret_basic",
     loopbackPort: 17331,
-    cloudServiceConfigKey: "figma-oauth",
     injectionTemplates: [
       {
         hostPattern: "api.figma.com",
@@ -1228,7 +1211,6 @@ export const PROVIDER_SEED_DATA: Record<
     authorizeParams: { prompt: "select_account" },
     tokenEndpointAuthMethod: "client_secret_post",
     loopbackPort: 17334,
-    cloudServiceConfigKey: "outlook-oauth",
     injectionTemplates: [
       {
         hostPattern: "graph.microsoft.com",
@@ -1332,68 +1314,6 @@ export const PROVIDER_SEED_DATA: Record<
         valuePrefix: "Bearer ",
       },
     ],
-  },
-  stripe_link: {
-    provider: "stripe_link",
-    authorizeUrl: "https://login.link.com/auth",
-    tokenExchangeUrl: "https://login.link.com/auth/token",
-    refreshUrl: "https://login.link.com/auth/token",
-    revokeUrl: "https://login.link.com/auth/revoke",
-    revokeBodyTemplate: {
-      token: "{access_token}",
-      token_type_hint: "access_token",
-    },
-    pingUrl: "https://api.link.com/userinfo",
-    baseUrl: "https://api.link.com",
-    displayLabel: "Link by Stripe",
-    description: "Wallet payment methods for agent purchases",
-    category: "commerce",
-    dashboardUrl: "https://dashboard.stripe.com",
-    // Link issues OAuth clients by request rather than through a self-serve
-    // dashboard, so there is no placeholder shape to suggest.
-    clientIdPlaceholder: null,
-    // Clients draw the bundled Link symbol; this remote fallback carries the
-    // parent Stripe mark because Simple Icons has no Link one (`link` 404s on
-    // the CDN).
-    logoUrl: "https://cdn.simpleicons.org/stripe",
-    defaultScopes: ["payment_methods.agentic", "userinfo:read"],
-    availableScopes: [
-      {
-        scope: "payment_methods.agentic",
-        description:
-          "Create single-use cards and payment tokens against the wallet",
-      },
-      {
-        scope: "userinfo:read",
-        description: "Read the wallet owner's profile (email, name, phone)",
-      },
-    ],
-    tokenEndpointAuthMethod: "client_secret_post",
-    // Link's authorize request also needs a `key` param holding the Stripe
-    // publishable key of the account behind the OAuth client. Cadet's own
-    // key lives in the cloud registry, which is the only place it is the
-    // right answer: it pairs with the cloud's client_id. Seeding it here
-    // would hand every self-hosted install our merchant identity to send
-    // alongside their own client_id, so BYO is deliberately left without one.
-    // See setupNotes.
-    loopbackPort: 17340,
-    cloudServiceConfigKey: "stripe-link-oauth",
-    injectionTemplates: [
-      {
-        hostPattern: "api.link.com",
-        injectionType: "header",
-        headerName: "Authorization",
-        valuePrefix: "Bearer ",
-      },
-    ],
-    appType: "App",
-    setupNotes: [
-      "Link is available in managed mode only. Its authorize endpoint requires a `key` parameter carrying the Stripe publishable key for the account that owns the OAuth client, and a bring-your-own connection has nowhere to put one: authorizeParams is re-stamped from seed data on every startup and no CLI or API surface sets it. Use managed mode, where the cloud supplies both halves.",
-    ],
-    // /userinfo returns no id, so email is the only stable-ish handle; phone
-    // backstops a wallet that has one but no email on file.
-    identityUrl: "https://api.link.com/userinfo",
-    identityResponsePaths: ["email", "phone"],
   },
   shopify: {
     provider: "shopify",
@@ -1578,7 +1498,6 @@ export const PROVIDER_SEED_DATA: Record<
       },
     ],
     loopbackPort: 17341,
-    cloudServiceConfigKey: "shopify-oauth",
     // Mirrors `extra_config.tenant_host` in the cloud provider registry.
     tenantHost: {
       pattern: "^[a-z0-9][a-z0-9-]*\\.myshopify\\.com$",
@@ -1662,7 +1581,6 @@ export const PROVIDER_SEED_DATA: Record<
       { scope: "address", description: "The signing-in user's address" },
     ],
     loopbackPort: 17342,
-    cloudServiceConfigKey: "quickbooks-oauth",
     injectionTemplates: [
       {
         hostPattern: "quickbooks.api.intuit.com",

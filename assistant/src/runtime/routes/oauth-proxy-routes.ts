@@ -13,10 +13,6 @@
 
 import { isCloudAuthBypassActive } from "../../config/env.js";
 import {
-  CloudOAuthConnection,
-  prepareCloudProxyHeaders,
-} from "../../oauth/cloud-connection.js";
-import {
   isIdempotentHttpMethod,
   type OAuthConnectionResponse,
 } from "../../oauth/connection.js";
@@ -29,7 +25,6 @@ import {
   BadRequestError,
   ForbiddenError,
   HttpTransportRequiredError,
-  MethodNotAllowedError,
   NotFoundError,
 } from "./errors.js";
 import {
@@ -102,7 +97,7 @@ export async function handleOAuthProxy(
   }
   const path = normalizeProxyPath(remainder);
   const query = parseProxyQuery(args.rawUrl.search);
-  let headers = sanitizeInboundHeaders(args.headers ?? {});
+  const headers = sanitizeInboundHeaders(args.headers ?? {});
 
   let resolution: OAuthConnectionResolution;
   try {
@@ -118,19 +113,6 @@ export async function handleOAuthProxy(
   }
 
   const { connection } = resolution;
-  if (connection instanceof CloudOAuthConnection) {
-    if (method === "HEAD") {
-      throw new MethodNotAllowedError("Cloud connections do not support HEAD");
-    }
-    const managedHeaders = prepareCloudProxyHeaders(headers);
-    const { unsupportedHeaders } = managedHeaders;
-    if (unsupportedHeaders.length > 0) {
-      throw new BadRequestError(
-        `Managed OAuth connections cannot forward these request headers: ${unsupportedHeaders.join(", ")}. The request was not sent to the provider.`,
-      );
-    }
-    headers = managedHeaders.headers;
-  }
 
   // A Buffer travels as raw bytes on BYO and as base64 on the cloud, in
   // both cases under the caller's own Content-Type.
@@ -199,8 +181,7 @@ const BINARY_BODY = {
 
 const ERROR_RESPONSES: Record<string, { description: string }> = {
   "400": {
-    description:
-      "Malformed provider segment or proxied path, or request headers unsupported by a cloud connection",
+    description: "Malformed provider segment or proxied path",
   },
   "402": { description: "The cloud account is out of balance" },
   "403": {

@@ -1,78 +1,8 @@
 import { hasTwilioCredentials } from "../calls/twilio-rest.js";
-import type { Services } from "../config/schemas/services.js";
 import {
   getConnectionByProvider,
-  getProvider,
   isProviderConnected,
 } from "../oauth/oauth-store.js";
-
-/**
- * Check whether a provider has an active connection, handling both BYO
- * (local SQLite) and managed (platform) modes.
- */
-export async function isOAuthProviderConnected(
-  provider: string,
-): Promise<boolean> {
-  const providerRow = getProvider(provider);
-  const managedKey = providerRow?.cloudServiceConfigKey;
-
-  if (managedKey) {
-    try {
-      const { ServicesSchema, getServiceMode } =
-        await import("../config/schemas/services.js");
-
-      if (managedKey in ServicesSchema.shape) {
-        const { getConfig } = await import("../config/loader.js");
-        const services: Services = getConfig().services;
-        if (
-          getServiceMode(services, managedKey as keyof Services) === "managed"
-        ) {
-          return isProviderConnectedOnPlatform(provider);
-        }
-      }
-    } catch {
-      // Config unavailable — fall through to BYO check
-    }
-  }
-
-  return isProviderConnected(provider);
-}
-
-/**
- * Check the cloud for active connections for a cloud provider.
- * Returns false on any error (network, auth, etc.) rather than throwing.
- */
-async function isProviderConnectedOnPlatform(
-  provider: string,
-): Promise<boolean> {
-  try {
-    const { CadetCloudClient } = await import("../cloud/client.js");
-    const client = await CadetCloudClient.create();
-    if (!client?.cloudAssistantId) {
-      return false;
-    }
-
-    const params = new URLSearchParams();
-    params.set("provider", provider);
-    params.set("status", "ACTIVE");
-
-    const path = `/v1/assistants/${encodeURIComponent(client.cloudAssistantId)}/oauth/connections/?${params.toString()}`;
-    const response = await client.fetch(path);
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const body = (await response.json()) as unknown;
-    const connections = Array.isArray(body)
-      ? body
-      : ((body as Record<string, unknown>).results ?? []);
-
-    return (connections as unknown[]).length > 0;
-  } catch {
-    return false;
-  }
-}
 
 interface IntegrationProbe {
   name: string;
@@ -85,12 +15,12 @@ const INTEGRATION_PROBES: IntegrationProbe[] = [
   {
     name: "Gmail",
     category: "email",
-    isConnected: () => isOAuthProviderConnected("google"),
+    isConnected: () => isProviderConnected("google"),
   },
   {
     name: "Slack",
     category: "messaging",
-    isConnected: () => isOAuthProviderConnected("slack"),
+    isConnected: () => isProviderConnected("slack"),
   },
   {
     name: "Twilio",

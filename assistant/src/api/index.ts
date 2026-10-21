@@ -936,8 +936,6 @@ export {
   ListSurfaceDataSchema,
   MODEL_INVOKABLE_SURFACE_TYPES,
   normalizeCopyBlockShowData,
-  type OAuthConnectSurfaceData,
-  OAuthConnectSurfaceDataSchema,
   SURFACE_DATA_SCHEMAS,
   SURFACE_TYPES,
   type SurfaceData,

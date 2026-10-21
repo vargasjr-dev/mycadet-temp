@@ -146,18 +146,15 @@ export const routes = {
   },
   account: {
     // Triage: every key here still has a live consumer in this bundle, and
-    // each leaves as its consumer does. The tier's PAGES are deleted from
-    // this bundle (their maintained ports live in the app bundle — these
-    // paths fall through to the NotFound splat when web serves at root),
-    // but the URL strings stay until their web consumers do: `root` +
-    // `providerCallback` feed the auth-logic tier (login-flow, native-auth,
-    // install-referrer), `oauth.popupComplete` is the integration-connect
-    // relay (cloud-oauth). They die with the auth store.
+    // The tier's PAGES are deleted from this bundle (their maintained ports
+    // live in the app bundle — these paths fall through to the NotFound
+    // splat when web serves at root), but the URL strings stay until their
+    // web consumers do: `root` + `providerCallback` feed the auth-logic
+    // tier (login-flow, native-auth, install-referrer). They die with the
+    // auth store. The integration-connect relay's key left with the
+    // managed-OAuth removal.
     root: r("/account"),
     providerCallback: r("/account/provider/callback"),
-    oauth: {
-      popupComplete: r("/account/oauth/popup-complete"),
-    },
   },
 
   welcome: r("/assistant/welcome"),

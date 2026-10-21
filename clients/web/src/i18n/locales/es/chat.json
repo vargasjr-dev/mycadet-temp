@@ -117,6 +117,7 @@
     "terminal": "Ejecutando un comando"
   },
   "sessionGroupRow": {
+    "waiting": "Esperando",
     "mode": {
       "computerUse": "Sesión de ordenador",
       "browser": "Sesión del navegador",
@@ -127,7 +128,6 @@
     "durationMinutes": "{count, plural, one {# min} other {# min}}",
     "working": "Trabajando",
     "workingWithDuration": "Trabajando · {duration}",
-    "waiting": "Esperando",
     "waitingWithDuration": "Esperando · {duration}",
     "finishing": "Finalizando",
     "finishingWithDuration": "Finalizando · {duration}",
@@ -226,9 +226,6 @@
   },
   "billingErrorBanner": {
     "dismiss": "Descartar"
-  },
-  "callSummarySurface": {
-    "eventsRecorded": "{count, plural, one {# evento} other {# eventos}} registrados."
   },
   "cameraDeepLink": {
     "captureFailed": "No se pudo tomar esa foto. Inténtalo de nuevo.",
@@ -853,7 +850,6 @@
   "missingApiKeyBanner": {
     "ariaLabel": "Se requiere una clave API",
     "body": "Añade una clave API en Ajustes → Modelos y servicios para empezar a chatear.",
-    "dismiss": "Descartar",
     "dismissAria": "Descartar la alerta de clave API requerida",
     "openSettings": "Abrir ajustes",
     "title": "Se requiere una clave API"
@@ -893,20 +889,7 @@
     "name": "Nombre",
     "noIcon": "Sin icono"
   },
-  "oauthConnectSurface": {
-    "approvalAria": "Acerca de la aprobación del asistente",
-    "approvalTooltip": "{name} nunca actúa en tu nombre sin tu aprobación",
-    "connect": "Conectar",
-    "connectTitle": "Conectar {name}",
-    "connected": "Conectado",
-    "defaultDescription": "Conecta {name} para que pueda usarlo en esta tarea.",
-    "dismiss": "Descartar",
-    "missingDetails": "Faltan detalles del asistente o del proveedor.",
-    "tenantHostInvalid": "Introduce un {label} válido, por ejemplo {placeholder}",
-    "thisAccount": "esta cuenta",
-    "waiting": "Esperando...",
-    "yourAssistant": "Tu asistente"
-  },
+
   "onboardingChoiceCard": {
     "continue": "Continuar",
     "helpWithHeading": "¿En qué puedo ayudarte?",
@@ -1391,7 +1374,6 @@
     "unmuteMicrophone": "Activar el micrófono"
   },
   "voiceSessionPill": {
-    "dismiss": "Descartar",
     "endSession": "Terminar sesión de voz",
     "goToThreadAria": "Ir al hilo de la sesión de voz",
     "groupAria": "Sesión de voz",

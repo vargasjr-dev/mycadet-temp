@@ -21,7 +21,6 @@ function asBot(overrides: Partial<RequestHintFacts> = {}): RequestHintFacts {
     status: 200,
     headers: JSON_HEADERS,
     botChannel: "slack",
-    managed: false,
     resolvedBaseUrl: "https://slack.com/api",
     missingScopes: [],
     ...overrides,
@@ -33,7 +32,6 @@ function asPerson(overrides: Partial<RequestHintFacts> = {}): RequestHintFacts {
     provider: "google",
     status: 200,
     headers: JSON_HEADERS,
-    managed: false,
     resolvedBaseUrl: "https://api.google.com",
     missingScopes: [],
     ...overrides,
@@ -158,15 +156,7 @@ describe("composeRequestHint", () => {
     );
   });
 
-  test("a rejected cloud credential points at connection health", () => {
-    expect(composeRequestHint(asPerson({ status: 403, managed: true }))).toBe(
-      "Request returned HTTP 403. The OAuth token may be expired or revoked.\n\n" +
-        "Run 'assistant oauth status google' to check connection health.\n" +
-        "To reconnect, run 'assistant oauth connect --help'.",
-    );
-  });
-
-  test("a rejected your-own credential points at connection status", () => {
+  test("a rejected credential points at connection status", () => {
     expect(composeRequestHint(asPerson({ status: 401 }))).toBe(
       "Request returned HTTP 401. The OAuth token may be expired or revoked.\n\n" +
         "Run 'assistant oauth status google' to check connection status.\n" +

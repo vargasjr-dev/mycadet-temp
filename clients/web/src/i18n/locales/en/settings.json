@@ -312,7 +312,6 @@
     "title": "Create schedule"
   },
   "connectMethod": {
-    "managed": "Sign in through Cadet",
     "mcp": "{name} MCP server",
     "mcpManual": "Set up manually",
     "otherWaysLabel": "Other ways to connect {name}",
@@ -513,8 +512,6 @@
     "connectionsDescription": "Manage how Cadet connects to {name}.",
     "copied": "Copied",
     "copy": "Copy",
-    "disconnectFailedToast": "Cadet could not disconnect the {name} account.",
-    "disconnectedToast": "{name} account disconnected.",
     "done": "Done",
     "endpoint": "Endpoint",
     "endpointUnknown": "Not available",
@@ -540,8 +537,6 @@
     "stopWaiting": "Stop waiting",
     "tagMcp": "MCP",
     "tagOwnApp": "Your app",
-    "tagCadet": "Cadet",
-    "tenantHostInvalid": "Enter a valid {label}, for example {placeholder}",
     "toolTokens": "~{tokens, number} tokens",
     "toolsAndDetails": "Tools and details",
     "toolsAndDetailsLabel": "Tools and details for {label}",

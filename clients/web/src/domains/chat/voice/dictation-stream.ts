@@ -141,7 +141,7 @@ export interface DictationStreamOptions {
  *
  * Delegates to {@link buildSelfHostedGatewayWsUrl} so this dictation stream and
  * live-voice share one transport rule set — including the local
- * `/assistant/__gateway/<port>` → loopback bypass (the HTTP-only proxy can't
+ * `/assistant/__gateway/<assistantId>` → loopback bypass (the HTTP-only proxy can't
  * carry a WS upgrade). Exported for unit tests.
  */
 export function buildSttStreamWsUrl({

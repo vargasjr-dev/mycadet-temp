@@ -11,13 +11,6 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import type { CadetCloudClient } from "../../../cloud/client.js";
-import {
-  CloudOAuthConnection,
-  CredentialRequiredError,
-  InsufficientBalanceError,
-  ProviderUnreachableError,
-} from "../../../oauth/cloud-connection.js";
 import type {
   OAuthConnection,
   OAuthConnectionRequest,
@@ -68,39 +61,6 @@ const byoConnection: OAuthConnection = {
     throw new Error("the proxy never unwraps the raw token");
   },
 };
-
-/**
- * A real cloud connection over a stub platform, for the paths whose behavior
- * lives inside `CloudOAuthConnection` rather than in the route.
- */
-function realManagedConnection(
-  fetchImpl: (path: string, init?: RequestInit) => Promise<Response>,
-): CloudOAuthConnection {
-  return new CloudOAuthConnection({
-    id: "conn-managed",
-    provider: "stripe_link",
-    externalId: "ext-1",
-    accountInfo: null,
-    connectionId: "platform-conn-1",
-    client: {
-      cloudAssistantId: "asst-1",
-      fetch: fetchImpl,
-    } as unknown as CadetCloudClient,
-  });
-}
-
-/** Satisfies the route's `instanceof CloudOAuthConnection` check. */
-function managedConnection(): OAuthConnection {
-  return Object.assign(
-    Object.create(CloudOAuthConnection.prototype) as OAuthConnection,
-    {
-      id: "conn-managed",
-      provider: "stripe_link",
-      accountInfo: null,
-      request: serve,
-    },
-  );
-}
 
 // ── Module mocks ────────────────────────────────────────────────────────────
 
@@ -363,15 +323,6 @@ describe("method passthrough", () => {
     expect(response.headers.get("x-total")).toBe("7");
     expect((await response.arrayBuffer()).byteLength).toBe(0);
   });
-
-  test("rejects HEAD against a cloud connection", async () => {
-    resolution = { ...resolution, connection: managedConnection() };
-
-    const response = await callProxy({ method: "HEAD" });
-
-    expect(response.status).toBe(405);
-    expect(captured).toBeUndefined();
-  });
 });
 
 // ── Write safety ────────────────────────────────────────────────────────────
@@ -390,24 +341,6 @@ describe("write safety", () => {
       expect(requireCaptured().singleAttempt).toBe(false);
     });
   }
-
-  test("a cloud write is not replayed after a 502", async () => {
-    let attempts = 0;
-    resolution = {
-      ...resolution,
-      connection: realManagedConnection(async () => {
-        attempts++;
-        return new Response("", { status: 502 });
-      }),
-    };
-
-    const response = await callProxy({ method: "POST", body: "{}" });
-
-    // The cloud answers 502 only after calling the provider, so a replay
-    // could land the write twice.
-    expect(attempts).toBe(1);
-    expect(response.status).toBe(502);
-  });
 });
 
 // ── Bodies ──────────────────────────────────────────────────────────────────
@@ -553,83 +486,6 @@ describe("header handling", () => {
     }
     expect(headers["user-agent"]).toBe("link-cli/1.0");
     expect(headers.accept).toBe("application/json");
-  });
-
-  for (const [method, name] of [
-    ["PUT", "If-Match"],
-    ["DELETE", "If-Match"],
-    ["POST", "Idempotency-Key"],
-    ["GET", "Range"],
-    ["POST", "Prefer"],
-    ["GET", "Stripe-Version"],
-    ["GET", "X-Custom-Option"],
-  ]) {
-    test(`rejects managed ${method} with ${name} before the cloud call`, async () => {
-      let attempts = 0;
-      resolution.connection = realManagedConnection(async () => {
-        attempts++;
-        return Response.json({ status: 200, headers: {}, body: {} });
-      });
-
-      const response = await callProxy({
-        method,
-        headers: { [name]: "private-header-value" },
-      });
-
-      expect(response.status).toBe(400);
-      const error = (await envelope(response)).error;
-      expect(error.code).toBe("BAD_REQUEST");
-      expect(error.message).toContain(name.toLowerCase());
-      expect(JSON.stringify(error)).not.toContain("private-header-value");
-      expect(attempts).toBe(0);
-    });
-  }
-
-  for (const method of ["GET", "POST"]) {
-    test(`forwards managed ${method} with Node CLI defaults and the gateway trace stamp`, async () => {
-      let attempts = 0;
-      const forwardedHeaders = {
-        "content-type": "application/json",
-        accept: "application/json",
-        "user-agent": "link-cli/1.0",
-        "x-request-id": "request-123",
-      };
-      resolution.connection = realManagedConnection(async (_path, init) => {
-        attempts++;
-        const body = JSON.parse(init?.body as string);
-        expect(body.request.headers).toEqual(forwardedHeaders);
-        return Response.json({ status: 200, headers: {}, body: {} });
-      });
-
-      const response = await callProxy({
-        method,
-        ...(method === "POST" ? { body: "{}" } : {}),
-        headers: {
-          ...forwardedHeaders,
-          "accept-language": "*",
-          "sec-fetch-mode": "cors",
-          "accept-encoding": "gzip, deflate",
-          connection: "keep-alive",
-          "x-trace-id": "trace-123",
-        },
-      });
-
-      expect(response.status).toBe(200);
-      expect(attempts).toBe(1);
-    });
-  }
-
-  test("rejects non-default managed fetch metadata and language preferences", async () => {
-    resolution.connection = managedConnection();
-    const response = await callProxy({
-      headers: { "Sec-Fetch-Mode": "navigate", "Accept-Language": "en" },
-    });
-
-    expect(response.status).toBe(400);
-    expect((await envelope(response)).error.message).toContain(
-      "accept-language, sec-fetch-mode",
-    );
-    expect(captured).toBeUndefined();
   });
 
   test("preserves conditional and custom headers on a BYO connection", async () => {
@@ -809,7 +665,9 @@ describe("failure mapping", () => {
   });
 
   test("a dead credential is a 424", async () => {
-    requestError = new CredentialRequiredError();
+    requestError = Object.assign(new Error("token expired"), {
+      name: "TokenExpiredError",
+    });
 
     const response = await callProxy({});
 
@@ -819,33 +677,9 @@ describe("failure mapping", () => {
     );
   });
 
-  test("an empty balance is a 402", async () => {
-    requestError = new InsufficientBalanceError();
-    expect((await callProxy({})).status).toBe(402);
-  });
-
   test("an unreachable provider is a 502", async () => {
-    requestError = new ProviderUnreachableError();
+    requestError = new Error("fetch failed");
     expect((await callProxy({})).status).toBe(502);
-  });
-
-  test("an unusable managed status is a mapped 502, not an opaque 500", async () => {
-    resolution = {
-      ...resolution,
-      connection: realManagedConnection(async () => {
-        return new Response(
-          JSON.stringify({ status: 700, headers: {}, body: null }),
-          { status: 200 },
-        );
-      }),
-    };
-
-    // Handing 700 to `new Response` would throw a RangeError, which is not a
-    // RouteError and reaches the caller as a bare 500.
-    const response = await callProxy({});
-
-    expect(response.status).toBe(502);
-    expect((await envelope(response)).error.code).toBe("BAD_GATEWAY");
   });
 });
 

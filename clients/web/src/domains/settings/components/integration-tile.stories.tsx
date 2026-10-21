@@ -109,7 +109,6 @@ export const IdleSelfHosted: Story = {
     );
     for (const label of [
       "Notion MCP server",
-      "Sign in through Cadet",
       "Use your own OAuth app",
     ]) {
       await expect(
@@ -156,7 +155,6 @@ export const LoginRequired: Story = {
   args: {
     plan: planFor({
       providers: [GOOGLE_PROVIDER],
-      cloudGate: "disabled",
     }),
   },
 };
@@ -219,7 +217,7 @@ export const FailedMcp: Story = {
         name: "Other ways to connect Linear",
       }),
     );
-    for (const label of ["Setup guide", "Sign in through Cadet"]) {
+    for (const label of ["Setup guide"]) {
       await expect(
         await screen.findByRole("menuitem", { name: label }),
       ).toBeInTheDocument();
@@ -251,7 +249,7 @@ export const FailedManaged: Story = {
       phase: "failed",
       error: "Google did not return an account.",
       methodId: googlePlan.primary.id,
-      methodKind: "cloud-oauth",
+      methodKind: "own-oauth",
     },
   },
 };

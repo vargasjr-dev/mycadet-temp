@@ -4,13 +4,6 @@ import { ServicesSchema } from "../../config/schemas/services.js";
 import { PROVIDER_SEED_DATA } from "../seed-providers.js";
 
 describe("PROVIDER_SEED_DATA managed mode wiring", () => {
-  test("github provider is wired up for managed mode", () => {
-    const github = PROVIDER_SEED_DATA.github;
-    expect(github).toBeDefined();
-    expect(github.cloudServiceConfigKey).toBe("github-oauth");
-    expect("github-oauth" in ServicesSchema.shape).toBe(true);
-  });
-
   test("monday only exposes scopes supported by its OAuth API", () => {
     const monday = PROVIDER_SEED_DATA.monday;
     expect(monday).toBeDefined();
@@ -32,7 +25,6 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
   test("figma requests only scopes an app on any plan can grant", () => {
     const figma = PROVIDER_SEED_DATA.figma;
     expect(figma).toBeDefined();
-    expect(figma.cloudServiceConfigKey).toBe("figma-oauth");
     expect("figma-oauth" in ServicesSchema.shape).toBe(true);
 
     // Figma rejects the whole authorization request when the app cannot grant
@@ -112,26 +104,6 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
     );
   });
 
-  test("Link does not ship a Stripe publishable key to BYO installs", () => {
-    // Link's authorize endpoint needs a `key` param naming the Stripe account
-    // behind the client_id. Cadet's belongs only in the cloud registry,
-    // where it pairs with the cloud's own client. Seeding it here would
-    // send our merchant identity from every self-hosted install.
-    const link = PROVIDER_SEED_DATA.stripe_link;
-    expect(link).toBeDefined();
-    expect(link.cloudServiceConfigKey).toBe("stripe-link-oauth");
-    expect(link.authorizeParams).toBeUndefined();
-    expect(JSON.stringify(link)).not.toContain("pk_live_");
-  });
-
-  test("Link identity falls back to phone when a wallet has no email", () => {
-    // /userinfo returns no id field, so email is the account handle and phone
-    // is the only backstop. Losing these paths breaks connection keying.
-    const link = PROVIDER_SEED_DATA.stripe_link;
-    expect(link.identityUrl).toBe("https://api.link.com/userinfo");
-    expect(link.identityResponsePaths).toEqual(["email", "phone"]);
-  });
-
   test("shopify keeps its per-tenant URL templates", () => {
     // Shopify has no global OAuth host: every endpoint lives on the
     // merchant's own domain. Hardcoding any host here would send every
@@ -184,13 +156,6 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
     expect(template?.headerName).toBe("X-Shopify-Access-Token");
     expect(template?.valuePrefix).toBe("");
     expect(template?.hostPattern).toBe("*.myshopify.com");
-  });
-
-  test("quickbooks is wired up for managed mode", () => {
-    const quickbooks = PROVIDER_SEED_DATA.quickbooks;
-    expect(quickbooks).toBeDefined();
-    expect(quickbooks.cloudServiceConfigKey).toBe("quickbooks-oauth");
-    expect("quickbooks-oauth" in ServicesSchema.shape).toBe(true);
   });
 
   test("quickbooks uses Intuit's OAuth endpoints with HTTP Basic", () => {
@@ -256,20 +221,6 @@ describe("PROVIDER_SEED_DATA managed mode wiring", () => {
       expect(template.headerName).toBe("Authorization");
       expect(template.valuePrefix).toBe("Bearer ");
     }
-  });
-
-  test("every cloudServiceConfigKey resolves to a ServicesSchema key", () => {
-    // Cross-repo invariant: a provider with cloudServiceConfigKey but no
-    // matching ServicesSchema entry silently falls back to BYO mode in
-    // connection-resolver.ts. This test guards against that drift.
-    const offenders: Array<{ provider: string; key: string }> = [];
-    for (const [provider, seed] of Object.entries(PROVIDER_SEED_DATA)) {
-      const key = seed.cloudServiceConfigKey;
-      if (key && !(key in ServicesSchema.shape)) {
-        offenders.push({ provider, key });
-      }
-    }
-    expect(offenders).toEqual([]);
   });
 
   test("github cloud service schema defaults to your-own", () => {

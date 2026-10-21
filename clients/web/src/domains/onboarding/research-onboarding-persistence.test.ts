@@ -1,8 +1,8 @@
 /**
  * Tests for the research-onboarding resume persistence: the round-trip
  * read/write/clear contract (user-scoped key, privacy-mode tolerance) and the
- * resolveResumeStep routing — jump to suggestions once research finished, never
- * replay the one-shot meeting confirmation, otherwise resume where we were.
+ * resolveResumeStep routing — jump to suggestions once research finished,
+ * otherwise resume where we were.
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
@@ -29,9 +29,7 @@ function baseSnapshot(
       hobbies: ["chess"],
     },
     faceValues: null,
-    checkinTime: null,
-    checkinBooked: false,
-    research: null,
+        research: null,
     ...overrides,
   };
 }
@@ -46,7 +44,7 @@ afterEach(() => {
 
 describe("read/write/clear round-trip", () => {
   test("writes then reads back the same snapshot", () => {
-    const snapshot = baseSnapshot({ checkinTime: "2:30 PM" });
+    const snapshot = baseSnapshot();
     writeResearchSnapshot(USER, snapshot);
     expect(readResearchSnapshot(USER)).toEqual(snapshot);
   });
@@ -156,28 +154,8 @@ describe("resolveResumeStep", () => {
     expect(resolveResumeStep(snapshot)).toBe("suggestions");
   });
 
-  test("a confirmed booking resumes the meeting step on the looking carousel", () => {
-    expect(
-      resolveResumeStep(baseSnapshot({ step: "meeting", checkinBooked: true })),
-    ).toBe("looking");
-  });
-
-  test("an unconfirmed booking resumes the meeting step back on the calendar", () => {
-    // The booking POST may have been cancelled by the refresh and the endpoint
-    // is non-idempotent, so fall back to the calendar step (which only books on
-    // an explicit click) rather than skipping past it or blind-retrying.
-    expect(
-      resolveResumeStep(
-        baseSnapshot({ step: "meeting", checkinBooked: false }),
-      ),
-    ).toBe("letschat");
-  });
-
   test("resumes the saved step mid-flow when research hasn't settled", () => {
     expect(resolveResumeStep(baseSnapshot({ step: "intro" }))).toBe("intro");
-    expect(resolveResumeStep(baseSnapshot({ step: "letschat" }))).toBe(
-      "letschat",
-    );
   });
 
   test("skips the research reveal when role and hobbies are both empty", () => {
@@ -195,15 +173,6 @@ describe("resolveResumeStep", () => {
     expect(
       resolveResumeStep(
         baseSnapshot({ step: "results", formValues: emptyDetails }),
-      ),
-    ).toBe("suggestions");
-    expect(
-      resolveResumeStep(
-        baseSnapshot({
-          step: "meeting",
-          checkinBooked: true,
-          formValues: emptyDetails,
-        }),
       ),
     ).toBe("suggestions");
   });

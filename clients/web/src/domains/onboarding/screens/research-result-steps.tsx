@@ -4,7 +4,6 @@
  * SPIKE — research-onboarding flow.
  *
  * These render the visual sequence that follows the calendar step:
- *   - MeetingCreatedStep   a brief "Check-in scheduled…" confirmation
  *   - LookingYouUpStep     a loading carousel ("looking you up")
  *   - ResearchResultsStep  the editable "Alright, this is what I got:" claims
  *   - SuggestionsStep      tappable suggestions that open a new chat
@@ -29,7 +28,6 @@ import {
   useOnboardingTone,
   type OnboardingTone,
 } from "@/domains/onboarding/onboarding-tone";
-import { useLayoutViewportSize } from "@/hooks/use-element-size";
 import { Trans, useTranslation } from "@/i18n";
 import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
 import {
@@ -86,19 +84,6 @@ export function MiniAssistant({
 const AVATAR_HEADING_CLASS = "pt-[0.7rem] text-[2.6rem] leading-none";
 
 // ---------------------------------------------------------------------------
-// Meeting Created
-// ---------------------------------------------------------------------------
-
-// Matches the carousel/result steps' avatar size so the avatar doesn't jump
-// between the meeting step and the looking-you-up step that follows it.
-const MINI = 64;
-
-// The confirmation animation runs ~1.3s to reveal the title; hold well past it
-// so the booked time stays readable for ~3s before advancing.
-const MEETING_MIN_MS = 4500;
-// Cap how long we hold for a slow-but-pending booking before advancing anyway.
-const MEETING_MAX_MS = 7000;
-
 /**
  * Reverse of the Introduction grow-in. The toned backdrop (behind) blends to
  * black and hides its bottom eyes; here the eyes lead — shrinking and rising
@@ -106,125 +91,6 @@ const MEETING_MAX_MS = 7000;
  * follows a beat later, shrinking into a small avatar beside the "Check-in
  * scheduled…" text. The edge characters stay (they live in the backdrop).
  */
-export function MeetingCreatedStep({
-  onDone,
-  onBack,
-  onForward,
-  scheduledTime,
-  awaitingTime,
-}: {
-  onDone: () => void;
-  onBack: () => void;
-  /** Redo into the next step — only set when the user has stepped back. */
-  onForward?: () => void;
-  /** Pre-formatted wall-clock time (e.g. "2:30 PM"); generic copy when absent. */
-  scheduledTime?: string;
-  /** True while the check-in booking is still in flight; holds the step (capped) so a slow-but-successful booking can still reveal the time. */
-  awaitingTime?: boolean;
-}) {
-  const { t } = useTranslation("onboarding");
-  const { components, chosen } = useChosenAvatar();
-  const reduce = useReducedMotion();
-  const { w, h } = useLayoutViewportSize();
-
-  const title = scheduledTime
-    ? t("meetingCreatedStep.titleWithTime", { time: scheduledTime })
-    : t("meetingCreatedStep.title");
-
-  // Hold the step long enough to reveal the booked time. While a booking is
-  // still in flight and we don't yet have the time, wait up to the cap; once
-  // the time lands (or the booking settles, or we were never waiting) advance
-  // after the normal minimum. The effect re-runs when those inputs change, so
-  // the timer re-anchors to the moment the time arrives.
-  useEffect(() => {
-    const holdForBooking = awaitingTime && !scheduledTime;
-    const delay = holdForBooking ? MEETING_MAX_MS : MEETING_MIN_MS;
-    const t = setTimeout(onDone, delay);
-    return () => clearTimeout(t);
-  }, [onDone, awaitingTime, scheduledTime]);
-
-  // Measure the avatar slot's center so the grow-in animation resolves to the
-  // exact resting position the next step's avatar uses — same column, same size
-  // — so there's no horizontal (or size) jump between the two steps. Re-measures
-  // on resize and when the title swaps (e.g. the booked time lands late).
-  const slotRef = useRef<HTMLDivElement>(null);
-  const [slot, setSlot] = useState<{ cx: number; cy: number } | null>(null);
-  useLayoutEffect(() => {
-    const measure = () => {
-      const r = slotRef.current?.getBoundingClientRect();
-      if (r) {
-        setSlot({ cx: r.left + r.width / 2, cy: r.top + r.height / 2 });
-      }
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [title]);
-
-  // The single giant avatar (eyes visible against the colored bg even while the
-  // body blends; the body appears as the bg darkens) starts low, dips a touch,
-  // then rises + shrinks into the slot with a small settle bounce.
-  const bigScale = (1.3 * Math.max(w, h)) / MINI;
-  const startX = slot ? w / 2 - slot.cx : 0;
-  const startY = slot ? h * 0.88 - slot.cy : 0;
-  const dip = h * 0.05;
-
-  return (
-    <div className="absolute inset-0 z-10 overflow-hidden text-white">
-      <OnboardingTopBar onBack={onBack} onNext={onForward} tone="light" />
-
-      {/* Same column layout as the looking-you-up / result steps so the avatar
-          lands exactly where the next step renders it. */}
-      <div className="absolute left-1/2 top-[14%] sm:top-[26%] flex w-full max-w-xl -translate-x-1/2 items-start gap-3 px-6">
-        <div
-          ref={slotRef}
-          className="relative shrink-0"
-          style={{ width: MINI, height: MINI }}
-        >
-          {components && chosen && slot && (
-            <motion.div
-              className="absolute inset-0"
-              style={{ transformOrigin: "center" }}
-              initial={
-                reduce ? false : { scale: bigScale, x: startX, y: startY }
-              }
-              animate={{
-                x: [startX, startX, 0, 0],
-                y: [startY, startY + dip, 0, 0],
-                scale: [bigScale, bigScale, 1.07, 1],
-              }}
-              transition={
-                reduce
-                  ? { duration: 0 }
-                  : {
-                      duration: 1.1,
-                      times: [0, 0.18, 0.82, 1],
-                      ease: ["easeOut", "easeIn", "easeOut"],
-                    }
-              }
-            >
-              <AnimatedAvatar
-                components={components}
-                traits={chosen}
-                size={MINI}
-              />
-            </motion.div>
-          )}
-        </div>
-        <motion.span
-          className={AVATAR_HEADING_CLASS}
-          style={{ fontFamily: "var(--font-serif)" }}
-          initial={reduce ? false : { opacity: 0, x: -8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={reduce ? { duration: 0 } : { duration: 0.4, delay: 0.9 }}
-        >
-          {title}
-        </motion.span>
-      </div>
-    </div>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Looking you up (loading carousel)
 // ---------------------------------------------------------------------------

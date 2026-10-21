@@ -13,7 +13,7 @@ import type { OAuthProviderRow } from "./oauth-store.js";
  *
  * JSON string fields are parsed into their native types, boolean/integer
  * fields are normalised to booleans, timestamps are ISO 8601 strings,
- * and a computed `supportsManagedMode` flag is included.
+ * and computed fields are included.
  */
 export type SerializedProvider = ReturnType<typeof serializeProvider> &
   Record<string, unknown>;
@@ -36,8 +36,6 @@ export interface SerializedProviderSummary {
   client_id_placeholder: string | null;
   requires_client_secret: boolean;
   logo_url: string | null;
-  supports_cloud_mode: boolean;
-  managed_service_is_paid: boolean;
   /**
    * Where the integrations catalog files the provider. `null` for a row with
    * no seed entry, such as a provider a user registered by hand.
@@ -115,8 +113,6 @@ function _serializeProvider(
     logoUrl: row.logoUrl ?? null,
     clientIdPlaceholder: row.clientIdPlaceholder ?? null,
     requiresClientSecret: !!(row.requiresClientSecret ?? 1),
-    supportsManagedMode: !!row.cloudServiceConfigKey,
-    managedServiceIsPaid: !!row.managedServiceIsPaid,
     defaultScopes: row.defaultScopes ? JSON.parse(row.defaultScopes) : [],
     availableScopes: row.availableScopes
       ? JSON.parse(row.availableScopes)
@@ -174,8 +170,6 @@ export function serializeProviderSummary(
     client_id_placeholder: row.clientIdPlaceholder ?? null,
     requires_client_secret: !!(row.requiresClientSecret ?? 1),
     logo_url: row.logoUrl ?? null,
-    supports_cloud_mode: !!row.cloudServiceConfigKey,
-    managed_service_is_paid: !!row.managedServiceIsPaid,
     category: PROVIDER_SEED_DATA[row.provider]?.category ?? null,
     tenant_host: PROVIDER_SEED_DATA[row.provider]?.tenantHost ?? null,
     acts_as: isChannelBotProvider(row.provider) ? "assistant" : "user",

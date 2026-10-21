@@ -1,8 +1,6 @@
 import type { IntegrationCategory } from "@mycadet/service-contracts/integration-categories";
 
 import type { OAuthConnection } from "@/generated/api/types.gen";
-import type { CloudGateState } from "@/hooks/use-cloud-gate";
-
 import {
   buildConnectPlan,
   type ConnectPlan,
@@ -37,8 +35,6 @@ export function oauthProvider(
     client_id_placeholder: null,
     requires_client_secret: true,
     logo_url: null,
-    supports_cloud_mode: true,
-    managed_service_is_paid: false,
     category,
     tenant_host: null,
     acts_as: "user",
@@ -111,7 +107,6 @@ export function planFor({
   connections = [],
   servers = [],
   definitions = [],
-  cloudGate = "full",
   ownOAuthAvailable = false,
   mcpServersLoaded = true,
 }: {
@@ -119,7 +114,6 @@ export function planFor({
   connections?: OAuthConnection[];
   servers?: McpServerEntry[];
   definitions?: McpPluginDefinition[];
-  cloudGate?: CloudGateState;
   ownOAuthAvailable?: boolean;
   /** A fixture has its servers in hand, so the list counts as read. */
   mcpServersLoaded?: boolean;
@@ -136,7 +130,6 @@ export function planFor({
   );
   const plan = item
     ? buildConnectPlan(item, {
-        cloudGate,
         ownOAuthAvailable,
         mcpServersLoaded,
       })
@@ -178,17 +171,20 @@ export const GITHUB_PROVIDER = oauthProvider(
   "Issues, pull requests, and code search on GitHub.",
 );
 
-/** Platform-hosted Notion: the MCP server leads, Cadet's OAuth is behind it. */
+/** Notion's own MCP server leads; bring-your-own OAuth sits behind it. */
 export const notionPlan = planFor({
   providers: [NOTION_PROVIDER],
   definitions: [pluginDefinition()],
 });
 
-/** Managed OAuth and nothing else, so the connect action has no chevron. */
-export const googlePlan = planFor({ providers: [GOOGLE_PROVIDER] });
+/** Bring-your-own OAuth and nothing else, so the connect action has no chevron. */
+export const googlePlan = planFor({
+  providers: [GOOGLE_PROVIDER],
+  ownOAuthAvailable: true,
+});
 
 /**
- * Linear's own MCP server with Cadet's hosted sign-in behind it: the shape a
+ * Linear's own MCP server with bring-your-own OAuth behind it: the shape a
  * failed attempt needs, since there is somewhere else to send the user.
  */
 export const linearMcpPlan = planFor({

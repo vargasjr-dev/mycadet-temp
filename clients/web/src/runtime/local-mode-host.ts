@@ -46,7 +46,7 @@ import { isElectron } from "@/runtime/is-electron";
  * a desktop-only nicety.
  *
  * The gateway *data plane* deliberately has no seam function: callers fetch
- * the same-origin `/assistant/__gateway/{port}/*` URL on both hosts, and each
+ * the same-origin `/assistant/__gateway/{assistantId}/*` URL on both hosts, and each
  * host proxies it to the local gateway transparently (the Vite dev middleware
  * on web/dev; the Electron `app://` protocol handler in the desktop shell).
  * The transport branch lives in the host, not the renderer, so the data-plane

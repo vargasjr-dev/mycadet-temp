@@ -70,7 +70,7 @@
  * the actor edge JWT in `?token=` (browser WebSockets cannot set an
  * `Authorization` header), and a cloud one is dialled through tunnel with a
  * short-lived minted token. See `live-voice/connection.ts` for the whole rule
- * set, including the local `/assistant/__gateway/<port>` bypass.
+ * set, including the local `/assistant/__gateway/<assistantId>` bypass.
  *
  * A paired assistant remains the one deployment with no transport at all: its
  * proxy is HTTP-only and there is no loopback to fall back to, so the toggle

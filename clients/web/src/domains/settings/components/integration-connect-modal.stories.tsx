@@ -194,7 +194,6 @@ export const LoginRequired: Story = {
   args: {
     plan: planFor({
       providers: [GOOGLE_PROVIDER],
-      cloudGate: "disabled",
     }),
   },
 };
