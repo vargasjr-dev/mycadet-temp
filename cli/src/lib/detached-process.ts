@@ -34,9 +34,9 @@ export interface DetachedRelaunchResult {
  * poll `isReady` until it succeeds, the child exits, or `timeoutMs` elapses.
  *
  * Shared by every command that offers a detached/background mode (e.g.
- * `cadet tunnel -d`, `cadet client --interface web --background`) so the
- * spawn/log/poll mechanics live in one place; each caller supplies its own
- * readiness check and decides how to react to a timeout or early exit.
+ * `cadet tunnel start`) so the spawn/log/poll mechanics live in one place;
+ * each caller supplies its own readiness check and decides how to react to a
+ * timeout or early exit.
  */
 export async function relaunchDetached(
   opts: RelaunchDetachedOptions,

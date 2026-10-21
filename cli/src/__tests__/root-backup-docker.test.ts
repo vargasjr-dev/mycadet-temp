@@ -1,5 +1,13 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Readable } from "node:stream";
@@ -291,4 +299,45 @@ test("create-only provisioning creates every target container without starting s
     ),
   ).toBe(false);
   expect([...running.values()].every((value) => !value)).toBe(true);
+});
+
+test("packRoot skips symlinks the validator would reject and keeps safe relative links", async () => {
+  // The bun store-link shapes a real workspace carries: absolute targets and
+  // escaping relatives must not fail the pack; internal relative links stay.
+  const nodeModules = join(directory, "workspace", "node_modules");
+  await mkdir(nodeModules, { mode: 0o700 });
+  await writeFile(join(nodeModules, "pkg"), "store", { mode: 0o600 });
+  await symlink(
+    "/usr/local/lib/node_modules/zod",
+    join(nodeModules, "zod-abs"),
+  );
+  await symlink("../../../outside/zod", join(nodeModules, "zod-esc"));
+  await symlink("./pkg", join(nodeModules, "zod-rel"));
+
+  const warnings: string[] = [];
+  const warn = spyOn(console, "warn").mockImplementation((...args) => {
+    warnings.push(args.join(" "));
+  });
+  const file = join(directory, "backup.tar.gz");
+  try {
+    await packRoot(directory, file);
+  } finally {
+    warn.mockRestore();
+  }
+
+  expect(warnings.some((line) => line.includes("zod-abs"))).toBe(true);
+  expect(warnings.some((line) => line.includes("zod-esc"))).toBe(true);
+  expect(warnings.some((line) => line.includes("zod-rel"))).toBe(false);
+
+  const paths: string[] = [];
+  await tar.t({
+    file,
+    strict: true,
+    onReadEntry: (entry) => {
+      paths.push(entry.path);
+    },
+  });
+  expect(paths.some((path) => path.endsWith("zod-rel"))).toBe(true);
+  expect(paths.some((path) => path.includes("zod-abs"))).toBe(false);
+  expect(paths.some((path) => path.includes("zod-esc"))).toBe(false);
 });

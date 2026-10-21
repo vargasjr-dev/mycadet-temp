@@ -66,7 +66,7 @@
     "./notification-avatar-file": "./src/notification-avatar-file.ts",
     "./notification-avatar-path": "./src/notification-avatar-path.ts",
     "./notifications": "./src/notifications.ts",
-    "./paired-gateway-request-guard": "./src/paired-gateway-request-guard.ts",
+    "./gateway-request-guard": "./src/gateway-request-guard.ts",
     "./permissions": "./src/permissions.ts",
     "./popout-window": "./src/popout-window.ts",
     "./power-events": "./src/power-events.ts",

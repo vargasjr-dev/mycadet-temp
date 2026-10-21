@@ -245,20 +245,6 @@ describe("buildSelfHostedGatewayWsUrl", () => {
     ).toThrow(PairedVoiceUnavailableError);
   });
 
-  test("paired __gateway-paired path throws PairedVoiceUnavailableError on any origin", () => {
-    // The paired proxy is HTTP-only with no loopback port to bypass to, so the
-    // builder fails typed before any dial. On an Electron app:// origin a raw
-    // dial would otherwise throw an opaque WebSocket construction error.
-    for (const ingressUrl of [
-      "http://localhost:3000/assistant/__gateway-paired/asst-1",
-      "app://cadet/assistant/__gateway-paired/asst-1",
-    ]) {
-      expect(() =>
-        buildSelfHostedGatewayWsUrl({ ...args, ingressUrl }),
-      ).toThrow(PairedVoiceUnavailableError);
-    }
-  });
-
   test("remote ingress keeps its host and path prefix, drops query and hash", () => {
     const url = new URL(
       buildSelfHostedGatewayWsUrl({
@@ -310,8 +296,15 @@ describe("resolveGatewayWsUrl", () => {
   });
 
   test("paired: refuses outright rather than dialling an HTTP-only proxy", async () => {
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "paired",
+        runtimeUrl: "https://gw.example.com",
+      } as LockfileAssistant,
+    ]);
     setSelfHostedConnection({
-      url: "http://localhost:3000/assistant/__gateway-paired/asst-1",
+      url: "http://localhost:3000/assistant/__gateway/asst-1",
       token: "actor-jwt",
     });
 
@@ -404,8 +397,15 @@ describe("resolveLiveVoiceWsUrl", () => {
   test("paired ingress rejects with the voice-unavailable reason (and does not mint)", async () => {
     // GIVEN the active selection is a paired assistant riding the HTTP-only
     // same-origin proxy
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "paired",
+        runtimeUrl: "https://gw.example.com",
+      } as LockfileAssistant,
+    ]);
     setSelfHostedConnection({
-      url: "http://localhost:3000/assistant/__gateway-paired/asst-1",
+      url: "http://localhost:3000/assistant/__gateway/asst-1",
       token: "actor-tok",
     });
 
@@ -418,8 +418,15 @@ describe("resolveLiveVoiceWsUrl", () => {
   });
 
   test("paired ingress rejects even before the actor token is provisioned", async () => {
+    setLockfile([
+      {
+        assistantId: "asst-1",
+        cloud: "paired",
+        runtimeUrl: "https://gw.example.com",
+      } as LockfileAssistant,
+    ]);
     setSelfHostedConnection({
-      url: "app://cadet/assistant/__gateway-paired/asst-1",
+      url: "app://cadet/assistant/__gateway/asst-1",
       token: null,
     });
 
@@ -435,17 +442,6 @@ describe("resolveLiveVoiceWsUrl", () => {
 // ---------------------------------------------------------------------------
 
 describe("isPairedGatewayIngress", () => {
-  test("matches the paired proxy path on browser and Electron origins", () => {
-    expect(
-      isPairedGatewayIngress(
-        "http://localhost:3000/assistant/__gateway-paired/asst-1",
-      ),
-    ).toBe(true);
-    expect(
-      isPairedGatewayIngress("app://cadet/assistant/__gateway-paired/asst-1"),
-    ).toBe(true);
-  });
-
   test("matches the unified proxy path when the entry is paired", () => {
     setLockfile([
       {

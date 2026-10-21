@@ -185,14 +185,6 @@
     "woke": "Tu asistente acaba de despertarse",
     "wokeNamed": "{name} acaba de despertarse"
   },
-  "assistantSwitcher": {
-    "collapse": "Ocultar asistentes",
-    "currentAssistant": "{name}, asistente actual",
-    "expand": "Cambiar de asistente",
-    "switchFailed": "No se pudo cambiar de asistente. Inténtalo de nuevo.",
-    "switchTo": "Cambiar a {name}",
-    "unnamedAssistant": "Asistente sin nombre"
-  },
   "attachmentChip": {
     "removeAria": "Eliminar {filename}"
   },

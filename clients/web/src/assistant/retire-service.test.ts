@@ -15,8 +15,10 @@ let isLocalClientValue = false;
 let lockfileAssistants: Array<{ assistantId: string; cloud?: string }> = [];
 let storeAssistants: Array<{ id: string }> = [];
 let retireByIdResult:
-  { ok: true } | { ok: false; status: number; error: Record<string, unknown> } =
-  { ok: true };
+  | { ok: true }
+  | { ok: false; status: number; error: Record<string, unknown> } = {
+  ok: true,
+};
 let retireLocalResult: { ok: true } | { ok: false; error?: string } = {
   ok: true,
 };
@@ -78,10 +80,7 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
       return { action: "allow" };
     }
     if (state.hasAssistants) {
-      return {
-        action: "redirect",
-        to: state.isLocalClient ? "/assistant/select-assistant" : "/assistant",
-      };
+      return { action: "redirect", to: "/assistant" };
     }
     if (!state.isLocalClient) {
       return { action: "redirect", to: "/assistant/onboarding/privacy" };
@@ -114,7 +113,6 @@ mock.module("@/utils/routes", () => ({
   routes: {
     assistant: "/assistant",
     welcome: "/assistant/welcome",
-    selectAssistant: "/assistant/select-assistant",
     onboarding: {
       hosting: "/assistant/onboarding/hosting",
       privacy: "/assistant/onboarding/privacy",
@@ -300,7 +298,7 @@ describe("retireAssistant", () => {
     }
   });
 
-  test("post-retire redirects to select-assistant when other assistants remain", async () => {
+  test("post-retire redirects to the assistant when other assistants remain", async () => {
     isLocalClientValue = true;
     lockfileAssistants = [
       { assistantId: "l1", cloud: "local" },
@@ -312,7 +310,7 @@ describe("retireAssistant", () => {
 
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
-      expect(outcome.nextRoute).toBe("/assistant/select-assistant");
+      expect(outcome.nextRoute).toBe("/assistant");
     }
   });
 

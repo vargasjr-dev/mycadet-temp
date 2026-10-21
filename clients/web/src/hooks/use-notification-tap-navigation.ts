@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 
-import { switchToResolvedAssistant } from "@/assistant/switch-service";
 import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import type { AssistantState } from "@/assistant/types";
 import {
@@ -8,6 +7,7 @@ import {
   resolveAssistantNotificationCloudId,
 } from "@/hooks/use-assistant-avatar";
 import { publish } from "@/lib/event-bus";
+import { isLocalClient } from "@/lib/local-mode";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import {
   createNotificationIdentity,
@@ -98,8 +98,7 @@ function waitForActiveTapAssistant(
     if (assistantsState.selectedAssistantId !== assistantId) {
       return false;
     }
-    const lifecycleState =
-      useAssistantLifecycleStore.getState().assistantState;
+    const lifecycleState = useAssistantLifecycleStore.getState().assistantState;
     if (
       lifecycleState !== lifecycleStateBeforeSwitch &&
       lifecycleState.kind === "error" &&
@@ -236,7 +235,18 @@ export function useNotificationTapNavigation(): void {
       const lifecycleStateBeforeSwitch =
         useAssistantLifecycleStore.getState().assistantState;
       try {
-        await switchToResolvedAssistant(assistant);
+        const {
+          connectPairedAssistant,
+          connectLocalAssistant,
+          connectCloudAssistant,
+        } = useAuthStore.getState();
+        if (assistant.isPaired) {
+          await connectPairedAssistant(assistant.id);
+        } else if (assistant.isLocal && isLocalClient()) {
+          await connectLocalAssistant(assistant.id);
+        } else {
+          await connectCloudAssistant(assistant.id);
+        }
       } catch {
         return;
       }

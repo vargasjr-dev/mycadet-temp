@@ -66,9 +66,7 @@
   "appViewerContainer": {
     "exitFullscreen": "退出全屏"
   },
-  "assistantConnect": {
-    "failed": "连接助手失败。"
-  },
+
   "assistantEmailIntroModal": {
     "setUp": "设置邮箱"
   },
@@ -532,13 +530,7 @@
     "placeholder": "向 Cadet 提问...",
     "send": "发送消息"
   },
-  "removeFromDeviceDialog": {
-    "confirm": "移除",
-    "messageOrigin": "这不会影响 {assistantName} 或让您在那里退出登录。它只会忘记此设备上的条目。您可以随时再次添加。",
-    "messagePaired": "这不会影响 {assistantName} 在其主机上的状态。它只会忘记此设备上的配对。您可以随时使用 cadet connect import 再次配对。",
-    "messagePlatform": "这不会删除 {assistantName}。它只会将其从此设备中移除。登录后它将再次可用。",
-    "title": "从该设备移除？"
-  },
+
   "resourcePressureBanner": {
     "body": "您的助手正在努力工作，并已达到其当前资源限制。请升级以确保其平稳运行。",
     "bodyNoUpgrade": "您的助手正在努力工作，并已达到其当前资源限制。",
@@ -558,9 +550,7 @@
   "routePendingIndicator": {
     "loadingAria": "正在加载"
   },
-  "rootLayout": {
-    "unnamedAssistant": "该助手"
-  },
+
   "routeErrorBoundary": {
     "chunkFailBody": "此部分无法加载。可能是网络故障或版本过旧。请重新加载页面重试。",
     "reload": "重新加载"

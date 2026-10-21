@@ -158,13 +158,13 @@ describe("onboarding funnel history contract", () => {
     expect(opts).toEqual({ replace: true });
   });
 
-  test("WelcomeScreen replaces on the way to the chooser too", () => {
+  test("WelcomeScreen replaces on the way to the assistant too", () => {
     localAssistants = true;
     render(<WelcomeScreen />);
     click("Continue without account");
 
     const { to, opts } = navigatedWith();
-    expect(to).toBe(routes.selectAssistant);
+    expect(to).toBe(routes.assistant);
     expect(opts).toEqual({ replace: true });
   });
 

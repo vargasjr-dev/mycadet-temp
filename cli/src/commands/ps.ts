@@ -705,13 +705,16 @@ function edgeWorkspaceFor(assistantId: string | undefined): string {
 }
 
 /**
- * Full info for one CLI-managed process: `cadet ps nginx` (the app edge) and
- * `cadet ps ngrok` (the tunnel agent — any provider name, or "tunnel"). These
- * names resolve before assistant lookup: a built-in process name wins.
- * Returns false when the identifier names neither, so the caller falls
- * through to the assistant lookup.
+ * Full info for one CLI-managed process: `cadet ps nginx` / `cadet app status`
+ * (the app edge) and `cadet ps ngrok` / `cadet tunnel status` (the tunnel
+ * agent — any provider name, or "tunnel"). These names resolve before
+ * assistant lookup: a built-in process name wins. Returns false when the
+ * identifier names neither, so the caller falls through to the assistant
+ * lookup.
  */
-async function printRootProcessDetail(identifier: string): Promise<boolean> {
+export async function printRootProcessDetail(
+  identifier: string,
+): Promise<boolean> {
   const name = identifier.toLowerCase();
   const { tunnel, app } = readRootProcesses();
 

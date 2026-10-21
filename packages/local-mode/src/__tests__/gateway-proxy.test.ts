@@ -19,10 +19,17 @@ const rejection = {
 } as const;
 
 const loopback = (port: number) => ({ kind: "loopback", port }) as const;
-const remote = (runtimeUrl: string) => ({ kind: "remote", runtimeUrl }) as const;
+const remote = (runtimeUrl: string) =>
+  ({ kind: "remote", runtimeUrl }) as const;
 
 const targets =
-  (map: Record<string, { kind: "loopback"; port: number } | { kind: "remote"; runtimeUrl: string }>) =>
+  (
+    map: Record<
+      string,
+      | { kind: "loopback"; port: number }
+      | { kind: "remote"; runtimeUrl: string }
+    >,
+  ) =>
   () =>
     new Map(Object.entries(map));
 
@@ -44,19 +51,6 @@ describe("parseAssistantGatewayUrl", () => {
       match: true,
       valid: true,
       target: { assistantId: "abc-123", path: "/auth/token", search: "" },
-    });
-  });
-
-  test("accepts the deprecated `-paired` alias with identical semantics", () => {
-    expect(
-      parseAssistantGatewayUrl("/assistant/__gateway-paired/abc-123/v1"),
-    ).toEqual(
-      parseAssistantGatewayUrl("/assistant/__gateway/abc-123/v1"),
-    );
-    expect(parseAssistantGatewayUrl("/__gateway-paired/abc-123")).toEqual({
-      match: true,
-      valid: true,
-      target: { assistantId: "abc-123", path: "/", search: "" },
     });
   });
 
@@ -150,9 +144,9 @@ describe("resolveGatewayProxyTarget", () => {
     expect(resolveGatewayProxyTarget("/__gateway/zzz-999/v1", entry)).toEqual(
       rejection,
     );
-    expect(resolveGatewayProxyTarget("/__gateway/abc/../secret", entry)).toEqual(
-      rejection,
-    );
+    expect(
+      resolveGatewayProxyTarget("/__gateway/abc/../secret", entry),
+    ).toEqual(rejection);
   });
 });
 
@@ -161,12 +155,14 @@ describe("gatewayTargetsFromLockfile", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "abc-123", cloud: "paired", runtimeUrl: "https://gw.example.com" },
+          {
+            assistantId: "abc-123",
+            cloud: "paired",
+            runtimeUrl: "https://gw.example.com",
+          },
         ],
       }),
-    ).toEqual(
-      targets({ "abc-123": remote("https://gw.example.com") })(),
-    );
+    ).toEqual(targets({ "abc-123": remote("https://gw.example.com") })());
   });
 
   test("omits a paired entry whose runtimeUrl is unusable", () => {
@@ -187,7 +183,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -229,7 +225,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 80 },
+            resources: { gatewayPort: 80, daemonPort: 8501 },
           },
           {
             assistantId: "def-456",
@@ -247,9 +243,21 @@ describe("gatewayTargetsFromLockfile", () => {
         assistants: [
           { assistantId: "a", cloud: "cadet" },
           { assistantId: "b", cloud: "apple-container" },
-          { assistantId: "c", cloud: "gcp", runtimeUrl: "https://gw.example.com" },
-          { assistantId: "d", cloud: "aws", runtimeUrl: "https://gw.example.com" },
-          { assistantId: "e", cloud: "custom", runtimeUrl: "https://gw.example.com" },
+          {
+            assistantId: "c",
+            cloud: "gcp",
+            runtimeUrl: "https://gw.example.com",
+          },
+          {
+            assistantId: "d",
+            cloud: "aws",
+            runtimeUrl: "https://gw.example.com",
+          },
+          {
+            assistantId: "e",
+            cloud: "custom",
+            runtimeUrl: "https://gw.example.com",
+          },
         ],
       }),
     ).toEqual(new Map());
@@ -266,7 +274,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -285,7 +293,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
           {
             assistantId: "def-456",
@@ -316,7 +324,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),
@@ -337,7 +345,7 @@ describe("readGatewayTargets", () => {
           {
             assistantId: "abc-123",
             cloud: "local",
-            resources: { gatewayPort: 8080 },
+            resources: { gatewayPort: 8080, daemonPort: 8501 },
           },
         ],
       }),

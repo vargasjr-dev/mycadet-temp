@@ -66,9 +66,7 @@
   "appViewerContainer": {
     "exitFullscreen": "結束全螢幕"
   },
-  "assistantConnect": {
-    "failed": "連線至助理失敗。"
-  },
+
   "assistantEmailIntroModal": {
     "setUp": "設定電子郵件"
   },
@@ -532,13 +530,7 @@
     "placeholder": "詢問 Cadet 任何問題…",
     "send": "傳送訊息"
   },
-  "removeFromDeviceDialog": {
-    "confirm": "移除",
-    "messageOrigin": "這不會影響 {assistantName} 或讓您在那裡登出。它只會忘記此裝置上的項目。您可以隨時再次新增。",
-    "messagePaired": "這不會影響 {assistantName} 在其主機上的狀態。它只會忘記此裝置上的配對。您可以隨時使用 cadet connect import 再次配對。",
-    "messagePlatform": "這不會刪除 {assistantName}。它只會將其從此裝置移除。登入後它將再次可用。",
-    "title": "從此裝置移除？"
-  },
+
   "resourcePressureBanner": {
     "body": "您的助理正在努力工作並達到其目前的資源限制。請升級以確保其順暢執行。",
     "bodyNoUpgrade": "您的助理正在努力工作並達到其目前的資源限制。",
@@ -558,9 +550,7 @@
   "routePendingIndicator": {
     "loadingAria": "正在載入"
   },
-  "rootLayout": {
-    "unnamedAssistant": "該助理"
-  },
+
   "routeErrorBoundary": {
     "chunkFailBody": "此區段無法載入。可能是網路瞬斷或版本過舊。請重新載入頁面再試一次。",
     "reload": "重新載入"

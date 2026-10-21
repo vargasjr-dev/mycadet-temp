@@ -6,8 +6,6 @@
     "cancel": "Отмена",
     "add": "Добавить",
     "adding": "Добавление…",
-    "connect": "Подключить",
-    "connecting": "Подключение…",
     "tryAgain": "Попробовать снова",
     "remove": "Убрать {value}",
     "logIn": "Войти",
@@ -15,7 +13,8 @@
     "loginToUse": "Войти, чтобы пользоваться",
     "downloadMacOSApp": "Скачать приложение для macOS",
     "downloadWindowsApp": "Скачать приложение для Windows",
-    "claim": "Забрать"
+    "claim": "Забрать",
+    "skipForNow": "Пока пропустить"
   },
   "welcome": {
     "title": "Добро пожаловать в Cadet",
@@ -38,9 +37,9 @@
     "optionsAriaLabel": "Варианты хостинга"
   },
   "apiKeyScreen": {
-    "providerLabel": "Провайдер",
     "title": "Подключение провайдера моделей",
     "body": "Выбор провайдера моделей для ассистента.",
+    "providerLabel": "Провайдер",
     "modelLabel": "Модель",
     "baseUrlLabel": "Базовый URL",
     "modelsLabel": "Модели",
@@ -50,21 +49,6 @@
     "apiKeyPlaceholder": "API-ключ",
     "noKeyPrompt": "Нет ключа?",
     "getKeyLink": "Получить API-ключ"
-  },
-  "selectAssistantScreen": {
-    "title": "Выбор ассистента",
-    "listAriaLabel": "Ассистенты",
-    "createNew": "Создать нового ассистента",
-    "connectRemote": "Подключить удалённого ассистента",
-    "addRemote": "Добавить удалённого ассистента",
-    "unnamedAssistant": "ассистент",
-    "connectingToAssistant": "Подключение к ассистенту…",
-    "rowActionsAriaLabel": "Действия для {name}",
-    "removeFromDevice": "Убрать с этого устройства…",
-    "selfHosted": "Свой хостинг",
-    "selfHostedWithHost": "Свой хостинг · {host}",
-    "currentWithHost": "Текущий · {host}",
-    "remoteWithHost": "Удалённый · {host}"
   },
   "hatchingScreen": {
     "apiKeyFailed": "API-ключ не сработал",
@@ -88,32 +72,6 @@
     "body": "Вставка https-ссылки со страницы привязки ассистента.",
     "addressLabel": "Адрес ассистента",
     "addFailed": "Не удалось добавить ассистента. Повторите попытку."
-  },
-  "connectAssistantDialog": {
-    "title": "Подключить удалённого ассистента",
-    "instruction": "Вставка ссылки для привязки из настроек «Привязать устройство» ассистента или просто его адреса, затем подтверждение запроса там.",
-    "linkGuidance": "Эта ссылка получена из QR-кода для привязки. Чтобы подключить это устройство, вставьте сюда ссылку для привязки с компьютера ассистента.",
-    "legacyLinkGuidance": "Эта ссылка создана в более старой версии приложения и больше не работает. Создайте новую ссылку для привязки на компьютере ассистента и вставьте её сюда.",
-    "addressLabel": "Адрес или ссылка для привязки",
-    "addressPlaceholder": "https://your-assistant.ts.net",
-    "nameLabel": "Имя (необязательно)",
-    "approveOnHost": "Подтвердите этот код на машине ассистента, чтобы завершить подключение.",
-    "waitingForApproval": "Ожидание подтверждения…",
-    "retrying": "Ассистент ещё не готов к привязке. Попытки продолжаются, пока не истечёт срок действия кода.",
-    "expiresIn": "Истекает через {time}",
-    "retryExpired": "Срок действия кода привязки истёк, прежде чем ассистент был готов к привязке. Начните заново, чтобы получить новый код.",
-    "submitError": "Не удалось подключиться к этому ассистенту. Повторите попытку.",
-    "importedTitle": "Привязка импортирована",
-    "importedBody": "Эта привязка только для доступа: сейчас она работает, но срок доступа истекает, и сама она не продлевается. Когда это произойдёт, создайте новую ссылку для привязки на машине ассистента и вставьте её сюда, чтобы выполнить привязку заново."
-  },
-  "connectRecoveryDialog": {
-    "repairTitle": "Восстановить ассистента?",
-    "repairBody": "Восстановление заново выпускает токен аутентификации этого ассистента. На всех других устройствах и в сессиях браузера вход будет сброшен, и их нужно будет подключить заново.",
-    "repairConfirm": "Восстановить",
-    "authFailedTitle": "Не удаётся аутентифицировать ассистента",
-    "authFailedBody": "Токен аутентификации для {name} отсутствует или его больше нельзя обновить, поэтому этого ассистента не подключить. Его можно восстановить, отключить или выбрать другого.",
-    "wakeAndRepair": "Разбудить и восстановить",
-    "retire": "Отключить ассистента"
   },
   "consentControls": {
     "whatsChanged": "Что изменилось",
@@ -194,7 +152,17 @@
     "hobbiesLabel": "Есть хобби?",
     "hobbiesPlaceholder": "Машины, книги, помидоры на подоконнике?"
   },
-
+  "letsChatTomorrowStep": {
+    "wakingTitle": "Просыпается",
+    "missingScopeTitle": "Доступ не включён",
+    "title": "Давай упростим",
+    "wakingBody": "Ассистент готовится",
+    "missingScopeBody": "Отметь разрешение Google Calendar, чтобы я мог назначить Check-in.",
+    "body": "Подключение Google Calendar, чтобы найти время для Check-in.",
+    "startingAssistant": "Запускаем ассистента…",
+    "waitingAuthorization": "Ждём авторизацию…",
+    "connectCalendar": "Подключить календарь →"
+  },
   "existingAssistantStep": {
     "titleNamed": "{name} уже запущен и работает",
     "title": "Ассистент уже запущен и работает",
@@ -205,7 +173,18 @@
     "redoNamed": "Начать заново и собрать характер {name} снова",
     "redo": "Начать заново и собрать характер заново"
   },
-
+  "checkinConnectScreen": {
+    "title": "Давай поговорим завтра",
+    "body": "Добавление встречи в календарь, чтобы продолжить с того же места.",
+    "permissionBody": "{name} добавит одно событие Check-in на второй день. Для этого нужен доступ к событиям календаря и адресу почты, но не к входящим и не к файлам. Отключить можно в любой момент.",
+    "unnamedAssistant": "ассистент",
+    "waitingAuthorization": "Ждём авторизацию...",
+    "connectGoogleCalendar": "Подключить Google Calendar"
+  },
+  "meetingCreatedStep": {
+    "titleWithTime": "Check-in назначен на завтра в {time}!",
+    "title": "Check-in назначен!"
+  },
   "lookingYouUpStep": {
     "searching": "Поиск в интернете…",
     "readingProfiles": "Читаю публичные профили…",
@@ -256,37 +235,6 @@
       }
     }
   },
-  "providerCallbackPage": {
-    "signupClosedTitle": "Регистрация сейчас закрыта",
-    "signupClosedSubtitle": "К сожалению, Cadet сейчас не принимает новые регистрации. Попробуйте снова позже.",
-    "backToSignIn": "Назад ко входу",
-    "failedTitle": "Не удалось войти",
-    "failedSubtitle": "Что-то пошло не так при входе через соцсеть. Повторите попытку или используйте другой способ входа.",
-    "completingTitle": "Завершаем вход...",
-    "completingSubtitle": "Завершение проверки."
-  },
-  "providerSignupPage": {
-    "completingTitle": "Завершаем регистрацию...",
-    "completingSubtitle": "Загрузка данных.",
-    "headingLine1": "Почти готово,",
-    "headingLine2": "ещё одна деталь",
-    "firstNameQuestion": "Имя",
-    "firstNamePlaceholder": "Имя",
-    "lastNameQuestion": "А фамилия?",
-    "lastNamePlaceholder": "Фамилия",
-    "roleQuestion": "Роль",
-    "rolePlaceholder": "например, инженер-разработчик",
-    "submitting": "Настраиваем…",
-    "submit": "Продолжить →",
-    "completeAccountTitle": "Завершение аккаунта",
-    "completeAccountSubtitle": "Нужны ещё некоторые сведения чтобы закончить настройку аккаунта.",
-    "backToSignIn": "← Назад ко входу",
-    "emailPlaceholder": "Почта",
-    "usernamePlaceholder": "Имя пользователя",
-    "completeSignup": "Завершить регистрацию",
-    "completingSignup": "Завершаем..."
-  },
-
   "authErrors": {
     "genericFailure": "Что-то пошло не так. Повторите попытку.",
     "signupClosed": "К сожалению, Cadet сейчас не принимает новые регистрации. Попробуйте снова позже.",

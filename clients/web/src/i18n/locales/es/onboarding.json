@@ -6,8 +6,6 @@
     "cancel": "Cancelar",
     "add": "Añadir",
     "adding": "Añadiendo…",
-    "connect": "Conectar",
-    "connecting": "Conectando…",
     "tryAgain": "Volver a intentarlo",
     "remove": "Quitar {value}",
     "logIn": "Iniciar sesión",
@@ -15,7 +13,8 @@
     "loginToUse": "Inicia sesión para usar",
     "downloadMacOSApp": "Descargar la app de macOS",
     "downloadWindowsApp": "Descargar la app de Windows",
-    "claim": "Reclamar"
+    "claim": "Reclamar",
+    "skipForNow": "Omitir por ahora"
   },
   "welcome": {
     "title": "Te damos la bienvenida a Cadet",
@@ -38,9 +37,9 @@
     "optionsAriaLabel": "Opciones de alojamiento"
   },
   "apiKeyScreen": {
-    "providerLabel": "Proveedor",
     "title": "Conectar un proveedor de modelos",
     "body": "Elige el proveedor de modelos que debe usar tu asistente.",
+    "providerLabel": "Proveedor",
     "modelLabel": "Modelo",
     "baseUrlLabel": "URL base",
     "modelsLabel": "Modelos",
@@ -50,21 +49,6 @@
     "apiKeyPlaceholder": "Introduce tu clave de API",
     "noKeyPrompt": "¿No la tienes?",
     "getKeyLink": "Consigue una clave de API aquí"
-  },
-  "selectAssistantScreen": {
-    "title": "Elige un asistente",
-    "listAriaLabel": "Asistentes",
-    "createNew": "Crear un asistente nuevo",
-    "connectRemote": "Conectar un asistente remoto",
-    "addRemote": "Añadir un asistente remoto",
-    "unnamedAssistant": "el asistente",
-    "connectingToAssistant": "Conectando con tu asistente…",
-    "rowActionsAriaLabel": "Acciones de {name}",
-    "removeFromDevice": "Quitar de este dispositivo…",
-    "selfHosted": "Autoalojado",
-    "selfHostedWithHost": "Autoalojado · {host}",
-    "currentWithHost": "Actual · {host}",
-    "remoteWithHost": "Remoto · {host}"
   },
   "hatchingScreen": {
     "apiKeyFailed": "Tu clave de API no ha funcionado",
@@ -88,32 +72,6 @@
     "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
     "addressLabel": "Dirección del asistente",
     "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
-  },
-  "connectAssistantDialog": {
-    "title": "Conectar un asistente remoto",
-    "instruction": "Pega el enlace de vinculación de los ajustes «Vincular un dispositivo» del asistente, o solo su dirección, y aprueba allí la solicitud.",
-    "linkGuidance": "Este enlace proviene de un código QR de vinculación. Para conectar este dispositivo, pega aquí el enlace de vinculación del equipo del asistente.",
-    "legacyLinkGuidance": "Este enlace proviene de una versión anterior de la aplicación y ya no se puede usar. Genera un nuevo enlace de vinculación en el equipo del asistente y pégalo aquí.",
-    "addressLabel": "Dirección o enlace de vinculación",
-    "addressPlaceholder": "https://your-assistant.ts.net",
-    "nameLabel": "Nombre (opcional)",
-    "approveOnHost": "Aprueba este código en la máquina del asistente para terminar de conectar.",
-    "waitingForApproval": "Esperando la aprobación…",
-    "retrying": "El asistente aún no está listo para vincularse. Se seguirá intentando hasta que caduque el código.",
-    "expiresIn": "Caduca en {time}",
-    "retryExpired": "El código de vinculación caducó antes de que el asistente estuviera listo para vincularse. Empieza de nuevo para obtener uno nuevo.",
-    "submitError": "No se pudo conectar con ese asistente. Inténtalo de nuevo.",
-    "importedTitle": "Vinculación importada",
-    "importedBody": "Esta vinculación es solo de acceso: funciona ahora, pero su acceso caduca y no puede renovarse por sí solo. Cuando caduque, genera un nuevo enlace de vinculación en la máquina del asistente y pégalo aquí para volver a vincular."
-  },
-  "connectRecoveryDialog": {
-    "repairTitle": "¿Reparar el asistente?",
-    "repairBody": "Reparar vuelve a aprovisionar el token de autenticación de este asistente. Se cerrará la sesión en cualquier otro dispositivo o navegador conectado y tendrán que volver a conectarse.",
-    "repairConfirm": "Reparar",
-    "authFailedTitle": "No se puede autenticar el asistente",
-    "authFailedBody": "Falta el token de autenticación de {name} o ya no se puede renovar, así que no es posible conectar este asistente. Puedes repararlo, retirarlo o elegir otro asistente.",
-    "wakeAndRepair": "Despertar y reparar",
-    "retire": "Retirar el asistente"
   },
   "consentControls": {
     "agreeTo": "Acepto <link>{policy}</link>",
@@ -194,7 +152,17 @@
     "hobbiesLabel": "¿Algún hobby?",
     "hobbiesPlaceholder": "Coches, libros, cultivar tomates?"
   },
-
+  "letsChatTomorrowStep": {
+    "wakingTitle": "Despertando",
+    "missingScopeTitle": "Acceso no activado",
+    "title": "Déjame facilitártelo",
+    "wakingBody": "Tu asistente se está preparando",
+    "missingScopeBody": "Marca la casilla junto al permiso de Google Calendar para que pueda reservar el check-in.",
+    "body": "Conecta tu Google Calendar para que pueda encontrar un momento para hacer el check-in y empezar a ayudar.",
+    "startingAssistant": "Arrancando el asistente…",
+    "waitingAuthorization": "Esperando la autorización…",
+    "connectCalendar": "Conectar calendario →"
+  },
   "existingAssistantStep": {
     "titleNamed": "{name} ya está en marcha",
     "title": "Tu asistente ya está en marcha",
@@ -205,7 +173,18 @@
     "redoNamed": "Empezar de cero y reconstruir la personalidad de {name}",
     "redo": "Empezar de cero y reconstruir su personalidad"
   },
-
+  "checkinConnectScreen": {
+    "title": "Hablemos mañana",
+    "body": "Añade una reunión en tu calendario para retomar donde lo dejamos.",
+    "permissionBody": "{name} añadirá un único evento de check-in del día 2. Obtiene permiso para gestionar los eventos de tu calendario y ver tu dirección de correo, no tu bandeja de entrada ni tus archivos, y puedes desconectarlo en cualquier momento.",
+    "unnamedAssistant": "tu asistente",
+    "waitingAuthorization": "Esperando la autorización...",
+    "connectGoogleCalendar": "Conectar Google Calendar"
+  },
+  "meetingCreatedStep": {
+    "titleWithTime": "¡Check-in programado para mañana a las {time}!",
+    "title": "¡Check-in programado!"
+  },
   "lookingYouUpStep": {
     "searching": "Buscando en la web para conocerte…",
     "readingProfiles": "Leyendo perfiles públicos…",
@@ -256,37 +235,6 @@
       }
     }
   },
-  "providerCallbackPage": {
-    "signupClosedTitle": "Los registros están cerrados por ahora",
-    "signupClosedSubtitle": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
-    "backToSignIn": "Volver al inicio de sesión",
-    "failedTitle": "No se pudo autenticar",
-    "failedSubtitle": "Algo ha ido mal durante el inicio de sesión con redes sociales. Inténtalo de nuevo o usa otro método.",
-    "completingTitle": "Completando el inicio de sesión...",
-    "completingSubtitle": "Espera mientras terminamos de autenticarte."
-  },
-  "providerSignupPage": {
-    "completingTitle": "Completando el registro...",
-    "completingSubtitle": "Espera mientras cargamos tu información.",
-    "headingLine1": "Ya casi está,",
-    "headingLine2": "un detalle más",
-    "firstNameQuestion": "¿Cómo quieres que te llame?",
-    "firstNamePlaceholder": "Nombre",
-    "lastNameQuestion": "¿Y tu apellido?",
-    "lastNamePlaceholder": "Apellido",
-    "roleQuestion": "Tu puesto",
-    "rolePlaceholder": "p. ej. Ingeniero de software",
-    "submitting": "Configurando…",
-    "submit": "Continuar →",
-    "completeAccountTitle": "Completa tu cuenta",
-    "completeAccountSubtitle": "Necesitamos algunos datos más para terminar de configurar tu cuenta.",
-    "backToSignIn": "← Volver al inicio de sesión",
-    "emailPlaceholder": "Correo electrónico",
-    "usernamePlaceholder": "Nombre de usuario",
-    "completeSignup": "Completar el registro",
-    "completingSignup": "Completando..."
-  },
-
   "authErrors": {
     "genericFailure": "Algo ha ido mal. Inténtalo de nuevo.",
     "signupClosed": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",

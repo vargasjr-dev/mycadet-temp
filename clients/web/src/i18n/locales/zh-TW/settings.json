@@ -386,17 +386,6 @@
     "subtitle": "管理備份、重新啟動您的助理，或進入復原模式以連接到偵錯終端機。",
     "title": "一般"
   },
-  "deleteAccountSection": {
-    "confirmLabel": "刪除帳號",
-    "confirmMessage": "這將永久刪除您的帳號及所有相關資料。此動作無法復原。",
-    "confirmTitle": "刪除帳號",
-    "deleteMyAccount": "刪除我的帳號",
-    "description": "永久刪除您的帳號及所有相關資料。",
-    "platformLoginNotice": "登入 Cadet 平台以刪除您的帳號。",
-    "title": "刪除帳號",
-    "toastFailed": "請求刪除帳號失敗。請再試一次。",
-    "toastRequested": "已請求刪除帳號。您將很快登出。"
-  },
   "doctorChatBlocks": {
     "allowOnce": "允許一次",
     "alwaysAllow": "總是允許",

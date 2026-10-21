@@ -380,7 +380,7 @@ describe("paired gateway proxy", () => {
       pairedGatewayUrl: "https://gateway.example.com",
     });
 
-    const result = await dispatch("/__gateway-paired/paired-g/readyz");
+    const result = await dispatch("/__gateway/paired-g/readyz");
 
     expect(result).toEqual({ status: 403, body: "Forbidden" });
   });
@@ -398,7 +398,7 @@ describe("paired gateway proxy", () => {
       pairedGatewayUrl: "https://gateway.example.com",
     });
 
-    const result = await dispatch("/__gateway-paired/paired-g/readyz", {
+    const result = await dispatch("/__gateway/paired-g/readyz", {
       origin: "http://127.0.0.1:9999",
       "sec-fetch-site": "same-site",
     });

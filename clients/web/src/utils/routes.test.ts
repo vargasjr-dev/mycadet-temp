@@ -29,13 +29,13 @@ const ESCAPED_PREFIX_CONVERSATION_PATH = `${ESCAPED_CONVERSATIONS_PREFIX}/c1`;
 describe("routes", () => {
   test("builds schedule-filtered usage URLs", () => {
     expect(routes.settings.usageForSchedule("schedule-123")).toBe(
-      "/assistant/settings/usage?tab=usage&range=7d&groupBy=schedule&scheduleId=schedule-123",
+      "/assistant/settings/usage?range=7d&groupBy=schedule&scheduleId=schedule-123",
     );
   });
 
   test("encodes schedule ids in usage URLs", () => {
     expect(routes.settings.usageForSchedule("schedule with spaces")).toBe(
-      "/assistant/settings/usage?tab=usage&range=7d&groupBy=schedule&scheduleId=schedule+with+spaces",
+      "/assistant/settings/usage?range=7d&groupBy=schedule&scheduleId=schedule+with+spaces",
     );
   });
 
@@ -296,7 +296,6 @@ describe("isConversationChatPath (composer-mounting routes only)", () => {
       true,
     );
   });
-
 
   test("matches the app viewer sub-route, which keeps ChatPage mounted", () => {
     expect(isConversationChatPath(routes.conversation("conv-1", "app-1"))).toBe(

@@ -146,18 +146,18 @@ export const routes = {
   },
   account: {
     // Triage: every key here still has a live consumer in this bundle, and
-    // each leaves as its consumer does. `login` is gone — the exits
-    // (requireAuth, the 401 interceptor, handle-logout) bounce to the
-    // Triage: the provider tier still has a live consumer in this bundle
-    // (the auth-logic tier — login-flow, native-auth, install-referrer);
-    // it dies with the auth store.
+    // The tier's PAGES are deleted from this bundle (their maintained ports
+    // live in the app bundle — these paths fall through to the NotFound
+    // splat when web serves at root), but the URL strings stay until their
+    // web consumers do: `root` + `providerCallback` feed the auth-logic
+    // tier (login-flow, native-auth, install-referrer). They die with the
+    // auth store. The integration-connect relay's key left with the
+    // managed-OAuth removal.
     root: r("/account"),
-    providerSignup: r("/account/provider/signup"),
     providerCallback: r("/account/provider/callback"),
   },
 
   welcome: r("/assistant/welcome"),
-  selectAssistant: r("/account/select-assistant"),
   reviewTerms: r("/assistant/review-terms"),
 
   onboarding: {

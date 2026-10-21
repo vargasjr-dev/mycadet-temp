@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-test("Electron exposes the initiating frame for custom-protocol paired requests", async () => {
+test("Electron exposes the initiating frame for custom-protocol gateway requests", async () => {
   if (process.platform !== "darwin") {
     return;
   }
@@ -14,10 +14,10 @@ test("Electron exposes the initiating frame for custom-protocol paired requests"
   );
   const fixture = path.resolve(
     import.meta.dir,
-    "fixtures/paired-gateway-request-guard",
+    "fixtures/gateway-request-guard",
   );
   const tempDir = mkdtempSync(
-    path.join(os.tmpdir(), "paired-gateway-request-guard-"),
+    path.join(os.tmpdir(), "gateway-request-guard-"),
   );
   const resultPath = path.join(tempDir, "result.json");
   try {
@@ -25,7 +25,7 @@ test("Electron exposes the initiating frame for custom-protocol paired requests"
       cwd: import.meta.dir,
       env: {
         ...process.env,
-        PAIRED_GATEWAY_GUARD_RESULT_PATH: resultPath,
+        GATEWAY_GUARD_RESULT_PATH: resultPath,
       },
       stdout: "ignore",
       stderr: "ignore",
@@ -36,7 +36,7 @@ test("Electron exposes the initiating frame for custom-protocol paired requests"
     const result = JSON.parse(readFileSync(resultPath, "utf8")) as {
       trustedStatus: number;
       foreignStatus: number;
-      pairedHandlerCalls: number;
+      gatewayHandlerCalls: number;
       protocolHeaders: {
         origin: string | null;
         referer: string | null;
@@ -47,14 +47,14 @@ test("Electron exposes the initiating frame for custom-protocol paired requests"
     expect(result).toEqual({
       trustedStatus: 200,
       foreignStatus: 0,
-      pairedHandlerCalls: 1,
+      gatewayHandlerCalls: 1,
       protocolHeaders: {
         origin: null,
         referer: null,
         secFetchSite: null,
       },
       observations: [
-        { frameOrigin: "paired-probe://mycadet.ai" },
+        { frameOrigin: "gateway-probe://mycadet.ai" },
         { frameOrigin: expect.stringMatching(/^http:\/\/127\.0\.0\.1:/) },
       ],
     });

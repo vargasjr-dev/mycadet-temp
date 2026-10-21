@@ -468,13 +468,13 @@ describe("lifecycleService — bootstrap branches", () => {
     });
   });
 
-  test("gateway-auth short-circuit resolves a paired selection to the paired proxy URL", async () => {
+  test("gateway-auth short-circuit resolves a paired selection to the gateway proxy URL", async () => {
     isGatewayAuthModeMock.mockImplementation(() => true);
     getSelectedAssistantMock.mockImplementation(() => ({
       assistantId: "asst-paired",
     }));
     getPairedGatewayUrlMock.mockImplementation(
-      () => "/assistant/__gateway-paired/asst-paired",
+      () => "/assistant/__gateway/asst-paired",
     );
 
     lifecycleService.setInputs({
@@ -485,7 +485,7 @@ describe("lifecycleService — bootstrap branches", () => {
 
     expect(getAssistantMock).not.toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).toHaveBeenCalledWith({
-      url: `${window.location.origin}/assistant/__gateway-paired/asst-paired`,
+      url: `${window.location.origin}/assistant/__gateway/asst-paired`,
       token: null,
     });
     expect(useResolvedAssistantsStore.getState().activeAssistantId).toBe(
@@ -1497,11 +1497,11 @@ describe("lifecycleService — selection subscription", () => {
     expect(arg.url).toContain("/assistant/__gateway/2222");
   });
 
-  test("switch from a local to a paired assistant republishes the paired proxy URL", async () => {
+  test("switch from a local to a paired assistant republishes the gateway proxy URL", async () => {
     await driveGatewayActive("asst-local");
     getLocalGatewayUrlMock.mockImplementation(() => undefined);
     getPairedGatewayUrlMock.mockImplementation(
-      () => "/assistant/__gateway-paired/asst-paired",
+      () => "/assistant/__gateway/asst-paired",
     );
     getSelectedAssistantMock.mockImplementation(() => ({
       assistantId: "asst-paired",
@@ -1519,7 +1519,7 @@ describe("lifecycleService — selection subscription", () => {
       token: string | null;
     };
     expect(arg.url).toBe(
-      `${window.location.origin}/assistant/__gateway-paired/asst-paired`,
+      `${window.location.origin}/assistant/__gateway/asst-paired`,
     );
     expect(arg.token).toBeNull();
   });

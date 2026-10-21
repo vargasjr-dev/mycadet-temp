@@ -2,6 +2,7 @@ import { persistRootSigningKey } from "./root-signing-key.js";
 import { createHash, randomUUID } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn } from "node:child_process";
+import { readlinkSync } from "node:fs";
 import {
   chmod,
   cp,
@@ -79,7 +80,31 @@ export async function packRoot(root: string, output: string): Promise<void> {
         gzip: true,
         strict: true,
         portable: true,
-        filter: (path, stat) => persistent(path, stat),
+        filter: (path, stat) => {
+          if (!persistent(path, stat)) return false;
+          if (
+            "isFile" in stat
+              ? stat.isSymbolicLink()
+              : stat.type === "SymbolicLink"
+          ) {
+            // A link the validator would reject is skipped instead of failing
+            // the whole pack: one bad store symlink in node_modules must not
+            // cost the user their pre-upgrade backup.
+            let target = "";
+            try {
+              target = readlinkSync(resolve(root, path));
+            } catch {
+              target = "";
+            }
+            if (unsafeLinkTarget(path, target)) {
+              console.warn(
+                `Backup skipped unsafe link: ${path} -> ${target || "(unreadable)"}`,
+              );
+              return false;
+            }
+          }
+          return true;
+        },
       },
       [...STATE_ROOTS],
     );
@@ -105,6 +130,30 @@ function archivePath(path: string): string {
     throw new Error(`Invalid root archive path: ${path}`);
   }
   return stripped;
+}
+
+/**
+ * Mirrors validateRootArchive's symlink rules: true when a link with this
+ * target would be rejected at restore. packRoot skips exactly these at pack
+ * time so one regenerable store symlink can't fail the whole backup.
+ */
+function unsafeLinkTarget(entryPath: string, rawTarget: string): boolean {
+  if (
+    !rawTarget ||
+    rawTarget.startsWith("/") ||
+    rawTarget.includes("\\") ||
+    /^[a-z]:/i.test(rawTarget)
+  ) {
+    return true;
+  }
+  try {
+    archivePath(
+      posix.normalize(posix.join(posix.dirname(entryPath), rawTarget)),
+    );
+  } catch {
+    return true;
+  }
+  return false;
 }
 
 export async function validateRootArchive(file: string): Promise<void> {

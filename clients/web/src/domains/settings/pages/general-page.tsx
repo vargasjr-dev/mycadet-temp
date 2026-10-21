@@ -17,7 +17,6 @@ import {
   AssistantUpgrades,
   LocalAssistantUpgrades,
 } from "@/domains/settings/components/assistant-upgrades";
-import { DeleteAccountSection } from "@/domains/settings/components/delete-account-section";
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
@@ -143,19 +142,16 @@ export function GeneralPage() {
       }
       const hubOrigin = new URL(hubUrl).origin;
       window.location.assign(
-        `${hubOrigin}${routes.selectAssistant}?${params.toString()}`,
+        `${hubOrigin}/account/select-assistant?${params.toString()}`,
       );
       return;
     }
-    void navigate(`${routes.selectAssistant}?noAutoSkip=1`);
+    void navigate(routes.assistant);
   };
 
   const showRetire =
     ((cloudGate === "full" || canRetireLocally) && !!assistant) ||
     (cloudGate === "disabled" && !canRetireLocally);
-  // Mirrors DeleteAccountSection's internal cloudHostedOnly gate — it
-  // returns null when gated, so the card must not render an empty shell.
-  const showDeleteAccount = infraGate !== "gated";
 
   return (
     <div className="space-y-4">
@@ -314,7 +310,7 @@ export function GeneralPage() {
 
       {isElectron() && <TeleportCard />}
 
-      {(showRetire || showDeleteAccount) && (
+      {showRetire && (
         <DetailCard variant="danger" title={t("generalPage.dangerZoneTitle")}>
           <div className="flex flex-col gap-6">
             {showRetire && (
@@ -336,10 +332,6 @@ export function GeneralPage() {
                 </div>
               </section>
             )}
-            {showRetire && showDeleteAccount && (
-              <div className="border-t border-[var(--border-subtle)]" />
-            )}
-            <DeleteAccountSection />
           </div>
         </DetailCard>
       )}

@@ -1,3 +1,4 @@
+import { gatewayProxyUrl } from "@mycadet/local-mode/contract";
 import {
   isPairedAssistant,
   statusLocalAssistantHost,
@@ -6,13 +7,16 @@ import {
 
 /**
  * Where a lockfile entry's same-origin API base lives. Paired gateways ride
- * the shell's paired-forward path: same-origin, allowlisted by the lockfile
- * entry, guardian credential injected server-side. Absent for local
+ * the shell's id-keyed gateway-forward path: same-origin, allowlisted by the
+ * lockfile entry, guardian credential injected server-side. Absent for local
  * entries, which resolve same-origin as before.
  */
 export function entryApiBase(entry: LockfileAssistant): string | undefined {
   return isPairedAssistant(entry)
-    ? `/assistant/__gateway-paired/${entry.assistantId}`
+    ? // Paired gateways ride the shell's id-keyed gateway-forward path:
+      // same-origin, allowlisted by the lockfile entry, guardian credential
+      // injected server-side.
+      gatewayProxyUrl(entry.assistantId)
     : undefined;
 }
 

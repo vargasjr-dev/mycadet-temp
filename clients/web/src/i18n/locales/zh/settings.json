@@ -386,17 +386,6 @@
     "subtitle": "管理备份、重启您的助手，或进入恢复模式以连接到调试终端。",
     "title": "通用"
   },
-  "deleteAccountSection": {
-    "confirmLabel": "删除账户",
-    "confirmMessage": "这将永久删除您的账户及所有相关数据。此操作无法撤销。",
-    "confirmTitle": "删除账户",
-    "deleteMyAccount": "删除我的账户",
-    "description": "永久删除您的账户及所有相关数据。",
-    "platformLoginNotice": "登录 Cadet 平台以删除您的账户。",
-    "title": "删除账户",
-    "toastFailed": "请求删除账户失败。请重试。",
-    "toastRequested": "已请求删除账户。您将很快被登出。"
-  },
   "doctorChatBlocks": {
     "allowOnce": "允许一次",
     "alwaysAllow": "始终允许",

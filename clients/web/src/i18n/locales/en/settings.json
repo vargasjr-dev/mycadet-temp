@@ -392,17 +392,6 @@
     "subtitle": "Manage backups, restart your assistant, or enter Recovery Mode to connect to the debug terminal.",
     "title": "General"
   },
-  "deleteAccountSection": {
-    "confirmLabel": "Delete Account",
-    "confirmMessage": "This will permanently delete your account and all associated data. This action cannot be undone.",
-    "confirmTitle": "Delete Account",
-    "deleteMyAccount": "Delete My Account",
-    "description": "Permanently delete your account and all associated data.",
-    "platformLoginNotice": "Log in to Cadet Cloud to delete your account.",
-    "title": "Delete Account",
-    "toastFailed": "Failed to request account deletion. Please try again.",
-    "toastRequested": "Account deletion requested. You will be logged out shortly."
-  },
   "doctorChatBlocks": {
     "allowOnce": "Allow once",
     "alwaysAllow": "Always Allow",

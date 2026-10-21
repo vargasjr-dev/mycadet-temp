@@ -685,9 +685,9 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("refreshSession in gateway mode still adopts a successful platform session", async () => {
-    // A local user who also signs into the cloud (e.g. ProviderCallbackPage
-    // after an allauth login) must have the successful probe update the store,
-    // even while the gateway token isn't minted.
+    // A local user who also signs into the cloud (e.g. through the provider
+    // callback flow after an allauth login) must have the successful probe
+    // update the store, even while the gateway token isn't minted.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
     mockGatewayToken = null;
@@ -887,7 +887,7 @@ describe("session cleanup on logout", () => {
     mockIsGatewayAuth = true;
     mockSelectedAssistant = { assistantId: "paired-1", cloud: "paired" };
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway-paired/paired-1`,
+      url: `${window.location.origin}/assistant/__gateway/paired-1`,
       token: null,
     });
     setSelectedAssistantMock.mockImplementationOnce(async () => {

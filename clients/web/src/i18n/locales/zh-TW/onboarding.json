@@ -6,8 +6,6 @@
     "cancel": "取消",
     "add": "新增",
     "adding": "正在新增…",
-    "connect": "連線",
-    "connecting": "正在連線…",
     "tryAgain": "再試一次",
     "remove": "移除 {value}",
     "logIn": "登入",
@@ -15,7 +13,8 @@
     "loginToUse": "登入以使用",
     "downloadMacOSApp": "下載 macOS 應用程式",
     "downloadWindowsApp": "下載 Windows 應用程式",
-    "claim": "認領"
+    "claim": "認領",
+    "skipForNow": "暫時跳過"
   },
   "welcome": {
     "title": "歡迎使用 Cadet",
@@ -38,9 +37,9 @@
     "optionsAriaLabel": "託管選項"
   },
   "apiKeyScreen": {
-    "providerLabel": "供應商",
     "title": "連線模型供應商",
     "body": "選擇您的助理應使用的模型供應商。",
+    "providerLabel": "供應商",
     "modelLabel": "模型",
     "baseUrlLabel": "基礎 URL",
     "modelsLabel": "模型",
@@ -50,21 +49,6 @@
     "apiKeyPlaceholder": "輸入您的 API 金鑰",
     "noKeyPrompt": "沒有金鑰？",
     "getKeyLink": "在此取得 API 金鑰"
-  },
-  "selectAssistantScreen": {
-    "title": "選擇助理",
-    "listAriaLabel": "助理列表",
-    "createNew": "建立新助理",
-    "connectRemote": "連線遠端助理",
-    "addRemote": "新增遠端助理",
-    "unnamedAssistant": "該助理",
-    "connectingToAssistant": "正在連線至您的助理…",
-    "rowActionsAriaLabel": "{name} 的動作",
-    "removeFromDevice": "從此裝置移除…",
-    "selfHosted": "自行託管",
-    "selfHostedWithHost": "自行託管 · {host}",
-    "currentWithHost": "目前 · {host}",
-    "remoteWithHost": "遠端 · {host}"
   },
   "hatchingScreen": {
     "apiKeyFailed": "您的 API 金鑰無效",
@@ -88,32 +72,6 @@
     "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
     "addressLabel": "助理位址",
     "addFailed": "新增助理失敗。請再試一次。"
-  },
-  "connectAssistantDialog": {
-    "title": "連接遠端助理",
-    "instruction": "請從助理的「配對裝置」設定中貼上配對連結，或直接貼上其位址，然後在助理端核准請求。",
-    "linkGuidance": "此連結來自配對 QR 碼。若要連接此裝置，請在此處貼上來自助理裝置的配對連結。",
-    "legacyLinkGuidance": "此連結來自舊版應用程式，已無法使用。請在助理裝置上產生新的配對連結並貼到此處。",
-    "addressLabel": "位址或配對連結",
-    "addressPlaceholder": "https://your-assistant.ts.net",
-    "nameLabel": "名稱（選填）",
-    "approveOnHost": "請在助理裝置上核准此代碼以完成連接。",
-    "waitingForApproval": "等待核准中…",
-    "retrying": "助理尚未準備好配對。正在重試，直到代碼過期。",
-    "expiresIn": "將於 {time} 後過期",
-    "retryExpired": "配對代碼在助理準備好配對之前已過期。請重新開始以取得新的代碼。",
-    "submitError": "無法連接到該助理。請再試一次。",
-    "importedTitle": "配對已匯入",
-    "importedBody": "此配對僅限存取：它現在可用，但其存取權限會過期且無法自動續訂。過期後，請在助理裝置上產生新的配對連結並貼到此處以重新配對。"
-  },
-  "connectRecoveryDialog": {
-    "repairTitle": "修復助理？",
-    "repairBody": "修復會重新配置此助理的驗證憑證。任何連接到此助理的其他裝置或瀏覽器工作階段都將登出，需要重新連接。",
-    "repairConfirm": "修復",
-    "authFailedTitle": "無法驗證助理身分",
-    "authFailedBody": "{name} 的驗證憑證遺失或無法再重新整理，因此無法連接此助理。您可以修復它、停用它或選擇不同的助理。",
-    "wakeAndRepair": "喚醒並修復",
-    "retire": "停用助理"
   },
   "consentControls": {
     "whatsChanged": "更新內容",
@@ -194,7 +152,17 @@
     "hobbiesLabel": "有什麼嗜好嗎？",
     "hobbiesPlaceholder": "汽車、書籍、種植番茄？"
   },
-
+  "letsChatTomorrowStep": {
+    "wakingTitle": "正在喚醒",
+    "missingScopeTitle": "未啟用存取權",
+    "title": "讓我來簡化一切",
+    "wakingBody": "您的助理正在準備中",
+    "missingScopeBody": "請勾選 Google 日曆權限旁的方塊，這樣我才能預訂報到。",
+    "body": "連接您的 Google 日曆，這樣我才能找到時間進行報到並開始提供協助。",
+    "startingAssistant": "正在啟動助理…",
+    "waitingAuthorization": "正在等待授權…",
+    "connectCalendar": "連接日曆 →"
+  },
   "existingAssistantStep": {
     "titleNamed": "{name} 已啟動並正在執行",
     "title": "您的助理已啟動並正在執行",
@@ -205,7 +173,18 @@
     "redoNamed": "重新開始並重建 {name} 的個性",
     "redo": "重新開始並重建其個性"
   },
-
+  "checkinConnectScreen": {
+    "title": "我們明天聊",
+    "body": "在您的日曆中新增一個會議，這樣我們就能從上次中斷的地方繼續。",
+    "permissionBody": "{name} 將新增一個單獨的「第 2 天報到」活動。它將獲得管理您的日曆活動和查看您的電子郵件地址的權限，而不是您的收件匣或檔案，並且您可以隨時中斷連線。",
+    "unnamedAssistant": "您的助理",
+    "waitingAuthorization": "正在等待授權...",
+    "connectGoogleCalendar": "連接 Google 日曆"
+  },
+  "meetingCreatedStep": {
+    "titleWithTime": "報到已排定在明天 {time}！",
+    "title": "報到已排定！"
+  },
   "lookingYouUpStep": {
     "searching": "正在搜尋網路以了解您…",
     "readingProfiles": "正在閱讀公開個人資料…",
@@ -256,38 +235,9 @@
       }
     }
   },
-
-  "providerCallbackPage": {
-    "signupClosedTitle": "目前已暫停註冊",
-    "signupClosedSubtitle": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",
-    "backToSignIn": "返回登入",
-    "failedTitle": "驗證失敗",
-    "failedSubtitle": "社群登入時發生問題。請再試一次或使用其他方式。",
-    "completingTitle": "正在完成登入...",
-    "completingSubtitle": "請稍候，我們正在完成您的驗證。"
+  "googleCalendar": {
+    "providerLabel": "Google 日曆"
   },
-  "providerSignupPage": {
-    "completingTitle": "正在完成註冊...",
-    "completingSubtitle": "請稍候，我們正在載入您的資訊。",
-    "headingLine1": "就快完成了，",
-    "headingLine2": "還差一步",
-    "firstNameQuestion": "我該如何稱呼您？",
-    "firstNamePlaceholder": "名字",
-    "lastNameQuestion": "您的姓氏是？",
-    "lastNamePlaceholder": "姓氏",
-    "roleQuestion": "您的角色",
-    "rolePlaceholder": "例如：軟體工程師",
-    "submitting": "正在設定…",
-    "submit": "繼續 →",
-    "completeAccountTitle": "完成您的帳號設定",
-    "completeAccountSubtitle": "我們需要更多詳細資訊來完成您的帳號設定。",
-    "backToSignIn": "← 返回登入",
-    "emailPlaceholder": "電子郵件",
-    "usernamePlaceholder": "使用者名稱",
-    "completeSignup": "完成註冊",
-    "completingSignup": "正在完成..."
-  },
-
   "authErrors": {
     "genericFailure": "發生錯誤。請再試一次。",
     "signupClosed": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",

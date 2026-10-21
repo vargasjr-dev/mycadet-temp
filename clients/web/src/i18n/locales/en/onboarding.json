@@ -6,8 +6,6 @@
     "cancel": "Cancel",
     "add": "Add",
     "adding": "Adding…",
-    "connect": "Connect",
-    "connecting": "Connecting…",
     "tryAgain": "Try again",
     "remove": "Remove {value}",
     "logIn": "Log In",
@@ -15,7 +13,8 @@
     "loginToUse": "Log in to use",
     "downloadMacOSApp": "Download the macOS app",
     "downloadWindowsApp": "Download the Windows app",
-    "claim": "Claim"
+    "claim": "Claim",
+    "skipForNow": "Skip for now"
   },
   "welcome": {
     "title": "Welcome to Cadet",
@@ -38,9 +37,9 @@
     "optionsAriaLabel": "Hosting options"
   },
   "apiKeyScreen": {
-    "providerLabel": "Provider",
     "title": "Connect a Model Provider",
     "body": "Choose the model provider your assistant should use.",
+    "providerLabel": "Provider",
     "modelLabel": "Model",
     "baseUrlLabel": "Base URL",
     "modelsLabel": "Models",
@@ -50,21 +49,6 @@
     "apiKeyPlaceholder": "Enter your API key",
     "noKeyPrompt": "Don't have it?",
     "getKeyLink": "Get an API key here"
-  },
-  "selectAssistantScreen": {
-    "title": "Choose an Assistant",
-    "listAriaLabel": "Assistants",
-    "createNew": "Create a new assistant",
-    "connectRemote": "Connect a remote assistant",
-    "addRemote": "Add a remote assistant",
-    "unnamedAssistant": "the assistant",
-    "connectingToAssistant": "Connecting to your assistant…",
-    "rowActionsAriaLabel": "Actions for {name}",
-    "removeFromDevice": "Remove from this device…",
-    "selfHosted": "Self-hosted",
-    "selfHostedWithHost": "Self-hosted · {host}",
-    "currentWithHost": "Current · {host}",
-    "remoteWithHost": "Remote · {host}"
   },
   "hatchingScreen": {
     "apiKeyFailed": "Your API key didn't work",
@@ -89,32 +73,6 @@
     "addressLabel": "Assistant address",
     "addFailed": "Failed to add the assistant. Please try again."
   },
-  "connectAssistantDialog": {
-    "title": "Connect a Remote Assistant",
-    "instruction": "Paste the pairing link from the assistant's Pair a device settings, or just its address, and approve the request there.",
-    "linkGuidance": "This link came from a pairing QR code. To connect this device, paste the pairing link from the assistant's machine here.",
-    "legacyLinkGuidance": "This link came from an older version of the app and can no longer be used. Generate a new pairing link on the assistant's machine and paste it here.",
-    "addressLabel": "Address or pairing link",
-    "addressPlaceholder": "https://your-assistant.ts.net",
-    "nameLabel": "Name (optional)",
-    "approveOnHost": "Approve this code on the assistant's machine to finish connecting.",
-    "waitingForApproval": "Waiting for approval…",
-    "retrying": "The assistant isn't ready to pair yet. Still trying until the code expires.",
-    "expiresIn": "Expires in {time}",
-    "retryExpired": "The pairing code expired before the assistant was ready to pair. Start over to get a new one.",
-    "submitError": "Failed to connect to that assistant. Please try again.",
-    "importedTitle": "Pairing Imported",
-    "importedBody": "This pairing is access-only: it works now, but its access expires and cannot renew itself. When it does, generate a fresh pairing link on the assistant's machine and paste it here to pair again."
-  },
-  "connectRecoveryDialog": {
-    "repairTitle": "Repair Assistant?",
-    "repairBody": "Repairing re-provisions this assistant’s authentication token. Any other devices or browser sessions connected to it will be signed out and need to reconnect.",
-    "repairConfirm": "Repair",
-    "authFailedTitle": "Can’t Authenticate Assistant",
-    "authFailedBody": "The authentication token for {name} is missing or can no longer be refreshed, so this assistant can’t be connected. You can repair it, retire it, or pick a different assistant.",
-    "wakeAndRepair": "Wake & Repair",
-    "retire": "Retire Assistant"
-  },
   "consentControls": {
     "whatsChanged": "What's changed",
     "agreements": "Agreements",
@@ -128,7 +86,9 @@
   "stepIndicator": {
     "ariaLabel": "Step {current} of {total}"
   },
-
+  "googleCalendar": {
+    "providerLabel": "Google Calendar"
+  },
   "introductionScreen": {
     "greetingNamed": "Hey, {name}!",
     "greeting": "Hey!",
@@ -195,7 +155,17 @@
     "hobbiesLabel": "Any hobbies?",
     "hobbiesPlaceholder": "Cars, books, growing tomatoes?"
   },
-
+  "letsChatTomorrowStep": {
+    "wakingTitle": "Waking up",
+    "missingScopeTitle": "Access not enabled",
+    "title": "Let me make this easy",
+    "wakingBody": "Your assistant is getting ready",
+    "missingScopeBody": "Check the box next to the Google Calendar permission so I can book the check-in.",
+    "body": "Connect your Google Calendar so I can find time to check in and start helping.",
+    "startingAssistant": "Starting assistant…",
+    "waitingAuthorization": "Waiting for authorization…",
+    "connectCalendar": "Connect Calendar →"
+  },
   "existingAssistantStep": {
     "titleNamed": "{name} is already up and running",
     "title": "Your assistant is already up and running",
@@ -206,7 +176,18 @@
     "redoNamed": "Start over and rebuild {name}'s personality",
     "redo": "Start over and rebuild its personality"
   },
-
+  "checkinConnectScreen": {
+    "title": "Let's chat tomorrow",
+    "body": "Add a meeting in your calendar so we can pick up where we left off.",
+    "permissionBody": "{name} will add a single Day 2 Check-in event. It gets permission to manage your calendar events and see your email address, not your inbox or files, and you can disconnect at any time.",
+    "unnamedAssistant": "your assistant",
+    "waitingAuthorization": "Waiting for authorization...",
+    "connectGoogleCalendar": "Connect Google Calendar"
+  },
+  "meetingCreatedStep": {
+    "titleWithTime": "Check-in scheduled for tomorrow at {time}!",
+    "title": "Check-in scheduled!"
+  },
   "lookingYouUpStep": {
     "searching": "Searching the web to get to know you…",
     "readingProfiles": "Reading public profiles…",
@@ -257,37 +238,6 @@
       }
     }
   },
-  "providerCallbackPage": {
-    "signupClosedTitle": "Signups are currently closed",
-    "signupClosedSubtitle": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",
-    "backToSignIn": "Back to sign in",
-    "failedTitle": "Authentication failed",
-    "failedSubtitle": "Something went wrong during social sign-in. Please try again or use a different method.",
-    "completingTitle": "Completing sign-in...",
-    "completingSubtitle": "Please wait while we finish authenticating you."
-  },
-  "providerSignupPage": {
-    "completingTitle": "Completing signup...",
-    "completingSubtitle": "Please wait while we load your information.",
-    "headingLine1": "Almost there,",
-    "headingLine2": "one more detail",
-    "firstNameQuestion": "What should I call you?",
-    "firstNamePlaceholder": "First name",
-    "lastNameQuestion": "And your last name?",
-    "lastNamePlaceholder": "Last name",
-    "roleQuestion": "Your role",
-    "rolePlaceholder": "e.g. Software Engineer",
-    "submitting": "Setting up…",
-    "submit": "Continue →",
-    "completeAccountTitle": "Complete your account",
-    "completeAccountSubtitle": "We need a few more details to finish setting up your account.",
-    "backToSignIn": "← Back to sign in",
-    "emailPlaceholder": "Email",
-    "usernamePlaceholder": "Username",
-    "completeSignup": "Complete signup",
-    "completingSignup": "Completing..."
-  },
-
   "authErrors": {
     "genericFailure": "Something went wrong. Please try again.",
     "signupClosed": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",

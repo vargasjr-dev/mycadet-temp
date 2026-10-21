@@ -1,4 +1,5 @@
 import { CloudOff, Globe, Link2 } from "lucide-react";
+import { gatewayProxyUrl } from "@mycadet/local-mode/contract";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
@@ -339,7 +340,7 @@ export function SelectAssistantScreen() {
       void navigate(routes.assistant, {
         state: assistantSelectionState(
           assistantId,
-          `/assistant/__gateway-paired/${assistantId}`,
+          gatewayProxyUrl(assistantId),
         ),
       });
     })();
