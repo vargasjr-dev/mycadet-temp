@@ -159,6 +159,7 @@ const DIRECT_OR_MANAGED_PROVIDER_KEYS: string[] = [
 ];
 const MANAGED_FALLBACK_PROVIDERS: string[] = [
   "anthropic",
+  "cadet",
   "gemini",
   "openai",
   "fireworks",

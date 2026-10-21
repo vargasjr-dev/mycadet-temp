@@ -63,11 +63,10 @@ const APP_NAME =
     ? "Cadet"
     : `Cadet ${CADET_ENV.charAt(0).toUpperCase() + CADET_ENV.slice(1)}`;
 
-// Local (dev) builds bake the repo CLI's display version — the exact string
-// `cadet-local --version` prints (`<base>-local.<stamp>.<sha>`, see
-// `cli/src/lib/local-version.ts`) — so the About panel and the CLI agree.
-// Release builds bake "" and fall back to the packaged app version the
-// release pipeline stamps.
+// Local (dev) builds bake this shell's display version — the stamped form of
+// its own package.json version (`<base>-local.<stamp>.<sha>`, see
+// @mycadet/shared/version) — so the About panel names the build kind
+// and the checkout it came from. Release builds bake the plain version.
 const VERSION: string =
   typeof __CADET_VERSION_DISPLAY__ === "string" && __CADET_VERSION_DISPLAY__
     ? __CADET_VERSION_DISPLAY__

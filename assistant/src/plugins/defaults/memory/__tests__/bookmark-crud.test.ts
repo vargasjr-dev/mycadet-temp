@@ -227,35 +227,6 @@ describe("bookmark-crud", () => {
     expect(listed[0]?.messagePreview).toBe("Hello, can you help with…");
   });
 
-  test("messagePreview quotes the delivered message on a private assistant row", () => {
-    const { db, raw } = setupDb();
-    seedConversationAndMessage(raw, {
-      conversationId: "conv-private",
-      messageId: "msg-private",
-      messageContent: JSON.stringify([
-        { type: "text", text: "Working notes the user never saw." },
-        {
-          type: "tool_use",
-          id: "tu_1",
-          name: "send_user_message",
-          input: { message: "You have two meetings today." },
-        },
-      ]),
-      messageRole: "assistant",
-      messageMetadata: JSON.stringify({ assistantTextVisibility: "private" }),
-    });
-
-    const { bookmark: summary } = createBookmark(db, {
-      messageId: "msg-private",
-    });
-
-    expect(summary.messagePreview).toBe("You have two meetings today.");
-    expect(summary.messagePreview).not.toContain("Working notes");
-    expect(listBookmarks(db)[0]?.messagePreview).toBe(
-      "You have two meetings today.",
-    );
-  });
-
   test("messagePreview concatenates multi-text blocks and drops non-text blocks", () => {
     const { db, raw } = setupDb();
     seedConversationAndMessage(raw, {

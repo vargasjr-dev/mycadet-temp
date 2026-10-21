@@ -613,8 +613,8 @@ export const routeTree = [
                     path: "usage",
                     lazy: {
                       Component: () =>
-                        import("@/domains/settings/billing/billing-page").then(
-                          (m) => m.BillingPage,
+                        import("@/domains/settings/usage-page").then(
+                          (m) => m.UsagePage,
                         ),
                     },
                   },
@@ -624,15 +624,6 @@ export const routeTree = [
                       Component: () =>
                         import("@/domains/settings/pages/billing-redirect-page").then(
                           (m) => m.BillingRedirectPage,
-                        ),
-                    },
-                  },
-                  {
-                    path: "billing/upgrade/cancel",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/billing/upgrade-cancel-page").then(
-                          (m) => m.UpgradeCancelPage,
                         ),
                     },
                   },
@@ -684,18 +675,6 @@ export const routeTree = [
                     },
                   },
                 ],
-              },
-
-              // View Plans — full-screen pricing takeover. Like settings/logs it
-              // renders its own dark shell outside ChatLayout chrome.
-              {
-                path: "plans",
-                lazy: {
-                  Component: () =>
-                    import("@/domains/settings/billing/plans/plans-page").then(
-                      (m) => m.PlansPage,
-                    ),
-                },
               },
 
               // Logs routes — full-screen overlay panel (like SettingsLayout).

@@ -15,6 +15,7 @@ import type { NavigateOptions, To } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { organizationsBillingSummaryRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { consumePendingComposerFocus } from "@/domains/chat/composer-focus";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";
@@ -83,6 +84,12 @@ stubModule("react-router", await import("react-router"), {
 const ensureMainWindowVisibleMock = mock(async () => undefined);
 stubModule("@/runtime/main-window", await import("@/runtime/main-window"), {
   ensureMainWindowVisible: ensureMainWindowVisibleMock,
+});
+
+// The subscription cancel leg hands off to the cloud's account billing page.
+const openExternalUrlMock = mock(async (_url: string) => undefined);
+stubModule("@/runtime/browser", await import("@/runtime/browser"), {
+  openExternalUrl: openExternalUrlMock,
 });
 
 // Stub the toaster: the top-up success branch toasts, and no <Toaster /> is
@@ -489,14 +496,12 @@ describe("deeplink.billingCheckoutComplete", () => {
       });
     });
 
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/settings/usage?tab=billing&session_id=cs_test_a1B2",
-    );
+    expect(navigateMock).toHaveBeenCalledWith("/assistant/settings/usage");
     expect(toastSuccessMock).not.toHaveBeenCalled();
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
-  test("subscription cancel lands on the upgrade-cancel page: no session id, no wizard", () => {
+  test("subscription cancel hands off to the cloud's billing page: no session id, no wizard", () => {
     renderConsumer();
 
     act(() => {
@@ -507,9 +512,7 @@ describe("deeplink.billingCheckoutComplete", () => {
       });
     });
 
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/settings/billing/upgrade/cancel",
-    );
+    expect(openExternalUrlMock).toHaveBeenCalledWith(cloudAccountBillingUrl());
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
@@ -549,12 +552,7 @@ describe("deeplink.billingCheckoutComplete", () => {
       });
     });
 
-    // `usageBilling` already carries `?tab=billing`, so the param appends
-    // with `&`: the exact query `BillingStatusHandler` consumes to run the
-    // server-verified checkout-bonus offer flow.
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/settings/usage?tab=billing&billing_status=cancel",
-    );
+    expect(navigateMock).toHaveBeenCalledWith("/assistant/settings/usage");
     expect(toastSuccessMock).not.toHaveBeenCalled();
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });

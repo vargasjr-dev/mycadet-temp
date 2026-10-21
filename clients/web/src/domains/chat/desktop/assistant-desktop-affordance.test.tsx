@@ -13,7 +13,6 @@ import { useEffect, useState } from "react";
 import { publish } from "@/lib/event-bus";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
-let desktopEnabled: boolean | undefined = true;
 let assistantId = "asst-1";
 let touch = false;
 let cloudHosted = true;
@@ -37,12 +36,6 @@ mock.module("@/hooks/use-cloud-gate", () => ({
 mock.module("@/utils/pointer", () => ({
   usePointerCoarse: () => touch,
   isPointerCoarse: () => touch,
-}));
-
-mock.module("@/stores/assistant-feature-flag-store", () => ({
-  useAssistantFeatureFlagStore: {
-    use: { assistantDesktop: () => desktopEnabled },
-  },
 }));
 
 mock.module("@/stores/resolved-assistants-store", () => ({
@@ -115,7 +108,6 @@ beforeEach(() => {
     submittedHelpRequests: {},
   });
   panelUnmounts = 0;
-  desktopEnabled = true;
   assistantId = "asst-1";
   useDesktopPreviewStore.getState().close();
 });
@@ -191,32 +183,6 @@ describe("AssistantDesktopAffordance", () => {
       screen.getByRole("button", { name: "Open Alice's virtual desktop" }),
     ).not.toBeNull();
   });
-  for (const flag of [false, undefined]) {
-    test(`hides the desktop control and panel when the flag is ${flag}`, () => {
-      desktopEnabled = flag;
-      render(<DesktopHarness />);
-      expect(
-        screen.queryByRole("button", { name: "Open Alice's virtual desktop" }),
-      ).toBeNull();
-      expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
-    });
-  }
-
-  test("unmounts an open desktop when the flag is disabled", async () => {
-    const { rerender } = render(<DesktopHarness />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Open Alice's virtual desktop" }),
-    );
-    await waitFor(() =>
-      expect(screen.getByTestId("desktop-panel")).not.toBeNull(),
-    );
-    desktopEnabled = false;
-    rerender(<DesktopHarness />);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.queryByTestId("desktop-panel") === null).toBe(true);
-    expect(panelUnmounts).toBe(1);
-  });
-
   test("Escape leaves the modal open and the panel mounted", async () => {
     await openDesktop();
     fireEvent.click(
@@ -494,7 +460,7 @@ describe("AssistantDesktopAffordance", () => {
   });
 });
 
-test("self-hosted assistants cannot open the virtual desktop even with its flag enabled", () => {
+test("self-hosted assistants cannot open the virtual desktop", () => {
   cloudHosted = false;
   render(<DesktopHarness />);
   expect(

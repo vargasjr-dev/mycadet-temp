@@ -4,7 +4,6 @@ import {
   fireEvent,
   render,
   screen,
-  within,
 } from "@testing-library/react";
 import {
   ComposerConfigurationContent,
@@ -83,30 +82,6 @@ describe("composer configuration menu", () => {
       ).toBeNull();
     },
   );
-  test("All models groups Open Beta as built-in and returns to the expanded model group", () => {
-    const configuration = composerConfigurationFixture();
-    configuration.selectMode = mock(async () => true);
-    configuration.setOpen = mock(() => {});
-    render(
-      <ComposerConfigurationContent
-        configuration={configuration}
-        mobile={false}
-        attachments={null}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Model" }));
-    fireEvent.click(screen.getByRole("button", { name: "All models (6)" }));
-    const builtIn = screen.getByRole("region", { name: "Built-in" });
-    fireEvent.click(within(builtIn).getByRole("button", { name: /Open Beta/ }));
-    expect(configuration.selectMode).toHaveBeenCalledWith("os-beta");
-    expect(screen.getByRole("radiogroup", { name: "Model" })).toBeTruthy();
-    expect(
-      screen
-        .getByRole("button", { name: "Autonomy" })
-        .getAttribute("aria-expanded"),
-    ).toBe("false");
-    expect(configuration.setOpen).not.toHaveBeenCalled();
-  });
   test("All models groups custom profiles and reuses the creation action", () => {
     const configuration = composerConfigurationFixture();
     configuration.profiles.push(

@@ -16,6 +16,8 @@ import { AssistantInboxSetupSuccess } from "@/domains/assistant-inbox/components
 import { AssistantInboxShell } from "@/domains/assistant-inbox/components/assistant-inbox-shell";
 import { AssistantInboxUpgradeState } from "@/domains/assistant-inbox/components/assistant-inbox-upgrade-state";
 import { useAssistantInboxState } from "@/domains/assistant-inbox/hooks/use-assistant-inbox-state";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { EmailSettingsModal } from "@/domains/channels/components/email-settings-modal";
 import { useDeletedEmails } from "@/domains/assistant-inbox/hooks/use-deleted-emails";
 import { useInboxMail } from "@/domains/assistant-inbox/hooks/use-inbox-mail";
@@ -396,8 +398,8 @@ export function AssistantInboxPageRoute() {
             handle={state.handle}
             rootDomain={state.rootDomain}
             onEditHandle={handleModal.openModal ?? undefined}
-            onUpgrade={() => navigate(routes.plans)}
-            onSeePlans={() => navigate(routes.plans)}
+            onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
+            onSeePlans={() => void openExternalUrl(cloudAccountBillingUrl())}
             onBack={leave}
           />
           {handleModal.modal}

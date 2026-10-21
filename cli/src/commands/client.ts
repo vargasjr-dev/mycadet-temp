@@ -61,7 +61,7 @@ import {
   type CliInvocation,
 } from "@mycadet/local-mode";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
-import { displayVersion } from "../lib/local-version.js";
+import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../package.json";
 import {
   fetchOrganizationId,
@@ -1306,7 +1306,7 @@ async function runWebInterface(
   const configJson = safeJson(
     buildWebInterfaceConfig({
       cloudUrl,
-      version: displayVersion(cliPkg.version),
+      version: stampedVersion(cliPkg.version),
     }),
   );
   const indexHtml = rawIndexHtml.replace(

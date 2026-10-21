@@ -42,22 +42,11 @@ mock.module("@mycadet/design-library/components/segment-control", () => ({
   ),
 }));
 
-// Feature-flag store: `velvet` off so the theme list is System/Light/Dark.
-const velvetValue = { current: false };
-mock.module("@/stores/client-feature-flag-store", () => ({
-  useClientFeatureFlagStore: {
-    use: {
-      velvet: () => velvetValue.current,
-    },
-  },
-}));
-
 import { ThemePicker } from "@/domains/settings/components/theme-picker";
 
 describe("ThemePicker", () => {
   beforeEach(() => {
     setThemePreferenceMock.mockClear();
-    velvetValue.current = false;
   });
 
   afterEach(() => {
@@ -72,8 +61,6 @@ describe("ThemePicker", () => {
     expect(screen.getByRole("button", { name: "System" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Light" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Dark" })).toBeDefined();
-    // Velvet is gated behind the flag (off here).
-    expect(screen.queryByRole("button", { name: "Velvet" })).toBeNull();
   });
 
   test("choosing a theme delegates to the shared theme setter", () => {
@@ -82,12 +69,5 @@ describe("ThemePicker", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dark" }));
 
     expect(setThemePreferenceMock).toHaveBeenCalledWith("dark");
-  });
-
-  test("exposes the Velvet option when the flag is enabled", () => {
-    velvetValue.current = true;
-    render(<ThemePicker />);
-
-    expect(screen.getByRole("button", { name: "Velvet" })).toBeDefined();
   });
 });

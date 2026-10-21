@@ -621,11 +621,6 @@
     "groupCopied": "Group ID copied to clipboard.",
     "groupFailed": "Couldn't copy the group ID."
   },
-  "creditsCard": {
-    "balanceAria": "{balance} credits",
-    "balanceShort": "{balance} c",
-    "credits": "Credits"
-  },
   "creditsUpsellCard": {
     "loginToAddCredits": "Log in to Cadet Cloud to add credits."
   },
@@ -1009,16 +1004,6 @@
     "preferences": "Preferences",
     "settings": "Settings",
     "shareFeedback": "Share Feedback"
-  },
-  "preferencesUsagePanel": {
-    "addCreditsAriaLabel": "Add credits",
-    "dailyExhausted": "Daily usage used up. Add credits to continue.",
-    "dailyTitle": "Daily usage",
-    "exhausted": "Add credits to continue.",
-    "extraCredits": "Now using extra usage credits",
-    "pctUsed": "{pct}% used",
-    "settingsAriaLabel": "Usage and billing settings",
-    "title": "Usage"
   },
   "previewError": {
     "cannotPreview": "Can't preview this file"
@@ -1638,7 +1623,7 @@
     "addCredits": "Add credits",
     "subtitle": "You've used today's free usage. It resets at {resetPhrase}. Upgrade or add credits to keep going.",
     "title": "Daily free usage used up",
-    "viewPlans": "View plans"
+    "upgrade": "Upgrade"
   },
   "chatsSettingsModal": {
     "title": "Chats Settings",

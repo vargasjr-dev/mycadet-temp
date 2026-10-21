@@ -5,6 +5,8 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import { AssistantInboxUpgradeBody } from "@/domains/assistant-inbox/components/assistant-inbox-upgrade-body";
@@ -338,8 +340,8 @@ export function EmailCloudContent({
           handle={assistantHandle ?? ""}
           rootDomain={emailRootDomain}
           onEditHandle={handleModal.openModal ?? undefined}
-          onUpgrade={() => navigate(routes.plans)}
-          onSeePlans={() => navigate(routes.plans)}
+          onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
+          onSeePlans={() => void openExternalUrl(cloudAccountBillingUrl())}
           align="start"
         />
         {handleModal.modal}

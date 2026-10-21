@@ -8,7 +8,7 @@
  */
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
 // Toggled per-test rather than re-mocked: `mock.module` is process-global, so a
 // second registration would leak into the rest of the file.
@@ -45,6 +45,24 @@ describe("ExternalAnchor", () => {
     expect(anchor.getAttribute("href")).toBe("https://example.com/jobs");
     expect(anchor.getAttribute("target")).toBe("_blank");
     expect(anchor.getAttribute("rel")).toBe("noopener noreferrer");
+  });
+
+  test("fires the onOpen callback on the click, web included", () => {
+    let opens = 0;
+    render(
+      <ExternalAnchor
+        href="https://example.com/jobs"
+        onOpen={() => {
+          opens += 1;
+        }}
+      >
+        Jobs
+      </ExternalAnchor>,
+    );
+
+    fireEvent.click(screen.getByRole("link", { name: "Jobs" }));
+
+    expect(opens).toBe(1);
   });
 
   test("on a native shell, opens through the native browser instead of _blank", () => {

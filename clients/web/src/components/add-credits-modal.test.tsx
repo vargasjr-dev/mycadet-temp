@@ -22,8 +22,9 @@ import { MemoryRouter } from "react-router";
 import type { BillingSummaryResponse } from "@/generated/api/types.gen";
 import * as sdkGen from "@/generated/api/sdk.gen";
 import { __resetForTesting, publish } from "@/lib/event-bus";
-import { routes } from "@/utils/routes";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import * as capacitorCore from "@capacitor/core";
+import * as actualPlatformDetection from "@/runtime/platform-detection";
 
 let nativeAndroid = false;
 // Drives `Capacitor.isNativePlatform()`, which `checkoutReturnTarget()` reads
@@ -66,12 +67,9 @@ const SUMMARY: BillingSummaryResponse = {
 // Captures the modal's `browserFinished` subscriber so a test can fire the
 // Capacitor sheet-dismissal signal on demand.
 let browserFinishedCallback: (() => void) | null = null;
-let openedUrl: string | null = null;
+
 mock.module("@/runtime/browser", () => ({
-  openUrl: (url: string) => {
-    openedUrl = url;
-    return Promise.resolve();
-  },
+  openUrl: () => Promise.resolve(),
   openUrlFinishedListener: (callback: () => void) => {
     browserFinishedCallback = callback;
     return () => {
@@ -81,6 +79,7 @@ mock.module("@/runtime/browser", () => ({
 }));
 
 mock.module("@/runtime/platform-detection", () => ({
+  ...actualPlatformDetection,
   useIsNativeAndroid: () => nativeAndroid,
   // Mirrors the real implementation: reads the window bridge, and a legacy
   // bridge without hostOS is a macOS host.
@@ -130,7 +129,6 @@ beforeEach(() => {
 afterEach(() => {
   nativeAndroid = false;
   nativePlatform = false;
-  openedUrl = null;
   delete (window as { cadet?: unknown }).cadet;
   checkoutCalls.length = 0;
   cleanup();
@@ -150,24 +148,6 @@ function renderModal(onOpenChange: (open: boolean) => void = () => {}) {
 }
 
 describe("AddCreditsModal", () => {
-  test("native Android opens the web billing page and closes instead of rendering", async () => {
-    nativeAndroid = true;
-    const closes: boolean[] = [];
-    renderModal((open) => closes.push(open));
-
-    await waitFor(() =>
-      expect(openedUrl).toBe(
-        new URL(
-          routes.settings.usageBilling,
-          window.location.origin,
-        ).toString(),
-      ),
-    );
-    expect(closes).toEqual([false]);
-    expect(screen.queryByText("Add Credits")).toBeNull();
-    expect(checkoutCalls.length).toBe(0);
-  });
-
   test("renders the updated copy and labels", () => {
     renderModal();
 
@@ -180,15 +160,13 @@ describe("AddCreditsModal", () => {
     expect(screen.getByRole("button", { name: "Continue" })).toBeTruthy();
   });
 
-  test("links the automatic top-ups control to the billing route", () => {
+  test("links the automatic top-ups control to the cloud's billing page", () => {
     renderModal();
 
     const link = screen.getByRole("link", {
       name: /Configure Auto-Reload/,
     });
-    expect(link.getAttribute("href")).toBe(
-      routes.settings.usageBillingConfigureTopUps,
-    );
+    expect(link.getAttribute("href")).toBe(cloudAccountBillingUrl());
   });
 });
 

@@ -22,7 +22,7 @@ import {
   makeProPackage,
   makeSuperPackage,
   makeUltraPackage,
-} from "@/domains/settings/billing/plans/pro-package-test-fixtures";
+} from "@/domains/settings/billing/pro-package-test-fixtures";
 import { organizationsBillingPlansRetrieveQueryKey } from "@/generated/api/@tanstack/react-query.gen";
 import type {
   CreditTier,

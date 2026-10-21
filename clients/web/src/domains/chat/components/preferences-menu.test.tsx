@@ -4,8 +4,7 @@
  * Uses `renderToStaticMarkup` (SSR) so only the trigger and top-level
  * structure are exercisable — Radix Popover/BottomSheet content is not
  * rendered when `open={false}`. Interactive content tests (menu items,
- * admin visibility, credits row) would require a DOM environment with
- * React Testing Library.
+ * navigation) require the DOM renderer below.
  */
 
 import {
@@ -28,7 +27,6 @@ import {
 
 import { SideMenu } from "@mycadet/design-library";
 
-import type { PreferencesUsage } from "@/domains/chat/hooks/use-preferences-usage";
 import type { AuthUser } from "@/stores/auth-store";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -39,7 +37,6 @@ import {
 import { routes } from "@/utils/routes";
 
 const isTouchMobileRef = { value: false };
-const nativeAndroidRef = { value: false };
 
 // Every module below is replaced through `stubModule`, which spreads the real
 // one and registers the undo `afterAll` runs: `mock.module` is process-global
@@ -55,43 +52,10 @@ stubModule(
   },
 );
 
-stubModule(
-  "@/runtime/platform-detection",
-  await import("@/runtime/platform-detection"),
-  { useIsNativeAndroid: () => nativeAndroidRef.value },
-);
-
 stubModule("@/hooks/use-cloud-gate", await import("@/hooks/use-cloud-gate"), {
   useCloudGate: () => "full",
   useActiveAssistantIsCloudHosted: () => true,
 });
-
-// Whether the org store can supply the `Cadet-Organization-Id` header, which
-// is the half of the billing gate a test can switch off from here.
-const orgReadyRef = { value: true };
-stubModule(
-  "@/hooks/use-is-org-ready",
-  await import("@/hooks/use-is-org-ready"),
-  {
-    useIsOrgReady: () => orgReadyRef.value,
-  },
-);
-
-// The BYOK gate pulls the daemon generated client (and its real
-// `queryOptions` import) into the graph; this suite's partial
-// `@tanstack/react-query` mock cannot host that, and the menu only reads
-// `enabled`/`balance`, which the gate never touches.
-stubModule(
-  "@/hooks/use-byok-credit-banner-gate",
-  await import("@/hooks/use-byok-credit-banner-gate"),
-  {
-    useByokCreditRouteVerdict: () => ({
-      suppress: false,
-      settled: true,
-      routeBurnsCloud: false,
-    }),
-  },
-);
 
 const authRef: {
   isAuthenticated: boolean;
@@ -126,41 +90,6 @@ stubModule("@/stores/auth-store", authStoreModule, {
   useAuthStore: authStoreStub,
   useIsAuthenticated: () => authRef.isAuthenticated,
 });
-
-const billingRef = {
-  data: undefined as
-    | { effective_balance: string; available_usage_balance?: string }
-    | undefined,
-};
-
-// Spread the real module so shared utilities that import other exports
-// (e.g. `isCancelledError` via `captureError`) keep resolving; only the
-// hook under test's read is overridden.
-const reactQueryModule = await import("@tanstack/react-query");
-stubModule("@tanstack/react-query", reactQueryModule, {
-  // The menu reads `data`, `isLoading` and `isError` only, so the answer is
-  // asserted against `useQuery`'s type rather than built out to its full
-  // result shape.
-  useQuery: (() => ({
-    data: billingRef.data,
-    isLoading: false,
-    isError: false,
-  })) as unknown as typeof reactQueryModule.useQuery,
-});
-
-const generatedQueriesModule =
-  await import("@/generated/api/@tanstack/react-query.gen");
-// Only the query key is read (the stubbed `useQuery` answers by key), so each
-// factory answers with the key alone and asserts the generated signature.
-stubModule(
-  "@/generated/api/@tanstack/react-query.gen",
-  generatedQueriesModule,
-  {
-    organizationsBillingSummaryRetrieveOptions: (() => ({
-      queryKey: [{ _id: "organizationsBillingSummaryRetrieve" }],
-    })) as unknown as typeof generatedQueriesModule.organizationsBillingSummaryRetrieveOptions,
-  },
-);
 
 // Capture navigate() targets so the menu's destinations can be asserted
 // without a live Router.
@@ -197,125 +126,25 @@ stubModule("@/lib/prefetch-route", await import("@/lib/prefetch-route"), {
   },
 });
 
-// The panel owns its own reads (subscription, plan catalog, usage totals),
-// which this suite's partial `@tanstack/react-query` mock cannot host. Its
-// rendering is covered by `preferences-usage-panel.test.tsx`; what the menu
-// owns is where the panel sits and what its two actions do.
-const panelPropsRef: { conversationId?: string | null } = {};
-stubModule(
-  "@/domains/chat/components/preferences-usage-panel",
-  await import("@/domains/chat/components/preferences-usage-panel"),
-  {
-    PreferencesUsagePanel: ({
-      onOpenBilling,
-      onAddCredits,
-      conversationId,
-    }: {
-      onOpenBilling: () => void;
-      onAddCredits?: () => void;
-      conversationId?: string | null;
-    }) => {
-      panelPropsRef.conversationId = conversationId;
-      return createElement(
-        "div",
-        { "data-testid": "preferences-usage" },
-        createElement("button", { onClick: onOpenBilling }, "Usage settings"),
-        // The real panel drops the strip's button with the handler, so the
-        // stub has to as well.
-        onAddCredits
-          ? createElement(
-              "button",
-              { onClick: onAddCredits },
-              "Add usage credits",
-            )
-          : null,
-      );
-    },
-  },
-);
-
-stubModule(
-  "@/components/add-credits-modal",
-  await import("@/components/add-credits-modal"),
-  {
-    AddCreditsModal: ({ open }: { open: boolean }) =>
-      open
-        ? createElement("div", { "data-testid": "add-credits-modal" })
-        : createElement(Fragment),
-  },
-);
-
-// The reading itself is composed from three billing queries this suite's
-// partial `@tanstack/react-query` mock cannot host, and is covered by
-// `preferences-usage-panel.test.tsx`. What the menu owns is the rule it
-// applies to the reading, so only the data is stubbed here.
-const usageRef: {
-  value: PreferencesUsage | null;
-  settled: boolean;
-  opts: unknown;
-} = {
-  value: null,
-  settled: true,
-  opts: undefined,
-};
-stubModule(
-  "@/domains/chat/hooks/use-preferences-usage",
-  await import("@/domains/chat/hooks/use-preferences-usage"),
-  {
-    usePreferencesUsage: (opts?: unknown) => {
-      usageRef.opts = opts;
-      return { usage: usageRef.value, settled: usageRef.settled };
-    },
-  },
-);
-
-stubModule(
-  "@/domains/chat/components/credits-card",
-  await import("@/domains/chat/components/credits-card"),
-  {
-    CreditsCard: ({
-      balance,
-      onAddCredits,
-    }: {
-      balance: string | null;
-      onAddCredits?: () => void;
-    }) =>
-      createElement(
-        "div",
-        { "data-testid": "credits-card" },
-        balance,
-        onAddCredits
-          ? createElement("button", { onClick: onAddCredits }, "Add credits")
-          : null,
-      ),
-  },
-);
-
-const { PreferencesMenu, showsMenuCredits } =
+const { PreferencesMenu } =
   await import("@/domains/chat/components/preferences-menu");
 
-/** Opens the menu the way a touch user does, and returns the open surface. */
-async function openMenu(
-  props: { activeConversationId?: string | null } = {},
-): Promise<void> {
+/** Opens the menu the way a touch user does. */
+async function openMenu(): Promise<void> {
   isTouchMobileRef.value = true;
-  render(<PreferencesMenu {...props} />);
+  render(<PreferencesMenu />);
   await act(async () => {
     fireEvent.click(screen.getByRole("button", { name: /Preferences/i }));
     await Promise.resolve();
   });
 }
 
-/** A reading at `ratio`, with the wallet behind it empty or not. */
-function usage(ratio: number, walletEmpty = false): PreferencesUsage {
-  const spent = ratio >= 1;
-  return {
-    kind: "overall",
-    ratio,
-    spent,
-    exhausted: spent && walletEmpty,
-    usingExtraCredits: spent && !walletEmpty,
-  };
+/** Closes the menu through its Settings row, the way a user would. */
+async function closeMenuViaSettings(): Promise<void> {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await Promise.resolve();
+  });
 }
 
 beforeEach(() => {
@@ -323,7 +152,6 @@ beforeEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
   isTouchMobileRef.value = false;
-  nativeAndroidRef.value = false;
   authRef.isAuthenticated = true;
   authRef.user = {
     kind: "platform",
@@ -334,12 +162,6 @@ beforeEach(() => {
     firstName: "",
     lastName: "",
   };
-  billingRef.data = undefined;
-  orgReadyRef.value = true;
-  usageRef.value = null;
-  usageRef.settled = true;
-  usageRef.opts = undefined;
-  panelPropsRef.conversationId = undefined;
   feedbackRef.prefetches = 0;
   prefetchedPaths.length = 0;
 });
@@ -437,7 +259,7 @@ describe("PreferencesMenu", () => {
     expect(html).toContain("mx-auto");
     // Nothing to clip: the label is not rendered at all.
     expect(visibleText(html)).toBe("");
-    // …and the control is still named, for assistive tech and the tooltip.
+    // ...and the control is still named, for assistive tech and the tooltip.
     expect(html).toContain('aria-label="Preferences"');
   });
 
@@ -467,65 +289,13 @@ describe("PreferencesMenu", () => {
     expect(html).not.toContain("size-[var(--side-menu-tile-size)]");
   });
 
-  test("the usage panel sits above the menu's destinations", async () => {
+  // Billing management moved to the cloud's account pages and usage reading
+  // to the settings usage page; the popover names neither.
+  test("the menu carries no billing or usage entries", async () => {
     await openMenu();
 
-    const panel = screen.getByTestId("preferences-usage");
-    const settings = screen.getByText("Settings");
-    // The panel reads the plan; the rows below it go somewhere.
-    expect(
-      panel.compareDocumentPosition(settings) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-  });
-
-  test("asks for the usage reading before the menu is opened", () => {
-    render(<PreferencesMenu activeConversationId="conv-7" />);
-
-    // The panel and the credits row only mount with the menu, so a reading
-    // asked for from inside it starts cold on the first open. The trigger is
-    // mounted with the sidebar, so asking from here means the requests run
-    // while the app loads and the menu opens onto answers.
-    expect(usageRef.opts).toEqual({ conversationId: "conv-7" });
-  });
-
-  test("the open conversation reaches both readings of the usage", async () => {
-    await openMenu({ activeConversationId: "conv-7" });
-
-    // The row's rule and the panel's bar have to classify the wallet against
-    // the same chat, or one of them calls it exhausted while the other does
-    // not.
-    expect(usageRef.opts).toEqual({ conversationId: "conv-7" });
-    expect(panelPropsRef.conversationId).toBe("conv-7");
-  });
-
-  test("the panel's gear opens the Billing tab and closes the menu", async () => {
-    await openMenu();
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Usage settings" }));
-      await Promise.resolve();
-    });
-
-    expect(navigateArgs).toEqual([routes.settings.usageBilling]);
-    expect(screen.queryByTestId("preferences-usage")).toBeNull();
-  });
-
-  test("the panel's add-credits action opens the checkout", async () => {
-    await openMenu();
-    expect(screen.queryByTestId("add-credits-modal")).toBeNull();
-
-    await act(async () => {
-      fireEvent.click(
-        screen.getByRole("button", { name: "Add usage credits" }),
-      );
-      await Promise.resolve();
-    });
-
-    // The menu closes as it goes, so the modal has to outlive the surface it
-    // was opened from.
-    expect(await screen.findByTestId("add-credits-modal")).toBeTruthy();
-    expect(screen.queryByTestId("preferences-usage")).toBeNull();
+    expect(screen.queryByText(/usage/i)).toBeNull();
+    expect(screen.queryByText(/credits/i)).toBeNull();
   });
 
   test("opening the menu warms the feedback chunk, once", async () => {
@@ -536,10 +306,7 @@ describe("PreferencesMenu", () => {
 
     // The menu closes here, which re-renders the component. The chunk is
     // cached after the first fetch, so a second warm buys nothing.
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Usage settings" }));
-      await Promise.resolve();
-    });
+    await closeMenuViaSettings();
     expect(feedbackRef.prefetches).toBe(1);
   });
 
@@ -555,125 +322,17 @@ describe("PreferencesMenu", () => {
     expect(prefetchedPaths).toEqual([routes.settings.root]);
 
     // AND closing the menu does not ask again
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: "Usage settings" }));
-      await Promise.resolve();
-    });
+    await closeMenuViaSettings();
     expect(prefetchedPaths).toEqual([routes.settings.root]);
   });
 
-  test("native Android keeps the panel's add-credits action, same as iOS", async () => {
-    nativeAndroidRef.value = true;
+  test("the Settings row navigates to the settings root and closes the menu", async () => {
     await openMenu();
 
-    // The purchase handoff lives in the add-credits modal, so the menu
-    // offers the same actions on every platform.
-    expect(screen.getByTestId("preferences-usage")).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Add usage credits" }),
-    ).toBeTruthy();
-  });
+    await closeMenuViaSettings();
 
-  test("native Android shows the balance with its add-credits action", async () => {
-    nativeAndroidRef.value = true;
-    isTouchMobileRef.value = true;
-    billingRef.data = { effective_balance: "60" };
-    render(<PreferencesMenu />);
-
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /Preferences/i }));
-      await Promise.resolve();
-    });
-
-    expect(screen.getByTestId("credits-card")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Add credits" })).toBeTruthy();
-  });
-});
-
-describe("PreferencesMenu credits row", () => {
-  test("the row is hidden while the bundle still has room", async () => {
-    billingRef.data = { effective_balance: "60.4" };
-    usageRef.value = usage(0.68);
-    await openMenu();
-
-    expect(screen.queryByTestId("credits-card")).toBeNull();
-  });
-
-  test("a spent bundle with credits left keeps the row hidden", async () => {
-    billingRef.data = { effective_balance: "60.4" };
-    usageRef.value = usage(1);
-    await openMenu();
-
-    // The panel already names the wallet takeover in the bar's place, so a
-    // dollar row beneath it would only restate the number the bar stands in
-    // for.
-    expect(screen.getByTestId("preferences-usage")).toBeTruthy();
-    expect(screen.queryByTestId("credits-card")).toBeNull();
-  });
-
-  test("the row names only the credit held on top of the usage grants", async () => {
-    billingRef.data = {
-      effective_balance: "34.65",
-      available_usage_balance: "9.10",
-    };
-    await openMenu();
-
-    // With no reading the row is the only balance on screen, and it states
-    // the bought-and-earned credit alone: the grants are what the panel's
-    // bar would have measured.
-    expect(screen.getByTestId("credits-card").textContent).toContain("25.55");
-  });
-
-  test("a free plan's used-up grant keeps the row hidden too", async () => {
-    billingRef.data = { effective_balance: "12.00" };
-    // The whole usage grant is gone and the panel names the extra credits
-    // covering the next turn, so the row has nothing left to add.
-    usageRef.value = {
-      kind: "overall",
-      ratio: 1,
-      spent: true,
-      exhausted: false,
-      usingExtraCredits: true,
-    };
-    await openMenu();
-
-    expect(screen.getByTestId("preferences-usage")).toBeTruthy();
-    expect(screen.queryByTestId("credits-card")).toBeNull();
-  });
-
-  test("a spent bundle with an empty wallet leaves the strip to say it", async () => {
-    billingRef.data = { effective_balance: "0" };
-    usageRef.value = usage(1, true);
-    await openMenu();
-
-    expect(screen.queryByTestId("credits-card")).toBeNull();
-  });
-
-  test("with nothing to measure the row stays", async () => {
-    billingRef.data = { effective_balance: "60.4" };
-    await openMenu();
-
-    // The real panel renders nothing without a reading, so the row is the only
-    // balance and the only way to buy more.
-    expect(screen.getByTestId("credits-card")).toBeTruthy();
-  });
-});
-
-describe("showsMenuCredits", () => {
-  test("hides the row whenever there is a reading", () => {
-    expect(showsMenuCredits(usage(0.99), true)).toBe(false);
-    expect(showsMenuCredits(usage(1), true)).toBe(false);
-    expect(showsMenuCredits(usage(1, true), true)).toBe(false);
-  });
-
-  test("an unmeasurable reading falls back to showing the row", () => {
-    expect(showsMenuCredits(null, true)).toBe(true);
-  });
-
-  test("an unsettled null holds the row back rather than flashing it", () => {
-    // The row needs only the summary; the panel that replaces it also needs
-    // the subscription. Showing the row in that gap swaps one surface for
-    // another a beat later.
-    expect(showsMenuCredits(null, false)).toBe(false);
+    expect(navigateArgs).toEqual([routes.settings.root]);
+    // The BottomSheet unmounts its content on close, so the rows are gone.
+    expect(screen.queryByRole("button", { name: "Share feedback" })).toBeNull();
   });
 });

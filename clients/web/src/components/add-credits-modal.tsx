@@ -1,6 +1,6 @@
 import { AlertCircle, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router";
+import { useLocation, useSearchParams } from "react-router";
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -9,11 +9,11 @@ import {
   organizationsBillingTopUpsCheckoutSessionCreateMutation,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
+import { ExternalAnchor } from "@/components/external-anchor";
 import { useTranslation } from "@/i18n";
-import { useAndroidBillingHandoff } from "@/lib/billing/android-billing-handoff";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { checkoutReturnTarget } from "@/lib/billing/checkout-return-target";
 import { openUrl, openUrlFinishedListener } from "@/runtime/browser";
-import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { Select } from "@mycadet/design-library/components/select";
 import { Modal } from "@mycadet/design-library/components/modal";
@@ -64,7 +64,7 @@ interface AddCreditsModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function AddCreditsModalContent({ open, onOpenChange }: AddCreditsModalProps) {
+export function AddCreditsModal({ open, onOpenChange }: AddCreditsModalProps) {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [searchParams] = useSearchParams();
@@ -191,17 +191,16 @@ function AddCreditsModalContent({ open, onOpenChange }: AddCreditsModalProps) {
               </div>
             )}
 
-            <Link
-              to={routes.settings.usageBillingConfigureTopUps}
+            <ExternalAnchor
+              href={cloudAccountBillingUrl()}
               className={cn(
                 textLinkVariants({ tone: "quiet" }),
                 "flex items-center gap-1 text-body-small-default text-[var(--content-tertiary)]",
               )}
-              onClick={() => onOpenChange(false)}
             >
               {t("addCreditsModal.configureAutoReload")}
               <ChevronRight className="size-4" />
-            </Link>
+            </ExternalAnchor>
 
             <div className="h-px w-full bg-[var(--border-subtle)]" />
           </div>
@@ -223,18 +222,4 @@ function AddCreditsModalContent({ open, onOpenChange }: AddCreditsModalProps) {
       </Modal.Content>
     </Modal.Root>
   );
-}
-
-export function AddCreditsModal(props: AddCreditsModalProps) {
-  // Native Android buys credits on the web app's billing page in the
-  // browser instead of running Stripe checkout from the app.
-  const handsOff = useAndroidBillingHandoff({
-    open: props.open,
-    path: routes.settings.usageBilling,
-    onClose: () => props.onOpenChange(false),
-  });
-  if (handsOff) {
-    return null;
-  }
-  return <AddCreditsModalContent {...props} />;
 }

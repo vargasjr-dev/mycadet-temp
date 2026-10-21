@@ -68,15 +68,13 @@ export function requiresFullPageNavigation(destination: string): boolean {
 /**
  * In-SPA surfaces that only do their job against a live platform account.
  * Reached on a gateway-only identity, each throws away what the link asked for:
- * `checkout` and `plans` drop the requested package, the Billing settings
- * surface — including its `upgrade/success` and `upgrade/cancel` Stripe
- * returns — falls back to the Usage tab, and `/account` reports a signed-in
- * state for an account that is not there. Matched by prefix, so sub-paths
- * count.
+ * `checkout` drops the requested package, the Billing settings surface —
+ * including its `upgrade/success` Stripe return — falls back to the Usage tab,
+ * and `/account` reports a signed-in state for an account that is not there.
+ * Matched by prefix, so sub-paths count.
  */
 const PLATFORM_ONLY_PATHS: readonly string[] = [
   routes.checkout,
-  routes.plans,
   `${routes.settings.root}/billing`,
   routes.account.root,
 ];

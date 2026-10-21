@@ -321,24 +321,27 @@ describe("routing identities", () => {
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
   });
 
-  test("a stored cadet GPU profile dispatches through the cadet adapter", async () => {
+  test("a stored cadet profile with the hosted glm model dispatches through the fireworks upstream", async () => {
     registerConnection(
       { name: "cadet", provider: "cadet", auth: { type: "platform" } },
-      { name: "cadet", tag: "gpu-stub" },
+      { name: "fireworks", tag: "managed-stub" },
     );
     setLlmConfig({
       profiles: {
-        gpu: { provider: "cadet", model: "qwen/qwen3-8b" },
+        managed: {
+          provider: "cadet",
+          model: "accounts/fireworks/models/glm-5p3-flash",
+        },
       },
     });
 
     const result = await getConfiguredProvider("mainAgent", {
-      overrideProfile: "gpu",
+      overrideProfile: "managed",
     });
 
     expect(result).not.toBeNull();
     expect(resolveProviderCalls[0]?.name).toBe("cadet");
-    expect(resolveProviderOpts[0]?.providerOverride).toBe("cadet");
+    expect(resolveProviderOpts[0]?.providerOverride).toBe("fireworks");
   });
 
   test("a stored chatgpt profile dispatches end-to-end through the real config loader", async () => {
@@ -376,9 +379,14 @@ describe("routing identities", () => {
     expect(
       resolveRoutingIdentity("cadet", "accounts/fireworks/models/glm-5p3"),
     ).toEqual({ connectionName: "cadet", expectedProvider: "fireworks" });
-    expect(resolveRoutingIdentity("cadet", "qwen/qwen3-8b")).toEqual({
+    expect(
+      resolveRoutingIdentity(
+        "cadet",
+        "accounts/fireworks/models/glm-5p3-flash",
+      ),
+    ).toEqual({
       connectionName: "cadet",
-      expectedProvider: "cadet",
+      expectedProvider: "fireworks",
     });
   });
 
@@ -445,32 +453,6 @@ describe("routing identities", () => {
     } as never);
     expect(resolveProviderCalls[0]?.name).toBe("cadet");
     expect(resolveProviderOpts[0]?.providerOverride).toBe("anthropic");
-  });
-
-  test("cadet identity + GPU model threads cadet as the upstream override", async () => {
-    fakeConnections.set("cadet", {
-      name: "cadet",
-      provider: "cadet",
-      auth: { type: "platform" },
-    });
-    fakeProviders.set("conn:cadet", { name: "cadet", tag: "gpu" });
-
-    const provider = await tryResolveProviderForConnectionName(
-      "ignored-stale-name",
-      { llm: {} } as never,
-      "cadet",
-      "qwen/qwen3-8b",
-    );
-
-    expect(provider).toEqual({
-      name: "cadet",
-      tag: "gpu",
-      routeAttribution: {
-        connectionName: "cadet",
-        isCloudRoute: true,
-      },
-    } as never);
-    expect(resolveProviderOpts[0]?.providerOverride).toBe("cadet");
   });
 
   test("chatgpt identity resolves the subscription row by name with an openai override", async () => {

@@ -1,6 +1,8 @@
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { useAssistantInboxState } from "@/domains/assistant-inbox/hooks/use-assistant-inbox-state";
 import { useFeatureIntroSeen } from "@/hooks/use-feature-intro-seen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
@@ -43,6 +45,13 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
     [markSeen, navigate],
   );
 
+  // Billing left web — the upgrade CTAs hand off to the cloud's account
+  // billing page instead of navigating in-app.
+  const leaveForBilling = useCallback(() => {
+    markSeen();
+    void openExternalUrl(cloudAccountBillingUrl());
+  }, [markSeen]);
+
   if (intro === null) {
     return null;
   }
@@ -58,8 +67,8 @@ function AssistantEmailIntroGate({ assistantId, markSeen }: GateProps) {
       assistantName={state.assistantName}
       rootDomain={state.rootDomain}
       locked={intro === "locked"}
-      onUpgrade={() => leaveFor(routes.plans)}
-      onSeePlans={() => leaveFor(routes.plans)}
+      onUpgrade={leaveForBilling}
+      onSeePlans={leaveForBilling}
       onSetUp={() => leaveFor(routes.assistantInbox)}
     />
   );

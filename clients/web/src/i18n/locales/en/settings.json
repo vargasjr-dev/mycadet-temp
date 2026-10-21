@@ -16,25 +16,6 @@
     "toastKeptOn": "Admin data access will stay on until you turn it off.",
     "toastUpdateFailed": "Failed to update log access consent."
   },
-  "adjustPlanModal": {
-    "alreadyOnPro": "You're already on Pro.",
-    "back": "Back",
-    "cancel": "Cancel",
-    "confirmDowngrade": "Confirm Downgrade",
-    "creditBundleUpdated": "Credit bundle updated.",
-    "downgradeIntro": "Downgrading removes the following Pro features:",
-    "downgradeTitle": "Downgrade to Base?",
-    "footerNote": "You can change or cancel your plan at any time from billing settings.",
-    "heroSubtitle": "Choose the plan that works best for you and your assistant.",
-    "heroTitle": "Your Assistant, Your Way",
-    "loadPlansError": "Failed to load plans. Please try again later.",
-    "loadingPlans": "Loading plans...",
-    "machineDowngradeFeature": "Reduced CPU and memory for your assistant - it will resize to the smaller compute profile.",
-    "pickTiersError": "Pick a machine and storage tier to continue.",
-    "planUpdated": "Plan updated.",
-    "upgradeFailed": "Failed to start upgrade. Please try again.",
-    "upgradePlanTitle": "Upgrade Plan"
-  },
   "advisorProfileRow": {
     "chooseProfilePlaceholder": "Choose profile…",
     "description": "The profile your assistant consults for a second opinion when it wants to check a plan or review its own work.",
@@ -188,116 +169,17 @@
     "updateToVersion": "Update to {version}",
     "updating": "Updating..."
   },
-  "autoTopUpCard": {
-    "addCreditCard": "Add a Credit Card",
-    "addPaymentMethod": "Add payment method",
-    "adjust": "Adjust",
-    "capProgress": " / {cap} this month",
-    "connectCardBanner": "Auto-reload requires you to connect a credit card.",
-    "dailyLimitLookupError": "Couldn't check your daily credit limit, which auto-reload requires. Retry to continue.",
-    "declinedCutoffNotice": "We paused automatic reloads after several declined payments. Add a new payment method to turn auto-reload back on.",
-    "disableError": "Failed to disable auto-reload. Please try again.",
-    "dismiss": "Dismiss",
-    "loadError": "Failed to load auto-reload configuration.",
-    "loading": "Loading…",
-    "retry": "Retry",
-    "summary": "Add {amount} when balance falls under {threshold}",
-    "toggleHelper": "Auto reloads only occur when plan based usage is exhausted",
-    "toggleLabel": "Enable auto-reload",
-    "updateError": "Failed to save auto-reload settings. Please try again."
-  },
-  "autoTopUpDailyLimitModal": {
-    "cancel": "Turn off auto-reload",
-    "message": "Auto-reload requires a daily credit limit. Set one to save your auto-reload settings, or turn auto-reload off.",
-    "save": "Save",
-    "saving": "Saving…",
-    "title": "Set a daily credit limit"
-  },
-  "autoTopUpDisableConfirm": {
-    "disable": "Disable",
-    "disabling": "Disabling…",
-    "keepEnabled": "Keep enabled",
-    "message": "Auto-reload will stop. Any saved payment method stays on file.",
-    "title": "Disable auto-reload?"
-  },
-  "autoTopUpForm": {
-    "amountLabel": "Auto-reload amount",
-    "cancel": "Cancel",
-    "capLabel": "Monthly spending cap",
-    "save": "Save",
-    "thresholdLabel": "Auto-reload when balance below"
-  },
   "autoTopUpPaymentMethodModal": {
-    "addSubtitle": "Kept on file for auto-reload and your Pro plan.",
-    "addTitle": "Add a card",
-    "addressFormLoadError": "Failed to load the billing address form. Please try again.",
-    "cancel": "Cancel",
     "cardOnFileExpiry": "· {month} / {year}",
-    "close": "Close",
-    "confirmFailed": "Failed to save payment method.",
-    "confirmingWithBank": "Confirming with your bank…",
-    "declined": "Your bank declined this card. Try another, or contact them.",
-    "loadingLabel": "Loading payment fields",
-    "paymentFormLoadError": "Failed to load the payment form. Please try again.",
-    "primaryAdd": "Save card",
-    "primaryReplace": "Replace card",
-    "primarySubmitting": "Saving",
-    "replaceSubtitle": "The new card takes over immediately.",
-    "replaceSubtitleCard": "Replacing {brand} •••• {last4}. The new card takes over immediately.",
-    "replaceSubtitleCardExpiry": "Replacing {brand} •••• {last4} · {month} / {year}. The new card takes over immediately.",
-    "replaceSubtitleCardNoBrand": "Replacing the card ending in {last4}. The new card takes over immediately.",
-    "replaceSubtitleCardNoBrandExpiry": "Replacing the card ending in {last4} · {month} / {year}. The new card takes over immediately.",
-    "replaceSubtitleCardNoLast4": "Replacing your {brand} card. The new card takes over immediately.",
-    "replaceSubtitleCardNoLast4Expiry": "Replacing your {brand} card · {month} / {year}. The new card takes over immediately.",
-    "replaceTitle": "Replace your card",
-    "savedSubtitle": "Auto-reload is active again",
-    "savedTitle": "{brand} •••• {last4} saved",
-    "savedTitleGeneric": "Card saved",
-    "savedTitleNoBrand": "Card ending in {last4} saved",
-    "setupError": "Failed to start card setup. Please try again.",
-    "termsAdd": "Cadet can charge this card for auto-reload and subscription renewals. Remove it any time from Billing.",
-    "termsReplace": "Your old card stays with Stripe until you remove it from Billing; Cadet stops charging it now.",
-    "tryAgain": "Try again",
-    "unavailable": "Payment method setup is currently unavailable. Please try again later."
-  },
-  "billingOnboardingModal": {
-    "backgroundConfirmContinue": "Continue",
-    "backgroundConfirmKeepWaiting": "Keep waiting",
-    "backgroundConfirmTitle": "Continue in the background?"
-  },
-  "billingPage": {
-    "billingTab": "Billing",
-    "billingUnavailable": "Billing isn't available for the current assistant state.",
-    "loadingBilling": "Loading billing…",
-    "platformLoginNotice": "Log in to Cadet Cloud to manage billing and usage.",
-    "usageTab": "Usage"
-  },
-  "billingPanel": {
-    "addCreditsButton": "Add Credits",
-    "balanceLabel": "Credits",
-    "degradedNotice": "Pending charges could not be calculated. The balance shown may be incomplete.",
-    "loadError": "Failed to load billing summary. Please try again later.",
-    "loading": "Loading billing summary...",
-    "lowBalanceToggle": "Custom Low Balance Alert",
-    "noInfo": "No billing information available.",
-    "subtitle": "Credits used when usage limit is reached",
-    "title": "Extra Usage Credits"
-  },
-  "billingPortalReturnHandler": {
-    "endOfBillingPeriod": "the end of your billing period",
-    "proCanceled": "Pro plan canceled. You'll have access until {date}.",
-    "proReactivated": "Pro plan reactivated.",
-    "subscriptionUpdated": "Subscription updated."
+    "loadingLabel": "Loading payment fields"
   },
   "billingStatusHandler": {
-    "successToast": "Payment received! Your credit balance will update shortly.",
-    "topUpCancelToast": "Checkout was cancelled. No credits were added.",
-    "upgradeCancelToast": "Upgrade canceled. No changes to your plan."
+    "successToast": "Payment received! Your credit balance will update shortly."
   },
-  "billingUsageChart": {
+  "inferenceUsageChart": {
     "empty": "No usage data for this period"
   },
-  "billingUsagePanel": {
+  "inferenceUsagePanel": {
     "backToAllUsage": "Back to all usage",
     "chartMetricAria": "Chart metric",
     "eventsLabel": "Events",
@@ -345,19 +227,6 @@
     "providerLabel": "Provider",
     "unavailableOption": "{name} (unavailable)"
   },
-  "cancelReasonSurvey": {
-    "optionCustomerService": "I had a poor support experience",
-    "optionLowQuality": "The quality didn't meet my expectations",
-    "optionMissingFeatures": "It's missing features I need",
-    "optionOther": "Other",
-    "optionSwitchedService": "I switched to another service",
-    "optionTooComplex": "It's too complicated",
-    "optionTooExpensive": "It's too expensive",
-    "optionUnused": "I don't use it enough",
-    "otherLabel": "Tell us more",
-    "otherPlaceholder": "What could we have done better?",
-    "title": "Why are you canceling?"
-  },
   "chatgptOauthSection": {
     "intro": "Connect your ChatGPT subscription to use OpenAI models without an API key."
   },
@@ -380,15 +249,6 @@
     "tryAgain": "Try Again",
     "urlPlaceholder": "Paste callback URL here..."
   },
-  "checkoutBonusModal": {
-    "body": "Claim {amount} in one-time extra usage and we'll add it straight to your usage balance. No payment required.",
-    "claim": "Claim {amount} in extra usage",
-    "decline": "No thanks",
-    "errorToast": "Could not add the extra usage. Please try again.",
-    "grantedToast": "{amount} in extra usage added to your usage balance.",
-    "title": "Here's {amount} of extra usage on us",
-    "unavailableToast": "This offer is no longer available."
-  },
   "checkoutPage": {
     "awaitingReturnMessage": "Checkout opened in your browser. Finish there to complete your upgrade.",
     "checkoutFailedMessage": "We couldn't start your checkout. Please try again.",
@@ -397,7 +257,7 @@
     "preparingCheckoutAriaLabel": "Preparing checkout",
     "reopenCheckout": "Reopen checkout",
     "tryAgain": "Try again",
-    "viewPlans": "View plans"
+    "openBilling": "Open billing"
   },
   "communityPage": {
     "communityHubDescription": "Showcases, guides, and projects shared by the community.",
@@ -525,57 +385,6 @@
     "placeholder": "Select a credit bundle",
     "tooltip": "A monthly allotment of credits added to your Pro Plan subscription"
   },
-  "customPlanModal": {
-    "cancel": "Cancel",
-    "changeFailed": "Failed to change your plan. Please try again.",
-    "comparedToPrevious": "{delta} compared to previous ({previous})",
-    "continue": "Continue",
-    "learnMore": "Learn more",
-    "machineSizeAriaLabel": "Machine size",
-    "machineSizeDocsAriaLabel": "Learn more about machine sizes",
-    "machineSizeLabel": "Select a machine size:",
-    "machineSizePlaceholder": "Select a machine size",
-    "noExtraUsage": "No extra usage",
-    "recap": "Recap",
-    "storageAriaLabel": "Storage",
-    "storageDocsAriaLabel": "Learn more about storage",
-    "storageLabel": "Select storage:",
-    "storagePlaceholder": "Select storage",
-    "subtitle": "Just better.",
-    "title": "Create a custom plan",
-    "totalBilledMonthly": "Total · Billed monthly",
-    "usageBundleAriaLabel": "Usage bundle",
-    "usageBundleDocsAriaLabel": "Learn more about usage bundles",
-    "usageBundleLabel": "Add a usage bundle:",
-    "usageBundlePlaceholder": "Select a usage bundle",
-    "yourSelection": "Your selection:"
-  },
-  "customPlanRow": {
-    "configure": "Configure",
-    "currentPlanTag": "Your Current Plan",
-    "genericDescriptor": "Select custom CPU power, Ram and Storage. Or just throw in some tokens.",
-    "prompt": "Need something more tailored to your needs?",
-    "title": "Custom Plan"
-  },
-  "dailyCreditLimitCard": {
-    "errorDecimals": "Use at most two decimal places",
-    "errorEmpty": "Enter a daily limit",
-    "errorMin": "Must be at least $1",
-    "helperText": "Resets daily at {time}.",
-    "inputLabel": "Stop spending Cadet credits after",
-    "loadError": "Failed to load daily credit limit settings.",
-    "loading": "Loading…",
-    "progress": "{spent} of {limit} spent today",
-    "reachedNotice": "Today's Cadet credit spend has reached this limit. Generation resumes at {time} or when you raise the limit.",
-    "requiredNote": "A daily credit limit is required while auto-reload is enabled.",
-    "resumeError": "Failed to resume the daily credit limit. Please try again.",
-    "resumeNow": "Resume now",
-    "save": "Save",
-    "saveError": "Failed to save daily credit limit. Please try again.",
-    "skippedNotice": "Skipped for today. This limit resumes at {time}.",
-    "toggleLabel": "Daily Credit Limit",
-    "toggleSubtitle": "Daily limit only applies to extra usage credits"
-  },
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
@@ -674,15 +483,6 @@
     "fetchErrorTitle": "Couldn't reach billing",
     "goToBilling": "Go to billing"
   },
-  "freeDowngradeConfirmModal": {
-    "bodyCancelOnly": "Your subscription will be canceled at the end of your current billing period. You'll keep Pro access until then.",
-    "bodyCancelOnlyPortal": "You'll be taken to Stripe to cancel your subscription.",
-    "bodyWithFeatures": "Downgrading removes the following Pro features. Your subscription will be canceled at the end of your current billing period.",
-    "bodyWithFeaturesPortal": "Downgrading removes the following Pro features. You'll be taken to Stripe to cancel your subscription.",
-    "cancel": "Cancel",
-    "confirm": "Downgrade to Base",
-    "title": "Downgrade to Base?"
-  },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
     "computeResourcesLoginNotice": "Log in to Cadet Cloud to manage compute resources.",
@@ -702,11 +502,6 @@
     "updatesLoginNotice": "Log in to Cadet Cloud to manage software updates.",
     "versionSubtitle": "Manage your assistant's software version and updates.",
     "versionTitle": "Version"
-  },
-  "gracePeriodBanner": {
-    "body": "You'll keep Pro features until then.",
-    "reactivate": "Reactivate",
-    "title": "Your Pro plan will end on {date}."
   },
   "imageGenerationCard": {
     "activeModelLabel": "Active Model",
@@ -835,27 +630,6 @@
     "sectionAvailable": "Available",
     "sectionConfigured": "Your integrations"
   },
-  "invoicesTable": {
-    "columnAction": "Action",
-    "columnAmount": "Amount",
-    "columnDate": "Date",
-    "columnStatus": "Status",
-    "downloadAll": "Download all",
-    "downloadAllFailed": "Failed to download invoices.",
-    "downloadPdfAriaLabel": "Download invoice PDF",
-    "empty": "No Invoices Found",
-    "hideButton": "Hide Invoices",
-    "loadError": "Failed to load invoices.",
-    "loadMore": "Load more",
-    "loadMoreError": "Failed to load more invoices.",
-    "loading": "Loading invoices...",
-    "retry": "Retry",
-    "showButton": "Show Invoices",
-    "showLess": "Show less",
-    "showMore": "Show more ({count} more)",
-    "title": "Invoices",
-    "view": "View"
-  },
   "languageModelCard": {
     "defaultProviderUnavailable": "Your default provider is not available.",
     "manage": "Manage",
@@ -867,17 +641,6 @@
     "change": "Change",
     "subtitle": "The language you speak to your assistant. Applies from your next spoken turn.",
     "title": "Listening language"
-  },
-  "lowBalanceAlertCard": {
-    "errorDecimals": "Use at most two decimal places",
-    "errorRange": "Must be between $1 and $1,000",
-    "helperText": "Default is {amount} when unset",
-    "label": "Alert me when my balance drops below",
-    "loadError": "Failed to load low-balance alert settings.",
-    "loading": "Loading…",
-    "reset": "Reset to default",
-    "save": "Save",
-    "saveError": "Failed to save low-balance alert. Please try again."
   },
   "manageProfilesBlockedDeleteModal": {
     "actionOverridesTitle": "Action overrides",
@@ -1071,9 +834,6 @@
     "searchPlaceholder": "Search actions…",
     "title": "Action Overrides"
   },
-  "packageSwitchConfirmModal": {
-    "cancel": "Cancel"
-  },
   "pairDeviceCard": {
     "copyError": "Could not copy the pairing address.",
     "generateButton": "Generate pairing QR",
@@ -1132,16 +892,7 @@
     "title": "Paired devices ({count})"
   },
   "paymentMethodRow": {
-    "endingIn": "Ending in {last4}",
-    "replaceCard": "Replace card",
     "savedCard": "Saved card"
-  },
-  "paymentMethodsCard": {
-    "addButton": "Add Payment Method",
-    "empty": "No payment method on file. Add one to use auto-reload.",
-    "loadError": "Failed to load payment methods.",
-    "loading": "Loading…",
-    "title": "Payment Method"
   },
   "pendingPairingRequests": {
     "approveButton": "Approve",
@@ -1151,80 +902,7 @@
     "requestedMetaHost": "Requested {when} from this computer",
     "title": "Pairing requests"
   },
-  "planCard": {
-    "alreadyOnPlanToast": "You're already on this plan.",
-    "checkoutFailedToast": "Failed to start the upgrade checkout. Please try again.",
-    "current": "Current",
-    "dailyUsageBar": "Daily Usage, resets at {resetPhrase}",
-    "dailyUsageExhausted": "You've used today's free usage. Add credits to keep using your assistant",
-    "dailyUsageResets": "Resets at {resetPhrase}",
-    "dailyUsageTitle": "Daily Usage",
-    "endsOn": "Your plan ends on {date}.",
-    "freeForever": "Free Forever",
-    "heading": "Plan",
-    "loadError": "Failed to load plan.",
-    "loading": "Loading plan...",
-    "manageSubscription": "Manage Subscription",
-    "nextPlan": "Next Plan",
-    "powerUp": "Power Up",
-    "powerUpFor": "Power Up for +{amount}/month",
-    "usageBalanceAddCredits": "Add",
-    "usageBalanceBarRenews": "Monthly Usage, renews on {date}",
-    "usageBalanceBarResets": "Monthly Usage, resets on {date}",
-    "usageBalanceExhausted": "Add credits to continue using your assistant",
-    "usageBalancePctUsed": "{pct}% used",
-    "usageBalanceRenews": "Renews on {date}",
-    "usageBalanceResets": "Resets on {date}",
-    "usageBalanceTitleMonthly": "Monthly Usage",
-    "usageBalanceTitleOverall": "Overall Usage",
-    "usageChip": "{name} usage, reset monthly",
-    "viewAllPlans": "View All Plans"
-  },
-  "planCardContent": {
-    "baseFee": "{amount} base fee",
-    "baseTagline": "All you need for a capable assistant",
-    "creditsNotIncluded": "*Credits not included",
-    "current": "Current",
-    "currentlyPrice": "Currently {price}",
-    "downgradeToBase": "Downgrade to Base",
-    "forever": "Forever",
-    "free": "Free",
-    "fromPrice": "From {price}",
-    "keepPlan": "Keep your Plan",
-    "loadingPlan": "Loading your plan...",
-    "planEndsOn": "Your plan ends on {date}",
-    "pricingUnavailable": "Current plan pricing unavailable",
-    "proTagline": "More features, more compute, more storage",
-    "subscriptionChangeTitle": "Your Pro Plan subscription will change from {from} to {to}.",
-    "updatePlan": "Update Plan",
-    "upgradeToPro": "Upgrade to Pro"
-  },
-  "planColumnCard": {
-    "currentPlan": "Current Plan",
-    "includes": "Includes:",
-    "recommended": "Recommended"
-  },
-  "plansPage": {
-    "alreadyOnPlanToast": "You're already on this plan.",
-    "back": "Back",
-    "billedMonthlyCaption": "Billed monthly",
-    "cancelAnytimeFooter": "You can cancel or change your plan anytime you want. To learn more <docsLink>Read our Docs.</docsLink>",
-    "checkoutFailedToast": "Failed to start the upgrade checkout. Please try again.",
-    "downgradeTo": "Downgrade to {name}",
-    "featureComputer": "{machine} Computer",
-    "featureStorage": "{gib} GB Storage",
-    "featureUsage": "{name} usage, reset monthly",
-    "foreverCaption": "Forever",
-    "freeFeaturePayAsYouGo": "Pay-as-you-go credits",
-    "freeFeatureSmallComputer": "Small Computer",
-    "freeFeatureStorage": "{gib} GB Storage",
-    "freePriceLabel": "Free",
-    "heading": "Give your assistant more power",
-    "loadingPlansAriaLabel": "Loading plans",
-    "planUpdatedToast": "Plan updated.",
-    "startFreeCta": "Start Free",
-    "subheading": "Choose the level that matches how much you want it to take on."
-  },
+  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Composer",
     "description": "Customize shortcuts and how Cadet behaves on this device.",
@@ -1839,13 +1517,6 @@
     "updateWindowWithTz": "Update window ({tz})",
     "weekly": "Weekly"
   },
-  "upgradeCancelPage": {
-    "billingUnavailable": "Billing isn't available for the current assistant state.",
-    "platformLoginNotice": "Log in to Cadet Cloud to manage billing and usage.",
-    "redirectingBody": "Returning you to billing settings…",
-    "returnToBilling": "Return to billing",
-    "title": "Upgrade canceled"
-  },
   "upgradeSuccessPage": {
     "cantConfirmUpgrade": "We can't confirm your upgrade for the current assistant. Return to billing to retry.",
     "fetchErrorBody": "We hit a problem checking your subscription. Your upgrade may still be processing. Return to billing to refresh.",
@@ -1909,11 +1580,6 @@
   "useBillingPortalSession": {
     "openError": "Couldn't open the billing portal. Please try again."
   },
-  "useCancelSubscription": {
-    "cancelFailedToast": "Couldn't cancel your subscription. Please try again.",
-    "canceledToast": "Pro plan canceled. You'll have access until {date}.",
-    "endOfBillingPeriod": "the end of your billing period"
-  },
   "useDaemonConfig": {
     "assistantNotReadyToast": "Assistant not ready. Please try again.",
     "saveApiKeyFailedToast": "Failed to save {providerName} API key. Please try again."
@@ -1933,10 +1599,6 @@
     "deleteFailedToast": "Failed to delete the provider. Please try again.",
     "deleteInUseToast": "This provider is in use by a profile or as the default provider. Update those settings before deleting it.",
     "setDefaultFailedToast": "Failed to set the default provider. Please try again."
-  },
-  "useReactivateSubscription": {
-    "reactivateFailedToast": "Couldn't reactivate your subscription. Please try again.",
-    "reactivatedToast": "Pro plan reactivated."
   },
   "useSystemTasks": {
     "consolidationAlreadyQueued": "Consolidation already queued or running.",
@@ -2098,7 +1760,6 @@
     "sounds": "Sounds",
     "privacy": "Permissions & Privacy",
     "usage": "Usage",
-    "billingUsage": "Billing & Usage",
     "community": "Community",
     "debug": "Debug",
     "logout": "Log Out",

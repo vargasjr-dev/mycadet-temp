@@ -8,7 +8,6 @@ import {
 describe("isSilentToolCall", () => {
   test("matches the bookkeeping tools", () => {
     for (const name of [
-      "send_user_message",
       "remember",
       "recall",
       "delete_memory_page",

@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { notifyCheckoutSuccess } from "@/lib/billing/checkout-success";
+import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
+import { openExternalUrl } from "@/runtime/browser";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
   isLiveVoiceSessionActive,
@@ -381,7 +383,7 @@ export function useGlobalDeepLinkConsumer(): void {
 
   useBusSubscription(
     "deeplink.billingCheckoutComplete",
-    ({ status, sessionId, flow }) => {
+    ({ status, sessionId: _sessionId, flow }) => {
       void ensureMainWindowVisible();
       if (flow === "top_up") {
         if (status === "success") {
@@ -390,20 +392,18 @@ export function useGlobalDeepLinkConsumer(): void {
           notifyCheckoutSuccess(queryClient);
           return;
         }
-        // `billing_status=cancel` funnels into `BillingStatusHandler`, the
-        // single owner of the server-verified checkout-bonus offer flow,
-        // so the native cancel gets the identical treatment as the web one.
-        // `usageBilling` already carries `?tab=billing`, hence the `&`.
-        navigateRef.current(
-          `${routes.settings.usageBilling}&billing_status=cancel`,
-        );
+        navigateRef.current(routes.settings.usage);
         return;
       }
-      navigateRef.current(
-        status === "success"
-          ? routes.settings.usageBillingCheckout(sessionId)
-          : routes.settings.upgradeCancel,
-      );
+      // A pro checkout's `session_id` lands on the usage page inert now —
+      // the billing tab that consumed it is gone (billing management moved
+      // to the cloud's account pages). The cancel leg hands off there too:
+      // the upgrade-cancel page that used to own it is gone.
+      if (status === "success") {
+        navigateRef.current(routes.settings.usage);
+        return;
+      }
+      void openExternalUrl(cloudAccountBillingUrl());
     },
   );
 
@@ -463,6 +463,4 @@ export function useGlobalDeepLinkConsumer(): void {
       openThread(item.destination.threadId);
     })();
   });
-
-
 }

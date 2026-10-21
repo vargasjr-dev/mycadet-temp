@@ -1,10 +1,12 @@
-import { Globe } from "lucide-react";
+import { CloudOff, Globe, Link2 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { CreateAssistantDialog } from "@app/components/create-assistant-dialog";
 import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
 import { AddRemoteOriginDialog } from "@app/components/account/add-remote-origin-dialog";
+import { ConnectAssistantDialog } from "@app/components/account/connect-assistant-dialog";
+import { ConnectRecoveryDialog } from "@app/components/account/connect-recovery-dialog";
 import { OriginCardMenu } from "@app/components/account/origin-card-menu";
 import { RetireCardMenu } from "@app/components/account/retire-card-menu";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -14,12 +16,23 @@ import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
+  isLocalModeHostAvailable,
+  isPairedAssistant,
+  isLocalGatewayAssistant,
+  statusLocalAssistantHost,
+  wakeLocalAssistantHost,
+  retireLocalAssistantHost,
+  unpairLocalAssistant,
+  type LockfileAssistant,
+} from "@app/assistant/local-mode-host";
+import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
+import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
+import {
   useRememberedOriginsStore,
   type RememberedOrigin,
 } from "@app/stores/remembered-origins-store";
 import { Button } from "@mycadet/design-library/components/button";
 import { useTranslation } from "@app/i18n";
-import { readInjectedConfig } from "@app/lib/injected-config";
 import { useAssistantChoices } from "@app/assistant/use-assistant-choices";
 import { retireCloudAssistant } from "@app/assistant/retire-cloud-assistant";
 import { assistantSelectionState } from "@app/assistant/assistant-selection";
@@ -79,7 +92,6 @@ function DashedActionButton({
 
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
-  const config = readInjectedConfig();
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
@@ -98,13 +110,52 @@ export function SelectAssistantScreen() {
     null,
   );
   const { state, retry } = useAssistantChoices({
-    apiBaseUrl: config?.cloudUrl,
     origin: window.location.origin,
   });
   const status =
     state.status === "selection" && state.assistants.length === 0
       ? "empty"
       : state.status;
+
+  // The connect flow's gate: only a runtime with a local-mode host (the
+  // Electron shell) can pair, list the lockfile arm, or wake/retire locals.
+  const localModeHostAvailable = isLocalModeHostAvailable();
+  const [connectingEntryId, setConnectingEntryId] = useState<string | null>(
+    null,
+  );
+  // A local assistant whose daemon is down or whose guardian token is gone:
+  // opens the recovery dialog instead of a doomed connect.
+  const [recoveryEntry, setRecoveryEntry] = useState<LockfileAssistant | null>(
+    null,
+  );
+  const [recoveryPending, setRecoveryPending] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  // Target of the paired-entry "remove from this device" (unpair) dialog.
+  const [unpairTarget, setUnpairTarget] = useState<LockfileAssistant | null>(
+    null,
+  );
+  const [unpairPending, setUnpairPending] = useState(false);
+  const [unpairError, setUnpairError] = useState<string | null>(null);
+  const connectDialogOpen = useConnectDialogStore.use.open();
+  const connectInitialAddress = useConnectDialogStore.use.initialAddress();
+  const connectGuidanceKind = useConnectDialogStore.use.guidanceKind();
+  const lockfile = useLocalLockfileStore.use.lockfile();
+
+  // The lockfile arm: entries connect can import (paired) plus the machine's
+  // own local assistants — the connectable sets of the shell's lockfile.
+  const lockfileEntries =
+    lockfile?.assistants.filter(
+      (entry) => isPairedAssistant(entry) || isLocalGatewayAssistant(entry),
+    ) ?? [];
+
+  // The lockfile hydrates on mount (Electron only — a no-op elsewhere), so a
+  // returning chooser renders its paired entries on the first paint after
+  // that read.
+  useEffect(() => {
+    if (localModeHostAvailable) {
+      void useLocalLockfileStore.load();
+    }
+  }, [localModeHostAvailable]);
 
   const closeRetireDialog = () => {
     if (retirePending) {
@@ -157,6 +208,160 @@ export function SelectAssistantScreen() {
     setAddOriginOpen(false);
     // Landing on the origin runs its own pair flow when no session exists.
     void switchToOrigin(origin, deviceCode ?? undefined);
+  };
+
+  /** Where a lockfile entry's same-origin API base lives. */
+  const entryApiBase = (entry: LockfileAssistant): string | undefined =>
+    isPairedAssistant(entry)
+      ? // Paired gateways ride the shell's paired-forward path: same-origin,
+        // allowlisted by the lockfile entry, guardian credential injected
+        // server-side.
+        `/assistant/__gateway-paired/${entry.assistantId}`
+      : undefined;
+
+  const connectEntry = (entry: LockfileAssistant): void => {
+    void navigate(routes.assistant, {
+      state: assistantSelectionState(entry.assistantId, entryApiBase(entry)),
+    });
+  };
+
+  /**
+   * Connect a lockfile entry. Paired entries navigate straight away — their
+   * resolution rides the paired-gateway path. A local entry is probed
+   * first: a healthy daemon connects by navigating, anything else opens
+   * the recovery dialog, whose repair re-provisions and retries — the
+   * app-bundle analog of web's connect failing into recovery.
+   */
+  const handleConnectEntry = async (entry: LockfileAssistant) => {
+    if (connectingEntryId != null || recoveryPending) {
+      return;
+    }
+    if (isPairedAssistant(entry)) {
+      connectEntry(entry);
+      return;
+    }
+    setConnectingEntryId(entry.assistantId);
+    try {
+      const status = await statusLocalAssistantHost(entry.assistantId);
+      if (
+        status.ok &&
+        (status.state === "healthy" ||
+          status.state === "starting" ||
+          status.state === "upgrading")
+      ) {
+        setConnectingEntryId(null);
+        connectEntry(entry);
+        return;
+      }
+      setRecoveryEntry(entry);
+    } catch (error) {
+      console.error("selectAssistant.connectEntry failed", error);
+      setRecoveryEntry(entry);
+    }
+    setConnectingEntryId(null);
+  };
+
+  const clearRecoveryState = () => {
+    setRecoveryEntry(null);
+    setRecoveryPending(false);
+    setRecoveryError(null);
+  };
+
+  const handleRecoveryRepair = async () => {
+    // recoveryPending also guards re-entry: a second click can land before
+    // React flushes the pending state into the dialog's disabled buttons.
+    if (!recoveryEntry || recoveryPending) {
+      return;
+    }
+    setRecoveryPending(true);
+    setRecoveryError(null);
+    // try/catch, not just the result branch: a thrown transport error would
+    // otherwise strand recoveryPending=true on a deliberately un-dismissable
+    // pending dialog.
+    try {
+      const result = await wakeLocalAssistantHost(recoveryEntry.assistantId, {
+        repairGuardian: true,
+      });
+      if (result.ok) {
+        const entry = recoveryEntry;
+        clearRecoveryState();
+        void handleConnectEntry(entry);
+        return;
+      }
+      setRecoveryError(result.error || t("connectRecoveryDialog.repairFailed"));
+    } catch (error) {
+      console.error("selectAssistant.recoveryRepair failed", error);
+      setRecoveryError(t("connectRecoveryDialog.repairFailed"));
+    }
+    setRecoveryPending(false);
+  };
+
+  const handleRecoveryRetire = async () => {
+    if (!recoveryEntry || recoveryPending) {
+      return;
+    }
+    setRecoveryPending(true);
+    setRecoveryError(null);
+    try {
+      const result = await retireLocalAssistantHost(recoveryEntry.assistantId);
+      if (result.ok) {
+        clearRecoveryState();
+        void useLocalLockfileStore.load();
+        return;
+      }
+      setRecoveryError(result.error || t("connectRecoveryDialog.retireFailed"));
+    } catch (error) {
+      console.error("selectAssistant.recoveryRetire failed", error);
+      setRecoveryError(t("connectRecoveryDialog.retireFailed"));
+    }
+    setRecoveryPending(false);
+  };
+
+  const closeUnpairDialog = () => {
+    if (unpairPending) {
+      return;
+    }
+    setUnpairTarget(null);
+    setUnpairError(null);
+  };
+
+  const handleUnpairConfirm = async () => {
+    if (!unpairTarget || unpairPending) {
+      return;
+    }
+    setUnpairPending(true);
+    setUnpairError(null);
+    const result = await unpairLocalAssistant(unpairTarget.assistantId);
+    setUnpairPending(false);
+    if (!result.ok) {
+      setUnpairError(result.error);
+      return;
+    }
+    closeUnpairDialog();
+    void useLocalLockfileStore.load();
+  };
+
+  const handleImported = (assistantId: string) => {
+    useConnectDialogStore.getState().closeConnectDialog();
+    // The import persists the lockfile entry host-side before resolving, so
+    // the store already lists the new entry after this load; the fallback
+    // keeps the connect alive if the read lags.
+    void (async () => {
+      await useLocalLockfileStore.load();
+      const imported = useLocalLockfileStore
+        .getState()
+        .lockfile?.assistants.find((a) => a.assistantId === assistantId);
+      if (imported) {
+        connectEntry(imported);
+        return;
+      }
+      void navigate(routes.assistant, {
+        state: assistantSelectionState(
+          assistantId,
+          `/assistant/__gateway-paired/${assistantId}`,
+        ),
+      });
+    })();
   };
 
   const handleRetireConfirm = async () => {
@@ -215,6 +420,55 @@ export function SelectAssistantScreen() {
               }}
             />
           ))}
+        {status === "error" && (
+          <ChooserCard
+            icon={
+              <CloudOff
+                size={22}
+                aria-hidden="true"
+                className="text-[var(--content-tertiary)]"
+              />
+            }
+            title={t("appShell.error")}
+            disabled
+          />
+        )}
+        {lockfileEntries.map((entry, index) => {
+          const paired = isPairedAssistant(entry);
+          const label = entry.name ?? entry.assistantId;
+          return (
+            <ChooserCard
+              key={entry.assistantId}
+              icon={
+                <ChooserAvatarChip avatarUrl={null} name={label} size={48} />
+              }
+              title={label}
+              subtitle={
+                paired
+                  ? entry.runtimeUrl
+                    ? t("selectAssistantScreen.pairedWithHost", {
+                        host: new URL(entry.runtimeUrl).hostname,
+                      })
+                    : t("selectAssistantScreen.paired")
+                  : t("selectAssistantScreen.localAssistant")
+              }
+              removeMenu={
+                paired ? (
+                  <OriginCardMenu
+                    label={label}
+                    onRemove={() => setUnpairTarget(entry)}
+                  />
+                ) : undefined
+              }
+              tabStop={
+                state.status === "selection" &&
+                state.assistants.length === 0 &&
+                index === 0
+              }
+              onSelect={() => void handleConnectEntry(entry)}
+            />
+          );
+        })}
         {originEntries.map((origin, index) => {
           // Selecting a remembered origin leaves the app for that
           // deployment; the one already serving this bundle just re-enters
@@ -254,16 +508,27 @@ export function SelectAssistantScreen() {
             />
           );
         })}
-        {/* The app is always a hostless surface (hub browser, desktop shell,
-              native shell): it adds an origin by address or pairing link and
-              navigates to it. */}
-        <DashedActionButton
-          icon={<Globe className="h-4 w-4" />}
-          label={t("selectAssistantScreen.addRemote")}
-          disabled={false}
-          onClick={() => setAddOriginOpen(true)}
-        />
-        {status !== "selection" && (
+        {/* A runtime with a local-mode host pairs in place through the
+            connect dialog (the exchange runs in the shell's main process);
+            hostless surfaces (hub browser, remote-gateway mode, native
+            mobile) add an origin by address or pairing link and navigate to
+            it. */}
+        {localModeHostAvailable ? (
+          <DashedActionButton
+            icon={<Link2 className="h-4 w-4" />}
+            label={t("selectAssistantScreen.connectRemote")}
+            disabled={connectingEntryId != null || recoveryPending}
+            onClick={() => useConnectDialogStore.getState().openConnectDialog()}
+          />
+        ) : (
+          <DashedActionButton
+            icon={<Globe className="h-4 w-4" />}
+            label={t("selectAssistantScreen.addRemote")}
+            disabled={false}
+            onClick={() => setAddOriginOpen(true)}
+          />
+        )}
+        {(status === "unauthenticated" || status === "empty") && (
           <p role="status">{t(`appShell.${status}`)}</p>
         )}
         {status === "unauthenticated" && (
@@ -317,6 +582,38 @@ export function SelectAssistantScreen() {
           isPending={removeOriginPending}
           onConfirm={() => void handleRemoveOriginConfirm()}
           onCancel={closeRemoveOriginDialog}
+        />
+        <RemoveFromDeviceDialog
+          open={unpairTarget != null}
+          assistantName={
+            unpairTarget
+              ? (unpairTarget.name ?? unpairTarget.assistantId)
+              : t("selectAssistantScreen.unnamedAssistant")
+          }
+          errorMessage={unpairError ?? undefined}
+          isPending={unpairPending}
+          onConfirm={() => void handleUnpairConfirm()}
+          onCancel={closeUnpairDialog}
+        />
+        <ConnectAssistantDialog
+          open={connectDialogOpen}
+          initialAddress={connectInitialAddress ?? undefined}
+          guidanceKind={connectGuidanceKind ?? undefined}
+          onClose={() => useConnectDialogStore.getState().closeConnectDialog()}
+          onImported={handleImported}
+        />
+        <ConnectRecoveryDialog
+          open={recoveryEntry != null}
+          assistantName={
+            recoveryEntry
+              ? (recoveryEntry.name ?? recoveryEntry.assistantId)
+              : ""
+          }
+          isPending={recoveryPending}
+          errorMessage={recoveryError ?? undefined}
+          onCancel={clearRecoveryState}
+          onRepair={() => void handleRecoveryRepair()}
+          onRetire={() => void handleRecoveryRetire()}
         />
       </div>
     </AccountShell>
