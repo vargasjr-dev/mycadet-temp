@@ -22,6 +22,7 @@
  * - https://web.dev/articles/sign-out-best-practices
  */
 
+import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
 import { clearCameraGateDebug } from "@/stores/camera-gate-debug-store";
@@ -76,6 +77,9 @@ function isUserScopedKey(key: string): boolean {
 export function clearUserScopedStorage(): void {
   resetNotificationIdentitySession();
   useChatSessionStore.getState().resetForLogout();
+  // A stale post-hatch auto-greet flag must not seed the incoming user's
+  // first chat mount with a spurious "Connecting…" overlay.
+  useAutoGreetStore.getState().clearExpectingFirstMessage();
 
   // A typed-storage accessor holds a value in memory when the device refuses
   // writes, so the key sweep below has nothing to remove.

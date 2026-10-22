@@ -24,8 +24,10 @@ import {
   type ReactNode,
 } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { lifecycleService } from "@/assistant/lifecycle-service";
+import { recheckAssistant } from "@/assistant/queries";
+import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import {
   resolveOnboardingFirstName,
@@ -131,6 +133,7 @@ preloadBundledAvatarComponents();
 
 export function ResearchOnboardingRoute() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore.use.user();
   const enterFocus = useOnboardingFocusStore.use.enterFocus();
   const exitFocus = useOnboardingFocusStore.use.exitFocus();
@@ -792,17 +795,17 @@ export function ResearchOnboardingRoute() {
     }
     // No auto-sent first message when skipping, so don't arm the expectation.
     if (!skip) {
-      lifecycleService.markExpectingFirstMessage();
+      useAutoGreetStore.getState().markExpectingFirstMessage();
     }
     // Collapse the side panel so the workspace opens focused on the new chat.
     requestSidebarCollapse();
     // Pin the refresh to the background-hatched assistant so the handoff targets
     // it (not a previously-selected one) and doesn't trigger a second hatch.
-    void lifecycleService
-      .checkAssistant(hatchedAssistantId ?? undefined)
-      .finally(() => {
+    void recheckAssistant(queryClient, hatchedAssistantId ?? undefined).finally(
+      () => {
         void navigate(`${routes.assistant}?onboarding=1`, { replace: true });
-      });
+      },
+    );
   }
 
   // Final research-onboarding handoff: wait out any background capability
@@ -1175,11 +1178,12 @@ export function ResearchOnboardingRoute() {
           }
           // Pin the selection to the adopted assistant, then enter the app —
           // with no pre-chat context, kickoff, or persona write of any kind.
-          void lifecycleService
-            .checkAssistant(hatchedAssistantId ?? undefined)
-            .finally(() => {
-              void navigate(routes.assistant, { replace: true });
-            });
+          void recheckAssistant(
+            queryClient,
+            hatchedAssistantId ?? undefined,
+          ).finally(() => {
+            void navigate(routes.assistant, { replace: true });
+          });
         }}
         onRedo={() => {
           const values = gatedFormValues;

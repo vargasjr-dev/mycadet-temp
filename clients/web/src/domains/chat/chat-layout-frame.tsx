@@ -9,7 +9,6 @@ interface ChatLayoutFrameProps {
   routeContentInert: boolean;
   desktopNavigation: ReactNode;
   desktopPreview: ReactNode;
-  sleepStage: ReactNode;
   popoutVoiceSession: ReactNode;
   desktopVoiceRoom: ReactNode;
   mobileDrawer: ReactNode;
@@ -22,7 +21,6 @@ export function ChatLayoutFrame({
   routeContentInert,
   desktopNavigation,
   desktopPreview,
-  sleepStage,
   popoutVoiceSession,
   desktopVoiceRoom,
   mobileDrawer,
@@ -54,7 +52,6 @@ export function ChatLayoutFrame({
             <Outlet />
             {desktopPreview}
           </div>
-          {sleepStage}
           {isPopout ? popoutVoiceSession : null}
           {!isMobile && !isPopout ? desktopVoiceRoom : null}
         </main>

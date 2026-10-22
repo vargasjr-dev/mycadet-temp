@@ -3,8 +3,6 @@ import { type ReactNode, useCallback, useLayoutEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { Button, Typography } from "@mycadet/design-library";
 
-import { RuntimeUpgradeBanner } from "@/components/runtime-upgrade-banner";
-import { StatusBanner } from "@/components/status-banner";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
@@ -46,6 +44,7 @@ export function SidebarShell({
   menuRoute = routes.settings.root,
   menuReplacesContentOnMobile = false,
 }: SidebarShellProps) {
+  const electron = isElectron();
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -87,15 +86,6 @@ export function SidebarShell({
     navKey: pathname,
     prefetchHref: mobileBackHref,
   });
-
-  // In the Electron shell the macOS window controls (traffic lights) sit in an
-  // inline title-bar zone at the top of the renderer (see `ChatLayoutHeader` /
-  // the desktop app's `MAIN_TRAFFIC_LIGHT_POSITION`). Unlike chat, this shell
-  // has no inline header row, so reserve top space to clear the controls AND
-  // match the chat layout, whose sidebar/content sits below the 44px title bar
-  // plus the 16px content inset (`p-4`) — i.e. 60px (3.75rem) from the top.
-  // Off Electron it stays at the standard 1rem inset.
-  const electron = isElectron();
 
   const mobileBackLabel = isMenuRoute
     ? t("sidebarShell.backFrom", { title })
@@ -151,13 +141,6 @@ export function SidebarShell({
         </Typography>
         <div className="h-10 w-10 shrink-0" aria-hidden="true" />
       </div>
-
-      {electron ? (
-        <div className="flex shrink-0 flex-col gap-2 pb-4 empty:hidden">
-          <StatusBanner placement="electron" className="px-0 pt-0" />
-          <RuntimeUpgradeBanner placement="electron" className="px-0 pt-0" />
-        </div>
-      ) : null}
 
       {/* Card chrome — desktop only */}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:rounded-[12px] md:border md:border-[var(--border-base)] md:bg-[var(--surface-overlay)]">

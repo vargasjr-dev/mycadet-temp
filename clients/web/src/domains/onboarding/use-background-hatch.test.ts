@@ -98,6 +98,7 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   // Short ceiling so the never-settles case doesn't hold the suite open, while
   // still leaving room for a few of the hook's 100ms poll ticks.
   ORG_HEADER_SETTLE_TIMEOUT_MS: 500,
+  useIsOrgReady: () => true,
 }));
 mock.module("@/utils/api-errors", () => ({
   extractErrorMessage: (e: unknown, _r: unknown, fallback?: string) =>

@@ -22,7 +22,7 @@ import { useCallback, useMemo } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import type { SidebarSection } from "@/domains/chat/use-sidebar-state";
 import { useSectionConversationListQuery } from "@/hooks/conversation-queries";
 import { useSupportsGroupFilter } from "@/lib/backwards-compat/use-supports-group-filter";
@@ -194,9 +194,7 @@ export function useSectionConversations(
   section: SidebarSection,
 ): SectionConversationsResult {
   const queryClient = useQueryClient();
-  const isAssistantActive = useAssistantLifecycleStore(
-    (s) => s.assistantState.kind === "active",
-  );
+  const isAssistantActive = useAssistantResolution().state.kind === "active";
   const supportsGroupFilter = useSupportsGroupFilter(assistantId);
   /* Chats additionally needs the daemon to read an unattributed row as
      native. Strictly later than the group gate on the same base version, so

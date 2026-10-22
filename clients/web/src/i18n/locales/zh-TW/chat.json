@@ -176,15 +176,6 @@
     "searchShortcut": "搜尋 ({shortcut})",
     "search": "搜尋"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "隱藏休眠畫面",
-    "sleeping": "您的助理正在休眠",
-    "sleepingNamed": "{name} 正在休眠",
-    "waking": "您的助理正在喚醒…",
-    "wakingNamed": "{name} 正在喚醒…",
-    "woke": "您的助理剛剛醒來",
-    "wokeNamed": "{name} 剛剛醒來"
-  },
   "attachmentChip": {
     "removeAria": "移除 {filename}"
   },
@@ -916,7 +907,6 @@
     "name": "名稱",
     "noIcon": "無圖示"
   },
-
   "onboardingChoiceCard": {
     "continue": "繼續",
     "helpWithHeading": "我能為您提供什麼協助？",

@@ -66,7 +66,7 @@ export function useOnboardingOrchestrator(): UseOnboardingOrchestratorResult {
   // Consume the `?onboarding=1` signal left by `/onboarding/hatching` when
   // it forwards the user after a successful hatch. Owns the post-hatch
   // draft conversation creation + redirect; the auto-greet gate itself
-  // is driven by `lifecycleService.expectingFirstMessage` (set by the
+  // is driven by the auto-greet store (set by the
   // hatching screens before they navigate). The flag is stripped from
   // the URL immediately so a page refresh doesn't re-trigger the greet.
   useEffect(() => {

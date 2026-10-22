@@ -7,12 +7,8 @@
  *    seq-gap detection, dispatch into the chat domain).
  * 2. `sse.opened` → `reconcileOnReopen` (post-reconnect reconcile,
  *    epoch bump, watchdog rescue telemetry).
- * 3. `sse.closed` → end the in-flight turn, kick the reachability
- *    probe so the burst-limiter below can take over.
- * 4. `reachabilityPhase` → `reachabilityBurstLimiter` on recovery
- *    into `"ready"` (3-burst / 10s window retry budget; on success
- *    publishes `reachability.retry-requested` so the bus bounces its
- *    SSE).
+ * 3. `sse.closed` → end the in-flight turn. Recovery rides the
+ *    stream's own reconnect plus the reconcile-on-reopen handler.
  *
  * Bus subscriptions use `useBusSubscription` per EVENT_BUS.md. The
  * stream-context lifecycle (setup / teardown of the stream-store
@@ -28,14 +24,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { useStreamStore } from "@/domains/chat/stream-store";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
-import {
-  createReachabilityBurstLimiter,
-  type ReachabilityBurstLimiter,
-} from "@/domains/chat/streaming/reachability-burst-limiter";
 import { createReconcileOnReopen } from "@/domains/chat/streaming/reconcile-on-reopen";
 import { createSseEventConsumer } from "@/domains/chat/streaming/sse-event-consumer";
 import { endTurn } from "@/domains/chat/turn-coordinator";
-import { isSending, useTurnStore } from "@/domains/chat/turn-store";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
 import type { EventStream } from "@/lib/streaming/stream-transport";
@@ -44,7 +35,6 @@ import type {
   ReconcileTrigger,
 } from "@/domains/chat/hooks/use-message-reconciliation";
 import type { AssistantEvent } from "@/types/event-types";
-import type { UseAssistantReachabilityResult } from "@/assistant/use-assistant-reachability";
 
 /** Params accepted by {@link useEventStream}. */
 export interface UseEventStreamParams {
@@ -69,11 +59,6 @@ export interface UseEventStreamParams {
   ) => Promise<ReconcileActiveConversationResult>;
   startReconciliationLoop: (epoch: number) => void;
   cancelReconciliation: () => void;
-
-  // Reachability
-  reachabilityProbe: UseAssistantReachabilityResult["probe"];
-  reachabilityPhase: string;
-  reachabilityReset: () => void;
 }
 
 export function useEventStream({
@@ -85,9 +70,6 @@ export function useEventStream({
   reconcileActiveConversation,
   startReconciliationLoop,
   cancelReconciliation,
-  reachabilityProbe,
-  reachabilityPhase,
-  reachabilityReset,
 }: UseEventStreamParams): void {
   // ---- Ref-stabilize unstable callback params ----
   //
@@ -100,26 +82,13 @@ export function useEventStream({
   const handleStreamEventRef = useRef(handleStreamEvent);
   const reconcileActiveConversationRef = useRef(reconcileActiveConversation);
   const startReconciliationLoopRef = useRef(startReconciliationLoop);
-  const reachabilityProbeRef = useRef(reachabilityProbe);
   const cancelReconciliationRef = useRef(cancelReconciliation);
-  const reachabilityResetRef = useRef(reachabilityReset);
   useLayoutEffect(() => {
     handleStreamEventRef.current = handleStreamEvent;
     reconcileActiveConversationRef.current = reconcileActiveConversation;
     startReconciliationLoopRef.current = startReconciliationLoop;
-    reachabilityProbeRef.current = reachabilityProbe;
     cancelReconciliationRef.current = cancelReconciliation;
-    reachabilityResetRef.current = reachabilityReset;
   });
-
-  const reachabilityPhaseRef = useRef(reachabilityPhase);
-  const backgroundReachabilityProbeRef = useRef(false);
-  useLayoutEffect(() => {
-    reachabilityPhaseRef.current = reachabilityPhase;
-    if (reachabilityPhase !== "checking") {
-      backgroundReachabilityProbeRef.current = false;
-    }
-  }, [reachabilityPhase]);
 
   // Track the latest active conversation key in a ref synced during
   // the commit phase. The bus subscriber filters against this ref
@@ -138,23 +107,6 @@ export function useEventStream({
   useLayoutEffect(() => {
     activeConversationIdLatestRef.current = activeConversationId;
   }, [activeConversationId]);
-
-  // Stable burst-limiter — its internal counter / window state must
-  // survive `reachabilityPhase` ticks. Lazy-init pattern via `useRef`:
-  // a fresh limiter on every render would reset the burst counter and
-  // let the user retry forever. `useMemo` would also work but is
-  // misleading here — there's no dep that could legitimately change.
-  const burstLimiterRef = useRef<ReachabilityBurstLimiter | null>(null);
-  /* eslint-disable react-hooks/refs -- lazy-init (runs once) */
-  if (burstLimiterRef.current == null) {
-    burstLimiterRef.current = createReachabilityBurstLimiter({
-      onReady: () => useTurnStore.getState().clearStaleTurn(),
-      onClearError: () => useChatSessionStore.getState().setError(null),
-      onExhausted: (err) => useChatSessionStore.getState().setError(err),
-      onReset: () => reachabilityResetRef.current(),
-    });
-  }
-  /* eslint-enable react-hooks/refs */
 
   // --------------------------------------------------------------------------
   // Stream context lifecycle — setup / teardown of the stream-store
@@ -316,7 +268,6 @@ export function useEventStream({
     ) {
       return;
     }
-    const hadActiveTurn = isSending(useTurnStore.getState().phase);
     const streamState = useStreamStore.getState();
     recordLifecycleDiagnostic("sse_stream_error", {
       assistantId,
@@ -328,81 +279,7 @@ export function useEventStream({
       conversationId: streamState.streamContext?.conversationId,
       reason: "session_error",
     });
-    // Idle SSE drops should reopen the stream without interrupting the
-    // user; active turns still surface the reconnect state immediately.
-    if (hadActiveTurn) {
-      reachabilityProbeRef.current({ showConnectingImmediately: true });
-    } else {
-      backgroundReachabilityProbeRef.current = true;
-      reachabilityProbeRef.current({ mode: "background" });
-    }
   });
-
-  // --------------------------------------------------------------------------
-  // Upgrade hidden background checks once a turn becomes active.
-  // (Zustand store subscription, not a bus event.)
-  // --------------------------------------------------------------------------
-  useEffect(() => {
-    if (
-      assistantStateKind !== "active" ||
-      !assistantId ||
-      !activeConversationId
-    ) {
-      return;
-    }
-
-    let wasSending = isSending(useTurnStore.getState().phase);
-    return useTurnStore.subscribe((state) => {
-      const nowSending = isSending(state.phase);
-      if (
-        !wasSending &&
-        nowSending &&
-        (backgroundReachabilityProbeRef.current ||
-          reachabilityPhaseRef.current === "checking")
-      ) {
-        backgroundReachabilityProbeRef.current = false;
-        reachabilityProbeRef.current({ showConnectingImmediately: true });
-      }
-      wasSending = nowSending;
-    });
-  }, [assistantStateKind, assistantId, activeConversationId]);
-
-  // --------------------------------------------------------------------------
-  // Reachability retry — drive the burst-limiter from the probe's
-  // phase. The limiter publishes `reachability.retry-requested` on
-  // success so the bus bounces its SSE; `reconcileOnReopen` runs the
-  // post-reconnect reconcile on the resulting `sse.opened`.
-  //
-  // A `"ready"` reached from a degraded phase (`"connecting"`,
-  // `"checking"`, `"failed"`) is a recovery and must bounce: the
-  // stream is closed or stale by then. A `"ready"` reached from
-  // `"idle"` or `"ready"` is a boot or remount confirmation over an
-  // already-healthy stream, and bouncing it costs a duplicate daemon
-  // connect plus the full non-fresh reconcile fan-out.
-  //
-  // The suppression is scoped to the bounce alone. Entering `"ready"`
-  // always runs the limiter's stale-UI cleanup, so a remount that
-  // lands on an already-healthy assistant still drops a leftover
-  // "Connection lost" banner and stale turn UI left by an earlier
-  // transient error or an exhausted retry budget. `runReadyCleanup()`
-  // publishes nothing and leaves the burst window untouched, so a
-  // confirmation neither spends budget nor slides the window. Every
-  // other phase still reaches the limiter so its budget bookkeeping is
-  // unchanged.
-  // --------------------------------------------------------------------------
-  const previousReachabilityPhaseRef = useRef(reachabilityPhase);
-  useEffect(() => {
-    const previousPhase = previousReachabilityPhaseRef.current;
-    previousReachabilityPhaseRef.current = reachabilityPhase;
-    const isHealthyStreamConfirmation =
-      reachabilityPhase === "ready" &&
-      (previousPhase === "idle" || previousPhase === "ready");
-    if (isHealthyStreamConfirmation) {
-      burstLimiterRef.current!.runReadyCleanup();
-      return;
-    }
-    burstLimiterRef.current!.handleReachabilityPhase(reachabilityPhase);
-  }, [reachabilityPhase]);
 
   // --------------------------------------------------------------------------
   // Unmount cleanup.

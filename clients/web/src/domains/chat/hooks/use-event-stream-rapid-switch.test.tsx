@@ -47,9 +47,6 @@ function renderEventStreamWithCapture(
           }) as never,
         startReconciliationLoop: () => {},
         cancelReconciliation: () => {},
-        reachabilityProbe: () => {},
-        reachabilityPhase: "ready",
-        reachabilityReset: () => {},
       });
     },
     { initialProps: { key: initialKey } },

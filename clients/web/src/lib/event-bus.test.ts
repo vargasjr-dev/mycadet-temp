@@ -162,13 +162,6 @@ describe("event-bus", () => {
     expect(handler).toHaveBeenCalledWith({ reason: "network error" });
   });
 
-  test("reachability.retry-requested is delivered to subscribers", () => {
-    const handler = mock(() => {});
-    subscribe("reachability.retry-requested", handler);
-    publish("reachability.retry-requested", {});
-    expect(handler).toHaveBeenCalledTimes(1);
-  });
-
   test("__resetForTesting clears every subscriber", () => {
     const handler = mock(() => {});
     subscribe("app.online", handler);

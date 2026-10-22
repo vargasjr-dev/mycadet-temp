@@ -14,8 +14,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
-import { lifecycleService } from "@/assistant/lifecycle-service";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { useIsSessionInitializing } from "@/stores/auth-store";
@@ -30,7 +29,8 @@ import { useTranslation } from "@/i18n";
 export function ChatPage() {
   const { t } = useTranslation("chat");
   const isSessionInitializing = useIsSessionInitializing();
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state: assistantState, refetch: refetchAssistantResolution } =
+    useAssistantResolution();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const shouldRenderChat = assistantStateCanServeChat(assistantState.kind);
 
@@ -38,11 +38,6 @@ export function ChatPage() {
   // TanStack Query deduplicates with the same query in ActiveChatView.
   const { isError: conversationListIsError, refetch: refetchConversationList } =
     useConversationListQuery(assistantId, shouldRenderChat);
-
-  const retryAssistant = useCallback(
-    () => lifecycleService.retryAssistant(),
-    [],
-  );
 
   // -------------------------------------------------------------------------
   // Loading guards — auth / assistant lifecycle not yet resolved
@@ -60,8 +55,8 @@ export function ChatPage() {
     useStuckConnecting(connectingReason);
   const retryStuckConnecting = useCallback(() => {
     resetStuckConnecting();
-    lifecycleService.retryAssistant();
-  }, [resetStuckConnecting]);
+    void refetchAssistantResolution();
+  }, [resetStuckConnecting, refetchAssistantResolution]);
 
   // Boot terminal outcome, or `null` while the page is still resolving. A
   // boot in flight is neither a success nor a failure until it settles: the
@@ -111,14 +106,15 @@ export function ChatPage() {
   // Lifecycle guards — non-active assistant states
   // -------------------------------------------------------------------------
   if (assistantState.kind === "error") {
-    // Transient (transport-shaped) errors auto-retry in the lifecycle
-    // service; the button is just the impatient-user shortcut.
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-[var(--content-secondary)]">
           {assistantState.message}
         </p>
-        <Button variant="primary" onClick={retryAssistant}>
+        <Button
+          variant="primary"
+          onClick={() => void refetchAssistantResolution()}
+        >
           {assistantState.transient
             ? t("chatPage.retryNow")
             : t("chatPage.tryAgain")}

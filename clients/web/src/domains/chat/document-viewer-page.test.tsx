@@ -68,6 +68,7 @@ mock.module("@/hooks/use-is-mobile", () => ({
 }));
 mock.module("@/hooks/use-is-org-ready", () => ({
   useOrgHeaderReadiness: () => "ready",
+  useIsOrgReady: () => true,
 }));
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: mock(() => {}),

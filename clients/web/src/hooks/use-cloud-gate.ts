@@ -4,7 +4,7 @@ import {
   useHasCloudSession,
   useIsCloudSessionSettled,
 } from "@/stores/auth-store";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 
 /**
  * How a cloud-dependent UI surface should behave, given the app mode,
@@ -70,7 +70,7 @@ export interface CloudGateOptions {
    *      and the user is effectively connected to a daemon. The
    *      platform billing/plan UI for that assistant is NOT meaningful.
    *
-   * The reactive source is `useAssistantLifecycleStore.assistantState`,
+   * The reactive source is `the assistant resolution`,
    * which is written by the lifecycle service from server resolutions
    * and gateway-auth short-circuits and covers both cases above.
    *
@@ -114,11 +114,11 @@ export interface PendingCloudGateOptions extends CloudGateOptions {
  * `isLocal: false`).
  */
 export function useActiveAssistantIsSelfHosted(): boolean {
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
-  if (assistantState.kind === "self_hosted") {
+  const { state } = useAssistantResolution();
+  if (state.kind === "self_hosted") {
     return true;
   }
-  if (assistantState.kind === "active" && assistantState.isLocal) {
+  if (state.kind === "active" && state.isLocal) {
     return true;
   }
   return false;
@@ -155,8 +155,8 @@ export function useActiveAssistantIsSelfHosted(): boolean {
  * ```
  */
 export function useActiveAssistantIsCloudHosted(): boolean {
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
-  if (assistantState.kind === "active" && !assistantState.isLocal) {
+  const { state } = useAssistantResolution();
+  if (state.kind === "active" && !state.isLocal) {
     return true;
   }
   return false;
@@ -198,11 +198,11 @@ export function useActiveAssistantIsCloudHosted(): boolean {
  * (`error`).
  */
 export function useActiveAssistantLifecycleIsLoading(): boolean {
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state } = useAssistantResolution();
   return (
-    assistantState.kind === "loading" ||
-    assistantState.kind === "initializing" ||
-    assistantState.kind === "cleaning_up"
+    state.kind === "loading" ||
+    state.kind === "initializing" ||
+    state.kind === "cleaning_up"
   );
 }
 

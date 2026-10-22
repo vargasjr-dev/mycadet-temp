@@ -11,8 +11,7 @@ import { useGuardianRepairRoute } from "@/hooks/use-guardian-repair-route";
 import { useGlobalDeepLinkConsumer } from "@/hooks/use-global-deep-link-consumer";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-open";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
-import { useAssistantLifecycle } from "@/assistant/use-lifecycle";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantBootResolution } from "@/assistant/queries";
 import { useChannelSetupCloseNotify } from "@/domains/chat/hooks/use-channel-setup-close-notify";
 import {
   endLiveVoiceSession,
@@ -47,7 +46,7 @@ import {
   navigateToConversation,
 } from "@/utils/conversation-navigation";
 import { routes } from "@/utils/routes";
-import { shouldSuppressRootStatusBanner } from "@/utils/status-banner-visibility";
+import { shouldDeferRootTopInset } from "@/utils/root-top-inset";
 import { useAssistantIdentityInit } from "@/hooks/use-assistant-identity-init";
 import { useAssistantResourceSync } from "@/hooks/use-assistant-resource-sync";
 import { useDocumentEditorSync } from "@/hooks/use-document-editor-sync";
@@ -94,7 +93,6 @@ import { CompanionTourEntry } from "@/components/companion-tour-entry-lazy";
 import { GlobalPushToTalkBridge } from "@/domains/chat/voice/global-push-to-talk-bridge";
 import { TimezoneSync } from "@/components/timezone-sync";
 import { RoutePendingIndicator } from "@/components/route-pending-indicator";
-import { StatusBanner } from "@/components/status-banner";
 import { UpdateToast } from "@/components/update-toast";
 import { retireAssistant } from "@/assistant/retire-service";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
@@ -111,13 +109,12 @@ import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notificat
  * App-level layout route. Owns four cross-route concerns:
  *
  * 1. Safe-area insets and iOS visual-viewport keyboard tracking.
- * 2. The single assistant lifecycle (`useAssistantLifecycle`). Mounted
- *    here as a side effect — the hook publishes `assistantState` and
- *    stable imperative callbacks into `useAssistantLifecycleStore`,
- *    and the active assistant id into `useResolvedAssistantsStore`.
- *    Mounting once at the app root means every layout / route can
- *    read the current assistant via store selectors without each
- *    running a duplicate polling state machine.
+ * 2. The boot resolution (`useAssistantBootResolution`). Mounted here
+ *    once: it fetches `/assistant/`, projects the result into the
+ *    resolved-assistants store and the self-hosted connection slots,
+ *    and re-projects on selection change. Every layout / route reads
+ *    the shared query cache — there is no runtime state machine to
+ *    manage.
  * 3. The event-bus owner (`useEventBusInit`). Bus producers (SSE
  *    connection, visibility / online / offline listeners, Capacitor
  *    app-state) need to be alive on every authenticated route — not
@@ -148,10 +145,7 @@ export function RootLayout() {
   useEffect(() => {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
-  useAssistantLifecycle({
-    sessionStatus,
-    hasCloudSession,
-  });
+  const { state: bootState } = useAssistantBootResolution();
   useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
@@ -191,9 +185,7 @@ export function RootLayout() {
   const notificationCloudAssistantId =
     resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
-  const assistantStateKind = useAssistantLifecycleStore(
-    (s) => s.assistantState.kind,
-  );
+  const assistantStateKind = bootState.kind;
   const isAssistantActive = assistantStateKind === "active";
   const companionReady = isAssistantActive && !isSessionInitializing;
   // Hydrate the assistant identity store (name + version) at the app root so
@@ -550,17 +542,16 @@ export function RootLayout() {
     keyboardOpen && visibleViewport ? visibleViewport.offsetTop : 0;
   const electron = isElectron();
   const isPopout = isPopoutWindow(location.search);
-  const suppressStatusBanner = shouldSuppressRootStatusBanner(
+  const routeOwnsTopInset = shouldDeferRootTopInset(
     location.pathname,
     location.search,
   );
   // The app shell owns the top safe-area inset for the primary web/mobile
-  // surface: whatever renders topmost — the status banner when present, else
-  // the active route's own header — sits directly below the notch. Electron,
-  // popouts, and onboarding manage their own top inset, so the shell defers to
-  // them. This keeps a single owner of the top inset per context and avoids
-  // the banner and a route header both reserving it (a doubled gap).
-  const appShellOwnsTopInset = !electron && !isPopout && !suppressStatusBanner;
+  // surface: the active route's own header sits directly below the notch.
+  // Electron, popouts, and onboarding manage their own top inset, so the
+  // shell defers to them. This keeps a single owner of the top inset per
+  // context and avoids a doubled gap.
+  const appShellOwnsTopInset = !electron && !isPopout && !routeOwnsTopInset;
   // The notch inset and the keyboard scroll compensation are independent top
   // offsets: the status bar is always present regardless of the keyboard, so
   // when the shell owns the inset it must be reserved in both states and
@@ -615,7 +606,6 @@ export function RootLayout() {
       }}
     >
       <UpdateToast />
-      {appShellOwnsTopInset ? <StatusBanner placement="web" /> : null}
       <div
         className="relative flex min-w-0 flex-col overflow-hidden w-full"
         style={{ flex: "1 1 0%", minHeight: 0 }}

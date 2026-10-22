@@ -25,8 +25,8 @@ interface HatchErrorOverlayProps {
  * so that case offers the local-assistant off-ramp instead.
  *
  * Portaled to `document.body` so no step's stacking or clipping context can
- * bury it. Onboarding routes suppress the shell's top inset entirely (see
- * `utils/status-banner-visibility.ts`), so nothing upstream reserves the notch
+ * bury it. Onboarding routes defer the shell's top inset entirely (see
+ * `utils/root-top-inset.ts`), so nothing upstream reserves the notch
  * and this banner adds it itself. Anchored to the top strip, which every step
  * reserves for chrome: bottom-anchored it would sit exactly over the results
  * step's viewport-pinned Continue, the only way forward from there. The offset

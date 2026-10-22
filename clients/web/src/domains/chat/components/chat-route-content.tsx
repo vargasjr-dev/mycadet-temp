@@ -137,8 +137,7 @@ import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { cmdEnterToSend } from "@/utils/composer-settings";
 import { routes } from "@/utils/routes";
-import { lifecycleService } from "@/assistant/lifecycle-service";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 
 import type { UseDiskPressureMonitorResult } from "@/assistant/use-disk-pressure-monitor";
 import type { UseResourcePressureMonitorResult } from "@/assistant/use-resource-pressure-monitor";
@@ -362,7 +361,8 @@ export function ChatMainPanel({
       useComposerStore.getState().addFiles(files, assistantId),
     [assistantId],
   );
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state: assistantState, refetch: refetchAssistantResolution } =
+    useAssistantResolution();
   const assistantName = useAssistantIdentityStore.use.name();
   // -------------------------------------------------------------------------
   // Store reads — per-conversation state
@@ -485,10 +485,9 @@ export function ChatMainPanel({
     void navigate(routes.settings.ai);
   }, [navigate]);
 
-  const checkAssistant = useCallback(
-    () => lifecycleService.checkAssistant(),
-    [],
-  );
+  const checkAssistant = useCallback(() => {
+    void refetchAssistantResolution();
+  }, [refetchAssistantResolution]);
 
   const handleDismissUnknownNudge = useCallback(
     (toolCallId: string) =>

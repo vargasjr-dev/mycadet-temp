@@ -126,15 +126,6 @@
   "assistantSideMenu": {
     "bulkActionMembersFailed": "Не удалось загрузить все диалоги в этом разделе. Повторите попытку."
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Скрыть экран сна",
-    "sleeping": "Ваш ассистент спит",
-    "sleepingNamed": "{name} спит",
-    "waking": "Ваш ассистент просыпается…",
-    "wakingNamed": "{name} просыпается…",
-    "woke": "Ваш ассистент только что проснулся",
-    "wokeNamed": "{name} только что проснулся"
-  },
   "attachmentPreviewModal": {
     "legacyUnavailable": "Предпросмотр недоступен. Содержимое файла не сохранилось в истории чата.",
     "loadFailed": "Не удалось загрузить предпросмотр.",

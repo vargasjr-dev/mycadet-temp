@@ -4,7 +4,7 @@ import { useConversationStore } from "@/stores/conversation-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { listConversationIdsWithPendingInteractions } from "@/domains/chat/api/interactions";
 import { USER_FACING_INTERACTION_KINDS } from "@/types/event-types";
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { decideGraduationDispatches } from "@/domains/chat/hooks/attention-tracking-utils";
 import { reconcileAttentionKeys } from "@/domains/chat/utils/reconcile-attention-keys";
@@ -18,8 +18,8 @@ import { useSurfaceOnOpen } from "./use-surface-on-open";
 interface UseAttentionTrackingParams {
   /** From `useAssistantLifecycle` in `ChatLayout`. */
   assistantId: string | null;
-  /** From `useAssistantLifecycle` in `ChatLayout`. */
-  assistantStateKind: AssistantState["kind"];
+  /** From the boot resolution in `ChatLayout`. */
+  assistantStateKind: AssistantResolutionState["kind"];
   /**
    * Whether the transcript is on screen. `ChatLayout` reads the route and the
    * viewer, so the answer is resolved once there rather than by each hook

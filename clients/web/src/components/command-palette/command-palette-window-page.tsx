@@ -4,7 +4,7 @@ import {
   CommandPalette,
   type CommandPaletteItemData,
 } from "@/components/command-palette/command-palette";
-import { useAssistantLifecycle } from "@/assistant/use-lifecycle";
+import { useAssistantBootResolution } from "@/assistant/queries";
 import { useCommandPaletteSections } from "@/domains/chat/hooks/use-command-palette-sections";
 import { useAppTheme } from "@/hooks/use-app-theme";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
@@ -15,8 +15,6 @@ import {
 } from "@/runtime/command-palette-window";
 import type { CadetCommand } from "@/runtime/is-electron";
 import {
-  useAuthStore,
-  useHasCloudSession,
 } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
@@ -59,21 +57,18 @@ const commandForItem = (item: CommandPaletteItemData): CadetCommand | null => {
 };
 
 export function CommandPaletteWindowPage() {
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const hasCloudSession = useHasCloudSession();
   // This standalone route bypasses RootLayout; bootstrap theme + feature flags
-  // so CSS custom properties resolve to the user's stored preference.
+  // so CSS custom properties resolve to the user's stored preference, and
+  // mount the boot resolution (the same shared query cache + projection
+  // effects the root mounts) so the palette resolves the assistant itself.
   useAppTheme();
-  useAssistantLifecycle({
-    sessionStatus,
-    hasCloudSession,
-  });
+  useAssistantBootResolution();
 
   const assistants = useResolvedAssistantsStore.use.assistants();
   const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  // The same gated read the lifecycle uses; when no selection is honored,
-  // track the lifecycle's active id, so the palette never binds to a
-  // selection the lifecycle ignored.
+  // The same gated read the resolution uses; when no selection is honored,
+  // track the resolved active id, so the palette never binds to a
+  // selection the resolution ignored.
   const gatedSelectedAssistantId = useGatedSelectedAssistantId();
   const selectedAssistant = useMemo(() => {
     const selectedId = gatedSelectedAssistantId ?? activeAssistantId;

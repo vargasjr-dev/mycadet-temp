@@ -203,7 +203,6 @@ mock.module("@/lib/cloud-assistant-id", () => ({
   resolveCloudAssistantId: async (id: string) => id,
 }));
 
-
 mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => mockIsNativePlatform,
   isOAuthFlowInFlight: () => false,
@@ -305,15 +304,6 @@ mock.module("@/stores/organization-store", () => ({
 // and the registered handler stays inert in tests that don't publish
 // `app.resume`.
 
-const lifecycleResetForLogoutMock = mock(() => {});
-const lifecycleCheckAssistantMock = mock(async () => {});
-mock.module("@/assistant/lifecycle-service", () => ({
-  lifecycleService: {
-    resetForLogout: lifecycleResetForLogoutMock,
-    checkAssistant: lifecycleCheckAssistantMock,
-  },
-}));
-
 // `@/assistant/api` transitively pulls in `@mycadet/assistant-api`
 // exports that are currently missing on main. Mock the call sites
 // `auth-store` actually uses; the real module load would crash
@@ -331,8 +321,6 @@ const {
   setupAuthListeners,
   whenCloudSessionSettled,
 } = await import("@/stores/auth-store");
-const { useAssistantLifecycleStore } =
-  await import("@/assistant/lifecycle-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
@@ -404,8 +392,6 @@ beforeEach(() => {
   deleteBiometricTokenMock.mockClear();
   installSessionCookiesMock.mockClear();
   retrieveBiometricTokenMock.mockClear();
-  lifecycleResetForLogoutMock.mockClear();
-  lifecycleCheckAssistantMock.mockClear();
   mockListAssistantsResult = [];
   listAssistantsMock.mockClear();
   mockOrgFetchOutcome = { ok: true };
@@ -415,7 +401,6 @@ beforeEach(() => {
   resetAuthStore();
   // Reset the lifecycle and resolved-assistants stores so each test starts from
   // a known connection/selection state.
-  useAssistantLifecycleStore.setState({ assistantState: { kind: "loading" } });
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
 });
 
@@ -847,42 +832,52 @@ describe("session cleanup on logout", () => {
     expect(clearUserScopedStorageMock).toHaveBeenCalled();
   });
 
-  test("logout clears assistant lifecycle synchronously, before leaving authenticated", async () => {
-    // The lifecycle reset must happen before the auth state flips,
+  test("logout clears the active assistant id synchronously, before leaving authenticated", async () => {
+    // The active-id clear must happen before the auth state flips,
     // otherwise sync hooks like `useAssistantResourceSync` get one
     // re-render with the previous user's assistant id and fire
     // requests that 401. The order is verified by recording the
-    // session status seen at reset time vs the final transition.
-    let statusAtResetTime = useAuthStore.getState().sessionStatus;
-    lifecycleResetForLogoutMock.mockImplementationOnce(() => {
-      statusAtResetTime = useAuthStore.getState().sessionStatus;
-    });
+    // session status seen at clear time vs the final transition.
+    const clearedAtStatus: string[] = [];
     useAuthStore.setState({ sessionStatus: "authenticated" });
+    const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
+      if (state.activeAssistantId === null && clearedAtStatus.length === 0) {
+        clearedAtStatus.push(useAuthStore.getState().sessionStatus);
+      }
+    });
 
-    await useAuthStore.getState().logout();
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unsubscribe();
+    }
 
-    expect(lifecycleResetForLogoutMock).toHaveBeenCalledTimes(1);
-    expect(statusAtResetTime).toBe("authenticated");
+    expect(clearedAtStatus[0]).toBe("authenticated");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
-  // The lifecycle reset must run BEFORE the selection clear in both branches:
-  // the lifecycle's selection subscription skips writes while the state is
-  // `loading`, so this order is what prevents the clear from resurrecting an
-  // active state mid-logout.
-  test("gateway logout resets the lifecycle before clearing the selection", async () => {
+  // The active-id clear must run BEFORE the selection clear in both
+  // branches so subscribers never observe a stale assistant id in their
+  // first re-render after logout.
+  test("gateway logout clears the active id before clearing the selection", async () => {
     mockIsGatewayAuth = true;
     mockGatewayToken = "access-token";
     useAuthStore.setState({ sessionStatus: "authenticated" });
     const order: string[] = [];
-    lifecycleResetForLogoutMock.mockImplementationOnce(() => {
-      order.push("reset");
+    const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
+      if (state.activeAssistantId === null) {
+        order.push("reset");
+      }
     });
     setSelectedAssistantMock.mockImplementationOnce(async (id) => {
       order.push(`clear:${String(id)}`);
     });
 
-    await useAuthStore.getState().logout();
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unsubscribe();
+    }
 
     expect(order).toEqual(["reset", "clear:null"]);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
@@ -910,16 +905,22 @@ describe("session cleanup on logout", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
-  test("non-gateway logout clears the selection slice after the lifecycle reset", async () => {
+  test("non-gateway logout clears the selection slice after the active-id clear", async () => {
     const order: string[] = [];
-    lifecycleResetForLogoutMock.mockImplementationOnce(() => {
-      order.push("reset");
+    const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
+      if (state.activeAssistantId === null) {
+        order.push("reset");
+      }
     });
     setSelectedAssistantMock.mockImplementationOnce(async (id) => {
       order.push(`clear:${String(id)}`);
     });
 
-    await useAuthStore.getState().logout();
+    try {
+      await useAuthStore.getState().logout();
+    } finally {
+      unsubscribe();
+    }
 
     expect(order).toEqual(["reset", "clear:null"]);
   });
@@ -1857,23 +1858,6 @@ describe("connectLocalAssistant", () => {
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("drives the lifecycle to publish active state, even when the selection is unchanged", async () => {
-    // The lifecycle's selection subscription only republishes
-    // `activeAssistantId` when `selectedAssistantId` changes. Reconnecting to
-    // the already-selected assistant — the common case after guardian-token
-    // repair retries the same assistant — would otherwise leave the active id
-    // stale, so `connectLocalAssistant` must drive `checkAssistant()` itself.
-    mockIsLocalClient = true;
-    mockCloudAssistants = [];
-    // setSelectedAssistant is a no-op write here (already selected); the only
-    // thing that publishes active state is the explicit checkAssistant call.
-    setSelectedAssistantMock.mockImplementationOnce(async () => {});
-
-    await useAuthStore.getState().connectLocalAssistant("local-a");
-
-    expect(lifecycleCheckAssistantMock).toHaveBeenCalledTimes(1);
-  });
-
   test("bootstraps a newly connected local assistant when already signed into the cloud", async () => {
     mockIsLocalClient = true;
     mockCloudAssistants = [];
@@ -1928,7 +1912,6 @@ describe("connectPairedAssistant", () => {
     expect(order).toEqual(["prime", "select:paired-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("gateway-local");
-    expect(lifecycleCheckAssistantMock).toHaveBeenCalledTimes(1);
     // No platform assistants and no gateway auth in this arrangement, so the
     // cloud-session status settles directly to "absent".
     expect(useAuthStore.getState().cloudSession).toBe("absent");

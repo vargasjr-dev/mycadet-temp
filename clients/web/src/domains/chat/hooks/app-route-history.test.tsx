@@ -143,7 +143,6 @@ function ConversationRouteWithLoader() {
     searchParams: new URLSearchParams(),
     activeConversation: undefined,
     refreshEpoch: 0,
-    reachabilityReadyEpoch: 0,
     onboardingDraftConversationIdRef: createRef<string | null>() as {
       current: string | null;
     },

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { useSyncExternalStore } from "react";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
 const isLocalClientMock = mock(() => false);
@@ -6,9 +7,29 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: isLocalClientMock,
 }));
 
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+const resolutionListeners = new Set<() => void>();
+function setLifecycle(assistantState: AssistantResolutionState) {
+  resolutionState = assistantState;
+  for (const listener of resolutionListeners) {
+    listener();
+  }
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({
+    state: useSyncExternalStore(
+      (cb) => {
+        resolutionListeners.add(cb);
+        return () => resolutionListeners.delete(cb);
+      },
+      () => resolutionState,
+    ),
+  }),
+}));
+
+import type { AssistantResolutionState } from "@/assistant/types";
 import { useAuthStore } from "@/stores/auth-store";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import type { AssistantState } from "@/assistant/types";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantLifecycleIsLoading,
@@ -17,16 +38,11 @@ import {
 } from "@/hooks/use-cloud-gate";
 
 const initialAuthState = useAuthStore.getState();
-const initialLifecycleState = useAssistantLifecycleStore.getState();
-
-function setLifecycle(assistantState: AssistantState) {
-  useAssistantLifecycleStore.setState({ assistantState });
-}
 
 beforeEach(() => {
   isLocalClientMock.mockImplementation(() => false);
   useAuthStore.setState(initialAuthState, true);
-  useAssistantLifecycleStore.setState(initialLifecycleState, true);
+  setLifecycle({ kind: "loading" });
 });
 
 afterEach(() => {
@@ -273,7 +289,7 @@ describe("useCloudGate — { cloudHostedOnly: true }", () => {
     // so the gate falls through to the session-only decision. They
     // are short-lived transitional states; over-gating them would
     // cause spurious flicker.
-    const kinds: AssistantState[] = [
+    const kinds: AssistantResolutionState[] = [
       { kind: "initializing" },
       { kind: "cleaning_up" },
       { kind: "error", message: "boom" },
@@ -321,7 +337,7 @@ describe("useActiveAssistantIsCloudHosted", () => {
   });
 
   test("returns false for transitional and non-hosted-resolved kinds", () => {
-    const kinds: AssistantState[] = [
+    const kinds: AssistantResolutionState[] = [
       { kind: "initializing" },
       { kind: "cleaning_up" },
       { kind: "error", message: "boom" },
@@ -370,7 +386,7 @@ describe("useActiveAssistantLifecycleIsLoading", () => {
     // `initializing` / `cleaning_up` are transitional states during setup
     // and teardown. The hosting outcome (active vs error/retired) is not yet
     // determined. Treat as resolving until terminal.
-    const kinds: AssistantState[] = [
+    const kinds: AssistantResolutionState[] = [
       { kind: "initializing" },
       { kind: "cleaning_up" },
     ];

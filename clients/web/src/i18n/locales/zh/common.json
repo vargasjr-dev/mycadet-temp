@@ -58,7 +58,6 @@
   "appViewerContainer": {
     "exitFullscreen": "退出全屏"
   },
-
   "assistantEmailIntroModal": {
     "setUp": "设置邮箱"
   },
@@ -521,7 +520,6 @@
     "placeholder": "向 Cadet 提问...",
     "send": "发送消息"
   },
-
   "resourcePressureBanner": {
     "body": "您的助手正在努力工作，并已达到其当前资源限制。请升级以确保其平稳运行。",
     "bodyNoUpgrade": "您的助手正在努力工作，并已达到其当前资源限制。",
@@ -541,19 +539,9 @@
   "routePendingIndicator": {
     "loadingAria": "正在加载"
   },
-
   "routeErrorBoundary": {
     "chunkFailBody": "此部分无法加载。可能是网络故障或版本过旧。请重新加载页面重试。",
     "reload": "重新加载"
-  },
-  "runtimeUpgradeBanner": {
-    "confirmMessage": "更新到版本 {version}？更新期间助手将暂时不可用。",
-    "confirmTitle": "更新助手运行时",
-    "later": "稍后",
-    "title": "有新的助手版本可用：{version}",
-    "toastComplete": "更新完成。您的助手运行正常。",
-    "toastFailed": "未能触发更新。请重试。",
-    "update": "更新"
   },
   "sectionActionsButton": {
     "ariaLabel": "{name} 操作"
@@ -680,14 +668,6 @@
   },
   "startupFailure": {
     "reloadApp": "重新加载应用"
-  },
-  "statusBanner": {
-    "reconnecting": "正在重新连接到你的助手…",
-    "dismiss": "忽略",
-    "goToDoctor": "前往诊断",
-    "resumeAssistant": "恢复助手",
-    "retryNow": "立即重试",
-    "wakeUp": "唤醒"
   },
   "sttLanguagePicker": {
     "allLanguages": "所有语言",

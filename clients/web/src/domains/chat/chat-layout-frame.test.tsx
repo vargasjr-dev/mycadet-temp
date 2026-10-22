@@ -38,7 +38,6 @@ function renderFrame({ isPopout = false }: { isPopout?: boolean } = {}) {
             routeContentInert={false}
             desktopNavigation={<nav>Desktop navigation</nav>}
             desktopPreview={<aside>Desktop session</aside>}
-            sleepStage={<div>Sleep stage</div>}
             popoutVoiceSession={<div>Popout voice session</div>}
             desktopVoiceRoom={<div>Desktop voice room</div>}
             mobileDrawer={<div>Mobile drawer</div>}

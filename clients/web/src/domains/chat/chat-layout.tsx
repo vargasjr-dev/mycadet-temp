@@ -10,7 +10,7 @@ import {
 import { useLocation, useNavigate, useNavigationType } from "react-router";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { MOBILE_MEDIA_QUERY, useIsMobile } from "@/hooks/use-is-mobile";
 import {
@@ -75,10 +75,6 @@ import type { Conversation } from "@/types/conversation-types";
 import { requestComposerFocus } from "./composer-focus";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
-import { RuntimeUpgradeBanner } from "@/components/runtime-upgrade-banner";
-import { StatusBanner } from "@/components/status-banner";
-import { AssistantSleepStage } from "@/domains/chat/components/assistant-sleep-stage";
-import { useAssistantSleepStageStore } from "@/stores/assistant-sleep-stage-store";
 import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu";
 import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useCommandPaletteOrchestrator } from "@/domains/chat/hooks/use-command-palette-orchestrator";
@@ -165,9 +161,7 @@ export function ChatLayout({
     useOnboardingFocusStore.use.consumeSidebarCollapse();
 
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantStateKind = useAssistantLifecycleStore(
-    (s) => s.assistantState.kind,
-  );
+  const assistantStateKind = useAssistantResolution().state.kind;
 
   const isAssistantActive = assistantStateCanServeChat(assistantStateKind);
 
@@ -321,8 +315,6 @@ export function ChatLayout({
   }, [sidebarCollapseRequested, consumeSidebarCollapse]);
 
   const voiceRoomVisible = useIsVoiceRoomVisible();
-
-  const sleepStageVisible = useAssistantSleepStageStore.use.visible();
 
   const drawerVisible = isMobile && drawerOpen;
 
@@ -730,21 +722,10 @@ export function ChatLayout({
         />
       )}
 
-      {!isPopout && electron ? (
-        <div className="flex shrink-0 flex-col gap-2 empty:hidden">
-          <StatusBanner placement="electron" />
-          <RuntimeUpgradeBanner
-            assistantId={assistantId}
-            currentVersion={assistantVersion}
-            placement="electron"
-          />
-        </div>
-      ) : null}
-
       <ChatLayoutFrame
         isPopout={isPopout}
         mainRoomClass={mainRoomClass}
-        routeContentInert={voiceRoomVisible || sleepStageVisible}
+        routeContentInert={voiceRoomVisible}
         desktopNavigation={
           <aside
             id="chat-side-menu"
@@ -760,7 +741,6 @@ export function ChatLayout({
           </aside>
         }
         desktopPreview={<AssistantDesktopPreview />}
-        sleepStage={<AssistantSleepStage />}
         popoutVoiceSession={<VoiceSessionPillHost variant="standalone" />}
         desktopVoiceRoom={<VoiceRoom variant="content" />}
         mobileDrawer={
@@ -804,7 +784,6 @@ export function ChatLayout({
                     "var(--safe-area-inset-left, env(safe-area-inset-left, 0px))",
                 }}
               >
-                <StatusBanner />
                 {renderSideMenu({
                   collapsed: false,
                   variant: "overlay",
