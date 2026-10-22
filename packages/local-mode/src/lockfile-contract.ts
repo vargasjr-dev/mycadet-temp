@@ -23,6 +23,7 @@
  * shape.
  */
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
+import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { z } from "zod";
 
 /**
@@ -301,7 +302,7 @@ export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
 export const TunnelProcessRecordSchema = z.object({
   pid: z.number(),
   /** Which tunnel provider owns the process. */
-  provider: z.string(),
+  provider: z.enum(TUNNEL_PROVIDERS),
   /** The assistant the process fronts, so `cadet ps` can nest the row. */
   assistantId: z.string().optional(),
   startedAt: z.string(),
