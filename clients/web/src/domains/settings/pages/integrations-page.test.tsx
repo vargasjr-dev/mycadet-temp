@@ -153,7 +153,6 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 const apiReactQueryActual =
   await import("@/generated/api/@tanstack/react-query.gen");
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
-
   ...apiReactQueryActual,
   assistantsOauthConnectionsListOptions: () => ({
     queryKey: ["oauth-connections"],

@@ -524,5 +524,4 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
   // -- post-checkout return -----------------------------------------------
   //
-
 });

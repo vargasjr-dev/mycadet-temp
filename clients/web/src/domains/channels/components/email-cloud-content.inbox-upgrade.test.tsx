@@ -99,7 +99,10 @@ describe("EmailCloudContent · entitled, no address", () => {
 
   test("with a domain but no address, keeps the domain row and points to the inbox for the address", () => {
     renderEntitled({
-      domain: { domain: "example.com", subdomain: "ada" } as unknown as AssistantDomain,
+      domain: {
+        domain: "example.com",
+        subdomain: "ada",
+      } as unknown as AssistantDomain,
     });
 
     // The domain row, with its release action, is still this page's.
