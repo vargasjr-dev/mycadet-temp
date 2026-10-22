@@ -246,8 +246,7 @@ async function getRemoteProcessesCustom(
   entry: AssistantEntry,
 ): Promise<string> {
   const host = extractHostFromUrl(entry.runtimeUrl);
-  const sshUser = entry.sshUser ?? "root";
-  return execOutput("ssh", [...SSH_OPTS, `${sshUser}@${host}`, REMOTE_PS_CMD], {
+  return execOutput("ssh", [...SSH_OPTS, `root@${host}`, REMOTE_PS_CMD], {
     timeoutMs: REMOTE_SSH_TIMEOUT_MS,
   });
 }
@@ -538,7 +537,7 @@ async function getAssistantProcessRows(
   }
 
   if (cloud === "apple-container") {
-    const mgmtSocket = entry.mgmtSocket as string | undefined;
+    const mgmtSocket = entry.mgmtSocket;
     const socketAlive = mgmtSocket ? existsSync(mgmtSocket) : false;
     const rows: TableRow[] = [
       {

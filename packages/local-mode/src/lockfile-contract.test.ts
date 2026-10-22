@@ -101,7 +101,7 @@ describe("parseLockfile", () => {
     expect(parsed.activeAssistant).toBe("asst_ok");
   });
 
-  test("accepts (does not reject) entries with unknown fields from a newer writer", () => {
+  test("accepts (but drops) entry fields unknown to this build", () => {
     const raw = {
       activeAssistant: "asst_1",
       schemaVersion: 99, // unknown top-level field from a newer writer
@@ -116,17 +116,13 @@ describe("parseLockfile", () => {
     };
 
     // A newer writer's extra fields must never make an older reader reject
-    // the entry — and the schema is loose, so the parsed value carries them
-    // through a read-modify-write intact (the on-disk file keeps them; see
-    // lockfile.test.ts).
+    // the entry — the schema is strict over the fields it models, so the
+    // unknown entry field drops from the validated value while the unknown
+    // root field rides the loose root (the local-mode write path still
+    // merges raw JSON; see lockfile.test.ts).
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      {
-        assistantId: "asst_1",
-        cloud: "local",
-        runtimeUrl: "http://a",
-        futureField: { nested: true },
-      },
+      { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
     ]);
     expect(parsed.activeAssistant).toBe("asst_1");
     expect(parsed.schemaVersion).toBe(99);
@@ -219,11 +215,10 @@ describe("parseLockfile", () => {
     });
   });
 
-  test("the resources parse is loose; the secrets leave at the hosts' strip", () => {
-    // The schema preserves what the writer wrote (the CLI's read-modify-write
-    // round-trips its host-only ports and signing key); the renderer boundary
-    // is `stripSensitiveFields`, which every host runs on the raw JSON before
-    // this parse ever sees it.
+  test("the resources parse is strict over the modeled shape; secrets leave at the hosts' strip", () => {
+    // Every field the CLI read-modify-writes is modeled, so the parse drops
+    // nothing; the renderer boundary is `stripSensitiveFields`, which every
+    // host runs on the raw JSON before this parse ever sees it.
     const raw = {
       assistants: [
         {
@@ -243,7 +238,16 @@ describe("parseLockfile", () => {
       ],
       activeAssistant: null,
     };
-    expect(parseLockfile(raw).assistants[0]?.resources?.qdrantPort).toBe(7779);
+    expect(parseLockfile(raw).assistants[0]?.resources).toEqual({
+      instanceDir: "/data",
+      gatewayPort: 7777,
+      daemonPort: 7778,
+      runtimeVersion: "v0.8.13",
+      runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
+      qdrantPort: 7779,
+      cesPort: 7780,
+      signingKey: "hunter2",
+    });
     const stripped = structuredClone(raw);
     stripSensitiveFields(stripped);
     expect(parseLockfile(stripped).assistants[0]?.resources).toEqual({
@@ -270,18 +274,8 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      {
-        assistantId: "gcp_1",
-        cloud: "local",
-        runtimeUrl: "https://a",
-        project: "my-proj",
-      },
-      {
-        assistantId: "ssh_1",
-        cloud: "local",
-        runtimeUrl: "https://b",
-        sshUser: "deploy",
-      },
+      { assistantId: "gcp_1", cloud: "local", runtimeUrl: "https://a" },
+      { assistantId: "ssh_1", cloud: "local", runtimeUrl: "https://b" },
       { assistantId: "legacy_1", cloud: "local" },
     ]);
   });
@@ -315,7 +309,7 @@ describe("parseLockfile", () => {
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "a", cloud: "cloud", project: "stale-proj" },
+      { assistantId: "a", cloud: "cloud" },
       { assistantId: "c", cloud: "local" },
     ]);
   });
@@ -330,7 +324,6 @@ describe("parseLockfile", () => {
         assistantId: "a",
         startedAt: "2026-10-21T00:00:00.000Z",
         publicUrl: "https://tunnel.example.ts.net",
-        previous: { pid: 1, provider: "ngrok", startedAt: "earlier" },
       },
       app: { pid: 51, port: 7840, builtSha: "abc1234" },
     };

@@ -306,16 +306,24 @@ export function upsertLockfileAssistant(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
-// `cloud` is host-owned classification, so a renderer payload never writes it
-// — and the schema's `catch` would otherwise materialize a spurious "local"
-// into every upsert, clobbering the recorded topology on merge. The entry
-// schema is loose (a CLI read-modify-write round-trips its host-only fields),
-// so the update schema is rebuilt CLOSED over the modeled shape: `resources`
-// and `cloud` are omitted AND everything unmodeled (the secrets) strips
-// instead of riding the loose passthrough.
-const RendererAssistantUpdateSchema = z.object(
-  LockfileAssistantSchema.omit({ resources: true, cloud: true }).shape,
-);
+// The renderer surface is an ALLOWLIST over the strict base schema: the base
+// models host-owned fields (the secrets, resources, addressing, process
+// bookkeeping) that must never ride a renderer payload, so a renderer save
+// parses through the fields a renderer may write and nothing else — a newly
+// modeled field is renderer-invisible until deliberately added here.
+// `cloud` additionally never rides because the schema's `catch` would
+// otherwise materialize a spurious "local" into every upsert, clobbering the
+// recorded topology on merge.
+const RendererAssistantUpdateSchema = LockfileAssistantSchema.pick({
+  assistantId: true,
+  name: true,
+  runtimeUrl: true,
+  hatchedAt: true,
+  onboardedAt: true,
+  cloudAssistantId: true,
+  cloudBaseUrl: true,
+  cloudOrganizationId: true,
+});
 
 /**
  * Apply a renderer-originated lockfile upsert. Resources and secrets are

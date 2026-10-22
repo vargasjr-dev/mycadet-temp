@@ -121,8 +121,7 @@ async function unregisterSelfHostedLocalPlatformRecord(
 
 async function retireCustom(entry: AssistantEntry): Promise<void> {
   const host = extractHostFromUrl(entry.runtimeUrl);
-  const sshUser = entry.sshUser ?? "root";
-  const sshHost = `${sshUser}@${host}`;
+  const sshHost = `root@${host}`;
 
   console.log(`\u{1F5D1}\ufe0f  Retiring custom instance on ${sshHost}...\n`);
 

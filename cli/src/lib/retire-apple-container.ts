@@ -17,7 +17,7 @@ export async function retireAppleContainer(
     `\u{1F5D1}\ufe0f  Retiring Apple Container assistant '${name}'...\n`,
   );
 
-  const mgmtSocket = entry.mgmtSocket as string | undefined;
+  const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(
       `No management socket found for '${name}'.\n` +

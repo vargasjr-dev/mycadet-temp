@@ -322,8 +322,7 @@ export const terminal = Object.assign(
 
   if (cloud === "custom") {
     const host = extractHostFromUrl(entry.runtimeUrl);
-    const sshUser = entry.sshUser ?? "root";
-    const sshTarget = `${sshUser}@${host}`;
+    const sshTarget = `root@${host}`;
 
     console.log(`🔗 Connecting to ${entry.assistantId} via ssh...\n`);
 

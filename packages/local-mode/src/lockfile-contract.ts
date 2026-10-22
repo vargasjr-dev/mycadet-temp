@@ -11,13 +11,16 @@
  * is its only third-party import.
  *
  * The lockfile is written by the Cadet CLI and read across the macOS↔CLI
- * boundary, which do not release in lockstep, so the parser is permissive: it
- * validates each entry whole through the schema (a malformed field drops that
- * entry, never the file), ignores unknown fields so a newer writer never
- * breaks an older reader, and defaults `cloud` when it is absent or unknown.
- * Unknown fields are preserved on disk by the write
- * path (see `lockfile.ts`); the validated value carries only the modeled,
- * renderer-safe shape.
+ * boundary, which do not release in lockstep, so the parser is permissive at
+ * the file level: it validates each entry whole through the schema (a
+ * malformed field drops that entry, never the file), accepts — but drops from
+ * the validated value — entry fields this build has never heard of, and
+ * defaults `cloud` when it is absent or unknown. The schema is strict over
+ * the fields it models: every field a reader needs is IN the schema, so a
+ * CLI read-modify-write round-trip preserves it by construction. The
+ * local-mode write path still merges raw JSON (unknown root fields survive
+ * on disk; see `lockfile.ts`); the validated value carries only the modeled
+ * shape.
  */
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { z } from "zod";
@@ -189,32 +192,57 @@ export function getLoopbackGatewayPort(entry: {
 }
 
 /**
- * Per-instance resources for a local assistant: the renderer-facing subset of
- * ports, the instance directory, and the local runtime install metadata.
- * Loose so a CLI read-modify-write round-trip preserves the host-only ports
- * and the signing key; the secrets are stripped from renderer reads by
+ * Per-instance resources for a local assistant: the renderer-facing ports,
+ * the instance directory, and the local runtime install metadata, plus the
+ * host-only ports and the persisted signing key the CLI read-modify-writes.
+ * Strict: every field the CLI round-trips is modeled, so nothing is dropped
+ * by the parse. The secrets are stripped from renderer reads by
  * {@link stripSensitiveFields} before the parse ever sees them.
  */
-export const LocalAssistantResourcesSchema = z.looseObject({
+export const LocalAssistantResourcesSchema = z.object({
   instanceDir: z.string().optional(),
   gatewayPort: z.number(),
   daemonPort: z.number(),
+  /** HTTP port for the Qdrant vector store (host-only). */
+  qdrantPort: z.number().optional(),
+  /** HTTP port for the CES (Claude Extension Server) (host-only). */
+  cesPort: z.number().optional(),
   runtimeVersion: z.string().optional(),
   runtimeInstallDir: z.string().optional(),
+  /** Persisted HMAC signing key (hex); survives daemon/gateway restarts so client actor tokens remain valid across wake cycles. */
+  signingKey: z.string().optional(),
 });
 export type LocalAssistantResources = z.infer<
   typeof LocalAssistantResourcesSchema
 >;
 
+/** Docker image metadata for the service group. Enables rollback to known-good refs. */
+export const ContainerInfoSchema = z.object({
+  assistantImage: z.string(),
+  gatewayImage: z.string(),
+  cesImage: z.string(),
+  /**
+   * Host-side port the assistant HTTP API is published on. Dynamically
+   * allocated at hatch time so concurrent instances don't collide on the
+   * default (7821). Stored so rollback/upgrade can rebind the same port
+   * instead of re-allocating (which could grab a different port if another
+   * process took it in the interim).
+   */
+  assistantPort: z.number().optional(),
+});
+export type ContainerInfo = z.infer<typeof ContainerInfoSchema>;
+
 /**
  * The shape of one assistant entry. `assistantId` is the only
  * strictly-required field — the identity every reader looks entries up by —
  * and `cloud` always parses (absent and unknown values default to "local").
- * Loose so a read-modify-write round-trip preserves the CLI's host-only and
- * sensitive fields; the renderer boundary is enforced by
- * {@link stripSensitiveFields} on the hosts, before this parse runs.
+ * Strict: every field the CLI read-modify-writes is modeled, so the parse
+ * drops nothing a reader needs; fields unknown to this build are accepted on
+ * disk but dropped from the validated value. The renderer boundary is
+ * enforced by {@link stripSensitiveFields} on the hosts, before this parse
+ * runs.
  */
-export const LockfileAssistantSchema = z.looseObject({
+export const LockfileAssistantSchema = z.object({
   assistantId: z.string(),
   name: z.string().optional(),
   /** Deployment topology; absent or unknown on-disk values parse as "local". */
@@ -234,6 +262,27 @@ export const LockfileAssistantSchema = z.looseObject({
   /** Platform organization UUID used for a self-hosted local assistant registration. */
   cloudOrganizationId: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
+  /**
+   * Loopback URL for same-machine health checks (e.g. `http://127.0.0.1:7831`).
+   * Avoids mDNS resolution issues when the machine checks its own gateway.
+   */
+  localUrl: z.string().optional(),
+  /** Helper token for cloud assistants' API bearer; host-only secret. */
+  bearerToken: z.string().optional(),
+  /** PID of the file watcher process for docker instances hatched with --watch. */
+  watcherPid: z.number().optional(),
+  /** Local bootstrap secret used to lease guardian tokens for Docker assistants after detached hatch. */
+  guardianBootstrapSecret: z.string().optional(),
+  /** Docker image metadata for rollback. Only present for docker topology entries. */
+  containerInfo: ContainerInfoSchema.optional(),
+  /** Management socket path for apple-container assistants; written by the macOS host. */
+  mgmtSocket: z.string().optional(),
+  /**
+   * Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
+   * assistant's chat conversation by. Minted once on first `cadet client`
+   * launch and persisted so every session shares one conversation.
+   */
+  conversationKey: z.string().optional(),
 });
 
 /**
@@ -249,18 +298,17 @@ export type LockfileAssistant = z.infer<typeof LockfileAssistantSchema>;
  * the per-assistant process trees, and the stop paths verify the pid before
  * signaling it.
  */
-export interface TunnelProcessRecord {
-  pid: number;
+export const TunnelProcessRecordSchema = z.object({
+  pid: z.number(),
   /** Which tunnel provider owns the process. */
-  provider: string;
+  provider: z.string(),
   /** The assistant the process fronts, so `cadet ps` can nest the row. */
-  assistantId?: string;
-  startedAt: string;
+  assistantId: z.string().optional(),
+  startedAt: z.string(),
   /** The public URL the tunnel agent serves. */
-  publicUrl?: string;
-  /** Tunnel temporarily displaced by a pairing-only tunnel. */
-  previous?: TunnelProcessRecord;
-}
+  publicUrl: z.string().optional(),
+});
+export type TunnelProcessRecord = z.infer<typeof TunnelProcessRecordSchema>;
 
 /**
  * A CLI-managed OS process recorded at the lockfile root under `app`: the
@@ -268,18 +316,18 @@ export interface TunnelProcessRecord {
  * Shares nothing with the tunnel record beyond the pid bookkeeping — a
  * tunnel serves a URL, the edge serves a port.
  */
-export interface AppProcessRecord {
+export const AppProcessRecordSchema = z.object({
   /**
    * The edge process's bookkeeping, present while the edge runs. Absent on
    * a stamp-only entry: the built-sha stamp below survives the edge's own
    * stop, so between runs the `app` entry may carry only that.
    */
-  pid?: number;
+  pid: z.number().optional(),
   /** The assistant the edge fronts, so `cadet ps` can nest the row. */
-  assistantId?: string;
-  startedAt?: string;
+  assistantId: z.string().optional(),
+  startedAt: z.string().optional(),
   /** Listening port for the nginx edge. */
-  port?: number;
+  port: z.number().optional(),
   /**
    * The commit the edge's source-built client bundles were last built from
    * — the auto-build staleness stamp. Lives on the edge's own record rather
@@ -287,26 +335,9 @@ export interface AppProcessRecord {
    * state, and survives the edge's own stop (a build-cache fact, not a
    * process fact) so restarting the edge never pays a needless rebuild.
    */
-  builtSha?: string;
-}
-
-export const TunnelProcessRecordSchema: z.ZodType<TunnelProcessRecord> =
-  z.object({
-    pid: z.number(),
-    provider: z.string(),
-    assistantId: z.string().optional(),
-    startedAt: z.string(),
-    publicUrl: z.string().optional(),
-    previous: z.lazy(() => TunnelProcessRecordSchema).optional(),
-  });
-
-export const AppProcessRecordSchema: z.ZodType<AppProcessRecord> = z.object({
-  pid: z.number().optional(),
-  assistantId: z.string().optional(),
-  startedAt: z.string().optional(),
-  port: z.number().optional(),
   builtSha: z.string().optional(),
 });
+export type AppProcessRecord = z.infer<typeof AppProcessRecordSchema>;
 
 /**
  * Renderer-facing result of a lockfile write, returned across the host bridge.

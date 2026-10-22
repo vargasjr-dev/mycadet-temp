@@ -48,7 +48,7 @@ import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { execOutput } from "../lib/step-runner.js";
 
 function assistantDisplayName(entry: AssistantEntry): string {
-  return entry.name || entry.assistantName || entry.assistantId;
+  return entry.name || entry.assistantId;
 }
 
 /**

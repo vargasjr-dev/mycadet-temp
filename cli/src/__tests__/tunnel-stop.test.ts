@@ -45,7 +45,6 @@ beforeEach(() => {
     name: "fixture",
     cloud: "local",
     runtimeUrl: "http://127.0.0.1:7830",
-    ingressUrl: "https://old.ngrok.app",
     resources: {
       instanceDir: join(root, "instance"),
       gatewayPort: 7830,
@@ -120,9 +119,6 @@ test("failure to stop retains process and ingress state", async () => {
   stop.mockResolvedValue(false);
   await expect(tunnel()).rejects.toThrow("Could not stop ngrok");
   expect(readRootProcesses().tunnel?.pid).toBe(424242);
-  expect(findAssistantByName("fixture")?.ingressUrl).toBe(
-    "https://old.ngrok.app",
-  );
 });
 
 test("Cloudflare dispatch stops cloudflared and clears its ingress", async () => {
@@ -140,16 +136,10 @@ test("Cloudflare dispatch stops cloudflared and clears its ingress", async () =>
   expect(readRootProcesses().tunnel).toBeUndefined();
 });
 
-test("Tailscale dispatch disables serve and preserves a separate webhook ingress", async () => {
+test("Tailscale dispatch disables serve and preserves the webhook ingress base", async () => {
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "tailscale",
-    previous: {
-      pid: 424240,
-      provider: "ngrok",
-      assistantId: "fixture",
-      startedAt: new Date().toISOString(),
-    },
     assistantId: "fixture",
     startedAt: new Date().toISOString(),
   });
@@ -177,10 +167,7 @@ test("Tailscale dispatch disables serve and preserves a separate webhook ingress
     await tunnel();
     expect(calls).toEqual([["serve", "--https=443", "off"]]);
     expect(stop).not.toHaveBeenCalled();
-    expect(readRootProcesses().tunnel?.pid).toBe(424240);
-    expect(findAssistantByName("fixture")?.ingressUrl).toBe(
-      "https://old.ngrok.app",
-    );
+    expect(readRootProcesses().tunnel).toBeUndefined();
     const state = JSON.parse(
       readFileSync(join(workspace, "config.json"), "utf8"),
     );
@@ -208,9 +195,6 @@ test("Tailscale shutdown failure preserves the recorded tunnel and ingress", asy
   try {
     await expect(tunnel()).rejects.toThrow("Could not stop tailscale serve");
     expect(readRootProcesses().tunnel?.provider).toBe("tailscale");
-    expect(findAssistantByName("fixture")?.ingressUrl).toBe(
-      "https://old.ngrok.app",
-    );
   } finally {
     provider.mockRestore();
   }

@@ -172,8 +172,9 @@ describe("upsertLockfileAssistant", () => {
     const old = assistants.find((a) => a.assistantId === "asst_old");
     expect(old?.futureField).toBe("keep-me");
 
-    // The returned wire value is the parsed shape — loose, so the unknown
-    // fields ride it like the file does.
+    // The returned wire value is the parsed shape — strict over the modeled
+    // fields, so the unknown field drops from it even though the file keeps
+    // it.
     if (result.ok) {
       expect(result.lockfile.activeAssistant).toBe("asst_new");
       const wireOld = result.lockfile.assistants.find(
@@ -183,7 +184,6 @@ describe("upsertLockfileAssistant", () => {
         assistantId: "asst_old",
         cloud: "cloud",
         runtimeUrl: "http://old",
-        futureField: "keep-me",
       });
     }
   });

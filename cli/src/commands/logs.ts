@@ -445,8 +445,7 @@ async function showCustomLogs(
   opts: LogsArgs,
 ): Promise<void> {
   const host = extractHostFromUrl(entry.runtimeUrl);
-  const sshUser = entry.sshUser ?? "root";
-  const sshTarget = `${sshUser}@${host}`;
+  const sshTarget = `root@${host}`;
 
   const remoteCmd = buildRemoteLogCommand(opts);
 

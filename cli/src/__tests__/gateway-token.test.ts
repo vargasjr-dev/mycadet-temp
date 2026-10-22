@@ -51,7 +51,6 @@ function seedLocalEntry(overrides: Record<string, unknown> = {}): void {
     runtimeUrl: "http://127.0.0.1:7830",
     localUrl: "http://127.0.0.1:7830",
     cloud: "local",
-    paired: false,
     ...overrides,
   });
 }
@@ -184,7 +183,6 @@ describe("gateway token command", () => {
       runtimeUrl: "http://127.0.0.1:7831",
       localUrl: "http://127.0.0.1:7831",
       cloud: "local",
-      paired: false,
     });
     setActiveAssistant("py");
     saveGuardianToken(

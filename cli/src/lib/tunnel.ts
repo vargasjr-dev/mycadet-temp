@@ -620,50 +620,15 @@ export async function restoreAppServer(
  *
  * Waking one container must not repoint another's public endpoint at its own
  * gateway, and `ensureAppServer` cannot make that call: it restarts an edge
- * whose recorded gateway port drifts, which is the hijack itself. Two records
- * establish ownership, and both have to hold because neither survives every
- * teardown: a running edge records its `gatewayPort`, while the saved
- * `ingress.publicBaseUrl` outlives the edge and is mirrored onto its owner's
- * entry as `ingressUrl`. That mirror is optional, so only a rival entry
- * actually claiming the URL disproves ownership; the default workspace is one
- * path shared by every environment, so rivals are looked for across all of
- * them.
+ * whose recorded gateway port drifts, which is the hijack itself. A running
+ * edge records its `gatewayPort` — an edge serving a different recorded
+ * gateway port disqualifies the wake; with no running edge (or one already
+ * fronting this assistant), the restore may proceed.
  */
-function ownsSharedIngress(
-  entry: AssistantEntry,
-  gatewayPort: number,
-  workspaceDir: string,
-): boolean {
-  if (
+function ownsSharedIngress(gatewayPort: number, workspaceDir: string): boolean {
+  return !(
     isIngressRunning(workspaceDir) &&
     readIngressState(workspaceDir)?.gatewayPort !== gatewayPort
-  ) {
-    return false;
-  }
-  let publicBaseUrl: string | undefined;
-  try {
-    const parsed = IngressConfigSchema.safeParse(
-      loadRawConfig(workspaceDir).ingress,
-    );
-    publicBaseUrl = parsed.success ? parsed.data.publicBaseUrl : undefined;
-  } catch {
-    return true;
-  }
-  if (!publicBaseUrl || !publicBaseUrl.trim()) {
-    return true;
-  }
-  if (entry.ingressUrl === publicBaseUrl) {
-    return true;
-  }
-  // The mirror is optional and predates this check, so its absence is not proof
-  // of non-ownership: a workspace tunneled before mirroring, or through a
-  // caller that omits `assistantId`, has a saved URL that no entry claims.
-  // Only another container actually claiming this URL disproves ownership.
-  return ![...loadAllAssistantsAcrossEnvs(), ...loadAllAssistants()].some(
-    (other) =>
-      other.assistantId !== entry.assistantId &&
-      isLocalContainerEntry(other) &&
-      other.ingressUrl === publicBaseUrl,
   );
 }
 
@@ -689,7 +654,7 @@ export async function restoreContainerAppServer(
     return;
   }
   const workspaceDir = getDefaultWorkspaceDir();
-  if (!ownsSharedIngress(entry, gatewayPort, workspaceDir)) {
+  if (!ownsSharedIngress(gatewayPort, workspaceDir)) {
     return;
   }
   // Gate before waiting: a container that was never tunneled wants no edge, and

@@ -145,17 +145,12 @@ describe("assistant-config", () => {
     expect(result!.assistantId).toBe("beta");
   });
 
-  test("getAssistantDisplayName prefers platform and legacy display names", () => {
+  test("getAssistantDisplayName prefers the platform name", () => {
     expect(
       getAssistantDisplayName(
         makeEntry("assistant-1", undefined, { name: "Alice" }),
       ),
     ).toBe("Alice");
-    expect(
-      getAssistantDisplayName(
-        makeEntry("assistant-2", undefined, { assistantName: "Legacy Alice" }),
-      ),
-    ).toBe("Legacy Alice");
     expect(getAssistantDisplayName(makeEntry("assistant-3"))).toBe(
       "assistant-3",
     );
@@ -182,22 +177,6 @@ describe("assistant-config", () => {
     });
 
     const result = lookupAssistantByIdentifier("Alice");
-    expect(result.status).toBe("found");
-    expect(result.status === "found" ? result.entry.assistantId : null).toBe(
-      "assistant-1",
-    );
-  });
-
-  test("lookupAssistantByIdentifier resolves a unique legacy assistantName", () => {
-    writeLockfile({
-      assistants: [
-        makeEntry("assistant-1", "http://localhost:7821", {
-          assistantName: "Legacy Alice",
-        }),
-      ],
-    });
-
-    const result = lookupAssistantByIdentifier("Legacy Alice");
     expect(result.status).toBe("found");
     expect(result.status === "found" ? result.entry.assistantId : null).toBe(
       "assistant-1",

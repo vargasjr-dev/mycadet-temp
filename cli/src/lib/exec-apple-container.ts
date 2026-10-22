@@ -13,7 +13,7 @@ export async function execAppleContainer(
   command: string[],
   service: string,
 ): Promise<void> {
-  const mgmtSocket = entry.mgmtSocket as string | undefined;
+  const mgmtSocket = entry.mgmtSocket;
   if (!mgmtSocket) {
     console.error(
       `No management socket found for '${entry.assistantId}'.\n` +

@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  clearRootProcess,
-  readRootProcesses,
-  stampRootProcess,
-} from "../assistant-config.js";
+import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
   TunnelProvider,
@@ -490,11 +486,7 @@ export async function runTailscaleTunnel(
   );
   console.log("or stop it later with: tailscale serve --https=443 off");
 
-  const previous = opts.preserveIngressUrl
-    ? readRootProcesses().tunnel
-    : undefined;
   stampRootProcess("tunnel", {
-    ...(previous?.provider !== "tailscale" ? { previous } : {}),
     pid: process.pid,
     provider: "tailscale",
     assistantId: opts.assistantId,

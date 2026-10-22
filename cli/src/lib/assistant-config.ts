@@ -13,10 +13,15 @@ import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import { withLockfileLock } from "@mycadet/local-mode";
 import {
   LockfileSchema,
+  type AppProcessRecord,
+  type ContainerInfo,
   type LocalAssistantResources,
   type Lockfile,
   type LockfileAssistant,
+  type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
+
+export type { AppProcessRecord, TunnelProcessRecord };
 
 import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
@@ -30,12 +35,12 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
 import { probePort } from "./port-probe.js";
 
 /**
- * Per-instance resource paths and ports. Each local assistant instance gets its
- * own directory tree, ports, and socket so multiple instances can run
- * side-by-side without conflicts. Extends the renderer-safe resources contract
- * (`instanceDir`, `gatewayPort`, `daemonPort`) with the host-only ports and the
- * signing key. Host-only and same-process, so it is a plain type — the
- * renderer-facing shape is the one with a Zod contract.
+ * Per-instance resource paths and ports. Each local assistant instance gets
+ * its own directory tree, ports, and socket so multiple instances can run
+ * side-by-side without conflicts. The contract models every field; this
+ * narrowing carries the guarantees this module's own writers make:
+ * `instanceDir`, and the two host-only ports allocated here, are always
+ * present on entries this CLI wrote.
  */
 export type LocalInstanceResources = LocalAssistantResources & {
   /**
@@ -46,126 +51,29 @@ export type LocalInstanceResources = LocalAssistantResources & {
    * state in `~/.cadet` for those.
    */
   instanceDir: string;
-  /** HTTP port for the Qdrant vector store */
   qdrantPort: number;
-  /** HTTP port for the CES (Claude Extension Server) */
   cesPort: number;
-  /** Persisted HMAC signing key (hex). Survives daemon/gateway restarts so
-   *  client actor tokens remain valid across `wake` cycles. */
-  signingKey?: string;
-  /** Version of the npm-backed local runtime this assistant should run. */
-  runtimeVersion?: string;
-  /** Install directory containing the npm-backed local runtime packages. */
-  runtimeInstallDir?: string;
-  [key: string]: unknown;
 };
 
-/** Docker image metadata for the service group. Enables rollback to known-good refs. */
-export interface ContainerInfo {
-  assistantImage: string;
-  gatewayImage: string;
-  cesImage: string;
-  /**
-   * Host-side port the assistant HTTP API is published on. Dynamically
-   * allocated at hatch time so concurrent instances don't collide on the
-   * default (7821). Stored so rollback/upgrade can rebind the same port
-   * instead of re-allocating (which could grab a different port if another
-   * process took it in the interim).
-   */
-  assistantPort?: number;
-}
-
 /**
- * The CLI's full view of an assistant entry: the renderer-safe base
- * (`LockfileAssistant`, the one canonical Zod contract) plus the host-only and
- * sensitive fields the CLI reads and writes. Those extra fields never cross a
- * validation boundary — the same toolchain writes and reads them — so they are
- * modeled as plain types here rather than re-validated.
- *
- * `runtimeUrl` is required (`loadAllAssistants` only returns entries that have one)
- * and `resources` is the richer host shape. `cloud` is inherited from
- * `LockfileAssistant` (always present; normalized at the read seam — see
- * `loadAllAssistants`). The index signature preserves unknown on-disk fields so a
- * read→write round-trip never drops a newer writer's data.
+ * The CLI's full view of an assistant entry: the one canonical Zod contract
+ * (`LockfileAssistant` — strict; every field the CLI reads and writes is
+ * modeled there) plus the two narrowings the CLI's load path guarantees.
+ * `runtimeUrl` is required (`loadAllAssistants` only returns entries that
+ * have one) and `resources` carries the host's required `instanceDir`.
+ * `cloud` is always present (normalized at the read seam — see
+ * `loadAllAssistants`).
  */
 export type AssistantEntry = LockfileAssistant & {
   runtimeUrl: string;
   /** Per-instance resource config. Present for local entries in multi-instance setups. */
   resources?: LocalInstanceResources;
-  /** Older lockfile key for the display name, if present. */
-  assistantName?: string;
-  /** Loopback URL for same-machine health checks (e.g. `http://127.0.0.1:7831`).
-   *  Avoids mDNS resolution issues when the machine checks its own gateway. */
-  localUrl?: string;
-  bearerToken?: string;
-  project?: string;
-  region?: string;
-  sshUser?: string;
-  zone?: string;
-  /** PID of the file watcher process for docker instances hatched with --watch. */
-  watcherPid?: number;
-  /** Local bootstrap secret used to lease guardian tokens for Docker assistants after detached hatch. */
-  guardianBootstrapSecret?: string;
-  /** Docker image metadata for rollback. Only present for docker topology entries. */
-  containerInfo?: ContainerInfo;
-  /** Client-minted uuid (web's temp-client-id pattern) the CLI addresses this
-   *  assistant's chat conversation by. Minted once on first `cadet client`
-   *  launch and persisted here so every session shares one conversation. */
-  conversationKey?: string;
-  [key: string]: unknown;
 };
 
 export type AssistantLookupResult =
   | { status: "found"; entry: AssistantEntry }
   | { status: "not_found" }
   | { status: "ambiguous"; matches: AssistantEntry[] };
-
-/**
- * A CLI-managed OS process recorded at the lockfile root under `tunnel`:
- * the auto-tunnel agent fronting the edge. `cadet ps` renders it alongside
- * the per-assistant process trees, and the stop paths verify the pid before
- * signaling it.
- */
-export interface TunnelProcessRecord {
-  pid: number;
-  /** Which tunnel provider owns the process. */
-  provider: string;
-  /** The assistant the process fronts, so `cadet ps` can nest the row. */
-  assistantId?: string;
-  startedAt: string;
-  /** The public URL the tunnel agent serves. */
-  publicUrl?: string;
-  /** Tunnel temporarily displaced by a pairing-only tunnel. */
-  previous?: TunnelProcessRecord;
-}
-
-/**
- * A CLI-managed OS process recorded at the lockfile root under `app`: the
- * nginx ingress edge (web artifacts, `/v1` proxying, the outer shell).
- * Shares nothing with the tunnel record beyond the pid bookkeeping — a
- * tunnel serves a URL, the edge serves a port.
- */
-export interface AppProcessRecord {
-  /**
-   * The edge process's bookkeeping, present while the edge runs. Absent on
-   * a stamp-only entry: the built-sha stamp below survives the edge's own
-   * stop, so between runs the `app` entry may carry only that.
-   */
-  pid?: number;
-  /** The assistant the edge fronts, so `cadet ps` can nest the row. */
-  assistantId?: string;
-  startedAt?: string;
-  /** Listening port for the nginx edge. */
-  port?: number;
-  /**
-   * The commit the edge's source-built client bundles were last built from
-   * — the auto-build staleness stamp. Lives on the edge's own record rather
-   * than beside each dist so the CLI lockfile is the single home for edge
-   * state, and survives the edge's own stop (a build-cache fact, not a
-   * process fact) so restarting the edge never pays a needless rebuild.
-   */
-  builtSha?: string;
-}
 
 /** Either lockfile-root process record, keyed by `RootProcessKind`. */
 export type RootProcessRecord = TunnelProcessRecord | AppProcessRecord;
@@ -252,7 +160,7 @@ export function stampRootProcess<K extends RootProcessKind>(
   });
 }
 
-/** Release a recorded process, preserving a replacement or restoring a displaced record. */
+/** Release a recorded process record, pid-verified. */
 export function clearRootProcess(
   kind: RootProcessKind,
   expectedPid?: number,
@@ -265,11 +173,7 @@ export function clearRootProcess(
       (expectedPid !== undefined && record.pid !== expectedPid)
     )
       return;
-    // Only a tunnel record carries a displaced predecessor to restore.
-    const previous =
-      kind === "tunnel" ? (record as TunnelProcessRecord).previous : undefined;
-    if (previous) (data as RootProcessRecords).tunnel = previous;
-    else delete data[kind];
+    delete data[kind];
     writeLockfileUnlocked(data);
   });
 }
@@ -379,13 +283,7 @@ export function findAssistantByName(name: string): AssistantEntry | null {
 }
 
 export function getAssistantDisplayName(entry: AssistantEntry): string {
-  const primary = entry.name?.trim();
-  if (primary) return primary;
-
-  const legacy = entry.assistantName?.trim();
-  if (legacy) return legacy;
-
-  return entry.assistantId;
+  return entry.name?.trim() || entry.assistantId;
 }
 
 export function formatAssistantReference(entry: AssistantEntry): string {
@@ -396,13 +294,8 @@ export function formatAssistantReference(entry: AssistantEntry): string {
 }
 
 function getAssistantDisplayNameCandidates(entry: AssistantEntry): string[] {
-  return Array.from(
-    new Set(
-      [entry.name?.trim(), entry.assistantName?.trim()].filter(
-        (value): value is string => typeof value === "string" && value !== "",
-      ),
-    ),
-  );
+  const name = entry.name?.trim();
+  return name ? [name] : [];
 }
 
 export function lookupAssistantByIdentifier(

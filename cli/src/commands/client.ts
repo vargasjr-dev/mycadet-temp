@@ -53,7 +53,7 @@ interface ParsedArgs {
 }
 
 function readAssistantName(entry: AssistantEntry | null): string | undefined {
-  const rawName = entry?.name ?? entry?.assistantName;
+  const rawName = entry?.name;
   return typeof rawName === "string" && rawName.trim()
     ? rawName.trim()
     : undefined;

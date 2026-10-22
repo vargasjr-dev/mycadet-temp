@@ -942,7 +942,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1023,7 +1022,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
@@ -1056,7 +1054,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
@@ -1101,7 +1098,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     ensureAppServerMock.mockRejectedValue(new Error("nginx is not installed."));
@@ -1129,45 +1125,6 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake leaves a saved ingress owned by another container alone", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    // The edge is stopped, so its gatewayPort record is gone; only the saved
-    // publicBaseUrl and its owner's `ingressUrl` say whose endpoint this is.
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      runtimeUrl: "http://localhost:7930",
-      cloud: "docker",
-      ingressUrl: "https://other.example.com",
-    });
-    loadAllAssistantsMock.mockReturnValue([
-      {
-        assistantId: "docker-2",
-        runtimeUrl: "http://localhost:8030",
-        cloud: "docker",
-        ingressUrl: "https://assistant.example.com",
-      },
-    ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
-    isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
-
-    try {
-      await wake();
-
-      expect(ensureAppServerMock).not.toHaveBeenCalled();
-      expect(logSpy).toHaveBeenCalledWith("Wake complete.");
-    } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
-    }
-  });
-
   test("a docker wake waits for the gateway before restoring the edge", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
@@ -1176,7 +1133,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     process.argv = ["bun", "cadet", "wake", "docker-1"];
@@ -1204,7 +1160,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     waitForDaemonReadyMock.mockImplementation(async () => false);
@@ -1254,12 +1209,12 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake restores a saved ingress that no entry claims", async () => {
+  test("a docker wake restores the saved ingress when the edge is stopped", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    // Tunneled before the lockfile mirror existed: publicBaseUrl is saved but
-    // no entry carries `ingressUrl`. The sole container still owns it.
+    // The saved publicBaseUrl outlives the edge; with no edge running, the
+    // wake restores it.
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -1294,41 +1249,6 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake respects an ingress claim from another environment", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      runtimeUrl: "http://localhost:7930",
-      cloud: "docker",
-    });
-    loadAllAssistantsAcrossEnvsMock.mockReturnValue([
-      {
-        assistantId: "docker-2",
-        runtimeUrl: "http://localhost:8030",
-        cloud: "docker",
-        ingressUrl: "https://assistant.example.com",
-      },
-    ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
-    isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
-
-    try {
-      await wake();
-
-      expect(ensureAppServerMock).not.toHaveBeenCalled();
-    } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
-    }
-  });
-
   test("a docker wake without an ingress config leaves the edge alone", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
@@ -1337,7 +1257,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
