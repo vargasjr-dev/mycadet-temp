@@ -88,7 +88,6 @@
     "unnamed": "Без имени"
   },
   "assistantStatusPanel": {
-    "account": "Аккаунт",
     "assistantId": "ID ассистента",
     "cpuUsage": "Загрузка CPU",
     "created": "Создан",

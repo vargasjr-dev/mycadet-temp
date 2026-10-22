@@ -173,10 +173,8 @@ export function RootLayout() {
   const activeAssistant = assistants.find(
     (assistant) => assistant.id === assistantId,
   );
-  const authUser = useAuthStore.use.user();
   const requestOrganizationId = useRequestOrganizationId();
   const assistantVersion = useAssistantIdentityStore.use.version();
-  const platformAccountId = authUser?.kind === "platform" ? authUser.id : null;
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
@@ -186,7 +184,6 @@ export function RootLayout() {
     sessionStatus === "authenticated" && activeAssistant
       ? resolveAssistantAvatarOwnerScopeId(
           activeAssistant,
-          platformAccountId,
           requestOrganizationId,
           connectionFallback,
         )
@@ -259,7 +256,6 @@ export function RootLayout() {
           assistant.id === assistantId ? connectionFallback : null;
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
-          platformAccountId,
           requestOrganizationId,
           fallback,
         );
@@ -271,7 +267,6 @@ export function RootLayout() {
     assistants,
     assistantsHydrated,
     connectionFallback,
-    platformAccountId,
     requestOrganizationId,
     sessionStatus,
   ]);

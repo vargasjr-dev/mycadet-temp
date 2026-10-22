@@ -69,13 +69,11 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
   const sessionStatus = useAuthStore.use.sessionStatus();
-  const authUser = useAuthStore.use.user();
   const requestOrganizationId = useRequestOrganizationId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const assistant = assistants.find(
     (candidate) => candidate.id === assistantId,
   );
-  const platformAccountId = authUser?.kind === "platform" ? authUser.id : null;
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
@@ -85,7 +83,6 @@ export function useNotificationIntentSync(assistantId: string | null): void {
     sessionStatus === "authenticated"
       ? resolveAssistantAvatarOwnerScopeId(
           assistant,
-          platformAccountId,
           requestOrganizationId,
           connectionFallback,
         )
@@ -208,7 +205,8 @@ export function useNotificationIntentSync(assistantId: string | null): void {
     void (async () => {
       const soundDisposition = await postLocalNotification({
         canDeliver: () =>
-          originatingIdentity !== null && deliveryOwner.current === originatingIdentity,
+          originatingIdentity !== null &&
+          deliveryOwner.current === originatingIdentity,
         title: event.title,
         body: event.body,
         sourceEventName: event.sourceEventName,

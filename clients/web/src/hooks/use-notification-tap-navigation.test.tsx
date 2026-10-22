@@ -74,12 +74,10 @@ const { useNotificationTapNavigation } =
 
 function platformIdentity(
   assistant: ResolvedAssistant = ASSISTANT_A,
-  accountId = "account-1",
   organizationId = "org-1",
 ): NotificationIdentity {
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
-    accountId,
     organizationId,
     window.location.href,
   );
@@ -363,12 +361,8 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([]);
   });
 
-  test("does not open an identity from a stale account or organization scope", async () => {
-    const staleIdentity = platformIdentity(
-      ASSISTANT_A,
-      "account-old",
-      "org-old",
-    );
+  test("does not open an identity from a stale organization scope", async () => {
+    const staleIdentity = platformIdentity(ASSISTANT_A, "org-old");
     renderHook(() => useNotificationTapNavigation());
     const received = collectThreadOpens();
 
@@ -459,7 +453,6 @@ describe("useNotificationTapNavigation", () => {
     };
     const scopeId = resolveAssistantAvatarOwnerScopeId(
       localAssistant,
-      null,
       null,
       window.location.href,
     );

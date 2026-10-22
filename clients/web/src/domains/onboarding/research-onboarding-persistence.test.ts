@@ -15,7 +15,7 @@ import {
   type ResearchOnboardingSnapshot,
 } from "@/domains/onboarding/research-onboarding-persistence";
 
-const ASSISTANT = "user-123";
+const ASSISTANT = "assistant-123";
 
 function baseSnapshot(
   overrides: Partial<ResearchOnboardingSnapshot> = {},
@@ -29,7 +29,7 @@ function baseSnapshot(
       hobbies: ["chess"],
     },
     faceValues: null,
-        research: null,
+    research: null,
     ...overrides,
   };
 }
@@ -78,7 +78,9 @@ describe("read/write/clear round-trip", () => {
   test("round-trips the research conversation id for mid-search resume", () => {
     const snapshot = baseSnapshot({ researchConversationId: "conv-abc" });
     writeResearchSnapshot(ASSISTANT, snapshot);
-    expect(readResearchSnapshot(ASSISTANT)?.researchConversationId).toBe("conv-abc");
+    expect(readResearchSnapshot(ASSISTANT)?.researchConversationId).toBe(
+      "conv-abc",
+    );
   });
 
   test("round-trips dropped claims and the scrub flag on completed research", () => {

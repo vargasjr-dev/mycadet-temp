@@ -102,7 +102,6 @@
     "unnamed": "未命名"
   },
   "assistantStatusPanel": {
-    "account": "账户",
     "assistantId": "助手 ID",
     "cpuUsage": "CPU 使用率",
     "created": "创建时间",

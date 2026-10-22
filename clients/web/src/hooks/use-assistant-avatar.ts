@@ -14,7 +14,6 @@ import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
-import { useAuthStore } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
@@ -92,11 +91,14 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
 
 /**
  * Resolve the complete connection/account owner shared by display and
- * notification avatar consumers.
+ * notification avatar consumers. The account arm keys on the assistant's
+ * own cloud UUID — the avatar belongs to the assistant, not to whichever
+ * platform account happens to be viewing it — so the scope needs no
+ * auth-store read. Re-keying from the platform user id invalidates cached
+ * scopes once.
  */
 export function resolveAssistantAvatarOwnerScopeId(
   assistant: ResolvedAssistant | null | undefined,
-  platformAccountId: string | null,
   organizationId: string | null,
   connectionFallback: string | null,
 ): string | null {
@@ -106,13 +108,12 @@ export function resolveAssistantAvatarOwnerScopeId(
   return assistant.isCloudHosted
     ? resolveNotificationIdentityScope({
         kind: "account",
-        accountId: platformAccountId,
+        accountId: resolveAssistantNotificationCloudId(assistant),
         organizationId,
       })
     : resolveNotificationIdentityScope({
         kind: "connection",
-        url:
-          assistant.runtimeUrl ?? assistant.ingressUrl ?? connectionFallback,
+        url: assistant.runtimeUrl ?? assistant.ingressUrl ?? connectionFallback,
       });
 }
 
@@ -123,9 +124,7 @@ export function resolveAssistantNotificationCloudId(
   if (assistant?.cloudAssistantId && isUuid(assistant.cloudAssistantId)) {
     return assistant.cloudAssistantId;
   }
-  return assistant?.isCloudHosted && isUuid(assistant.id)
-    ? assistant.id
-    : null;
+  return assistant?.isCloudHosted && isUuid(assistant.id) ? assistant.id : null;
 }
 
 interface AvatarOwner {
@@ -192,18 +191,12 @@ function transitionAvatarOwner(
     return;
   }
   const installedRegistration = activeOwners.get(next.assistantId);
-  if (
-    installedRegistration &&
-    installedRegistration.scopeId !== next.scopeId
-  ) {
+  if (installedRegistration && installedRegistration.scopeId !== next.scopeId) {
     const installedOwner = {
       assistantId: next.assistantId,
       scopeId: installedRegistration.scopeId,
     };
-    removeAvatarOwnerQueries(
-      installedRegistration.queryClient,
-      installedOwner,
-    );
+    removeAvatarOwnerQueries(installedRegistration.queryClient, installedOwner);
     releaseAssistantAvatarUrl(next.assistantId);
   }
   activeOwners.set(next.assistantId, { scopeId: next.scopeId, queryClient });
@@ -403,7 +396,6 @@ export function useAssistantAvatar(
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const authUser = useAuthStore.use.user();
   const organizationId = useRequestOrganizationId();
   const assistant =
     options?.ownerAssistant === undefined
@@ -411,8 +403,6 @@ export function useAssistantAvatar(
       : options.ownerAssistant?.id === assistantId
         ? options.ownerAssistant
         : null;
-  const platformAccountId =
-    authUser?.kind === "platform" ? authUser.id : null;
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
@@ -420,7 +410,6 @@ export function useAssistantAvatar(
       : globalThis.location.href);
   const canonicalScopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
-    platformAccountId,
     organizationId,
     connectionFallback,
   );
@@ -449,20 +438,17 @@ export function useAssistantAvatar(
 
   useEffect(() => {
     const previousOwner = previousOwnerRef.current;
-    const nextOwner =
-      assistantId && scopeId ? { assistantId, scopeId } : null;
-    transitionAvatarOwner(
-      queryClient,
-      previousOwner,
-      nextOwner,
-      assistantId,
-    );
+    const nextOwner = assistantId && scopeId ? { assistantId, scopeId } : null;
+    transitionAvatarOwner(queryClient, previousOwner, nextOwner, assistantId);
     previousOwnerRef.current = nextOwner;
     setReadyOwner(nextOwner);
   }, [assistantId, queryClient, scopeId]);
 
   const owner = requestedOwner
-    ? { scopeId: requestedOwner.scopeId, assistantId: requestedOwner.assistantId }
+    ? {
+        scopeId: requestedOwner.scopeId,
+        assistantId: requestedOwner.assistantId,
+      }
     : undefined;
   const queryKey = [
     ...avatarQueryKey(assistantId ?? ""),
@@ -491,9 +477,7 @@ export function useAssistantAvatar(
       }
       const legacySeed =
         queryClient.getQueryData<AvatarData>(legacyQueryKey) ??
-        queryClient.getQueryData<AvatarData>(
-          avatarQueryKey(assistantId ?? ""),
-        );
+        queryClient.getQueryData<AvatarData>(avatarQueryKey(assistantId ?? ""));
       return legacySeed ? withoutAvatarOwner(legacySeed) : undefined;
     },
     queryFn: async ({ client }) => {

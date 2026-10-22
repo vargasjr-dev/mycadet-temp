@@ -222,7 +222,6 @@ function expectNotified() {
 function platformScopeId(): string {
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     PLATFORM_ASSISTANT,
-    "account-1",
     "org-1",
     window.location.href,
   );
@@ -476,7 +475,6 @@ describe("useNotificationIntentSync", () => {
     expect(originA).toMatchObject({
       scopeId: resolveAssistantAvatarOwnerScopeId(
         assistantA,
-        null,
         null,
         window.location.href,
       ),

@@ -165,10 +165,8 @@ function resolveCurrentTapAssistant(
   if (!assistant) {
     return null;
   }
-  const accountId = auth.user?.kind === "platform" ? auth.user.id : null;
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
-    accountId,
     getActiveOrganizationIdForRequests(),
     getSelfHostedIngressUrl() ??
       (typeof globalThis.location === "undefined"

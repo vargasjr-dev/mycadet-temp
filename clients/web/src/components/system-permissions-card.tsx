@@ -23,7 +23,6 @@ import {
   type SystemPermissionKind,
   type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
-import { useAuthStore } from "@/stores/auth-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
@@ -249,7 +248,6 @@ export function SystemPermissionsCard({
   const selectedAssistantId =
     useResolvedAssistantsStore.use.selectedAssistantId();
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const authUser = useAuthStore.use.user();
   const requestOrganizationId = useRequestOrganizationId();
 
   const hostOS = detectElectronHostOS();
@@ -354,7 +352,6 @@ export function SystemPermissionsCard({
         );
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
-          authUser?.kind === "platform" ? authUser.id : null,
           requestOrganizationId,
           getSelfHostedIngressUrl() ??
             (typeof globalThis.location === "undefined"

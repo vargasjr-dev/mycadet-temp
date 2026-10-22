@@ -17,7 +17,6 @@ import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { t, useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAuthStore } from "@/stores/auth-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { isTransientNetworkError } from "@mycadet/design-library/utils/is-transient-network-error";
 import { toast } from "@mycadet/design-library";
@@ -248,9 +247,6 @@ export function AssistantStatusPanel({
   healthzLoading,
 }: AssistantStatusPanelProps) {
   const isNonProduction = useEnvironmentStore.use.isNonProduction();
-  const user = useAuthStore.use.user();
-  const email = user?.email;
-
   const { t } = useTranslation("settings");
 
   if (assistantLoading) {
@@ -274,13 +270,6 @@ export function AssistantStatusPanel({
 
   return (
     <div className="grid grid-cols-[140px_minmax(0,1fr)] gap-y-3">
-      {email && (
-        <>
-          <Label>{t("assistantStatusPanel.account")}</Label>
-          <Value>{email}</Value>
-        </>
-      )}
-
       <Label>{t("assistantStatusPanel.name")}</Label>
       <Value>{assistant.name}</Value>
 
@@ -320,7 +309,11 @@ export function AssistantStatusPanel({
       </Value>
 
       <Label>{t("assistantStatusPanel.version")}</Label>
-      <Value>{healthzLoading && !assistant.current_release_version ? "—" : version ?? "—"}</Value>
+      <Value>
+        {healthzLoading && !assistant.current_release_version
+          ? "—"
+          : (version ?? "—")}
+      </Value>
     </div>
   );
 }

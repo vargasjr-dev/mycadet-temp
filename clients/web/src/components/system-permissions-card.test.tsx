@@ -284,7 +284,6 @@ describe("SystemPermissionsCard", () => {
     });
   });
 
-  
   test("keeps notifications requests plain without a complete snapshot", async () => {
     state = makeState({ notifications: "not-determined" });
     preparedSnapshot = { name: "Alice" };
