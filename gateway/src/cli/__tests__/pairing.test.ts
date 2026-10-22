@@ -7,7 +7,7 @@
  * the on-disk store the running gateway reads.
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
@@ -20,7 +20,9 @@ const {
 } = await import("../../remote-web/pairing-challenge-store.js");
 const { resetRemoteWebPairingChallengeRateLimiterForTests } =
   await import("../../remote-web/pairing-challenge-rate-limit-store.js");
-const { testSecurityDir } = await import("../../__tests__/test-preload.js");
+const { testSecurityDir, testWorkspaceDir } = await import(
+  "../../__tests__/test-preload.js",
+);
 
 // ---------------------------------------------------------------------------
 // Test infrastructure
@@ -57,9 +59,23 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  writeIngressPublicBaseUrl(null);
   logSpy.mockRestore();
   errorSpy.mockRestore();
 });
+
+function writeIngressPublicBaseUrl(url: string | null): void {
+  const configPath = join(testWorkspaceDir, "config.json");
+  if (url === null) {
+    rmSync(configPath, { force: true });
+    return;
+  }
+  mkdirSync(testWorkspaceDir, { recursive: true });
+  writeFileSync(
+    configPath,
+    JSON.stringify({ ingress: { publicBaseUrl: url } }),
+  );
+}
 
 function lastLoggedChallenge() {
   const line = logs[logs.length - 1];
@@ -69,10 +85,8 @@ function lastLoggedChallenge() {
 
 describe("gateway pairing mint", () => {
   test("mints an approved challenge directly against the file-backed store", async () => {
-    const code = await runPairingCommand([
-      "mint",
-      "https://my-assistant.ts.net",
-    ]);
+    writeIngressPublicBaseUrl("https://my-assistant.ts.net");
+    const code = await runPairingCommand(["mint"]);
 
     expect(code).toBe(0);
     const challenge = lastLoggedChallenge();
@@ -87,10 +101,8 @@ describe("gateway pairing mint", () => {
   });
 
   test("persists the challenge to the store the running gateway reads", async () => {
-    const code = await runPairingCommand([
-      "mint",
-      "https://my-assistant.ts.net",
-    ]);
+    writeIngressPublicBaseUrl("https://my-assistant.ts.net");
+    const code = await runPairingCommand(["mint"]);
     expect(code).toBe(0);
 
     const storePath = join(
@@ -103,18 +115,20 @@ describe("gateway pairing mint", () => {
     expect(raw).toContain('"requesterIp":"cli"');
   });
 
-  test("rejects an unparseable public base URL", async () => {
-    const code = await runPairingCommand(["mint", "not-a-url"]);
+  test("rejects an unparseable saved public base URL", async () => {
+    writeIngressPublicBaseUrl("not-a-url");
+    const code = await runPairingCommand(["mint"]);
 
     expect(code).toBe(1);
     expect(errors.join("\n")).toContain("publicBaseUrl is required");
   });
 
-  test("requires the public base URL argument", async () => {
+  test("fails when no ingress url is saved", async () => {
+    writeIngressPublicBaseUrl(null);
     const code = await runPairingCommand(["mint"]);
 
     expect(code).toBe(1);
-    expect(errors.join("\n")).toContain("mint requires the public base URL");
+    expect(errors.join("\n")).toContain("no ingress url saved");
   });
 });
 
@@ -173,9 +187,11 @@ describe("gateway pairing list", () => {
     const older = Date.now() - 60_000;
     const newer = Date.now() - 30_000;
     setRemoteWebPairingChallengeNowForTests(() => older);
-    await runPairingCommand(["mint", "https://older.example.com"]);
+    writeIngressPublicBaseUrl("https://older.example.com");
+    await runPairingCommand(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => newer);
-    await runPairingCommand(["mint", "https://newer.example.com"]);
+    writeIngressPublicBaseUrl("https://newer.example.com");
+    await runPairingCommand(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => Date.now());
 
     const code = await runPairingCommand(["list", "--json"]);
@@ -197,7 +213,8 @@ describe("gateway pairing list", () => {
     // (mint + 10-minute TTL) is then in the past of the real wall clock the
     // CLI checks against, without the store's own expiry paths deleting it.
     setRemoteWebPairingChallengeNowForTests(() => Date.now() - 3_600_000);
-    await runPairingCommand(["mint", "https://stale.example.com"]);
+    writeIngressPublicBaseUrl("https://stale.example.com");
+    await runPairingCommand(["mint"]);
     setRemoteWebPairingChallengeNowForTests(() => Date.now());
 
     const code = await runPairingCommand(["list", "--json"]);
@@ -211,7 +228,8 @@ describe("gateway pairing list", () => {
   });
 
   test("human output shows user code, status, liveness, and timestamps", async () => {
-    await runPairingCommand(["mint", "https://shown.example.com"]);
+    writeIngressPublicBaseUrl("https://shown.example.com");
+    await runPairingCommand(["mint"]);
 
     const code = await runPairingCommand(["list"]);
     expect(code).toBe(0);
