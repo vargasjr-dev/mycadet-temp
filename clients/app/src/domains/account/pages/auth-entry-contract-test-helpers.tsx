@@ -15,7 +15,6 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
-import { useAssistantLifecycleStore } from "@web/assistant/lifecycle-store";
 import * as authStore from "@web/stores/auth-store";
 import * as nativeAuth from "@web/runtime/native-auth";
 import type { CloudSessionStatus } from "@web/stores/session-status";
@@ -88,9 +87,6 @@ export function setupAuthEntry() {
     authEntry.hardNavigateCalls = [];
     authEntry.nativeLoginError = null;
     setCloudSession("present");
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "loading" },
-    });
   });
 
   afterEach(cleanup);
@@ -168,9 +164,6 @@ export function describeAuthEntryContract(
     test("a self-hosted assistant with no platform session still signs in", () => {
       authEntry.authenticated = true;
       setCloudSession("absent");
-      useAssistantLifecycleStore.setState({
-        assistantState: { kind: "self_hosted" },
-      });
       const entry = entryUrl(route, CHECKOUT);
       renderEntry(entry);
 
