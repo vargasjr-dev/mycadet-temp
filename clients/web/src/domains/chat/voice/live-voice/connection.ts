@@ -11,12 +11,13 @@
  *   only accepts a local actor edge JWT. So the browser first mints a
  *   short-lived, org+assistant-scoped WS token from the cloud and passes it
  *   to tunnel as a `?token=` query param.
- * - **Self-hosted / local** — when {@link getSelfHostedIngressUrl} returns the
- *   user's gateway ingress, the browser connects directly to that gateway's
- *   `/v1/live-voice`, authenticated with the cloud actor edge JWT
- *   ({@link getSelfHostedActorToken}) in `?token=`. tunnel is the cloud ingress
- *   only, so there is no token-exchange on this path — it mirrors how the
- *   self-hosted HeyAPI interceptor already routes runtime calls to the gateway.
+ * - **Self-hosted** — when {@link getSelfHostedIngressUrl} is primed, the
+ *   browser dials the scoped path `/v1/assistants/<id>/<route>` on that
+ *   origin — the same shape every HTTP call takes. The credential follows
+ *   the plane: a local assistant's serving host (the vite dev proxy, the
+ *   desktop forward, nginx) injects the gateway bearer on the proxied
+ *   upgrade, while a paired gateway's public ingress is authenticated with
+ *   the slot's actor token when it carries one.
  *
  * ---------------------------------------------------------------------------
  * Mint-endpoint contract (the backend plan must match this verbatim)
@@ -46,18 +47,6 @@ import { tunnelHostForCloudHost } from "@mycadet/service-contracts/ingress";
 import { authLiveVoiceTokenCreate } from "@/generated/api/sdk.gen";
 import type { LiveVoiceTokenResponse } from "@/generated/api/types.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import {
-  getLoopbackGatewayPort,
-  isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
-} from "@mycadet/local-mode/contract";
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
-import {
-  getLockfileAssistant,
-  isLocalClient,
-  isServedGatewayRuntime,
-  type LockfileAssistant,
-} from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -231,172 +220,96 @@ export function buildTunnelWsUrl({
   return url.toString();
 }
 
-/**
- * Whether the entry's gateway lives on another machine (a connect import):
- * a loopback-gateway cloud whose `runtimeUrl` points off this machine. Such
- * a gateway cannot carry this runtime's direct WebSocket dial.
- */
-function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  return (
-    isLoopbackGatewayCloud(entry.cloud) &&
-    isUsableRuntimeUrl(entry.runtimeUrl) &&
-    !isLoopbackPublicUrl(entry.runtimeUrl)
-  );
-}
-
-/**
- * Whether `assistantId`'s gateway is a paired one, which cannot carry a
- * WebSocket upgrade. Voice entry points use this to degrade cleanly instead
- * of dialling an unusable socket. The ingress slot no longer encodes the
- * local/paired split (every local-mode prime carries the bare same-origin),
- * so pairedness is read from the lockfile entry directly.
- */
-export function isPairedGatewayAssistant(assistantId: string): boolean {
-  const entry = getLockfileAssistant(assistantId);
-  return entry != null && isRemoteGatewayEntry(entry);
-}
-
-/**
- * Thrown when a voice WebSocket URL is requested for a paired-assistant
- * ingress. The message is user-facing: live-voice's connect failure path
- * surfaces `Error.message` as the displayed reason.
- */
-export class PairedVoiceUnavailableError extends Error {
-  constructor() {
-    super("Voice isn't available for paired assistants yet.");
-    this.name = "PairedVoiceUnavailableError";
-  }
-}
-
-export interface BuildSelfHostedGatewayWsUrlArgs {
-  /** The session's assistant id — its lockfile entry picks the transport. */
+export interface BuildGatewayWsUrlArgs {
+  /** The session's assistant id — names the scoped path the gateway serves. */
   assistantId: string;
   /**
-   * The user's gateway ingress URL (e.g. `https://x.ngrok-free.app`) or, in
-   * local mode, the bare page origin — from {@link getSelfHostedIngressUrl}.
+   * The origin the socket dials — the ingress slot from
+   * {@link getSelfHostedIngressUrl}: the page origin (local/served), the
+   * desktop bridge origin, or a paired gateway's public URL.
    */
   ingressUrl: string;
   /** Gateway route to open, e.g. `/v1/live-voice` or `/v1/stt/stream`. */
   routePath: string;
-  /** Platform actor edge JWT from {@link getSelfHostedActorToken}. */
-  token: string;
+  /**
+   * The paired/remote plane's actor edge JWT, when the slot carries one.
+   * Local-plane sockets ride host-side auth instead and pass none.
+   */
+  token?: string;
   /** Extra query params to append after `token` (e.g. `conversationId`). */
   params?: Record<string, string>;
 }
 
 /**
- * Build a self-hosted gateway WebSocket URL. Shared by every gateway WS the
- * browser opens (`/v1/live-voice`, `/v1/stt/stream`) so the transport rules stay
- * in one place:
+ * Build a gateway WebSocket URL for the scoped plane, shared by every gateway
+ * WS the browser opens (`/v1/live-voice`, `/v1/stt/stream`, `/v1/watch/stream`,
+ * `/v1/desktop/stream`) so the transport rules stay in one place:
  *
+ * - **One path shape** — `ws(s)://<ingress>/v1/assistants/<id><route>`, the
+ *   route's `/v1` prefix collapsing into the scoped family. The gateway serves
+ *   the scoped spelling alongside the flat one, so every host forwarder (vite,
+ *   the desktop bridge, nginx) carries the path verbatim.
  * - **Scheme follows the ingress:** `https`→`wss`, `http`→`ws`, so a plain-HTTP
- *   local gateway is reachable over `ws`.
- * - **The token is the actor edge JWT**, not a minted tunnel token. It rides in
- *   `?token=` because the browser WebSocket API can't set an `Authorization`
- *   header; the gateway's non-managed auth reads it there.
- * - **Local assistants → direct loopback dial** (`ws://127.0.0.1:<port>`
- *   `{routePath}`, port resolved from the entry's lockfile record): the
- *   same-origin HTTP proxies can't carry a WS upgrade, and the bare-origin
- *   ingress slot doesn't encode the port — the entry does. The
- *   `ws://127.0.0.1:*` shape is what the desktop CSP already allowlists.
- * - **Paired entries → throws {@link PairedVoiceUnavailableError}**: the
- *   paired transport is HTTP-only and there is no direct dial to fall back
- *   to, so no usable WS URL exists.
- * - **Remote ingress** (e.g. an ngrok `wss://` URL, or the served-gateway
- *   origin) keeps its host and path prefix, with `routePath` appended. Any
- *   query/hash on the ingress is dropped.
+ *   local origin is reachable over `ws`.
+ * - **The token is the actor edge JWT**, not a minted tunnel token — and only
+ *   for the paired plane, where the gateway has no host to inject one. It rides
+ *   in `?token=` because the browser WebSocket API can't set an `Authorization`
+ *   header.
+ * - Any query/hash on the ingress is dropped.
  */
-export function buildSelfHostedGatewayWsUrl({
+export function buildGatewayWsUrl({
   assistantId,
   ingressUrl,
   routePath,
   token,
   params,
-}: BuildSelfHostedGatewayWsUrlArgs): string {
-  const entry = getLockfileAssistant(assistantId);
-  if (entry != null && isRemoteGatewayEntry(entry)) {
-    // A paired entry degrades typed: the paired transport is HTTP-only with
-    // no loopback port to bypass to.
-    throw new PairedVoiceUnavailableError();
+}: BuildGatewayWsUrlArgs): string {
+  const ingress = new URL(ingressUrl);
+  ingress.protocol = ingress.protocol === "http:" ? "ws:" : "wss:";
+  const prefix = ingress.pathname.replace(/\/+$/, "");
+  ingress.pathname = `${prefix}/v1/assistants/${encodeURIComponent(assistantId)}${routePath.replace(/^\/v1/, "")}`;
+  ingress.search = "";
+  ingress.hash = "";
+  if (token) {
+    ingress.searchParams.set("token", token);
   }
-  let target: URL;
-  if (isLocalClient() && !isServedGatewayRuntime() && entry != null) {
-    // A local assistant dials its recorded loopback port directly: the
-    // same-origin HTTP proxies can't carry a WS upgrade, and the bare-origin
-    // ingress slot doesn't encode the port — the entry does.
-    const port = getLoopbackGatewayPort(entry);
-    if (port == null) {
-      throw new Error("Local gateway has no recorded port yet.");
-    }
-    target = new URL(`ws://127.0.0.1:${port}${routePath}`);
-  } else {
-    const ingress = new URL(ingressUrl);
-    ingress.protocol = ingress.protocol === "http:" ? "ws:" : "wss:";
-    const prefix = ingress.pathname.replace(/\/+$/, "");
-    ingress.pathname = `${prefix}${routePath}`;
-    ingress.search = "";
-    ingress.hash = "";
-    target = ingress;
-  }
-
-  target.searchParams.set("token", token);
   for (const [key, value] of Object.entries(params ?? {})) {
-    target.searchParams.set(key, value);
+    ingress.searchParams.set(key, value);
   }
-  return target.toString();
+  return ingress.toString();
 }
 
 export interface ResolveGatewayWsUrlArgs {
   assistantId: string;
   /** Gateway route to open, e.g. `/v1/live-voice` or `/v1/watch/stream`. */
   routePath: string;
-  /** Names the stream in the not-ready error, e.g. `live voice`. */
-  label: string;
   /** Extra query params to append after `token`. */
   params?: Record<string, string>;
 }
 
 /**
  * Resolve a gateway WebSocket URL for `assistantId`, choosing the transport by
- * deployment kind (see the module doc comment). Live voice, watch, and the pod
- * desktop all route through here.
+ * deployment kind (see the module doc comment). Live voice, watch, the pod
+ * desktop, and dictation all route through here.
  *
- * - **Self-hosted / local**: when {@link getSelfHostedIngressUrl} is primed,
- *   connect straight to the user's gateway with the actor edge JWT. No tunnel
- *   token-exchange happens. Throws {@link TunnelWsTokenError} if the ingress is
- *   known but the actor token hasn't been provisioned yet (a brief post-hatch
- *   window), so the caller surfaces a connection failure rather than dialling an
- *   unauthenticated socket. A paired ingress throws
- *   {@link PairedVoiceUnavailableError} first: the paired proxy is HTTP-only,
- *   so no WebSocket transport exists and the caller surfaces the
- *   unavailable reason.
+ * - **Self-hosted**: when {@link getSelfHostedIngressUrl} is primed, dial the
+ *   scoped path on that origin. No tunnel token-exchange happens. The slot's
+ *   actor token rides when provisioned (the paired plane); local assistants
+ *   ride their serving host's injected bearer instead.
  * - **Cloud**: mint a short-lived tunnel WS token and build the tunnel URL.
  */
 export async function resolveGatewayWsUrl({
   assistantId,
   routePath,
-  label,
   params,
 }: ResolveGatewayWsUrlArgs): Promise<string> {
   const ingressUrl = getSelfHostedIngressUrl();
   if (ingressUrl) {
-    // The paired check fires before the token check: a paired slot carries
-    // no renderer token by design.
-    if (isPairedGatewayAssistant(assistantId)) {
-      throw new PairedVoiceUnavailableError();
-    }
-    const token = getSelfHostedActorToken();
-    if (!token) {
-      throw new TunnelWsTokenError(
-        0,
-        `Self-hosted ${label} has no actor token yet; the gateway isn't ready.`,
-      );
-    }
-    return buildSelfHostedGatewayWsUrl({
+    return buildGatewayWsUrl({
       assistantId,
       ingressUrl,
       routePath,
-      token,
+      token: getSelfHostedActorToken() ?? undefined,
       params,
     });
   }
@@ -422,7 +335,6 @@ export function resolveLiveVoiceWsUrl({
   return resolveGatewayWsUrl({
     assistantId,
     routePath: LIVE_VOICE_ROUTE,
-    label: "live voice",
     params: conversationId ? { conversationId } : undefined,
   });
 }

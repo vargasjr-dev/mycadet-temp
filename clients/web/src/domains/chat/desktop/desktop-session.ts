@@ -8,8 +8,6 @@
 
 import RFB from "@novnc/novnc";
 
-import { PairedVoiceUnavailableError } from "@/domains/chat/voice/live-voice/connection";
-
 import {
   desktopEndReasonForClose,
   resolveDesktopStreamWsUrl,
@@ -164,9 +162,7 @@ export function openDesktopSession({
     },
     (err: unknown) => {
       console.warn("desktop-session: no desktop transport", err);
-      end(
-        err instanceof PairedVoiceUnavailableError ? "unavailable" : "failed",
-      );
+      end("failed");
     },
   );
 

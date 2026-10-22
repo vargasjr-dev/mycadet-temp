@@ -337,15 +337,13 @@ describe("DesktopViewer", () => {
     expect(status()).toBe("connecting");
   });
 
-  test("a paired assistant is refused as unavailable rather than left hanging", async () => {
-    const { PairedVoiceUnavailableError } =
-      await import("@/domains/chat/voice/live-voice/connection");
-    resolved = new PairedVoiceUnavailableError();
+  test("a resolver failure surfaces the generic failure, dialing nothing", async () => {
+    resolved = new Error("no desktop transport");
 
     await mountPanel();
 
     expect(FakeWebSocket.instances).toHaveLength(0);
-    expect(status()).toBe("unavailable");
+    expect(status()).toBe("failed");
   });
 
   test("a remote copy lands on the local clipboard", async () => {

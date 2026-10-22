@@ -16,14 +16,14 @@
  * stream can't start (no ingress, provider without streaming support, capture
  * failure), dictation proceeds on the batch path alone.
  *
- * Transport follows `live-voice/connection.ts` and the watch stream. A
- * self-hosted assistant is dialled straight at its gateway ingress with the
- * actor edge JWT in `?token=` (browser WebSockets can't set an `Authorization`
- * header); a cloud one is reached through the cloud's tunnel ingress with
- * a minted short-lived token. The mint is a round trip, so the socket is
- * resolved asynchronously and audio captured meanwhile is held until it opens,
- * which is what keeps the opening words of a dictation that begins the
- * instant a key goes down.
+ * Transport follows the shared `resolveGatewayWsUrl`: the scoped
+ * `/v1/assistants/<id>/stt/stream` path on the ingress slot's origin (local
+ * hosts inject the gateway bearer on the proxied upgrade; a paired gateway's
+ * public ingress authenticates with the slot's actor token), or the cloud's
+ * tunnel ingress with a minted short-lived token. The mint is a round trip,
+ * so the socket is resolved asynchronously and audio captured meanwhile is
+ * held until it opens, which is what keeps the opening words of a dictation
+ * that begins the instant a key goes down.
  *
  * Audio is the live-voice capture pipeline's 16 kHz mono PCM16LE
  * (`LiveVoiceAudioCapture`), sent as binary frames; the runtime session
@@ -38,19 +38,9 @@ import {
   type LiveVoiceAudioCaptureOptions,
   type LiveVoiceCaptureResult,
 } from "@/domains/chat/voice/live-voice/pcm-capture";
-import {
-  buildSelfHostedGatewayWsUrl,
-  buildTunnelWsUrl,
-  isPairedGatewayAssistant,
-  mintTunnelWsToken,
-  PairedVoiceUnavailableError,
-  TunnelWsTokenError,
-} from "@/domains/chat/voice/live-voice/connection";
+import { resolveGatewayWsUrl } from "@/domains/chat/voice/live-voice/connection";
 import { LIVE_VOICE_AUDIO_FORMAT_PARAMS } from "@/domains/chat/voice/live-voice/protocol";
-import {
-  getSelfHostedActorToken,
-  getSelfHostedIngressUrl,
-} from "@/lib/self-hosted/connection";
+import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 
 export interface DictationStreamHandle {
   /**
@@ -89,35 +79,16 @@ const STOP_FLUSH_TIMEOUT_MS = 4000;
 /**
  * Where the session's socket is, for a given assistant.
  *
- * The same shape as the watch stream's resolver and live voice's, since all
- * three are gateway WebSocket routes with the same two ways in. Throws the
- * same errors they do for the same reasons; see `resolveWatchStreamWsUrl`.
+ * Delegates to the shared {@link resolveGatewayWsUrl} with the STT route and
+ * the live-voice audio-format params, so dictation, live voice, watch, and
+ * the desktop share one transport rule set.
  */
-export async function resolveDictationStreamWsUrl(
+export function resolveDictationStreamWsUrl(
   assistantId: string,
 ): Promise<string> {
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (ingressUrl) {
-    // The paired check fires before the token check: a paired slot carries
-    // no renderer token by design.
-    if (isPairedGatewayAssistant(assistantId)) {
-      throw new PairedVoiceUnavailableError();
-    }
-    const token = getSelfHostedActorToken();
-    if (!token) {
-      throw new TunnelWsTokenError(
-        0,
-        "Self-hosted dictation has no actor token yet; the gateway isn't ready.",
-      );
-    }
-    return buildSttStreamWsUrl({ assistantId, ingressUrl, token });
-  }
-
-  const { token } = await mintTunnelWsToken(assistantId);
-  return buildTunnelWsUrl({
+  return resolveGatewayWsUrl({
     assistantId,
     routePath: STT_STREAM_ROUTE,
-    token,
     params: LIVE_VOICE_AUDIO_FORMAT_PARAMS,
   });
 }
@@ -134,34 +105,6 @@ export interface DictationStreamOptions {
     shutdown(): void;
     flush?(): void;
   };
-}
-
-/**
- * Build the self-hosted STT stream WebSocket URL:
- *
- *   ws(s)://<ingressHost>/v1/stt/stream?token=…&mimeType=audio/pcm&sampleRate=16000
- *
- * Delegates to {@link buildSelfHostedGatewayWsUrl} so this dictation stream and
- * live-voice share one transport rule set — including the local entry's direct
- * loopback dial (the HTTP-only same-origin proxies can't carry a WS upgrade).
- * Exported for unit tests.
- */
-export function buildSttStreamWsUrl({
-  assistantId,
-  ingressUrl,
-  token,
-}: {
-  assistantId: string;
-  ingressUrl: string;
-  token: string;
-}): string {
-  return buildSelfHostedGatewayWsUrl({
-    assistantId,
-    ingressUrl,
-    routePath: STT_STREAM_ROUTE,
-    token,
-    params: LIVE_VOICE_AUDIO_FORMAT_PARAMS,
-  });
 }
 
 /** Join transcript segments with a single space, ignoring blanks. */

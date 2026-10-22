@@ -27,7 +27,7 @@ describe("resolving the desktop stream URL", () => {
     const url = new URL(await resolveDesktopStreamWsUrl("asst-1"));
 
     expect(url.origin).toBe("ws://localhost:8500");
-    expect(url.pathname).toBe("/v1/desktop/stream");
+    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
     expect(url.searchParams.get("token")).toBe("actor-jwt");
   });
 });

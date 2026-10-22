@@ -7,27 +7,23 @@
  *     CSRF + org header via the interceptor). We spy on `client.post` rather
  *     than `mock.module`-ing the whole SDK, matching the pattern in
  *     `domains/chat/inspector/compaction-trail-fetch.test.ts`.
- *   - `buildTunnelWsUrl` / `buildSelfHostedGatewayWsUrl` and the resolvers on
- *     top of them: the cloud tunnel URL carries the `assistantId` in the path,
- *     a URL-encoded `?token=`, and the `wss` scheme; the self-hosted URL
- *     follows the ingress and bypasses the HTTP-only local proxy.
+ *   - `buildTunnelWsUrl` / `buildGatewayWsUrl` and the resolvers on top of
+ *     them: the cloud tunnel URL carries the `assistantId` in the path, a
+ *     URL-encoded `?token=`, and the `wss` scheme; the self-hosted URL rides
+ *     the scoped shape on the ingress origin.
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { client } from "@/generated/api/client.gen";
-import type { LockfileAssistant } from "@/lib/local-mode";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
-import { useLockfileStore } from "@/stores/lockfile-store";
 
 import {
-  buildSelfHostedGatewayWsUrl,
+  buildGatewayWsUrl,
   buildTunnelWsUrl,
   getTunnelWsScheme,
-  isPairedGatewayAssistant,
   TunnelWsTokenError,
   mintTunnelWsToken,
-  PairedVoiceUnavailableError,
   resolveGatewayWsUrl,
   resolveLiveVoiceWsUrl,
 } from "./connection";
@@ -64,19 +60,7 @@ afterEach(() => {
   client.post = originalPost;
   setSelfHostedConnection(null);
   window.__CADET_CONFIG__ = undefined;
-  useLockfileStore.setState({ lockfile: null });
 });
-
-/**
- * Seed the real lockfile store — the unified id-keyed proxy resolves the
- * loopback port and pairedness through the entry the path names, so the WS
- * tests read the same source the hosts do.
- */
-function setLockfile(assistants: LockfileAssistant[]): void {
-  useLockfileStore.setState({
-    lockfile: { assistants, activeAssistant: null },
-  });
-}
 
 describe("mintTunnelWsToken", () => {
   test("POSTs the documented mint endpoint with the assistantId body", async () => {
@@ -181,78 +165,62 @@ describe("getTunnelWsScheme", () => {
 });
 
 // ---------------------------------------------------------------------------
-// buildSelfHostedGatewayWsUrl
+// buildGatewayWsUrl
 // ---------------------------------------------------------------------------
-
-describe("buildSelfHostedGatewayWsUrl", () => {
+describe("buildGatewayWsUrl", () => {
   const args = {
     assistantId: "asst-1",
     routePath: "/v1/live-voice",
-    token: "actor-tok",
   };
 
-  test("a local entry dials its recorded loopback port", () => {
-    // The same-origin HTTP proxies can't carry a WS upgrade, so the socket
-    // bypasses them and hits 127.0.0.1:<port> — the port resolved from the
-    // entry's lockfile record. The bare-origin ingress (the local prime's
-    // shape) carries nothing the dial needs; the entry is the source of truth.
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        resources: { gatewayPort: 7821 },
-      } as LockfileAssistant,
-    ]);
+  test("dials the scoped path on the ingress origin, dropping query and hash", () => {
     const url = new URL(
-      buildSelfHostedGatewayWsUrl({
+      buildGatewayWsUrl({
         ...args,
         ingressUrl: "https://app.example?a=1#frag",
         params: { conversationId: "conv-xyz" },
       }),
     );
-    expect(url.protocol).toBe("ws:");
-    expect(url.host).toBe("127.0.0.1:7821");
-    expect(url.pathname).toBe("/v1/live-voice");
+    expect(url.protocol).toBe("wss:");
+    expect(url.host).toBe("app.example");
+    expect(url.pathname).toBe("/v1/assistants/asst-1/live-voice");
     expect(url.hash).toBe("");
     expect(url.searchParams.get("a")).toBeNull();
-    expect(url.searchParams.get("token")).toBe("actor-tok");
+    expect(url.searchParams.get("token")).toBeNull();
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
   });
 
-  test("a local entry with no recorded port throws", () => {
-    setLockfile([
-      { assistantId: "asst-1", cloud: "local" } as LockfileAssistant,
-    ]);
-    expect(() =>
-      buildSelfHostedGatewayWsUrl({ ...args, ingressUrl: "https://app.example" }),
-    ).toThrow("Local gateway has no recorded port yet.");
-  });
-
-  test("a paired entry throws PairedVoiceUnavailableError", () => {
-    // Pairedness is read from the entry, and paired transports have no
-    // loopback to dial.
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "https://gw.example.com",
-      } as LockfileAssistant,
-    ]);
-    expect(() =>
-      buildSelfHostedGatewayWsUrl({ ...args, ingressUrl: "https://app.example" }),
-    ).toThrow(PairedVoiceUnavailableError);
-  });
-
-  test("remote ingress keeps its host and path prefix, drops query and hash", () => {
+  test("a plain-HTTP ingress dials over ws so a local origin is reachable", () => {
     const url = new URL(
-      buildSelfHostedGatewayWsUrl({
+      buildGatewayWsUrl({ ...args, ingressUrl: "http://localhost:8500" }),
+    );
+    expect(url.protocol).toBe("ws:");
+    expect(url.host).toBe("localhost:8500");
+    expect(url.pathname).toBe("/v1/assistants/asst-1/live-voice");
+  });
+
+  test("the paired plane's actor token rides in ?token= when provided", () => {
+    const url = new URL(
+      buildGatewayWsUrl({
+        ...args,
+        ingressUrl: "https://app.example",
+        token: "actor-tok",
+      }),
+    );
+    expect(url.searchParams.get("token")).toBe("actor-tok");
+  });
+
+  test("a path-prefixed ingress keeps its prefix; the route's /v1 folds into the scoped family", () => {
+    const url = new URL(
+      buildGatewayWsUrl({
         ...args,
         ingressUrl: "https://x.ngrok-free.app/gw?a=1#frag",
+        token: "actor-tok",
       }),
     );
     expect(url.protocol).toBe("wss:");
     expect(url.host).toBe("x.ngrok-free.app");
-    expect(url.pathname).toBe("/gw/v1/live-voice");
+    expect(url.pathname).toBe("/gw/v1/assistants/asst-1/live-voice");
     expect(url.hash).toBe("");
     expect(url.searchParams.get("a")).toBeNull();
     expect(url.searchParams.get("token")).toBe("actor-tok");
@@ -262,15 +230,13 @@ describe("buildSelfHostedGatewayWsUrl", () => {
 // ---------------------------------------------------------------------------
 // resolveGatewayWsUrl: the routing every gateway WS shares
 // ---------------------------------------------------------------------------
-
 describe("resolveGatewayWsUrl", () => {
   const args = {
     assistantId: "asst-1",
     routePath: "/v1/desktop/stream",
-    label: "desktop",
   };
 
-  test("self-hosted: dials the ingress directly and mints nothing", async () => {
+  test("self-hosted: dials the scoped path on the ingress and mints nothing", async () => {
     setSelfHostedConnection({
       url: "http://localhost:8500",
       token: "actor-jwt",
@@ -279,36 +245,18 @@ describe("resolveGatewayWsUrl", () => {
     const url = new URL(await resolveGatewayWsUrl(args));
 
     expect(url.origin).toBe("ws://localhost:8500");
-    expect(url.pathname).toBe("/v1/desktop/stream");
+    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
     expect(url.searchParams.get("token")).toBe("actor-jwt");
     expect(captured).toBeNull();
   });
 
-  test("self-hosted: refuses before the actor token is provisioned, naming the stream", async () => {
+  test("self-hosted: dials without a token when none is provisioned — the host injects", async () => {
     setSelfHostedConnection({ url: "http://localhost:8500", token: null });
 
-    await expect(resolveGatewayWsUrl(args)).rejects.toThrow(
-      /Self-hosted desktop has no actor token yet/,
-    );
-    expect(captured).toBeNull();
-  });
+    const url = new URL(await resolveGatewayWsUrl(args));
 
-  test("paired: refuses outright rather than dialling an HTTP-only proxy", async () => {
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "https://gw.example.com",
-      } as LockfileAssistant,
-    ]);
-    setSelfHostedConnection({
-      url: "http://localhost:3000",
-      token: "actor-jwt",
-    });
-
-    await expect(resolveGatewayWsUrl(args)).rejects.toBeInstanceOf(
-      PairedVoiceUnavailableError,
-    );
+    expect(url.pathname).toBe("/v1/assistants/asst-1/desktop/stream");
+    expect(url.searchParams.has("token")).toBe(false);
     expect(captured).toBeNull();
   });
 
@@ -331,7 +279,6 @@ describe("resolveGatewayWsUrl", () => {
 // ---------------------------------------------------------------------------
 // resolveLiveVoiceWsUrl — transport routing (cloud vs self-hosted)
 // ---------------------------------------------------------------------------
-
 describe("resolveLiveVoiceWsUrl", () => {
   test("cloud path: mints a tunnel token and builds the tunnel URL", async () => {
     // GIVEN no self-hosted ingress (default)
@@ -359,7 +306,7 @@ describe("resolveLiveVoiceWsUrl", () => {
     expect(new URL(raw).searchParams.has("conversationId")).toBe(false);
   });
 
-  test("self-hosted path: dials the gateway with the actor token, no mint", async () => {
+  test("self-hosted path: dials the scoped path with the actor token, no mint", async () => {
     // GIVEN a primed self-hosted connection
     setSelfHostedConnection({
       url: "https://x.ngrok-free.app",
@@ -373,94 +320,24 @@ describe("resolveLiveVoiceWsUrl", () => {
 
     // THEN no tunnel token is minted...
     expect(captured).toBeNull();
-    // ...and the URL targets the gateway with the actor token
+    // ...and the URL targets the gateway's scoped route with the actor token
     const url = new URL(raw);
     expect(url.protocol).toBe("wss:");
     expect(url.host).toBe("x.ngrok-free.app");
-    expect(url.pathname).toBe("/v1/live-voice");
+    expect(url.pathname).toBe("/v1/assistants/assistant-1/live-voice");
     expect(url.searchParams.get("token")).toBe("actor-tok");
     expect(url.searchParams.get("conversationId")).toBe("conv-xyz");
   });
 
-  test("self-hosted with no actor token yet throws (and does not mint)", async () => {
-    // GIVEN an ingress is known but the actor token hasn't been provisioned
-    setSelfHostedConnection({ url: "https://x.ngrok-free.app", token: null });
+  test("self-hosted with no actor token dials without one (and does not mint)", async () => {
+    // GIVEN an ingress is known but no actor token is provisioned — a local
+    // assistant's serving host injects the credential on the proxied upgrade.
+    setSelfHostedConnection({ url: "http://localhost:8500", token: null });
 
-    await expect(
-      resolveLiveVoiceWsUrl({ assistantId: "assistant-1" }),
-    ).rejects.toBeInstanceOf(TunnelWsTokenError);
+    const raw = await resolveLiveVoiceWsUrl({ assistantId: "assistant-1" });
+
+    const url = new URL(raw);
+    expect(url.searchParams.has("token")).toBe(false);
     expect(captured).toBeNull();
-  });
-
-  test("paired ingress rejects with the voice-unavailable reason (and does not mint)", async () => {
-    // GIVEN the active selection is a paired assistant riding the HTTP-only
-    // same-origin proxy
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "https://gw.example.com",
-      } as LockfileAssistant,
-    ]);
-    setSelfHostedConnection({
-      url: "http://localhost:3000",
-      token: "actor-tok",
-    });
-
-    // THEN the resolve fails typed with the user-facing reason live-voice
-    // surfaces via Error.message, and no tunnel token is minted
-    await expect(
-      resolveLiveVoiceWsUrl({ assistantId: "asst-1" }),
-    ).rejects.toThrow("Voice isn't available for paired assistants yet.");
-    expect(captured).toBeNull();
-  });
-
-  test("paired ingress rejects even before the actor token is provisioned", async () => {
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "https://gw.example.com",
-      } as LockfileAssistant,
-    ]);
-    setSelfHostedConnection({
-      url: "app://cadet",
-      token: null,
-    });
-
-    await expect(
-      resolveLiveVoiceWsUrl({ assistantId: "asst-1" }),
-    ).rejects.toBeInstanceOf(PairedVoiceUnavailableError);
-    expect(captured).toBeNull();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// isPairedGatewayIngress
-// ---------------------------------------------------------------------------
-
-describe("isPairedGatewayAssistant", () => {
-  test("true exactly when the lockfile entry is paired", () => {
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "https://gw.example.com",
-      } as LockfileAssistant,
-    ]);
-    expect(isPairedGatewayAssistant("asst-1")).toBe(true);
-    expect(isPairedGatewayAssistant("who")).toBe(false);
-  });
-
-  test("local entries and unknown ids are not paired", () => {
-    setLockfile([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        resources: { gatewayPort: 7821 },
-      } as LockfileAssistant,
-    ]);
-    expect(isPairedGatewayAssistant("asst-1")).toBe(false);
-    expect(isPairedGatewayAssistant("who")).toBe(false);
   });
 });
