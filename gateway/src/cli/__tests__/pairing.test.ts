@@ -7,7 +7,13 @@
  * the on-disk store the running gateway reads.
  */
 
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
@@ -20,9 +26,8 @@ const {
 } = await import("../../remote-web/pairing-challenge-store.js");
 const { resetRemoteWebPairingChallengeRateLimiterForTests } =
   await import("../../remote-web/pairing-challenge-rate-limit-store.js");
-const { testSecurityDir, testWorkspaceDir } = await import(
-  "../../__tests__/test-preload.js",
-);
+const { testSecurityDir, testWorkspaceDir } =
+  await import("../../__tests__/test-preload.js");
 
 // ---------------------------------------------------------------------------
 // Test infrastructure

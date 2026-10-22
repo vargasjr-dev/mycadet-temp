@@ -1328,7 +1328,6 @@ describe("ChatComposer: send/stop while the assistant is busy", () => {
     const html = renderComposer({ input: "hello", isAssistantBusy: true });
     expect(html).toContain('aria-label="Attach file"');
   });
-
 });
 
 /**
@@ -1750,7 +1749,6 @@ describe("ChatComposer: single-row mobile composer", () => {
     // THEN the plus opens ours rather than the OS chooser
     expect(addSheet(container)).not.toBeNull();
   });
-
 
   test("the card is a pill on a phone and keeps its desktop corner elsewhere", () => {
     // GIVEN a phone composer
