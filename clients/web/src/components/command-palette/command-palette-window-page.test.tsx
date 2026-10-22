@@ -55,7 +55,9 @@ mock.module("@/hooks/conversation-queries", () => ({
 const localSelectedRef = {
   value: null as { assistantId: string; name?: string } | null,
 };
+const localModeModule = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
+  ...localModeModule,
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   getSelectedAssistant: () => localSelectedRef.value,
@@ -90,6 +92,7 @@ mock.module("@/stores/organization-store", () => {
   const useOrganizationStore = () => null;
   useOrganizationStore.use = {
     currentOrganizationId: () => orgRef.currentOrganizationId,
+    status: () => "idle",
   };
   useOrganizationStore.getState = () => ({
     currentOrganizationId: orgRef.currentOrganizationId,
