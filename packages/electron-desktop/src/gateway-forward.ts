@@ -1,11 +1,13 @@
 import {
   authorizePairedForwardHeaders,
   gatewayTargetsFromLockfile,
+  loopbackGatewayBearer,
   readGatewayTargets,
   resolveGatewayProxyTarget,
   resolveLockfilePaths,
   sanitizePairedForwardHeaders,
   type GatewayEntryTarget,
+  type GuardianTokenLease,
   type PairedGuardianTokenProvider,
 } from "@mycadet/local-mode";
 
@@ -14,7 +16,10 @@ import {
   type ForwardFetchRetryOptions,
 } from "./cloud-forward";
 import { getWatchedLockfileSnapshot } from "./lockfile-watcher";
-import { getPairedGuardianAccessToken } from "./local-mode";
+import {
+  getLocalGuardianAccessToken,
+  getPairedGuardianAccessToken,
+} from "./local-mode";
 
 /**
  * Planning and execution for the gateway data-plane proxy: the same-origin
@@ -71,15 +76,11 @@ export type GatewayForwardPlan =
  * actually hatched or imported are reachable.
  *
  * On a loopback forward, the request's `Origin` is rewritten to the gateway's
- * own loopback origin. The gateway token route (`/auth/token`) only accepts
- * loopback web origins (`http(s)://localhost|127.0.0.1`) as a CSRF defense
- * against arbitrary web pages; the renderer issues this request from the
- * packaged app's `app://mycadet.ai` origin, but the main process is itself the
- * trusted loopback client making the hop — exactly as the dev server's browser
- * presents `http://localhost:<port>`. Without the rewrite the gateway rejects
- * the packaged app's origin with 403. Only `Origin` is gated, so the remaining
- * headers (notably the gateway `Authorization` bearer the renderer minted)
- * pass through unchanged.
+ * own loopback origin (the gateway gates loopback web origins on its
+ * browser-reachable routes), and the renderer-supplied `Authorization` is
+ * stripped — the renderer holds no gateway credential. The executor installs
+ * the bearer the trusted main process mints itself from the on-disk guardian
+ * token, so nothing token-shaped ever crosses into the renderer.
  *
  * On a remote forward, renderer-controlled authorization and browser-ambient
  * headers (`Origin`, `Referer`, `Cookie`, `Sec-Fetch-*`) are stripped via the
@@ -112,6 +113,7 @@ function planGatewayForward(
       if (decision.target.kind === "loopback") {
         const { port } = decision.target;
         headers.set("origin", `http://127.0.0.1:${port}`);
+        headers.delete("authorization");
         return {
           kind: "forward",
           url: `http://127.0.0.1:${port}${decision.path}${decision.search}`,
@@ -213,6 +215,9 @@ export function executeGatewayForwardPlan(
     case "reject":
       return new Response(plan.message, { status: plan.status });
     case "forward": {
+      if (!plan.remote) {
+        return executeLoopbackForward(plan, request, fetcher);
+      }
       const doFetch = () =>
         fetcher(plan.url, {
           method: plan.method,
@@ -223,9 +228,6 @@ export function executeGatewayForwardPlan(
           ...(plan.hasBody ? { duplex: "half" as const } : {}),
           redirect: "manual",
         });
-      if (!plan.remote) {
-        return doFetch();
-      }
       return fetchForwardPlanWithRetry(plan, doFetch, {
         retries: 1,
         onError: (err, attempt) => {
@@ -238,4 +240,60 @@ export function executeGatewayForwardPlan(
       });
     }
   }
+}
+
+/**
+ * Execute a loopback forward with host-side bearer custody. The plan's
+ * headers arrive renderer-sanitized (the planner strips any Authorization),
+ * the executor installs the bearer the main process mints from the on-disk
+ * guardian token — except on the mint route itself, whose own bearer
+ * contract is the guardian token and which nothing dials through this
+ * forward anymore. A gateway 401 on a bodyless request forces one re-mint
+ * and one retry, so a revoked bearer heals on the next request instead of
+ * 401ing until the cache expires; bodied requests cannot replay (the
+ * request stream is already consumed), so their 401 flows back to the
+ * caller. When the mint fails the request forwards without a bearer and
+ * the gateway's own response surfaces the truth.
+ */
+async function executeLoopbackForward(
+  plan: Extract<GatewayForwardPlan, { kind: "forward"; remote: false }>,
+  request: Pick<Request, "body">,
+  fetcher: GatewayForwardFetcher,
+): Promise<Response> {
+  const lease: GuardianTokenLease = () =>
+    getLocalGuardianAccessToken(plan.assistantId);
+  // The mint dials the same network seam as the forward, so a recorded or
+  // stubbed fetcher sees both hops.
+  const mintFetcher = (input: RequestInfo | URL, init?: RequestInit) =>
+    fetcher(String(input), init ?? {});
+  const injectable = new URL(plan.url).pathname !== "/auth/token";
+  const bearer = injectable
+    ? await loopbackGatewayBearer(plan.target.port, lease, {
+        fetcher: mintFetcher,
+      })
+    : null;
+  if (bearer) {
+    plan.headers.set("authorization", `Bearer ${bearer}`);
+  }
+  const doFetch = () =>
+    fetcher(plan.url, {
+      method: plan.method,
+      headers: plan.headers,
+      body: plan.hasBody ? request.body : undefined,
+      ...(plan.hasBody ? { duplex: "half" as const } : {}),
+      redirect: "manual",
+    });
+  const response = await doFetch();
+  if (response.status !== 401 || !bearer || plan.hasBody) {
+    return response;
+  }
+  const fresh = await loopbackGatewayBearer(plan.target.port, lease, {
+    forceMint: true,
+    fetcher: mintFetcher,
+  });
+  if (!fresh || fresh === bearer) {
+    return response;
+  }
+  plan.headers.set("authorization", `Bearer ${fresh}`);
+  return doFetch();
 }

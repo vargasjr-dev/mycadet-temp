@@ -2032,10 +2032,10 @@ describe("paired selection in the gateway-auth session paths", () => {
       globalThis.fetch = realFetch;
     }
 
+    // Both selection kinds collapse into the tokenless prime — it takes no
+    // target and resolves the selection itself.
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
-    expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "paired-a", cloud: "local" }),
-    );
+    expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith();
     // The undefined-token-URL fallback would mint at the SPA's own origin.
     expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
     expect(fetchedUrls).toEqual([]);

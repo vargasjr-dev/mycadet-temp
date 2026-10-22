@@ -36,6 +36,7 @@ const servedGatewayRuntimeFromConfig = (): boolean => {
 };
 const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
 let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
+let localGatewayUrlImpl: () => string | undefined = () => undefined;
 const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
 // The lockfile selection the recovery snapshots; a test moves it to model an
 // assistant switch or logout landing while the re-prime is in flight.
@@ -46,7 +47,7 @@ mock.module(
   (): Partial<typeof LocalMode> => ({
     getActiveAssistant: () => undefined,
     getLocalAssistants: () => [],
-    getLocalGatewayUrl: () => undefined,
+    getLocalGatewayUrl: () => localGatewayUrlImpl(),
     getLockfile: () => ({ assistants: [], activeAssistant: null }),
     getCloudAssistants: () => [],
     getSelectedAssistant: () => selectedAssistantImpl(),
@@ -144,9 +145,9 @@ import {
   resetCloudAuthRecoveryFlag,
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
-import { GatewayTokenError, getGatewayToken } from "@/lib/auth/gateway-session";
 import { subscribe } from "@/lib/event-bus";
 import { ApiError } from "@/utils/api-errors";
+import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -1318,6 +1319,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     clearGatewayTokenStorage();
     resetGw401RecoveryState();
     primeGatewayWithRepairImpl = async () => {};
+    localGatewayUrlImpl = () => undefined;
     selectedAssistantImpl = () => undefined;
   });
 
@@ -1336,11 +1338,10 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     const response = gatewayResponse(401);
     const result = await localGatewayAuthRecoveryInterceptor(response);
 
-    // THEN the session is re-primed with a forced mint
+    // THEN the session is re-primed in place (a tokenless re-prime — the
+    // trusted host owns the bearer)
     expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledWith(undefined, {
-      forceMint: true,
-    });
+    expect(primeGatewayWithRepairMock).toHaveBeenCalledWith();
 
     // AND the page never reloads; without a replayable request the 401
     // flows back to the caller's error path
@@ -1348,27 +1349,33 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(result).toBe(response);
   });
 
-  test("the rejected token stays in place until its replacement is minted", async () => {
+  test("the connection stays primed and gateway-auth mode reads true across the recovery", async () => {
     /**
-     * A recovery must not null the cached token while the mint is in
-     * flight: `isGatewayAuthMode()` reads it, and a session refresh or a
-     * lifecycle pass landing in that window would take the cloud
-     * branch and could log a local-gateway user out.
+     * A recovery must not unprime the slot while the prime is in flight:
+     * `isGatewayAuthMode()` reads it, and a session refresh or a lifecycle
+     * pass landing in that window would take the cloud branch and could
+     * log a local-gateway user out. The renderer holds no bearer in this
+     * mode — the trusted host mints and injects — so the slot's null token
+     * is steady state, not a logged-out signal.
      */
 
-    // GIVEN gateway tokens are stored, and a prime that inspects them
-    seedGatewayTokens();
-    let tokenDuringPrime: string | null | undefined;
+    // GIVEN a local selection (the topology the predicate reads) and a
+    // prime that inspects the connection mid-flight
+    localGatewayUrlImpl = () => "http://127.0.0.1:9090";
+    let ingressDuringPrime: string | null | undefined;
+    let authModeDuringPrime: boolean | undefined;
     primeGatewayWithRepairImpl = async () => {
-      tokenDuringPrime = localStorage.getItem("cadet:gw:token");
-      setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
+      ingressDuringPrime = getSelfHostedIngressUrl();
+      authModeDuringPrime = isGatewayAuthMode();
+      setSelfHostedConnection({ url: GATEWAY_URL, token: null });
     };
 
     // WHEN a 401 triggers recovery
     await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
 
-    // THEN the token was still present throughout the mint
-    expect(tokenDuringPrime).toBe("stale-jwt");
+    // THEN the slot was still primed and the predicate read true throughout
+    expect(ingressDuringPrime).toBe(GATEWAY_URL);
+    expect(authModeDuringPrime).toBe(true);
   });
 
   test("replays a request whose bearer the slot has already moved past, without recovering", async () => {
@@ -1553,19 +1560,18 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(captureErrorMock).toHaveBeenCalledTimes(1);
   });
 
-  test("hands a session needing a guardian repair to the chooser", async () => {
+  test("a failed recovery hands the 401 back without a repair handoff", async () => {
     /**
-     * A mint the gateway still answers with 401 after the wake the repair
-     * ran needs a guardian re-provision, which no automatic path performs.
-     * Leaving the cached token in place is what makes it survive a
-     * relaunch: its local expiry still looks fine, so the reconnect reuses
-     * it instead of minting and lands straight back in the dead session.
+     * A gateway whose host-side mint keeps failing (a revoked or spent
+     * guardian token) 401s every data request and this recovery cannot fix
+     * it — only a guardian re-provision clears that, and it must never run
+     * silently. The failure is recorded and the 401 flows to the caller's
+     * error path; the budget bounds the retries.
      */
 
-    // GIVEN a cached token the gateway refuses past the wake
-    seedGatewayTokens();
+    // GIVEN a prime that keeps failing
     primeGatewayWithRepairImpl = async () => {
-      throw new GatewayTokenError(401, "Gateway token request failed: 401");
+      throw new Error("readyz failed");
     };
 
     // WHEN a 401 reaches the interceptor
@@ -1575,40 +1581,36 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       gatewayGet(),
     );
 
-    // THEN nothing is left for the reconnect to replay
-    expect(getGatewayToken()).toBeNull();
-    // AND the chooser is asked for the repair it alone offers
-    expect(repairRequests).toBe(1);
+    // THEN the failure is reported, and no repair is asked for
+    expect(captureErrorMock).toHaveBeenCalledTimes(1);
+    expect(repairRequests).toBe(0);
     // AND the 401 still flows to the caller's error path, no reload
     expect(result).toBe(response);
     expect(reloadCalls).toBe(0);
   });
 
-  test("a repair verdict from a superseded assistant leaves the live session alone", async () => {
+  test("a failed recovery from a superseded assistant routes nobody anywhere", async () => {
     /**
      * The wake and its retries take seconds, and a switch or a logout can
      * land inside that window. The verdict is then about an assistant
-     * nobody is connected to, so acting on it would clear the gateway token
+     * nobody is connected to, so acting on it would clear the connection
      * the newly selected one is using and route the user away from it.
      */
 
     // GIVEN a recovery for one assistant, and a switch mid-prime
-    seedGatewayTokens();
     selectedAssistantImpl = () => ({ assistantId: "asst-a", cloud: "local" });
     primeGatewayWithRepairImpl = async () => {
       selectedAssistantImpl = () => ({ assistantId: "asst-b", cloud: "local" });
-      throw new GatewayTokenError(401, "Gateway token request failed: 401");
+      throw new Error("readyz failed");
     };
 
-    // WHEN the superseded recovery fails repairably
+    // WHEN the superseded recovery fails
     await localGatewayAuthRecoveryInterceptor(
       gatewayResponse(401),
       gatewayGet(),
     );
 
-    // THEN the token the new selection may already hold survives
-    expect(getGatewayToken()).toBe("stale-jwt");
-    // AND the user is not routed away from it
+    // THEN no repair handoff fires
     expect(repairRequests).toBe(0);
   });
 
@@ -1620,9 +1622,9 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
      * long as the app stays open.
      */
 
-    // GIVEN a session handed off for a guardian repair
+    // GIVEN a recovery that failed
     primeGatewayWithRepairImpl = async () => {
-      throw new GatewayTokenError(401, "Gateway token request failed: 401");
+      throw new Error("readyz failed");
     };
     await localGatewayAuthRecoveryInterceptor(
       gatewayResponse(401),
@@ -1649,35 +1651,36 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(2);
   });
 
-  test("stops recovering once a guardian repair is required", async () => {
+  test("a recovery whose replay still 401s does not refund the budget", async () => {
     /**
-     * The budget alone does not bound this: any 2xx from the ingress
-     * refunds it, so a gateway serving its own routes while rejecting a
-     * proxied one re-arms recovery indefinitely and the health poll
-     * re-enters a repair that cannot succeed, every few seconds, for the
-     * life of the session.
+     * A gateway whose host-side mint keeps failing rejects the replay too.
+     * A recovery that "succeeds" (the prime ran) but whose replay 401s has
+     * not demonstrated anything, so the budget stays spent and the
+     * cooldown spaces the next attempt instead of the health poll
+     * re-priming every few seconds for the life of the session.
      */
 
-    // GIVEN a session that needs a repair the renderer cannot run
-    primeGatewayWithRepairImpl = async () => {
-      throw new GatewayTokenError(401, "Gateway token request failed: 401");
-    };
+    // GIVEN the replay is rejected like every other proxied request
+    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
+      replayedRequests.push(input as Request);
+      return new Response("{}", { status: 401 });
+    }) as unknown as typeof globalThis.fetch;
 
-    // WHEN a 401 gives up, an ingress 2xx refunds the budget, and
-    // another 401 arrives
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(200));
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
+    // WHEN a 401 is recovered (the prime runs, the replay 401s) and another
+    // 401 arrives inside the cooldown, on the bearer the slot holds now
+    const response = gatewayResponse(401);
+    await localGatewayAuthRecoveryInterceptor(response, gatewayGet());
+    const second = gatewayResponse(401);
+    const result = await localGatewayAuthRecoveryInterceptor(
+      second,
+      new Request(GATEWAY_URL + "/v1/assistants/123/conversations", {
+        headers: { Authorization: "Bearer fresh-tok" },
+      }),
     );
 
-    // THEN the repair ran once and was asked for once
+    // THEN the recovery ran once and the second 401 flowed back untouched
     expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(repairRequests).toBe(1);
+    expect(result).toBe(second);
   });
 
   test("a failed recovery restores the connection slot the prime nulled", async () => {

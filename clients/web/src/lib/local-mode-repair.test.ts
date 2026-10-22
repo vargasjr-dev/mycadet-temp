@@ -4,19 +4,16 @@ import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
 // The wrapper under test orchestrates the real connect primitive, so we drive
-// its external seams rather than the primitive itself: the local guardian-token
-// read, the paired gateway proxy, and the wake repair call. Everything else in
-// the primitive (gateway token exchange, self-hosted connection write) is
-// stubbed to no-op so a successful prime resolves cleanly.
+// its external seams rather than the primitive itself: the host-routed readyz
+// probe the prime dials, and the wake repair call. The renderer holds no
+// gateway credential — the prime seeds a tokenless slot — so there is no
+// token machinery to stub.
 const host = await import("@/runtime/local-mode-host");
 
-let primeShouldSucceed: () => boolean;
-let fetchGuardianTokenHost = mock(async (_id: string) => "tok");
 let wakeLocalAssistantHost = mock(async (_id: string) => ({ ok: true }));
 
 mock.module("@/runtime/local-mode-host", () => ({
   ...host,
-  fetchGuardianTokenHost: (id: string) => fetchGuardianTokenHost(id),
   wakeLocalAssistantHost: (id: string) => wakeLocalAssistantHost(id),
   // The post-wake reload reads back the lockfile; serve the in-store copy so the
   // retry resolves the selected assistant rather than hitting the real host.
@@ -27,32 +24,22 @@ mock.module("@/runtime/local-mode-host", () => ({
     },
 }));
 
-// Spread the real module so `GatewayTokenError` (used by the connect wrapper's
-// ride-out classifier via `instanceof`) is the genuine class; override only the
-// transport-shaped functions. `ensureGatewayToken` is indirected through a
-// mutable impl so a test can inject a transient gateway-startup failure.
-const realGatewaySession = await import("@/lib/auth/gateway-session");
-const { GatewayTokenError } = realGatewaySession;
-let ensureGatewayTokenImpl: () => Promise<void> = async () => {};
+// The prime's only dial is the host-routed readyz probe; each test installs
+// its own response impl and reads the attempt count off the stub.
+let probeImpl: () => Promise<Response> = async () =>
+  Response.json({ status: "ok", ready: true });
+let probeCalls = 0;
+globalThis.fetch = (async () => {
+  probeCalls += 1;
+  return probeImpl();
+}) as unknown as typeof fetch;
 
-mock.module("@/lib/auth/gateway-session", () => ({
-  ...realGatewaySession,
-  clearGatewayToken: () => {},
-  ensureGatewayToken: () => ensureGatewayTokenImpl(),
-  getGatewayToken: () => "gateway-tok",
-  // Mirror the real chain (token URL derives from the assistant's gateway port)
-  // so a portless entry yields no URL until wake records one.
-  getLocalTokenUrl: (a?: LockfileAssistant) => {
-    const port = a?.resources?.gatewayPort;
-    return port == null ? undefined : `http://127.0.0.1:${port}/token`;
-  },
-}));
-
+const realConnection = await import("@/lib/self-hosted/connection");
 mock.module("@/lib/self-hosted/connection", () => ({
+  ...realConnection,
   setSelfHostedConnection: () => {},
 }));
 
-const { GuardianTokenError } = host;
 const {
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
@@ -77,15 +64,18 @@ function selectLocalAssistant(): void {
   localStorage.setItem("cadet:local:selected-assistant", "local-a");
 }
 
+const probeOk = async () => Response.json({ status: "ok", ready: true });
+const probeStatus =
+  (status: number, message = "probe failed") =>
+  async () =>
+    new Response(message, { status });
+
 beforeEach(() => {
-  primeShouldSucceed = () => true;
-  ensureGatewayTokenImpl = async () => {};
-  fetchGuardianTokenHost = mock(async (_id: string) => {
-    if (!primeShouldSucceed()) {
-      throw new GuardianTokenError(404, "token gone");
-    }
-    return "tok";
-  });
+  // The prime only dials in local mode; the previous test's afterEach leaves
+  // the cloud stamp behind, so restore the local world every test.
+  window.__CADET_CONFIG__ = undefined;
+  probeCalls = 0;
+  probeImpl = probeOk;
   wakeLocalAssistantHost = mock(async (_id: string) => ({ ok: true }));
   selectLocalAssistant();
 });
@@ -103,99 +93,74 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   });
 
   test("a repairable failure wakes once, then retries and succeeds", async () => {
-    let attempts = 0;
-    // Fail the first prime (missing token), succeed once wake has run.
-    primeShouldSucceed = () => attempts++ > 0;
+    // Fail the first probe (a route the gateway does not answer), succeed
+    // once wake has run.
+    probeImpl = async () => (probeCalls === 1 ? probeStatus(404)() : probeOk());
 
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
     expect(wakeLocalAssistantHost).toHaveBeenCalledWith("local-a");
-    // One failing attempt + one succeeding retry.
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(2);
+    // One failing probe + one succeeding retry.
+    expect(probeCalls).toBe(2);
   });
 
-  test("a mint 401 that later succeeds reconnects without waking", async () => {
-    // Login Item cold boot: the gateway opens traffic before its guardian
-    // binding backfill lands, so the mint answers 401 for a while. Waiting
-    // heals it; a plain wake cannot re-lease the mint and would restart an
+  test("a starting gateway that later answers reconnects without waking", async () => {
+    // Login Item cold boot: the gateway binds its port while the ride-out is
+    // already running. Waiting heals it; a plain wake would restart an
     // already-starting gateway.
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ < 2) {
-        throw new GatewayTokenError(401, "Gateway token request failed: 401");
-      }
-    };
+    probeImpl = async () =>
+      probeCalls < 3 ? probeStatus(503, "starting")() : probeOk();
 
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(3);
-  });
-
-  test("a mint 401 that survives the ride-out surfaces without waking", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      mintAttempts++;
-      throw new GatewayTokenError(401, "Gateway token request failed: 401");
-    };
-
-    const err = await primeLocalGatewayConnectionWithRepair().catch(
-      (e: unknown) => e,
-    );
-
-    expect(err).toBeInstanceOf(GatewayTokenError);
-    expect((err as InstanceType<typeof GatewayTokenError>).status).toBe(401);
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts);
+    expect(probeCalls).toBe(3);
   });
 
   test("a transport error that later succeeds reconnects without waking", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ < 2) {
+    probeImpl = async () => {
+      if (probeCalls < 3) {
         throw new TypeError("Failed to fetch");
       }
+      return probeOk();
     };
 
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(3);
+    expect(probeCalls).toBe(3);
   });
 
   test("a transport error that survives the ride-out wakes once, then reconnects", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      mintAttempts++;
-      if (mintAttempts <= LOCAL_GATEWAY_STARTUP_RETRY.attempts) {
+    probeImpl = async () => {
+      // The pre-wake ride-out budget is spent on transport failures; the
+      // post-wake retry lands once the gateway is back.
+      if (probeCalls <= LOCAL_GATEWAY_STARTUP_RETRY.attempts) {
         throw new TypeError("Failed to fetch");
       }
+      return probeOk();
     };
 
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    expect(mintAttempts).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts + 1);
+    expect(probeCalls).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts + 1);
   });
 
   test("a still-failing retry surfaces the original error and wakes only once", async () => {
-    primeShouldSucceed = () => false;
+    probeImpl = probeStatus(404, "no such route");
 
     const err = await primeLocalGatewayConnectionWithRepair().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
   });
 
   test("a failed wake surfaces the original error without retrying", async () => {
-    primeShouldSucceed = () => false;
+    probeImpl = probeStatus(404, "no such route");
     wakeLocalAssistantHost = mock(async () => ({
       ok: false,
       error: "no sibling env",
@@ -205,16 +170,15 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    // The first prime failed and wake failed — the connection is never retried.
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(1);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    // The first probe failed and wake failed — the connection is never retried.
+    expect(probeCalls).toBe(1);
   });
 
   test("a repairable failure for a paired target never wakes and rethrows", async () => {
     // Wake is cloud:"local"-only (it refuses paired entries), so a paired
     // connect failure must propagate immediately instead of spawning a wake
     // that is guaranteed to refuse.
-    window.__CADET_CONFIG__ = undefined;
     const paired: LockfileAssistant = {
       assistantId: "paired-a",
       cloud: "local",
@@ -224,39 +188,33 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
       lockfile: { assistants: [paired], activeAssistant: "paired-a" },
     });
     localStorage.setItem("cadet:local:selected-assistant", "paired-a");
-    const realFetch = globalThis.fetch;
-    globalThis.fetch = mock(
-      async () => new Response("token gone", { status: 404 }),
-    ) as unknown as typeof fetch;
-    const err = await primeLocalGatewayConnectionWithRepair()
-      .catch((e: unknown) => e)
-      .finally(() => {
-        globalThis.fetch = realFetch;
-      });
-
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("a non-repairable 403 surfaces immediately and never wakes", async () => {
-    fetchGuardianTokenHost = mock(async () => {
-      throw new GuardianTokenError(403, "forbidden");
-    });
+    probeImpl = probeStatus(404, "token gone");
 
     const err = await primeLocalGatewayConnectionWithRepair().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(403);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
+  });
+
+  test("a non-repairable 403 surfaces immediately and never wakes", async () => {
+    probeImpl = probeStatus(403, "forbidden");
+
+    const err = await primeLocalGatewayConnectionWithRepair().catch(
+      (e: unknown) => e,
+    );
+
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      403,
+    );
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
   });
 
   test("recovers a portless legacy assistant: wakes, reloads the port, then retries", async () => {
     // The Swift→Electron import case: a legacy entry reaches the renderer with
     // no recorded gateway port, so the first prime can't resolve a gateway.
-    window.__CADET_CONFIG__ = undefined;
     const portless: LockfileAssistant = {
       assistantId: "local-a",
       cloud: "local",
@@ -286,158 +244,128 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
 
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
     expect(wakeLocalAssistantHost).toHaveBeenCalledWith("local-a");
-    // The first attempt fails at gateway resolution, before any token fetch; the
-    // guardian token is fetched only on the retry, once the port resolves.
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(1);
+    // The first attempt fails at gateway resolution, before any probe; the
+    // probe runs only on the retry, once the port resolves.
+    expect(probeCalls).toBe(1);
   });
 
   test("rides out a wake-restarted gateway that is still starting, then reconnects", async () => {
-    // First prime fails (repairable) → wake restarts the gateway → the post-wake
-    // prime races the gateway coming back up: the mint answers 503 "starting"
-    // once before it succeeds. The ride-out retries instead of dead-ending.
-    let attempts = 0;
-    primeShouldSucceed = () => attempts++ > 0;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ === 0) {
-        throw new GatewayTokenError(503, "Gateway token request failed: 503");
+    // First probe fails (repairable) → wake restarts the gateway → the post-wake
+    // probe races the gateway coming back up: it answers 503 "starting" once
+    // before it succeeds. The ride-out retries instead of dead-ending.
+    probeImpl = async () => {
+      if (probeCalls === 1) {
+        return probeStatus(404, "no such route")();
       }
+      if (probeCalls === 2) {
+        return probeStatus(503, "starting")();
+      }
+      return probeOk();
     };
 
     await primeLocalGatewayConnectionWithRepair();
 
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    // One pre-wake fetch that fails, then two post-wake fetches: the first mints
-    // a 503 and is ridden out, the second succeeds.
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(3);
+    // One pre-wake probe that fails, then two post-wake probes: the first
+    // answers 503 and is ridden out, the second succeeds.
+    expect(probeCalls).toBe(3);
   });
 
   test("a wake-restarted gateway stuck starting surfaces the last error after the budget", async () => {
     // Wake succeeds but the gateway never finishes starting — the ride-out
     // exhausts its budget and the last transient error propagates so the recovery
     // controls still surface.
-    let attempts = 0;
-    primeShouldSucceed = () => attempts++ > 0;
-    ensureGatewayTokenImpl = async () => {
-      throw new GatewayTokenError(503, "Gateway token request failed: 503");
-    };
+    probeImpl = async () =>
+      probeCalls === 1
+        ? probeStatus(404, "no such route")()
+        : probeStatus(503, "starting")();
 
     const err = await primeLocalGatewayConnectionWithRepair().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GatewayTokenError);
-    expect((err as InstanceType<typeof GatewayTokenError>).status).toBe(503);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      503,
+    );
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
   });
 
-  test("rides out a post-wake guardian refresh 503, then reconnects", async () => {
-    // The reopen-the-app symptom: with the gateway down, refresh reports 503.
-    // Wake restarts the gateway, but the refresh that follows can still land
-    // before it answers. Riding that 5xx out keeps a plain reopen from
-    // dead-ending on the recovery dialog.
-    let fetches = 0;
-    fetchGuardianTokenHost = mock(async (_id: string) => {
-      fetches++;
-      if (fetches <= 2) {
-        throw new GuardianTokenError(503, "Assistant gateway is unreachable");
-      }
-      return "tok";
-    });
-
-    await primeLocalGatewayConnectionWithRepair();
-
-    expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    // One pre-wake fetch, one post-wake fetch ridden out, then the success.
-    expect(fetches).toBe(3);
-  });
-
-  test("a post-wake guardian 401 surfaces immediately as a spent credential", async () => {
-    fetchGuardianTokenHost = mock(async () => {
-      throw new GuardianTokenError(401, "Failed to refresh guardian token");
-    });
+  test("a post-wake probe 401 surfaces immediately as a spent credential", async () => {
+    probeImpl = probeStatus(401, "Failed to refresh guardian token");
 
     const err = await primeLocalGatewayConnectionWithRepair().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(401);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      401,
+    );
     expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    // One pre-wake fetch plus one terminal post-wake fetch.
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(2);
+    // One pre-wake probe plus one terminal post-wake probe.
+    expect(probeCalls).toBe(2);
   });
 });
 
 describe("primeLocalGatewayConnectionWithStartupRetry", () => {
   test("rides out a still-starting gateway (503) without waking, then connects", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ < 2) {
-        throw new GatewayTokenError(503, "Gateway token request failed: 503");
-      }
-    };
+    probeImpl = async () =>
+      probeCalls < 3 ? probeStatus(503, "starting")() : probeOk();
 
     await primeLocalGatewayConnectionWithStartupRetry();
 
     // Boot must never spawn an assistant process: the plain prime rides out
     // the window.
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(3);
+    expect(probeCalls).toBe(3);
   });
 
-  test("rides out the reported reboot 401 without waking, then connects", async () => {
-    // The reported symptom: after a reboot the gateway opens traffic before its
-    // guardian-binding backfill lands, so the mint answers a transient 401 for a
-    // few seconds. Boot must ride that out (never waking) so the persisted local
-    // assistant restores itself instead of bouncing to the recovery controls.
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ < 2) {
-        throw new GatewayTokenError(401, "Gateway token request failed: 401");
-      }
-    };
-
-    await primeLocalGatewayConnectionWithStartupRetry();
-
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(3);
-  });
-
-  test("does not ride out a 403 boundary refusal, surfaces immediately", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      mintAttempts++;
-      throw new GatewayTokenError(403, "Forbidden");
-    };
+  test("does not ride out a probe 401, surfaces immediately", async () => {
+    // A 401 from the readiness probe is not a starting gateway — waiting
+    // cannot heal it, so the boot surfaces instead of stalling the budget.
+    probeImpl = probeStatus(401, "spent credential");
 
     const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GatewayTokenError);
-    expect((err as InstanceType<typeof GatewayTokenError>).status).toBe(403);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      401,
+    );
+    expect(probeCalls).toBe(1);
+    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
+  });
+
+  test("does not ride out a 403 boundary refusal, surfaces immediately", async () => {
+    probeImpl = probeStatus(403, "Forbidden");
+
+    const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
+      (e: unknown) => e,
+    );
+
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      403,
+    );
     // A loopback-boundary refusal is terminal. No repair can change it.
-    expect(mintAttempts).toBe(1);
+    expect(probeCalls).toBe(1);
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
   });
 
   test("rides out a transport error (Login Item port not bound yet) without waking, then connects", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      if (mintAttempts++ < 2) {
+    probeImpl = async () => {
+      if (probeCalls < 3) {
         throw new TypeError("Failed to fetch");
       }
+      return probeOk();
     };
 
     await primeLocalGatewayConnectionWithStartupRetry();
 
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(mintAttempts).toBe(3);
+    expect(probeCalls).toBe(3);
   });
 
   test("a gateway that never answers spends the transport budget, then falls through without waking", async () => {
@@ -445,10 +373,7 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
     // assistant look. Boot rides the budget (never waking) so a starting
     // gateway can bind its port. A stopped assistant still reaches the chooser
     // after the budget, where connect-with-repair may wake it.
-    window.__CADET_CONFIG__ = undefined;
-    let mintAttempts = 0;
-    ensureGatewayTokenImpl = async () => {
-      mintAttempts++;
+    probeImpl = async () => {
       throw new TypeError("Failed to fetch");
     };
 
@@ -457,56 +382,37 @@ describe("primeLocalGatewayConnectionWithStartupRetry", () => {
     );
 
     expect(err).toBeInstanceOf(TypeError);
-    expect(mintAttempts).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts);
+    expect(probeCalls).toBe(LOCAL_GATEWAY_STARTUP_RETRY.attempts);
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
   });
 
-  test("does not ride out a missing guardian token, surfaces immediately", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    fetchGuardianTokenHost = mock(async () => {
-      throw new GuardianTokenError(404, "token gone");
-    });
+  test("does not ride out a probe 404, surfaces immediately", async () => {
+    probeImpl = probeStatus(404, "no such route");
 
     const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(404);
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(1);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      404,
+    );
+    expect(probeCalls).toBe(1);
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
   });
 
-  test("does not ride out a guardian 500 (malformed file, spawn, or timeout)", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    fetchGuardianTokenHost = mock(async () => {
-      throw new GuardianTokenError(500, "Guardian token refresh timed out");
-    });
+  test("does not ride out a probe 500, surfaces immediately", async () => {
+    probeImpl = probeStatus(500, "Assistant gateway is unreachable");
 
     const err = await primeLocalGatewayConnectionWithStartupRetry().catch(
       (e: unknown) => e,
     );
 
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(500);
-    expect(fetchGuardianTokenHost).toHaveBeenCalledTimes(1);
+    expect(err).toBeInstanceOf(host.GuardianTokenError);
+    expect((err as InstanceType<typeof host.GuardianTokenError>).status).toBe(
+      500,
+    );
+    expect(probeCalls).toBe(1);
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("rides out a guardian refresh 503 without waking, then connects", async () => {
-    window.__CADET_CONFIG__ = undefined;
-    let fetches = 0;
-    fetchGuardianTokenHost = mock(async (_id: string) => {
-      fetches++;
-      if (fetches < 3) {
-        throw new GuardianTokenError(503, "Assistant gateway is unreachable");
-      }
-      return "tok";
-    });
-
-    await primeLocalGatewayConnectionWithStartupRetry();
-
-    expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-    expect(fetches).toBe(3);
   });
 });

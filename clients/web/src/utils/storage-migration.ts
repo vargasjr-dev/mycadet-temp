@@ -6,9 +6,11 @@
  * - `device:` — device-scoped, preserved across sessions
  *
  * This module renames legacy keys (unprefixed, `onboarding.`, `voice:`,
- * `ff:client:`, `gw:`, `local:`, `integrations.`, `cadet_`) to the
- * canonical `cadet:` namespace so that session-cleanup.ts can use a
- * single prefix check instead of a brittle allowlist.
+ * `ff:client:`, `local:`, `integrations.`, `cadet_`) to the canonical
+ * `cadet:` namespace so that session-cleanup.ts can use a
+ * single prefix check instead of a brittle allowlist. The legacy
+ * gateway-session cache (`gw:*` / `cadet:gw:*`) is not renamed — it is
+ * removed outright, since the renderer holds no gateway credential.
  *
  * Migrations are idempotent — safe to re-run on every app startup.
  * Executed synchronously at import time via `run-storage-migrations.ts`,
@@ -101,33 +103,6 @@ export function migratePrefix(oldPrefix: string, newPrefix: string): void {
     }
   } catch {
     // Storage unavailable.
-  }
-}
-
-/** Remove guardian credentials persisted by the legacy paired-session flow. */
-export function removePersistedPairedGatewayCredential(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  try {
-    const source =
-      localStorage.getItem("cadet:gw:tokenSource") ??
-      localStorage.getItem("gw:tokenSource");
-    if (!source?.includes("/__gateway-paired/")) {
-      return;
-    }
-    for (const key of [
-      "cadet:gw:token",
-      "cadet:gw:expiresAt",
-      "cadet:gw:tokenSource",
-      "gw:token",
-      "gw:expiresAt",
-      "gw:tokenSource",
-    ]) {
-      localStorage.removeItem(key);
-    }
-  } catch {
-    // Storage unavailable. Retry on next load.
   }
 }
 
@@ -293,11 +268,19 @@ export function runStorageMigrations(): void {
     "cadet:debug:impersonateAssistantVersion",
   );
 
-  // gw: → cadet:gw:
-  migrateKey("gw:token", "cadet:gw:token");
-  migrateKey("gw:expiresAt", "cadet:gw:expiresAt");
-  migrateKey("gw:tokenSource", "cadet:gw:tokenSource");
-  removePersistedPairedGatewayCredential();
+  // The gateway-session cache is gone — the trusted host owns bearer
+  // custody and the renderer holds no credential — so both spellings of
+  // every key older clients persisted are removed outright.
+  for (const key of [
+    "gw:token",
+    "gw:expiresAt",
+    "gw:tokenSource",
+    "cadet:gw:token",
+    "cadet:gw:expiresAt",
+    "cadet:gw:tokenSource",
+  ]) {
+    removeKey(key);
+  }
 
   // local: → cadet:local:
   migrateKey("local:lockfile", "cadet:local:lockfile");

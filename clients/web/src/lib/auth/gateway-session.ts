@@ -6,56 +6,18 @@ import {
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
 
 /**
- * Thrown when the gateway `/auth/token` mint rejects the request, carrying the
- * response `status` so callers can branch on the failure class. A `401` means
- * the gateway refused to mint against the presented guardian identity — most
- * often an `invalid_signature` after the gateway restarted with a different
- * signing key than the on-disk guardian token was leased against, or a
- * `guardian_repair_required` refusal after the gateway DB lost its guardian
- * rows — which a guardian re-provision (`wake --repair-guardian`) fixes by
- * re-leasing against the running gateway. A `403` is a loopback/Origin
- * boundary refusal that repair can't change, and `5xx`/network failures are
- * transient.
- *
- * Distinct from {@link GuardianTokenError} (thrown by `fetchGuardianTokenHost`
- * when the guardian token is missing/unrefreshable on disk): this is the
- * downstream mint rejecting a token that read back fine.
+ * Gateway session state. The renderer holds no gateway credential of its
+ * own: in the local desktop mode the trusted host mints the bearer against
+ * the loopback gateway from the on-disk guardian token and injects it on
+ * its forwards, so nothing token-shaped ever reaches localStorage; paired
+ * browsers ride the host-injected paired bearer the same way. This module
+ * keeps the served-gateway arm's platform-exchanged token, the gateway-auth
+ * predicates, and the scrubber that clears tokens persisted by older
+ * clients.
  */
-export class GatewayTokenError extends Error {
-  readonly status: number;
 
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = "GatewayTokenError";
-    this.status = status;
-  }
-}
-
-/**
- * True when a connect failure is the gateway rejecting the guardian token at
- * the `/auth/token` mint (a `401`), which a guardian re-provision can recover.
- * `403` (boundary refusal) and `5xx`/network failures are not re-provisionable.
- */
-export function isRepairableGatewayTokenError(error: unknown): boolean {
-  return error instanceof GatewayTokenError && error.status === 401;
-}
-
-const LS_TOKEN_KEY = "cadet:gw:token";
-const LS_EXPIRES_KEY = "cadet:gw:expiresAt";
-const LS_TOKEN_SOURCE_KEY = "cadet:gw:tokenSource";
-
-// Legacy key names kept as read fallbacks in case the startup migration
-// in storage-migration.ts failed (e.g. QuotaExceededError on setItem).
-const LEGACY_TOKEN_KEY = "gw:token";
-const LEGACY_EXPIRES_KEY = "gw:expiresAt";
-const LEGACY_TOKEN_SOURCE_KEY = "gw:tokenSource";
-
-let cachedToken: string | null = null;
-let cachedExpiresAt: number = 0;
-let cachedTokenSource: string | null = null;
 let remoteGatewayToken: string | null = null;
 let remoteGatewayExpiresAt: number = 0;
 
@@ -79,11 +41,12 @@ export function isGatewayAuthMode(): boolean {
   if (!isServedGatewayRuntime()) {
     const selectedAssistant = getSelectedAssistant();
     if (getPairedGatewayUrl(selectedAssistant) != null) {
-      // Paired gateways carry no renderer token — the trusted host injects
-      // its own bearer — so gateway-auth mode is on while the shared
-      // same-origin data-plane slot is primed.
+      // The paired prime seeds the shared same-origin data-plane slot.
       return getSelfHostedIngressUrl() != null;
     }
+    // The local signal is topology — a resolvable gateway URL — not token
+    // presence: the trusted host owns bearer custody in this mode.
+    return getLocalGatewayUrl() != null;
   }
   return getGatewayToken() !== null;
 }
@@ -109,145 +72,38 @@ export function setRemoteGatewayToken(params: {
 }
 
 export function getGatewayToken(): string | null {
-  if (isServedGatewayRuntime()) {
-    if (remoteGatewayToken && !isTokenExpired(remoteGatewayExpiresAt)) {
-      return remoteGatewayToken;
-    }
-    remoteGatewayToken = null;
-    remoteGatewayExpiresAt = 0;
-    return null;
+  if (remoteGatewayToken && !isTokenExpired(remoteGatewayExpiresAt)) {
+    return remoteGatewayToken;
   }
-
-  if (cachedToken && !isTokenExpired(cachedExpiresAt)) {
-    return cachedToken;
-  }
-  cachedToken = null;
-  try {
-    const token =
-      localStorage.getItem(LS_TOKEN_KEY) ??
-      localStorage.getItem(LEGACY_TOKEN_KEY);
-    const expiresAtRaw =
-      localStorage.getItem(LS_EXPIRES_KEY) ??
-      localStorage.getItem(LEGACY_EXPIRES_KEY);
-    if (token && expiresAtRaw) {
-      const expiresAt = Number(expiresAtRaw);
-      if (!isTokenExpired(expiresAt)) {
-        cachedToken = token;
-        cachedExpiresAt = expiresAt;
-        return cachedToken;
-      }
-    }
-  } catch {
-    // localStorage unavailable
-  }
+  remoteGatewayToken = null;
+  remoteGatewayExpiresAt = 0;
   return null;
 }
 
-/**
- * Install a gateway-minted actor bearer in the in-memory and localStorage
- * slots used by `getGatewayToken()`. Paired guardian credentials never enter
- * this module; their trusted host proxy owns acquisition and injection.
- */
-export function seedGatewayToken(params: {
-  token: string;
-  expiresAtEpochSeconds: number;
-  source: string;
-}): void {
-  try {
-    localStorage.setItem(LS_TOKEN_KEY, params.token);
-    localStorage.setItem(LS_EXPIRES_KEY, String(params.expiresAtEpochSeconds));
-    localStorage.setItem(LS_TOKEN_SOURCE_KEY, params.source);
-  } catch {
-    // localStorage unavailable
-  }
-  cachedToken = params.token;
-  cachedExpiresAt = params.expiresAtEpochSeconds;
-  cachedTokenSource = params.source;
-}
-
-async function acquireGatewayToken(
-  tokenUrl?: string,
-  guardianToken?: string,
-): Promise<string> {
-  const url = tokenUrl ?? "/auth/token";
-  const headers: Record<string, string> = {};
-  if (guardianToken) {
-    headers["Authorization"] = `Bearer ${guardianToken}`;
-  }
-  const res = await fetch(url, { method: "POST", headers });
-  if (!res.ok) {
-    throw new GatewayTokenError(
-      res.status,
-      `Gateway token request failed: ${res.status}`,
-    );
-  }
-  const { token, expiresAt } = (await res.json()) as {
-    token: string;
-    expiresAt: number;
-  };
-  seedGatewayToken({ token, expiresAtEpochSeconds: expiresAt, source: url });
-  return token;
-}
+// Every spelling the gateway-session cache ever used, including the
+// pre-cadet: prefixes the startup migration used to rename.
+const SCRUB_KEYS = [
+  "cadet:gw:token",
+  "cadet:gw:expiresAt",
+  "cadet:gw:tokenSource",
+  "gw:token",
+  "gw:expiresAt",
+  "gw:tokenSource",
+] as const;
 
 /**
- * Options for {@link ensureGatewayToken}.
- *
- * `forceMint` skips the cached token and mints a fresh one even when the
- * cache holds an unexpired value. Callers use it when the gateway has
- * rejected the cached token (its expiry is local bookkeeping; a rotated
- * signing key rejects it early). The cached token stays in place until
- * the mint seeds its replacement, so `getGatewayToken()` never reads null
- * mid-mint and predicates such as `isGatewayAuthMode()` hold steady.
+ * Drop any gateway bearer this renderer still holds: the in-memory served
+ * token and every localStorage spelling older clients persisted. The host
+ * owns bearer custody now, so this is pure hygiene — logout, assistant
+ * switch, and upgrade flows call it to leave no stale credential behind.
  */
-export interface EnsureGatewayTokenOptions {
-  forceMint?: boolean;
-}
-
-export async function ensureGatewayToken(
-  tokenUrl?: string,
-  guardianToken?: string,
-  { forceMint = false }: EnsureGatewayTokenOptions = {},
-): Promise<string> {
-  const source = tokenUrl ?? "/auth/token";
-  const storedSource =
-    cachedTokenSource ??
-    localStorage.getItem(LS_TOKEN_SOURCE_KEY) ??
-    localStorage.getItem(LEGACY_TOKEN_SOURCE_KEY);
-  if (storedSource && storedSource !== source) {
-    clearGatewayToken();
-  }
-  if (!forceMint) {
-    const existing = getGatewayToken();
-    if (existing) {
-      return existing;
-    }
-  }
-  return acquireGatewayToken(tokenUrl, guardianToken);
-}
-
-export function getLocalTokenUrl(
-  assistant?: LockfileAssistant,
-): string | undefined {
-  const gatewayUrl = getLocalGatewayUrl(assistant);
-  if (!gatewayUrl) {
-    return undefined;
-  }
-  return `${gatewayUrl}/auth/token`;
-}
-
 export function clearGatewayToken(): void {
-  cachedToken = null;
-  cachedExpiresAt = 0;
-  cachedTokenSource = null;
   remoteGatewayToken = null;
   remoteGatewayExpiresAt = 0;
   try {
-    localStorage.removeItem(LS_TOKEN_KEY);
-    localStorage.removeItem(LS_EXPIRES_KEY);
-    localStorage.removeItem(LS_TOKEN_SOURCE_KEY);
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
-    localStorage.removeItem(LEGACY_EXPIRES_KEY);
-    localStorage.removeItem(LEGACY_TOKEN_SOURCE_KEY);
+    for (const key of SCRUB_KEYS) {
+      localStorage.removeItem(key);
+    }
   } catch {
     // localStorage unavailable
   }

@@ -34,6 +34,7 @@ import {
   unpairAssistant,
   getGuardianAccessToken,
   getPairedGuardianAccessToken,
+  loopbackGatewayBearer,
   resolveGatewayProxyTarget,
   readGatewayTargets,
   authorizePairedForwardHeaders,
@@ -1147,8 +1148,9 @@ function gatewayProxyMiddleware(
     // id-keyed proxy for every assistant gateway. The lockfile resolves the
     // id to a loopback port (locally hatched) or a recorded remote
     // `runtimeUrl` (imported pairing) — that target map is the allowlist.
-    // Loopback hops forward the renderer's headers (notably its minted
-    // gateway bearer) with the Host rewritten; remote hops strip renderer
+    // Loopback hops strip renderer authorization and install the bearer
+    // the host mints itself from the on-disk guardian token (with a 401
+    // re-mint retry on bodyless requests); remote hops strip renderer
     // authorization and browser-ambient headers on this server-to-server
     // hop, and the dev-server host reads the paired guardian bearer from
     // disk and installs it after sanitization. An unknown id on the scoped
@@ -1173,22 +1175,54 @@ function gatewayProxyMiddleware(
 
     if (decision.target.kind === "loopback") {
       const { port } = decision.target;
-      pipeGatewayProxy(
-        req,
-        res,
-        http,
-        {
-          hostname: "127.0.0.1",
-          port,
-          path: decision.path + decision.search,
-          method: req.method,
-          headers: {
-            ...req.headers,
-            host: `127.0.0.1:${port}`,
+      void (async () => {
+        // The trusted dev-server host mints and injects the gateway bearer
+        // itself — the browser never holds one. The mint route is left
+        // alone: its bearer contract is the guardian token, and nothing
+        // dials it through this proxy anymore.
+        const headers: Record<string, string | string[] | undefined> = {
+          ...req.headers,
+          host: `127.0.0.1:${port}`,
+        };
+        delete headers.authorization;
+        let bearer: string | null = null;
+        const lease = async () => {
+          const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
+          return getGuardianAccessToken(
+            decision.assistantId,
+            configDir,
+            invocation,
+            true,
+            env,
+            { paired: false },
+          );
+        };
+        if (decision.path !== "/auth/token") {
+          bearer = await loopbackGatewayBearer(port, lease);
+          if (bearer) {
+            headers.authorization = `Bearer ${bearer}`;
+          }
+        }
+        pipeGatewayProxyWithBearerRetry(
+          req,
+          res,
+          http,
+          {
+            hostname: "127.0.0.1",
+            port,
+            path: decision.path + decision.search,
+            method: req.method,
+            headers,
           },
-        },
-        "Gateway proxy error",
-      );
+          bearer,
+          () => loopbackGatewayBearer(port, lease, { forceMint: true }),
+        );
+      })().catch(() => {
+        if (!res.headersSent) {
+          res.statusCode = 502;
+          res.end("Gateway proxy error");
+        }
+      });
       return;
     }
 
@@ -1287,4 +1321,56 @@ function pipeGatewayProxy(
   });
 
   req.pipe(proxyReq);
+}
+
+/**
+ * The loopback variant of {@link pipeGatewayProxy} with bearer-custody
+ * retry: when the gateway rejects the injected bearer with a 401 on a
+ * bodyless request, the rejected upstream response is discarded, the host
+ * re-mints once, and the request is sent again — a revoked bearer heals on
+ * the next request instead of 401ing until the cache expires. Bodied
+ * requests cannot replay (the request stream is already consumed), so
+ * their 401 pipes through untouched.
+ */
+function pipeGatewayProxyWithBearerRetry(
+  req: http.IncomingMessage,
+  res: http.ServerResponse,
+  transport: Pick<typeof http, "request">,
+  options: http.RequestOptions,
+  injectedBearer: string | null,
+  reMint: () => Promise<string | null>,
+): void {
+  const send = (bearer: string | null, isRetry: boolean) => {
+    const proxyReq = transport.request(options, (proxyRes) => {
+      if (!isRetry && injectedBearer !== null && proxyRes.statusCode === 401) {
+        proxyRes.resume();
+        void reMint().then((fresh) => {
+          if (fresh) {
+            send(fresh, true);
+            return;
+          }
+          // The re-mint failed: surface the original rejection.
+          const headers = { ...proxyRes.headers };
+          delete headers["transfer-encoding"];
+          res.writeHead(proxyRes.statusCode ?? 502, headers);
+          res.end();
+        });
+        return;
+      }
+      const headers = { ...proxyRes.headers };
+      delete headers["transfer-encoding"];
+      res.writeHead(proxyRes.statusCode ?? 502, headers);
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on("error", () => {
+      if (!res.headersSent) {
+        res.statusCode = 502;
+        res.end("Gateway proxy error");
+      }
+    });
+
+    req.pipe(proxyReq);
+  };
+  send(injectedBearer, false);
 }

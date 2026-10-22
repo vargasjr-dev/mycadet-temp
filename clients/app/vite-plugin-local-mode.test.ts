@@ -4,7 +4,9 @@
  * stay inside the trusted host proxy.
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -94,14 +96,33 @@ function dispatch(
       method,
       headers: { host: "127.0.0.1:5173", ...headers },
       socket: { remoteAddress },
+      // The gateway proxy pipes the request into its upstream hop; a GET
+      // carries no body, so the pipe just closes the hop.
+      pipe: (dest: { end: () => void }) => {
+        dest.end();
+        return dest;
+      },
     }) as unknown as Connect.IncomingMessage;
-    const res = {
+    const chunks: unknown[] = [];
+    const res = Object.assign(new EventEmitter(), {
       statusCode: 200,
       setHeader: () => {},
-      end: (body?: unknown) => {
-        resolve({ status: res.statusCode, body: String(body ?? "") });
+      writeHead: (status: number) => {
+        res.statusCode = status;
       },
-    };
+      write: (chunk: unknown) => {
+        chunks.push(chunk);
+      },
+      end: (body?: unknown) => {
+        if (body != null) {
+          chunks.push(body);
+        }
+        resolve({
+          status: res.statusCode,
+          body: String(body ?? chunks.join("")),
+        });
+      },
+    }) as unknown as Connect.ServerResponse;
     let index = 0;
     const next = (err?: unknown): void => {
       if (err) {
@@ -395,6 +416,61 @@ describe("paired gateway proxy", () => {
     });
 
     expect(result).toEqual({ status: 403, body: "Forbidden" });
+  });
+
+  test("pipes a loopback forward with the host-minted bearer injected", async () => {
+    // A real loopback upstream: the middleware mints against its /auth/token
+    // (leasing the guardian token from the seeded token file), injects the
+    // minted bearer on the forward, and the renderer's own authorization
+    // never crosses.
+    const server = http.createServer((upstreamReq, upstreamRes) => {
+      const url = new URL(upstreamReq.url ?? "/", "http://127.0.0.1");
+      upstreamRes.writeHead(200, {
+        "content-type": "application/json",
+        // bun test's fetch enforces CORS on the Origin-carrying mint (the
+        // runtime's own gateway does too, for web origins).
+        "access-control-allow-origin": "*",
+      });
+      if (url.pathname === "/auth/token") {
+        upstreamRes.end(
+          JSON.stringify({
+            token: "minted-by-host",
+            expiresAt: Math.floor(Date.now() / 1000) + 3600,
+          }),
+        );
+        return;
+      }
+      upstreamRes.end(
+        JSON.stringify({ authorization: upstreamReq.headers.authorization }),
+      );
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const port = (server.address() as AddressInfo).port;
+    try {
+      writeLockfile([
+        {
+          assistantId: "local-a",
+          cloud: "local",
+          resources: {
+            instanceDir: path.join(tempDir, "instances", "local-a"),
+            gatewayPort: port,
+            daemonPort: 9001,
+          },
+        },
+      ]);
+      writeToken("local-a", {});
+
+      const result = await dispatch("/v1/assistants/local-a/conversations", {
+        authorization: "Bearer renderer-should-not-send",
+      });
+
+      expect(result.status).toBe(200);
+      const upstream = JSON.parse(result.body);
+      expect(upstream.authorization).toBe("Bearer minted-by-host");
+    } finally {
+      server.close();
+    }
   });
 });
 

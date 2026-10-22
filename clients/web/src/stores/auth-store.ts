@@ -42,10 +42,8 @@ import { resetNotificationIdentitySession } from "@/runtime/notification-avatar"
 import {
   isGatewayAuthEnabled,
   isGatewayAuthMode,
-  ensureGatewayToken,
   clearGatewayToken,
   getGatewayToken,
-  getLocalTokenUrl,
 } from "@/lib/auth/gateway-session";
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
@@ -53,7 +51,6 @@ import {
   getLockfileAssistant,
   getCloudAssistants,
   getLocalAssistants,
-  getSelectedAssistant,
   isCadetCloudRemote,
   isServedGatewayRuntime,
   primeLocalGatewayConnection,
@@ -1063,16 +1060,11 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
 
     if (isGatewayAuthMode()) {
       try {
-        const selected = getSelectedAssistant();
-        if (selected && isRemoteGatewayEntry(selected)) {
-          // A paired selection uses its host-authorized proxy and has no
-          // renderer gateway token. `getLocalTokenUrl()` is undefined for it,
-          // so `ensureGatewayToken` would target the SPA origin's unrelated
-          // `/auth/token` route.
-          await primeLocalGatewayConnection(selected);
-        } else {
-          await ensureGatewayToken(getLocalTokenUrl());
-        }
+        // Both selection kinds collapse into the prime: it probes the
+        // gateway through the host-routed readyz route and seeds the
+        // tokenless same-origin slot — the trusted host mints and injects
+        // the bearer itself, so the renderer holds no credential.
+        await primeLocalGatewayConnection();
         if (supersededByLogout()) {
           // Abandon the cloud probe below too: launching it would settle
           // `cloudSession` from the session the logout just ended.

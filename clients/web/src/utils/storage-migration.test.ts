@@ -5,7 +5,6 @@ import {
   migratePrefix,
   migrateValue,
   removeKey,
-  removePersistedPairedGatewayCredential,
   runStorageMigrations,
 } from "./storage-migration";
 
@@ -135,42 +134,6 @@ describe("migratePrefix", () => {
 
     expect(localStorage.getItem("cadet:ff:flag-a")).toBe("already-migrated");
     expect(localStorage.getItem("ff:client:flag-a")).toBeNull();
-  });
-});
-
-describe("removePersistedPairedGatewayCredential", () => {
-  test("removes a paired guardian bearer and its metadata", () => {
-    // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy paired credential to verify removal
-    localStorage.setItem("cadet:gw:token", "guardian-token");
-    // generic-examples:ignore-next-line — reason: real test fixture seeding a legacy storage key to verify cleanup behavior
-    localStorage.setItem("cadet:gw:expiresAt", "2000000000");
-    // eslint-disable-next-line no-restricted-syntax -- test: seeding legacy paired credential metadata to verify removal
-    localStorage.setItem(
-      "cadet:gw:tokenSource",
-      "/assistant/__gateway-paired/paired-a/auth/token",
-    );
-
-    removePersistedPairedGatewayCredential();
-
-    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
-    expect(localStorage.getItem("cadet:gw:expiresAt")).toBeNull();
-    expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
-  });
-
-  test("preserves a locally minted gateway actor token", () => {
-    // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy local actor token to verify preservation
-    localStorage.setItem("cadet:gw:token", "local-actor-token");
-    // generic-examples:ignore-next-line — reason: real test fixture seeding a legacy storage key to verify preservation
-    localStorage.setItem("cadet:gw:expiresAt", "2000000000");
-    // eslint-disable-next-line no-restricted-syntax -- test: seeding legacy local actor metadata to verify preservation
-    localStorage.setItem(
-      "cadet:gw:tokenSource",
-      "/assistant/__gateway/20100/auth/token",
-    );
-
-    removePersistedPairedGatewayCredential();
-
-    expect(localStorage.getItem("cadet:gw:token")).toBe("local-actor-token");
   });
 });
 
@@ -314,28 +277,31 @@ describe("runStorageMigrations", () => {
     expect(localStorage.getItem("cadet:ff:watch")).toBeNull();
   });
 
-  test("migrates gw: and local: keys", () => {
-    // eslint-disable-next-line no-restricted-syntax -- test: verifying migration of gateway token keys
+  test("removes the legacy gateway token keys and migrates local: keys", () => {
+    // The renderer holds no gateway credential — both spellings of the old
+    // gateway-session cache are removed outright, not renamed.
+    // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy gateway token to verify removal
     localStorage.setItem("gw:token", "jwt-abc");
     // generic-examples:ignore-next-line — reason: epoch timestamp, not a phone number
     localStorage.setItem("gw:expiresAt", "1700000000");
-    // eslint-disable-next-line no-restricted-syntax -- test: verifying migration of gateway token keys
+    // eslint-disable-next-line no-restricted-syntax -- test: seeding a legacy gateway token to verify removal
     localStorage.setItem("gw:tokenSource", "/auth/token");
     localStorage.setItem("local:lockfile", "{}");
     localStorage.setItem("local:selectedAssistantId", "asst-1");
 
     runStorageMigrations();
 
-    expect(localStorage.getItem("cadet:gw:token")).toBe("jwt-abc");
-    // generic-examples:ignore-next-line — reason: epoch timestamp, not a phone number
-    expect(localStorage.getItem("cadet:gw:expiresAt")).toBe("1700000000");
-    expect(localStorage.getItem("cadet:gw:tokenSource")).toBe("/auth/token");
+    expect(localStorage.getItem("cadet:gw:token")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:expiresAt")).toBeNull();
+    expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
+    expect(localStorage.getItem("gw:token")).toBeNull();
+    expect(localStorage.getItem("gw:expiresAt")).toBeNull();
+    expect(localStorage.getItem("gw:tokenSource")).toBeNull();
     expect(localStorage.getItem("cadet:local:lockfile")).toBe("{}");
     // local:selectedAssistantId is canonicalized then collapsed into the single
     // cadet:selectedAssistantId, so the intermediate key no longer survives.
     expect(localStorage.getItem("cadet:selectedAssistantId")).toBe("asst-1");
     expect(localStorage.getItem("cadet:local:selectedAssistantId")).toBeNull();
-    expect(localStorage.getItem("gw:token")).toBeNull();
     expect(localStorage.getItem("local:lockfile")).toBeNull();
   });
 

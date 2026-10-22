@@ -1,29 +1,21 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
-  GatewayTokenError,
   clearGatewayToken,
-  ensureGatewayToken,
   isGatewayAuthEnabled,
   isGatewayAuthMode,
-  isRepairableGatewayTokenError,
   setRemoteGatewayToken,
 } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import { useLockfileStore } from "@/stores/lockfile-store";
 
-const realFetch = globalThis.fetch;
-
 beforeEach(() => {
-  // The token cache is module-level; start every test with no cached token so
-  // `ensureGatewayToken` always reaches the mint.
   clearGatewayToken();
 });
 
 afterEach(() => {
   window.__CADET_CONFIG__ = { remote: "cloud" };
-  globalThis.fetch = realFetch;
   clearGatewayToken();
   setSelfHostedConnection(null);
   useLockfileStore.setState({ lockfile: null, committed: false });
@@ -97,69 +89,33 @@ describe("paired selection", () => {
   });
 });
 
-describe("ensureGatewayToken mint failure", () => {
-  test("throws a GatewayTokenError carrying the response status on a 401", async () => {
-    globalThis.fetch = mock(async () => ({
-      ok: false,
-      status: 401,
-    })) as unknown as typeof fetch;
+describe("local selection", () => {
+  function selectLocal(gatewayPort?: number): void {
+    const local = {
+      assistantId: "local-a",
+      cloud: "local",
+      ...(gatewayPort != null && {
+        resources: { gatewayPort, daemonPort: 8501 },
+      }),
+    } as unknown as LockfileAssistant;
+    useLockfileStore.setState({
+      lockfile: { assistants: [local], activeAssistant: "local-a" },
+    });
+  }
 
-    const err = await ensureGatewayToken(
-      "/assistant/__gateway/20100/auth/token",
-      "guardian-token",
-    ).catch((e: unknown) => e);
+  test("gateway-auth mode is topology-based — no renderer token exists", () => {
+    window.__CADET_CONFIG__ = undefined;
+    selectLocal(20100);
 
-    expect(err).toBeInstanceOf(GatewayTokenError);
-    expect((err as GatewayTokenError).status).toBe(401);
+    // The trusted host owns bearer custody; the renderer holds no token, so
+    // the local signal is the resolvable gateway, not a cached credential.
+    expect(isGatewayAuthMode()).toBe(true);
   });
 
-  test("preserves a non-401 status (e.g. 403 boundary refusal)", async () => {
-    globalThis.fetch = mock(async () => ({
-      ok: false,
-      status: 403,
-    })) as unknown as typeof fetch;
+  test("gateway-auth mode stays off while the gateway is unresolvable", () => {
+    window.__CADET_CONFIG__ = undefined;
+    selectLocal();
 
-    const err = await ensureGatewayToken(
-      "/assistant/__gateway/20100/auth/token",
-      "guardian-token",
-    ).catch((e: unknown) => e);
-
-    expect(err).toBeInstanceOf(GatewayTokenError);
-    expect((err as GatewayTokenError).status).toBe(403);
-  });
-
-  test("returns the minted token on success", async () => {
-    globalThis.fetch = mock(async () => ({
-      ok: true,
-      json: async () => ({ token: "minted", expiresAt: 9_999_999_999 }),
-    })) as unknown as typeof fetch;
-
-    const token = await ensureGatewayToken(
-      "/assistant/__gateway/20100/auth/token",
-      "guardian-token",
-    );
-    expect(token).toBe("minted");
-  });
-});
-
-describe("isRepairableGatewayTokenError", () => {
-  test("true only for a 401 GatewayTokenError", () => {
-    expect(isRepairableGatewayTokenError(new GatewayTokenError(401, "x"))).toBe(
-      true,
-    );
-  });
-
-  test("false for a 403 (boundary refusal) and 5xx (transient)", () => {
-    expect(isRepairableGatewayTokenError(new GatewayTokenError(403, "x"))).toBe(
-      false,
-    );
-    expect(isRepairableGatewayTokenError(new GatewayTokenError(500, "x"))).toBe(
-      false,
-    );
-  });
-
-  test("false for a plain Error or a non-error value", () => {
-    expect(isRepairableGatewayTokenError(new Error("nope"))).toBe(false);
-    expect(isRepairableGatewayTokenError(undefined)).toBe(false);
+    expect(isGatewayAuthMode()).toBe(false);
   });
 });

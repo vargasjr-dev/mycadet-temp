@@ -131,6 +131,11 @@ export {
   sanitizePairedForwardHeaders,
   FLATTENED_FIRST_SEGMENTS,
 } from "./gateway-proxy";
+export {
+  loopbackGatewayBearer,
+  clearLoopbackGatewayBearerCache,
+} from "./gateway-bearer";
+export type { GuardianTokenLease } from "./gateway-bearer";
 export type {
   GatewayTarget,
   GatewayParseResult,

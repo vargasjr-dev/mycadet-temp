@@ -323,6 +323,17 @@ export async function getPairedGuardianAccessToken(
   );
 }
 
+/** Read a local guardian token for the trusted main-process bearer mint. */
+export async function getLocalGuardianAccessToken(
+  assistantId: string,
+): Promise<TokenResult> {
+  return getHostGuardianAccessToken(
+    assistantId,
+    requireRuntime().paths.configDir,
+    { paired: false },
+  );
+}
+
 // A persisted assistant entry as it crosses the IPC boundary. The
 // package's lockfile parser owns the real field-level contract; here we
 // only assert the renderer sent an object, so unknown/forward-compat

@@ -8,9 +8,10 @@ type TokenResult =
   | { ok: false; status: number; error: string };
 
 // The planner reads its target map from the watched lockfile snapshot (the
-// watcher seam) and resolves the paired guardian bearer through
-// electron-desktop's local-mode module — both are module-level dependencies
-// of `forwardGatewayRequest`, pinned here so tests never touch disk.
+// watcher seam) and resolves the paired guardian bearer and the local
+// guardian lease through electron-desktop's local-mode module — both are
+// module-level dependencies of `forwardGatewayRequest`, pinned here so tests
+// never touch disk.
 let watchedSnapshot: { assistants: unknown[] } | null = null;
 mock.module("./lockfile-watcher", () => ({
   getWatchedLockfileSnapshot: () => watchedSnapshot,
@@ -21,15 +22,45 @@ const getPairedGuardianAccessToken = mock(
   async (_assistantId: string, _runtimeUrl: string): Promise<TokenResult> =>
     tokenResult,
 );
-mock.module("./local-mode", () => ({ getPairedGuardianAccessToken }));
+let localTokenResult: TokenResult = { ok: true, accessToken: "local-guardian" };
+const getLocalGuardianAccessToken = mock(
+  async (_assistantId: string): Promise<TokenResult> => localTokenResult,
+);
+mock.module("./local-mode", () => ({
+  getPairedGuardianAccessToken,
+  getLocalGuardianAccessToken,
+}));
 
 const { forwardGatewayRequest } = await import("./gateway-forward");
+const { clearLoopbackGatewayBearerCache } = await import("@mycadet/local-mode");
 
 const request = (path: string, init: RequestInit = {}) =>
   new Request(`app://mycadet.ai${path}`, init);
+
+const MINTED_BEARER = "host-minted-bearer";
+
+/**
+ * The network seam for a loopback test: the executor's bearer mint dials the
+ * same fetcher as the forward itself, so the recorder answers the mint route
+ * with a canned mint body and everything else with the test's response.
+ * Every call is recorded in order.
+ */
 const recorder = (response = new Response("ok")) => {
-  const fetcher = mock<GatewayForwardFetcher>(async () => response);
-  return { fetcher, response };
+  const calls: Array<{
+    url: string;
+    init?: RequestInit & { duplex?: "half" };
+  }> = [];
+  const fetcher: GatewayForwardFetcher = async (url, init) => {
+    calls.push({ url, init });
+    if (new URL(url).pathname === "/auth/token") {
+      return Response.json({
+        token: MINTED_BEARER,
+        expiresAt: Math.floor(Date.now() / 1000) + 3600,
+      });
+    }
+    return response;
+  };
+  return { fetcher, calls, response };
 };
 
 const localLockfile = {
@@ -53,7 +84,10 @@ const pairedLockfile = {
 
 beforeEach(() => {
   tokenResult = { ok: true, accessToken: "host-token" };
+  localTokenResult = { ok: true, accessToken: "local-guardian" };
   getPairedGuardianAccessToken.mockClear();
+  getLocalGuardianAccessToken.mockClear();
+  clearLoopbackGatewayBearerCache();
 });
 
 describe("forwardGatewayRequest — loopback forwards", () => {
@@ -62,16 +96,17 @@ describe("forwardGatewayRequest — loopback forwards", () => {
   });
 
   test("passes non-gateway requests through without fetching", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     expect(
       await forwardGatewayRequest(request("/assistant/assets/app.js"), fetcher),
     ).toBeNull();
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
     expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
+    expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("rejects an id that is not active in the lockfile before fetching", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     const response = await forwardGatewayRequest(
       request("/__gateway/unknown/v1"),
       fetcher,
@@ -79,111 +114,228 @@ describe("forwardGatewayRequest — loopback forwards", () => {
     expect(response?.status).toBe(403);
     expect(await response?.text()).toBe("Assistant is not active in lockfile");
     expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
   });
 
   test("passes a scoped path for an unknown id through to the generic /v1 arm", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     expect(
       await forwardGatewayRequest(
         request("/v1/assistants/unknown/messages"),
         fetcher,
       ),
     ).toBeNull();
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
     expect(getPairedGuardianAccessToken).not.toHaveBeenCalled();
   });
 
   test("forwards the scoped SDK surface verbatim to the recorded port", async () => {
-    const { fetcher, response } = recorder();
+    const { fetcher, response, calls } = recorder();
     expect(
       await forwardGatewayRequest(
         request("/v1/assistants/abc/conversations?x=1"),
         fetcher,
       ),
     ).toBe(response);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    const [url, init] = fetcher.mock.calls[0]!;
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    expect(forwards).toHaveLength(1);
+    const { url, init } = forwards[0]!;
     expect(url).toBe(
       "http://127.0.0.1:8080/v1/assistants/abc/conversations?x=1",
     );
-    expect(init.method).toBe("GET");
+    expect(init!.method).toBe("GET");
   });
 
   test("flattens the contact family in the scoped forward", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     await forwardGatewayRequest(
       request("/v1/assistants/abc/contacts/x"),
       fetcher,
     );
-    expect(fetcher.mock.calls[0]![0]).toBe(
-      "http://127.0.0.1:8080/v1/contacts/x",
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
     );
+    expect(forwards[0]!.url).toBe("http://127.0.0.1:8080/v1/contacts/x");
   });
 
   test("forwards to the recorded loopback port and preserves the query", async () => {
-    const { fetcher, response } = recorder();
+    const { fetcher, response, calls } = recorder();
     expect(
       await forwardGatewayRequest(
         request("/assistant/__gateway/abc/v1/assistants?x=1"),
         fetcher,
       ),
     ).toBe(response);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    const [url, init] = fetcher.mock.calls[0]!;
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    expect(forwards).toHaveLength(1);
+    const { url, init } = forwards[0]!;
     expect(url).toBe("http://127.0.0.1:8080/v1/assistants?x=1");
-    expect(init.method).toBe("GET");
-    expect(init.body).toBeUndefined();
-    expect(init.duplex).toBeUndefined();
+    expect(init!.method).toBe("GET");
+    expect(init!.body).toBeUndefined();
+    expect(init!.duplex).toBeUndefined();
   });
 
-  test.each([undefined, "app://mycadet.ai"])(
-    "sets loopback Origin when renderer Origin is %s",
-    async (origin) => {
-      const { fetcher } = recorder();
-      await forwardGatewayRequest(
-        request("/__gateway/abc/auth/token", {
-          method: "POST",
-          headers: origin ? { origin } : {},
-        }),
-        fetcher,
-      );
-      expect(new Headers(fetcher.mock.calls[0]![1].headers).get("origin")).toBe(
-        "http://127.0.0.1:8080",
-      );
-    },
-  );
+  test("mints and injects the host-owned bearer on scoped forwards", async () => {
+    const { fetcher, response, calls } = recorder();
+    await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations"),
+      fetcher,
+    );
 
-  test("preserves the renderer-minted gateway bearer and other headers", async () => {
-    const { fetcher } = recorder();
+    expect(getLocalGuardianAccessToken).toHaveBeenCalledWith("abc");
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    const headers = new Headers(forwards[0]!.init?.headers);
+    expect(headers.get("authorization")).toBe(`Bearer ${MINTED_BEARER}`);
+    expect(response.bodyUsed).toBe(false);
+  });
+
+  test("strips the renderer's bearer and other credentials never cross", async () => {
+    const { fetcher, calls } = recorder();
+    await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations", {
+        headers: { authorization: "Bearer renderer-minted-token" },
+      }),
+      fetcher,
+    );
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    const headers = new Headers(forwards[0]!.init?.headers);
+    expect(headers.get("authorization")).toBe(`Bearer ${MINTED_BEARER}`);
+  });
+
+  test("leaves the mint route itself stripped and uninjected", async () => {
+    const { fetcher, calls } = recorder();
     await forwardGatewayRequest(
       request("/__gateway/abc/auth/token", {
         method: "POST",
         headers: {
           origin: "app://mycadet.ai",
-          authorization: "Bearer gateway-token",
-          "content-type": "application/json",
+          authorization: "Bearer guardian-token",
         },
       }),
       fetcher,
     );
-    const headers = new Headers(fetcher.mock.calls[0]![1].headers);
-    expect(headers.get("authorization")).toBe("Bearer gateway-token");
-    expect(headers.get("content-type")).toBe("application/json");
+    // The mint route's own bearer contract is the guardian token, which the
+    // planner strips like any renderer credential — and nothing dials the
+    // route through this forward anymore, so no data-plane bearer is
+    // injected either. A straggler dial gets the gateway's own 401.
+    expect(calls).toHaveLength(1);
+    const { url, init } = calls[0]!;
+    expect(new URL(url).pathname).toBe("/auth/token");
+    const headers = new Headers(init!.headers);
+    expect(headers.get("authorization")).toBeNull();
+    expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
+  });
+
+  test("sets loopback Origin when renderer Origin is app://mycadet.ai", async () => {
+    const { fetcher, calls } = recorder();
+    await forwardGatewayRequest(
+      request("/__gateway/abc/auth/token", {
+        method: "POST",
+        headers: { origin: "app://mycadet.ai" },
+      }),
+      fetcher,
+    );
+    expect(new Headers(calls[0]!.init?.headers).get("origin")).toBe(
+      "http://127.0.0.1:8080",
+    );
   });
 
   test("forwards a half-duplex streamed body with manual redirects", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     const req = request("/__gateway/abc/v1/foo", {
       method: "POST",
       body: new ReadableStream<Uint8Array>(),
     });
     await forwardGatewayRequest(req, fetcher);
-    const init = fetcher.mock.calls[0]![1];
-    expect(init.method).toBe("POST");
-    expect(init.body).toBe(req.body);
-    expect(init.duplex).toBe("half");
-    expect(init.redirect).toBe("manual");
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    const init = forwards[0]!.init;
+    expect(init?.method).toBe("POST");
+    expect(init?.body).toBe(req.body);
+    expect(init?.duplex).toBe("half");
+    expect(init?.redirect).toBe("manual");
+  });
+
+  test("re-mints once and retries a bodyless forward the gateway 401s", async () => {
+    let forwards = 0;
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const fetcher: GatewayForwardFetcher = async (url, init) => {
+      calls.push({ url, init });
+      if (new URL(url).pathname === "/auth/token") {
+        return Response.json({
+          token: forwards === 0 ? MINTED_BEARER : "re-minted-bearer",
+          expiresAt: Math.floor(Date.now() / 1000) + 3600,
+        });
+      }
+      forwards += 1;
+      return forwards === 1
+        ? new Response("Unauthorized", { status: 401 })
+        : new Response("ok");
+    };
+
+    const response = await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations"),
+      fetcher,
+    );
+
+    expect(response?.status).toBe(200);
+    // Calls: the mint, the rejected forward, the re-mint, the retry.
+    const forwardHeaders = new Headers(calls[3]!.init?.headers);
+    expect(forwardHeaders.get("authorization")).toBe("Bearer re-minted-bearer");
+  });
+
+  test("does not retry a bodied forward the gateway 401s", async () => {
+    let forwards = 0;
+    const fetcher: GatewayForwardFetcher = async (url) => {
+      if (new URL(url).pathname === "/auth/token") {
+        return Response.json({
+          token: MINTED_BEARER,
+          expiresAt: Math.floor(Date.now() / 1000) + 3600,
+        });
+      }
+      forwards += 1;
+      return new Response("Unauthorized", { status: 401 });
+    };
+
+    const response = await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations", {
+        method: "POST",
+        body: new ReadableStream<Uint8Array>(),
+      }),
+      fetcher,
+    );
+
+    expect(response?.status).toBe(401);
+    expect(forwards).toBe(1);
+  });
+
+  test("forwards without a bearer when the mint fails", async () => {
+    localTokenResult = { ok: false, status: 404, error: "no guardian token" };
+    const { fetcher, calls } = recorder(new Response("{}", { status: 200 }));
+
+    const response = await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations"),
+      fetcher,
+    );
+
+    // The gateway's own response surfaces the truth (readyz stays reachable;
+    // protected routes answer 401 unauthenticated).
+    expect(response?.status).toBe(200);
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    expect(
+      new Headers(forwards[0]!.init?.headers).get("authorization"),
+    ).toBeNull();
   });
 
   test("propagates loopback fetch failures without retrying", async () => {
@@ -195,7 +347,8 @@ describe("forwardGatewayRequest — loopback forwards", () => {
         forwardGatewayRequest(request("/__gateway/abc/v1/foo"), fetcher),
       ),
     ).rejects.toThrow("net::ERR_CONNECTION_REFUSED");
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    // The mint attempt plus the forward attempt, no retry.
+    expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -205,7 +358,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
   });
 
   test("forwards to the paired runtime with its host-owned bearer and query", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     await forwardGatewayRequest(
       request("/__gateway/abc/v1/foo?x=1", {
         headers: {
@@ -219,16 +372,16 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       "abc",
       "https://gw.example.com",
     );
-    const [url, init] = fetcher.mock.calls[0]!;
+    const { url, init } = calls[0]!;
     expect(url).toBe("https://gw.example.com/v1/foo?x=1");
-    expect(init.redirect).toBe("manual");
-    const headers = new Headers(init.headers);
+    expect(init!.redirect).toBe("manual");
+    const headers = new Headers(init!.headers);
     expect(headers.get("authorization")).toBe("Bearer host-token");
     expect(headers.get("accept")).toBe("text/event-stream");
   });
 
   test("strips browser-ambient headers and streams the request body", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     const req = request("/__gateway/abc/v1/events", {
       method: "POST",
       headers: {
@@ -241,7 +394,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       body: new ReadableStream<Uint8Array>(),
     });
     await forwardGatewayRequest(req, fetcher);
-    const init = fetcher.mock.calls[0]![1];
+    const init = calls[0]!.init!;
     const headers = new Headers(init.headers);
     for (const name of [
       "origin",
@@ -258,7 +411,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
   });
 
   test("rejects before fetching when the host cannot read the bearer", async () => {
-    const { fetcher } = recorder();
+    const { fetcher, calls } = recorder();
     tokenResult = { ok: false, status: 404, error: "Guardian token not found" };
     const response = await forwardGatewayRequest(
       request("/__gateway/abc/v1/foo"),
@@ -266,7 +419,7 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
     );
     expect(response?.status).toBe(404);
     expect(await response?.text()).toBe("Guardian token not found");
-    expect(fetcher).not.toHaveBeenCalled();
+    expect(calls).toHaveLength(0);
   });
 
   test("returns the upstream streaming Response without consuming it", async () => {

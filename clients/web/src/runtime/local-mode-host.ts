@@ -607,14 +607,16 @@ export async function readAssistantAvatarHost(
 }
 
 /**
- * Acquire a fresh guardian access token for a local assistant, used to
- * authorize the gateway token exchange. Reading the token file and refreshing
- * it via the CLI is a trusted disk/CLI operation, so it runs in the host:
- * the Electron main process behind `window.cadet.localMode.guardianToken`,
- * the Vite dev server behind `/v1/assistants/{id}/guardian-token`. Throws
- * a {@link GuardianTokenError} carrying the host's status on failure, so
- * callers surface the same connect error — and can branch on the failure
- * class — regardless of host.
+ * Acquire a fresh guardian access token for a local assistant. The
+ * diagnostics export embeds it in the hosted-assistant bundle it assembles;
+ * the connect flows no longer need it — the trusted host mints the gateway
+ * bearer itself, so the renderer never leases the credential to authenticate.
+ * Reading the token file and refreshing it via the CLI is a trusted
+ * disk/CLI operation, so it runs in the host: the Electron main process
+ * behind `window.cadet.localMode.guardianToken`, the Vite dev server behind
+ * `/v1/assistants/{id}/guardian-token`. Throws a {@link GuardianTokenError}
+ * carrying the host's status on failure, so callers surface the same
+ * error — and can branch on the failure class — regardless of host.
  */
 export async function fetchGuardianTokenHost(
   assistantId: string,
