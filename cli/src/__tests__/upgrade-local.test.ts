@@ -194,7 +194,6 @@ function makeLocalEntry(): AssistantEntry {
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://lan.local:7830",
-    localUrl: "http://127.0.0.1:7830",
     cloud: "local",
     resources: {
       instanceDir: tempDir,

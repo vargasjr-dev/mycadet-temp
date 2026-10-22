@@ -28,11 +28,12 @@
 import { isCloudHome } from "../cloud-values.js";
 import {
   formatAssistantLookupError,
-  formatAssistantReference,
+  getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveTargetAssistant,
   type AssistantEntry,
 } from "../assistant-config.js";
+import { gatewayDialUrl } from "../runtime-url.js";
 import { getCloudUrl, readCloudToken } from "../cloud-client.js";
 import {
   guardianTokenDueForRenewal,
@@ -96,7 +97,7 @@ export async function resolveLiveVoiceConnection(
     return await resolveCloudConnection(entry);
   }
 
-  const baseUrl = (entry.localUrl || entry.runtimeUrl).replace(/\/+$/, "");
+  const baseUrl = gatewayDialUrl(entry).replace(/\/+$/, "");
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);
@@ -121,7 +122,7 @@ export async function resolveLiveVoiceConnection(
     token,
     tokenTransport: "header",
     assistantId: entry.assistantId,
-    reference: formatAssistantReference(entry),
+    reference: getAssistantDisplayName(entry),
   };
 }
 
@@ -142,7 +143,7 @@ async function resolveCloudConnection(
   const sessionToken = readCloudToken();
   if (!sessionToken) {
     throw new LiveVoiceConnectionError(
-      `${formatAssistantReference(entry)} is a Cadet cloud assistant, which ` +
+      `${getAssistantDisplayName(entry)} is a Cadet cloud assistant, which ` +
         "needs a cloud login. Run 'cadet login' and try again.",
     );
   }
@@ -178,7 +179,7 @@ async function resolveCloudConnection(
     token,
     tokenTransport: "query",
     assistantId: entry.assistantId,
-    reference: formatAssistantReference(entry),
+    reference: getAssistantDisplayName(entry),
   };
 }
 

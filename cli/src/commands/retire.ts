@@ -1,12 +1,12 @@
 import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
+import { gatewayDialUrl } from "../lib/runtime-url.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
 import {
-  extractHostFromUrl,
+  extractHostFromEntry,
   formatAssistantLookupError,
-  formatAssistantReference,
   getActiveAssistant,
   getAssistantDisplayName,
   loadAllAssistants,
@@ -120,7 +120,7 @@ async function unregisterSelfHostedLocalPlatformRecord(
 }
 
 async function retireCustom(entry: AssistantEntry): Promise<void> {
-  const host = extractHostFromUrl(entry.runtimeUrl);
+  const host = extractHostFromEntry(entry);
   const sshHost = `root@${host}`;
 
   console.log(`\u{1F5D1}\ufe0f  Retiring custom instance on ${sshHost}...\n`);
@@ -200,8 +200,8 @@ function parseRetireArgs(args: string[]): RetireArgs {
   };
 }
 
-function formatRuntimeUrl(entry: AssistantEntry): string {
-  return entry.localUrl ?? entry.runtimeUrl;
+function formatRuntimeUrl(entry: AssistantEntry): string | undefined {
+  return gatewayDialUrl(entry);
 }
 
 function printRetireTarget(entry: AssistantEntry, cloud: string): void {
@@ -373,7 +373,7 @@ async function retireInner(): Promise<void> {
   }
 
   removeAssistantEntry(assistantId);
-  console.log(`Removed ${formatAssistantReference(entry)} from config.`);
+  console.log(`Removed ${getAssistantDisplayName(entry)} from config.`);
 
   // When no assistants remain, remove the dock-display-name sentinel so
   // the dock label falls back to "Cadet" instead of using the

@@ -321,7 +321,6 @@ function resolveStatusResources(
       ports.daemon,
     gatewayPort:
       firstNumber(entry.resources?.gatewayPort, rawResources?.gatewayPort) ??
-      parsePortFromUrl(rawEntry?.localUrl) ??
       parsePortFromUrl(rawEntry?.runtimeUrl ?? entry.runtimeUrl) ??
       ports.gateway,
   };

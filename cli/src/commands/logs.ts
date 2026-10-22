@@ -6,7 +6,7 @@ import { watch } from "fs";
 import { join } from "path";
 
 import {
-  extractHostFromUrl,
+  extractHostFromEntry,
   resolveAssistant,
   type AssistantEntry,
 } from "../lib/assistant-config";
@@ -444,7 +444,7 @@ async function showCustomLogs(
   entry: AssistantEntry,
   opts: LogsArgs,
 ): Promise<void> {
-  const host = extractHostFromUrl(entry.runtimeUrl);
+  const host = extractHostFromEntry(entry);
   const sshTarget = `root@${host}`;
 
   const remoteCmd = buildRemoteLogCommand(opts);

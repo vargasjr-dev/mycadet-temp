@@ -14,10 +14,9 @@ import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import { getLogDir } from "../lib/xdg-log.js";
 
 import {
-  extractHostFromUrl,
+  extractHostFromEntry,
   findAssistantByName,
   formatAssistantLookupError,
-  formatAssistantReference,
   getActiveAssistant,
   getAssistantDisplayName,
   getDaemonPidPath,
@@ -26,6 +25,7 @@ import {
   readRootProcesses,
   type AssistantEntry,
 } from "../lib/assistant-config";
+import { gatewayDialUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
@@ -245,7 +245,7 @@ const REMOTE_SSH_TIMEOUT_MS = 30_000;
 async function getRemoteProcessesCustom(
   entry: AssistantEntry,
 ): Promise<string> {
-  const host = extractHostFromUrl(entry.runtimeUrl);
+  const host = extractHostFromEntry(entry);
   return execOutput("ssh", [...SSH_OPTS, `root@${host}`, REMOTE_PS_CMD], {
     timeoutMs: REMOTE_SSH_TIMEOUT_MS,
   });
@@ -338,14 +338,14 @@ function formatDetectionInfo(proc: DetectedProcess): string {
 }
 
 async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
-  if (!entry.resources) {
+  const resources = entry.resources;
+  if (!resources?.instanceDir) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  const resources = entry.resources;
   const cadetDir = resources.instanceDir;
-  const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
+  const gatewayUrl = gatewayDialUrl(entry);
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
 
   // Preferred path: the gateway's /v1/ps returns the daemon's REAL process
@@ -506,7 +506,7 @@ async function getAssistantProcessRows(
 ): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
-  console.log(`Processes for ${formatAssistantReference(entry)} — ${cloud}:`);
+  console.log(`Processes for ${getAssistantDisplayName(entry)} — ${cloud}:`);
   console.log(`Location: ${locationFor(entry)}\n`);
 
   if (cloud === "local") {
@@ -751,7 +751,7 @@ function assistantLabelFor(assistantId: string | undefined): string | null {
   if (!assistantId) return null;
   const result = lookupAssistantByIdentifier(assistantId);
   return result.status === "found"
-    ? formatAssistantReference(result.entry)
+    ? getAssistantDisplayName(result.entry)
     : assistantId;
 }
 
@@ -797,7 +797,7 @@ async function getAssistantListHealth(
       return { status: "sleeping", detail: null };
     }
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(entry.localUrl ?? entry.runtimeUrl, token);
+    return checkHealth(gatewayDialUrl(entry), token);
   }
 
   if (entry.cloud === "docker") {
@@ -807,7 +807,7 @@ async function getAssistantListHealth(
       return { status: "sleeping", detail: null };
     }
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(entry.localUrl ?? entry.runtimeUrl, token);
+    return checkHealth(gatewayDialUrl(entry), token);
   }
 
   if (entry.cloud === "apple-container") {
@@ -824,7 +824,7 @@ async function getAssistantListHealth(
   }
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  return checkHealth(entry.localUrl ?? entry.runtimeUrl, token);
+  return checkHealth(gatewayDialUrl(entry), token);
 }
 
 function formatAssistantListRow(

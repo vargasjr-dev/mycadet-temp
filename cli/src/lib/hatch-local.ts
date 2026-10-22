@@ -178,7 +178,6 @@ export interface HatchLocalParams {
 export interface HatchLocalResult {
   assistantId: string;
   runtimeUrl: string;
-  localUrl: string;
   /**
    * Guardian access token leased during hatch, when the lease succeeded. The
    * full token pair is persisted to disk regardless; this is surfaced so an
@@ -347,7 +346,6 @@ export async function hatchLocal(
       const localEntry: AssistantEntry = {
         assistantId: instanceName,
         runtimeUrl,
-        localUrl: `http://127.0.0.1:${resources.gatewayPort}`,
         cloud: "local",
         hatchedAt: new Date().toISOString(),
         resources: { ...resources, signingKey },
@@ -454,7 +452,6 @@ export async function hatchLocal(
   const result: HatchLocalResult = {
     assistantId: instanceName,
     runtimeUrl,
-    localUrl: `http://127.0.0.1:${resources.gatewayPort}`,
     guardianAccessToken,
   };
 

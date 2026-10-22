@@ -27,7 +27,6 @@ import {
   loadLatestAssistant,
   findAssistantByName,
   formatAssistantLookupError,
-  formatAssistantReference,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   removeAssistantEntry,
@@ -213,17 +212,6 @@ describe("assistant-config", () => {
       "assistant-1",
     );
     expect(formatAssistantLookupError("Alice", result)).toContain(
-      "assistant-2",
-    );
-  });
-
-  test("formatAssistantReference includes distinct display name and id", () => {
-    expect(
-      formatAssistantReference(
-        makeEntry("assistant-1", undefined, { name: "Alice" }),
-      ),
-    ).toBe("Alice (assistant-1)");
-    expect(formatAssistantReference(makeEntry("assistant-2"))).toBe(
       "assistant-2",
     );
   });

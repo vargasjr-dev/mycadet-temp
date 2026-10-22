@@ -1,6 +1,6 @@
 import {
   formatAssistantLookupError,
-  formatAssistantReference,
+  getAssistantDisplayName,
   getActiveAssistant,
   lookupAssistantByIdentifier,
   setActiveAssistant,
@@ -36,7 +36,7 @@ export const use = Object.assign(
       const result = lookupAssistantByIdentifier(active);
       if (result.status === "found") {
         console.log(
-          `Active assistant: ${formatAssistantReference(result.entry)}`,
+          `Active assistant: ${getAssistantDisplayName(result.entry)}`,
         );
       } else {
         console.log(`Active assistant: ${active} — not found in lockfile`);
@@ -55,7 +55,7 @@ export const use = Object.assign(
 
   setActiveAssistant(result.entry.assistantId);
   console.log(
-    `Active assistant set to ${formatAssistantReference(result.entry)}.`,
+    `Active assistant set to ${getAssistantDisplayName(result.entry)}.`,
   );
 },
   { description: "Set the active assistant for commands" },

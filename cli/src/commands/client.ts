@@ -5,6 +5,7 @@ import {
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
+  getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveAssistant,
   resolveConversationKey,
@@ -17,7 +18,11 @@ import {
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "../lib/guardian-token";
-import { normalizeRuntimeUrl, trustedRefreshUrl } from "../lib/runtime-url";
+import {
+  gatewayDialUrl,
+  normalizeRuntimeUrl,
+  trustedRefreshUrl,
+} from "../lib/runtime-url";
 import {
   CLI_INTERFACE_ID,
   getClientRegistrationHeaders,
@@ -36,8 +41,6 @@ const ANSI = {
   dim: "\x1b[2m",
 };
 
-const FALLBACK_RUNTIME_URL = `http://127.0.0.1:${GATEWAY_PORT}`;
-
 interface ParsedArgs {
   runtimeUrl: string;
   assistantId: string;
@@ -50,13 +53,6 @@ interface ParsedArgs {
   cloudToken?: string;
   /** Guardian JWT (Authorization: Bearer), set for local assistants. */
   bearerToken?: string;
-}
-
-function readAssistantName(entry: AssistantEntry | null): string | undefined {
-  const rawName = entry?.name;
-  return typeof rawName === "string" && rawName.trim()
-    ? rawName.trim()
-    : undefined;
 }
 
 /** Collapse the home prefix so panel paths read `~/...` instead of absolute. */
@@ -138,9 +134,9 @@ export function parseArgs(): ParsedArgs {
     }
   }
 
-  let runtimeUrl = entry?.localUrl || entry?.runtimeUrl || FALLBACK_RUNTIME_URL;
+  let runtimeUrl = gatewayDialUrl(entry);
   let assistantId = entry?.assistantId || DAEMON_INTERNAL_ASSISTANT_ID;
-  let assistantName = readAssistantName(entry);
+  let assistantName = entry ? getAssistantDisplayName(entry) : undefined;
   const cloud = entry?.cloud;
   const workspaceRoot = readWorkspaceRoot(entry);
 

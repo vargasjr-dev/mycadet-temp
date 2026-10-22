@@ -3,7 +3,7 @@ import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
-  formatAssistantReference,
+  getAssistantDisplayName,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
@@ -206,14 +206,14 @@ export interface LocalTunnelTarget {
  * Map an entry to its local tunnel target, or null when it has no locally
  * reachable gateway (e.g. cloud-hosted). Entries with `resources` carry
  * their own gateway port and instance workspace. Local container entries
- * (docker, apple-container) run locally without host resources: their gateway
- * port comes from localUrl/runtimeUrl and their ingress state lives in the
- * default workspace.
+ * (docker, apple-container) run locally without host resources: their
+ * gateway port comes from their recorded runtime url and their ingress
+ * state lives in the default workspace.
  */
 export function toLocalTunnelTarget(
   entry: AssistantEntry,
 ): LocalTunnelTarget | null {
-  if (entry.resources) {
+  if (entry.resources?.instanceDir) {
     return {
       entry,
       gatewayPort: entry.resources.gatewayPort,
@@ -230,7 +230,7 @@ export function toLocalTunnelTarget(
 }
 
 export function describeUntunnelableEntry(entry: AssistantEntry): string {
-  const reference = formatAssistantReference(entry);
+  const reference = getAssistantDisplayName(entry);
   return isCloudHome(entry.cloud)
     ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
     : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
@@ -256,7 +256,7 @@ export function resolveLocalTunnelTarget(): LocalTunnelTarget {
 
   if (localTargets.length === 1) {
     console.log(
-      `${describeUntunnelableEntry(entry)} Tunneling the local assistant '${formatAssistantReference(localTargets[0].entry)}' instead.`,
+      `${describeUntunnelableEntry(entry)} Tunneling the local assistant '${getAssistantDisplayName(localTargets[0].entry)}' instead.`,
     );
     return localTargets[0];
   }

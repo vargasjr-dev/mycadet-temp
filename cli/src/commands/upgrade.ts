@@ -748,10 +748,6 @@ export async function targetVersionFromCli(
   return latestTag;
 }
 
-function localAdminUrl(entry: AssistantEntry): string {
-  return entry.localUrl ?? entry.runtimeUrl;
-}
-
 async function ensureGuardianTokenAfterLocalUpgrade(
   entry: AssistantEntry,
   gatewayPort: number,
@@ -801,7 +797,7 @@ async function upgradeLocal(
   }
 
   const targetVersion = await targetVersionFromCli(version);
-  const adminUrl = localAdminUrl(entry);
+  const adminUrl = `http://127.0.0.1:${entry.resources.gatewayPort}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {

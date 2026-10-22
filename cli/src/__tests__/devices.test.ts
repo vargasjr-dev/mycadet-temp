@@ -178,13 +178,19 @@ describe("cadet devices", () => {
     rmSync(testDir, { recursive: true, force: true });
   });
 
-  function seedLocal(id: string, localUrl = "http://127.0.0.1:7830"): void {
+  function seedLocal(id: string, gatewayPort = 7830): void {
     saveAssistantEntry({
       assistantId: id,
       name: id,
       runtimeUrl: "http://127.0.0.1:7830",
-      localUrl,
       cloud: "local",
+      resources: {
+        instanceDir: testDir,
+        gatewayPort,
+        daemonPort: 8501,
+        qdrantPort: 9001,
+        cesPort: 9002,
+      },
     });
   }
 
@@ -197,7 +203,7 @@ describe("cadet devices", () => {
   });
 
   test("lists active devices over loopback with no browser/proxy headers", async () => {
-    seedLocal("list-host", "http://127.0.0.1:7833");
+    seedLocal("list-host", 7833);
     stubFetch((url) => {
       if (url.endsWith("/v1/devices")) {
         return jsonResponse({
@@ -258,7 +264,7 @@ describe("cadet devices", () => {
   }
 
   test("labels this machine's own host credential in the human list", async () => {
-    seedLocal("host-label", "http://127.0.0.1:7837");
+    seedLocal("host-label");
     stubFetch((url) =>
       url.endsWith("/v1/devices")
         ? jsonResponse({
@@ -298,7 +304,7 @@ describe("cadet devices", () => {
   });
 
   test("list --json marks only the host credential with isCurrentHost", async () => {
-    seedLocal("host-json", "http://127.0.0.1:7838");
+    seedLocal("host-json", 7838);
     const hostRecord = {
       hashedDeviceId: hostHash(),
       platform: "cli",
@@ -333,7 +339,7 @@ describe("cadet devices", () => {
   });
 
   test("revoking the host credential warns on stderr but proceeds", async () => {
-    seedLocal("host-revoke", "http://127.0.0.1:7839");
+    seedLocal("host-revoke", 7839);
     stubFetch((url) =>
       url.endsWith("/v1/devices/revoke")
         ? jsonResponse({ revoked: true })
@@ -369,7 +375,7 @@ describe("cadet devices", () => {
   });
 
   test("revoke posts the hashedDeviceId with --yes (no prompt)", async () => {
-    seedLocal("revoke-host", "http://127.0.0.1:7834");
+    seedLocal("revoke-host", 7834);
     stubFetch((url) => {
       if (url.endsWith("/v1/devices/revoke")) {
         return jsonResponse({ revoked: true, hashedDeviceId: "hashAAA111" });
@@ -437,7 +443,7 @@ describe("cadet devices", () => {
   });
 
   test("list --json emits a single JSON document and no human text", async () => {
-    seedLocal("json-host", "http://127.0.0.1:7835");
+    seedLocal("json-host");
     const records = [
       {
         hashedDeviceId: "hashAAA111",
@@ -479,7 +485,7 @@ describe("cadet devices", () => {
   });
 
   test("revoke --json --yes emits one JSON line; identity preamble on stderr", async () => {
-    seedLocal("json-revoke-host", "http://127.0.0.1:7836");
+    seedLocal("json-revoke-host");
     stubFetch((url) =>
       url.endsWith("/v1/devices/revoke")
         ? jsonResponse({ revoked: true, hashedDeviceId: "hashAAA111" })

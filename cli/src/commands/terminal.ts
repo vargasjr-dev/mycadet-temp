@@ -16,7 +16,7 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { spawn } from "child_process";
 
-import { extractHostFromUrl, resolveAssistant } from "../lib/assistant-config";
+import { extractHostFromEntry, resolveAssistant } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/ssh-apple-container";
@@ -321,7 +321,7 @@ export const terminal = Object.assign(
   }
 
   if (cloud === "custom") {
-    const host = extractHostFromUrl(entry.runtimeUrl);
+    const host = extractHostFromEntry(entry);
     const sshTarget = `root@${host}`;
 
     console.log(`🔗 Connecting to ${entry.assistantId} via ssh...\n`);

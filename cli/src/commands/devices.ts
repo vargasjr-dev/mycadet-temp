@@ -14,10 +14,10 @@ import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 
 import type { DeviceRecord } from "@mycadet/local-mode";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 
 import {
   type AssistantEntry,
-  formatAssistantReference,
   getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config";
@@ -81,11 +81,8 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
   if (entry.cloud === "docker")
     return `http://127.0.0.1:${GATEWAY_INTERNAL_PORT}`;
 
-  const base =
-    entry.localUrl ||
-    (entry.resources?.gatewayPort
-      ? `http://127.0.0.1:${entry.resources.gatewayPort}`
-      : undefined);
+  const port = getLoopbackGatewayPort(entry);
+  const base = port ? `http://127.0.0.1:${port}` : undefined;
   if (!base) {
     console.error(
       `Error: no local gateway found for '${displayName}'. \`cadet devices\` runs on the machine hosting the assistant.`,
@@ -219,7 +216,7 @@ async function listDevices(
     return;
   }
 
-  console.log(`Devices paired to ${formatAssistantReference(entry)}:`);
+  console.log(`Devices paired to ${getAssistantDisplayName(entry)}:`);
   console.log("");
   for (const device of devices) {
     console.log(`  ${device.hashedDeviceId}`);
@@ -265,7 +262,7 @@ async function revokeDevice(
   // it goes to stderr so stdout stays a single JSON document.
   const printIdentity = jsonOutput ? console.error : console.log;
   printIdentity("Device to revoke:");
-  printIdentity(`  Assistant: ${formatAssistantReference(entry)}`);
+  printIdentity(`  Assistant: ${getAssistantDisplayName(entry)}`);
   printIdentity(`  Device:    ${hashedDeviceId}`);
   printIdentity("");
 

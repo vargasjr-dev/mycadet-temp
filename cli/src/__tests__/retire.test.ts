@@ -251,15 +251,12 @@ describe("cadet retire", () => {
     const output = consoleLogSpy.mock.calls.flat().join("\n");
     expect(output).toContain("Name: Example Assistant");
     expect(output).toContain("ID: assistant-1");
-    expect(output).toContain(
-      "Removed Example Assistant (assistant-1) from config.",
-    );
+    expect(output).toContain("Removed Example Assistant from config.");
   });
 
   test("local retire unregisters the cloud record straight from the lockfile entry", async () => {
     const entry = makeEntry("assistant-1", {
       name: "Example Assistant",
-      localUrl: "http://127.0.0.1:7831",
       cloudAssistantId: "cloud-asst-1",
       cloudOrganizationId: "org-123",
     });

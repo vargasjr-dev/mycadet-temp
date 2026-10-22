@@ -186,8 +186,14 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       runtimeUrl: "http://runtime.example",
-      localUrl: "http://127.0.0.1:3000",
       cloud: "local",
+      resources: {
+        instanceDir: testDir,
+        gatewayPort: 3000,
+        daemonPort: 8501,
+        qdrantPort: 9001,
+        cesPort: 9002,
+      },
     });
     saveGuardianToken("assistant-123", guardianTokenFixture());
 
@@ -216,6 +222,13 @@ describe("setup command", () => {
       assistantId: "assistant-123",
       runtimeUrl: "http://127.0.0.1:3000",
       cloud: "local",
+      resources: {
+        instanceDir: testDir,
+        gatewayPort: 3000,
+        daemonPort: 8501,
+        qdrantPort: 9001,
+        cesPort: 9002,
+      },
     });
     saveGuardianToken("assistant-123", guardianTokenFixture());
 
@@ -236,8 +249,14 @@ describe("setup command", () => {
     writeLockfile({
       assistantId: "assistant-123",
       runtimeUrl: "http://runtime.example",
-      localUrl: "http://127.0.0.1:3000",
       cloud: "local",
+      resources: {
+        instanceDir: testDir,
+        gatewayPort: 3000,
+        daemonPort: 8501,
+        qdrantPort: 9001,
+        cesPort: 9002,
+      },
     });
     installFetchStub({
       leasedToken: guardianTokenFixture({
@@ -275,8 +294,8 @@ describe("setup command", () => {
 
     await setup();
 
-    expect(fetchCalls[0].url).toBe("http://localhost:7831/readyz");
-    expect(fetchCalls[1].url).toBe("http://localhost:7831/v1/guardian/init");
+    expect(fetchCalls[0].url).toBe("http://127.0.0.1:7831/readyz");
+    expect(fetchCalls[1].url).toBe("http://127.0.0.1:7831/v1/guardian/init");
     expect(fetchCalls[1].headers.get("x-bootstrap-secret")).toBe(
       "test-bootstrap-secret",
     );

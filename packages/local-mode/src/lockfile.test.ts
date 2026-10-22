@@ -83,7 +83,6 @@ describe("getLockfileData", () => {
         {
           assistantId: "asst_legacy",
           cloud: "local",
-          localUrl: "http://127.0.0.1:7777",
         },
       ]);
       expect(result.data.activeAssistant).toBe("asst_legacy");

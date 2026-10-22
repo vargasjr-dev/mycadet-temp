@@ -49,7 +49,6 @@ function seedLocalEntry(overrides: Record<string, unknown> = {}): void {
     assistantId: "px",
     name: "Prime Quail",
     runtimeUrl: "http://127.0.0.1:7830",
-    localUrl: "http://127.0.0.1:7830",
     cloud: "local",
     ...overrides,
   });
@@ -181,7 +180,6 @@ describe("gateway token command", () => {
       assistantId: "py",
       name: "Other Box",
       runtimeUrl: "http://127.0.0.1:7831",
-      localUrl: "http://127.0.0.1:7831",
       cloud: "local",
     });
     setActiveAssistant("py");

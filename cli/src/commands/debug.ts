@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import {
-  formatAssistantReference,
+  getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -59,7 +59,7 @@ export const debug = Object.assign(
     }
 
     const entry = resolveTargetAssistant(parseAssistantTargetArg(args));
-    const reference = formatAssistantReference(entry);
+    const reference = getAssistantDisplayName(entry);
     if (isCloudHome(entry.cloud)) {
       console.error(
         `${reference} is hosted by Cadet, so staff can clone it directly. No bundle is needed.`,

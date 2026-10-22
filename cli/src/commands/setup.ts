@@ -1,5 +1,6 @@
 import { resolveAssistant } from "../lib/assistant-config.js";
 import { cliCommand } from "../lib/cli-name.js";
+import { gatewayDialUrl } from "../lib/runtime-url.js";
 import {
   leaseGuardianToken,
   loadGuardianToken,
@@ -116,7 +117,7 @@ async function resolveSetupBearerToken(
   }
 
   const canLeaseGuardianToken =
-    entry.cloud === "local" || entry.cloud === "docker" || entry.localUrl;
+    entry.cloud === "local" || entry.cloud === "docker";
   if (canLeaseGuardianToken) {
     try {
       const bootstrapSecret =
@@ -180,7 +181,7 @@ export const setup = Object.assign(
     process.exit(1);
   }
 
-  const gatewayUrl = entry.localUrl ?? entry.runtimeUrl;
+  const gatewayUrl = gatewayDialUrl(entry);
   const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
 
   // Respect the assistant's configured default provider (e.g. Cadet Cloud

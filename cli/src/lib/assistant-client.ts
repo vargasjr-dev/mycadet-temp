@@ -19,7 +19,7 @@
 
 import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
-import { GATEWAY_PORT } from "./constants.js";
+import { gatewayDialUrl } from "./runtime-url.js";
 import {
   loadGuardianToken,
   refreshGuardianToken,
@@ -33,7 +33,6 @@ import {
 } from "./cloud-client.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
-const FALLBACK_RUNTIME_URL = `http://127.0.0.1:${GATEWAY_PORT}`;
 
 /**
  * - `guardian`: `Authorization: Bearer <guardian JWT>`, refreshable on a 401.
@@ -123,12 +122,7 @@ export class AssistantClient {
 
     this.runtimeUrl = platformManaged
       ? platformHost
-      : stripTrailingSlashes(
-          opts?.runtimeUrl ||
-            entry.localUrl ||
-            entry.runtimeUrl ||
-            FALLBACK_RUNTIME_URL,
-        );
+      : stripTrailingSlashes(opts?.runtimeUrl || gatewayDialUrl(entry));
 
     if (opts?.sessionToken) {
       // Caller supplied the credential: X-Session-Token + Cadet-Organization-Id.

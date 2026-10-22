@@ -9,17 +9,17 @@ import { lookupAssistantByIdentifier } from "../assistant-config.js";
 import { GATEWAY_PORT } from "../constants.js";
 import { loadGuardianToken } from "../guardian-token.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
+import { gatewayDialUrl } from "../runtime-url.js";
 
 /**
  * Where the gateway for this run's assistant answers. The entry's recorded
- * loopback URL when one resolves; the global gateway port otherwise.
+ * loopback gateway port when one resolves; the global gateway port otherwise.
  */
 function gatewayUrlFor(assistantId: string | undefined): string {
   if (assistantId) {
     const result = lookupAssistantByIdentifier(assistantId);
     if (result.status === "found") {
-      const url = result.entry.localUrl ?? result.entry.runtimeUrl;
-      if (url) return url;
+      return gatewayDialUrl(result.entry);
     }
   }
   return `http://127.0.0.1:${GATEWAY_PORT}`;

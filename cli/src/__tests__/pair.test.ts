@@ -8,7 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -26,16 +26,19 @@ import { withPreconnect } from "./helpers/http.js";
 // answer it in-process and record the invocations (the fetch stubs below
 // still serve the loopback HTTP mint the other topologies keep using).
 const mintCalls: Array<{ command: string; args: readonly string[] }> = [];
+// The gateway CLI self-sources its advertised url from its own workspace
+// config, so the mint carries no url argument; the mock echoes the base the
+// test seeded there.
+let mintReplyBase = "";
 const actualStepRunner = await import("../lib/step-runner.js");
 const mockExecOutput = mock(
   (command: string, args: readonly string[]): Promise<string> => {
     mintCalls.push({ command, args });
-    const mintedUrl = args[args.length - 1] ?? "";
     return Promise.resolve(
       JSON.stringify({
         deviceCode: "device-code",
         userCode: "ABCD-EFGH",
-        verificationUri: `${mintedUrl}/assistant/pair`,
+        verificationUri: `${mintReplyBase}/assistant/pair`,
         expiresAt: "2026-06-04T00:10:00.000Z",
         expiresInSeconds: 600,
         intervalSeconds: 5,
@@ -97,6 +100,19 @@ function stubPairingGateway(
   });
 }
 
+// The pairing preflight reads the ingress url `cadet tunnel start` saved
+// into the entry's workspace config.
+const INSTANCE_DIR = join(testDir, "instance");
+
+function writeIngressConfig(publicBaseUrl: string): void {
+  const workspaceDir = join(INSTANCE_DIR, "workspace");
+  mkdirSync(workspaceDir, { recursive: true });
+  writeFileSync(
+    join(workspaceDir, "config.json"),
+    JSON.stringify({ ingress: { publicBaseUrl } }),
+  );
+}
+
 function writeLockfile(): void {
   writeFileSync(
     join(testDir, "lockfile.json"),
@@ -105,13 +121,18 @@ function writeLockfile(): void {
         {
           assistantId: "pair-test",
           runtimeUrl: RUNTIME_URL,
-          localUrl: LOCAL_URL,
           cloud: "local",
+          resources: {
+            instanceDir: INSTANCE_DIR,
+            gatewayPort: 7830,
+            daemonPort: 8501,
+          },
         },
       ],
       activeAssistant: "pair-test",
     }),
   );
+  writeIngressConfig(PUBLIC_URL);
 }
 
 // Capture the real argv ONCE, before any test mutates it, and restore after
@@ -122,6 +143,7 @@ const ORIGINAL_ARGV = [...process.argv];
 describe("pair command", () => {
   beforeEach(() => {
     mintCalls.length = 0;
+    mintReplyBase = PUBLIC_URL;
     writeLockfile();
   });
 
@@ -151,7 +173,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
+    process.argv = ["bun", "cadet", "pair"];
     try {
       await pair();
     } finally {
@@ -163,11 +185,7 @@ describe("pair command", () => {
     // local-presence proof and the approval, so the link alone completes
     // the pairing — no HTTP at all for a local assistant.
     expect(mintCalls).toHaveLength(1);
-    expect(mintCalls[0]?.args.slice(-3)).toEqual([
-      "pairing",
-      "mint",
-      PUBLIC_URL,
-    ]);
+    expect(mintCalls[0]?.args.slice(-2)).toEqual(["pairing", "mint"]);
     expect(calls).toHaveLength(0);
 
     const output = logs.join("\n");
@@ -195,7 +213,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL, "--json"];
+    process.argv = ["bun", "cadet", "pair", "--json"];
     try {
       await pair();
     } finally {
@@ -254,15 +272,8 @@ describe("pair command", () => {
     let plain: { urls: string[]; output: string };
     let withQr: { urls: string[]; output: string };
     try {
-      plain = await runPair(["bun", "cadet", "pair", "--url", PUBLIC_URL]);
-      withQr = await runPair([
-        "bun",
-        "cadet",
-        "pair",
-        "--qr",
-        "--url",
-        PUBLIC_URL,
-      ]);
+      plain = await runPair(["bun", "cadet", "pair"]);
+      withQr = await runPair(["bun", "cadet", "pair", "--qr"]);
     } finally {
       globalThis.fetch = origFetch;
     }
@@ -311,15 +322,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = [
-      "bun",
-      "cadet",
-      "pair",
-      "--app-scheme",
-      "cadet-dev",
-      "--url",
-      PUBLIC_URL,
-    ];
+    process.argv = ["bun", "cadet", "pair", "--app-scheme", "cadet-dev"];
     let exited = false;
     try {
       await pair();
@@ -357,7 +360,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--web", "--url", PUBLIC_URL];
+    process.argv = ["bun", "cadet", "pair", "--web"];
     let exited = false;
     try {
       await pair();
@@ -387,29 +390,25 @@ describe("pair command", () => {
             assistantId: "pair-test",
             name: "My Assistant",
             runtimeUrl: RUNTIME_URL,
-            localUrl: LOCAL_URL,
             cloud: "local",
+            resources: {
+              instanceDir: INSTANCE_DIR,
+              gatewayPort: 7830,
+              daemonPort: 8501,
+            },
           },
         ],
         activeAssistant: "pair-test",
       }),
     );
+    writeIngressConfig(PUBLIC_URL);
 
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
     stubPairingGateway(calls);
     const logSpy = spyOn(console, "log").mockImplementation(() => {});
 
-    process.argv = [
-      "bun",
-      "cadet",
-      "pair",
-      "My",
-      "Assistant",
-      "--url",
-      PUBLIC_URL,
-      "--json",
-    ];
+    process.argv = ["bun", "cadet", "pair", "My", "Assistant", "--json"];
     try {
       await pair();
     } finally {
@@ -419,7 +418,7 @@ describe("pair command", () => {
 
     // Resolution succeeded (no exit), so the challenge was minted.
     expect(mintCalls).toHaveLength(1);
-    expect(mintCalls[0]?.args.at(-1)).toBe(PUBLIC_URL);
+    expect(mintCalls[0]?.args.slice(-2)).toEqual(["pairing", "mint"]);
     expect(calls).toHaveLength(0);
   });
 
@@ -517,8 +516,9 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("refuses a loopback runtime URL without --url, before minting", async () => {
-    // Local hatch on a NON-default gateway port (e.g. a 2nd instance).
+  test("refuses when no public URL is recorded, before minting", async () => {
+    // Local hatch on a NON-default gateway port (e.g. a 2nd instance), and no
+    // workspace config — no tunnel has recorded a public address yet.
     const LOOPBACK_CUSTOM = "http://127.0.0.1:7842";
     writeFileSync(
       join(testDir, "lockfile.json"),
@@ -527,7 +527,6 @@ describe("pair command", () => {
           {
             assistantId: "pair-test",
             runtimeUrl: LOOPBACK_CUSTOM,
-            localUrl: LOOPBACK_CUSTOM,
             cloud: "local",
           },
         ],
@@ -565,20 +564,18 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // The refusal names the address it refused and both ways forward: an
-    // explicit --url, or a tunnel when there is no public address yet.
     const joined = errors.join("\n");
-    expect(joined).toContain(LOOPBACK_CUSTOM);
-    expect(joined).toContain("loopback");
-    expect(joined).toContain("cadet pair --url");
-    expect(joined).toContain("cadet tunnel --provider tailscale");
+    expect(joined).toContain(
+      "No public URL is recorded for this assistant.",
+    );
+    expect(joined).toContain("cadet tunnel start");
 
     // Exited before minting, so no challenge exists for a dead link.
     expect(exited).toBe(true);
     expect(fetchCalled).toBe(false);
   });
 
-  test("--url override wins over a loopback runtime URL", async () => {
+  test("advertises the saved ingress url even when the runtime url is loopback", async () => {
     writeFileSync(
       join(testDir, "lockfile.json"),
       JSON.stringify({
@@ -586,8 +583,12 @@ describe("pair command", () => {
           {
             assistantId: "pair-test",
             runtimeUrl: LOCAL_URL,
-            localUrl: LOCAL_URL,
             cloud: "local",
+            resources: {
+              instanceDir: INSTANCE_DIR,
+              gatewayPort: 7830,
+              daemonPort: 8501,
+            },
           },
         ],
         activeAssistant: "pair-test",
@@ -595,6 +596,8 @@ describe("pair command", () => {
     );
 
     const OVERRIDE = "https://abc123.ngrok.app";
+    writeIngressConfig(OVERRIDE);
+    mintReplyBase = OVERRIDE;
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
     stubPairingGateway(calls, OVERRIDE);
@@ -605,7 +608,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--url", OVERRIDE, "--json"];
+    process.argv = ["bun", "cadet", "pair", "--json"];
     try {
       await pair();
     } finally {
@@ -613,8 +616,9 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // Mint still through the gateway CLI; the link advertises the override.
-    expect(mintCalls[0]?.args.at(-1)).toBe(OVERRIDE);
+    // Mint still through the gateway CLI, carrying no url; the link
+    // advertises the address the tunnel recorded.
+    expect(mintCalls[0]?.args.slice(-2)).toEqual(["pairing", "mint"]);
     expect(JSON.parse(logs.join("\n")).pairUrl).toBe(
       `${OVERRIDE}/assistant/pair#device_code=device-code`,
     );
@@ -688,7 +692,8 @@ describe("pair command", () => {
     });
   });
 
-  test("refuses a non-https --url without minting", async () => {
+  test("refuses a non-https saved ingress url without minting", async () => {
+    writeIngressConfig("http://pair.example.com");
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
     globalThis.fetch = withPreconnect(async () => {
@@ -707,13 +712,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = [
-      "bun",
-      "cadet",
-      "pair",
-      "--url",
-      "http://pair.example.com",
-    ];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -731,7 +730,8 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("refuses a loopback --url without minting", async () => {
+  test("refuses a loopback saved ingress url without minting", async () => {
+    writeIngressConfig("https://127.0.0.1:7830");
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
     globalThis.fetch = withPreconnect(async () => {
@@ -750,7 +750,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--url", "http://127.0.0.1:7830"];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -767,7 +767,8 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("refuses an unparseable --url with an accurate error, not a non-https mislabel", async () => {
+  test("refuses an unparseable saved ingress url with an accurate error", async () => {
+    writeIngressConfig("not-a-url");
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
     globalThis.fetch = withPreconnect(async () => {
@@ -786,7 +787,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = ["bun", "cadet", "pair", "--url", "not-a-url"];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -808,7 +809,8 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("refuses a tunnel-provider website URL (Tailscale admin invite) without minting", async () => {
+  test("refuses a saved tunnel-provider website url (Tailscale admin invite) without minting", async () => {
+    writeIngressConfig("https://login.tailscale.com/admin/invite/abc123");
     let fetchCalled = false;
     const origFetch = globalThis.fetch;
     globalThis.fetch = withPreconnect(async () => {
@@ -827,13 +829,7 @@ describe("pair command", () => {
       },
     );
 
-    process.argv = [
-      "bun",
-      "cadet",
-      "pair",
-      "--url",
-      "https://login.tailscale.com/admin/invite/abc123",
-    ];
+    process.argv = ["bun", "cadet", "pair"];
     let exited = false;
     try {
       await pair();
@@ -942,8 +938,6 @@ describe("pair command", () => {
       "--app",
       "--app-scheme",
       "cadet-dev",
-      "--url",
-      "https://pair.example.ts.net",
       "--json",
     ];
     try {
@@ -1009,8 +1003,6 @@ describe("pair command", () => {
       "--app",
       "--label",
       "Homelab",
-      "--url",
-      "https://pair.example.ts.net",
       "--json",
     ];
     try {
@@ -1070,21 +1062,8 @@ describe("pair command", () => {
   });
 
   function writeLockfileWithIngress(ingressUrl: string): void {
-    writeFileSync(
-      join(testDir, "lockfile.json"),
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "pair-test",
-            runtimeUrl: RUNTIME_URL,
-            localUrl: LOCAL_URL,
-            cloud: "local",
-            ingressUrl,
-          },
-        ],
-        activeAssistant: "pair-test",
-      }),
-    );
+    writeIngressConfig(ingressUrl);
+    mintReplyBase = ingressUrl;
   }
 
   test("with no --url, the entry's tunnel-recorded ingress URL is used", async () => {
@@ -1112,53 +1091,16 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // The minted challenge must advertise the entry's recorded URL.
-    expect(mintCalls[0]?.args.at(-1)).toBe("https://saved.example.ts.net");
+    // The minted challenge must advertise the recorded URL.
+    expect(mintCalls[0]?.args.slice(-2)).toEqual(["pairing", "mint"]);
     expect(calls).toHaveLength(0);
     const output = logs.join("\n");
-    expect(output).toContain(
-      "Using saved ingress URL https://saved.example.ts.net",
-    );
     expect(output).toContain(
       "https://saved.example.ts.net/assistant/pair#device_code=device-code",
     );
   });
 
-  test("--url beats the entry's recorded ingress URL", async () => {
-    writeLockfileWithIngress("https://saved.example.ts.net");
-
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      return new Response("not found", { status: 404 });
-    });
-
-    const logs: string[] = [];
-    const logSpy = spyOn(console, "log").mockImplementation(
-      (...a: unknown[]) => {
-        logs.push(a.join(" "));
-      },
-    );
-
-    process.argv = [
-      "bun",
-      "cadet",
-      "pair",
-      "--url",
-      "https://explicit.example.ts.net",
-    ];
-    try {
-      await pair();
-    } finally {
-      logSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    expect(logs.join("\n")).not.toContain("Using saved ingress URL");
-    // The override reached the mint.
-    expect(mintCalls[0]?.args.at(-1)).toBe("https://explicit.example.ts.net");
-  });
-
-  test("a non-https recorded ingress URL is ignored", async () => {
+  test("a non-https recorded ingress URL is refused", async () => {
     writeLockfileWithIngress("http://insecure.example.com");
 
     const origFetch = globalThis.fetch;
@@ -1192,14 +1134,14 @@ describe("pair command", () => {
       globalThis.fetch = origFetch;
     }
 
-    // The recorded http URL is skipped, so the flow falls through to the
-    // (non-https) runtime URL and refuses, proving it was not advertised.
+    // The recorded url is validated before anything is minted — a bad one
+    // refuses rather than falling back to an unreachable guess.
     expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain(RUNTIME_URL);
+    expect(errors.join("\n")).toContain("Re-record a valid address");
     expect(minted).toBe(false);
   });
 
-  test("a loopback recorded ingress URL is ignored", async () => {
+  test("a loopback recorded ingress URL is refused", async () => {
     writeLockfileWithIngress("https://127.0.0.1:7840");
 
     const origFetch = globalThis.fetch;
@@ -1234,11 +1176,11 @@ describe("pair command", () => {
     }
 
     expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain(RUNTIME_URL);
+    expect(errors.join("\n")).toContain("Re-record a valid address");
     expect(minted).toBe(false);
   });
 
-  test("a custom (ssh-managed) assistant keeps the loopback HTTP mint", async () => {
+  test("a custom (ssh-managed) assistant without a saved ingress url is refused", async () => {
     writeFileSync(
       join(testDir, "lockfile.json"),
       JSON.stringify({
@@ -1270,24 +1212,34 @@ describe("pair command", () => {
     );
 
     const logSpy = spyOn(console, "log").mockImplementation(() => {});
+    const errors: string[] = [];
+    const errSpy = spyOn(console, "error").mockImplementation(
+      (...a: unknown[]) => {
+        errors.push(a.join(" "));
+      },
+    );
+    const exitSpy = spyOn(process, "exit").mockImplementation(
+      (code?: number | string | undefined): never => {
+        throw new Error(`exit:${code}`);
+      },
+    );
 
-    process.argv = ["bun", "cadet", "pair", "--url", PUBLIC_URL];
+    process.argv = ["bun", "cadet", "pair"];
+    let exited = false;
     try {
       await pair();
+    } catch (e) {
+      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       logSpy.mockRestore();
+      errSpy.mockRestore();
+      exitSpy.mockRestore();
       globalThis.fetch = origFetch;
     }
 
-    // Not local/docker: no CLI execution — the mint rides the loopback HTTP
-    // route, keyed on the entry's cloud, not on containerInfo.
-    expect(mintCalls).toHaveLength(0);
-    expect(calls.map((c) => c[0])).toEqual([
-      `${LOCAL_URL}/v1/remote-web/pairing-challenge`,
-      `${LOCAL_URL}/v1/remote-web/pairing-verification`,
-    ]);
-    expect(JSON.parse(String(calls[0]?.[1]?.body))).toEqual({
-      publicBaseUrl: PUBLIC_URL,
-    });
+    // Not local/docker: no locally managed workspace, so no ingress url can
+    // be recorded here — pairing refuses and points at the tunnel.
+    expect(exited).toBe(true);
+    expect(errors.join("\n")).toContain("No public URL is recorded");
   });
 });

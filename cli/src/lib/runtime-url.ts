@@ -2,6 +2,8 @@ import { isCloudHome } from "./cloud-values.js";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./local";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import { GATEWAY_PORT } from "./constants.js";
 import type { AssistantEntry } from "./assistant-config.js";
 
 /**
@@ -84,31 +86,37 @@ export function normalizeRuntimeUrl(url: string): string {
  * the selected entry's stored guardian token, so a victim pointed at an
  * attacker-controlled (or poisoned/redirected) URL must NOT cause us to POST the
  * long-lived refreshToken + deviceId there. Refresh is permitted only when
- * `candidateUrl` normalizes to one of the entry's persisted URLs (`localUrl`,
- * which the CLI prefers when present, or `runtimeUrl`).
+ * `candidateUrl` normalizes to the entry's persisted `runtimeUrl`.
  *
  * Returns the persisted URL that the candidate matched — never the
  * caller-supplied `candidateUrl` verbatim — so credentials only ever reach a
- * trusted origin even if a caller forgets to use this return value. The matched
- * URL is preferred over always returning `runtimeUrl` so the refresh stays on
- * the same interface the session is using: e.g. a local entry may persist both a
- * loopback `localUrl` (which `cadet client` defaults to) and an externally
- * discovered `runtimeUrl`, and refreshing the loopback session against the
- * external address could be unreachable or needlessly cross the public
- * interface. Returns `null` when the candidate is untrusted (caller must skip
- * the refresh).
+ * trusted origin even if a caller forgets to use this return value. Returns
+ * `null` when the candidate is untrusted (caller must skip the refresh).
  */
 export function trustedRefreshUrl(
-  entry: Pick<AssistantEntry, "runtimeUrl" | "localUrl">,
+  entry: Pick<AssistantEntry, "runtimeUrl">,
   candidateUrl: string,
 ): string | null {
   const candidate = normalizeRuntimeUrl(candidateUrl);
-  // localUrl first: it's what the CLI prefers when present, so the candidate is
-  // most likely to match it, and we want to keep the refresh on that interface.
-  for (const persisted of [entry.localUrl, entry.runtimeUrl]) {
-    if (persisted && normalizeRuntimeUrl(persisted) === candidate) {
-      return persisted;
-    }
+  const persisted = entry.runtimeUrl;
+  if (persisted && normalizeRuntimeUrl(persisted) === candidate) {
+    return persisted;
   }
   return null;
+}
+
+/**
+ * The address to dial an entry's gateway on: the entry's loopback gateway
+ * port (`resources.gatewayPort`, else the port of a loopback `runtimeUrl`)
+ * becomes `http://127.0.0.1:<port>` — fast, mDNS-free, and identical to what
+ * the old `localUrl` mirror recorded — and anything else falls back to the
+ * entry's recorded `runtimeUrl` (e.g. a paired assistant dialable only
+ * remotely), then to the default gateway port.
+ */
+export function gatewayDialUrl(
+  entry: Pick<AssistantEntry, "resources" | "runtimeUrl"> | null | undefined,
+): string {
+  const port = entry ? getLoopbackGatewayPort(entry) : undefined;
+  if (port) return `http://127.0.0.1:${port}`;
+  return entry?.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`;
 }

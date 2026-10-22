@@ -1,7 +1,7 @@
 /**
  * `gateway pairing` — operator subcommands for the remote-web pairing flow.
  *
- *   gateway pairing mint <url>
+ *   gateway pairing mint
  *   gateway pairing list [--json]
  *
  * Mints (and approves) a remote-web pairing challenge by executing the
@@ -27,6 +27,9 @@ import {
   type PendingRemoteWebPairingChallenge,
 } from "../remote-web/pairing-challenge-store.js";
 import { mintAndApproveRemoteWebPairingChallenge } from "../remote-web/pairing-mint.js";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { getWorkspaceDir } from "../paths.js";
 
 function printUsage(): void {
   console.log("Usage: gateway pairing <subcommand>");
@@ -35,10 +38,13 @@ function printUsage(): void {
   console.log("");
   console.log("Subcommands:");
   console.log(
-    "  mint <url>   Mint and approve a pairing challenge; prints the",
+    "  mint         Mint and approve a pairing challenge advertising the",
   );
   console.log(
-    "               challenge (device code, pairing link, expiry) as JSON.",
+    "               saved ingress url; prints the challenge (device code,",
+  );
+  console.log(
+    "               pairing link, expiry) as JSON.",
   );
   console.log(
     "  list         List every persisted pairing challenge — active and",
@@ -51,7 +57,7 @@ function printUsage(): void {
   console.log("  --json       Machine-readable JSON (list)");
   console.log("");
   console.log("Examples:");
-  console.log("  $ gateway pairing mint https://your-assistant.ts.net");
+  console.log("  $ gateway pairing mint");
   console.log("  $ gateway pairing list");
   console.log("  $ gateway pairing list --json");
   console.log("");
@@ -65,6 +71,25 @@ export function parsePairingArgs(args: string[]): {
 } {
   const [subcommand = null, positional = null] = args;
   return { subcommand, positional };
+}
+
+/**
+ * The workspace's saved public ingress url — written by `cadet tunnel start`
+ * (and re-recorded by the gateway's own /v1/ingress/domains handler). The
+ * mint self-sources it: this CLI runs where the workspace lives, so no
+ * caller needs to pass a URL.
+ */
+function readSavedIngressPublicBaseUrl(): string | null {
+  try {
+    const config = JSON.parse(
+      readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8"),
+    ) as Record<string, unknown>;
+    const ingress = config.ingress as Record<string, unknown> | undefined;
+    const url = ingress?.publicBaseUrl;
+    return typeof url === "string" && url.trim() ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 function listLiveness(
@@ -114,7 +139,7 @@ function runPairingList(json: boolean): number {
 }
 
 export async function runPairingCommand(args: string[]): Promise<number> {
-  const { subcommand, positional } = parsePairingArgs(args);
+  const { subcommand } = parsePairingArgs(args);
 
   if (!subcommand || subcommand === "--help" || subcommand === "-h") {
     printUsage();
@@ -128,14 +153,17 @@ export async function runPairingCommand(args: string[]): Promise<number> {
     printUsage();
     return 1;
   }
-  if (!positional) {
-    console.error("Error: mint requires the public base URL to advertise.");
-    printUsage();
+
+  const publicBaseUrl = readSavedIngressPublicBaseUrl();
+  if (!publicBaseUrl) {
+    console.error(
+      "Error: no ingress url saved — run `cadet tunnel start` first.",
+    );
     return 1;
   }
 
   try {
-    const challenge = mintAndApproveRemoteWebPairingChallenge(positional);
+    const challenge = mintAndApproveRemoteWebPairingChallenge(publicBaseUrl);
     console.log(JSON.stringify(challenge));
     return 0;
   } catch (err) {

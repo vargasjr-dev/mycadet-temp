@@ -262,11 +262,6 @@ export const LockfileAssistantSchema = z.object({
   /** Platform organization UUID used for a self-hosted local assistant registration. */
   cloudOrganizationId: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
-  /**
-   * Loopback URL for same-machine health checks (e.g. `http://127.0.0.1:7831`).
-   * Avoids mDNS resolution issues when the machine checks its own gateway.
-   */
-  localUrl: z.string().optional(),
   /** Helper token for cloud assistants' API bearer; host-only secret. */
   bearerToken: z.string().optional(),
   /** PID of the file watcher process for docker instances hatched with --watch. */

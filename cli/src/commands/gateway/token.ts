@@ -1,5 +1,6 @@
 import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
 import { cliCommand } from "../../lib/cli-name.js";
+import { gatewayDialUrl } from "../../lib/runtime-url.js";
 
 import {
   type AssistantEntry,
@@ -93,7 +94,7 @@ export async function gatewayToken(): Promise<void> {
     return;
   }
 
-  const gatewayUrl = entry.localUrl || entry.runtimeUrl;
+  const gatewayUrl = gatewayDialUrl(entry);
   if (!gatewayUrl) {
     console.error("No gateway URL found for this assistant.");
     process.exit(1);

@@ -78,7 +78,6 @@ describe("parseLockfile", () => {
       {
         assistantId: "asst_1",
         cloud: "local",
-        localUrl: "http://127.0.0.1:7777",
       },
     ]);
   });
