@@ -11,6 +11,7 @@ import {
   staleTrackedNgrokAgent,
   untrackedNgrokHolderPid,
 } from "../lib/tunnels/ngrok.js";
+import type { TunnelProcessRecord } from "../lib/assistant-config.js";
 
 describe("buildNgrokSpawnArgs", () => {
   test("spawns a plain http agent against the loopback edge", () => {
@@ -146,7 +147,7 @@ describe("confirmStopAnswer", () => {
 });
 
 describe("staleTrackedNgrokAgent", () => {
-  const record = {
+  const record: TunnelProcessRecord = {
     pid: 4242,
     provider: "ngrok",
     startedAt: new Date().toISOString(),

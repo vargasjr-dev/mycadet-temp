@@ -1872,6 +1872,12 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
     return writeEntryWorkspaceConfig(entry, {
       ingress: {
         enabled: true,
@@ -1890,7 +1896,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     // Step 1: the edge started even though the gateway had cleared the url —
-    // the recorded tunnel is why the workspace still wants it.
+    // the lockfile's app entry is why the workspace still wants it.
     expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
@@ -1932,15 +1938,22 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
   });
 
-  test("a pairing-only tailnet run keeps the webhook tunnel on the default arm", async () => {
+  test("a pairing-only tailnet run does not re-establish the tailnet serve", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     // A preserve run stamps the root lockfile with the tailnet supervisor but
     // deliberately leaves the workspace's last tunnel on the webhook
-    // provider it did not repoint.
+    // provider it did not repoint — the tailnet start piece declines, and
+    // the simple dispatch has no default-provider fall-through.
     stampRootProcess("tunnel", {
       pid: 4321,
       provider: "tailscale",
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
@@ -1958,13 +1971,22 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       workspaceDir,
     );
 
+    expect(ensureAppServerMock).toHaveBeenCalled();
     expect(startTailscaleServeMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
-  test("a stopped tunnel cleared its root record, so the wake resurrects nothing", async () => {
+  test("a stopped tunnel cleared its root record, so the wake resurrects no tunnel", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
+    // The app entry survives, so the edge comes back — but the cleared
+    // tunnel record leaves the dispatch nothing to ensure.
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
       ingress: {
         enabled: true,
@@ -1978,12 +2000,12 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       workspaceDir,
     );
 
+    expect(ensureAppServerMock).toHaveBeenCalled();
     expect(startTailscaleServeMock).not.toHaveBeenCalled();
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
-  test("a workspace with no recorded tunnel and a cleared url wants no edge", async () => {
+  test("a workspace with no recorded app server wants no edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     const workspaceDir = writeEntryWorkspaceConfig(entry, {
@@ -1997,6 +2019,36 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
+    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
+  });
+
+  test("a provider with no start piece ensures nothing", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    stampRootProcess("tunnel", {
+      pid: 4321,
+      provider: "cloudflare",
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: { enabled: true },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    expect(ensureAppServerMock).toHaveBeenCalled();
     expect(startTailscaleServeMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
