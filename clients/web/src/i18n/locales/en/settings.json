@@ -155,7 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
-  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "No usage data for this period"
   },
@@ -229,7 +228,6 @@
     "tryAgain": "Try Again",
     "urlPlaceholder": "Paste callback URL here..."
   },
-  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Showcases, guides, and projects shared by the community.",
     "communityHubTitle": "Community Hub",
@@ -257,7 +255,6 @@
     "youtubeChannelDescription": "Walkthroughs, tutorials, and product deep-dives.",
     "youtubeChannelTitle": "YouTube channel"
   },
-  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Advanced - write a cron expression",
     "atMinute": "At minute",
@@ -343,7 +340,6 @@
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
   },
-  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
@@ -423,7 +419,6 @@
     "keepPro": "Keep Pro",
     "title": "Downgrade to Base?"
   },
-  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
     "computeResourcesLoginNotice": "Log in to Cadet Cloud to manage compute resources.",
@@ -839,7 +834,6 @@
     "requestedMetaHost": "Requested {when} from this computer",
     "title": "Pairing requests"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Composer",
     "description": "Customize shortcuts and how Cadet behaves on this device.",
@@ -1104,7 +1098,6 @@
     "loadError": "Failed to load providers. Please try again.",
     "title": "Providers"
   },
-  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "No runs yet.",
     "error": "Error",
@@ -1127,7 +1120,6 @@
     "resumeAssistant": "Resume Assistant",
     "title": "Recovery Mode"
   },
-  "resizeCard": {},
   "restartAssistant": {
     "button": "Restart",
     "confirmLabel": "Restart",
@@ -1381,7 +1373,6 @@
     "updateWindowWithTz": "Update window ({tz})",
     "weekly": "Weekly"
   },
-  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Analyze costs with assistant",
     "breakdownTitle": "Breakdown",
@@ -1430,7 +1421,6 @@
     "noUsageInRange": "No usage recorded in this time range",
     "total": "Total"
   },
-  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "Assistant not ready. Please try again.",
     "saveApiKeyFailedToast": "Failed to save {providerName} API key. Please try again."

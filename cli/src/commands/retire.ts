@@ -200,10 +200,6 @@ function parseRetireArgs(args: string[]): RetireArgs {
   };
 }
 
-function formatRuntimeUrl(entry: AssistantEntry): string | undefined {
-  return getGatewayUrl(entry);
-}
-
 function printRetireTarget(entry: AssistantEntry, cloud: string): void {
   console.log("Assistant to retire:");
   printInstanceDetails(
@@ -211,7 +207,7 @@ function printRetireTarget(entry: AssistantEntry, cloud: string): void {
       name: getAssistantDisplayName(entry),
       id: entry.assistantId,
       cloud,
-      runtime: formatRuntimeUrl(entry),
+      runtime: getGatewayUrl(entry),
       ...(entry.cloud === "local" && entry.resources?.instanceDir
         ? { root: entry.resources.instanceDir }
         : {}),

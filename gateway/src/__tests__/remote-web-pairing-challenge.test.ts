@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, test } from "bun:test";
 
@@ -17,7 +17,7 @@ const {
 } = await import("../remote-web/pairing-challenge-store.js");
 const { resetRemoteWebPairingChallengeRateLimiterForTests } =
   await import("../remote-web/pairing-challenge-rate-limit-store.js");
-const { testSecurityDir } = await import("./test-preload.js");
+const { testSecurityDir, testWorkspaceDir } = await import("./test-preload.js");
 
 import {
   LOOPBACK_IP,
@@ -294,6 +294,66 @@ describe("remote web pairing challenge", () => {
     const record = getRemoteWebPairingChallengeForTests(body.userCode);
     expect(record?.requesterIp).toBe(LOOPBACK_IP);
     expect(record?.viaEdgeProxy).toBe(false);
+  });
+
+  test("self-sources the recorded ingress url on a direct loopback mint", async () => {
+    writeFileSync(
+      join(testWorkspaceDir, "config.json"),
+      JSON.stringify({
+        ingress: { publicBaseUrl: "https://saved.example.test" },
+      }),
+    );
+
+    const res = await handleCreateRemoteWebPairingChallenge(
+      makeRequest({ body: JSON.stringify({}) }),
+      LOOPBACK_IP,
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      verificationUri: string;
+      publicBaseUrl: string;
+    };
+    expect(body.verificationUri).toBe(
+      "https://saved.example.test/assistant/pair",
+    );
+    expect(body.publicBaseUrl).toBe("https://saved.example.test");
+  });
+
+  test("self-sources the request host on an edge-proxied mint", async () => {
+    const res = await handleCreateRemoteWebPairingChallenge(
+      makeRequest({
+        edgeForwarded: true,
+        host: "paired.example.com",
+        body: JSON.stringify({}),
+      }),
+      REMOTE_IP,
+      LOOPBACK_IP,
+    );
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { verificationUri: string };
+    expect(body.verificationUri).toBe(
+      "https://paired.example.com/assistant/pair",
+    );
+  });
+
+  test("refuses a self-sourced loopback mint when no ingress url is recorded", async () => {
+    rmSync(join(testWorkspaceDir, "config.json"), { force: true });
+
+    const res = await handleCreateRemoteWebPairingChallenge(
+      makeRequest({ body: JSON.stringify({}) }),
+      LOOPBACK_IP,
+    );
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: {
+        code: "BAD_REQUEST",
+        message:
+          "no public URL is recorded for this gateway — run `cadet tunnel start` first",
+      },
+    });
   });
 
   test("rejects oversized challenge request bodies", async () => {

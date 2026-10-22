@@ -1168,12 +1168,10 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake leaves a saved ingress owned by another container alone", async () => {
+  test("a docker wake leaves a live edge fronting another assistant alone", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    // The edge is stopped, so its gatewayPort record is gone; only the saved
-    // publicBaseUrl names whose endpoint this is.
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -1186,8 +1184,14 @@ describe("cadet wake — app server restore", () => {
         cloud: "docker",
       },
     ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
-    isIngressRunningMock.mockReturnValue(false);
+    // The edge is up and stamped for docker-2 — a live process pid, so the
+    // gate's liveness check passes and the ownership check fires.
+    assistantConfig.stampRootProcess("app", {
+      pid: process.pid,
+      port: 7840,
+      assistantId: "docker-2",
+      startedAt: new Date().toISOString(),
+    });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {

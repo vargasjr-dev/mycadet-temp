@@ -155,8 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
   },
-  "billingStatusHandler": {
-  },
   "inferenceUsageChart": {
     "empty": "此期间无使用数据"
   },
@@ -230,8 +228,6 @@
     "tryAgain": "重试",
     "urlPlaceholder": "在此处粘贴回调 URL..."
   },
-  "checkoutPage": {
-  },
   "communityPage": {
     "communityHubDescription": "社区分享的展示、指南和项目。",
     "communityHubTitle": "社区中心",
@@ -258,8 +254,6 @@
     "viewSource": "查看源代码",
     "youtubeChannelDescription": "演练、教程和产品深度解析。",
     "youtubeChannelTitle": "YouTube 频道"
-  },
-  "completeState": {
   },
   "createScheduleModal": {
     "advancedCron": "高级 - 编写 cron 表达式",
@@ -340,8 +334,6 @@
     "subtitleOwn": "加密存储在助手的凭据库中。可按需显示、替换或删除其值。",
     "title": "凭据"
   },
-  "creditBundlePicker": {
-  },
   "debugBundleExport": {
     "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
     "export": "导出调试包",
@@ -420,8 +412,6 @@
     "confirm": "确认降级",
     "keepPro": "保留专业版",
     "title": "降级到基础版？"
-  },
-  "errorStates": {
   },
   "generalPage": {
     "chooseAssistant": "选择助手",
@@ -775,7 +765,6 @@
     "requestedMetaHost": "{when} 从本机请求",
     "title": "配对请求"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "撰写器",
     "description": "自定义快捷方式以及 Cadet 在此设备上的行为。",
@@ -1018,8 +1007,6 @@
     "loadError": "加载提供商失败。请重试。",
     "title": "提供商"
   },
-  "provisioningState": {
-  },
   "recentRunsCard": {
     "emptyDefault": "暂无运行记录。",
     "error": "错误",
@@ -1041,8 +1028,6 @@
     "loginNoticeExit": "登录 Cadet 平台以退出恢复模式。",
     "resumeAssistant": "恢复助手",
     "title": "恢复模式"
-  },
-  "resizeCard": {
   },
   "restartAssistant": {
     "button": "重启",
@@ -1297,8 +1282,6 @@
     "updateWindowWithTz": "更新窗口 ({tz})",
     "weekly": "每周"
   },
-  "upgradeSuccessPage": {
-  },
   "usageTab": {
     "analyzeCostsButton": "使用助手分析成本",
     "breakdownTitle": "明细",
@@ -1346,8 +1329,6 @@
     "noHourlyData": "无每小时数据",
     "noUsageInRange": "此时间范围内无使用情况记录",
     "total": "总计"
-  },
-  "useBillingPortalSession": {
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助手未就绪。请重试。",

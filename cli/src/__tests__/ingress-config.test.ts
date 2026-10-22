@@ -10,7 +10,6 @@ import {
 
 import {
   clearIngressUrl,
-  readIngressPublicBaseUrl,
   saveIngressUrl,
   savePairingTunnel,
 } from "../lib/ingress-config.js";
@@ -27,19 +26,6 @@ afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-describe("readIngressPublicBaseUrl", () => {
-  test("reads back what saveIngressUrl saved", () => {
-    const ws = makeWorkspace();
-    expect(readIngressPublicBaseUrl(ws)).toBeNull();
-
-    saveIngressUrl(ws, "https://tunnel.example.ts.net");
-
-    expect(readIngressPublicBaseUrl(ws)).toBe("https://tunnel.example.ts.net");
-    clearIngressUrl(ws);
-    expect(readIngressPublicBaseUrl(ws)).toBeNull();
-  });
 });
 
 describe("last-tunnel record", () => {

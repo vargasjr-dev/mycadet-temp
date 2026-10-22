@@ -20,9 +20,6 @@ import qrcodeTerminal from "qrcode-terminal";
 
 import {
   buildRemoteWebPairingUrl,
-  resolvePublicBaseUrl,
-  tunnelProviderWebsiteName,
-  type PublicBaseUrlRejection,
   type RemoteWebPairingChallengeRequest,
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingVerificationRequest,
@@ -38,7 +35,6 @@ import {
   resolveAssistant,
   type AssistantEntry,
 } from "../lib/assistant-config.js";
-import { readIngressPublicBaseUrl } from "../lib/ingress-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
@@ -47,7 +43,6 @@ import { gatewayCliInvocation } from "../lib/local.js";
 import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { execOutput } from "../lib/step-runner.js";
-import { toLocalTunnelTarget } from "../lib/tunnel.js";
 
 function assistantDisplayName(entry: AssistantEntry): string {
   return entry.name || entry.assistantId;
@@ -196,10 +191,9 @@ async function exitOnHttpError(response: Response): Promise<Response> {
  */
 async function mintPairingChallengeOrExit(
   entry: AssistantEntry,
-  publicBaseUrl: string,
 ): Promise<RemoteWebPairingChallengeResponse> {
   if (entry.cloud !== "local" && entry.cloud !== "docker") {
-    return mintPairingChallengeOverLoopbackOrExit(entry, publicBaseUrl);
+    return mintPairingChallengeOverLoopbackOrExit(entry);
   }
 
   let stdout: string;
@@ -266,7 +260,6 @@ async function mintPairingChallengeOrExit(
  */
 async function mintPairingChallengeOverLoopbackOrExit(
   entry: AssistantEntry,
-  publicBaseUrl: string,
 ): Promise<RemoteWebPairingChallengeResponse> {
   // Mint over loopback (the derived port avoids mDNS for same-machine calls),
   // then approve immediately: running this CLI on the host IS the
@@ -276,7 +269,7 @@ async function mintPairingChallengeOverLoopbackOrExit(
   const response = await gatewayPostOrExit(
     mintUrl,
     "/v1/remote-web/pairing-challenge",
-    { publicBaseUrl } satisfies RemoteWebPairingChallengeRequest,
+    {} satisfies RemoteWebPairingChallengeRequest,
   );
   const challenge: RemoteWebPairingChallengeResponse =
     await response.json();
@@ -431,55 +424,16 @@ export const pair = Object.assign(
     return;
   }
 
-  // The advertised address is the one `cadet tunnel start` recorded — pairing
-  // refuses without one rather than falling back to an unreachable guess.
-  const target = toLocalTunnelTarget(entry);
-  const savedPublicUrl = target
-    ? readIngressPublicBaseUrl(target.workspaceDir)
-    : null;
-  if (!savedPublicUrl) {
-    console.error(
-      "Error: pairing needs a public https address the other device can open.",
-    );
-    console.error(
-      "No public URL is recorded for this assistant. Run `cadet tunnel start` first.",
-    );
-    process.exit(1);
-  }
-  const advertisedUrl = savedPublicUrl.replace(/\/+$/, "");
-
-  // Validate the public URL before any network call: a link that encodes a
-  // loopback or plain-http address is unusable from another device.
-  const resolved = resolvePublicBaseUrl(advertisedUrl);
-  if (!resolved.ok) {
-    const detailByReason: Record<PublicBaseUrlRejection, string> = {
-      unparseable: `${advertisedUrl} isn't a valid URL`,
-      loopback: `${advertisedUrl} is a loopback address`,
-      "private-address": `${advertisedUrl} is a private-network address the other device can't reach`,
-      "non-https": `${advertisedUrl} is not https`,
-      "service-website": `${advertisedUrl} is ${
-        tunnelProviderWebsiteName(advertisedUrl) ?? "a tunnel provider"
-      }'s website, not your assistant's address`,
-    };
-    console.error(
-      "Error: pairing needs a public https URL the other device can open: " +
-        `${detailByReason[resolved.reason]}.`,
-    );
-    console.error("Re-record a valid address: run `cadet tunnel start` again.");
-    process.exit(1);
-  }
-  const publicBaseUrl = resolved.url;
-
-  // Mint a challenge (approved on the spot by the gateway-CLI invocation):
-  // running this CLI on the host IS the local-presence proof, so the other
-  // device completes pairing in one step from the link alone.
-  const challenge = await mintPairingChallengeOrExit(entry, publicBaseUrl);
+  // The gateway owns the advertised address: it self-sources the public URL
+  // the tunnel recorded (and refuses honestly when none is), so this command
+  // never reads the workspace's ingress state.
+  const challenge = await mintPairingChallengeOrExit(entry);
   const pairUrl = buildRemoteWebPairingUrl(challenge);
   const displayName = assistantDisplayName(entry);
   const appUrl = appVariant
     ? buildAppConnectUrl(
         appSchemeOverride ?? DEFAULT_APP_CONNECT_SCHEME,
-        publicBaseUrl,
+        challenge.publicBaseUrl,
         challenge.deviceCode,
         label || displayName,
       )

@@ -155,8 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在載入付款欄位"
   },
-  "billingStatusHandler": {
-  },
   "inferenceUsageChart": {
     "empty": "此期間無使用資料"
   },
@@ -230,8 +228,6 @@
     "tryAgain": "再試一次",
     "urlPlaceholder": "在此貼上回呼 URL..."
   },
-  "checkoutPage": {
-  },
   "communityPage": {
     "communityHubDescription": "社群分享的展示、指南和專案。",
     "communityHubTitle": "社群中心",
@@ -258,8 +254,6 @@
     "viewSource": "檢視原始碼",
     "youtubeChannelDescription": "逐步解說、教學課程和產品深入探討。",
     "youtubeChannelTitle": "YouTube 頻道"
-  },
-  "completeState": {
   },
   "createScheduleModal": {
     "advancedCron": "進階 - 撰寫 cron 表達式",
@@ -340,8 +334,6 @@
     "subtitleOwn": "加密儲存於助理的憑證庫中。可依需求顯示、取代或隨時刪除其值。",
     "title": "憑證"
   },
-  "creditBundlePicker": {
-  },
   "debugBundleExport": {
     "description": "向 Cadet 支援傳送診斷記錄和已清理的設定。不包含憑證。上傳內容保留七天。",
     "export": "匯出偵錯套件",
@@ -420,8 +412,6 @@
     "confirm": "確認降級",
     "keepPro": "保留專業版",
     "title": "降級到基礎版？"
-  },
-  "errorStates": {
   },
   "generalPage": {
     "chooseAssistant": "選擇助理",
@@ -775,7 +765,6 @@
     "requestedMetaHost": "於 {when} 從本機請求",
     "title": "配對請求"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "撰寫器",
     "description": "自訂快捷鍵以及 Cadet 在此裝置上的行為。",
@@ -1018,8 +1007,6 @@
     "loadError": "載入供應商失敗。請再試一次。",
     "title": "供應商"
   },
-  "provisioningState": {
-  },
   "recentRunsCard": {
     "emptyDefault": "尚無執行記錄。",
     "error": "錯誤",
@@ -1041,8 +1028,6 @@
     "loginNoticeExit": "登入 Cadet 平台以結束復原模式。",
     "resumeAssistant": "繼續助理",
     "title": "復原模式"
-  },
-  "resizeCard": {
   },
   "restartAssistant": {
     "button": "重新啟動",
@@ -1297,8 +1282,6 @@
     "updateWindowWithTz": "更新視窗 ({tz})",
     "weekly": "每週"
   },
-  "upgradeSuccessPage": {
-  },
   "usageTab": {
     "analyzeCostsButton": "使用助理分析成本",
     "breakdownTitle": "明細",
@@ -1346,8 +1329,6 @@
     "noHourlyData": "無每小時資料",
     "noUsageInRange": "此時間範圍內沒有記錄使用情況",
     "total": "總計"
-  },
-  "useBillingPortalSession": {
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助理尚未準備就緒。請再試一次。",

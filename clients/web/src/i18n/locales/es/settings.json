@@ -155,8 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
-  "billingStatusHandler": {
-  },
   "inferenceUsageChart": {
     "empty": "No hay datos de uso para este período"
   },
@@ -230,8 +228,6 @@
     "tryAgain": "Intentar de nuevo",
     "urlPlaceholder": "Pega aquí la URL de devolución de llamada..."
   },
-  "checkoutPage": {
-  },
   "communityPage": {
     "communityHubDescription": "Muestras, guías y proyectos compartidos por la comunidad.",
     "communityHubTitle": "Centro de la comunidad",
@@ -258,8 +254,6 @@
     "viewSource": "Ver código fuente",
     "youtubeChannelDescription": "Recorridos, tutoriales y análisis profundos del producto.",
     "youtubeChannelTitle": "Canal de YouTube"
-  },
-  "completeState": {
   },
   "createScheduleModal": {
     "advancedCron": "Avanzado: escribe una expresión cron",
@@ -340,8 +334,6 @@
     "subtitleOwn": "Guardadas cifradas en la bóveda de credenciales de tu asistente. Revela un valor bajo demanda, o reemplázalo o elimínalo en cualquier momento.",
     "title": "Credenciales"
   },
-  "creditBundlePicker": {
-  },
   "debugBundleExport": {
     "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
     "export": "Exportar paquete de depuración",
@@ -420,8 +412,6 @@
     "confirm": "Confirmar bajada de plan",
     "keepPro": "Mantener Pro",
     "title": "¿Bajar a Base?"
-  },
-  "errorStates": {
   },
   "generalPage": {
     "chooseAssistant": "Elegir asistente",
@@ -775,7 +765,6 @@
     "requestedMetaHost": "Solicitado {when} desde este equipo",
     "title": "Solicitudes de vinculación"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Compositor",
     "description": "Personaliza los atajos y el comportamiento de Cadet en este dispositivo.",
@@ -1040,8 +1029,6 @@
     "loadError": "No se pudieron cargar los proveedores. Inténtalo de nuevo.",
     "title": "Proveedores"
   },
-  "provisioningState": {
-  },
   "recentRunsCard": {
     "emptyDefault": "Aún no hay ejecuciones.",
     "error": "Error",
@@ -1063,8 +1050,6 @@
     "loginNoticeExit": "Inicia sesión en la plataforma Cadet para salir del modo de recuperación.",
     "resumeAssistant": "Reanudar asistente",
     "title": "Modo de recuperación"
-  },
-  "resizeCard": {
   },
   "restartAssistant": {
     "button": "Reiniciar",
@@ -1319,8 +1304,6 @@
     "updateWindowWithTz": "Ventana de actualización ({tz})",
     "weekly": "Semanal"
   },
-  "upgradeSuccessPage": {
-  },
   "usageTab": {
     "analyzeCostsButton": "Analizar costos con el asistente",
     "breakdownTitle": "Desglose",
@@ -1368,8 +1351,6 @@
     "noHourlyData": "Sin datos por hora",
     "noUsageInRange": "No hay uso registrado en este intervalo",
     "total": "Total"
-  },
-  "useBillingPortalSession": {
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "El asistente no está listo. Inténtalo de nuevo.",

@@ -15,7 +15,7 @@
 
 import type { RemoteWebPairingChallengeResponse } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { parsePublicBaseUrl } from "../http/routes/remote-web-pairing-challenge.js";
+import { parsePublicBaseUrl } from "./public-base-url.js";
 import { recordRemoteWebPairingChallengeCreation } from "./pairing-challenge-rate-limit-store.js";
 import {
   approveRemoteWebPairingChallenge,

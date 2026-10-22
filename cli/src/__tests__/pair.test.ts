@@ -8,7 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -39,6 +39,7 @@ const mockExecOutput = mock(
         deviceCode: "device-code",
         userCode: "ABCD-EFGH",
         verificationUri: `${mintReplyBase}/assistant/pair`,
+        publicBaseUrl: mintReplyBase,
         expiresAt: "2026-06-04T00:10:00.000Z",
         expiresInSeconds: 600,
         intervalSeconds: 5,
@@ -100,18 +101,7 @@ function stubPairingGateway(
   });
 }
 
-// The pairing preflight reads the ingress url `cadet tunnel start` saved
-// into the entry's workspace config.
 const INSTANCE_DIR = join(testDir, "instance");
-
-function writeIngressConfig(publicBaseUrl: string): void {
-  const workspaceDir = join(INSTANCE_DIR, "workspace");
-  mkdirSync(workspaceDir, { recursive: true });
-  writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify({ ingress: { publicBaseUrl } }),
-  );
-}
 
 function writeLockfile(): void {
   writeFileSync(
@@ -132,7 +122,6 @@ function writeLockfile(): void {
       activeAssistant: "pair-test",
     }),
   );
-  writeIngressConfig(PUBLIC_URL);
 }
 
 // Capture the real argv ONCE, before any test mutates it, and restore after
@@ -362,7 +351,6 @@ describe("pair command", () => {
         activeAssistant: "pair-test",
       }),
     );
-    writeIngressConfig(PUBLIC_URL);
 
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
@@ -477,65 +465,6 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("refuses when no public URL is recorded, before minting", async () => {
-    // Local hatch on a NON-default gateway port (e.g. a 2nd instance), and no
-    // workspace config — no tunnel has recorded a public address yet.
-    const LOOPBACK_CUSTOM = "http://127.0.0.1:7842";
-    writeFileSync(
-      join(testDir, "lockfile.json"),
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "pair-test",
-            runtimeUrl: LOOPBACK_CUSTOM,
-            cloud: "local",
-          },
-        ],
-        activeAssistant: "pair-test",
-      }),
-    );
-
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    const joined = errors.join("\n");
-    expect(joined).toContain(
-      "No public URL is recorded for this assistant.",
-    );
-    expect(joined).toContain("cadet tunnel start");
-
-    // Exited before minting, so no challenge exists for a dead link.
-    expect(exited).toBe(true);
-    expect(fetchCalled).toBe(false);
-  });
-
   test("advertises the saved ingress url even when the runtime url is loopback", async () => {
     writeFileSync(
       join(testDir, "lockfile.json"),
@@ -557,7 +486,6 @@ describe("pair command", () => {
     );
 
     const OVERRIDE = "https://abc123.ngrok.app";
-    writeIngressConfig(OVERRIDE);
     mintReplyBase = OVERRIDE;
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
@@ -651,164 +579,6 @@ describe("pair command", () => {
       verificationUri: "https://abc123.ngrok.app/assistant/pair",
       expiresAt: "2026-06-04T00:10:00.000Z",
     });
-  });
-
-  test("refuses a non-https saved ingress url without minting", async () => {
-    writeIngressConfig("http://pair.example.com");
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    // Validation is local and fails fast — no challenge minted for a dead link.
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("https");
-    expect(fetchCalled).toBe(false);
-  });
-
-  test("refuses a loopback saved ingress url without minting", async () => {
-    writeIngressConfig("https://127.0.0.1:7830");
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("loopback");
-    expect(fetchCalled).toBe(false);
-  });
-
-  test("refuses an unparseable saved ingress url with an accurate error", async () => {
-    writeIngressConfig("not-a-url");
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    // Unparseable input reports its own reason — not the loopback/non-https
-    // messages the reason-blind version reconstructed.
-    expect(exited).toBe(true);
-    const joined = errors.join("\n");
-    expect(joined).toContain("isn't a valid URL");
-    expect(joined).not.toContain("is not https");
-    expect(joined).not.toContain("loopback");
-    expect(fetchCalled).toBe(false);
-  });
-
-  test("refuses a saved tunnel-provider website url (Tailscale admin invite) without minting", async () => {
-    writeIngressConfig("https://login.tailscale.com/admin/invite/abc123");
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    // The admin-invite link is a vendor website — named as such, not mislabeled
-    // as non-https, and refused before any challenge is minted.
-    expect(exited).toBe(true);
-    const joined = errors.join("\n");
-    expect(joined).toContain("Tailscale's website");
-    expect(joined).not.toContain("is not https");
-    expect(fetchCalled).toBe(false);
   });
 
   test("buildAppConnectUrl composes and encodes the connect link", () => {
@@ -1022,13 +792,8 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  function writeLockfileWithIngress(ingressUrl: string): void {
-    writeIngressConfig(ingressUrl);
-    mintReplyBase = ingressUrl;
-  }
-
-  test("with no --url, the entry's tunnel-recorded ingress URL is used", async () => {
-    writeLockfileWithIngress("https://saved.example.ts.net");
+  test("the gateway-CLI mint's challenge drives the advertised link", async () => {
+    mintReplyBase = "https://saved.example.ts.net";
 
     const calls: string[] = [];
     const origFetch = globalThis.fetch;
@@ -1061,87 +826,7 @@ describe("pair command", () => {
     );
   });
 
-  test("a non-https recorded ingress URL is refused", async () => {
-    writeLockfileWithIngress("http://insecure.example.com");
-
-    const origFetch = globalThis.fetch;
-    let minted = false;
-    globalThis.fetch = withPreconnect(async () => {
-      minted = true;
-      return new Response("{}", { status: 200 });
-    });
-
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    // The recorded url is validated before anything is minted — a bad one
-    // refuses rather than falling back to an unreachable guess.
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("Re-record a valid address");
-    expect(minted).toBe(false);
-  });
-
-  test("a loopback recorded ingress URL is refused", async () => {
-    writeLockfileWithIngress("https://127.0.0.1:7840");
-
-    const origFetch = globalThis.fetch;
-    let minted = false;
-    globalThis.fetch = withPreconnect(async () => {
-      minted = true;
-      return new Response("{}", { status: 200 });
-    });
-
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("Re-record a valid address");
-    expect(minted).toBe(false);
-  });
-
-  test("a custom (ssh-managed) assistant without a saved ingress url is refused", async () => {
+  test("a custom (ssh-managed) assistant pairs through the gateway's own advertised URL", async () => {
     writeFileSync(
       join(testDir, "lockfile.json"),
       JSON.stringify({
@@ -1173,34 +858,26 @@ describe("pair command", () => {
     );
 
     const logSpy = spyOn(console, "log").mockImplementation(() => {});
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
 
     process.argv = ["bun", "cadet", "pair"];
-    let exited = false;
     try {
       await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
     } finally {
       logSpy.mockRestore();
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
       globalThis.fetch = origFetch;
     }
 
-    // Not local/docker: no locally managed workspace, so no ingress url can
-    // be recorded here — pairing refuses and points at the tunnel.
-    expect(exited).toBe(true);
-    expect(errors.join("\n")).toContain("No public URL is recorded");
+    // Custom entries mint over the gateway's loopback HTTP route; the
+    // gateway self-sources the advertised URL from its own workspace.
+    expect(
+      calls.some(([url]) =>
+        url.endsWith("/v1/remote-web/pairing-challenge"),
+      ),
+    ).toBe(true);
+    expect(
+      calls.some(([url]) =>
+        url.endsWith("/v1/remote-web/pairing-verification"),
+      ),
+    ).toBe(true);
   });
 });
