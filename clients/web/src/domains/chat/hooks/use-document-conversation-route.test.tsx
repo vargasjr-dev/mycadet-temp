@@ -149,8 +149,7 @@ function Harness() {
     searchParams,
     activeConversation: undefined,
     refreshEpoch: 0,
-    reachabilityReadyEpoch: 0,
-    onboardingDraftConversationIdRef,
+        onboardingDraftConversationIdRef,
   });
   const session = useDocumentConversationRoute();
   const editorRef = useRef<DocumentViewerContainerHandle>(null);

@@ -1,12 +1,25 @@
+import { mock } from "bun:test";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import type { AssistantResolutionState } from "@/assistant/types";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { TranscriptColumn } from "@/domains/chat/transcript/transcript-column";
 
 import { DesktopHelpCard } from "./desktop-help-card";
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+}
+function resetResolutionState() {
+  resolutionState = { kind: "loading" };
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({ state: resolutionState }),
+  useAssistantBootResolution: () => ({ state: resolutionState }),
+}));
 import { useDesktopPreviewStore } from "./desktop-preview-store";
 
 function PreviewFixture() {
@@ -15,17 +28,15 @@ function PreviewFixture() {
   useLayoutEffect(() => {
     const initialSession = useDesktopPreviewStore.getState().session;
     const assistantId = useResolvedAssistantsStore.getState().activeAssistantId;
-    const assistantState = useAssistantLifecycleStore.getState().assistantState;
+    const previousLifecycleState = resolutionState;
     useResolvedAssistantsStore.setState({
       activeAssistantId: "assistant-example",
     });
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "active", isLocal: false, health: "healthy" },
-    });
+    setResolutionState({ kind: "active", isLocal: false });
     return () => {
       useDesktopPreviewStore.setState({ session: initialSession });
       useResolvedAssistantsStore.setState({ activeAssistantId: assistantId });
-      useAssistantLifecycleStore.setState({ assistantState });
+      setResolutionState(previousLifecycleState);
     };
   }, []);
   return (

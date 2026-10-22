@@ -59,7 +59,7 @@ export function ChatPage() {
     useStuckConnecting(connectingReason);
   const retryStuckConnecting = useCallback(() => {
     resetStuckConnecting();
-    lifecycleService.retryAssistant();
+    retryAssistant();
   }, [resetStuckConnecting]);
 
   // Boot terminal outcome, or `null` while the page is still resolving. A

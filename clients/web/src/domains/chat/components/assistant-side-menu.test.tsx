@@ -116,18 +116,6 @@ mock.module(
   }),
 );
 
-// Each section gates its fetch on the pod being reachable, which polls
-// operational status through React Query; stub it so static SSR rendering
-// resolves without a QueryClient. Open, because these tests are about what the
-// sidebar draws from the rows it is handed, not about the gate. The gate's own
-// behavior is covered in `assistant/operational-status.test.tsx`.
-mock.module(
-  "@/assistant/operational-status",
-  (): Partial<typeof OperationalStatus> => ({
-    useAssistantIsServing: () => true,
-  }),
-);
-
 /* Pinned apps come from the daemon's app list. The pin list is a plain
    variable rather than seeded query data because `SideMenuUnderTest` builds its
    own QueryClient per render, so a test has nothing to seed. */
@@ -160,7 +148,6 @@ mock.module("@/hooks/use-assistant-avatar", () => ({
 }));
 
 import type * as ConversationQueries from "@/hooks/conversation-queries";
-import type * as OperationalStatus from "@/assistant/operational-status";
 import type {
   Conversation,
   ConversationGroup,

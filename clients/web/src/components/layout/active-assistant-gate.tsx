@@ -70,15 +70,23 @@ function ActiveAssistantError({ message }: { message: string }) {
       <p className="text-body-medium-lighter max-w-md text-[var(--content-secondary)]">
         {message}
       </p>
-      <Button
-        variant="ghost"
-        onClick={() => {
-          void refetch();
-        }}
-      >
-        {t("activeAssistantGate.retry")}
-      </Button>
+      <RetryButton />
     </div>
+  );
+}
+
+function RetryButton() {
+  const { t } = useTranslation();
+  const { refetch } = useAssistantResolution();
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => {
+        void refetch();
+      }}
+    >
+      {t("activeAssistantGate.retry")}
+    </Button>
   );
 }
 

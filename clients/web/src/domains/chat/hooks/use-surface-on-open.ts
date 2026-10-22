@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { surfaceConversation } from "@/domains/chat/api/conversations";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type { Conversation } from "@/types/conversation-types";
 import {
   applySurfacedConversation,
@@ -39,7 +39,7 @@ export function useSurfaceOnOpen({
   activeConversation,
 }: {
   assistantId: string | null;
-  assistantStateKind: AssistantState["kind"];
+  assistantStateKind: AssistantResolutionState["kind"];
   activeConversationId: string | null;
   activeConversation: Conversation | undefined;
 }) {

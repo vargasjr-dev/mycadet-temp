@@ -81,8 +81,31 @@ mock.module("@/routes", () => ({
   },
 }));
 
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+const resolutionListeners = new Set<() => void>();
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+  for (const listener of resolutionListeners) {
+    listener();
+  }
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({
+    state: useSyncExternalStore(
+      (cb) => {
+        resolutionListeners.add(cb);
+        return () => resolutionListeners.delete(cb);
+      },
+      () => resolutionState,
+    ),
+  }),
+}));
+
+import type { AssistantResolutionState } from "@/assistant/types";
+import { useSyncExternalStore } from "react";
+
 import { authMiddleware } from "./auth-middleware";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useAuthStore, type AuthUser } from "@/stores/auth-store";
@@ -176,9 +199,7 @@ beforeEach(() => {
     assistants: [],
     activeAssistantId: null,
   });
-  useAssistantLifecycleStore.setState({
-    assistantState: { kind: "error", message: "no assistant" },
-  });
+  setResolutionState({ kind: "error", message: "no assistant" });
 });
 
 afterEach(async () => {
@@ -329,6 +350,7 @@ describe("authMiddleware — app-access admit gate", () => {
   });
 });
 
+(test(web): the lifecycle seams re-pin to the boot resolution)
 describe("authMiddleware — hydration timeout", () => {
   test("a hung hydration degrades to a decision instead of re-entering the wait", async () => {
     isLocalClientMock.mockImplementation(() => false);

@@ -1,9 +1,32 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
+import { useSyncExternalStore } from "react";
+import type { AssistantResolutionState } from "@/assistant/types";
+
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+const resolutionListeners = new Set<() => void>();
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+  for (const listener of resolutionListeners) {
+    listener();
+  }
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({
+    state: useSyncExternalStore(
+      (cb) => {
+        resolutionListeners.add(cb);
+        return () => resolutionListeners.delete(cb);
+      },
+      () => resolutionState,
+    ),
+  }),
+}));
+
 import type { NotificationIdentity } from "@mycadet/ipc-contract";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import {
   resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId,
@@ -152,9 +175,7 @@ beforeEach(() => {
     selectedAssistantId: ASSISTANT_B.id,
     activeAssistantId: ASSISTANT_B.id,
   });
-  useAssistantLifecycleStore.setState({
-    assistantState: { kind: "active", isLocal: false },
-  });
+  setResolutionState({ kind: "active", isLocal: false });
   for (const connectMock of [
     connectCloudAssistantMock,
     connectLocalAssistantMock,
@@ -332,9 +353,7 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([]);
 
     act(() => {
-      useAssistantLifecycleStore.setState({
-        assistantState: { kind: "error", message: "activation failed" },
-      });
+      setResolutionState({ kind: "error", message: "activation failed" });
     });
 
     await waitFor(() => {

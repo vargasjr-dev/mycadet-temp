@@ -16,9 +16,20 @@ import {
   useNavigate,
 } from "react-router";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-store";
+
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({ state: resolutionState }),
+  useAssistantBootResolution: () => ({ state: resolutionState }),
+}));
+
+
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
@@ -104,7 +115,6 @@ mock.module(
 
 const { ChatPage } = await import("../chat-page");
 const viewport = viewportAxesStub();
-const initialLifecycle = useAssistantLifecycleStore.getState();
 const initialAuth = useAuthStore.getState();
 const initialSelection = useResolvedAssistantsStore.getState();
 const initialSlots = useChatLayoutSlotsStore.getState();
@@ -156,9 +166,7 @@ function renderPage(
 
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
-  useAssistantLifecycleStore.setState({
-    assistantState: { kind: "active", isLocal: false },
-  });
+  setResolutionState({ kind: "active", isLocal: false });
   useAuthStore.setState({ sessionStatus: "authenticated" });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
@@ -175,14 +183,14 @@ afterEach(() => {
   cleanup();
   queryClient.clear();
   viewport.restore();
-  useAssistantLifecycleStore.setState(initialLifecycle, true);
+  setResolutionState({ kind: "loading" });
   useAuthStore.setState(initialAuth, true);
   useResolvedAssistantsStore.setState(initialSelection, true);
   useChatLayoutSlotsStore.setState(initialSlots, true);
 });
 
 describe("document navigation header handoff", () => {
-  const states: AssistantState[] = [
+  const states: AssistantResolutionState[] = [
     { kind: "loading" },
     { kind: "error", message: "Assistant unavailable" },
     { kind: "initializing" },
@@ -191,7 +199,7 @@ describe("document navigation header handoff", () => {
   test.each(states)(
     "keeps navigation for a cold document link in $kind",
     (assistantState) => {
-      useAssistantLifecycleStore.setState({ assistantState });
+      setResolutionState(assistantState);
       const router = renderPage();
       fireEvent.click(screen.getByRole("button", { name: "Open navigation" }));
       expect(toggleSidebar).toHaveBeenCalledTimes(1);
@@ -211,9 +219,7 @@ describe("document navigation header handoff", () => {
       useAuthStore.setState({ sessionStatus: "initializing" });
     }
     if (guard.startsWith("self-hosted")) {
-      useAssistantLifecycleStore.setState({
-        assistantState: { kind: "self_hosted" },
-      });
+      setResolutionState({ kind: "self_hosted" });
     }
     if (guard === "self-hosted-error") {
       conversationListError = true;
@@ -240,19 +246,15 @@ describe("document navigation header handoff", () => {
       expect(
         Boolean(screen.queryByRole("button", { name: "Open navigation" })),
       ).toBe(false);
-      act(() =>
-        useAssistantLifecycleStore.setState({
-          assistantState: { kind: "error", message: "Disconnected" },
-        }),
-      );
+      act(() => {
+        setResolutionState({ kind: "error", message: "Disconnected" });
+      });
       expect(
         screen.getByRole("button", { name: "Open navigation" }),
       ).toBeTruthy();
-      act(() =>
-        useAssistantLifecycleStore.setState({
-          assistantState: { kind: "active", isLocal: false },
-        }),
-      );
+      act(() => {
+        setResolutionState({ kind: "active", isLocal: false });
+      });
       expect(
         Boolean(screen.queryByRole("button", { name: "Open navigation" })),
       ).toBe(false);

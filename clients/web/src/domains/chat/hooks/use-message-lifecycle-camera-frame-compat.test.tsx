@@ -149,12 +149,7 @@ function useLegacyTranscript() {
     activeConversationId: CONVERSATION_ID,
     conversationExistsOnServer: true,
     latestPageOldestTimestamp: pagination.latestPageOldestTimestamp,
-    reachability: {
-      state: { phase: "ready" },
-      probe: () => {},
-      reset: () => {},
-    },
-    setAssetsRefreshKey: () => {},
+        setAssetsRefreshKey: () => {},
   });
   return useTranscriptMessages();
 }

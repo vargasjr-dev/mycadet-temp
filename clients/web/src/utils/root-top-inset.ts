@@ -14,7 +14,7 @@ export function shouldDeferRootTopInset(
   if (
     pathname === ONBOARDING_PREFIX ||
     pathname.startsWith(`${ONBOARDING_PREFIX}/`) ||
-    STATUS_BANNER_SETUP_PATHS.has(pathname)
+    ROUTE_OWNED_TOP_INSET_PATHS.has(pathname)
   ) {
     return true;
   }

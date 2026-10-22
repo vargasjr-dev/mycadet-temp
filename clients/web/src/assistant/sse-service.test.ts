@@ -278,7 +278,7 @@ describe("sseService.attach — connection lifecycle", () => {
     expect(cancelMock).toHaveBeenCalledTimes(1);
   });
 
-  test("does not publish sse.closed for intentional teardowns (app.hidden, reachability retry)", async () => {
+  test("does not publish sse.closed for intentional teardowns (app.hidden)", async () => {
     __setHiddenTeardownGraceMsForTesting(TEST_HIDDEN_GRACE_MS);
     sseService.attach("asst-1");
     publishSpy.mockClear();
@@ -286,8 +286,6 @@ describe("sseService.attach — connection lifecycle", () => {
     eventBus.publish("app.hidden", { signal: "visibility" });
     // Let the debounced hidden teardown actually fire.
     await sleep(TEST_HIDDEN_GRACE_MS + 20);
-    eventBus.publish("reachability.retry-requested", {});
-
     const closedCalls = publishSpy.mock.calls.filter(
       ([name]) => name === "sse.closed",
     );
@@ -1039,31 +1037,6 @@ describe("sseService.attach — power-driven bounce", () => {
   });
 });
 
-describe("sseService.attach — reachability bounce", () => {
-  test("reachability.retry-requested bounces the SSE connection", () => {
-    sseService.attach("asst-1");
-    expect(subscribeEventsMock).toHaveBeenCalledTimes(1);
-
-    eventBus.publish("reachability.retry-requested", {});
-
-    expect(cancelMock).toHaveBeenCalledTimes(1);
-    expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-  });
-
-  test("reachability-driven reopen labels sse.opened with cause='error', not 'resume'", () => {
-    sseService.attach("asst-1");
-    publishSpy.mockClear();
-
-    eventBus.publish("reachability.retry-requested", {});
-    activeOnStreamOpen!();
-
-    expect(publishSpy).toHaveBeenCalledWith("sse.opened", {
-      assistantId: "asst-1",
-      cause: "error",
-    });
-  });
-});
-
 describe("sseService.attach — debug-driven reconnect", () => {
   test("reconnectClient with no delay bounces the SSE immediately", () => {
     // GIVEN a live SSE connection
@@ -1155,7 +1128,6 @@ describe("sseService.attach — detach cleanup", () => {
     eventBus.publish("power.resume", {});
     eventBus.publish("power.unlock", {});
     eventBus.publish("power.suspend", {});
-    eventBus.publish("reachability.retry-requested", {});
 
     expect(cancelMock).not.toHaveBeenCalled();
     expect(subscribeEventsMock).not.toHaveBeenCalled();

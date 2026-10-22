@@ -7,6 +7,7 @@ import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
 import { navigateWithPageTransition } from "@/lib/page-transition";
+import { isElectron } from "@/runtime/is-electron";
 import { routes } from "@/utils/routes";
 
 interface SidebarShellProps {
@@ -43,6 +44,7 @@ export function SidebarShell({
   menuRoute = routes.settings.root,
   menuReplacesContentOnMobile = false,
 }: SidebarShellProps) {
+  const electron = isElectron();
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const navigate = useNavigate();

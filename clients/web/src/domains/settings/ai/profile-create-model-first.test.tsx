@@ -31,10 +31,21 @@ import {
   SEARCHABLE_SELECT_MENU_REACH,
 } from "@mycadet/design-library/components/searchable-select";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
+
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({ state: resolutionState }),
+  useAssistantBootResolution: () => ({ state: resolutionState }),
+}));
+
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -101,7 +112,7 @@ const { ProfileEditorModal } =
 
 const ASSISTANT_ID = "asst-1";
 
-const initialLifecycleState = useAssistantLifecycleStore.getState();
+
 
 function makeConnection(
   name: string,
@@ -405,7 +416,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   useAssistantIdentityStore.getState().clearIdentity();
-  useAssistantLifecycleStore.setState(initialLifecycleState);
+  setResolutionState({ kind: "loading" });
 });
 
 // ---------------------------------------------------------------------------
@@ -747,9 +758,7 @@ describe("a route with no connection yet", () => {
 
   test("re-keys the connect form when the lone route changes", () => {
     // Ollama is a local runtime, so only a self-hosted assistant offers it.
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "self_hosted" },
-    });
+    setResolutionState({ kind: "self_hosted" });
     renderCreate([makeConnection("anthropic-personal")]);
 
     selectModel("Gemini 3.6 Flash");

@@ -36,9 +36,6 @@ function renderEventStream(params: {
           }) as never),
       startReconciliationLoop: params.startReconciliationLoop ?? (() => {}),
       cancelReconciliation: () => {},
-      reachabilityProbe: () => {},
-      reachabilityPhase: "ready",
-      reachabilityReset: () => {},
     });
   });
 }

@@ -32,7 +32,7 @@ import { fetchAssistantIdentity } from "@/assistant/identity";
 import { consumePendingAssistantName } from "@/domains/onboarding/prechat";
 import { identityGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 
 /** Build the generated query key for identity. Exported for invalidation sites. */
 export function assistantIdentityQueryKey(assistantId: string | null) {
@@ -41,7 +41,7 @@ export function assistantIdentityQueryKey(assistantId: string | null) {
 
 interface UseAssistantIdentityInitParams {
   assistantId: string | null;
-  assistantStateKind: AssistantState["kind"];
+  assistantStateKind: AssistantResolutionState["kind"];
   ownerScopeId?: string | null;
 }
 
