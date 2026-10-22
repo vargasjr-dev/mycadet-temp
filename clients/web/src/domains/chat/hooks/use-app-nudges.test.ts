@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, renderHook } from "@testing-library/react";
 
 import { useAppNudges } from "@/domains/chat/hooks/use-app-nudges";
+import { ANDROID_PLAY_STORE_URL } from "@/hooks/use-native-app-nudge";
 
 const IPHONE_SAFARI_UA =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) " +
@@ -95,14 +96,15 @@ describe("useAppNudges platform promotion", () => {
     });
   });
 
-  test("promotes on Android even with no Play Store URL configured", () => {
-    // The unconfigured deployment used to resolve nothing here, which left
-    // every Android reader with no banner at all.
+  test("promotes the default Play listing on Android", () => {
+    // The store-url kill switch is gone: Android always promotes the Play
+    // listing, with the default URL when none is configured.
     setUserAgent(ANDROID_UA);
 
     expect(renderNudges().current.mobilePromotion).toMatchObject({
-      target: "generic",
-      appName: null,
+      target: "android",
+      appName: "Android",
+      storeUrl: ANDROID_PLAY_STORE_URL,
     });
   });
 

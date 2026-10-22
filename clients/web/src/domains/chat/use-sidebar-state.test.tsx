@@ -24,6 +24,14 @@ mock.module(
   }),
 );
 
+/* The hook reads the boot resolution's active state for its section query.
+   Stubbed (spread-real) so the render never needs a QueryClientProvider. */
+const assistantQueries = await import("@/assistant/queries");
+mock.module("@/assistant/queries", () => ({
+  ...assistantQueries,
+  useAssistantResolution: () => ({ state: { kind: "active" } }),
+}));
+
 const { useSidebarState } = await import("@/domains/chat/use-sidebar-state");
 
 function makeConversation(
