@@ -232,7 +232,6 @@
     "stopCommandAria": "Stop command"
   },
   "billingErrorBanner": {
-    "dismiss": "Dismiss"
   },
   "cameraDeepLink": {
     "captureFailed": "Could not take that photo. Please try again.",
@@ -614,7 +613,6 @@
     "groupFailed": "Couldn't copy the group ID."
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "Log in to Cadet Cloud to add credits."
   },
   "csvPreview": {
     "emptyFile": "This file is empty",
@@ -622,11 +620,6 @@
     "summaryTruncated": "{rows, plural, one {# row} other {# rows}} x {columns, plural, one {# column} other {# columns}} (truncated)"
   },
   "dailyLimitBanner": {
-    "skipConfirmTitle": "Skip today's credit limit?",
-    "skipError": "Could not skip today's limit. Please try again.",
-    "skipForToday": "Skip for today",
-    "subtitle": "Cadet credit spend is paused until your limit resets at {resetPhrase}.",
-    "title": "Daily credit limit reached"
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "I understand that related assets and memories may still persist",
@@ -844,10 +837,6 @@
     "pictureInPicture": "Picture in Picture"
   },
   "lowBalanceBanner": {
-    "addCredits": "Add credits",
-    "ariaLabel": "Your credits are running low. {detail}",
-    "subtitle": "Add credits to avoid an interruption.",
-    "title": "Your credits are running low"
   },
   "maintenanceModeBanner": {
     "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
@@ -1016,8 +1005,6 @@
     "noActiveSession": "No active session. Please try again."
   },
   "providerBillingBanner": {
-    "body": "Add funds with your provider or lower the model token limit.",
-    "title": "Your API key needs credits"
   },
   "pullRefreshSpinner": {
     "refreshing": "Refreshing"
@@ -1599,10 +1586,6 @@
     "depth": "{depth, select, fast {Quick search} standard {Standard search} deep {Deep search} other {Search}}"
   },
   "freeTierDailyLimitBanner": {
-    "addCredits": "Add credits",
-    "subtitle": "You've used today's free usage. It resets at {resetPhrase}. Upgrade or add credits to keep going.",
-    "title": "Daily free usage used up",
-    "upgrade": "Upgrade"
   },
   "chatsSettingsModal": {
     "title": "Chats Settings",

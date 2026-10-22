@@ -52,33 +52,21 @@ mock.module("@/stores/auth-store", () => ({
   whenCloudSessionSettled: async () => {},
 }));
 
-const {
-  clearStaleNativeCheckoutStash,
-  resolveNativePostAuthDestination,
-  startAuthFlow,
-  startNativeLogin,
-} = await import("./native-auth");
-const { clearCheckoutIntent, readCheckoutIntent, saveCheckoutIntent } =
-  await import("@/lib/billing/checkout-intent");
-const { nativeAuthErrorDetail } = await import(
-  "@/domains/account/native-auth-error"
-);
-const { ONBOARDED_HATCH_AGE_MS } = await import(
-  "@/domains/onboarding/onboarded-assistant"
-);
-const { useResolvedAssistantsStore } = await import(
-  "@/stores/resolved-assistants-store"
-);
+const { resolveNativePostAuthDestination, startAuthFlow, startNativeLogin } =
+  await import("./native-auth");
+const { nativeAuthErrorDetail } =
+  await import("@/domains/account/native-auth-error");
+const { ONBOARDED_HATCH_AGE_MS } =
+  await import("@/domains/onboarding/onboarded-assistant");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 const { routes } = await import("@/utils/routes");
-const { NEW_ASSISTANT_PARAM } = await import(
-  "@/domains/onboarding/onboarding-destination"
-);
+const { NEW_ASSISTANT_PARAM } =
+  await import("@/domains/onboarding/onboarding-destination");
 
 describe("resolveNativePostAuthDestination", () => {
   beforeEach(() => {
     sessionStorage.clear();
-    // Reset the module-level in-memory mirror so it can't leak across tests.
-    clearCheckoutIntent();
     useResolvedAssistantsStore.setState({ assistants: [] });
   });
 
@@ -86,68 +74,19 @@ describe("resolveNativePostAuthDestination", () => {
     useResolvedAssistantsStore.setState({ assistants: [] });
   });
 
-  test("native signup via the checkout deep link stashes the package and still routes to privacy", () => {
-    const destination = resolveNativePostAuthDestination(
-      "signup",
-      "/assistant/checkout?package=super",
-    );
-
-    expect(destination).toBe("/assistant/onboarding/privacy");
-    expect(readCheckoutIntent()).toMatchObject({
-      kind: "package",
-      packageKey: "super",
-    });
-  });
-
-  test("native signup with a non-checkout destination stashes nothing", () => {
+  test("native signup with a destination routes to privacy", () => {
     const destination = resolveNativePostAuthDestination(
       "signup",
       "/assistant/identity",
     );
 
     expect(destination).toBe("/assistant/onboarding/privacy");
-    expect(readCheckoutIntent()).toBeNull();
   });
 
   test("native signup with no returnTo routes to privacy and stashes nothing", () => {
     const destination = resolveNativePostAuthDestination("signup", null);
 
     expect(destination).toBe("/assistant/onboarding/privacy");
-    expect(readCheckoutIntent()).toBeNull();
-  });
-
-  test("native login keeps its returnTo and stashes nothing even on the checkout link", () => {
-    const destination = resolveNativePostAuthDestination(
-      "login",
-      "/assistant/checkout?package=super",
-    );
-
-    expect(destination).toBe("/assistant/checkout?package=super");
-    expect(readCheckoutIntent()).toBeNull();
-  });
-
-  test("native non-checkout signup clears a stale stash from an abandoned attempt", () => {
-    saveCheckoutIntent({ kind: "package", packageKey: "abandoned" });
-
-    const destination = resolveNativePostAuthDestination(
-      "signup",
-      "/assistant/identity",
-    );
-
-    expect(destination).toBe("/assistant/onboarding/privacy");
-    expect(readCheckoutIntent()).toBeNull();
-  });
-
-  test("native non-checkout login clears a stale stash from an abandoned attempt", () => {
-    saveCheckoutIntent({ kind: "package", packageKey: "abandoned" });
-
-    const destination = resolveNativePostAuthDestination(
-      "login",
-      "/assistant/identity",
-    );
-
-    expect(destination).toBe("/assistant/identity");
-    expect(readCheckoutIntent()).toBeNull();
   });
 
   test("native signup skips privacy when the assistant is already onboarded", () => {
@@ -155,7 +94,9 @@ describe("resolveNativePostAuthDestination", () => {
       assistants: [
         {
           id: "asst-1",
-          hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
           isPaired: false,
@@ -169,7 +110,6 @@ describe("resolveNativePostAuthDestination", () => {
     );
 
     expect(destination).toBe("/assistant/identity");
-    expect(readCheckoutIntent()).toBeNull();
   });
 
   test("native login skips a research returnTo when the assistant is already onboarded", () => {
@@ -177,7 +117,9 @@ describe("resolveNativePostAuthDestination", () => {
       assistants: [
         {
           id: "asst-1",
-          hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
           isPaired: false,
@@ -198,7 +140,9 @@ describe("resolveNativePostAuthDestination", () => {
       assistants: [
         {
           id: "asst-1",
-          hatchedAt: new Date(Date.now() - ONBOARDED_HATCH_AGE_MS).toISOString(),
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
           isPaired: false,
@@ -294,49 +238,6 @@ describe("startAuthFlow on Electron", () => {
   });
 });
 
-describe("clearStaleNativeCheckoutStash", () => {
-  beforeEach(() => {
-    sessionStorage.clear();
-    clearCheckoutIntent();
-  });
-
-  test("a direct native login with a non-checkout destination clears a stale stash", () => {
-    // The direct login form passes no intent and a non-checkout returnTo.
-    saveCheckoutIntent({ kind: "package", packageKey: "abandoned" });
-
-    clearStaleNativeCheckoutStash(undefined, "/assistant/identity");
-
-    expect(readCheckoutIntent()).toBeNull();
-  });
-
-  test("a native login onto a checkout deep link leaves an existing stash in place", () => {
-    saveCheckoutIntent({ kind: "package", packageKey: "existing" });
-
-    clearStaleNativeCheckoutStash(
-      undefined,
-      "/assistant/checkout?package=super",
-    );
-
-    expect(readCheckoutIntent()).toMatchObject({
-      kind: "package",
-      packageKey: "existing",
-    });
-  });
-
-  test("a signup keeps the stash its resolver just set", () => {
-    // A signup owns its stash via `resolveSignupCheckoutDestination`; the entry
-    // cleanup must not wipe it just because the destination is the privacy page.
-    saveCheckoutIntent({ kind: "package", packageKey: "super" });
-
-    clearStaleNativeCheckoutStash("signup", "/assistant/onboarding/privacy");
-
-    expect(readCheckoutIntent()).toMatchObject({
-      kind: "package",
-      packageKey: "super",
-    });
-  });
-});
-
 describe("startAuthFlow attribution on native", () => {
   const INSTALL_REFERRER_KEY = "device:install_referrer";
   const originalLocation = Object.getOwnPropertyDescriptor(window, "location");
@@ -379,7 +280,6 @@ describe("startAuthFlow attribution on native", () => {
     platform = "android";
     localStorage.clear();
     sessionStorage.clear();
-    clearCheckoutIntent();
     useResolvedAssistantsStore.setState({ assistants: [] });
     // Keep `completeNativeLogin`'s biometric branch out of the way; it is
     // opt-out, so an unset preference would reach the secure-storage plugin.

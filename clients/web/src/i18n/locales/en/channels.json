@@ -158,7 +158,6 @@
   },
   "emailCloudContent": {
     "addressLabel": "Address",
-    "checkingSubscription": "Checking subscription…",
     "completeSetup": "Complete domain setup",
     "completingSetup": "Completing setup…",
     "copiedAddress": "Copied",
@@ -187,9 +186,6 @@
     "repairNoticeBody": "Your email address is ready, but this domain is not set up with the email provider yet. Complete setup to start sending and receiving mail.",
     "repairNoticeTitle": "Domain setup required",
     "repairStartedToast": "Domain setup started. Verification usually takes a few minutes.",
-    "retry": "Retry",
-    "subscriptionWarningBody": "We couldn't reach the billing service. The form below assumes managed email is enabled for your org. If it isn't, registering a domain will fail.",
-    "subscriptionWarningTitle": "Couldn't verify subscription status",
     "usageSummary": "{sent} / {limit} sent today · {received} received"
   },
   "emailSettingsModal": {

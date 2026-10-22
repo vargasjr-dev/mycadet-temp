@@ -29,12 +29,6 @@
     "valuePlaceholder": "Enter the secret value"
   },
   "addCreditsModal": {
-    "amount": "Amount",
-    "cancel": "Cancel",
-    "configureAutoReload": "Configure Auto-Reload",
-    "continue": "Continue",
-    "description": "You'll be redirected to Stripe to complete the payment.",
-    "title": "Add Credits"
   },
   "appCard": {
     "openApp": "Open App",

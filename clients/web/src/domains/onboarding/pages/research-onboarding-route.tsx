@@ -32,7 +32,6 @@ import {
   takeSignupOnboardingFirstName,
 } from "@/lib/auth/signup-onboarding-handoff";
 import { isLocalClient } from "@/lib/local-mode";
-import { POST_CHECKOUT_HATCH_PARAM } from "@/lib/navigation/navigation-resolver";
 import {
   useAuthStore,
   useHasCloudSession,
@@ -240,19 +239,6 @@ export function ResearchOnboardingRoute() {
   // Extra edge characters revealed so far — grows as the looking-you-up
   // carousel advances, then stays for the results/suggestions steps.
   const [edgeAvatars, setEdgeAvatars] = useState(0);
-
-  // Provision the assistant in the background the moment the user lands here,
-  // so it's (usually) healthy by the time they finish the intro/pitch steps —
-  // and run the "research me" turn against it, surfacing real claims +
-  // suggestions for the in-flow result steps. The research turn is gated on the
-  // LATER of the details submit (subject) and hatch readiness: `start()` is
-  // called on submit and internally awaits the hatch.
-  // A local-hosting onboarding (hosting=local/docker) already provisioned its
-  // assistant in the hatching screen, so the background hatch ADOPTS it rather
-  // than running a cloud hatch; when the query string is missing, a live
-  // gateway-auth session is the same evidence (see
-  // `shouldAdoptExistingAssistant`). Cadet-Cloud onboarding runs the cloud
-  // hatch.
   const [searchParams] = useSearchParams();
   const hostingParam = searchParams.get("hosting");
   const adoptExistingAssistant = shouldAdoptExistingAssistant({
@@ -264,10 +250,6 @@ export function ResearchOnboardingRoute() {
   // param, pinning adoption to that exact one — a stale selection or leftover
   // lockfile entries from previous sessions can't answer for it.
   const adoptAssistantId = searchParams.get("assistant") ?? undefined;
-  // On the return leg of a completed checkout the hatch also waits out the
-  // purchased resize, so the paid user never starts on a baseline assistant.
-  const postCheckoutReturn =
-    searchParams.get(POST_CHECKOUT_HATCH_PARAM) === "1";
   // The claim-credits step ("integration") promises managed free credits,
   // which only a cloud account can hold. A self-hosted onboarding with no
   // platform login has no account to credit, so the promise would be empty:
@@ -313,7 +295,6 @@ export function ResearchOnboardingRoute() {
   } = useBackgroundHatch({
     adoptExisting: adoptExistingAssistant,
     adoptAssistantId,
-    postCheckoutReturn,
   });
   const research = useResearchRunner();
   // Stable across renders (useCallback in the runner); safe as effect deps.

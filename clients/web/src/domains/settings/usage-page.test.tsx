@@ -25,7 +25,7 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
 }));
 
-mock.module("@/domains/settings/billing/usage/usage-tab", () => ({
+mock.module("@/domains/settings/usage/usage-tab", () => ({
   UsageTab: () => <div data-testid="usage-tab-stub" />,
 }));
 mock.module(

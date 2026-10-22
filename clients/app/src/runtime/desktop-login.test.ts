@@ -146,10 +146,7 @@ test("desktop keeps OAuth guards active and waits for app facts before navigatin
   expect(calls).toContain("context");
   expect(location.href).toBe("");
   expect(isOAuthFlowInFlight()).toBe(true);
-  resolve({
-    returningUser: true,
-    checkout: { save: () => {}, clear: () => {} },
-  });
+  resolve({ returningUser: true });
   await pending;
   expect(location.href).toBe("/assistant");
 });

@@ -13,7 +13,6 @@ import { type ReactNode, useEffect, useMemo } from "react";
 import { ChatAvatar } from "@/components/avatar/chat-avatar";
 import type { ChatEmptyStateProps } from "@/domains/chat/components/chat-empty-state";
 import { ComposerPeek } from "@/domains/chat/components/composer-peek";
-import { CreditsUpsellCard } from "@/domains/chat/components/credits-upsell-card";
 import { ConversationStarterDock } from "@/domains/chat/components/conversation-starter-dock";
 import { ConversationStarterGrid } from "@/domains/chat/components/conversation-starter-grid";
 import {
@@ -55,15 +54,6 @@ export interface UseChatEmptyStateParams {
   /** Opened app state from viewer-store (non-null when editing an app). */
   openedAppState: { name: string; dirName?: string } | null;
   isAssistantBusy: boolean;
-  /**
-   * Whether the org's credit balance is exhausted (from the shared
-   * `useBillingBalanceStatus()` read in `chat-route-content`). While true,
-   * the plain empty state mounts the credits upsell card above the starters
-   * so a fresh conversation shows the credit wall before the first send.
-   * Inert while the billing query is loading or gated off (self-hosted, no
-   * platform session), so the card never flashes.
-   */
-  showCreditsUpsell: boolean;
   onSelectStarter: (starter: ConversationStarter) => void;
   /**
    * Clicking a library card invokes this to open the detail drawer. The
@@ -121,7 +111,6 @@ export function useChatEmptyState({
   mainView,
   openedAppState,
   isAssistantBusy,
-  showCreditsUpsell,
   onSelectStarter,
   onSelectSuggestion,
 }: UseChatEmptyStateParams): ChatEmptyStateResult {
@@ -173,8 +162,7 @@ export function useChatEmptyState({
   // The app-editing override keeps its bespoke chips, so it stays on the
   // grid path. The library also needs `onSelectSuggestion` to open its
   // detail drawer; without it we fall back to the chip grid.
-  const showSuggestionLibrary =
-    isPlainEmptyState && onSelectSuggestion != null;
+  const showSuggestionLibrary = isPlainEmptyState && onSelectSuggestion != null;
 
   // Gate the daemon fetch by `isEmptyConversation` so non-empty chats stop
   // polling for data that's never rendered. Also skip it whenever the
@@ -248,10 +236,7 @@ export function useChatEmptyState({
   // covers the docked column's own padding as well. The credits card rides
   // this same slot, so a dock holding one is never empty.
   const startersDockCollapsed =
-    showStarterDock &&
-    !startersReserved &&
-    !showCreditsUpsell &&
-    emptyStateStarters.length === 0;
+    showStarterDock && !startersReserved && emptyStateStarters.length === 0;
 
   let startersSlot: ReactNode | undefined;
   let belowFoldSlot: ReactNode | undefined;
@@ -294,23 +279,6 @@ export function useChatEmptyState({
         isReserving={startersReserved}
         onSelect={onSelectStarter}
       />
-    );
-  }
-
-  // Proactive credit wall for a fresh conversation: the card rides the
-  // starters slot, ahead of whatever occupies it (or alone when there are no
-  // starters yet), so it lands above the starters dock. The empty state
-  // suppresses `bannerSlot` (see `chat-body.tsx`), which is why the card
-  // mounts here rather than as a banner. The app-editing side panel is
-  // excluded; a send there still fails into the in-transcript card.
-  if (showCreditsUpsell && isPlainEmptyState) {
-    startersSlot = (
-      <>
-        <div className="mb-3">
-          <CreditsUpsellCard />
-        </div>
-        {startersSlot}
-      </>
     );
   }
 

@@ -158,7 +158,6 @@
   },
   "emailCloudContent": {
     "addressLabel": "地址",
-    "checkingSubscription": "正在检查订阅…",
     "completeSetup": "完成域名设置",
     "completingSetup": "正在完成设置…",
     "copiedAddress": "已复制",
@@ -187,9 +186,6 @@
     "repairNoticeBody": "您的电子邮件地址已就绪，但此域名尚未在电子邮件提供商处设置。完成设置后即可开始发送和接收邮件。",
     "repairNoticeTitle": "需要设置域名",
     "repairStartedToast": "已开始域名设置。验证通常需要几分钟。",
-    "retry": "重试",
-    "subscriptionWarningBody": "我们无法连接到计费服务。以下表单假定您的组织已启用托管电子邮件。如果未启用，注册域名将失败。",
-    "subscriptionWarningTitle": "无法验证订阅状态",
     "usageSummary": "今日发送 {sent} / {limit} · 收到 {received}"
   },
   "emailSettingsModal": {

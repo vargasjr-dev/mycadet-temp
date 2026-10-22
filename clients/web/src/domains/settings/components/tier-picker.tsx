@@ -8,7 +8,7 @@ import type {
   StorageTierEnum,
 } from "@/generated/api/types.gen";
 import { useTranslation } from "@/i18n";
-import { MACHINE_TIER_LABEL } from "@/lib/billing/machine-sizes";
+import { MACHINE_TIER_LABEL } from "@/lib/machine-sizes";
 import { Select } from "@mycadet/design-library/components/select";
 import { Typography } from "@mycadet/design-library/components/typography";
 

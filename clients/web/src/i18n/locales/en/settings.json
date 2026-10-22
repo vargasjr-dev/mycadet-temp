@@ -157,7 +157,6 @@
     "loadingLabel": "Loading payment fields"
   },
   "billingStatusHandler": {
-    "successToast": "Payment received! Your credit balance will update shortly."
   },
   "inferenceUsageChart": {
     "empty": "No usage data for this period"
@@ -233,14 +232,6 @@
     "urlPlaceholder": "Paste callback URL here..."
   },
   "checkoutPage": {
-    "awaitingReturnMessage": "Checkout opened in your browser. Finish there to complete your upgrade.",
-    "checkoutFailedMessage": "We couldn't start your checkout. Please try again.",
-    "continueSetup": "Continue setup",
-    "preparingCheckout": "Preparing checkout…",
-    "preparingCheckoutAriaLabel": "Preparing checkout",
-    "reopenCheckout": "Reopen checkout",
-    "tryAgain": "Try again",
-    "openBilling": "Open billing"
   },
   "communityPage": {
     "communityHubDescription": "Showcases, guides, and projects shared by the community.",
@@ -270,9 +261,6 @@
     "youtubeChannelTitle": "YouTube channel"
   },
   "completeState": {
-    "assistantFallbackName": "your assistant",
-    "returnTo": "Return to {assistantName}",
-    "title": "You're all set!"
   },
   "createScheduleModal": {
     "advancedCron": "Advanced - write a cron expression",
@@ -360,12 +348,6 @@
     "title": "Credentials"
   },
   "creditBundlePicker": {
-    "ariaLabel": "Credit bundle",
-    "label": "Credit bundle",
-    "noBundleOption": "No credit bundle - {price}",
-    "optionLabel": "{label} - {price}",
-    "placeholder": "Select a credit bundle",
-    "tooltip": "A monthly allotment of credits added to your Pro Plan subscription"
   },
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
@@ -451,8 +433,6 @@
     "title": "Downgrade to Base?"
   },
   "errorStates": {
-    "fetchErrorTitle": "Couldn't reach billing",
-    "goToBilling": "Go to billing"
   },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
@@ -1135,26 +1115,6 @@
     "title": "Providers"
   },
   "provisioningState": {
-    "allDoneStatus": "All done!",
-    "confirmingCaption": "This might take a couple seconds.",
-    "continueInBackground": "Continue in the background",
-    "dimensionsComplete": "{dimensions} complete",
-    "goToBilling": "Go to billing",
-    "machineLabel": "Machine",
-    "noExtraUsage": "No extra usage",
-    "packageLabel": "Package",
-    "planReadyStatus": "Your plan is ready",
-    "retryInBackground": "Retry in the background",
-    "srOnlyTo": "to",
-    "stalledCaption": "This may take a couple of minutes.",
-    "statusComplete": "Complete",
-    "statusPending": "Pending",
-    "storageLabel": "Storage",
-    "takingLongerStatus": "This is taking longer than expected",
-    "tryAgain": "Try again",
-    "usageLabel": "Usage",
-    "waitingCaptionLong": "Still working. This can take a minute or two.",
-    "waitingCaptionShort": "This might take a couple seconds."
   },
   "recentRunsCard": {
     "emptyDefault": "No runs yet.",
@@ -1179,40 +1139,6 @@
     "title": "Recovery Mode"
   },
   "resizeCard": {
-    "apply": "Apply",
-    "applyingResize": "Applying resize…",
-    "cancel": "Cancel",
-    "cpu": "CPU",
-    "current": "Current",
-    "disk": "Disk",
-    "increaseSize": "Increase Size",
-    "increaseStorage": "Increase Storage",
-    "machine": "Machine",
-    "machineSize": "Machine Size",
-    "machineSizeAriaLabel": "Compute machine size",
-    "memory": "Memory",
-    "modalDescription": "Resize your assistant's compute and storage. Your assistant will briefly restart.",
-    "modalTitle": "Resize Assistant",
-    "needMore": "Need more? <upgradeLink>Upgrade plan</upgradeLink>",
-    "noMachineTier": "No machine tier configured. Visit the community for help.",
-    "refreshMetrics": "Refresh resource metrics",
-    "resize": "Resize",
-    "resizeFailed": "Failed to resize assistant. Please try again.",
-    "retry": "Retry",
-    "storage": "Storage",
-    "storageAlreadyProvisioned": "Storage is already at its provisioned size ({size} GB) and will not change.",
-    "storageExpandFromTo": "Storage will be expanded from {from} GB to {to} GB.",
-    "storageExpandTo": "Storage will be expanded to {to} GB.",
-    "storageUnchanged": "Storage will not change.",
-    "subscriptionLoadError": "Could not load your subscription. Please try again.",
-    "subtitle": "Monitor resource usage and manage your assistant's compute profile.",
-    "title": "Compute & Resources",
-    "toastStarted": "Resize started. Changes will apply shortly.",
-    "unavailable": "Unavailable",
-    "upgrade": "Upgrade",
-    "upgradeDescription": "Move to a higher plan for more power, more storage, and a larger credit bundle.",
-    "upgradeTitle": "Upgrade your plan",
-    "usedOf": "{used} of {total}"
   },
   "restartAssistant": {
     "button": "Restart",
@@ -1468,16 +1394,6 @@
     "weekly": "Weekly"
   },
   "upgradeSuccessPage": {
-    "cantConfirmUpgrade": "We can't confirm your upgrade for the current assistant. Return to billing to retry.",
-    "fetchErrorBody": "We hit a problem checking your subscription. Your upgrade may still be processing. Return to billing to refresh.",
-    "fetchErrorTitle": "Couldn't reach billing",
-    "finalizingBody": "Stripe is confirming your subscription. This usually takes a few seconds.",
-    "finalizingTitle": "Finalizing your upgrade…",
-    "goToBilling": "Go to billing",
-    "platformLoginNotice": "Log in to Cadet Cloud to manage billing and usage.",
-    "processingFallback": "We're processing your upgrade. Refresh in a moment to see your new plan.",
-    "successBody": "Your Pro plan is active. You'll be redirected back to billing in a moment.",
-    "welcomeTitle": "Welcome to Pro"
   },
   "usageTab": {
     "analyzeCostsButton": "Analyze costs with assistant",
@@ -1528,7 +1444,6 @@
     "total": "Total"
   },
   "useBillingPortalSession": {
-    "openError": "Couldn't open the billing portal. Please try again."
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "Assistant not ready. Please try again.",

@@ -4,9 +4,6 @@ import { useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { notifyCheckoutSuccess } from "@/lib/billing/checkout-success";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
   isLiveVoiceSessionActive,
@@ -43,15 +40,6 @@ import { conversationIdForPath, routes } from "@/utils/routes";
  * - `deeplink.send` → `ensureMainWindowVisible()` + navigate to
  *   `/assistant` + park the message in `usePendingDeepLinkStore`
  *   for `ChatPage`'s composer-domain hook to consume on mount.
- * - `deeplink.billingCheckoutComplete` → `ensureMainWindowVisible()`,
- *   then branch on `flow`. A `subscription` checkout navigates to
- *   billing carrying the Stripe `session_id` (which opens the Pro
- *   onboarding wizard), or to the upgrade-cancel page on
- *   `status: "cancel"` (the same landing the web flow uses). A
- *   `top_up` checkout toasts and refetches the billing summary on
- *   success (no forced navigation), and on cancel lands on billing
- *   with `billing_status=cancel`, funneling into the billing page's
- *   server-verified checkout-bonus offer flow.
  * - `deeplink.startVoice` → `ensureMainWindowVisible()` + navigate,
  *   then hand the request to the live-voice starter (parked for the
  *   cold-launch case, see `start-voice-request.ts`). `mode: "resume"`
@@ -347,32 +335,6 @@ export function useGlobalDeepLinkConsumer(): void {
     }
     usePendingDeepLinkStore.getState().setPendingConversationList();
   });
-
-  useBusSubscription(
-    "deeplink.billingCheckoutComplete",
-    ({ status, sessionId: _sessionId, flow }) => {
-      void ensureMainWindowVisible();
-      if (flow === "top_up") {
-        if (status === "success") {
-          // No forced navigation: a top-up has no onboarding wizard to open,
-          // so the user stays wherever they were.
-          notifyCheckoutSuccess(queryClient);
-          return;
-        }
-        navigateRef.current(routes.settings.usage);
-        return;
-      }
-      // A pro checkout's `session_id` lands on the usage page inert now —
-      // the billing tab that consumed it is gone (billing management moved
-      // to the cloud's account pages). The cancel leg hands off there too:
-      // the upgrade-cancel page that used to own it is gone.
-      if (status === "success") {
-        navigateRef.current(routes.settings.usage);
-        return;
-      }
-      void openExternalUrl(cloudAccountBillingUrl());
-    },
-  );
 
   useBusSubscription("deeplink.share", ({ inboxId }) => {
     void (async () => {

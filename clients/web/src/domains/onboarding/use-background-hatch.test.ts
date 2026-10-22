@@ -13,7 +13,6 @@ import type {
   GetHealthzResult,
   HatchResult,
 } from "@/assistant/api";
-import type { PurchasedProvisioningOutcome } from "@/domains/onboarding/purchased-provisioning";
 import type { OrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 
 let hatchResult: HatchResult = {
@@ -109,30 +108,9 @@ mock.module("@/utils/api-errors", () => ({
       : (fallback ?? "error"),
 }));
 
-// The paid stage only: the free path must never reach this module at all.
-let provisioningOutcome: PurchasedProvisioningOutcome = "ready";
-// Optional gate holding the provisioning wait open, so a test can assert
-// `ready` stays false for as long as the resize hasn't converged.
-let provisioningGate: Promise<void> | null = null;
-const holdProvisioning = (): (() => void) => {
-  let release!: () => void;
-  provisioningGate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  return release;
-};
-const awaitPurchasedProvisioningMock = mock(
-  async (_options: unknown): Promise<PurchasedProvisioningOutcome> => {
-    if (provisioningGate) {
-      await provisioningGate;
-    }
-    return provisioningOutcome;
-  },
-);
-// The hook reads the poll cadence and the wait ceiling from this module too
+// The hook reads the poll cadence and the wait ceiling from the wait module
 // (single-sourced); a short interval keeps the poll-loop tests fast.
-mock.module("@/domains/onboarding/purchased-provisioning", () => ({
-  awaitPurchasedProvisioning: awaitPurchasedProvisioningMock,
+mock.module("@/domains/onboarding/hatch-wait", () => ({
   POLL_INTERVAL_MS: 10,
   MAX_HATCH_WAIT_MS: 300_000,
 }));
@@ -191,8 +169,6 @@ beforeEach(() => {
   healthzResult = { ok: true, status: 200, data: {} as never };
   lockfileEntries = {};
   localMode = false;
-  provisioningOutcome = "ready";
-  provisioningGate = null;
   orgReadiness = "ready";
   fetchOrganizationsMock.mockClear();
   hatchAssistantMock.mockClear();
@@ -200,7 +176,6 @@ beforeEach(() => {
   getAssistantHealthzMock.mockClear();
   probeLocalGatewayReadyMock.mockClear();
   getLockfileAssistantMock.mockClear();
-  awaitPurchasedProvisioningMock.mockClear();
   seedHatchAvatarMock.mockClear();
   clearGatewayTokenMock.mockClear();
   setSelfHostedConnectionMock.mockClear();
@@ -350,76 +325,7 @@ describe("useBackgroundHatch", () => {
     expect(hatchAssistantMock).toHaveBeenCalledTimes(1);
   });
 
-  test("post-checkout return withholds ready until the provisioning wait resolves", async () => {
-    const release = holdProvisioning();
 
-    const { result } = renderHook(() =>
-      useBackgroundHatch({ postCheckoutReturn: true }),
-    );
-
-    let resolved: string | undefined;
-    act(() => {
-      void result.current.awaitReady().then((id) => {
-        resolved = id;
-      });
-      result.current.start();
-    });
-
-    await waitFor(() =>
-      expect(awaitPurchasedProvisioningMock).toHaveBeenCalledTimes(1),
-    );
-    // The wait runs AFTER healthz passes, and holds `ready` while pending.
-    expect(getAssistantHealthzMock).toHaveBeenCalledTimes(1);
-    expect(awaitPurchasedProvisioningMock.mock.calls[0][0]).toMatchObject({
-      assistantId: "ast-research",
-      postCheckoutReturn: true,
-      managedHatch: true,
-    });
-    expect(result.current.ready).toBe(false);
-    expect(resolved).toBeUndefined();
-
-    await act(async () => {
-      release();
-    });
-
-    await waitFor(() => expect(result.current.ready).toBe(true));
-    await waitFor(() => expect(resolved).toBe("ast-research"));
-  });
-
-  test("a health_timeout from the provisioning wait fails the hatch", async () => {
-    provisioningOutcome = "health_timeout";
-
-    const { result } = renderHook(() =>
-      useBackgroundHatch({ postCheckoutReturn: true }),
-    );
-
-    let rejection: Error | undefined;
-    act(() => {
-      void result.current.awaitReady().catch((err: Error) => {
-        rejection = err;
-      });
-      result.current.start();
-    });
-
-    await waitFor(() => expect(result.current.error).toBe(TIMEOUT_MESSAGE));
-    // A resize the assistant never came back from is a failure, never a
-    // completion onto an unreachable pod.
-    expect(result.current.ready).toBe(false);
-    await waitFor(() => expect(rejection?.message).toBe(TIMEOUT_MESSAGE));
-  });
-
-  test("the free path never runs the purchased-provisioning wait", async () => {
-    const { result } = renderHook(() => useBackgroundHatch());
-
-    act(() => {
-      result.current.start();
-    });
-
-    await waitFor(() => expect(result.current.ready).toBe(true));
-    // No subscription polling and no avatar seed without the paid marker.
-    expect(awaitPurchasedProvisioningMock).not.toHaveBeenCalled();
-    expect(seedHatchAvatarMock).not.toHaveBeenCalled();
-  });
 
   test("retry() re-runs the hatch after a terminal failure", async () => {
     hatchResult = {
@@ -465,10 +371,8 @@ describe("useBackgroundHatch", () => {
     expect(hatchAssistantMock).toHaveBeenCalledTimes(2);
   });
 
-  test("a 201 paid hatch seeds the avatar; an existing (200) one does not", async () => {
-    const fresh = renderHook(() =>
-      useBackgroundHatch({ postCheckoutReturn: true }),
-    );
+  test("a 201 hatch seeds the avatar; an existing (200) one does not", async () => {
+    const fresh = renderHook(() => useBackgroundHatch());
 
     act(() => {
       fresh.result.current.start();
@@ -485,9 +389,7 @@ describe("useBackgroundHatch", () => {
       data: { id: "ast-research" } as never,
     };
 
-    const existing = renderHook(() =>
-      useBackgroundHatch({ postCheckoutReturn: true }),
-    );
+    const existing = renderHook(() => useBackgroundHatch());
 
     act(() => {
       existing.result.current.start();
@@ -602,43 +504,6 @@ describe("useBackgroundHatch", () => {
     await expect(
       until(() => resolved != null || rejection != null),
     ).rejects.toThrow();
-  });
-
-  test("unmounting cancels the purchased-provisioning wait without settling", async () => {
-    const release = holdProvisioning();
-
-    const { result, unmount } = renderHook(() =>
-      useBackgroundHatch({ postCheckoutReturn: true }),
-    );
-
-    let resolved: string | undefined;
-    act(() => {
-      void result.current.awaitReady().then((id) => {
-        resolved = id;
-      });
-      result.current.start();
-    });
-
-    await waitFor(() =>
-      expect(awaitPurchasedProvisioningMock).toHaveBeenCalledTimes(1),
-    );
-    const options = awaitPurchasedProvisioningMock.mock.calls[0][0] as {
-      isCancelled: () => boolean;
-      registerTimer?: (timer: ReturnType<typeof setTimeout> | null) => void;
-    };
-    expect(options.isCancelled()).toBe(false);
-    // The wait's own poll timer has to be clearable from the caller.
-    expect(typeof options.registerTimer).toBe("function");
-
-    unmount();
-    expect(options.isCancelled()).toBe(true);
-
-    // A cancelled wait still resolves "ready"; the hatch must not complete on
-    // it once the component is gone.
-    await act(async () => {
-      release();
-    });
-    expect(resolved).toBeUndefined();
   });
 
   test("a cloud hatch in local mode writes no lockfile entry", async () => {

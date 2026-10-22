@@ -8,8 +8,6 @@ import {
 const BASE: InboxStatusInputs = {
   gate: "full",
   cloudAssistantId: "asst-platform",
-  entitlements: { cloud_email: true },
-  subscriptionFailed: false,
   addressCount: 1,
   domainsSettled: true,
 };
@@ -24,29 +22,6 @@ describe("resolveInboxStatus", () => {
     expect(resolveInboxStatus({ ...BASE, gate: "disabled" })).toBe(
       "unavailable",
     );
-  });
-
-  test("loads until the subscription answers", () => {
-    expect(resolveInboxStatus({ ...BASE, entitlements: undefined })).toBe(
-      "loading",
-    );
-  });
-
-  test("upgrade when the entitlements explicitly omit managed email", () => {
-    expect(resolveInboxStatus({ ...BASE, entitlements: {} })).toBe("upgrade");
-    expect(
-      resolveInboxStatus({ ...BASE, entitlements: { cloud_email: false } }),
-    ).toBe("upgrade");
-  });
-
-  test("a failed subscription read fails open to the address list", () => {
-    expect(
-      resolveInboxStatus({
-        ...BASE,
-        entitlements: undefined,
-        subscriptionFailed: true,
-      }),
-    ).toBe("ready");
   });
 
   test("loads until the cloud id and the address list are in", () => {

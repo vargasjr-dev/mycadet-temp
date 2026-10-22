@@ -12,8 +12,6 @@
  * Reference: https://capacitorjs.com/docs/apis/app#addlistenerappurlopen-
  */
 
-import type { BillingCheckoutFlow } from "@/lib/event-bus";
-
 export const OAUTH_COMPLETE_DEEP_LINK_EVENT = "cadet:oauth-complete-deeplink";
 export const OAUTH_COMPLETE_DEEP_LINK_HOST = "oauth-complete";
 
@@ -50,96 +48,17 @@ export function getNativeUrlSchemeForHost(host: string): string | null {
   return NATIVE_URL_SCHEME_BY_HOST[host] ?? null;
 }
 
-export const BILLING_CHECKOUT_COMPLETE_DEEP_LINK_HOST = "billing";
-const BILLING_CHECKOUT_COMPLETE_PATH_SEGMENT = "checkout-complete";
-
 /**
- * Stripe Checkout Session id shape (`cs_test_a1B2…` / `cs_live_…`). Mirrors
- * the cloud's own check in `checkout_native_return.py` and the macOS main
- * parser, so a malformed id never reaches the billing route.
+ * The provenance marker's raw query shape. Matched against the raw
+ * `&`-split query, never through `URLSearchParams`: that view
+ * percent-decodes item names, so it would read `s%72c=intent` as the
+ * marker, and the shell (Foundation, a different parser) has to strip
+ * every spelling this side honors. The raw item is the one thing both
+ * parsers see identically, so it is the whole predicate here; the shell
+ * strips it and its decoded spellings.
  */
-const CHECKOUT_SESSION_ID_RE = /^cs_[A-Za-z0-9_]{1,255}$/;
+const COMMAND_URL_PROVENANCE_ITEM = "src=intent";
 
-export type BillingCheckoutCompleteDeepLinkPayload =
-  | { status: "success"; sessionId: string; flow: BillingCheckoutFlow }
-  | { status: "cancel"; sessionId: null; flow: BillingCheckoutFlow };
-
-/**
- * Parse a `cadet://billing/checkout-complete?status=…&session_id=…`
- * deep link, the hand-off the cloud bounces a `return_target=native`
- * Checkout to (`checkout_native_return.py`). An optional `flow=top_up` marks
- * a credit top-up checkout; anything else is a subscription checkout.
- *
- * Returns `null` for anything else — including a `success` without a
- * well-formed Session id, which the app can do nothing with. Semantics mirror
- * the macOS main-process parser so both shells agree.
- */
-export function parseBillingCheckoutCompleteDeepLink(
-  rawUrl: string,
-): BillingCheckoutCompleteDeepLinkPayload | null {
-  let url: URL;
-  try {
-    url = new URL(rawUrl);
-  } catch {
-    return null;
-  }
-
-  if (!ALLOWED_NATIVE_URL_PROTOCOLS.has(url.protocol)) {
-    return null;
-  }
-  if (url.host !== BILLING_CHECKOUT_COMPLETE_DEEP_LINK_HOST) {
-    return null;
-  }
-  const segment = url.pathname.replace(/^\/+/, "").split("/")[0];
-  if (segment !== BILLING_CHECKOUT_COMPLETE_PATH_SEGMENT) {
-    return null;
-  }
-
-  const flow: BillingCheckoutFlow =
-    url.searchParams.get("flow") === "top_up" ? "top_up" : "subscription";
-
-  const status = url.searchParams.get("status");
-  if (status === "cancel") {
-    return { status: "cancel", sessionId: null, flow };
-  }
-  const sessionId = url.searchParams.get("session_id") ?? "";
-  if (status === "success" && CHECKOUT_SESSION_ID_RE.test(sessionId)) {
-    return { status: "success", sessionId, flow };
-  }
-  return null;
-}
-
-/**
- * Query item the iOS shell adds to a command URL an App Intent produced, and
- * strips from every URL that arrived from outside the process (Safari,
- * another app, the Live Activity's tap). Name and value are shared with
- * `CommandURLProvenance.swift`, which owns the trust argument: intent URLs
- * are handed to the delegate in-process and never pass through
- * `application(_:open:)`, so by the time a URL reaches Capacitor's
- * `appUrlOpen` the marker is present exactly when an intent produced it.
- */
-const COMMAND_URL_PROVENANCE_PARAM = "src";
-const COMMAND_URL_PROVENANCE_INTENT = "intent";
-/**
- * The marker as one raw query item, byte-for-byte what
- * `CommandURLProvenance.marked` serializes. It is matched against the raw
- * `&`-split query, never through `URLSearchParams`: that view percent-decodes
- * item names, so it would read `s%72c=intent` as the marker, and the shell
- * (Foundation, a different parser) has to strip every spelling this side
- * honors. The raw item is the one thing both parsers see identically, so it
- * is the whole predicate here; the shell strips it and its decoded spellings.
- */
-const COMMAND_URL_PROVENANCE_ITEM = `${COMMAND_URL_PROVENANCE_PARAM}=${COMMAND_URL_PROVENANCE_INTENT}`;
-
-/**
- * Where a command URL came from, as far as the shell can prove.
- *
- * - `"intent"`: an iOS App Intent produced it on the user's explicit action
- *   (a Shortcut, Siri, the Action Button). Text it carries may be acted on
- *   without a further tap.
- * - `null`: unknown, which for a custom URL scheme means "anyone". Text it
- *   carries is staged for the user to send, never sent.
- */
 export type CommandUrlProvenance = "intent" | null;
 
 /**

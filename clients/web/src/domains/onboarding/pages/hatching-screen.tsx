@@ -34,10 +34,10 @@ import {
 import { markAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
 import { ATTRIBUTED_PLUGIN_PARAM } from "@/domains/onboarding/plugin-attribution";
 import {
-  awaitPurchasedProvisioning,
+  awaitHatchReadiness,
   MAX_HATCH_WAIT_MS,
   POLL_INTERVAL_MS,
-} from "@/domains/onboarding/purchased-provisioning";
+} from "@/domains/onboarding/hatch-wait";
 import { getDesktopAppDownloadActionKey } from "@/domains/onboarding/utils/desktop-app-copy";
 import {
   isLocalClient,
@@ -47,10 +47,7 @@ import {
 } from "@/lib/local-mode";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
-import {
-  POST_CHECKOUT_HATCH_PARAM,
-  resolveNavigation,
-} from "@/lib/navigation/navigation-resolver";
+import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { hatchLocalAssistant } from "@/runtime/local-mode-host";
 import { isElectron } from "@/runtime/is-electron";
@@ -102,18 +99,12 @@ function releaseHatchGuards(): void {
   hatchTraitsCache = null;
 }
 
-type HatchPhase =
-  | "initializing"
-  | "provisioning"
-  | "connecting"
-  | "resizing"
-  | "ready";
+type HatchPhase = "initializing" | "provisioning" | "connecting" | "ready";
 
 const PHASE_TARGET: Record<HatchPhase, number> = {
   initializing: 0,
   provisioning: 0.33,
   connecting: 0.66,
-  resizing: 0.85,
   ready: 1.0,
 };
 
@@ -126,7 +117,6 @@ const PHASE_KEY: Record<HatchPhase, `hatchingScreen.phase.${HatchPhase}`> = {
   initializing: "hatchingScreen.phase.initializing",
   provisioning: "hatchingScreen.phase.provisioning",
   connecting: "hatchingScreen.phase.connecting",
-  resizing: "hatchingScreen.phase.resizing",
   ready: "hatchingScreen.phase.ready",
 };
 
@@ -180,12 +170,6 @@ export function HatchingScreen() {
   // (see `adopt-existing-assistant`): the assistant is provisioned on the
   // platform, so its purchased machine and storage are waited for.
   const managedHatch = hostingParam === "cadet-cloud";
-  // This hatch is the return leg of a completed checkout — only the
-  // post-checkout funnel sets the param, and only for a billing landing
-  // carrying Stripe's `session_id`. `managedHatch` is NOT a substitute: it
-  // names a hosting choice a free user can make too.
-  const postCheckoutReturn =
-    searchParams.get(POST_CHECKOUT_HATCH_PARAM) === "1";
   const sessionStatus = useAuthStore.use.sessionStatus();
   // Local hatches drive `sessionStatus` themselves (`connectLocalAssistant`
   // below flips it mid-handoff), so they gate on settled-ness to keep that flip
@@ -630,13 +614,10 @@ export function HatchingScreen() {
         return;
       }
 
-      const outcome = await awaitPurchasedProvisioning({
+      const outcome = await awaitHatchReadiness({
         assistantId,
-        postCheckoutReturn,
-        managedHatch,
         hatchStartMs: pollStartMs,
         isCancelled: () => cancelled,
-        onResizeWait: () => transitionPhase("resizing"),
         registerTimer: (timer) => {
           pollTimer = timer;
         },
@@ -744,7 +725,6 @@ export function HatchingScreen() {
     failParam,
     hatchTraits,
     managedHatch,
-    postCheckoutReturn,
     sessionGateKey,
     navigate,
     queryClient,

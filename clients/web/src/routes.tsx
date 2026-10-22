@@ -451,16 +451,6 @@ export const routeTree = [
           // yet can reach it; `authMiddleware` on `/assistant` still applies, and
           // the navigation resolver exempts it from the no-assistant funnel
           // redirect. The page gates on the session-only platform gate itself.
-          {
-            path: "checkout",
-            lazy: {
-              Component: () =>
-                import("@/domains/settings/billing/checkout-page").then(
-                  (m) => m.CheckoutPage,
-                ),
-            },
-          },
-
           // Settings and logs require a resolved assistant. The gate
           // defers child rendering until the lifecycle reaches active/
           // self_hosted, so route components can use useActiveAssistantId().
@@ -594,24 +584,6 @@ export const routeTree = [
                       Component: () =>
                         import("@/domains/settings/usage-page").then(
                           (m) => m.UsagePage,
-                        ),
-                    },
-                  },
-                  {
-                    path: "billing",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/pages/billing-redirect-page").then(
-                          (m) => m.BillingRedirectPage,
-                        ),
-                    },
-                  },
-                  {
-                    path: "billing/upgrade/success",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/settings/billing/upgrade-success-page").then(
-                          (m) => m.UpgradeSuccessPage,
                         ),
                     },
                   },

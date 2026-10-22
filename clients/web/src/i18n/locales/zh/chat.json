@@ -225,7 +225,6 @@
     "stopCommandAria": "停止命令"
   },
   "billingErrorBanner": {
-    "dismiss": "忽略"
   },
   "cameraDeepLink": {
     "captureFailed": "无法拍摄照片。请重试。",
@@ -604,7 +603,6 @@
     "groupFailed": "无法复制群组ID。"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "登录Cadet Cloud以添加积分。"
   },
   "csvPreview": {
     "emptyFile": "此文件为空",
@@ -612,11 +610,6 @@
     "summaryTruncated": "{rows, plural, other {# 行}} x {columns, plural, other {# 列}}（已截断）"
   },
   "dailyLimitBanner": {
-    "skipConfirmTitle": "跳过今日积分限制？",
-    "skipError": "无法跳过今日限制。请重试。",
-    "skipForToday": "今日跳过",
-    "subtitle": "Cadet积分消费已暂停，直到您的限制在{resetPhrase}重置。",
-    "title": "已达到每日积分限制"
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "我理解相关资产和记忆可能仍会保留",
@@ -834,10 +827,6 @@
     "pictureInPicture": "画中画"
   },
   "lowBalanceBanner": {
-    "addCredits": "添加点数",
-    "ariaLabel": "您的点数不足。{detail}",
-    "subtitle": "添加点数以避免中断。",
-    "title": "您的点数不足"
   },
   "maintenanceModeBanner": {
     "body": "您的助手工作区当前已连接到调试终端。在恢复模式下，聊天不可用。",
@@ -1005,8 +994,6 @@
     "noActiveSession": "无活动会话。请重试。"
   },
   "providerBillingBanner": {
-    "body": "向您的提供商充值或降低模型Token 限制。",
-    "title": "您的 API 密钥需要充值"
   },
   "pullRefreshSpinner": {
     "refreshing": "正在刷新"
@@ -1594,10 +1581,6 @@
     "depth": "{depth, select, fast {快速搜索} standard {标准搜索} deep {深度搜索} other {搜索}}"
   },
   "freeTierDailyLimitBanner": {
-    "addCredits": "添加额度",
-    "subtitle": "您已用完今日的免费用量，将在{resetPhrase}重置。升级或添加额度以继续。",
-    "title": "今日免费用量已用完",
-    "upgrade": "升级"
   },
   "chatsSettingsModal": {
     "title": "聊天设置",

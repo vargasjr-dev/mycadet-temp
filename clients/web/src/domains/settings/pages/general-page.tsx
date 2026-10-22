@@ -20,7 +20,6 @@ import {
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
-import { ResizeCard } from "@/domains/settings/components/resize-card";
 import { RetireAssistant } from "@/domains/settings/components/retire-assistant";
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
 import { ThisDeviceSection } from "@/domains/settings/components/this-device-section";
@@ -247,17 +246,6 @@ export function GeneralPage() {
         />
       )}
 
-      {infraGate === "full" && assistant && (
-        <ResizeCard
-          assistant={assistant}
-          healthz={healthz}
-          healthzLoading={healthzLoading}
-          healthzFetching={healthzFetching}
-          healthzPolling={healthzPolling}
-          refetch={refetch}
-          refetchUntilResized={refetchUntilResized}
-        />
-      )}
       {infraGate === "disabled" && (
         <DetailCard
           id="storage-resources"

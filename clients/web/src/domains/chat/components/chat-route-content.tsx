@@ -64,8 +64,6 @@ import { useQuoteReplyStore } from "@/domains/chat/quote-reply-store";
 import { isChannelConversation } from "@/domains/chat/utils/conversation-channel";
 import { resolveComposerPlaceholder } from "@/domains/chat/utils/composer-placeholder";
 import { isPopoutWindow } from "@/runtime/popout-window";
-import { openExternalUrl } from "@/runtime/browser";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { isImageAttachment } from "@/utils/attachment-utils";
@@ -93,12 +91,8 @@ import { OrphanedHistoryNotice } from "@/domains/chat/components/orphaned-histor
 import { ComposerSecretNotice } from "@/domains/chat/components/composer-secret-notice";
 import { ComposerConfigurationProvider } from "@/domains/chat/components/composer-configuration-provider";
 import { ContextWindowIndicator } from "@/domains/chat/components/context-window-indicator";
-import { DailyLimitBanner } from "@/domains/chat/components/daily-limit-banner";
-import { FreeTierDailyLimitBanner } from "@/domains/chat/components/free-tier-daily-limit-banner";
-import { LowBalanceBanner } from "@/domains/chat/components/low-balance-banner";
 import { MicPermissionPrimer } from "@/domains/chat/components/mic-permission-primer";
 import { OnboardingChoiceCard } from "@/domains/chat/components/onboarding-choice-card";
-import { ProviderBillingBanner } from "@/domains/chat/components/provider-billing-banner";
 import { SendErrorModal } from "@/domains/chat/components/send-error-modal";
 import { StoreCredentialDialog } from "@/domains/chat/components/store-credential-dialog";
 import { SuggestionDetailPanel } from "@/domains/chat/components/suggestion-detail-panel";
@@ -123,13 +117,10 @@ import {
 import { Button } from "@mycadet/design-library";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
-  getChatBillingBannerDecision,
   isCloudCredentialChatError,
-  resolveComposerBillingBanner,
   shouldShowGenericChatErrorNotice,
 } from "@/domains/chat/utils/error-classification";
 import { openUrlInPopupOrTab } from "@/domains/chat/utils/oauth-popup-links";
-import { useBillingBalanceStatus } from "@/hooks/use-billing-balance-status";
 import { useInteractionStore } from "@/domains/chat/interaction-store";
 import type {
   DisplayAttachment,
@@ -182,7 +173,6 @@ import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
 import { canRecoverLocalAssistantCloudCredential } from "@/lib/local-cloud-identity";
 
 import { RestoreCloudCredentialButton } from "./restore-cloud-credential-button";
-import { useLowBalanceBannerStore } from "@/stores/low-balance-banner-store";
 
 // ---------------------------------------------------------------------------
 // Props — only values that cannot be owned locally
@@ -495,10 +485,6 @@ export function ChatMainPanel({
     void navigate(routes.settings.ai);
   }, [navigate]);
 
-  const pushToDailyLimitSettings = useCallback(() => {
-    void openExternalUrl(cloudAccountBillingUrl());
-  }, []);
-
   const checkAssistant = useCallback(
     () => lifecycleService.checkAssistant(),
     [],
@@ -697,20 +683,12 @@ export function ChatMainPanel({
     activeConversationId && draftConversationIds.has(activeConversationId)
       ? activeConversationId
       : null;
-  const balanceStatus = useBillingBalanceStatus({
-    conversationId: activeDraftId ? null : activeConversationId,
-    draftProfile: activeDraftId
-      ? (pendingDraftProfiles.get(activeDraftId) ?? null)
-      : null,
-  });
-
   const { sanitizedMessages, transcriptItems } = useTranscriptData({
     messages,
     showThinking,
     turnActive: isAssistantBusy,
     thinkingLabel,
     showOnboardingChoice,
-    creditsExhausted: balanceStatus.isExhausted,
   });
 
   // --- Ref writes (connect hook outputs to ActiveChatView's debug refs) ---
@@ -1214,7 +1192,6 @@ export function ChatMainPanel({
     mainView,
     openedAppState,
     isAssistantBusy,
-    showCreditsUpsell: balanceStatus.isExhausted,
     onSelectStarter: handleSelectStarter,
     onSelectSuggestion: setSelectedSuggestion,
   });
@@ -1247,35 +1224,6 @@ export function ChatMainPanel({
         {mainBannerSlot}
       </>
     ) : undefined;
-
-  // -------------------------------------------------------------------------
-  // Billing composer banner
-  // -------------------------------------------------------------------------
-  const errorBillingBannerDecision = getChatBillingBannerDecision(error);
-  const noticeBillingBannerDecision = getChatBillingBannerDecision(notice);
-  const billingBannerDecision =
-    errorBillingBannerDecision ?? noticeBillingBannerDecision;
-
-  const lowBalanceBannerDismissed = useLowBalanceBannerStore.use.dismissed();
-  const composerBillingBanner = resolveComposerBillingBanner({
-    billingBannerDecision,
-    isLowBalance: balanceStatus.isLowBalance,
-    dismissed: lowBalanceBannerDismissed,
-    // State-driven, so the banner is already up when the user returns to an
-    // app whose daily cap was reached by background turns.
-    dailyLimitReached: balanceStatus.dailyLimitReached,
-    // A skip clears the banner even when the error that raised it is still the
-    // last thing that happened on this conversation.
-    dailyLimitSnoozed: balanceStatus.dailyLimitSnoozed,
-    // The hook's gated verdict: cap reached, no extra credit to fall back on,
-    // and this conversation's route burns managed credit. Unknown until the
-    // summary and that verdict have settled, so a banner raised by a failed
-    // send is neither retired nor invented off a status still loading.
-    freeTierDailyLimitBlocked:
-      balanceStatus.enabled && balanceStatus.settled
-        ? balanceStatus.freeTierDailyLimitBlocked
-        : undefined,
-  });
 
   // -------------------------------------------------------------------------
   // JSX construction
@@ -1380,7 +1328,6 @@ export function ChatMainPanel({
         onCancelEdit={isEditing ? handleCancelEdit : undefined}
         textareaMaxHeightPx={isEmptyConversation ? 320 : undefined}
         suggestion={suggestion}
-        hasBillingBanner={composerBillingBanner !== null}
         statusControlsSlot={<ProgressStack placement="composer" />}
         contextWindowIndicatorSlot={
           <ContextWindowIndicator
@@ -1424,17 +1371,6 @@ export function ChatMainPanel({
               onRetryMicPermission={handleRetryMicPermission}
               onOpenMicSettings={handleOpenMicSettings}
               onOpenTextInsertionSettings={handleOpenTextInsertionSettings}
-              billingBannerSlot={
-                composerBillingBanner === "daily_limit" ? (
-                  <DailyLimitBanner onAdjustLimit={pushToDailyLimitSettings} />
-                ) : composerBillingBanner === "free_tier_daily_limit" ? (
-                  <FreeTierDailyLimitBanner />
-                ) : composerBillingBanner === "provider_billing" ? (
-                  <ProviderBillingBanner onOpenSettings={pushToAiSettings} />
-                ) : composerBillingBanner === "low_balance" ? (
-                  <LowBalanceBanner />
-                ) : null
-              }
               diskPressureBanner={diskPressureBannerSlot}
               // A storage warning is actionable-critical and must not stack
               // with or compete against an upsell banner, so the resource

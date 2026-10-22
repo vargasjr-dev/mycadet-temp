@@ -32,7 +32,7 @@ export interface AssistantEmailIntroInputs {
  */
 export function resolveAssistantEmailIntro(
   inputs: AssistantEmailIntroInputs,
-): "locked" | "open" | null {
+): "open" | null {
   if (inputs.seen) {
     return null;
   }
@@ -42,12 +42,5 @@ export function resolveAssistantEmailIntro(
   if (!predatesFeatureIntro(inputs.assistantCreatedAt, "assistant-email")) {
     return null;
   }
-  switch (inputs.status) {
-    case "upgrade":
-      return "locked";
-    case "setup":
-      return "open";
-    default:
-      return null;
-  }
+  return inputs.status === "setup" ? "open" : null;
 }

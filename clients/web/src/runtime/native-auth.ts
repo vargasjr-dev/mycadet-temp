@@ -9,7 +9,6 @@ import {
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
 import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
-import { resolveSignupCheckoutDestination } from "@/lib/billing/post-auth-checkout";
 import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
@@ -145,13 +144,6 @@ export async function startNativeLogin(options?: {
   intent?: string;
   attribution?: Record<string, string>;
 }): Promise<void> {
-  // Every native auth entry routes through the shared stale-stash cleanup. The
-  // direct login form (`login-page.tsx`) calls this without going through
-  // `resolveNativePostAuthDestination`, so without this a stash abandoned by a
-  // prior native checkout-signup could leak into a later login and wrongly
-  // resume checkout from privacy.
-  clearStaleNativeCheckoutStash(options?.intent, options?.returnTo);
-
   // Attribution resolves here for the same reason: the direct login form is
   // the auth entry a fresh Play install reaches, and the install referrer is
   // the only attribution such an install carries.
@@ -309,12 +301,10 @@ export function getSessionTokenFromCookies(): string | null {
 }
 
 /**
- * Post-auth destination for the native (Capacitor/Electron) flows. Delegates
- * the signup checkout-stash + destination decision to the shared
- * `resolveSignupCheckoutDestination`. A first-run signup routes through
- * consent (privacy) first. A returning user skips hosting, privacy, and
- * research. A login keeps its `returnTo` unless that target is the first-run
- * funnel and the user is already onboarded.
+ * Post-auth destination for the native (Capacitor/Electron) flows. A
+ * first-run signup routes through consent (privacy) first. A returning user
+ * skips hosting, privacy, and research. A login keeps its `returnTo` unless
+ * that target is the first-run funnel and the user is already onboarded.
  */
 export function resolveNativePostAuthDestination(
   intent: string | undefined,
@@ -323,20 +313,11 @@ export function resolveNativePostAuthDestination(
   const isSignup = intent === "signup";
   const returningUser = nativeAuthReturningUser();
   if (returningUser) {
-    const skipTarget = isFirstRunOnboardingReturnTo(returnTo)
+    return isFirstRunOnboardingReturnTo(returnTo)
       ? routes.assistant
       : (returnTo ?? (isSignup ? routes.assistant : null));
-    resolveSignupCheckoutDestination({
-      intent: "login",
-      returnTo: skipTarget ?? "",
-    });
-    return skipTarget;
   }
-  const destination = resolveSignupCheckoutDestination({
-    intent: isSignup ? "signup" : "login",
-    returnTo: returnTo ?? "",
-  });
-  return isSignup ? destination : (returnTo ?? null);
+  return isSignup ? routes.onboarding.privacy : (returnTo ?? null);
 }
 
 /**
@@ -359,32 +340,6 @@ function isFirstRunOnboardingReturnTo(
     pathname === routes.onboarding.privacy ||
     pathname === routes.onboarding.research
   );
-}
-
-/**
- * Discard a checkout stash abandoned by a prior native checkout-signup so it
- * can't leak into a later native auth. Runs on every native auth entry (via
- * `startNativeLogin`), including the direct login form that skips
- * `resolveNativePostAuthDestination`.
- *
- * A signup owns its stash through `resolveSignupCheckoutDestination` — already
- * run before we reach here, and its `returnTo` is the transformed privacy
- * destination rather than the original checkout link — so we skip it to avoid
- * wiping the package it just stashed. Otherwise the shared resolver clears a
- * stale stash for a non-checkout destination and leaves an existing stash in
- * place when the destination IS a checkout deep link (a legitimate resume).
- */
-export function clearStaleNativeCheckoutStash(
-  intent: string | undefined,
-  returnTo: string | null | undefined,
-): void {
-  if (intent === "signup") {
-    return;
-  }
-  resolveSignupCheckoutDestination({
-    intent: "login",
-    returnTo: returnTo ?? "",
-  });
 }
 
 /**

@@ -18,15 +18,15 @@ const READY: AssistantEmailIntroInputs = {
   seen: false,
   onboardingBusy: false,
   assistantCreatedAt: EXISTING,
-  status: "upgrade",
+  status: "loading",
 };
 
 describe("resolveAssistantEmailIntro", () => {
-  test("a plan without email gets the locked pitch", () => {
-    expect(resolveAssistantEmailIntro(READY)).toBe("locked");
+  test("no address yet keeps the intro withheld (nothing to announce)", () => {
+    expect(resolveAssistantEmailIntro(READY)).toBeNull();
   });
 
-  test("an entitled assistant with no address gets the way into setup", () => {
+  test("an assistant with no address gets the way into setup", () => {
     expect(resolveAssistantEmailIntro({ ...READY, status: "setup" })).toBe(
       "open",
     );

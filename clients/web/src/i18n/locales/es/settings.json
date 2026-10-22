@@ -157,7 +157,6 @@
     "loadingLabel": "Cargando los campos de pago"
   },
   "billingStatusHandler": {
-    "successToast": "¡Pago recibido! Tu saldo de créditos se actualizará en breve."
   },
   "inferenceUsageChart": {
     "empty": "No hay datos de uso para este período"
@@ -233,14 +232,6 @@
     "urlPlaceholder": "Pega aquí la URL de devolución de llamada..."
   },
   "checkoutPage": {
-    "awaitingReturnMessage": "El pago se abrió en tu navegador. Complétalo allí para finalizar la mejora.",
-    "checkoutFailedMessage": "No pudimos iniciar el pago. Inténtalo de nuevo.",
-    "continueSetup": "Continuar configuración",
-    "preparingCheckout": "Preparando pago…",
-    "preparingCheckoutAriaLabel": "Preparando pago",
-    "reopenCheckout": "Reabrir pago",
-    "tryAgain": "Intentar de nuevo",
-    "openBilling": "Abrir facturación"
   },
   "communityPage": {
     "communityHubDescription": "Muestras, guías y proyectos compartidos por la comunidad.",
@@ -270,9 +261,6 @@
     "youtubeChannelTitle": "Canal de YouTube"
   },
   "completeState": {
-    "assistantFallbackName": "tu asistente",
-    "returnTo": "Volver a {assistantName}",
-    "title": "¡Ya está todo listo!"
   },
   "createScheduleModal": {
     "advancedCron": "Avanzado: escribe una expresión cron",
@@ -354,12 +342,6 @@
     "title": "Credenciales"
   },
   "creditBundlePicker": {
-    "ariaLabel": "Paquete de créditos",
-    "label": "Paquete de créditos",
-    "noBundleOption": "Sin paquete de créditos - {price}",
-    "optionLabel": "{label} - {price}",
-    "placeholder": "Selecciona un paquete de créditos",
-    "tooltip": "Una asignación mensual de créditos añadida a tu suscripción del Plan Pro"
   },
   "debugBundleExport": {
     "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
@@ -445,8 +427,6 @@
     "title": "¿Bajar a Base?"
   },
   "errorStates": {
-    "fetchErrorTitle": "No se pudo acceder a facturación",
-    "goToBilling": "Ir a facturación"
   },
   "generalPage": {
     "chooseAssistant": "Elegir asistente",
@@ -1066,26 +1046,6 @@
     "title": "Proveedores"
   },
   "provisioningState": {
-    "allDoneStatus": "¡Todo listo!",
-    "confirmingCaption": "Esto puede tardar unos segundos.",
-    "continueInBackground": "Continuar en segundo plano",
-    "dimensionsComplete": "{dimensions} completado",
-    "goToBilling": "Ir a facturación",
-    "machineLabel": "Máquina",
-    "noExtraUsage": "Sin uso adicional",
-    "packageLabel": "Paquete",
-    "planReadyStatus": "Tu plan está listo",
-    "retryInBackground": "Reintentar en segundo plano",
-    "srOnlyTo": "a",
-    "stalledCaption": "Esto puede tardar un par de minutos.",
-    "statusComplete": "Completado",
-    "statusPending": "Pendiente",
-    "storageLabel": "Almacenamiento",
-    "takingLongerStatus": "Esto está tardando más de lo esperado",
-    "tryAgain": "Intentar de nuevo",
-    "usageLabel": "Uso",
-    "waitingCaptionLong": "Seguimos trabajando. Esto puede tardar uno o dos minutos.",
-    "waitingCaptionShort": "Esto puede tardar unos segundos."
   },
   "recentRunsCard": {
     "emptyDefault": "Aún no hay ejecuciones.",
@@ -1110,40 +1070,6 @@
     "title": "Modo de recuperación"
   },
   "resizeCard": {
-    "apply": "Aplicar",
-    "applyingResize": "Aplicando cambio de tamaño…",
-    "cancel": "Cancelar",
-    "cpu": "CPU",
-    "current": "Actual",
-    "disk": "Disco",
-    "increaseSize": "Aumentar tamaño",
-    "increaseStorage": "Aumentar almacenamiento",
-    "machine": "Máquina",
-    "machineSize": "Tamaño de máquina",
-    "machineSizeAriaLabel": "Tamaño de máquina de cómputo",
-    "memory": "Memoria",
-    "modalDescription": "Cambia el cómputo y el almacenamiento de tu asistente. Tu asistente se reiniciará brevemente.",
-    "modalTitle": "Cambiar tamaño del asistente",
-    "needMore": "¿Necesitas más? <upgradeLink>Mejorar plan</upgradeLink>",
-    "noMachineTier": "No hay un nivel de máquina configurado. Visita la comunidad para obtener ayuda.",
-    "refreshMetrics": "Actualizar métricas de recursos",
-    "resize": "Cambiar tamaño",
-    "resizeFailed": "No se pudo cambiar el tamaño del asistente. Inténtalo de nuevo.",
-    "retry": "Reintentar",
-    "storage": "Almacenamiento",
-    "storageAlreadyProvisioned": "El almacenamiento ya está en su tamaño aprovisionado ({size} GB) y no cambiará.",
-    "storageExpandFromTo": "El almacenamiento se ampliará de {from} GB a {to} GB.",
-    "storageExpandTo": "El almacenamiento se ampliará a {to} GB.",
-    "storageUnchanged": "El almacenamiento no cambiará.",
-    "subscriptionLoadError": "No se pudo cargar tu suscripción. Inténtalo de nuevo.",
-    "subtitle": "Supervisa el uso de recursos y gestiona el perfil de cómputo de tu asistente.",
-    "title": "Cómputo y recursos",
-    "toastStarted": "Cambio de tamaño iniciado. Los cambios se aplicarán en breve.",
-    "unavailable": "No disponible",
-    "upgrade": "Mejorar plan",
-    "upgradeDescription": "Pasa a un plan superior para más potencia, más almacenamiento y un paquete de créditos más grande.",
-    "upgradeTitle": "Mejora tu plan",
-    "usedOf": "{used} de {total}"
   },
   "restartAssistant": {
     "button": "Reiniciar",
@@ -1399,16 +1325,6 @@
     "weekly": "Semanal"
   },
   "upgradeSuccessPage": {
-    "cantConfirmUpgrade": "No podemos confirmar su actualización para el asistente actual. Vuelva a facturación para reintentar.",
-    "fetchErrorBody": "Tuvimos un problema al verificar su suscripción. Su actualización puede seguir procesándose. Vuelva a facturación para actualizar.",
-    "fetchErrorTitle": "No se pudo acceder a facturación",
-    "finalizingBody": "Stripe está confirmando su suscripción. Esto suele tardar unos segundos.",
-    "finalizingTitle": "Finalizando su actualización…",
-    "goToBilling": "Ir a facturación",
-    "platformLoginNotice": "Inicie sesión en la plataforma Cadet para administrar facturación y uso.",
-    "processingFallback": "Estamos procesando su actualización. Actualice en un momento para ver su nuevo plan.",
-    "successBody": "Su plan Pro está activo. Será redirigido a facturación en un momento.",
-    "welcomeTitle": "Bienvenido a Pro"
   },
   "usageTab": {
     "analyzeCostsButton": "Analizar costos con el asistente",
@@ -1459,7 +1375,6 @@
     "total": "Total"
   },
   "useBillingPortalSession": {
-    "openError": "No se pudo abrir el portal de facturación. Inténtalo de nuevo."
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "El asistente no está listo. Inténtalo de nuevo.",

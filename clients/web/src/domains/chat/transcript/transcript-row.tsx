@@ -6,7 +6,6 @@ import {
 } from "react";
 
 import { ChatMarkdownMessage } from "@/domains/chat/components/chat-markdown-message";
-import { CreditsUpsellCard } from "@/domains/chat/components/credits-upsell-card";
 import { MessageHoverActions } from "@/domains/chat/components/message-hover-actions/message-hover-actions";
 import { StreamingShimmerText } from "@/domains/chat/components/streaming-shimmer-text";
 import { SurfaceRouter } from "@/domains/chat/components/surfaces/surface-router";
@@ -170,26 +169,6 @@ function SubstitutedMessageShell({
         />
       </div>
     </div>
-  );
-}
-
-function CreditsUpsellMessageRow({
-  message,
-  conversationId,
-  onInspectMessage,
-}: {
-  message: DisplayMessage;
-  conversationId?: string | null;
-  onInspectMessage?: (messageId: string) => void;
-}) {
-  return (
-    <SubstitutedMessageShell
-      message={message}
-      conversationId={conversationId}
-      onInspectMessage={onInspectMessage}
-    >
-      <CreditsUpsellCard />
-    </SubstitutedMessageShell>
   );
 }
 
@@ -384,23 +363,6 @@ export const TranscriptRow = memo(function TranscriptRow({
         return <>{renderOnboardingChoice()}</>;
       }
       return null;
-
-    case "creditsUpsell": {
-      // Substituted in place of a credits-exhausted provider-error row by
-      // `buildTranscriptItems`. Substituted items carry the underlying row
-      // (`message`) and render through `CreditsUpsellMessageRow`; the
-      // proactive tail card has no backing message and renders the bare card.
-      if (item.message) {
-        return (
-          <CreditsUpsellMessageRow
-            message={item.message}
-            conversationId={conversationId}
-            onInspectMessage={onInspectMessage}
-          />
-        );
-      }
-      return <CreditsUpsellCard />;
-    }
 
     default: {
       // Exhaustiveness guard — TypeScript narrows `item` to `never` here.

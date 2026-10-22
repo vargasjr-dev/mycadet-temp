@@ -11,7 +11,6 @@ import {
   storeBiometricToken,
 } from "@app/runtime/native-biometric";
 import { nativeAuthContext } from "@app/runtime/native-auth-context";
-import { clearStaleNativeCheckoutStash } from "@app/runtime/native-post-auth-destination";
 const DEFAULT_POST_AUTH_DESTINATION = routes.assistant;
 
 interface NativeAuthPlugin {
@@ -43,17 +42,6 @@ export async function startNativeLogin(options?: {
   intent?: string;
   attribution?: Record<string, string>;
 }): Promise<void> {
-  // Every native auth entry routes through the shared stale-stash cleanup. The
-  // direct login form (`login-page.tsx`) calls this without going through
-  // `resolveNativePostAuthDestination`, so without this a stash abandoned by a
-  // prior native checkout-signup could leak into a later login and wrongly
-  // resume checkout from privacy.
-  clearStaleNativeCheckoutStash(
-    options?.intent,
-    options?.returnTo,
-    nativeAuthContext.checkout,
-  );
-
   // Attribution resolves here for the same reason: the direct login form is
   // the auth entry a fresh Play install reaches, and the install referrer is
   // the only attribution such an install carries.

@@ -225,7 +225,6 @@
     "stopCommandAria": "停止命令"
   },
   "billingErrorBanner": {
-    "dismiss": "關閉"
   },
   "cameraDeepLink": {
     "captureFailed": "無法拍攝該照片。請再試一次。",
@@ -604,7 +603,6 @@
     "groupFailed": "無法複製群組 ID。"
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "登入 Cadet Cloud 以新增點數。"
   },
   "csvPreview": {
     "emptyFile": "此檔案為空",
@@ -612,11 +610,6 @@
     "summaryTruncated": "{rows, plural, other {# 列}} x {columns, plural, other {# 欄}} (已截斷)"
   },
   "dailyLimitBanner": {
-    "skipConfirmTitle": "略過今日點數限制？",
-    "skipError": "無法略過今日限制。請再試一次。",
-    "skipForToday": "今日略過",
-    "subtitle": "Cadet 點數花費已暫停，直到您的限制在 {resetPhrase} 重設。",
-    "title": "已達每日點數限制"
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "我了解相關資產和記憶可能仍會保留",
@@ -834,10 +827,6 @@
     "pictureInPicture": "子母畫面"
   },
   "lowBalanceBanner": {
-    "addCredits": "新增點數",
-    "ariaLabel": "您的點數不足。{detail}",
-    "subtitle": "新增點數以避免中斷。",
-    "title": "您的點數不足"
   },
   "maintenanceModeBanner": {
     "body": "您的助理工作區目前已連接至偵錯終端機。在復原模式下，聊天無法使用。",
@@ -1005,8 +994,6 @@
     "noActiveSession": "無作用中工作階段。請再試一次。"
   },
   "providerBillingBanner": {
-    "body": "向您的供應商儲值或降低模型權杖限制。",
-    "title": "您的 API 金鑰需要點數"
   },
   "pullRefreshSpinner": {
     "refreshing": "正在重新整理"
@@ -1594,10 +1581,6 @@
     "depth": "{depth, select, fast {快速搜尋} standard {標準搜尋} deep {深度搜尋} other {搜尋}}"
   },
   "freeTierDailyLimitBanner": {
-    "addCredits": "新增點數",
-    "subtitle": "您已用完今日的免費用量，將在 {resetPhrase} 重設。升級或新增點數以繼續。",
-    "title": "今日免費用量已用完",
-    "upgrade": "升級"
   },
   "chatsSettingsModal": {
     "title": "聊天設定",

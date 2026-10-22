@@ -7,7 +7,6 @@ import {
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
   assistantsListOptions,
-  organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
@@ -43,9 +42,8 @@ export interface AssistantInboxState {
 
 /**
  * Everything the inbox needs to know to pick a state, read from the caches
- * that own it: the cloud gate, the billing subscription's entitlements,
- * the cloud's assistant listing (for the handle and name), and the
- * assistant's address and domain lists. Managed email lives on the cloud
+ * that own it: the cloud gate, the cloud's assistant listing (for the
+ * handle and name), and the assistant's address and domain lists. Managed email lives on the cloud
  * API, whose assistant routes key on the cloud UUID, so the local id is
  * resolved to that first; the reads that need it wait on it.
  */
@@ -64,18 +62,6 @@ export function useAssistantInboxState(
     onPlatform,
   );
 
-  const subscriptionQuery = useQuery({
-    ...organizationsBillingSubscriptionRetrieveOptions(),
-    enabled: onPlatform && orgReady,
-  });
-  const entitlements = subscriptionQuery.data?.entitlements as
-    | Record<string, unknown>
-    | undefined;
-  const subscriptionFailed =
-    !subscriptionQuery.data &&
-    subscriptionQuery.isError &&
-    !subscriptionQuery.isFetching;
-
   const assistantsQuery = useQuery({
     ...assistantsListOptions(),
     enabled: onPlatform && orgReady,
@@ -86,10 +72,7 @@ export function useAssistantInboxState(
     ) ?? assistantsQuery.data?.results?.[0];
 
   const addressPath = { path: { assistant_id: cloudAssistantId ?? "" } };
-  const readsEnabled =
-    onPlatform && orgReady && !!cloudAssistantId && !!entitlements
-      ? entitlements.cloud_email === true
-      : onPlatform && orgReady && !!cloudAssistantId && subscriptionFailed;
+  const readsEnabled = onPlatform && orgReady && !!cloudAssistantId;
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions(addressPath),
@@ -121,8 +104,6 @@ export function useAssistantInboxState(
     status: resolveInboxStatus({
       gate,
       cloudAssistantId,
-      entitlements,
-      subscriptionFailed,
       addressCount: addresses?.length,
       domainsSettled: domainsQuery.isFetched,
     }),

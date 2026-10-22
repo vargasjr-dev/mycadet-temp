@@ -1,16 +1,8 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
 
-import type * as CreditsUpsell from "@/domains/chat/components/credits-upsell-card";
 import type { DisplayMessage } from "@/domains/chat/types/types";
 import { textBody } from "@/domains/chat/utils/message-test-helpers";
-
-mock.module(
-  "@/domains/chat/components/credits-upsell-card",
-  (): Partial<typeof CreditsUpsell> => ({
-    CreditsUpsellCard: () => <div data-testid="credits-upsell" />,
-  }),
-);
 
 import { buildTranscriptItems } from "./build-items";
 import { TranscriptRow } from "./transcript-row";
@@ -29,13 +21,9 @@ const utterance: DisplayMessage = {
   ...textBody("What is this?"),
 };
 
-function renderProjection(
-  messages: DisplayMessage[],
-  creditsExhausted = false,
-) {
+function renderProjection(messages: DisplayMessage[]) {
   const items = buildTranscriptItems({
     messages,
-    creditsExhausted,
     pendingSecret: null,
     pendingConfirmation: null,
     isThinking: false,
@@ -97,10 +85,6 @@ describe("camera frame projection through TranscriptRow", () => {
         },
       },
     },
-    {
-      name: "credits substitution",
-      props: { providerError: { category: "credits_exhausted" } },
-    },
     { name: "assistant", props: { role: "assistant" } },
   ] satisfies { name: string; props: Partial<DisplayMessage> }[])(
     "keeps every frame visible around $name",
@@ -112,10 +96,13 @@ describe("camera frame projection through TranscriptRow", () => {
         ...textBody("Status"),
         ...props,
       };
-      const { container, getByText } = renderProjection(
-        [frames[0]!, frames[1]!, special, frames[2]!, utterance],
-        Boolean(special.providerError),
-      );
+      const { container, getByText } = renderProjection([
+        frames[0]!,
+        frames[1]!,
+        special,
+        frames[2]!,
+        utterance,
+      ]);
       expectEveryTile(container);
       expect(
         getByText("What is this?")

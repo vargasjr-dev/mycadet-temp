@@ -29,12 +29,6 @@
     "valuePlaceholder": "输入秘密值"
   },
   "addCreditsModal": {
-    "amount": "金额",
-    "cancel": "取消",
-    "configureAutoReload": "配置自动充值",
-    "continue": "继续",
-    "description": "您将被重定向到 Stripe 完成支付。",
-    "title": "添加点数"
   },
   "appCard": {
     "openApp": "打开应用",

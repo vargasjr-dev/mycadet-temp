@@ -28,12 +28,6 @@ import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu
 import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
 import { saveViewMode } from "@/domains/chat/utils/sidebar-view-mode";
-import { ProvisioningState } from "@/domains/settings/billing/pro-onboarding/provisioning-state";
-import {
-  TAKEOVER_CONSTANT_PROPS,
-  TAKEOVER_SCENARIOS,
-  TakeoverStage,
-} from "@/domains/settings/billing/pro-onboarding/takeover-story-support";
 import { appsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { withQueryCache } from "@/lib/story-query-cache";
@@ -46,7 +40,6 @@ import { preloadBundledAvatarComponents } from "@/utils/use-bundled-avatar-compo
 import { AssistantInboxPage } from "./components/assistant-inbox-page";
 import { AssistantInboxSetupCard } from "./components/assistant-inbox-setup-card";
 import { AssistantInboxSetupSuccess } from "./components/assistant-inbox-setup-success";
-import { AssistantInboxUpgradeState } from "./components/assistant-inbox-upgrade-state";
 import {
   MOCK_ADDRESS,
   MOCK_ASSISTANT_HANDLE,
@@ -175,32 +168,6 @@ type Story = StoryObj<InboxStoryArgs>;
  * landed and the storage still moving. The phase playground under
  * Settings/Billing/ProOnboarding drives every other state of this screen.
  */
-export const Upgrading: Story = {
-  name: "0 · Upgrading",
-  render: () => {
-    const scenario = TAKEOVER_SCENARIOS.baseToSuper;
-    return (
-      <div className="fixed inset-0 z-50">
-        <TakeoverStage>
-          <ProvisioningState
-            {...TAKEOVER_CONSTANT_PROPS}
-            state="WAITING"
-            direction={scenario.direction}
-            intent={scenario.intent}
-            creditsChange={scenario.creditsChange}
-            targets={scenario.targets}
-            fromSnapshot={scenario.fromSnapshot}
-            landed={{ machine: true, storage: false }}
-            softWaiting={false}
-            escapeAvailable={false}
-            celebrating={false}
-          />
-        </TakeoverStage>
-      </div>
-    );
-  },
-};
-
 /** How long the takeover's "All done!" holds before the hand-off. */
 const STORY_CELEBRATION_MS = 2500;
 
@@ -211,74 +178,14 @@ const STORY_CELEBRATION_MS = 2500;
  * takeover's plan-catalog read resolves from the stage's cache; the card
  * beneath is the same "2 · Set up email".
  */
-function UpgradeHandoff() {
-  const [landed, setLanded] = useState(false);
-  const scenario = TAKEOVER_SCENARIOS.baseToSuper;
-  return (
-    <>
-      <AssistantInboxSetupCard
-        assistantId={ASSISTANT_ID}
-        handle={MOCK_ASSISTANT_HANDLE}
-        rootDomain={MOCK_ROOT_DOMAIN}
-        onConfirm={fn().mockName("onConfirm")}
-      />
-      {!landed ? (
-        /* Over the shell, the way the modal's takeover covers the billing
-           page. `fixed` here, not in the stage, so the stage stays reusable
-           in flow. */
-        <div className="fixed inset-0 z-50">
-          <TakeoverStage>
-            <ProvisioningState
-              {...TAKEOVER_CONSTANT_PROPS}
-              state="DONE"
-              direction={scenario.direction}
-              intent={scenario.intent}
-              creditsChange={scenario.creditsChange}
-              targets={scenario.targets}
-              fromSnapshot={scenario.fromSnapshot}
-              landed={{ machine: true, storage: true }}
-              softWaiting={false}
-              escapeAvailable={false}
-              dwellMs={STORY_CELEBRATION_MS}
-              onCelebrationEnd={() => setLanded(true)}
-            />
-          </TakeoverStage>
-        </div>
-      ) : null}
-    </>
-  );
-}
-
 /**
  * An upgrade lands. The takeover's celebration runs its dwell, then the
  * setup card is what is left on screen. Remount the story to replay it.
  */
-export const ArrivingFromUpgrade: Story = {
-  name: "0b · Arriving from an upgrade",
-  render: () => <UpgradeHandoff />,
-};
-
 /**
  * No managed-email entitlement. The upgrade card, with the address builder
  * prefilled from the handle the user already chose.
  */
-export const UpgradeRequired: Story = {
-  name: "1 · Upgrade required",
-  /* The rail entry carries its dismiss only here: with no inbox to open,
-     the entry is a pitch, and a pitch can be declined. */
-  render: () => (
-    <AssistantInboxUpgradeState
-      assistantId={ASSISTANT_ID}
-      assistantName={MOCK_ASSISTANT_NAME}
-      handle={MOCK_ASSISTANT_HANDLE}
-      rootDomain={MOCK_ROOT_DOMAIN}
-      onEditHandle={fn().mockName("onEditHandle")}
-      onUpgrade={fn().mockName("onUpgrade")}
-      onSeePlans={fn().mockName("onSeePlans")}
-    />
-  ),
-};
-
 /** Entitled, no address yet. The email onboarding card, inline. */
 export const SetUpEmail: Story = {
   name: "2 · Set up email",

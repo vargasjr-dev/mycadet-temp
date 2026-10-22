@@ -113,10 +113,7 @@ test("mobile waits for app facts before opening native auth and preserves return
     returnTo: "/assistant/onboarding/privacy",
   });
   expect(mobileLogin).not.toHaveBeenCalled();
-  resolve({
-    returningUser: true,
-    checkout: { save: () => {}, clear: () => {} },
-  });
+  resolve({ returningUser: true });
   await pending;
   expect(mobileLogin).toHaveBeenCalledWith({
     returnTo: "/assistant",

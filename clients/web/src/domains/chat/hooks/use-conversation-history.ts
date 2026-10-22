@@ -30,11 +30,6 @@ import { useCallback, useEffect, useRef } from "react";
 
 import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 
-import {
-  organizationsBillingSummaryRetrieveQueryKey,
-  organizationsBillingUsageTotalsRetrieveQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import { useBillingBalanceQueryEnabled } from "@/hooks/use-billing-balance-status";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useResumeGrace } from "@/hooks/use-resume-grace";
 import { restoreAcpConnectFromHistory } from "@/domains/chat/hooks/restore-acp-connect-from-history";
@@ -572,19 +567,18 @@ export function useConversationHistory({
             pendingConfirmationBeforeFetch.requestId !==
               parsedConfirmation.requestId
           ) {
-            const previousRequestId =
-              pendingConfirmationBeforeFetch.requestId;
+            const previousRequestId = pendingConfirmationBeforeFetch.requestId;
             const sessionStore = useChatSessionStore.getState();
-            useInteractionStore.getState().releaseInlineAnchorIfMatches(
-              sessionStore.confirmationToolCallMap.get(previousRequestId) ??
-                pendingConfirmationBeforeFetch.toolUseId,
-            );
+            useInteractionStore
+              .getState()
+              .releaseInlineAnchorIfMatches(
+                sessionStore.confirmationToolCallMap.get(previousRequestId) ??
+                  pendingConfirmationBeforeFetch.toolUseId,
+              );
             clearConfirmationTranscriptMarker(previousRequestId);
             sessionStore.deleteConfirmationToolCall(previousRequestId);
           }
-          useInteractionStore
-            .getState()
-            .showConfirmation(parsedConfirmation);
+          useInteractionStore.getState().showConfirmation(parsedConfirmation);
         } else if (
           !interactions.pendingConfirmation &&
           pendingConfirmationBeforeFetch &&
@@ -596,10 +590,12 @@ export function useConversationHistory({
           useInteractionStore
             .getState()
             .dismissConfirmationIfMatches(requestId);
-          useInteractionStore.getState().releaseInlineAnchorIfMatches(
-            sessionStore.confirmationToolCallMap.get(requestId) ??
-              pendingConfirmationBeforeFetch.toolUseId,
-          );
+          useInteractionStore
+            .getState()
+            .releaseInlineAnchorIfMatches(
+              sessionStore.confirmationToolCallMap.get(requestId) ??
+                pendingConfirmationBeforeFetch.toolUseId,
+            );
           clearConfirmationTranscriptMarker(requestId);
           sessionStore.deleteConfirmationToolCall(requestId);
         }
@@ -654,33 +650,6 @@ export function useConversationHistory({
     void pagination.invalidate();
   }, [assistantId, activeConversationId, pagination]);
 
-  // The billing summary is invalidated on its own falling edge below: every
-  // turn in ANY conversation (including a background turn run from an
-  // external channel or another client, and one that fails on exhausted
-  // credits) can move the org-wide credit balance, and the balance surfaces
-  // should reflect it without waiting for the staleTime window. Gated exactly
-  // like `useBillingBalanceStatus` so self-hosted / org-not-ready contexts,
-  // where the query never runs, skip it.
-  const billingSummaryEnabled = useBillingBalanceQueryEnabled();
-  const invalidateBillingSummary = useCallback(() => {
-    if (billingSummaryEnabled) {
-      void queryClient.invalidateQueries({
-        queryKey: organizationsBillingSummaryRetrieveQueryKey(),
-      });
-      // The BYOK banner gate's recent-spend probe
-      // (`useByokCreditRouteVerdict`) must see a cloud burn from this
-      // turn too, or a cached zero keeps suppressing the banners in an open
-      // tab. Its key carries a from/to window, so match on the key's base
-      // fields (derived from the generated key builder, minus the window)
-      // to hit every cached window.
-      const [totalsKey] = organizationsBillingUsageTotalsRetrieveQueryKey({
-        query: { from: "", to: "" },
-      });
-      const { query: _window, ...totalsKeyBase } = totalsKey;
-      void queryClient.invalidateQueries({ queryKey: [totalsKeyBase] });
-    }
-  }, [billingSummaryEnabled, queryClient]);
-
   // A turn is in progress for the active conversation when either the local
   // turn store is sending (a `useSendMessage` turn this client started) or the
   // conversation is flagged processing. The processing flag also covers
@@ -704,15 +673,6 @@ export function useConversationHistory({
     }
   }, [activeInProgress, refetchHistoryOnTurnEnd]);
 
-  // Billing tracks turn ends across ALL conversations, not just the active
-  // one: a background turn (external channel, other client) spends the same
-  // org-wide balance. Each conversation leaving the processing set fires its
-  // own invalidation, so one turn's spend is never masked by another turn
-  // still running (a turn parked at `awaiting_user_input` can hold a
-  // combined signal for minutes). The local-send falling edge is the
-  // fallback for a send whose conversation never got flagged processing;
-  // when the flag did appear, the set departure owns the invalidation and
-  // the send edge stays quiet, so a local turn fires exactly once.
   const sendingNow = isSending(turnPhase);
   const prevProcessingRef = useRef(processingConversationIds);
   const wasSendingRef = useRef(false);
@@ -739,20 +699,10 @@ export function useConversationHistory({
       }
     }
 
-    if (anyTurnDeparted) {
-      invalidateBillingSummary();
-    } else if (sendJustEnded && !activeSendTrackedRef.current) {
-      invalidateBillingSummary();
-    }
     if (sendJustEnded) {
       activeSendTrackedRef.current = false;
     }
-  }, [
-    processingConversationIds,
-    sendingNow,
-    activeConversationId,
-    invalidateBillingSummary,
-  ]);
+  }, [processingConversationIds, sendingNow, activeConversationId]);
 
   // -------------------------------------------------------------------------
   // Server-processing revalidation. The daemon's snapshot `processing` flag is
@@ -835,7 +785,10 @@ export function useConversationHistory({
   const isResumeGraceActive = useResumeGrace();
   const historyErrorRef = useRef<ChatError | null>(null);
   useEffect(() => {
-    if (historyErrorRef.current && (pagination.isSuccess || isResumeGraceActive)) {
+    if (
+      historyErrorRef.current &&
+      (pagination.isSuccess || isResumeGraceActive)
+    ) {
       const historyError = historyErrorRef.current;
       setError((current) => (current === historyError ? null : current));
       historyErrorRef.current = null;

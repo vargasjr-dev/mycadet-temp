@@ -29,9 +29,6 @@ function renderModal(overrides: Partial<AssistantEmailIntroModalProps> = {}) {
     assistantId: ASSISTANT_ID,
     assistantName: "Mel",
     rootDomain: "cadet.me",
-    locked: true,
-    onUpgrade: () => {},
-    onSeePlans: () => {},
     onSetUp: () => {},
     ...overrides,
   };
@@ -49,29 +46,12 @@ afterEach(() => {
 });
 
 describe("AssistantEmailIntroModal", () => {
-  test("a plan without email gets the pitch, the perks and the upgrade", () => {
-    const pressed: string[] = [];
-    renderModal({
-      onUpgrade: () => pressed.push("upgrade"),
-      onSeePlans: () => pressed.push("plans"),
-    });
-    expect(screen.getByText("Give Mel an inbox")).toBeTruthy();
-    expect(screen.getByText("A real address on cadet.me")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Upgrade to Super" }));
-    fireEvent.click(screen.getByRole("button", { name: "Plans" }));
-    expect(pressed).toEqual(["upgrade", "plans"]);
-    expect(screen.queryByRole("button", { name: "Set up email" })).toBeNull();
-  });
-
-  test("a plan with email gets the perks and the way into setup", () => {
+  test("the intro gets the perks and the way into setup", () => {
     let setUp = 0;
-    renderModal({ locked: false, onSetUp: () => setUp++ });
+    renderModal({ onSetUp: () => setUp++ });
     expect(
       screen.getByText("Every message kept here, inbox and sent"),
     ).toBeTruthy();
-    expect(
-      screen.queryByRole("button", { name: "Upgrade to Super" }),
-    ).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Set up email" }));
     expect(setUp).toBe(1);
   });

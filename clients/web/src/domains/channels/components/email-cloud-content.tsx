@@ -5,11 +5,8 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
-import { AssistantInboxUpgradeBody } from "@/domains/assistant-inbox/components/assistant-inbox-upgrade-body";
 import {
   assistantsDomainsDestroyMutation,
   assistantsDomainsListOptions,
@@ -94,46 +91,18 @@ export function EmailCloudContent({
     errorMessage: t("emailCloudContent.copyAddressFailed"),
   });
 
-  // -- Subscription gate (managed mode requires the cloud_email entitlement)
-  // We read the `cloud_email` entitlement directly rather than inferring it
-  // from the plan, so an admin `EntitlementOverride` (which flips a Base org to
-  // entitled) is honored in-product. We separate "definitely not entitled"
-  // from "unknown" so a failed subscription fetch (transient 5xx, network
-  // blip) doesn't lock entitled users out of their own managed email. React
-  // Query preserves last-known `data` across failed refetches, so
-  // `isExplicitlyNotEntitled` only flips true when the server told us so. The
-  // backend `assert_entitlement` remains the source of truth — this gate is
-  // just a UX hint to keep non-entitled orgs out of a form that would 403
-  // anyway.
-  const subscriptionQuery = useQuery({
-    ...organizationsBillingSubscriptionRetrieveOptions(),
-    enabled: true,
-  });
-  const subscriptionData = subscriptionQuery.data;
-  const entitlements = subscriptionData?.entitlements;
-  const hasManagedEmail = entitlements?.cloud_email === true;
-  // Only an explicit denial when the server returned an entitlements object that
-  // omits cloud_email. A successful payload lacking entitlements entirely
-  // (older platform deploy / partial response) is treated as unknown and fails
-  // open, preserving the definitely-not vs unknown split.
-  const isExplicitlyNotEntitled = !!entitlements && !hasManagedEmail;
-  const subscriptionUnknown =
-    !subscriptionData &&
-    subscriptionQuery.isError &&
-    !subscriptionQuery.isFetching;
-
   // -- Domain & address state ------------------------------------------------
   const domainsQuery = useQuery({
     ...assistantsDomainsListOptions({
       path: { assistant_id: assistantId },
     }),
-    enabled: !isExplicitlyNotEntitled,
+    enabled: true,
   });
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions({
       path: { assistant_id: assistantId },
     }),
-    enabled: !isExplicitlyNotEntitled,
+    enabled: true,
   });
 
   const domain = domainsQuery.data?.results?.[0];
@@ -318,59 +287,6 @@ export function EmailCloudContent({
   ]);
 
   // -- Render ----------------------------------------------------------------
-  if (subscriptionQuery.isLoading) {
-    return (
-      <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        {t("emailCloudContent.checkingSubscription")}
-      </div>
-    );
-  }
-
-  if (isExplicitlyNotEntitled) {
-    /* The Assistant Inbox's own pitch, so it reads the same from either
-       door. No title here: the Email section's header carries the
-       pitch's title and line in this state (see `EmailChannelSection`), and
-       the body sits at the start under it rather than in a card of its own. */
-    return (
-      <>
-        <AssistantInboxUpgradeBody
-          assistantId={activeAssistantId}
-          assistantName={assistantName ?? ""}
-          handle={assistantHandle ?? ""}
-          rootDomain={emailRootDomain}
-          onEditHandle={handleModal.openModal ?? undefined}
-          onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
-          onSeePlans={() => void openExternalUrl(cloudAccountBillingUrl())}
-          align="start"
-        />
-        {handleModal.modal}
-      </>
-    );
-  }
-
-  // subscriptionUnknown: billing service unreachable. Render warning above
-  // the form but still show the form (fail-open). The backend
-  // `assert_entitlement` remains the source of truth — if the user isn't
-  // entitled, domain registration will 403.
-  const subscriptionWarning = subscriptionUnknown ? (
-    <Notice
-      tone="warning"
-      title={t("emailCloudContent.subscriptionWarningTitle")}
-      actions={
-        <Button
-          size="compact"
-          variant="outlined"
-          onClick={() => subscriptionQuery.refetch()}
-        >
-          {t("emailCloudContent.retry")}
-        </Button>
-      }
-    >
-      {t("emailCloudContent.subscriptionWarningBody")}
-    </Notice>
-  ) : null;
-
   /* The address is created from the Assistant Inbox's own setup card, the
      one place that also opens the mailbox once it exists. This section
      points there instead of carrying a second way to register: an address
@@ -397,8 +313,7 @@ export function EmailCloudContent({
   if (!domain) {
     return (
       <div className="space-y-3">
-        {subscriptionWarning}
-        {inboxSetupNotice}
+                {inboxSetupNotice}
       </div>
     );
   }
@@ -406,8 +321,7 @@ export function EmailCloudContent({
   if (!address) {
     return (
       <div className="space-y-4">
-        {subscriptionWarning}
-        <div className="space-y-1.5">
+                <div className="space-y-1.5">
           <label className="block text-body-small-default text-[var(--content-tertiary)]">
             {t("emailCloudContent.domainLabel")}
           </label>
@@ -458,8 +372,7 @@ export function EmailCloudContent({
 
   return (
     <div className="space-y-4">
-      {subscriptionWarning}
-      <div className="space-y-1.5">
+            <div className="space-y-1.5">
         {/* The domain's verification sits on the label's line, so the field
             under it holds the address alone and the trailing controls are
             the two things to do with it: copy it, or remove it. */}

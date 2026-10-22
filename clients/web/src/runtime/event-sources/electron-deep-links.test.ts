@@ -52,31 +52,11 @@ describe("publishElectronDeepLinksSource", () => {
 
     activeCallback!({ kind: "send", message: "hi" });
     activeCallback!({ kind: "openThread", threadId: "t-1" });
-    activeCallback!({
-      kind: "billingCheckoutComplete",
-      status: "success",
-      sessionId: "cs_test_a1B2",
-      flow: "subscription",
-    });
-    activeCallback!({
-      kind: "billingCheckoutComplete",
-      status: "cancel",
-      sessionId: null,
-      flow: "top_up",
-    });
     activeCallback!({ kind: "unknown", url: "javascript:alert(1)" });
 
     expect(publishSpy.mock.calls).toEqual([
       ["deeplink.send", { message: "hi" }],
       ["deeplink.openThread", { threadId: "t-1" }],
-      [
-        "deeplink.billingCheckoutComplete",
-        { status: "success", sessionId: "cs_test_a1B2", flow: "subscription" },
-      ],
-      [
-        "deeplink.billingCheckoutComplete",
-        { status: "cancel", sessionId: null, flow: "top_up" },
-      ],
       ["deeplink.unknown", { url: "javascript:alert(1)" }],
     ]);
   });

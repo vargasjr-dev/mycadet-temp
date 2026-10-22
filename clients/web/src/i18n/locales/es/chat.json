@@ -225,7 +225,6 @@
     "stopCommandAria": "Detener comando"
   },
   "billingErrorBanner": {
-    "dismiss": "Descartar"
   },
   "cameraDeepLink": {
     "captureFailed": "No se pudo tomar esa foto. Inténtalo de nuevo.",
@@ -607,7 +606,6 @@
     "groupFailed": "No se pudo copiar el ID de grupo."
   },
   "creditsUpsellCard": {
-    "loginToAddCredits": "Inicia sesión en Cadet Cloud para agregar créditos."
   },
   "csvPreview": {
     "emptyFile": "Este archivo está vacío",
@@ -615,11 +613,6 @@
     "summaryTruncated": "{rows, plural, one {# fila} other {# filas}} x {columns, plural, one {# columna} other {# columnas}} (truncado)"
   },
   "dailyLimitBanner": {
-    "skipConfirmTitle": "¿Omitir el límite de créditos de hoy?",
-    "skipError": "No se pudo omitir el límite de hoy. Inténtalo de nuevo.",
-    "skipForToday": "Omitir por hoy",
-    "subtitle": "El gasto de créditos de Cadet está pausado hasta que tu límite se reinicie a las {resetPhrase}.",
-    "title": "Límite diario de créditos alcanzado"
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "Entiendo que los recursos y recuerdos relacionados pueden seguir existiendo",
@@ -796,10 +789,6 @@
     "pictureInPicture": "Imagen en imagen"
   },
   "lowBalanceBanner": {
-    "addCredits": "Añadir créditos",
-    "ariaLabel": "Tus créditos se están agotando. {detail}",
-    "subtitle": "Añade créditos para evitar una interrupción.",
-    "title": "Tus créditos se están agotando"
   },
   "maintenanceModeBanner": {
     "body": "El espacio de trabajo de tu asistente está conectado actualmente a un terminal de depuración. El chat no está disponible en el modo de recuperación.",
@@ -967,8 +956,6 @@
     "noActiveSession": "No hay ninguna sesión activa. Inténtalo de nuevo."
   },
   "providerBillingBanner": {
-    "body": "Añade fondos con tu proveedor o baja el límite de tokens del modelo.",
-    "title": "Tu clave de API necesita créditos"
   },
   "pullRefreshSpinner": {
     "refreshing": "Actualizando"
@@ -1536,10 +1523,6 @@
     "depth": "{depth, select, fast {Búsqueda rápida} standard {Búsqueda estándar} deep {Búsqueda profunda} other {Búsqueda}}"
   },
   "freeTierDailyLimitBanner": {
-    "addCredits": "Añadir créditos",
-    "subtitle": "Has usado el uso gratuito de hoy. Se reinicia a las {resetPhrase}. Mejora tu plan o añade créditos para continuar.",
-    "title": "Uso gratuito diario agotado",
-    "upgrade": "Mejorar"
   },
   "chatsSettingsModal": {
     "title": "Ajustes de chats",

@@ -69,12 +69,8 @@
     "perkAddress": "Настоящий адрес на {rootDomain}",
     "perkReads": "{name} читает, сортирует и отвечает за вас",
     "perkHistory": "Каждое письмо хранится здесь: входящие и отправленные",
-    "upgradeButton": "Перейти на Super",
-    "seePlans": "Планы",
     "titleNoName": "Дайте ассистенту почтовый ящик",
-    "perkReadsNoName": "Ассистент читает, сортирует и отвечает за вас",
-    "changeHandle": "Изменить handle ({address})",
-    "planNotice": "Почта не входит в бесплатный план. Перейдите на план с почтой."
+    "perkReadsNoName": "Ассистент читает, сортирует и отвечает за вас"
   },
   "assistantInboxSetupCard": {
     "headline": "Отлично, давайте всё настроим.",

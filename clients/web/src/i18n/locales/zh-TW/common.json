@@ -29,12 +29,6 @@
     "valuePlaceholder": "輸入密碼值"
   },
   "addCreditsModal": {
-    "amount": "金額",
-    "cancel": "取消",
-    "configureAutoReload": "設定自動儲值",
-    "continue": "繼續",
-    "description": "您將被重新導向至 Stripe 以完成付款。",
-    "title": "新增點數"
   },
   "appCard": {
     "openApp": "開啟應用程式",

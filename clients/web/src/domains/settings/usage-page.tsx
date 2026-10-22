@@ -1,6 +1,6 @@
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { InferenceUsagePanel } from "@/domains/settings/components/inference-usage/inference-usage-panel";
-import { UsageTab } from "@/domains/settings/billing/usage/usage-tab";
+import { UsageTab } from "@/domains/settings/usage/usage-tab";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 
 /**

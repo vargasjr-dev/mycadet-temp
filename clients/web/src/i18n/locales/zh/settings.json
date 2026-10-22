@@ -157,7 +157,6 @@
     "loadingLabel": "正在加载付款字段"
   },
   "billingStatusHandler": {
-    "successToast": "付款成功！您的积分余额将很快更新。"
   },
   "inferenceUsageChart": {
     "empty": "此期间无使用数据"
@@ -233,14 +232,6 @@
     "urlPlaceholder": "在此处粘贴回调 URL..."
   },
   "checkoutPage": {
-    "awaitingReturnMessage": "结账页面已在您的浏览器中打开。请在那里完成操作以完成升级。",
-    "checkoutFailedMessage": "我们无法启动您的结账。请重试。",
-    "continueSetup": "继续设置",
-    "preparingCheckout": "正在准备结账…",
-    "preparingCheckoutAriaLabel": "正在准备结账",
-    "reopenCheckout": "重新打开结账",
-    "tryAgain": "重试",
-    "openBilling": "打开账单"
   },
   "communityPage": {
     "communityHubDescription": "社区分享的展示、指南和项目。",
@@ -270,9 +261,6 @@
     "youtubeChannelTitle": "YouTube 频道"
   },
   "completeState": {
-    "assistantFallbackName": "您的助手",
-    "returnTo": "返回 {assistantName}",
-    "title": "一切就绪！"
   },
   "createScheduleModal": {
     "advancedCron": "高级 - 编写 cron 表达式",
@@ -354,12 +342,6 @@
     "title": "凭据"
   },
   "creditBundlePicker": {
-    "ariaLabel": "积分包",
-    "label": "积分包",
-    "noBundleOption": "无积分包 - {price}",
-    "optionLabel": "{label} - {price}",
-    "placeholder": "选择积分包",
-    "tooltip": "每月分配给您的专业版计划订阅的积分额度"
   },
   "debugBundleExport": {
     "description": "向 Cadet 支持发送诊断日志和已清理的配置。不包含凭据。上传内容保留七天。",
@@ -445,8 +427,6 @@
     "title": "降级到基础版？"
   },
   "errorStates": {
-    "fetchErrorTitle": "无法连接到账单服务",
-    "goToBilling": "前往账单"
   },
   "generalPage": {
     "chooseAssistant": "选择助手",
@@ -1044,26 +1024,6 @@
     "title": "提供商"
   },
   "provisioningState": {
-    "allDoneStatus": "全部完成！",
-    "confirmingCaption": "这可能需要几秒钟。",
-    "continueInBackground": "在后台继续",
-    "dimensionsComplete": "{dimensions} 已完成",
-    "goToBilling": "前往账单",
-    "machineLabel": "机器",
-    "noExtraUsage": "无额外用量",
-    "packageLabel": "套餐",
-    "planReadyStatus": "您的套餐已就绪",
-    "retryInBackground": "在后台重试",
-    "srOnlyTo": "至",
-    "stalledCaption": "这可能需要几分钟。",
-    "statusComplete": "完成",
-    "statusPending": "待处理",
-    "storageLabel": "存储",
-    "takingLongerStatus": "耗时比预期长",
-    "tryAgain": "重试",
-    "usageLabel": "用量",
-    "waitingCaptionLong": "仍在处理中。这可能需要一两分钟。",
-    "waitingCaptionShort": "这可能需要几秒钟。"
   },
   "recentRunsCard": {
     "emptyDefault": "暂无运行记录。",
@@ -1088,40 +1048,6 @@
     "title": "恢复模式"
   },
   "resizeCard": {
-    "apply": "应用",
-    "applyingResize": "正在应用大小调整…",
-    "cancel": "取消",
-    "cpu": "CPU",
-    "current": "当前",
-    "disk": "磁盘",
-    "increaseSize": "增加大小",
-    "increaseStorage": "增加存储",
-    "machine": "机器",
-    "machineSize": "机器大小",
-    "machineSizeAriaLabel": "计算机器大小",
-    "memory": "内存",
-    "modalDescription": "调整助手的计算和存储。您的助手将短暂重启。",
-    "modalTitle": "调整助手大小",
-    "needMore": "需要更多？<upgradeLink>升级套餐</upgradeLink>",
-    "noMachineTier": "未配置机器层级。请访问社区寻求帮助。",
-    "refreshMetrics": "刷新资源指标",
-    "resize": "调整大小",
-    "resizeFailed": "调整助手大小失败。请重试。",
-    "retry": "重试",
-    "storage": "存储",
-    "storageAlreadyProvisioned": "存储已达到其预置大小 ({size} GB)，不会更改。",
-    "storageExpandFromTo": "存储将从 {from} GB 扩展到 {to} GB。",
-    "storageExpandTo": "存储将扩展到 {to} GB。",
-    "storageUnchanged": "存储不会更改。",
-    "subscriptionLoadError": "无法加载您的订阅。请重试。",
-    "subtitle": "监控资源使用情况并管理助手的计算配置文件。",
-    "title": "计算与资源",
-    "toastStarted": "大小调整已开始。更改将很快生效。",
-    "unavailable": "不可用",
-    "upgrade": "升级",
-    "upgradeDescription": "升级到更高级别的套餐，以获得更强大的性能、更大的存储空间和更多的积分。",
-    "upgradeTitle": "升级您的套餐",
-    "usedOf": "{used} / {total}"
   },
   "restartAssistant": {
     "button": "重启",
@@ -1377,16 +1303,6 @@
     "weekly": "每周"
   },
   "upgradeSuccessPage": {
-    "cantConfirmUpgrade": "无法确认当前助手的升级。请返回账单页面重试。",
-    "fetchErrorBody": "检查订阅时遇到问题。您的升级可能仍在处理中。请返回账单页面刷新。",
-    "fetchErrorTitle": "无法连接到账单系统",
-    "finalizingBody": "Stripe 正在确认您的订阅。这通常需要几秒钟。",
-    "finalizingTitle": "正在完成升级…",
-    "goToBilling": "前往账单页面",
-    "platformLoginNotice": "登录 Cadet 平台以管理账单和使用情况。",
-    "processingFallback": "正在处理您的升级。请稍后刷新以查看您的新套餐。",
-    "successBody": "您的专业版套餐已激活。您将很快被重定向回账单页面。",
-    "welcomeTitle": "欢迎使用专业版"
   },
   "usageTab": {
     "analyzeCostsButton": "使用助手分析成本",
@@ -1437,7 +1353,6 @@
     "total": "总计"
   },
   "useBillingPortalSession": {
-    "openError": "无法打开账单门户。请重试。"
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助手未就绪。请重试。",

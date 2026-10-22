@@ -158,7 +158,6 @@
   },
   "emailCloudContent": {
     "addressLabel": "Dirección",
-    "checkingSubscription": "Comprobando suscripción…",
     "completeSetup": "Completar configuración del dominio",
     "completingSetup": "Completando configuración…",
     "copiedAddress": "Copiado",
@@ -187,9 +186,6 @@
     "repairNoticeBody": "Tu dirección de correo está lista, pero este dominio aún no está configurado con el proveedor de correo. Completa la configuración para empezar a enviar y recibir correo.",
     "repairNoticeTitle": "Configuración del dominio requerida",
     "repairStartedToast": "Se inició la configuración del dominio. La verificación suele tardar unos minutos.",
-    "retry": "Reintentar",
-    "subscriptionWarningBody": "No pudimos contactar con el servicio de facturación. El formulario siguiente asume que el correo gestionado está habilitado para tu organización. Si no lo está, registrar un dominio fallará.",
-    "subscriptionWarningTitle": "No se pudo verificar el estado de la suscripción",
     "usageSummary": "{sent} / {limit} enviados hoy · {received} recibidos"
   },
   "emailSettingsModal": {

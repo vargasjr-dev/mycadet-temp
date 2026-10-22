@@ -157,7 +157,6 @@
     "loadingLabel": "正在載入付款欄位"
   },
   "billingStatusHandler": {
-    "successToast": "付款成功！您的點數餘額將很快更新。"
   },
   "inferenceUsageChart": {
     "empty": "此期間無使用資料"
@@ -233,14 +232,6 @@
     "urlPlaceholder": "在此貼上回呼 URL..."
   },
   "checkoutPage": {
-    "awaitingReturnMessage": "結帳頁面已在您的瀏覽器中開啟。請在那裡完成以升級。",
-    "checkoutFailedMessage": "我們無法啟動您的結帳。請再試一次。",
-    "continueSetup": "繼續設定",
-    "preparingCheckout": "正在準備結帳…",
-    "preparingCheckoutAriaLabel": "正在準備結帳",
-    "reopenCheckout": "重新開啟結帳",
-    "tryAgain": "再試一次",
-    "openBilling": "打開帳單"
   },
   "communityPage": {
     "communityHubDescription": "社群分享的展示、指南和專案。",
@@ -270,9 +261,6 @@
     "youtubeChannelTitle": "YouTube 頻道"
   },
   "completeState": {
-    "assistantFallbackName": "您的助理",
-    "returnTo": "返回 {assistantName}",
-    "title": "一切就緒！"
   },
   "createScheduleModal": {
     "advancedCron": "進階 - 撰寫 cron 表達式",
@@ -354,12 +342,6 @@
     "title": "憑證"
   },
   "creditBundlePicker": {
-    "ariaLabel": "點數組合",
-    "label": "點數組合",
-    "noBundleOption": "無點數組合 - {price}",
-    "optionLabel": "{label} - {price}",
-    "placeholder": "選擇點數組合",
-    "tooltip": "每月新增至您的專業版方案訂閱的點數配額"
   },
   "debugBundleExport": {
     "description": "向 Cadet 支援傳送診斷記錄和已清理的設定。不包含憑證。上傳內容保留七天。",
@@ -445,8 +427,6 @@
     "title": "降級到基礎版？"
   },
   "errorStates": {
-    "fetchErrorTitle": "無法連線到帳單服務",
-    "goToBilling": "前往帳單"
   },
   "generalPage": {
     "chooseAssistant": "選擇助理",
@@ -1044,26 +1024,6 @@
     "title": "供應商"
   },
   "provisioningState": {
-    "allDoneStatus": "全部完成！",
-    "confirmingCaption": "這可能需要幾秒鐘。",
-    "continueInBackground": "在背景繼續",
-    "dimensionsComplete": "{dimensions} 已完成",
-    "goToBilling": "前往帳單",
-    "machineLabel": "機器",
-    "noExtraUsage": "無額外用量",
-    "packageLabel": "套件",
-    "planReadyStatus": "您的方案已就緒",
-    "retryInBackground": "在背景重試",
-    "srOnlyTo": "至",
-    "stalledCaption": "這可能需要幾分鐘。",
-    "statusComplete": "完成",
-    "statusPending": "待處理",
-    "storageLabel": "儲存空間",
-    "takingLongerStatus": "耗時比預期長",
-    "tryAgain": "再試一次",
-    "usageLabel": "用量",
-    "waitingCaptionLong": "仍在處理中。這可能需要一兩分鐘。",
-    "waitingCaptionShort": "這可能需要幾秒鐘。"
   },
   "recentRunsCard": {
     "emptyDefault": "尚無執行記錄。",
@@ -1088,40 +1048,6 @@
     "title": "復原模式"
   },
   "resizeCard": {
-    "apply": "套用",
-    "applyingResize": "正在套用大小調整…",
-    "cancel": "取消",
-    "cpu": "CPU",
-    "current": "目前",
-    "disk": "硬碟",
-    "increaseSize": "增加大小",
-    "increaseStorage": "增加儲存空間",
-    "machine": "機器",
-    "machineSize": "機器大小",
-    "machineSizeAriaLabel": "計算機器大小",
-    "memory": "記憶體",
-    "modalDescription": "調整助理的運算與儲存空間。您的助理將會短暫重新啟動。",
-    "modalTitle": "調整助理大小",
-    "needMore": "需要更多？<upgradeLink>升級方案</upgradeLink>",
-    "noMachineTier": "未設定機器層級。請造訪社群尋求協助。",
-    "refreshMetrics": "重新整理資源指標",
-    "resize": "調整大小",
-    "resizeFailed": "調整助理大小失敗。請再試一次。",
-    "retry": "重試",
-    "storage": "儲存空間",
-    "storageAlreadyProvisioned": "儲存空間已達其配置大小 ({size} GB)，將不會變更。",
-    "storageExpandFromTo": "儲存空間將從 {from} GB 擴展至 {to} GB。",
-    "storageExpandTo": "儲存空間將擴展至 {to} GB。",
-    "storageUnchanged": "儲存空間將不會變更。",
-    "subscriptionLoadError": "無法載入您的訂閱。請再試一次。",
-    "subtitle": "監控資源使用情況並管理助理的運算設定檔。",
-    "title": "運算與資源",
-    "toastStarted": "已開始調整大小。變更將很快套用。",
-    "unavailable": "無法使用",
-    "upgrade": "升級",
-    "upgradeDescription": "升級至更高階的方案，以獲得更強大的效能、更大的儲存空間和更多的點數組合。",
-    "upgradeTitle": "升級您的方案",
-    "usedOf": "{used} / {total}"
   },
   "restartAssistant": {
     "button": "重新啟動",
@@ -1377,16 +1303,6 @@
     "weekly": "每週"
   },
   "upgradeSuccessPage": {
-    "cantConfirmUpgrade": "我們無法確認您目前助理的升級。請返回帳單頁面重試。",
-    "fetchErrorBody": "檢查您的訂閱時發生問題。您的升級可能仍在處理中。請返回帳單頁面重新整理。",
-    "fetchErrorTitle": "無法連線至帳單系統",
-    "finalizingBody": "Stripe 正在確認您的訂閱。這通常需要幾秒鐘。",
-    "finalizingTitle": "正在完成您的升級…",
-    "goToBilling": "前往帳單頁面",
-    "platformLoginNotice": "登入 Cadet 平台以管理帳單和使用情況。",
-    "processingFallback": "我們正在處理您的升級。請稍後重新整理以查看您的新方案。",
-    "successBody": "您的專業版方案已啟用。您將很快被重新導向回帳單頁面。",
-    "welcomeTitle": "歡迎使用專業版"
   },
   "usageTab": {
     "analyzeCostsButton": "使用助理分析成本",
@@ -1437,7 +1353,6 @@
     "total": "總計"
   },
   "useBillingPortalSession": {
-    "openError": "無法開啟帳單入口網站。請再試一次。"
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "助理尚未準備就緒。請再試一次。",

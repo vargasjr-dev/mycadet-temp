@@ -1,21 +1,6 @@
-import {
-  clearCheckoutIntent,
-  saveCheckoutIntent,
-} from "@/lib/billing/checkout-intent";
-
-import {
-  isPostCheckoutReturn,
-  postCheckoutHatchReturnTo,
-  resolveNavigation,
-} from "@/lib/navigation/navigation-resolver";
+import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { routes } from "@/utils/routes";
-
-/** Shared checkout handoff, including its storage-disabled fallback. */
-export const nativeCheckoutHandoff = {
-  save: saveCheckoutIntent,
-  clear: clearCheckoutIntent,
-};
 
 export function nativeAuthReturningUser(): boolean {
   return buildNavigationState().userHasOnboardedAssistant;
@@ -67,49 +52,30 @@ export function requiresFullPageNavigation(destination: string): boolean {
 
 /**
  * In-SPA surfaces that only do their job against a live platform account.
- * Reached on a gateway-only identity, each throws away what the link asked for:
- * `checkout` drops the requested package, the Billing settings surface —
- * including its `upgrade/success` Stripe return — falls back to the Usage tab,
- * and `/account` reports a signed-in state for an account that is not there.
- * Matched by prefix, so sub-paths count.
+ * Reached on a gateway-only identity, `/account` reports a signed-in state for
+ * an account that is not there. Matched by prefix, so sub-paths count.
  */
-const PLATFORM_ONLY_PATHS: readonly string[] = [
-  routes.checkout,
-  `${routes.settings.root}/billing`,
-  routes.account.root,
-];
+const PLATFORM_ONLY_PATHS: readonly string[] = [routes.account.root];
 
 /**
  * Does landing on `destination` need a live platform session, or is a local
  * gateway identity enough?
  *
- * Three families need one. Anything the cloud serves rather than this SPA:
+ * Two families need one. Anything the cloud serves rather than this SPA:
  * the Django account routes, the API, the marketing import funnel and any
- * mycadet.ai URL. The cloud-only in-app surfaces above. And the returns that
- * carry a finished purchase — a billing landing holding Stripe's `session_id`,
- * and the cloud hatch, which reads the purchased ceiling server-side and
- * hatches at the baseline plan without a session.
+ * mycadet.ai URL. And the cloud-only in-app surfaces above.
  *
- * Everything else is daemon-served and works on a local session, including a
- * bare `/assistant/settings/usage`: the Usage tab reads from the local daemon,
- * so only the `session_id` return leg of it is platform-bound.
+ * Everything else is daemon-served and works on a local session, including
+ * `/assistant/settings/usage`: the Usage tab reads from the local daemon.
  */
 export function requiresCloudSession(destination: string): boolean {
   if (requiresFullPageNavigation(destination)) {
     return true;
   }
   const path = destination.split(/[?#]/)[0] ?? destination;
-  if (
-    PLATFORM_ONLY_PATHS.some(
-      (candidate) => path === candidate || path.startsWith(`${candidate}/`),
-    )
-  ) {
-    return true;
-  }
-  if (postCheckoutHatchReturnTo(destination) !== null) {
-    return true;
-  }
-  return isPostCheckoutReturn(destination);
+  return PLATFORM_ONLY_PATHS.some(
+    (candidate) => path === candidate || path.startsWith(`${candidate}/`),
+  );
 }
 
 export function resolvePostLoginDestination(

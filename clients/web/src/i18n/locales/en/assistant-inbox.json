@@ -69,12 +69,8 @@
     "perkAddress": "A real address on {rootDomain}",
     "perkReads": "{name} reads, sorts, and replies for you",
     "perkHistory": "Every message kept here, inbox and sent",
-    "upgradeButton": "Upgrade to Super",
-    "seePlans": "Plans",
     "titleNoName": "Give your assistant an inbox",
-    "perkReadsNoName": "Your assistant reads, sorts, and replies for you",
-    "changeHandle": "Change handle ({address})",
-    "planNotice": "Email support is not offered as part of a Free plan. Please upgrade to a plan with email support."
+    "perkReadsNoName": "Your assistant reads, sorts, and replies for you"
   },
   "assistantInboxSetupCard": {
     "headline": "Alright, let’s get you set up.",

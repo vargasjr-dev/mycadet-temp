@@ -14,10 +14,7 @@ import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { AssistantInboxSetupCard } from "@/domains/assistant-inbox/components/assistant-inbox-setup-card";
 import { AssistantInboxSetupSuccess } from "@/domains/assistant-inbox/components/assistant-inbox-setup-success";
 import { AssistantInboxShell } from "@/domains/assistant-inbox/components/assistant-inbox-shell";
-import { AssistantInboxUpgradeState } from "@/domains/assistant-inbox/components/assistant-inbox-upgrade-state";
 import { useAssistantInboxState } from "@/domains/assistant-inbox/hooks/use-assistant-inbox-state";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
-import { openExternalUrl } from "@/runtime/browser";
 import { EmailSettingsModal } from "@/domains/channels/components/email-settings-modal";
 import { useDeletedEmails } from "@/domains/assistant-inbox/hooks/use-deleted-emails";
 import { useInboxMail } from "@/domains/assistant-inbox/hooks/use-inbox-mail";
@@ -389,22 +386,6 @@ export function AssistantInboxPageRoute() {
       return <Navigate to="/" replace />;
     case "loading":
       return <InboxLoading label={t("assistantInboxRoute.loading")} />;
-    case "upgrade":
-      return (
-        <>
-          <AssistantInboxUpgradeState
-            assistantId={assistantId}
-            assistantName={state.assistantName}
-            handle={state.handle}
-            rootDomain={state.rootDomain}
-            onEditHandle={handleModal.openModal ?? undefined}
-            onUpgrade={() => void openExternalUrl(cloudAccountBillingUrl())}
-            onSeePlans={() => void openExternalUrl(cloudAccountBillingUrl())}
-            onBack={leave}
-          />
-          {handleModal.modal}
-        </>
-      );
     case "setup":
       return (
         <AssistantInboxSetupCard

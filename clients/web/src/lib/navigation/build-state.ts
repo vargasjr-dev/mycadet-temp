@@ -22,25 +22,6 @@ import {
 } from "@/stores/resolved-assistants-store";
 import type { NavigationState } from "./navigation-resolver";
 
-/**
- * Whether the active organization has a cloud-hosted assistant — the only
- * kind a cloud plan can apply to.
- *
- * The org narrows the list only once it resolves. Before that every resolved
- * assistant counts: narrowing against an unresolved org would read an
- * established user's own cloud assistant as absent (lockfile entries carry
- * an `organizationId`, and `assistantsValidForOrg` drops those that name a
- * different one).
- */
-function hasCloudHostedAssistant(assistants: ResolvedAssistant[]): boolean {
-  const activeOrganizationId = getActiveOrganizationIdForRequests();
-  const scoped =
-    activeOrganizationId == null
-      ? assistants
-      : assistantsValidForOrg(assistants, activeOrganizationId);
-  return scoped.some((assistant) => assistant.isCloudHosted);
-}
-
 export function buildNavigationState(
   overrides?: Partial<NavigationState>,
 ): NavigationState {
@@ -59,7 +40,6 @@ export function buildNavigationState(
       : "",
     isGatewayAuth: isGatewayAuthMode(),
     hasAssistants: assistants.length > 0,
-    hasCloudHostedAssistant: hasCloudHostedAssistant(assistants),
     sessionSettled: isSessionSettled(sessionStatus),
     // `isAuthenticated` mirrors `sessionStatus`. The local gateway is the sole
     // session authority (#35152), so a reachable local user is already

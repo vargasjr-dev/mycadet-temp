@@ -101,11 +101,6 @@ export function resolveAcceptedSchemes(env: string): string[] {
   return [...accepted];
 }
 
-// Stripe Checkout Session ids (`cs_test_a1B2…` / `cs_live_…`). Mirrors the
-// shape check the cloud's hand-off view applies before it builds the
-// deep link, so garbage never reaches the renderer's billing route.
-const CHECKOUT_SESSION_ID_RE = /^cs_[A-Za-z0-9_]{1,255}$/;
-
 // A device code is opaque on the wire, so the shape check bounds it rather
 // than spelling its alphabet: `buildAppConnectUrl` emits whatever the gateway
 // minted, including values like `a+b/c=`. Only whitespace and control
@@ -149,15 +144,6 @@ const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
  *     the renderer routes them to the connect flow with guidance.
  *     `code` is credential material: never logged, and never echoed
  *     on an `unknown` URL (which the renderer logs).
- *   - `cadet://billing/checkout-complete?status=…&session_id=…` →
- *     `{ kind: "billingCheckoutComplete", status, sessionId, flow }`.
- *     The cloud bounces a native-initiated Stripe Checkout here
- *     once the user finishes in the system browser. `status=success`
- *     requires a well-formed Checkout Session id; `status=cancel`
- *     carries none. `flow=top_up` marks a credit top-up checkout;
- *     links without the param are subscription checkouts. Anything
- *     else is `unknown` with the query stripped, so a stray session
- *     id never reaches telemetry.
  *   - Malformed URL (unparseable, percent-encoding throws) →
  *     `kind: "unknown"`.
  */
@@ -180,36 +166,6 @@ export const parseCadetUrl = (input: string): DeepLink => {
       return { kind: "openThread", threadId };
     }
     return { kind: "unknown", url: input };
-  }
-  if (url.host === "billing") {
-    // Never echo the query back on the `unknown` fallbacks — the renderer
-    // logs that URL, and it may carry a session id.
-    const withoutQuery = `${url.protocol}//${url.host}${url.pathname}`;
-    const segment = url.pathname.replace(/^\/+/, "").split("/")[0];
-    if (segment !== "checkout-complete") {
-      return { kind: "unknown", url: withoutQuery };
-    }
-    const flow: "subscription" | "top_up" =
-      url.searchParams.get("flow") === "top_up" ? "top_up" : "subscription";
-    const status = url.searchParams.get("status");
-    if (status === "cancel") {
-      return {
-        kind: "billingCheckoutComplete",
-        status: "cancel",
-        sessionId: null,
-        flow,
-      };
-    }
-    const sessionId = url.searchParams.get("session_id") ?? "";
-    if (status === "success" && CHECKOUT_SESSION_ID_RE.test(sessionId)) {
-      return {
-        kind: "billingCheckoutComplete",
-        status: "success",
-        sessionId,
-        flow,
-      };
-    }
-    return { kind: "unknown", url: withoutQuery };
   }
   if (url.host === "connect") {
     // `code` is credential material (the device code the local-mode host

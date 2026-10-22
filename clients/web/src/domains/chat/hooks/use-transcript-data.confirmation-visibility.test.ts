@@ -62,7 +62,6 @@ function trailerRowCount(messages: DisplayMessage[]): number {
       turnActive: false,
       thinkingLabel: null,
       showOnboardingChoice: false,
-      creditsExhausted: false,
     }),
   );
   return result.current.transcriptItems.filter(

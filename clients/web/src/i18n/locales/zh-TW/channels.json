@@ -158,7 +158,6 @@
   },
   "emailCloudContent": {
     "addressLabel": "地址",
-    "checkingSubscription": "正在檢查訂閱…",
     "completeSetup": "完成網域設定",
     "completingSetup": "正在完成設定…",
     "copiedAddress": "已複製",
@@ -187,9 +186,6 @@
     "repairNoticeBody": "您的電子郵件地址已就緒，但此網域尚未在電子郵件供應商處設定。完成設定後即可開始傳送和接收郵件。",
     "repairNoticeTitle": "需要設定網域",
     "repairStartedToast": "已開始網域設定。驗證通常需要幾分鐘。",
-    "retry": "重試",
-    "subscriptionWarningBody": "我們無法連線至帳務服務。以下表單假設您的組織已啟用受管理的電子郵件。如果未啟用，註冊網域將會失敗。",
-    "subscriptionWarningTitle": "無法驗證訂閱狀態",
     "usageSummary": "今日已傳送 {sent} / {limit} · 已接收 {received}"
   },
   "emailSettingsModal": {

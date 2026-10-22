@@ -14,10 +14,9 @@ import {
 } from "@/assistant/lifecycle";
 import { seedHatchAvatar } from "@/assistant/seed-hatch-avatar";
 import {
-  awaitPurchasedProvisioning,
   MAX_HATCH_WAIT_MS,
   POLL_INTERVAL_MS,
-} from "@/domains/onboarding/purchased-provisioning";
+} from "@/domains/onboarding/hatch-wait";
 import { awaitOrgHeaderSettled } from "@/hooks/await-org-header-settled";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import {
@@ -80,13 +79,6 @@ export interface UseBackgroundHatchOptions {
    * out stale), discovery falls back to the selected/active assistant.
    */
   adoptAssistantId?: string;
-  /**
-   * The hatch is the return leg of a completed checkout (`post_checkout=1`):
-   * after healthz, hold `ready` until the purchased machine/storage resize
-   * converges (`awaitPurchasedProvisioning`), then re-probe healthz. Never set
-   * on the free path — the free hatch must not add subscription polling.
-   */
-  postCheckoutReturn?: boolean;
 }
 
 /**
@@ -100,9 +92,7 @@ export interface UseBackgroundHatchOptions {
  * the hatch return.
  *
  * When `adoptExisting` is set (a local-hosting onboarding), the cloud hatch is
- * skipped and we adopt the already-live assistant instead. When
- * `postCheckoutReturn` is set, `ready` additionally waits on the purchased
- * machine/storage resize so the paid user never starts on a baseline assistant.
+ * skipped and we adopt the already-live assistant instead.
  *
  * Terminal failures (cloud-hosted disabled, non-recoverable hatch errors,
  * lifecycle errors, timeout) set `error` and reject `awaitReady()`.
@@ -113,7 +103,6 @@ export interface UseBackgroundHatchOptions {
 export function useBackgroundHatch({
   adoptExisting = false,
   adoptAssistantId,
-  postCheckoutReturn = false,
 }: UseBackgroundHatchOptions = {}): UseBackgroundHatch {
   const queryClient = useQueryClient();
   const [ready, setReady] = useState(false);
@@ -314,9 +303,9 @@ export function useBackgroundHatch({
             hatchedAssistantId = result.data.id;
             setAssistantId(result.data.id);
             // Dock and tray icons are avatar-driven, so a freshly created (201)
-            // assistant gets seeded traits. Paid-only: the free hatch makes no
-            // avatar write. Fire-and-forget; the research face step overwrites.
-            if (postCheckoutReturn && result.status === 201) {
+            // assistant gets seeded traits. Fire-and-forget; the research face
+            // step overwrites.
+            if (result.status === 201) {
               void seedHatchAvatar(
                 result.data.id,
                 randomCharacterTraits(BUNDLED_COMPONENTS),
@@ -432,40 +421,6 @@ export function useBackgroundHatch({
         }
       }
 
-      // 4. On a paid return, hold `ready` until the purchased resize converges.
-      //
-      // `managedHatch` is true by construction: the checkout destination always
-      // carries `hosting=cadet-cloud`, and `adoptExisting` already excludes the
-      // local foreground hatch.
-      if (!adoptExisting && postCheckoutReturn) {
-        const outcome = await awaitPurchasedProvisioning({
-          assistantId: activeAssistantId,
-          postCheckoutReturn,
-          managedHatch: true,
-          hatchStartMs: startMs,
-          isCancelled: () => abortedRef.current,
-          registerTimer: (timer) => {
-            pollTimerRef.current = timer;
-          },
-        });
-        // A cancellation landing mid-healthz past the deadline also reports
-        // `"health_timeout"`, and nobody is waiting on this hatch any more —
-        // reporting it would be a false alarm.
-        if (abortedRef.current) {
-          return;
-        }
-        if (outcome === "health_timeout") {
-          // The assistant never answered healthz after the resize; completing
-          // would hand the user an unreachable assistant.
-          console.warn("Onboarding hatch wait exceeded timeout", {
-            maxWaitMs: MAX_HATCH_WAIT_MS,
-            stage: "post_resize_health",
-          });
-          settleError(TIMEOUT_ERROR);
-          return;
-        }
-      }
-
       settleReady(activeAssistantId);
     })();
   }, [
@@ -473,7 +428,6 @@ export function useBackgroundHatch({
     settleReady,
     adoptExisting,
     adoptAssistantId,
-    postCheckoutReturn,
     queryClient,
   ]);
 

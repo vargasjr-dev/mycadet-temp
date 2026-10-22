@@ -82,10 +82,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { isElectron } from "@/runtime/is-electron";
 import { isPopoutWindowLifetime } from "@/runtime/popout-window";
 import { useIsNativePlatform } from "@/runtime/native-auth";
-import {
-  isNativeIOS,
-  useIsNativeAndroid,
-} from "@/runtime/platform-detection";
+import { isNativeIOS, useIsNativeAndroid } from "@/runtime/platform-detection";
 import { isPointerCoarse, usePointerCoarse } from "@/utils/pointer";
 import { routes } from "@/utils/routes";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
@@ -897,8 +894,7 @@ export function ChatComposer({
   // menu: the web bundle cannot add a photo picker the binary lacks.
   const iosNativeAttach = isNativeIOS() && nativePickers;
   const usesAddSheet =
-    iosNativeAttach ||
-    (isMobile && (isNativeAndroidShell || nativePickers));
+    iosNativeAttach || (isMobile && (isNativeAndroidShell || nativePickers));
 
   // Touch presses keep the textarea focused while activating a control.
   const holdsFocusOnPress = isMobile && pointerCoarseNow;

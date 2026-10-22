@@ -143,7 +143,6 @@
     "loadingLabel": "Загрузка полей оплаты"
   },
   "billingStatusHandler": {
-    "successToast": "Оплата получена! Баланс кредитов скоро обновится."
   },
   "inferenceUsageChart": {
     "empty": "Нет данных об использовании за этот период"
@@ -219,14 +218,6 @@
     "urlPlaceholder": "Callback URL..."
   },
   "checkoutPage": {
-    "awaitingReturnMessage": "Оплата открылась в браузере. Завершение там повышает план.",
-    "checkoutFailedMessage": "Не удалось начать оплату. Повторите попытку.",
-    "continueSetup": "Продолжить настройку",
-    "preparingCheckout": "Готовим оплату…",
-    "preparingCheckoutAriaLabel": "Готовим оплату",
-    "reopenCheckout": "Открыть оплату снова",
-    "tryAgain": "Попробовать снова",
-    "openBilling": "Открыть платежи"
   },
   "communityPage": {
     "communityHubDescription": "Витрины, гайды и проекты от сообщества.",
@@ -256,9 +247,6 @@
     "youtubeChannelTitle": "Канал YouTube"
   },
   "completeState": {
-    "assistantFallbackName": "твоему ассистенту",
-    "returnTo": "Вернуться к {assistantName}",
-    "title": "Всё готово!"
   },
   "createScheduleModal": {
     "advancedCron": "Дополнительно: cron-выражение",
@@ -340,12 +328,6 @@
     "title": "Секреты"
   },
   "creditBundlePicker": {
-    "ariaLabel": "Пакет кредитов",
-    "label": "Пакет кредитов",
-    "noBundleOption": "Без пакета кредитов - {price}",
-    "optionLabel": "{label} - {price}",
-    "placeholder": "Выбор пакета кредитов",
-    "tooltip": "Ежемесячный запас кредитов, который добавляется к подписке Pro"
   },
   "debugBundleExport": {
     "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
@@ -431,8 +413,6 @@
     "title": "Перейти на Base?"
   },
   "errorStates": {
-    "fetchErrorTitle": "Не удалось открыть оплату",
-    "goToBilling": "К оплате"
   },
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",
@@ -1049,26 +1029,6 @@
     "title": "Провайдеры"
   },
   "provisioningState": {
-    "allDoneStatus": "Готово!",
-    "confirmingCaption": "Это может занять пару секунд.",
-    "continueInBackground": "Продолжить в фоне",
-    "dimensionsComplete": "{dimensions} готово",
-    "goToBilling": "К оплате",
-    "machineLabel": "Машина",
-    "noExtraUsage": "Без дополнительного использования",
-    "packageLabel": "Пакет",
-    "planReadyStatus": "План готов",
-    "retryInBackground": "Повторить в фоне",
-    "srOnlyTo": "на",
-    "stalledCaption": "Это может занять пару минут.",
-    "statusComplete": "Готово",
-    "statusPending": "Ожидание",
-    "storageLabel": "Хранилище",
-    "takingLongerStatus": "Это занимает больше времени, чем ожидалось",
-    "tryAgain": "Попробовать снова",
-    "usageLabel": "Использование",
-    "waitingCaptionLong": "Ещё работаем. Это может занять минуту или две.",
-    "waitingCaptionShort": "Это может занять пару секунд."
   },
   "recentRunsCard": {
     "emptyDefault": "Запусков пока нет.",
@@ -1093,40 +1053,6 @@
     "title": "Режим восстановления"
   },
   "resizeCard": {
-    "apply": "Применить",
-    "applyingResize": "Применяем изменение размера…",
-    "cancel": "Отмена",
-    "cpu": "CPU",
-    "current": "Текущий",
-    "disk": "Диск",
-    "increaseSize": "Увеличить размер",
-    "increaseStorage": "Увеличить хранилище",
-    "machine": "Машина",
-    "machineSize": "Размер машины",
-    "machineSizeAriaLabel": "Размер вычислительной машины",
-    "memory": "Память",
-    "modalDescription": "Измени вычисления и хранилище ассистента. Ассистент ненадолго перезапустится.",
-    "modalTitle": "Изменить размер ассистента",
-    "needMore": "Нужно больше? <upgradeLink>Повысить план</upgradeLink>",
-    "noMachineTier": "Уровень машины не задан. Загляни в сообщество за помощью.",
-    "refreshMetrics": "Обновить метрики ресурсов",
-    "resize": "Изменить размер",
-    "resizeFailed": "Не удалось изменить размер ассистента. Повторите попытку.",
-    "retry": "Повторить",
-    "storage": "Хранилище",
-    "storageAlreadyProvisioned": "Хранилище уже на выделенном размере ({size} ГБ) и не изменится.",
-    "storageExpandFromTo": "Хранилище расширится с {from} ГБ до {to} ГБ.",
-    "storageExpandTo": "Хранилище расширится до {to} ГБ.",
-    "storageUnchanged": "Хранилище не изменится.",
-    "subscriptionLoadError": "Не удалось загрузить подписку. Повторите попытку.",
-    "subtitle": "Использование ресурсов и управление вычислительным профилем ассистента.",
-    "title": "Вычисления и ресурсы",
-    "toastStarted": "Изменение размера запущено. Изменения применятся скоро.",
-    "unavailable": "Недоступно",
-    "upgrade": "Повысить",
-    "upgradeDescription": "Переход на более высокий план: больше мощности, больше хранилища и больший пакет кредитов.",
-    "upgradeTitle": "Повысь план",
-    "usedOf": "{used} из {total}"
   },
   "restartAssistant": {
     "button": "Перезапустить",
@@ -1377,16 +1303,6 @@
     "weekly": "Еженедельно"
   },
   "upgradeSuccessPage": {
-    "cantConfirmUpgrade": "Не можем подтвердить повышение для текущего ассистента. Вернитесь к оплате и повторите попытку.",
-    "fetchErrorBody": "Не получилось проверить подписку. Повышение, возможно, ещё обрабатывается. Вернитесь к оплате и обновите страницу.",
-    "fetchErrorTitle": "Не удалось открыть оплату",
-    "finalizingBody": "Stripe подтверждает подписку. Обычно это несколько секунд.",
-    "finalizingTitle": "Завершаем повышение…",
-    "goToBilling": "К оплате",
-    "platformLoginNotice": "Вход на платформу Cadet для управления оплатой и использованием.",
-    "processingFallback": "Обработка повышения. Обновление чуть позже покажет новый план.",
-    "successBody": "План Pro активен. Скоро откроется оплата.",
-    "welcomeTitle": "Добро пожаловать в Pro"
   },
   "usageTab": {
     "analyzeCostsButton": "Разобрать расходы с ассистентом",
@@ -1437,7 +1353,6 @@
     "total": "Итого"
   },
   "useBillingPortalSession": {
-    "openError": "Не удалось открыть портал оплаты. Повторите попытку."
   },
   "useDaemonConfig": {
     "assistantNotReadyToast": "Ассистент не готов. Повторите попытку.",

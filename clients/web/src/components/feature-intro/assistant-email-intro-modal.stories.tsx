@@ -54,28 +54,15 @@ const meta = {
     assistantId: ASSISTANT_ID,
     assistantName: "Mel",
     rootDomain: "cadet.me",
-    locked: true,
-    onUpgrade: fn(),
-    onSeePlans: fn(),
     onSetUp: fn(),
   },
   argTypes: {
     onOpenChange: { control: false },
-    onUpgrade: { control: false },
-    onSeePlans: { control: false },
     onSetUp: { control: false },
   },
 } satisfies Meta<typeof AssistantEmailIntroModal>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/** The design: a Free plan is pitched the upgrade. */
-export const AssistantEmailLocked: Story = {};
-
-/** A plan with email, and an assistant with no address yet: the way into setup. */
-export const AssistantEmailEntitled: Story = {
-  args: { locked: false },
-};
 
 /** No name yet: the copy says "your assistant". */
 export const AssistantEmailUnnamed: Story = {
