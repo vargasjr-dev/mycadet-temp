@@ -150,7 +150,6 @@ import {
   takeLiveVoiceCameraLookRequest,
   useLiveVoiceStore,
 } from "@/domains/chat/voice/live-voice/live-voice-store";
-import { FrameGateHud } from "@/domains/chat/frame-gate-hud";
 import { CameraShutter } from "@/domains/chat/voice/camera-shutter";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useSupportsVoiceCamera } from "@/lib/backwards-compat/use-supports-voice-camera";
@@ -1398,36 +1397,6 @@ function VoiceRoomOverlay({ variant }: { variant: VoiceRoomVariant }) {
             style={{ background: CAMERA_SCRIM_BOTTOM }}
           />
         </>
-      ) : null}
-
-      {/* The frame gate's tuning readout for this viewfinder.
-
-          Above the scrims at `z-[3]` and below the connect card at `z-20`, so
-          it reads over the frame without covering the one surface that needs a
-          press. Parked on the left, clear of the whole chrome band: the view
-          options hold that corner, the shutter column and the thumbnail band
-          own the floor, and the status pill owns the top centre. Inside
-          `inset-0` because the room clips.
-
-          Camera-only, and either viewfinder. Both feed the same gate, so both
-          have decisions to read, and this is the instrument the thresholds are
-          tuned with on the hardware that runs them. It draws inside the room's
-          own chrome, which the native shells keep visible in front of the
-          preview layer behind the web view.
-
-          Collapsible, because the surroundings here are a full-bleed
-          viewfinder: on a window with no room for the card the readout stands
-          down to a strip in this slot and puts the rest behind a tap. Which
-          window that is belongs to the readout, which reads the shared
-          narrow-window signal; the room says only that this slot is one the
-          readout may stand down in. */}
-      {cameraOpen ? (
-        <FrameGateHud
-          surface="voice"
-          collapsible
-          className="absolute top-[calc(var(--room-chrome-top)+3.75rem)] z-10 max-h-[calc(100%-var(--room-chrome-top)-14rem)]"
-          style={{ left: VOICE_ROOM_CORNER_LEFT }}
-        />
       ) : null}
 
       {/* Optional live transcript, rendered into the room's two text zones —

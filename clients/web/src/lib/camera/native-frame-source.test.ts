@@ -26,7 +26,6 @@ import {
   test,
 } from "bun:test";
 
-import { FRAME_GATE_OVERRIDE_KEYS } from "./frame-gate-debug";
 import {
   createFrameGate,
   DEFAULT_FRAME_GATE_OPTIONS,
@@ -1588,11 +1587,7 @@ describe("native frame source pair timing", () => {
     };
   }
 
-  test("reads the motion window from the shipped options, which no slider moves", () => {
-    // The source knows the window without holding the gate's configuration,
-    // which is only sound while the window is not one of the tunable
-    // thresholds. Make that a failing test rather than a stale comment.
-    expect(FRAME_GATE_OVERRIDE_KEYS).not.toContain("motionMaxAgeMs");
+  test("reads the motion window from the shipped gate options", () => {
     expect(NATIVE_PAIR_MAX_GAP_MS).toBe(
       DEFAULT_FRAME_GATE_OPTIONS.motionMaxAgeMs,
     );

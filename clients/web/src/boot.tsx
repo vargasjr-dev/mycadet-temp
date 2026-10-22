@@ -18,7 +18,6 @@ import {
 } from "@/components/startup-failure";
 import { WindowDragRegion } from "@/components/window-drag-region";
 import { initI18n } from "@/i18n";
-import { setupCameraGateHudAccessSync } from "@/lib/camera/frame-gate-debug-access";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
 import { isLocalClient, loadLockfile } from "@/lib/local-mode";
@@ -75,9 +74,6 @@ async function boot(router: Router) {
   }
 
   setupOrganizationStore();
-  // The camera gates are built outside React, so what a restored tuning
-  // session applies to them is decided here rather than by a mounted panel.
-  setupCameraGateHudAccessSync();
   // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
   // boot route is announced.

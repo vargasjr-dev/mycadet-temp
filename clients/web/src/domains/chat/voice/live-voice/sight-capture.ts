@@ -48,7 +48,6 @@ import {
   uploadChatAttachment,
 } from "@/domains/chat/api/messages";
 import { prepareImageAttachmentForUpload } from "@/domains/chat/components/chat-attachments/attachment-image-resize";
-import { recordFrameGateKeep } from "@/lib/camera/frame-gate-debug";
 import { captureError } from "@/lib/error-reporting/capture-error";
 
 import type { LiveVoiceSightFrameTiming } from "./live-voice-client";
@@ -323,8 +322,6 @@ export function createSightCapture(errorContext: string): SightCapture {
       if (!frame) {
         return;
       }
-      recordFrameGateKeep("voice", frame);
-
       // The same preparation a pasted image gets, for the same reason the
       // shutter does it: a high-resolution track behaves like every other
       // attachment rather than like a special case.

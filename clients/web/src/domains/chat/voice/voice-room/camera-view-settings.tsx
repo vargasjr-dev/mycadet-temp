@@ -47,8 +47,6 @@ import {
 } from "@mycadet/design-library";
 
 import { useTranslation } from "@/i18n";
-import { useCameraGateHudAvailable } from "@/hooks/use-camera-gate-hud";
-import { useCameraGateDebugStore } from "@/stores/camera-gate-debug-store";
 import { useVoicePrefsStore } from "@/stores/voice-prefs-store";
 
 import { CAMERA_MEDIA_GLASS_CLASS, cameraModeStyle } from "./camera-mode-paint";
@@ -115,9 +113,6 @@ export function CameraViewSettings({
   // Set by the explainer row alone, so a close by Escape or an outside press
   // never carries one with it.
   const showExplainerOnClose = useRef(false);
-  const hudAvailable = useCameraGateHudAvailable();
-  const hudEnabled = useCameraGateDebugStore.use.hudEnabled();
-  const setHudEnabled = useCameraGateDebugStore.use.setHudEnabled();
   const showKeptFrame = useVoicePrefsStore.use.showKeptFrame();
   const setShowKeptFrame = useVoicePrefsStore.use.setShowKeptFrame();
 
@@ -185,14 +180,6 @@ export function CameraViewSettings({
           >
             {t("cameraViewOptions.title")}
           </p>
-          {hudAvailable ? (
-            <ViewOptionRow
-              title={t("cameraViewOptions.gateHudTitle")}
-              description={t("cameraViewOptions.gateHudDescription")}
-              checked={hudEnabled}
-              onChange={setHudEnabled}
-            />
-          ) : null}
           <ViewOptionRow
             title={t("cameraViewOptions.keptFrameTitle")}
             description={t("cameraViewOptions.keptFrameDescription")}

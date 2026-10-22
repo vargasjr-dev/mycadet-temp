@@ -155,8 +155,7 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
-  "billingStatusHandler": {
-  },
+  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "No usage data for this period"
   },
@@ -230,8 +229,7 @@
     "tryAgain": "Try Again",
     "urlPlaceholder": "Paste callback URL here..."
   },
-  "checkoutPage": {
-  },
+  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Showcases, guides, and projects shared by the community.",
     "communityHubTitle": "Community Hub",
@@ -259,8 +257,7 @@
     "youtubeChannelDescription": "Walkthroughs, tutorials, and product deep-dives.",
     "youtubeChannelTitle": "YouTube channel"
   },
-  "completeState": {
-  },
+  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Advanced - write a cron expression",
     "atMinute": "At minute",
@@ -346,8 +343,7 @@
     "subtitleOwn": "Stored encrypted in your assistant's credential vault. Reveal a value on demand, or replace or delete it at any time.",
     "title": "Credentials"
   },
-  "creditBundlePicker": {
-  },
+  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Send diagnostic logs and sanitized configuration to Cadet support. Credentials are excluded. The upload is kept for seven days.",
     "export": "Export debug bundle",
@@ -364,10 +360,6 @@
     "loading": "Loading assistant info...",
     "loginNotice": "Log in to Cadet Cloud to manage backups.",
     "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
-    "onboardingClearedToast": "Onboarding flags cleared.",
-    "replay": "Replay",
-    "replayDescription": "Clear local onboarding flags and re-walk the privacy → hatch screens. Your existing assistant is preserved.",
-    "replayTitle": "Replay onboarding (Cadet-only)",
     "restartDescription": "Restart the assistant machine. It will be briefly unavailable during the restart.",
     "restartTitle": "Restart Assistant",
     "subtitle": "Manage backups, restart your assistant, or enter Recovery Mode to connect to the debug terminal.",
@@ -431,8 +423,7 @@
     "keepPro": "Keep Pro",
     "title": "Downgrade to Base?"
   },
-  "errorStates": {
-  },
+  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
     "computeResourcesLoginNotice": "Log in to Cadet Cloud to manage compute resources.",
@@ -1113,8 +1104,7 @@
     "loadError": "Failed to load providers. Please try again.",
     "title": "Providers"
   },
-  "provisioningState": {
-  },
+  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "No runs yet.",
     "error": "Error",
@@ -1137,8 +1127,7 @@
     "resumeAssistant": "Resume Assistant",
     "title": "Recovery Mode"
   },
-  "resizeCard": {
-  },
+  "resizeCard": {},
   "restartAssistant": {
     "button": "Restart",
     "confirmLabel": "Restart",
@@ -1392,8 +1381,7 @@
     "updateWindowWithTz": "Update window ({tz})",
     "weekly": "Weekly"
   },
-  "upgradeSuccessPage": {
-  },
+  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Analyze costs with assistant",
     "breakdownTitle": "Breakdown",
@@ -1442,8 +1430,7 @@
     "noUsageInRange": "No usage recorded in this time range",
     "total": "Total"
   },
-  "useBillingPortalSession": {
-  },
+  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "Assistant not ready. Please try again.",
     "saveApiKeyFailedToast": "Failed to save {providerName} API key. Please try again."

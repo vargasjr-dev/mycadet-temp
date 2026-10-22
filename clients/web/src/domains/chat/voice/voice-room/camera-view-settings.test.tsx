@@ -1,12 +1,11 @@
 /**
  * Tests for `CameraViewSettings`.
  *
- * What the panel offers, who it offers it to, and where it lands in the DOM.
- * The availability rule itself belongs to `lib/camera/frame-gate-debug-access`
- * and is stubbed here, so what is under test is the component's own wiring:
- * which rows a session sees, which store each row writes, and the panel
- * rendering into the host it is handed. Which element that host is, and where
- * the room puts it, is the room's own subject in `voice-room.test.tsx`.
+ * What the panel offers and where it lands in the DOM. What is under test is
+ * the component's own wiring: which rows it shows, which store each row
+ * writes, and the panel rendering into the host it is handed. Which element
+ * that host is, and where the room puts it, is the room's own subject in
+ * `voice-room.test.tsx`.
  */
 
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
@@ -20,15 +19,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 
-let hudAvailable = false;
-mock.module("@/hooks/use-camera-gate-hud", () => ({
-  useCameraGateHudAvailable: () => hudAvailable,
-  useCameraGateHudEnabled: () => false,
-}));
-
 const { CameraViewSettings } = await import("./camera-view-settings");
-const { useCameraGateDebugStore } =
-  await import("@/stores/camera-gate-debug-store");
 const { useVoicePrefsStore } = await import("@/stores/voice-prefs-store");
 
 const trigger = () => screen.getByTestId("camera-view-settings");
@@ -60,11 +51,9 @@ async function openPanel(): Promise<void> {
 }
 
 beforeEach(() => {
-  hudAvailable = false;
   showExplainer = undefined;
   panelHost = document.createElement("div");
   document.body.appendChild(panelHost);
-  useCameraGateDebugStore.setState({ hudEnabled: false });
   useVoicePrefsStore.setState({ showKeptFrame: true });
 });
 
@@ -178,23 +167,13 @@ describe("CameraViewSettings", () => {
     });
   });
 
-  test("a session without the readout gets the thumbnail row alone", async () => {
+  test("the panel offers the thumbnail row", async () => {
     await openPanel();
 
     expect(row("Latest shared frame")).not.toBeNull();
-    expect(row("Frame gate tuning")).toBeNull();
   });
 
-  test("a session with the readout gets both rows", async () => {
-    hudAvailable = true;
-    await openPanel();
-
-    expect(row("Frame gate tuning")).not.toBeNull();
-    expect(row("Latest shared frame")).not.toBeNull();
-  });
-
-  test("each switch points at its own description", async () => {
-    hudAvailable = true;
+  test("the switch points at its own description", async () => {
     await openPanel();
 
     /** The text a screen reader is given after the switch's name. */
@@ -208,9 +187,6 @@ describe("CameraViewSettings", () => {
     // with the explanation on screen and out of reach.
     expect(describedText("Latest shared frame")).toBe(
       "Shows the most recent frame Live sent.",
-    );
-    expect(describedText("Frame gate tuning")).toBe(
-      "Debug overlay for how Live picks which frames to send.",
     );
   });
 
@@ -278,19 +254,5 @@ describe("CameraViewSettings", () => {
       // surface nothing can reach.
       expect(panel()).toBeNull();
     });
-  });
-
-  test("the readout row writes the persisted switch", async () => {
-    hudAvailable = true;
-    await openPanel();
-
-    await act(async () => {
-      fireEvent.click(row("Frame gate tuning")!);
-    });
-
-    expect(useCameraGateDebugStore.getState().hudEnabled).toBe(true);
-    // The thumbnail is a different preference, and one row must not move the
-    // other.
-    expect(useVoicePrefsStore.getState().showKeptFrame).toBe(true);
   });
 });

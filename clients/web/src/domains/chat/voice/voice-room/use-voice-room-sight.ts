@@ -97,13 +97,10 @@ import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useSupportsSightStream } from "@/lib/backwards-compat/use-supports-sight-stream";
 import {
   type FrameGate,
+  DEFAULT_FRAME_GATE_OPTIONS,
   type FrameGateDecision,
   createFrameGate,
 } from "@/lib/camera/frame-gate";
-import {
-  FRAME_GATE_LIVE_OPTIONS,
-  recordFrameGateDecision,
-} from "@/lib/camera/frame-gate-debug";
 import { createFrameSampler } from "@/lib/camera/frame-sampler";
 import {
   createNativeFrameSource,
@@ -325,9 +322,7 @@ export function useVoiceRoomSight(
   // term going false mid-viewfinder ends a Live that is already running rather
   // than stranding it.
   const liveAvailable =
-    supportsFrames &&
-    !!assistantId &&
-    !sightFramesUnsupported;
+    supportsFrames && !!assistantId && !sightFramesUnsupported;
   // The camera on screen is the consent, and Live is the ask. Nothing samples
   // without both.
   const active = cameraOpen && liveAvailable && live;
@@ -514,11 +509,7 @@ export function useVoiceRoomSight(
       void haptic.light();
       hold({ attachmentId, previewUrl: URL.createObjectURL(frame) });
     };
-    // The live options record rather than the defaults, so the tuning readout
-    // can move a threshold without this effect rebuilding the gate. A rebuild
-    // would clear the last-keep clock and fire an immediate keep, which on
-    // this surface is an upload and a persisted transcript message.
-    const gate = createFrameGate(FRAME_GATE_LIVE_OPTIONS);
+    const gate = createFrameGate(DEFAULT_FRAME_GATE_OPTIONS);
     gate.reset(performance.now());
     gateRef.current = gate;
     /**
@@ -544,8 +535,7 @@ export function useVoiceRoomSight(
     if (video) {
       const sampler = createFrameSampler({
         gate,
-        onDecision: (decision, nowMs) => {
-          recordFrameGateDecision("voice", decision, nowMs);
+        onDecision: (decision) => {
           const run = currentRunRef.current;
           if (
             !decision.keep ||
@@ -585,8 +575,7 @@ export function useVoiceRoomSight(
             NATIVE_CAPTURE_QUALITY,
             NATIVE_PAIR_SPACING_MS,
           ),
-        onDecision: (decision, nowMs, sample) => {
-          recordFrameGateDecision("voice", decision, nowMs);
+        onDecision: (decision, _nowMs, sample) => {
           const run = currentRunRef.current;
           if (
             !decision.keep ||
