@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
-
-import { parseLockfile, resolveLockfilePaths } from "@mycadet/local-mode";
+import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
 
 /**
  * The local build's control-plane base, read from the lockfile alone: the
@@ -16,26 +14,25 @@ import { parseLockfile, resolveLockfilePaths } from "@mycadet/local-mode";
  * touched: the lockfile is the single home for edge state.
  */
 export function resolveLocalServerUrl(): string | undefined {
-  for (const path of resolveLockfilePaths(process.env)) {
-    let lockfile;
-    try {
-      lockfile = parseLockfile(JSON.parse(readFileSync(path, "utf-8")));
-    } catch {
-      continue;
-    }
-    const tunnelUrl = lockfile.tunnel?.publicUrl;
-    if (tunnelUrl && isUsableBaseUrl(tunnelUrl)) {
-      return tunnelUrl;
-    }
-    const port = lockfile.app?.port;
-    if (typeof port === "number") {
-      return `http://127.0.0.1:${port}`;
-    }
+  const lockfile = getLockfileData(resolveLockfilePaths(process.env));
+  if (!lockfile.ok) {
+    return undefined;
+  }
+  const tunnelUrl = lockfile.data.tunnel?.publicUrl;
+  if (isUsableBaseUrl(tunnelUrl)) {
+    return tunnelUrl;
+  }
+  const port = lockfile.data.app?.port;
+  if (typeof port === "number") {
+    return `http://127.0.0.1:${port}`;
   }
   return undefined;
 }
 
-function isUsableBaseUrl(url: string): boolean {
+function isUsableBaseUrl(url: string | undefined): boolean {
+  if (!url) {
+    return false;
+  }
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" || parsed.protocol === "http:";

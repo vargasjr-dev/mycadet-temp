@@ -143,10 +143,10 @@ class MyViewController: CAPBridgeViewController {
 
     /// Capture the scheme the asset handler will be registered under. This
     /// configuration builder is Capacitor's only reader of the instance
-    /// configuration that runs ahead of the web view's creation, where
-    /// handler substitution is still possible (`prepareWebView` builds the
-    /// configuration, registers the handler, then calls
-    /// `webView(with:configuration:)` to instantiate the web view).
+    /// configuration that runs ahead of the web view's creation
+    /// (`prepareWebView` builds the configuration, registers the stock
+    /// handler, then calls `webView(with:configuration:)` to instantiate
+    /// the web view — where the same-origin wrapper is swapped in).
     override open func webViewConfiguration(
         for instanceConfiguration: InstanceConfiguration
     ) -> WKWebViewConfiguration {
@@ -160,30 +160,62 @@ class MyViewController: CAPBridgeViewController {
         with frame: CGRect,
         configuration: WKWebViewConfiguration
     ) -> WKWebView {
-        wrapSameOriginAPIHandler(configuration)
-        return QuoteReplyWebView(frame: frame, configuration: configuration)
+        return QuoteReplyWebView(
+            frame: frame,
+            configuration: sameOriginConfiguration(from: configuration)
+        )
     }
 
     /// Swap Capacitor's asset handler for the same-origin wrapper: `/v1/`
     /// requests forward to the stamped control-plane base (tunnel, loopback
     /// app server, or cloud web origin) instead of falling into the SPA's
     /// index-HTML fallback, and everything else serves assets exactly as
-    /// before. Must run before the `WKWebView` is created — the
-    /// configuration is inert afterwards — which this override is: called
-    /// with the finished configuration, immediately before the web view
-    /// instantiates with it.
-    private func wrapSameOriginAPIHandler(_ configuration: WKWebViewConfiguration) {
+    /// before.
+    ///
+    /// The swap cannot be a re-registration on the passed configuration:
+    /// Capacitor's `prepareWebView` registers its stock handler for the
+    /// webview scheme before this hook runs, and `WKWebViewConfiguration`
+    /// offers no way past that — `setURLSchemeHandler` raises
+    /// `NSInvalidArgumentException` on a scheme that already has one (the
+    /// crash this rebuilds around), there is no removal API, and the
+    /// handler map rides `copy()` too. The supported path is a fresh
+    /// configuration carrying the state Capacitor's builder set —
+    /// enumerated against Capacitor 8.3.4's `webViewConfiguration(for:)`
+    /// plus `prepareWebView` — with the wrapper (wrapping the stock
+    /// handler) registered in its place. A Capacitor upgrade that adds
+    /// configuration state needs this list revisited; `processPool` is
+    /// left out deliberately (deprecated since iOS 15, no remaining
+    /// effect).
+    private func sameOriginConfiguration(
+        from configuration: WKWebViewConfiguration
+    ) -> WKWebViewConfiguration {
         let scheme = assetScheme ?? "capacitor"
-        guard let stock = configuration.urlSchemeHandler(forURLScheme: scheme) else {
-            return
+        guard let stock = configuration.urlSchemeHandler(forURLScheme: scheme),
+              !(stock is SameOriginAPIHandler)
+        else {
+            return configuration
         }
-        configuration.setURLSchemeHandler(
+        let fresh = WKWebViewConfiguration()
+        fresh.preferences = configuration.preferences
+        fresh.userContentController = configuration.userContentController
+        fresh.websiteDataStore = configuration.websiteDataStore
+        fresh.applicationNameForUserAgent = configuration.applicationNameForUserAgent
+        fresh.allowsInlineMediaPlayback = configuration.allowsInlineMediaPlayback
+        fresh.suppressesIncrementalRendering = configuration.suppressesIncrementalRendering
+        fresh.allowsAirPlayForMediaPlayback = configuration.allowsAirPlayForMediaPlayback
+        fresh.mediaTypesRequiringUserActionForPlayback =
+            configuration.mediaTypesRequiringUserActionForPlayback
+        fresh.limitsNavigationsToAppBoundDomains =
+            configuration.limitsNavigationsToAppBoundDomains
+        fresh.defaultWebpagePreferences = configuration.defaultWebpagePreferences
+        fresh.setURLSchemeHandler(
             SameOriginAPIHandler(
                 wrapping: stock,
                 base: SelfHostedServer.stampedHandoffURL()
             ),
             forURLScheme: scheme
         )
+        return fresh
     }
 
     /// Paint the web view's backgrounds with the design system's

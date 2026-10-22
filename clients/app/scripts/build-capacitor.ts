@@ -1,10 +1,7 @@
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { build } from "vite";
-import {
-  capacitorInjectedConfig,
-  injectedConfigScript,
-} from "../src/capacitor/stamp";
+import { injectedConfigScript } from "../src/capacitor/stamp";
 
 // The Capacitor app bundle: one `capacitor.html` entry booting the same
 // `main.tsx` app shell every other host serves, built root-based into
@@ -32,11 +29,7 @@ if (!html.includes(marker)) {
 // from being interpreted as replacement patterns.
 writeFileSync(
   indexHtml,
-  html.replace(
-    marker,
-    () =>
-      `${injectedConfigScript(capacitorInjectedConfig())}${marker}`,
-  ),
+  html.replace(marker, () => `${injectedConfigScript()}${marker}`),
 );
 
 const stamped = readFileSync(indexHtml, "utf8");

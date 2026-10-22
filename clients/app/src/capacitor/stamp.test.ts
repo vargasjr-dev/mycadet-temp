@@ -8,7 +8,11 @@ describe("capacitorInjectedConfig", () => {
   // The house env pattern: snapshot the keys the stamp reads, restore
   // afterwards. The lockfile dir points at an empty temp dir by default so
   // the local stamp deterministically falls to the seed default.
-  const KEYS = ["CADET_ENVIRONMENT", "CADET_SERVER_URL", "CADET_LOCKFILE_DIR"] as const;
+  const KEYS = [
+    "CADET_ENVIRONMENT",
+    "CADET_SERVER_URL",
+    "CADET_LOCKFILE_DIR",
+  ] as const;
   const saved: Record<string, string | undefined> = {};
   let emptyDir: string;
 
@@ -109,16 +113,33 @@ describe("capacitorInjectedConfig", () => {
 });
 
 function writeLockfile(content: string): void {
-  writeFileSync(join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"), content);
+  writeFileSync(
+    join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+    content,
+  );
 }
 
 describe("injectedConfigScript", () => {
+  // The script resolves the config itself — the custom arm is driven
+  // through the env, snapshotted and restored like the describe above.
+  let savedServerUrl: string | undefined;
+
+  beforeEach(() => {
+    savedServerUrl = process.env.CADET_SERVER_URL;
+    process.env.CADET_SERVER_URL =
+      "https://assistant.example.com/?a=</script><script>alert(1)</script>";
+  });
+
+  afterEach(() => {
+    if (savedServerUrl === undefined) {
+      delete process.env.CADET_SERVER_URL;
+    } else {
+      process.env.CADET_SERVER_URL = savedServerUrl;
+    }
+  });
+
   test("the payload carries no raw < so tag breakout is impossible", () => {
-    const script = injectedConfigScript({
-      remote: "custom",
-      cloudUrl:
-        "https://assistant.example.com/?a=</script><script>alert(1)</script>",
-    });
+    const script = injectedConfigScript();
     const payload = script.slice(
       "<script>window.__CADET_CONFIG__=".length,
       -"</script>".length,

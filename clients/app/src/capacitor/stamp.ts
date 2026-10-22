@@ -76,6 +76,7 @@ export function capacitorInjectedConfig(): InjectedConfig {
  * the tag and break out (`</script>` becomes `\u003c/script>`) — the same
  * mitigation the CLI's `buildRemoteWebIndexHtml` applies to its own stamps.
  */
-export function injectedConfigScript(config: InjectedConfig): string {
+export function injectedConfigScript(): string {
+  const config = capacitorInjectedConfig();
   return `<script>window.__CADET_CONFIG__=${JSON.stringify(config).replaceAll("<", "\\u003c")}</script>`;
 }
