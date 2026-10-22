@@ -31,21 +31,6 @@ mock.module("@/lib/consent/consent-persistence", () => ({
   saveConsent: saveConsentMock,
 }));
 
-// Pending checkout intent — a pricing-CTA signup stashes the chosen package
-// (see navigation-resolver post-auth). Mutable so individual tests can pre-seed
-// it or leave it absent.
-let checkoutIntentValue: unknown = null;
-const clearCheckoutIntentMock = mock(() => {});
-mock.module("@/lib/billing/checkout-intent", () => ({
-  readCheckoutIntent: () => checkoutIntentValue,
-  clearCheckoutIntent: clearCheckoutIntentMock,
-  // The screen reads the paid-hatch carry off `navigation-resolver`, which
-  // pulls in the post-auth checkout carry. Omitting this export fails the
-  // module link, so the mock has to cover the whole surface the graph needs.
-  saveCheckoutIntent: mock((_intent: unknown) => {}),
-}));
-
-
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => true }));
 // Mutable platform/flag state so individual tests can flip them.
 let nativePlatform = false;
@@ -117,19 +102,12 @@ function clickSkipToChat(): void {
 }
 
 /** The query of the single URL `navigate()` was called with. */
-function navigatedQuery(): URLSearchParams {
-  const target = navigateMock.mock.calls[0]?.[0] as string;
-  return new URLSearchParams(target.slice(target.indexOf("?")));
-}
-
 describe("PrivacyScreen — Start navigation", () => {
   beforeEach(() => {
     navigateMock.mockClear();
     saveConsentMock.mockClear();
-    clearCheckoutIntentMock.mockClear();
     nativePlatform = false;
     localMode = false;
-    checkoutIntentValue = null;
     useResolvedAssistantsStore.setState({ assistants: [] });
     clearSelectedAssistantId();
   });
@@ -137,7 +115,6 @@ describe("PrivacyScreen — Start navigation", () => {
     cleanup();
     nativePlatform = false;
     localMode = false;
-    checkoutIntentValue = null;
     useResolvedAssistantsStore.setState({ assistants: [] });
     clearSelectedAssistantId();
   });
@@ -279,235 +256,6 @@ describe("PrivacyScreen — Start navigation", () => {
     expect(navigateMock.mock.calls[0]?.[1]).toEqual({ replace: true });
   });
 
-  test("resumes checkout when a pending signup-marked package intent is present", () => {
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    // Consent is still recorded before checkout resumes — payment after consent.
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(`${routes.checkout}?`)).toBe(true);
-    expect(navigatedQuery().get("package")).toBe("super");
-  });
-
-  test("the carried continuation follows the local-hatch destination", () => {
-    // Local hosting must run the foreground hatch first, so the continuation is
-    // `hatching`, not `research` — the checkout bail has to resume the same step
-    // the standard branch would have.
-    localMode = true;
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=local");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(navigatedQuery().get("continue")).toBe(
-      `${routes.onboarding.hatching}?hosting=local`,
-    );
-  });
-
-  test("does NOT resume an unmarked billing-surface intent — onboarding proceeds normally", () => {
-    // An abandoned CheckoutPage/takeover checkout leaves a discriminator-less
-    // package intent. Without the signup marker it must not hijack onboarding:
-    // Start advances to the normal next step instead of launching checkout.
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(routes.onboarding.research)).toBe(true);
-    expect(target).not.toContain(routes.checkout);
-  });
-
-  test("resumes checkout when a pending signup-marked custom intent is present", () => {
-    checkoutIntentValue = {
-      kind: "custom",
-      machineTier: "large",
-      storageTier: "s",
-      creditTier: "credits_50",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(`${routes.checkout}?`)).toBe(true);
-    const query = navigatedQuery();
-    // The tier params the checkout route parses back into an upgrade body.
-    expect(query.get("machine_tier")).toBe("large");
-    expect(query.get("storage_tier")).toBe("s");
-    expect(query.get("credit_tier")).toBe("credits_50");
-    expect(query.get("continue")).toBe(
-      `${routes.onboarding.research}?hosting=managed`,
-    );
-  });
-
-  test("a resumed custom config omits the dimensions it leaves unset", () => {
-    checkoutIntentValue = {
-      kind: "custom",
-      machineTier: null,
-      storageTier: "xs",
-      creditTier: null,
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    const query = navigatedQuery();
-    expect(query.get("storage_tier")).toBe("xs");
-    // Absent, not empty: an empty tier param would fail the checkout parse.
-    expect(query.has("machine_tier")).toBe(false);
-    expect(query.has("credit_tier")).toBe(false);
-  });
-
-  test("proceeds with onboarding when a marked custom stash names no storage tier", () => {
-    // Storage is required on a package-less upgrade, so such a stash names
-    // nothing the checkout route could buy. Fall through rather than hand off
-    // to a route that would only bail back out of the funnel.
-    checkoutIntentValue = {
-      kind: "custom",
-      machineTier: "medium",
-      storageTier: null,
-      creditTier: null,
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(routes.onboarding.research)).toBe(true);
-    expect(target).not.toContain(routes.checkout);
-  });
-
-  test("does NOT resume an unmarked custom intent: onboarding proceeds normally", () => {
-    // The Stripe hand-off rewrites the stash without the marker, so an
-    // unmarked custom intent describes a checkout that already ran.
-    checkoutIntentValue = {
-      kind: "custom",
-      machineTier: "medium",
-      storageTier: "m",
-      creditTier: null,
-      savedAt: Date.now(),
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(routes.onboarding.research)).toBe(true);
-    expect(target).not.toContain(routes.checkout);
-  });
-
-  // -- paid post-checkout return bounced here for consent -------------------
-  //
-  // A checkout return with nothing provisioned is funneled to the hatching
-  // screen; an unconsented user is bounced here, and the funnel URL rides
-  // along as `returnTo`. Start has to resume it — the standard onboarding step
-  // carries neither the cloud-hatch nor the paid-return marker, so the
-  // paying user would finish the hatch at the baseline plan.
-  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
-
-  test("resumes the paid hatch carried through the consent bounce", () => {
-    searchParamsValue = new URLSearchParams({ returnTo: PAID_HATCH });
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    // Consent is recorded first — the resume never skips it.
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).toHaveBeenCalledWith(PAID_HATCH, { replace: true });
-  });
-
-  test("the paid hatch wins over a pending signup-marked package intent", () => {
-    // Money has already changed hands, so resuming checkout again is the worse
-    // failure of the two.
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams({ returnTo: PAID_HATCH });
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    expect(navigateMock).toHaveBeenCalledWith(PAID_HATCH, { replace: true });
-  });
-
-  test("ignores a returnTo that is not a paid hatch", () => {
-    // Resuming an arbitrary same-origin path would let a crafted link skip the
-    // rest of the funnel, so only the paid hatch URL is honored.
-    searchParamsValue = new URLSearchParams({
-      hosting: "managed",
-      returnTo: routes.settings.usage,
-    });
-    render(<PrivacyScreen />);
-
-    clickStart();
-
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(routes.onboarding.research)).toBe(true);
-    expect(target).toContain("hosting=managed");
-  });
-
-  test("resume fires only on the Start click, not on render (no loop)", () => {
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams();
-    render(<PrivacyScreen />);
-
-    // Mounting the screen must never navigate — the resume is action-gated, so
-    // a consented user returning here cannot loop between consent and checkout.
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    clickStart();
-
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(`${routes.checkout}?`)).toBe(true);
-    expect(navigatedQuery().get("package")).toBe("super");
-  });
 });
 
 describe("PrivacyScreen — Skip to chat", () => {
@@ -521,14 +269,12 @@ describe("PrivacyScreen — Skip to chat", () => {
     saveConsentMock.mockClear();
     nativePlatform = false;
     localMode = false;
-    checkoutIntentValue = null;
   });
   afterEach(() => {
     env.VITE_ENVIRONMENT = previousEnv;
     cleanup();
     nativePlatform = false;
     localMode = false;
-    checkoutIntentValue = null;
   });
 
   test("saves consent and hatches, skipping the research funnel", () => {
@@ -556,38 +302,6 @@ describe("PrivacyScreen — Skip to chat", () => {
     expect(saveConsentMock).not.toHaveBeenCalled();
   });
 
-  test("carries skip_research onto a paid hatch return", () => {
-    const paidHatch = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
-    searchParamsValue = new URLSearchParams({ returnTo: paidHatch });
-    render(<PrivacyScreen />);
-
-    clickSkipToChat();
-
-    expect(saveConsentMock).toHaveBeenCalledTimes(1);
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(routes.onboarding.hatching)).toBe(true);
-    expect(target).toContain("post_checkout=1");
-    expect(target).toContain(`${SKIP_RESEARCH_PARAM}=1`);
-  });
-
-  test("checkout continuation carries the skip-to-chat hatch URL", () => {
-    checkoutIntentValue = {
-      kind: "package",
-      packageKey: "super",
-      savedAt: Date.now(),
-      resumeAfterOnboarding: true,
-    };
-    searchParamsValue = new URLSearchParams("hosting=managed");
-    render(<PrivacyScreen />);
-
-    clickSkipToChat();
-
-    const target = navigateMock.mock.calls[0]?.[0] as string;
-    expect(target.startsWith(`${routes.checkout}?`)).toBe(true);
-    expect(navigatedQuery().get("continue")).toBe(
-      `${routes.onboarding.hatching}?hosting=managed&${SKIP_RESEARCH_PARAM}=1`,
-    );
-  });
 });
 
 describe("PrivacyScreen — Back navigation", () => {

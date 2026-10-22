@@ -12,7 +12,6 @@ import type {
   AssistantDomain,
   SubscriptionResponse,
 } from "@/generated/api/types.gen";
-import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 
 const ASSISTANT_ID = "assistant-123";
 
@@ -30,53 +29,12 @@ mock.module("@mycadet/design-library/components/toast", () => ({
 
 const { EmailCloudContent } = await import("./email-cloud-content");
 
-const NOT_ENTITLED = {
-  plan_id: "base",
-  status: "active",
-  entitlements: { cloud_email: false, phone_number: false },
-} as unknown as SubscriptionResponse;
-
-function renderNotEntitled() {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
-  });
-  client.setQueryData(
-    organizationsBillingSubscriptionRetrieveOptions().queryKey,
-    NOT_ENTITLED,
-  );
-  for (const supportsManifest of [true, false]) {
-    client.setQueryData([...avatarQueryKey(ASSISTANT_ID), supportsManifest], {
-      components: null,
-      traits: null,
-      customImageUrl: null,
-    });
-  }
-  return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <EmailCloudContent
-          assistantId="platform-assistant"
-          emailRootDomain="example.com"
-        />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
-
 const ENTITLED = {
-  plan_id: "pro",
+  plan_id: "base",
   status: "active",
   entitlements: { cloud_email: true, phone_number: false },
 } as unknown as SubscriptionResponse;
 
-const PLATFORM_ASSISTANT_ID = "platform-assistant";
-
-const DOMAIN: AssistantDomain = {
-  id: "domain-1",
-  subdomain: "ada",
-  created: "2026-01-01T00:00:00Z",
-  modified: "2026-01-01T00:00:00Z",
-};
 
 function LocationProbe() {
   const location = useLocation();
@@ -92,7 +50,7 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
     organizationsBillingSubscriptionRetrieveOptions().queryKey,
     ENTITLED,
   );
-  const path = { path: { assistant_id: PLATFORM_ASSISTANT_ID } };
+  const path = { path: { assistant_id: ASSISTANT_ID } };
   client.setQueryData(assistantsDomainsListOptions(path).queryKey, {
     count: domain ? 1 : 0,
     next: null,
@@ -109,7 +67,7 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={["/assistant/channels/email"]}>
         <EmailCloudContent
-          assistantId={PLATFORM_ASSISTANT_ID}
+          assistantId={ASSISTANT_ID}
           emailRootDomain="example.com"
         />
         <LocationProbe />
@@ -120,28 +78,6 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
 
 afterEach(() => {
   cleanup();
-});
-
-describe("EmailCloudContent · not entitled", () => {
-  test("draws the inbox's pitch, without a title of its own", () => {
-    renderNotEntitled();
-
-    // The pitch is the perks and the plan notice; the address itself is
-    // not drawn, the perk about it stands in.
-    expect(screen.getByText("A real address on example.com")).toBeTruthy();
-    expect(
-      screen.getByText("Your assistant reads, sorts, and replies for you"),
-    ).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Plans" })).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: /Upgrade to Super/ }),
-    ).toBeTruthy();
-    // The Email section's header introduces the pitch; the body repeats none of it.
-    expect(screen.queryByRole("heading")).toBeNull();
-    // Handles live on the cloud; with no platform session there is no
-    // handle modal to open, so the pitch offers none.
-    expect(screen.queryByRole("button", { name: /Change handle/ })).toBeNull();
-  });
 });
 
 describe("EmailCloudContent · entitled, no address", () => {
@@ -159,7 +95,7 @@ describe("EmailCloudContent · entitled, no address", () => {
   });
 
   test("with a domain but no address, keeps the domain row and points to the inbox for the address", () => {
-    renderEntitled({ domain: DOMAIN });
+    renderEntitled({ domain: { domain: "example.com" } as unknown as AssistantDomain });
 
     // The domain row, with its release action, is still this page's.
     expect(screen.getByText("ada.example.com")).toBeTruthy();

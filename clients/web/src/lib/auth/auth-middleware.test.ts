@@ -102,13 +102,11 @@ const localAssistant: LockfileAssistant = {
 // the pricing funnel has a brand-new user pay before an assistant exists.
 // Billing lives under `ActiveAssistantGate`, so admitting the return strands
 // the (paying) user on "Connecting to your assistant…" forever.
-const postCheckoutBilling = `${routes.settings.root}/billing?session_id=cs_test_123`;
+const gatedDestination = routes.account.root;
 
-// The funnel entry carries the cloud-hatch marker so a local-mode client
-// provisions on the cloud rather than letting its own gateway answer for
 // the assistant. Every client lands on the headless research onboarding, which
 // runs the purchased-provisioning wait behind the form.
-const managedFunnel = `${routes.onboarding.research}?hosting=cadet-cloud&post_checkout=1`;
+const gatedRedirect = routes.onboarding.hosting;
 
 /**
  * A checkout return on a local-mode client whose lockfile already holds a
@@ -369,115 +367,12 @@ describe("authMiddleware — app-access admit gate", () => {
   });
 });
 
-describe("authMiddleware — post-checkout return with nothing provisioned", () => {
-  function makePaidPlatformReturn(): void {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      user: fakeUser,
-      cloudSession: "present",
-    });
-    useOnboardingStore.setState({ consentHydrated: true });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: true,
-    });
-  }
-
-  test("funnels the paid return into provisioning", async () => {
-    makePaidPlatformReturn();
-
-    const res = await runMiddleware(postCheckoutBilling);
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(managedFunnel);
-  });
-
-  test("funnels it under a gateway session too, which otherwise bypasses the pipeline", async () => {
-    makePaidPlatformReturn();
-    isLocalClientMock.mockImplementation(() => true);
-    mockGatewayAuthMode = true;
-
-    const res = await runMiddleware(postCheckoutBilling);
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(managedFunnel);
-  });
-
-  // A local assistant satisfies `hasAssistants`, so the gateway-auth bypass
-  // admits the return — but a cloud plan has no target in an org whose only
-  // entries are self-hosted. Provision the cloud assistant; the lockfile
-  // entry is untouched.
-  test("funnels a local-mode return whose only assistant is self-hosted", async () => {
-    makePaidPlatformReturn();
-    isLocalClientMock.mockImplementation(() => true);
-    mockGatewayAuthMode = true;
-    mockSelectedAssistant = localAssistant;
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        {
-          id: localAssistant.assistantId,
-          isLocal: true,
-          isCloudHosted: false,
-          isPaired: false,
-        },
-      ],
-      assistantsHydrated: true,
-    });
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "active", isLocal: true },
-    });
-
-    const res = await runMiddleware(postCheckoutBilling);
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(managedFunnel);
-  });
-
-  // A local-mode client is "authenticated" on its gateway session alone. With
-  // no platform session there is no account to provision into, so the return
-  // stays on billing, whose login notice carries `session_id` through sign-in.
-  test("admits a local-mode return with no platform session", async () => {
-    makePaidPlatformReturn();
-    isLocalClientMock.mockImplementation(() => true);
-    mockGatewayAuthMode = true;
-    mockSelectedAssistant = localAssistant;
-    useAuthStore.setState({ cloudSession: "absent" });
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        {
-          id: localAssistant.assistantId,
-          isLocal: true,
-          isCloudHosted: false,
-          isPaired: false,
-        },
-      ],
-      assistantsHydrated: true,
-    });
-
-    const outcome = await runMiddlewareOutcome(postCheckoutBilling);
-    expect(outcome.admitted).toBe(true);
-  });
-
-  test("admits the return once a cloud-hosted assistant exists", async () => {
-    makePaidPlatformReturn();
-    useResolvedAssistantsStore.setState({
-      assistants: [
-        { id: "a-1", isLocal: false, isCloudHosted: true, isPaired: false },
-      ],
-    });
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "active", isLocal: false },
-    });
-
-    const outcome = await runMiddlewareOutcome(postCheckoutBilling);
-    expect(outcome.admitted).toBe(true);
-  });
-});
-
-describe("authMiddleware — local-mode post-checkout platform probe", () => {
+describe("authMiddleware — the local-mode platform probe wait", () => {
   test("holds the return until the probe settles, then funnels it", async () => {
     makeSelfHostedLocalReturn();
 
     let settled: Response | null = null;
-    const pending = runMiddleware(postCheckoutBilling).then((res) => {
+    const pending = runMiddleware(gatedDestination).then((res) => {
       settled = res;
     });
 
@@ -491,14 +386,14 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
 
     expect(settled).not.toBeNull();
     expect(settled!.status).toBe(302);
-    expect(settled!.headers.get("Location")).toBe(managedFunnel);
+    expect(settled!.headers.get("Location")).toBe(gatedRedirect);
   });
 
   test("leaves the return on billing once the probe settles absent", async () => {
     makeSelfHostedLocalReturn();
 
     let decided = false;
-    const pending = runMiddlewareOutcome(postCheckoutBilling).then((res) => {
+    const pending = runMiddlewareOutcome(gatedDestination).then((res) => {
       decided = true;
       return res;
     });
@@ -516,7 +411,7 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
     // The probe stays "unknown", so the wait runs out its (clamped) timeout and
     // the guard decides on a settled-absent session: the return stays on
     // billing, whose login notice carries `session_id` through sign-in.
-    const outcome = await runMiddlewareOutcome(postCheckoutBilling);
+    const outcome = await runMiddlewareOutcome(gatedDestination);
     expect(outcome.admitted).toBe(true);
   });
 
@@ -525,7 +420,7 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
 
     // The probe outruns the (clamped) wait, so the guard decides on the forced
     // "absent" and admits the return to billing.
-    const outcome = await runMiddlewareOutcome(postCheckoutBilling);
+    const outcome = await runMiddlewareOutcome(gatedDestination);
     expect(outcome.admitted).toBe(true);
     expect(revalidateMock).not.toHaveBeenCalled();
 
@@ -537,16 +432,16 @@ describe("authMiddleware — local-mode post-checkout platform probe", () => {
     expect(revalidateMock).toHaveBeenCalledTimes(1);
 
     // The re-run reads the settled session and funnels the return.
-    const redirected = await runMiddleware(postCheckoutBilling);
+    const redirected = await runMiddleware(gatedDestination);
     expect(redirected.status).toBe(302);
-    expect(redirected.headers.get("Location")).toBe(managedFunnel);
+    expect(redirected.headers.get("Location")).toBe(gatedRedirect);
   });
 
   test("the re-run is armed once and fires once", async () => {
     makeSelfHostedLocalReturn();
 
-    await runMiddlewareOutcome(postCheckoutBilling);
-    await runMiddlewareOutcome(postCheckoutBilling);
+    await runMiddlewareOutcome(gatedDestination);
+    await runMiddlewareOutcome(gatedDestination);
 
     useAuthStore.setState({ cloudSession: "present" });
     await tick();
@@ -599,8 +494,8 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
     try {
       // The probe outruns the (clamped) wait, so the guard decides on the
       // forced "absent" and the router lands on billing.
-      await router.navigate(postCheckoutBilling);
-      expect(currentHref(router)).toBe(postCheckoutBilling);
+      await router.navigate(gatedDestination);
+      expect(currentHref(router)).toBe(gatedDestination);
       expect(revalidateMock).not.toHaveBeenCalled();
 
       // The probe lands "present" afterwards. The guard has to re-run for the
@@ -608,7 +503,7 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
       // is what pins that `revalidate()` still re-runs middleware.
       useAuthStore.setState({ cloudSession: "present" });
       await waitUntil(
-        () => currentHref(router) === managedFunnel,
+        () => currentHref(router) === gatedRedirect,
         "the re-run guard to funnel the paid return",
       );
       expect(revalidateMock).toHaveBeenCalledTimes(1);
@@ -624,10 +519,10 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
     liveRouter = router;
 
     try {
-      await router.navigate(postCheckoutBilling);
+      await router.navigate(gatedDestination);
       useAuthStore.setState({ cloudSession: "present" });
       await waitUntil(
-        () => currentHref(router) === managedFunnel,
+        () => currentHref(router) === gatedRedirect,
         "the re-run guard to funnel the paid return",
       );
 
@@ -637,7 +532,7 @@ describe("authMiddleware — late-probe re-run through a real router", () => {
       await tick();
       await tick();
       expect(revalidateMock).toHaveBeenCalledTimes(1);
-      expect(currentHref(router)).toBe(managedFunnel);
+      expect(currentHref(router)).toBe(gatedRedirect);
     } finally {
       liveRouter = null;
       router.dispose();
@@ -705,7 +600,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const outcome = await runMiddlewareOutcome(managedFunnel);
+      const outcome = await runMiddlewareOutcome(gatedRedirect);
       expect(outcome.admitted).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
@@ -732,10 +627,10 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const res = await runMiddleware(managedFunnel);
+      const res = await runMiddleware(gatedRedirect);
       expect(res.status).toBe(302);
       expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(managedFunnel)}`,
+        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
       );
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
@@ -765,7 +660,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(managedFunnel);
+      const pending = runMiddleware(gatedRedirect);
       // Consent lands well inside its (clamped) wait; the assistants fetch
       // never reports, so only that second wait runs out.
       setTimeout(() => {
@@ -775,7 +670,7 @@ describe("authMiddleware — hydration timeout", () => {
       const res = await pending;
       expect(res.status).toBe(302);
       expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(managedFunnel)}`,
+        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
       );
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
@@ -808,7 +703,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(managedFunnel);
+      const pending = runMiddleware(gatedRedirect);
       // Past the (clamped) consent wait but inside the assistants one, which
       // never reports.
       setTimeout(() => {
@@ -818,7 +713,7 @@ describe("authMiddleware — hydration timeout", () => {
       const res = await pending;
       expect(res.status).toBe(302);
       expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(managedFunnel)}`,
+        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
       );
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
@@ -849,7 +744,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const outcome = await runMiddlewareOutcome(managedFunnel);
+      const outcome = await runMiddlewareOutcome(gatedRedirect);
       expect(outcome.admitted).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });

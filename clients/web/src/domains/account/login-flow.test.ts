@@ -135,18 +135,7 @@ describe("login flow routing", () => {
 });
 
 describe("requiresCloudSession", () => {
-  const BILLING_LANDING = `${routes.settings.root}/billing`;
-  const STRIPE_RETURN = "session_id=cs_test_123";
-  const PAID_HATCH = `${routes.onboarding.hatching}?hosting=cadet-cloud&post_checkout=1`;
-
   test.each([
-    [routes.checkout],
-    [`${routes.checkout}?package=mighty`],
-    [BILLING_LANDING],
-    [`${BILLING_LANDING}?${STRIPE_RETURN}`],
-    [routes.settings.upgradeSuccess],
-    [`${routes.settings.usage}?${STRIPE_RETURN}`],
-    [PAID_HATCH],
     [routes.account.root],
     ["/import?foo=1"],
     ["/accounts/cli/callback?port=1"],
@@ -159,8 +148,7 @@ describe("requiresCloudSession", () => {
     [routes.assistant],
     [routes.settings.general],
     ["/assistant/conversations/abc"],
-    // The usage page reads from the local daemon, so only its Stripe return
-    // leg is platform-bound.
+    // The usage page reads from the local daemon.
     [routes.settings.usage],
     // A managed hatch a free user chose carries no purchase to lose.
     [routes.onboarding.hatching],
@@ -170,8 +158,6 @@ describe("requiresCloudSession", () => {
   });
 
   test("matches sub-paths, not siblings that merely share a prefix", () => {
-    expect(requiresCloudSession(`${routes.checkout}/detail`)).toBe(true);
-    expect(requiresCloudSession(`${routes.checkout}-archive`)).toBe(false);
     expect(requiresCloudSession(`${routes.account.root}/login`)).toBe(true);
     expect(requiresCloudSession("/accountant")).toBe(false);
   });

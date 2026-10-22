@@ -551,7 +551,7 @@ export function ActiveChatView() {
     const turnActive = turnPhase !== "idle";
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-[var(--text-secondary)]">
+        <p className="text-[var(--content-secondary)]">
           {autoGreet.timedOut
             ? turnActive
               ? t("activeChatView.stillWorking")
