@@ -10,7 +10,6 @@ import { toast } from "@mycadet/design-library/components/toast";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { AssistantInboxPage } from "@/domains/assistant-inbox/components/assistant-inbox-page";
-import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { AssistantInboxSetupCard } from "@/domains/assistant-inbox/components/assistant-inbox-setup-card";
 import { AssistantInboxSetupSuccess } from "@/domains/assistant-inbox/components/assistant-inbox-setup-success";
 import { AssistantInboxShell } from "@/domains/assistant-inbox/components/assistant-inbox-shell";
@@ -72,7 +71,6 @@ interface MailboxProps {
   assistantName: string;
   address: string;
   addressId: string;
-  handle: string;
   rootDomain: string;
   /** Leaves the page. */
   onBack: () => void;
@@ -85,7 +83,6 @@ function Mailbox({
   assistantName,
   address,
   addressId,
-  handle,
   rootDomain,
   onBack,
 }: MailboxProps) {
@@ -202,7 +199,6 @@ function Mailbox({
         assistantId={cloudAssistantId}
         localAssistantId={assistantId}
         assistantName={assistantName}
-        assistantHandle={handle}
         emailRootDomain={rootDomain}
       />
     </>
@@ -386,8 +382,8 @@ export function AssistantInboxPageRoute() {
       return (
         <AssistantInboxSetupCard
           assistantId={assistantId}
-          handle={state.handle}
           rootDomain={state.rootDomain}
+          handle={state.handle}
           handleEditable={!state.hasDomain}
           checkHandle={checkHandle}
           error={setupError}
@@ -416,7 +412,6 @@ export function AssistantInboxPageRoute() {
           assistantName={state.assistantName}
           address={state.address ?? ""}
           addressId={state.addressId ?? ""}
-          handle={state.handle}
           rootDomain={state.rootDomain}
           onBack={leave}
         />

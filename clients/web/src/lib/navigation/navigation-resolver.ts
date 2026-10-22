@@ -1,9 +1,6 @@
 import type { CloudSessionStatus } from "@/stores/session-status";
 import { sanitizeReturnTo } from "@/utils/return-to";
-import {
-  isNewAssistantFunnel,
-  onboardingDestinationAfterConsent,
-} from "@/domains/onboarding/onboarding-destination";
+import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
 import { routes } from "@/utils/routes";
 
 // ---------------------------------------------------------------------------
@@ -235,11 +232,7 @@ function waitForSession(state: NavigationState): NavigationDecision | null {
 /**
  * A gateway session answers for itself, so it skips the rest of the pipeline.
  */
-function allowGatewayAuth(
-  state: NavigationState,
-  _path: string,
-  pathnameWithSearch: string,
-): NavigationDecision | null {
+function allowGatewayAuth(state: NavigationState): NavigationDecision | null {
   if (!state.isGatewayAuth) {
     return null;
   }
@@ -381,7 +374,7 @@ function allowSetupRoutes(
     }
   }
 
-  return enforceFunnelConsent(state, path, pathnameWithSearch);
+  return enforceFunnelConsent(state, path);
 }
 
 /**
@@ -403,7 +396,6 @@ const PROVISIONING_FUNNEL_PATHS: ReadonlySet<string> = new Set([
 function enforceFunnelConsent(
   state: NavigationState,
   path: string,
-  pathnameWithSearch: string,
 ): NavigationDecision {
   if (!PROVISIONING_FUNNEL_PATHS.has(path)) {
     return { action: "allow" };

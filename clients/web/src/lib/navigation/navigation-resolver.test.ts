@@ -48,8 +48,10 @@ function redirectPath(decision: NavigationDecision): string | null {
 
 // The two provisioning funnel entries: managed cloud hatches (hosting
 // forced to cadet-cloud so a local-mode client provisions on the cloud).
-const RESEARCH_FUNNEL_URL = "/assistant/onboarding/research?hosting=cadet-cloud";
-const HATCHING_FUNNEL_URL = "/assistant/onboarding/hatching?hosting=cadet-cloud";
+const RESEARCH_FUNNEL_URL =
+  "/assistant/onboarding/research?hosting=cadet-cloud";
+const HATCHING_FUNNEL_URL =
+  "/assistant/onboarding/hatching?hosting=cadet-cloud";
 
 const ALLOW: NavigationDecision = { action: "allow" };
 const WAIT: NavigationDecision = { action: "wait" };
@@ -679,8 +681,6 @@ describe("resolveNavigation", () => {
 
     // A brand-new org: nothing resolved at all.
     const EMPTY_ORG = { hasAssistants: false } as const;
-
-    const STALE_TOGGLES = [{ privacyConsent: false }] as const;
 
     // Consent is enforced at the destination, not skipped: both funnel entries
     // are onboarding paths, and re-resolving one bounces an unconsented user on.
@@ -1324,7 +1324,6 @@ describe("resolveNavigation", () => {
         to: "/assistant/onboarding/privacy",
       });
     });
-
   });
 
   // -----------------------------------------------------------------------
@@ -1352,5 +1351,4 @@ describe("resolveNavigation", () => {
       );
     });
   });
-
 });

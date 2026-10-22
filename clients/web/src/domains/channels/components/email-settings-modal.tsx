@@ -15,7 +15,6 @@ export interface EmailSettingsModalProps {
   /** The local assistant id the gateway's channel policy routes take. */
   localAssistantId: string;
   assistantName: string;
-  assistantHandle: string | undefined;
   emailRootDomain: string;
 }
 
@@ -34,7 +33,6 @@ export function EmailSettingsModal({
   assistantId,
   localAssistantId,
   assistantName,
-  assistantHandle,
   emailRootDomain,
 }: EmailSettingsModalProps) {
   const { t } = useTranslation("channels");

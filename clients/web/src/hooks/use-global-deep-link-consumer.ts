@@ -1,8 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
 
-import { useQueryClient } from "@tanstack/react-query";
-
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { requestComposerFocus } from "@/domains/chat/composer-focus";
 import {
@@ -118,7 +116,6 @@ import { conversationIdForPath, routes } from "@/utils/routes";
 export function useGlobalDeepLinkConsumer(): void {
   const navigate = useNavigate();
   const { pathname, search, hash, state } = useLocation();
-  const queryClient = useQueryClient();
   const navigateRef = useRef(navigate);
   useLayoutEffect(() => {
     navigateRef.current = navigate;

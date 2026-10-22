@@ -5,7 +5,6 @@ import {
   describe,
   expect,
   mock,
-  spyOn,
   test,
 } from "bun:test";
 import { cleanup, renderHook, act } from "@testing-library/react";
@@ -14,8 +13,6 @@ import type { NavigateOptions, To } from "react-router";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { organizationsBillingSummaryRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
-import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { consumePendingComposerFocus } from "@/domains/chat/composer-focus";
 import { useSubagentStore } from "@/domains/chat/subagent-store";
 import { useWorkflowStore } from "@/domains/chat/workflow-store";

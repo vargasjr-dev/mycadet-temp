@@ -5,7 +5,6 @@ import { useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { useAssistantHandleModal } from "@/components/assistant-handle-modal";
 import { useCopyToClipboard } from "@/hooks/use-copy-to-clipboard";
 import {
   assistantsDomainsDestroyMutation,
@@ -28,7 +27,6 @@ import {
   channelsReadinessRefreshPostMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { extractErrorMessage } from "@/utils/api-errors";
 import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
@@ -176,8 +174,6 @@ export function EmailCloudContent({
   // daemon readiness query in `useAssistantChannels` is cached under the
   // active id (a local slug on self-hosted assistants).
   const activeAssistantId = useActiveAssistantId();
-  const assistantName = useAssistantIdentityStore.use.name();
-  const handleModal = useAssistantHandleModal(activeAssistantId);
   const refreshReadinessMutateAsync = refreshReadiness.mutateAsync;
   const refreshChannelReadiness = useCallback(() => {
     void refreshReadinessMutateAsync({
@@ -308,17 +304,13 @@ export function EmailCloudContent({
   );
 
   if (!domain) {
-    return (
-      <div className="space-y-3">
-                {inboxSetupNotice}
-      </div>
-    );
+    return <div className="space-y-3">{inboxSetupNotice}</div>;
   }
 
   if (!address) {
     return (
       <div className="space-y-4">
-                <div className="space-y-1.5">
+        <div className="space-y-1.5">
           <label className="block text-body-small-default text-[var(--content-tertiary)]">
             {t("emailCloudContent.domainLabel")}
           </label>
@@ -369,7 +361,7 @@ export function EmailCloudContent({
 
   return (
     <div className="space-y-4">
-            <div className="space-y-1.5">
+      <div className="space-y-1.5">
         {/* The domain's verification sits on the label's line, so the field
             under it holds the address alone and the trailing controls are
             the two things to do with it: copy it, or remove it. */}

@@ -9,17 +9,12 @@ import {
   readPrivacyConsent,
   readConsentHydrated,
 } from "@/domains/onboarding/prefs";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import {
   isSelectedAssistantOnboarded,
   userHasOnboardedAssistant,
 } from "@/domains/onboarding/onboarded-assistant";
 import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
-import {
-  assistantsValidForOrg,
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { NavigationState } from "./navigation-resolver";
 
 export function buildNavigationState(

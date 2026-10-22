@@ -117,7 +117,6 @@ const meta: Meta<typeof EmailSettingsModal> = {
     assistantId: ASSISTANT_ID,
     localAssistantId: LOCAL_ASSISTANT_ID,
     assistantName: "Velly",
-    assistantHandle: SUBDOMAIN,
     emailRootDomain: ROOT_DOMAIN,
   },
   beforeEach: () => {

@@ -1,4 +1,4 @@
-import { Check, Zap } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 

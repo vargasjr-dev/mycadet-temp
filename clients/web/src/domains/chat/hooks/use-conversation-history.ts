@@ -678,7 +678,6 @@ export function useConversationHistory({
   const wasSendingRef = useRef(false);
   const activeSendTrackedRef = useRef(false);
   useEffect(() => {
-    const prevProcessing = prevProcessingRef.current;
     prevProcessingRef.current = processingConversationIds;
     const sendJustEnded = wasSendingRef.current && !sendingNow;
     wasSendingRef.current = sendingNow;
@@ -689,14 +688,6 @@ export function useConversationHistory({
       processingConversationIds.has(activeConversationId)
     ) {
       activeSendTrackedRef.current = true;
-    }
-
-    let anyTurnDeparted = false;
-    for (const id of prevProcessing) {
-      if (!processingConversationIds.has(id)) {
-        anyTurnDeparted = true;
-        break;
-      }
     }
 
     if (sendJustEnded) {

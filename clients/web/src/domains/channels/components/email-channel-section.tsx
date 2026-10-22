@@ -7,10 +7,7 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
 import { useInboxPitchCopy } from "@/domains/assistant-inbox/hooks/use-inbox-pitch-copy";
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
-import {
-  assistantsListOptions,
-  organizationsBillingSubscriptionRetrieveOptions,
-} from "@/generated/api/@tanstack/react-query.gen";
+import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
@@ -43,11 +40,6 @@ export function EmailChannelSection() {
 
   // assistantHandle is platform-only; used to pre-fill the email subdomain.
   const isOrgReady = useIsOrgReady();
-  const { data: assistantList } = useQuery({
-    ...assistantsListOptions(),
-    enabled: isOrgReady,
-  });
-  const assistantHandle = assistantList?.results?.[0]?.handle;
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
   const cloudGate = useCloudGate();

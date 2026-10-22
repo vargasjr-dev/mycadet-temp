@@ -50,15 +50,8 @@ import { routes } from "@/utils/routes";
 
 export function GeneralPage() {
   const { t } = useTranslation("settings");
-  const {
-    assistant,
-    healthz,
-    healthzLoading,
-    healthzFetching,
-    healthzPolling,
-    refetch,
-    refetchUntilResized,
-  } = useAssistantWithHealthz();
+  const { assistant, healthz, healthzLoading, refetch } =
+    useAssistantWithHealthz();
   const isAuthenticated = useIsAuthenticated();
   const isNativeMobile = useIsNativeMobile();
   // The card supersedes the in-page picker so the two never render together.

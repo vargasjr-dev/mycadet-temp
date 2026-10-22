@@ -130,8 +130,6 @@ mock.module("@tanstack/react-query", () => ({
 
 const { useBackgroundHatch } = await import("./use-background-hatch");
 
-const TIMEOUT_MESSAGE =
-  "Your assistant is taking longer than expected. Please try again.";
 const ORG_HEADER_MESSAGE =
   "We couldn't confirm your organization. Please try again.";
 
@@ -324,8 +322,6 @@ describe("useBackgroundHatch", () => {
     // Cadet-Cloud / managed path still provisions via hatchAssistant.
     expect(hatchAssistantMock).toHaveBeenCalledTimes(1);
   });
-
-
 
   test("retry() re-runs the hatch after a terminal failure", async () => {
     hatchResult = {
