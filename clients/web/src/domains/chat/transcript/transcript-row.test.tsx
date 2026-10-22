@@ -2,7 +2,7 @@
  * `TranscriptRow`'s dispatch tests: which shell a row's kind renders through.
  */
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 
 import { displayReactionEmoji } from "@/domains/chat/transcript/transcript-message-body-shared";
 import { TranscriptRow } from "@/domains/chat/transcript/transcript-row";

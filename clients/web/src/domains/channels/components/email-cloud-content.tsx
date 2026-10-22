@@ -1,4 +1,4 @@
-import { Check, Copy, Loader2, Mail, Trash2 } from "lucide-react";
+import { Check, Copy, Mail, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -20,7 +20,6 @@ import {
   assistantsEmailAddressesStatusRetrieveOptions,
   assistantsEmailAddressesStatusRetrieveQueryKey,
   assistantsListQueryKey,
-  organizationsBillingSubscriptionRetrieveOptions,
   useAssistantsDomainsProvisionCreateMutation,
 } from "@/generated/api/@tanstack/react-query.gen";
 import type { DomainVerificationStatusStatusEnum } from "@/generated/api/types.gen";
@@ -67,13 +66,11 @@ export function domainVerificationRefetchInterval(
 
 interface EmailCloudContentProps {
   assistantId: string;
-  assistantHandle: string | undefined;
   emailRootDomain: string;
 }
 
 export function EmailCloudContent({
   assistantId,
-  assistantHandle,
   emailRootDomain,
 }: EmailCloudContentProps) {
   const { t } = useTranslation("channels");

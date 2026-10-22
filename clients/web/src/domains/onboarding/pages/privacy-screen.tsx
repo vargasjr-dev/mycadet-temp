@@ -22,7 +22,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { saveConsent } from "@/lib/consent/consent-persistence";
 import { useTranslation } from "@/i18n";
-import { PACKAGE_PARAM, routes } from "@/utils/routes";
+import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 
 export function PrivacyScreen() {

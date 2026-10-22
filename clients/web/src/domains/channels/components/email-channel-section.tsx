@@ -281,7 +281,6 @@ export function EmailChannelSection() {
           ) : (
             <EmailCloudContent
               assistantId={managedAssistantId}
-              assistantHandle={assistantHandle}
               emailRootDomain={emailRootDomain}
             />
           )}

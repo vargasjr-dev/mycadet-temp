@@ -230,7 +230,6 @@ function renderManaged(
       <MemoryRouter>
         <EmailCloudContent
           assistantId={ASSISTANT_ID}
-          assistantHandle={SUBDOMAIN}
           emailRootDomain={ROOT_DOMAIN}
         />
       </MemoryRouter>

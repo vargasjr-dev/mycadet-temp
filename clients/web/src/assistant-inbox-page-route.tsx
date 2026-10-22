@@ -229,10 +229,6 @@ export function AssistantInboxPageRoute() {
   /* The address just created, shown on the success screen until the user
      goes on to the mailbox. */
   const [justCreated, setJustCreated] = useState<string | null>(null);
-  /* The upgrade pitch's "Change handle": the same modal the assistant page
-     opens from its @handle line. */
-  const handleModal = useAssistantHandleModal(assistantId);
-
   /* The way back from the inbox's pages. "/" is the account screen, not
      the app, so back goes where the user came from when there is an entry
      behind this one, and to the assistant's profile (which holds the Email

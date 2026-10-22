@@ -52,7 +52,6 @@ export function EmailSettingsModal({
           <div className="flex flex-col gap-5">
             <EmailCloudContent
               assistantId={assistantId}
-              assistantHandle={assistantHandle}
               emailRootDomain={emailRootDomain}
             />
             {floors.onChange ? (

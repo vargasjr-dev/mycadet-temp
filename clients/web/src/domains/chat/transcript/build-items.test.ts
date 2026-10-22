@@ -7,7 +7,6 @@ import type {
   TranscriptItem,
 } from "@/domains/chat/transcript/types";
 
-import { mergeAdjacentAssistantMessages } from "@/domains/chat/utils/message-merge";
 import { textBody } from "@/domains/chat/utils/message-test-helpers";
 import { isCameraFrameRow } from "./camera-frame-rows";
 function makeMessage(

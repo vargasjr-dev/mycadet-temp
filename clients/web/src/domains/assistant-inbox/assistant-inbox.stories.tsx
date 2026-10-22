@@ -21,7 +21,6 @@
  * and the handlers log to the Actions panel.
  */
 import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
 import { fn } from "storybook/test";
 
 import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu";
@@ -168,8 +167,6 @@ type Story = StoryObj<InboxStoryArgs>;
  * landed and the storage still moving. The phase playground under
  * Settings/Billing/ProOnboarding drives every other state of this screen.
  */
-/** How long the takeover's "All done!" holds before the hand-off. */
-const STORY_CELEBRATION_MS = 2500;
 
 /**
  * The end of a plan upgrade, as the billing wizard now plays it: the

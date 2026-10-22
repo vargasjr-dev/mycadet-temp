@@ -40,7 +40,6 @@ const meta: Meta<typeof EmailCloudContent> = {
   parameters: { layout: "padded" },
   args: {
     assistantId: "story-assistant",
-    assistantHandle: "ada",
     emailRootDomain: "mycadet.ai",
   },
   decorators: [

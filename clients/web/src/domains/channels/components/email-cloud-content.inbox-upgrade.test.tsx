@@ -56,7 +56,6 @@ function renderNotEntitled() {
       <MemoryRouter>
         <EmailCloudContent
           assistantId="platform-assistant"
-          assistantHandle="ada"
           emailRootDomain="example.com"
         />
       </MemoryRouter>
@@ -111,7 +110,6 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
       <MemoryRouter initialEntries={["/assistant/channels/email"]}>
         <EmailCloudContent
           assistantId={PLATFORM_ASSISTANT_ID}
-          assistantHandle="ada"
           emailRootDomain="example.com"
         />
         <LocationProbe />

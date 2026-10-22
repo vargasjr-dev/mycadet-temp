@@ -1,6 +1,4 @@
 import { Check, Zap } from "lucide-react";
-import type { ReactNode } from "react";
-
 
 import { useTranslation } from "@/i18n";
 
