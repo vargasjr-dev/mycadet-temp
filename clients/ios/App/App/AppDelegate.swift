@@ -1,35 +1,18 @@
 import UIKit
 import Capacitor
 
-@UIApplicationMain
+@main
 class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Categories persist across launches, so remote pushes can show the
         // action after the first open even when JS has not yet registered.
         NotificationCategories.register()
 
-        // A QR scan that launches the terminated app delivers the connect URL
-        // here as well as through `application(_:open:)`. Parse it into a
-        // pending confirmation only; persistence waits on an explicit Connect.
-        // A launch URL came from outside the process, so it may not carry the
-        // in-process provenance marker; strip before storing so the dedupe
-        // below compares like with like, and drop a URL that cannot be
-        // stripped. See `CommandURLProvenance`.
-        if let rawURL = launchOptions?[.url] as? URL,
-           let url = CommandURLProvenance.stripped(rawURL) {
-            if !handleConnectDeepLink(url) {
-                // Every *other* custom-scheme launch URL (a `voice` or `thread`
-                // link from the Live Activity or Safari; App Intents never
-                // arrive this way, they run in-process) is stashed as a
-                // *backstop*, not as the delivery. See `launchURL` for why it
-                // is both kept and deduped.
-                launchURL = url
-                pendingCommandURL = url
-            }
-        }
+        // A cold-launch URL no longer rides `launchOptions` — under the scene
+        // lifecycle the scene delegate forwards it from
+        // `scene(_:willConnectTo:)`'s connection options to
+        // `handleColdLaunchURLContexts`.
         return true
     }
 
@@ -52,32 +35,74 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         VoiceLiveActivityPlugin.endRunningActivityBeforeTermination()
     }
 
-    func application(_ app: UIApplication, open rawURL: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // This and `launchOptions[.url]` are the only two ways a custom-scheme
-        // URL enters from outside the process, so this is where an external
-        // open loses any claim to intent provenance, and where one that cannot
-        // be stripped is refused rather than forwarded. See
-        // `CommandURLProvenance`.
-        guard let url = CommandURLProvenance.stripped(rawURL) else {
-            return false
+    /// The cold-launch entry point for custom-scheme URLs: the scene delegate
+    /// forwards `scene(_:willConnectTo:)`'s connection options here — the
+    /// scene-lifecycle home of what `launchOptions[.url]` used to deliver. A
+    /// QR scan that launches the terminated app brings its connect URL
+    /// through this path.
+    ///
+    /// A launch URL came from outside the process, so it may not carry the
+    /// in-process provenance marker; strip before storing so the dedupe below
+    /// compares like with like, and drop a URL that cannot be stripped. See
+    /// `CommandURLProvenance`.
+    func handleColdLaunchURLContexts(_ urlContexts: Set<UIOpenURLContext>) {
+        for context in urlContexts {
+            guard let url = CommandURLProvenance.stripped(context.url) else {
+                continue
+            }
+            if handleConnectDeepLink(url) {
+                continue
+            }
+            // Every *other* custom-scheme launch URL (a `voice` or `thread`
+            // link from the Live Activity or Safari; App Intents never arrive
+            // this way, they run in-process) is stashed as a *backstop*, not
+            // as the delivery. See `launchURL` for why it is both kept and
+            // deduped.
+            launchURL = url
+            pendingCommandURL = url
+            deliverExternalURL(url)
         }
-        if handleConnectDeepLink(url) {
-            return true
-        }
-        if swallowIfLaunchURLAlreadyDelivered(url) {
-            return true
-        }
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
     }
 
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        // Universal Links — navigate the Capacitor webview to the incoming URL
-        // so that deep links (e.g. ?app=X#/pr/...) open in-app instead of Safari.
+    /// A warm open from outside the process, forwarded from the scene
+    /// delegate's `scene(_:openURLContexts:)`.
+    func handleOpenURLContexts(_ urlContexts: Set<UIOpenURLContext>) {
+        for context in urlContexts {
+            guard let url = CommandURLProvenance.stripped(context.url) else {
+                continue
+            }
+            deliverExternalURL(url)
+        }
+    }
+
+    /// The tail both external paths share: this is where an external open
+    /// loses any claim to intent provenance (already stripped above), a
+    /// `connect` link routes to the pending confirmation, and everything else
+    /// either dies in the launch-URL dedupe or reaches the web layer through
+    /// Capacitor's proxy. Capacitor's `appUrlOpen` payload carries only the
+    /// URL, so the launch-context options a warm open used to forward are not
+    /// missed.
+    private func deliverExternalURL(_ url: URL) {
+        if handleConnectDeepLink(url) {
+            return
+        }
+        if swallowIfLaunchURLAlreadyDelivered(url) {
+            return
+        }
+        _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: [:])
+    }
+
+    /// Universal Links, forwarded from the scene delegate's
+    /// `scene(_:continueUserActivity:)` (and a cold launch's connection
+    /// options, both under the scene lifecycle). Navigate the Capacitor
+    /// webview to the incoming URL so that deep links (e.g. ?app=X#/pr/...)
+    /// open in-app instead of Safari.
+    func handleUserActivity(_ userActivity: NSUserActivity) {
         if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
            let url = userActivity.webpageURL {
             navigateWebView(to: url)
         }
-        return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
+        _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in [] })
     }
 
     // MARK: - APNs Token Forwarding
@@ -116,8 +141,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// hosting); it is both persisted and the value the pair-page URL is derived
     /// from, so there is one source of truth.
     ///
-    /// One handler serves both entry points: a warm open via
-    /// `application(_:open:)` and a cold launch via `launchOptions[.url]`. The
+    /// One handler serves both entry points: a warm open via the scene's
+    /// `scene(_:openURLContexts:)` and a cold launch via
+    /// `scene(_:willConnectTo:)`'s connection options, both forwarded by the
+    /// scene delegate. The
     /// `connect` host distinguishes it from the OAuth-completion deep link (host
     /// `oauth-complete`), which Capacitor's `appUrlOpen` routes.
     ///
@@ -241,40 +268,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// one is kept: a superseded command is stale by definition.
     private var pendingCommandURL: URL?
 
-    /// The URL this process was launched with (`launchOptions[.url]`), while it
-    /// is still eligible to arrive a second time through
-    /// `application(_:open:)`.
+    /// The URL this process was launched with, while it is still eligible to
+    /// arrive a second time through the scene's open-URL path.
     ///
-    /// UIKit delivers a cold-launch URL through **both** routes on a non-scene
-    /// app: `launchOptions[.url]` here, *and* `application(_:open:options:)`,
-    /// which "is not called if your implementations return false from both the
-    /// `application(_:willFinishLaunchingWithOptions:)` and
-    /// `application(_:didFinishLaunchingWithOptions:)` methods"
-    /// (https://developer.apple.com/documentation/uikit/uiapplicationdelegate/application(_:open:options:)).
-    /// This delegate implements only the latter and returns `true`
-    /// unconditionally, so the `open:` call always comes — which is why a stock
-    /// Capacitor app, whose delegate handles URLs only in `application(_:open:)`,
-    /// receives `appUrlOpen` from a terminated state at all.
-    ///
-    /// The launch stash is kept anyway, because the `open:` route has a race of
-    /// its own: `ApplicationDelegateProxy` delivers by posting
+    /// Under the scene lifecycle a cold-launch URL is delivered exactly once:
+    /// the scene delegate forwards `scene(_:willConnectTo:)`'s connection
+    /// options to `handleColdLaunchURLContexts`, which stashes it here and then
+    /// attempts the same delivery a warm open would make. That attempt races
+    /// the bridge: `ApplicationDelegateProxy` delivers by posting
     /// `.capacitorOpenURL`, and `AppPlugin` only subscribes in its `load()`, so
-    /// a URL that arrives before the bridge finishes registering plugins has no
-    /// observer and is dropped. Nothing in the web layer calls
+    /// a URL that arrives before the bridge finishes registering plugins (its
+    /// synchronous `viewDidLoad`, which the key window's first appearance
+    /// triggers) has no observer and is dropped. Nothing in the web layer calls
     /// `App.getLaunchUrl()`, Capacitor's usual escape hatch for exactly that.
     ///
-    /// So: `open:` is the delivery, the stash is the backstop, and this holds
-    /// the identity that lets whichever one loses the race stay silent.
+    /// So: the immediate forward is the delivery when the bridge is already
+    /// up, the stash is the backstop when it is not, and this holds the
+    /// identity that lets whichever one loses the race stay silent.
     private var launchURL: URL?
 
-    /// Whether the backstop replayed ``launchURL`` before `application(_:open:)`
-    /// got to it, so the `open:` call that follows is recognized as the same
-    /// delivery rather than a second one.
+    /// Whether the backstop replayed `launchURL` already, so an open-URL
+    /// delivery of the same URL that follows is recognized as the same payload
+    /// rather than a fresh one.
     private var launchURLWasReplayed = false
 
-    /// Reconcile an `application(_:open:)` call against the launch URL,
-    /// answering whether it is a second delivery of something the web layer
-    /// already has and should be dropped here.
+    /// Reconcile an open-URL delivery against the launch URL, answering
+    /// whether it is a second delivery of something the web layer already has
+    /// and should be dropped here.
     ///
     /// Three cases, and only the launch URL reaches any of them:
     ///
@@ -313,14 +333,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// `VoiceModeDeepLink.route()`, `SendMessageToChatIntent` via
     /// `ThreadDeepLink.route()`, and `OpenCameraIntent` / `OpenNewChatIntent`
     /// via `CommandDeepLink.route(host:)`), which run in-process and therefore
-    /// never pass through `application(_:open:)`. A widget tap is no exception:
+    /// never arrive through the scene's open-URL paths. A widget tap is no
+    /// exception:
     /// those intents declare `openAppWhenRun`, so the system performs them in
     /// the app process rather than in the appex. That exclusivity is
     /// load-bearing: it is what lets this method vouch for the URL by adding
     /// the provenance marker the external entry points strip (see
     /// `CommandURLProvenance`).
     /// Do not route anything that arrived from outside the process through
-    /// here; the terminated-launch path in `didFinishLaunchingWithOptions`
+    /// here; the terminated-launch path in `handleColdLaunchURLContexts`
     /// deliberately stashes into `pendingCommandURL` directly instead.
     func deliverCommandURL(_ url: URL) {
         pendingCommandURL = CommandURLProvenance.marked(url)
@@ -331,8 +352,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     /// call before the view controller exists (a cold launch defers to the first
     /// `viewDidAppear`) and idempotent once delivered.
     ///
-    /// Delivery goes through `ApplicationDelegateProxy`, the exact channel a
-    /// warm `application(_:open:)` uses, so the URL surfaces to JS as Capacitor's
+    /// Delivery goes through `ApplicationDelegateProxy`, the exact channel the
+    /// scene delegate's URL forwarding uses, so the URL surfaces to JS as
+    /// Capacitor's
     /// `appUrlOpen` and `capacitor-deep-links.ts` handles it with no new web
     /// code. `AppPlugin` posts that event with `retainUntilConsumed: true`, so a
     /// command delivered before the SPA has registered its listener is replayed
@@ -359,10 +381,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Web view navigation
 
-    /// The Capacitor bridge view controller — the window root, or embedded in a
-    /// navigation controller, or a direct child of the root.
+    /// The Capacitor bridge view controller — the key window's root, or
+    /// embedded in a navigation controller, or a direct child of the root.
+    /// The window lives on the scene delegate under the scene lifecycle, so
+    /// it is looked up through the connected scene, the same read-only
+    /// pattern `NativeAuthPlugin` uses.
     private func currentBridgeViewController() -> CAPBridgeViewController? {
-        guard let rootVC = window?.rootViewController else { return nil }
+        let keyWindow = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: { $0.isKeyWindow })
+        guard let rootVC = keyWindow?.rootViewController else { return nil }
         if let bridgeVC = rootVC as? CAPBridgeViewController {
             return bridgeVC
         }

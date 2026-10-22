@@ -13,9 +13,10 @@ import Foundation
 ///
 /// The shell can prove the difference mechanically. Intent URLs are produced
 /// in-process and handed to `AppDelegate.deliverCommandURL(_:)`; they never
-/// pass through `application(_:open:)`. External opens arrive *only* through
-/// `application(_:open:options:)` and `launchOptions[.url]`. So a query item
-/// that `deliverCommandURL` adds and those two entry points strip is
+/// arrive through the scene's open-URL paths. External opens arrive *only*
+/// through the scene delegate's URL forwarding (`scene(_:willConnectTo:)`'s
+/// connection options and `scene(_:openURLContexts:)`). So a query item
+/// that `deliverCommandURL` adds and those entry points strip is
 /// unforgeable from outside the process: by the time any URL reaches the
 /// shared delivery seam (`ApplicationDelegateProxy` → Capacitor `appUrlOpen`),
 /// the marker is present exactly when an intent produced it (LUM-3281).
@@ -25,10 +26,11 @@ import Foundation
 /// `WebViewDelegationHandler.webView(_:decidePolicyFor:)` (our
 /// `NavigationDelegateProxy` forwards anything off the self-hosted origin to
 /// it), which cancels the load and calls `UIApplication.shared.open(_:)`; iOS
-/// routes an open of our own scheme back through `application(_:open:)`, so
-/// it is stripped like any external open. And an intent that launches a
-/// terminated app runs its `perform()` in-process after launch, so its URL is
-/// built after `launchOptions` and can never appear there. Nothing in this
+/// routes an open of our own scheme back through the scene's open-URL path,
+/// so it is stripped like any external open. And an intent that launches a
+/// terminated app runs its `perform()` in-process after launch and hands its
+/// URL straight to `deliverCommandURL(_:)` — it never rides the scene's
+/// open-URL paths. Nothing in this
 /// app or in Capacitor posts `.capacitorOpenURL` except via the proxy path
 /// the delegate feeds.
 ///
@@ -36,8 +38,8 @@ import Foundation
 /// the "one URL, one parser" contract in `NATIVE_VOICE.md` holds, and it is
 /// added by the delegate rather than by the producers so the whole trust
 /// boundary lives in one file and a producer cannot forget it. The Live
-/// Activity's `widgetURL` (a system open that lands in `application(_:open:)`)
-/// and Safari test links therefore never carry it, which is the point.
+/// Activity's `widgetURL` (a system open that lands in the scene's open-URL
+/// path) and Safari test links therefore never carry it, which is the point.
 ///
 /// ## Two parsers, one predicate
 ///
@@ -78,7 +80,7 @@ enum CommandURLProvenance {
     /// surviving raw items are re-joined, never re-encoded), so a `message` or
     /// `prompt` value is untouched and the cold-launch dedupe
     /// (`AppDelegate.launchURL`, which compares URLs by equality) keeps working
-    /// as long as both deliveries are stripped before they are stored or
+    /// as long as every delivery is stripped before it is stored or
     /// compared.
     ///
     /// Returns `nil` when the URL cannot be taken apart, in which case the
