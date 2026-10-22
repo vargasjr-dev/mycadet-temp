@@ -14,7 +14,6 @@ import { withLockfileLock } from "@mycadet/local-mode";
 import {
   LockfileSchema,
   type AppProcessRecord,
-  type ContainerInfo,
   type LocalAssistantResources,
   type Lockfile,
   type LockfileAssistant,

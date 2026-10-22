@@ -5,7 +5,6 @@ import {
   clearRootProcess,
   formatAssistantReference,
   loadAllAssistants,
-  loadAllAssistantsAcrossEnvs,
   readRootProcesses,
   resolveTargetAssistant,
   type AssistantEntry,

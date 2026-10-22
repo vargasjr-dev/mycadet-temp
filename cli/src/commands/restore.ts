@@ -566,9 +566,6 @@ export const restore = Object.assign(
     const sizeMB = (statSync(fromPath).size / (1024 * 1024)).toFixed(1);
     console.log(`Reading ${fromPath} — ${sizeMB} MB...`);
 
-    // Cloud storage and lifecycle belong to the cloud API. `cloud` always
-    // parses (absent or unknown on-disk values default to "local"), so the
-    // pre-union legacy markers (`project`/`sshUser`) have no fallback to do.
     const cloud = entry.cloud;
 
     if (cloud === "apple-container") {

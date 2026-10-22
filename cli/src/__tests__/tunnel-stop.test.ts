@@ -20,7 +20,6 @@ import {
   readRootProcesses,
   saveAssistantEntry,
   stampRootProcess,
-  findAssistantByName,
 } from "../lib/assistant-config.js";
 
 const originalArgv = process.argv;
