@@ -19,6 +19,8 @@ mock.module("@/runtime/native-file", () => ({
 }));
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  assistantsListQueryKey: () => ["assistants", "email-test-listing"],
+
   feedbackCreateMutation: () => ({
     mutationFn: async (request: unknown) => {
       feedbackRequests.push(request);

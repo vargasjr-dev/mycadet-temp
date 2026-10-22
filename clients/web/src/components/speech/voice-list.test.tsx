@@ -85,6 +85,8 @@ mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
 }));
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  assistantsListQueryKey: () => ["assistants", "email-test-listing"],
+
   // The voice catalog is read straight from the cloud API now — the daemon's
   // managed-voices route is deleted. initialData keeps the fetched state
   // synchronous (same trick the daemon mocks use).

@@ -279,6 +279,8 @@ mock.module("@/generated/api/sdk.gen", () => ({
 }));
 
 mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
+  assistantsListQueryKey: () => ["assistants", "email-test-listing"],
+
   assistantsActiveRetrieveOptions: () => ({}),
   assistantsOauthConnectionsListOptions: () => ({}),
   useAssistantsOauthStartCreateMutation: () => ({

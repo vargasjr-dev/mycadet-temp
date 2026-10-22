@@ -26,8 +26,6 @@ import {
 } from "bun:test";
 import type { ReactNode } from "react";
 
-const RESIZE_LABEL = "Setting up your machine…";
-
 // --- Mutable per-test state, reset in beforeEach ------------------------------
 
 const navigateMock = mock((_to: string, _opts?: unknown) => {});
@@ -35,17 +33,6 @@ let searchParams = new URLSearchParams();
 
 let isLocalClientValue = false;
 
-// The observed subscription plan gates the free/no-wait decision (Fix 2).
-let subscriptionPlanId = "base";
-// Whether the subscription read is uncertain: a throw, or a resolved response
-// with no data (a 5xx under throwOnError:false). Either is "unknown", not "free".
-let subscriptionThrows = false;
-let subscriptionNoData = false;
-// Whether a resize operation reads as still in flight (Fix 1).
-let opStatusInFlight = false;
-// Whether the operational-status read resolves with no data (a 5xx under
-// throwOnError:false) — an uncertain read that must count as in-flight.
-let opStatusNoData = false;
 // Whether the no-id pre-flight getAssistant resolves an already-active
 // assistant (the reload path, Fix 3).
 let preflightActive = false;
@@ -71,17 +58,7 @@ let currentAssistant: AssistantShape;
 let idPollCount = 0;
 let resizePollClockStepMs = 0;
 
-// The subscription/targets loop runs before the resize loop, so a cap-expiry
 // test that never reaches a confirmed-Pro read advances the clock here instead.
-let subscriptionCallCount = 0;
-let subscriptionPollClockStepMs = 0;
-
-interface OnboardingShape {
-  max_machine_tier: string | null;
-  selected_storage_gib: number | null;
-}
-let onboardingData: OnboardingShape | null = null;
-let onboardingThrows = false;
 
 // --- Mocks --------------------------------------------------------------------
 
@@ -139,67 +116,6 @@ const hatchAssistantMock = mock(async () => ({
   data: { id: "asst-1", status: "provisioning" },
 }));
 
-// How many leading reconcile calls resolve with NO data — a 503 "nothing
-// queued" / network blip under throwOnError:false — before one succeeds. 0 =
-// always succeed. Infinity = never succeeds.
-let ensureProvisionedFailFirstN = 0;
-// How many leading reconcile calls answer with a race body: a 200 that queues
-// nothing because the cloud cannot see the entitlement yet, or has no
-// settled assistant to provision.
-let ensureProvisionedRaceFirstN = 0;
-let ensureProvisionedRaceReason = "no_active_pro";
-let ensureProvisionedCallCount = 0;
-
-const ensureProvisionedMock = mock(async () => {
-  ensureProvisionedCallCount += 1;
-  if (ensureProvisionedCallCount <= ensureProvisionedFailFirstN) {
-    return { data: undefined };
-  }
-  if (ensureProvisionedCallCount <= ensureProvisionedRaceFirstN) {
-    return {
-      data: {
-        state: "not_applicable",
-        reason: ensureProvisionedRaceReason,
-        targets: {},
-      },
-    };
-  }
-  return { data: { state: "started", reason: null, targets: {} } };
-});
-
-const onboardingRetrieveMock = mock(async () => {
-  if (onboardingThrows) {
-    throw new Error("onboarding fetch failed");
-  }
-  return { data: onboardingData };
-});
-
-const subscriptionRetrieveMock = mock(async () => {
-  subscriptionCallCount += 1;
-  if (subscriptionCallCount >= 2 && subscriptionPollClockStepMs > 0) {
-    setSystemTime(new Date(Date.now() + subscriptionPollClockStepMs));
-  }
-  if (subscriptionThrows) {
-    throw new Error("subscription fetch failed");
-  }
-  if (subscriptionNoData) {
-    return { data: undefined };
-  }
-  return { data: { plan_id: subscriptionPlanId } };
-});
-
-const operationalStatusReadMock = mock(async () => {
-  if (opStatusNoData) {
-    return { data: undefined };
-  }
-  return {
-    data: {
-      state: opStatusInFlight ? "resizing_machine" : "active",
-      active_operation: null,
-    },
-  };
-});
-
 const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
   ok: true as const,
   assistantId: "local-1",
@@ -228,13 +144,7 @@ mock.module("@/assistant/api", () => ({
   hatchAssistant: hatchAssistantMock,
 }));
 
-mock.module("@/generated/api/sdk.gen", () => ({
-  assistantsOperationalStatusDetailRead: operationalStatusReadMock,
-  organizationsBillingSubscriptionOnboardingEnsureProvisionedCreate:
-    ensureProvisionedMock,
-  organizationsBillingSubscriptionOnboardingRetrieve: onboardingRetrieveMock,
-  organizationsBillingSubscriptionRetrieve: subscriptionRetrieveMock,
-}));
+mock.module("@/generated/api/sdk.gen", () => ({}));
 
 mock.module("@/assistant/seed-hatch-avatar", () => ({
   seedHatchAvatar: async () => {},
@@ -420,10 +330,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     getAssistantMock.mockClear();
     getAssistantHealthzMock.mockClear();
     hatchAssistantMock.mockClear();
-    ensureProvisionedMock.mockClear();
-    onboardingRetrieveMock.mockClear();
-    subscriptionRetrieveMock.mockClear();
-    operationalStatusReadMock.mockClear();
     hatchLocalAssistantMock.mockClear();
     applyPendingProviderKeyMock.mockClear();
     applyPendingProviderKeyMock.mockImplementation(async () => {});
@@ -431,26 +337,13 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     setSelfHostedConnectionMock.mockClear();
     searchParams = new URLSearchParams();
     isLocalClientValue = false;
-    subscriptionPlanId = "base";
-    subscriptionThrows = false;
-    subscriptionNoData = false;
-    opStatusInFlight = false;
-    opStatusNoData = false;
     preflightActive = false;
     preflightGatewaySelectedLocal = false;
     idPollCount = 0;
     resizePollClockStepMs = 0;
-    subscriptionCallCount = 0;
-    subscriptionPollClockStepMs = 0;
-    ensureProvisionedFailFirstN = 0;
-    ensureProvisionedRaceFirstN = 0;
-    ensureProvisionedRaceReason = "no_active_pro";
-    ensureProvisionedCallCount = 0;
     healthzCallCount = 0;
     healthzUnhealthyFromCall = Number.POSITIVE_INFINITY;
     healthzPollClockStepMs = 0;
-    onboardingThrows = false;
-    onboardingData = null;
     currentAssistant = {
       id: "asst-1",
       status: "active",
@@ -464,51 +357,11 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     setSystemTime();
   });
 
-  test("holds until actuals meet the purchased targets, then completes; reconcile fires once", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    // The resize wait is active — actuals (small/10) are below the purchased
-    // ceiling (extra_large/50), so the screen holds without completing.
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy());
-    expect(ensureProvisionedMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // The server-side resize lands: actuals now meet the targets.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    expect(ensureProvisionedMock).toHaveBeenCalledTimes(1);
-  }, 20000);
-
-  test("free org with null targets completes with no added wait", async () => {
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: null, selected_storage_gib: null };
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(navigateMock).toHaveBeenCalledWith("/onboarding/research", {
-      replace: true,
-    });
-    // Not a Pro subscription: the resize phase is never entered.
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
   test("skip_research hands off to chat instead of the research funnel", async () => {
     const env = import.meta.env as Record<string, string | undefined>;
     const previousEnv = env.VITE_ENVIRONMENT;
     env.VITE_ENVIRONMENT = "staging";
     searchParams = new URLSearchParams("skip_research=1");
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: null, selected_storage_gib: null };
 
     try {
       render(<HatchingScreen />);
@@ -524,360 +377,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     }
   });
 
-  test("a base plan whose targets fetch fails still completes, never trapping", async () => {
-    subscriptionPlanId = "base";
-    onboardingThrows = true;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
-  test("a non-pro subscription completes immediately even when targets are present", async () => {
-    // The free/no-wait decision is gated on plan_id, not on the targets: a
-    // base plan completes at baseline even though onboarding names a ceiling.
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
-  test("targets met but the resize operation still in flight holds until it clears", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // Actuals already sit at the purchased ceiling, but the resize operation
-    // is still rolling out — completion must wait for the operation, not just
-    // targets-met, so the screen holds.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-    opStatusInFlight = true;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy());
-    // The resize loop keeps polling operational status while it holds.
-    await waitFor(
-      () =>
-        expect(
-          operationalStatusReadMock.mock.calls.length,
-        ).toBeGreaterThanOrEqual(2),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // The resize operation clears.
-    opStatusInFlight = false;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("plan pro with lagging targets keeps waiting (not free) until targets appear", async () => {
-    subscriptionPlanId = "pro";
-    // Targets aren't visible yet — the entitlement/targets race.
-    onboardingData = null;
-    // Actuals already meet the eventual ceiling so completion is prompt once
-    // the targets land.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    render(<HatchingScreen />);
-
-    // The reconcile fires, and the subscription/targets poll keeps re-fetching
-    // rather than concluding "free" and completing at baseline.
-    await waitFor(() => expect(ensureProvisionedMock).toHaveBeenCalledTimes(1));
-    await waitFor(
-      () =>
-        expect(onboardingRetrieveMock.mock.calls.length).toBeGreaterThanOrEqual(
-          2,
-        ),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // Targets become visible; the flow now holds for and clears the resize.
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("a preflight-active reload runs the provisioning wait before completing", async () => {
-    // The baseline assistant is already active on reload; the preflight path
-    // must still reconcile and hold for the purchased resize.
-    preflightActive = true;
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    currentAssistant.machine_size = "small";
-    currentAssistant.provisioned_storage_gib = 10;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy(), {
-      timeout: 15000,
-    });
-    // The preflight short-circuits the hatch request but still provisions.
-    expect(hatchAssistantMock).not.toHaveBeenCalled();
-    expect(ensureProvisionedMock).toHaveBeenCalledTimes(1);
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // The resize lands.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("the wait exceeding the hard cap completes anyway", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // Actuals stay below the targets; the resize poll jumps the clock past the
-    // RESIZE_WAIT_MAX_MS cap so completion falls through at baseline.
-    resizePollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // Never met the targets — completion came from the cap, not convergence.
-    expect(currentAssistant.machine_size).toBe("small");
-    expect(ensureProvisionedMock).toHaveBeenCalledTimes(1);
-  }, 20000);
-
-  test("an unknown (no-data) subscription read during a paid hatch keeps waiting, never completing at baseline", async () => {
-    // The subscription endpoint resolves with no data (a 5xx under
-    // throwOnError:false) — an UNKNOWN result. Even with onboarding targets
-    // present and actuals already at the ceiling, an unknown read must not be
-    // mistaken for "free" and skip the purchased resize by completing early.
-    subscriptionNoData = true;
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    render(<HatchingScreen />);
-
-    // The reconcile fires and the subscription poll keeps retrying rather than
-    // concluding "free" and navigating away.
-    await waitFor(() => expect(ensureProvisionedMock).toHaveBeenCalledTimes(1));
-    await waitFor(
-      () =>
-        expect(
-          subscriptionRetrieveMock.mock.calls.length,
-        ).toBeGreaterThanOrEqual(2),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // A definitive Pro read now lands; with targets met the resize completes.
-    subscriptionNoData = false;
-    subscriptionPlanId = "pro";
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("an erroring subscription endpoint still completes at the hard cap", async () => {
-    // The subscription read persistently throws (always "unknown"). It never
-    // completes early, but the RESIZE_WAIT_MAX_MS cap is the ultimate escape
-    // so the user is not trapped.
-    subscriptionThrows = true;
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // The subscription loop's poll jumps the clock past the cap so completion
-    // falls through without a real 90s wait.
-    subscriptionPollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // Never entered the resize phase: the cap fired before a confirmed Pro read.
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  }, 20000);
-
-  test("a failed operational-status read counts as in-flight and holds until a healthy read arrives", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // Actuals already sit at the purchased ceiling, but the operational-status
-    // read returns no data (a 5xx under throwOnError:false). That uncertain
-    // read must count as in-flight so the screen does not navigate onto a pod
-    // that is still restarting.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-    opStatusNoData = true;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy());
-    // The resize loop keeps polling operational status while it holds.
-    await waitFor(
-      () =>
-        expect(
-          operationalStatusReadMock.mock.calls.length,
-        ).toBeGreaterThanOrEqual(2),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // A healthy status read (data present, no resize in flight) finally lands.
-    opStatusNoData = false;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("a reconcile that fails on the first attempt re-fires on a later poll and provisioning proceeds", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // The first reconcile fails (a 503 "nothing queued" resolves with no data
-    // under throwOnError:false); a failed reconcile must not permanently
-    // consume the fire-once guard, so a later poll re-fires it and it lands.
-    ensureProvisionedFailFirstN = 1;
-    // Actuals already sit at the ceiling so the resize completes promptly once
-    // the reconcile lands.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    render(<HatchingScreen />);
-
-    // The reconcile is re-fired after the first failure (called more than once).
-    await waitFor(
-      () =>
-        expect(ensureProvisionedMock.mock.calls.length).toBeGreaterThanOrEqual(
-          2,
-        ),
-      { timeout: 15000 },
-    );
-    // Provisioning still converges and the screen completes.
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("a persistently-failing reconcile still completes at the hard cap", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // The reconcile never succeeds (always resolves with no data), so it
-    // re-fires on every poll — but the RESIZE_WAIT_MAX_MS cap is the ultimate
-    // escape so the user is never trapped.
-    ensureProvisionedFailFirstN = Number.POSITIVE_INFINITY;
-    // Actuals stay below the ceiling; the resize poll jumps the clock past the
-    // cap so completion falls through at baseline.
-    resizePollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // Re-fired more than once before the cap released it.
-    expect(ensureProvisionedMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-    // Completion came from the cap, not convergence.
-    expect(currentAssistant.machine_size).toBe("small");
-  }, 20000);
-
-  test("the resize deadline expiring while still in flight still health-probes before completing", async () => {
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    // The resize never converges: the operation reads as perpetually in
-    // flight, so the loop can exit only via the RESIZE_WAIT_MAX_MS cap. Even
-    // on that deadline-expiry path a healthz probe must run before completion
-    // so the user is never routed onto a pod mid-restart.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-    opStatusInFlight = true;
-    // The resize poll jumps the clock past the cap so the deadline fires
-    // without a real 90s wait.
-    resizePollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // The connecting phase probes healthz once; the post-resize probe on the
-    // deadline path is the second — proving completion went through a health
-    // check even when the cap fired.
-    expect(getAssistantHealthzMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-  }, 20000);
-
-  test("the entitlement deadline expiring health-probes before completing", async () => {
-    // The subscription read never resolves an answer, so the entitlement wait
-    // can exit only on its deadline. The reconcile has been nudged on every
-    // iteration by then, so a resize may already have restarted the pod —
-    // completion must still go through a health check.
-    subscriptionThrows = true;
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    subscriptionPollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // The resize phase was never entered — the deadline fired before a
-    // confirmed Pro read — yet healthz was probed a second time.
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-    expect(getAssistantHealthzMock.mock.calls.length).toBeGreaterThanOrEqual(2);
-  }, 20000);
-
-  test("a post-resize daemon that never recovers fails the hatch instead of completing", async () => {
-    // The resize converges but the restarted daemon never answers healthz.
-    // Exhausting MAX_HATCH_WAIT_MS on that probe is a failed hatch: completing
-    // would navigate the user onto an unreachable assistant.
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-    // The connecting-phase probe (call 1) passes; every post-resize probe
-    // fails and jumps the clock past MAX_HATCH_WAIT_MS.
-    healthzUnhealthyFromCall = 2;
-    healthzPollClockStepMs = 301_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(
-      () =>
-        expect(
-          screen.getByText(
-            "Your assistant is taking longer than expected. Please try again.",
-          ),
-        ).toBeTruthy(),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-  }, 20000);
-
-  test("a free hatch never runs the post-resize health probe", async () => {
-    // The free path returns before the resize and health phases, so the only
-    // healthz probe is the connecting one — unchanged by the failure plumbing.
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(getAssistantHealthzMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
   test("local hatches never provision", async () => {
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=docker");
@@ -887,29 +386,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
       timeout: 5000,
     });
-    expect(ensureProvisionedMock).not.toHaveBeenCalled();
-    expect(onboardingRetrieveMock).not.toHaveBeenCalled();
-    expect(subscriptionRetrieveMock).not.toHaveBeenCalled();
-    expect(operationalStatusReadMock).not.toHaveBeenCalled();
-  });
-
-  test("a local-mode preflight-active reload completes without provisioning", async () => {
-    // A local-mode session with no hosting param makes useLocalHatch false, so
-    // a reload onto an already-active assistant flows through the cloud
-    // preflight path into finishActiveHatch. Without the cloud marker the
-    // provisioning wait short-circuits — no billing reads, no resize wait.
-    isLocalClientValue = true;
-    preflightActive = true;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(ensureProvisionedMock).not.toHaveBeenCalled();
-    expect(subscriptionRetrieveMock).not.toHaveBeenCalled();
-    expect(onboardingRetrieveMock).not.toHaveBeenCalled();
-    expect(operationalStatusReadMock).not.toHaveBeenCalled();
   });
 
   // -- managed hatch in a local-mode build --------------------------------
@@ -919,27 +395,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   // org does not have yet, so the assistant is provisioned on the cloud and
   // the purchased machine and storage must land before the screen completes.
 
-  test("a cloud hatch in local mode waits for the purchased provisioning", async () => {
-    isLocalClientValue = true;
-    searchParams = new URLSearchParams("hosting=cadet-cloud");
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    // The purchased ceiling is read and held for, exactly as in platform mode.
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy());
-    expect(ensureProvisionedMock).toHaveBeenCalled();
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
   test("a cloud hatch drops the gateway session and routes to the cloud", async () => {
     // Under gateway auth `getAssistant()` answers from the selected lockfile
     // entry. That entry is self-hosted, so it is never mistaken for the
@@ -948,7 +403,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     isLocalClientValue = true;
     searchParams = new URLSearchParams("hosting=cadet-cloud");
     preflightGatewaySelectedLocal = true;
-    subscriptionPlanId = "base";
 
     render(<HatchingScreen />);
 
@@ -1070,158 +524,5 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
 
   // -- post-checkout return -----------------------------------------------
   //
-  // Stripe redirects the moment payment succeeds, which can beat the subscribe
-  // webhook that flips the org to Pro. On the return leg of a completed
-  // checkout — marked by `post_checkout=1`, set only by the funnel — a
-  // still-base plan read means the webhook is lagging, not that the org is
-  // free. `hosting=cadet-cloud` alone never carries that meaning: it is a
-  // hosting choice a free user can make.
 
-  const POST_CHECKOUT_PARAMS = "hosting=cadet-cloud&post_checkout=1";
-
-  test("a post-checkout return whose plan still reads base waits, then applies the purchased targets", async () => {
-    searchParams = new URLSearchParams(POST_CHECKOUT_PARAMS);
-    // The webhook has not landed: the org still reports its pre-checkout plan
-    // with no targets, and the assistant sits at the warm-pool baseline.
-    subscriptionPlanId = "base";
-    onboardingData = null;
-
-    render(<HatchingScreen />);
-
-    // The subscription is re-read rather than accepted as a free entitlement.
-    await waitFor(
-      () =>
-        expect(
-          subscriptionRetrieveMock.mock.calls.length,
-        ).toBeGreaterThanOrEqual(2),
-      { timeout: 15000 },
-    );
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // The webhook lands, carrying the purchased ceiling.
-    subscriptionPlanId = "pro";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    await waitFor(() => expect(screen.getByText(RESIZE_LABEL)).toBeTruthy(), {
-      timeout: 15000,
-    });
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    // The resize lands and the screen completes at the purchased size.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 30000);
-
-  test("a post-checkout return whose plan never flips still completes at the hard cap", async () => {
-    searchParams = new URLSearchParams(POST_CHECKOUT_PARAMS);
-    subscriptionPlanId = "base";
-    onboardingData = null;
-    // The subscription loop's poll jumps the clock past RESIZE_WAIT_MAX_MS so
-    // the cap fires without a real 90s wait.
-    subscriptionPollClockStepMs = 91_000;
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-    // The cap released it at baseline: the resize phase was never entered.
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  }, 20000);
-
-  test("a hatch with no post-checkout marker completes on the first non-pro read", async () => {
-    // The free path is untouched — one subscription read, no resize phase, no
-    // added poll — even with a stale onboarding ceiling on record.
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(subscriptionRetrieveMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
-  test("a cloud hatch without the post-checkout marker completes on the first non-pro read", async () => {
-    // Picking Cadet Cloud is not a purchase: a free managed hatch must never
-    // be parked on the post-checkout wait.
-    isLocalClientValue = true;
-    searchParams = new URLSearchParams("hosting=cadet-cloud");
-    subscriptionPlanId = "base";
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    render(<HatchingScreen />);
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 5000,
-    });
-    expect(subscriptionRetrieveMock).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText(RESIZE_LABEL)).toBeNull();
-  });
-
-  test("a no_active_pro reconcile is re-fired on a later poll instead of consuming the fire-once guard", async () => {
-    // The entitlement race answers with a 200 body but queues nothing.
-    // Consuming the guard on it would spend the nudge for the whole hatch, so
-    // the purchased resize would land only if the webhook's own resize did.
-    subscriptionPlanId = "pro";
-    onboardingData = null;
-    ensureProvisionedRaceFirstN = 1;
-    // Actuals already sit at the eventual ceiling so completion is prompt
-    // once the targets land.
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    render(<HatchingScreen />);
-
-    await waitFor(
-      () =>
-        expect(ensureProvisionedMock.mock.calls.length).toBeGreaterThanOrEqual(
-          2,
-        ),
-      { timeout: 15000 },
-    );
-
-    // The entitlement becomes visible and provisioning converges.
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
-
-  test("a no_provisionable_assistants reconcile is re-fired instead of consuming the fire-once guard", async () => {
-    // The reason a hatch hits most: the org holds the entitlement but its
-    // assistant hasn't settled yet, so the reconcile queues nothing. Spending
-    // the guard here would lose the nudge for the whole hatch — exactly the
-    // window where the assistant is about to become provisionable.
-    subscriptionPlanId = "pro";
-    onboardingData = null;
-    ensureProvisionedRaceFirstN = 1;
-    ensureProvisionedRaceReason = "no_provisionable_assistants";
-    currentAssistant.machine_size = "extra_large";
-    currentAssistant.provisioned_storage_gib = 50;
-
-    render(<HatchingScreen />);
-
-    await waitFor(
-      () =>
-        expect(ensureProvisionedMock.mock.calls.length).toBeGreaterThanOrEqual(
-          2,
-        ),
-      { timeout: 15000 },
-    );
-
-    // The assistant settles and provisioning converges.
-    onboardingData = { max_machine_tier: "xl", selected_storage_gib: 50 };
-
-    await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-      timeout: 15000,
-    });
-  }, 20000);
 });

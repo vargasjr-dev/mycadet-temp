@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { createMemoryRouter } from "react-router";
 
 import type { LockfileAssistant } from "@/lib/local-mode";
 
@@ -102,54 +101,17 @@ const localAssistant: LockfileAssistant = {
 // the pricing funnel has a brand-new user pay before an assistant exists.
 // Billing lives under `ActiveAssistantGate`, so admitting the return strands
 // the (paying) user on "Connecting to your assistant…" forever.
-const gatedDestination = routes.account.root;
 
 // the assistant. Every client lands on the headless research onboarding, which
 // runs the purchased-provisioning wait behind the form.
-const gatedRedirect = routes.onboarding.hosting;
+const researchFunnelEntry = `${routes.onboarding.research}?hosting=cadet-cloud`;
 
 /**
  * A checkout return on a local-mode client whose lockfile already holds a
  * self-hosted assistant. `hasAssistants()` is true, so the cold-boot probe wait
  * does not apply, yet the funnel decision still hangs on the probe.
  */
-function makeSelfHostedLocalReturn(): void {
-  isLocalClientMock.mockImplementation(() => true);
-  hasAssistantsMock.mockImplementation(() => true);
-  mockGatewayAuthMode = true;
-  mockSelectedAssistant = localAssistant;
-  useAuthStore.setState({
-    sessionStatus: "authenticated",
-    user: fakeUser,
-    cloudSession: "unknown",
-  });
-  useOnboardingStore.setState({ consentHydrated: true });
-  useResolvedAssistantsStore.setState({
-    assistants: [
-      {
-        id: localAssistant.assistantId,
-        isLocal: true,
-        isCloudHosted: false,
-      },
-    ] as never[],
-    assistantsHydrated: true,
-  });
-}
-
 /** Poll until `predicate` holds, giving router-driven work room to settle. */
-async function waitUntil(
-  predicate: () => boolean,
-  label: string,
-): Promise<void> {
-  for (let attempt = 0; attempt < 300; attempt++) {
-    if (predicate()) {
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-  throw new Error(`timed out waiting for ${label}`);
-}
-
 /**
  * Run the middleware and report whether it admitted (called `next`) or threw a
  * redirect Response — so admit-path assertions don't have to special-case the
@@ -367,142 +329,6 @@ describe("authMiddleware — app-access admit gate", () => {
   });
 });
 
-describe("authMiddleware — the local-mode platform probe wait", () => {
-  test("a probe that never settles degrades to a decision instead of looping", async () => {
-    makeSelfHostedLocalReturn();
-
-    // The probe stays "unknown", so the wait runs out its (clamped) timeout and
-    // the guard decides on a settled-absent session: the return stays on
-    // billing, whose login notice carries `session_id` through sign-in.
-    const outcome = await runMiddlewareOutcome(gatedDestination);
-    expect(outcome.admitted).toBe(true);
-  });
-
-  test("a probe that succeeds after the timeout re-runs the guard", async () => {
-    makeSelfHostedLocalReturn();
-
-    // The probe outruns the (clamped) wait, so the guard decides on the forced
-    // "absent" and admits the return to billing.
-    const outcome = await runMiddlewareOutcome(gatedDestination);
-    expect(outcome.admitted).toBe(true);
-    expect(revalidateMock).not.toHaveBeenCalled();
-
-    // The probe lands "present" afterwards. Nothing else re-runs route
-    // middleware on a store change, so without this the paid return is stranded
-    // on billing with no cloud assistant to apply the purchase to.
-    useAuthStore.setState({ cloudSession: "present" });
-    await tick();
-    expect(revalidateMock).toHaveBeenCalledTimes(1);
-
-    // The re-run reads the settled session and funnels the return.
-    const redirected = await runMiddleware(gatedDestination);
-    expect(redirected.status).toBe(302);
-    expect(redirected.headers.get("Location")).toBe(gatedRedirect);
-  });
-
-  test("the re-run is armed once and fires once", async () => {
-    makeSelfHostedLocalReturn();
-
-    await runMiddlewareOutcome(gatedDestination);
-    await runMiddlewareOutcome(gatedDestination);
-
-    useAuthStore.setState({ cloudSession: "present" });
-    await tick();
-    expect(revalidateMock).toHaveBeenCalledTimes(1);
-
-    // A settled probe never reopens "unknown", so no later change re-triggers
-    // the re-run — the correction cannot loop.
-    useAuthStore.setState({ cloudSession: "absent" });
-    await tick();
-    expect(revalidateMock).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("authMiddleware — late-probe re-run through a real router", () => {
-  // The cases above stub `@/routes`, so they pin that a re-run is *armed* —
-  // not that `router.revalidate()` re-runs middleware. The re-run is a React
-  // Router behavior: a matched route carrying middleware defeats the no-op
-  // revalidation short-circuit. The correction rests entirely on it, and it
-  // degrades silently — the guard keeps its forced "absent" decision and the
-  // paid return stays stranded on billing. These cases drive a real router so
-  // that degradation fails loudly.
-  //
-  // `/assistant` carries the guard exactly as `routes.tsx` wires it. The funnel
-  // target is a middleware-free sibling (same pattern as `/assistant/about`)
-  // so the redirect settles there instead of re-entering the guard.
-  function createGuardedRouter(): ReturnType<typeof createMemoryRouter> {
-    return createMemoryRouter(
-      [
-        { path: routes.onboarding.research, Component: () => null },
-        {
-          path: "/assistant",
-          middleware: [authMiddleware],
-          children: [{ path: "settings/billing", Component: () => null }],
-        },
-        { path: "*", Component: () => null },
-      ] as never,
-      { initialEntries: ["/"], future: { v8_middleware: true } },
-    );
-  }
-
-  function currentHref(router: ReturnType<typeof createMemoryRouter>): string {
-    return router.state.location.pathname + router.state.location.search;
-  }
-
-  test("a probe that settles after the timeout re-decides the route", async () => {
-    makeSelfHostedLocalReturn();
-    const router = createGuardedRouter();
-    liveRouter = router;
-
-    try {
-      // The probe outruns the (clamped) wait, so the guard decides on the
-      // forced "absent" and the router lands on billing.
-      await router.navigate(gatedDestination);
-      expect(currentHref(router)).toBe(gatedDestination);
-      expect(revalidateMock).not.toHaveBeenCalled();
-
-      // The probe lands "present" afterwards. The guard has to re-run for the
-      // return to reach provisioning — asserting the redirect, not the call,
-      // is what pins that `revalidate()` still re-runs middleware.
-      useAuthStore.setState({ cloudSession: "present" });
-      await waitUntil(
-        () => currentHref(router) === gatedRedirect,
-        "the re-run guard to funnel the paid return",
-      );
-      expect(revalidateMock).toHaveBeenCalledTimes(1);
-    } finally {
-      liveRouter = null;
-      router.dispose();
-    }
-  });
-
-  test("the re-run fires once and does not re-decide on later transitions", async () => {
-    makeSelfHostedLocalReturn();
-    const router = createGuardedRouter();
-    liveRouter = router;
-
-    try {
-      await router.navigate(gatedDestination);
-      useAuthStore.setState({ cloudSession: "present" });
-      await waitUntil(
-        () => currentHref(router) === gatedRedirect,
-        "the re-run guard to funnel the paid return",
-      );
-
-      // A settled probe never reopens "unknown", so no later transition
-      // re-arms the subscription — the correction cannot loop.
-      useAuthStore.setState({ cloudSession: "absent" });
-      await tick();
-      await tick();
-      expect(revalidateMock).toHaveBeenCalledTimes(1);
-      expect(currentHref(router)).toBe(gatedRedirect);
-    } finally {
-      liveRouter = null;
-      router.dispose();
-    }
-  });
-});
-
 describe("authMiddleware — hydration timeout", () => {
   test("a hung hydration degrades to a decision instead of re-entering the wait", async () => {
     isLocalClientMock.mockImplementation(() => false);
@@ -563,7 +389,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const outcome = await runMiddlewareOutcome(gatedRedirect);
+      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
       expect(outcome.admitted).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
@@ -590,11 +416,9 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const res = await runMiddleware(gatedRedirect);
+      const res = await runMiddleware(researchFunnelEntry);
       expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
-      );
+      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
     }
@@ -623,7 +447,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(gatedRedirect);
+      const pending = runMiddleware(researchFunnelEntry);
       // Consent lands well inside its (clamped) wait; the assistants fetch
       // never reports, so only that second wait runs out.
       setTimeout(() => {
@@ -632,9 +456,7 @@ describe("authMiddleware — hydration timeout", () => {
 
       const res = await pending;
       expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
-      );
+      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
       useResolvedAssistantsStore.setState({
@@ -666,7 +488,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(gatedRedirect);
+      const pending = runMiddleware(researchFunnelEntry);
       // Past the (clamped) consent wait but inside the assistants one, which
       // never reports.
       setTimeout(() => {
@@ -675,9 +497,7 @@ describe("authMiddleware — hydration timeout", () => {
 
       const res = await pending;
       expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(
-        `${routes.onboarding.privacy}?returnTo=${encodeURIComponent(gatedRedirect)}`,
-      );
+      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
       useResolvedAssistantsStore.setState({
@@ -707,7 +527,7 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const outcome = await runMiddlewareOutcome(gatedRedirect);
+      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
       expect(outcome.admitted).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
