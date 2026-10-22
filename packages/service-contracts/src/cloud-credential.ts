@@ -3,7 +3,7 @@
  * credential still authenticates.
  *
  * The daemon route is the authoritative serving side:
- *   - `POST /v1/platform/verify-credential`
+ *   - `POST /v1/cloud/verify-credential`
  *       (`assistant/src/runtime/routes/cloud-routes.ts`)
  *
  * The daemon's platform client produces the verdict, the route reports it,

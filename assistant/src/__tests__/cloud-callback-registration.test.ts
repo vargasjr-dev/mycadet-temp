@@ -110,7 +110,7 @@ describe("platform callback registration", () => {
     const context = await resolveCloudCallbackRegistrationContext();
 
     expect(context.enabled).toBe(true);
-    expect(context.isPlatform).toBe(true);
+    expect(context.isCloud).toBe(true);
     expect(context.cloudBaseUrl).toBe("https://platform.example.com");
     expect(context.assistantId).toBe("11111111-2222-4333-8444-555555555555");
     expect(context.hasAssistantApiKey).toBe(true);
@@ -129,7 +129,7 @@ describe("platform callback registration", () => {
     const context = await resolveCloudCallbackRegistrationContext();
 
     expect(context.enabled).toBe(true);
-    expect(context.isPlatform).toBe(false);
+    expect(context.isCloud).toBe(false);
     expect(context.cloudBaseUrl).toBe("https://platform.example.com");
     expect(context.assistantId).toBe("22222222-3333-4444-8555-666666666666");
     expect(context.hasAssistantApiKey).toBe(true);

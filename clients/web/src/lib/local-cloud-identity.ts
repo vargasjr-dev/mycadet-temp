@@ -1,7 +1,7 @@
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import type {
-  PlatformStatusGetResponses,
-  PlatformVerifycredentialPostResponses,
+  CloudStatusGetResponses,
+  CloudVerifycredentialPostResponses,
 } from "@/generated/daemon/types.gen";
 import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
@@ -32,7 +32,7 @@ const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 export { isUuid } from "@/utils/uuid";
 
-type LocalPlatformStatus = {
+type LocalCloudStatus = {
   assistantId: string | null;
   baseUrl: string | null;
   organizationId: string | null;
@@ -305,7 +305,7 @@ async function verifyCloudCredential(
     // client routes to whichever assistant the app is connected to, and a
     // repair can run for an assistant before that connection is primed.
     const response = await fetch(
-      gatewayUrl(gateway.gatewayUrl, "/v1/platform/verify-credential"),
+      gatewayUrl(gateway.gatewayUrl, "/v1/cloud/verify-credential"),
       {
         method: "POST",
         headers: {
@@ -321,7 +321,7 @@ async function verifyCloudCredential(
     // The route's own response shape; the value check keeps a malformed body
     // from being read as a verdict.
     const body = (await response.json()) as Partial<
-      PlatformVerifycredentialPostResponses[200]
+      CloudVerifycredentialPostResponses[200]
     >;
     return body.status === "valid" || body.status === "rejected"
       ? body.status
@@ -584,16 +584,16 @@ async function ensureGatewayAccess(
 }
 
 /**
- * The daemon's `platform/status`, null on any failure. A null `actorToken`
+ * The daemon's `cloud/status`, null on any failure. A null `actorToken`
  * sends no bearer: the paired proxy's trusted host installs its own.
  */
 export async function fetchCloudStatus(
   gateway: { gatewayUrl: string; actorToken: string | null },
   runtimeAssistantId: string,
-): Promise<LocalPlatformStatus | null> {
+): Promise<LocalCloudStatus | null> {
   const url = gatewayUrl(
     gateway.gatewayUrl,
-    `/v1/assistants/${encodeURIComponent(runtimeAssistantId)}/platform/status`,
+    `/v1/assistants/${encodeURIComponent(runtimeAssistantId)}/cloud/status`,
   );
   const response = await fetch(url, {
     headers: {
@@ -612,7 +612,7 @@ export async function fetchCloudStatus(
   // daemons of any age, and a field the current schema requires may be absent
   // from an older one; absent reads as null, which the gates treat as unknown.
   const body = (await response.json().catch(() => null)) as Partial<
-    PlatformStatusGetResponses[200]
+    CloudStatusGetResponses[200]
   > | null;
   return {
     assistantId: body?.assistantId ?? null,
