@@ -11,18 +11,32 @@ import {
  * through the same `main.tsx` entry every other host serves, and reads the
  * stamp back through the same `readInjectedConfig()`. Every branch stamps
  * `cloudUrl`: the webview origin serves only baked assets (no `/v1`
- * router), so the shell and the chooser resolve assistants against the
- * environment's control plane directly — same-origin would request
- * `capacitor://localhost/v1/...` and get the SPA's index HTML back.
+ * router), so every same-origin `/v1` request is resolved by the shell's
+ * native scheme handler against this base — same-origin would otherwise
+ * request `capacitor://localhost/v1/...` and get the SPA's index HTML back.
  *
- * Resolution mirrors the native `server.url` bake this replaces: the release
- * workflows set `CADET_ENVIRONMENT`; `CADET_SERVER_URL` overrides with an
+ * Cloud environments stamp the WEB origin, not the cloud-api origin: the
+ * edge routes `/v1` at the origin every web surface boots on, and the
+ * account session lives there too — the same origin `webUrl` encodes for
+ * the pair flow.
+ *
+ * The local stamp resolves the RUNNING cadet's control plane the same way
+ * the pair flow does (see `resolveLocalServerUrl`): the tunnel URL when one
+ * is up, else the app server's loopback port — reachable from the simulator
+ * only, since a device's `127.0.0.1` is the phone itself. Unresolved builds
+ * keep the seed's dev-stack default.
+ *
+ * Otherwise resolution mirrors the native `server.url` bake this
+ * replaces: the release workflows set `CADET_ENVIRONMENT`; `CADET_SERVER_URL` overrides with an
  * https origin for self-hosted assistants; unset means the local cadet.
  */
-export function capacitorInjectedConfig(env: {
-  CADET_ENVIRONMENT?: string;
-  CADET_SERVER_URL?: string;
-}): InjectedConfig {
+export function capacitorInjectedConfig(
+  env: {
+    CADET_ENVIRONMENT?: string;
+    CADET_SERVER_URL?: string;
+  },
+  options: { localServerUrl?: string } = {},
+): InjectedConfig {
   const override = env.CADET_SERVER_URL?.trim();
   if (!override) {
     const environment = env.CADET_ENVIRONMENT ?? "local";
@@ -32,13 +46,13 @@ export function capacitorInjectedConfig(env: {
       // other local surface uses.
       return InjectedConfigSchema.parse({
         remote: "local",
-        cloudUrl: SEEDS.local.cloudUrl,
+        cloudUrl: options.localServerUrl ?? SEEDS.local.cloudUrl,
       });
     }
     const seed = SEEDS[environment] ?? SEEDS.dev;
     return InjectedConfigSchema.parse({
       remote: "cloud",
-      cloudUrl: seed.cloudUrl,
+      cloudUrl: seed.webUrl,
     });
   }
 

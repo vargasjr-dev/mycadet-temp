@@ -9,20 +9,41 @@ describe("capacitorInjectedConfig", () => {
     });
   });
 
-  test("cloud environments stamp their platform API origin", () => {
+  test("a resolved local server base overrides the seed default", () => {
+    // The build's lockfile read: the running cadet's tunnel URL, or its
+    // loopback app-server port (simulator-only — a device's 127.0.0.1 is
+    // the phone).
+    expect(
+      capacitorInjectedConfig({}, { localServerUrl: "https://tunnel.example.net" }),
+    ).toEqual({
+      remote: "local",
+      cloudUrl: "https://tunnel.example.net",
+    });
+    expect(
+      capacitorInjectedConfig(
+        { CADET_ENVIRONMENT: "local" },
+        { localServerUrl: "http://127.0.0.1:7821" },
+      ),
+    ).toEqual({
+      remote: "local",
+      cloudUrl: "http://127.0.0.1:7821",
+    });
+  });
+
+  test("cloud environments stamp their web origin — the /v1 edge", () => {
     expect(
       capacitorInjectedConfig({ CADET_ENVIRONMENT: "production" }),
     ).toEqual({
       remote: "cloud",
-      cloudUrl: "https://cloud.mycadet.ai",
+      cloudUrl: "https://mycadet.ai",
     });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "staging" })).toEqual({
       remote: "cloud",
-      cloudUrl: "https://staging-cloud.mycadet.ai",
+      cloudUrl: "https://staging.mycadet.ai",
     });
     expect(capacitorInjectedConfig({ CADET_ENVIRONMENT: "dev" })).toEqual({
       remote: "cloud",
-      cloudUrl: "https://dev-cloud.mycadet.ai",
+      cloudUrl: "https://dev.mycadet.ai",
     });
   });
 
