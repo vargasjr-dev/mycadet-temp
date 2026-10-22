@@ -586,7 +586,7 @@ export async function restoreAppServer(
     return survivingPort;
   }
   console.log(
-    `   App server ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
+    `   App server ${edge.started ? "started" : "already running"} on 127.0.0.1:${edge.port}.`,
   );
   return edge.port;
 }

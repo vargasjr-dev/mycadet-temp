@@ -53,7 +53,7 @@ async function startAppEdge(): Promise<void> {
   }
 
   console.log(
-    `${edge.started ? "Started" : "Reusing"} the app edge on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
+    `${edge.started ? "Started" : "Reusing"} the app edge on 127.0.0.1:${edge.port}.`,
   );
   console.log(`Stop with: ${cliCommand()} app stop`);
 }

@@ -511,7 +511,7 @@ export const tunnel = Object.assign(
     }
 
     console.log(
-      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port} (app shell + remote web + webhooks).`,
+      `${edge.started ? "Started" : "Reusing"} the nginx edge on 127.0.0.1:${edge.port}.`,
     );
 
     const baseTunnelOpts = {
