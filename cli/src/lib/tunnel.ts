@@ -127,10 +127,21 @@ export interface ProviderMeta {
  * validation, and dispatch all read one shape.
  */
 export const PROVIDER_META: Record<TunnelProviderName, ProviderMeta> = {
-  cadet: CADET_TUNNEL_META,
-  ngrok: NGROK_TUNNEL_META,
-  cloudflare: CLOUDFLARE_TUNNEL_META,
-  tailscale: TAILSCALE_TUNNEL_META,
+  // Getters, like the providers map below: the provider modules' import chain
+  // cycles back through this file (runtime-url → local → tunnel), and an
+  // eager read would touch a still-initializing meta const.
+  get cadet() {
+    return CADET_TUNNEL_META;
+  },
+  get ngrok() {
+    return NGROK_TUNNEL_META;
+  },
+  get cloudflare() {
+    return CLOUDFLARE_TUNNEL_META;
+  },
+  get tailscale() {
+    return TAILSCALE_TUNNEL_META;
+  },
 };
 
 /**
