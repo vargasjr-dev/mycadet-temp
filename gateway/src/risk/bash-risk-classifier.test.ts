@@ -1091,17 +1091,17 @@ describe("assistant subcommand classification", () => {
     expect(result.riskLevel).toBe("low");
   });
 
-  test("assistant cloud invoices list → low", async () => {
+  test("assistant cloud status → low", async () => {
     const result = await classifier.classify({
-      command: "assistant cloud invoices list",
+      command: "assistant cloud status --json",
       toolName: "bash",
     });
     expect(result.riskLevel).toBe("low");
   });
 
-  test("assistant cloud invoices get <id> → low", async () => {
+  test("assistant cloud callback-routes list → low", async () => {
     const result = await classifier.classify({
-      command: "assistant cloud invoices get inv_123",
+      command: "assistant cloud callback-routes list",
       toolName: "bash",
     });
     expect(result.riskLevel).toBe("low");

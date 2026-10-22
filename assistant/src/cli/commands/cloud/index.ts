@@ -12,13 +12,8 @@ import { registerCommand } from "../../lib/register-command.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
 import { registerCloudConnectCommand } from "./connect.js";
-import {
-  type CloudCreditsResult,
-  formatCreditsLines,
-} from "./credits-format.js";
 import { registerCloudDisconnectCommand } from "./disconnect.js";
 import { cloudHelp } from "./index.help.js";
-import { registerCloudInvoicesCommands } from "./invoices.js";
 
 interface CloudStatusResult {
   isPlatform: boolean;
@@ -29,30 +24,6 @@ interface CloudStatusResult {
   available: boolean;
   organizationId: string | null;
   userId: string | null;
-}
-
-interface CloudSubscriptionResult {
-  planId: "base" | "pro";
-  status: string | null;
-  renewalDate: string | null;
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  cancelAt: string | null;
-  selectedCreditTier: string | null;
-  package: {
-    key: string;
-    name: string;
-    version: number;
-    customized: boolean;
-  } | null;
-  entitlements: {
-    cloudEmail: boolean;
-    phoneNumber: boolean;
-  };
-}
-
-interface CloudPlansResult {
-  plans: Array<Record<string, unknown>>;
 }
 
 export function registerCloudCommand(program: Command): void {
@@ -116,127 +87,6 @@ export function registerCloudCommand(program: Command): void {
           }
         },
       );
-
-      // -----------------------------------------------------------------------
-      // credits
-      // -----------------------------------------------------------------------
-
-      subcommand(platform, "credits").action(
-        async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<CloudCreditsResult>(
-            "platform_credits",
-            {},
-          );
-          if (!r.ok) {
-            return exitFromIpcResult(
-              { ok: false, error: r.error, statusCode: r.statusCode },
-              cmd,
-            );
-          }
-
-          const result = r.result!;
-
-          if (shouldOutputJson(cmd)) {
-            writeOutput(cmd, result);
-          } else {
-            for (const line of formatCreditsLines(result)) {
-              log.info(line);
-            }
-          }
-        },
-      );
-
-      // -----------------------------------------------------------------------
-      // subscription
-      // -----------------------------------------------------------------------
-
-      subcommand(platform, "subscription").action(
-        async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<CloudSubscriptionResult>(
-            "platform_subscription",
-            {},
-          );
-          if (!r.ok) {
-            return exitFromIpcResult(
-              { ok: false, error: r.error, statusCode: r.statusCode },
-              cmd,
-            );
-          }
-
-          const result = r.result!;
-
-          if (shouldOutputJson(cmd)) {
-            writeOutput(cmd, result);
-          } else {
-            const planLabel = result.planId === "pro" ? "Pro" : "Base";
-            const statusNote = result.status ? ` (${result.status})` : "";
-            log.info(`Plan:   ${planLabel}${statusNote}`);
-            if (result.package) {
-              const customized = result.package.customized
-                ? " (customized)"
-                : "";
-              log.info(`Package: ${result.package.name}${customized}`);
-            }
-            if (result.renewalDate) {
-              const renewalVerb = result.cancelAtPeriodEnd
-                ? "Cancels"
-                : "Renews";
-              log.info(`${renewalVerb}: ${result.renewalDate}`);
-            }
-            if (result.selectedCreditTier) {
-              log.info(`Credit tier: ${result.selectedCreditTier}`);
-            }
-            const ent: string[] = [];
-            if (result.entitlements.cloudEmail) {
-              ent.push("managed email");
-            }
-            if (result.entitlements.phoneNumber) {
-              ent.push("phone number");
-            }
-            log.info(
-              `Entitlements: ${ent.length > 0 ? ent.join(", ") : "none"}`,
-            );
-          }
-        },
-      );
-
-      // -----------------------------------------------------------------------
-      // plans
-      // -----------------------------------------------------------------------
-
-      subcommand(platform, "plans").action(
-        async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<CloudPlansResult>("platform_plans", {});
-          if (!r.ok) {
-            return exitFromIpcResult(
-              { ok: false, error: r.error, statusCode: r.statusCode },
-              cmd,
-            );
-          }
-
-          const result = r.result!;
-
-          if (shouldOutputJson(cmd)) {
-            writeOutput(cmd, result);
-          } else {
-            for (const plan of result.plans) {
-              const name = String(plan.name ?? plan.id ?? "?");
-              // Base uses `price_cents`; Pro uses `base_price_cents`.
-              const cents = Number(
-                plan.price_cents ?? plan.base_price_cents ?? 0,
-              );
-              const interval = String(plan.billing_interval ?? "month");
-              log.info(`${name}: $${(cents / 100).toFixed(2)}/${interval}`);
-            }
-          }
-        },
-      );
-
-      // -----------------------------------------------------------------------
-      // invoices
-      // -----------------------------------------------------------------------
-
-      registerCloudInvoicesCommands(platform);
 
       // -----------------------------------------------------------------------
       // disconnect
