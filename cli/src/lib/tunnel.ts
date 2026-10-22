@@ -45,6 +45,8 @@ import {
 import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
+  INGRESS_LAST_TUNNEL_KEY,
+  parseTunnelRecord,
   selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
@@ -54,7 +56,7 @@ import {
   CLOUDFLARE_TUNNEL_META,
 } from "./tunnels/cloudflare.js";
 import {
-  recoverTailscaleIngressUrl,
+  startTailscaleServe,
   TAILSCALE_PROVIDER,
   TAILSCALE_TUNNEL_META,
 } from "./tunnels/tailscale.js";
@@ -484,14 +486,31 @@ function wantsWebIngress(config: Record<string, unknown>): boolean {
 }
 
 /**
- * Whether anything wants the nginx edge: webhook integrations or the
- * remote-web ingress config. One config read covers both checks;
- * `maybeStartNgrokTunnel` keeps its own webhook gate for its other callers.
+ * Whether the root lockfile records a tunnel we expect connected to the app
+ * server. Every provider run stamps `tunnel` (the spawned ngrok agent, the
+ * tailscale supervisor) and only a stop clears it, so the record outlives
+ * the gateway starts that wipe the saved ingress URL: a workspace whose
+ * tunnel the gateway just cleared still wants the edge the tunnel fronts —
+ * the ensure step re-establishes the tunnel at it.
+ */
+function wantsRecordedTunnel(): boolean {
+  return readRootProcesses().tunnel?.provider !== undefined;
+}
+
+/**
+ * Whether anything wants the nginx edge: webhook integrations, the
+ * remote-web ingress config, or a recorded tunnel. One config read covers
+ * the config checks; `maybeStartNgrokTunnel` keeps its own webhook gate for
+ * its other callers.
  */
 function wantsAppServer(workspaceDir: string): boolean {
   try {
     const config = loadRawConfig(workspaceDir);
-    return hasWebhookIntegrations(config) || wantsWebIngress(config);
+    return (
+      hasWebhookIntegrations(config) ||
+      wantsWebIngress(config) ||
+      wantsRecordedTunnel()
+    );
   } catch {
     return false;
   }
@@ -564,26 +583,6 @@ export async function restoreAppServer(
    *  which is what keeps webhook delivery alive without an edge. */
   gatewayFallback = true,
 ): Promise<number | null> {
-  // The gateway clears a tunnel-managed ingress URL whenever it starts, and
-  // the local gateway has just been started. A tailnet serve outlives that
-  // (tailscaled keeps the mapping), so put its URL back before deciding
-  // whether anything wants the edge. Non-fatal: a failed probe just leaves
-  // the config as the gateway left it.
-  try {
-    const recovered = await recoverTailscaleIngressUrl({
-      workspaceDir,
-      assistantId,
-    });
-    if (recovered) {
-      console.log(
-        `   Restored the tailnet ingress URL ${recovered} (the gateway start had cleared it).`,
-      );
-    }
-  } catch (err) {
-    console.warn(
-      `   Could not check the saved tailnet serve: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
   if (!wantsAppServer(workspaceDir)) {
     return null;
   }
@@ -682,24 +681,99 @@ export async function restoreContainerAppServer(
 }
 
 /**
- * Restore the nginx edge, then start the default provider's tunnel at it
- * (the gateway port when the edge is down, keeping webhook delivery alive).
- * The spawned agent records itself in the root lockfile under `tunnel`;
- * adopting an already-running one clears any stale entry.
+ * The startup/recovery sequence, in dependency order — the tunnel points at
+ * the app server, never the other way around:
+ *
+ * 1. ensure the app server is started,
+ * 2. ensure the tunnel is started at it (the app server's port is what the
+ *    tunnel takes),
+ * 3. save the tunnel's ingress url to each assistant.
  */
 export async function restoreAppServerAndAutoTunnel(
   assistantId: string,
   gatewayPort: number,
   workspaceDir: string,
 ): Promise<void> {
+  // 1. Ensure the app server is started.
   const edgePort = await restoreAppServer(
     assistantId,
     gatewayPort,
     workspaceDir,
   );
-  await maybeStartNgrokTunnel(
+  // 2. Ensure the tunnel is started at it: lockfile.json records which
+  //    tunnel we expect connected to the app server, so only that provider's
+  //    own start piece runs — pointed at the app server's port.
+  const publicUrl = await ensureTunnel(
     edgePort ?? gatewayPort,
     workspaceDir,
     assistantId,
   );
+  // 3. Save the ingress url from the tunnel to each assistant.
+  if (publicUrl) {
+    await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
+    await refreshEdgeWithEstablishedUrl(
+      { port: edgePort ?? gatewayPort, workspaceDir, assistantId },
+      publicUrl,
+    );
+  }
+}
+
+/**
+ * Ensure the tunnel lockfile.json expects is started at the app server.
+ *
+ * The root lockfile's `tunnel` record is the expectation: every provider run
+ * stamps it (the spawned ngrok agent, the tailscale supervisor) and only a
+ * stop clears it, so it outlives the gateway starts that wipe the saved
+ * ingress URL and the reboots that outlive every process. The workspace's
+ * `lastTunnel` record names the tunnel whose URL the app server fronts. A
+ * tailnet run satisfies both — its ensure re-establishes the serve at the
+ * app server's port and re-saves the URL a gateway start cleared, which is
+ * the whole recovery. A pairing-only tailnet run leaves `lastTunnel` on the
+ * older public provider (that run deliberately did not repoint it), so the
+ * default provider's start keeps the webhook tunnel; and a stopped tunnel
+ * cleared its root record, so nothing resurrects it. Returns the established
+ * URL, or null when nothing was started.
+ */
+async function ensureTunnel(
+  targetPort: number,
+  workspaceDir: string,
+  assistantId?: string,
+): Promise<string | null> {
+  const expected = readRootProcesses().tunnel;
+  let lastTunnel: ReturnType<typeof parseTunnelRecord> = null;
+  try {
+    const ingress = loadRawConfig(workspaceDir).ingress as
+      | Record<string, unknown>
+      | undefined;
+    lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
+  } catch {
+    lastTunnel = null;
+  }
+  if (
+    expected?.provider === "tailscale" &&
+    lastTunnel?.provider === "tailscale"
+  ) {
+    // The tailnet serve outlives the gateway; (re)establish it at the app
+    // server's port and let it publish the URL. Quiet: a wake without a
+    // running tailscale daemon must not fail the restore.
+    try {
+      const info = await startTailscaleServe({
+        port: targetPort,
+        workspaceDir,
+        assistantId,
+      });
+      return info.publicUrl;
+    } catch (err) {
+      console.warn(
+        `   Could not ensure the tailnet tunnel: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return null;
+    }
+  }
+  // The default provider's start keeps its own gates (containerized deploys,
+  // webhook integrations, a saved foreign URL) and detached-spawn ownership —
+  // the ChildProcess is what the root lockfile's pid tracking records; it
+  // saves the URL and notifies the gateway itself.
+  await maybeStartNgrokTunnel(targetPort, workspaceDir, assistantId);
+  return null;
 }

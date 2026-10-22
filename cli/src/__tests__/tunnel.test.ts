@@ -32,6 +32,8 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { getLogDir } from "../lib/xdg-log.js";
+import { saveIngressUrl } from "../lib/ingress-config.js";
+import { stampRootProcess } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
@@ -72,6 +74,15 @@ mock.module("../lib/tunnels/ngrok", () => ({
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
   async () => fakeTunnelResult("https://test-machine.tailnet.ts.net"),
 );
+const startTailscaleServeMock = mock<
+  typeof tailscaleTunnel.startTailscaleServe
+>(async () => ({
+  publicUrl: "https://test-machine.tailnet.ts.net",
+  port: EDGE_PORT,
+  binary: "tailscale",
+  workspaceDir: "/tmp/test-workspace",
+  previousLockfileIngressUrl: null,
+}));
 mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
@@ -96,6 +107,12 @@ const ensureAppServerMock = mock<typeof nginxIngress.ensureAppServer>(
     port: EDGE_PORT,
     started: true,
   }),
+);
+const isIngressRunningMock = mock<typeof nginxIngress.isIngressRunning>(
+  () => false,
+);
+const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
+  () => null,
 );
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
   () => "nginx version (test)",
@@ -1762,5 +1779,225 @@ describe("tunnel background mode", () => {
     expect(logs).not.toContain("Stop with: kill 5555");
     expect(logs).toContain("only");
     expect(logs).toContain("stops this supervisor, not the ngrok tunnel");
+  });
+});
+
+describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
+  const TAILNET_URL = "https://test-machine.tailnet.ts.net";
+  let restoreFlow: typeof import("../lib/tunnel.js");
+  let logSpy: ReturnType<typeof spyOn>;
+  let warnSpy: ReturnType<typeof spyOn>;
+
+  beforeAll(async () => {
+    // The edge-targeting describe's afterAll restores the REAL provider
+    // modules; re-establish the fakes the restore flow's tests need.
+    mock.module("../lib/tunnels/tailscale.js", () => ({
+      ...realTailscaleTunnel,
+      startTailscaleServe: startTailscaleServeMock,
+      TAILSCALE_PROVIDER: {
+        ...realTailscaleTunnel.TAILSCALE_PROVIDER,
+        run: runTailscaleTunnelMock,
+      },
+    }));
+    mock.module("../lib/nginx-ingress.js", () => ({
+      ...realNginxIngress,
+      ensureAppServer: ensureAppServerMock,
+      getNginxVersion: getNginxVersionMock,
+      isIngressRunning: isIngressRunningMock,
+      readIngressState: readIngressStateMock,
+    }));
+    restoreFlow = await import("../lib/tunnel.js");
+  });
+
+  beforeEach(() => {
+    ensureAppServerMock.mockReset();
+    ensureAppServerMock.mockImplementation(async () => ({
+      port: EDGE_PORT,
+      started: true,
+    }));
+    startTailscaleServeMock.mockReset();
+    startTailscaleServeMock.mockImplementation(async (opts) => {
+      const workspaceDir = opts?.workspaceDir ?? "";
+      saveIngressUrl(workspaceDir, TAILNET_URL, opts?.assistantId, "tailscale");
+      return {
+        publicUrl: TAILNET_URL,
+        port: opts?.port ?? EDGE_PORT,
+        binary: "tailscale",
+        workspaceDir,
+        previousLockfileIngressUrl: null,
+      };
+    });
+    isIngressRunningMock.mockReset();
+    isIngressRunningMock.mockImplementation(() => false);
+    readIngressStateMock.mockReset();
+    readIngressStateMock.mockImplementation(() => null);
+    notifyGatewayOfPublicUrlMock.mockReset();
+    notifyGatewayOfPublicUrlMock.mockImplementation(async () => {});
+    logSpy = spyOn(console, "log").mockImplementation(() => {});
+    warnSpy = spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    warnSpy.mockRestore();
+    process.argv = originalArgv;
+    globalThis.fetch = originalFetch;
+    rmSync(realNgrok.ngrokConfigPath(), { force: true });
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
+    }
+    if (originalLockfileDir === undefined) {
+      delete process.env.CADET_LOCKFILE_DIR;
+    } else {
+      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+    }
+    if (originalWorkspaceDir === undefined) {
+      delete process.env.CADET_WORKSPACE_DIR;
+    } else {
+      process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
+    }
+    for (const dir of tempDirs.splice(0)) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  function seedRecordedTailnetWake(): string {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    stampRootProcess("tunnel", {
+      pid: 4321,
+      provider: "tailscale",
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    return writeEntryWorkspaceConfig(entry, {
+      ingress: {
+        enabled: true,
+        lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+      },
+    });
+  }
+
+  test("a recorded tailnet tunnel re-establishes the serve at the app server's port and saves the url to each assistant", async () => {
+    const workspaceDir = seedRecordedTailnetWake();
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      "assistant-1",
+      7830,
+      workspaceDir,
+    );
+
+    // Step 1: the edge started even though the gateway had cleared the url —
+    // the recorded tunnel is why the workspace still wants it.
+    expect(ensureAppServerMock).toHaveBeenCalledWith({
+      assistantId: "assistant-1",
+      workspaceDir,
+      gatewayPort: 7830,
+    });
+    // Step 2: the tunnel re-established at the app server's port, never the
+    // gateway's fallback port.
+    expect(startTailscaleServeMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      workspaceDir,
+      assistantId: "assistant-1",
+    });
+    // Step 3: the url rode to every locally-reachable assistant's gateway,
+    // and the workspace config carries it again.
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
+      TAILNET_URL,
+      "assistant-1",
+    );
+    const saved = JSON.parse(
+      readFileSync(join(workspaceDir, "config.json"), "utf-8"),
+    ) as { ingress?: { publicBaseUrl?: string } };
+    expect(saved.ingress?.publicBaseUrl).toBe(TAILNET_URL);
+  });
+
+  test("the fresh url re-ensures the edge so the served config carries it the same wake", async () => {
+    const workspaceDir = seedRecordedTailnetWake();
+    isIngressRunningMock.mockImplementation(() => true);
+    readIngressStateMock.mockImplementation(() => ({
+      listenPort: EDGE_PORT,
+      gatewayPort: 7830,
+    }));
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      "assistant-1",
+      7830,
+      workspaceDir,
+    );
+
+    expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("a pairing-only tailnet run keeps the webhook tunnel on the default arm", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    // A preserve run stamps the root lockfile with the tailnet supervisor but
+    // deliberately leaves the workspace's last tunnel on the webhook
+    // provider it did not repoint.
+    stampRootProcess("tunnel", {
+      pid: 4321,
+      provider: "tailscale",
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: {
+        enabled: true,
+        publicBaseUrl: "https://x.ngrok.app",
+        lastTunnel: { provider: "ngrok", publicBaseUrl: "https://x.ngrok.app" },
+      },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
+  });
+
+  test("a stopped tunnel cleared its root record, so the wake resurrects nothing", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: {
+        enabled: true,
+        lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+      },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
+    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
+  });
+
+  test("a workspace with no recorded tunnel and a cleared url wants no edge", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: { enabled: true },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    expect(ensureAppServerMock).not.toHaveBeenCalled();
+    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 });

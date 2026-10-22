@@ -15,11 +15,6 @@ import { GATEWAY_PORT } from "../constants.js";
 import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
-} from "@mycadet/service-contracts/ingress";
-
-import {
   clearIngressUrl,
   loadRawConfig,
   getDefaultWorkspaceDir,
@@ -160,77 +155,6 @@ function realRun(bin: string, args: string[]): TailscaleCommandResult {
 
 function realTailscaleDeps(): TailscaleDeps {
   return { findBinary: realFindBinary, run: realRun };
-}
-
-/** Real deps that only probe for the binary, never offering to install it. */
-function quietTailscaleDeps(): TailscaleDeps {
-  return { findBinary: async () => probeTailscaleBinary(), run: realRun };
-}
-
-const RecoverableIngressSchema = z.object({
-  publicBaseUrl: z.string().optional(),
-  [INGRESS_LAST_TUNNEL_KEY]: z.unknown().optional(),
-});
-
-/** Whether `tailscale serve status` output lists `publicUrl` as a served host. */
-export function serveStatusListsUrl(stdout: string, publicUrl: string): boolean {
-  const wanted = publicUrl.replace(/\/+$/, "").toLowerCase();
-  return stdout
-    .split(/\r?\n/)
-    .some((line) => line.trim().toLowerCase().startsWith(wanted));
-}
-
-/**
- * Re-record a tailnet ingress URL that the gateway has cleared.
- *
- * tailscaled keeps a `serve` mapping across gateway restarts and reboots, but
- * the gateway drops every tunnel-managed `ingress.publicBaseUrl` when it
- * starts, which leaves the wake-time app-server restore with nothing to front. When
- * the last tunnel record is a tailscale serve that `tailscale serve status`
- * still lists, save its URL back as the ingress base URL. Returns the
- * recovered URL, or null when nothing needed recovering or the serve is gone.
- */
-export async function recoverTailscaleIngressUrl(
-  opts: { workspaceDir: string; assistantId?: string },
-  deps: TailscaleDeps = quietTailscaleDeps(),
-): Promise<string | null> {
-  const parsed = RecoverableIngressSchema.safeParse(
-    loadRawConfig(opts.workspaceDir).ingress,
-  );
-  if (!parsed.success) {
-    return null;
-  }
-  const { publicBaseUrl, [INGRESS_LAST_TUNNEL_KEY]: lastTunnel } = parsed.data;
-  if (typeof publicBaseUrl === "string" && publicBaseUrl.trim() !== "") {
-    return null;
-  }
-  const record = parseTunnelRecord(lastTunnel);
-  if (!record || record.provider !== "tailscale") {
-    return null;
-  }
-  const binary = await deps.findBinary();
-  if (!binary) {
-    return null;
-  }
-  let status: TailscaleCommandResult;
-  try {
-    status = deps.run(binary, ["serve", "status"]);
-  } catch {
-    return null;
-  }
-  if (
-    status.status !== 0 ||
-    !serveStatusListsUrl(status.stdout, record.publicBaseUrl)
-  ) {
-    return null;
-  }
-  saveIngressUrl(
-    opts.workspaceDir,
-    record.publicBaseUrl,
-    opts.assistantId,
-    "tailscale",
-  );
-  return record.publicBaseUrl;
 }
 
 // ── Status parsing ──────────────────────────────────────────────────────────
