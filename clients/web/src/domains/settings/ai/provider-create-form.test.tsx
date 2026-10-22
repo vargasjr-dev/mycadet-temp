@@ -42,7 +42,6 @@ mock.module("@/assistant/queries", () => ({
   useAssistantBootResolution: () => ({ state: resolutionState }),
 }));
 
-
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -63,7 +62,6 @@ let createResponseOk = true;
 let createResponseStatus = 200;
 let createResponseJson: unknown = null;
 let toastSuccessCalls: string[] = [];
-
 
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {

@@ -94,4 +94,3 @@ describe("isTransportShapedError", () => {
     expect(isTransportShapedError({})).toBe(false);
   });
 });
-

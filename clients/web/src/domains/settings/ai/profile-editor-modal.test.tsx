@@ -41,14 +41,12 @@ mock.module("@/assistant/queries", () => ({
   useAssistantBootResolution: () => ({ state: resolutionState }),
 }));
 
-
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
 
 let createdConnection: ProviderConnection;
 let toastSuccessCalls: string[] = [];
-
 
 // Spy on the design-library toast so we can assert the shared ProfileEditorModal
 // does NOT fire a profile-create success toast itself — that toast belongs to

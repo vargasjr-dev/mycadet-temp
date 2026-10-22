@@ -58,7 +58,6 @@ mock.module("@/runtime/platform-detection", () => ({
   isNativeMobile: () => nativeMobile,
 }));
 
-
 // `seq` is per-assistant, so `attach` clears the resumable cursor to start
 // each assistant-scoped stream cold. Spy on the reset to assert that wiring;
 // the other exports are stubbed so the module's surface stays complete.

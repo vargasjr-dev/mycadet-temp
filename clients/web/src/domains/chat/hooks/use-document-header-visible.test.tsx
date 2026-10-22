@@ -16,16 +16,31 @@ import {
   useNavigate,
 } from "react-router";
 
+import { useSyncExternalStore } from "react";
+
 import type { AssistantResolutionState } from "@/assistant/types";
 import { useChatLayoutSlotsStore } from "@/components/layout/chat-layout-slots-store";
 
 let resolutionState: AssistantResolutionState = { kind: "loading" };
+const resolutionListeners = new Set<() => void>();
 function setResolutionState(next: AssistantResolutionState) {
   resolutionState = next;
+  for (const listener of resolutionListeners) {
+    listener();
+  }
 }
 
 mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({ state: resolutionState }),
+  useAssistantResolution: () =>
+    ({
+      state: useSyncExternalStore(
+        (cb) => {
+          resolutionListeners.add(cb);
+          return () => resolutionListeners.delete(cb);
+        },
+        () => resolutionState,
+      ),
+    }) as { state: AssistantResolutionState },
   useAssistantBootResolution: () => ({ state: resolutionState }),
 }));
 

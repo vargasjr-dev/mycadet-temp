@@ -1178,10 +1178,12 @@ export function ResearchOnboardingRoute() {
           }
           // Pin the selection to the adopted assistant, then enter the app —
           // with no pre-chat context, kickoff, or persona write of any kind.
-          void recheckAssistant(queryClient, hatchedAssistantId ?? undefined)
-            .finally(() => {
-              void navigate(routes.assistant, { replace: true });
-            });
+          void recheckAssistant(
+            queryClient,
+            hatchedAssistantId ?? undefined,
+          ).finally(() => {
+            void navigate(routes.assistant, { replace: true });
+          });
         }}
         onRedo={() => {
           const values = gatedFormValues;

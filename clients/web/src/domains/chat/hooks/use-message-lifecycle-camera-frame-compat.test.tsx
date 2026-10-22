@@ -149,7 +149,7 @@ function useLegacyTranscript() {
     activeConversationId: CONVERSATION_ID,
     conversationExistsOnServer: true,
     latestPageOldestTimestamp: pagination.latestPageOldestTimestamp,
-        setAssetsRefreshKey: () => {},
+    setAssetsRefreshKey: () => {},
   });
   return useTranscriptMessages();
 }

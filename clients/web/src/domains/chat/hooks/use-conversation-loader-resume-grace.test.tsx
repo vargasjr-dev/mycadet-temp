@@ -76,7 +76,7 @@ function renderLoader() {
         searchParams: new URLSearchParams(),
         activeConversation: undefined,
         refreshEpoch: 0,
-                onboardingDraftConversationIdRef: createRef<string | null>() as {
+        onboardingDraftConversationIdRef: createRef<string | null>() as {
           current: string | null;
         },
       }),

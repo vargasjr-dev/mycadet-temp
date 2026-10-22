@@ -23,15 +23,13 @@ describe("shouldDeferRootTopInset", () => {
   });
 
   test("suppresses the onboarding handoff query on the assistant route", () => {
-    expect(
-      shouldDeferRootTopInset(routes.assistant, "?onboarding=1"),
-    ).toBe(true);
+    expect(shouldDeferRootTopInset(routes.assistant, "?onboarding=1")).toBe(
+      true,
+    );
   });
 
   test("allows normal app routes", () => {
-    expect(shouldDeferRootTopInset(routes.settings.root, "")).toBe(
-      false,
-    );
+    expect(shouldDeferRootTopInset(routes.settings.root, "")).toBe(false);
     expect(shouldDeferRootTopInset(routes.assistant, "")).toBe(false);
   });
 });
