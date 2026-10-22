@@ -288,12 +288,6 @@ declare global {
         readAssistantAvatar?(
           assistantId: string,
         ): Promise<LocalReadAssistantAvatarResult>;
-        guardianToken(
-          assistantId: string,
-        ): Promise<
-          | { ok: true; accessToken: string }
-          | { ok: false; status: number; error: string }
-        >;
       };
       auth?: {
         startOAuth(options: {

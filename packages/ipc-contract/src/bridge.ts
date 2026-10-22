@@ -489,12 +489,6 @@ export interface CadetBridge {
       options?: LocalUpgradeOptions,
     ): Promise<{ ok: boolean; version?: string; error?: string }>;
     status(assistantId: string): Promise<LocalAssistantStatusResult>;
-    guardianToken(
-      assistantId: string,
-    ): Promise<
-      | { ok: true; accessToken: string }
-      | { ok: false; status: number; error: string }
-    >;
     /**
      * Read a local assistant's avatar straight off its workspace, so the
      * chooser can render it even while that assistant is asleep.

@@ -272,10 +272,7 @@ const authBoundaryAllowedPaths = [
  * Exempt from `rawApiFetchRules` only; still subject to the auth-header and
  * storage rules.
  */
-const localModeHostAllowedPaths = [
-  "src/runtime/local-mode-host.ts",
-  "src/lib/local-mode.ts",
-];
+const localModeHostAllowedPaths = ["src/runtime/local-mode-host.ts"];
 
 /**
  * Paths where user-facing copy must come from a translation catalog.

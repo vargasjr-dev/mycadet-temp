@@ -7,8 +7,6 @@ type RendererIpc = Pick<IpcRenderer, "invoke">;
 export const createLocalModeBridge = (
   ipc: RendererIpc,
 ): CadetBridge["localMode"] => ({
-  guardianToken: (assistantId) =>
-    ipc.invoke("cadet:localMode:guardianToken", assistantId),
   hatch: (remote) => ipc.invoke("cadet:localMode:hatch", remote),
   listDevices: (assistantId) =>
     ipc.invoke("cadet:localMode:listDevices", assistantId),

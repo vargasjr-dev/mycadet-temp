@@ -1,6 +1,5 @@
 import {
   getLoopbackGatewayPort,
-  gatewayProxyUrl,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
@@ -22,6 +21,7 @@ import {
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
+import { probeAssistantReadyzHost } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useLockfileStore } from "@/stores/lockfile-store";
 import {
@@ -152,7 +152,7 @@ const commitLockfile = (data: Lockfile): void => {
 // ---------------------------------------------------------------------------
 
 export function isLocalClient(): boolean {
-  // The serving host stamps the runtime truth: the platform's cloud-served SPA
+  // The serving host stamps the runtime truth: Cadet Cloud's served SPA
   // carries remote "cloud"; the desktop shim, dev servers, and every
   // self-hosted surface resolve to a local arm (or inject nothing at all,
   // which reads as local too).
@@ -166,8 +166,8 @@ export async function loadLockfile(): Promise<Lockfile> {
     return lockfile;
   }
 
-  // A cloud-hosted cadet has no local-mode host: the bundle is served by the
-  // platform, so a local lockfile fetch would land on the platform's web app
+  // A cloud-hosted cadet has no local-mode host: the bundle is served by
+  // Cadet Cloud, so a local lockfile fetch would land on its web app
   // instead of a local daemon. Commit an empty lockfile without fetching —
   // the assistant list comes from the cloud API, and stale persisted local
   // entries must not leak into a cloud session.
@@ -374,7 +374,7 @@ export function hasAssistants(): boolean {
  * A local-kind assistant, by origin: a plain on-machine assistant the web
  * client drives through its full set of local lifecycle flows (wake, local
  * retire). Identity only — whether it currently has a reachable gateway is a
- * separate, connect-time question (see `getLocalGatewayUrl`).
+ * separate, connect-time question (see `hasLocalGateway`).
  *
  * Deliberately excludes the externally-managed container runtimes
  * (`docker`, `apple-container`), the remote self-hosted cloud (`custom`,
@@ -494,15 +494,8 @@ export function reconcileSelectedAssistant(): void {
 }
 
 // ---------------------------------------------------------------------------
-// URL helpers
+// Gateway predicates
 // ---------------------------------------------------------------------------
-
-/**
- * Whether this runtime should reach `assistant` over a local gateway: a
- * local-kind assistant ({@link isLocalAssistant}), in local
- * (non-remote-gateway) mode. Whether that gateway is currently resolvable — a
- * recorded port — is a separate question answered by `getLocalGatewayUrl`.
- */
 /**
  * Whether the entry's gateway lives on another machine (a connect import):
  * a loopback-gateway cloud whose `runtimeUrl` points off this machine.
@@ -528,26 +521,18 @@ function expectsLocalGateway(
 }
 
 /**
- * Return the local gateway proxy URL for the given assistant (default: the
- * selected one), or `undefined` when this runtime doesn't reach it over a local
- * gateway or the gateway port hasn't been recorded yet (the same resolvability
- * gate as before — only the URL shape changed; the host resolves the port).
- *
- * Serves the gateway's UNSCOPED routes only (the renderer's `/auth/token`
- * mint and the local `/v1/pair` device flow); the scoped SDK data plane and
- * the readiness probe are plain same-origin `/v1`.
+ * Whether the given assistant (default: the selected one) reaches this
+ * runtime over a resolvable local gateway: a local-kind assistant in local
+ * (non-remote-gateway) mode with a recorded loopback port. The host owns
+ * everything URL-shaped — the scoped data plane is plain same-origin `/v1`.
  */
-export function getLocalGatewayUrl(
+export function hasLocalGateway(
   assistant: LockfileAssistant | undefined = getSelectedAssistant(),
-): string | undefined {
+): boolean {
   if (!expectsLocalGateway(assistant)) {
-    return undefined;
+    return false;
   }
-  const gatewayPort = getLoopbackGatewayPort(assistant);
-  if (gatewayPort == null) {
-    return undefined;
-  }
-  return gatewayProxyUrl(assistant.assistantId);
+  return getLoopbackGatewayPort(assistant) != null;
 }
 
 /**
@@ -567,47 +552,20 @@ function expectsPairedGateway(assistant: LockfileAssistant): boolean {
 }
 
 /**
- * The same-origin proxy path this runtime reaches a paired assistant's remote
- * gateway through, or `undefined` when the entry isn't paired, isn't usable in
- * this runtime (non-local client or remote-gateway mode), or records no
- * absolute http(s) `runtimeUrl` for the host to forward to.
- *
- * The renderer never fetches the remote origin directly: the packaged app's
- * CSP pins `connect-src` to Cadet origins, and a browser-served SPA would be
- * stopped by the remote gateway's CORS. Instead the serving host (the Electron
- * `app://` handler, the Vite dev middleware, the CLI web server) resolves the
- * entry's recorded `runtimeUrl` and forwards. The scoped SDK data plane and
- * the readiness probe are plain same-origin `/v1` — the serving host routes
- * by the id in the path.
+ * Whether the entry is a paired assistant this runtime reaches through the
+ * host's forward: paired in local (non-remote-gateway) mode with a recorded
+ * absolute http(s) `runtimeUrl` for the host to resolve. The renderer never
+ * fetches the remote origin itself — the serving host forwards and injects
+ * the guardian bearer; the scoped data plane is plain same-origin `/v1`.
  */
-export function getPairedGatewayUrl(
+export function hasPairedGateway(
   assistant: LockfileAssistant | undefined,
-): string | undefined {
-  if (!assistant || !expectsPairedGateway(assistant)) {
-    return undefined;
-  }
-  if (!isUsableRuntimeUrl(assistant.runtimeUrl)) {
-    return undefined;
-  }
-  return gatewayProxyUrl(assistant.assistantId);
-}
-
-/**
- * Absolute base URL this runtime reaches the given assistant's gateway's
- * UNSCOPED routes at (the renderer's `/auth/token` mint and the local
- * `/v1/pair` device flow): origin + local gateway proxy for local/docker
- * entries, origin + paired gateway proxy for paired entries, `undefined`
- * otherwise. The scoped SDK data plane doesn't ride this — it is plain
- * same-origin `/v1`.
- */
-export function getAuthGatewayIngressUrl(
-  assistant: LockfileAssistant | undefined,
-): string | undefined {
-  const base = getLocalGatewayUrl(assistant) ?? getPairedGatewayUrl(assistant);
-  if (!base) {
-    return undefined;
-  }
-  return `${window.location.origin}${base}`;
+): boolean {
+  return (
+    !!assistant &&
+    expectsPairedGateway(assistant) &&
+    isUsableRuntimeUrl(assistant.runtimeUrl)
+  );
 }
 
 /**
@@ -634,14 +592,9 @@ export async function probeLocalGatewayReady(): Promise<boolean> {
     // Host-side probing: the serving host resolves the assistant's gateway
     // from the id in the path and dials its root `/readyz` itself — the
     // renderer never sees a port or an unscoped gateway path.
-    const res = await fetch(
-      `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/readyz`,
+    return isReadyzResponseReady(
+      await probeAssistantReadyzHost(assistant.assistantId),
     );
-    if (!res.ok) {
-      return false;
-    }
-    const body: unknown = await res.json();
-    return isReadyzResponseReady(body);
   } catch {
     return false;
   }
@@ -722,17 +675,7 @@ export async function primeLocalGatewayConnection(
     // Host-side probing through the scoped readyz route: the serving host
     // resolves the gateway from the id in the path, dials its root
     // `/readyz`, and injects its own bearer.
-    const response = await fetch(
-      `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/readyz`,
-    );
-    if (!response.ok) {
-      const message = await response.text();
-      throw new GuardianTokenError(
-        response.status,
-        message || `Gateway request failed: ${response.status}`,
-      );
-    }
-    const readiness: unknown = await response.json().catch(() => null);
+    const readiness = await probeAssistantReadyzHost(assistant.assistantId);
     if (!isReadyzResponseReady(readiness)) {
       throw new Error("Assistant is not ready");
     }

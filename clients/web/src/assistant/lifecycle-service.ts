@@ -51,8 +51,6 @@ import type { AssistantState, LocalAssistantHealth } from "@/assistant/types";
 import { isGatewayAuthMode, getGatewayToken } from "@/lib/auth/gateway-session";
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
-  getAuthGatewayIngressUrl,
-  getPairedGatewayUrl,
   getSelectedAssistant,
   isCadetCloudRemote,
   isServedGatewayRuntime,
@@ -632,21 +630,16 @@ class AssistantLifecycleService {
   }
 
   private applyGatewayAuthShortCircuit(): void {
-    let ingressUrl = window.location.origin;
-    let resolvedAssistantId = "self";
-    let rendererToken = getGatewayToken();
-    if (isServedGatewayRuntime()) {
-      ingressUrl = getRemoteGatewayIngressUrl();
-    } else {
-      const assistant = getSelectedAssistant();
-      if (getAuthGatewayIngressUrl(assistant) != null) {
-        resolvedAssistantId = assistant?.assistantId ?? resolvedAssistantId;
-        if (getPairedGatewayUrl(assistant) != null) {
-          rendererToken = null;
-        }
-      }
-    }
-    setSelfHostedConnection({ url: ingressUrl, token: rendererToken });
+    const served = isServedGatewayRuntime();
+    const resolvedAssistantId = served
+      ? "self"
+      : (getSelectedAssistant()?.assistantId ?? "self");
+    setSelfHostedConnection({
+      url: served ? getRemoteGatewayIngressUrl() : window.location.origin,
+      // Local mode holds no renderer credential: the trusted host mints and
+      // injects the bearer on its forwards.
+      token: served ? getGatewayToken() : null,
+    });
     this.setOperationalStatusAssistantId(null);
     useResolvedAssistantsStore
       .getState()

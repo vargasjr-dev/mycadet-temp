@@ -1,8 +1,8 @@
 /**
- * Browser side of the `cadet pair` flow. In desktop/local mode the SPA
- * reaches the same-machine gateway over its loopback proxy
- * (`/assistant/__gateway/<assistantId>`) and drives the two loopback-only routes the
- * CLI uses:
+ * Browser side of the `cadet pair` flow. In desktop/local mode the SPA drives
+ * the two loopback-only routes the CLI uses through the scoped same-origin
+ * data plane (`/v1/assistants/<assistantId>/remote-web/...`; the host routes
+ * by the id in the path):
  *   1. `POST /v1/remote-web/pairing-challenge` — mint a device-code challenge.
  *   2. `POST /v1/remote-web/pairing-verification` — approve it with the user
  *      code. Running on the host IS the authorization, so the scan alone
@@ -15,11 +15,9 @@
  *   4. `POST /v1/remote-web/pairing-requests/approve`: approve one.
  *   5. `POST /v1/remote-web/pairing-requests/deny`: deny one.
  *
- * All these routes are loopback-gated and unauthenticated (they refuse any
- * non-loopback origin server-side), so no token is attached: the loopback
- * proxy is the trust boundary. Minting and approval are possible only from the
- * host; a remote paired session can never reach these routes, which is why the
- * UI is hidden outside local mode rather than relying on a client-side check.
+ * The routes are loopback-gated server-side; minting and approval are
+ * possible only from the host, which is why the UI is hidden outside local
+ * mode rather than relying on a client-side check.
  */
 
 import type {
@@ -32,7 +30,7 @@ import type {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { getLocalGatewayUrl, getSelectedAssistant } from "@/lib/local-mode";
+import { hasLocalGateway, getSelectedAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
@@ -90,32 +88,33 @@ export interface DevicePairing {
 
 /** What the "Pair a device" card needs about the assistant it pairs. */
 export interface PairDeviceTarget {
-  /** Absolute local-gateway base URL to mint the pairing challenge against. */
+  /** Scoped same-origin base for the assistant's remote-web routes. */
   base: string;
   /** The paired assistant's display name, or `null` when it has none. */
   assistantName: string | null;
 }
 
 /**
- * Resolve the selected assistant and its local-gateway base URL, or `null` when
- * device pairing isn't available from here. `getLocalGatewayUrl` already
- * resolves only in desktop/local mode (never remote-gateway or platform mode)
- * and only for an on-machine assistant with a recorded loopback gateway —
- * exactly the cases where a host-presence mint is possible — so a `null` here
- * doubles as the section's visibility gate.
+ * Resolve the selected assistant's scoped remote-web base, or `null` when
+ * device pairing isn't available from here. `hasLocalGateway` is true only in
+ * desktop/local mode (never remote-gateway or platform mode) for an
+ * on-machine assistant with a recorded loopback gateway — exactly the cases
+ * where a host-presence mint is possible — so a `null` here doubles as the
+ * section's visibility gate.
  */
 export function resolvePairDeviceTarget(): PairDeviceTarget | null {
   if (typeof window === "undefined") {
     return null;
   }
   const assistant = getSelectedAssistant();
-  const path = getLocalGatewayUrl(assistant);
-  if (!path) {
+  if (!hasLocalGateway(assistant)) {
     return null;
   }
   return {
-    base: `${window.location.origin}${path}`,
-    assistantName: assistant?.name?.trim() || null,
+    base: `${window.location.origin}/v1/assistants/${encodeURIComponent(
+      assistant.assistantId,
+    )}/remote-web`,
+    assistantName: assistant.name?.trim() || null,
   };
 }
 

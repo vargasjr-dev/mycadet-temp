@@ -340,9 +340,9 @@ export async function getLocalGuardianAccessToken(
 // fields pass through untouched.
 const assistantRecord = z.record(z.string(), z.unknown());
 
-// `retire`, `unpair`, and `guardianToken` each take a single assistant id and
-// keep a never-reject contract: a missing id resolves with a structured error
-// the renderer renders, rather than rejecting the invoke. The id is therefore
+// `retire` and `unpair` each take a single assistant id and keep a
+// never-reject contract: a missing id resolves with a structured error the
+// renderer renders, rather than rejecting the invoke. The id is therefore
 // optional on the wire and validated in the body.
 const assistantIdArgs = z.tuple([z.string().optional()]);
 
@@ -656,23 +656,4 @@ export const installLocalMode = (): void => {
     },
   );
 
-  ipc(
-    "cadet:localMode:guardianToken",
-    assistantIdArgs,
-    async ([assistantId]): Promise<TokenResult> => {
-      if (!assistantId) {
-        return { ok: false, status: 400, error: "Missing assistantId" };
-      }
-      if (isPairedLockfileEntry(lockfilePaths, assistantId)) {
-        return {
-          ok: false,
-          status: 403,
-          error: PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
-        };
-      }
-      return getHostGuardianAccessToken(assistantId, configDir, {
-        paired: false,
-      });
-    },
-  );
 };

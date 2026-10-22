@@ -2,7 +2,7 @@ import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import { CloudIdentityInjectionError } from "@/lib/cloud-identity-errors";
 import {
   getLockfileAssistant,
-  getPairedGatewayUrl,
+  hasPairedGateway,
   isCadetCloudRemote,
 } from "@/lib/local-mode";
 import {
@@ -86,7 +86,7 @@ async function resolvePairedAssistantCloudId(
   if (entry.cloudAssistantId) {
     return entry.cloudAssistantId;
   }
-  if (!getPairedGatewayUrl(entry)) {
+  if (!hasPairedGateway(entry)) {
     return null;
   }
   // The scoped data plane is plain same-origin /v1 — the trusted host routes

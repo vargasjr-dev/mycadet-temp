@@ -115,7 +115,6 @@ export const LOCAL_MODE_SLEEP = "cadet:localMode:sleep";
 export const LOCAL_MODE_WAKE = "cadet:localMode:wake";
 export const LOCAL_MODE_UPGRADE = "cadet:localMode:upgrade";
 export const LOCAL_MODE_STATUS = "cadet:localMode:status";
-export const LOCAL_MODE_GUARDIAN_TOKEN = "cadet:localMode:guardianToken";
 export const LOCAL_MODE_READ_ASSISTANT_AVATAR =
   "cadet:localMode:readAssistantAvatar";
 

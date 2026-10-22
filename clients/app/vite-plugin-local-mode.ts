@@ -20,7 +20,6 @@ import {
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
-  PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   runDevicesList,
   runDevicesRevoke,
   runHatch,
@@ -50,7 +49,6 @@ import cliPkg from "../../cli/package.json";
 // routes (detail/avatar/retire/wake/sleep) are intercepted before the
 // id-keyed gateway proxy below for host-managed entries; paired and cloud
 // entries pass through to that proxy.
-const GUARDIAN_TOKEN_PATTERN = /^\/v1\/assistants\/([^/]+)\/guardian-token$/;
 const LOCAL_STATUS_PATTERN = /^\/v1\/assistants\/([^/]+)\/?$/;
 const LOCAL_AVATAR_PATTERN = /^\/v1\/assistants\/([^/]+)\/avatar\/get$/;
 const LOCAL_UPGRADE_PATTERN = /^\/v1\/assistants\/([^/]+)\/upgrade\/?$/;
@@ -169,14 +167,6 @@ export function localModePlugin(env: Record<string, string>): Plugin {
         statusMiddleware(config.lockfilePaths, upgradingLocalAssistantIds),
       );
       server.middlewares.use(avatarMiddleware(config.lockfilePaths, env));
-      server.middlewares.use(
-        guardianTokenMiddleware(
-          config.lockfilePaths,
-          config.configDir,
-          baseDir,
-          env,
-        ),
-      );
       server.middlewares.use(
         gatewayProxyMiddleware(
           config.lockfilePaths,
@@ -1071,70 +1061,6 @@ function avatarMiddleware(
   };
 }
 
-function guardianTokenMiddleware(
-  lockfilePaths: string[],
-  configDir: string,
-  baseDir: string,
-  env: Record<string, string>,
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(GUARDIAN_TOKEN_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (req.method !== "GET") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-
-    if (lockfileEntryFor(lockfilePaths, assistantId) == null) {
-      return next();
-    }
-
-    if (isPairedLockfileEntry(lockfilePaths, assistantId)) {
-      res.statusCode = 403;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ error: PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR }));
-      return;
-    }
-
-    let invocation: CliInvocation;
-    try {
-      invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-    } catch (err) {
-      res.statusCode = 500;
-      res.setHeader("Content-Type", "application/json");
-      res.end(
-        JSON.stringify({
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
-      return;
-    }
-
-    getGuardianAccessToken(assistantId, configDir, invocation, true, env, {
-      paired: false,
-    }).then((result) => {
-      if (result.ok) {
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ accessToken: result.accessToken }));
-      } else {
-        res.statusCode = result.status;
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify({ error: result.error }));
-      }
-    });
-  };
-}
-
 function gatewayProxyMiddleware(
   lockfilePaths: string[],
   configDir: string,
@@ -1143,19 +1069,17 @@ function gatewayProxyMiddleware(
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
-    // and the legacy unscoped prefix (`/assistant/__gateway/{id}/*`,
-    // `/auth/token` mint and `/readyz` until they fold into `/v1`) share one
-    // id-keyed proxy for every assistant gateway. The lockfile resolves the
-    // id to a loopback port (locally hatched) or a recorded remote
+    // and the legacy unscoped prefix (`/assistant/__gateway/{id}/*`) share
+    // one id-keyed proxy for every assistant gateway. The lockfile resolves
+    // the id to a loopback port (locally hatched) or a recorded remote
     // `runtimeUrl` (imported pairing) — that target map is the allowlist.
-    // Loopback hops strip renderer authorization and install the bearer
-    // the host mints itself from the on-disk guardian token (with a 401
-    // re-mint retry on bodyless requests); remote hops strip renderer
-    // authorization and browser-ambient headers on this server-to-server
-    // hop, and the dev-server host reads the paired guardian bearer from
-    // disk and installs it after sanitization. An unknown id on the scoped
-    // surface passes through to the dev `/v1` proxy (the cloud), so cloud
-    // assistants keep their platform-served routes.
+    // The host OWNS the Authorization header: it overwrites whatever the
+    // renderer sent with the bearer it mints from the on-disk guardian
+    // token (401 re-mint retry on bodyless requests); remote hops
+    // sanitize browser-ambient headers and install the paired guardian
+    // bearer. An unknown id on the scoped surface passes through to the
+    // dev `/v1` proxy (the cloud), so cloud assistants keep their
+    // platform-served routes.
     const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
       readGatewayTargets(lockfilePaths),
     );
@@ -1175,54 +1099,47 @@ function gatewayProxyMiddleware(
 
     if (decision.target.kind === "loopback") {
       const { port } = decision.target;
-      void (async () => {
-        // The trusted dev-server host mints and injects the gateway bearer
-        // itself — the browser never holds one. The mint route is left
-        // alone: its bearer contract is the guardian token, and nothing
-        // dials it through this proxy anymore.
-        const headers: Record<string, string | string[] | undefined> = {
-          ...req.headers,
-          host: `127.0.0.1:${port}`,
-        };
-        delete headers.authorization;
-        let bearer: string | null = null;
-        const lease = async () => {
-          const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-          return getGuardianAccessToken(
-            decision.assistantId,
-            configDir,
-            invocation,
-            true,
-            env,
-            { paired: false },
-          );
-        };
-        if (decision.path !== "/auth/token") {
-          bearer = await loopbackGatewayBearer(port, lease);
-          if (bearer) {
-            headers.authorization = `Bearer ${bearer}`;
-          }
-        }
-        pipeGatewayProxyWithBearerRetry(
-          req,
-          res,
-          http,
-          {
-            hostname: "127.0.0.1",
-            port,
-            path: decision.path + decision.search,
-            method: req.method,
-            headers,
-          },
-          bearer,
-          () => loopbackGatewayBearer(port, lease, { forceMint: true }),
+      // The trusted dev-server host owns the Authorization header: it
+      // overwrites whatever the renderer sent with the bearer it mints
+      // from the on-disk guardian token — the browser never holds one.
+      const lease = async () => {
+        const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
+        return getGuardianAccessToken(
+          decision.assistantId,
+          configDir,
+          invocation,
+          true,
+          env,
+          { paired: false },
         );
-      })().catch(() => {
-        if (!res.headersSent) {
-          res.statusCode = 502;
-          res.end("Gateway proxy error");
-        }
-      });
+      };
+      const mint =
+        decision.path !== "/auth/token"
+          ? loopbackGatewayBearer(port, lease)
+          : Promise.resolve(null);
+      mint
+        .then((bearer) => {
+          pipeGatewayProxyWithBearerRetry(
+            req,
+            res,
+            http,
+            {
+              hostname: "127.0.0.1",
+              port,
+              path: decision.path + decision.search,
+              method: req.method,
+              headers: { ...req.headers, host: `127.0.0.1:${port}` },
+            },
+            bearer,
+            () => loopbackGatewayBearer(port, lease, { forceMint: true }),
+          );
+        })
+        .catch(() => {
+          if (!res.headersSent) {
+            res.statusCode = 502;
+            res.end("Gateway proxy error");
+          }
+        });
       return;
     }
 
@@ -1341,7 +1258,18 @@ function pipeGatewayProxyWithBearerRetry(
   reMint: () => Promise<string | null>,
 ): void {
   const send = (bearer: string | null, isRetry: boolean) => {
-    const proxyReq = transport.request(options, (proxyRes) => {
+    // The host owns the Authorization header on every attempt: overwrite
+    // the renderer's value with the current bearer, clear when none
+    // applies — a stale credential never rides a retry.
+    const headers: http.OutgoingHttpHeaders = { ...options.headers };
+    if (bearer) {
+      headers.authorization = `Bearer ${bearer}`;
+    } else {
+      delete headers.authorization;
+    }
+    const proxyReq = transport.request(
+      { ...options, headers },
+      (proxyRes) => {
       if (!isRetry && injectedBearer !== null && proxyRes.statusCode === 401) {
         proxyRes.resume();
         void reMint().then((fresh) => {

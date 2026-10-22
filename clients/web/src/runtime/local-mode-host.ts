@@ -104,15 +104,11 @@ export type { LocalRevokeDeviceResult };
 export type { LocalUpgradeOptions };
 
 /**
- * Thrown by {@link fetchGuardianTokenHost} when a host returns a structured
- * guardian-token failure. Carries the host's `status` so callers can branch on
- * the failure class — a missing (`404`) or expired (`401`) token means the
- * assistant must be re-provisioned (hatch/wake), whereas a `403`/`5xx`/network
- * failure is transient and worth retrying — instead of string-matching the
- * message. Both hosts already produce the status (the package's
- * `getGuardianAccessToken` `TokenResult`, mirrored into the dev server's HTTP
- * status code); this preserves it across the seam rather than collapsing it
- * into a bare `Error`.
+ * Thrown when a host returns a structured guardian-token failure. Carries the
+ * host's `status` so callers can branch on the failure class — a missing
+ * (`404`) or expired (`401`) token means the assistant must be re-provisioned
+ * (hatch/wake), whereas a `403`/`5xx`/network failure is transient and worth
+ * retrying — instead of string-matching the message.
  */
 export class GuardianTokenError extends Error {
   readonly status: number;
@@ -607,40 +603,25 @@ export async function readAssistantAvatarHost(
 }
 
 /**
- * Acquire a fresh guardian access token for a local assistant. The
- * diagnostics export embeds it in the hosted-assistant bundle it assembles;
- * the connect flows no longer need it — the trusted host mints the gateway
- * bearer itself, so the renderer never leases the credential to authenticate.
- * Reading the token file and refreshing it via the CLI is a trusted
- * disk/CLI operation, so it runs in the host: the Electron main process
- * behind `window.cadet.localMode.guardianToken`, the Vite dev server behind
- * `/v1/assistants/{id}/guardian-token`. Throws a {@link GuardianTokenError}
- * carrying the host's status on failure, so callers surface the same
- * error — and can branch on the failure class — regardless of host.
+ * Probe an assistant's gateway readiness through the serving host: the host
+ * resolves the gateway from the id in the path, dials its root `/readyz`, and
+ * injects its own bearer. Throws a {@link GuardianTokenError} carrying the
+ * host's status on failure; resolves the parsed readiness body otherwise.
  */
-export async function fetchGuardianTokenHost(
+export async function probeAssistantReadyzHost(
   assistantId: string,
-): Promise<string> {
-  if (isElectron()) {
-    const result = await window.cadet!.localMode.guardianToken(assistantId);
-    if (!result.ok) {
-      throw new GuardianTokenError(result.status, result.error);
-    }
-    return result.accessToken;
-  }
-
+): Promise<unknown> {
   const res = await fetch(
-    `/v1/assistants/${encodeURIComponent(assistantId)}/guardian-token`,
+    `/v1/assistants/${encodeURIComponent(assistantId)}/readyz`,
   );
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    const message = await res.text();
     throw new GuardianTokenError(
       res.status,
-      body.error ?? `Guardian token request failed: ${res.status}`,
+      message || `Gateway request failed: ${res.status}`,
     );
   }
-  const { accessToken } = (await res.json()) as { accessToken: string };
-  return accessToken;
+  return res.json().catch(() => null);
 }
 
 /**

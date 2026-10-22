@@ -1,36 +1,19 @@
-import { z } from "zod";
-import { getLocalGatewayUrl } from "@/lib/local-mode";
-import {
-  fetchGuardianTokenHost,
-  type LockfileAssistant,
-} from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@/runtime/local-mode-host";
 
 export async function exportLocalDebugBundle(
   assistant: LockfileAssistant,
   uploadUrl: string,
 ): Promise<void> {
-  const gateway = getLocalGatewayUrl(assistant);
-  if (!gateway) {
-    throw new Error("No local gateway is available.");
-  }
-  const base = `${window.location.origin}${gateway}`;
-  const guardian = await fetchGuardianTokenHost(assistant.assistantId);
-  const minted = await fetch(`${base}/auth/token`, {
-    method: "POST",
-    signal: AbortSignal.timeout(30_000),
-    headers: { Authorization: `Bearer ${guardian}` },
-  });
-  if (!minted.ok) {
-    throw new Error(`Gateway authentication failed (HTTP ${minted.status}).`);
-  }
-  const { token } = z
-    .object({ token: z.string().min(1) })
-    .parse(await minted.json());
-  const logs = await fetch(`${base}/v1/logs/export`, {
-    method: "POST",
-    signal: AbortSignal.timeout(180_000),
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  // The scoped data plane is plain same-origin /v1 and the trusted host
+  // injects the gateway bearer on its forward — the renderer sends no
+  // credential and mints nothing.
+  const logs = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistant.assistantId)}/logs/export`,
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(180_000),
+    },
+  );
   if (!logs.ok) {
     throw new Error(`Diagnostic export failed (HTTP ${logs.status}).`);
   }
