@@ -232,8 +232,8 @@ describe("skills routes", () => {
 
 describe("onboarding funnel middleware order", () => {
   // A paid return reaches the hatching route with its funnel markers in the
-  // query string, and an unconsented user is bounced from there to the privacy
-  // screen. `authMiddleware` resolves the guard with `pathname + search`, so
+  // query string, and an unconsented user is bounced from there to the
+  // consent screen. `authMiddleware` resolves the guard with `pathname + search`, so
   // its bounce carries the markers along as `returnTo`;
   // `onboardingCompletedMiddleware` resolves with `pathname` alone and bounces
   // without them. Running the auth guard first is what keeps the markers, so a

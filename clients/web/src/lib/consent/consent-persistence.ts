@@ -12,14 +12,11 @@
  * sharing, each artifact with its own ack) — so any one can be re-reviewed
  * without forcing the others.
  *
- * The onboarding Zustand store holds the in-memory state (`tosAccepted`,
- * `privacyConsent`). This module handles the durable device-key layer
- * and the unified write API for legal consent:
+ * Web keeps the READ half only — the shell's `/account/consent` screen (the
+ * app bundle's copy of this contract) is the sole writer, and these reads see
+ * its keys same-origin:
  *
  * - `restoreConsentForUser` — read device keys, return {tos, privacy}
- * - `persistConsentForUser` — write tos/privacy device keys
- * - `clearConsentForUser`   — delete device keys + legacy active keys
- * - `saveConsent`           — unified write: store + device keys
  *
  * (The share-analytics/diagnostics toggles and their server sync were torn
  * out with the telemetry subsystem; only legal consent persists here.)
@@ -30,7 +27,6 @@ import {
   removeLocalSetting,
   getLocalBool,
 } from "@/utils/local-settings";
-import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 
 // Frozen build constants. Review-terms displays change notes keyed off them.
 // Zero-padded ISO dates (YYYY-MM-DD): currency is a monotonic comparison
@@ -220,57 +216,6 @@ export function restoreConsentForUser(userId: string | null): {
   }
 }
 
-export function persistConsentForUser(
-  userId: string | null,
-  tos: boolean,
-  privacy: boolean,
-): void {
-  if (typeof window === "undefined" || !userId) {
-    return;
-  }
-  try {
-    if (tos) {
-      setLocalSetting(consentAckKey("tos", userId), requiredAckVersion("tos"));
-    } else {
-      removeLocalSetting(consentAckKey("tos", userId));
-    }
-    if (privacy) {
-      setLocalSetting(
-        consentAckKey("privacy_policy", userId),
-        requiredAckVersion("privacy_policy"),
-      );
-      setLocalSetting(
-        consentAckKey("ai_data_sharing", userId),
-        requiredAckVersion("ai_data_sharing"),
-      );
-    } else {
-      removeLocalSetting(consentAckKey("privacy_policy", userId));
-      removeLocalSetting(consentAckKey("ai_data_sharing", userId));
-    }
-  } catch {
-    // Storage unavailable.
-  }
-}
-
-export function clearConsentForUser(userId: string | null): void {
-  removeLocalSetting("cadet:onboarding:tosAccepted");
-  removeLocalSetting("cadet:onboarding:aiDataConsent");
-  removeLocalSetting("cadet:onboarding:selectedVersion");
-  if (typeof window === "undefined" || !userId) {
-    return;
-  }
-  try {
-    removeLocalSetting(consentAckKey("tos", userId));
-    removeLocalSetting(consentAckKey("privacy_policy", userId));
-    removeLocalSetting(consentAckKey("ai_data_sharing", userId));
-    removeLocalSetting(legacyPrivacyConsentKey(userId));
-    migrateLegacyVersionedAcks("tos", userId, []);
-    migrateLegacyVersionedAcks("privacy", userId, []);
-  } catch {
-    // Storage unavailable.
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Version currency
 // ---------------------------------------------------------------------------
@@ -284,33 +229,4 @@ export function clearConsentForUser(userId: string | null): void {
  */
 function versionIsCurrent(accepted: string, required: string): boolean {
   return accepted >= required;
-}
-
-// ---------------------------------------------------------------------------
-// Unified write API
-// ---------------------------------------------------------------------------
-
-/**
- * The single write path for user-initiated legal consent: store updates and
- * per-user device keys.
- *
- * A consent-screen save is an explicit review of the current terms, so
- * currency and hydration are authoritative: `hasConsentRecord` and
- * `consentHydrated` are set, and route guards may trust the flags without
- * waiting for a restore.
- */
-export function saveConsent(opts: {
-  userId: string | null;
-  tos: boolean;
-  privacy: boolean;
-}): void {
-  const store = useOnboardingStore.getState();
-
-  store.setTosAccepted(opts.tos);
-  store.setPrivacyConsent(opts.privacy);
-  persistConsentForUser(opts.userId, opts.tos, opts.privacy);
-  // Accepting on a consent screen creates the record, so a subsequent mount
-  // must not re-frame this user as never-consented.
-  store.setHasConsentRecord(true);
-  store.setConsentHydrated(true);
 }

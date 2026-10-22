@@ -437,9 +437,11 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const res = await runMiddleware(researchFunnelEntry);
-      expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
+      // The bounce targets the app bundle's consent screen — a full-page
+      // navigation, so the middleware admits and the page URL carries it.
+      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
+      expect(outcome.admitted).toBe(true);
+      expect(window.location.href.endsWith("/account/consent")).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
     }
@@ -468,16 +470,16 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(researchFunnelEntry);
+      const pending = runMiddlewareOutcome(researchFunnelEntry);
       // Consent lands well inside its (clamped) wait; the assistants fetch
       // never reports, so only that second wait runs out.
       setTimeout(() => {
         useOnboardingStore.setState({ consentHydrated: true });
       }, 10);
 
-      const res = await pending;
-      expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
+      const outcome = await pending;
+      expect(outcome.admitted).toBe(true);
+      expect(window.location.href.endsWith("/account/consent")).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
       useResolvedAssistantsStore.setState({
@@ -509,16 +511,16 @@ describe("authMiddleware — hydration timeout", () => {
     });
 
     try {
-      const pending = runMiddleware(researchFunnelEntry);
+      const pending = runMiddlewareOutcome(researchFunnelEntry);
       // Past the (clamped) consent wait but inside the assistants one, which
       // never reports.
       setTimeout(() => {
         useOnboardingStore.setState({ consentHydrated: true });
       }, WAIT_TIMEOUT_CLAMP_MS + 30);
 
-      const res = await pending;
-      expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(routes.onboarding.privacy);
+      const outcome = await pending;
+      expect(outcome.admitted).toBe(true);
+      expect(window.location.href.endsWith("/account/consent")).toBe(true);
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
       useResolvedAssistantsStore.setState({

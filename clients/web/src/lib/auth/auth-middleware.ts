@@ -8,6 +8,7 @@ import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import { isAuthenticated, isSessionSettled } from "@/stores/session-status";
 import { isLocalClient, hasAssistants } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
+import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
@@ -188,6 +189,9 @@ const resolveWithGuard = async (
   }
 
   if (decision.action === "redirect") {
+    if (hardNavigateIfCrossBundle(decision.to)) {
+      return next();
+    }
     throw redirect(decision.to);
   }
 

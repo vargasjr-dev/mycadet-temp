@@ -1,6 +1,11 @@
 import type { CloudSessionStatus } from "@/stores/session-status";
 import { sanitizeReturnTo } from "@/utils/return-to";
-import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
+import {
+  canSkipOnboardingResearch,
+  isNewAssistantFunnel,
+  onboardingDestinationAfterConsent,
+  withSkipResearch,
+} from "@/domains/onboarding/onboarding-destination";
 import { routes } from "@/utils/routes";
 
 // ---------------------------------------------------------------------------
@@ -115,8 +120,10 @@ function isOnboardingPath(pathname: string): boolean {
   );
 }
 
+// The platform arm targets the app bundle's consent screen — a cross-bundle
+// literal (house pattern): it lives outside web's route table on purpose.
 function onboardingEntrypoint(isLocalClient: boolean): string {
-  return isLocalClient ? routes.welcome : routes.onboarding.privacy;
+  return isLocalClient ? routes.welcome : "/account/consent";
 }
 
 function extractPathname(destination: string): string {
@@ -187,7 +194,7 @@ export function resolveNavigation(
 //   2. Bypass             — gateway auth skips everything but a paid return
 //   4. Identity           — is the user authenticated?
 //   5. Mode boundary      — is this path valid for the user's mode?
-//   6. Setup exemptions   — onboarding/consent paths are always reachable
+//   6. Setup exemptions   — onboarding paths are always reachable
 //   7. Assistant required  — user needs at least one assistant
 //   8. Consent required   — platform users must accept TOS
 
@@ -341,37 +348,13 @@ function enforceModeBoundary(
   return null;
 }
 
-/**
- * Where an unconsented user is sent: the onboarding entrypoint for their mode.
- */
-function consentBounceDestination(state: NavigationState): string {
-  return onboardingEntrypoint(state.isLocalClient);
-}
-
 function allowSetupRoutes(
   state: NavigationState,
   path: string,
-  pathnameWithSearch: string,
+  _pathnameWithSearch: string,
 ): NavigationDecision | null {
-  if (path === routes.reviewTerms) {
-    return { action: "allow" };
-  }
-
   if (!isOnboardingPath(path)) {
     return null;
-  }
-
-  // The selected assistant is past first run, so this privacy visit is a
-  // replay rather than its onboarding. Research stays reachable on demand;
-  // only the automatic privacy entry is bounced.
-  //
-  // The marker is the walk's INTENT: provisioning a new assistant is first-run
-  // for that assistant no matter how established the selected one is.
-  if (path === routes.onboarding.privacy && state.selectedAssistantOnboarded) {
-    const params = searchParamsOf(pathnameWithSearch);
-    if (!isNewAssistantFunnel(params)) {
-      return { action: "redirect", to: routes.assistant };
-    }
   }
 
   return enforceFunnelConsent(state, path);
@@ -420,13 +403,16 @@ function enforceFunnelConsent(
   }
 
   // First consent only: a user with no consent record at all. A
-  // record-holder whose acceptance went stale is handled below (research)
-  // or by the hatching screen's own hatch-gate.
-  if (!state.hasConsentRecord && !hasCompletedOnboarding(state)) {
-    return {
-      action: "redirect",
-      to: consentBounceDestination(state),
-    };
+  // record-holder whose acceptance went stale is handled by the hatching
+  // screen's own hatch-gate. Gated on the cloud session — consent is a
+  // cloud-account concern, so a local-only client (no session to consent
+  // against) proceeds ungated.
+  if (
+    state.cloudSession === "present" &&
+    !state.hasConsentRecord &&
+    !hasCompletedOnboarding(state)
+  ) {
+    return { action: "redirect", to: "/account/consent" };
   }
 
   return { action: "allow" };
@@ -460,17 +446,14 @@ function requireAssistant(
   }
 
   if (!hasCompletedOnboarding(state)) {
-    // No consent record = first consent: the privacy screen starts the
-    // onboarding funnel. A record + a stale acceptance = a re-review of the
-    // terms before provisioning an assistant.
-    if (state.hasConsentRecord) {
-      const returnTo = encodeURIComponent(pathnameWithSearch);
-      return {
-        action: "redirect",
-        to: `${routes.reviewTerms}?returnTo=${returnTo}`,
-      };
-    }
-    return { action: "redirect", to: routes.onboarding.privacy };
+    // First consent and a stale acceptance both settle at the shell's consent
+    // screen (the app bundle), returnTo preserved for the ride back — the
+    // screen frames itself first-consent vs re-review off the record.
+    const returnTo = encodeURIComponent(pathnameWithSearch);
+    return {
+      action: "redirect",
+      to: `/account/consent?returnTo=${returnTo}`,
+    };
   }
   // A consented user with no assistant goes to the standard hatching screen.
   return { action: "redirect", to: routes.onboarding.hatching };
@@ -502,7 +485,7 @@ function requireConsent(
   const returnTo = encodeURIComponent(pathnameWithSearch);
   return {
     action: "redirect",
-    to: `${routes.reviewTerms}?returnTo=${returnTo}`,
+    to: `/account/consent?returnTo=${returnTo}`,
   };
 }
 
@@ -532,9 +515,6 @@ function resolveOnboardingIntercept(
   if (path.startsWith(`${routes.assistant}/onboarding`)) {
     return { action: "allow" };
   }
-  if (path === routes.reviewTerms) {
-    return { action: "allow" };
-  }
 
   return {
     action: "redirect",
@@ -553,19 +533,11 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
   if (!state.isAuthenticated && !state.isLocalClient) {
     return { action: "redirect", to: routes.remotePair };
   }
-  if (!hasCompletedOnboarding(state)) {
-    // A user with no consent record owes first consent. A record-holder's
-    // acceptance flags only went stale — platform users re-review the terms
-    // (even via direct navigation); local mode is not gated on staleness.
-    if (!state.hasConsentRecord) {
-      return {
-        action: "redirect",
-        to: onboardingEntrypoint(state.isLocalClient),
-      };
-    }
-    if (!state.isLocalClient) {
-      return { action: "redirect", to: routes.reviewTerms };
-    }
+  if (state.cloudSession === "present" && !hasCompletedOnboarding(state)) {
+    // First consent and a stale acceptance both settle at the shell's consent
+    // screen. Local-only clients have no session to consent against, so they
+    // are not gated here.
+    return { action: "redirect", to: "/account/consent" };
   }
   return { action: "allow" };
 }
@@ -601,10 +573,7 @@ function isOnboardingResearchPath(destination: string): boolean {
   const path = extractPathname(destination);
   const qIdx = path.indexOf("?");
   const pathname = qIdx < 0 ? path : path.slice(0, qIdx);
-  return (
-    pathname === routes.onboarding.privacy ||
-    pathname === routes.onboarding.research
-  );
+  return pathname === routes.onboarding.research;
 }
 
 function resolvePostAuth(
@@ -633,11 +602,23 @@ function resolvePostAuth(
     return { action: "redirect", to: skipTarget };
   }
 
-  // A first-run signup starts at the consent screen; a login resumes the
-  // sanitized returnTo.
+  if (authIntent !== "signup") {
+    return { action: "redirect", to: destination };
+  }
+  // A first-run signup consents at the shell's screen (the app bundle), then
+  // rides returnTo into the same post-consent destination the privacy screen
+  // used to hand off.
+  const skipResearch = canSkipOnboardingResearch();
+  const postConsentDestination = onboardingDestinationAfterConsent({
+    isLocalHatch: false,
+    skipResearch,
+  });
+  const signupNext = skipResearch
+    ? withSkipResearch(postConsentDestination)
+    : postConsentDestination;
   return {
     action: "redirect",
-    to: authIntent === "signup" ? routes.onboarding.privacy : destination,
+    to: `/account/consent?returnTo=${encodeURIComponent(signupNext)}`,
   };
 }
 
@@ -653,7 +634,7 @@ function resolvePostRetire(state: NavigationState): NavigationDecision {
     };
   }
   if (!state.isLocalClient) {
-    return { action: "redirect", to: routes.onboarding.privacy };
+    return { action: "redirect", to: routes.onboarding.research };
   }
   if (state.cloudSession === "present") {
     return { action: "redirect", to: routes.onboarding.hosting };

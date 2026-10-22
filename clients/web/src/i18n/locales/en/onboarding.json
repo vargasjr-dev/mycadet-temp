@@ -9,7 +9,6 @@
     "tryAgain": "Try again",
     "remove": "Remove {value}",
     "logIn": "Log In",
-    "logOut": "Log out",
     "loginToUse": "Log in to use",
     "downloadMacOSApp": "Download the macOS app",
     "downloadWindowsApp": "Download the Windows app",
@@ -22,12 +21,6 @@
   },
   "startScreen": {
     "createAssistant": "Create your assistant"
-  },
-  "privacyScreen": {
-    "title": "Before You Start",
-    "body": "Choose your privacy preferences. You can update these anytime in the Settings.",
-    "start": "Start Onboarding",
-    "skipToChat": "Skip to the Assistant"
   },
   "hostingScreen": {
     "title": "Hosting",
@@ -70,11 +63,6 @@
     "body": "Paste the https link your assistant’s pairing page gave you.",
     "addressLabel": "Assistant address",
     "addFailed": "Failed to add the assistant. Please try again."
-  },
-  "consentControls": {
-    "whatsChanged": "What's changed",
-    "agreements": "Agreements",
-    "agreeTo": "I agree to the <link>{policy}</link>"
   },
   "onboardingAutocomplete": {
     "addOption": "Add “{value}”",

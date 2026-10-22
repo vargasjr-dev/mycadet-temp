@@ -378,17 +378,8 @@ export const routeTree = [
                 ),
             },
           },
-          {
-            path: "review-terms",
-            lazy: {
-              Component: () =>
-                import("@/domains/onboarding/pages/review-terms-screen").then(
-                  (m) => m.ReviewTermsScreen,
-                ),
-            },
-          },
-
-          // Onboarding funnel — new-user setup flow (privacy → prechat → hatching).
+          // Onboarding funnel — new-user setup flow (prechat → hatching). Consent
+          // happens at the app shell's /account/consent before any of this.
           {
             middleware: [onboardingCompletedMiddleware],
             children: [
@@ -421,15 +412,6 @@ export const routeTree = [
                   Component: () =>
                     import("@/domains/onboarding/pages/start-screen").then(
                       (m) => m.StartScreen,
-                    ),
-                },
-              },
-              {
-                path: "onboarding/privacy",
-                lazy: {
-                  Component: () =>
-                    import("@/domains/onboarding/pages/privacy-screen").then(
-                      (m) => m.PrivacyScreen,
                     ),
                 },
               },

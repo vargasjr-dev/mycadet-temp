@@ -12,10 +12,9 @@
  * another window's chat if the user opens onboarding in two tabs concurrently.
  *
  * Storage-error handling matches the pattern in
- * `@/domains/onboarding/prefs` (e.g. `readSelectedVersion`) and
- * `@/lib/consent/consent-persistence`: every read/write is wrapped in `try/catch` so a
- * disabled or quota-exceeded `sessionStorage` degrades to "no pending
- * context" instead of throwing into the caller.
+ * `@/domains/onboarding/prefs` (e.g. `readSelectedVersion`): every read/write
+ * is wrapped in `try/catch` so a disabled or quota-exceeded `sessionStorage`
+ * degrades to "no pending context" instead of throwing into the caller.
  */
 
 /** Shape of the pre-chat onboarding payload. Mirrors the Swift model. */

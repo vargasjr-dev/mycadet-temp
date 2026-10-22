@@ -9,7 +9,6 @@
     "tryAgain": "再試一次",
     "remove": "移除 {value}",
     "logIn": "登入",
-    "logOut": "登出",
     "loginToUse": "登入以使用",
     "downloadMacOSApp": "下載 macOS 應用程式",
     "downloadWindowsApp": "下載 Windows 應用程式",
@@ -22,12 +21,6 @@
   },
   "startScreen": {
     "createAssistant": "建立您的助理"
-  },
-  "privacyScreen": {
-    "title": "開始之前",
-    "body": "選擇您的隱私偏好設定。您可以隨時在「設定」中更新這些內容。",
-    "start": "開始新手導覽",
-    "skipToChat": "跳過並開始聊天"
   },
   "hostingScreen": {
     "title": "託管",
@@ -70,11 +63,6 @@
     "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
     "addressLabel": "助理位址",
     "addFailed": "新增助理失敗。請再試一次。"
-  },
-  "consentControls": {
-    "whatsChanged": "更新內容",
-    "agreements": "協議",
-    "agreeTo": "我同意 <link>{policy}</link>"
   },
   "onboardingAutocomplete": {
     "addOption": "新增「{value}」",

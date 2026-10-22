@@ -1,7 +1,10 @@
 import { useNavigate } from "react-router";
 
 import { OnboardingLayout } from "@/components/onboarding-layout";
-import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination";
+import {
+  NEW_ASSISTANT_PARAM,
+  withSkipResearch,
+} from "@/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@/domains/onboarding/onboarding-navigation";
 import { useTranslation } from "@/i18n";
 import { routes } from "@/utils/routes";
@@ -10,17 +13,12 @@ import { Button } from "@mycadet/design-library/components/button";
 /**
  * Platform onboarding welcome / front door.
  *
- * This is the in-SPA landing spot for "Back" out of the privacy screen in
- * platform mode. Privacy is the onboarding entrypoint there and its only
- * happy-path predecessor (hosting) is local-only, so before this screen a
- * platform Back had nowhere in-SPA to go — sending it to the marketing host
- * (`/`) would have navigated a Capacitor staging/dev shell onto production
- * (its CTA points at `www.mycadet.ai/assistant`). Keeping Back inside the SPA
- * preserves the running environment on every platform.
- *
- * It is deliberately a single-CTA welcome: the button re-enters the funnel at
- * privacy (consent), which then hatches the assistant. Not wired as the funnel
- * entrypoint — reached only via Back — so the happy path is unchanged.
+ * The in-SPA landing spot for "Back" in platform mode (its only happy-path
+ * predecessor, hosting, is local-only, and the marketing host `/` would
+ * navigate a Capacitor staging/dev shell onto production). Deliberately a
+ * single-CTA welcome: the button re-enters the funnel at research, which
+ * hatches the assistant. Not wired as the funnel entrypoint — reached only
+ * via Back — so the happy path is unchanged.
  */
 export function StartScreen() {
   const { t } = useTranslation("onboarding");
@@ -53,7 +51,9 @@ export function StartScreen() {
               fullWidth
               onClick={() =>
                 void navigate(
-                  `${routes.onboarding.privacy}?${NEW_ASSISTANT_PARAM}=1`,
+                  withSkipResearch(
+                    `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
+                  ),
                   SETUP_NAVIGATE,
                 )
               }

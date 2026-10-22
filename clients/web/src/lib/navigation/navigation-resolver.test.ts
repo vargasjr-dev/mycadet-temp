@@ -53,6 +53,13 @@ const RESEARCH_FUNNEL_URL =
 const HATCHING_FUNNEL_URL =
   "/assistant/onboarding/hatching?hosting=cadet-cloud";
 
+// A signup consents at the shell's screen carrying the post-consent funnel
+// destination as the returnTo (non-production builds skip research).
+const consentCarry = () =>
+  `/account/consent?returnTo=${encodeURIComponent(
+    "/assistant/onboarding/hatching?skip_research=1",
+  )}`;
+
 const ALLOW: NavigationDecision = { action: "allow" };
 const WAIT: NavigationDecision = { action: "wait" };
 // The auth middleware awaits the probe only for a wait that names it, so the
@@ -190,55 +197,10 @@ describe("resolveNavigation", () => {
     // -- authenticated, onboarding routes ---------------------------------
 
     test("allows authenticated user on onboarding route regardless of assistant count", () => {
-      expect(guard(s({}), "/assistant/onboarding/privacy")).toEqual(ALLOW);
+      expect(guard(s({}), "/assistant/onboarding/hatching")).toEqual(ALLOW);
       expect(
-        guard(s({ hasAssistants: false }), "/assistant/onboarding/privacy"),
+        guard(s({ hasAssistants: false }), "/assistant/onboarding/hatching"),
       ).toEqual(ALLOW);
-    });
-
-    test("bounces first-run privacy when the selected assistant is onboarded", () => {
-      expect(
-        guard(
-          s({ selectedAssistantOnboarded: true }),
-          "/assistant/onboarding/privacy",
-        ),
-      ).toEqual({ action: "redirect", to: "/assistant" });
-      expect(
-        guard(
-          s({ selectedAssistantOnboarded: true, hasAssistants: false }),
-          "/assistant/onboarding/privacy?replay=1",
-        ),
-      ).toEqual({ action: "redirect", to: "/assistant" });
-    });
-
-    test("lets a new-assistant walk through privacy despite an onboarded selection", () => {
-      expect(
-        guard(
-          s({ selectedAssistantOnboarded: true }),
-          `/assistant/onboarding/privacy?hosting=local&${NEW_ASSISTANT_PARAM}=1`,
-        ),
-      ).toEqual(ALLOW);
-      expect(
-        guard(
-          s({ selectedAssistantOnboarded: true }),
-          `/assistant/onboarding/privacy?${NEW_ASSISTANT_PARAM}=1`,
-        ),
-      ).toEqual(ALLOW);
-    });
-
-    test("bounces an onboarded selection off a local privacy visit", () => {
-      const state = s({
-        isLocalClient: true,
-        isAuthenticated: false,
-        selectedAssistantOnboarded: true,
-        hasAssistants: true,
-      });
-      expect(
-        guard(
-          { ...state, isAuthenticated: true },
-          "/assistant/onboarding/privacy?hosting=local",
-        ),
-      ).toEqual({ action: "redirect", to: "/assistant" });
     });
 
     test("keeps research reachable on demand for an onboarded selection", () => {
@@ -250,15 +212,11 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("allows authenticated user on review-terms route", () => {
-      expect(guard(s({}), "/assistant/review-terms")).toEqual(ALLOW);
-    });
-
     test("query strings do not break onboarding path matching", () => {
       expect(
         guard(
           s({ hasAssistants: false }),
-          "/assistant/onboarding/privacy?replay=1",
+          "/assistant/onboarding/research?replay=1",
         ),
       ).toEqual(ALLOW);
       expect(
@@ -284,30 +242,45 @@ describe("resolveNavigation", () => {
 
     test("allows non-local user on onboarding screens regardless of assistant count", () => {
       expect(
-        guard(s({ isLocalClient: false }), "/assistant/onboarding/privacy"),
-      ).toEqual(ALLOW);
-      expect(
         guard(s({ isLocalClient: false }), "/assistant/onboarding/hatching"),
       ).toEqual(ALLOW);
       expect(
         guard(
           s({ isLocalClient: false, hasAssistants: false }),
-          "/assistant/onboarding/privacy",
+          "/assistant/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
 
-    test("redirects user from hatching to privacy when consent missing", () => {
+    test("redirects a cloud user from hatching to consent when consent missing", () => {
       expect(
         guard(
           s({
+            cloudSession: "present",
             tosAccepted: false,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
           "/assistant/onboarding/hatching",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
+    });
+
+    test("allows a local-only user on hatching without a consent record", () => {
+      // Consent is a cloud-account concern: with no session to consent
+      // against, a local-only client is not gated here.
+      expect(
+        guard(
+          s({
+            isLocalClient: true,
+            cloudSession: "absent",
+            tosAccepted: false,
+            privacyConsent: false,
+            hasConsentRecord: false,
+          }),
+          "/assistant/onboarding/hatching",
+        ),
+      ).toEqual(ALLOW);
     });
 
     test("allows user on hatching when consent present", () => {
@@ -319,45 +292,48 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("redirects user from hatching to privacy with partial consent", () => {
+    test("redirects a cloud user from hatching to consent with partial consent", () => {
       expect(
         guard(
           s({
+            cloudSession: "present",
             tosAccepted: true,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
           "/assistant/onboarding/hatching",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
     });
 
-    test("redirects from hatching without consent to privacy when no assistants", () => {
+    test("redirects a cloud user from hatching without consent when no assistants", () => {
       expect(
         guard(
           s({
             hasAssistants: false,
+            cloudSession: "present",
             tosAccepted: false,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
           "/assistant/onboarding/hatching",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
     });
 
-    test("redirects from hatching without consent in local mode", () => {
+    test("allows hatching without consent in local-only mode", () => {
       expect(
         guard(
           s({
             isLocalClient: true,
+            cloudSession: "absent",
             tosAccepted: false,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
           "/assistant/onboarding/hatching",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual(ALLOW);
     });
 
     test("allows hatching with consent when no assistants", () => {
@@ -415,7 +391,7 @@ describe("resolveNavigation", () => {
 
     // -- authenticated, platform mode, not onboarded ----------------------
 
-    test("redirects platform-mode user without consent to review-terms with returnTo", () => {
+    test("redirects platform-mode user without consent to consent with returnTo", () => {
       expect(
         guard(
           s({
@@ -426,22 +402,22 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
-    test("redirects platform-mode user with partial consent to review-terms with returnTo", () => {
+    test("redirects platform-mode user with partial consent to consent with returnTo", () => {
       expect(
         guard(
           s({ isLocalClient: false, tosAccepted: true, privacyConsent: false }),
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
-    test("redirects platform-mode user without consent and no assistants to privacy, not hatching", () => {
+    test("redirects platform-mode user without consent and no assistants to consent, not hatching", () => {
       expect(
         guard(
           s({
@@ -452,12 +428,15 @@ describe("resolveNavigation", () => {
             hasConsentRecord: false,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({
+        action: "redirect",
+        to: "/account/consent?returnTo=%2Fassistant",
+      });
     });
 
     // -- hydration gating ---------------------------------------------------
 
-    test("waits (not privacy) for a cloud user when the assistants list has not hydrated", () => {
+    test("waits (not consent) for a cloud user when the assistants list has not hydrated", () => {
       // Boot race: assistants and consent both start empty/false. Deciding
       // here would dump an established user into the onboarding funnel.
       expect(
@@ -487,7 +466,7 @@ describe("resolveNavigation", () => {
       ).toEqual(WAIT);
     });
 
-    test("redirects to privacy once both hydrated and consent is genuinely false", () => {
+    test("redirects to consent once both hydrated and consent is genuinely false", () => {
       expect(
         guard(
           s({
@@ -499,10 +478,13 @@ describe("resolveNavigation", () => {
             consentHydrated: true,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({
+        action: "redirect",
+        to: "/account/consent?returnTo=%2Fassistant",
+      });
     });
 
-    test("waits (not review-terms) when consent looks stale but has not hydrated", () => {
+    test("waits (not consent) when consent looks stale but has not hydrated", () => {
       expect(
         guard(
           s({
@@ -514,7 +496,7 @@ describe("resolveNavigation", () => {
       ).toEqual(WAIT);
     });
 
-    test("redirects to review-terms once hydrated consent is genuinely stale", () => {
+    test("redirects to consent once hydrated consent is genuinely stale", () => {
       expect(
         guard(
           s({
@@ -525,7 +507,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
@@ -557,25 +539,25 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
     // -- stale consent toggles --------------------------------------------
 
-    test("redirects platform user with stale privacy acceptance to review-terms", () => {
+    test("redirects platform user with stale privacy acceptance to consent", () => {
       expect(guard(s({ isLocalClient: false, privacyConsent: false }))).toEqual(
         {
           action: "redirect",
-          to: "/assistant/review-terms?returnTo=%2Fassistant",
+          to: "/account/consent?returnTo=%2Fassistant",
         },
       );
     });
 
-    test("redirects platform user with stale tos acceptance to review-terms", () => {
+    test("redirects platform user with stale tos acceptance to consent", () => {
       expect(guard(s({ isLocalClient: false, tosAccepted: false }))).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
@@ -591,7 +573,7 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("redirects local-mode user with a cloud session and stale consent to review-terms", () => {
+    test("redirects local-mode user with a cloud session and stale consent to consent", () => {
       // Consent is gated on the cloud session, NOT isLocalClient: a local-mode
       // client logged into the cloud still re-reviews stale terms.
       expect(
@@ -606,7 +588,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant",
+        to: "/account/consent?returnTo=%2Fassistant",
       });
     });
 
@@ -652,16 +634,16 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects consented platform user with stale privacy acceptance and no assistant to review-terms, not hatching", () => {
+    test("redirects consented platform user with stale privacy acceptance and no assistant to consent, not hatching", () => {
       expect(guard(s({ hasAssistants: false, privacyConsent: false }))).toEqual(
         {
           action: "redirect",
-          to: "/assistant/review-terms?returnTo=%2Fassistant",
+          to: "/account/consent?returnTo=%2Fassistant",
         },
       );
     });
 
-    test("redirects consented platform user with stale tos acceptance and no assistant to review-terms", () => {
+    test("redirects consented platform user with stale tos acceptance and no assistant to consent", () => {
       expect(
         guard(
           s({ hasAssistants: false, tosAccepted: false }),
@@ -669,7 +651,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms?returnTo=%2Fassistant%2Fidentity",
+        to: "/account/consent?returnTo=%2Fassistant%2Fidentity",
       });
     });
 
@@ -683,50 +665,54 @@ describe("resolveNavigation", () => {
     const EMPTY_ORG = { hasAssistants: false } as const;
 
     // Consent is enforced at the destination, not skipped: both funnel entries
-    // are onboarding paths, and re-resolving one bounces an unconsented user on.
+    // are onboarding paths, and re-resolving one bounces an unconsented cloud
+    // user on.
     test("consent is still enforced once the funnel destination is resolved", () => {
       for (const url of [RESEARCH_FUNNEL_URL, HATCHING_FUNNEL_URL]) {
         expect(
           redirectPath(guard(s({ ...EMPTY_ORG, ...UNCONSENTED }), url)),
-        ).toBe("/assistant/onboarding/privacy");
+        ).toBe("/account/consent");
       }
     });
 
-    // Every hatching bounce is the bare entrypoint: the onboarding entrypoints
-    // read no `returnTo`.
-    test("a hatching bounce keeps the bare entrypoint", () => {
+    // Every funnel bounce is the bare consent screen: the bounce reads no
+    // `returnTo`.
+    test("a hatching bounce keeps the bare consent screen", () => {
       for (const url of [
         "/assistant/onboarding/hatching",
         "/assistant/onboarding/hatching?hosting=cadet-cloud",
       ]) {
         expect(guard(s(UNCONSENTED), url)).toEqual({
           action: "redirect",
-          to: "/assistant/onboarding/privacy",
+          to: "/account/consent",
         });
       }
     });
 
-    // Local mode's onboarding entrypoint is `welcome`, which reads no
-    // `returnTo`, so its bounce stays bare.
-    test("a local-mode hatching bounce keeps the bare welcome entrypoint", () => {
+    // A local-only client has no session to consent against, so the funnel
+    // gates let it through ungated.
+    test("a local-only hatching visit is not consent-gated", () => {
       expect(
-        guard(s({ isLocalClient: true, ...UNCONSENTED }), HATCHING_FUNNEL_URL),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+        guard(
+          s({ isLocalClient: true, cloudSession: "absent", ...UNCONSENTED }),
+          HATCHING_FUNNEL_URL,
+        ),
+      ).toEqual(ALLOW);
     });
 
-    // The research funnel provisions an assistant, so an unconsented user does
-    // not reach it by navigating there directly either.
-    test("bounces an unconsented bare research visit to the entrypoint", () => {
+    // The research funnel provisions an assistant, so an unconsented cloud
+    // user does not reach it by navigating there directly either.
+    test("bounces an unconsented bare research visit to the consent screen", () => {
       expect(guard(s(UNCONSENTED), "/assistant/onboarding/research")).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
       expect(
         guard(
-          s({ isLocalClient: true, ...UNCONSENTED }),
+          s({ isLocalClient: true, cloudSession: "absent", ...UNCONSENTED }),
           "/assistant/onboarding/research",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual(ALLOW);
     });
 
     test("allows a consented user on the research route", () => {
@@ -739,7 +725,7 @@ describe("resolveNavigation", () => {
 
     // A cold deep link reaches the research route before the consent flags
     // hydrate, and they boot false — deciding there would bounce an
-    // established user to privacy, and a `redirect` gives the auth middleware
+    // established user to consent, and a `redirect` gives the auth middleware
     // nothing to wait on.
     test("waits on the research route until consent hydrates", () => {
       for (const url of [
@@ -768,7 +754,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
@@ -815,7 +801,7 @@ describe("resolveNavigation", () => {
         guard(s({ ...EMPTY_ORG, ...UNCONSENTED }), RESEARCH_FUNNEL_URL),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
@@ -833,29 +819,29 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
     // Local mode is excluded from hydration waits everywhere in the pipeline —
-    // its consent hydrates during session init or not at all — so its research
-    // bounce decides immediately.
+    // its consent hydrates during session init or not at all — so a
+    // cloud-session research bounce decides immediately.
     test("a local-mode research bounce decides without waiting on hydration", () => {
       expect(
         guard(
           s({ isLocalClient: true, ...UNCONSENTED, consentHydrated: false }),
           RESEARCH_FUNNEL_URL,
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
       expect(
         guard(
           s({ isLocalClient: true, ...UNCONSENTED, consentHydrated: false }),
           "/assistant/onboarding/research",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
     });
 
-    test("redirects brand-new platform user with no assistant to privacy, unaffected by stale-toggle gate", () => {
+    test("redirects brand-new platform user with no assistant to consent, unaffected by stale-toggle gate", () => {
       expect(
         guard(
           s({
@@ -865,7 +851,10 @@ describe("resolveNavigation", () => {
             hasConsentRecord: false,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({
+        action: "redirect",
+        to: "/account/consent?returnTo=%2Fassistant",
+      });
     });
   });
 
@@ -931,7 +920,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "/assistant/onboarding/privacy",
+          "/assistant/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -951,7 +940,7 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: "/assistant/welcome" });
     });
 
-    test("redirects to privacy in platform mode", () => {
+    test("redirects to consent in platform mode", () => {
       expect(
         intercept(
           s({
@@ -963,7 +952,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
@@ -977,7 +966,7 @@ describe("resolveNavigation", () => {
           }),
           "https://mycadet.ai/assistant",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
     });
 
     test("handles protocol-relative URL destinations", () => {
@@ -990,7 +979,7 @@ describe("resolveNavigation", () => {
           }),
           "//mycadet.ai/assistant",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/privacy" });
+      ).toEqual({ action: "redirect", to: "/account/consent" });
     });
 
     test("allows absolute URL outside /assistant", () => {
@@ -1023,21 +1012,21 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects unauthenticated local-mode user without consent to welcome", () => {
+    test("does not gate an unauthenticated local-mode user without consent", () => {
+      // Consent is a cloud-account concern: with no session to consent
+      // against, a local-only client is not gated here.
       expect(
         hatch(
           s({
             isAuthenticated: false,
             isLocalClient: true,
+            cloudSession: "absent",
             tosAccepted: false,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
         ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/welcome",
-      });
+      ).toEqual(ALLOW);
     });
 
     test("redirects when missing consent", () => {
@@ -1051,7 +1040,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
@@ -1066,21 +1055,22 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/account/consent",
       });
     });
 
-    test("redirects to welcome in local mode when missing consent", () => {
+    test("does not gate a local-only user missing consent", () => {
       expect(
         hatch(
           s({
             isLocalClient: true,
+            cloudSession: "absent",
             tosAccepted: false,
             privacyConsent: false,
             hasConsentRecord: false,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual(ALLOW);
     });
 
     test("allows with full consent", () => {
@@ -1089,25 +1079,43 @@ describe("resolveNavigation", () => {
       );
     });
 
-    test("redirects platform user with stale privacy acceptance to review-terms", () => {
+    test("redirects platform user with stale privacy acceptance to consent", () => {
       expect(hatch(s({ privacyConsent: false }))).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms",
+        to: "/account/consent",
       });
     });
 
-    test("redirects platform user with stale tos acceptance to review-terms", () => {
+    test("redirects platform user with stale tos acceptance to consent", () => {
       expect(hatch(s({ tosAccepted: false }))).toEqual({
         action: "redirect",
-        to: "/assistant/review-terms",
+        to: "/account/consent",
       });
     });
 
-    test("does not gate local-mode user on stale toggles", () => {
+    test("gates a local-mode user WITH a cloud session on stale toggles", () => {
+      // Consent is gated on the cloud session, not isLocalClient: a
+      // local-mode client logged into the cloud still re-reviews.
       expect(
         hatch(
           s({
             isLocalClient: true,
+            cloudSession: "present",
+            privacyConsent: false,
+          }),
+        ),
+      ).toEqual({
+        action: "redirect",
+        to: "/account/consent",
+      });
+    });
+
+    test("does not gate a local-only user on stale toggles", () => {
+      expect(
+        hatch(
+          s({
+            isLocalClient: true,
+            cloudSession: "absent",
             privacyConsent: false,
           }),
         ),
@@ -1140,12 +1148,12 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects to privacy in platform mode when no assistants remain", () => {
+    test("redirects to research in platform mode when no assistants remain", () => {
       expect(
         postRetire(s({ hasAssistants: false, isLocalClient: false })),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: "/assistant/onboarding/research",
       });
     });
 
@@ -1200,17 +1208,17 @@ describe("resolveNavigation", () => {
         fallback,
       });
 
-    test("signup goes to privacy for non-import returnTo", () => {
+    test("signup goes to consent for non-import returnTo", () => {
       expect(postAuth("signup", "/some-return")).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: consentCarry(),
       });
     });
 
-    test("signup goes to privacy without returnTo", () => {
+    test("signup goes to consent without returnTo", () => {
       expect(postAuth("signup", null)).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: consentCarry(),
       });
     });
 
@@ -1230,7 +1238,7 @@ describe("resolveNavigation", () => {
     test("signup does not treat import-prefixed pages as the funnel", () => {
       expect(postAuth("signup", "/importantly-not-the-funnel")).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        to: consentCarry(),
       });
     });
 
@@ -1277,12 +1285,12 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: HATCHING_FUNNEL_URL });
     });
 
-    test("login skips a privacy or research returnTo when already onboarded", () => {
+    test("login skips a research returnTo when already onboarded", () => {
       expect(
         resolveNavigation(s({ userHasOnboardedAssistant: true }), {
           kind: "post-auth",
           authIntent: "login",
-          returnTo: "/assistant/onboarding/privacy",
+          returnTo: "/assistant/onboarding/research",
           fallback: "/assistant",
         }),
       ).toEqual({ action: "redirect", to: "/assistant" });
@@ -1297,7 +1305,7 @@ describe("resolveNavigation", () => {
     });
 
     test("login keeps a new-assistant returnTo when already onboarded", () => {
-      const returnTo = `/assistant/onboarding/privacy?${NEW_ASSISTANT_PARAM}=1`;
+      const returnTo = `/assistant/onboarding/research?${NEW_ASSISTANT_PARAM}=1`;
       expect(
         resolveNavigation(s({ userHasOnboardedAssistant: true }), {
           kind: "post-auth",
@@ -1308,7 +1316,7 @@ describe("resolveNavigation", () => {
       ).toEqual({ action: "redirect", to: returnTo });
     });
 
-    test("signup still goes to privacy for a freshly hatched assistant", () => {
+    test("signup still goes to consent for a freshly hatched assistant", () => {
       expect(
         resolveNavigation(
           s({ userHasOnboardedAssistant: false, hasAssistants: true }),
@@ -1321,7 +1329,10 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/privacy",
+        // Non-production build: the post-consent destination skips research.
+        to: `/account/consent?returnTo=${encodeURIComponent(
+          "/assistant/onboarding/hatching?skip_research=1",
+        )}`,
       });
     });
   });

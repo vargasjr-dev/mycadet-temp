@@ -93,10 +93,11 @@ export function HostingScreen() {
       // Cloud is managed: drop any provider key staged from a prior
       // Local/Docker visit so it can't leak into a later local hatch.
       setPendingProviderKey(null);
-      // Cloud skips the api-key step, so this is the handoff into privacy and
-      // it carries the marker itself.
+      // Cloud skips the api-key step, so this is the handoff into research
+      // (consent settles at the shell's screen before the funnel runs) and it
+      // carries the marker itself.
       void navigate(
-        `${routes.onboarding.privacy}?${NEW_ASSISTANT_PARAM}=1`,
+        `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
         SETUP_NAVIGATE,
       );
     } else {

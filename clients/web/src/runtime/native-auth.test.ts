@@ -74,19 +74,27 @@ describe("resolveNativePostAuthDestination", () => {
     useResolvedAssistantsStore.setState({ assistants: [] });
   });
 
-  test("native signup with a destination routes to privacy", () => {
+  test("native signup consents at the shell screen, returning to the funnel", () => {
     const destination = resolveNativePostAuthDestination(
       "signup",
       "/assistant/identity",
     );
 
-    expect(destination).toBe("/assistant/onboarding/privacy");
+    expect(destination).toBe(
+      `/account/consent?returnTo=${encodeURIComponent(
+        "/assistant/onboarding/hatching?skip_research=1",
+      )}`,
+    );
   });
 
-  test("native signup with no returnTo routes to privacy and stashes nothing", () => {
+  test("native signup with no returnTo consents at the shell screen", () => {
     const destination = resolveNativePostAuthDestination("signup", null);
 
-    expect(destination).toBe("/assistant/onboarding/privacy");
+    expect(destination).toBe(
+      `/account/consent?returnTo=${encodeURIComponent(
+        "/assistant/onboarding/hatching?skip_research=1",
+      )}`,
+    );
   });
 
   test("native signup skips privacy when the assistant is already onboarded", () => {
@@ -149,7 +157,7 @@ describe("resolveNativePostAuthDestination", () => {
         },
       ],
     });
-    const returnTo = `${routes.onboarding.privacy}?${NEW_ASSISTANT_PARAM}=1`;
+    const returnTo = `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
 
     expect(resolveNativePostAuthDestination("login", returnTo)).toBe(returnTo);
   });
@@ -342,7 +350,9 @@ describe("startAuthFlow attribution on native", () => {
     expect(options).toEqual({
       baseURL: "https://mycadet.ai",
       intent: "signup",
-      postAuthDestination: "/assistant/onboarding/privacy",
+      postAuthDestination: `/account/consent?returnTo=${encodeURIComponent(
+        "/assistant/onboarding/hatching?skip_research=1",
+      )}`,
     });
   });
 
@@ -386,7 +396,11 @@ describe("startAuthFlow attribution on native", () => {
       utm_source: "google-play",
     });
     expect(localStorage.getItem(INSTALL_REFERRER_KEY)).toBe("");
-    expect(window.location.href).toBe("/assistant/onboarding/privacy");
+    expect(window.location.href).toBe(
+      `/account/consent?returnTo=${encodeURIComponent(
+        "/assistant/onboarding/hatching?skip_research=1",
+      )}`,
+    );
   });
 
   test("resolves attribution on the direct login entry too", async () => {

@@ -44,6 +44,9 @@ export function requiresFullPageNavigation(destination: string): boolean {
     destination.startsWith("/accounts/") ||
     destination.startsWith("/v1/") ||
     destination.startsWith("/_allauth/") ||
+    // The consent bounce targets the app bundle's /account/consent — outside
+    // this bundle's route table, so the trip is a full-page navigation.
+    destination.startsWith("/account/") ||
     // The bring-your-agent import funnel is a marketing page served by the
     // platform Next.js app, not this SPA — client-side navigation would miss.
     destination.startsWith("/import")

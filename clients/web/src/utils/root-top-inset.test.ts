@@ -8,7 +8,6 @@ describe("shouldDeferRootTopInset", () => {
     for (const pathname of [
       routes.onboarding.hosting,
       routes.onboarding.apiKey,
-      routes.onboarding.privacy,
       routes.onboarding.hatching,
       `${routes.assistant}/onboarding`,
     ]) {
@@ -17,9 +16,7 @@ describe("shouldDeferRootTopInset", () => {
   });
 
   test("suppresses setup routes around onboarding", () => {
-    for (const pathname of [routes.welcome, routes.reviewTerms]) {
-      expect(shouldDeferRootTopInset(pathname, "")).toBe(true);
-    }
+    expect(shouldDeferRootTopInset(routes.welcome, "")).toBe(true);
   });
 
   test("suppresses the onboarding handoff query on the assistant route", () => {

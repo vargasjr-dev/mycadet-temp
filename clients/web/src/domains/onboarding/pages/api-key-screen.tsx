@@ -3,7 +3,15 @@ import { useNavigate, useSearchParams } from "react-router";
 
 import { ExternalAnchor } from "@/components/external-anchor";
 import { OnboardingLayout } from "@/components/onboarding-layout";
-import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination";
+import {
+  NEW_ASSISTANT_PARAM,
+  onboardingDestinationAfterConsent,
+} from "@/domains/onboarding/onboarding-destination";
+import { ATTRIBUTED_PLUGIN_PARAM } from "@/domains/onboarding/plugin-attribution";
+import { isSelectedAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant";
+import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { isLocalClient } from "@/lib/local-mode";
 import {
   DEFAULT_ONBOARDING_PROVIDER,
   ONBOARDING_PROVIDERS,
@@ -82,15 +90,36 @@ export function ApiKeyScreen() {
         : {}),
     });
     // Reaching this screen at all means an assistant is being provisioned, so
-    // the handoff into privacy always carries the marker.
+    // the funnel continuation always carries the marker.
     const params = new URLSearchParams({ [NEW_ASSISTANT_PARAM]: "1" });
     if (hosting) {
       params.set("hosting", hosting);
     }
-    void navigate(
-      `${routes.onboarding.privacy}?${params.toString()}`,
-      SETUP_NAVIGATE,
+    // Carry the marketing plugin attribution forward so the research runner can
+    // read it off the URL and pre-install that plugin (see `plugin-attribution`).
+    const pluginParam = searchParams.get(ATTRIBUTED_PLUGIN_PARAM);
+    if (pluginParam) {
+      params.set(ATTRIBUTED_PLUGIN_PARAM, pluginParam);
+    }
+    const qs = params.toString();
+    // Consent settles at the shell's screen before this funnel runs, so the
+    // continue hands straight to the post-consent destination: a local-hosting
+    // onboarding (hosting=local/docker in a local-mode build) must run the
+    // foreground local hatch first, so it goes to `hatching`, which then
+    // redirects into the research flow. Cadet-Cloud goes straight to research
+    // (managed background hatch).
+    const isLocalHatch =
+      isLocalClient() && hosting !== null && hosting !== "cadet-cloud";
+    const selectedAssistantOnboarded = isSelectedAssistantOnboarded(
+      useResolvedAssistantsStore.getState().assistants,
+      readSelectedAssistantId(),
     );
+    const destination = onboardingDestinationAfterConsent({
+      isLocalHatch,
+      selectedAssistantOnboarded,
+      newAssistant: true,
+    });
+    void navigate(`${destination}${qs ? `?${qs}` : ""}`, SETUP_NAVIGATE);
   };
 
   const onBack = () => {

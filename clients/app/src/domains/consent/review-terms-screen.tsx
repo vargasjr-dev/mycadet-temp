@@ -19,14 +19,12 @@ import {
 import { privacyChangeNotes, tosChangeNotes } from "./consent-changelog";
 
 /**
- * The shell's terms re-review: the surface a stale-consent user lands on
- * BEFORE the assistant (web) mounts. Per the unbundling ruling, a re-review
- * takes place at the app shell, outside of an assistant — the required
- * versions are frozen build constants, so staleness materializes exactly
- * when a release relaunches the shell, and this screen owns it.
- *
- * Ported from web's `review-terms-screen` (the re-review framing only): the
- * first-consent funnel start stays in web's onboarding arc for now.
+ * The shell's consent screen: first consent AND stale-version re-reviews
+ * happen HERE, before the assistant (web) mounts. Per the unbundling ruling,
+ * consent takes place at the app shell, outside of an assistant — the
+ * required versions are frozen build constants, so a re-review materializes
+ * exactly when a release relaunches the shell, and the boot gate routes
+ * first-time users (no acks at all) here with the welcome framing.
  */
 export function ReviewTermsScreen() {
   const { t } = useTranslation("consent");
@@ -42,9 +40,10 @@ export function ReviewTermsScreen() {
   const [currencyAtMount] = useState(() => readConsentCurrency(userId));
   const tosStaleAtMount = !currencyAtMount.tos;
   const privacyStaleAtMount = !currencyAtMount.privacy;
-  // A record-holder sees the "we've updated our terms" framing — the shell
-  // only routes here for re-reviews. First-time consent belongs to web's
-  // onboarding funnel.
+  // A record-holder sees the "we've updated our terms" framing with change
+  // notes; a first-time user sees the welcome framing. Both framings show
+  // every axis the user still owes an ack for.
+  const isFirstConsent = !currencyAtMount.hasConsentRecord;
   const showTos = tosStaleAtMount;
   const showPrivacy = privacyStaleAtMount;
 
@@ -81,10 +80,12 @@ export function ReviewTermsScreen() {
           />
         </div>
         <h1 className="mt-5 text-3xl font-semibold tracking-tight">
-          Updated terms
+          {isFirstConsent ? "Welcome to Cadet" : "Updated terms"}
         </h1>
         <p className="mt-3.5 text-center text-body-medium-lighter text-[var(--content-tertiary)]">
-          We've updated our terms. Please review and accept to continue.
+          {isFirstConsent
+            ? "Please review and accept our terms to get started."
+            : "We've updated our terms. Please review and accept to continue."}
         </p>
 
         <section className="mt-6 w-full">
@@ -113,7 +114,9 @@ export function ReviewTermsScreen() {
               </span>
             </label>
           )}
-          {showTos && tosChangeNotes(TOS_CONSENT_VERSION).length > 0 && (
+          {!isFirstConsent &&
+            showTos &&
+            tosChangeNotes(TOS_CONSENT_VERSION).length > 0 && (
             <div className="mt-4">
               <p className="text-body-small-default font-medium text-[var(--content-secondary)]">
                 {t("consentControls.whatsChanged")}
@@ -134,7 +137,9 @@ export function ReviewTermsScreen() {
               </ul>
             </div>
           )}
-          {showPrivacy && privacyChangeNotes(PRIVACY_CONSENT_VERSION).length > 0 && (
+          {!isFirstConsent &&
+            showPrivacy &&
+            privacyChangeNotes(PRIVACY_CONSENT_VERSION).length > 0 && (
             <div className="mt-4">
               <p className="text-body-small-default font-medium text-[var(--content-secondary)]">
                 {t("consentControls.whatsChanged")}

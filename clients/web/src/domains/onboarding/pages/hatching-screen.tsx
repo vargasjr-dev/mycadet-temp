@@ -48,6 +48,7 @@ import {
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
+import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { hatchLocalAssistant } from "@/runtime/local-mode-host";
 import { isElectron } from "@/runtime/is-electron";
@@ -231,6 +232,9 @@ export function HatchingScreen() {
     }
     const decision = decideHatchGate();
     if (decision.kind === "redirect") {
+      if (hardNavigateIfCrossBundle(decision.to)) {
+        return;
+      }
       void navigate(decision.to, { replace: true });
       return;
     }
@@ -850,7 +854,7 @@ export function HatchingScreen() {
                 void navigate(
                   useLocalHatch
                     ? routes.onboarding.hosting
-                    : `${routes.onboarding.privacy}?${NEW_ASSISTANT_PARAM}=1`,
+                    : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
                   { replace: true },
                 )
               }

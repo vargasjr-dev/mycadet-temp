@@ -9,7 +9,6 @@
     "tryAgain": "重试",
     "remove": "移除 {value}",
     "logIn": "登录",
-    "logOut": "注销",
     "loginToUse": "登录以使用",
     "downloadMacOSApp": "下载 macOS 应用",
     "downloadWindowsApp": "下载 Windows 应用",
@@ -22,12 +21,6 @@
   },
   "startScreen": {
     "createAssistant": "创建您的助手"
-  },
-  "privacyScreen": {
-    "title": "开始之前",
-    "body": "选择您的隐私偏好设置。您可以随时在“设置”中更新这些内容。",
-    "start": "开始新手引导",
-    "skipToChat": "跳过并聊天"
   },
   "hostingScreen": {
     "title": "托管",
@@ -70,11 +63,6 @@
     "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
     "addressLabel": "助手地址",
     "addFailed": "添加助手失败。请重试。"
-  },
-  "consentControls": {
-    "whatsChanged": "更新内容",
-    "agreements": "协议",
-    "agreeTo": "我同意<link>{policy}</link>"
   },
   "onboardingAutocomplete": {
     "addOption": "添加“{value}”",

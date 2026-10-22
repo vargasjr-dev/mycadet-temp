@@ -4,7 +4,6 @@ const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
 
 const ROUTE_OWNED_TOP_INSET_PATHS: ReadonlySet<string> = new Set([
   routes.welcome,
-  routes.reviewTerms,
 ]);
 
 export function shouldDeferRootTopInset(

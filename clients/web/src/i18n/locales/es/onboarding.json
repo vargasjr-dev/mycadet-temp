@@ -9,7 +9,6 @@
     "tryAgain": "Volver a intentarlo",
     "remove": "Quitar {value}",
     "logIn": "Iniciar sesión",
-    "logOut": "Cerrar sesión",
     "loginToUse": "Inicia sesión para usar",
     "downloadMacOSApp": "Descargar la app de macOS",
     "downloadWindowsApp": "Descargar la app de Windows",
@@ -22,12 +21,6 @@
   },
   "startScreen": {
     "createAssistant": "Crear tu asistente"
-  },
-  "privacyScreen": {
-    "title": "Antes de empezar",
-    "body": "Elige tus preferencias de privacidad. Puedes cambiarlas cuando quieras en los ajustes.",
-    "start": "Comenzar la incorporación",
-    "skipToChat": "Ir al asistente"
   },
   "hostingScreen": {
     "title": "Alojamiento",
@@ -70,11 +63,6 @@
     "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
     "addressLabel": "Dirección del asistente",
     "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
-  },
-  "consentControls": {
-    "agreeTo": "Acepto <link>{policy}</link>",
-    "whatsChanged": "Qué ha cambiado",
-    "agreements": "Acuerdos"
   },
   "onboardingAutocomplete": {
     "addOption": "Añadir «{value}»",

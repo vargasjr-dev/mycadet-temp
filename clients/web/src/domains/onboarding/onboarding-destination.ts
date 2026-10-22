@@ -3,20 +3,20 @@ import { routes } from "@/utils/routes";
 /**
  * Query param that asks the hatch screen to hand off to chat instead of the
  * research/personality funnel. Set only by the non-production "Skip to chat"
- * control on the privacy screen (and carried through checkout / paid-return
+ * control on the consent screen (and carried through checkout / paid-return
  * resumptions of that click). Production builds ignore it.
  */
 export const SKIP_RESEARCH_PARAM = "skip_research";
 
 /**
  * Query param marking a funnel walk that is provisioning a NEW assistant. Set
- * by every handoff into the privacy screen that provisions: the start screen's
+ * by every handoff into a funnel screen that provisions: the start screen's
  * CTA, the hosting screen's cloud Continue, the api-key screen, and the retry
  * off-ramp on a failed managed hatch.
  *
  * The walk's intent, which no fact about an existing assistant can supply: the
  * one being created does not exist yet, so however established the selected
- * assistant is, this visit is its first run. The privacy route guard and the
+ * assistant is, this visit is its first run. The funnel route guards and the
  * post-consent destination both defer to the marker rather than skipping a
  * hatch the user explicitly asked for.
  */
@@ -81,8 +81,9 @@ export function withSkipResearch(
 }
 
 /**
- * Decide where the standard onboarding flow goes after the user accepts
- * consent on the privacy screen.
+ * Decide where the standard onboarding flow goes after consent settles (the
+ * shell's /account/consent screen, or the api-key screen's continue for a
+ * walk that already consented).
  *
  * The research/personality flow is now THE onboarding, but HOW the assistant is
  * provisioned differs by hosting:

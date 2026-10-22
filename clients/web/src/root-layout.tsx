@@ -505,7 +505,7 @@ export function RootLayout() {
         .setShareAnnotation(command.phase, command.strokes, command.ink);
     },
     replayOnboarding: () => {
-      void navigate(`${routes.onboarding.privacy}?preview=true`);
+      void navigate(routes.onboarding.research);
     },
     replayHatchFailure: () => {
       void navigate(`${routes.onboarding.hatching}?preview=true&fail=1`);

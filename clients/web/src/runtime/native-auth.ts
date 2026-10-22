@@ -8,7 +8,12 @@ import {
 } from "@/domains/account/social-auth";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
-import { isNewAssistantFunnel } from "@/domains/onboarding/onboarding-destination";
+import {
+  canSkipOnboardingResearch,
+  isNewAssistantFunnel,
+  onboardingDestinationAfterConsent,
+  withSkipResearch,
+} from "@/domains/onboarding/onboarding-destination";
 import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
@@ -302,9 +307,10 @@ export function getSessionTokenFromCookies(): string | null {
 
 /**
  * Post-auth destination for the native (Capacitor/Electron) flows. A
- * first-run signup routes through consent (privacy) first. A returning user
- * skips hosting, privacy, and research. A login keeps its `returnTo` unless
- * that target is the first-run funnel and the user is already onboarded.
+ * first-run signup consents at the shell's screen (/account/consent) first.
+ * A returning user skips hosting and research. A login keeps its `returnTo`
+ * unless that target is the first-run funnel and the user is already
+ * onboarded.
  */
 export function resolveNativePostAuthDestination(
   intent: string | undefined,
@@ -317,7 +323,21 @@ export function resolveNativePostAuthDestination(
       ? routes.assistant
       : (returnTo ?? (isSignup ? routes.assistant : null));
   }
-  return isSignup ? routes.onboarding.privacy : (returnTo ?? null);
+  if (!isSignup) {
+    return returnTo ?? null;
+  }
+  // Consent settles at the shell's screen (/account/consent), then the signup
+  // rides returnTo into the same post-consent destination the privacy screen
+  // used to hand off.
+  const skipResearch = canSkipOnboardingResearch();
+  const postConsentDestination = onboardingDestinationAfterConsent({
+    isLocalHatch: false,
+    skipResearch,
+  });
+  const signupNext = skipResearch
+    ? withSkipResearch(postConsentDestination)
+    : postConsentDestination;
+  return `/account/consent?returnTo=${encodeURIComponent(signupNext)}`;
 }
 
 /**
@@ -337,7 +357,6 @@ function isFirstRunOnboardingReturnTo(
   }
   return (
     pathname === routes.onboarding.hosting ||
-    pathname === routes.onboarding.privacy ||
     pathname === routes.onboarding.research
   );
 }

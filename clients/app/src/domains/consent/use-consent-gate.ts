@@ -7,8 +7,8 @@ import { readConsentCurrency, type ConsentCurrency } from "./consent-persistence
 export interface ConsentGateState {
   /** False while the session or user identity is still resolving. */
   settled: boolean;
-  /** Whether there is a live platform session to consent against. */
-  hasPlatformSession: boolean;
+  /** Whether there is a live cloud session to consent against. */
+  hasCloudSession: boolean;
   userId: string | null;
   currency: ConsentCurrency | null;
 }
@@ -16,7 +16,7 @@ export interface ConsentGateState {
 /**
  * The shell consent gate's read model, mirroring web's resolver semantics:
  * consent is a cloud-account concern, so the gate only decides once there is
- * a platform session and a user id to read acks against. Awaiting those
+ * a cloud session and a user id to read acks against. Awaiting those
  * signals reads `settled: false`.
  */
 export function useConsentGate(): ConsentGateState {
@@ -33,14 +33,14 @@ export function useConsentGate(): ConsentGateState {
     ];
     const settled =
       status !== "initializing" && cloudSession !== "unknown";
-    const hasPlatformSession = cloudSession === "present";
+    const hasCloudSession = cloudSession === "present";
     const userId = user?.id ?? null;
     return {
       settled,
-      hasPlatformSession,
+      hasCloudSession,
       userId,
       currency:
-        settled && hasPlatformSession && userId
+        settled && hasCloudSession && userId
           ? readConsentCurrency(userId)
           : null,
     };

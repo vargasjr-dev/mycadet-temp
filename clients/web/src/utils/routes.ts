@@ -158,16 +158,13 @@ export const routes = {
   },
 
   welcome: r("/assistant/welcome"),
-  reviewTerms: r("/assistant/review-terms"),
 
   onboarding: {
-    // Platform onboarding welcome/front door. Not the funnel entrypoint
-    // (privacy still is) — it's the in-SPA landing spot for "Back" out of the
-    // privacy screen in platform mode, with a single CTA back into the flow.
+    // Platform onboarding welcome/front door, with a single CTA back into
+    // the flow.
     start: r("/assistant/onboarding/start"),
     hosting: r("/assistant/onboarding/hosting"),
     apiKey: r("/assistant/onboarding/api-key"),
-    privacy: r("/assistant/onboarding/privacy"),
     hatching: r("/assistant/onboarding/hatching"),
     // SPIKE — research-onboarding front door. Reachable on demand behind auth
     // alone (no flag; see routes.tsx).

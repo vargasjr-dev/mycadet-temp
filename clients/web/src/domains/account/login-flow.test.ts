@@ -41,8 +41,12 @@ describe("login flow routing", () => {
         authIntent: "signup",
       }),
     ).toEqual({
-      destination: routes.onboarding.privacy,
-      requiresFullPageNavigation: false,
+      // Non-production build: the post-consent destination skips research, so
+      // the consent bounce carries it as the returnTo.
+      destination: `/account/consent?returnTo=${encodeURIComponent(
+        "/assistant/onboarding/hatching?skip_research=1",
+      )}`,
+      requiresFullPageNavigation: true,
     });
   });
 
@@ -124,7 +128,7 @@ describe("login flow routing", () => {
       true,
     );
     expect(requiresFullPageNavigation("/assistant")).toBe(false);
-    expect(requiresFullPageNavigation("/onboarding/privacy")).toBe(false);
+    expect(requiresFullPageNavigation("/account/consent")).toBe(true);
   });
 
   test("requiresFullPageNavigation for the marketing import funnel", () => {

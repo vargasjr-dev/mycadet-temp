@@ -17,25 +17,20 @@ export function AssistantPage() {
   const navigate = useNavigate();
   const selection = selectedAssistantState(location.state);
 
-  // The consent re-review gates the assistant: a user whose acked versions
-  // went stale (a release bumped the frozen required versions — the only way
-  // staleness materializes, since it ships with the client) settles it HERE,
-  // in the shell, before any assistant mounts. First-time consent is not the
-  // shell's: a user with no consent record belongs to the onboarding funnel
-  // inside the assistant, which frames and sequences first consent itself.
   const consent = useConsentGate();
   if (
     consent.settled &&
-    consent.hasPlatformSession &&
-    consent.currency?.hasConsentRecord &&
-    (!consent.currency.tos || !consent.currency.privacy)
+    consent.hasCloudSession &&
+    (!consent.currency?.hasConsentRecord ||
+      !consent.currency.tos ||
+      !consent.currency.privacy)
   ) {
     const returnTo = encodeURIComponent(
       `${location.pathname}${location.search}${location.hash}`,
     );
     return (
       <Navigate
-        to={`${routes.account.consent.reviewTerms}?returnTo=${returnTo}`}
+        to={`${routes.account.consent}?returnTo=${returnTo}`}
         replace
       />
     );

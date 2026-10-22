@@ -94,7 +94,10 @@ mock.module("@/stores/client-feature-flag-store", () => ({
   },
 }));
 mock.module("@/stores/resolved-assistants-store", () => ({
-  useResolvedAssistantsStore: { use: { assistants: () => [] } },
+  useResolvedAssistantsStore: {
+    use: { assistants: () => [] },
+    getState: () => ({ assistants: [] }),
+  },
 }));
 
 mock.module("@/components/onboarding-layout", () => ({
@@ -174,8 +177,8 @@ describe("onboarding funnel history contract", () => {
 
     const { to, opts } = navigatedWith();
     // Cloud skips the api-key step, so this handoff carries the new-assistant
-    // marker itself (see `NEW_ASSISTANT_PARAM`).
-    expect(to).toBe(`${routes.onboarding.privacy}?${NEW_ASSISTANT_PARAM}=1`);
+    // marker itself (see `NEW_ASSISTANT_PARAM`) straight into research.
+    expect(to).toBe(`${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`);
     expect(opts).toEqual({ replace: true });
   });
 
@@ -203,7 +206,10 @@ describe("onboarding funnel history contract", () => {
     navigateMock.mockClear();
     click("Continue");
     const { to, opts } = navigatedWith();
-    expect(to.startsWith(routes.onboarding.privacy)).toBe(true);
+    // Consent settles at the shell's screen before the funnel runs, so the
+    // continue hands to the post-consent destination: a local hosting walk
+    // runs the foreground local hatch first, so it goes to `hatching`.
+    expect(to.startsWith(routes.onboarding.hatching)).toBe(true);
     // The marker is what exempts this walk from the already-onboarded bounce,
     // and the hosting choice still has to reach the hatch. Both ride here.
     const forward = new URLSearchParams(to.slice(to.indexOf("?") + 1));
