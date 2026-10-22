@@ -5,7 +5,6 @@ import {
   capacitorInjectedConfig,
   injectedConfigScript,
 } from "../src/capacitor/stamp";
-import { resolveLocalServerUrl } from "../src/capacitor/local-server";
 
 // The Capacitor app bundle: one `capacitor.html` entry booting the same
 // `main.tsx` app shell every other host serves, built root-based into
@@ -36,7 +35,7 @@ writeFileSync(
   html.replace(
     marker,
     () =>
-      `${injectedConfigScript(capacitorInjectedConfig(process.env, { localServerUrl: resolveLocalServerUrl(process.env) }))}${marker}`,
+      `${injectedConfigScript(capacitorInjectedConfig())}${marker}`,
   ),
 );
 
