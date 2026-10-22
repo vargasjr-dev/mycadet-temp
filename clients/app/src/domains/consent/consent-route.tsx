@@ -17,7 +17,8 @@ export const consentRoute = {
     {
       path: "review-terms",
       lazy: {
-        Component: () => <ReviewTermsScreen />,
+        Component: () =>
+          import("./review-terms-screen").then((m) => m.ReviewTermsScreen),
       },
     },
   ],
