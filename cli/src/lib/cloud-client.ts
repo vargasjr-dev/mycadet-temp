@@ -1,6 +1,6 @@
 import {
   type CloudCredentialVerificationStatus,
-  PlatformVerifyCredentialResponseSchema,
+  CloudVerifyCredentialResponseSchema,
 } from "@mycadet/service-contracts/cloud-credential";
 import {
   chmodSync,
@@ -494,7 +494,7 @@ export async function verifyGatewayCloudCredential(
       return null;
     }
 
-    const parsed = PlatformVerifyCredentialResponseSchema.safeParse(
+    const parsed = CloudVerifyCredentialResponseSchema.safeParse(
       await response.json(),
     );
     if (parsed.success) {

@@ -96,9 +96,7 @@ const CloudConnectResponseSchema = z.object({
    */
   credentialRejected: z.boolean().optional(),
 });
-export type CloudConnectResponse = z.infer<
-  typeof CloudConnectResponseSchema
->;
+export type CloudConnectResponse = z.infer<typeof CloudConnectResponseSchema>;
 
 const CloudDisconnectResponseSchema = z.object({
   disconnected: z.literal(true),
@@ -363,10 +361,7 @@ const CLOUD_FETCH_TIMEOUT_MS = 10_000;
  * InternalError on transport / non-2xx failures; `label` names the resource in
  * those error messages.
  */
-async function fetchCloudJson(
-  path: string,
-  label: string,
-): Promise<unknown> {
+async function fetchCloudJson(path: string, label: string): Promise<unknown> {
   const context = await resolveCloudCallbackRegistrationContext();
 
   if (!context.cloudBaseUrl || !context.authHeader) {

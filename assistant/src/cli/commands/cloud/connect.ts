@@ -9,10 +9,7 @@ import { shouldOutputJson, writeOutput } from "../../output.js";
 export function registerCloudConnectCommand(cloud: Command): void {
   subcommand(cloud, "connect").action(
     async (_opts: Record<string, unknown>, cmd: Command) => {
-      const r = await cliIpcCall<CloudConnectResponse>(
-        "cloud_connect",
-        {},
-      );
+      const r = await cliIpcCall<CloudConnectResponse>("cloud_connect", {});
       if (!r.ok) {
         return exitFromIpcResult(
           { ok: false, error: r.error, statusCode: r.statusCode },
