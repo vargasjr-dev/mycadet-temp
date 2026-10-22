@@ -35,7 +35,6 @@ const ENTITLED = {
   entitlements: { cloud_email: true, phone_number: false },
 } as unknown as SubscriptionResponse;
 
-
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="loc">{location.pathname}</div>;
@@ -95,7 +94,9 @@ describe("EmailCloudContent · entitled, no address", () => {
   });
 
   test("with a domain but no address, keeps the domain row and points to the inbox for the address", () => {
-    renderEntitled({ domain: { domain: "example.com" } as unknown as AssistantDomain });
+    renderEntitled({
+      domain: { domain: "example.com" } as unknown as AssistantDomain,
+    });
 
     // The domain row, with its release action, is still this page's.
     expect(screen.getByText("ada.example.com")).toBeTruthy();

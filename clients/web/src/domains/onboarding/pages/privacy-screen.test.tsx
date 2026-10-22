@@ -255,7 +255,6 @@ describe("PrivacyScreen — Start navigation", () => {
 
     expect(navigateMock.mock.calls[0]?.[1]).toEqual({ replace: true });
   });
-
 });
 
 describe("PrivacyScreen — Skip to chat", () => {
@@ -301,7 +300,6 @@ describe("PrivacyScreen — Skip to chat", () => {
     expect(navigateMock).not.toHaveBeenCalled();
     expect(saveConsentMock).not.toHaveBeenCalled();
   });
-
 });
 
 describe("PrivacyScreen — Back navigation", () => {
