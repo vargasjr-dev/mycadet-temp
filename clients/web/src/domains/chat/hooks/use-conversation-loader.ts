@@ -73,7 +73,6 @@ interface UseConversationLoaderParams {
 
   // Epochs
   refreshEpoch: number;
-  reachabilityReadyEpoch: number;
 
   // Infrastructure refs (not per-conversation state)
   onboardingDraftConversationIdRef: MutableRefObject<string | null>;
@@ -109,7 +108,6 @@ export function useConversationLoader({
   searchParams,
   activeConversation,
   refreshEpoch,
-  reachabilityReadyEpoch,
   onboardingDraftConversationIdRef,
 }: UseConversationLoaderParams) {
   const navigate = useNavigate();
@@ -200,13 +198,7 @@ export function useConversationLoader({
       return;
     }
     void invalidateConversationQueries(queryClient, assistantId);
-  }, [
-    refreshEpoch,
-    reachabilityReadyEpoch,
-    assistantStateKind,
-    assistantId,
-    queryClient,
-  ]);
+  }, [refreshEpoch, assistantStateKind, assistantId, queryClient]);
 
   // -------------------------------------------------------------------------
   // 401 auth-failure toast
@@ -313,7 +305,7 @@ export function useConversationLoader({
      pod serving. A waking pod 503s every request, so the landing lookups
      wait for the gate rather than spend their retries against it; the
      effect re-runs when the gate opens. */
-  const canQueryDaemon = useCanQueryDaemon(assistantId);
+  const canQueryDaemon = useCanQueryDaemon();
   useEffect(() => {
     if (assistantStateKind !== "active") {
       return;

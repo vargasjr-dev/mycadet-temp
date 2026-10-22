@@ -16,7 +16,7 @@ import {
   resolveAssistantLifecycleState,
   shouldRecoverFromHatchFailure,
 } from "@/assistant/lifecycle";
-import { lifecycleService } from "@/assistant/lifecycle-service";
+import { recheckAssistant } from "@/assistant/queries";
 import { OnboardingLayout } from "@/components/onboarding-layout";
 import {
   readSelectedVersion,
@@ -295,7 +295,7 @@ export function HatchingScreen() {
         // this resolved promise and avatar.
         releaseHatchGuards();
         void (async () => {
-          await lifecycleService.checkAssistant();
+          await recheckAssistant(queryClient);
           if (cancelled) {
             return;
           }

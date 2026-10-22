@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { shouldSuppressRootStatusBanner } from "@/utils/status-banner-visibility";
+import { shouldDeferRootTopInset } from "@/utils/root-top-inset";
 import { routes } from "@/utils/routes";
 
-describe("shouldSuppressRootStatusBanner", () => {
+describe("shouldDeferRootTopInset", () => {
   test("suppresses onboarding funnel routes", () => {
     for (const pathname of [
       routes.onboarding.hosting,
@@ -12,26 +12,26 @@ describe("shouldSuppressRootStatusBanner", () => {
       routes.onboarding.hatching,
       `${routes.assistant}/onboarding`,
     ]) {
-      expect(shouldSuppressRootStatusBanner(pathname, "")).toBe(true);
+      expect(shouldDeferRootTopInset(pathname, "")).toBe(true);
     }
   });
 
   test("suppresses setup routes around onboarding", () => {
     for (const pathname of [routes.welcome, routes.reviewTerms]) {
-      expect(shouldSuppressRootStatusBanner(pathname, "")).toBe(true);
+      expect(shouldDeferRootTopInset(pathname, "")).toBe(true);
     }
   });
 
   test("suppresses the onboarding handoff query on the assistant route", () => {
     expect(
-      shouldSuppressRootStatusBanner(routes.assistant, "?onboarding=1"),
+      shouldDeferRootTopInset(routes.assistant, "?onboarding=1"),
     ).toBe(true);
   });
 
   test("allows normal app routes", () => {
-    expect(shouldSuppressRootStatusBanner(routes.settings.root, "")).toBe(
+    expect(shouldDeferRootTopInset(routes.settings.root, "")).toBe(
       false,
     );
-    expect(shouldSuppressRootStatusBanner(routes.assistant, "")).toBe(false);
+    expect(shouldDeferRootTopInset(routes.assistant, "")).toBe(false);
   });
 });

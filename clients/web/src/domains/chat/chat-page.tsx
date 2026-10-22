@@ -14,8 +14,7 @@
 import { useCallback, useEffect, useRef } from "react";
 
 import { assistantStateCanServeChat } from "@/assistant/lifecycle";
-import { lifecycleService } from "@/assistant/lifecycle-service";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
 import { useIsSessionInitializing } from "@/stores/auth-store";
@@ -30,7 +29,8 @@ import { useTranslation } from "@/i18n";
 export function ChatPage() {
   const { t } = useTranslation("chat");
   const isSessionInitializing = useIsSessionInitializing();
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state: assistantState, refetch: refetchAssistantResolution } =
+    useAssistantResolution();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const shouldRenderChat = assistantStateCanServeChat(assistantState.kind);
 
@@ -39,10 +39,9 @@ export function ChatPage() {
   const { isError: conversationListIsError, refetch: refetchConversationList } =
     useConversationListQuery(assistantId, shouldRenderChat);
 
-  const retryAssistant = useCallback(
-    () => lifecycleService.retryAssistant(),
-    [],
-  );
+  const retryAssistant = useCallback(() => {
+    void refetchAssistantResolution();
+  }, [refetchAssistantResolution]);
 
   // -------------------------------------------------------------------------
   // Loading guards — auth / assistant lifecycle not yet resolved
@@ -111,8 +110,6 @@ export function ChatPage() {
   // Lifecycle guards — non-active assistant states
   // -------------------------------------------------------------------------
   if (assistantState.kind === "error") {
-    // Transient (transport-shaped) errors auto-retry in the lifecycle
-    // service; the button is just the impatient-user shortcut.
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
         <p className="text-[var(--content-secondary)]">

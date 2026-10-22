@@ -11,24 +11,15 @@
  *    `prompt` stripped from the URL after dispatch so a refresh can't replay
  *    it; relay callers keep theirs to re-fire on a new token.
  *
- * 2. **Pre-chat reachability probe** — when a pending onboarding message
- *    exists in sessionStorage, kicks off a background reachability probe
- *    immediately instead of waiting for a 502 from the conversation list
- *    query to publish `assistant.unreachable`.
- *
- * 3. **Onboarding initial message** — once the daemon reports "ready",
- *    reads the staged pre-chat context from sessionStorage and auto-sends
- *    the initial message. Consumed exactly once per mount.
+ * 2. **Onboarding initial message** — once the assistant resolution is
+ *    active, reads the staged pre-chat context from sessionStorage and
+ *    auto-sends the initial message. Consumed exactly once per mount.
  */
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import type { SetURLSearchParams } from "react-router";
 
-import type {
-  ReachabilityProbeOptions,
-  ReachabilityState,
-} from "@/assistant/use-assistant-reachability";
 import { hasAutoSendPromptState } from "@/utils/auto-send-prompt";
 
 export interface UseAutoSendEffectsOptions {
@@ -47,8 +38,8 @@ export interface UseAutoSendEffectsOptions {
    * `?prompt=` that arrived without the in-app auto-send marker.
    */
   prefillComposer: (content: string) => void;
-  reachabilityPhase: ReachabilityState["phase"];
-  reachabilityProbe: (options?: ReachabilityProbeOptions) => void;
+  /** Whether the assistant resolution is active (the daemon can serve). */
+  assistantActive: boolean;
   /** Reads the staged pre-chat initial message from sessionStorage. */
   getPendingInitialMessage: () => string | undefined;
   /**
@@ -67,8 +58,7 @@ export function useAutoSendEffects({
   navigationState,
   sendMessage,
   prefillComposer,
-  reachabilityPhase,
-  reachabilityProbe,
+  assistantActive,
   getPendingInitialMessage,
   getPendingInitialMessageHidden,
 }: UseAutoSendEffectsOptions): void {
@@ -137,20 +127,7 @@ export function useAutoSendEffects({
     navigationState,
   ]);
 
-  // 2. Pre-chat reachability probe — eagerly start the probe cycle.
-  useEffect(() => {
-    if (!assistantId) {
-      return;
-    }
-    if (!getPendingInitialMessageRef.current()) {
-      return;
-    }
-    if (reachabilityPhase === "idle") {
-      reachabilityProbe({ mode: "background" });
-    }
-  }, [assistantId, reachabilityPhase, reachabilityProbe]);
-
-  // 3. Onboarding initial message — fires once when daemon is reachable.
+  // 2. Onboarding initial message — fires once when the assistant is active.
   const initialMessageConsumedRef = useRef(false);
   useEffect(() => {
     if (
@@ -160,7 +137,7 @@ export function useAutoSendEffects({
     ) {
       return;
     }
-    if (reachabilityPhase !== "ready") {
+    if (!assistantActive) {
       return;
     }
     const message = getPendingInitialMessageRef.current();
@@ -180,5 +157,5 @@ export function useAutoSendEffects({
     // a check-in CTA the user clicked), and the analytics classifier does not
     // treat them as scripted either.
     void sendMessage(message, [], { hidden, scripted: true });
-  }, [activeConversationId, assistantId, reachabilityPhase, sendMessage]);
+  }, [activeConversationId, assistantId, assistantActive, sendMessage]);
 }

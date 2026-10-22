@@ -36,7 +36,6 @@ import {
 import { groupsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { Options } from "@/generated/daemon/sdk.gen";
 import type { GroupsGetData } from "@/generated/daemon/types.gen";
-import { useAssistantIsServing } from "@/assistant/operational-status";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import type {
   Conversation,
@@ -73,29 +72,13 @@ const EMPTY_CONVERSATIONS: Conversation[] = [];
 const EMPTY_GROUPS: ConversationGroup[] = [];
 
 /**
- * The preconditions every daemon-backed query in this module shares: the org
- * header the interceptor needs is available, and the assistant's pod is not
- * known to be down.
- *
- * Applied inside each hook rather than asked of callers, because these queries
- * share their query keys across many call sites and TanStack Query fetches
- * when *any* observer is enabled. A precondition enforced at one call site is
- * a precondition some other mount defeats, so the only place it holds is here.
- *
- * The pod half matters most while an assistant is waking: the daemon 503s
- * every request through that window, and a list query that spends its retry
- * budget there gives up for good. Gating instead of retrying also supplies the
- * recovery edge, since TanStack Query refetches when `enabled` flips back to
- * true. See {@link useAssistantIsServing}.
- *
- * Exported for the one imperative daemon read that shares the queries'
- * preconditions (the cold-boot landing lookup in `use-conversation-loader`),
- * so the gate has one definition.
+ * Whether the daemon can be queried. The wake-window gating (the cloud's
+ * operational-status poll) died with the lifecycle machine: requests fire
+ * whenever the org is ready, and a wake-window 503 surfaces as the query's
+ * own error state.
  */
-export function useCanQueryDaemon(assistantId: string | null): boolean {
-  const isOrgReady = useIsOrgReady();
-  const isServing = useAssistantIsServing(assistantId);
-  return isOrgReady && isServing;
+export function useCanQueryDaemon(): boolean {
+  return useIsOrgReady();
 }
 
 /** What every list hook returns. */
@@ -171,7 +154,7 @@ function useListQuery(
   filter: ConversationListFilter | null,
   enabled: boolean,
 ): ConversationListQueryResult {
-  const canQuery = useCanQueryDaemon(assistantId);
+  const canQuery = useCanQueryDaemon();
   /* An array, not a tuple, so `useQueries` types the results as a list of
      one query kind whether it holds zero entries or one. */
   const queries: ListQueryOptions[] =
@@ -361,7 +344,7 @@ export function useUnreadConversationCountQuery(
   assistantId: string | null,
   enabled: boolean = true,
 ): number | null {
-  const canQuery = useCanQueryDaemon(assistantId);
+  const canQuery = useCanQueryDaemon();
   const query = useQuery({
     ...unreadConversationCountOptions(assistantId!),
     enabled: enabled && Boolean(assistantId) && canQuery,
@@ -421,7 +404,7 @@ export function useConversationGroupsQuery(
   isPending: boolean;
   isError: boolean;
 } {
-  const canQuery = useCanQueryDaemon(assistantId);
+  const canQuery = useCanQueryDaemon();
   const query = useQuery({
     ...groupsGetOptions({
       path: { assistant_id: assistantId ?? "" },

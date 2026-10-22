@@ -1,37 +1,53 @@
 /**
- * TanStack Query wrapper for the assistant lifecycle resource.
+ * TanStack Query layer for the assistant resolution resource.
  *
- * `useAssistantQuery` is the canonical read path for the `/assistant/`
- * status response. It owns:
+ * The web bundle is focused on one assistant whose auth is constant at
+ * initial iframe load, so there is no runtime session lifecycle to manage —
+ * no retry budgets, no watchdogs, no reachability polling. What remains is
+ * the boot resolution: fetch `/assistant/` once (re-fetched on selection
+ * change, retry, and while a transient phase is expected to resolve) and
+ * project the result into the resolved-assistants store and the self-hosted
+ * connection slots the request interceptor reads.
  *
- *   - The fetch (`getAssistant`)
- *   - The cache (`["assistant", "current"]`)
- *   - The poll cadence (`refetchInterval`, only while the assistant is
- *     in a transient lifecycle state like `initializing` / `to_be_deleted`)
- *   - The "should this even fire" gate (`enabled`)
- *
- * Everything that derives an `AssistantState` from the response — the
- * authoritative client-side state machine in
- * `use-assistant-lifecycle.ts` — reads via this query instead of issuing
- * its own ad-hoc fetch.
- *
- * Retry policy: this query DOES NOT retry on failure (`retry: false`).
- * The owning hook has a richer retry budget (`MAX_HATCH_RETRIES`,
- * `MAX_INITIALIZING_RECOVERIES`) that distinguishes recoverable 5xx
- * from terminal errors like capacity kill-switches. Letting TanStack
- * Query retry on top of that would burn the hook's budget twice as
- * fast and double-log the error.
+ * `useAssistantBootResolution` mounts the resolution + its two projection
+ * effects (the app root and standalone windows like the command palette);
+ * `useAssistantResolution` is the read-only view every other consumer uses.
  *
  * @see {@link https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults}
  */
 
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import {
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import { getAssistant, type GetAssistantResult } from "@/assistant/api";
 import {
   resolveAssistantLifecycleState,
-  type ResolvedAssistantLifecycleState,
+  TRANSPORT_ERROR_MESSAGE,
 } from "@/assistant/lifecycle";
+import type { AssistantResolutionState } from "@/assistant/types";
+import {
+  useGatedSelectedAssistantId,
+  resolveSelectedAssistantId,
+} from "@/assistant/selection";
+import { useIsOrgReady } from "@/hooks/use-is-org-ready";
+import { isAuthenticated } from "@/stores/session-status";
+import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { isGatewayAuthMode, getGatewayToken } from "@/lib/auth/gateway-session";
+import {
+  getLocalAssistants,
+  isLocalClient,
+  isServedGatewayRuntime,
+  getSelectedAssistant,
+  getAuthGatewayIngressUrl,
+  getPairedGatewayUrl,
+} from "@/lib/local-mode";
+import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
 
@@ -50,7 +66,7 @@ export const POLL_INTERVAL_MS = 3000;
  * forever in the background.
  *
  * These are **lifecycle kinds** (the discriminator on
- * `ResolvedAssistantLifecycleState`), not raw server status strings.
+ * `AssistantResolutionState`), not raw server status strings.
  * Raw → kind mappings happen in `resolveAssistantLifecycleState`:
  *   - server `status: "initializing"`  → kind `initializing`
  *   - server `status: "to_be_deleted"` → kind `cleaning_up`
@@ -58,8 +74,9 @@ export const POLL_INTERVAL_MS = 3000;
  *   - 404                              → kind `auto_hatch`
  *   - other non-OK                     → kind `error`
  */
-const TRANSIENT_PHASES: ReadonlySet<ResolvedAssistantLifecycleState["kind"]> =
-  new Set(["initializing", "cleaning_up"]);
+const TRANSIENT_PHASES: ReadonlySet<
+  Exclude<AssistantResolutionState, { kind: "loading" | "error" }>["kind"]
+> = new Set(["initializing", "cleaning_up"]);
 
 /**
  * The query's `refetchInterval` decision in a form callers can test
@@ -76,7 +93,9 @@ export function pollIntervalFor(
     return false;
   }
   const phase = resolveAssistantLifecycleState(result);
-  return TRANSIENT_PHASES.has(phase.kind) ? POLL_INTERVAL_MS : false;
+  return TRANSIENT_PHASES.has(phase.kind as "initializing")
+    ? POLL_INTERVAL_MS
+    : false;
 }
 
 /**
@@ -95,29 +114,232 @@ export function assistantQueryKey(
     : ASSISTANT_QUERY_KEY;
 }
 
-export interface UseAssistantQueryOptions {
-  /**
-   * Disables the query when false. Used to short-circuit the fetch
-   * during auth handshake / local-mode boot before the cloud
-   * session is actually available.
-   */
-  enabled: boolean;
-  /**
-   * The cloud assistant the user has selected, when multi-assistant
-   * is active. `null`/absent resolves the default (first listed) assistant —
-   * the pre-multi-assistant behavior.
-   */
-  selectedCloudAssistantId?: string | null;
+/**
+ * The selected platform assistant to resolve. `null` when the selection is
+ * not honored (no org id, gateway-auth mode) or names a lockfile-only LOCAL
+ * assistant (gateway-based, never registered on the cloud — `getAssistant(id)`
+ * would 404). Managed AND platform self-hosted (API `is_local`) assistants
+ * ARE valid there — `projectAssistantResult` handles the self-hosted
+ * response — and a pre-hydration unknown id passes through for the 404 net.
+ */
+function resolveSelectedCloudAssistantId(): string | null {
+  const resolvedSelectionId = useGatedSelectedAssistantId();
+  return resolvedSelectionId &&
+    !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
+    ? resolvedSelectionId
+    : null;
 }
 
-export function useAssistantQuery(options: UseAssistantQueryOptions) {
-  const selectedId = options.selectedCloudAssistantId ?? null;
-  return useQuery<GetAssistantResult>({
+function resolveSelectedCloudAssistantIdImperative(): string | null {
+  const resolvedSelectionId = resolveSelectedAssistantId(
+    getActiveOrganizationIdForRequests(),
+  );
+  return resolvedSelectionId &&
+    !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
+    ? resolvedSelectionId
+    : null;
+}
+
+/**
+ * Gateway-auth mode resolves the assistant locally — the gateway issues the
+ * session token directly, so no `/assistant/` fetch happens. Primes the
+ * self-hosted connection slots and publishes the active assistant id.
+ */
+export function applyGatewayAuthBoot(): void {
+  let ingressUrl = window.location.origin;
+  let resolvedAssistantId = "self";
+  let rendererToken = getGatewayToken();
+  if (isServedGatewayRuntime()) {
+    ingressUrl = getRemoteGatewayIngressUrl();
+  } else {
+    const assistant = getSelectedAssistant();
+    if (getAuthGatewayIngressUrl(assistant) != null) {
+      resolvedAssistantId = assistant?.assistantId ?? resolvedAssistantId;
+      if (getPairedGatewayUrl(assistant) != null) {
+        rendererToken = null;
+      }
+    }
+  }
+  setSelfHostedConnection({ url: ingressUrl, token: rendererToken });
+  useResolvedAssistantsStore
+    .getState()
+    .setActiveAssistantId(resolvedAssistantId);
+}
+
+function getRemoteGatewayIngressUrl(): string {
+  const match = /\/assistant(?:\/|$)/.exec(window.location.pathname);
+  const prefix =
+    match && match.index > 0
+      ? window.location.pathname.slice(0, match.index).replace(/\/+$/, "")
+      : "";
+  return `${window.location.origin}${prefix}`;
+}
+
+/**
+ * Project a resolution into the stores the rest of the bundle reads: the
+ * resolved-assistants record + active id, and the self-hosted connection
+ * slots the request interceptor consults.
+ *
+ * A cloud-active resolution drops any stale self-hosted connection (runtime
+ * calls belong on the cloud); a self-hosted one records the user's gateway +
+ * actor token so runtime-proxied calls rewrite to the gateway.
+ */
+function projectAssistantResult(result: GetAssistantResult): void {
+  if (!result.ok) {
+    return;
+  }
+  if (result.data.is_local) {
+    setSelfHostedConnection({
+      url: result.data.ingress_url,
+      token: result.data.platform_actor_token,
+    });
+  } else {
+    setSelfHostedConnection(null);
+  }
+  const store = useResolvedAssistantsStore.getState();
+  store.upsertFromApi(result.data);
+  store.setActiveAssistantId(result.data.id);
+}
+
+/**
+ * Fetch a fresh `/assistant/` resolution and project it.
+ *
+ * `assistantIdOverride` pins this one refresh to a specific assistant
+ * instead of the selection — the onboarding handoff uses it so a
+ * just-hatched assistant is the one fetched and projected.
+ */
+export async function recheckAssistant(
+  queryClient: QueryClient,
+  assistantIdOverride?: string,
+): Promise<GetAssistantResult | undefined> {
+  if (isGatewayAuthMode()) {
+    applyGatewayAuthBoot();
+    return queryClient.getQueryData(assistantQueryKey(null));
+  }
+  const selectedId =
+    assistantIdOverride ?? resolveSelectedCloudAssistantIdImperative() ?? null;
+  const result = await queryClient.fetchQuery({
     queryKey: assistantQueryKey(selectedId),
     queryFn: () => getAssistant(selectedId ?? undefined),
-    enabled: options.enabled,
+    staleTime: 0,
+  });
+  // If the selected assistant 404s (retired/deleted), clear the stale
+  // selection and retry without an ID so the resolution falls back to the
+  // default first-listed assistant.
+  if (selectedId && !result.ok && result.status === 404) {
+    useResolvedAssistantsStore.getState().setSelectedAssistant(null);
+    return recheckAssistant(queryClient);
+  }
+  projectAssistantResult(result);
+  return result;
+}
+
+export interface AssistantResolutionResult {
+  state: AssistantResolutionState;
+  result: GetAssistantResult | undefined;
+  selectedCloudAssistantId: string | null;
+  refetch: ReturnType<typeof useQuery<GetAssistantResult>>["refetch"];
+}
+
+/**
+ * Whether to resolve the server-side assistant at all. Gateway-auth
+ * mode and "local mode without platform session" short-circuit to local
+ * states without ever calling /assistant/. Platform API calls require the
+ * Cadet-Organization-Id header; wait for the org store to resolve before
+ * firing them.
+ */
+function useShouldQueryServer(): boolean {
+  const sessionStatus = useAuthStore.use.sessionStatus();
+  const hasCloudSession = useHasCloudSession();
+  const isOrgReady = useIsOrgReady();
+  return (
+    isAuthenticated(sessionStatus) &&
+    !isGatewayAuthMode() &&
+    (hasCloudSession || !isLocalClient()) &&
+    isOrgReady
+  );
+}
+
+/**
+ * The read-only view of the boot resolution. Shared cache — every consumer
+ * sees the same answer without issuing its own fetch.
+ */
+export function useAssistantResolution(): AssistantResolutionResult {
+  const shouldQueryServer = useShouldQueryServer();
+  const selectedCloudAssistantId = resolveSelectedCloudAssistantId();
+
+  const query = useQuery<GetAssistantResult>({
+    queryKey: assistantQueryKey(selectedCloudAssistantId),
+    queryFn: () => getAssistant(selectedCloudAssistantId ?? undefined),
+    enabled: shouldQueryServer,
     retry: false,
-    refetchInterval: (query) => pollIntervalFor(query.state.data),
+    refetchInterval: (q) => pollIntervalFor(q.state.data),
     refetchOnWindowFocus: false,
   });
+
+  const state = useMemo<AssistantResolutionState>(() => {
+    // Gateway-auth mode resolves the assistant locally — the gateway issues
+    // the session token directly and there is nothing to fetch.
+    if (isGatewayAuthMode()) {
+      return { kind: "active", isLocal: true };
+    }
+    if (!shouldQueryServer || query.isPending) {
+      return { kind: "loading" };
+    }
+    if (query.isError) {
+      // A thrown fetch is a transport failure (the request never got an HTTP
+      // answer) — the chat surface renders it with reconnecting copy.
+      return {
+        kind: "error",
+        transient: true,
+        message: TRANSPORT_ERROR_MESSAGE,
+      };
+    }
+    return resolveAssistantLifecycleState(query.data);
+  }, [query.isPending, query.isError, query.data, shouldQueryServer]);
+
+  return {
+    state,
+    result: query.data,
+    selectedCloudAssistantId,
+    refetch: query.refetch,
+  };
+}
+
+/**
+ * The boot resolution: the shared read plus the projection effects. Mounted
+ * once per running surface (the app root, and standalone windows like the
+ * command palette that bypass it) — the effects are idempotent so an extra
+ * mount is harmless.
+ */
+export function useAssistantBootResolution(): AssistantResolutionResult {
+  const queryClient = useQueryClient();
+  const resolution = useAssistantResolution();
+  const selectedId = resolution.selectedCloudAssistantId;
+
+  // Gateway-auth mode: prime the connection slots + active id from local
+  // state. Re-runs when the selection changes so a newly connected assistant
+  // takes over.
+  useEffect(() => {
+    if (!isGatewayAuthMode()) {
+      return;
+    }
+    applyGatewayAuthBoot();
+  }, [selectedId]);
+
+  useEffect(() => {
+    const result = resolution.result;
+    if (!result) {
+      return;
+    }
+    // A selected id that 404s (retired/deleted) clears the stale selection —
+    // the key change refetches the default assistant.
+    if (!result.ok && result.status === 404 && selectedId) {
+      useResolvedAssistantsStore.getState().setSelectedAssistant(null);
+      return;
+    }
+    projectAssistantResult(result);
+  }, [resolution.result, selectedId]);
+
+  return resolution;
 }

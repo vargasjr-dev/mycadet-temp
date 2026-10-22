@@ -2,7 +2,7 @@
  * Owns the post-hatch "Connecting…" overlay lifecycle.
  *
  * When the assistant is freshly hatched, `expectingFirstMessage` is set
- * in `useAssistantLifecycleStore` by every hatch path. This hook
+ * in the auto-greet store by every hatch path. This hook
  * consolidates the gate-clearing logic:
  *
  * 1. **Pre-chat sessionStorage detector** — if a pending pre-chat context
@@ -19,8 +19,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import { lifecycleService } from "@/assistant/lifecycle-service";
+import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import {
   hasAssistantMessage,
@@ -37,8 +36,7 @@ export function useAutoGreetGate(
   hasPendingPreChatMessage: boolean,
   onboardingDraftConversationId: string | null,
 ): AutoGreetGateResult {
-  const autoGreetPending =
-    useAssistantLifecycleStore.use.expectingFirstMessage();
+  const autoGreetPending = useAutoGreetStore.use.expectingFirstMessage();
   // The post-hatch greeting folds into the materialized snapshot as it streams;
   // a freshly hatched conversation has no persisted history yet, so the snapshot
   // is the right (and sufficient) place to watch for the first assistant message.
@@ -49,7 +47,7 @@ export function useAutoGreetGate(
   // 1. Pre-chat sessionStorage detector — re-arm gate on reload.
   useEffect(() => {
     if (hasPendingPreChatMessage) {
-      lifecycleService.markExpectingFirstMessage();
+      useAutoGreetStore.getState().markExpectingFirstMessage();
     }
   }, [hasPendingPreChatMessage]);
 
@@ -60,7 +58,7 @@ export function useAutoGreetGate(
     }
     if (firstAssistantMessageArrived) {
       setTimedOut(false);
-      lifecycleService.clearExpectingFirstMessage();
+      useAutoGreetStore.getState().clearExpectingFirstMessage();
     }
   }, [autoGreetPending, firstAssistantMessageArrived]);
 
@@ -94,7 +92,7 @@ export function useAutoGreetGate(
         assistantMessagePresent: firstAssistantMessageArrived,
       })
     ) {
-      lifecycleService.clearExpectingFirstMessage();
+      useAutoGreetStore.getState().clearExpectingFirstMessage();
     }
   }, [
     activeConversationId,

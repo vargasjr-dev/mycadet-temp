@@ -26,7 +26,7 @@
  *    assistant becomes active and the returned detach when it
  *    changes or unmounts. All connection lifecycle, dedup windows,
  *    and bounce policy live inside the service — paralleling
- *    `lifecycleService`.
+ *    the SSE service.
  *
  * The daemon dedups SSE subscribers by `clientId`, so this hook MUST
  * be the only place that calls `sseService.attach`. Consumers

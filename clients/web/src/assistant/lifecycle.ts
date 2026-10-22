@@ -1,15 +1,7 @@
 import { extractErrorMessage } from "@/utils/api-errors";
 
 import type { GetAssistantResult } from "@/assistant/api";
-import type { AssistantState } from "@/assistant/types";
-
-export type ResolvedAssistantLifecycleState =
-  | { kind: "active" }
-  | { kind: "self_hosted" }
-  | { kind: "initializing" }
-  | { kind: "cleaning_up" }
-  | { kind: "auto_hatch" }
-  | { kind: "error"; message: string; transient?: boolean };
+import type { AssistantResolutionState } from "@/assistant/types";
 
 /**
  * Error code the Electron main process's cloud proxy puts in its
@@ -32,8 +24,6 @@ export const TRANSPORT_ERROR_MESSAGE = "Connection interrupted. Reconnecting…"
  *     its own `net.fetch` rejected, and
  *   - a raw Chromium `net::ERR_*` string in the detail (older
  *     Electron builds forwarded the error message verbatim).
- * Thrown fetches (the browser path) never reach this — they surface
- * via `checkAssistant`'s catch instead.
  */
 export function isTransportShapedError(
   error: Record<string, unknown>,
@@ -46,7 +36,7 @@ export function isTransportShapedError(
 }
 
 /**
- * Whether this lifecycle kind can serve chat queries and the surfaces
+ * Whether this resolution kind can serve chat queries and the surfaces
  * that mirror them (sidebar, Home Screen widgets, dock badge).
  *
  * `active` is a running assistant. `self_hosted` is too: the cloud
@@ -55,21 +45,29 @@ export function isTransportShapedError(
  * layout-owned queries.
  */
 export function assistantStateCanServeChat(
-  kind: AssistantState["kind"],
+  kind: AssistantResolutionState["kind"],
 ): boolean {
   return kind === "active" || kind === "self_hosted";
 }
 
+/**
+ * Map a `/assistant/` result onto the resolution state.
+ *
+ * Transport-shaped failures get friendly copy (never a raw `net::ERR_*`
+ * string) and the `transient` marker the chat page renders with
+ * reconnecting copy instead of a terminal error.
+ */
 export function resolveAssistantLifecycleState(
   result: GetAssistantResult,
-): ResolvedAssistantLifecycleState {
+): AssistantResolutionState {
   if (result.ok) {
     switch (result.data.status) {
       case "active":
-        if (result.data.is_local) {
-          return { kind: "self_hosted" };
-        }
-        return { kind: "active" };
+        return {
+          kind: "active",
+          isLocal: result.data.is_local ?? false,
+          maintenanceMode: result.data.maintenance_mode,
+        };
       case "initializing":
         return { kind: "initializing" };
       case "to_be_deleted":
@@ -86,10 +84,6 @@ export function resolveAssistantLifecycleState(
     return { kind: "auto_hatch" };
   }
 
-  // Transport-shaped failures get friendly copy (never a raw
-  // `net::ERR_*` string) and the `transient` marker that drives the
-  // lifecycle service's degrade-instead-of-error and auto-retry
-  // behavior (LUM-2402).
   if (isTransportShapedError(result.error)) {
     return {
       kind: "error",
@@ -131,31 +125,4 @@ export function isCloudHostedDisabled(
     return false;
   }
   return error?.code === PLATFORM_HOSTED_DISABLED_CODE;
-}
-
-/**
- * Backoff schedule for auto-retrying a transient (transport-shaped)
- * error state: 2s, 4s, 8s, … capped at 30s. Wake-time network flaps
- * usually resolve within a few seconds, so the early retries recover
- * the session without the user touching anything; the cap keeps a
- * long outage from polling aggressively forever.
- */
-export const ERROR_RETRY_BASE_MS = 2_000;
-export const ERROR_RETRY_MAX_MS = 30_000;
-
-export function errorRetryDelayMs(attempt: number): number {
-  return Math.min(ERROR_RETRY_BASE_MS * 2 ** attempt, ERROR_RETRY_MAX_MS);
-}
-
-export const INITIALIZING_TIMEOUT_MS = 300_000;
-
-export function buildInitializingTimeoutError(): {
-  kind: "error";
-  message: string;
-} {
-  return {
-    kind: "error",
-    message:
-      "Your assistant is taking longer than expected to start. Please try again, or check the community for help.",
-  };
 }

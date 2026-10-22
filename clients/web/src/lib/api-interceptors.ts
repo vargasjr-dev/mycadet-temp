@@ -21,16 +21,10 @@
  * error state).
  *
  * Import this module for its side effects in the app entrypoint
- * (`main.tsx`) so interceptors are installed before any API call fires. The
- * same import installs the post-resume request counter these interceptors feed,
- * which needs to be subscribed to `app.resume` before React mounts.
+ * (`main.tsx`) so interceptors are installed before any API call fires.
  *
  * Reference: https://heyapi.dev/openapi-ts/clients/fetch#interceptors
  */
-import {
-  beginAssistantRequest,
-  recordAssistantResponse,
-} from "@/assistant/request-activity";
 import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
@@ -369,83 +363,19 @@ export function authorizeRemoteGatewayRequest(
   });
 }
 
-const assistantRequestObservations = new WeakMap<
-  Request,
-  {
-    observation: number;
-    isStatus: boolean;
-    provesReadiness: boolean;
-  }
->();
-// Legacy daemon SDK routes served by the gateway, plus sleep acknowledgements
-// and health checks whose payload must be validated by the lifecycle service.
-const NON_SERVING_DAEMON_PATHS = new Set([
-  ...FLATTENED_FIRST_SEGMENTS,
-  ...PLATFORM_PUSH_FIRST_SEGMENTS,
-  "audio",
-  "backups",
-  "brain-graph",
-  "brain-graph-ui",
-  "channel-verification-sessions",
-  "channels",
-  "credential-requests",
-  "events",
-  "health",
-  "healthz",
-  "integrations",
-  "logs",
-  "oauth",
-  "ps",
-  "slack",
-  "trust-rules",
-]);
-
-export function assistantActivityResponseInterceptor(
-  response: Response,
-  request: Request,
-  options?: { parseAs?: string },
-): Response {
-  const observation = assistantRequestObservations.get(request);
-  const isStream =
-    options?.parseAs === "stream" ||
-    response.headers.get("content-type")?.includes("text/event-stream");
-  if (
-    response.ok &&
-    request.method !== "OPTIONS" &&
-    !request.signal.aborted &&
-    !isStream &&
-    observation
-  ) {
-    if (observation.isStatus || observation.provesReadiness) {
-      recordAssistantResponse(observation.observation, !observation.isStatus);
-    }
-  }
-  return response;
-}
-
 /**
  * Builds a request interceptor for a HeyAPI client.
  *
  * @param isDaemonClient `true` for the daemon + gateway clients. All
  *   assistant sub-resource paths are forwarded to the self-hosted gateway
- *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}, and every
- *   request counts toward the post-resume burst. `false` for the cloud and
- *   auth clients, where only allowlisted segments are forwarded (platform-owned
- *   routes like maintenance-mode, system-events, etc. fall through to Django)
- *   and only daemon-bound paths ({@link isDaemonBoundPath}) count, the SSE
- *   reopen among them.
- *
- * Counting happens once per request, after the routing decision, and this is
- * the single choke point on each client's chain. On the cloud chain it is
- * additionally conditioned on {@link cloudFeaturesGateDecision}, the gate
- * registered downstream, so a request that gate aborts is never counted. The
- * auth chain reaches neither test: allauth endpoints live under `/_allauth/`
- * and are never daemon-bound.
+ *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. `false` for the
+ *   cloud and auth clients, where only allowlisted segments are forwarded
+ *   (platform-owned routes like maintenance-mode, system-events, etc. fall
+ *   through to Django).
  */
 function createInterceptor({
   isDaemonClient = false,
   allowRemoteGatewayDirect = false,
-  observeDaemonActivity = false,
 } = {}) {
   /**
    * `outgoing` is the request the chain hands downstream; `url` is the original
@@ -531,75 +461,23 @@ function createInterceptor({
   };
 
   return async (request: Request): Promise<Request> => {
-    const pathname = new URL(request.url).pathname;
-    const isStatus =
-      !isDaemonClient &&
-      /\/v1\/assistants\/[^/]+\/operational\/status\/?$/.test(pathname);
-    const match =
-      observeDaemonActivity || isDaemonClient
-        ? /\/v1\/assistants\/([^/]+)\/([^/?#]+)/.exec(pathname)
-        : null;
-    const observation =
-      match &&
-      (isStatus ||
-        isDaemonClient ||
-        RUNTIME_PROXIED_FIRST_SEGMENTS.has(match[2]))
-        ? beginAssistantRequest(match[1])
-        : null;
-    const outgoing = await route(request);
-    if (observation && match) {
-      assistantRequestObservations.set(outgoing, {
-        observation,
-        isStatus,
-        provesReadiness:
-          observeDaemonActivity && !NON_SERVING_DAEMON_PATHS.has(match[2]),
-      });
-    }
-    return outgoing;
+    return route(request);
   };
 }
 
 /** Platform + auth clients: uses the segment allowlist. */
-export const requestInterceptor = createInterceptor({
-  observeDaemonActivity: true,
-});
+export const requestInterceptor = createInterceptor({});
 
 /** Daemon client: bypasses the segment allowlist. */
 export const daemonRequestInterceptor = createInterceptor({
   isDaemonClient: true,
   allowRemoteGatewayDirect: true,
-  observeDaemonActivity: true,
 });
 
 const gatewayRequestInterceptor = createInterceptor({
   isDaemonClient: true,
   allowRemoteGatewayDirect: true,
 });
-
-/**
- * Statuses that mean the request reached the cloud but could not reach the
- * assistant's runtime: the pod is restarting or not yet ready.
- */
-const UNREACHABLE_STATUS_CODES = new Set<number>([502, 503, 504]);
-
-/**
- * Records gateway-class failures before prompting a scoped reachability probe.
- * Not installed on platform/auth clients, whose 502s can come from Django.
- */
-export function daemonUnreachableInterceptor(
-  response: Response,
-  request: Request,
-): Response {
-  const observation = assistantRequestObservations.get(request)?.observation;
-  if (
-    UNREACHABLE_STATUS_CODES.has(response.status) &&
-    !request.signal.aborted &&
-    recordAssistantResponse(observation ?? null, false)
-  ) {
-    publish("assistant.unreachable", {});
-  }
-  return response;
-}
 
 /**
  * Daemon response interceptor for local gateway 401 recovery.
@@ -1189,13 +1067,11 @@ export function daemonErrorInterceptor(
 // cannot give that guarantee.
 
 daemonClient.interceptors.request.use(daemonRequestInterceptor);
-daemonClient.interceptors.response.use(daemonUnreachableInterceptor);
 if (!isCadetCloudRemote()) {
   daemonClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 } else {
   daemonClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
 }
-daemonClient.interceptors.response.use(assistantActivityResponseInterceptor);
 daemonClient.interceptors.error.use(daemonErrorInterceptor);
 
 // Gateway client uses the same routing as daemon: all gateway endpoints
@@ -1203,7 +1079,6 @@ daemonClient.interceptors.error.use(daemonErrorInterceptor);
 // so a stale renderer token 401s both clients identically and the same
 // in-place recovery applies. Gateway-only responses do not prove daemon readiness.
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
-gatewayClient.interceptors.response.use(daemonUnreachableInterceptor);
 if (!isCadetCloudRemote()) {
   gatewayClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
 } else {
@@ -1317,4 +1192,3 @@ export function platformFeaturesGate(request: Request): Request {
 }
 
 cloudClient.interceptors.request.use(platformFeaturesGate);
-cloudClient.interceptors.response.use(assistantActivityResponseInterceptor);

@@ -68,7 +68,7 @@ import {
   type SidebarViewMode,
 } from "@/domains/chat/utils/sidebar-view-mode";
 import { useSidebarSectionsQuery } from "@/hooks/conversation-queries";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import { getChannelLabel } from "@/utils/channel-presentation";
 import { RECENTS_SECTION_LABEL } from "@/domains/chat/utils/sidebar-section-icon";
 
@@ -191,9 +191,7 @@ export function useSidebarState({
   conversationGroups,
   attentionConversationIds,
 }: UseSidebarStateParams): SidebarState {
-  const isAssistantActive = useAssistantLifecycleStore(
-    (s) => s.assistantState.kind === "active",
-  );
+  const isAssistantActive = useAssistantResolution().state.kind === "active";
 
   // --- Layout store hydration ---
 
