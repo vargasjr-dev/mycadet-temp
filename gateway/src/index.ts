@@ -570,6 +570,37 @@ async function main() {
   const handleWatchStreamWs = createWatchStreamWebsocketHandler(config);
   const handleDesktopStreamWs = createDesktopStreamWebsocketHandler(config);
   const handleLiveVoiceWs = createLiveVoiceWebsocketHandler(config);
+
+  // Assistant-scoped mirrors of the browser stream sockets: the scoped data
+  // plane emits /v1/assistants/<id>/<route> — the same verbatim shape every
+  // scoped forwarder carries — so the upgrade pre-router admits the scoped
+  // spelling of each socket and discards the id, the same mirror the route
+  // table keeps for tunnel/status. Daemon-only sockets (speech relay) get no
+  // mirror: they are never browser-reachable.
+  const SCOPED_WS_MIRRORS: Array<{
+    pattern: RegExp;
+    upgrade: (
+      req: Request,
+      server: Parameters<typeof handleSttStreamWs>[1],
+    ) => Promise<Response | undefined> | Response | undefined;
+  }> = [
+    {
+      pattern: /^\/v1\/assistants\/[^/]+\/live-voice\/?$/,
+      upgrade: handleLiveVoiceWs,
+    },
+    {
+      pattern: /^\/v1\/assistants\/[^/]+\/stt\/stream\/?$/,
+      upgrade: handleSttStreamWs,
+    },
+    {
+      pattern: /^\/v1\/assistants\/[^/]+\/watch\/stream\/?$/,
+      upgrade: handleWatchStreamWs,
+    },
+    {
+      pattern: /^\/v1\/assistants\/[^/]+\/desktop\/stream\/?$/,
+      upgrade: handleDesktopStreamWs,
+    },
+  ];
   const handleSpeechRelaySttWs = createSpeechRelayUpgradeHandler(
     config,
     "stt",
@@ -2104,6 +2135,15 @@ async function main() {
           match[1]!,
           match[2]!,
         );
+        if (upgradeResult !== undefined) return upgradeResult;
+        return undefined as unknown as Response;
+      }
+    }
+
+    if (isWebsocketUpgradeRequest(req)) {
+      for (const mirror of SCOPED_WS_MIRRORS) {
+        if (!mirror.pattern.test(url.pathname)) continue;
+        const upgradeResult = await mirror.upgrade(req, server);
         if (upgradeResult !== undefined) return upgradeResult;
         return undefined as unknown as Response;
       }
