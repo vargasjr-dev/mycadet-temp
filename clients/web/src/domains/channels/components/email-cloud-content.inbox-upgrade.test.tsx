@@ -6,6 +6,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import {
   assistantsDomainsListOptions,
   assistantsEmailAddressesListOptions,
+  assistantsListQueryKey,
   organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import type {
@@ -61,6 +62,9 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
     next: null,
     previous: null,
     results: [],
+  });
+  client.setQueryData(assistantsListQueryKey(), {
+    results: [{ id: ASSISTANT_ID, handle: "ada" }],
   });
   return render(
     <QueryClientProvider client={client}>

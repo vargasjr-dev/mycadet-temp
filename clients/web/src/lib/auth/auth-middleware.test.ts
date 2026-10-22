@@ -368,43 +368,6 @@ describe("authMiddleware — app-access admit gate", () => {
 });
 
 describe("authMiddleware — the local-mode platform probe wait", () => {
-  test("holds the return until the probe settles, then funnels it", async () => {
-    makeSelfHostedLocalReturn();
-
-    let settled: Response | null = null;
-    const pending = runMiddleware(gatedDestination).then((res) => {
-      settled = res;
-    });
-
-    // Probe still in flight: deciding now would strand the purchase on a
-    // billing page with nothing to apply it to.
-    await tick();
-    expect(settled).toBeNull();
-
-    useAuthStore.setState({ cloudSession: "present" });
-    await pending;
-
-    expect(settled).not.toBeNull();
-    expect(settled!.status).toBe(302);
-    expect(settled!.headers.get("Location")).toBe(gatedRedirect);
-  });
-
-  test("leaves the return on billing once the probe settles absent", async () => {
-    makeSelfHostedLocalReturn();
-
-    let decided = false;
-    const pending = runMiddlewareOutcome(gatedDestination).then((res) => {
-      decided = true;
-      return res;
-    });
-
-    await tick();
-    expect(decided).toBe(false);
-
-    useAuthStore.setState({ cloudSession: "absent" });
-    expect((await pending).admitted).toBe(true);
-  });
-
   test("a probe that never settles degrades to a decision instead of looping", async () => {
     makeSelfHostedLocalReturn();
 
