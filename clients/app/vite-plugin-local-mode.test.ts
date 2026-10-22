@@ -194,7 +194,13 @@ describe("guardian-token middleware", () => {
   });
 
   test("never returns a paired credential to the renderer", async () => {
-    writeLockfile([{ assistantId: "paired-g", cloud: "paired" }]);
+    writeLockfile([
+      {
+        assistantId: "paired-g",
+        cloud: "local",
+        runtimeUrl: "https://gateway.example.com",
+      },
+    ]);
     writeToken("paired-g", {});
 
     const result = await dispatch("/v1/assistants/paired-g/guardian-token");
@@ -227,7 +233,11 @@ describe("avatar middleware", () => {
     fs.rmSync(instanceDir, { recursive: true, force: true });
     fs.mkdirSync(avatarDir, { recursive: true });
     writeLockfile([
-      { assistantId: "asst-a", cloud: "local", resources: { instanceDir } },
+      {
+        assistantId: "asst-a",
+        cloud: "local",
+        resources: { instanceDir, gatewayPort: 9000, daemonPort: 9001 },
+      },
     ]);
   });
 
