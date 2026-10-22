@@ -1,5 +1,8 @@
 import { useEffect } from "react";
 
+import { useAssistantResolution } from "@/assistant/queries";
+import type { AssistantResolutionState } from "@/assistant/types";
+
 import {
   resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId,
@@ -24,6 +27,15 @@ import {
 } from "@/stores/resolved-assistants-store";
 
 const TAP_ACTIVATION_TIMEOUT_MS = 15_000;
+
+/* Mirrored from useAssistantResolution so a terminal error settles wedged activation waiters. */
+let currentResolutionState: AssistantResolutionState = { kind: "loading" };
+const activationWaiters = new Set<() => void>();
+function wakeActivationWaiters() {
+  for (const wake of activationWaiters) {
+    wake();
+  }
+}
 
 function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   const auth = useAuthStore.getState();
@@ -95,7 +107,14 @@ function waitForActiveTapAssistant(
     if (assistantsState.selectedAssistantId !== assistantId) {
       return false;
     }
-    return assistantsState.activeAssistantId === assistantId ? true : null;
+    if (assistantsState.activeAssistantId === assistantId) {
+      return true;
+    }
+    const resolution = currentResolutionState;
+    if (resolution.kind === "error" && !resolution.transient) {
+      return false;
+    }
+    return null;
   };
   const immediate = readOutcome();
   if (immediate !== null) {
@@ -110,6 +129,7 @@ function waitForActiveTapAssistant(
       unsubscribeAuth();
       unsubscribeOrganization();
       unsubscribeAssistants();
+      activationWaiters.delete(settleIfComplete);
       if (cancellationTimer) {
         clearTimeout(cancellationTimer);
       }
@@ -129,6 +149,7 @@ function waitForActiveTapAssistant(
     cancellationTimer = setTimeout(() => {
       finish(false);
     }, TAP_ACTIVATION_TIMEOUT_MS);
+    activationWaiters.add(settleIfComplete);
     settleIfComplete();
   });
 }
@@ -183,6 +204,11 @@ function resolveCurrentTapAssistant(
  * for the app's lifetime, so there is nothing to tear down.
  */
 export function useNotificationTapNavigation(): void {
+  const { state: resolutionState } = useAssistantResolution();
+  useEffect(() => {
+    currentResolutionState = resolutionState;
+    wakeActivationWaiters();
+  }, [resolutionState]);
   useEffect(() => {
     // Electron pop-out windows (`?popout=1`) mount `RootLayout` too, and
     // the macOS notification bridge broadcasts each action to every
