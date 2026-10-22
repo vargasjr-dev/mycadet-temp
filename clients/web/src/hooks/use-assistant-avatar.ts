@@ -91,11 +91,10 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
 
 /**
  * Resolve the complete connection/account owner shared by display and
- * notification avatar consumers. The account arm keys on the assistant's
- * own cloud UUID — the avatar belongs to the assistant, not to whichever
- * platform account happens to be viewing it — so the scope needs no
- * auth-store read. Re-keying from the platform user id invalidates cached
- * scopes once.
+ * notification avatar consumers. The account arm keys on the organization
+ * alone — the avatar belongs to the assistant, and the assistant's own id
+ * rides the query key and the identity triple, not the scope — so the
+ * scope needs no auth-store read.
  */
 export function resolveAssistantAvatarOwnerScopeId(
   assistant: ResolvedAssistant | null | undefined,
@@ -108,7 +107,6 @@ export function resolveAssistantAvatarOwnerScopeId(
   return assistant.isCloudHosted
     ? resolveNotificationIdentityScope({
         kind: "account",
-        accountId: resolveAssistantNotificationCloudId(assistant),
         organizationId,
       })
     : resolveNotificationIdentityScope({

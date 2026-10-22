@@ -59,11 +59,7 @@ interface PublicationScope {
 }
 
 export type NotificationIdentityScopeInput =
-  | {
-      kind: "account";
-      accountId: string | null;
-      organizationId: string | null;
-    }
+  | { kind: "account"; organizationId: string | null }
   | { kind: "connection"; url: string | null };
 
 export interface NotificationIdentityOwner {
@@ -221,10 +217,9 @@ export function resolveNotificationIdentityScope(
   }
   let canonical: string | null = null;
   if (scope.kind === "account") {
-    const accountId = scope.accountId?.trim();
     const organizationId = scope.organizationId?.trim();
-    if (accountId && organizationId) {
-      canonical = JSON.stringify(["account", accountId, organizationId]);
+    if (organizationId) {
+      canonical = JSON.stringify(["account", organizationId]);
     }
   } else {
     const rawUrl = scope.url?.trim();

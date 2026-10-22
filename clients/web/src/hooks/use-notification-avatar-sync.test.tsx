@@ -1050,7 +1050,6 @@ describe("scoped notification identity preparation", () => {
   test("uses account/org isolation and preserves an explicit platform sender id", async () => {
     const accountScope: NotificationAvatarScope = {
       kind: "account",
-      accountId: "user-123",
       organizationId: "org-abc",
     };
     const nativeId = "00000000-0000-4000-8000-000000000001";
