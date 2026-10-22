@@ -437,12 +437,16 @@ describe("cadet upgrade local", () => {
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain("upgraded to");
   });
 
-  test("failed safety backup aborts before runtime installation or service replacement", async () => {
+  test("failed safety backup continues the upgrade without one", async () => {
     createBackupMock.mockResolvedValue(null);
-    await expect(upgrade()).rejects.toThrow("process.exit(1)");
-    expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
-    expect(stopLocalProcessesMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
+    await upgrade();
+    expect(consoleWarnSpy.mock.calls.flat().join("\n")).toContain(
+      "continuing WITHOUT a backup",
+    );
+    expect(pruneOldBackupsMock).not.toHaveBeenCalled();
+    expect(restoreBackupMock).not.toHaveBeenCalled();
+    expect(ensureLocalRuntimeMock).toHaveBeenCalled();
+    expect(startLocalDaemonMock).toHaveBeenCalled();
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
