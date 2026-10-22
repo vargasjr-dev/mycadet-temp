@@ -40,7 +40,7 @@ import {
 } from "../lib/assistant-config.js";
 import { readIngressPublicBaseUrl } from "../lib/ingress-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { gatewayDialUrl } from "../lib/runtime-url.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { gatewayCliInvocation } from "../lib/local.js";
@@ -52,25 +52,6 @@ import { toLocalTunnelTarget } from "../lib/tunnel.js";
 function assistantDisplayName(entry: AssistantEntry): string {
   return entry.name || entry.assistantId;
 }
-
-/**
- * Options this command used to have, and what replaced them. Named explicitly
- * so a scripted or copy-pasted invocation gets the migration instead of the
- * generic unknown-option error's out-of-date-CLI advice.
- */
-const RETIRED_FLAGS = new Map<string, string>([
-  [
-    "--web",
-    "the device being paired mints its own code. Run " +
-      "`cadet connect import <assistant-url>` there, then approve the code " +
-      "it prints with `cadet pair --web-approve <code>`.",
-  ],
-  [
-    "--url",
-    "the advertised address is the one `cadet tunnel start` recorded for " +
-      "this assistant. Run `cadet tunnel start` first.",
-  ],
-]);
 
 function printUsage(): void {
   console.log(`cadet pair - Print a pairing link and QR code for another device
@@ -291,7 +272,7 @@ async function mintPairingChallengeOverLoopbackOrExit(
   // then approve immediately: running this CLI on the host IS the
   // local-presence proof, so the other device completes pairing in one step
   // from the link.
-  const mintUrl = gatewayDialUrl(entry).replace(/\/+$/, "");
+  const mintUrl = getGatewayUrl(entry);
   const response = await gatewayPostOrExit(
     mintUrl,
     "/v1/remote-web/pairing-challenge",
@@ -329,15 +310,6 @@ export const pair = Object.assign(
   if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
     printUsage();
     return;
-  }
-
-  const retiredFlag = rawArgs.find((a) => RETIRED_FLAGS.has(a));
-  if (retiredFlag) {
-    console.error(
-      `Error: ${retiredFlag} is no longer an option: ${RETIRED_FLAGS.get(retiredFlag)}`,
-    );
-    console.error("Run `cadet pair --help` to see available options.");
-    process.exit(1);
   }
 
   const jsonOutput = rawArgs.includes("--json");
@@ -427,7 +399,7 @@ export const pair = Object.assign(
   // but advertise a REACHABLE url in the link, since the loopback url would
   // point the other device at its own localhost: the public https address
   // `cadet tunnel start` recorded for this assistant.
-  const mintUrl = gatewayDialUrl(entry).replace(/\/+$/, "");
+  const mintUrl = getGatewayUrl(entry);
 
   if (webApproveCode) {
     // Rejections are diagnosed here rather than by exitOnHttpError: a

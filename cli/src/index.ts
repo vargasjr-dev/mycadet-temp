@@ -45,7 +45,7 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
-import { gatewayDialUrl } from "./lib/runtime-url.js";
+import { getGatewayUrl } from "./lib/runtime-url.js";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 
@@ -178,7 +178,7 @@ async function tryLaunchClient(): Promise<boolean> {
 
   if (!entry) return false;
 
-  const url = gatewayDialUrl(entry);
+  const url = getGatewayUrl(entry);
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
   const result = await checkHealth(url, token);

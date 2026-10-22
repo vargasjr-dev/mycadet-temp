@@ -166,30 +166,13 @@ describe("AssistantClient cloud-managed auth", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("refuses to send cloud credentials to a runtimeUrl override", async () => {
-    seedCloud("sess-tok-4");
-    const calls = stubFetch(() => new Response("", { status: 200 }));
-
-    expect(
-      () =>
-        new AssistantClient({
-          assistantId: ASSISTANT_ID,
-          runtimeUrl: "https://attacker.example.com",
-        }),
-    ).toThrow("Refusing to send cloud credentials");
-    expect(calls).toHaveLength(0);
-  });
-
-  test("allows a runtimeUrl override that matches the entry's platform host", async () => {
+  test("dials the entry's recorded cloud host", async () => {
     seedCloud("sess-tok-5");
     stubFetch((url) =>
       isOrgFetch(url) ? orgResponse() : new Response("", { status: 200 }),
     );
 
-    const client = new AssistantClient({
-      assistantId: ASSISTANT_ID,
-      runtimeUrl: `${PLATFORM_URL}/`, // trailing slash must not count as a mismatch
-    });
+    const client = new AssistantClient({ assistantId: ASSISTANT_ID });
 
     expect(client.runtimeUrl).toBe(PLATFORM_URL);
     expect((await client.get("/healthz/")).status).toBe(200);

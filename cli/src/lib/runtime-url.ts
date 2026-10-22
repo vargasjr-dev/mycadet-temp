@@ -94,7 +94,7 @@ export function normalizeRuntimeUrl(url: string): string {
  * `null` when the candidate is untrusted (caller must skip the refresh).
  */
 export function trustedRefreshUrl(
-  entry: Pick<AssistantEntry, "runtimeUrl">,
+  entry: AssistantEntry,
   candidateUrl: string,
 ): string | null {
   const candidate = normalizeRuntimeUrl(candidateUrl);
@@ -105,18 +105,12 @@ export function trustedRefreshUrl(
   return null;
 }
 
-/**
- * The address to dial an entry's gateway on: the entry's loopback gateway
- * port (`resources.gatewayPort`, else the port of a loopback `runtimeUrl`)
- * becomes `http://127.0.0.1:<port>` — fast, mDNS-free, and identical to what
- * the old `localUrl` mirror recorded — and anything else falls back to the
- * entry's recorded `runtimeUrl` (e.g. a paired assistant dialable only
- * remotely), then to the default gateway port.
- */
-export function gatewayDialUrl(
-  entry: Pick<AssistantEntry, "resources" | "runtimeUrl"> | null | undefined,
-): string {
-  const port = entry ? getLoopbackGatewayPort(entry) : undefined;
+/** The URL to dial an entry's gateway on: its loopback gateway port, else its recorded runtimeUrl, else the default gateway port. */
+export function getGatewayUrl(entry: AssistantEntry): string {
+  const port = getLoopbackGatewayPort(entry);
   if (port) return `http://127.0.0.1:${port}`;
-  return entry?.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`;
+  return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(
+    /\/+$/,
+    "",
+  );
 }

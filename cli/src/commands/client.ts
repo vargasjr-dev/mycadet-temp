@@ -12,14 +12,14 @@ import {
   saveAssistantEntry,
   type AssistantEntry,
 } from "../lib/assistant-config";
-import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
+import { GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "../lib/guardian-token";
 import {
-  gatewayDialUrl,
+  getGatewayUrl,
   normalizeRuntimeUrl,
   trustedRefreshUrl,
 } from "../lib/runtime-url";
@@ -134,10 +134,15 @@ export function parseArgs(): ParsedArgs {
     }
   }
 
-  let runtimeUrl = gatewayDialUrl(entry);
-  let assistantId = entry?.assistantId || DAEMON_INTERNAL_ASSISTANT_ID;
-  let assistantName = entry ? getAssistantDisplayName(entry) : undefined;
-  const cloud = entry?.cloud;
+  if (!entry) {
+    console.error("No assistant found. Hatch one first with 'cadet hatch'.");
+    process.exit(1);
+  }
+
+  let runtimeUrl = getGatewayUrl(entry);
+  let assistantId = entry.assistantId;
+  let assistantName: string | undefined = getAssistantDisplayName(entry);
+  const cloud = entry.cloud;
   const workspaceRoot = readWorkspaceRoot(entry);
 
   // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this

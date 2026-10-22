@@ -21,31 +21,9 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
  * no-`.cadet/`-reads boundary in cli/AGENTS.md.
  */
 
-function parsePortFromUrl(url: unknown): number | undefined {
-  if (typeof url !== "string" || !url.trim()) return undefined;
-  try {
-    const port = Number(new URL(url).port);
-    return Number.isInteger(port) && port > 0 && port <= 65535
-      ? port
-      : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 /** Container topologies whose gateway runs on this machine without host `resources`. */
 export function isLocalContainerEntry(entry: AssistantEntry): boolean {
   return entry.cloud === "docker" || entry.cloud === "apple-container";
-}
-
-/**
- * Derive the gateway port from an entry's recorded runtime URL. Undefined
- * when it carries no explicit port (e.g. a cloud-hosted https runtime URL).
- */
-export function parseGatewayPortFromEntryUrls(
-  entry: AssistantEntry | undefined,
-): number | undefined {
-  return parsePortFromUrl(entry?.runtimeUrl);
 }
 
 /**

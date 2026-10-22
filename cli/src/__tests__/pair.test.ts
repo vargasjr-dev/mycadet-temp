@@ -341,45 +341,6 @@ describe("pair command", () => {
     expect(fetchCalled).toBe(false);
   });
 
-  test("--web is refused, pointing at connect import on the other device", async () => {
-    let fetchCalled = false;
-    const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async () => {
-      fetchCalled = true;
-      return new Response("{}", { status: 200 });
-    });
-    const errors: string[] = [];
-    const errSpy = spyOn(console, "error").mockImplementation(
-      (...a: unknown[]) => {
-        errors.push(a.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(
-      (code?: number | string | undefined): never => {
-        throw new Error(`exit:${code}`);
-      },
-    );
-
-    process.argv = ["bun", "cadet", "pair", "--web"];
-    let exited = false;
-    try {
-      await pair();
-    } catch (e) {
-      exited = e instanceof Error && e.message === "exit:1";
-    } finally {
-      errSpy.mockRestore();
-      exitSpy.mockRestore();
-      globalThis.fetch = origFetch;
-    }
-
-    expect(exited).toBe(true);
-    const joined = errors.join("\n");
-    expect(joined).toContain("--web is no longer an option");
-    expect(joined).toContain("cadet connect import");
-    expect(joined).toContain("--web-approve");
-    expect(fetchCalled).toBe(false);
-  });
-
   test("resolves an unquoted multi-word display name", async () => {
     // Assistant whose display name has a space; passed as separate argv tokens.
     writeFileSync(

@@ -1,6 +1,6 @@
 import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
-import { gatewayDialUrl } from "../lib/runtime-url.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
@@ -201,7 +201,7 @@ function parseRetireArgs(args: string[]): RetireArgs {
 }
 
 function formatRuntimeUrl(entry: AssistantEntry): string | undefined {
-  return gatewayDialUrl(entry);
+  return getGatewayUrl(entry);
 }
 
 function printRetireTarget(entry: AssistantEntry, cloud: string): void {

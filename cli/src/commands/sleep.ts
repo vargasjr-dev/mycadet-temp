@@ -8,7 +8,7 @@ import {
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import type { AssistantEntry } from "../lib/assistant-config.js";
-import { gatewayDialUrl } from "../lib/runtime-url.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
   drainAssistant,
@@ -380,7 +380,7 @@ async function runDrainPhase(
   if (!isProcessAlive(assistantPidFile).alive) {
     return "skipped";
   }
-  const baseUrl = gatewayDialUrl(entry);
+  const baseUrl = getGatewayUrl(entry);
   const stored = loadGuardianToken(entry.assistantId)?.accessToken;
   if (!baseUrl || !stored) {
     console.log(

@@ -11,7 +11,6 @@ import {
 import {
   clearIngressUrl,
   readIngressPublicBaseUrl,
-  parseGatewayPortFromEntryUrls,
   saveIngressUrl,
   savePairingTunnel,
 } from "../lib/ingress-config.js";
@@ -195,28 +194,5 @@ describe("pairing-tunnel record", () => {
       provider: "tailscale",
       publicBaseUrl: "https://host.example.ts.net",
     });
-  });
-});
-
-describe("parseGatewayPortFromEntryUrls", () => {
-  test("parses the port from the recorded runtime url", () => {
-    expect(
-      parseGatewayPortFromEntryUrls({
-        assistantId: "a",
-        cloud: "local",
-        runtimeUrl: "http://localhost:9123",
-      }),
-    ).toBe(9123);
-  });
-
-  test("is undefined when the runtime url carries no explicit port", () => {
-    expect(
-      parseGatewayPortFromEntryUrls({
-        assistantId: "a",
-        cloud: "local",
-        runtimeUrl: "https://runtime.example.com/a",
-      }),
-    ).toBeUndefined();
-    expect(parseGatewayPortFromEntryUrls(undefined)).toBeUndefined();
   });
 });

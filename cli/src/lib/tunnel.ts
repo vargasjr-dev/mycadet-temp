@@ -12,12 +12,12 @@ import {
 } from "./assistant-config.js";
 import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
   loadRawConfig,
-  parseGatewayPortFromEntryUrls,
 } from "./ingress-config.js";
 import {
   ensureAppServer,
@@ -221,7 +221,7 @@ export function toLocalTunnelTarget(
     };
   }
   if (isLocalContainerEntry(entry)) {
-    const gatewayPort = parseGatewayPortFromEntryUrls(entry);
+    const gatewayPort = getLoopbackGatewayPort(entry);
     if (gatewayPort !== undefined) {
       return { entry, gatewayPort, workspaceDir: getDefaultWorkspaceDir() };
     }
@@ -648,7 +648,7 @@ export async function restoreContainerAppServer(
   if (!isLocalContainerEntry(entry)) {
     return;
   }
-  const gatewayPort = parseGatewayPortFromEntryUrls(entry);
+  const gatewayPort = getLoopbackGatewayPort(entry);
   if (gatewayPort === undefined) {
     return;
   }

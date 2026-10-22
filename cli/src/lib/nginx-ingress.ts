@@ -32,13 +32,13 @@ import {
   stampRootProcess,
   type AssistantEntry,
 } from "./assistant-config.js";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { RemoteHost } from "./constants.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
   loadRawConfig,
-  parseGatewayPortFromEntryUrls,
   saveRawConfig,
 } from "./ingress-config.js";
 import { resolveEdgeClientDists } from "./web-dist.js";
@@ -1386,7 +1386,7 @@ export async function stopContainerAppServer(
   if (!isLocalContainerEntry(entry)) {
     return false;
   }
-  const gatewayPort = parseGatewayPortFromEntryUrls(entry);
+  const gatewayPort = getLoopbackGatewayPort(entry);
   if (gatewayPort === undefined) {
     return false;
   }

@@ -482,27 +482,16 @@ export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
 }
 
 /**
- * Extract the hostname from a URL string. Falls back to stripping the scheme
- * and taking the hostname portion if URL parsing fails.
- */
-export function extractHostFromUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    return parsed.hostname;
-  } catch {
-    return url.replace(/^https?:\/\//, "").split(":")[0];
-  }
-}
-
-/**
  * Extract the ssh host for a remote-managed entry: the hostname of the
  * entry's recorded runtime URL. One seam so the runtimeUrl death (a later
  * PR) rewires a single site instead of every ssh flow.
  */
-export function extractHostFromEntry(
-  entry: Pick<AssistantEntry, "runtimeUrl">,
-): string {
-  return extractHostFromUrl(entry.runtimeUrl);
+export function extractHostFromEntry(entry: AssistantEntry): string {
+  try {
+    return new URL(entry.runtimeUrl).hostname;
+  } catch {
+    return entry.runtimeUrl.replace(/^https?:\/\//, "").split(":")[0];
+  }
 }
 
 export function saveAssistantEntry(entry: AssistantEntry): void {

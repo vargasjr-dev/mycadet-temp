@@ -14,7 +14,6 @@ import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 
 import type { DeviceRecord } from "@mycadet/local-mode";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 
 import {
   type AssistantEntry,
@@ -39,6 +38,7 @@ import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),
@@ -81,16 +81,18 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
   if (entry.cloud === "docker")
     return `http://127.0.0.1:${GATEWAY_INTERNAL_PORT}`;
 
-  const port = getLoopbackGatewayPort(entry);
-  const base = port ? `http://127.0.0.1:${port}` : undefined;
-  if (!base) {
+  const base = getGatewayUrl(entry);
+  if (
+    !base.startsWith("http://127.0.0.1:") &&
+    !base.startsWith("http://localhost:")
+  ) {
     console.error(
       `Error: no local gateway found for '${displayName}'. \`cadet devices\` runs on the machine hosting the assistant.`,
     );
     process.exit(1);
   }
 
-  return base.replace(/\/+$/, "");
+  return base;
 }
 
 /** Docker host management enters the gateway network namespace before calling loopback-only routes. */

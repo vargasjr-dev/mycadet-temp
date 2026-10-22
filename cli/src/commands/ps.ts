@@ -25,7 +25,7 @@ import {
   readRootProcesses,
   type AssistantEntry,
 } from "../lib/assistant-config";
-import { gatewayDialUrl } from "../lib/runtime-url.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
@@ -345,7 +345,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
     );
   }
   const cadetDir = resources.instanceDir;
-  const gatewayUrl = gatewayDialUrl(entry);
+  const gatewayUrl = getGatewayUrl(entry);
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
 
   // Preferred path: the gateway's /v1/ps returns the daemon's REAL process
@@ -797,7 +797,7 @@ async function getAssistantListHealth(
       return { status: "sleeping", detail: null };
     }
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(gatewayDialUrl(entry), token);
+    return checkHealth(getGatewayUrl(entry), token);
   }
 
   if (entry.cloud === "docker") {
@@ -807,7 +807,7 @@ async function getAssistantListHealth(
       return { status: "sleeping", detail: null };
     }
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return checkHealth(gatewayDialUrl(entry), token);
+    return checkHealth(getGatewayUrl(entry), token);
   }
 
   if (entry.cloud === "apple-container") {
@@ -824,7 +824,7 @@ async function getAssistantListHealth(
   }
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
-  return checkHealth(gatewayDialUrl(entry), token);
+  return checkHealth(getGatewayUrl(entry), token);
 }
 
 function formatAssistantListRow(

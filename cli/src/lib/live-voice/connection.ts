@@ -33,7 +33,7 @@ import {
   resolveTargetAssistant,
   type AssistantEntry,
 } from "../assistant-config.js";
-import { gatewayDialUrl } from "../runtime-url.js";
+import { getGatewayUrl } from "../runtime-url.js";
 import { getCloudUrl, readCloudToken } from "../cloud-client.js";
 import {
   guardianTokenDueForRenewal,
@@ -97,7 +97,7 @@ export async function resolveLiveVoiceConnection(
     return await resolveCloudConnection(entry);
   }
 
-  const baseUrl = gatewayDialUrl(entry).replace(/\/+$/, "");
+  const baseUrl = getGatewayUrl(entry).replace(/\/+$/, "");
   let parsed: URL;
   try {
     parsed = new URL(baseUrl);

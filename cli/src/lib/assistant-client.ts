@@ -19,7 +19,7 @@
 
 import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
-import { gatewayDialUrl } from "./runtime-url.js";
+import { getGatewayUrl } from "./runtime-url.js";
 import {
   loadGuardianToken,
   refreshGuardianToken,
@@ -46,7 +46,6 @@ const stripTrailingSlashes = (url: string): string => url.replace(/\/+$/, "");
 
 export interface AssistantClientOpts {
   assistantId?: string;
-  runtimeUrl?: string;
   /**
    * When provided alongside `orgId`, the client authenticates with a
    * session token instead of a guardian token.  The session token is
@@ -102,35 +101,18 @@ export class AssistantClient {
     }
 
     this._assistantId = entry.assistantId;
-    const platformManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
-    const platformHost = stripTrailingSlashes(entry.runtimeUrl);
+    const cloudManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
+    const cloudHost = stripTrailingSlashes(entry.runtimeUrl);
 
-    // SECURITY: a cloud credential is account-scoped, far broader than the
-    // per-assistant guardian JWT, so its origin is pinned to the host recorded in
-    // the lockfile. Honoring a URL override here would hand the caller's session
-    // token or `vak_` key to whatever host they named.
-    if (
-      platformManaged &&
-      opts?.runtimeUrl &&
-      stripTrailingSlashes(opts.runtimeUrl) !== platformHost
-    ) {
-      throw new Error(
-        `Refusing to send cloud credentials to '${opts.runtimeUrl}': ` +
-          `assistant '${entry.assistantId}' is hosted at ${platformHost}.`,
-      );
-    }
-
-    this.runtimeUrl = platformManaged
-      ? platformHost
-      : stripTrailingSlashes(opts?.runtimeUrl || gatewayDialUrl(entry));
+    this.runtimeUrl = cloudManaged ? cloudHost : getGatewayUrl(entry);
 
     if (opts?.sessionToken) {
       // Caller supplied the credential: X-Session-Token + Cadet-Organization-Id.
       this.token = opts.sessionToken;
       this.authMode = "session";
       this.orgId = opts.orgId;
-    } else if (platformManaged) {
-      // Platform-managed: no guardian token exists locally, so authenticate with
+    } else if (cloudManaged) {
+      // Cloud-managed: no guardian token exists locally, so authenticate with
       // the stored cloud credential. Resolved on first use because the org id
       // behind it needs a network lookup.
       this.token = undefined;
