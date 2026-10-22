@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination";
-import { routes } from "@/utils/routes";
 
 const navigateMock = mock((..._args: unknown[]) => {});
 mock.module("react-router", () => ({
