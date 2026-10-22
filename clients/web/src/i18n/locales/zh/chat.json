@@ -215,8 +215,6 @@
     "output": "输出",
     "stopCommandAria": "停止命令"
   },
-  "billingErrorBanner": {
-  },
   "cameraDeepLink": {
     "captureFailed": "无法拍摄照片。请重试。",
     "close": "关闭相机",
@@ -591,14 +589,10 @@
     "groupCopied": "群组ID已复制到剪贴板。",
     "groupFailed": "无法复制群组ID。"
   },
-  "creditsUpsellCard": {
-  },
   "csvPreview": {
     "emptyFile": "此文件为空",
     "summary": "{rows, plural, other {# 行}} x {columns, plural, other {# 列}}",
     "summaryTruncated": "{rows, plural, other {# 行}} x {columns, plural, other {# 列}}（已截断）"
-  },
-  "dailyLimitBanner": {
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "我理解相关资产和记忆可能仍会保留",
@@ -771,8 +765,6 @@
     "goToFile": "转到文件",
     "pictureInPicture": "画中画"
   },
-  "lowBalanceBanner": {
-  },
   "maintenanceModeBanner": {
     "body": "您的助手工作区当前已连接到调试终端。在恢复模式下，聊天不可用。",
     "loginHint": "登录 Cadet 平台以退出恢复模式。",
@@ -936,8 +928,6 @@
   },
   "promptSubmission": {
     "noActiveSession": "无活动会话。请重试。"
-  },
-  "providerBillingBanner": {
   },
   "pullRefreshSpinner": {
     "refreshing": "正在刷新"
@@ -1523,8 +1513,6 @@
   "recallLabels": {
     "source": "{source, select, memory {记忆} conversations {对话} workspace {工作区文件} other {{source}}}",
     "depth": "{depth, select, fast {快速搜索} standard {标准搜索} deep {深度搜索} other {搜索}}"
-  },
-  "freeTierDailyLimitBanner": {
   },
   "chatsSettingsModal": {
     "title": "聊天设置",

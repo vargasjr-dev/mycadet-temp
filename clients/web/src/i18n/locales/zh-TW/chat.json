@@ -215,8 +215,6 @@
     "output": "輸出",
     "stopCommandAria": "停止命令"
   },
-  "billingErrorBanner": {
-  },
   "cameraDeepLink": {
     "captureFailed": "無法拍攝該照片。請再試一次。",
     "close": "關閉相機",
@@ -591,14 +589,10 @@
     "groupCopied": "群組 ID 已複製到剪貼簿。",
     "groupFailed": "無法複製群組 ID。"
   },
-  "creditsUpsellCard": {
-  },
   "csvPreview": {
     "emptyFile": "此檔案為空",
     "summary": "{rows, plural, other {# 列}} x {columns, plural, other {# 欄}}",
     "summaryTruncated": "{rows, plural, other {# 列}} x {columns, plural, other {# 欄}} (已截斷)"
-  },
-  "dailyLimitBanner": {
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "我了解相關資產和記憶可能仍會保留",
@@ -771,8 +765,6 @@
     "goToFile": "前往檔案",
     "pictureInPicture": "子母畫面"
   },
-  "lowBalanceBanner": {
-  },
   "maintenanceModeBanner": {
     "body": "您的助理工作區目前已連接至偵錯終端機。在復原模式下，聊天無法使用。",
     "loginHint": "登入 Cadet 平台以結束復原模式。",
@@ -936,8 +928,6 @@
   },
   "promptSubmission": {
     "noActiveSession": "無作用中工作階段。請再試一次。"
-  },
-  "providerBillingBanner": {
   },
   "pullRefreshSpinner": {
     "refreshing": "正在重新整理"
@@ -1523,8 +1513,6 @@
   "recallLabels": {
     "source": "{source, select, memory {記憶} conversations {對話} workspace {工作區檔案} other {{source}}}",
     "depth": "{depth, select, fast {快速搜尋} standard {標準搜尋} deep {深度搜尋} other {搜尋}}"
-  },
-  "freeTierDailyLimitBanner": {
   },
   "chatsSettingsModal": {
     "title": "聊天設定",

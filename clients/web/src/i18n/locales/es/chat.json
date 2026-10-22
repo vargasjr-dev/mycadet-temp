@@ -215,8 +215,6 @@
     "output": "Salida",
     "stopCommandAria": "Detener comando"
   },
-  "billingErrorBanner": {
-  },
   "cameraDeepLink": {
     "captureFailed": "No se pudo tomar esa foto. Inténtalo de nuevo.",
     "close": "Cerrar cámara",
@@ -594,14 +592,10 @@
     "groupCopied": "ID de grupo copiado al portapapeles.",
     "groupFailed": "No se pudo copiar el ID de grupo."
   },
-  "creditsUpsellCard": {
-  },
   "csvPreview": {
     "emptyFile": "Este archivo está vacío",
     "summary": "{rows, plural, one {# fila} other {# filas}} x {columns, plural, one {# columna} other {# columnas}}",
     "summaryTruncated": "{rows, plural, one {# fila} other {# filas}} x {columns, plural, one {# columna} other {# columnas}} (truncado)"
-  },
-  "dailyLimitBanner": {
   },
   "deleteConversationConfirmDialog": {
     "acknowledgment": "Entiendo que los recursos y recuerdos relacionados pueden seguir existiendo",
@@ -773,8 +767,6 @@
     "goToFile": "Ir al archivo",
     "pictureInPicture": "Imagen en imagen"
   },
-  "lowBalanceBanner": {
-  },
   "maintenanceModeBanner": {
     "body": "El espacio de trabajo de tu asistente está conectado actualmente a un terminal de depuración. El chat no está disponible en el modo de recuperación.",
     "loginHint": "Inicia sesión en la plataforma Cadet para salir del modo de recuperación.",
@@ -938,8 +930,6 @@
   },
   "promptSubmission": {
     "noActiveSession": "No hay ninguna sesión activa. Inténtalo de nuevo."
-  },
-  "providerBillingBanner": {
   },
   "pullRefreshSpinner": {
     "refreshing": "Actualizando"
@@ -1505,8 +1495,6 @@
   "recallLabels": {
     "source": "{source, select, memory {Memoria} conversations {Conversaciones} workspace {Archivos del espacio de trabajo} other {{source}}}",
     "depth": "{depth, select, fast {Búsqueda rápida} standard {Búsqueda estándar} deep {Búsqueda profunda} other {Búsqueda}}"
-  },
-  "freeTierDailyLimitBanner": {
   },
   "chatsSettingsModal": {
     "title": "Ajustes de chats",

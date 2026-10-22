@@ -222,7 +222,6 @@
     "output": "Output",
     "stopCommandAria": "Stop command"
   },
-  "billingErrorBanner": {},
   "cameraDeepLink": {
     "captureFailed": "Could not take that photo. Please try again.",
     "close": "Close camera",
@@ -600,13 +599,11 @@
     "groupCopied": "Group ID copied to clipboard.",
     "groupFailed": "Couldn't copy the group ID."
   },
-  "creditsUpsellCard": {},
   "csvPreview": {
     "emptyFile": "This file is empty",
     "summary": "{rows, plural, one {# row} other {# rows}} x {columns, plural, one {# column} other {# columns}}",
     "summaryTruncated": "{rows, plural, one {# row} other {# rows}} x {columns, plural, one {# column} other {# columns}} (truncated)"
   },
-  "dailyLimitBanner": {},
   "deleteConversationConfirmDialog": {
     "acknowledgment": "I understand that related assets and memories may still persist",
     "cancel": "Cancel",
@@ -778,7 +775,6 @@
     "goToFile": "Go to file",
     "pictureInPicture": "Picture in Picture"
   },
-  "lowBalanceBanner": {},
   "maintenanceModeBanner": {
     "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
     "loginHint": "Log in to Cadet Cloud to exit Recovery Mode.",
@@ -944,7 +940,6 @@
   "promptSubmission": {
     "noActiveSession": "No active session. Please try again."
   },
-  "providerBillingBanner": {},
   "pullRefreshSpinner": {
     "refreshing": "Refreshing"
   },
@@ -1524,7 +1519,6 @@
     "source": "{source, select, memory {Memory} conversations {Conversations} workspace {Workspace files} other {{source}}}",
     "depth": "{depth, select, fast {Quick search} standard {Standard search} deep {Deep search} other {Search}}"
   },
-  "freeTierDailyLimitBanner": {},
   "chatsSettingsModal": {
     "title": "Chats Settings",
     "description": "Manage automatic Done marking and chat reply alerts for this assistant across your devices.",
