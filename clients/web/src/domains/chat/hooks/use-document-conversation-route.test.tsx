@@ -88,7 +88,6 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
 mock.module(
   "@/hooks/conversation-queries",
   (): Partial<typeof ConversationQueries> => ({
-    useCanQueryDaemon: () => false,
     useConversationListQuery: () => ({
       conversations: [],
       isLoading: false,

@@ -110,30 +110,22 @@ export function assistantQueryKey(
     : ASSISTANT_QUERY_KEY;
 }
 
-/**
- * The selected platform assistant to resolve. `null` when the selection is
- * not honored (no org id, gateway-auth mode) or names a lockfile-only LOCAL
- * assistant (gateway-based, never registered on the cloud — `getAssistant(id)`
- * would 404). Managed AND platform self-hosted (API `is_local`) assistants
- * ARE valid there — `projectAssistantResult` handles the self-hosted
- * response — and a pre-hydration unknown id passes through for the 404 net.
- */
-function useSelectedCloudAssistantId(): string | null {
-  const resolvedSelectionId = useGatedSelectedAssistantId();
+/** The selection, unless it names a lockfile-only LOCAL assistant (gateway-based, never registered on the cloud — `getAssistant(id)` would 404). Managed AND platform self-hosted (API `is_local`) assistants ARE valid there — `projectAssistantResult` handles the self-hosted response — and a pre-hydration unknown id passes through for the 404 net. */
+function toCloudAssistantId(resolvedSelectionId: string | null): string | null {
   return resolvedSelectionId &&
     !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
     ? resolvedSelectionId
     : null;
 }
 
-function resolveSelectedCloudAssistantIdImperative(): string | null {
-  const resolvedSelectionId = resolveSelectedAssistantId(
-    getActiveOrganizationIdForRequests(),
+function useSelectedCloudAssistantId(): string | null {
+  return toCloudAssistantId(useGatedSelectedAssistantId());
+}
+
+function resolveSelectedCloudAssistantId(): string | null {
+  return toCloudAssistantId(
+    resolveSelectedAssistantId(getActiveOrganizationIdForRequests()),
   );
-  return resolvedSelectionId &&
-    !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
-    ? resolvedSelectionId
-    : null;
 }
 
 /**
@@ -213,7 +205,7 @@ export async function recheckAssistant(
     return queryClient.getQueryData(assistantQueryKey(null));
   }
   const selectedId =
-    assistantIdOverride ?? resolveSelectedCloudAssistantIdImperative() ?? null;
+    assistantIdOverride ?? resolveSelectedCloudAssistantId() ?? null;
   const result = await queryClient.fetchQuery({
     queryKey: assistantQueryKey(selectedId),
     queryFn: () => getAssistant(selectedId ?? undefined),

@@ -9,7 +9,7 @@
  * Each hook spreads a `queryOptions` factory (`conversationListOptions` in
  * `utils/conversation-list-options.ts` for the list caches; the fetchers
  * module for the sidebar's other reads) and adds runtime concerns
- * (`enabled` gating via `useCanQueryDaemon()`, `select` transforms). This
+ * (`enabled` gating via `useIsOrgReady()`, `select` transforms). This
  * co-locates `queryKey` + `queryFn` + `staleTime` in one place so they
  * can be reused across hooks, prefetches, and imperative cache reads.
  *
@@ -70,16 +70,6 @@ import { countUnreadConversationsInList } from "@/utils/conversation-predicates"
 // Stable empty references so consumers don't churn on `??` fallback.
 const EMPTY_CONVERSATIONS: Conversation[] = [];
 const EMPTY_GROUPS: ConversationGroup[] = [];
-
-/**
- * Whether the daemon can be queried. The wake-window gating (the cloud's
- * operational-status poll) died with the lifecycle machine: requests fire
- * whenever the org is ready, and a wake-window 503 surfaces as the query's
- * own error state.
- */
-export function useCanQueryDaemon(): boolean {
-  return useIsOrgReady();
-}
 
 /** What every list hook returns. */
 export interface ConversationListQueryResult {
@@ -154,7 +144,7 @@ function useListQuery(
   filter: ConversationListFilter | null,
   enabled: boolean,
 ): ConversationListQueryResult {
-  const canQuery = useCanQueryDaemon();
+  const canQuery = useIsOrgReady();
   /* An array, not a tuple, so `useQueries` types the results as a list of
      one query kind whether it holds zero entries or one. */
   const queries: ListQueryOptions[] =
@@ -344,7 +334,7 @@ export function useUnreadConversationCountQuery(
   assistantId: string | null,
   enabled: boolean = true,
 ): number | null {
-  const canQuery = useCanQueryDaemon();
+  const canQuery = useIsOrgReady();
   const query = useQuery({
     ...unreadConversationCountOptions(assistantId!),
     enabled: enabled && Boolean(assistantId) && canQuery,
@@ -404,7 +394,7 @@ export function useConversationGroupsQuery(
   isPending: boolean;
   isError: boolean;
 } {
-  const canQuery = useCanQueryDaemon();
+  const canQuery = useIsOrgReady();
   const query = useQuery({
     ...groupsGetOptions({
       path: { assistant_id: assistantId ?? "" },

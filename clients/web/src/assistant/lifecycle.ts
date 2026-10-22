@@ -61,37 +61,36 @@ export function resolveAssistantLifecycleState(
   result: GetAssistantResult,
 ): AssistantResolutionState {
   if (result.ok) {
-    switch (result.data.status) {
-      case "active":
-        return {
-          kind: "active",
-          isLocal: result.data.is_local ?? false,
-          maintenanceMode: result.data.maintenance_mode,
-        };
-      case "initializing":
-        return { kind: "initializing" };
-      case "to_be_deleted":
-        return { kind: "cleaning_up" };
-      default:
-        return {
-          kind: "error",
-          message: `Unexpected assistant status: ${result.data.status}`,
-        };
+    const { status } = result.data;
+    if (status === "active") {
+      // The server's one `active` status splits by hosting: `is_local` marks
+      // a self-hosted runtime (the cloud record is provisioned, the daemon is
+      // the runtime).
+      return result.data.is_local
+        ? { kind: "self_hosted" }
+        : {
+            kind: "active",
+            isLocal: false,
+            maintenanceMode: result.data.maintenance_mode,
+          };
     }
+    if (status === "initializing") {
+      return { kind: "initializing" };
+    }
+    if (status === "to_be_deleted") {
+      return { kind: "cleaning_up" };
+    }
+    return { kind: "error", message: `Unexpected assistant status: ${status}` };
   }
 
+  // Client-only states from here: the server said nothing to serve (404) or
+  // never got a server answer at all.
   if (result.status === 404) {
     return { kind: "auto_hatch" };
   }
-
   if (isTransportShapedError(result.error)) {
-    return {
-      kind: "error",
-      transient: true,
-      message: TRANSPORT_ERROR_MESSAGE,
-    };
+    return { kind: "error", transient: true, message: TRANSPORT_ERROR_MESSAGE };
   }
-
   return {
     kind: "error",
     message: extractErrorMessage(

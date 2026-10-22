@@ -39,10 +39,6 @@ export function ChatPage() {
   const { isError: conversationListIsError, refetch: refetchConversationList } =
     useConversationListQuery(assistantId, shouldRenderChat);
 
-  const retryAssistant = useCallback(() => {
-    void refetchAssistantResolution();
-  }, [refetchAssistantResolution]);
-
   // -------------------------------------------------------------------------
   // Loading guards — auth / assistant lifecycle not yet resolved
   // -------------------------------------------------------------------------
@@ -59,8 +55,8 @@ export function ChatPage() {
     useStuckConnecting(connectingReason);
   const retryStuckConnecting = useCallback(() => {
     resetStuckConnecting();
-    retryAssistant();
-  }, [resetStuckConnecting]);
+    void refetchAssistantResolution();
+  }, [resetStuckConnecting, refetchAssistantResolution]);
 
   // Boot terminal outcome, or `null` while the page is still resolving. A
   // boot in flight is neither a success nor a failure until it settles: the
@@ -115,7 +111,10 @@ export function ChatPage() {
         <p className="text-[var(--content-secondary)]">
           {assistantState.message}
         </p>
-        <Button variant="primary" onClick={retryAssistant}>
+        <Button
+          variant="primary"
+          onClick={() => void refetchAssistantResolution()}
+        >
           {assistantState.transient
             ? t("chatPage.retryNow")
             : t("chatPage.tryAgain")}

@@ -40,10 +40,8 @@ import type { AssistantStateKind } from "@/domains/chat/types";
 import { shouldSuppressGenericChatErrorNotice } from "@/domains/chat/utils/error-classification";
 import { useQueryClient } from "@tanstack/react-query";
 
-import {
-  useCanQueryDaemon,
-  useConversationListQuery,
-} from "@/hooks/conversation-queries";
+import { useConversationListQuery } from "@/hooks/conversation-queries";
+import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useResumeGrace } from "@/hooks/use-resume-grace";
 import { groupsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { resolveLandingConversation } from "@/domains/chat/utils/landing-conversation";
@@ -305,7 +303,7 @@ export function useConversationLoader({
      pod serving. A waking pod 503s every request, so the landing lookups
      wait for the gate rather than spend their retries against it; the
      effect re-runs when the gate opens. */
-  const canQueryDaemon = useCanQueryDaemon();
+  const canQueryDaemon = useIsOrgReady();
   useEffect(() => {
     if (assistantStateKind !== "active") {
       return;

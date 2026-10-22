@@ -38,7 +38,6 @@ function groupsOk(groups: GroupsGetResponse["groups"] = []): GroupsGetResult {
 
 const groupsGetMock = mock(async (): Promise<GroupsGetResult> => groupsOk());
 
-let podIsServing = true;
 let orgIsReady = true;
 
 /* Spread over the real module rather than replacing it: the generated SDK is a
@@ -50,10 +49,6 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
   ...realDaemonSdk,
   conversationsGet: conversationsGetMock,
   groupsGet: groupsGetMock,
-}));
-
-mock.module("@/assistant/operational-status", () => ({
-  useAssistantIsServing: () => podIsServing,
 }));
 
 /* A completed drain posts to the telemetry ingest, which has no listener here
@@ -107,7 +102,6 @@ beforeEach(() => {
   conversationsGetMock.mockClear();
   groupsGetMock.mockClear();
   groupsGetMock.mockImplementation(async () => groupsOk());
-  podIsServing = true;
   orgIsReady = true;
 });
 
@@ -116,7 +110,7 @@ afterEach(() => {
 });
 
 describe("conversation queries · daemon gate", () => {
-  test("fetches when the pod is serving", async () => {
+  test("fetches when the org is ready", async () => {
     renderHook(() => useConversationListQuery(ASSISTANT_ID), { wrapper });
 
     await waitFor(() => {
@@ -124,52 +118,7 @@ describe("conversation queries · daemon gate", () => {
     });
   });
 
-  test("does not fetch while the pod is not serving", async () => {
-    // A waking pod 503s every request, and the list query has a bounded retry
-    // budget. Spending it inside the wake window leaves the query in a
-    // terminal error state that nothing clears, which renders as an assistant
-    // with no conversations.
-    podIsServing = false;
-
-    renderHook(() => useConversationListQuery(ASSISTANT_ID), { wrapper });
-    await settle();
-
-    expect(conversationsGetMock).not.toHaveBeenCalled();
-  });
-
-  test("a call site passing enabled cannot open the gate itself", async () => {
-    // Several call sites mount this query with a hardcoded `true`. Since every
-    // observer shares one query key, a gate applied at the call sites would be
-    // defeated by whichever mount passed no gate of its own.
-    podIsServing = false;
-
-    renderHook(() => useConversationListQuery(ASSISTANT_ID, true), { wrapper });
-    await settle();
-
-    expect(conversationsGetMock).not.toHaveBeenCalled();
-  });
-
-  test("fetches once a waking pod comes up", async () => {
-    // The recovery edge: flipping `enabled` back to true is what makes
-    // TanStack Query re-issue a fetch that was never allowed to run.
-    podIsServing = false;
-
-    const { rerender } = renderHook(
-      () => useConversationListQuery(ASSISTANT_ID),
-      { wrapper },
-    );
-    await settle();
-    expect(conversationsGetMock).not.toHaveBeenCalled();
-
-    podIsServing = true;
-    rerender();
-
-    await waitFor(() => {
-      expect(conversationsGetMock).toHaveBeenCalled();
-    });
-  });
-
-  test("still honors org readiness", async () => {
+  test("does not fetch before the org is ready", async () => {
     // The gate is an AND of both preconditions, so the pod being up must not
     // let a request through before the org header is available.
     orgIsReady = false;
@@ -241,7 +190,7 @@ describe("section list query · no filter, no query", () => {
    it is false both for a query that is gated and for one that has failed. */
 describe("groups query · resolution state", () => {
   test("a gated query reads as pending, never as loaded", async () => {
-    podIsServing = false;
+    orgIsReady = false;
 
     const { result } = renderHook(
       () => useConversationGroupsQuery(ASSISTANT_ID),

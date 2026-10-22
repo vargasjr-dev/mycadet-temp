@@ -87,14 +87,6 @@ export function SidebarShell({
     prefetchHref: mobileBackHref,
   });
 
-  // In the Electron shell the macOS window controls (traffic lights) sit in an
-  // inline title-bar zone at the top of the renderer (see `ChatLayoutHeader` /
-  // the desktop app's `MAIN_TRAFFIC_LIGHT_POSITION`). Unlike chat, this shell
-  // has no inline header row, so reserve top space to clear the controls AND
-  // match the chat layout, whose sidebar/content sits below the 44px title bar
-  // plus the 16px content inset (`p-4`) — i.e. 60px (3.75rem) from the top.
-  // Off Electron it stays at the standard 1rem inset.
-
   const mobileBackLabel = isMenuRoute
     ? t("sidebarShell.backFrom", { title })
     : t("sidebarShell.backToMenu", { title });
