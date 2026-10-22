@@ -30,10 +30,8 @@ import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,
   endpointHost,
-  IngressConfigSchema,
   isNgrokEndpointOnlineError,
   loadNgrokDomain,
-  maybeStartNgrokTunnel,
   ngrokHolderPid,
   ngrokOnlineEndpoint,
   NGROK_TUNNEL_META,
@@ -44,8 +42,6 @@ import {
 import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
   selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
@@ -55,7 +51,6 @@ import {
   CLOUDFLARE_TUNNEL_META,
 } from "./tunnels/cloudflare.js";
 import {
-  startTailscaleServe,
   TAILSCALE_PROVIDER,
   TAILSCALE_TUNNEL_META,
 } from "./tunnels/tailscale.js";
@@ -184,13 +179,30 @@ export interface ProviderStopOptions {
 export interface TunnelProvider {
   run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
   stop(opts: ProviderStopOptions): Promise<boolean>;
+  /**
+   * Establish the provider's tunnel at the app server's port, resolving the
+   * established URL — or null when its own gates declined. Absent on a
+   * provider whose runs are foreground-only: the restore ensures nothing.
+   */
+  start?(opts: TunnelStartOptions): Promise<string | null>;
 }
 
+// The entries read the provider modules' bindings at call time (the #489
+// getter lesson): wake/upgrade tests re-mock the provider modules after
+// this module evaluates, and captured objects would bypass the re-mocks.
 const providers: Record<TunnelProviderName, TunnelProvider> = {
-  ngrok: NGROK_PROVIDER,
-  cloudflare: CLOUDFLARE_PROVIDER,
-  tailscale: TAILSCALE_PROVIDER,
-  cadet: CADET_PROVIDER,
+  get ngrok() {
+    return NGROK_PROVIDER;
+  },
+  get cloudflare() {
+    return CLOUDFLARE_PROVIDER;
+  },
+  get tailscale() {
+    return TAILSCALE_PROVIDER;
+  },
+  get cadet() {
+    return CADET_PROVIDER;
+  },
 };
 const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
 
@@ -686,7 +698,7 @@ export async function restoreAppServerAndAutoTunnel(
 }
 
 /** The app-server-facing start contract each provider's restore piece takes. */
-interface TunnelStartOptions {
+export interface TunnelStartOptions {
   port: number;
   workspaceDir: string;
   assistantId?: string;
@@ -697,77 +709,6 @@ interface TunnelStartOptions {
  * server's port, resolving the established URL — or null when its own gates
  * declined.
  */
-type TunnelStart = (opts: TunnelStartOptions) => Promise<string | null>;
-
-/**
- * The tailnet's start piece. The workspace's `lastTunnel` record names the
- * tunnel whose URL the app server fronts: a tailnet run re-establishes the
- * serve at the app server's port and re-saves the URL a gateway start
- * cleared, which is the whole recovery. A pairing-only tailnet run leaves
- * `lastTunnel` on the older public provider (that run deliberately did not
- * repoint it), so nothing re-establishes here. Quiet: a wake without a
- * running tailscale daemon must not fail the restore.
- */
-async function ensureTailnetServe({
-  port,
-  workspaceDir,
-  assistantId,
-}: TunnelStartOptions): Promise<string | null> {
-  let lastTunnel: ReturnType<typeof parseTunnelRecord> = null;
-  try {
-    const ingress = loadRawConfig(workspaceDir).ingress as
-      | Record<string, unknown>
-      | undefined;
-    lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
-  } catch {
-    lastTunnel = null;
-  }
-  if (lastTunnel?.provider !== "tailscale") {
-    return null;
-  }
-  try {
-    const info = await startTailscaleServe({
-      port,
-      workspaceDir,
-      assistantId,
-    });
-    return info.publicUrl;
-  } catch (err) {
-    console.warn(
-      `   Could not ensure the tailnet tunnel: ${err instanceof Error ? err.message : String(err)}`,
-    );
-    return null;
-  }
-}
-
-/**
- * The default provider's start piece: the same gates (containerized deploys,
- * webhook integrations, a saved foreign URL) and detached-spawn ownership —
- * the ChildProcess is what the root lockfile's pid tracking records; it
- * saves the URL and notifies the gateway itself, so the spawn returns
- * nothing to await here.
- */
-async function startNgrokTunnel({
-  port,
-  workspaceDir,
-  assistantId,
-}: TunnelStartOptions): Promise<string | null> {
-  await maybeStartNgrokTunnel(port, workspaceDir, assistantId);
-  return null;
-}
-
-/**
- * Each provider's restore-path start piece, keyed by the provider the root
- * lockfile's `tunnel` record names. Partial on purpose: a provider without a
- * start piece (a foreground-only run, a coming-soon provider) ensures
- * nothing. The entries are this module's own wrappers, so the provider
- * modules' bindings are read at call time — re-mocked modules in tests are
- * honored.
- */
-const TUNNELS: Partial<Record<TunnelProviderName, { start: TunnelStart }>> = {
-  ngrok: { start: startNgrokTunnel },
-  tailscale: { start: ensureTailnetServe },
-};
 
 /**
  * Ensure the tunnel the lockfile expects is started at the app server.
@@ -791,7 +732,7 @@ async function ensureTunnel(
     return null;
   }
   return (
-    (await TUNNELS[expected.provider]?.start({
+    (await providers[expected.provider]?.start?.({
       port: targetPort,
       workspaceDir,
       assistantId,

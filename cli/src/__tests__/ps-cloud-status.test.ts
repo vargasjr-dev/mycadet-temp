@@ -242,15 +242,19 @@ describe("cadet ps — platform status line", () => {
       status: "healthy",
       detail: null,
     }));
-    // The tunnel fronts Alice (recorded id); the edge records no assistant.
+    // The tunnel fronts the app server, no assistant; the edge records one.
     readRootProcessesMock.mockReturnValue({
       tunnel: {
         pid: 4242,
         provider: "ngrok",
         startedAt: "2026-10-11T00:00:00.000Z",
+      },
+      app: {
+        pid: 77,
+        port: 7841,
+        startedAt: "2026-10-11T00:00:00.000Z",
         assistantId: "assistant-123",
       },
-      app: { pid: 77, port: 7841, startedAt: "2026-10-11T00:00:00.000Z" },
     });
 
     await listAllAssistants(false);

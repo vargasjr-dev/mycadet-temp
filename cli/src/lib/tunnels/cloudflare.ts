@@ -247,7 +247,6 @@ export async function runCloudflareTunnel(
     stampRootProcess("tunnel", {
       pid: child.pid,
       provider: "cloudflare",
-      assistantId: opts.assistantId,
       startedAt: new Date().toISOString(),
     });
   console.log("Ingress URL saved to config.");

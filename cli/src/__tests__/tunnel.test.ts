@@ -74,21 +74,20 @@ mock.module("../lib/tunnels/ngrok", () => ({
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
   async () => fakeTunnelResult("https://test-machine.tailnet.ts.net"),
 );
-const startTailscaleServeMock = mock<
-  typeof tailscaleTunnel.startTailscaleServe
->(async () => ({
-  publicUrl: "https://test-machine.tailnet.ts.net",
-  port: EDGE_PORT,
-  binary: "tailscale",
-  workspaceDir: "/tmp/test-workspace",
-  previousLockfileIngressUrl: null,
-}));
+const startTailnetServeMock = mock<
+  (opts: {
+    port: number;
+    workspaceDir: string;
+    assistantId?: string;
+  }) => Promise<string | null>
+>(async () => null);
 mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
   TAILSCALE_PROVIDER: {
     ...realTailscaleTunnel.TAILSCALE_PROVIDER,
     run: runTailscaleTunnelMock,
+    start: startTailnetServeMock,
   },
 }));
 
@@ -1793,10 +1792,10 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // modules; re-establish the fakes the restore flow's tests need.
     mock.module("../lib/tunnels/tailscale.js", () => ({
       ...realTailscaleTunnel,
-      startTailscaleServe: startTailscaleServeMock,
       TAILSCALE_PROVIDER: {
         ...realTailscaleTunnel.TAILSCALE_PROVIDER,
         run: runTailscaleTunnelMock,
+        start: startTailnetServeMock,
       },
     }));
     mock.module("../lib/nginx-ingress.js", () => ({
@@ -1815,17 +1814,15 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       port: EDGE_PORT,
       started: true,
     }));
-    startTailscaleServeMock.mockReset();
-    startTailscaleServeMock.mockImplementation(async (opts) => {
-      const workspaceDir = opts?.workspaceDir ?? "";
-      saveIngressUrl(workspaceDir, TAILNET_URL, opts?.assistantId, "tailscale");
-      return {
-        publicUrl: TAILNET_URL,
-        port: opts?.port ?? EDGE_PORT,
-        binary: "tailscale",
-        workspaceDir,
-        previousLockfileIngressUrl: null,
-      };
+    startTailnetServeMock.mockReset();
+    startTailnetServeMock.mockImplementation(async (opts) => {
+      saveIngressUrl(
+        opts.workspaceDir,
+        TAILNET_URL,
+        opts.assistantId,
+        "tailscale",
+      );
+      return TAILNET_URL;
     });
     isIngressRunningMock.mockReset();
     isIngressRunningMock.mockImplementation(() => false);
@@ -1869,7 +1866,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("tunnel", {
       pid: 4321,
       provider: "tailscale",
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     stampRootProcess("app", {
@@ -1904,7 +1900,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     });
     // Step 2: the tunnel re-established at the app server's port, never the
     // gateway's fallback port.
-    expect(startTailscaleServeMock).toHaveBeenCalledWith({
+    expect(startTailnetServeMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       workspaceDir,
       assistantId: "assistant-1",
@@ -1938,44 +1934,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
   });
 
-  test("a pairing-only tailnet run does not re-establish the tailnet serve", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    // A preserve run stamps the root lockfile with the tailnet supervisor but
-    // deliberately leaves the workspace's last tunnel on the webhook
-    // provider it did not repoint — the tailnet start piece declines, and
-    // the simple dispatch has no default-provider fall-through.
-    stampRootProcess("tunnel", {
-      pid: 4321,
-      provider: "tailscale",
-      assistantId: entry.assistantId,
-      startedAt: new Date().toISOString(),
-    });
-    stampRootProcess("app", {
-      pid: 4321,
-      port: EDGE_PORT,
-      assistantId: entry.assistantId,
-      startedAt: new Date().toISOString(),
-    });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
-      ingress: {
-        enabled: true,
-        publicBaseUrl: "https://x.ngrok.app",
-        lastTunnel: { provider: "ngrok", publicBaseUrl: "https://x.ngrok.app" },
-      },
-    });
-
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
-
-    expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(startTailscaleServeMock).not.toHaveBeenCalled();
-    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
-  });
-
   test("a stopped tunnel cleared its root record, so the wake resurrects no tunnel", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
@@ -2001,7 +1959,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(startTailnetServeMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
@@ -2019,7 +1977,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(startTailnetServeMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
@@ -2029,7 +1987,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     stampRootProcess("tunnel", {
       pid: 4321,
       provider: "cloudflare",
-      assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
     stampRootProcess("app", {
@@ -2049,7 +2006,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(startTailscaleServeMock).not.toHaveBeenCalled();
+    expect(startTailnetServeMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 });

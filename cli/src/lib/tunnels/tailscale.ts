@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  INGRESS_LAST_TUNNEL_KEY,
+  parseTunnelRecord,
+} from "@mycadet/service-contracts/ingress";
 import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
@@ -413,7 +417,6 @@ export async function runTailscaleTunnel(
   stampRootProcess("tunnel", {
     pid: process.pid,
     provider: "tailscale",
-    assistantId: opts.assistantId,
     startedAt: new Date().toISOString(),
   });
   const teardown = (): void => {
@@ -511,7 +514,7 @@ export async function stopTailscaleTunnel(
     const state = stoppedTailscaleStateSchema.parse(
       loadRawConfig(opts.workspaceDir),
     ).ingress;
-    const assistantId = opts.assistantId ?? opts.record.assistantId;
+    const assistantId = opts.assistantId;
     retractServeUrl(
       {
         assistantId,
@@ -526,4 +529,40 @@ export async function stopTailscaleTunnel(
 export const TAILSCALE_PROVIDER: TunnelProvider = {
   run: runTailscaleTunnel,
   stop: stopTailscaleTunnel,
+  /**
+   * The tailnet's start piece. The workspace's `lastTunnel` record names the
+   * tunnel whose URL the app server fronts: a tailnet run re-establishes the
+   * serve at the app server's port and re-saves the URL a gateway start
+   * cleared, which is the whole recovery. A pairing-only tailnet run leaves
+   * `lastTunnel` on the older public provider (that run deliberately did not
+   * repoint it), so nothing re-establishes here. Quiet: a wake without a
+   * running tailscale daemon must not fail the restore.
+   */
+  start: async ({ port, workspaceDir, assistantId }) => {
+    let lastTunnel: ReturnType<typeof parseTunnelRecord> = null;
+    try {
+      const ingress = loadRawConfig(workspaceDir).ingress as
+        | Record<string, unknown>
+        | undefined;
+      lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
+    } catch {
+      lastTunnel = null;
+    }
+    if (lastTunnel?.provider !== "tailscale") {
+      return null;
+    }
+    try {
+      const info = await startTailscaleServe({
+        port,
+        workspaceDir,
+        assistantId,
+      });
+      return info.publicUrl;
+    } catch (err) {
+      console.warn(
+        `   Could not ensure the tailnet tunnel: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return null;
+    }
+  },
 };

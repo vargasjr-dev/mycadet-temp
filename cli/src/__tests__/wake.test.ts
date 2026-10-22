@@ -153,13 +153,20 @@ mock.module("../lib/local", () => ({
   startCes: startCesMock,
 }));
 
-const maybeStartNgrokTunnelMock = mock<typeof ngrok.maybeStartNgrokTunnel>(
-  async () => null,
-);
+const ngrokStartMock = mock<
+  (opts: {
+    port: number;
+    workspaceDir: string;
+    assistantId?: string;
+  }) => Promise<string | null>
+>(async () => null);
 
 mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
-  maybeStartNgrokTunnel: maybeStartNgrokTunnelMock,
+  NGROK_PROVIDER: {
+    ...realNgrok.NGROK_PROVIDER,
+    start: ngrokStartMock,
+  },
 }));
 
 const realIngressConfig = { ...ingressConfig };
@@ -296,8 +303,8 @@ beforeEach(() => {
   resetGuardianBootstrapMock.mockResolvedValue(undefined);
   leaseGuardianTokenMock.mockReset();
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianTokenData());
-  maybeStartNgrokTunnelMock.mockReset();
-  maybeStartNgrokTunnelMock.mockResolvedValue(null);
+  ngrokStartMock.mockReset();
+  ngrokStartMock.mockResolvedValue(null);
   loadRawConfigMock.mockReset();
   loadRawConfigMock.mockReturnValue({});
   ensureAppServerMock.mockReset();
@@ -918,14 +925,10 @@ describe("cadet wake — app server restore", () => {
     });
   }
 
-  function stampRecordedTunnel(
-    provider: "ngrok" | "tailscale",
-    assistantId = "local-assistant",
-  ): void {
+  function stampRecordedTunnel(provider: "ngrok" | "tailscale"): void {
     assistantConfig.stampRootProcess("tunnel", {
       pid: 4321,
       provider,
-      assistantId,
       startedAt: new Date().toISOString(),
     });
   }
@@ -942,11 +945,11 @@ describe("cadet wake — app server restore", () => {
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
     });
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7840,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7840,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
 
@@ -962,11 +965,11 @@ describe("cadet wake — app server restore", () => {
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
     });
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7840,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7840,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
 
@@ -978,11 +981,10 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
-    stampRecordedTunnel("ngrok", "docker-1");
+    stampRecordedTunnel("ngrok");
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
     try {
@@ -995,11 +997,11 @@ describe("cadet wake — app server restore", () => {
       });
       // Container wakes run the same auto-tunnel as local wakes (docker
       // parity); the spawned agent records itself in the root lockfile.
-      expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-        7840,
-        defaultWorkspace,
-        "docker-1",
-      );
+      expect(ngrokStartMock).toHaveBeenCalledWith({
+        port: 7840,
+        workspaceDir: defaultWorkspace,
+        assistantId: "docker-1",
+      });
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
     } finally {
       if (originalWorkspaceDir === undefined) {
@@ -1061,7 +1063,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     isIngressRunningMock.mockReturnValue(true);
@@ -1094,7 +1095,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
@@ -1140,7 +1140,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
@@ -1174,19 +1173,17 @@ describe("cadet wake — app server restore", () => {
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
     // The edge is stopped, so its gatewayPort record is gone; only the saved
-    // publicBaseUrl and its owner's `ingressUrl` say whose endpoint this is.
+    // publicBaseUrl names whose endpoint this is.
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://other.example.com",
     });
     loadAllAssistantsMock.mockReturnValue([
       {
         assistantId: "docker-2",
         runtimeUrl: "http://localhost:8030",
         cloud: "docker",
-        ingressUrl: "https://assistant.example.com",
       },
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
@@ -1216,7 +1213,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
@@ -1245,7 +1241,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     loadRawConfigMock.mockReturnValue(enabledConfig);
     stampRecordedAppServer("docker-1");
@@ -1300,8 +1295,8 @@ describe("cadet wake — app server restore", () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
     process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    // Tunneled before the lockfile mirror existed: publicBaseUrl is saved but
-    // no entry carries `ingressUrl`. The sole container still owns it.
+    // Tunneled before root-process tracking existed: publicBaseUrl is saved
+    // with no record naming its owner. The sole container still owns it.
     resolveTargetAssistantMock.mockReturnValue({
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
@@ -1351,7 +1346,6 @@ describe("cadet wake — app server restore", () => {
         assistantId: "docker-2",
         runtimeUrl: "http://localhost:8030",
         cloud: "docker",
-        ingressUrl: "https://assistant.example.com",
       },
     ]);
     loadRawConfigMock.mockReturnValue(enabledConfig);
@@ -1380,7 +1374,6 @@ describe("cadet wake — app server restore", () => {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:7930",
       cloud: "docker",
-      ingressUrl: "https://assistant.example.com",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -1405,11 +1398,11 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7830,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
   });
 
   test("a wake with no recorded app server or tunnel skips the edge and the tunnel", async () => {
@@ -1418,7 +1411,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(maybeStartNgrokTunnelMock).not.toHaveBeenCalled();
+    expect(ngrokStartMock).not.toHaveBeenCalled();
   });
 
   test("a running edge is rebuilt through ensureAppServer, never adopted at its recorded port", async () => {
@@ -1444,11 +1437,11 @@ describe("cadet wake — app server restore", () => {
       workspaceDir: workspaceDirOf(tempDir),
       gatewayPort: 7830,
     });
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7840,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7840,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
   });
 
   test("a failed rebuild keeps tunneling the SPA edge that is still running", async () => {
@@ -1473,11 +1466,11 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7845,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7845,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("127.0.0.1:7845"),
     );
@@ -1501,11 +1494,11 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7830,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
   });
 
   test("nginx-missing falls back to the gateway-port tunnel with a warning", async () => {
@@ -1530,11 +1523,11 @@ describe("cadet wake — app server restore", () => {
         "Run `cadet tunnel --help` to rebuild the app server.",
       ),
     );
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7830,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
   });
 
@@ -1599,11 +1592,11 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7841,
-      workspaceDirOf(tempDir),
-      "local-assistant",
-    );
+    expect(ngrokStartMock).toHaveBeenCalledWith({
+      port: 7841,
+      workspaceDir: workspaceDirOf(tempDir),
+      assistantId: "local-assistant",
+    });
   });
 
   describe("--all", () => {

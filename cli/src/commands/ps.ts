@@ -606,12 +606,13 @@ interface RootManagedRow {
 /**
  * Rows for the CLI-managed processes recorded at the lockfile root: the
  * `tunnel` agent and the `app` nginx edge. Pids are liveness-checked so a
- * stale entry reads as not running rather than as a lie. Each row carries the
- * assistant it fronts so the listing can nest it under that assistant, and
- * the INFO column leads with the URL the process serves — the tunnel's
- * public URL, the edge's loopback listen URL — the same way assistant rows
- * lead with their runtime URL. The app entry may carry only its built-sha
- * stamp between runs; such an entry reports no row.
+ * stale entry reads as not running rather than as a lie. The edge carries
+ * the assistant it fronts; the tunnel fronts the App Server, not an
+ * assistant, so its row renders unattributed. The INFO column leads with
+ * the URL the process serves — the tunnel's public URL, the edge's loopback
+ * listen URL — the same way assistant rows lead with their runtime URL. The
+ * app entry may carry only its built-sha stamp between runs; such an entry
+ * reports no row.
  */
 async function getRootManagedRows(): Promise<RootManagedRow[]> {
   const { tunnel, app } = readRootProcesses();
@@ -623,7 +624,6 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
       .filter(Boolean)
       .join(" | ");
     rows.push({
-      assistantId: tunnel.assistantId,
       row: {
         name: tunnel.provider ?? "unknown provider",
         type: TUNNEL_TYPE,
@@ -735,7 +735,6 @@ export async function printRootProcessDetail(
     detailLine("PID:", String(tunnel.pid));
     detailLine("Provider:", provider ?? DEFAULT_TUNNEL_PROVIDER);
     detailLine("URL:", tunnel.publicUrl);
-    detailLine("Assistant:", assistantLabelFor(tunnel.assistantId));
     if ((provider ?? DEFAULT_TUNNEL_PROVIDER) === "ngrok") {
       detailLine("Reserved domain:", loadNgrokDomain());
     }

@@ -303,8 +303,6 @@ export const TunnelProcessRecordSchema = z.object({
   pid: z.number(),
   /** Which tunnel provider owns the process. */
   provider: z.enum(TUNNEL_PROVIDERS),
-  /** The assistant the process fronts, so `cadet ps` can nest the row. */
-  assistantId: z.string().optional(),
   startedAt: z.string(),
   /** The public URL the tunnel agent serves. */
   publicUrl: z.string().optional(),

@@ -7,7 +7,6 @@ import {
 
 import {
   loadAllAssistants,
-  lookupAssistantByIdentifier,
   readRootProcesses,
 } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
@@ -403,20 +402,16 @@ async function offerStopUntrackedNgrokHolder(): Promise<boolean> {
 }
 
 /**
- * The workspace the recorded tunnel's edge fronts — the recorded assistant's
- * own workspace when it resolves, the default workspace otherwise (container
- * assistants share it).
+ * The workspace the tunnel fronts — the same resolution the start flow uses
+ * (the active, or the sole locally-reachable, assistant). Falls back to the
+ * default workspace when nothing resolves locally.
  */
-function recordedTunnelWorkspace(): string {
-  const record = readRootProcesses().tunnel;
-  if (record?.assistantId) {
-    const result = lookupAssistantByIdentifier(record.assistantId);
-    if (result.status === "found") {
-      const target = toLocalTunnelTarget(result.entry);
-      if (target) return target.workspaceDir;
-    }
+function tunnelWorkspace(): string {
+  try {
+    return resolveLocalTunnelTarget().workspaceDir;
+  } catch {
+    return getDefaultWorkspaceDir();
   }
-  return getDefaultWorkspaceDir();
 }
 
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
@@ -434,7 +429,7 @@ async function stopTunnelFlow(): Promise<void> {
     );
     return;
   }
-  const stopped = await stopTunnelProcess(recordedTunnelWorkspace());
+  const stopped = await stopTunnelProcess(tunnelWorkspace());
   console.log(
     stopped
       ? "Tunnel stopped. nginx and the saved domain are unchanged."
