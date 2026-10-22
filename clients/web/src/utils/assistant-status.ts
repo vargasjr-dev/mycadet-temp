@@ -1,13 +1,14 @@
 import type { AssistantState } from "@/assistant/types";
 import type { AssistantStatus } from "@/runtime/is-electron";
-import type { SessionStatus } from "@/stores/session-status";
 import type { TurnPhase } from "@/domains/chat/turn-store";
 
 export interface AssistantStatusInputs {
   /** Lifecycle phase the assistant is in (`useAssistantLifecycleStore`). */
   lifecycleKind: AssistantState["kind"];
-  /** Platform-session auth state (`useAuthStore`). */
-  sessionStatus: SessionStatus;
+  /** Session bits from the gateway-session seam. */
+  sessionSettled: boolean;
+  /** Whether a user is signed in (cloud or local gateway). */
+  sessionLive: boolean;
   /** Whether the always-on SSE event stream is currently connected. */
   isSSEConnected: boolean;
   /** Phase of the active chat turn (`useTurnStore`). */
@@ -31,13 +32,16 @@ export interface AssistantStatusInputs {
  */
 export function deriveAssistantStatus({
   lifecycleKind,
-  sessionStatus,
+  sessionSettled,
+  sessionLive,
   isSSEConnected,
   turnPhase,
 }: AssistantStatusInputs): AssistantStatus {
-  // Auth is the outermost gate: without an authenticated session the renderer
-  // can't reach the assistant on the user's behalf at all.
-  if (sessionStatus === "unauthenticated") {
+  // Auth is the outermost gate: a settled probe with no live session means
+  // the renderer can't reach the assistant on the user's behalf at all. An
+  // unsettled probe is still booting rather than failing, so it falls
+  // through to disconnected below.
+  if (!sessionLive && sessionSettled) {
     return "authFailed";
   }
 
@@ -50,7 +54,7 @@ export function deriveAssistantStatus({
   // Session still settling, or the assistant hasn't reached `active` yet
   // (loading / initializing / hosted-but-not-connected):
   // there's no live data plane, so the honest state is disconnected.
-  if (sessionStatus === "initializing" || lifecycleKind !== "active") {
+  if (!sessionLive || lifecycleKind !== "active") {
     return "disconnected";
   }
 

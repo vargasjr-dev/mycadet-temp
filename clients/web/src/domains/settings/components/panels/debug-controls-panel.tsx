@@ -9,9 +9,8 @@ import { RecoveryModeControls } from "@/domains/settings/components/recovery-mod
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
-import { isCadetStaff } from "@/lib/auth/staff";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { clearConsentForUser } from "@/lib/consent/consent-persistence";
 import { routes } from "@/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
@@ -20,19 +19,20 @@ import { toast } from "@mycadet/design-library/components/toast";
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
   const navigate = useNavigate();
-  const user = useAuthStore.use.user();
+  const isStaff = useGatewaySessionStore.use.isStaff();
+  const identityKey = useGatewaySessionStore.use.identityKey();
   const cloudGate = useCloudGate();
-  const showInternalControls = isCadetStaff(user);
+  const showInternalControls = isStaff;
 
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
 
   const handleReplayOnboarding = useCallback(() => {
-    clearConsentForUser(user?.id ?? null);
+    clearConsentForUser(identityKey);
     toast.success(t("debugControlsPanel.onboardingClearedToast"));
     navigate(routes.onboarding.privacy);
-  }, [navigate, t, user?.id]);
+  }, [navigate, t, identityKey]);
 
   const fetchAssistant = useCallback(
     async (force?: boolean) => {

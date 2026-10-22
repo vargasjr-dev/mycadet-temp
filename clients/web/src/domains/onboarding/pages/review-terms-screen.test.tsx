@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+// The graph loads the real auth-store (via native-auth), whose module
+// named-imports restoreConsentForUser — bun's link check runs against the
+// FACTORY's keys, so the real exports ride under the overrides.
+import * as realConsentPersistence from "@/lib/consent/consent-persistence";
 
 // react-router: capture navigate() targets.
 const navigateMock = mock((..._args: unknown[]) => {});
@@ -35,6 +39,7 @@ mock.module("@/domains/onboarding/prefs", () => ({
 
 const saveConsentMock = mock((_args: unknown) => {});
 mock.module("@/lib/consent/consent-persistence", () => ({
+  ...realConsentPersistence,
   saveConsent: saveConsentMock,
   PRIVACY_CONSENT_VERSION: "2026-06-22",
   TOS_CONSENT_VERSION: "2026-06-08",
@@ -44,11 +49,10 @@ mock.module("@/lib/auth/hard-navigate", () => ({
   hardNavigate: mock(() => {}),
 }));
 mock.module("@/runtime/is-electron", () => ({ isElectron: () => true }));
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    use: { user: () => ({ id: "user-1" }), logout: () => mock(async () => {}) },
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: {
+    use: { identityKey: () => "user-1", logout: () => mock(async () => {}) },
   },
-  useHasCloudSession: () => true,
 }));
 
 // Light passthroughs for layout/design-library so the screen renders in happy-dom.

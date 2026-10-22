@@ -30,11 +30,7 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import {
-  useAuthStore,
-  useIsSessionInitializing,
-  useHasCloudSession,
-} from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -139,9 +135,10 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const isSessionInitializing = useIsSessionInitializing();
-  const hasCloudSession = useHasCloudSession();
+  const settled = useGatewaySessionStore.use.settled();
+  const live = useGatewaySessionStore.use.live();
+  const hasCloudSession = useGatewaySessionStore.use.cloudLive();
+  const isSessionInitializing = !settled;
   // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
   // on non-chat routes (e.g. Settings) where ChatLayout isn't mounted.
@@ -149,7 +146,7 @@ export function RootLayout() {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
   useAssistantLifecycle({
-    sessionStatus,
+    sessionLive: live,
     hasCloudSession,
   });
   useGuardianRepairRoute();
@@ -180,8 +177,7 @@ export function RootLayout() {
     (typeof globalThis.location === "undefined"
       ? null
       : globalThis.location.href);
-  const notificationScopeId =
-    sessionStatus === "authenticated" && activeAssistant
+  const notificationScopeId = live && activeAssistant
       ? resolveAssistantAvatarOwnerScopeId(
           activeAssistant,
           requestOrganizationId,
@@ -244,10 +240,10 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    if (sessionStatus === "authenticated" && !assistantsHydrated) {
+    if (live && !assistantsHydrated) {
       return null;
     }
-    if (sessionStatus !== "authenticated") {
+    if (!live) {
       return [];
     }
     return assistants
@@ -268,7 +264,7 @@ export function RootLayout() {
     assistantsHydrated,
     connectionFallback,
     requestOrganizationId,
-    sessionStatus,
+    live,
   ]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {

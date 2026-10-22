@@ -194,7 +194,7 @@ function makeQueryClient(): QueryClient {
 }
 
 const baseInputs = {
-  sessionStatus: "authenticated" as const,
+  sessionLive: true,
   hasCloudSession: true,
 };
 
@@ -358,7 +358,7 @@ describe("lifecycleService — bootstrap branches", () => {
     // Now flip the session unauthenticated and reconcile.
     lifecycleService.setInputs({
       ...baseInputs,
-      sessionStatus: "unauthenticated",
+      sessionLive: false,
       queryClient: makeQueryClient(),
     });
     await lifecycleService.respondToInputs();
@@ -497,7 +497,7 @@ describe("lifecycleService — bootstrap branches", () => {
     });
   });
 
-  test("gateway-auth mode does NOT reset on a cloud sessionStatus flip to unauthenticated", async () => {
+  test("gateway-auth mode does NOT reset on a cloud sessionLive drop to false", async () => {
     // Local (gateway) and platform are independent session authorities:
     // a cloud identity loss must not tear down a local lifecycle.
     isGatewayAuthModeMock.mockImplementation(() => true);
@@ -518,7 +518,7 @@ describe("lifecycleService — bootstrap branches", () => {
     // gateway authority drives the lifecycle, so no reset happens.
     lifecycleService.setInputs({
       ...baseInputs,
-      sessionStatus: "unauthenticated",
+      sessionLive: false,
       queryClient: makeQueryClient(),
     });
     await lifecycleService.respondToInputs();
@@ -534,7 +534,7 @@ describe("lifecycleService — bootstrap branches", () => {
     );
   });
 
-  test("platform mode (not gateway-auth) still resets on a sessionStatus flip to unauthenticated", async () => {
+  test("platform mode (not gateway-auth) still resets on a sessionLive drop to false", async () => {
     // Drive into an active state through the cloud path.
     getAssistantMock.mockImplementationOnce(async () => ({
       ok: true,
@@ -558,7 +558,7 @@ describe("lifecycleService — bootstrap branches", () => {
     // Platform identity loss (not gateway-auth) still resets the lifecycle.
     lifecycleService.setInputs({
       ...baseInputs,
-      sessionStatus: "unauthenticated",
+      sessionLive: false,
       queryClient: makeQueryClient(),
     });
     await lifecycleService.respondToInputs();

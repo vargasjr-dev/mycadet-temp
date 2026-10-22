@@ -17,7 +17,7 @@
  *   way round, and anything missing or unparseable falls back to the shipped
  *   default, so what the sliders draw is what the gate is judging against.
  * - The account that tuned it is stored beside it. A restored preference is
- *   only ever applied to the account it belongs to: `claimForUser` drops it
+ *   only ever applied to the account it belongs to: `claimForIdentity` drops it
  *   for anyone else, so a shared browser never hands one person's thresholds
  *   to the next, whether the previous session was signed out of or expired.
  * - Cross-tab updates: the persist middleware doesn't sync across tabs on its
@@ -68,12 +68,12 @@ export interface CameraGateDebugState {
   /** What the sliders hold. Always a complete set, defaults included. */
   overrides: FrameGateOverrides;
   /**
-   * The account this preference belongs to, or null when no account has
+   * The identity this preference belongs to, or null when no identity has
    * claimed it. Persisted alongside the preference so the pair travels
    * together: a tuning session is one account's, and the reload that restores
    * it has to know whose before applying it to whoever signs in next.
    */
-  ownerUserId: string | null;
+  ownerIdentityKey: string | null;
 }
 
 export interface CameraGateDebugActions {
@@ -84,14 +84,14 @@ export interface CameraGateDebugActions {
   resetOverrides: () => void;
   /**
    * Bind the stored preference to the account now signed in, dropping it
-   * first unless that account is the one it already belongs to.
+   * first unless that identity is the one it already belongs to.
    *
-   * An owner that is not this account, including one no session ever
+   * An owner that is not this identity, including one no session ever
    * recorded, means the readout was left on by somebody else, so the switch
-   * and the thresholds go back to shipped before the new account can inherit
+   * and the thresholds go back to shipped before the new identity can inherit
    * a gate it never tuned.
    */
-  claimForUser: (userId: string) => void;
+  claimForIdentity: (identityKey: string) => void;
 }
 
 export type CameraGateDebugStore = CameraGateDebugState &
@@ -104,7 +104,7 @@ export type CameraGateDebugStore = CameraGateDebugState &
 const INITIAL_STATE: CameraGateDebugState = {
   hudEnabled: false,
   overrides: defaultFrameGateOverrides(),
-  ownerUserId: null,
+  ownerIdentityKey: null,
 };
 
 /**
@@ -159,12 +159,12 @@ const useCameraGateDebugStoreBase = create<CameraGateDebugStore>()(
         set({ overrides: defaultFrameGateOverrides() });
       },
 
-      claimForUser: (userId: string) => {
-        if (get().ownerUserId === userId) {
+      claimForIdentity: (identityKey: string) => {
+        if (get().ownerIdentityKey === identityKey) {
           return;
         }
         set({
-          ownerUserId: userId,
+          ownerIdentityKey: identityKey,
           hudEnabled: false,
           overrides: defaultFrameGateOverrides(),
         });
@@ -176,7 +176,7 @@ const useCameraGateDebugStoreBase = create<CameraGateDebugStore>()(
       partialize: (state) => ({
         hudEnabled: state.hudEnabled,
         overrides: state.overrides,
-        ownerUserId: state.ownerUserId,
+        ownerIdentityKey: state.ownerIdentityKey,
       }),
       merge: (persisted, current) => {
         const saved = persisted as Partial<CameraGateDebugState> | undefined;
@@ -184,8 +184,10 @@ const useCameraGateDebugStoreBase = create<CameraGateDebugStore>()(
           ...current,
           hudEnabled: saved?.hudEnabled === true,
           overrides: completeOverrides(saved?.overrides),
-          ownerUserId:
-            typeof saved?.ownerUserId === "string" ? saved.ownerUserId : null,
+          ownerIdentityKey:
+            typeof saved?.ownerIdentityKey === "string"
+            ? saved.ownerIdentityKey
+            : null,
         };
       },
     },
@@ -210,7 +212,7 @@ export const useCameraGateDebugStore = createSelectors(
  */
 function readPersistedOwner(
   raw: string | null,
-): { readable: true; ownerUserId: string | null } | { readable: false } {
+): { readable: true; ownerIdentityKey: string | null } | { readable: false } {
   if (raw === null) {
     return { readable: false };
   }
@@ -227,10 +229,10 @@ function readPersistedOwner(
   if (typeof state !== "object" || state === null) {
     return { readable: false };
   }
-  const owner = (state as { ownerUserId?: unknown }).ownerUserId;
+  const owner = (state as { ownerIdentityKey?: unknown }).ownerIdentityKey;
   return {
     readable: true,
-    ownerUserId: typeof owner === "string" ? owner : null,
+    ownerIdentityKey: typeof owner === "string" ? owner : null,
   };
 }
 
@@ -259,7 +261,7 @@ function readPersistedOwner(
  * the key between the answer and the restore.
  */
 export function watchCameraGateDebugStorage(
-  shouldAccept: (ownerUserId: string | null) => boolean,
+  shouldAccept: (ownerIdentityKey: string | null) => boolean,
   onRestored: () => void,
 ): () => void {
   if (typeof window === "undefined") {
@@ -272,7 +274,7 @@ export function watchCameraGateDebugStorage(
     const owner = readPersistedOwner(
       localStorage.getItem(CAMERA_GATE_DEBUG_STORE_KEY),
     );
-    if (!owner.readable || !shouldAccept(owner.ownerUserId)) {
+    if (!owner.readable || !shouldAccept(owner.ownerIdentityKey)) {
       return;
     }
     void Promise.resolve(useCameraGateDebugStoreBase.persist.rehydrate()).then(
@@ -303,7 +305,7 @@ export function clearCameraGateDebug(): void {
   useCameraGateDebugStoreBase.setState({
     hudEnabled: false,
     overrides,
-    ownerUserId: null,
+    ownerIdentityKey: null,
   });
   syncFrameGateDebugOptions(false, overrides);
 }

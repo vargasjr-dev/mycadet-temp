@@ -90,7 +90,7 @@ describe("camera gate debug store", () => {
     expect(Object.keys(state).sort()).toEqual([
       "hudEnabled",
       "overrides",
-      "ownerUserId",
+      "ownerIdentityKey",
     ]);
   });
 

@@ -174,7 +174,7 @@ describe("camera gate readout access", () => {
       JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId: STAFF_USER.id,
+          ownerIdentityKey: STAFF_USER.id,
           overrides: { ...defaultFrameGateOverrides(), minDetail: 42 },
         },
         version: 0,
@@ -212,7 +212,7 @@ describe("camera gate readout access", () => {
       JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId: STAFF_USER.id,
+          ownerIdentityKey: STAFF_USER.id,
           overrides: { ...defaultFrameGateOverrides(), minDetail: 42 },
         },
         version: 0,
@@ -237,12 +237,12 @@ describe("camera gate readout access", () => {
    * is not automatically this tab's to read.
    */
   describe("another tab's write", () => {
-    /** The payload a tab owned by `ownerUserId` leaves on the key. */
-    function payloadFrom(ownerUserId: string, minDetail: number): string {
+    /** The payload a tab owned by `ownerIdentityKey` leaves on the key. */
+    function payloadFrom(ownerIdentityKey: string, minDetail: number): string {
       return JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId,
+          ownerIdentityKey,
           overrides: { ...defaultFrameGateOverrides(), minDetail },
         },
         version: 0,
@@ -251,10 +251,10 @@ describe("camera gate readout access", () => {
 
     /** Leave a payload behind and tell this tab about it, as another tab does. */
     async function arriveFromAnotherTab(
-      ownerUserId: string,
+      ownerIdentityKey: string,
       minDetail: number,
     ): Promise<void> {
-      const newValue = payloadFrom(ownerUserId, minDetail);
+      const newValue = payloadFrom(ownerIdentityKey, minDetail);
       localStorage.setItem(STORAGE_KEY, newValue);
       window.dispatchEvent(
         new StorageEvent("storage", { key: STORAGE_KEY, newValue }),
@@ -303,7 +303,7 @@ describe("camera gate readout access", () => {
       const newValue = JSON.stringify({
         state: {
           hudEnabled: true,
-          ownerUserId: null,
+          ownerIdentityKey: null,
           overrides: { ...defaultFrameGateOverrides(), minDetail: 42 },
         },
         version: 0,
@@ -316,7 +316,7 @@ describe("camera gate readout access", () => {
       await Promise.resolve();
 
       const state = useCameraGateDebugStore.getState();
-      expect(state.ownerUserId).toBe(STAFF_USER.id);
+      expect(state.ownerIdentityKey).toBe(STAFF_USER.id);
       expect(state.hudEnabled).toBe(false);
       expect(state.overrides.minDetail).toBe(
         DEFAULT_FRAME_GATE_OPTIONS.minDetail,
@@ -350,7 +350,7 @@ describe("camera gate readout access", () => {
       const state = useCameraGateDebugStore.getState();
       expect(state.hudEnabled).toBe(true);
       expect(state.overrides.minDetail).toBe(30);
-      expect(state.ownerUserId).toBe(STAFF_USER.id);
+      expect(state.ownerIdentityKey).toBe(STAFF_USER.id);
       expect(FRAME_GATE_LIVE_OPTIONS.minDetail).toBe(30);
       expect(localStorage.getItem(STORAGE_KEY)).toBe(foreign);
     });

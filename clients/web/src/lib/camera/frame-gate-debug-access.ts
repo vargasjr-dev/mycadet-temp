@@ -13,7 +13,7 @@
  * preference on every launch, because access reads false during boot until
  * the session lands.
  *
- * The account is watched from here too. A tuning session belongs to whoever
+ * The identity is watched from here too. A tuning session belongs to whoever
  * ran it, so the preference is dropped when a different account signs in.
  * That is keyed on the account rather than on a session ending, because a
  * session can end without the logout sweep running and because the two can be
@@ -26,24 +26,16 @@
  * sessions that have no panel on screen.
  */
 
-import { isCadetStaff } from "@/lib/auth/staff";
 import { syncFrameGateDebugOptions } from "@/lib/camera/frame-gate-debug";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
 import {
   useCameraGateDebugStore,
   watchCameraGateDebugStorage,
 } from "@/stores/camera-gate-debug-store";
-
-/**
- * Whether a session may reach the readout: staff only.
- */
-export function cameraGateHudAvailable(user: AuthUser | null): boolean {
-  return isCadetStaff(user);
-}
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 
 /** The same answer read outside React, for the subscriptions below. */
 function availableNow(): boolean {
-  return cameraGateHudAvailable(useAuthStore.getState().user);
+  return useGatewaySessionStore.getState().isStaff;
 }
 
 /**
@@ -55,18 +47,18 @@ function availableNow(): boolean {
  * account rather than to the ending covers both, and covers the reload in
  * between, because the store remembers whose preference it holds.
  *
- * A window with no user is not an account change. Boot before the session
+ * A window with no identity is not an account change. Boot before the session
  * resolves, a token refresh, and an expired session all sit in one, and
  * dropping the preference there would cost the user their tuning every launch
  * for no gain: with no identity there is no access, so the thresholds already
  * stop reaching the gate.
  */
 function claimForCurrentUser(): void {
-  const userId = useAuthStore.getState().user?.id ?? null;
-  if (userId === null) {
+  const identityKey = useGatewaySessionStore.getState().identityKey;
+  if (identityKey === null) {
     return;
   }
-  useCameraGateDebugStore.getState().claimForUser(userId);
+  useCameraGateDebugStore.getState().claimForIdentity(identityKey);
 }
 
 /**
@@ -103,11 +95,11 @@ function onAuthChange(): void {
  * the same caution {@link claimForCurrentUser} takes for the same reason: boot
  * and a token refresh both look like a signed-out window.
  */
-function ownsPersistedPreference(ownerUserId: string | null): boolean {
-  if (ownerUserId === null) {
+function ownsPersistedPreference(ownerIdentityKey: string | null): boolean {
+  if (ownerIdentityKey === null) {
     return true;
   }
-  return ownerUserId === (useAuthStore.getState().user?.id ?? null);
+  return ownerIdentityKey === useGatewaySessionStore.getState().identityKey;
 }
 
 /**
@@ -126,7 +118,7 @@ function ownsPersistedPreference(ownerUserId: string | null): boolean {
  */
 export function setupCameraGateHudAccessSync(): () => void {
   onAuthChange();
-  const unsubscribeAuth = useAuthStore.subscribe(onAuthChange);
+  const unsubscribeSession = useGatewaySessionStore.subscribe(onAuthChange);
   const unsubscribeDebug = useCameraGateDebugStore.subscribe(
     applyEffectiveOptions,
   );
@@ -135,7 +127,7 @@ export function setupCameraGateHudAccessSync(): () => void {
     onAuthChange,
   );
   return () => {
-    unsubscribeAuth();
+    unsubscribeSession();
     unsubscribeDebug();
     unwatchStorage();
   };

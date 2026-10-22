@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, render } from "@testing-library/react";
+// The graph's real auth-store named-imports getLockfileAssistant from
+// local-mode — the link check runs against the FACTORY's keys, so the real
+// exports ride under the overrides.
+import * as realLocalMode from "@/lib/local-mode";
 
 const authRef = {
   sessionStatus: "authenticated" as const,
@@ -56,6 +60,7 @@ const localSelectedRef = {
   value: null as { assistantId: string; name?: string } | null,
 };
 mock.module("@/lib/local-mode", () => ({
+  ...realLocalMode,
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   getSelectedAssistant: () => localSelectedRef.value,
@@ -74,16 +79,22 @@ mock.module("@/lib/auth/gateway-session", () => ({
   getGatewayToken: () => null,
 }));
 
-mock.module("@/stores/auth-store", () => {
-  const useAuthStore = () => null;
-  useAuthStore.use = {
-    sessionStatus: () => authRef.sessionStatus,
+mock.module("@/stores/gateway-session-store", () => {
+  const useGatewaySessionStore = () => null;
+  useGatewaySessionStore.use = {
+    settled: () => authRef.isSessionInitializing === false,
+    live: () => authRef.sessionStatus === "authenticated",
+    cloudLive: () => authRef.hasCloudSession,
   };
-  return {
-    useAuthStore,
-    useHasCloudSession: () => authRef.hasCloudSession,
-    useIsSessionInitializing: () => authRef.isSessionInitializing,
-  };
+  // The imperative seam readers (getOrgHeaderReadiness) call getState().
+  useGatewaySessionStore.getState = () => ({
+    settled: authRef.isSessionInitializing === false,
+    live: authRef.sessionStatus === "authenticated",
+    cloudLive: authRef.hasCloudSession,
+    identityKey: null,
+    isStaff: false,
+  });
+  return { useGatewaySessionStore };
 });
 
 mock.module("@/stores/organization-store", () => {
@@ -95,13 +106,19 @@ mock.module("@/stores/organization-store", () => {
     currentOrganizationId: orgRef.currentOrganizationId,
   });
   return {
+    // Real exports ride under the overrides: the graph's auth-store
+    // named-imports clearOrganization, and bun's link check runs against the
+    // FACTORY's keys.
+    ...realOrganizationStore,
     useOrganizationStore,
     useRequestOrganizationId: () => orgRef.currentOrganizationId,
     // API interceptors read the org for request headers through this helper;
     // same value the mocked store hooks return.
     getActiveOrganizationIdForRequests: () => orgRef.currentOrganizationId,
+    clearOrganization: () => {},
   };
 });
+import * as realOrganizationStore from "@/stores/organization-store";
 
 mock.module("@/stores/resolved-assistants-store", () => {
   const useResolvedAssistantsStore = () => null;
@@ -188,7 +205,7 @@ describe("CommandPaletteWindowPage", () => {
     render(<CommandPaletteWindowPage />);
 
     expect(useAssistantLifecycleMock).toHaveBeenCalledWith({
-      sessionStatus: "authenticated",
+      sessionLive: true,
       hasCloudSession: true,
     });
     expect(useConversationListQueryMock).toHaveBeenCalledWith(

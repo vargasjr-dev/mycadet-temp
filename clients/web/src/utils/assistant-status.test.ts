@@ -10,7 +10,8 @@ import {
 // single input it cares about.
 const working: AssistantStatusInputs = {
   lifecycleKind: "active",
-  sessionStatus: "authenticated",
+  sessionSettled: true,
+  sessionLive: true,
   isSSEConnected: true,
   turnPhase: "idle",
 };
@@ -26,7 +27,8 @@ describe("deriveAssistantStatus", () => {
     expect(
       deriveAssistantStatus({
         lifecycleKind: "error",
-        sessionStatus: "unauthenticated",
+        sessionSettled: true,
+        sessionLive: false,
         isSSEConnected: false,
         turnPhase: "thinking",
       }),
@@ -40,8 +42,14 @@ describe("deriveAssistantStatus", () => {
   });
 
   test("disconnected while the session is still initializing", () => {
+    // The initializing window is unsettled AND not live — a settled probe
+    // with no session is authFailed, not disconnected.
     expect(
-      deriveAssistantStatus({ ...working, sessionStatus: "initializing" }),
+      deriveAssistantStatus({
+        ...working,
+        sessionSettled: false,
+        sessionLive: false,
+      }),
     ).toBe("disconnected");
   });
 

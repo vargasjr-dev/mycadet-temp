@@ -59,9 +59,8 @@ mock.module("@/runtime/native-auth", () => ({
 mock.module("@/utils/native-anchor", () => ({
   handleNativeAnchorClick: () => {},
 }));
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: { use: { user: () => ({ id: "user-1" }) } },
-  useHasCloudSession: () => false,
+mock.module("@/stores/gateway-session-store", () => ({
+  useGatewaySessionStore: { use: { identityKey: () => "user-1" } },
 }));
 mock.module("@/stores/client-feature-flag-store", () => ({
   useClientFeatureFlagStore: {

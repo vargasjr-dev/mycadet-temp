@@ -7,7 +7,7 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   resolveCloudAssistantId,
@@ -22,14 +22,14 @@ const EMPTY_AVATAR_URLS: CloudAvatarUrls = new Map();
 export const CLOUD_AVATAR_URLS_STALE_TIME_MS = 60_000;
 
 /**
- * Keyed by user and organization: a sign-out never serves another account's
+ * Keyed by identity and organization: a sign-out never serves another account's
  * thumbnails, and an org switch rescopes the list with the request header.
  */
 export function cloudAvatarUrlsQueryKey(
-  userId: string | null,
+  identityKey: string | null,
   organizationId: string | null,
 ) {
-  return ["cloudAvatarUrls", userId, organizationId] as const;
+  return ["cloudAvatarUrls", identityKey, organizationId] as const;
 }
 
 const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
@@ -105,14 +105,14 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  * that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
-  const hasCloudSession = useHasCloudSession();
-  const userId = useAuthStore.use.user()?.id ?? null;
+  const cloudLive = useGatewaySessionStore.use.cloudLive();
+  const identityKey = useGatewaySessionStore.use.identityKey();
   const isOrgReady = useIsOrgReady();
   const organizationId = useRequestOrganizationId();
   const query = useQuery<CloudAvatarUrls>({
-    queryKey: cloudAvatarUrlsQueryKey(userId, organizationId),
+    queryKey: cloudAvatarUrlsQueryKey(identityKey, organizationId),
     queryFn: fetchCloudAvatarUrls,
-    enabled: hasCloudSession && isOrgReady && !isCadetCloudRemote(),
+    enabled: cloudLive && isOrgReady && !isCadetCloudRemote(),
     staleTime: CLOUD_AVATAR_URLS_STALE_TIME_MS,
     // staleTime alone never refetches a chooser that stays mounted, and a
     // sibling's change on another client sends no event here; poll while

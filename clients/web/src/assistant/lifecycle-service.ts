@@ -59,7 +59,6 @@ import {
 } from "@/lib/local-mode";
 import { getLocalAssistantStatusHost } from "@/runtime/local-mode-host";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
-import { isAuthenticated, type SessionStatus } from "@/stores/session-status";
 
 const PROBE_RETRY_DELAY_MS = 4_000;
 const PROBE_RETRY_LIMIT_MS = 60_000;
@@ -75,7 +74,7 @@ function getRemoteGatewayIngressUrl(): string {
 }
 
 export interface LifecycleServiceInputs {
-  sessionStatus: SessionStatus;
+  sessionLive: boolean;
   hasCloudSession: boolean;
   /** The TanStack Query client owned by `RootLayout`'s provider. */
   queryClient: QueryClient;
@@ -115,7 +114,7 @@ class AssistantLifecycleService {
    */
   private ready = false;
   private inputs: LifecycleServiceInputs = {
-    sessionStatus: "initializing",
+    sessionLive: false,
     hasCloudSession: false,
     queryClient: null as unknown as QueryClient,
     selectedCloudAssistantId: null,
@@ -245,7 +244,7 @@ class AssistantLifecycleService {
 
   /**
    * Synchronously drop the selection + lifecycle state. Called from
-   * `auth-store.logout()` before `sessionStatus` leaves `authenticated`,
+   * `auth-store.logout()` while the session is still live,
    * so subscribers to either store don't observe a stale id in their
    * first re-render after logout. The `respondToInputs` not-authenticated
    * branch is the safety net for cases where auth flips without
@@ -285,12 +284,12 @@ class AssistantLifecycleService {
     }
     // Check gateway auth before the unauthenticated-reset below: local (gateway)
     // and platform are independent authorities, so a cloud-session loss that
-    // flips `sessionStatus` must not tear down a gateway-driven local lifecycle.
+    // drops `sessionLive` must not tear down a gateway-driven local lifecycle.
     if (isGatewayAuthMode()) {
       this.applyGatewayAuthShortCircuit();
       return;
     }
-    if (!isAuthenticated(this.inputs.sessionStatus)) {
+    if (!this.inputs.sessionLive) {
       // Logout / pre-auth boot — same reset as `resetForLogout` but
       // reachable from the input-driven path for token-expiry style
       // flips that don't call `logout()` explicitly.
@@ -1002,7 +1001,7 @@ class AssistantLifecycleService {
   /**
    * Reset all state to the post-import default. For tests only —
    * production code should never call this. (Use `respondToInputs`
-   * with a non-authenticated `sessionStatus` for logout reset.)
+   * with `sessionLive: false` for logout reset.)
    */
   __resetForTesting(): void {
     if (this.initializingTimeout) {
@@ -1022,7 +1021,7 @@ class AssistantLifecycleService {
       operationalStatusAssistantId: null,
     });
     this.inputs = {
-      sessionStatus: "initializing",
+      sessionLive: false,
       hasCloudSession: false,
       queryClient: null as unknown as QueryClient,
     };

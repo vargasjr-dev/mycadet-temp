@@ -21,16 +21,15 @@ import { useGatedSelectedAssistantId } from "@/assistant/selection";
 import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { getLocalAssistants, isLocalClient } from "@/lib/local-mode";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { isAuthenticated, type SessionStatus } from "@/stores/session-status";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 interface UseAssistantLifecycleOptions {
-  sessionStatus: SessionStatus;
+  sessionLive: boolean;
   hasCloudSession: boolean;
 }
 
 export function useAssistantLifecycle({
-  sessionStatus,
+  sessionLive,
   hasCloudSession,
 }: UseAssistantLifecycleOptions): void {
   const queryClient = useQueryClient();
@@ -43,7 +42,7 @@ export function useAssistantLifecycle({
   // Platform API calls require the Cadet-Organization-Id header;
   // wait for the org store to resolve before firing them.
   const shouldQueryServer =
-    isAuthenticated(sessionStatus) &&
+    sessionLive &&
     !isGatewayAuthMode() &&
     (hasCloudSession || !isLocalClient()) &&
     isOrgReady;
@@ -77,7 +76,7 @@ export function useAssistantLifecycle({
   // hook itself.
   useEffect(() => {
     lifecycleService.setInputs({
-      sessionStatus,
+      sessionLive,
       hasCloudSession,
       queryClient,
       selectedCloudAssistantId,
@@ -85,7 +84,7 @@ export function useAssistantLifecycle({
     });
     void lifecycleService.respondToInputs();
   }, [
-    sessionStatus,
+    sessionLive,
     hasCloudSession,
     queryClient,
     selectedCloudAssistantId,

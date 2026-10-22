@@ -15,7 +15,7 @@ import {
 } from "@/domains/onboarding/prefs";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { isElectron } from "@/runtime/is-electron";
-import { useAuthStore } from "@/stores/auth-store";
+import { useGatewaySessionStore } from "@/stores/gateway-session-store";
 import {
   PRIVACY_CONSENT_VERSION,
   TOS_CONSENT_VERSION,
@@ -30,8 +30,8 @@ export function ReviewTermsScreen() {
   const { t } = useTranslation("onboarding");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const userId = useAuthStore.use.user()?.id ?? null;
-  const logout = useAuthStore.use.logout();
+  const identityKey = useGatewaySessionStore.use.identityKey();
+  const logout = useGatewaySessionStore.use.logout();
   const electron = isElectron();
 
   const [tosAccepted, setTosAccepted] = useTosAccepted();
@@ -71,7 +71,7 @@ export function ReviewTermsScreen() {
 
   const onContinue = useCallback(() => {
     saveConsent({
-      userId,
+      userId: identityKey,
       tos: tosAccepted,
       privacy: privacyConsent,
     });
@@ -81,7 +81,7 @@ export function ReviewTermsScreen() {
       routes.assistant,
     );
     void navigate(destination, { replace: true });
-  }, [privacyConsent, navigate, searchParams, tosAccepted, userId]);
+  }, [privacyConsent, navigate, searchParams, tosAccepted, identityKey]);
 
   const handleLogout = useCallback(async () => {
     await logout();
