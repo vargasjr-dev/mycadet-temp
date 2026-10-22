@@ -28,11 +28,11 @@ import {
 } from "./pair-device-test-helpers";
 import { usePendingPairingRequests } from "./use-pending-pairing-requests";
 
-const LIST_URL = `${BASE}/v1/remote-web/pairing-requests`;
+const LIST_URL = `${BASE}/pairing-requests`;
 const APPROVE_URL = `${LIST_URL}/approve`;
 const DENY_URL = `${LIST_URL}/deny`;
-const OTHER_BASE = "http://localhost:3000/assistant/__gateway/20200";
-const OTHER_LIST_URL = `${OTHER_BASE}/v1/remote-web/pairing-requests`;
+const OTHER_BASE = "http://localhost:3000/v1/assistants/20200/remote-web";
+const OTHER_LIST_URL = `${OTHER_BASE}/pairing-requests`;
 const OTHER_APPROVE_URL = `${OTHER_LIST_URL}/approve`;
 const POLL_INTERVAL_MS = 5000;
 

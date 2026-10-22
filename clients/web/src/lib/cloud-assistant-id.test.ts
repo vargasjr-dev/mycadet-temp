@@ -19,26 +19,29 @@ mock.module("@/lib/local-cloud-identity", () => ({
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       value,
     ),
-  resolveLocalAssistantCloudIdentity:
-    resolveLocalAssistantCloudIdentityMock,
+  resolveLocalAssistantCloudIdentity: resolveLocalAssistantCloudIdentityMock,
   fetchCloudStatus: fetchCloudStatusMock,
 }));
 /** The paired lockfile entry the private paired leg resolves against. */
-let mockPairedEntry: { assistantId: string; cloud: string; runtimeUrl: string } | null =
-  null;
+let mockPairedEntry: {
+  assistantId: string;
+  cloud: string;
+  runtimeUrl: string;
+} | null = null;
 mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
   getLockfileAssistant: (id: string) =>
-    mockPairedEntry && mockPairedEntry.assistantId === id ? mockPairedEntry : null,
-  getPairedGatewayUrl: (entry: { runtimeUrl?: string }) =>
-    entry.runtimeUrl ? "/assistant/__gateway/x" : undefined,
+    mockPairedEntry && mockPairedEntry.assistantId === id
+      ? mockPairedEntry
+      : null,
+  hasPairedGateway: (entry: { runtimeUrl?: string } | null) =>
+    !!entry?.runtimeUrl,
 }));
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedActorToken: () => "actor-token",
 }));
 
-const { resolveCloudAssistantId } =
-  await import("@/lib/cloud-assistant-id");
+const { resolveCloudAssistantId } = await import("@/lib/cloud-assistant-id");
 
 beforeEach(() => {
   cloudRemote = false;
@@ -54,9 +57,9 @@ beforeEach(() => {
 
 describe("resolveCloudAssistantId", () => {
   test("returns a UUID unchanged", async () => {
-    await expect(
-      resolveCloudAssistantId(PLATFORM_ASSISTANT_ID),
-    ).resolves.toBe(PLATFORM_ASSISTANT_ID);
+    await expect(resolveCloudAssistantId(PLATFORM_ASSISTANT_ID)).resolves.toBe(
+      PLATFORM_ASSISTANT_ID,
+    );
     expect(resolveLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
   });
 
@@ -88,14 +91,12 @@ describe("resolveCloudAssistantId", () => {
   test("takes the registered id off an injection failure", async () => {
     const { CloudIdentityInjectionError } =
       await import("@/lib/cloud-identity-errors");
-    resolveLocalAssistantCloudIdentityMock.mockImplementationOnce(
-      async () => {
-        throw new CloudIdentityInjectionError(
-          PLATFORM_ASSISTANT_ID,
-          new Error("store unreadable"),
-        );
-      },
-    );
+    resolveLocalAssistantCloudIdentityMock.mockImplementationOnce(async () => {
+      throw new CloudIdentityInjectionError(
+        PLATFORM_ASSISTANT_ID,
+        new Error("store unreadable"),
+      );
+    });
 
     await expect(resolveCloudAssistantId("local-slug")).resolves.toBe(
       PLATFORM_ASSISTANT_ID,
@@ -103,11 +104,9 @@ describe("resolveCloudAssistantId", () => {
   });
 
   test("continues after a local-identity throw", async () => {
-    resolveLocalAssistantCloudIdentityMock.mockImplementationOnce(
-      async () => {
-        throw new Error("no lockfile");
-      },
-    );
+    resolveLocalAssistantCloudIdentityMock.mockImplementationOnce(async () => {
+      throw new Error("no lockfile");
+    });
     mockPairedEntry = {
       assistantId: "paired-slug",
       cloud: "local",

@@ -77,10 +77,10 @@ export type GatewayForwardPlan =
  *
  * On a loopback forward, the request's `Origin` is rewritten to the gateway's
  * own loopback origin (the gateway gates loopback web origins on its
- * browser-reachable routes), and the renderer-supplied `Authorization` is
- * stripped — the renderer holds no gateway credential. The executor installs
- * the bearer the trusted main process mints itself from the on-disk guardian
- * token, so nothing token-shaped ever crosses into the renderer.
+ * browser-reachable routes). The executor owns the `Authorization` header: it
+ * overwrites whatever the renderer sent with the bearer it mints from the
+ * on-disk guardian token, so nothing token-shaped ever crosses into the
+ * renderer.
  *
  * On a remote forward, renderer-controlled authorization and browser-ambient
  * headers (`Origin`, `Referer`, `Cookie`, `Sec-Fetch-*`) are stripped via the
@@ -113,7 +113,6 @@ function planGatewayForward(
       if (decision.target.kind === "loopback") {
         const { port } = decision.target;
         headers.set("origin", `http://127.0.0.1:${port}`);
-        headers.delete("authorization");
         return {
           kind: "forward",
           url: `http://127.0.0.1:${port}${decision.path}${decision.search}`,
@@ -243,17 +242,15 @@ export function executeGatewayForwardPlan(
 }
 
 /**
- * Execute a loopback forward with host-side bearer custody. The plan's
- * headers arrive renderer-sanitized (the planner strips any Authorization),
- * the executor installs the bearer the main process mints from the on-disk
- * guardian token — except on the mint route itself, whose own bearer
- * contract is the guardian token and which nothing dials through this
- * forward anymore. A gateway 401 on a bodyless request forces one re-mint
- * and one retry, so a revoked bearer heals on the next request instead of
- * 401ing until the cache expires; bodied requests cannot replay (the
- * request stream is already consumed), so their 401 flows back to the
- * caller. When the mint fails the request forwards without a bearer and
- * the gateway's own response surfaces the truth.
+ * Execute a loopback forward with host-side bearer custody: the executor
+ * overwrites whatever the renderer sent with the bearer the main process
+ * mints from the on-disk guardian token — except on the mint route itself,
+ * whose bearer contract is the guardian token. A gateway 401 on a bodyless
+ * request forces one re-mint and one retry, so a revoked bearer heals on the
+ * next request instead of 401ing until the cache expires; bodied requests
+ * cannot replay (the request stream is already consumed), so their 401 flows
+ * back to the caller. When the mint fails the request forwards without a
+ * bearer and the gateway's own response surfaces the truth.
  */
 async function executeLoopbackForward(
   plan: Extract<GatewayForwardPlan, { kind: "forward"; remote: false }>,
@@ -272,8 +269,10 @@ async function executeLoopbackForward(
         fetcher: mintFetcher,
       })
     : null;
-  if (bearer) {
+  if (injectable && bearer) {
     plan.headers.set("authorization", `Bearer ${bearer}`);
+  } else {
+    plan.headers.delete("authorization");
   }
   const doFetch = () =>
     fetcher(plan.url, {

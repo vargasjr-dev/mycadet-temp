@@ -47,7 +47,7 @@ mock.module(
   (): Partial<typeof LocalMode> => ({
     getActiveAssistant: () => undefined,
     getLocalAssistants: () => [],
-    getLocalGatewayUrl: () => localGatewayUrlImpl(),
+    hasLocalGateway: () => localGatewayUrlImpl() !== undefined,
     getLockfile: () => ({ assistants: [], activeAssistant: null }),
     getCloudAssistants: () => [],
     getSelectedAssistant: () => selectedAssistantImpl(),
@@ -102,7 +102,7 @@ mock.module("@/lib/auth/hard-navigate", () => ({
 }));
 
 // Error reporting, stubbed so a failed in-place recovery doesn't touch the
-// real client and the report can be asserted.
+// real client. The failure evidence lives on the durable lifecycle ring.
 const captureErrorMock = mock((_err: unknown, _ctx?: unknown) => {});
 mock.module(
   "@/lib/error-reporting/capture-error",
@@ -110,6 +110,16 @@ mock.module(
     captureError: captureErrorMock,
   }),
 );
+
+const lifecycleDiagnosticCalls: Array<[string, Record<string, unknown>]> = [];
+mock.module("@/lib/diagnostics", () => ({
+  recordLifecycleDiagnostic: (
+    kind: string,
+    details: Record<string, unknown> = {},
+  ) => {
+    lifecycleDiagnosticCalls.push([kind, details]);
+  },
+}));
 
 // Paired-browser refresh, stubbed so remote-gateway recovery is driven
 // without a live pairing cookie; a test flips it to model a rejected refresh.
@@ -1553,11 +1563,17 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       gatewayGet(),
     );
 
-    // THEN the 401 flows to the error path, without replay or reload
+    // THEN the 401 flows to the error path, without replay or reload, and
+    // the failure lands on the lifecycle ring with the error attached.
     expect(result).toBe(response);
     expect(replayedRequests).toHaveLength(0);
     expect(reloadCalls).toBe(0);
-    expect(captureErrorMock).toHaveBeenCalledTimes(1);
+    const recorded = lifecycleDiagnosticCalls.at(-1);
+    expect(recorded?.[0]).toBe("gw_401_recovery");
+    expect(recorded?.[1]).toEqual({
+      outcome: "failed",
+      error: "mint rejected",
+    });
   });
 
   test("a failed recovery hands the 401 back without a repair handoff", async () => {
@@ -1581,8 +1597,11 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
       gatewayGet(),
     );
 
-    // THEN the failure is reported, and no repair is asked for
-    expect(captureErrorMock).toHaveBeenCalledTimes(1);
+    // THEN the failure is recorded on the lifecycle ring, and no repair is
+    // asked for.
+    const recorded = lifecycleDiagnosticCalls.at(-1);
+    expect(recorded?.[0]).toBe("gw_401_recovery");
+    expect(recorded?.[1]?.outcome).toBe("failed");
     expect(repairRequests).toBe(0);
     // AND the 401 still flows to the caller's error path, no reload
     expect(result).toBe(response);
@@ -1748,7 +1767,6 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     isCadetCloudRemoteMock.mockImplementation(() => false);
     isServedGatewayRuntimeMock.mockImplementation(() => true);
     refreshRemoteGatewaySessionImpl = async () => false;
-    seedGatewayTokens();
 
     // WHEN the gateway rejects with 401
     const response = gatewayResponse(401);
@@ -1762,9 +1780,6 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(replayedRequests).toHaveLength(0);
     expect(result).toBe(response);
     expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    for (const key of GW_TOKEN_KEYS) {
-      expect(localStorage.getItem(key)).toBeNull();
-    }
   });
 
   test("does not recover on non-401 status codes", async () => {

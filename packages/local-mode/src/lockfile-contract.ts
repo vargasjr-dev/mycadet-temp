@@ -133,10 +133,6 @@ export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
   "contact-channels",
 ]);
 
-export function gatewayProxyUrl(assistantId: string): string {
-  return `/assistant/__gateway/${encodeURIComponent(assistantId)}`;
-}
-
 /**
  * User-facing hosting label for a paired entry: "Paired · <hostname>" when
  * `runtimeUrl` names the remote host, plain "Paired" otherwise. Shared by the

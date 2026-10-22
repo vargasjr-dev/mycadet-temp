@@ -22,11 +22,10 @@ test("forwards the complete local-mode namespace through IPC", async () => {
   await bridge.pairingStart("https://gw.example.com");
   await bridge.pairingPoll("handle-1", "Assistant 1");
   await bridge.pairingCancel("handle-1");
-  await bridge.guardianToken("assistant-1");
   await bridge.listDevices("assistant-1");
   await bridge.revokeDevice("assistant-1", "hash-1");
 
-  expect(invoke).toHaveBeenCalledTimes(16);
+  expect(invoke).toHaveBeenCalledTimes(15);
   expect(invoke).toHaveBeenCalledWith("cadet:localMode:wake", "assistant-1", {
     repairGuardian: true,
   });

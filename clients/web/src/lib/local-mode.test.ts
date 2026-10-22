@@ -53,11 +53,10 @@ mock.module("@/runtime/local-mode-host", () => ({
 
 import {
   getActiveAssistant,
-  getAuthGatewayIngressUrl,
-  getLocalGatewayUrl,
+  hasLocalGateway,
+  hasPairedGateway,
   getLocalAssistants,
   getLockfile,
-  getPairedGatewayUrl,
   getCloudAssistants,
   getRemoteAssistantDisplayName,
   getSelectedAssistant,
@@ -197,7 +196,7 @@ describe("remote gateway mode", () => {
       }),
     ]);
     expect(getLocalAssistants().map((a) => a.assistantId)).toEqual(["self"]);
-    expect(getLocalGatewayUrl()).toBeUndefined();
+    expect(hasLocalGateway()).toBe(false);
     expect(useLockfileStore.getState().committed).toBe(true);
   });
 
@@ -644,19 +643,19 @@ describe("assistant classification", () => {
   });
 });
 
-describe("getLocalGatewayUrl", () => {
-  test("resolves the gateway proxy URL for a local assistant with a recorded port", () => {
+describe("hasLocalGateway", () => {
+  test("is true for a local assistant with a recorded port", () => {
     enableLocalMode();
-    expect(getLocalGatewayUrl(localA)).toBe("/assistant/__gateway/local-a");
+    expect(hasLocalGateway(localA)).toBe(true);
   });
 
-  test("is undefined for a local assistant with no recorded gateway port", () => {
+  test("is false for a local assistant with no recorded gateway port", () => {
     enableLocalMode();
     const portless = { assistantId: "x", cloud: "local" } as LockfileAssistant;
-    expect(getLocalGatewayUrl(portless)).toBeUndefined();
+    expect(hasLocalGateway(portless)).toBe(false);
   });
 
-  test("resolves a docker assistant's gateway from its loopback runtimeUrl", () => {
+  test("is true for a docker assistant's loopback runtimeUrl", () => {
     // Docker entries record the published gateway as a loopback runtimeUrl and
     // carry no `resources` block.
     enableLocalMode();
@@ -665,7 +664,7 @@ describe("getLocalGatewayUrl", () => {
       cloud: "docker",
       runtimeUrl: "http://localhost:7930",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/dk");
+    expect(hasLocalGateway(docker)).toBe(true);
   });
 
   test("accepts 127.0.0.1 as a loopback runtimeUrl host", () => {
@@ -675,7 +674,7 @@ describe("getLocalGatewayUrl", () => {
       cloud: "docker",
       runtimeUrl: "http://127.0.0.1:7931",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(docker)).toBe("/assistant/__gateway/dk");
+    expect(hasLocalGateway(docker)).toBe(true);
   });
 
   test("prefers a recorded resources.gatewayPort over the runtimeUrl port", () => {
@@ -686,63 +685,56 @@ describe("getLocalGatewayUrl", () => {
       runtimeUrl: "http://localhost:9999",
       resources: { gatewayPort: 7830 },
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(entry)).toBe("/assistant/__gateway/x");
+    expect(hasLocalGateway(entry)).toBe(true);
   });
 
-  test("never resolves a gateway from a non-loopback runtimeUrl", () => {
+  test("is false for a non-loopback runtimeUrl", () => {
     enableLocalMode();
     const docker = {
       assistantId: "dk",
       cloud: "docker",
       runtimeUrl: "http://assistant.example.com:7930",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(docker)).toBeUndefined();
+    expect(hasLocalGateway(docker)).toBe(false);
   });
 
-  test("is undefined for a docker assistant with no runtimeUrl or port", () => {
+  test("is false for a docker assistant with no runtimeUrl or port", () => {
     enableLocalMode();
     const bare = { assistantId: "dk", cloud: "docker" } as LockfileAssistant;
-    expect(getLocalGatewayUrl(bare)).toBeUndefined();
+    expect(hasLocalGateway(bare)).toBe(false);
   });
 
-  test("is undefined for a cloud assistant", () => {
+  test("is false for a cloud assistant", () => {
     enableLocalMode();
-    expect(getLocalGatewayUrl(platform)).toBeUndefined();
+    expect(hasLocalGateway(platform)).toBe(false);
   });
 
-  test("is undefined for a remote (paired) assistant", () => {
+  test("is false for a remote (paired) assistant", () => {
     enableLocalMode();
     const paired = {
       assistantId: "p",
       cloud: "local",
       runtimeUrl: "https://p.example.com",
     } as LockfileAssistant;
-    expect(getLocalGatewayUrl(paired)).toBeUndefined();
+    expect(hasLocalGateway(paired)).toBe(false);
   });
 
-  test("is undefined outside local mode even for a local assistant with a port", () => {
+  test("is false outside local mode even for a local assistant with a port", () => {
     disableLocalMode();
-    expect(getLocalGatewayUrl(localA)).toBeUndefined();
+    expect(hasLocalGateway(localA)).toBe(false);
+  });
+
+  test("defaults to the selected assistant", () => {
+    enableLocalMode();
+    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+    expect(hasLocalGateway()).toBe(true);
   });
 });
 
-describe("getPairedGatewayUrl", () => {
-  test("resolves the same-origin proxy path for a usable paired entry", () => {
+describe("hasPairedGateway", () => {
+  test("is true for a usable paired entry", () => {
     enableLocalMode();
-    expect(getPairedGatewayUrl(pairedEntry)).toBe(
-      "/assistant/__gateway/paired-a",
-    );
-  });
-
-  test("URL-encodes the assistant id in the proxy path", () => {
-    enableLocalMode();
-    const paired = {
-      ...pairedEntry,
-      assistantId: "paired/one two",
-    } as LockfileAssistant;
-    expect(getPairedGatewayUrl(paired)).toBe(
-      "/assistant/__gateway/paired%2Fone%20two",
-    );
+    expect(hasPairedGateway(pairedEntry)).toBe(true);
   });
 
   test("accepts runtimeUrls with trailing slashes or path prefixes", () => {
@@ -752,20 +744,20 @@ describe("getPairedGatewayUrl", () => {
       "https://gw.example.com/assistant/",
     ]) {
       const paired = { ...pairedEntry, runtimeUrl } as LockfileAssistant;
-      expect(getPairedGatewayUrl(paired)).toBe("/assistant/__gateway/paired-a");
+      expect(hasPairedGateway(paired)).toBe(true);
     }
   });
 
-  test("is undefined for a non-http(s) runtimeUrl", () => {
+  test("is false for a non-http(s) runtimeUrl", () => {
     enableLocalMode();
     const paired = {
       ...pairedEntry,
       runtimeUrl: "ftp://x",
     } as LockfileAssistant;
-    expect(getPairedGatewayUrl(paired)).toBeUndefined();
+    expect(hasPairedGateway(paired)).toBe(false);
   });
 
-  test("is undefined for a missing or malformed runtimeUrl", () => {
+  test("is false for a missing or malformed runtimeUrl", () => {
     enableLocalMode();
     const missing = {
       assistantId: "p",
@@ -775,55 +767,26 @@ describe("getPairedGatewayUrl", () => {
       ...pairedEntry,
       runtimeUrl: "not a url",
     } as LockfileAssistant;
-    expect(getPairedGatewayUrl(missing)).toBeUndefined();
-    expect(getPairedGatewayUrl(malformed)).toBeUndefined();
+    expect(hasPairedGateway(missing)).toBe(false);
+    expect(hasPairedGateway(malformed)).toBe(false);
   });
 
-  test("is undefined for non-paired entries", () => {
+  test("is false for non-paired entries", () => {
     enableLocalMode();
-    expect(getPairedGatewayUrl(localA)).toBeUndefined();
-    expect(getPairedGatewayUrl(platform)).toBeUndefined();
-    expect(getPairedGatewayUrl(undefined)).toBeUndefined();
+    expect(hasPairedGateway(localA)).toBe(false);
+    expect(hasPairedGateway(platform)).toBe(false);
+    expect(hasPairedGateway(undefined)).toBe(false);
   });
 
-  test("is undefined outside local mode", () => {
+  test("is false outside local mode", () => {
     disableLocalMode();
-    expect(getPairedGatewayUrl(pairedEntry)).toBeUndefined();
+    expect(hasPairedGateway(pairedEntry)).toBe(false);
   });
 
-  test("is undefined in remote-gateway mode", () => {
+  test("is false in remote-gateway mode", () => {
     enableLocalMode();
     window.__CADET_CONFIG__ = { remote: "docker" };
-    expect(getPairedGatewayUrl(pairedEntry)).toBeUndefined();
-  });
-});
-
-describe("getAuthGatewayIngressUrl", () => {
-  test("returns origin + gateway proxy for a local entry", () => {
-    enableLocalMode();
-    expect(getAuthGatewayIngressUrl(localA)).toBe(
-      `${window.location.origin}/assistant/__gateway/local-a`,
-    );
-  });
-
-  test("returns origin + paired gateway proxy for a paired entry", () => {
-    enableLocalMode();
-    expect(getAuthGatewayIngressUrl(pairedEntry)).toBe(
-      `${window.location.origin}/assistant/__gateway/paired-a`,
-    );
-  });
-
-  test("is undefined for a cloud entry", () => {
-    enableLocalMode();
-    expect(getAuthGatewayIngressUrl(platform)).toBeUndefined();
-  });
-
-  test("resolves the selected assistant's ingress", () => {
-    enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
-    expect(getAuthGatewayIngressUrl(getSelectedAssistant())).toBe(
-      `${window.location.origin}/assistant/__gateway/paired-a`,
-    );
+    expect(hasPairedGateway(pairedEntry)).toBe(false);
   });
 });
 

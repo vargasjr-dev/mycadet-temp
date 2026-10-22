@@ -39,7 +39,7 @@ let selectedAssistant: {
 const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
-  getLocalGatewayUrl: () => gatewayPath,
+  hasLocalGateway: () => gatewayPath !== undefined,
   getSelectedAssistant: () => selectedAssistant,
 }));
 
@@ -179,18 +179,18 @@ function installFetch(
   }: FetchHandlers = {},
 ) {
   return installRecordingFetch((url) => {
-    if (url.endsWith("/v1/remote-web/pairing-challenge")) {
+    if (url.endsWith("/remote-web/pairing-challenge")) {
       return onChallenge();
     }
-    if (url.endsWith("/v1/remote-web/pairing-verification")) {
+    if (url.endsWith("/remote-web/pairing-verification")) {
       return onVerification();
     }
-    if (url.endsWith("/v1/remote-web/pairing-requests")) {
+    if (url.endsWith("/remote-web/pairing-requests")) {
       return onPendingRequests();
     }
     if (
-      url.endsWith("/v1/remote-web/pairing-requests/approve") ||
-      url.endsWith("/v1/remote-web/pairing-requests/deny")
+      url.endsWith("/remote-web/pairing-requests/approve") ||
+      url.endsWith("/remote-web/pairing-requests/deny")
     ) {
       return onRequestAction();
     }
@@ -200,14 +200,14 @@ function installFetch(
 
 function actionCalls(action: "approve" | "deny") {
   return fetchLog.filter((request) =>
-    request.url.endsWith(`/v1/remote-web/pairing-requests/${action}`),
+    request.url.endsWith(`/remote-web/pairing-requests/${action}`),
   );
 }
 
 /** The mint-flow calls (challenge + verification), without the section's list polls. */
 function mintCalls() {
   return fetchLog.filter(
-    (request) => !request.url.endsWith("/v1/remote-web/pairing-requests"),
+    (request) => !request.url.endsWith("/remote-web/pairing-requests"),
   );
 }
 
@@ -301,11 +301,11 @@ describe("PairDeviceCard", () => {
 
     expect(mintCalls()).toHaveLength(2);
     expect(mintCalls()[0]?.url).toContain(
-      "/assistant/__gateway/20100/v1/remote-web/pairing-challenge",
+      "/v1/assistants/self/remote-web/pairing-challenge",
     );
     expect(requestBody(mintCalls()[0])).toEqual({ publicBaseUrl: PUBLIC_URL });
     expect(mintCalls()[1]?.url).toContain(
-      "/assistant/__gateway/20100/v1/remote-web/pairing-verification",
+      "/v1/assistants/self/remote-web/pairing-verification",
     );
     expect(requestBody(mintCalls()[1])).toEqual({ userCode: "WXYZ-1234" });
   });
@@ -437,7 +437,7 @@ describe("PairDeviceCard: pending pairing requests", () => {
     // The list was polled and came back empty.
     await waitFor(() =>
       expect(
-        fetchLog.some((r) => r.url.endsWith("/v1/remote-web/pairing-requests")),
+        fetchLog.some((r) => r.url.endsWith("/remote-web/pairing-requests")),
       ).toBe(true),
     );
     expect(screen.queryByText("Pairing requests")).toBeNull();

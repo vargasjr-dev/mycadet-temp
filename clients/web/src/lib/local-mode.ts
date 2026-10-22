@@ -647,10 +647,10 @@ export async function primeLocalGatewayConnection(
     return;
   }
   if (expectsPairedGateway(assistant)) {
-    if (!getPairedGatewayUrl(assistant)) {
+    if (!hasPairedGateway(assistant)) {
       throw new UnresolvedPairedGatewayError(assistant.assistantId);
     }
-  } else if (!getLocalGatewayUrl(assistant)) {
+  } else if (!hasLocalGateway(assistant)) {
     // A local assistant we recognize but can't resolve a gateway for (no
     // port) is recoverable by waking it — surface that instead of
     // silently leaving the session unconnected. Non-local / non-local-

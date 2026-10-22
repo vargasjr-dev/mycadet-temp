@@ -36,9 +36,9 @@ import { isCancellationError } from "@mycadet/design-library/utils/is-cancellati
 
 import { buildRemoteWebPairingUrl } from "./pair-device-url";
 
-const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
-const PAIRING_VERIFICATION_PATH = "/v1/remote-web/pairing-verification";
-const PAIRING_REQUESTS_PATH = "/v1/remote-web/pairing-requests";
+const PAIRING_CHALLENGE_PATH = "/pairing-challenge";
+const PAIRING_VERIFICATION_PATH = "/pairing-verification";
+const PAIRING_REQUESTS_PATH = "/pairing-requests";
 const PAIRING_REQUEST_APPROVE_PATH = `${PAIRING_REQUESTS_PATH}/approve`;
 const PAIRING_REQUEST_DENY_PATH = `${PAIRING_REQUESTS_PATH}/deny`;
 
@@ -107,7 +107,7 @@ export function resolvePairDeviceTarget(): PairDeviceTarget | null {
     return null;
   }
   const assistant = getSelectedAssistant();
-  if (!hasLocalGateway(assistant)) {
+  if (!assistant || !hasLocalGateway(assistant)) {
     return null;
   }
   return {

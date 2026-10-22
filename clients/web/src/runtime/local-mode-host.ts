@@ -625,6 +625,27 @@ export async function probeAssistantReadyzHost(
 }
 
 /**
+ * Fetch an assistant's diagnostic logs through the host's data-plane
+ * forward: the scoped same-origin POST the host routes by the id in the
+ * path, injecting its own bearer. Throws with the host's status on failure.
+ */
+export async function fetchAssistantLogsHost(
+  assistantId: string,
+): Promise<Blob> {
+  const res = await fetch(
+    `/v1/assistants/${encodeURIComponent(assistantId)}/logs/export`,
+    {
+      method: "POST",
+      signal: AbortSignal.timeout(180_000),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Diagnostic export failed (HTTP ${res.status}).`);
+  }
+  return res.blob();
+}
+
+/**
  * Hand the loopback platform session token to the local web server so its proxy
  * can authenticate to the cloud. Called by the loopback callback page only
  * after it validates the `state` nonce, so the token is never trusted from an

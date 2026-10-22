@@ -181,135 +181,6 @@ describe("parseCadetUrl", () => {
     });
   });
 
-  test("cadet://billing/checkout-complete?status=success&session_id=… → billingCheckoutComplete", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "success",
-      sessionId: "cs_test_a1B2",
-      flow: "subscription",
-    });
-  });
-
-  test("checkout-complete under the alternate scheme parses the same", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=success&session_id=cs_live_XYZ",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "success",
-      sessionId: "cs_live_XYZ",
-      flow: "subscription",
-    });
-  });
-
-  test("status=cancel → cancel with no session id", () => {
-    expect(
-      parseCadetUrl("cadet://billing/checkout-complete?status=cancel"),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "cancel",
-      sessionId: null,
-      flow: "subscription",
-    });
-  });
-
-  test("status=cancel ignores any session id that rides along", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=cancel&session_id=cs_test_a1B2",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "cancel",
-      sessionId: null,
-      flow: "subscription",
-    });
-  });
-
-  test("flow=top_up is carried through on both statuses", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2&flow=top_up",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "success",
-      sessionId: "cs_test_a1B2",
-      flow: "top_up",
-    });
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=cancel&flow=top_up",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "cancel",
-      sessionId: null,
-      flow: "top_up",
-    });
-  });
-
-  test("an unrecognized flow value degrades to the subscription flow", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=cancel&flow=bogus",
-      ),
-    ).toEqual({
-      kind: "billingCheckoutComplete",
-      status: "cancel",
-      sessionId: null,
-      flow: "subscription",
-    });
-  });
-
-  test("success without a session id → unknown (never a success state with nothing to open)", () => {
-    expect(
-      parseCadetUrl("cadet://billing/checkout-complete?status=success"),
-    ).toEqual({
-      kind: "unknown",
-      url: "cadet://billing/checkout-complete",
-    });
-  });
-
-  test("success with a malformed session id → unknown, query stripped", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=success&session_id=../../etc/passwd",
-      ),
-    ).toEqual({
-      kind: "unknown",
-      url: "cadet://billing/checkout-complete",
-    });
-  });
-
-  test("missing / unrecognized status → unknown, query stripped (no session-id leak)", () => {
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?session_id=cs_test_a1B2",
-      ),
-    ).toEqual({ kind: "unknown", url: "cadet://billing/checkout-complete" });
-    expect(
-      parseCadetUrl(
-        "cadet://billing/checkout-complete?status=bogus&session_id=cs_test_a1B2",
-      ),
-    ).toEqual({ kind: "unknown", url: "cadet://billing/checkout-complete" });
-  });
-
-  test("unrecognized billing path → unknown, query stripped", () => {
-    expect(
-      parseCadetUrl("cadet://billing/other?session_id=cs_test_a1B2"),
-    ).toEqual({ kind: "unknown", url: "cadet://billing/other" });
-    expect(parseCadetUrl("cadet://billing")).toEqual({
-      kind: "unknown",
-      url: "cadet://billing",
-    });
-  });
-
   test("rejects foreign schemes — javascript: returns unknown", () => {
     expect(parseCadetUrl("javascript:alert(1)")).toEqual({
       kind: "unknown",
@@ -351,9 +222,10 @@ describe("parseCadetUrl", () => {
     expect(
       parseCadetUrl("cadet://auth/callback?code=secret&state=xyz"),
     ).toEqual({ kind: "unknown", url: "cadet://auth/callback" });
-    expect(
-      parseCadetUrl("cadet://auth/callback?code=secret"),
-    ).toEqual({ kind: "unknown", url: "cadet://auth/callback" });
+    expect(parseCadetUrl("cadet://auth/callback?code=secret")).toEqual({
+      kind: "unknown",
+      url: "cadet://auth/callback",
+    });
   });
 
   test("cadet://connect?url=…&code=… → connect carrying the base and the device code", () => {
@@ -495,8 +367,7 @@ describe("parseCadetUrl", () => {
   test("env-specific scheme for a foreign environment is rejected as unknown", () => {
     // A scheme that doesn't match any known environment is always
     // rejected, regardless of which env this test suite runs under.
-    const url =
-      "cadet-nonexistent://auth/callback?code=abc&state=xyz";
+    const url = "cadet-nonexistent://auth/callback?code=abc&state=xyz";
     expect(parseCadetUrl(url)).toEqual({ kind: "unknown", url });
   });
 });
@@ -527,7 +398,7 @@ describe("extractDeepLinkFromArgv", () => {
   test.each([
     "cadet://send?message=hello",
     "cadet://thread/thread-123",
-    "cadet://billing/checkout-complete?status=cancel",
+    "cadet://connect?url=https%3A%2F%2Fh.example",
   ])("extracts supported Windows launch URL %s", (url) => {
     expect(extractDeepLinkFromArgv(["Cadet.exe", url])).toBe(url);
   });
@@ -803,13 +674,6 @@ describe("handleDeepLink — window activation", () => {
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
   });
 
-  test("brings the main window forward for `billingCheckoutComplete`", () => {
-    handleDeepLink(
-      "cadet://billing/checkout-complete?status=success&session_id=cs_test_a1B2",
-    );
-    expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
-  });
-
   test("brings the main window forward for `connect`", () => {
     handleDeepLink("cadet://connect?url=https%3A%2F%2Fh.example&code=ABCD");
     expect(ensureMainWindowVisibleMock).toHaveBeenCalledTimes(1);
@@ -877,9 +741,7 @@ describe("handleDeepLink — window activation", () => {
 
 describe("resolveRegisteredSchemes", () => {
   test("production registers cadet", () => {
-    expect(resolveRegisteredSchemes("production")).toEqual([
-      "cadet",
-    ]);
+    expect(resolveRegisteredSchemes("production")).toEqual(["cadet"]);
   });
 
   test("dev registers only cadet-dev", () => {
@@ -887,15 +749,11 @@ describe("resolveRegisteredSchemes", () => {
   });
 
   test("staging registers only cadet-staging", () => {
-    expect(resolveRegisteredSchemes("staging")).toEqual([
-      "cadet-staging",
-    ]);
+    expect(resolveRegisteredSchemes("staging")).toEqual(["cadet-staging"]);
   });
 
   test("local registers only cadet-local", () => {
-    expect(resolveRegisteredSchemes("local")).toEqual([
-      "cadet-local",
-    ]);
+    expect(resolveRegisteredSchemes("local")).toEqual(["cadet-local"]);
   });
 
   test("unknown env derives scheme from env name", () => {

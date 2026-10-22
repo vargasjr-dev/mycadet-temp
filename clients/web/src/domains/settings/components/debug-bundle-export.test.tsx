@@ -10,7 +10,7 @@ let toastErrors: string[] = [];
 
 mock.module("@/lib/local-mode", () => ({
   getSelectedAssistant: () => selected,
-  getLocalGatewayUrl: () => gatewayPath,
+  hasLocalGateway: () => selected !== null && gatewayPath !== null,
 }));
 
 mock.module("@/generated/api/sdk.gen", () => ({

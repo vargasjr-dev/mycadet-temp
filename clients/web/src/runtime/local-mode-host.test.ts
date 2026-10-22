@@ -21,7 +21,7 @@ const {
   wakeLocalAssistantHost,
   getLocalAssistantStatusHost,
   readAssistantAvatarHost,
-  fetchGuardianTokenHost,
+  probeAssistantReadyzHost,
   isLocalModeHostAvailable,
   canReadAvatarFromLocalHost,
   requiresGuardianReprovision,
@@ -764,60 +764,30 @@ describe("canReadAvatarFromLocalHost", () => {
   });
 });
 
-describe("fetchGuardianTokenHost", () => {
-  test("web/dev host GETs the guardian-token middleware and returns the access token", async () => {
+describe("probeAssistantReadyzHost", () => {
+  test("GETs the scoped readyz route and resolves the parsed body", async () => {
     const fetchMock = mock(async () => ({
       ok: true,
-      json: async () => ({ accessToken: "tok-web" }),
+      json: async () => ({ status: "ok" }),
     }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    expect(await fetchGuardianTokenHost("a 1")).toBe("tok-web");
+    expect(await probeAssistantReadyzHost("a 1")).toEqual({ status: "ok" });
     const [url] = fetchMock.mock.calls[0] as unknown as [string];
-    expect(url).toBe("/v1/assistants/a%201/guardian-token");
+    expect(url).toBe("/v1/assistants/a%201/readyz");
   });
 
-  test("web/dev host throws a GuardianTokenError carrying the response status", async () => {
+  test("throws a GuardianTokenError carrying the response status", async () => {
     globalThis.fetch = mock(async () => ({
       ok: false,
       status: 404,
-      json: async () => ({ error: "assistant not found" }),
+      text: async () => "assistant not found",
     })) as unknown as typeof fetch;
 
-    const err = await fetchGuardianTokenHost("a-1").catch((e: unknown) => e);
+    const err = await probeAssistantReadyzHost("a-1").catch((e: unknown) => e);
     expect(err).toBeInstanceOf(GuardianTokenError);
     expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(404);
     expect((err as Error).message).toBe("assistant not found");
-  });
-
-  test("Electron host reads through the bridge and never touches fetch", async () => {
-    const guardianToken = mock(async () => ({
-      ok: true,
-      accessToken: "tok-electron",
-    }));
-    const fetchMock = mock(async () => {
-      throw new Error("fetch must not run on the Electron branch");
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
-    setElectronBridge({ guardianToken });
-
-    expect(await fetchGuardianTokenHost("a-1")).toBe("tok-electron");
-    expect(guardianToken).toHaveBeenCalledWith("a-1");
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  test("Electron host throws a GuardianTokenError carrying the bridge status", async () => {
-    const guardianToken = mock(async () => ({
-      ok: false,
-      status: 500,
-      error: "refresh failed",
-    }));
-    setElectronBridge({ guardianToken });
-
-    const err = await fetchGuardianTokenHost("a-1").catch((e: unknown) => e);
-    expect(err).toBeInstanceOf(GuardianTokenError);
-    expect((err as InstanceType<typeof GuardianTokenError>).status).toBe(500);
-    expect((err as Error).message).toBe("refresh failed");
   });
 });
 

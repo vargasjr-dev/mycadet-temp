@@ -1,7 +1,6 @@
 /**
- * Tests for the dev-server guardian-token route. Local assistant credentials
- * support the renderer's loopback token exchange, while paired credentials
- * stay inside the trusted host proxy.
+ * Tests for the dev-server's local-host middlewares and the gateway data
+ * plane. Local assistant credentials stay inside the trusted host proxy.
  */
 import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { EventEmitter, once } from "node:events";
@@ -179,71 +178,6 @@ function writeLockfile(assistants: Array<Record<string, unknown>>): void {
     JSON.stringify({ assistants, activeAssistant: null }),
   );
 }
-
-describe("guardian-token middleware", () => {
-  beforeEach(() => {
-    fs.rmSync(lockfilePath, { force: true });
-    fs.rmSync(path.join(configDir, "assistants"), {
-      recursive: true,
-      force: true,
-    });
-  });
-
-  test("returns a fresh token from the file", async () => {
-    writeLockfile([{ assistantId: "asst-g", cloud: "local" }]);
-    writeToken("asst-g", {});
-
-    const result = await dispatch("/v1/assistants/asst-g/guardian-token");
-
-    expect(result.status).toBe(200);
-    expect(JSON.parse(result.body)).toEqual({ accessToken: "stored-token" });
-  });
-
-  test("expired refresh token for a local entry yields hatch/wake guidance", async () => {
-    writeLockfile([{ assistantId: "asst-g", cloud: "local" }]);
-    writeToken("asst-g", {
-      accessTokenExpiresAt: PAST,
-      refreshTokenExpiresAt: PAST,
-    });
-
-    const result = await dispatch("/v1/assistants/asst-g/guardian-token");
-
-    expect(result.status).toBe(401);
-    const { error } = JSON.parse(result.body) as { error: string };
-    expect(error).toContain("cadet hatch");
-    expect(error).not.toContain("cadet pair");
-  });
-
-  test("never returns a paired credential to the renderer", async () => {
-    writeLockfile([
-      {
-        assistantId: "paired-g",
-        cloud: "local",
-        runtimeUrl: "https://gateway.example.com",
-      },
-    ]);
-    writeToken("paired-g", {});
-
-    const result = await dispatch("/v1/assistants/paired-g/guardian-token");
-
-    expect(result.status).toBe(403);
-    const { error } = JSON.parse(result.body) as { error: string };
-    expect(error).toContain("paired gateway proxy");
-  });
-
-  test("stored pairing metadata blocks a credential after lockfile reclassification", async () => {
-    writeLockfile([{ assistantId: "paired-g", cloud: "local" }]);
-    writeToken("paired-g", {
-      pairedGatewayUrl: "https://gateway.example.com",
-    });
-
-    const result = await dispatch("/v1/assistants/paired-g/guardian-token");
-
-    expect(result.status).toBe(403);
-    const { error } = JSON.parse(result.body) as { error: string };
-    expect(error).toContain("paired gateway proxy");
-  });
-});
 
 describe("avatar middleware", () => {
   const instanceDir = path.join(tempDir, "instances", "asst-a");

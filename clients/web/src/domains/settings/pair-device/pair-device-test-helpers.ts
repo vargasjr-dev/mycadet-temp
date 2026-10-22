@@ -14,9 +14,9 @@ import type { RemoteWebPairingRequestSummary } from "@mycadet/service-contracts/
 
 import type { IntegrationsIngressStatusGetResponse } from "@/generated/daemon/types.gen";
 
-/** Local-gateway base URL used across the pair-device tests. */
+/** Scoped same-origin remote-web base used across the pair-device tests. */
 export const TEST_GATEWAY_BASE =
-  "http://localhost:3000/assistant/__gateway/test-assistant";
+  "http://localhost:3000/v1/assistants/test-assistant/remote-web";
 
 /** An assistant version below the ingress-status floor, so no probe goes out. */
 export const VERSION_BELOW_INGRESS_STATUS = "0.11.5";
