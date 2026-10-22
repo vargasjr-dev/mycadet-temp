@@ -322,7 +322,8 @@ describe("removePairedAssistantFromLockfile", () => {
 
     expect(result.ok).toBe(true);
     expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
-    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBeNull();
+    // clearGatewayToken is memory-only now — stored keys are never scrubbed.
+    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe("tok");
     expect(getSelfHostedIngressUrl()).toBeNull();
   });
 
@@ -887,7 +888,10 @@ describe("primeLocalGatewayConnection", () => {
     expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
     expect(getSelfHostedActorToken()).toBeNull();
     expect(isGatewayAuthMode()).toBe(true);
-    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBeNull();
+    // The prime neither reads nor scrubs stored credentials — LS rides out untouched.
+    expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe(
+      "legacy-paired-guardian",
+    );
     expect(localStorage.getItem("cadet:gw:tokenSource")).toBeNull();
   });
 
