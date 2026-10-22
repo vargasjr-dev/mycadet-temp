@@ -135,13 +135,55 @@ class MyViewController: CAPBridgeViewController {
         return descriptor
     }
 
+    /// The webview scheme captured from the instance configuration — the
+    /// exact scheme Capacitor registers its asset handler under, which the
+    /// same-origin wrapper replaces. `nil` until
+    /// `webViewConfiguration(for:)` runs; falls back to Capacitor's default.
+    private var assetScheme: String?
+
+    /// Capture the scheme the asset handler will be registered under. This
+    /// configuration builder is Capacitor's only reader of the instance
+    /// configuration that runs ahead of the web view's creation, where
+    /// handler substitution is still possible (`prepareWebView` builds the
+    /// configuration, registers the handler, then calls
+    /// `webView(with:configuration:)` to instantiate the web view).
+    override open func webViewConfiguration(
+        for instanceConfiguration: InstanceConfiguration
+    ) -> WKWebViewConfiguration {
+        assetScheme = instanceConfiguration.localURL.scheme
+        return super.webViewConfiguration(for: instanceConfiguration)
+    }
+
     /// Substitute the quote-and-reply-aware web view subclass. This is the
     /// Capacitor-supported hook for providing a custom `WKWebView` class.
     override open func webView(
         with frame: CGRect,
         configuration: WKWebViewConfiguration
     ) -> WKWebView {
+        wrapSameOriginAPIHandler(configuration)
         return QuoteReplyWebView(frame: frame, configuration: configuration)
+    }
+
+    /// Swap Capacitor's asset handler for the same-origin wrapper: `/v1/`
+    /// requests forward to the stamped control-plane base (tunnel, loopback
+    /// app server, or cloud web origin) instead of falling into the SPA's
+    /// index-HTML fallback, and everything else serves assets exactly as
+    /// before. Must run before the `WKWebView` is created — the
+    /// configuration is inert afterwards — which this override is: called
+    /// with the finished configuration, immediately before the web view
+    /// instantiates with it.
+    private func wrapSameOriginAPIHandler(_ configuration: WKWebViewConfiguration) {
+        let scheme = assetScheme ?? "capacitor"
+        guard let stock = configuration.urlSchemeHandler(forURLScheme: scheme) else {
+            return
+        }
+        configuration.setURLSchemeHandler(
+            SameOriginAPIHandler(
+                wrapping: stock,
+                base: SelfHostedServer.stampedHandoffURL()
+            ),
+            forURLScheme: scheme
+        )
     }
 
     /// Paint the web view's backgrounds with the design system's

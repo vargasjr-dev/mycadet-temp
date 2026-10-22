@@ -7,10 +7,10 @@ import {
 } from "@/domains/chat/utils/error-classification";
 
 describe("chat error classification", () => {
-  test("routes managed key failures through the generic Doctor-capable notice", () => {
+  test("routes cloud key failures through the generic Doctor-capable notice", () => {
     const error = {
-      code: "MANAGED_KEY_INVALID",
-      errorCategory: "managed_key_invalid",
+      code: "CLOUD_KEY_INVALID",
+      errorCategory: "cloud_key_invalid",
     };
 
     expect(isCloudCredentialChatError(error)).toBe(true);

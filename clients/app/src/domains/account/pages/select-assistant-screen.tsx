@@ -112,9 +112,7 @@ export function SelectAssistantScreen() {
   const [removeOriginError, setRemoveOriginError] = useState<string | null>(
     null,
   );
-  const { state, retry } = useAssistantChoices({
-    origin: window.location.origin,
-  });
+  const { state, retry } = useAssistantChoices();
   const status =
     state.status === "selection" && state.assistants.length === 0
       ? "empty"

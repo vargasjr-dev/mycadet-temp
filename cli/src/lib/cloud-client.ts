@@ -1,6 +1,6 @@
 import {
   type CloudCredentialVerificationStatus,
-  PlatformVerifyCredentialResponseSchema,
+  CloudVerifyCredentialResponseSchema,
 } from "@mycadet/service-contracts/cloud-credential";
 import {
   chmodSync,
@@ -463,7 +463,7 @@ export interface GatewayCredentialResult {
 
 /**
  * Ask a running assistant to check its stored cloud credential against the
- * platform, via the gateway-proxied `POST /v1/platform/verify-credential`.
+ * platform, via the gateway-proxied `POST /v1/cloud/verify-credential`.
  *
  * Returns `"rejected"` only when the cloud settled that answer. Every other
  * case, including a daemon too old to serve the route and any failure to reach
@@ -483,7 +483,7 @@ export async function verifyGatewayCloudCredential(
     }
 
     const response = await loopbackSafeFetch(
-      `${gatewayUrl}/v1/platform/verify-credential`,
+      `${gatewayUrl}/v1/cloud/verify-credential`,
       {
         method: "POST",
         headers,
@@ -494,7 +494,7 @@ export async function verifyGatewayCloudCredential(
       return null;
     }
 
-    const parsed = PlatformVerifyCredentialResponseSchema.safeParse(
+    const parsed = CloudVerifyCredentialResponseSchema.safeParse(
       await response.json(),
     );
     if (parsed.success) {

@@ -13,6 +13,7 @@ import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { useDeepLinkConsumer } from "@app/runtime/deep-links";
 import { accountRoute } from "@app/domains/account/account-route";
+import { consentRoute } from "@app/domains/consent/consent-route";
 import { AssistantPage } from "@app/shell/assistant-page";
 import {
   assistantSelectionState,
@@ -102,6 +103,7 @@ export const router = createBrowserRouter(
       HydrateFallback: RootHydrateFallback,
       children: [
         accountRoute,
+        consentRoute,
         { path: "/", Component: () => <Navigate to="/assistant" replace /> },
         { path: "/assistant/*", Component: AssistantPage },
         {

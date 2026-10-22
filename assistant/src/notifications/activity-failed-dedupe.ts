@@ -11,7 +11,7 @@ import type { BackgroundJobErrorKind } from "../runtime/background-job-runner.js
  * build here instead of silently un-collapsing.
  */
 const WORKSPACE_WIDE_FAILURE_CODES = new Set<string>([
-  "MANAGED_KEY_INVALID",
+  "CLOUD_KEY_INVALID",
   "MANAGED_USAGE_LIMIT",
   "DISK_SPACE_CRITICAL",
 ] satisfies ConversationErrorCode[]);

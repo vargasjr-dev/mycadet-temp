@@ -46,7 +46,7 @@ describe("assistant cloud connect", () => {
     process.exitCode = 0;
   });
 
-  test("calls platform_connect and reports login UI triggered", async () => {
+  test("calls cloud_connect and reports login UI triggered", async () => {
     const program = buildProgram();
     const stdoutChunks: string[] = [];
     const origWrite = process.stdout.write.bind(process.stdout);
@@ -62,7 +62,7 @@ describe("assistant cloud connect", () => {
     }
 
     expect(mockCalls.length).toBe(1);
-    expect(mockCalls[0][0]).toBe("platform_connect");
+    expect(mockCalls[0][0]).toBe("cloud_connect");
 
     const parsed = JSON.parse(stdoutChunks.join(""));
     expect(parsed.ok).toBe(true);

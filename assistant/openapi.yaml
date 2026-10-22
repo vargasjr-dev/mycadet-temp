@@ -5131,6 +5131,226 @@ paths:
                 required:
                   - recorded
                 additionalProperties: false
+  /v1/cloud/callback-routes:
+    get:
+      operationId: cloud_callbackroutes_get
+      summary: List registered cloud callback routes
+      description: Lists all callback routes registered with the cloud for this assistant.
+      tags:
+        - cloud
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  routes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        assistant_id:
+                          type: string
+                        type:
+                          type: string
+                        callback_path:
+                          type: string
+                        callback_url:
+                          type: string
+                        source_identifier:
+                          anyOf:
+                            - type: string
+                            - type: "null"
+                      required:
+                        - id
+                        - assistant_id
+                        - type
+                        - callback_path
+                        - callback_url
+                        - source_identifier
+                      additionalProperties: false
+                required:
+                  - routes
+                additionalProperties: false
+  /v1/cloud/callback-routes/register:
+    post:
+      operationId: cloud_callbackroutes_register_post
+      summary: Register a cloud callback route
+      description: Registers a callback route with the cloud gateway for inbound provider webhooks.
+      tags:
+        - cloud
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                type:
+                  type: string
+              required:
+                - path
+                - type
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  callbackUrl:
+                    type: string
+                  callbackPath:
+                    type: string
+                  type:
+                    type: string
+                required:
+                  - callbackUrl
+                  - callbackPath
+                  - type
+                additionalProperties: false
+  /v1/cloud/connect:
+    post:
+      operationId: cloud_connect_post
+      summary: Connect to Cadet Cloud
+      description:
+        Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as
+        credentialRejected, so the caller can direct the user to sign in again and replace it.
+      tags:
+        - cloud
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alreadyConnected:
+                    type: boolean
+                  baseUrl:
+                    type: string
+                  showCloudLogin:
+                    type: boolean
+                  credentialRejected:
+                    type: boolean
+                additionalProperties: false
+  /v1/cloud/disconnect:
+    post:
+      operationId: cloud_disconnect_post
+      summary: Disconnect from Cadet Cloud
+      description: Deletes stored cloud credentials and emits cloud_disconnected signal to connected clients.
+      tags:
+        - cloud
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  disconnected:
+                    type: boolean
+                    const: true
+                  previousBaseUrl:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                required:
+                  - disconnected
+                  - previousBaseUrl
+                additionalProperties: false
+  /v1/cloud/status:
+    get:
+      operationId: cloud_status_get
+      summary: Get cloud deployment context and connection status
+      description:
+        Aggregates cloud context, credentials, assistant ID, and webhook secret. Tunnel status is reported
+        separately by gateway_status.
+      tags:
+        - cloud
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isCloud:
+                    type: boolean
+                  baseUrl:
+                    type: string
+                  assistantId:
+                    type: string
+                  hasAssistantApiKey:
+                    anyOf:
+                      - type: boolean
+                      - type: "null"
+                    description:
+                      Whether a cloud assistant API key is stored. Null when the credential store could not be read, which is not
+                      evidence that no key is stored.
+                  hasWebhookSecret:
+                    type: boolean
+                  clientInstallationId:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  available:
+                    type: boolean
+                  organizationId:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                  userId:
+                    anyOf:
+                      - type: string
+                      - type: "null"
+                required:
+                  - isCloud
+                  - baseUrl
+                  - assistantId
+                  - hasAssistantApiKey
+                  - hasWebhookSecret
+                  - clientInstallationId
+                  - available
+                  - organizationId
+                  - userId
+                additionalProperties: false
+  /v1/cloud/verify-credential:
+    post:
+      operationId: cloud_verifycredential_post
+      summary: Verify the Cadet Cloud credential against the cloud
+      description:
+        Asks the cloud whether the stored assistant API key authenticates. POST because it performs a check; the
+        result is returned, not stored.
+      tags:
+        - cloud
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - valid
+                      - rejected
+                      - unknown
+                required:
+                  - status
+                additionalProperties: false
   /v1/composer/settings:
     get:
       operationId: composer_settings_get
@@ -31226,226 +31446,6 @@ paths:
                         - kind
                       additionalProperties: false
                     description: All pending interactions (returned when no filters given)
-                additionalProperties: false
-  /v1/platform/callback-routes:
-    get:
-      operationId: platform_callbackroutes_get
-      summary: List registered platform callback routes
-      description: Lists all callback routes registered with the cloud for this assistant.
-      tags:
-        - platform
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  routes:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        assistant_id:
-                          type: string
-                        type:
-                          type: string
-                        callback_path:
-                          type: string
-                        callback_url:
-                          type: string
-                        source_identifier:
-                          anyOf:
-                            - type: string
-                            - type: "null"
-                      required:
-                        - id
-                        - assistant_id
-                        - type
-                        - callback_path
-                        - callback_url
-                        - source_identifier
-                      additionalProperties: false
-                required:
-                  - routes
-                additionalProperties: false
-  /v1/platform/callback-routes/register:
-    post:
-      operationId: platform_callbackroutes_register_post
-      summary: Register a cloud callback route
-      description: Registers a callback route with the cloud gateway for inbound provider webhooks.
-      tags:
-        - cloud
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                path:
-                  type: string
-                type:
-                  type: string
-              required:
-                - path
-                - type
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  callbackUrl:
-                    type: string
-                  callbackPath:
-                    type: string
-                  type:
-                    type: string
-                required:
-                  - callbackUrl
-                  - callbackPath
-                  - type
-                additionalProperties: false
-  /v1/platform/connect:
-    post:
-      operationId: platform_connect_post
-      summary: Connect to Cadet Cloud
-      description:
-        Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as
-        credentialRejected, so the caller can direct the user to sign in again and replace it.
-      tags:
-        - platform
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  alreadyConnected:
-                    type: boolean
-                  baseUrl:
-                    type: string
-                  showPlatformLogin:
-                    type: boolean
-                  credentialRejected:
-                    type: boolean
-                additionalProperties: false
-  /v1/platform/disconnect:
-    post:
-      operationId: platform_disconnect_post
-      summary: Disconnect from Cadet Cloud
-      description: Deletes stored cloud credentials and emits cloud_disconnected signal to connected clients.
-      tags:
-        - platform
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  disconnected:
-                    type: boolean
-                    const: true
-                  previousBaseUrl:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                required:
-                  - disconnected
-                  - previousBaseUrl
-                additionalProperties: false
-  /v1/platform/status:
-    get:
-      operationId: platform_status_get
-      summary: Get platform deployment context and connection status
-      description:
-        Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel status is reported
-        separately by gateway_status.
-      tags:
-        - platform
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  isPlatform:
-                    type: boolean
-                  baseUrl:
-                    type: string
-                  assistantId:
-                    type: string
-                  hasAssistantApiKey:
-                    anyOf:
-                      - type: boolean
-                      - type: "null"
-                    description:
-                      Whether a cloud assistant API key is stored. Null when the credential store could not be read, which is not
-                      evidence that no key is stored.
-                  hasWebhookSecret:
-                    type: boolean
-                  clientInstallationId:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  available:
-                    type: boolean
-                  organizationId:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                  userId:
-                    anyOf:
-                      - type: string
-                      - type: "null"
-                required:
-                  - isPlatform
-                  - baseUrl
-                  - assistantId
-                  - hasAssistantApiKey
-                  - hasWebhookSecret
-                  - clientInstallationId
-                  - available
-                  - organizationId
-                  - userId
-                additionalProperties: false
-  /v1/platform/verify-credential:
-    post:
-      operationId: platform_verifycredential_post
-      summary: Verify the Cadet Cloud credential against the cloud
-      description:
-        Asks the cloud whether the stored assistant API key authenticates. POST because it performs a check; the
-        result is returned, not stored.
-      tags:
-        - platform
-      responses:
-        "200":
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum:
-                      - valid
-                      - rejected
-                      - unknown
-                required:
-                  - status
                 additionalProperties: false
   /v1/plugins:
     get:

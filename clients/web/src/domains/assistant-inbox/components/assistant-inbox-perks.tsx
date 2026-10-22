@@ -9,7 +9,7 @@ export interface AssistantInboxPerksProps {
 }
 
 /**
- * The three perks of managed email as the design's pill rows with a green
+ * The three perks of Cadet Cloud email as the design's pill rows with a green
  * check. Its own piece so the one-time intro modal can set them over a
  * different ending than the upgrade pitch's plan notice.
  */

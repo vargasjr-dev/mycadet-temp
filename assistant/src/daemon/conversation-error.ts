@@ -871,16 +871,16 @@ function managedUsageLimitClassification(): Omit<
  * The copy's job is to rule out the user's own provider key as the cause;
  * clients that can offer a real next step attach one (web renders Doctor).
  */
-function managedKeyInvalidClassification(): Omit<
+function cloudKeyInvalidClassification(): Omit<
   ClassifiedConversationError,
   "debugDetails"
 > {
   return {
-    code: "MANAGED_KEY_INVALID",
+    code: "CLOUD_KEY_INVALID",
     userMessage:
       "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
     retryable: false,
-    errorCategory: "managed_key_invalid",
+    errorCategory: "cloud_key_invalid",
   };
 }
 
@@ -1020,7 +1020,7 @@ function rejectedCredentialClassification(
 ): Omit<ClassifiedConversationError, "debugDetails"> {
   switch (credentialSource) {
     case "cadet-cloud":
-      return managedKeyInvalidClassification();
+      return cloudKeyInvalidClassification();
     case "oauth-subscription":
       return subscriptionLoginRejectedClassification(providerName, attribution);
     case "no-auth":

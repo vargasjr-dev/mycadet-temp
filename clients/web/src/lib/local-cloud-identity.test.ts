@@ -30,7 +30,7 @@ let statusBody: unknown;
 let statusUnavailable = false;
 let ensureRegistrationBody: unknown;
 let reprovisionApiKeyBody: unknown;
-/** What `POST /v1/platform/verify-credential` reports about the stored key. */
+/** What `POST /v1/cloud/verify-credential` reports about the stored key. */
 let verifyCredentialStatus: "valid" | "rejected" | "unknown" = "valid";
 let requests: RecordedRequest[] = [];
 let secretsUnavailable = false;
@@ -214,7 +214,7 @@ beforeEach(() => {
 
       if (
         url.pathname.endsWith(
-          `/v1/assistants/${RUNTIME_ASSISTANT_ID}/platform/status`,
+          `/v1/assistants/${RUNTIME_ASSISTANT_ID}/cloud/status`,
         )
       ) {
         if (statusUnavailable) {
@@ -234,7 +234,7 @@ beforeEach(() => {
       ) {
         return jsonResponse(reprovisionApiKeyBody);
       }
-      if (url.pathname.endsWith("/v1/platform/verify-credential")) {
+      if (url.pathname.endsWith("/v1/cloud/verify-credential")) {
         return jsonResponse({ status: verifyCredentialStatus });
       }
       if (url.pathname.endsWith("/v1/secrets")) {

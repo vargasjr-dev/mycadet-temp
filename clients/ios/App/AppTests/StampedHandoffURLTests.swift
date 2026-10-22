@@ -4,12 +4,12 @@ final class StampedHandoffURLTests: XCTestCase {
     func testParsesTheStampedPayload() {
         let html = """
             <html><head><script>window.__CADET_CONFIG__=\
-            {"remote":"cloud","handoffUrl":"https://mycadet.ai/assistant"}\
+            {"remote":"cloud","cloudUrl":"https://mycadet.ai"}\
             </script></head><body></body></html>
             """
         XCTAssertEqual(
             StampedHandoffURL.parse(html)?.absoluteString,
-            "https://mycadet.ai/assistant"
+            "https://mycadet.ai"
         )
     }
 
@@ -35,7 +35,7 @@ final class StampedHandoffURLTests: XCTestCase {
         // URL(string:) rejects.
         let html = """
             <script>window.__CADET_CONFIG__=\
-            {"remote":"custom","handoffUrl":"https://x.example/?a=\u{003C}/script\u{003E}"}\
+            {"remote":"custom","cloudUrl":"https://x.example/?a=\u{003C}/script\u{003E}"}\
             </script>
             """
         XCTAssertNil(StampedHandoffURL.parse(html))

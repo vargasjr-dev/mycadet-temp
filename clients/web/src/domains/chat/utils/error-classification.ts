@@ -2,7 +2,7 @@
 // not-configured provider hides the generic inline notice (its own card
 // owns the surface), and a cloud credential error pins a dedicated notice.
 const PROVIDER_NOT_CONFIGURED_CODE = "PROVIDER_NOT_CONFIGURED";
-const MANAGED_KEY_INVALID_CODE = "MANAGED_KEY_INVALID";
+const CLOUD_KEY_INVALID_CODE = "CLOUD_KEY_INVALID";
 
 export interface ChatErrorLike {
   code?: string;
@@ -31,5 +31,5 @@ export function shouldShowGenericChatErrorNotice(
 export function isCloudCredentialChatError(
   error: ChatErrorLike | null | undefined,
 ): boolean {
-  return error?.code === MANAGED_KEY_INVALID_CODE;
+  return error?.code === CLOUD_KEY_INVALID_CODE;
 }

@@ -35,7 +35,7 @@ writeFileSync(
   html.replace(
     marker,
     () =>
-      `${injectedConfigScript(capacitorInjectedConfig(process.env))}${marker}`,
+      `${injectedConfigScript(capacitorInjectedConfig())}${marker}`,
   ),
 );
 

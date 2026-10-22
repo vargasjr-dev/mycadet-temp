@@ -89,7 +89,7 @@ enum SelfHostedServer {
 
     /// The boot bundle's stamped handoff URL — the Cadet Cloud origin the
     /// shell ships with. `build:capacitor` stamps `__CADET_CONFIG__` (with
-    /// `handoffUrl`) into the synced `public/index.html` before `cap sync`
+    /// `cloudUrl`) into the synced `public/index.html` before `cap sync`
     /// copies it, so the bundled document — not the native config, which no
     /// longer carries a `server.url` — is the build's source of truth for
     /// the baked default. `nil` when the bundle or the stamp is unreadable.

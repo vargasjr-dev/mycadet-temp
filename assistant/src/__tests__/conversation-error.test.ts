@@ -864,12 +864,12 @@ describe("classifyConversationError", () => {
 
       const result = classifyConversationError(err, baseCtx);
 
-      expect(result.code).toBe("MANAGED_KEY_INVALID");
+      expect(result.code).toBe("CLOUD_KEY_INVALID");
       expect(result.userMessage).toBe(
         "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
       expect(result.retryable).toBe(false);
-      expect(result.errorCategory).toBe("managed_key_invalid");
+      expect(result.errorCategory).toBe("cloud_key_invalid");
     });
 
     it("keeps credential-shaped 4xx failures on the request's cloud route", () => {
@@ -883,8 +883,8 @@ describe("classifyConversationError", () => {
 
       const result = classifyConversationError(err, baseCtx);
 
-      expect(result.code).toBe("MANAGED_KEY_INVALID");
-      expect(result.errorCategory).toBe("managed_key_invalid");
+      expect(result.code).toBe("CLOUD_KEY_INVALID");
+      expect(result.errorCategory).toBe("cloud_key_invalid");
       expect(result.userMessage).toBe(
         "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
@@ -953,7 +953,7 @@ describe("classifyConversationError", () => {
 
       const result = classifyConversationError(err, baseCtx);
 
-      expect(result.code).toBe("MANAGED_KEY_INVALID");
+      expect(result.code).toBe("CLOUD_KEY_INVALID");
       expect(result.userMessage).toBe(
         "Cadet's managed inference credential was rejected. This isn't a personal provider API key — Cadet provisions this one, so there's nothing to update in Settings.",
       );
@@ -1256,7 +1256,7 @@ describe("classifyConversationError", () => {
       );
     });
 
-    it("routes reason=invalid_credentials to MANAGED_KEY_INVALID under cloud-proxy", () => {
+    it("routes reason=invalid_credentials to CLOUD_KEY_INVALID under cloud-proxy", () => {
       providerRoutingSources["vercel-ai-gateway"] = "cloud-proxy";
       const err = new ProviderError(
         "Vercel AI Gateway API error (401): unauthorized",
@@ -1267,8 +1267,8 @@ describe("classifyConversationError", () => {
 
       const result = classifyConversationError(err, baseCtx);
 
-      expect(result.code).toBe("MANAGED_KEY_INVALID");
-      expect(result.errorCategory).toBe("managed_key_invalid");
+      expect(result.code).toBe("CLOUD_KEY_INVALID");
+      expect(result.errorCategory).toBe("cloud_key_invalid");
       expect(result.retryable).toBe(false);
     });
 

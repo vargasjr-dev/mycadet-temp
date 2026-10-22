@@ -3,7 +3,7 @@
  * credential still authenticates.
  *
  * The daemon route is the authoritative serving side:
- *   - `POST /v1/platform/verify-credential`
+ *   - `POST /v1/cloud/verify-credential`
  *       (`assistant/src/runtime/routes/cloud-routes.ts`)
  *
  * The daemon's platform client produces the verdict, the route reports it,
@@ -32,10 +32,10 @@ export type CloudCredentialVerificationStatus = z.infer<
   typeof CloudCredentialVerificationStatusSchema
 >;
 
-/** `POST /v1/platform/verify-credential` response body. */
-export const PlatformVerifyCredentialResponseSchema = z.object({
+/** `POST /v1/cloud/verify-credential` response body. */
+export const CloudVerifyCredentialResponseSchema = z.object({
   status: CloudCredentialVerificationStatusSchema,
 });
-export type PlatformVerifyCredentialResponse = z.infer<
-  typeof PlatformVerifyCredentialResponseSchema
+export type CloudVerifyCredentialResponse = z.infer<
+  typeof CloudVerifyCredentialResponseSchema
 >;

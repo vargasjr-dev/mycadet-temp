@@ -13,7 +13,7 @@ describe("assistant cloud callback-routes list", () => {
   test("returns empty list when no routes registered", async () => {
     const out = await runCloud(["callback-routes", "list", "--json"]);
 
-    expect(ipc.calls[0][0]).toBe("platform_callback_routes_list");
+    expect(ipc.calls[0][0]).toBe("cloud_callback_routes_list");
 
     const parsed = JSON.parse(out.join(""));
     expect(parsed.ok).toBe(true);

@@ -11,6 +11,9 @@ export const routes = {
   welcome: "/assistant/welcome",
   account: {
     root: "/account",
+    consent: {
+      reviewTerms: "/account/consent/review-terms",
+    },
     login: "/account/login",
     selectAssistant: "/account/select-assistant",
     signup: "/account/signup",

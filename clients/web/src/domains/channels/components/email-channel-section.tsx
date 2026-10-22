@@ -38,7 +38,7 @@ export function EmailChannelSection() {
   const { t } = useTranslation("channels");
   const assistantId = useActiveAssistantId();
 
-  // assistantHandle is platform-only; used to pre-fill the email subdomain.
+  // assistantHandle is cloud-only; used to pre-fill the email subdomain.
   const isOrgReady = useIsOrgReady();
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
@@ -62,16 +62,18 @@ export function EmailChannelSection() {
 
   // Managed email lives on the cloud API, whose assistant routes key on
   // the cloud UUID — the local-mode lockfile id is a slug that no
-  // platform route matches. Resolve the cloud id before rendering the
+  // cloud route matches. Resolve the cloud id before rendering the
   // managed form; on resolution failure fall back to the raw id so the
-  // platform can still answer with a real per-request error.
-  const { cloudAssistantId, error: cloudAssistantIdError } =
-    useCloudAssistantId(
-      assistantId,
-      cloudGate === "full" && mode === "managed",
-    );
-  const managedAssistantId =
-    cloudAssistantId ?? (cloudAssistantIdError ? assistantId : null);
+  // cloud can still answer with a real per-request error.
+  const {
+    cloudAssistantId: resolvedCloudAssistantId,
+    error: cloudAssistantIdError,
+  } = useCloudAssistantId(
+    assistantId,
+    cloudGate === "full" && mode === "managed",
+  );
+  const cloudAssistantId =
+    resolvedCloudAssistantId ?? (cloudAssistantIdError ? assistantId : null);
 
   // -- BYO credential check (your-own mode) ----------------------------------
   const byoCredentialQuery = useQuery({
@@ -118,7 +120,7 @@ export function EmailChannelSection() {
   const showInboxPitch =
     cloudGate === "full" &&
     mode === "managed" &&
-    managedAssistantId !== null &&
+    cloudAssistantId !== null &&
     !!subscription?.entitlements &&
     subscription.entitlements.cloud_email !== true;
 
@@ -265,14 +267,14 @@ export function EmailChannelSection() {
             <CloudLoginNotice>
               {t("emailChannelSection.platformLoginNotice")}
             </CloudLoginNotice>
-          ) : managedAssistantId === null ? (
+          ) : cloudAssistantId === null ? (
             <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
               <Loader2 className="h-4 w-4 animate-spin" />
               {t("emailChannelSection.connecting")}
             </div>
           ) : (
             <EmailCloudContent
-              assistantId={managedAssistantId}
+              assistantId={cloudAssistantId}
               emailRootDomain={emailRootDomain}
             />
           )}

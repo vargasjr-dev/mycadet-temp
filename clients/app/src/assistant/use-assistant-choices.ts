@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { AssistantListSchema, type AssistantList } from "./resolution-contract";
-import {
-  listAssistantChoices,
-  type AssistantRequest,
-} from "./resolve-assistant";
+import { listAssistantChoices } from "./resolve-assistant";
 
 /**
  * The chooser's request state: only what the list endpoint can answer, plus
@@ -16,16 +13,19 @@ export type AssistantChoicesState =
   | AssistantList;
 
 /**
- * The chooser's request hook: it calls only the list endpoint. The shell's
+ * The chooser's request hook: it calls only the list endpoint, and it is
+ * SAME-ORIGIN by contract — `window.location.origin`, like every other
+ * Cadet surface's chooser (the web dev server proxies /v1, the desktop
+ * protocol handler forwards it, the edge and cloud takeovers route it, and
+ * the mobile shells' native scheme handler resolves it). Naming a base here
+ * would bypass the serving layer and lose its session handling. The shell's
  * resolution flow (one assistant's detail, or which arms redirect to this
  * chooser) stays in useAssistantRequest.
  */
-export function useAssistantChoices({
-  apiBaseUrl = "/",
-  origin,
-}: Omit<AssistantRequest, "assistantId" | "signal">) {
+export function useAssistantChoices() {
+  const origin = window.location.origin;
   const [attempt, setAttempt] = useState(0);
-  const key = JSON.stringify([apiBaseUrl, origin, attempt]);
+  const key = JSON.stringify([origin, attempt]);
   const [result, setResult] = useState<{
     key: string;
     state: AssistantChoicesState;
@@ -36,7 +36,7 @@ export function useAssistantChoices({
     settle({ status: "loading" });
     const timer = setTimeout(() => {
       console.error(
-        `Assistant list request timed out after 10s (apiBaseUrl ${apiBaseUrl}, origin ${origin})`,
+        `Assistant list request timed out after 10s (origin ${origin})`,
       );
       controller.abort();
       settle({ status: "error" });
@@ -47,7 +47,7 @@ export function useAssistantChoices({
           return;
         }
         return listAssistantChoices({
-          apiBaseUrl,
+          apiBaseUrl: "/",
           origin,
           signal: controller.signal,
         });
@@ -81,7 +81,7 @@ export function useAssistantChoices({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [apiBaseUrl, origin, attempt, key]);
+  }, [attempt, key]);
   const state: AssistantChoicesState =
     result?.key === key ? result.state : { status: "loading" };
   return {
