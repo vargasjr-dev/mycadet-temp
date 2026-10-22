@@ -1,8 +1,6 @@
 {
   "terminalToolbar": {
     "heading": "Terminal",
-    "recoveryTitle": "Recovery Mode active, session connected to the debug terminal",
-    "recoveryTag": "Recovery",
     "clearTitle": "Clear terminal output",
     "clear": "Clear",
     "disconnectTitle": "Disconnect terminal session",

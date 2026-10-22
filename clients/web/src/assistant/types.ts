@@ -1,7 +1,3 @@
-export type MaintenanceModeInfo = {
-  enabled?: boolean;
-};
-
 /**
  * What the web bundle's one assistant resolution landed on.
  *
@@ -21,10 +17,6 @@ export type AssistantResolutionState =
   | { kind: "initializing" }
   | { kind: "cleaning_up" }
   | { kind: "self_hosted" }
-  | {
-      kind: "active";
-      isLocal: boolean;
-      maintenanceMode?: MaintenanceModeInfo;
-    }
+  | { kind: "active"; isLocal: boolean }
   | { kind: "auto_hatch" }
   | { kind: "error"; message: string; transient?: boolean };

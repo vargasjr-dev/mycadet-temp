@@ -309,7 +309,7 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // The cloud client uses the segment allowlist — only explicitly
 // listed segments are rewritten. Platform-owned routes like
-// `maintenance-mode/`, `system-events/`, `terminal/`,
+// `system-events/`, `terminal/`,
 // `doctor/` fall through to Django.
 //
 // These tests pin the invariants that make that handoff safe:
@@ -326,7 +326,7 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // Negative tests confirm we don't route to the gateway when (a) no
 // connection is set, (b) the path's first segment isn't on the allowlist
-// (`activate`, `maintenance-mode`, `system-events`, `terminal`, …), or
+// (`activate`, `system-events`, `terminal`, …), or
 // (c) the path is the bare retrieve route `/v1/assistants/{id}/`.
 
 const SELF_HOSTED_ID = "01h1234567890abcdefg";
@@ -520,7 +520,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
       "restart",
       "retire",
       "backups",
-      "maintenance-mode",
       "system-events",
       "terminal",
       "doctor",

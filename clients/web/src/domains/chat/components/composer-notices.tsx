@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 
 import { CompactionCircuitOpenBanner } from "@/domains/chat/components/compaction-circuit-open-banner";
-import { MaintenanceModeBanner } from "@/domains/chat/components/maintenance-mode-banner";
 import { MissingApiKeyBanner } from "@/domains/chat/components/missing-api-key-banner";
 import {
   formatVoiceError,
@@ -76,15 +75,6 @@ export interface ComposerNoticesProps {
   compactionCircuitOpenUntil?: Date | null;
   /** Invoked when the compaction-circuit countdown elapses. */
   onCompactionCircuitExpired?: () => void;
-
-  /** True when the assistant is in maintenance/recovery mode. */
-  showMaintenanceBanner: boolean;
-  /** True when this composer notice should render its own maintenance exit action. */
-  showMaintenanceExitAction?: boolean;
-  /** Assistant id used by the maintenance banner's "exited" callback. */
-  assistantId?: string | null;
-  /** Invoked when the assistant exits maintenance mode. */
-  onMaintenanceExited?: () => void;
 }
 
 export function ComposerNotices({
@@ -101,10 +91,6 @@ export function ComposerNotices({
   onDismissApiKeyError,
   compactionCircuitOpenUntil,
   onCompactionCircuitExpired,
-  showMaintenanceBanner,
-  showMaintenanceExitAction = true,
-  assistantId,
-  onMaintenanceExited,
 }: ComposerNoticesProps) {
   const { t } = useTranslation("chat");
   return (
@@ -176,15 +162,6 @@ export function ComposerNotices({
             />
           </div>
         )}
-      {showMaintenanceBanner && assistantId && onMaintenanceExited && (
-        <div className="mb-2">
-          <MaintenanceModeBanner
-            assistantId={assistantId}
-            onExited={onMaintenanceExited}
-            showExitAction={showMaintenanceExitAction}
-          />
-        </div>
-      )}
     </>
   );
 }

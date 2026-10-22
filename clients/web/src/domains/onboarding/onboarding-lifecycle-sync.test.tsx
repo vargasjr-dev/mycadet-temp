@@ -8,9 +8,6 @@ import { routes } from "@/utils/routes";
 let searchParams = new URLSearchParams();
 const navigateMock = mock(() => {});
 
-let checkAssistantImpl: () => Promise<void> = async () => {};
-const checkAssistantMock = mock(() => checkAssistantImpl());
-
 const hatchAssistantMock = mock(async () => ({
   ok: true,
   status: 201,
@@ -18,7 +15,6 @@ const hatchAssistantMock = mock(async () => ({
     id: "asst-1",
     status: "initializing",
     is_local: false,
-    maintenance_mode: { enabled: false },
   },
 }));
 
@@ -29,7 +25,6 @@ const assistantResult = (status: string) => ({
     id: "asst-1",
     status,
     is_local: false,
-    maintenance_mode: { enabled: false },
   },
 });
 let getAssistantImpl: () => Promise<unknown> = async () =>
@@ -40,8 +35,9 @@ let fetchTraitsImpl: () => Promise<unknown> = async () => null;
 const fetchCharacterTraitsMock = mock(() => fetchTraitsImpl());
 const saveCharacterTraitsMock = mock(async () => undefined);
 const invalidateQueriesMock = mock(() => {});
+const fetchQueryMock = mock(async () => assistantResult("active"));
 const queryClientMock = {
-  fetchQuery: mock(async () => []),
+  fetchQuery: fetchQueryMock,
   invalidateQueries: invalidateQueriesMock,
 };
 const writeSelectedVersionMock = mock(() => {});
@@ -56,14 +52,9 @@ mock.module("react-router", () => ({
   useSearchParams: () => [searchParams],
 }));
 
-mock.module("@/assistant/lifecycle-service", () => ({
-  lifecycleService: {
-    checkAssistant: checkAssistantMock,
-    markExpectingFirstMessage: () => {},
-  },
-}));
-
+const actualAssistantApi = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({
+  ...actualAssistantApi,
   hatchAssistant: hatchAssistantMock,
   getAssistant: getAssistantMock,
   getAssistantHealthz: async () => ({
@@ -73,12 +64,17 @@ mock.module("@/assistant/api", () => ({
   }),
 }));
 
+const actual_avatar_api = await import("@/assistant/avatar-api");
 mock.module("@/assistant/avatar-api", () => ({
+  ...actual_avatar_api,
   fetchCharacterTraits: fetchCharacterTraitsMock,
   saveCharacterTraits: saveCharacterTraitsMock,
 }));
 
+const actual_use_assistant_avatar =
+  await import("@/hooks/use-assistant-avatar");
 mock.module("@/hooks/use-assistant-avatar", () => ({
+  ...actual_use_assistant_avatar,
   avatarQueryKey: (assistantId: string) => ["assistantAvatar", assistantId],
   AVATAR_QUERY_KEY_PREFIX: "assistantAvatar",
 }));
@@ -152,12 +148,16 @@ mock.module("@/lib/navigation/build-state", () => ({
   }),
 }));
 
+const actualNativeAuth = await import("@/runtime/native-auth");
 mock.module("@/runtime/native-auth", () => ({
+  ...actualNativeAuth,
   isNativePlatform: () => false,
   useIsNativePlatform: () => false,
 }));
 
+const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
+  ...actualLocalMode,
   isLocalClient: () => isLocalClientValue,
   isCadetCloudRemote: () => false,
   isServedGatewayRuntime: () => false,
@@ -204,11 +204,16 @@ mock.module("@/runtime/local-mode-host", () => ({
   hatchLocalAssistant: async () => ({ ok: true, assistantId: "local-1" }),
 }));
 
+const actual_selection = await import("@/assistant/selection");
 mock.module("@/assistant/selection", () => ({
+  ...actual_selection,
   setSelectedAssistant: async () => {},
 }));
 
+const actual_resolved_assistants_store =
+  await import("@/stores/resolved-assistants-store");
 mock.module("@/stores/resolved-assistants-store", () => ({
+  ...actual_resolved_assistants_store,
   useResolvedAssistantsStore: {
     getState: () => ({
       assistants: [],
@@ -227,7 +232,9 @@ mock.module("@/stores/resolved-assistants-store", () => ({
   },
 }));
 
+const actualAuthStore = await import("@/stores/auth-store");
 mock.module("@/stores/auth-store", () => ({
+  ...actualAuthStore,
   useAuthStore: {
     use: {
       user: () => ({
@@ -294,7 +301,6 @@ const { HatchingScreen } =
 
 beforeEach(() => {
   searchParams = new URLSearchParams();
-  checkAssistantImpl = async () => {};
   fetchTraitsImpl = async () => null;
   getAssistantImpl = async () => assistantResult("active");
   isLocalClientValue = false;
@@ -305,7 +311,8 @@ beforeEach(() => {
 
   navigateMock.mockClear();
   connectLocalAssistantMock.mockClear();
-  checkAssistantMock.mockClear();
+  fetchQueryMock.mockImplementation(async () => assistantResult("active"));
+  fetchQueryMock.mockClear();
   hatchAssistantMock.mockClear();
   getAssistantMock.mockClear();
   fetchCharacterTraitsMock.mockClear();
@@ -320,21 +327,23 @@ afterEach(() => {
 
 describe("onboarding lifecycle sync", () => {
   test("hatching refreshes the root assistant lifecycle before leaving onboarding", async () => {
-    let resolveLifecycle!: () => void;
-    checkAssistantImpl = () =>
-      new Promise<void>((resolve) => {
-        resolveLifecycle = resolve;
-      });
+    let resolveLifecycle!: (value: ReturnType<typeof assistantResult>) => void;
+    fetchQueryMock.mockImplementation(
+      () =>
+        new Promise<ReturnType<typeof assistantResult>>((resolve) => {
+          resolveLifecycle = resolve;
+        }),
+    );
 
     render(<HatchingScreen />);
 
     await waitFor(() => expect(getAssistantMock).toHaveBeenCalled());
-    await waitFor(() => expect(checkAssistantMock).toHaveBeenCalled(), {
+    await waitFor(() => expect(fetchQueryMock).toHaveBeenCalled(), {
       timeout: 2_000,
     });
     expect(navigateMock).not.toHaveBeenCalled();
 
-    resolveLifecycle();
+    resolveLifecycle(assistantResult("active"));
 
     await waitFor(() =>
       expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
@@ -379,11 +388,13 @@ describe("onboarding lifecycle sync", () => {
     getAssistantImpl = async () =>
       assistantResult(++assistantCalls === 1 ? "initializing" : "active");
 
-    let resolveLifecycle!: () => void;
-    checkAssistantImpl = () =>
-      new Promise<void>((resolve) => {
-        resolveLifecycle = resolve;
-      });
+    let resolveLifecycle!: (value: ReturnType<typeof assistantResult>) => void;
+    fetchQueryMock.mockImplementation(
+      () =>
+        new Promise<ReturnType<typeof assistantResult>>((resolve) => {
+          resolveLifecycle = resolve;
+        }),
+    );
 
     render(<HatchingScreen />);
 
@@ -401,10 +412,10 @@ describe("onboarding lifecycle sync", () => {
     );
 
     // Persisting the avatar must not block the lifecycle hand-off.
-    await waitFor(() => expect(checkAssistantMock).toHaveBeenCalled(), {
+    await waitFor(() => expect(fetchQueryMock).toHaveBeenCalled(), {
       timeout: 2_000,
     });
-    resolveLifecycle();
+    resolveLifecycle(assistantResult("active"));
     await waitFor(() =>
       expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
         replace: true,
@@ -418,7 +429,7 @@ describe("onboarding lifecycle sync", () => {
     // sidecar, so seeding would overwrite it (see persistHatchAvatar).
     render(<HatchingScreen />);
 
-    await waitFor(() => expect(checkAssistantMock).toHaveBeenCalled(), {
+    await waitFor(() => expect(fetchQueryMock).toHaveBeenCalled(), {
       timeout: 2_000,
     });
     expect(saveCharacterTraitsMock).not.toHaveBeenCalled();
@@ -442,7 +453,7 @@ describe("onboarding lifecycle sync", () => {
 
     render(<HatchingScreen />);
 
-    await waitFor(() => expect(checkAssistantMock).toHaveBeenCalled(), {
+    await waitFor(() => expect(fetchQueryMock).toHaveBeenCalled(), {
       timeout: 2_000,
     });
     expect(saveCharacterTraitsMock).not.toHaveBeenCalled();

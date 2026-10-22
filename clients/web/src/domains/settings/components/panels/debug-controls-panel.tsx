@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { type Assistant, getAssistant } from "@/assistant/api";
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
-import { RecoveryModeControls } from "@/domains/settings/components/recovery-mode-controls";
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
@@ -19,31 +18,26 @@ export function DebugControlsPanel() {
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
 
-  const fetchAssistant = useCallback(
-    async (force?: boolean) => {
-      if (!force && fetchedRef.current) {
-        return;
+  const fetchAssistant = useCallback(async () => {
+    if (fetchedRef.current) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await getAssistant();
+      if (result.ok) {
+        fetchedRef.current = true;
+        setAssistant(result.data);
+      } else {
+        setAssistant(null);
       }
-      if (!force) {
-        setLoading(true);
-      }
-      try {
-        const result = await getAssistant();
-        if (result.ok) {
-          fetchedRef.current = true;
-          setAssistant(result.data);
-        } else {
-          setAssistant(null);
-        }
-      } catch (error) {
-        captureError(error, { context: "fetch_assistant_for_debug_controls" });
-        toast.error(t("debugControlsPanel.loadFailedToast"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [t],
-  );
+    } catch (error) {
+      captureError(error, { context: "fetch_assistant_for_debug_controls" });
+      toast.error(t("debugControlsPanel.loadFailedToast"));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
     fetchAssistant();
@@ -88,12 +82,6 @@ export function DebugControlsPanel() {
               />
             </div>
           </div>
-
-          <RecoveryModeControls
-            assistantId={assistant.id}
-            maintenanceMode={assistant.maintenance_mode}
-            onMaintenanceModeChange={() => fetchAssistant(true)}
-          />
 
           {cloudGate === "disabled" && (
             <CloudLoginNotice>

@@ -767,17 +767,6 @@
     "goToFile": "Ir al archivo",
     "pictureInPicture": "Imagen en imagen"
   },
-  "maintenanceModeBanner": {
-    "body": "El espacio de trabajo de tu asistente está conectado actualmente a un terminal de depuración. El chat no está disponible en el modo de recuperación.",
-    "loginHint": "Inicia sesión en la plataforma Cadet para salir del modo de recuperación.",
-    "resume": "Reanudar asistente",
-    "title": "Asistente en modo de recuperación"
-  },
-  "maintenanceRecoveryCard": {
-    "body": "El chat no está disponible mientras el mantenimiento está activo.",
-    "goToDebug": "Ir a ajustes de depuración",
-    "title": "El asistente está en modo de recuperación"
-  },
   "messageFilesPanel": {
     "closeAria": "Cerrar archivos",
     "empty": "No hay archivos en este mensaje",

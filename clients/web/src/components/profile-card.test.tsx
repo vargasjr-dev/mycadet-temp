@@ -125,7 +125,6 @@ function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
     machine_id: null,
     vembda_cluster_id: null,
     machine_size: null,
-    maintenance_mode: { enabled: false, debug_pod_name: null },
     is_local: false,
     ingress_url: null,
     access_consented: false,

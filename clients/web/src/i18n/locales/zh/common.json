@@ -746,9 +746,7 @@
     "stepConnect": "连接",
     "stepCreate": "创建机器人"
   },
-  "terminalPanel": {
-    "recoveryModeBanner": "恢复模式已激活：此会话已连接到调试终端。"
-  },
+  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "强调色填充",
     "activeBorder": "活动边框",

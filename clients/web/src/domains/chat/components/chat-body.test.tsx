@@ -30,10 +30,6 @@ mock.module("@/domains/chat/transcript/transcript", () => ({
   Transcript: () => <div data-testid="transcript">TRANSCRIPT</div>,
 }));
 
-mock.module("@/domains/chat/components/maintenance-recovery-card", () => ({
-  MaintenanceRecoveryCard: () => <div>MAINTENANCE</div>,
-}));
-
 mock.module("@/domains/chat/components/chat-skeleton", () => ({
   ChatSkeleton: () => <div>SKELETON</div>,
 }));
@@ -143,7 +139,6 @@ function baseProps(overrides: Partial<ChatBodyProps> = {}): ChatBodyProps {
     scrollAreaProps: {
       isLoadingHistory: false,
       messageCount: 0,
-      showMaintenanceRecoveryCard: false,
       showEmptyState: false,
       emptyStateProps: {},
       transcriptRef: null,

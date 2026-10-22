@@ -1439,114 +1439,6 @@ paths:
           description: No response body
       x-cadet-api-clients:
       - platform
-  /v1/assistants/{assistant_id}/maintenance-mode/enter/:
-    post:
-      operationId: assistants_maintenance_mode_enter_create
-      description: |-
-        Enter maintenance mode for the given assistant.
-
-        Pauses the assistant StatefulSet, hands the workspace PVC off to a debug
-        pod, and persists ``maintenance_mode_enabled=True`` on the Assistant row
-        only after vembda confirms the handoff succeeded.
-      parameters:
-      - in: header
-        name: Cadet-Organization-Id
-        schema:
-          type: string
-          format: uuid
-        description: Required if using Cookie-based or X-Session-Token authentication
-          methods.
-      - in: path
-        name: assistant_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - assistants
-      security:
-      - CadetAPIKey: []
-      - cookieAuth: []
-      - XSessionTokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '502':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-      x-cadet-api-clients:
-      - platform
-  /v1/assistants/{assistant_id}/maintenance-mode/exit/:
-    post:
-      operationId: assistants_maintenance_mode_exit_create
-      description: |-
-        Exit maintenance mode for the given assistant.
-
-        Tears down the debug pod, returns the workspace PVC to the assistant
-        StatefulSet, and clears ``maintenance_mode_enabled`` only after vembda
-        confirms the StatefulSet handoff is complete.
-      parameters:
-      - in: header
-        name: Cadet-Organization-Id
-        schema:
-          type: string
-          format: uuid
-        description: Required if using Cookie-based or X-Session-Token authentication
-          methods.
-      - in: path
-        name: assistant_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - assistants
-      security:
-      - CadetAPIKey: []
-      - cookieAuth: []
-      - XSessionTokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '502':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-      x-cadet-api-clients:
-      - platform
   /v1/assistants/{assistant_id}/cloud-speech/stt/transcribe/:
     post:
       operationId: assistants_managed_speech_stt_transcribe_create
@@ -6107,10 +5999,6 @@ components:
             assistant via a resize/onboarding apply. Null until storage is first applied.
             Used to derive onboarding pvc_ready and as the never-shrink floor; distinct
             from BillingAccount billing markers.
-        maintenance_mode:
-          allOf:
-          - $ref: '#/components/schemas/MaintenanceMode'
-          readOnly: true
         is_local:
           type: boolean
           readOnly: true
@@ -6145,7 +6033,6 @@ components:
       - ingress_url
       - is_local
       - machine_size
-      - maintenance_mode
       - modified
       - platform_actor_token
       - provisioned_storage_gib
@@ -8191,17 +8078,6 @@ components:
         * `medium` - medium
         * `large` - large
         * `xl` - xl
-    MaintenanceMode:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        debug_pod_name:
-          type: string
-          nullable: true
-      required:
-      - debug_pod_name
-      - enabled
     CloudSpeechErrorResponse:
       type: object
       description: Error envelope shared by the cloud speech STT/TTS endpoints.

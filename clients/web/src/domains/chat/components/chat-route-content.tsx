@@ -319,7 +319,6 @@ export function ChatMainPanel({
   // A pop-out renders no header and no status banner, which changes both what
   // chrome is available and which kinds the overlay row has to carry.
   const isPopout = isPopoutWindow(location.search);
-  const statusBannerVisible = !isPopout;
 
   // -------------------------------------------------------------------------
   // Derived UI state (provides assistantId, activeConversationId,
@@ -361,8 +360,7 @@ export function ChatMainPanel({
       useComposerStore.getState().addFiles(files, assistantId),
     [assistantId],
   );
-  const { state: assistantState, refetch: refetchAssistantResolution } =
-    useAssistantResolution();
+  const { state: assistantState } = useAssistantResolution();
   const assistantName = useAssistantIdentityStore.use.name();
   // -------------------------------------------------------------------------
   // Store reads — per-conversation state
@@ -485,10 +483,6 @@ export function ChatMainPanel({
     void navigate(routes.settings.ai);
   }, [navigate]);
 
-  const checkAssistant = useCallback(() => {
-    void refetchAssistantResolution();
-  }, [refetchAssistantResolution]);
-
   const handleDismissUnknownNudge = useCallback(
     (toolCallId: string) =>
       useInteractionStore.getState().removeUnknownNudgeToolCallId(toolCallId),
@@ -524,11 +518,6 @@ export function ChatMainPanel({
   const handleCompactionCircuitExpired = useCallback(
     () => useChatSessionStore.getState().setCompactionCircuitOpenUntil(null),
     [],
-  );
-
-  const handleMaintenanceExited = useCallback(
-    () => void checkAssistant(),
-    [checkAssistant],
   );
 
   // -------------------------------------------------------------------------
@@ -717,11 +706,7 @@ export function ChatMainPanel({
     }
   }, [transcriptPainted]);
 
-  const typingDisabled =
-    isLoadingHistory ||
-    (assistantState.kind === "active" &&
-      !!assistantState.maintenanceMode?.enabled) ||
-    diskPressureInputDisabled;
+  const typingDisabled = isLoadingHistory || diskPressureInputDisabled;
 
   const sendDisabled = isSendDisabledFromTurn || typingDisabled;
 
@@ -743,11 +728,7 @@ export function ChatMainPanel({
     // streaming reply materializes (notably across the onboarding draft→real
     // conversation switch, which resets the snapshot mid-turn).
     !activeConversationIsProcessing &&
-    !isAssistantBusy &&
-    !(
-      assistantState.kind === "active" &&
-      assistantState.maintenanceMode?.enabled
-    );
+    !isAssistantBusy;
 
   const showDoctorAction =
     assistantState.kind === "active" && !assistantState.isLocal;
@@ -931,12 +912,6 @@ export function ChatMainPanel({
   // rejection.
   const imageAttachmentsAllowed =
     !visionGateActive || activeModelSupportsVision;
-
-  const isInMaintenanceWithNoMessages =
-    !isLoadingHistory &&
-    messages.length === 0 &&
-    assistantState.kind === "active" &&
-    assistantState.maintenanceMode?.enabled === true;
 
   // -------------------------------------------------------------------------
   // Attachment drop zone
@@ -1378,13 +1353,6 @@ export function ChatMainPanel({
               onDismissApiKeyError={handleDismissApiKeyError}
               compactionCircuitOpenUntil={compactionCircuitOpenUntil}
               onCompactionCircuitExpired={handleCompactionCircuitExpired}
-              showMaintenanceBanner={
-                assistantState.kind === "active" &&
-                assistantState.maintenanceMode?.enabled === true
-              }
-              showMaintenanceExitAction={!statusBannerVisible}
-              assistantId={assistantId}
-              onMaintenanceExited={handleMaintenanceExited}
             />
           </>
         }
@@ -1447,12 +1415,7 @@ export function ChatMainPanel({
     <ChatBody
       variant={variant}
       bottomInset={appStripBottomInset}
-      scrollAreaProps={{
-        ...chatBodyScrollAreaPropsBase,
-        showMaintenanceRecoveryCard: isSidePanel
-          ? false
-          : isInMaintenanceWithNoMessages,
-      }}
+      scrollAreaProps={chatBodyScrollAreaPropsBase}
       composerSlot={composerNode}
       documentSlot={
         isMobile && documentRoute.surfaceId ? (

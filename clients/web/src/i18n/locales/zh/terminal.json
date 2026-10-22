@@ -1,8 +1,6 @@
 {
   "terminalToolbar": {
     "heading": "终端",
-    "recoveryTitle": "恢复模式已激活，会话已连接到调试终端",
-    "recoveryTag": "恢复",
     "clearTitle": "清除终端输出",
     "clear": "清除",
     "disconnectTitle": "断开终端会话",

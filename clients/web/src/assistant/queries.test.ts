@@ -47,7 +47,6 @@ function okResult(
       id: "asst-1",
       status,
       is_local: isLocal,
-      maintenance_mode: { enabled: false },
     } as Partial<Assistant> as Assistant,
   };
 }

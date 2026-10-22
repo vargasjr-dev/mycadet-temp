@@ -141,8 +141,7 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
   },
-  "billingStatusHandler": {
-  },
+  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "Нет данных об использовании за этот период"
   },
@@ -216,8 +215,7 @@
     "tryAgain": "Попробовать снова",
     "urlPlaceholder": "Callback URL..."
   },
-  "checkoutPage": {
-  },
+  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Витрины, гайды и проекты от сообщества.",
     "communityHubTitle": "Центр сообщества",
@@ -245,8 +243,7 @@
     "youtubeChannelDescription": "Обзоры, туториалы и разборы продукта.",
     "youtubeChannelTitle": "Канал YouTube"
   },
-  "completeState": {
-  },
+  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Дополнительно: cron-выражение",
     "atMinute": "В минуту",
@@ -326,8 +323,7 @@
     "subtitleOwn": "Хранятся в зашифрованном виде в хранилище учётных данных ассистента. Значение можно показать по запросу, заменить или удалить в любой момент.",
     "title": "Секреты"
   },
-  "creditBundlePicker": {
-  },
+  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
     "export": "Экспортировать отладочный пакет",
@@ -346,7 +342,7 @@
     "noAssistant": "Ассистент не найден. Создание ассистента для отладочных элементов.",
     "restartDescription": "Перезапустить машину ассистента. На время перезапуска он будет недоступен.",
     "restartTitle": "Перезапустить ассистента",
-    "subtitle": "Управление резервными копиями, перезапуск ассистента или вход в режим восстановления для отладочного терминала.",
+    "subtitle": "Управление резервными копиями и перезапуск ассистента.",
     "title": "Общие"
   },
   "doctorChatBlocks": {
@@ -407,8 +403,7 @@
     "keepPro": "Оставить Pro",
     "title": "Перейти на Base?"
   },
-  "errorStates": {
-  },
+  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",
     "computeResourcesLoginNotice": "Вход на платформу Cadet для управления вычислительными ресурсами.",
@@ -1023,8 +1018,7 @@
     "loadError": "Не удалось загрузить провайдеров. Повторите попытку.",
     "title": "Провайдеры"
   },
-  "provisioningState": {
-  },
+  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "Запусков пока нет.",
     "error": "Ошибка",
@@ -1036,19 +1030,7 @@
     "skipped": "Пропущен",
     "title": "Недавние запуски"
   },
-  "recoveryModeControls": {
-    "activeDescription": "Активен: подключено к отладочному терминалу",
-    "enter": "Войти в режим восстановления",
-    "enterError": "Не удалось войти в режим восстановления. Повторите попытку.",
-    "exitError": "Не удалось выйти из режима восстановления. Повторите попытку.",
-    "inactiveDescription": "Приостановить ассистента и подключиться к его рабочей области через отладочный терминал",
-    "loginNoticeEnter": "Вход на платформу Cadet для перехода в режим восстановления.",
-    "loginNoticeExit": "Вход на платформу Cadet для выхода из режима восстановления.",
-    "resumeAssistant": "Возобновить ассистента",
-    "title": "Режим восстановления"
-  },
-  "resizeCard": {
-  },
+  "resizeCard": {},
   "restartAssistant": {
     "button": "Перезапустить",
     "confirmLabel": "Перезапустить",
@@ -1297,8 +1279,7 @@
     "updateWindowWithTz": "Окно обновления ({tz})",
     "weekly": "Еженедельно"
   },
-  "upgradeSuccessPage": {
-  },
+  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Разобрать расходы с ассистентом",
     "breakdownTitle": "По действиям",
@@ -1347,8 +1328,7 @@
     "noUsageInRange": "В этом диапазоне использования нет",
     "total": "Итого"
   },
-  "useBillingPortalSession": {
-  },
+  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "Ассистент не готов. Повторите попытку.",
     "saveApiKeyFailedToast": "Не удалось сохранить API-ключ {providerName}. Повторите попытку."

@@ -1,8 +1,6 @@
 {
   "terminalToolbar": {
     "heading": "終端機",
-    "recoveryTitle": "復原模式已啟用，工作階段已連線至偵錯終端機",
-    "recoveryTag": "復原",
     "clearTitle": "清除終端機輸出",
     "clear": "清除",
     "disconnectTitle": "中斷終端機工作階段連線",

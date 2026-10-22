@@ -744,9 +744,7 @@
     "stepConnect": "Conectar",
     "stepCreate": "Crear bot"
   },
-  "terminalPanel": {
-    "recoveryModeBanner": "Modo de recuperación activo: esta sesión está conectada al terminal de depuración."
-  },
+  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "Relleno de acento",
     "activeBorder": "Borde activo",

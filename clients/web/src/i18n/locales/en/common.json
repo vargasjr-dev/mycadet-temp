@@ -746,9 +746,7 @@
     "stepConnect": "Connect",
     "stepCreate": "Create bot"
   },
-  "terminalPanel": {
-    "recoveryModeBanner": "Recovery Mode active: this session is connected to the debug terminal."
-  },
+  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "Accent fill",
     "activeBorder": "Active border",

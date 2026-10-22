@@ -1,26 +1,21 @@
 import { useCallback, useRef } from "react";
 
-import type { MaintenanceMode } from "@/generated/api/types.gen";
 import { useTerminalSession } from "@/domains/terminal/use-terminal-session";
 import { useTerminalStore } from "@/domains/terminal/terminal-store";
 import { TerminalConsole } from "@/domains/terminal/components/terminal-console";
 import { TerminalToolbar } from "@/domains/terminal/components/terminal-toolbar";
-import { useTranslation } from "@/i18n";
 
 export interface TerminalPanelProps {
   assistantId: string | null;
   className?: string;
-  maintenanceMode?: MaintenanceMode;
   service?: string;
 }
 
 export function TerminalPanel({
   assistantId,
   className,
-  maintenanceMode,
   service,
 }: TerminalPanelProps) {
-  const { t } = useTranslation();
   const writeToTerminalRef = useRef<((data: string) => void) | null>(null);
 
   const handleData = useCallback((data: string) => {
@@ -70,7 +65,6 @@ export function TerminalPanel({
   }, []);
 
   const isReadOnly = status !== "connected";
-  const isMaintenanceActive = maintenanceMode?.enabled === true;
 
   return (
     <div
@@ -86,14 +80,7 @@ export function TerminalPanel({
         onConnect={handleConnect}
         onDisconnect={close}
         onClear={handleClear}
-        maintenanceModeActive={isMaintenanceActive}
       />
-
-      {isMaintenanceActive && (
-        <div className="border-b border-[var(--system-mid-strong)] bg-[var(--system-mid-weak)] px-3 py-2 text-body-small-lighter text-[var(--system-mid-strong)]">
-          {t("terminalPanel.recoveryModeBanner")}
-        </div>
-      )}
 
       {status === "error" && errorMessage && (
         <div className="border-b border-[var(--border-base)] bg-[var(--system-negative-weak)] px-3 py-2 text-body-small-default text-[var(--system-negative-strong)]">

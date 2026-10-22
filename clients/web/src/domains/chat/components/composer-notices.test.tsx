@@ -18,7 +18,6 @@ const REQUIRED = {
   showMissingApiKeyBanner: false,
   onOpenAiSettings: () => {},
   onDismissApiKeyError: () => {},
-  showMaintenanceBanner: false,
 };
 
 describe("ComposerNotices", () => {

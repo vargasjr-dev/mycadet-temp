@@ -765,17 +765,6 @@
     "goToFile": "前往檔案",
     "pictureInPicture": "子母畫面"
   },
-  "maintenanceModeBanner": {
-    "body": "您的助理工作區目前已連接至偵錯終端機。在復原模式下，聊天無法使用。",
-    "loginHint": "登入 Cadet 平台以結束復原模式。",
-    "resume": "繼續助理",
-    "title": "助理處於復原模式"
-  },
-  "maintenanceRecoveryCard": {
-    "body": "維護期間，聊天無法使用。",
-    "goToDebug": "前往偵錯設定",
-    "title": "助理處於復原模式"
-  },
   "messageFilesPanel": {
     "closeAria": "關閉檔案",
     "empty": "此訊息沒有檔案",

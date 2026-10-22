@@ -155,8 +155,7 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
-  "billingStatusHandler": {
-  },
+  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "No hay datos de uso para este período"
   },
@@ -230,8 +229,7 @@
     "tryAgain": "Intentar de nuevo",
     "urlPlaceholder": "Pega aquí la URL de devolución de llamada..."
   },
-  "checkoutPage": {
-  },
+  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Muestras, guías y proyectos compartidos por la comunidad.",
     "communityHubTitle": "Centro de la comunidad",
@@ -259,8 +257,7 @@
     "youtubeChannelDescription": "Recorridos, tutoriales y análisis profundos del producto.",
     "youtubeChannelTitle": "Canal de YouTube"
   },
-  "completeState": {
-  },
+  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Avanzado: escribe una expresión cron",
     "atMinute": "En el minuto",
@@ -340,8 +337,7 @@
     "subtitleOwn": "Guardadas cifradas en la bóveda de credenciales de tu asistente. Revela un valor bajo demanda, o reemplázalo o elimínalo en cualquier momento.",
     "title": "Credenciales"
   },
-  "creditBundlePicker": {
-  },
+  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
     "export": "Exportar paquete de depuración",
@@ -360,7 +356,7 @@
     "noAssistant": "No se encontró ningún asistente. Crea un asistente para acceder a los controles de depuración.",
     "restartDescription": "Reinicia la máquina del asistente. Estará brevemente no disponible durante el reinicio.",
     "restartTitle": "Reiniciar asistente",
-    "subtitle": "Administra copias de seguridad, reinicia tu asistente o entra en modo de recuperación para conectar al terminal de depuración.",
+    "subtitle": "Administra copias de seguridad y reinicia tu asistente.",
     "title": "General"
   },
   "doctorChatBlocks": {
@@ -421,8 +417,7 @@
     "keepPro": "Mantener Pro",
     "title": "¿Bajar a Base?"
   },
-  "errorStates": {
-  },
+  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Elegir asistente",
     "computeResourcesLoginNotice": "Inicia sesión en la plataforma Cadet para administrar los recursos de cómputo.",
@@ -1040,8 +1035,7 @@
     "loadError": "No se pudieron cargar los proveedores. Inténtalo de nuevo.",
     "title": "Proveedores"
   },
-  "provisioningState": {
-  },
+  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "Aún no hay ejecuciones.",
     "error": "Error",
@@ -1053,19 +1047,7 @@
     "skipped": "Saltada",
     "title": "Ejecuciones recientes"
   },
-  "recoveryModeControls": {
-    "activeDescription": "Activo: conectado al terminal de depuración",
-    "enter": "Entrar en modo de recuperación",
-    "enterError": "No se pudo entrar en el modo de recuperación. Inténtalo de nuevo.",
-    "exitError": "No se pudo salir del modo de recuperación. Inténtalo de nuevo.",
-    "inactiveDescription": "Pausa el asistente y conéctate directamente a su espacio de trabajo mediante el terminal de depuración",
-    "loginNoticeEnter": "Inicia sesión en la plataforma Cadet para entrar en el modo de recuperación.",
-    "loginNoticeExit": "Inicia sesión en la plataforma Cadet para salir del modo de recuperación.",
-    "resumeAssistant": "Reanudar asistente",
-    "title": "Modo de recuperación"
-  },
-  "resizeCard": {
-  },
+  "resizeCard": {},
   "restartAssistant": {
     "button": "Reiniciar",
     "confirmLabel": "Reiniciar",
@@ -1319,8 +1301,7 @@
     "updateWindowWithTz": "Ventana de actualización ({tz})",
     "weekly": "Semanal"
   },
-  "upgradeSuccessPage": {
-  },
+  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Analizar costos con el asistente",
     "breakdownTitle": "Desglose",
@@ -1369,8 +1350,7 @@
     "noUsageInRange": "No hay uso registrado en este intervalo",
     "total": "Total"
   },
-  "useBillingPortalSession": {
-  },
+  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "El asistente no está listo. Inténtalo de nuevo.",
     "saveApiKeyFailedToast": "No se pudo guardar la clave de API de {providerName}. Inténtalo de nuevo."

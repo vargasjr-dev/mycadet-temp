@@ -81,7 +81,7 @@ function getRendererTupleOrigin(): string {
  * {@link daemonRequestInterceptor}).
  *
  * Kept narrow for the cloud client: the cloud owns routes like
- * `maintenance-mode/`, `system-events/`, `terminal/`, `doctor/` under
+ * `system-events/`, `terminal/`, `doctor/` under
  * the same namespace, and forwarding those to the gateway would 404.
  * Once all daemon endpoints are migrated to the daemon SDK, this list
  * becomes dead code and can be removed.
@@ -228,7 +228,7 @@ function relocateRemoteGatewayPushRequest(request: Request): Request {
  *   {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. The daemon client sets this
  *   for both daemon routes and gateway-owned compatibility routes.
  *   The cloud client leaves it `false` to avoid forwarding
- *   platform-owned routes (maintenance-mode, system-events, etc.);
+ *   platform-owned routes (system-events, etc.);
  *   {@link FLATTENED_FIRST_SEGMENTS} are forwarded regardless.
  *
  * Exported for direct unit testing — production code paths invoke this
@@ -368,7 +368,7 @@ export function authorizeRemoteGatewayRequest(
  *   assistant sub-resource paths are forwarded to the self-hosted gateway
  *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. `false` for the
  *   cloud and auth clients, where only allowlisted segments are forwarded
- *   (platform-owned routes like maintenance-mode, system-events, etc. fall
+ *   (platform-owned routes like system-events, etc. fall
  *   through to Django).
  */
 function createInterceptor({

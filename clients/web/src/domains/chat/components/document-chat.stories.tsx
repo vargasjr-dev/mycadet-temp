@@ -133,7 +133,6 @@ function DocumentChatStory({ state, layout }: DocumentChatStoryProps) {
       scrollAreaProps={{
         isLoadingHistory: false,
         messageCount: transcript.length,
-        showMaintenanceRecoveryCard: false,
         showEmptyState: false,
         emptyStateProps: {},
         transcriptRef: null,

@@ -25,9 +25,7 @@ import {
   hasAnyInteractiveSurface,
   hasPendingAssistantResponse,
 } from "@/domains/chat/utils/chat";
-import {
-  hasRenderedThinking,
-} from "@/domains/chat/transcript/message-content";
+import { hasRenderedThinking } from "@/domains/chat/transcript/message-content";
 import { liveAssistantRowId } from "@/domains/chat/utils/stream-updaters/shared";
 import { hasQuietTurnProgress } from "@/domains/chat/transcript/quiet-turn";
 import { useActiveConversationIsProcessing } from "@/lib/backwards-compat/conversation-processing-state";
@@ -51,7 +49,7 @@ export interface ChatUIState {
   isAssistantBusy: boolean;
   /** Whether the turn-level state blocks sending (pending secret or
    *  confirmation). Does NOT include typing-disabled conditions (loading
-   *  history, maintenance, disk pressure, channel readonly) — the caller
+   *  history, disk pressure, channel readonly) — the caller
    *  must OR those in separately. */
   isSendDisabledFromTurn: boolean;
   thinkingLabel: string | null;

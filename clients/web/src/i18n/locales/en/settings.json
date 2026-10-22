@@ -362,7 +362,7 @@
     "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
     "restartDescription": "Restart the assistant machine. It will be briefly unavailable during the restart.",
     "restartTitle": "Restart Assistant",
-    "subtitle": "Manage backups, restart your assistant, or enter Recovery Mode to connect to the debug terminal.",
+    "subtitle": "Manage backups and restart your assistant.",
     "title": "General"
   },
   "doctorChatBlocks": {
@@ -1115,17 +1115,6 @@
     "runAtAria": "Run at {time}",
     "skipped": "Skipped",
     "title": "Recent runs"
-  },
-  "recoveryModeControls": {
-    "activeDescription": "Active - connected to the debug terminal",
-    "enter": "Enter Recovery Mode",
-    "enterError": "Failed to enter Recovery Mode. Please try again.",
-    "exitError": "Failed to exit Recovery Mode. Please try again.",
-    "inactiveDescription": "Pause the assistant and connect directly to its workspace via the debug terminal",
-    "loginNoticeEnter": "Log in to Cadet Cloud to enter Recovery Mode.",
-    "loginNoticeExit": "Log in to Cadet Cloud to exit Recovery Mode.",
-    "resumeAssistant": "Resume Assistant",
-    "title": "Recovery Mode"
   },
   "resizeCard": {},
   "restartAssistant": {

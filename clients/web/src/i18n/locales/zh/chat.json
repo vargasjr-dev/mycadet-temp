@@ -765,17 +765,6 @@
     "goToFile": "转到文件",
     "pictureInPicture": "画中画"
   },
-  "maintenanceModeBanner": {
-    "body": "您的助手工作区当前已连接到调试终端。在恢复模式下，聊天不可用。",
-    "loginHint": "登录 Cadet 平台以退出恢复模式。",
-    "resume": "恢复助手",
-    "title": "助手处于恢复模式"
-  },
-  "maintenanceRecoveryCard": {
-    "body": "维护期间，聊天不可用。",
-    "goToDebug": "转到调试设置",
-    "title": "助手处于恢复模式"
-  },
   "messageFilesPanel": {
     "closeAria": "关闭文件",
     "empty": "此消息没有文件",

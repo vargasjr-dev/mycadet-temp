@@ -68,11 +68,7 @@ export function resolveAssistantLifecycleState(
       // the runtime).
       return result.data.is_local
         ? { kind: "self_hosted" }
-        : {
-            kind: "active",
-            isLocal: false,
-            maintenanceMode: result.data.maintenance_mode,
-          };
+        : { kind: "active", isLocal: false };
     }
     if (status === "initializing") {
       return { kind: "initializing" };

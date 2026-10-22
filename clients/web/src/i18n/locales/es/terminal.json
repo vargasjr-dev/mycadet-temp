@@ -1,8 +1,6 @@
 {
   "terminalToolbar": {
     "heading": "Terminal",
-    "recoveryTitle": "Modo de recuperación activo, sesión conectada al terminal de depuración",
-    "recoveryTag": "Recuperación",
     "clearTitle": "Borrar la salida del terminal",
     "clear": "Borrar",
     "disconnectTitle": "Desconectar la sesión del terminal",

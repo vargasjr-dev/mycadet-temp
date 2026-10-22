@@ -775,17 +775,6 @@
     "goToFile": "Go to file",
     "pictureInPicture": "Picture in Picture"
   },
-  "maintenanceModeBanner": {
-    "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
-    "loginHint": "Log in to Cadet Cloud to exit Recovery Mode.",
-    "resume": "Resume Assistant",
-    "title": "Assistant in Recovery Mode"
-  },
-  "maintenanceRecoveryCard": {
-    "body": "Chat is unavailable while maintenance is active.",
-    "goToDebug": "Go to Debug Settings",
-    "title": "Assistant is in Recovery Mode"
-  },
   "messageFilesPanel": {
     "closeAria": "Close files",
     "empty": "No files on this message",

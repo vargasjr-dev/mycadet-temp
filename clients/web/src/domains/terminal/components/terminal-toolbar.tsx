@@ -1,4 +1,4 @@
-import { PlugZap, Terminal, Unplug, Wrench, X } from "lucide-react";
+import { PlugZap, Terminal, Unplug, X } from "lucide-react";
 
 import { useTranslation } from "@/i18n";
 import type { TerminalStatus } from "@/domains/terminal/types";
@@ -11,7 +11,6 @@ interface TerminalToolbarProps {
   onDisconnect: () => void;
   onClear: () => void;
   className?: string;
-  maintenanceModeActive?: boolean;
 }
 
 export function TerminalToolbar({
@@ -20,7 +19,6 @@ export function TerminalToolbar({
   onDisconnect,
   onClear,
   className,
-  maintenanceModeActive,
 }: TerminalToolbarProps) {
   const { t } = useTranslation("terminal");
   const isConnecting = status === "connecting" || status === "reconnecting";
@@ -53,15 +51,6 @@ export function TerminalToolbar({
           {t("terminalToolbar.heading")}
         </span>
         <StatusBadge status={status} />
-        {maintenanceModeActive && (
-          <Tag
-            tone="warning"
-            leftIcon={<Wrench />}
-            title={t("terminalToolbar.recoveryTitle")}
-          >
-            {t("terminalToolbar.recoveryTag")}
-          </Tag>
-        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
