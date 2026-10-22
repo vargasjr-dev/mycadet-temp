@@ -72,6 +72,18 @@ export class TunnelWsTokenError extends Error {
 }
 
 /**
+ * The ingress origin's scheme can't carry a WebSocket upgrade — a packaged
+ * shell's `app://` page origin (the Electron bridge arm replaces it with a
+ * loopback origin once it lands).
+ */
+export class GatewayWsIngressError extends Error {
+  constructor(ingressUrl: string) {
+    super(`Gateway WebSocket ingress "${ingressUrl}" can't carry an upgrade.`);
+    this.name = "GatewayWsIngressError";
+  }
+}
+
+/**
  * Type guard for the mint endpoint's wire shape. The SDK function is typed but
  * the body is unverified on the wire — narrow defensively rather than trusting
  * the generic.
@@ -250,7 +262,9 @@ export interface BuildGatewayWsUrlArgs {
  *   the scoped spelling alongside the flat one, so every host forwarder (vite,
  *   the desktop bridge, nginx) carries the path verbatim.
  * - **Scheme follows the ingress:** `https`→`wss`, `http`→`ws`, so a plain-HTTP
- *   local origin is reachable over `ws`.
+ *   local origin is reachable over `ws`. A non-HTTP(S) ingress (a packaged
+ *   shell's `app://` origin) refuses — scheme-swapping it would dial a foreign
+ *   host, and no forwarder carries its upgrades yet.
  * - **The token is the actor edge JWT**, not a minted tunnel token — and only
  *   for the paired plane, where the gateway has no host to inject one. It rides
  *   in `?token=` because the browser WebSocket API can't set an `Authorization`
@@ -265,6 +279,9 @@ export function buildGatewayWsUrl({
   params,
 }: BuildGatewayWsUrlArgs): string {
   const ingress = new URL(ingressUrl);
+  if (ingress.protocol !== "http:" && ingress.protocol !== "https:") {
+    throw new GatewayWsIngressError(ingressUrl);
+  }
   ingress.protocol = ingress.protocol === "http:" ? "ws:" : "wss:";
   const prefix = ingress.pathname.replace(/\/+$/, "");
   ingress.pathname = `${prefix}/v1/assistants/${encodeURIComponent(assistantId)}${routePath.replace(/^\/v1/, "")}`;

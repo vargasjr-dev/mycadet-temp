@@ -21,6 +21,7 @@ import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import {
   buildGatewayWsUrl,
   buildTunnelWsUrl,
+  GatewayWsIngressError,
   getTunnelWsScheme,
   TunnelWsTokenError,
   mintTunnelWsToken,
@@ -224,6 +225,12 @@ describe("buildGatewayWsUrl", () => {
     expect(url.hash).toBe("");
     expect(url.searchParams.get("a")).toBeNull();
     expect(url.searchParams.get("token")).toBe("actor-tok");
+  });
+
+  test("a non-HTTP(S) ingress refuses instead of scheme-swapping to a foreign host", () => {
+    expect(() =>
+      buildGatewayWsUrl({ ...args, ingressUrl: "app://mycadet.ai" }),
+    ).toThrow(GatewayWsIngressError);
   });
 });
 
