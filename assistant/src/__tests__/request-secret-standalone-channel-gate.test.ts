@@ -14,7 +14,7 @@ import { setConfig } from "./helpers/set-config.js";
 
 // A short permission timeout keeps a leaked prompt from lingering; the default
 // `secretDetection.allowOneTimeSend` (false) drives the broadcast field.
-setConfig("timeouts", { permissionTimeoutSec: 0.01 });
+setConfig("timeouts", { secretPromptTimeoutSec: 0.01 });
 
 let broadcastMessages: AssistantEvent[] = [];
 setBroadcastOverrideForTesting((msg: AssistantEvent) =>

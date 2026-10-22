@@ -987,7 +987,7 @@ export function requestSecretStandalone(
     const timer = setTimeout(() => {
       pendingInteractions.resolve(requestId, "cancelled");
       resolve({ value: null, delivery: "store", reason: "timed_out" });
-    }, config.timeouts.permissionTimeoutSec * 1000);
+    }, config.timeouts.secretPromptTimeoutSec * 1000);
     pendingInteractions.register(requestId, {
       conversationId: params.conversationId,
       kind: "secret",

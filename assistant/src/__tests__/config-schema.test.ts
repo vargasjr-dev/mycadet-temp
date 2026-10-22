@@ -80,6 +80,7 @@ describe("AssistantConfigSchema", () => {
       shellDefaultTimeoutSec: 120,
       shellMaxTimeoutSec: 600,
       permissionTimeoutSec: 300,
+      secretPromptTimeoutSec: 300,
       questionResponseTimeoutSec: 1800,
       toolExecutionTimeoutSec: 120,
       providerStreamTimeoutSec: 1800,
@@ -198,6 +199,7 @@ describe("AssistantConfigSchema", () => {
         shellDefaultTimeoutSec: 30,
         shellMaxTimeoutSec: 300,
         permissionTimeoutSec: 60,
+        secretPromptTimeoutSec: 600,
       },
       rateLimit: { maxRequestsPerMinute: 10 },
       secretDetection: {
@@ -210,6 +212,8 @@ describe("AssistantConfigSchema", () => {
     expect(result.llm.callSites?.mainAgent?.provider).toBe("openai");
     expect(result.llm.callSites?.mainAgent?.model).toBe("gpt-4");
     expect(result.llm.callSites?.mainAgent?.maxTokens).toBe(4096);
+    expect(result.timeouts.permissionTimeoutSec).toBe(60);
+    expect(result.timeouts.secretPromptTimeoutSec).toBe(600);
     expect(result.secretDetection.enabled).toBe(false);
   });
 
@@ -535,11 +539,12 @@ describe("AssistantConfigSchema", () => {
         shellDefaultTimeoutSec: -5,
         shellMaxTimeoutSec: "bad",
         permissionTimeoutSec: 0,
+        secretPromptTimeoutSec: 0,
       },
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues.length).toBeGreaterThanOrEqual(3);
+      expect(result.error.issues.length).toBeGreaterThanOrEqual(4);
     }
   });
 
@@ -692,6 +697,15 @@ describe("AssistantConfigSchema", () => {
     expect(result.timeouts.shellDefaultTimeoutSec).toBe(30);
     expect(result.timeouts.shellMaxTimeoutSec).toBe(600);
     expect(result.timeouts.permissionTimeoutSec).toBe(300);
+    expect(result.timeouts.secretPromptTimeoutSec).toBe(300);
+  });
+
+  test("permission and secret prompt timeouts are independent", () => {
+    const result = AssistantConfigSchema.parse({
+      timeouts: { permissionTimeoutSec: 3, secretPromptTimeoutSec: 600 },
+    });
+    expect(result.timeouts.permissionTimeoutSec).toBe(3);
+    expect(result.timeouts.secretPromptTimeoutSec).toBe(600);
   });
 
   test("background/schedule turn timeouts default to 1800s when unset", () => {
@@ -2432,6 +2446,7 @@ describe("getConfig with schema validation", () => {
     expect(config.timeouts.shellDefaultTimeoutSec).toBe(120);
     expect(config.timeouts.shellMaxTimeoutSec).toBe(600);
     expect(config.timeouts.permissionTimeoutSec).toBe(300);
+    expect(config.timeouts.secretPromptTimeoutSec).toBe(300);
   });
 
   test("preserves valid fields when other fields are invalid", () => {
@@ -2468,6 +2483,7 @@ describe("getConfig with schema validation", () => {
     expect(config.timeouts.shellDefaultTimeoutSec).toBe(30);
     expect(config.timeouts.shellMaxTimeoutSec).toBe(600);
     expect(config.timeouts.permissionTimeoutSec).toBe(300);
+    expect(config.timeouts.secretPromptTimeoutSec).toBe(300);
   });
 
   test("falls back for out-of-range contextWindow ratio", () => {

@@ -55,7 +55,7 @@ mock.module("../runtime/pending-interactions.js", () => ({
 }));
 
 // Use a tiny timeout so the setTimeout branch fires quickly in tests
-setConfig("timeouts", { permissionTimeoutSec: 0.01 });
+setConfig("timeouts", { secretPromptTimeoutSec: 0.01 });
 setConfig("secretDetection", { allowOneTimeSend: false });
 
 // Import after mock so SecretPrompter picks up the captured logger
@@ -100,7 +100,7 @@ describe("secret prompt log hygiene", () => {
 
   test("prompt timeout logs only metadata, not the secret value", async () => {
     // Let the setTimeout branch in SecretPrompter.prompt() actually fire
-    // (config seeds permissionTimeoutSec to 0.01s = 10ms)
+    // (config seeds secretPromptTimeoutSec to 0.01s = 10ms)
     const result = await prompter.prompt("svc", "key", "Label");
 
     // Timeout resolves with null value
