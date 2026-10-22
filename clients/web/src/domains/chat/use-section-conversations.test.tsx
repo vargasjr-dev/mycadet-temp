@@ -79,9 +79,8 @@ mock.module("@/utils/conversation-list-fetchers", (): typeof ListFetchers => ({
 /* Chats consults a second, later gate. Left at the real implementation so
    these tests exercise the same version comparison the app does; the identity
    store seeded per test is what opens or closes both. */
-mock.module("@/assistant/lifecycle-store", () => ({
-  useAssistantLifecycleStore: (selector: (s: unknown) => unknown) =>
-    selector({ assistantState: { kind: "active" } }),
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({ state: { kind: "active" } }),
 }));
 
 const { useSectionConversations } =

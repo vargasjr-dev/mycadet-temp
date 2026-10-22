@@ -20,7 +20,6 @@ import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { getClientId } from "@/lib/client-identity";
 import { parseConversationSyncTag } from "@/lib/sync/types";
 import { useConversationStore } from "@/stores/conversation-store";
-import type { UseAssistantReachabilityResult } from "@/assistant/use-assistant-reachability";
 import type {
   ReconcileActiveConversationResult,
   ReconcileTrigger,
@@ -36,7 +35,6 @@ export interface UseMessageLifecycleParams {
   activeConversationId: string | null;
   conversationExistsOnServer: boolean;
   latestPageOldestTimestamp: number | null;
-  reachability: UseAssistantReachabilityResult;
   setAssetsRefreshKey: Dispatch<SetStateAction<number>>;
   observeLiveModeSession?: (sessionId: string) => void;
 }
@@ -64,7 +62,6 @@ export function useMessageLifecycle({
   activeConversationId,
   conversationExistsOnServer,
   latestPageOldestTimestamp,
-  reachability,
   setAssetsRefreshKey,
   observeLiveModeSession,
 }: UseMessageLifecycleParams): UseMessageLifecycleReturn {
@@ -111,9 +108,6 @@ export function useMessageLifecycle({
     reconcileActiveConversation,
     startReconciliationLoop,
     cancelReconciliation,
-    reachabilityProbe: reachability.probe,
-    reachabilityPhase: reachability.state.phase,
-    reachabilityReset: reachability.reset,
   });
 
   // 4. Active-conversation `:messages` sync — when another client writes

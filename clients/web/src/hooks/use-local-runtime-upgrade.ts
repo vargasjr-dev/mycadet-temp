@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 
-import { lifecycleService } from "@/assistant/lifecycle-service";
 import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { loadLockfile } from "@/lib/local-mode";
 import { upgradeLocalAssistantHost } from "@/runtime/local-mode-host";
@@ -20,18 +19,13 @@ export function useLocalRuntimeUpgrade({
       if (!assistantId) {
         throw new Error("No local assistant is active.");
       }
-      lifecycleService.setLocalAssistantUpgradeInProgress(assistantId, true);
-      try {
-        const result = await upgradeLocalAssistantHost(assistantId, {
-          ...(targetVersion ? { version: targetVersion } : { latest: true }),
-        });
-        if (!result.ok) {
-          throw new Error(result.error ?? "Failed to trigger update.");
-        }
-        return result;
-      } finally {
-        lifecycleService.setLocalAssistantUpgradeInProgress(assistantId, false);
+      const result = await upgradeLocalAssistantHost(assistantId, {
+        ...(targetVersion ? { version: targetVersion } : { latest: true }),
+      });
+      if (!result.ok) {
+        throw new Error(result.error ?? "Failed to trigger update.");
       }
+      return result;
     },
   });
 

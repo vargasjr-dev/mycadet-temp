@@ -15,8 +15,6 @@
  * Producers:
  *   - `runtime/event-sources/*` for host-environment signals
  *   - `assistant/sse-service.ts` for SSE-derived signals
- *   - `domains/chat/hooks/use-event-stream.ts` for
- *     `reachability.retry-requested`
  *   - `hooks/use-notification-tap-navigation.ts` and
  *     `runtime/push-registration.ts` for notification-tap
  *     `deeplink.openThread`
@@ -103,16 +101,6 @@ export interface BusEventMap {
    * state, kick reachability probes).
    */
   "sse.closed": { reason: string };
-  /**
-   * Published by `useEventStream`'s reachability-retry burst limiter
-   * when the reachability probe recovers into "ready" from a degraded
-   * phase ("connecting", "checking", or "failed"). Tells the bus to
-   * close + reopen its SSE connection so the conversation-scoped
-   * reconcile pass can run. A "ready" entered from "idle" or "ready"
-   * confirms an already-healthy stream (boot, remount) and does not
-   * publish.
-   */
-  "reachability.retry-requested": Record<string, never>;
   /**
    * Published by `cold-anchor.ts` once `/messages` has resolved with a
    * snapshot watermark `S` on a cold session. Tells the bus to bounce
@@ -297,20 +285,6 @@ export interface BusEventMap {
   "connectivity.state": {
     state: "online" | "device-offline" | "backend-unreachable";
   };
-  /**
-   * A daemon SDK request came back with a gateway-class status (502/503/504):
-   * it reached the cloud but could not reach the assistant's runtime, which
-   * is restarting or not yet ready. Published by `daemonUnreachableInterceptor`
-   * so the connecting overlay appears even when the failure lands on an
-   * incidental request (a page load, a background refetch) rather than on the
-   * SSE stream. The lifecycle service subscribes and kicks its retry probe.
-   *
-   * Distinct from `connectivity.state`, which is the Electron host's fused
-   * view of device and backend health and never fires off Electron. This one
-   * is derived from a response the client actually received, so it reports on
-   * every platform.
-   */
-  "assistant.unreachable": Record<string, never>;
   /**
    * The local gateway rejects the guardian token behind this session, past
    * what the renderer can repair on its own: the `/auth/token` mint still

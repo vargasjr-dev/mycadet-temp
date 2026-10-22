@@ -6,11 +6,11 @@
  * (a task's worth per drain, see `docs/EVENT_BUS.md`), publishing
  * `sse.opened` / `sse.closed` lifecycle signals, and the bounce policy
  * that recovers half-dead sockets across renderer visibility, system
- * suspend/wake, screen lock/unlock, and reachability-driven retries.
+ * suspend/wake, and screen lock/unlock.
  *
  * Producer + consumer: republishes SSE events into the bus AND
- * subscribes to bus events (`app.hidden`, `app.resume`, `power.*`,
- * `reachability.retry-requested`) to derive when to bounce. That
+ * subscribes to bus events (`app.hidden`, `app.resume`, `power.*`)
+ * to derive when to bounce. That
  * dual role is the reason this exists as a service — `useEffect`
  * cleanups can express either side but mixing both produces a
  * state-machine-in-a-hook that's hard to read.
@@ -26,7 +26,6 @@
 
 import type { AssistantEventEnvelope } from "@mycadet/assistant-api";
 
-import { lifecycleService } from "@/assistant/lifecycle-service";
 import {
   publish,
   subscribe,
@@ -304,7 +303,7 @@ export const sseService: SseService = {
     };
 
     const teardown = () => {
-      // A teardown by any path (grace timer, power, reachability, debug,
+      // A teardown by any path (grace timer, power, debug,
       // detach) makes a still-pending grace teardown moot — clear it so a
       // late fire can't cancel a connection opened after it. The hidden
       // mark goes with it: it describes the socket being dropped here, and
@@ -383,11 +382,6 @@ export const sseService: SseService = {
         return;
       }
       lastAppResumeAt = now;
-      // Daemon health check via the lifecycle store. The no-op
-      // default covers the pre-registration window but no
-      // foreground resume event can fire before `RootLayout` has
-      // mounted.
-      void lifecycleService.checkAssistant();
       // App-resume means the renderer became visible; if a
       // connection is already live, it was either never torn down
       // or just opened moments ago — either way, leave it alone.
@@ -438,7 +432,6 @@ export const sseService: SseService = {
         return;
       }
       lastPowerActionAt = now;
-      void lifecycleService.checkAssistant();
       teardown();
       openConnection();
     };
@@ -494,17 +487,6 @@ export const sseService: SseService = {
     const unsubResume = subscribe("app.resume", handleAppResume);
     const unsubPowerResume = subscribe("power.resume", handlePowerResume);
     const unsubPowerUnlock = subscribe("power.unlock", handlePowerResume);
-    const unsubReachabilityRetry = subscribe(
-      "reachability.retry-requested",
-      () => {
-        // Label the next open as a recovery rather than the default
-        // `"resume"` so `sse.opened` consumers can distinguish a
-        // tab-foreground recovery from a reachability-driven retry.
-        teardown();
-        nextOpenCause = "error";
-        openConnection();
-      },
-    );
     // Cold-start anchored replay (see `cold-anchor.ts`): the cold
     // connect opened cursor-less before the `/messages` snapshot
     // watermark `S` was known. The cursor is now seeded at `S`, so
@@ -536,7 +518,6 @@ export const sseService: SseService = {
       unsubResume();
       unsubPowerResume();
       unsubPowerUnlock();
-      unsubReachabilityRetry();
       unsubAnchorRequested();
       flushPendingEnvelopes();
       drainChannel.port1.onmessage = null;

@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
-import type { AssistantState } from "@/assistant/types";
+import { useAssistantResolution } from "@/assistant/queries";
+import type { AssistantResolutionState } from "@/assistant/types";
+
 import {
   resolveAssistantAvatarOwnerScopeId,
   resolveAssistantNotificationCloudId,
@@ -26,6 +27,15 @@ import {
 } from "@/stores/resolved-assistants-store";
 
 const TAP_ACTIVATION_TIMEOUT_MS = 15_000;
+
+/* Mirrored from useAssistantResolution so a terminal error settles wedged activation waiters. */
+let currentResolutionState: AssistantResolutionState = { kind: "loading" };
+const activationWaiters = new Set<() => void>();
+function wakeActivationWaiters() {
+  for (const wake of activationWaiters) {
+    wake();
+  }
+}
 
 function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   const auth = useAuthStore.getState();
@@ -85,7 +95,6 @@ function waitForTapResolutionReadiness(
 function waitForActiveTapAssistant(
   payload: NotificationTapPayload,
   assistantId: string,
-  lifecycleStateBeforeSwitch: AssistantState,
 ): Promise<boolean> {
   const readOutcome = (): boolean | null => {
     if (useAuthStore.getState().sessionStatus !== "authenticated") {
@@ -98,15 +107,14 @@ function waitForActiveTapAssistant(
     if (assistantsState.selectedAssistantId !== assistantId) {
       return false;
     }
-    const lifecycleState = useAssistantLifecycleStore.getState().assistantState;
-    if (
-      lifecycleState !== lifecycleStateBeforeSwitch &&
-      lifecycleState.kind === "error" &&
-      lifecycleState.transient !== true
-    ) {
+    if (assistantsState.activeAssistantId === assistantId) {
+      return true;
+    }
+    const resolution = currentResolutionState;
+    if (resolution.kind === "error" && !resolution.transient) {
       return false;
     }
-    return assistantsState.activeAssistantId === assistantId ? true : null;
+    return null;
   };
   const immediate = readOutcome();
   if (immediate !== null) {
@@ -114,15 +122,14 @@ function waitForActiveTapAssistant(
   }
   return new Promise<boolean>((resolve) => {
     let unsubscribeAuth = () => {};
-    let unsubscribeLifecycle = () => {};
     let unsubscribeOrganization = () => {};
     let unsubscribeAssistants = () => {};
     let cancellationTimer: ReturnType<typeof setTimeout> | null = null;
     const finish = (outcome: boolean) => {
       unsubscribeAuth();
-      unsubscribeLifecycle();
       unsubscribeOrganization();
       unsubscribeAssistants();
+      activationWaiters.delete(settleIfComplete);
       if (cancellationTimer) {
         clearTimeout(cancellationTimer);
       }
@@ -136,14 +143,13 @@ function waitForActiveTapAssistant(
       finish(outcome);
     };
     unsubscribeAuth = useAuthStore.subscribe(settleIfComplete);
-    unsubscribeLifecycle =
-      useAssistantLifecycleStore.subscribe(settleIfComplete);
     unsubscribeOrganization = useOrganizationStore.subscribe(settleIfComplete);
     unsubscribeAssistants =
       useResolvedAssistantsStore.subscribe(settleIfComplete);
     cancellationTimer = setTimeout(() => {
       finish(false);
     }, TAP_ACTIVATION_TIMEOUT_MS);
+    activationWaiters.add(settleIfComplete);
     settleIfComplete();
   });
 }
@@ -198,6 +204,11 @@ function resolveCurrentTapAssistant(
  * for the app's lifetime, so there is nothing to tear down.
  */
 export function useNotificationTapNavigation(): void {
+  const { state: resolutionState } = useAssistantResolution();
+  useEffect(() => {
+    currentResolutionState = resolutionState;
+    wakeActivationWaiters();
+  }, [resolutionState]);
   useEffect(() => {
     // Electron pop-out windows (`?popout=1`) mount `RootLayout` too, and
     // the macOS notification bridge broadcasts each action to every
@@ -230,8 +241,6 @@ export function useNotificationTapNavigation(): void {
         publish("deeplink.openThread", { threadId: payload.conversationId });
         return;
       }
-      const lifecycleStateBeforeSwitch =
-        useAssistantLifecycleStore.getState().assistantState;
       try {
         const {
           connectPairedAssistant,
@@ -248,13 +257,7 @@ export function useNotificationTapNavigation(): void {
       } catch {
         return;
       }
-      if (
-        !(await waitForActiveTapAssistant(
-          payload,
-          assistant.id,
-          lifecycleStateBeforeSwitch,
-        ))
-      ) {
+      if (!(await waitForActiveTapAssistant(payload, assistant.id))) {
         return;
       }
       const activeSelection = useResolvedAssistantsStore.getState();

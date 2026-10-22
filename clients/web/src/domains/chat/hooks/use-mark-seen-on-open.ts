@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { useMarkConversationSeenMutation } from "@/domains/chat/hooks/use-mark-conversation-seen-mutation";
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type { Conversation } from "@/types/conversation-types";
 
 /**
@@ -30,7 +30,7 @@ export function useMarkSeenOnOpen({
   isTranscriptOnScreen,
 }: {
   assistantId: string | null;
-  assistantStateKind: AssistantState["kind"];
+  assistantStateKind: AssistantResolutionState["kind"];
   activeConversationId: string | null;
   activeConversation: Conversation | undefined;
   isTranscriptOnScreen: boolean;

@@ -17,6 +17,9 @@
   "src/domains/chat/hooks/use-send-message.ts": [
     "onboarding"
   ],
+  "src/domains/onboarding/pages/research-onboarding-route.tsx": [
+    "chat"
+  ],
   "src/domains/schedules/components/schedule-detail-panel.tsx": [
     "settings"
   ],

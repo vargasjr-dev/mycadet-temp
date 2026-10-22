@@ -377,14 +377,6 @@ function recordSerialized(body: () => void): string[] {
 // rest of its surface is in this import graph, and `mock.module` is
 // process-global in bun, so a bare object would shadow those exports for later
 // test files in the run.
-let podIsServing = true;
-const realOperationalStatus = await import("@/assistant/operational-status");
-
-mock.module("@/assistant/operational-status", () => ({
-  ...realOperationalStatus,
-  useAssistantIsServing: () => podIsServing,
-}));
-
 const { useConversationStore } = await import("@/stores/conversation-store");
 const { useNativeWidgetSnapshotSync, WIDGET_SNAPSHOT_HEARTBEAT_MS } =
   await import("@/domains/chat/hooks/use-native-widget-snapshot-sync");
@@ -475,7 +467,6 @@ beforeEach(() => {
   syncGate = null;
   pendingClear = false;
   persistedAssistantId = null;
-  podIsServing = true;
   armedTimers = [];
   setAvatar(NO_AVATAR);
   avatarListeners.clear();
@@ -1150,34 +1141,6 @@ describe("useNativeWidgetSnapshotSync", () => {
     fireHeartbeat();
     expect(syncedSnapshots).toHaveLength(2);
     expect(syncedSnapshots[1]?.conversations[0]?.id).toBe("c1");
-  });
-
-  it("arms no heartbeat once the pod stops serving", async () => {
-    // The other half of the same gate: the assistant record stays active while
-    // its pod is unreachable, and the cached rows stay resolved throughout.
-    const { rerender } = render({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      inputsResolved: true,
-    });
-    await settle();
-    expect(liveHeartbeats()).toHaveLength(1);
-
-    podIsServing = false;
-    rerender({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      inputsResolved: true,
-    });
-    expect(liveHeartbeats()).toHaveLength(0);
-
-    podIsServing = true;
-    rerender({
-      conversations: [conversation("c1", { title: "Groceries" })],
-      conversationGroups: NO_GROUPS,
-      inputsResolved: true,
-    });
-    expect(liveHeartbeats()).toHaveLength(1);
   });
 
   it("drops the previous assistant's payload from the heartbeat on a switch", async () => {

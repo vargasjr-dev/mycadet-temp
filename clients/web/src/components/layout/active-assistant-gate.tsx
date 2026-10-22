@@ -4,8 +4,7 @@ import { Outlet, useNavigate } from "react-router";
 import { Typography } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
 
-import { lifecycleService } from "@/assistant/lifecycle-service";
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
 import { handleLogout } from "@/lib/auth/handle-logout";
@@ -36,9 +35,9 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
  */
 export function ActiveAssistantGate() {
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state: assistantState } = useAssistantResolution();
 
-  // A lifecycle error is terminal (or retryable via the button below) — it
+  // A resolution error is terminal (or retryable via the button below) — it
   // must surface as an honest error, never as the connecting placeholder:
   // an unreachable assistant left on an eternal spinner is the one failure
   // mode a user can't self-diagnose.
@@ -71,10 +70,23 @@ function ActiveAssistantError({ message }: { message: string }) {
       <p className="text-body-medium-lighter max-w-md text-[var(--content-secondary)]">
         {message}
       </p>
-      <Button variant="ghost" onClick={() => lifecycleService.retryAssistant()}>
-        {t("activeAssistantGate.retry")}
-      </Button>
+      <RetryButton />
     </div>
+  );
+}
+
+function RetryButton() {
+  const { t } = useTranslation();
+  const { refetch } = useAssistantResolution();
+  return (
+    <Button
+      variant="ghost"
+      onClick={() => {
+        void refetch();
+      }}
+    >
+      {t("activeAssistantGate.retry")}
+    </Button>
   );
 }
 

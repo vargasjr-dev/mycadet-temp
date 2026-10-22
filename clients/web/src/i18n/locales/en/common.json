@@ -60,7 +60,6 @@
   "appViewerContainer": {
     "exitFullscreen": "Exit fullscreen"
   },
-
   "assistantEmailIntroModal": {
     "setUp": "Set up email"
   },
@@ -523,7 +522,6 @@
     "placeholder": "Ask Cadet anything...",
     "send": "Send message"
   },
-
   "resourcePressureBanner": {
     "body": "Your assistant is working hard and reaching its current resource limits. Upgrade to keep it running smoothly.",
     "bodyNoUpgrade": "Your assistant is working hard and reaching its current resource limits.",
@@ -543,19 +541,9 @@
   "routePendingIndicator": {
     "loadingAria": "Loading"
   },
-
   "routeErrorBoundary": {
     "chunkFailBody": "This section couldn't load. Likely a network blip or a stale version. Reload the page to try again.",
     "reload": "Reload"
-  },
-  "runtimeUpgradeBanner": {
-    "confirmMessage": "Update to version {version}? The assistant will be briefly unavailable during the update.",
-    "confirmTitle": "Update assistant runtime",
-    "later": "Later",
-    "title": "New assistant version available: {version}",
-    "toastComplete": "Update complete. Your assistant is healthy.",
-    "toastFailed": "Failed to trigger update. Please try again.",
-    "update": "Update"
   },
   "sectionActionsButton": {
     "ariaLabel": "{name} actions"
@@ -682,14 +670,6 @@
   },
   "startupFailure": {
     "reloadApp": "Reload app"
-  },
-  "statusBanner": {
-    "reconnecting": "Reconnecting to your assistant…",
-    "dismiss": "Dismiss",
-    "goToDoctor": "Go to Doctor",
-    "resumeAssistant": "Resume Assistant",
-    "retryNow": "Retry now",
-    "wakeUp": "Wake up"
   },
   "sttLanguagePicker": {
     "allLanguages": "All languages",

@@ -13,7 +13,6 @@
  */
 import { create } from "zustand";
 
-import { lifecycleService } from "@/assistant/lifecycle-service";
 import { setSelectedAssistant } from "@/assistant/selection";
 import { createSelectors } from "@/utils/create-selectors";
 import {
@@ -88,6 +87,7 @@ import {
 } from "@/stores/organization-store";
 import { clearUserScopedStorage } from "@/lib/auth/session-cleanup";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { subscribe } from "@/lib/event-bus";
 import { isElectron } from "@/runtime/is-electron";
 import { clearLocalCloudSession } from "@/runtime/local-mode-host";
@@ -714,9 +714,9 @@ function probeCloudSessionIfReachable(
 
 /**
  * Shared tail of the interactive connect actions, run after the target's
- * gateway connection is primed: select the assistant, mark the session logged
- * in, and drive `checkAssistant()` so the active id republishes even when the
- * selection is unchanged (the selection subscription only fires on a change).
+ * gateway connection is primed: select the assistant and mark the session
+ * logged in. The selection write re-keys the boot resolution query, which
+ * refetches and republishes the active id.
  */
 async function establishLocalUserSession(
   set: AuthSet,
@@ -724,7 +724,6 @@ async function establishLocalUserSession(
 ): Promise<void> {
   await setSelectedAssistant(assistantId);
   set(authenticatedLocalUser());
-  await lifecycleService.checkAssistant();
 }
 
 async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
@@ -925,15 +924,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
    * subscription republishes the connection synchronously on the write, so
    * the token must already be minted for the new gateway — and a failed
    * connect leaves the previous selection in place.
-   *
-   * After the selection write we explicitly drive `checkAssistant()` rather
-   * than trusting the selection subscription to publish `activeAssistantId`.
-   * That subscription only fires when `selectedAssistantId` actually changes
-   * (and not while the lifecycle is still `loading`), so reconnecting to the
-   * assistant that's already selected — the common case after guardian-token
-   * repair, where the user retries the very assistant they were connecting to
-   * — would otherwise leave the active id stale. In gateway mode the call is a
-   * synchronous, idempotent republish.
    *
    * Unlike {@link AuthActions.initSession}, which is the best-effort boot
    * probe and swallows failures, this rethrows so the caller can surface the
@@ -1186,7 +1176,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         // resurrect an active state mid-logout. The `respondToInputs`
         // not-authenticated branch is the safety net for token-expiry-style
         // flips.
-        lifecycleService.resetForLogout();
+        useResolvedAssistantsStore.getState().setActiveAssistantId(null);
         setSelfHostedConnection(null);
         await setSelectedAssistant(null);
         clearGatewayToken();
@@ -1232,7 +1222,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         }
         clearOrganization();
         clearUserScopedStorage();
-        lifecycleService.resetForLogout();
+        useResolvedAssistantsStore.getState().setActiveAssistantId(null);
         // Clear the selection slice too — `clearUserScopedStorage` already
         // removed the persisted key, and a surviving slice would resolve the
         // previous user's assistant after re-login.

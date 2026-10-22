@@ -22,9 +22,9 @@
  * - https://web.dev/articles/sign-out-best-practices
  */
 
+import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
-import { clearCameraGateDebug } from "@/stores/camera-gate-debug-store";
 import { clearUserScopedOverrides } from "@/utils/typed-storage";
 
 const USER_PREFIX = "cadet:";
@@ -76,15 +76,13 @@ function isUserScopedKey(key: string): boolean {
 export function clearUserScopedStorage(): void {
   resetNotificationIdentitySession();
   useChatSessionStore.getState().resetForLogout();
+  // A stale post-hatch auto-greet flag must not seed the incoming user's
+  // first chat mount with a spurious "Connecting…" overlay.
+  useAutoGreetStore.getState().clearExpectingFirstMessage();
 
   // A typed-storage accessor holds a value in memory when the device refuses
   // writes, so the key sweep below has nothing to remove.
   clearUserScopedOverrides();
-
-  // And again: the camera gate's tuning readout keeps its enable bit in a
-  // store slice and its thresholds in the record the gate reads, neither of
-  // which the key sweep reaches.
-  clearCameraGateDebug();
 
   try {
     sessionStorage.clear();

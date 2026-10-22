@@ -183,15 +183,6 @@
     "search": "Search",
     "searchShortcut": "Search ({shortcut})"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Hide the sleep screen",
-    "sleeping": "Your assistant is asleep",
-    "sleepingNamed": "{name} is asleep",
-    "waking": "Your assistant is waking up…",
-    "wakingNamed": "{name} is waking up…",
-    "woke": "Your assistant just woke up",
-    "wokeNamed": "{name} just woke up"
-  },
   "attachmentChip": {
     "removeAria": "Remove {filename}"
   },
@@ -231,8 +222,7 @@
     "output": "Output",
     "stopCommandAria": "Stop command"
   },
-  "billingErrorBanner": {
-  },
+  "billingErrorBanner": {},
   "cameraDeepLink": {
     "captureFailed": "Could not take that photo. Please try again.",
     "close": "Close camera",
@@ -290,8 +280,6 @@
   },
   "cameraViewOptions": {
     "buttonAria": "Camera view options",
-    "gateHudDescription": "Debug overlay for how Live picks which frames to send.",
-    "gateHudTitle": "Frame gate tuning",
     "howItWorks": "How Photo and Live work",
     "keptFrameDescription": "Shows the most recent frame Live sent.",
     "keptFrameTitle": "Latest shared frame",
@@ -612,15 +600,13 @@
     "groupCopied": "Group ID copied to clipboard.",
     "groupFailed": "Couldn't copy the group ID."
   },
-  "creditsUpsellCard": {
-  },
+  "creditsUpsellCard": {},
   "csvPreview": {
     "emptyFile": "This file is empty",
     "summary": "{rows, plural, one {# row} other {# rows}} x {columns, plural, one {# column} other {# columns}}",
     "summaryTruncated": "{rows, plural, one {# row} other {# rows}} x {columns, plural, one {# column} other {# columns}} (truncated)"
   },
-  "dailyLimitBanner": {
-  },
+  "dailyLimitBanner": {},
   "deleteConversationConfirmDialog": {
     "acknowledgment": "I understand that related assets and memories may still persist",
     "cancel": "Cancel",
@@ -726,50 +712,6 @@
     "secureHint": "This value will be sent securely and will not be stored in your browser.",
     "selectPlaceholder": "Select..."
   },
-  "frameGateHud": {
-    "collapse": "Hide the frame gate readout",
-    "decisionOrder": "Decision order",
-    "detailLabel": "Detail (luma SD)",
-    "expand": "Show the frame gate readout",
-    "forcedNoveltyThresholdLabel": "Asked-for threshold",
-    "keep": "Keep",
-    "keptFrameAlt": "Kept frame",
-    "maxIntervalLabel": "Heartbeat interval",
-    "minDetailLabel": "Detail floor",
-    "motionLabel": "Motion vs previous frame",
-    "noKeeps": "No frames kept yet.",
-    "noveltyLabel": "Novelty vs last kept",
-    "noveltyThresholdLabel": "Novelty threshold",
-    "overridden": "Moved off the default",
-    "reasonAnswered": "Asked for, but the last photo already shows this.",
-    "reasonFeatureless": "Too little detail to compare.",
-    "reasonFirst": "Nothing kept yet, and the view settled.",
-    "reasonForced": "Kept for the question being asked right now.",
-    "reasonHeartbeat": "Nothing changed, but the last photo is old.",
-    "reasonMoving": "The view is still moving.",
-    "reasonNovel": "Enough changed since the last photo.",
-    "reasonSettling": "Stopped, but not held still long enough yet.",
-    "reasonUnchanged": "Settled, recent, and much the same as the last photo.",
-    "reasonWarmup": "Still inside the exposure warmup.",
-    "recentFrames": "Recent frames",
-    "recentKeeps": "Recent keeps",
-    "reset": "Reset",
-    "settleThresholdLabel": "Settle threshold",
-    "skip": "Skip",
-    "stepAnswered": "Already shown",
-    "stepFeatureless": "Detail floor",
-    "stepFirst": "First keep",
-    "stepForced": "Asked for",
-    "stepHeartbeat": "Heartbeat",
-    "stepMoving": "Settled",
-    "stepNovel": "Novelty",
-    "stepSettling": "Held still",
-    "stepUnchanged": "Unchanged",
-    "stepWarmup": "Warmup",
-    "surfaceVoice": "Voice room camera",
-    "thresholds": "Thresholds",
-    "valueAbsent": "n/a"
-  },
   "groupActions": {
     "archiveAll": "Archive All…",
     "copyGroupId": "Copy group ID",
@@ -836,8 +778,7 @@
     "goToFile": "Go to file",
     "pictureInPicture": "Picture in Picture"
   },
-  "lowBalanceBanner": {
-  },
+  "lowBalanceBanner": {},
   "maintenanceModeBanner": {
     "body": "Your assistant workspace is currently connected to a debug terminal. Chat is unavailable while in Recovery Mode.",
     "loginHint": "Log in to Cadet Cloud to exit Recovery Mode.",
@@ -927,7 +868,6 @@
     "name": "Name",
     "noIcon": "No icon"
   },
-
   "onboardingChoiceCard": {
     "continue": "Continue",
     "helpWithHeading": "What can I help with?",
@@ -1004,8 +944,7 @@
   "promptSubmission": {
     "noActiveSession": "No active session. Please try again."
   },
-  "providerBillingBanner": {
-  },
+  "providerBillingBanner": {},
   "pullRefreshSpinner": {
     "refreshing": "Refreshing"
   },
@@ -1585,8 +1524,7 @@
     "source": "{source, select, memory {Memory} conversations {Conversations} workspace {Workspace files} other {{source}}}",
     "depth": "{depth, select, fast {Quick search} standard {Standard search} deep {Deep search} other {Search}}"
   },
-  "freeTierDailyLimitBanner": {
-  },
+  "freeTierDailyLimitBanner": {},
   "chatsSettingsModal": {
     "title": "Chats Settings",
     "description": "Manage automatic Done marking and chat reply alerts for this assistant across your devices.",

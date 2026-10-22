@@ -1,11 +1,11 @@
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type { AssistantStatus } from "@/runtime/is-electron";
 import type { SessionStatus } from "@/stores/session-status";
 import type { TurnPhase } from "@/domains/chat/turn-store";
 
 export interface AssistantStatusInputs {
-  /** Lifecycle phase the assistant is in (`useAssistantLifecycleStore`). */
-  lifecycleKind: AssistantState["kind"];
+  /** Resolution kind the assistant's boot resolve landed on. */
+  lifecycleKind: AssistantResolutionState["kind"];
   /** Platform-session auth state (`useAuthStore`). */
   sessionStatus: SessionStatus;
   /** Whether the always-on SSE event stream is currently connected. */

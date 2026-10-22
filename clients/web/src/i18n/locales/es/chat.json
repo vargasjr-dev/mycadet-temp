@@ -176,15 +176,6 @@
     "search": "Buscar",
     "searchShortcut": "Buscar ({shortcut})"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Ocultar la pantalla de reposo",
-    "sleeping": "Tu asistente está durmiendo",
-    "sleepingNamed": "{name} está durmiendo",
-    "waking": "Tu asistente se está despertando…",
-    "wakingNamed": "{name} se está despertando…",
-    "woke": "Tu asistente acaba de despertarse",
-    "wokeNamed": "{name} acaba de despertarse"
-  },
   "attachmentChip": {
     "removeAria": "Eliminar {filename}"
   },
@@ -283,8 +274,6 @@
   },
   "cameraViewOptions": {
     "buttonAria": "Opciones de vista de la cámara",
-    "gateHudDescription": "Superposición de depuración: cómo el modo en vivo elige qué fotogramas enviar.",
-    "gateHudTitle": "Ajuste del filtro de fotogramas",
     "howItWorks": "Cómo funcionan Foto y En vivo",
     "keptFrameDescription": "Muestra el fotograma más reciente que envió el modo en vivo.",
     "keptFrameTitle": "Último fotograma compartido",
@@ -719,10 +708,6 @@
     "secureHint": "Este valor se enviará de forma segura y no se guardará en tu navegador.",
     "selectPlaceholder": "Seleccionar..."
   },
-  "frameGateHud": {
-    "collapse": "Ocultar la lectura del filtro de fotogramas",
-    "expand": "Mostrar la lectura del filtro de fotogramas"
-  },
   "groupActions": {
     "archiveAll": "Archivar todas…",
     "copyGroupId": "Copiar ID del grupo",
@@ -878,7 +863,6 @@
     "name": "Nombre",
     "noIcon": "Sin icono"
   },
-
   "onboardingChoiceCard": {
     "continue": "Continuar",
     "helpWithHeading": "¿En qué puedo ayudarte?",

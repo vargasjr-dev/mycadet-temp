@@ -81,6 +81,7 @@ const resolveConversation = mock(
 );
 mock.module("@/hooks/use-is-org-ready", () => ({
   useOrgHeaderReadiness: () => "ready",
+  useIsOrgReady: () => true,
 }));
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: mock(() => {}),
@@ -88,7 +89,6 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
 mock.module(
   "@/hooks/conversation-queries",
   (): Partial<typeof ConversationQueries> => ({
-    useCanQueryDaemon: () => false,
     useConversationListQuery: () => ({
       conversations: [],
       isLoading: false,
@@ -149,7 +149,6 @@ function Harness() {
     searchParams,
     activeConversation: undefined,
     refreshEpoch: 0,
-    reachabilityReadyEpoch: 0,
     onboardingDraftConversationIdRef,
   });
   const session = useDocumentConversationRoute();

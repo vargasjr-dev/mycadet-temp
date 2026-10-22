@@ -126,15 +126,6 @@
   "assistantSideMenu": {
     "bulkActionMembersFailed": "Не удалось загрузить все диалоги в этом разделе. Повторите попытку."
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Скрыть экран сна",
-    "sleeping": "Ваш ассистент спит",
-    "sleepingNamed": "{name} спит",
-    "waking": "Ваш ассистент просыпается…",
-    "wakingNamed": "{name} просыпается…",
-    "woke": "Ваш ассистент только что проснулся",
-    "wokeNamed": "{name} только что проснулся"
-  },
   "attachmentPreviewModal": {
     "legacyUnavailable": "Предпросмотр недоступен. Содержимое файла не сохранилось в истории чата.",
     "loadFailed": "Не удалось загрузить предпросмотр.",
@@ -203,8 +194,6 @@
   },
   "cameraViewOptions": {
     "buttonAria": "Параметры отображения камеры",
-    "gateHudDescription": "Отладочный слой: как прямой эфир выбирает, какие кадры отправлять.",
-    "gateHudTitle": "Настройка фильтра кадров",
     "howItWorks": "Как работают «Фото» и «Прямой эфир»",
     "keptFrameDescription": "Показывает последний кадр, отправленный в эфире.",
     "keptFrameTitle": "Последний отправленный кадр",
@@ -575,10 +564,6 @@
   },
   "valueFields": {
     "copyValue": "Скопировать {label}"
-  },
-  "frameGateHud": {
-    "collapse": "Скрыть показатели фильтра кадров",
-    "expand": "Показать показатели фильтра кадров"
   },
   "wakeCard": {
     "commandFinished": "Фоновая команда завершена",

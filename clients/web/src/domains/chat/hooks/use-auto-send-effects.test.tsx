@@ -35,8 +35,7 @@ function baseProps(
     prefillComposer: mock((_content: string) => {}),
     // In-app provenance by default; the pre-fill cases override this.
     navigationState: autoSendPromptState() as unknown,
-    reachabilityPhase: "idle" as const,
-    reachabilityProbe: () => {},
+    assistantActive: true,
     getPendingInitialMessage: () => undefined,
   };
 }

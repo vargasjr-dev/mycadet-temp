@@ -47,7 +47,7 @@ describe("listPendingPairingRequests", () => {
 
     await expect(result).toEqual([pendingRequest()]);
     expect(fetchLog).toHaveLength(1);
-    expect(fetchLog[0]?.url).toBe(`${BASE}/v1/remote-web/pairing-requests`);
+    expect(fetchLog[0]?.url).toBe(`${BASE}/pairing-requests`);
     expect(fetchLog[0]?.init?.method).toBe("GET");
     expect(fetchLog[0]?.init?.body).toBeUndefined();
     expect(
@@ -136,7 +136,7 @@ describe("approvePairingRequest", () => {
 
     expect(fetchLog).toHaveLength(1);
     expect(fetchLog[0]?.url).toBe(
-      `${BASE}/v1/remote-web/pairing-requests/approve`,
+      `${BASE}/pairing-requests/approve`,
     );
     expect(fetchLog[0]?.init?.method).toBe("POST");
     expect(requestBody(fetchLog[0])).toEqual({ requestId: "req-1" });
@@ -198,7 +198,7 @@ describe("denyPairingRequest", () => {
 
     expect(fetchLog).toHaveLength(1);
     expect(fetchLog[0]?.url).toBe(
-      `${BASE}/v1/remote-web/pairing-requests/deny`,
+      `${BASE}/pairing-requests/deny`,
     );
     expect(fetchLog[0]?.init?.method).toBe("POST");
     expect(requestBody(fetchLog[0])).toEqual({ requestId: "req-1" });
@@ -258,9 +258,9 @@ describe("denyPairingRequest", () => {
 
 describe("mintDevicePairing", () => {
   const MINT_ARGS = { base: BASE, publicBaseUrl: "https://foo.ts.net" };
-  const CHALLENGE_URL = `${BASE}/v1/remote-web/pairing-challenge`;
-  const VERIFICATION_URL = `${BASE}/v1/remote-web/pairing-verification`;
-  const LIST_URL = `${BASE}/v1/remote-web/pairing-requests`;
+  const CHALLENGE_URL = `${BASE}/pairing-challenge`;
+  const VERIFICATION_URL = `${BASE}/pairing-verification`;
+  const LIST_URL = `${BASE}/pairing-requests`;
   const DENY_URL = `${LIST_URL}/deny`;
 
   function challengeResponse(): Response {

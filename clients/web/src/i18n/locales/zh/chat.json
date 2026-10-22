@@ -176,15 +176,6 @@
     "searchShortcut": "搜索 ({shortcut})",
     "search": "搜索"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "隐藏休眠画面",
-    "sleeping": "您的助手正在休眠",
-    "sleepingNamed": "{name} 正在休眠",
-    "waking": "您的助手正在唤醒…",
-    "wakingNamed": "{name} 正在唤醒…",
-    "woke": "您的助手刚刚醒来",
-    "wokeNamed": "{name} 刚刚醒来"
-  },
   "attachmentChip": {
     "removeAria": "移除 {filename}"
   },
@@ -283,8 +274,6 @@
   },
   "cameraViewOptions": {
     "buttonAria": "相机显示选项",
-    "gateHudDescription": "调试叠加层：实时模式如何挑选要发送的画面。",
-    "gateHudTitle": "帧筛选调校",
     "howItWorks": "“照片”和“实时”的运作方式",
     "keptFrameDescription": "显示实时模式最近发送的画面。",
     "keptFrameTitle": "最近分享的画面",
@@ -716,50 +705,6 @@
     "secureHint": "此值将安全发送，不会存储在您的浏览器中。",
     "selectPlaceholder": "选择..."
   },
-  "frameGateHud": {
-    "collapse": "隐藏帧筛选读数",
-    "expand": "显示帧筛选读数",
-    "decisionOrder": "决策顺序",
-    "detailLabel": "细节度 (亮度标准差)",
-    "keep": "保留",
-    "keptFrameAlt": "已保留画面",
-    "maxIntervalLabel": "心跳间隔",
-    "minDetailLabel": "最低细节度",
-    "motionLabel": "与前一帧运动量",
-    "noKeeps": "尚未保留任何画面。",
-    "noveltyLabel": "与上次保留的新颖度",
-    "noveltyThresholdLabel": "新颖度阈值",
-    "overridden": "已偏离默认值",
-    "reasonFeatureless": "细节过少，无法比较。",
-    "reasonFirst": "尚未保留画面，画面已稳定。",
-    "reasonForced": "为当前提出的问题保留。",
-    "reasonHeartbeat": "画面未发生变化，但上一张照片时间已过久。",
-    "reasonMoving": "画面仍在晃动中。",
-    "reasonNovel": "与上一张照片相比发生了足够的变化。",
-    "reasonUnchanged": "画面稳定、采集时间近且与上一张照片基本一致。",
-    "reasonWarmup": "仍处于曝光预热阶段。",
-    "recentFrames": "最近画面帧",
-    "recentKeeps": "最近保留帧",
-    "reset": "重置",
-    "settleThresholdLabel": "稳定阈值",
-    "skip": "跳过",
-    "stepFeatureless": "最低细节度",
-    "stepFirst": "首帧保留",
-    "stepForced": "用户请求",
-    "stepHeartbeat": "心跳",
-    "stepMoving": "画面稳定",
-    "stepNovel": "新颖度",
-    "stepUnchanged": "未变更",
-    "stepWarmup": "预热",
-    "surfaceVoice": "语音通话摄像头",
-    "thresholds": "阈值",
-    "valueAbsent": "无",
-    "forcedNoveltyThresholdLabel": "主动请求阈值",
-    "reasonAnswered": "已请求，但上一张照片已包含该内容。",
-    "reasonSettling": "已停止移动，但静止时间尚不足。",
-    "stepAnswered": "已显示",
-    "stepSettling": "保持静止"
-  },
   "groupActions": {
     "archiveAll": "全部归档…",
     "copyGroupId": "复制群组 ID",
@@ -916,7 +861,6 @@
     "name": "名称",
     "noIcon": "无图标"
   },
-
   "onboardingChoiceCard": {
     "continue": "继续",
     "helpWithHeading": "我能帮您什么？",

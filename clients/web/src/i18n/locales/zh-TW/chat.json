@@ -176,15 +176,6 @@
     "searchShortcut": "搜尋 ({shortcut})",
     "search": "搜尋"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "隱藏休眠畫面",
-    "sleeping": "您的助理正在休眠",
-    "sleepingNamed": "{name} 正在休眠",
-    "waking": "您的助理正在喚醒…",
-    "wakingNamed": "{name} 正在喚醒…",
-    "woke": "您的助理剛剛醒來",
-    "wokeNamed": "{name} 剛剛醒來"
-  },
   "attachmentChip": {
     "removeAria": "移除 {filename}"
   },
@@ -283,8 +274,6 @@
   },
   "cameraViewOptions": {
     "buttonAria": "相機顯示選項",
-    "gateHudDescription": "偵錯疊加層：即時模式如何挑選要傳送的畫面。",
-    "gateHudTitle": "影格篩選調校",
     "howItWorks": "「相片」和「即時」的運作方式",
     "keptFrameDescription": "顯示即時模式最近傳送的畫面。",
     "keptFrameTitle": "最近分享的畫面",
@@ -716,50 +705,6 @@
     "secureHint": "此值將會安全傳送，且不會儲存在您的瀏覽器中。",
     "selectPlaceholder": "請選擇..."
   },
-  "frameGateHud": {
-    "collapse": "隱藏影格篩選讀數",
-    "expand": "顯示影格篩選讀數",
-    "decisionOrder": "決策順序",
-    "detailLabel": "細節度 (亮度標準差)",
-    "keep": "保留",
-    "keptFrameAlt": "已保留畫面",
-    "maxIntervalLabel": "心跳間隔",
-    "minDetailLabel": "最低細節度",
-    "motionLabel": "與前一幀運動量",
-    "noKeeps": "尚未保留任何畫面。",
-    "noveltyLabel": "與上次保留的新穎度",
-    "noveltyThresholdLabel": "新穎度閾值",
-    "overridden": "已偏離預設值",
-    "reasonFeatureless": "細節過少，無法比較。",
-    "reasonFirst": "尚未保留畫面，畫面已穩定。",
-    "reasonForced": "為當前提出的問題保留。",
-    "reasonHeartbeat": "畫面未發生變化，但上一張照片時間已過久。",
-    "reasonMoving": "畫面仍在晃動中。",
-    "reasonNovel": "與上一張照片相比發生了足夠的變化。",
-    "reasonUnchanged": "畫面穩定、採集時間近且與上一張照片基本一致。",
-    "reasonWarmup": "仍處於曝光預熱階段。",
-    "recentFrames": "最近畫面幀",
-    "recentKeeps": "最近保留幀",
-    "reset": "重設",
-    "settleThresholdLabel": "穩定閾值",
-    "skip": "略過",
-    "stepFeatureless": "最低細節度",
-    "stepFirst": "首幀保留",
-    "stepForced": "使用者請求",
-    "stepHeartbeat": "心跳",
-    "stepMoving": "畫面穩定",
-    "stepNovel": "新穎度",
-    "stepUnchanged": "未變更",
-    "stepWarmup": "預熱",
-    "surfaceVoice": "語音通話攝影機",
-    "thresholds": "閾值",
-    "valueAbsent": "無",
-    "forcedNoveltyThresholdLabel": "主動請求閾值",
-    "reasonAnswered": "已請求，但上一張相片已包含該內容。",
-    "reasonSettling": "已停止移動，但靜止時間尚不足。",
-    "stepAnswered": "已顯示",
-    "stepSettling": "保持靜止"
-  },
   "groupActions": {
     "archiveAll": "全部封存…",
     "copyGroupId": "複製群組 ID",
@@ -916,7 +861,6 @@
     "name": "名稱",
     "noIcon": "無圖示"
   },
-
   "onboardingChoiceCard": {
     "continue": "繼續",
     "helpWithHeading": "我能為您提供什麼協助？",

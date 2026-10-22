@@ -28,9 +28,19 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { Modal } from "@mycadet/design-library/components/modal";
 import { createElement, type ReactNode } from "react";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type { ProviderConnection } from "@/generated/daemon/types.gen";
 import * as sdkGen from "@/generated/daemon/sdk.gen";
+
+let resolutionState: AssistantResolutionState = { kind: "loading" };
+function setResolutionState(next: AssistantResolutionState) {
+  resolutionState = next;
+}
+
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({ state: resolutionState }),
+  useAssistantBootResolution: () => ({ state: resolutionState }),
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -52,7 +62,6 @@ let createResponseOk = true;
 let createResponseStatus = 200;
 let createResponseJson: unknown = null;
 let toastSuccessCalls: string[] = [];
-const initialLifecycleState = useAssistantLifecycleStore.getState();
 
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: {
@@ -234,7 +243,7 @@ beforeEach(() => {
   createResponseStatus = 200;
   createResponseJson = null;
   toastSuccessCalls = [];
-  useAssistantLifecycleStore.setState(initialLifecycleState, true);
+  setResolutionState({ kind: "loading" });
 });
 
 afterEach(() => {
@@ -393,9 +402,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama creates a keyless connection without saving a secret", async () => {
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "self_hosted" },
-    });
+    setResolutionState({ kind: "self_hosted" });
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -429,9 +436,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create form shows an optional Base URL field", async () => {
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "self_hosted" },
-    });
+    setResolutionState({ kind: "self_hosted" });
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -451,9 +456,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("Ollama create posts a filled Base URL", async () => {
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "self_hosted" },
-    });
+    setResolutionState({ kind: "self_hosted" });
     render(
       <ModalWrapper>
         <ProviderCreateForm
@@ -483,9 +486,7 @@ describe("ProviderCreateForm submit sequence", () => {
   });
 
   test("cloud-hosted assistants ignore an Ollama default provider seed", () => {
-    useAssistantLifecycleStore.setState({
-      assistantState: { kind: "active", isLocal: false },
-    });
+    setResolutionState({ kind: "active", isLocal: false });
     render(
       <ModalWrapper>
         <ProviderCreateForm

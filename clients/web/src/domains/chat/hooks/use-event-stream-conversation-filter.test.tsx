@@ -27,9 +27,6 @@ function renderEventStream(
           }) as never,
         startReconciliationLoop: () => {},
         cancelReconciliation: () => {},
-        reachabilityProbe: () => {},
-        reachabilityPhase: "ready",
-        reachabilityReset: () => {},
       });
     },
     { initialProps: { key: activeConversationId } },

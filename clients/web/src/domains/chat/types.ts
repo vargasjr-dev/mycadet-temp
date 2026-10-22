@@ -6,7 +6,7 @@
  * inlined in a single consumer.
  */
 
-import type { AssistantState } from "@/assistant/types";
+import type { AssistantResolutionState } from "@/assistant/types";
 import type {
   AllowlistOption,
   DirectoryScopeOption,
@@ -18,8 +18,8 @@ import type {
 // Assistant state
 // ---------------------------------------------------------------------------
 
-/** The `kind` discriminant of `AssistantState`, shared across multiple hooks. */
-export type AssistantStateKind = AssistantState["kind"];
+/** The `kind` discriminant of `AssistantResolutionState`, shared across multiple hooks. */
+export type AssistantStateKind = AssistantResolutionState["kind"];
 
 // ---------------------------------------------------------------------------
 // State shapes for prompt / error UI

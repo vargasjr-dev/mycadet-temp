@@ -1,6 +1,5 @@
-import { HardDrive, Loader2, RotateCw, Wrench } from "lucide-react";
+import { HardDrive, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 
 import { type Assistant, getAssistant } from "@/assistant/api";
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
@@ -9,30 +8,16 @@ import { RecoveryModeControls } from "@/domains/settings/components/recovery-mod
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
-import { isCadetStaff } from "@/lib/auth/staff";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAuthStore } from "@/stores/auth-store";
-import { clearConsentForUser } from "@/lib/consent/consent-persistence";
-import { routes } from "@/utils/routes";
-import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
-  const navigate = useNavigate();
-  const user = useAuthStore.use.user();
   const cloudGate = useCloudGate();
-  const showInternalControls = isCadetStaff(user);
 
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchedRef = useRef(false);
-
-  const handleReplayOnboarding = useCallback(() => {
-    clearConsentForUser(user?.id ?? null);
-    toast.success(t("debugControlsPanel.onboardingClearedToast"));
-    navigate(routes.onboarding.privacy);
-  }, [navigate, t, user?.id]);
 
   const fetchAssistant = useCallback(
     async (force?: boolean) => {
@@ -109,28 +94,6 @@ export function DebugControlsPanel() {
             maintenanceMode={assistant.maintenance_mode}
             onMaintenanceModeChange={() => fetchAssistant(true)}
           />
-
-          {showInternalControls && (
-            <div className="flex items-center justify-between rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
-              <div className="min-w-0">
-                <p className="text-body-medium-default text-[var(--content-default)]">
-                  {t("debugControlsPanel.replayTitle")}
-                </p>
-                <p className="text-body-small-lighter text-[var(--content-tertiary)]">
-                  {t("debugControlsPanel.replayDescription")}
-                </p>
-              </div>
-              <div className="ml-4 shrink-0">
-                <Button
-                  variant="outlined"
-                  leftIcon={<RotateCw />}
-                  onClick={handleReplayOnboarding}
-                >
-                  {t("debugControlsPanel.replay")}
-                </Button>
-              </div>
-            </div>
-          )}
 
           {cloudGate === "disabled" && (
             <CloudLoginNotice>

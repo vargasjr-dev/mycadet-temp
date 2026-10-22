@@ -16,7 +16,6 @@ import {
   useSearchParams,
 } from "react-router";
 
-import { useAssistantLifecycleStore } from "@/assistant/lifecycle-store";
 import { useAutoGreetGate } from "@/domains/chat/hooks/use-auto-greet-gate";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -40,7 +39,6 @@ import { peekPendingPreChatContext } from "@/domains/onboarding/prechat";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
-import { useAssistantReachability } from "@/assistant/use-assistant-reachability";
 import { useDiskPressureMonitor } from "@/assistant/use-disk-pressure-monitor";
 import { getDiskPressureChatBlockReason } from "@/assistant/disk-pressure";
 import { useResourcePressureMonitor } from "@/assistant/use-resource-pressure-monitor";
@@ -68,7 +66,8 @@ import { useChatDebugRegistration } from "@/domains/chat/hooks/use-chat-debug-re
 import { useAppRouteSync } from "@/domains/chat/hooks/use-app-route-sync";
 import { useDeepLinkApp } from "@/domains/chat/hooks/use-deep-link-app";
 import { useScrollToMessageParam } from "@/domains/chat/hooks/use-scroll-to-message";
-import { lifecycleService } from "@/assistant/lifecycle-service";
+import { useAssistantResolution } from "@/assistant/queries";
+import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
 import { isSending, useTurnStore } from "@/domains/chat/turn-store";
 import { useOnboardingFocusStore } from "@/stores/onboarding-focus-store";
 import { Button } from "@mycadet/design-library/components/button";
@@ -119,7 +118,7 @@ export function ActiveChatView() {
     appId?: string;
   }>();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const assistantState = useAssistantLifecycleStore.use.assistantState();
+  const { state: assistantState } = useAssistantResolution();
   const turnPhase = useTurnStore.use.phase();
 
   // -------------------------------------------------------------------------
@@ -198,17 +197,6 @@ export function ActiveChatView() {
   } = useOnboardingOrchestrator();
 
   // -------------------------------------------------------------------------
-  // Reachability
-  // -------------------------------------------------------------------------
-  const reachability = useAssistantReachability(assistantId);
-  const reachabilityReadyEpoch = useMemo(() => {
-    if (reachability.state.phase === "ready") {
-      return refreshEpoch + 1;
-    }
-    return 0;
-  }, [reachability.state.phase, refreshEpoch]);
-
-  // -------------------------------------------------------------------------
   // Disk pressure (only relevant for cloud-hosted assistants)
   // -------------------------------------------------------------------------
   const isCloudHosted = useActiveAssistantIsCloudHosted();
@@ -280,7 +268,6 @@ export function ActiveChatView() {
     searchParams,
     activeConversation,
     refreshEpoch,
-    reachabilityReadyEpoch,
     onboardingDraftConversationIdRef,
   });
 
@@ -314,7 +301,6 @@ export function ActiveChatView() {
     conversationExistsOnServer,
     latestPageOldestTimestamp:
       historyResult.pagination.latestPageOldestTimestamp,
-    reachability,
     setAssetsRefreshKey,
     observeLiveModeSession: sessionDisclosureState.observeLiveSession,
   });
@@ -364,7 +350,7 @@ export function ActiveChatView() {
   // staged as composer attachments once that draft is on screen.
   usePendingEmailReferences({ activeConversationId });
 
-  // Auto-send: URL ?prompt=, pre-chat reachability probe, onboarding message.
+  // Auto-send: URL ?prompt=, onboarding message.
   useAutoSendEffects({
     assistantId,
     activeConversationId,
@@ -373,8 +359,7 @@ export function ActiveChatView() {
     navigationState: location.state,
     sendMessage,
     prefillComposer: prefillComposerFromUrl,
-    reachabilityPhase: reachability.state.phase,
-    reachabilityProbe: reachability.probe,
+    assistantActive: assistantState.kind === "active",
     getPendingInitialMessage: () =>
       peekPendingPreChatContext()?.initialMessage ?? undefined,
     getPendingInitialMessageHidden: () =>
@@ -390,15 +375,6 @@ export function ActiveChatView() {
     [sendMessage],
   );
   useAcpAutoContinue(sendAcpContinue);
-
-  useEffect(() => {
-    if (reachability.state.phase !== "failed") {
-      return;
-    }
-    useChatSessionStore.getState().setError({
-      message: "Connection lost. Please try again.",
-    });
-  }, [reachability.state.phase]);
 
   // Focused research-onboarding "deeper dive": the results overlay (rendered
   // by ChatLayout, outside this component) stages a follow-up message; send it
@@ -432,13 +408,13 @@ export function ActiveChatView() {
   const handleAutoGreetRetry = useCallback(() => {
     const message = initialMessageRef.current;
     if (!message) {
-      lifecycleService.clearExpectingFirstMessage();
+      useAutoGreetStore.getState().clearExpectingFirstMessage();
       return;
     }
     if (isSending(useTurnStore.getState().phase)) {
       return;
     }
-    lifecycleService.markExpectingFirstMessage();
+    useAutoGreetStore.getState().markExpectingFirstMessage();
     void sendMessage(message);
   }, [sendMessage]);
 

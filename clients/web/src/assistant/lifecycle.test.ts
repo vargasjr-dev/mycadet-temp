@@ -2,9 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import {
   assistantStateCanServeChat,
-  ERROR_RETRY_BASE_MS,
-  ERROR_RETRY_MAX_MS,
-  errorRetryDelayMs,
   isTransportShapedError,
   PROXY_NETWORK_ERROR_CODE,
   resolveAssistantLifecycleState,
@@ -95,15 +92,5 @@ describe("isTransportShapedError", () => {
       false,
     );
     expect(isTransportShapedError({})).toBe(false);
-  });
-});
-
-describe("errorRetryDelayMs", () => {
-  test("doubles from the base and caps at the maximum", () => {
-    expect(errorRetryDelayMs(0)).toBe(ERROR_RETRY_BASE_MS);
-    expect(errorRetryDelayMs(1)).toBe(ERROR_RETRY_BASE_MS * 2);
-    expect(errorRetryDelayMs(2)).toBe(ERROR_RETRY_BASE_MS * 4);
-    expect(errorRetryDelayMs(4)).toBe(ERROR_RETRY_MAX_MS);
-    expect(errorRetryDelayMs(20)).toBe(ERROR_RETRY_MAX_MS);
   });
 });

@@ -543,7 +543,7 @@ export function hasLocalGateway(
  * answered by `getPairedGatewayUrl`. Deliberately not a type predicate: its
  * false branch must not narrow `assistant` (a local entry also lands there).
  */
-function expectsPairedGateway(assistant: LockfileAssistant): boolean {
+export function expectsPairedGateway(assistant: LockfileAssistant): boolean {
   return (
     isLocalClient() &&
     !isServedGatewayRuntime() &&

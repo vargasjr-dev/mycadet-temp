@@ -3,7 +3,7 @@
  *
  *  1. **What assistants exist** — `assistants: ResolvedAssistant[]`
  *  2. **Which is active** — `activeAssistantId` (output of the lifecycle
- *     state machine, written exclusively by `lifecycle-service.ts`)
+ *     boot resolution, written exclusively by `assistant/queries.ts`)
  *  3. **Which assistant the user selected** — `selectedAssistantId` (input to
  *     the lifecycle, persisted to a single localStorage key). The active org is
  *     a read-time *filter* (see `resolveSelectedAssistantId`), never a storage

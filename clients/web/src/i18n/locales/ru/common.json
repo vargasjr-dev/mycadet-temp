@@ -17,12 +17,8 @@
     "modeAria": "Как показывать этот файл",
     "source": "Исходный код"
   },
-  "statusBanner": {
-    "reconnecting": "Восстанавливаем соединение с вашим ассистентом…"
-  },
   "addCreditsModal": {
   },
-
   "assistantEmailIntroModal": {
     "setUp": "Настроить почту"
   },
@@ -240,7 +236,6 @@
     "upgrade": "Обновить план",
     "dontShowAgain": "Больше не показывать"
   },
-
   "sectionActionsButton": {
     "ariaLabel": "Действия: {name}"
   },
