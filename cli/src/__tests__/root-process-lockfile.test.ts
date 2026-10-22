@@ -66,21 +66,6 @@ describe("root process lockfile entries", () => {
     expect(readRootProcesses().tunnel?.pid).toBe(78);
   });
 
-  test("a record can name the assistant it fronts, for `cadet ps` nesting", () => {
-    stampRootProcess("tunnel", {
-      pid: 4242,
-      provider: "ngrok",
-      startedAt: "2026-10-11T00:00:00.000Z",
-      assistantId: "assistant-1",
-    });
-
-    expect(readRootProcesses().tunnel).toMatchObject({
-      pid: 4242,
-      provider: "ngrok",
-      assistantId: "assistant-1",
-    });
-  });
-
   test("the records live at the lockfile root under their kind keys", () => {
     stampRootProcess("app", { pid: 1, port: 7841, startedAt: "t" });
 

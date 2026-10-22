@@ -62,7 +62,6 @@ describe("notification identities", () => {
     });
     const account = resolveNotificationIdentityScope({
       kind: "account",
-      accountId: "user@example.com",
       organizationId: "org-abc",
     });
 
@@ -71,9 +70,8 @@ describe("notification identities", () => {
     );
     expect(sameOrigin).toBe(connection);
     expect(account).toBe(
-      "scope:v1:e6052e7a38013dfcdb9a2e8603679b2ab223f6b8f473611efd6b3128d860c426",
+      "scope:v1:b86c769bdc8b0579383b98d35b9da4e72db0aac40f4566a8a92751e8bf2ea356",
     );
-    expect(account).not.toContain("user@example.com");
     expect(account).not.toContain("org-abc");
     expect(connection).not.toContain("assistant.example.com");
   });

@@ -264,7 +264,6 @@ describe("SystemPermissionsCard", () => {
     });
     expect(resolveAssistantAvatarOwnerScopeId).toHaveBeenCalledWith(
       assistants[0],
-      "account-123",
       "org-abc",
       expect.any(String),
     );
@@ -284,7 +283,6 @@ describe("SystemPermissionsCard", () => {
     });
   });
 
-  
   test("keeps notifications requests plain without a complete snapshot", async () => {
     state = makeState({ notifications: "not-determined" });
     preparedSnapshot = { name: "Alice" };

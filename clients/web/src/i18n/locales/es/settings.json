@@ -102,7 +102,6 @@
     "unnamed": "Sin nombre"
   },
   "assistantStatusPanel": {
-    "account": "Cuenta",
     "assistantId": "ID del asistente",
     "cpuUsage": "Uso de CPU",
     "created": "Creado",

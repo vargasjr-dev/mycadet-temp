@@ -37,6 +37,7 @@ import type {
   TunnelProvider,
   ProviderMeta,
   ProviderTunnelResult,
+  TunnelStartOptions,
 } from "../tunnel.js";
 import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
@@ -974,7 +975,6 @@ export async function maybeStartNgrokTunnel(
         pid: ngrokProcess.pid,
         provider: "ngrok",
         startedAt: new Date().toISOString(),
-        assistantId,
         publicUrl,
       });
     }
@@ -1309,7 +1309,6 @@ export async function runNgrokTunnel(
         pid: ngrokProcess.pid,
         provider: "ngrok",
         startedAt: new Date().toISOString(),
-        assistantId: opts.assistantId,
         publicUrl,
       });
     }
@@ -1333,4 +1332,15 @@ export async function runNgrokTunnel(
 export const NGROK_PROVIDER: TunnelProvider = {
   run: runNgrokTunnel,
   stop: (opts) => stopOwnedTunnelAgent(opts, isNgrokProcess, "ngrok"),
+  /**
+   * The default provider's start piece: the same gates (containerized
+   * deploys, webhook integrations, a saved foreign URL) and detached-spawn
+   * ownership — the ChildProcess is what the root lockfile's pid tracking
+   * records; it saves the URL and notifies the gateway itself, so the spawn
+   * returns nothing to await here.
+   */
+  start: async ({ port, workspaceDir, assistantId }: TunnelStartOptions) => {
+    await maybeStartNgrokTunnel(port, workspaceDir, assistantId);
+    return null;
+  },
 };

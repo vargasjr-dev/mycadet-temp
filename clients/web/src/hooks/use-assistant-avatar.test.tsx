@@ -293,7 +293,6 @@ describe("useAssistantAvatar", () => {
       assistantOne,
       null,
       null,
-      null,
     )!;
     const secondAssistant = {
       ...assistantOne,
@@ -301,7 +300,6 @@ describe("useAssistantAvatar", () => {
     };
     const secondScope = resolveAssistantAvatarOwnerScopeId(
       secondAssistant,
-      null,
       null,
       null,
     )!;
@@ -358,7 +356,6 @@ describe("useAssistantAvatar", () => {
     });
     const scopeId = resolveAssistantAvatarOwnerScopeId(
       assistantOne,
-      null,
       null,
       null,
     )!;
@@ -537,7 +534,6 @@ describe("useAssistantAvatar", () => {
     } satisfies AvatarData);
     const scopeId = resolveAssistantAvatarOwnerScopeId(
       assistantOne,
-      null,
       null,
       null,
     )!;

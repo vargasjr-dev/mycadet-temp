@@ -320,8 +320,7 @@ describe("parseLockfile", () => {
       activeAssistant: null,
       tunnel: {
         pid: 4242,
-        provider: "ngrok",
-        assistantId: "a",
+        provider: "ngrok" as const,
         startedAt: "2026-10-21T00:00:00.000Z",
         publicUrl: "https://tunnel.example.ts.net",
       },

@@ -67,7 +67,6 @@ beforeEach(() => {
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "ngrok",
-    assistantId: "fixture",
     startedAt: new Date().toISOString(),
   });
   stampRootProcess("app", {
@@ -124,7 +123,6 @@ test("Cloudflare dispatch stops cloudflared and clears its ingress", async () =>
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "cloudflare",
-    assistantId: "fixture",
     startedAt: new Date().toISOString(),
   });
   identity.mockReturnValue(
@@ -139,7 +137,6 @@ test("Tailscale dispatch disables serve and preserves the webhook ingress base",
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "tailscale",
-    assistantId: "fixture",
     startedAt: new Date().toISOString(),
   });
   writeFileSync(
@@ -181,7 +178,6 @@ test("Tailscale shutdown failure preserves the recorded tunnel and ingress", asy
   stampRootProcess("tunnel", {
     pid: 424242,
     provider: "tailscale",
-    assistantId: "fixture",
     startedAt: new Date().toISOString(),
   });
   const deps: TailscaleDeps = {

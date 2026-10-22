@@ -13,13 +13,12 @@ import {
   getTailscaleBinaryCandidates,
   getTailscaleInstallMessage,
   normalizeDnsName,
-  recoverTailscaleIngressUrl,
   resolveServeHostname,
   retractServeUrl,
-  serveStatusListsUrl,
   shouldClearIngressUrl,
   startTailscaleServe,
   stopTailscaleServe,
+  TAILSCALE_PROVIDER,
   type TailscaleCommandResult,
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";
@@ -362,98 +361,45 @@ describe("shouldClearIngressUrl", () => {
   });
 });
 
-describe("recoverTailscaleIngressUrl", () => {
-  const SERVE_STATUS =
-    `${TAILNET_URL} (tailnet only)\n|-- / proxy http://127.0.0.1:7840\n`;
+describe("TAILSCALE_PROVIDER.start — the restore-path start piece", () => {
+  test("a pairing-only tailnet run leaves lastTunnel on the webhook provider, so nothing re-establishes", async () => {
+    const workspaceDir = makeWorkspace();
+    writeFileSync(
+      join(workspaceDir, "config.json"),
+      JSON.stringify({
+        ingress: {
+          enabled: true,
+          publicBaseUrl: "https://x.ngrok.app",
+          lastTunnel: {
+            provider: "ngrok",
+            publicBaseUrl: "https://x.ngrok.app",
+          },
+        },
+      }),
+    );
 
-  function writeIngress(ws: string, ingress: Record<string, unknown>): void {
-    writeFileSync(join(ws, "config.json"), JSON.stringify({ ingress }));
-  }
-
-  function readIngress(ws: string): Record<string, unknown> {
-    return JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")).ingress;
-  }
-
-  test("re-saves a cleared URL when the recorded tailscale serve is still listed", async () => {
-    const ws = makeWorkspace();
-    writeIngress(ws, {
-      enabled: true,
-      lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+    const url = await TAILSCALE_PROVIDER.start?.({
+      port: 7840,
+      workspaceDir,
+      assistantId: "assistant-1",
     });
-    const { deps, calls } = makeDeps({
-      responses: { "serve status": ok(SERVE_STATUS) },
-    });
 
-    await expect(
-      recoverTailscaleIngressUrl({ workspaceDir: ws }, deps),
-    ).resolves.toBe(TAILNET_URL);
-    expect(calls).toEqual([["serve", "status"]]);
-    expect(readIngress(ws).publicBaseUrl).toBe(TAILNET_URL);
+    expect(url).toBeNull();
   });
 
-  test("leaves the config alone when the serve is gone", async () => {
-    const ws = makeWorkspace();
-    writeIngress(ws, {
-      enabled: true,
-      lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
+  test("a workspace whose config never recorded a tunnel declines too", async () => {
+    const workspaceDir = makeWorkspace();
+    writeFileSync(
+      join(workspaceDir, "config.json"),
+      JSON.stringify({ ingress: { enabled: true } }),
+    );
+
+    const url = await TAILSCALE_PROVIDER.start?.({
+      port: 7840,
+      workspaceDir,
+      assistantId: "assistant-1",
     });
-    const { deps } = makeDeps({
-      responses: { "serve status": ok("No serve config\n") },
-    });
 
-    await expect(
-      recoverTailscaleIngressUrl({ workspaceDir: ws }, deps),
-    ).resolves.toBeNull();
-    expect(readIngress(ws).publicBaseUrl).toBeUndefined();
-  });
-
-  test("does nothing when a URL is already saved", async () => {
-    const ws = makeWorkspace();
-    writeIngress(ws, {
-      enabled: true,
-      publicBaseUrl: TAILNET_URL,
-      lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-    });
-    const { deps, calls } = makeDeps({});
-
-    await expect(
-      recoverTailscaleIngressUrl({ workspaceDir: ws }, deps),
-    ).resolves.toBeNull();
-    expect(calls).toEqual([]);
-  });
-
-  test("ignores a last tunnel from another provider", async () => {
-    const ws = makeWorkspace();
-    writeIngress(ws, {
-      enabled: true,
-      lastTunnel: { provider: "ngrok", publicBaseUrl: "https://x.ngrok.app" },
-    });
-    const { deps, calls } = makeDeps({});
-
-    await expect(
-      recoverTailscaleIngressUrl({ workspaceDir: ws }, deps),
-    ).resolves.toBeNull();
-    expect(calls).toEqual([]);
-    expect(readIngress(ws).publicBaseUrl).toBeUndefined();
-  });
-
-  test("gives up quietly without a tailscale binary", async () => {
-    const ws = makeWorkspace();
-    writeIngress(ws, {
-      enabled: true,
-      lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-    });
-    const { deps } = makeDeps({ binary: null });
-
-    await expect(
-      recoverTailscaleIngressUrl({ workspaceDir: ws }, deps),
-    ).resolves.toBeNull();
-  });
-
-  test("matches the served host case-insensitively and ignores the proxy lines", () => {
-    expect(serveStatusListsUrl(SERVE_STATUS, TAILNET_URL)).toBe(true);
-    expect(
-      serveStatusListsUrl(SERVE_STATUS, "https://other.tail-scale.ts.net"),
-    ).toBe(false);
+    expect(url).toBeNull();
   });
 });
