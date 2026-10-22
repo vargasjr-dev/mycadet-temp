@@ -35,7 +35,7 @@ import {
 const log = getLogger("cloud-callback-registration");
 
 export interface CloudCallbackRegistrationContext {
-  isPlatform: boolean;
+  isCloud: boolean;
   cloudBaseUrl: string;
   assistantId: string;
   /**
@@ -50,7 +50,7 @@ export interface CloudCallbackRegistrationContext {
 }
 
 export async function resolveCloudCallbackRegistrationContext(): Promise<CloudCallbackRegistrationContext> {
-  const platform = getIsCloud();
+  const isCloud = getIsCloud();
   const [storedAssistantApiKey, assistantId] = await Promise.all([
     getSecureKeyResultAsync(credentialKey("cadet", "assistant_api_key")),
     resolveCloudAssistantId(),
@@ -69,7 +69,7 @@ export async function resolveCloudCallbackRegistrationContext(): Promise<CloudCa
       : !!assistantCredential;
 
   return {
-    isPlatform: platform,
+    isCloud: isCloud,
     cloudBaseUrl,
     assistantId,
     hasAssistantApiKey,

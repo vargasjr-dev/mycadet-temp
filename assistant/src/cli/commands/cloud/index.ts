@@ -1,7 +1,7 @@
 /**
  * `assistant cloud` — manage Cadet Cloud integration.
  *
- * Thin IPC wrapper that delegates all platform operations to the daemon.
+ * Thin IPC wrapper that delegates all cloud operations to the daemon.
  */
 
 import type { Command } from "commander";
@@ -16,7 +16,7 @@ import { registerCloudDisconnectCommand } from "./disconnect.js";
 import { cloudHelp } from "./index.help.js";
 
 interface CloudStatusResult {
-  isPlatform: boolean;
+  isCloud: boolean;
   baseUrl: string;
   assistantId: string;
   hasAssistantApiKey: boolean | null;
@@ -34,22 +34,22 @@ export function registerCloudCommand(program: Command): void {
     aliases: ["platform"],
     transport: "ipc",
     description: cloudHelp.description,
-    build: (platform) => {
-      applyCommandHelp(platform, cloudHelp);
+    build: (cloud) => {
+      applyCommandHelp(cloud, cloudHelp);
 
       // -----------------------------------------------------------------------
       // connect
       // -----------------------------------------------------------------------
 
-      registerCloudConnectCommand(platform);
+      registerCloudConnectCommand(cloud);
 
       // -----------------------------------------------------------------------
       // status
       // -----------------------------------------------------------------------
 
-      subcommand(platform, "status").action(
+      subcommand(cloud, "status").action(
         async (_opts: Record<string, unknown>, cmd: Command) => {
-          const r = await cliIpcCall<CloudStatusResult>("platform_status", {});
+          const r = await cliIpcCall<CloudStatusResult>("cloud_status", {});
           if (!r.ok) {
             return exitFromIpcResult(
               { ok: false, error: r.error, statusCode: r.statusCode },
@@ -62,7 +62,7 @@ export function registerCloudCommand(program: Command): void {
           if (shouldOutputJson(cmd)) {
             writeOutput(cmd, result);
           } else {
-            log.info(`Platform: ${result.isPlatform}`);
+            log.info(`Cloud: ${result.isCloud}`);
             log.info(`Base URL: ${result.baseUrl || "(not set)"}`);
             log.info(`Assistant ID: ${result.assistantId || "(not set)"}`);
             log.info(
@@ -92,13 +92,13 @@ export function registerCloudCommand(program: Command): void {
       // disconnect
       // -----------------------------------------------------------------------
 
-      registerCloudDisconnectCommand(platform);
+      registerCloudDisconnectCommand(cloud);
 
       // -----------------------------------------------------------------------
       // callback-routes
       // -----------------------------------------------------------------------
 
-      const callbackRoutes = subcommand(platform, "callback-routes");
+      const callbackRoutes = subcommand(cloud, "callback-routes");
 
       // -----------------------------------------------------------------------
       // callback-routes register
@@ -142,7 +142,7 @@ export function registerCloudCommand(program: Command): void {
               callback_path: string;
               callback_url: string;
             }>;
-          }>("platform_callback_routes_list", {});
+          }>("cloud_callback_routes_list", {});
           if (!r.ok) {
             return exitFromIpcResult(
               { ok: false, error: r.error, statusCode: r.statusCode },

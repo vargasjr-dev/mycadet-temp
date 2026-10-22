@@ -1,16 +1,16 @@
 import type { Command } from "commander";
 
 import { cliIpcCall, exitFromIpcResult } from "../../../ipc/cli-client.js";
-import type { PlatformConnectResponse } from "../../../runtime/routes/cloud-routes.js";
+import type { CloudConnectResponse } from "../../../runtime/routes/cloud-routes.js";
 import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
 
-export function registerCloudConnectCommand(platform: Command): void {
-  subcommand(platform, "connect").action(
+export function registerCloudConnectCommand(cloud: Command): void {
+  subcommand(cloud, "connect").action(
     async (_opts: Record<string, unknown>, cmd: Command) => {
-      const r = await cliIpcCall<PlatformConnectResponse>(
-        "platform_connect",
+      const r = await cliIpcCall<CloudConnectResponse>(
+        "cloud_connect",
         {},
       );
       if (!r.ok) {
@@ -25,7 +25,7 @@ export function registerCloudConnectCommand(platform: Command): void {
       if (!shouldOutputJson(cmd)) {
         if (r.result?.alreadyConnected) {
           log.info(
-            `Already connected to platform at ${r.result.baseUrl}. ` +
+            `Already connected to cloud at ${r.result.baseUrl}. ` +
               `Run 'assistant cloud disconnect' first to reconnect.`,
           );
         } else if (r.result?.credentialRejected) {

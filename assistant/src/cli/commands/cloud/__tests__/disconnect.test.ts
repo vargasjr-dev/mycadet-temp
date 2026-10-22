@@ -55,7 +55,7 @@ describe("assistant cloud disconnect", () => {
     process.exitCode = 0;
   });
 
-  test("calls platform_disconnect and reports success", async () => {
+  test("calls cloud_disconnect and reports success", async () => {
     const program = buildProgram();
     const stdoutChunks: string[] = [];
     const origWrite = process.stdout.write.bind(process.stdout);
@@ -71,7 +71,7 @@ describe("assistant cloud disconnect", () => {
     }
 
     expect(mockCalls.length).toBe(1);
-    expect(mockCalls[0][0]).toBe("platform_disconnect");
+    expect(mockCalls[0][0]).toBe("cloud_disconnect");
 
     const parsed = JSON.parse(stdoutChunks.join(""));
     expect(parsed.ok).toBe(true);

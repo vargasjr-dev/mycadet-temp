@@ -32,10 +32,10 @@ export type CloudCredentialVerificationStatus = z.infer<
   typeof CloudCredentialVerificationStatusSchema
 >;
 
-/** `POST /v1/platform/verify-credential` response body. */
-export const PlatformVerifyCredentialResponseSchema = z.object({
+/** `POST /v1/cloud/verify-credential` response body. */
+export const CloudVerifyCredentialResponseSchema = z.object({
   status: CloudCredentialVerificationStatusSchema,
 });
-export type PlatformVerifyCredentialResponse = z.infer<
-  typeof PlatformVerifyCredentialResponseSchema
+export type CloudVerifyCredentialResponse = z.infer<
+  typeof CloudVerifyCredentialResponseSchema
 >;

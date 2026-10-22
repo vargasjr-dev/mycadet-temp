@@ -424,7 +424,7 @@ describe("ROUTES policy declarations", () => {
   test("platform/status is readable by browser actors", async () => {
     const { ROUTES } = await import("../../routes/index.js");
     const route = ROUTES.find(
-      (r) => r.endpoint === "platform/status" && r.method === "GET",
+      (r) => r.endpoint === "cloud/status" && r.method === "GET",
     );
     expect(route).toBeDefined();
     expect(route!.policy).not.toBeNull();

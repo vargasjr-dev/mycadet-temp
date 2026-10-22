@@ -3747,10 +3747,10 @@ describe("session-agent-loop", () => {
 
     test("does not persist cloud credential refresh failures as assistant text", async () => {
       mockConversationErrorClassification = {
-        code: "MANAGED_KEY_INVALID",
+        code: "CLOUD_KEY_INVALID",
         userMessage: "Couldn't refresh assistant credentials.",
         retryable: false,
-        errorCategory: "managed_key_invalid",
+        errorCategory: "cloud_key_invalid",
       };
       const events: AssistantEvent[] = [];
 
@@ -3773,9 +3773,9 @@ describe("session-agent-loop", () => {
       );
       expect(conversationError).toBeDefined();
       expect(conversationError).toMatchObject({
-        code: "MANAGED_KEY_INVALID",
+        code: "CLOUD_KEY_INVALID",
         userMessage: "Couldn't refresh assistant credentials.",
-        errorCategory: "managed_key_invalid",
+        errorCategory: "cloud_key_invalid",
       });
 
       expect(addMessageMock).not.toHaveBeenCalled();
@@ -4656,10 +4656,10 @@ describe("session-agent-loop", () => {
         createdAt: 1_700_000_000_051,
       }));
       mockConversationErrorClassification = {
-        code: "MANAGED_KEY_INVALID",
+        code: "CLOUD_KEY_INVALID",
         userMessage: "Couldn't refresh assistant credentials.",
         retryable: false,
-        errorCategory: "managed_key_invalid",
+        errorCategory: "cloud_key_invalid",
       };
 
       const ctx = makeCtx({

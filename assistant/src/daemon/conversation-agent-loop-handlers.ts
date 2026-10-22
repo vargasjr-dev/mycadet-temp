@@ -146,7 +146,7 @@ const log = getLogger("agent-loop-handlers");
 function shouldPersistProviderErrorAsAssistantMessage(classified: {
   code: string;
 }): boolean {
-  return classified.code !== "MANAGED_KEY_INVALID";
+  return classified.code !== "CLOUD_KEY_INVALID";
 }
 
 /**

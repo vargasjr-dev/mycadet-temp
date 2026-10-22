@@ -445,12 +445,6 @@ export const routeTree = [
             ],
           },
 
-          // Deep-link checkout — starts Stripe checkout for a package chosen on
-          // the marketing pricing page. Placed OUTSIDE ActiveAssistantGate (and
-          // the onboarding-completed guard) so a brand-new user with no assistant
-          // yet can reach it; `authMiddleware` on `/assistant` still applies, and
-          // the navigation resolver exempts it from the no-assistant funnel
-          // redirect. The page gates on the session-only platform gate itself.
           // Settings and logs require a resolved assistant. The gate
           // defers child rendering until the lifecycle reaches active/
           // self_hosted, so route components can use useActiveAssistantId().
@@ -959,7 +953,7 @@ export const router = createBrowserRouter(routeTree as never, {
   // A served prefix is a topology fact — read it from where the bundle was
   // actually loaded, never from the auth scheme. Cloud-hosted bundles serve
   // under a versioned artifact path (`/web/<version>/assistant/…`) on both
-  // the gateway and the platform host; without the prefix the router matches
+  // the gateway and the cloud host; without the prefix the router matches
   // the full iframe path, finds no `/web` route, and lands in the not-found
   // catch-all. Root-served bundles (local, electron) match at index 0 and
   // keep no basename.

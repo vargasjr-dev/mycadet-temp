@@ -58,18 +58,18 @@ describe("activityFailedDedupeKey", () => {
     const a = activityFailedDedupeKey({
       jobName: "job-a",
       errorKind: "model_provider",
-      failureCode: "MANAGED_KEY_INVALID",
+      failureCode: "CLOUD_KEY_INVALID",
       providerScope: "profile-a",
     });
     const b = activityFailedDedupeKey({
       jobName: "job-b",
       errorKind: "model_provider",
-      failureCode: "MANAGED_KEY_INVALID",
+      failureCode: "CLOUD_KEY_INVALID",
       providerScope: "profile-b",
     });
     expect(a).toBe(b);
     expect(a).toMatch(
-      /^activity-failed:cause:MANAGED_KEY_INVALID:\d{4}-\d{2}-\d{2}$/,
+      /^activity-failed:cause:CLOUD_KEY_INVALID:\d{4}-\d{2}-\d{2}$/,
     );
   });
 
@@ -107,7 +107,7 @@ describe("activityFailedDedupeKey", () => {
     const key = activityFailedDedupeKey({
       jobName: "job",
       errorKind: "model_provider",
-      failureCode: "MANAGED_KEY_INVALID",
+      failureCode: "CLOUD_KEY_INVALID",
       providerScope: "balanced",
     });
     expect(billing).not.toBe(key);

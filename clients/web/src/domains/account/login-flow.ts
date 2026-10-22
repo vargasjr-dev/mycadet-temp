@@ -51,14 +51,14 @@ export function requiresFullPageNavigation(destination: string): boolean {
 }
 
 /**
- * In-SPA surfaces that only do their job against a live platform account.
+ * In-SPA surfaces that only do their job against a live cloud account.
  * Reached on a gateway-only identity, `/account` reports a signed-in state for
  * an account that is not there. Matched by prefix, so sub-paths count.
  */
-const PLATFORM_ONLY_PATHS: readonly string[] = [routes.account.root];
+const CLOUD_ONLY_PATHS: readonly string[] = [routes.account.root];
 
 /**
- * Does landing on `destination` need a live platform session, or is a local
+ * Does landing on `destination` need a live cloud session, or is a local
  * gateway identity enough?
  *
  * Two families need one. Anything the cloud serves rather than this SPA:
@@ -73,7 +73,7 @@ export function requiresCloudSession(destination: string): boolean {
     return true;
   }
   const path = destination.split(/[?#]/)[0] ?? destination;
-  return PLATFORM_ONLY_PATHS.some(
+  return CLOUD_ONLY_PATHS.some(
     (candidate) => path === candidate || path.startsWith(`${candidate}/`),
   );
 }

@@ -39,7 +39,7 @@ describe("assistant cloud status", () => {
 
     const out = await runCloud(["status", "--json"]);
 
-    expect(ipc.calls[0][0]).toBe("platform_status");
+    expect(ipc.calls[0][0]).toBe("cloud_status");
 
     const parsed = JSON.parse(out.join(""));
     expect(parsed.isPlatform).toBe(true);

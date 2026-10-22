@@ -5,13 +5,13 @@ import { subcommand } from "../../lib/cli-command-help.js";
 import { log } from "../../logger.js";
 import { shouldOutputJson, writeOutput } from "../../output.js";
 
-export function registerCloudDisconnectCommand(platform: Command): void {
-  subcommand(platform, "disconnect").action(
+export function registerCloudDisconnectCommand(cloud: Command): void {
+  subcommand(cloud, "disconnect").action(
     async (_opts: Record<string, unknown>, cmd: Command) => {
       const r = await cliIpcCall<{
         disconnected: boolean;
         previousBaseUrl: string | null;
-      }>("platform_disconnect", {});
+      }>("cloud_disconnect", {});
       if (!r.ok) {
         return exitFromIpcResult(
           { ok: false, error: r.error, statusCode: r.statusCode },
@@ -23,7 +23,7 @@ export function registerCloudDisconnectCommand(platform: Command): void {
 
       if (!shouldOutputJson(cmd)) {
         const prev = r.result?.previousBaseUrl;
-        log.info(`Disconnected from platform${prev ? ` at ${prev}` : ""}`);
+        log.info(`Disconnected from cloud${prev ? ` at ${prev}` : ""}`);
       }
     },
   );

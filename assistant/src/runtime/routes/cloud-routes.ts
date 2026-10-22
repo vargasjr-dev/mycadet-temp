@@ -1,27 +1,27 @@
 /**
- * Platform route handlers for the shared HTTP/IPC route table.
+ * Cloud route handlers for the shared HTTP/IPC route table.
  *
  * Serves six operations:
- *   - platform_status (GET platform/status): aggregates platform context,
+ *   - cloud_status (GET cloud/status): aggregates cloud context,
  *     credentials, assistant ID, and webhook secret. (Tunnel status
  *     lives on the gateway — see gateway_status.)
- *   - platform_connect (POST platform/connect): reports whether the stored
+ *   - cloud_connect (POST cloud/connect): reports whether the stored
  *     credentials still connect, and when the stored key has been rejected,
  *     says so, so the caller can tell the user what replaces it.
- *   - platform_verify_credential (POST platform/verify-credential): asks the
+ *   - cloud_verify_credential (POST cloud/verify-credential): asks the
  *     cloud whether the stored assistant API key still authenticates.
- *   - platform_disconnect (POST platform/disconnect): deletes stored cloud
+ *   - cloud_disconnect (POST cloud/disconnect): deletes stored cloud
  *     credentials and emits cloud_disconnected signal.
- *   - cloud_callback_routes_register (POST platform/callback-routes/register):
+ *   - cloud_callback_routes_register (POST cloud/callback-routes/register):
  *     registers a callback route with the cloud gateway.
- *   - platform_callback_routes_list (GET platform/callback-routes): lists
+ *   - cloud_callback_routes_list (GET cloud/callback-routes): lists
  *     registered callback routes for this assistant.
  */
 
 import {
   type CloudCredentialVerificationStatus,
-  type PlatformVerifyCredentialResponse,
-  PlatformVerifyCredentialResponseSchema,
+  type CloudVerifyCredentialResponse,
+  CloudVerifyCredentialResponseSchema,
 } from "@mycadet/service-contracts/cloud-credential";
 import { z } from "zod";
 
@@ -67,8 +67,8 @@ const CREDENTIAL_KEYS = {
 // Schemas
 // ---------------------------------------------------------------------------
 
-const PlatformStatusResponseSchema = z.object({
-  isPlatform: z.boolean(),
+const CloudStatusResponseSchema = z.object({
+  isCloud: z.boolean(),
   baseUrl: z.string(),
   assistantId: z.string(),
   hasAssistantApiKey: z
@@ -83,12 +83,12 @@ const PlatformStatusResponseSchema = z.object({
   organizationId: z.string().nullable(),
   userId: z.string().nullable(),
 });
-type PlatformStatusResponse = z.infer<typeof PlatformStatusResponseSchema>;
+type CloudStatusResponse = z.infer<typeof CloudStatusResponseSchema>;
 
-const PlatformConnectResponseSchema = z.object({
+const CloudConnectResponseSchema = z.object({
   alreadyConnected: z.boolean().optional(),
   baseUrl: z.string().optional(),
-  showPlatformLogin: z.boolean().optional(),
+  showCloudLogin: z.boolean().optional(),
   /**
    * The stored cloud credential exists but the cloud rejects it. Distinct
    * from "nothing stored": the user is not setting up, they are recovering,
@@ -96,8 +96,8 @@ const PlatformConnectResponseSchema = z.object({
    */
   credentialRejected: z.boolean().optional(),
 });
-export type PlatformConnectResponse = z.infer<
-  typeof PlatformConnectResponseSchema
+export type CloudConnectResponse = z.infer<
+  typeof CloudConnectResponseSchema
 >;
 
 const CloudDisconnectResponseSchema = z.object({
@@ -140,9 +140,9 @@ type CallbackRoutesListResponse = z.infer<
 // Handlers
 // ---------------------------------------------------------------------------
 
-async function handlePlatformStatus(
+async function handleCloudStatus(
   _args: RouteHandlerArgs,
-): Promise<PlatformStatusResponse> {
+): Promise<CloudStatusResponse> {
   const context = await resolveCloudCallbackRegistrationContext();
 
   const [organizationId, userId, webhookSecretRaw] = await Promise.all([
@@ -154,7 +154,7 @@ async function handlePlatformStatus(
   const hasWebhookSecret = !!webhookSecretRaw;
 
   return {
-    isPlatform: context.isPlatform,
+    isCloud: context.isCloud,
     baseUrl: context.cloudBaseUrl,
     assistantId: context.assistantId,
     hasAssistantApiKey: context.hasAssistantApiKey,
@@ -166,9 +166,9 @@ async function handlePlatformStatus(
   };
 }
 
-async function handlePlatformConnect(
+async function handleCloudConnect(
   _args: RouteHandlerArgs,
-): Promise<PlatformConnectResponse> {
+): Promise<CloudConnectResponse> {
   // Check if already connected
   const existingApiKey = await getSecureKeyAsync(
     credentialKey(CREDENTIAL_KEYS.apiKey.service, CREDENTIAL_KEYS.apiKey.field),
@@ -181,7 +181,7 @@ async function handlePlatformConnect(
   //
   // Checked here rather than read from a cache: connect is a deliberate user
   // action, so one request is affordable, and an answer computed now cannot go
-  // stale between the check and the answer. An unreachable platform leaves the
+  // stale between the check and the answer. An unreachable cloud leaves the
   // stored credentials counting as a connection, so a network problem never
   // strands a working install by reporting it disconnected.
   let credentialRejected = false;
@@ -202,8 +202,8 @@ async function handlePlatformConnect(
   broadcastMessage({ type: "show_cloud_login" });
 
   return credentialRejected
-    ? { showPlatformLogin: true, credentialRejected: true }
-    : { showPlatformLogin: true };
+    ? { showCloudLogin: true, credentialRejected: true }
+    : { showCloudLogin: true };
 }
 
 /**
@@ -221,7 +221,7 @@ async function verifyStoredCredential(): Promise<CloudCredentialVerificationStat
       await import("../../credential-health/credential-health-service.js");
     const result = await checkAssistantApiKey();
     if (result === null) {
-      // No platform identity at all, so there is nothing to verify.
+      // No cloud identity at all, so there is nothing to verify.
       return "unknown";
     }
     if (result.status === "healthy") {
@@ -236,9 +236,9 @@ async function verifyStoredCredential(): Promise<CloudCredentialVerificationStat
   }
 }
 
-async function handlePlatformVerifyCredential(
+async function handleCloudVerifyCredential(
   _args: RouteHandlerArgs,
-): Promise<PlatformVerifyCredentialResponse> {
+): Promise<CloudVerifyCredentialResponse> {
   return { status: await verifyStoredCredential() };
 }
 
@@ -316,7 +316,7 @@ async function handleCallbackRoutesRegister(
   const context = await resolveCloudCallbackRegistrationContext();
   if (!context.enabled) {
     throw new UnprocessableEntityError(
-      "Platform callbacks not available — missing platform base URL, assistant ID, or API key. Run 'assistant cloud connect' or ensure credentials are configured.",
+      "Cloud callbacks not available — missing cloud base URL, assistant ID, or API key. Run 'assistant cloud connect' or ensure credentials are configured.",
     );
   }
 
@@ -339,7 +339,7 @@ async function handleCallbackRoutesRegister(
 async function handleCallbackRoutesList(
   _args: RouteHandlerArgs,
 ): Promise<CallbackRoutesListResponse> {
-  const routes = (await fetchPlatformJson(
+  const routes = (await fetchCloudJson(
     "/v1/internal/gateway/callback-routes/",
     "callback routes",
   )) as Array<{
@@ -354,16 +354,16 @@ async function handleCallbackRoutesList(
   return { routes };
 }
 
-/** Default per-request timeout for platform fetches. */
-const PLATFORM_FETCH_TIMEOUT_MS = 10_000;
+/** Default per-request timeout for cloud fetches. */
+const CLOUD_FETCH_TIMEOUT_MS = 10_000;
 
 /**
- * GET a JSON resource from the cloud using the assistant's stored platform
+ * GET a JSON resource from the cloud using the assistant's stored cloud
  * credentials. Throws UnprocessableEntityError when credentials are missing and
  * InternalError on transport / non-2xx failures; `label` names the resource in
  * those error messages.
  */
-async function fetchPlatformJson(
+async function fetchCloudJson(
   path: string,
   label: string,
 ): Promise<unknown> {
@@ -384,7 +384,7 @@ async function fetchPlatformJson(
         Authorization: context.authHeader,
         Accept: "application/json",
       },
-      signal: AbortSignal.timeout(PLATFORM_FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(CLOUD_FETCH_TIMEOUT_MS),
     });
   } catch (err) {
     throw new InternalError(
@@ -408,23 +408,23 @@ async function fetchPlatformJson(
 
 export const ROUTES: RouteDefinition[] = [
   {
-    operationId: "platform_status",
-    endpoint: "platform/status",
+    operationId: "cloud_status",
+    endpoint: "cloud/status",
     method: "GET",
     policy: {
       requiredScopes: ["settings.read"],
       allowedPrincipalTypes: ACTOR_PRINCIPALS,
     },
-    summary: "Get platform deployment context and connection status",
+    summary: "Get cloud deployment context and connection status",
     description:
-      "Aggregates platform context, credentials, assistant ID, and webhook secret. Tunnel status is reported separately by gateway_status.",
-    tags: ["platform"],
-    handler: handlePlatformStatus,
-    responseBody: PlatformStatusResponseSchema,
+      "Aggregates cloud context, credentials, assistant ID, and webhook secret. Tunnel status is reported separately by gateway_status.",
+    tags: ["cloud"],
+    handler: handleCloudStatus,
+    responseBody: CloudStatusResponseSchema,
   },
   {
-    operationId: "platform_connect",
-    endpoint: "platform/connect",
+    operationId: "cloud_connect",
+    endpoint: "cloud/connect",
     method: "POST",
     policy: {
       requiredScopes: ["settings.write"],
@@ -433,16 +433,16 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Connect to Cadet Cloud",
     description:
       "Checks whether the stored cloud credentials still connect. Reports a stored key Cadet Cloud rejects as credentialRejected, so the caller can direct the user to sign in again and replace it.",
-    tags: ["platform"],
-    handler: handlePlatformConnect,
-    responseBody: PlatformConnectResponseSchema,
+    tags: ["cloud"],
+    handler: handleCloudConnect,
+    responseBody: CloudConnectResponseSchema,
   },
   {
-    operationId: "platform_verify_credential",
-    endpoint: "platform/verify-credential",
+    operationId: "cloud_verify_credential",
+    endpoint: "cloud/verify-credential",
     method: "POST",
     // The in-app repair calls this through the gateway with an actor token,
-    // the same caller shape as platform_status, so it takes that route's
+    // the same caller shape as cloud_status, so it takes that route's
     // principal bundle. A local-only policy would 403 every browser repair
     // after it had already rotated and stored the replacement. Read scope:
     // the route performs a check and mutates nothing.
@@ -453,13 +453,13 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Verify the Cadet Cloud credential against the cloud",
     description:
       "Asks the cloud whether the stored assistant API key authenticates. POST because it performs a check; the result is returned, not stored.",
-    tags: ["platform"],
-    handler: handlePlatformVerifyCredential,
-    responseBody: PlatformVerifyCredentialResponseSchema,
+    tags: ["cloud"],
+    handler: handleCloudVerifyCredential,
+    responseBody: CloudVerifyCredentialResponseSchema,
   },
   {
-    operationId: "platform_disconnect",
-    endpoint: "platform/disconnect",
+    operationId: "cloud_disconnect",
+    endpoint: "cloud/disconnect",
     method: "POST",
     policy: {
       requiredScopes: ["settings.write"],
@@ -468,13 +468,13 @@ export const ROUTES: RouteDefinition[] = [
     summary: "Disconnect from Cadet Cloud",
     description:
       "Deletes stored cloud credentials and emits cloud_disconnected signal to connected clients.",
-    tags: ["platform"],
+    tags: ["cloud"],
     handler: handleCloudDisconnect,
     responseBody: CloudDisconnectResponseSchema,
   },
   {
     operationId: "cloud_callback_routes_register",
-    endpoint: "platform/callback-routes/register",
+    endpoint: "cloud/callback-routes/register",
     method: "POST",
     policy: {
       requiredScopes: ["settings.write"],
@@ -489,17 +489,17 @@ export const ROUTES: RouteDefinition[] = [
     responseBody: CallbackRouteRegisterResponseSchema,
   },
   {
-    operationId: "platform_callback_routes_list",
-    endpoint: "platform/callback-routes",
+    operationId: "cloud_callback_routes_list",
+    endpoint: "cloud/callback-routes",
     method: "GET",
     policy: {
       requiredScopes: ["settings.read"],
       allowedPrincipalTypes: LOCAL_PRINCIPALS,
     },
-    summary: "List registered platform callback routes",
+    summary: "List registered cloud callback routes",
     description:
       "Lists all callback routes registered with the cloud for this assistant.",
-    tags: ["platform"],
+    tags: ["cloud"],
     handler: handleCallbackRoutesList,
     responseBody: CallbackRoutesListResponseSchema,
   },

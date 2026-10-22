@@ -28,8 +28,6 @@
     "valueLabel": "Value",
     "valuePlaceholder": "Enter the secret value"
   },
-  "addCreditsModal": {
-  },
   "appCard": {
     "openApp": "Open App",
     "pin": "Pin",

@@ -20,8 +20,6 @@
   "statusBanner": {
     "reconnecting": "Восстанавливаем соединение с вашим ассистентом…"
   },
-  "addCreditsModal": {
-  },
 
   "assistantEmailIntroModal": {
     "setUp": "Настроить почту"
