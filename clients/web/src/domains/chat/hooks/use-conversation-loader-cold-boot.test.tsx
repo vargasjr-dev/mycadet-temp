@@ -52,11 +52,7 @@ import type { Conversation } from "@/types/conversation-types";
 const ASSISTANT_ID = "asst-1";
 
 /* The daemon gate the list queries honor; the landing lookups share it. */
-let podIsServing = true;
 let orgIsReady = true;
-mock.module("@/assistant/operational-status", () => ({
-  useAssistantIsServing: () => podIsServing,
-}));
 mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgIsReady,
 }));
@@ -252,7 +248,6 @@ beforeEach(() => {
   pinnedExtras = [];
   failNextRequests = 0;
   daemonFiltersForeground = true;
-  podIsServing = true;
   orgIsReady = true;
   navigateMock.mockClear();
   useConversationStore.setState({
@@ -536,24 +531,6 @@ describe("useConversationLoader cold-boot landing", () => {
     renderColdBoot(new QueryClient());
 
     expect(await landedOn()).toContain("newest");
-  });
-
-  test("defers the lookups while the pod is not serving, then lands once it is", async () => {
-    saveLastViewedConversationId(ASSISTANT_ID, "old-visible");
-    byIdRow = { id: "old-visible" };
-    podIsServing = false;
-
-    const { rerender } = renderColdBoot(new QueryClient());
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    /* Nothing asked, nothing decided: a 503 from a waking pod must not
-       become a landing on the assistant home. */
-    expect(requests).toEqual([]);
-    expect(navigateMock).not.toHaveBeenCalled();
-
-    podIsServing = true;
-    rerender();
-
-    expect(await landedOn()).toContain("old-visible");
   });
 
   test("reads the newest selectable row from a warm drained cache instead of the server", async () => {

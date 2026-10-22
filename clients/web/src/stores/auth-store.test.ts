@@ -203,7 +203,6 @@ mock.module("@/lib/cloud-assistant-id", () => ({
   resolveCloudAssistantId: async (id: string) => id,
 }));
 
-
 mock.module("@/runtime/native-auth", () => ({
   isNativePlatform: () => mockIsNativePlatform,
   isOAuthFlowInFlight: () => false,
@@ -304,7 +303,6 @@ mock.module("@/stores/organization-store", () => ({
 // at module load; the real bus's `subscribe` returns an unsubscribe
 // and the registered handler stays inert in tests that don't publish
 // `app.resume`.
-
 
 // `@/assistant/api` transitively pulls in `@mycadet/assistant-api`
 // exports that are currently missing on main. Mock the call sites
@@ -840,11 +838,11 @@ describe("session cleanup on logout", () => {
     // re-render with the previous user's assistant id and fire
     // requests that 401. The order is verified by recording the
     // session status seen at clear time vs the final transition.
-    let statusAtClearTime: string | null = null;
+    const clearedAtStatus: string[] = [];
     useAuthStore.setState({ sessionStatus: "authenticated" });
     const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
-      if (state.activeAssistantId === null && statusAtClearTime === null) {
-        statusAtClearTime = useAuthStore.getState().sessionStatus;
+      if (state.activeAssistantId === null && clearedAtStatus.length === 0) {
+        clearedAtStatus.push(useAuthStore.getState().sessionStatus);
       }
     });
 
@@ -854,7 +852,7 @@ describe("session cleanup on logout", () => {
       unsubscribe();
     }
 
-    expect(statusAtClearTime).toBe("authenticated");
+    expect(clearedAtStatus[0]).toBe("authenticated");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 

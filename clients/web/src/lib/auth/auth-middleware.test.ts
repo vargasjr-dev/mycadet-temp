@@ -350,7 +350,6 @@ describe("authMiddleware — app-access admit gate", () => {
   });
 });
 
-(test(web): the lifecycle seams re-pin to the boot resolution)
 describe("authMiddleware — hydration timeout", () => {
   test("a hung hydration degrades to a decision instead of re-entering the wait", async () => {
     isLocalClientMock.mockImplementation(() => false);

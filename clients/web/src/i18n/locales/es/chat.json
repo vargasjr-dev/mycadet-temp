@@ -176,15 +176,6 @@
     "search": "Buscar",
     "searchShortcut": "Buscar ({shortcut})"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Ocultar la pantalla de reposo",
-    "sleeping": "Tu asistente está durmiendo",
-    "sleepingNamed": "{name} está durmiendo",
-    "waking": "Tu asistente se está despertando…",
-    "wakingNamed": "{name} se está despertando…",
-    "woke": "Tu asistente acaba de despertarse",
-    "wokeNamed": "{name} acaba de despertarse"
-  },
   "attachmentChip": {
     "removeAria": "Eliminar {filename}"
   },
@@ -878,7 +869,6 @@
     "name": "Nombre",
     "noIcon": "Sin icono"
   },
-
   "onboardingChoiceCard": {
     "continue": "Continuar",
     "helpWithHeading": "¿En qué puedo ayudarte?",

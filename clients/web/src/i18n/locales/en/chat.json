@@ -183,15 +183,6 @@
     "search": "Search",
     "searchShortcut": "Search ({shortcut})"
   },
-  "assistantSleepStage": {
-    "dismissLabel": "Hide the sleep screen",
-    "sleeping": "Your assistant is asleep",
-    "sleepingNamed": "{name} is asleep",
-    "waking": "Your assistant is waking up…",
-    "wakingNamed": "{name} is waking up…",
-    "woke": "Your assistant just woke up",
-    "wokeNamed": "{name} just woke up"
-  },
   "attachmentChip": {
     "removeAria": "Remove {filename}"
   },
@@ -927,7 +918,6 @@
     "name": "Name",
     "noIcon": "No icon"
   },
-
   "onboardingChoiceCard": {
     "continue": "Continue",
     "helpWithHeading": "What can I help with?",

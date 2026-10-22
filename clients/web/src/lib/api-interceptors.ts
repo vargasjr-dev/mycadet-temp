@@ -43,7 +43,6 @@ import {
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
 import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
-import { publish } from "@/lib/event-bus";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import {
   getSelfHostedActorToken,

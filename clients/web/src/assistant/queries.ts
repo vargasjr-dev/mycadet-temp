@@ -17,11 +17,7 @@
  */
 
 import { useEffect, useMemo } from "react";
-import {
-  useQuery,
-  useQueryClient,
-  type QueryClient,
-} from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 
 import { getAssistant, type GetAssistantResult } from "@/assistant/api";
 import {
@@ -122,7 +118,7 @@ export function assistantQueryKey(
  * ARE valid there — `projectAssistantResult` handles the self-hosted
  * response — and a pre-hydration unknown id passes through for the 404 net.
  */
-function resolveSelectedCloudAssistantId(): string | null {
+function useSelectedCloudAssistantId(): string | null {
   const resolvedSelectionId = useGatedSelectedAssistantId();
   return resolvedSelectionId &&
     !getLocalAssistants().some((a) => a.assistantId === resolvedSelectionId)
@@ -266,7 +262,7 @@ function useShouldQueryServer(): boolean {
  */
 export function useAssistantResolution(): AssistantResolutionResult {
   const shouldQueryServer = useShouldQueryServer();
-  const selectedCloudAssistantId = resolveSelectedCloudAssistantId();
+  const selectedCloudAssistantId = useSelectedCloudAssistantId();
 
   const query = useQuery<GetAssistantResult>({
     queryKey: assistantQueryKey(selectedCloudAssistantId),
@@ -313,7 +309,6 @@ export function useAssistantResolution(): AssistantResolutionResult {
  * mount is harmless.
  */
 export function useAssistantBootResolution(): AssistantResolutionResult {
-  const queryClient = useQueryClient();
   const resolution = useAssistantResolution();
   const selectedId = resolution.selectedCloudAssistantId;
 

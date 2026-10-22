@@ -58,12 +58,6 @@ mock.module("@/runtime/platform-detection", () => ({
   isNativeMobile: () => nativeMobile,
 }));
 
-const checkAssistantMock = mock(async () => {});
-mock.module("@/assistant/lifecycle-service", () => ({
-  lifecycleService: {
-    checkAssistant: checkAssistantMock,
-  },
-}));
 
 // `seq` is per-assistant, so `attach` clears the resumable cursor to start
 // each assistant-scoped stream cold. Spy on the reset to assert that wiring;
@@ -139,7 +133,6 @@ beforeEach(() => {
   lastSubscribeArgs = null;
   cancelMock.mockClear();
   subscribeEventsMock.mockClear();
-  checkAssistantMock.mockClear();
   resetReconnectCursorMock.mockClear();
   publishSpy.mockClear();
 });
@@ -615,7 +608,6 @@ describe("sseService.attach — visibility-driven bounce", () => {
     eventBus.publish("app.resume", { signal: "visibility" });
 
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("app.resume inside the dedup window does NOT reopen the SSE", async () => {
@@ -631,7 +623,6 @@ describe("sseService.attach — visibility-driven bounce", () => {
     eventBus.publish("app.resume", { signal: "app_state" });
 
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("app.resume inside the dedup window still reopens a torn-down SSE", async () => {
@@ -646,7 +637,6 @@ describe("sseService.attach — visibility-driven bounce", () => {
     // First resume opens the dedup window (socket still live → no reopen).
     eventBus.publish("app.resume", { signal: "visibility" });
     expect(subscribeEventsMock).toHaveBeenCalledTimes(1);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
 
     // Hidden → its grace teardown fires, tearing the socket down...
     eventBus.publish("app.hidden", { signal: "visibility" });
@@ -659,7 +649,6 @@ describe("sseService.attach — visibility-driven bounce", () => {
     // The torn-down socket is reopened despite the dedup window...
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
     // ...but the redundant daemon health check stays deduped.
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("does NOT reopen the SSE on app.resume while a connection is still live", () => {
@@ -671,7 +660,6 @@ describe("sseService.attach — visibility-driven bounce", () => {
     // Stream is still open (no app.hidden first), so app.resume only
     // triggers a checkAssistant — no new subscribeEvents call.
     expect(subscribeEventsMock).toHaveBeenCalledTimes(1);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("app.resume after app.hidden labels the reopen with cause='resume'", async () => {
@@ -922,7 +910,6 @@ describe("sseService.attach: online resumes vs the hidden mark", () => {
     // reopens, and nothing had to be torn down to get there
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
     expect(cancelMock).toHaveBeenCalledTimes(0);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -947,7 +934,6 @@ describe("sseService.attach — power-driven bounce", () => {
 
     expect(cancelMock).toHaveBeenCalledTimes(1);
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("power.unlock bounces a LIVE SSE — screen lock can outlast TCP timeouts", () => {
@@ -970,7 +956,6 @@ describe("sseService.attach — power-driven bounce", () => {
     eventBus.publish("power.resume", {});
 
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("power.unlock reopens the SSE after teardown", async () => {
@@ -983,7 +968,6 @@ describe("sseService.attach — power-driven bounce", () => {
     eventBus.publish("power.unlock", {});
 
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 
   test("app.resume no-op (current non-null) does NOT suppress a follow-up power.resume bounce", () => {
@@ -1139,7 +1123,6 @@ describe("sseService.attach — detach cleanup", () => {
     detach1();
     cancelMock.mockClear();
     subscribeEventsMock.mockClear();
-    checkAssistantMock.mockClear();
 
     // Fresh attach — the first power.resume should NOT be dedup'd
     // against the previous attach's timestamp.
@@ -1148,6 +1131,5 @@ describe("sseService.attach — detach cleanup", () => {
 
     expect(cancelMock).toHaveBeenCalledTimes(1);
     expect(subscribeEventsMock).toHaveBeenCalledTimes(2);
-    expect(checkAssistantMock).toHaveBeenCalledTimes(1);
   });
 });

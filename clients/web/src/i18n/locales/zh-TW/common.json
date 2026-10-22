@@ -60,7 +60,6 @@
   "appViewerContainer": {
     "exitFullscreen": "結束全螢幕"
   },
-
   "assistantEmailIntroModal": {
     "setUp": "設定電子郵件"
   },
@@ -523,7 +522,6 @@
     "placeholder": "詢問 Cadet 任何問題…",
     "send": "傳送訊息"
   },
-
   "resourcePressureBanner": {
     "body": "您的助理正在努力工作並達到其目前的資源限制。請升級以確保其順暢執行。",
     "bodyNoUpgrade": "您的助理正在努力工作並達到其目前的資源限制。",
@@ -543,19 +541,9 @@
   "routePendingIndicator": {
     "loadingAria": "正在載入"
   },
-
   "routeErrorBoundary": {
     "chunkFailBody": "此區段無法載入。可能是網路瞬斷或版本過舊。請重新載入頁面再試一次。",
     "reload": "重新載入"
-  },
-  "runtimeUpgradeBanner": {
-    "confirmMessage": "更新至版本 {version}？更新期間助理將暫時無法使用。",
-    "confirmTitle": "更新助理執行環境",
-    "later": "稍後",
-    "title": "有新的助理版本可用：{version}",
-    "toastComplete": "更新完成。您的助理運作正常。",
-    "toastFailed": "無法觸發更新。請再試一次。",
-    "update": "更新"
   },
   "sectionActionsButton": {
     "ariaLabel": "{name} 動作"
@@ -682,14 +670,6 @@
   },
   "startupFailure": {
     "reloadApp": "重新載入應用程式"
-  },
-  "statusBanner": {
-    "reconnecting": "正在重新連線至你的助理…",
-    "dismiss": "關閉",
-    "goToDoctor": "前往診斷",
-    "resumeAssistant": "恢復助理",
-    "retryNow": "立即重試",
-    "wakeUp": "喚醒"
   },
   "sttLanguagePicker": {
     "allLanguages": "所有語言",

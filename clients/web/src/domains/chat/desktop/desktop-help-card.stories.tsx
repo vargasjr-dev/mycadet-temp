@@ -12,10 +12,6 @@ let resolutionState: AssistantResolutionState = { kind: "loading" };
 function setResolutionState(next: AssistantResolutionState) {
   resolutionState = next;
 }
-function resetResolutionState() {
-  resolutionState = { kind: "loading" };
-}
-
 mock.module("@/assistant/queries", () => ({
   useAssistantResolution: () => ({ state: resolutionState }),
   useAssistantBootResolution: () => ({ state: resolutionState }),

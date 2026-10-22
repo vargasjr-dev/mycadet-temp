@@ -29,7 +29,6 @@ mock.module("@/assistant/queries", () => ({
   useAssistantBootResolution: () => ({ state: resolutionState }),
 }));
 
-
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
@@ -210,30 +209,29 @@ describe("document navigation header handoff", () => {
     },
   );
 
-  test.each([
-    "auth",
-    "self-hosted-error",
-    "first-message",
-  ])("keeps navigation before the document host mounts during %s", (guard) => {
-    if (guard === "auth") {
-      useAuthStore.setState({ sessionStatus: "initializing" });
-    }
-    if (guard.startsWith("self-hosted")) {
-      setResolutionState({ kind: "self_hosted" });
-    }
-    if (guard === "self-hosted-error") {
-      conversationListError = true;
-    }
-    if (guard === "first-message") {
-      firstMessageSetup = true;
-    }
-    const router = renderPage();
-    expect(
-      screen.getByRole("button", { name: "Open navigation" }),
-    ).toBeTruthy();
-    expect(useChatLayoutSlotsStore.getState().documentHeader).toBeNull();
-    router.dispose();
-  });
+  test.each(["auth", "self-hosted-error", "first-message"])(
+    "keeps navigation before the document host mounts during %s",
+    (guard) => {
+      if (guard === "auth") {
+        useAuthStore.setState({ sessionStatus: "initializing" });
+      }
+      if (guard.startsWith("self-hosted")) {
+        setResolutionState({ kind: "self_hosted" });
+      }
+      if (guard === "self-hosted-error") {
+        conversationListError = true;
+      }
+      if (guard === "first-message") {
+        firstMessageSetup = true;
+      }
+      const router = renderPage();
+      expect(
+        screen.getByRole("button", { name: "Open navigation" }),
+      ).toBeTruthy();
+      expect(useChatLayoutSlotsStore.getState().documentHeader).toBeNull();
+      router.dispose();
+    },
+  );
 
   test.each(["loading", "error"] as const)(
     "hands navigation to a mounted %s document and restores it on failure",

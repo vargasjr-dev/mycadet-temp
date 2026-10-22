@@ -35,7 +35,7 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
  */
 export function ActiveAssistantGate() {
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const { state: assistantState, refetch } = useAssistantResolution();
+  const { state: assistantState } = useAssistantResolution();
 
   // A resolution error is terminal (or retryable via the button below) — it
   // must surface as an honest error, never as the connecting placeholder:
