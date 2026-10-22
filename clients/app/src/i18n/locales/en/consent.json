@@ -1,0 +1,11 @@
+{
+  "consentControls": {
+    "whatsChanged": "What's changed",
+    "agreements": "Agreements",
+    "agreeTo": "I agree to the <link>{policy}</link>"
+  },
+  "actions": {
+    "continue": "Continue",
+    "logOut": "Log out"
+  }
+}

@@ -35,6 +35,7 @@
  */
 import enAccount from "@app/i18n/locales/en/account.json";
 import enCommon from "@app/i18n/locales/en/common.json";
+import enConsent from "@app/i18n/locales/en/consent.json";
 import { NAMESPACES, type Namespace } from "@app/i18n/namespaces";
 import {
   DEFAULT_LOCALE,
@@ -60,6 +61,7 @@ type CatalogLoader = () => Promise<{ default: Catalog }>;
 export const FALLBACK_CATALOGS: LocaleCatalogs = {
   common: enCommon,
   account: enAccount,
+  consent: enConsent,
 };
 
 /** Loaders for the locales that are not bundled into the entry chunk. */
@@ -70,18 +72,22 @@ const CATALOG_LOADERS: Record<
   es: {
     common: () => import("@app/i18n/locales/es/common.json"),
     account: () => import("@app/i18n/locales/es/account.json"),
+    consent: () => import("@app/i18n/locales/es/consent.json"),
   },
   ru: {
     common: () => import("@app/i18n/locales/ru/common.json"),
     account: () => import("@app/i18n/locales/ru/account.json"),
+    consent: () => import("@app/i18n/locales/ru/consent.json"),
   },
   zh: {
     common: () => import("@app/i18n/locales/zh/common.json"),
     account: () => import("@app/i18n/locales/zh/account.json"),
+    consent: () => import("@app/i18n/locales/zh/consent.json"),
   },
   "zh-TW": {
     common: () => import("@app/i18n/locales/zh-TW/common.json"),
     account: () => import("@app/i18n/locales/zh-TW/account.json"),
+    consent: () => import("@app/i18n/locales/zh-TW/consent.json"),
   },
 };
 

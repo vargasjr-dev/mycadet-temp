@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import { AppShell } from "@app/app-shell";
 import { useTranslation } from "@app/i18n";
 import { readInjectedConfig } from "@app/lib/injected-config";
@@ -7,6 +7,8 @@ import {
   assistantSelectionState,
   selectedAssistantState,
 } from "@app/assistant/assistant-selection";
+import { routes } from "@app/utils/routes";
+import { useConsentGate } from "@app/domains/consent/use-consent-gate";
 
 export function AssistantPage() {
   useTranslation();
@@ -14,6 +16,31 @@ export function AssistantPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const selection = selectedAssistantState(location.state);
+
+  // The consent re-review gates the assistant: a user whose acked versions
+  // went stale (a release bumped the frozen required versions — the only way
+  // staleness materializes, since it ships with the client) settles it HERE,
+  // in the shell, before any assistant mounts. First-time consent is not the
+  // shell's: a user with no consent record belongs to the onboarding funnel
+  // inside the assistant, which frames and sequences first consent itself.
+  const consent = useConsentGate();
+  if (
+    consent.settled &&
+    consent.hasPlatformSession &&
+    consent.currency?.hasConsentRecord &&
+    (!consent.currency.tos || !consent.currency.privacy)
+  ) {
+    const returnTo = encodeURIComponent(
+      `${location.pathname}${location.search}${location.hash}`,
+    );
+    return (
+      <Navigate
+        to={`${routes.account.consent.reviewTerms}?returnTo=${returnTo}`}
+        replace
+      />
+    );
+  }
+
   return (
     <AppShell
       assistantId={selection?.id ?? config?.assistantId}
