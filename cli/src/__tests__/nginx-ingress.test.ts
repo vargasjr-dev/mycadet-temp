@@ -458,6 +458,70 @@ describe("buildIngressNginxConfig", () => {
     expect(conf).toContain("proxy_buffering off;");
     expect(conf).toContain("proxy_read_timeout 1h;");
   });
+
+  test("the app-mode edge serves the unversioned gateway API surface", () => {
+    // Root spelling forwards verbatim; the gateway's router resolves the
+    // missing /v1 prefix (P7).
+    const rootLocation = remoteConf
+      .split("location ~ ^/(?:")[1]
+      ?.split("    }")[0];
+    expect(rootLocation).toBeDefined();
+    expect(rootLocation).toContain("proxy_pass http://127.0.0.1:7830;");
+    expect(rootLocation).not.toContain("rewrite");
+  });
+
+  test("the iframe twin translates /web/<segment> to the /v1 route", () => {
+    expect(remoteConf).toContain("location ~ ^/web/(?:");
+    expect(remoteConf).toContain("rewrite ^/web/(.*)$ /v1/$1 break;");
+  });
+
+  test("the unversioned surface excludes the sensitive and gateway-native segments", () => {
+    const rootLocation = remoteConf.split("location ~ ^/(?:")[1] ?? "";
+    for (const excluded of [
+      "pair",
+      "devices",
+      "guardian",
+      "remote-web",
+      "shared",
+      "integrations",
+      "oauth",
+      "assistant",
+      "healthz",
+    ]) {
+      // Exact-entry match: the trailing "|" keeps a prefix like "assistant"
+      // from false-matching the real "assistants" segment.
+      expect(rootLocation).not.toContain(`|${excluded}|`);
+    }
+    // The first entry is never one of the excluded segments either.
+    expect(rootLocation.startsWith("admin|")).toBe(true);
+  });
+
+  test("web mode keeps its surface versioned (the gateway handles both spellings)", () => {
+    expect(conf).not.toContain("location ~ ^/(?:");
+    expect(conf).not.toContain("location ~ ^/web/");
+  });
+
+  test("the sensitive routes are blocked in both spellings at both prefixes", () => {
+    for (const location of [
+      "location = /pair ",
+      "location = /pair/ ",
+      "location = /devices ",
+      "location = /v1/pair ",
+      "location = /web/pair ",
+      "location = /web/v1/pair ",
+    ]) {
+      expect(remoteConf).toContain(`${location}{ return 404; }`);
+    }
+    // Web mode's denylist also gains the unversioned twins.
+    expect(conf).toContain("location = /pair { return 404; }");
+  });
+
+  test("the iframe catch-all 404 spares the assistant mount, the v1 prefix, and the API", () => {
+    expect(remoteConf).toContain(
+      "location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$))",
+    );
+    expect(remoteConf).not.toContain("location ^~ /web/ {");
+  });
 });
 
 describe("buildRemoteWebIndexHtml", () => {
@@ -2311,8 +2375,11 @@ describe("the app shell edge", () => {
     expect(conf).toContain("location ^~ /web/v1/ {");
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830/v1/;");
     // Nothing else under /web exists, so the namespace cannot serve the shell
-    // (or anything else) recursively.
-    expect(conf).toContain("location ^~ /web/ {\n      return 404;\n    }");
+    // (or anything else) recursively. The catch-all is an ordered regex (not
+    // ^~) so the unversioned API locations above it get first claim, and its
+    // lookahead spares the assistant mount and the versioned API twin.
+    expect(conf).toContain("location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {");
+    expect(conf).toContain("location ~ ^/web/(?:");
   });
 
   test("blocks the sensitive gateway routes under both prefixes", () => {

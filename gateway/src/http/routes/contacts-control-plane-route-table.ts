@@ -34,44 +34,44 @@ export function buildContactsControlPlaneRoutes({
 }: ContactsControlPlaneRouteDeps): RouteDefinition[] {
   return [
     {
-      path: "/v1/contacts/prompt/submit",
+      path: "/contacts/prompt/submit",
       method: "POST",
       auth: "edge",
       handler: (req) => handleContactPromptSubmit(req),
     },
     {
-      path: "/v1/contacts/record/submit",
+      path: "/contacts/record/submit",
       method: "POST",
       auth: "edge",
       handler: (req) => handleContactRecordSubmit(req),
     },
     {
-      path: "/v1/contacts",
+      path: "/contacts",
       method: "GET",
       auth: "edge",
       handler: (req) => contactsControlPlaneProxy.handleListContacts(req),
     },
     {
-      path: "/v1/contacts",
+      path: "/contacts",
       method: "POST",
       auth: "edge",
       handler: (req) => contactsControlPlaneProxy.handleUpsertContact(req),
     },
     {
-      path: "/v1/contacts/merge",
+      path: "/contacts/merge",
       method: "POST",
       auth: "edge",
       handler: (req) => contactsControlPlaneProxy.handleMergeContacts(req),
     },
     {
-      path: /^\/v1\/contact-channels\/([^/]+)$/,
+      path: /^\/contact-channels\/([^/]+)$/,
       method: "PATCH",
       auth: "edge",
       handler: (req, params) =>
         contactsControlPlaneProxy.handleUpdateContactChannel(req, params[0]),
     },
     {
-      path: /^\/v1\/contact-channels\/([^/]+)\/verify$/,
+      path: /^\/contact-channels\/([^/]+)\/verify$/,
       method: "POST",
       auth: "edge-guardian",
       handler: (req, params) =>
@@ -81,28 +81,28 @@ export function buildContactsControlPlaneRoutes({
     // Scope map: invites list → settings.read; create/redeem/revoke/call →
     // settings.write.
     {
-      path: "/v1/contacts/invites",
+      path: "/contacts/invites",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => contactsControlPlaneProxy.handleListInvites(req),
     },
     {
-      path: "/v1/contacts/invites",
+      path: "/contacts/invites",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => contactsControlPlaneProxy.handleCreateInvite(req),
     },
     {
-      path: "/v1/contacts/invites/redeem",
+      path: "/contacts/invites/redeem",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => contactsControlPlaneProxy.handleRedeemInvite(req),
     },
     {
-      path: /^\/v1\/contacts\/invites\/([^/]+)\/call$/,
+      path: /^\/contacts\/invites\/([^/]+)\/call$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -110,7 +110,7 @@ export function buildContactsControlPlaneRoutes({
         contactsControlPlaneProxy.handleCallInvite(req, params[0]),
     },
     {
-      path: /^\/v1\/contacts\/invites\/([^/]+)$/,
+      path: /^\/contacts\/invites\/([^/]+)$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -120,14 +120,14 @@ export function buildContactsControlPlaneRoutes({
     {
       // Keep DELETE on the invite collection unsupported; only /invites/:id
       // should revoke an invite.
-      path: /^\/v1\/contacts\/(?!invites\/?$)([^/]+)\/?$/,
+      path: /^\/contacts\/(?!invites\/?$)([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge",
       handler: (_req, params) =>
         contactsControlPlaneProxy.handleDeleteContact(params[0]),
     },
     {
-      path: /^\/v1\/contacts\/([^/]+)$/,
+      path: /^\/contacts\/([^/]+)$/,
       method: "GET",
       auth: "edge",
       handler: (req, params) =>
