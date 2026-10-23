@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
@@ -10,8 +10,8 @@ describe("capacitorInjectedConfig", () => {
   // the local stamp deterministically falls to the seed default.
   const KEYS = [
     "CADET_ENVIRONMENT",
-    "CADET_SERVER_URL",
     "CADET_LOCKFILE_DIR",
+    "XDG_CONFIG_HOME",
   ] as const;
   const saved: Record<string, string | undefined> = {};
   let emptyDir: string;
@@ -77,6 +77,35 @@ describe("capacitorInjectedConfig", () => {
     });
   });
 
+  test("unset CADET_ENVIRONMENT reads the local cadet's lockfile, not production's", () => {
+    // The local arm owns the "unset means the local cadet" contract, and
+    // the lockfile read underneath resolves the environment the same way —
+    // so the arm must pin its default before the read. Without the pin the
+    // read falls to production, and a bare build never sees the local
+    // stack's records (the seed default stamps instead).
+    const home = mkdtempSync(join(tmpdir(), "cadet-stamp-home-"));
+    const configHome = join(home, ".config");
+    mkdirSync(join(configHome, "cadet-local"), { recursive: true });
+    writeFileSync(
+      join(configHome, "cadet-local", "lockfile.json"),
+      JSON.stringify({
+        app: { pid: 4322, port: 8000 },
+        assistants: [],
+        activeAssistant: null,
+      }),
+    );
+    delete process.env.CADET_LOCKFILE_DIR;
+    process.env.XDG_CONFIG_HOME = configHome;
+    try {
+      expect(capacitorInjectedConfig()).toEqual({
+        remote: "local",
+        cloudUrl: "http://127.0.0.1:8000",
+      });
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
   test("cloud environments stamp their web origin — the /v1 edge", () => {
     process.env.CADET_ENVIRONMENT = "production";
     expect(capacitorInjectedConfig()).toEqual({
@@ -94,22 +123,6 @@ describe("capacitorInjectedConfig", () => {
       cloudUrl: "https://dev.mycadet.ai",
     });
   });
-
-  test("CADET_SERVER_URL overrides verbatim as a custom remote", () => {
-    process.env.CADET_ENVIRONMENT = "production";
-    process.env.CADET_SERVER_URL = "https://assistant.example.com";
-    expect(capacitorInjectedConfig()).toEqual({
-      remote: "custom",
-      cloudUrl: "https://assistant.example.com",
-    });
-  });
-
-  test("CADET_SERVER_URL must parse and use https", () => {
-    process.env.CADET_SERVER_URL = "not a url";
-    expect(() => capacitorInjectedConfig()).toThrow(/not a valid URL/);
-    process.env.CADET_SERVER_URL = "http://assistant.example.com";
-    expect(() => capacitorInjectedConfig()).toThrow(/must use https/);
-  });
 });
 
 function writeLockfile(content: string): void {
@@ -120,25 +133,37 @@ function writeLockfile(content: string): void {
 }
 
 describe("injectedConfigScript", () => {
-  // The script resolves the config itself — the custom arm is driven
-  // through the env, snapshotted and restored like the describe above.
-  let savedServerUrl: string | undefined;
+  // The script resolves the config itself — the local arm's lockfile is
+  // driven through the env, snapshotted and restored like the describe
+  // above.
+  let dir: string;
 
   beforeEach(() => {
-    savedServerUrl = process.env.CADET_SERVER_URL;
-    process.env.CADET_SERVER_URL =
-      "https://assistant.example.com/?a=</script><script>alert(1)</script>";
+    dir = mkdtempSync(join(tmpdir(), "cadet-stamp-escape-"));
+    process.env.CADET_LOCKFILE_DIR = dir;
+    process.env.CADET_ENVIRONMENT = "local";
   });
 
   afterEach(() => {
-    if (savedServerUrl === undefined) {
-      delete process.env.CADET_SERVER_URL;
-    } else {
-      process.env.CADET_SERVER_URL = savedServerUrl;
-    }
+    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.CADET_ENVIRONMENT;
+    rmSync(dir, { recursive: true, force: true });
   });
 
   test("the payload carries no raw < so tag breakout is impossible", () => {
+    writeLockfile(
+      JSON.stringify({
+        tunnel: {
+          pid: 4321,
+          provider: "cadet",
+          startedAt: "2026-10-22T00:00:00Z",
+          publicUrl:
+            "https://assistant.example.com/?a=</script><script>alert(1)</script>",
+        },
+        assistants: [],
+        activeAssistant: null,
+      }),
+    );
     const script = injectedConfigScript();
     const payload = script.slice(
       "<script>window.__CADET_CONFIG__=".length,
@@ -146,7 +171,7 @@ describe("injectedConfigScript", () => {
     );
     expect(payload.includes("<")).toBe(false);
     expect(JSON.parse(payload)).toEqual({
-      remote: "custom",
+      remote: "local",
       cloudUrl:
         "https://assistant.example.com/?a=\u003c/script\u003e\u003cscript\u003ealert(1)\u003c/script\u003e",
     });

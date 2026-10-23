@@ -460,34 +460,26 @@ re-runs `cap sync ios` (regenerating
 `clients/ios/App/App/public/`) and then `xcodegen generate` to refresh
 `App.xcodeproj/`. All three of those output paths are gitignored.
 
-### Point at a different server (self-hosted origin or local dev)
+### Point at a different server
 
-**HTTPS origin (self-hosted assistant, or any valid-TLS host):** set
-`CADET_SERVER_URL` when building. It overrides the environment-derived
-Cadet Cloud URL and is stamped into the boot bundle's `handoffUrl` the same
-way:
+The boot bundle's control-plane base is stamped at build time
+(`build:capacitor` → `clients/app/src/capacitor/stamp.ts`) and resolved
+from the CLI lockfile: a running tunnel's public URL wins — reachable
+from devices — else the app server edge's loopback port — simulator only
+— else the seed default (`http://localhost:8000`). The common cases need
+no configuration:
 
-```bash
-CADET_SERVER_URL=https://your-host.ts.net bun run build
-```
+- **Simulator:** have the local stack up (`cadet-local app start`)
+  before `bun run build` — the stamp bakes the edge's loopback port.
+- **Physical device:** the device can't reach the host's loopback, so
+  start the tunnel first (`cadet-local tunnel start`) and build after —
+  the stamp bakes the tunnel's https URL.
+- **A cloud environment:** `CADET_ENVIRONMENT=dev bun run build` stamps
+  the dev cloud origin instead of the local cadet.
 
-Then rebuild in Xcode. The value must be a valid `https:` URL — the build
-fails loudly otherwise, because iOS App Transport Security requires valid
-TLS. Nothing to edit or revert: resync
-without the variable (`bun run build`) to return to
-the environment default.
-
-**A device on your LAN (plain-HTTP local dev):** the simulator shares the
-host's loopback, so the default (`localhost:3000`) works there as-is. A
-physical device can't reach the host's loopback, ATS blocks cleartext HTTP
-(the config no longer carries a `server` block to exempt), and
-`CADET_SERVER_URL` is https-only — so run the web surface through
-`cadet tunnel` instead and point the build at its https URL:
-
-```bash
-cadet tunnel  # on the host — serves the assistant surface over https
-CADET_SERVER_URL=https://<tunnel-host> bun run build
-```
+A build made before the stack (or tunnel) was up keeps the seed default —
+the build warns loudly when no local server resolved; rerun
+`bun run build` once it's up, then rebuild in Xcode.
 
 ### Add a new Capacitor plugin
 

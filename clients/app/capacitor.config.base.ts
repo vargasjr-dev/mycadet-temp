@@ -5,35 +5,14 @@ import type { CapacitorConfig } from "@capacitor/cli";
 import { cloudAssistantHubUrl } from "@mycadet/environments/seeds";
 
 // Resolves the environment the same way the build stamps `__CADET_CONFIG__`
-// (`build:capacitor` → `src/capacitor/stamp.ts`). With the shell booting on
-// its own origin there is no handoff navigation anymore, so this mostly
-// covers the self-hosted override flow's own instanceDescriptor allowlist.
-// The release workflows always set `CADET_ENVIRONMENT`; `CADET_SERVER_URL`
-// overrides with an https origin for self-hosted assistants.
+// (`build:capacitor` → `src/capacitor/stamp.ts`). The shell boots on its own
+// origin and the scheme handler forwards `/v1`, so this only lists the
+// environment's host as a navigation escape hatch. The release workflows
+// always set `CADET_ENVIRONMENT`; unset means the local cadet.
 function resolveServerUrl(): string {
-  const override = process.env.CADET_SERVER_URL?.trim();
-  if (!override) {
-    // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
-    process.env.CADET_ENVIRONMENT ??= "local";
-    return cloudAssistantHubUrl();
-  }
-
-  let parsed: URL;
-  try {
-    parsed = new URL(override);
-  } catch {
-    throw new Error(
-      `CADET_SERVER_URL is not a valid URL: ${JSON.stringify(override)}`,
-    );
-  }
-
-  if (parsed.protocol !== "https:") {
-    throw new Error(
-      `CADET_SERVER_URL must use https: (got ${JSON.stringify(override)}); native builds require valid TLS.`,
-    );
-  }
-
-  return override;
+  // The helper reads CADET_ENVIRONMENT; the sync-time default stays local.
+  process.env.CADET_ENVIRONMENT ??= "local";
+  return cloudAssistantHubUrl();
 }
 
 // The Capacitor config shared by both platform shells: clients/ios and
