@@ -26,7 +26,7 @@ import {
   VERSION_BELOW_INGRESS_STATUS,
 } from "./pair-device-test-helpers";
 
-let gatewayPath: string | undefined = "/assistant/__gateway/20100";
+let gatewayPath: string | undefined = "/assistant";
 let supportsPairingRoutes = true;
 let selectedAssistant: {
   assistantId: string;
@@ -236,7 +236,7 @@ function recheckButton(): HTMLElement | null {
 }
 
 beforeEach(() => {
-  gatewayPath = "/assistant/__gateway/20100";
+  gatewayPath = "/assistant";
   supportsPairingRoutes = true;
   selectedAssistant = { assistantId: "self", cloud: "local" };
   listDevicesResult = { ok: false, error: "unavailable" };

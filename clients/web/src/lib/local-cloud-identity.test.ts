@@ -6,7 +6,7 @@ const RUNTIME_ASSISTANT_ID = "qa-loopback-auth";
 const PLATFORM_ASSISTANT_ID = "019ed7d1-e995-71cc-9859-c54f422ace3c";
 const OTHER_PLATFORM_ASSISTANT_ID = "019ed7d1-e995-71cc-9859-c54f422ace3d";
 const ORGANIZATION_ID = "019ed7d1-e995-71cc-9859-c54f422ace3e";
-const GATEWAY_URL = "http://localhost:5173/assistant/__gateway/20101";
+const GATEWAY_URL = "http://localhost:5173";
 const HOST_INSTALLATION_ID = "host-installation-1";
 const STATUS_PLATFORM_BASE_URL = "https://registered-platform.example.com";
 const CONFIG_PLATFORM_BASE_URL = "http://localhost:8000";
@@ -60,7 +60,6 @@ mock.module("@/lib/cloud-runtime-url", () => ({
 }));
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeAssistant,
-  getLocalGatewayUrl: () => "/assistant/__gateway/20101",
   getSelectedAssistant: () => activeAssistant,
   isLocalAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local",

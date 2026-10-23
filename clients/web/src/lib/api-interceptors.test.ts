@@ -417,7 +417,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
   });
 
   test("prepends the ingress path prefix when the ingress URL has a path", async () => {
-    const prefixedIngress = "http://localhost:3000/__gateway/20100";
+    const prefixedIngress = "http://localhost:3000/web/20100";
     setSelfHostedConnection({ url: prefixedIngress, token: ACTOR_TOKEN });
     const input = new Request(
       `https://platform.test/v1/assistants/self/conversations`,
@@ -426,7 +426,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const outUrl = new URL(output.url);
     expect(outUrl.origin).toBe("http://localhost:3000");
     expect(outUrl.pathname).toBe(
-      "/__gateway/20100/v1/assistants/self/conversations",
+      "/web/20100/v1/assistants/self/conversations",
     );
   });
 
@@ -752,7 +752,7 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
 
   test("prepends the ingress path prefix to flattened paths", async () => {
     setSelfHostedConnection({
-      url: "http://localhost:3000/__gateway/20100",
+      url: "http://localhost:3000/web/20100",
       token: ACTOR_TOKEN,
     });
     const input = new Request(
@@ -762,7 +762,7 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
     const output = await daemonRequestInterceptor(input);
     const outUrl = new URL(output.url);
     expect(outUrl.origin).toBe("http://localhost:3000");
-    expect(outUrl.pathname).toBe("/__gateway/20100/v1/contacts");
+    expect(outUrl.pathname).toBe("/web/20100/v1/contacts");
   });
 
   test("non-contact segments keep the scoped path", async () => {

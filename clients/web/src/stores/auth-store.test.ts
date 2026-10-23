@@ -891,7 +891,7 @@ describe("session cleanup on logout", () => {
       runtimeUrl: "https://gw.example.com",
     };
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway/paired-1`,
+      url: window.location.origin,
       token: null,
     });
     setSelectedAssistantMock.mockImplementationOnce(async () => {

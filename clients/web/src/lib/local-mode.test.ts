@@ -942,7 +942,7 @@ describe("primeLocalGatewayConnection", () => {
     expect(isGatewayAuthMode()).toBe(false);
   });
 
-  test("unready paired prime preserves the current local session", async () => {
+  test("unready paired prime clears the shared same-origin slot", async () => {
     enableLocalMode();
     setLockfile({
       assistants: [localA, pairedEntry],
@@ -950,7 +950,7 @@ describe("primeLocalGatewayConnection", () => {
     });
     setSelected("local-a");
     setSelfHostedConnection({
-      url: `${window.location.origin}/assistant/__gateway/local-a`,
+      url: window.location.origin,
       token: null,
     });
     globalThis.fetch = mock(async () =>
@@ -961,10 +961,11 @@ describe("primeLocalGatewayConnection", () => {
       "Assistant is not ready",
     );
 
-    expect(getSelfHostedIngressUrl()).toBe(
-      `${window.location.origin}/assistant/__gateway/local-a`,
-    );
+    // The slot is assistant-anonymous (every prime seeds the bare origin), so
+    // a failed probe clears it — a connect flow re-primes on retry.
+    expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
+    // The local selection's session signal is topology, not the slot.
     expect(isGatewayAuthMode()).toBe(true);
   });
 });

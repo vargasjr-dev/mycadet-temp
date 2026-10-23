@@ -14,10 +14,6 @@ const createGatewayRequestFilter = (
     // The scoped data plane (`/v1/assistants/{id}/...`): id-keyed gateway
     // reach resolved host-side.
     `${appOrigin.protocol}//${appOrigin.host}/v1/assistants/*`,
-    // The legacy unscoped prefix (`/auth/token` mint, `/readyz`, the
-    // lifecycle trio) until it folds into `/v1`.
-    `${appOrigin.protocol}//${appOrigin.host}/assistant/__gateway/*`,
-    `${appOrigin.protocol}//${appOrigin.host}/__gateway/*`,
   ],
 });
 

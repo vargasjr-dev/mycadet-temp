@@ -38,7 +38,6 @@ describe("parseAssistantGatewayUrl", () => {
     expect(parseAssistantGatewayUrl("/v1/assistants/abc-123")).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: {
         assistantId: "abc-123",
         path: "/v1/assistants/abc-123",
@@ -50,7 +49,6 @@ describe("parseAssistantGatewayUrl", () => {
     ).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: {
         assistantId: "abc-123",
         path: "/v1/assistants/abc-123/conversations",
@@ -63,7 +61,6 @@ describe("parseAssistantGatewayUrl", () => {
     expect(parseAssistantGatewayUrl("/v1/assistants/abc-123/readyz")).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: { assistantId: "abc-123", path: "/readyz", search: "" },
     });
   });
@@ -74,7 +71,6 @@ describe("parseAssistantGatewayUrl", () => {
     ).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: {
         assistantId: "abc-123",
         path: "/v1/assistants/abc-123/messages",
@@ -89,7 +85,6 @@ describe("parseAssistantGatewayUrl", () => {
     ).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: {
         assistantId: "abc-123",
         path: "/v1/contacts/x",
@@ -101,7 +96,6 @@ describe("parseAssistantGatewayUrl", () => {
     ).toEqual({
       match: true,
       valid: true,
-      legacy: false,
       target: {
         assistantId: "abc-123",
         path: "/v1/contact-channels/y",
@@ -110,24 +104,7 @@ describe("parseAssistantGatewayUrl", () => {
     });
   });
 
-  test("parses the legacy unscoped prefix and forwards the tail", () => {
-    expect(parseAssistantGatewayUrl("/__gateway/abc-123/auth/token")).toEqual({
-      match: true,
-      valid: true,
-      legacy: true,
-      target: { assistantId: "abc-123", path: "/auth/token", search: "" },
-    });
-    expect(
-      parseAssistantGatewayUrl("/assistant/__gateway/abc-123/readyz"),
-    ).toEqual({
-      match: true,
-      valid: true,
-      legacy: true,
-      target: { assistantId: "abc-123", path: "/readyz", search: "" },
-    });
-  });
-
-  test("rejects dot segments on both shapes (raw and percent-encoded)", () => {
+  test("rejects dot segments (raw and percent-encoded)", () => {
     expect(parseAssistantGatewayUrl("/v1/assistants/../secret")).toMatchObject({
       match: true,
       valid: false,
@@ -135,18 +112,10 @@ describe("parseAssistantGatewayUrl", () => {
     expect(
       parseAssistantGatewayUrl("/v1/assistants/abc/%2e%2e/secret"),
     ).toMatchObject({ match: true, valid: false });
-    expect(parseAssistantGatewayUrl("/__gateway/abc/../secret")).toMatchObject({
-      match: true,
-      valid: false,
-    });
   });
 
   test("rejects malformed percent-encoding as an invalid parse", () => {
     expect(parseAssistantGatewayUrl("/v1/assistants/%zz/x")).toEqual({
-      match: true,
-      valid: false,
-    });
-    expect(parseAssistantGatewayUrl("/__gateway/%zz/v1")).toEqual({
       match: true,
       valid: false,
     });
@@ -219,27 +188,6 @@ describe("resolveGatewayProxyTarget", () => {
     expect(
       resolveGatewayProxyTarget("/v1/assistants/zzz-999/x", targets({})),
     ).toEqual({ kind: "pass" });
-  });
-
-  test("forwards the legacy prefix for unscoped gateway routes", () => {
-    expect(
-      resolveGatewayProxyTarget("/__gateway/abc-123/auth/token", entry),
-    ).toEqual({
-      kind: "forward",
-      assistantId: "abc-123",
-      path: "/auth/token",
-      search: "",
-      target: loopback(8080),
-    });
-  });
-
-  test("rejects an unknown id on the legacy prefix", () => {
-    expect(resolveGatewayProxyTarget("/__gateway/zzz-999/v1", entry)).toEqual(
-      rejection,
-    );
-    expect(
-      resolveGatewayProxyTarget("/__gateway/abc/../secret", entry),
-    ).toEqual(rejection);
   });
 });
 

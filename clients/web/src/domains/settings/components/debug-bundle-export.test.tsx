@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const LOCAL = { assistantId: "local-1", cloud: "local" } as const;
 let selected: typeof LOCAL | null = LOCAL;
-let gatewayPath: string | null = "/assistant/__gateway/7830";
+let gatewayPath: string | null = "/assistant";
 const calls: string[] = [];
 let exportFails = false;
 let toastErrors: string[] = [];
@@ -69,7 +69,7 @@ function renderRow() {
 describe("DebugBundleExport", () => {
   beforeEach(() => {
     selected = LOCAL;
-    gatewayPath = "/assistant/__gateway/7830";
+    gatewayPath = "/assistant";
     calls.length = 0;
     exportFails = false;
     toastErrors = [];

@@ -57,7 +57,7 @@ const WILDCARD_HOST = `*${ROOT_HOSTNAME}`;
 // (@mycadet/app) iframes the resolved assistant's own edge, where the web
 // bundle is served — the same remote-web model the hub and the mobile shells
 // use. 'self' covers the local-assistant shape (the same-origin /assistant
-// mount and its __gateway forwards).
+// mount).
 //
 // frame-src must not be dropped, and 'self' must stay the floor. It is the
 // only control over where a sandboxed frame can navigate *itself*: no CSP

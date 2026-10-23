@@ -1069,10 +1069,10 @@ function gatewayProxyMiddleware(
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
-    // and the legacy unscoped prefix (`/assistant/__gateway/{id}/*`) share
-    // one id-keyed proxy for every assistant gateway. The lockfile resolves
-    // the id to a loopback port (locally hatched) or a recorded remote
-    // `runtimeUrl` (imported pairing) — that target map is the allowlist.
+    // rides one id-keyed proxy for every assistant gateway. The lockfile
+    // resolves the id to a loopback port (locally hatched) or a recorded
+    // remote `runtimeUrl` (imported pairing) — that target map is the
+    // allowlist.
     // The host OWNS the Authorization header: it overwrites whatever the
     // renderer sent with the bearer it mints from the on-disk guardian
     // token (401 re-mint retry on bodyless requests); remote hops

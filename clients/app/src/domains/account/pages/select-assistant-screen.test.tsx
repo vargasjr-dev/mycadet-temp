@@ -608,9 +608,7 @@ describe("remembered origins", () => {
       await waitFor(() => {
         expect(
           request.mock.calls.some(
-            ([url]) =>
-              !String(url).includes("/assistant/__gateway") &&
-              String(url).includes("/v1/assistants/paired-1"),
+            ([url]) => String(url).includes("/v1/assistants/paired-1"),
           ),
         ).toBe(true);
       });
