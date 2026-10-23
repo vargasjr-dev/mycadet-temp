@@ -25,7 +25,7 @@ const ORIGINAL_ARGV = [...process.argv];
 import { connectImport } from "../commands/connect/import.js";
 import {
   findAssistantByName,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
 import { z } from "zod";
 import { loadGuardianToken } from "../lib/guardian-token.js";
@@ -640,7 +640,7 @@ describe("connect import", () => {
   });
 
   test("does not overwrite an existing non-paired assistant", async () => {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "desk",
       name: "Desk",
       runtimeUrl: "http://127.0.0.1:7830",

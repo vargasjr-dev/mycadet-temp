@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import {
   getDaemonPidPath,
   loadAllAssistants,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import {
   canPromptForConfirmation,
@@ -29,7 +29,7 @@ import { stopProcessByPidFile } from "../lib/process";
  * Everything on-disk is deleted by the sweep regardless — this is the part
  * uninstall could NOT do before it refused.
  */
-async function retireAssistantData(entry: AssistantEntry): Promise<void> {
+async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
   if (entry.cloud === "docker") {
     await retireDocker(entry.assistantId);
     return;

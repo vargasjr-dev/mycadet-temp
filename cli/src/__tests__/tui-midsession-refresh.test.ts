@@ -15,7 +15,7 @@ const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
-import { saveAssistantEntry } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "../lib/assistant-config";
 import { saveGuardianToken } from "../lib/guardian-token";
 
 const RUNTIME = "https://gw.example.com";
@@ -26,7 +26,7 @@ function seedEntry(kind: "paired" | "local", localUrl?: string): void {
   // Paired-ness derives from the addressing (no stored flag): the paired
   // shape is a loopback-cloud entry whose runtimeUrl points off-machine;
   // the plain-local shape uses a loopback runtimeUrl.
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: "px",
     name: kind === "paired" ? "Paired" : "Local",
     runtimeUrl: kind === "paired" ? RUNTIME : "http://127.0.0.1:7830",
@@ -81,7 +81,7 @@ describe("maybeRefreshAuthHeaders", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "tui-midsession-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Isolate the lockfile too — saveAssistantEntry writes the prod lockfile
+    // Isolate the lockfile too — saveLockfileAssistant writes the prod lockfile
     // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set, which would
     // mutate the real user/CI lockfile.
     process.env.CADET_LOCKFILE_DIR = tempHome;

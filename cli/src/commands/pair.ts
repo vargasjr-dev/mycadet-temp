@@ -32,7 +32,7 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { getGatewayUrl } from "../lib/runtime-url.js";
@@ -43,7 +43,7 @@ import { formatWebApproveFailure, parseGatewayErrorCode } from "../lib/pair.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import { execOutput } from "../lib/step-runner.js";
 
-function assistantDisplayName(entry: AssistantEntry): string {
+function assistantDisplayName(entry: LockfileAssistant): string {
   return entry.name || entry.assistantId;
 }
 
@@ -189,7 +189,7 @@ async function exitOnHttpError(response: Response): Promise<Response> {
  * topologies keep the loopback HTTP mint they used before.
  */
 async function mintPairingChallengeOrExit(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<RemoteWebPairingChallengeResponse> {
   if (entry.cloud !== "local" && entry.cloud !== "docker") {
     return mintPairingChallengeOverLoopbackOrExit(entry);
@@ -258,7 +258,7 @@ async function mintPairingChallengeOrExit(
  * cloud-managed), where no gateway-CLI execution surface is defined.
  */
 async function mintPairingChallengeOverLoopbackOrExit(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<RemoteWebPairingChallengeResponse> {
   // Mint over loopback (the derived port avoids mDNS for same-machine calls),
   // then approve immediately: running this CLI on the host IS the
@@ -366,7 +366,7 @@ export const pair = Object.assign(
   // assistant. Join positional tokens so multi-word display names work even
   // unquoted (e.g. `cadet pair My Assistant`).
   const assistantName = parseAssistantTargetArg(args);
-  let entry: AssistantEntry | null;
+  let entry: LockfileAssistant | null;
   if (assistantName) {
     const result = lookupAssistantByIdentifier(assistantName);
     if (result.status !== "found") {

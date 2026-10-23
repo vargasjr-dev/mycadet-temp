@@ -23,7 +23,7 @@ import {
   loadAllAssistants,
   lookupAssistantByIdentifier,
   readRootProcesses,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
@@ -243,7 +243,7 @@ const REMOTE_PS_CMD = [
 const REMOTE_SSH_TIMEOUT_MS = 30_000;
 
 async function getRemoteProcessesCustom(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<string> {
   const host = extractHostFromEntry(entry);
   return execOutput("ssh", [...SSH_OPTS, `root@${host}`, REMOTE_PS_CMD], {
@@ -337,7 +337,7 @@ function formatDetectionInfo(proc: DetectedProcess): string {
   return parts.join(" | ");
 }
 
-async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
+async function getLocalProcesses(entry: LockfileAssistant): Promise<TableRow[]> {
   const resources = entry.resources;
   if (!resources?.instanceDir) {
     throw new Error(
@@ -381,7 +381,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
 // gateway version that predates the route): probe each known process
 // directly.
 async function detectLocalProcessesFallback(
-  resources: NonNullable<AssistantEntry["resources"]>,
+  resources: NonNullable<LockfileAssistant["resources"]>,
   cadetDir: string,
 ): Promise<TableRow[]> {
   const assistantSpec: ProcessSpec = {
@@ -446,7 +446,7 @@ function isLocalProcessAlive(pid: number): boolean {
   }
 }
 
-async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
+async function getDockerProcesses(entry: LockfileAssistant): Promise<TableRow[]> {
   const res = dockerResourceNames(entry.assistantId);
 
   const containers: { name: string; containerName: string }[] = [
@@ -491,7 +491,7 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   return results;
 }
 
-function locationFor(entry: AssistantEntry): string {
+function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "local") {
     return entry.resources?.instanceDir ?? "unknown — no instance dir recorded";
   }
@@ -502,7 +502,7 @@ function locationFor(entry: AssistantEntry): string {
 }
 
 async function getAssistantProcessRows(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
@@ -761,7 +761,7 @@ function assistantLabelFor(assistantId: string | undefined): string | null {
  * splits into /app and /ui — so every CLI-managed row renders machine-level.
  */
 async function assistantRowsWithRootProcesses(
-  assistants: AssistantEntry[],
+  assistants: LockfileAssistant[],
   healths: AssistantHealth[],
   activeAssistantId: string | null,
 ): Promise<TableRow[]> {
@@ -784,7 +784,7 @@ type AssistantHealth = {
 };
 
 async function getAssistantListHealth(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
   const resources = entry.resources;
   if (entry.cloud === "local" && resources) {
@@ -827,7 +827,7 @@ async function getAssistantListHealth(
 }
 
 function formatAssistantListRow(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   activeAssistantId: string | null,
   health: AssistantHealth,
 ): TableRow {

@@ -34,7 +34,7 @@ import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { getLogDir } from "../lib/xdg-log.js";
 import { saveIngressUrl } from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
@@ -131,7 +131,7 @@ const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
 
-function makeLocalEntry(assistantId = "assistant-1"): AssistantEntry {
+function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
   const instanceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-test-"));
   tempDirs.push(instanceDir);
   return {
@@ -148,7 +148,7 @@ function makeLocalEntry(assistantId = "assistant-1"): AssistantEntry {
   };
 }
 
-function makeCloudEntry(assistantId = "cloud-1"): AssistantEntry {
+function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: `https://runtime.example.com/${assistantId}`,
@@ -157,7 +157,7 @@ function makeCloudEntry(assistantId = "cloud-1"): AssistantEntry {
 }
 
 /** A `hatch --remote docker` entry: local container gateway, no `resources`. */
-function makeDockerEntry(assistantId = "docker-1"): AssistantEntry {
+function makeDockerEntry(assistantId = "docker-1"): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: "http://localhost:7930",
@@ -166,7 +166,7 @@ function makeDockerEntry(assistantId = "docker-1"): AssistantEntry {
 }
 
 /** A macOS-app-managed entry: local container gateway, no `resources`. */
-function makeAppleContainerEntry(assistantId = "apple-1"): AssistantEntry {
+function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: "http://localhost:8030",
@@ -176,7 +176,7 @@ function makeAppleContainerEntry(assistantId = "apple-1"): AssistantEntry {
 
 /** Seed a local entry's workspace config; returns that workspace dir. */
 function writeEntryWorkspaceConfig(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   config: Record<string, unknown>,
 ): string {
   const workspaceDir = join(entry.resources!.instanceDir, "workspace");
@@ -197,7 +197,7 @@ function useTempDefaultWorkspaceDir(): string {
 }
 
 function writeLockfile(
-  entryOrEntries: AssistantEntry | AssistantEntry[],
+  entryOrEntries: LockfileAssistant | LockfileAssistant[],
   activeAssistant?: string,
 ): void {
   const entries = Array.isArray(entryOrEntries)

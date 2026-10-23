@@ -22,7 +22,7 @@ import { homedir, tmpdir } from "node:os";
 import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
 
@@ -73,7 +73,7 @@ const originalXdgData = process.env.XDG_DATA_HOME;
 // Directories that getRetiredDir() will use when XDG_DATA_HOME is overridden
 const retiredDir = join(testDir, "cadet", "retired");
 
-function makeEntry(assistantId: string, instanceDir: string): AssistantEntry {
+function makeEntry(assistantId: string, instanceDir: string): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: "http://127.0.0.1:7831",
@@ -92,7 +92,7 @@ function makeEntry(assistantId: string, instanceDir: string): AssistantEntry {
 
 function writeArchiveFixtures(
   name: string,
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): {
   archivePath: string;
   metadataPath: string;
@@ -124,7 +124,7 @@ beforeEach(() => {
   // Route lockfile and retired archives to the temp directory
   process.env.CADET_LOCKFILE_DIR = testDir;
   process.env.XDG_DATA_HOME = testDir;
-  // Write an empty lockfile so saveAssistantEntry has a dir to write to
+  // Write an empty lockfile so saveLockfileAssistant has a dir to write to
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
     resolveLockfilePaths(process.env)[0]!,
@@ -283,7 +283,7 @@ describe("restore error cases", () => {
     const name = "no-resources";
     mkdirSync(retiredDir, { recursive: true });
     writeFileSync(join(retiredDir, `${name}.tar.gz`), "");
-    const entry: Partial<AssistantEntry> = {
+    const entry: Partial<LockfileAssistant> = {
       assistantId: name,
       runtimeUrl: "http://127.0.0.1:7831",
       cloud: "local",

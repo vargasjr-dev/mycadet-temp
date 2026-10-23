@@ -27,7 +27,7 @@ import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
 import * as versionModule from "@mycadet/shared/version";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
@@ -2039,7 +2039,7 @@ describe("stopContainerAppServer", () => {
   });
 
   /** A container entry whose gateway port is only recoverable from its URLs. */
-  function containerEntry(port: number): AssistantEntry {
+  function containerEntry(port: number): LockfileAssistant {
     return {
       assistantId: "docker-1",
       runtimeUrl: `http://localhost:${port}`,

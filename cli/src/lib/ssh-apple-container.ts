@@ -1,14 +1,14 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import type { AssistantEntry } from "./assistant-config";
+import type { LockfileAssistant } from "./assistant-config";
 
 /**
  * Connect to an Apple Container assistant via its management socket.
  * Sends a JSON handshake then relays stdin/stdout in raw mode.
  */
 export async function sshAppleContainer(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   command?: string[],
   service?: string,
 ): Promise<void> {

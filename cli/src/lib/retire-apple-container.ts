@@ -1,7 +1,7 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 
 /**
  * Retire an Apple Container assistant by sending a retire command to the
@@ -11,7 +11,7 @@ import type { AssistantEntry } from "./assistant-config.js";
  */
 export async function retireAppleContainer(
   name: string,
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<void> {
   console.log(
     `\u{1F5D1}\ufe0f  Retiring Apple Container assistant '${name}'...\n`,

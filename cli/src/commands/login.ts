@@ -4,7 +4,7 @@ import { cliCommand } from "../lib/cli-name.js";
 import {
   getActiveAssistant,
   loadAllAssistants,
-  removeAssistantEntry,
+  removeLockfileAssistant,
   setActiveAssistant,
 } from "../lib/assistant-config";
 import {
@@ -158,7 +158,7 @@ export const logout = Object.assign(
     isCloudHome(a.cloud),
   );
   for (const a of cloudAssistants) {
-    removeAssistantEntry(a.assistantId);
+    removeLockfileAssistant(a.assistantId);
   }
   if (cloudAssistants.length > 0) {
     console.log(

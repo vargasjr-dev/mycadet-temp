@@ -12,8 +12,8 @@ import {
   getActiveAssistant,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  saveAssistantEntry,
-  type AssistantEntry,
+  saveLockfileAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config";
 import {
   captureImageRefs,
@@ -224,7 +224,7 @@ function parseArgs(): UpgradeArgs {
  * 2. Active assistant set via `cadet use`
  * 3. Sole assistant (when exactly one exists)
  */
-function resolveTargetAssistant(nameArg: string | null): AssistantEntry {
+function resolveTargetAssistant(nameArg: string | null): LockfileAssistant {
   if (nameArg) {
     const result = lookupAssistantByIdentifier(nameArg);
     if (result.status !== "found") {
@@ -259,10 +259,16 @@ function resolveTargetAssistant(nameArg: string | null): AssistantEntry {
 }
 
 async function upgradeDocker(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   version: string | null,
   force: boolean,
 ): Promise<void> {
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
@@ -279,7 +285,7 @@ async function upgradeDocker(
   } = {};
   try {
     const healthResp = await loopbackSafeFetch(
-      `${entry.runtimeUrl}/healthz?include=migrations`,
+      `${gatewayUrl}/healthz?include=migrations`,
       {
         signal: AbortSignal.timeout(5000),
       },
@@ -350,7 +356,7 @@ async function upgradeDocker(
 
   // Record version transition start in workspace git history
   await commitWorkspaceViaGateway(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildUpgradeCommitMessage({
       action: "upgrade",
@@ -375,7 +381,7 @@ async function upgradeDocker(
   // isUpdateInProgress = true and starts displaying status messages.
   console.log("📢 Notifying connected clients...");
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildStartingEvent(versionTag),
   );
@@ -383,7 +389,7 @@ async function upgradeDocker(
   await new Promise((r) => setTimeout(r, 500));
 
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.DOWNLOADING),
   );
@@ -402,7 +408,7 @@ async function upgradeDocker(
     const detail = pullErr instanceof Error ? pullErr.message : String(pullErr);
     console.error(`\n❌ Failed to pull Docker images: ${detail}`);
     await broadcastUpgradeEvent(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildCompleteEvent(currentVersion ?? "unknown", false),
     );
@@ -414,7 +420,7 @@ async function upgradeDocker(
   // Parse gateway port from entry's runtimeUrl, fall back to default
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
-    const parsed = new URL(entry.runtimeUrl);
+    const parsed = new URL(gatewayUrl);
     const port = parseInt(parsed.port, 10);
     if (!isNaN(port)) {
       gatewayPort = port;
@@ -429,12 +435,12 @@ async function upgradeDocker(
 
   // Capture complete persistent roots before replacing any services.
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.BACKING_UP),
   );
   console.log("📦 Creating pre-upgrade backup...");
-  const backupPath = await createBackup(entry.runtimeUrl, entry.assistantId, {
+  const backupPath = await createBackup(gatewayUrl, entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion ?? "unknown"} → ${versionTag}`,
   });
@@ -449,7 +455,7 @@ async function upgradeDocker(
   }
 
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.INSTALLING),
   );
@@ -478,10 +484,10 @@ async function upgradeDocker(
   console.log("✅ Containers started\n");
 
   console.log("Waiting for assistant to become ready...");
-  const ready = await waitForReady(entry.runtimeUrl);
+  const ready = await waitForReady(gatewayUrl);
   if (ready) {
     // Update lockfile with new service group topology
-    const updatedEntry: AssistantEntry = {
+    const updatedEntry: LockfileAssistant = {
       ...entry,
       containerInfo: {
         assistantImage: imageTags.assistant,
@@ -490,20 +496,20 @@ async function upgradeDocker(
         assistantPort,
       },
     };
-    saveAssistantEntry(updatedEntry);
+    saveLockfileAssistant(updatedEntry);
     // Refresh the host-served web bundle before clients reload on completion.
     await restoreContainerAppServer(updatedEntry);
 
     // Notify clients on the new service group that the upgrade succeeded.
     await broadcastUpgradeEvent(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildCompleteEvent(versionTag, true),
     );
 
     // Record successful upgrade in workspace git history
     await commitWorkspaceViaGateway(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildUpgradeCommitMessage({
         action: "upgrade",
@@ -532,7 +538,7 @@ async function upgradeDocker(
 
     if (previousImageRefs) {
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildProgressEvent(UPGRADE_PROGRESS.REVERTING),
       );
@@ -546,12 +552,12 @@ async function upgradeDocker(
         ) {
           console.log("🔄 Reverting database changes...");
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildProgressEvent(UPGRADE_PROGRESS.REVERTING_MIGRATIONS),
           );
           await rollbackMigrations(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             preMigrationState.dbVersion,
             preMigrationState.lastWorkspaceMigrationId,
@@ -577,11 +583,11 @@ async function upgradeDocker(
           (msg) => console.log(msg),
         );
 
-        let rollbackReady = await waitForReady(entry.runtimeUrl);
+        let rollbackReady = await waitForReady(gatewayUrl);
         let restoredViaFailedState = false;
         if (!rollbackReady && backupPath) {
           const recovery = await attemptFailedStateRestore({
-            runtimeUrl: entry.runtimeUrl,
+            runtimeUrl: gatewayUrl,
             assistantId: entry.assistantId,
             backupPath,
             backupLabel: "pre-upgrade",
@@ -615,14 +621,14 @@ async function upgradeDocker(
             );
           } else if (backupPath) {
             await broadcastUpgradeEvent(
-              entry.runtimeUrl,
+              gatewayUrl,
               entry.assistantId,
               buildProgressEvent(UPGRADE_PROGRESS.RESTORING),
             );
             console.log(`📦 Restoring data from pre-upgrade backup...`);
             console.log(`   Source: ${backupPath}`);
             const restored = await restoreBackup(
-              entry.runtimeUrl,
+              gatewayUrl,
               entry.assistantId,
               backupPath,
               {},
@@ -641,7 +647,7 @@ async function upgradeDocker(
           // Restore previous container info in lockfile after rollback.
           // The recorded image refs are the rollback record now (digests are
           // gone from the contract).
-          const rolledBackEntry: AssistantEntry = {
+          const rolledBackEntry: LockfileAssistant = {
             ...entry,
             containerInfo: {
               assistantImage:
@@ -655,11 +661,11 @@ async function upgradeDocker(
               assistantPort,
             },
           };
-          saveAssistantEntry(rolledBackEntry);
+          saveLockfileAssistant(rolledBackEntry);
 
           // Notify clients that the upgrade failed and rolled back.
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildCompleteEvent(
               currentVersion ?? "unknown",
@@ -683,7 +689,7 @@ async function upgradeDocker(
             `   Check logs with: docker logs -f ${res.assistantContainer}`,
           );
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildCompleteEvent(currentVersion ?? "unknown", false),
           );
@@ -703,7 +709,7 @@ async function upgradeDocker(
           `   Check logs with: docker logs -f ${res.assistantContainer}`,
         );
         await broadcastUpgradeEvent(
-          entry.runtimeUrl,
+          gatewayUrl,
           entry.assistantId,
           buildCompleteEvent(currentVersion ?? "unknown", false),
         );
@@ -719,7 +725,7 @@ async function upgradeDocker(
         `   Check logs with: docker logs -f ${res.assistantContainer}`,
       );
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildCompleteEvent(currentVersion ?? "unknown", false),
       );
@@ -749,7 +755,7 @@ export async function targetVersionFromCli(
 }
 
 async function ensureGuardianTokenAfterLocalUpgrade(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   gatewayPort: number,
   bootstrapSecret?: string,
 ): Promise<void> {
@@ -778,7 +784,7 @@ async function ensureGuardianTokenAfterLocalUpgrade(
 }
 
 async function upgradeLocal(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   version: string | null,
   force: boolean,
 ): Promise<void> {
@@ -789,11 +795,19 @@ async function upgradeLocal(
     process.exit(1);
   }
 
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    const msg = `Local assistant '${entry.assistantId}' is missing its gateway URL. Re-hatch to fix.`;
+    console.error(msg);
+    emitCliError("UNKNOWN", msg);
+    process.exit(1);
+  }
+
   const originalResources = { ...entry.resources };
   const signingKey = resolveExistingLocalSigningKey(entry.resources);
   if (entry.resources.signingKey !== signingKey) {
     entry.resources.signingKey = signingKey;
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
   }
 
   const targetVersion = await targetVersionFromCli(version);
@@ -878,7 +892,7 @@ async function upgradeLocal(
   }
 
   if (entryChanged) {
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
   }
 
   await broadcastUpgradeEvent(
@@ -898,7 +912,7 @@ async function upgradeLocal(
     runtimeVersion: runtimeInstall.version,
     runtimeInstallDir: runtimeInstall.installDir,
   };
-  saveAssistantEntry(entry);
+  saveLockfileAssistant(entry);
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   try {
@@ -955,7 +969,7 @@ async function upgradeLocal(
     console.error("Local upgrade failed; restoring the previous runtime and service roots...");
     await stopLocalProcesses(entry.resources);
     entry.resources = originalResources;
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
     if (backupPath) {
       const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
       if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
@@ -1023,7 +1037,7 @@ function sleep(ms: number): Promise<void> {
  * the service group restarts).
  */
 async function waitForPlatformUpgrade(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   token: string,
   pollTarget: string | null,
   initialVersion: string | null,
@@ -1096,10 +1110,16 @@ async function waitForPlatformUpgrade(
 }
 
 async function upgradePlatform(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   version: string | null,
   wait: boolean,
 ): Promise<void> {
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Cloud assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
   console.log(
     `🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`,
   );
@@ -1117,8 +1137,8 @@ async function upgradePlatform(
   // platform doesn't know about): resolve the target, detect no-ops and
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
-    fetchAssistantDetail(token, entry.assistantId, entry.runtimeUrl),
-    checkManagedHealth(entry.runtimeUrl || getCloudUrl(), entry.assistantId),
+    fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
+    checkManagedHealth(gatewayUrl || getCloudUrl(), entry.assistantId),
   ]);
   // Health probe first, DB-backed field as the sleeping-assistant fallback.
   const currentVersion =
@@ -1129,7 +1149,7 @@ async function upgradePlatform(
   // platform may differ from the active lockfile default.
   const releases = await fetchReleases({
     channel: releaseChannel,
-    cloudUrl: entry.runtimeUrl,
+    cloudUrl: gatewayUrl,
   });
 
   const resolution = resolveUpgradeTarget({
@@ -1166,7 +1186,7 @@ async function upgradePlatform(
   const inProgress = await fetchUpgradeInProgress(
     token,
     entry.assistantId,
-    entry.runtimeUrl,
+    gatewayUrl,
   );
   if (inProgress === true) {
     console.error(UPGRADE_IN_PROGRESS_MSG);
@@ -1178,9 +1198,9 @@ async function upgradePlatform(
     console.log(`   ${currentVersion} → ${resolution.target}\n`);
   }
 
-  const headers = await authHeaders(token, entry.runtimeUrl);
+  const headers = await authHeaders(token, gatewayUrl);
 
-  const url = `${entry.runtimeUrl || getCloudUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
+  const url = `${gatewayUrl || getCloudUrl()}/v1/assistants/${encodeURIComponent(entry.assistantId)}/upgrade/`;
   const body: { version?: string } = {};
   if (version) {
     body.version = version;
@@ -1200,7 +1220,7 @@ async function upgradePlatform(
     emitCliError("AUTH_FAILED", "Authentication failed", text);
     try {
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildCompleteEvent("unknown", false),
       );
@@ -1229,7 +1249,7 @@ async function upgradePlatform(
     );
     try {
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildCompleteEvent("unknown", false),
       );
@@ -1279,35 +1299,41 @@ async function upgradePlatform(
  * prunes old backups, and outputs the backup path.
  */
 async function upgradePrepare(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   version: string | null,
 ): Promise<void> {
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
   const targetVersion = version ?? "unknown";
   const currentVersion = "unknown";
 
   // 1. Broadcast "starting" so the UI shows the progress spinner
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildStartingEvent(targetVersion, 30),
   );
 
   // 2. Workspace commit: record pre-update state
   await commitWorkspaceViaGateway(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     `[assistant-upgrade] Starting: ${currentVersion} → ${targetVersion}`,
   );
 
   // 3. Progress: saving backup
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent("Saving a backup of your data…"),
   );
 
   // 4. Create backup
-  const backupPath = await createBackup(entry.runtimeUrl, entry.assistantId, {
+  const backupPath = await createBackup(gatewayUrl, entry.assistantId, {
     prefix: `${entry.assistantId}-pre-upgrade`,
     description: `Pre-upgrade snapshot before ${currentVersion} → ${targetVersion}`,
   });
@@ -1324,7 +1350,7 @@ async function upgradePrepare(
 
   // 6. Progress: installing update
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.INSTALLING),
   );
@@ -1341,7 +1367,7 @@ async function upgradePrepare(
  * Broadcasts a "complete" SSE event and creates a workspace commit.
  */
 async function upgradeFinalize(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   version: string | null,
 ): Promise<void> {
   if (!version) {
@@ -1355,19 +1381,25 @@ async function upgradeFinalize(
     process.exit(1);
   }
 
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
   const fromVersion = version;
   const currentVersion = cliPkg.version ? `v${cliPkg.version}` : "unknown";
 
   // 1. Broadcast "complete" so the UI clears the progress spinner
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildCompleteEvent(currentVersion, true),
   );
 
   // 2. Workspace commit: record successful update
   await commitWorkspaceViaGateway(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     `[assistant-upgrade] Complete: ${fromVersion} → ${currentVersion}\n\nresult: success`,
   );
@@ -1505,11 +1537,13 @@ export const upgrade = Object.assign(
     // Best-effort: notify connected clients that the upgrade failed.
     // A `starting` event may have been sent inside upgradeDocker/upgradePlatform
     // before the error was thrown, so we must close with `complete`.
-    await broadcastUpgradeEvent(
-      entry.runtimeUrl,
-      entry.assistantId,
-      buildCompleteEvent("unknown", false),
-    );
+    if (entry.runtimeUrl) {
+      await broadcastUpgradeEvent(
+        entry.runtimeUrl,
+        entry.assistantId,
+        buildCompleteEvent("unknown", false),
+      );
+    }
     emitCliError(categorizeUpgradeError(err), "Upgrade failed", detail);
     process.exit(1);
   }

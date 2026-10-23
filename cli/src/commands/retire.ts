@@ -11,8 +11,8 @@ import {
   getAssistantDisplayName,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  removeAssistantEntry,
-  type AssistantEntry,
+  removeLockfileAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
@@ -100,7 +100,7 @@ async function deleteCloudAssistant(
 }
 
 async function unregisterSelfHostedLocalPlatformRecord(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<void> {
   const token = readPlatformRetireToken();
   if (!token) return;
@@ -119,7 +119,7 @@ async function unregisterSelfHostedLocalPlatformRecord(
   });
 }
 
-async function retireCustom(entry: AssistantEntry): Promise<void> {
+async function retireCustom(entry: LockfileAssistant): Promise<void> {
   const host = extractHostFromEntry(entry);
   const sshHost = `root@${host}`;
 
@@ -200,7 +200,7 @@ function parseRetireArgs(args: string[]): RetireArgs {
   };
 }
 
-function printRetireTarget(entry: AssistantEntry, cloud: string): void {
+function printRetireTarget(entry: LockfileAssistant, cloud: string): void {
   console.log("Assistant to retire:");
   printInstanceDetails(
     {
@@ -368,7 +368,7 @@ async function retireInner(): Promise<void> {
     process.exit(1);
   }
 
-  removeAssistantEntry(assistantId);
+  removeLockfileAssistant(assistantId);
   console.log(`Removed ${getAssistantDisplayName(entry)} from config.`);
 
   // When no assistants remain, remove the dock-display-name sentinel so

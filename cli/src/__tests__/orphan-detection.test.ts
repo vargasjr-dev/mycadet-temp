@@ -16,7 +16,7 @@ import {
 } from "../lib/orphan-detection.js";
 import {
   loadAllAssistantsAcrossEnvs,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 
 afterAll(() => {
@@ -33,7 +33,7 @@ function makeLocalEntry(
     qdrant?: string;
     embed?: string;
   } = {},
-): AssistantEntry {
+): LockfileAssistant {
   mkdirSync(join(instanceDir, "workspace", "data", "qdrant"), {
     recursive: true,
   });
@@ -93,7 +93,7 @@ describe("getKnownPidsFromAssistants", () => {
   });
 
   test("includes docker watcherPid when present", () => {
-    const entry: AssistantEntry = {
+    const entry: LockfileAssistant = {
       assistantId: "docker-1",
       runtimeUrl: "http://localhost:18100",
       cloud: "docker",
@@ -104,7 +104,7 @@ describe("getKnownPidsFromAssistants", () => {
   });
 
   test("ignores non-local entries without watcherPid", () => {
-    const entry: AssistantEntry = {
+    const entry: LockfileAssistant = {
       assistantId: "managed-1",
       runtimeUrl: "https://cloud.mycadet.ai/foo",
       cloud: "cloud",
@@ -114,7 +114,7 @@ describe("getKnownPidsFromAssistants", () => {
   });
 
   test("local entry without resources contributes no PIDs", () => {
-    const entry: AssistantEntry = {
+    const entry: LockfileAssistant = {
       assistantId: "legacy",
       runtimeUrl: "http://localhost:7821",
       cloud: "local",

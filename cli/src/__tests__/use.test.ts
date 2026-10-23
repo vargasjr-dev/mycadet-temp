@@ -13,7 +13,7 @@ import { join } from "node:path";
 
 import {
   getActiveAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { use } from "../commands/use.js";
 
@@ -27,8 +27,8 @@ let consoleErrorSpy: ReturnType<typeof spyOn>;
 
 function makeEntry(
   assistantId: string,
-  extra: Partial<AssistantEntry> = {},
-): AssistantEntry {
+  extra: Partial<LockfileAssistant> = {},
+): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: `http://localhost:${7800 + assistantId.length}`,
@@ -38,7 +38,7 @@ function makeEntry(
 }
 
 function writeLockfile(
-  entries: AssistantEntry[],
+  entries: LockfileAssistant[],
   activeAssistant?: string,
 ): void {
   mkdirSync(testDir, { recursive: true });

@@ -17,7 +17,7 @@ import { stageRootArchive, STATE_ROOTS } from "../lib/root-backup.js";
 const directory = await mkdtemp(join(tmpdir(), "safety-root-backup-"));
 const root = join(directory, "instance");
 const backupDir = join(directory, "backups");
-const entry: config.AssistantEntry = {
+const entry: config.LockfileAssistant = {
   assistantId: "alpha",
   cloud: "local",
   runtimeUrl: "http://127.0.0.1:1",
@@ -32,7 +32,7 @@ const entry: config.AssistantEntry = {
 };
 const lookup = spyOn(config, "findAssistantByName").mockReturnValue(entry);
 const location = spyOn(backups, "getBackupsDir").mockReturnValue(backupDir);
-const save = spyOn(config, "saveAssistantEntry").mockImplementation(() => {});
+const save = spyOn(config, "saveLockfileAssistant").mockImplementation(() => {});
 const tokens = spyOn(guardian, "loadGuardianToken").mockImplementation(() => {
   throw new Error("no guardian token access allowed");
 });

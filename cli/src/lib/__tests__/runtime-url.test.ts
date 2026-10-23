@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
 
-import type { AssistantEntry } from "../assistant-config.js";
+import type { LockfileAssistant } from "../assistant-config.js";
 import { resolveRuntimeUrl } from "../runtime-url.js";
 
 function makeEntry(
-  overrides: Partial<AssistantEntry> & {
+  overrides: Partial<LockfileAssistant> & {
     cloud: string;
     runtimeUrl: string;
     assistantId: string;
   },
-): Pick<AssistantEntry, "cloud" | "runtimeUrl" | "assistantId"> {
+): Pick<LockfileAssistant, "cloud" | "runtimeUrl" | "assistantId"> {
   return {
     cloud: overrides.cloud,
     runtimeUrl: overrides.runtimeUrl,

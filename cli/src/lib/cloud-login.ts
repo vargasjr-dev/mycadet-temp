@@ -14,7 +14,7 @@ import type { AddressInfo } from "net";
 import { isCloudHome } from "./cloud-values.js";
 import {
   resolveAssistant,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "./assistant-config.js";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
 import { computeDeviceId } from "./guardian-token.js";
@@ -378,7 +378,7 @@ export async function registerLocalAssistantWithPlatform(
     cloudUrl,
     ingressUrl,
   );
-  saveAssistantEntry({
+  saveLockfileAssistant({
     ...entry,
     cloudAssistantId: registration.assistant.id,
     cloudBaseUrl: cloudUrl,

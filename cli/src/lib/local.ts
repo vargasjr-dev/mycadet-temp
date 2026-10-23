@@ -1001,7 +1001,9 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
  * entry's `resources` (undefined for the default instance, where both
  * processes fall back to the same cwd-relative paths).
  */
-export function gatewayCliInvocation(resources?: LocalInstanceResources): {
+export function gatewayCliInvocation(
+  resources?: LocalAssistantResources | undefined,
+): {
   command: string;
   args: string[];
   cwd: string;
@@ -1013,7 +1015,7 @@ export function gatewayCliInvocation(resources?: LocalInstanceResources): {
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(resources
+      ...(resources?.instanceDir
         ? {
             CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace"),
             GATEWAY_SECURITY_DIR: join(

@@ -4,8 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   findAssistantByName,
-  saveAssistantEntry,
-  type AssistantEntry,
+  saveLockfileAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import {
   teleportHostInstallation,
@@ -20,8 +20,8 @@ import {
 } from "../lib/root-backup.js";
 
 let directory: string,
-  source: AssistantEntry,
-  target: AssistantEntry,
+  source: LockfileAssistant,
+  target: LockfileAssistant,
   ops: HostTeleportOps;
 let order: string[],
   running: Map<string, boolean>,
@@ -32,7 +32,7 @@ async function instance(
   name: string,
   cloud: "local" | "docker",
   byte: number,
-): Promise<AssistantEntry> {
+): Promise<LockfileAssistant> {
   const root = join(directory, name);
   for (const state of STATE_ROOTS) {
     await mkdir(join(root, state), { recursive: true });
@@ -74,8 +74,8 @@ beforeEach(async () => {
   process.env.CADET_LOCKFILE_DIR = join(directory, "registry");
   source = await instance("source", "docker", 7);
   target = await instance("target", "local", 3);
-  saveAssistantEntry(source);
-  saveAssistantEntry(target);
+  saveLockfileAssistant(source);
+  saveLockfileAssistant(target);
   order = [];
   running = new Map([
     ["source", true],
@@ -115,7 +115,7 @@ beforeEach(async () => {
         storage,
         sleep: () => ops.sleep(entry),
         wake: () => storage.resume(),
-        save: saveAssistantEntry,
+        save: saveLockfileAssistant,
       });
       order.push(`backup:${entry.assistantId}`);
       return file;
@@ -132,7 +132,7 @@ beforeEach(async () => {
           storage,
           sleep: () => ops.sleep(entry),
           wake: () => storage.resume(),
-          save: saveAssistantEntry,
+          save: saveLockfileAssistant,
         },
       );
       await storage.resume();
@@ -387,7 +387,7 @@ test("holds source and target operation locks through import and releases them a
           storage,
           sleep: () => ops.sleep(entry),
           wake: () => storage.resume(),
-          save: saveAssistantEntry,
+          save: saveLockfileAssistant,
         }),
       ).rejects.toThrow("Another backup/restore owns");
     }
@@ -400,6 +400,6 @@ test("holds source and target operation locks through import and releases them a
     storage,
     sleep: () => ops.sleep(source),
     wake: () => storage.resume(),
-    save: saveAssistantEntry,
+    save: saveLockfileAssistant,
   });
 });

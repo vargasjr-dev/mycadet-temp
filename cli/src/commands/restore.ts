@@ -13,9 +13,9 @@ import { basename, dirname, join } from "path";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import {
   findAssistantByName,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   generateLocalSigningKey,
   startCes,
@@ -145,7 +145,7 @@ interface ImportResponse {
 // ---------------------------------------------------------------------------
 
 async function restorePlatform(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   name: string,
   bundleData: Buffer,
   opts: { dryRun: boolean },
@@ -458,7 +458,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   }
 
   // Read and validate metadata before any side effects
-  const entry: AssistantEntry = JSON.parse(readFileSync(metadataPath, "utf-8"));
+  const entry: LockfileAssistant = JSON.parse(readFileSync(metadataPath, "utf-8"));
   if (!entry.resources) {
     throw new Error(
       `Retired assistant '${name}' is missing resource configuration. ` +
@@ -504,7 +504,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   entry.guardianBootstrapSecret = bootstrapSecret;
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
-  saveAssistantEntry(entry);
+  saveLockfileAssistant(entry);
 
   // Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes

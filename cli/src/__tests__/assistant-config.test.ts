@@ -29,12 +29,12 @@ import {
   formatAssistantLookupError,
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
-  removeAssistantEntry,
+  removeLockfileAssistant,
   loadAllAssistants,
   resolveTargetAssistant,
-  saveAssistantEntry,
+  saveLockfileAssistant,
   getActiveAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 
 afterAll(() => {
@@ -52,8 +52,8 @@ function writeLockfile(data: unknown): void {
 const makeEntry = (
   id: string,
   runtimeUrl = "http://localhost:7821",
-  extra?: Partial<AssistantEntry>,
-): AssistantEntry => ({
+  extra?: Partial<LockfileAssistant>,
+): LockfileAssistant => ({
   assistantId: id,
   runtimeUrl,
   cloud: "local",
@@ -94,38 +94,38 @@ describe("assistant-config", () => {
     expect(loadAllAssistants()).toEqual([]);
   });
 
-  test("saveAssistantEntry and loadAllAssistants round-trip", () => {
+  test("saveLockfileAssistant and loadAllAssistants round-trip", () => {
     const entry = makeEntry("test-1");
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
     const all = loadAllAssistants();
     expect(all).toHaveLength(1);
     expect(all[0].assistantId).toBe("test-1");
   });
 
-  test("saveAssistantEntry writes under the advisory lock and cleans it up", () => {
-    saveAssistantEntry(makeEntry("locked-1"));
+  test("saveLockfileAssistant writes under the advisory lock and cleans it up", () => {
+    saveLockfileAssistant(makeEntry("locked-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
     expect(existsSync(join(testDir, "lockfile.json.lock"))).toBe(false);
   });
 
-  test("saveAssistantEntry breaks a stale lock and still lands the write", () => {
+  test("saveLockfileAssistant breaks a stale lock and still lands the write", () => {
     const lockDir = join(testDir, "lockfile.json.lock");
     mkdirSync(lockDir);
     const past = new Date(Date.now() - 60_000);
     utimesSync(lockDir, past, past);
 
-    saveAssistantEntry(makeEntry("stale-lock-1"));
+    saveLockfileAssistant(makeEntry("stale-lock-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     expect(existsSync(lockDir)).toBe(false);
   });
 
-  test("saveAssistantEntry fails fast without writing when another holder is fresh", () => {
+  test("saveLockfileAssistant fails fast without writing when another holder is fresh", () => {
     const lockDir = join(testDir, "lockfile.json.lock");
     mkdirSync(lockDir);
     try {
       const start = Date.now();
-      expect(() => saveAssistantEntry(makeEntry("contended-1"))).toThrow(
+      expect(() => saveLockfileAssistant(makeEntry("contended-1"))).toThrow(
         /Timed out acquiring lockfile lock/,
       );
       expect(Date.now() - start).toBeLessThan(2_000);
@@ -221,42 +221,42 @@ describe("assistant-config", () => {
     expect(findAssistantByName("missing")).toBeNull();
   });
 
-  test("removeAssistantEntry removes matching entry", () => {
+  test("removeLockfileAssistant removes matching entry", () => {
     writeLockfile({
       assistants: [makeEntry("a"), makeEntry("b"), makeEntry("c")],
     });
-    removeAssistantEntry("b");
+    removeLockfileAssistant("b");
     const all = loadAllAssistants();
     expect(all).toHaveLength(2);
     expect(all.map((e) => e.assistantId)).toEqual(["a", "c"]);
   });
 
-  test("removeAssistantEntry reassigns activeAssistant to remaining entry", () => {
+  test("removeLockfileAssistant reassigns activeAssistant to remaining entry", () => {
     writeLockfile({
       assistants: [makeEntry("a"), makeEntry("b")],
       activeAssistant: "a",
     });
-    removeAssistantEntry("a");
+    removeLockfileAssistant("a");
     expect(getActiveAssistant()).toBe("b");
     expect(loadAllAssistants()).toHaveLength(1);
   });
 
-  test("removeAssistantEntry clears activeAssistant when no entries remain", () => {
+  test("removeLockfileAssistant clears activeAssistant when no entries remain", () => {
     writeLockfile({
       assistants: [makeEntry("only")],
       activeAssistant: "only",
     });
-    removeAssistantEntry("only");
+    removeLockfileAssistant("only");
     expect(getActiveAssistant()).toBeNull();
     expect(loadAllAssistants()).toHaveLength(0);
   });
 
-  test("removeAssistantEntry preserves activeAssistant when removing a different entry", () => {
+  test("removeLockfileAssistant preserves activeAssistant when removing a different entry", () => {
     writeLockfile({
       assistants: [makeEntry("a"), makeEntry("b"), makeEntry("c")],
       activeAssistant: "a",
     });
-    removeAssistantEntry("b");
+    removeLockfileAssistant("b");
     expect(getActiveAssistant()).toBe("a");
     expect(loadAllAssistants()).toHaveLength(2);
   });
@@ -326,7 +326,7 @@ describe("env-scoped lockfile and migration", () => {
     delete process.env.CADET_LOCKFILE_DIR;
     try {
       // WHEN we save an assistant entry (which triggers writeLockfile)
-      saveAssistantEntry({
+      saveLockfileAssistant({
         assistantId: "dev-env-bot",
         runtimeUrl: "http://localhost:7830",
         cloud: "local",
@@ -372,7 +372,7 @@ describe("env-scoped lockfile and migration", () => {
       rmSync(join(testDir, "lockfile.json"), { force: true });
       rmSync(join(testDir, ".cadet.lock.json"), { force: true });
 
-      saveAssistantEntry({
+      saveLockfileAssistant({
         assistantId: "prod-bot",
         runtimeUrl: "http://localhost:7830",
         cloud: "local",

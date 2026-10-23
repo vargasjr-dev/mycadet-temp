@@ -8,7 +8,7 @@ import {
   type ManagedBackupEntry,
 } from "@mycadet/local-mode/teleport-backup-policy";
 
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { authHeaders, invalidateOrgIdCache } from "./cloud-client.js";
 import { z } from "zod";
@@ -28,7 +28,7 @@ const CreatedBackupResponseSchema = z.object({
   ready_to_use: z.boolean().optional(),
 });
 
-type PlatformEntry = Pick<AssistantEntry, "runtimeUrl" | "assistantId">;
+type PlatformEntry = Pick<LockfileAssistant, "runtimeUrl" | "assistantId">;
 
 function platformBackupsUrl(entry: PlatformEntry): string {
   return `${entry.runtimeUrl}/v1/assistants/${entry.assistantId}/backups/`;

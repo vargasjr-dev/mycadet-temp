@@ -30,7 +30,7 @@ import {
   lookupAssistantByIdentifier,
   readRootProcesses,
   stampRootProcess,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "./assistant-config.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { RemoteHost } from "./constants.js";
@@ -1381,7 +1381,7 @@ function lockfileAssistantName(assistantId: string): string | undefined {
  * with no recorded port cannot be attributed, so it is left alone.
  */
 export async function stopContainerAppServer(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<boolean> {
   if (!isLocalContainerEntry(entry)) {
     return false;

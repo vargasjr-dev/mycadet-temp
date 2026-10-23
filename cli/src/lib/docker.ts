@@ -15,10 +15,10 @@ import cliPkg from "../../package.json";
 
 import {
   findAssistantByName,
-  saveAssistantEntry,
+  saveLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config";
-import type { AssistantEntry } from "./assistant-config";
+import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
 import { buildServiceRunArgs } from "./statefulset.js";
@@ -937,7 +937,7 @@ export function isNoSuchContainerError(err: unknown): boolean {
  * generate). Empty volumes just get fresh state on first boot.
  */
 export async function recreateDockerContainers(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<void> {
   const info = entry.containerInfo;
   if (!info?.assistantImage || !info.gatewayImage || !info.cesImage) {
@@ -981,7 +981,7 @@ export async function recreateDockerContainers(
   }
 
   const gatewayPort =
-    parseGatewayPort(entry.runtimeUrl) ??
+    parseGatewayPort(entry.runtimeUrl ?? "") ??
     getDefaultPorts(getCurrentEnvironment()).gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
@@ -1006,7 +1006,7 @@ export async function recreateDockerContainers(
   // Persist what the recreation decided (the gateway port in the runtime
   // url, the assistant port when it defaulted) so plain `docker start`
   // wakes work and clients reach the right endpoints.
-  saveAssistantEntry({
+  saveLockfileAssistant({
     ...entry,
     runtimeUrl: `http://localhost:${gatewayPort}`,
     containerInfo: { ...info, assistantPort },
@@ -1699,7 +1699,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       CADET_DEVICE_ID: hostDeviceId,
     };
     const runtimeUrl = `http://localhost:${gatewayPort}`;
-    const dockerEntry: AssistantEntry = {
+    const dockerEntry: LockfileAssistant = {
       assistantId: instanceName,
       runtimeUrl,
       cloud: "docker",
@@ -1713,7 +1713,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       },
     };
     if (params.initialArchive) {
-      saveAssistantEntry(dockerEntry);
+      saveLockfileAssistant(dockerEntry);
     }
     await startContainers(
       {
@@ -1736,7 +1736,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const containersUpAt = Date.now();
 
     emitProgress(5, 6, "Saving configuration...");
-    saveAssistantEntry(dockerEntry);
+    saveLockfileAssistant(dockerEntry);
     setActiveAssistant(instanceName);
 
     if (params.initialArchive) {
@@ -1813,7 +1813,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (watch && repoRoot) {
-      saveAssistantEntry({ ...dockerEntry, watcherPid: process.pid });
+      saveLockfileAssistant({ ...dockerEntry, watcherPid: process.pid });
 
       const stopWatcher = startFileWatcher({
         signingKey,
@@ -1836,7 +1836,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log("\n🛑 Shutting down...");
           stopWatcher();
           await stopContainers(res);
-          saveAssistantEntry({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
           log("✅ Docker instance stopped.");
           resolve();
         };
@@ -1849,7 +1849,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         // file watchers and let the process terminate.
         process.on("SIGTERM", () => {
           stopWatcher();
-          saveAssistantEntry({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
           resolve();
         });
       });

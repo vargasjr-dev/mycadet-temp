@@ -6,8 +6,8 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import type { AssistantEntry } from "./assistant-config.js";
-import { saveAssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
+import { saveLockfileAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
@@ -578,7 +578,7 @@ export interface PerformDockerRollbackOptions {
  * - Auto-rollback on failure
  */
 export async function performDockerRollback(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
   const { targetVersion, backupPath } = options;
@@ -800,7 +800,7 @@ export async function performDockerRollback(
   if (ready) {
     // Success path
 
-    const updatedEntry: AssistantEntry = {
+    const updatedEntry: LockfileAssistant = {
       ...entry,
       containerInfo: {
         assistantImage: targetImageTags.assistant,
@@ -809,7 +809,7 @@ export async function performDockerRollback(
         assistantPort,
       },
     };
-    saveAssistantEntry(updatedEntry);
+    saveLockfileAssistant(updatedEntry);
 
     // Notify clients that the rollback succeeded
     await broadcastUpgradeEvent(
@@ -951,7 +951,7 @@ export async function performDockerRollback(
           }
 
           // Restore lockfile state
-          const revertedEntry: AssistantEntry = {
+          const revertedEntry: LockfileAssistant = {
             ...entry,
             containerInfo: {
               assistantImage:
@@ -965,7 +965,7 @@ export async function performDockerRollback(
               assistantPort,
             },
           };
-          saveAssistantEntry(revertedEntry);
+          saveLockfileAssistant(revertedEntry);
 
           await broadcastUpgradeEvent(
             entry.runtimeUrl,

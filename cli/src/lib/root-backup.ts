@@ -21,8 +21,8 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
-import type { AssistantEntry } from "./assistant-config.js";
-import { getDaemonPidPath, saveAssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
+import { getDaemonPidPath, saveLockfileAssistant } from "./assistant-config.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";
@@ -263,7 +263,7 @@ export interface RootStorage {
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
   initialRunning?: Set<string>;
-  constructor(readonly entry: AssistantEntry) {
+  constructor(readonly entry: LockfileAssistant) {
     if (!entry.resources)
       throw new Error("Local backup requires the instance's resource paths.");
     this.root = resolve(entry.resources.instanceDir);
@@ -493,7 +493,7 @@ export class DockerRootStorage implements RootStorage {
   readonly containers: Record<StateRoot, string>;
   initialRunning?: Set<string>;
   constructor(
-    readonly entry: AssistantEntry,
+    readonly entry: LockfileAssistant,
     readonly ops: DockerBackupOps = dockerOps,
   ) {
     const names = dockerResourceNames(entry.assistantId);
@@ -719,10 +719,10 @@ export interface RootBackupOps {
   storage: RootStorage;
   sleep: () => Promise<void>;
   wake: () => Promise<void>;
-  save: (entry: AssistantEntry) => void;
+  save: (entry: LockfileAssistant) => void;
 }
 
-function defaultOps(entry: AssistantEntry): RootBackupOps {
+function defaultOps(entry: LockfileAssistant): RootBackupOps {
   const storage =
     entry.cloud === "docker"
       ? new DockerRootStorage(entry)
@@ -736,7 +736,7 @@ function defaultOps(entry: AssistantEntry): RootBackupOps {
         waitMs: null,
       }),
     wake: () => storage.resume(),
-    save: saveAssistantEntry,
+    save: saveLockfileAssistant,
   };
 }
 
@@ -751,7 +751,7 @@ const ownedOperationLocks = new AsyncLocalStorage<ReadonlySet<string>>();
 
 /** Hold storage ownership across lifecycle steps; nested backup calls share the lock. */
 export async function withRootOperationLock<T>(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   work: () => Promise<T>,
 ): Promise<T> {
   const parent = join(getBackupsDir(), ".operations");
@@ -790,7 +790,7 @@ export async function withRootOperationLock<T>(
 }
 
 export async function createRootBackup(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   output: string,
   ops = defaultOps(entry),
 ): Promise<void> {
@@ -798,7 +798,7 @@ export async function createRootBackup(
 }
 
 async function captureBackup(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
@@ -836,7 +836,7 @@ async function captureBackup(
 }
 
 export async function restoreRootBackup(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean } = {},
   ops = defaultOps(entry),
@@ -848,7 +848,7 @@ export async function restoreRootBackup(
 
 /** Install into a newly allocated instance before any service starts. */
 export async function initializeRootArchive(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   file: string,
   storage: RootStorage = entry.cloud === "docker"
     ? new DockerRootStorage(entry)
@@ -872,7 +872,7 @@ export async function initializeRootArchive(
 }
 
 async function restoreBackup(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   file: string,
   options: { dryRun?: boolean; recoveryPath?: string; resume?: boolean },
   ops: RootBackupOps,
