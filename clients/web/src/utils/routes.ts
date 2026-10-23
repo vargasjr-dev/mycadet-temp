@@ -157,12 +157,16 @@ export const routes = {
     providerCallback: r("/account/provider/callback"),
   },
 
-  welcome: r("/assistant/welcome"),
+  // The local front door moved to the app bundle (`/account/onboarding/welcome`);
+  // the maintained port renders the app-owned screen. The URL string stays
+  // until its web consumers do (the account-subtree pattern above).
+  welcome: r("/account/onboarding/welcome"),
 
   onboarding: {
     // Platform onboarding welcome/front door, with a single CTA back into
-    // the flow.
-    start: r("/assistant/onboarding/start"),
+    // the flow. Moved to the app bundle (`/account/onboarding/start`); the
+    // URL string stays for the same reason as `welcome`.
+    start: r("/account/onboarding/start"),
     hosting: r("/assistant/onboarding/hosting"),
     apiKey: r("/assistant/onboarding/api-key"),
     hatching: r("/assistant/onboarding/hatching"),

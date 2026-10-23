@@ -91,7 +91,8 @@
     "title": "歡迎使用 Cadet",
     "body": "您的專屬智慧助理近在咫尺。",
     "cancel": "取消",
-    "logIn": "登入"
+    "logIn": "登入",
+    "continueWithoutAccount": "不登入繼續"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "助理",
@@ -169,5 +170,8 @@
     "retire": "停用助理",
     "repairFailed": "修復失敗，請再試一次。",
     "retireFailed": "移除助理失敗，請再試一次。"
+  },
+  "startScreen": {
+    "createAssistant": "建立您的助理"
   }
 }

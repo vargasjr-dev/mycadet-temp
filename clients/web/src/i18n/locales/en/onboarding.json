@@ -8,19 +8,10 @@
     "adding": "Adding…",
     "tryAgain": "Try again",
     "remove": "Remove {value}",
-    "logIn": "Log In",
     "loginToUse": "Log in to use",
     "downloadMacOSApp": "Download the macOS app",
     "downloadWindowsApp": "Download the Windows app",
     "claim": "Claim"
-  },
-  "welcome": {
-    "title": "Welcome to Cadet",
-    "body": "Your own personal intelligence is just a step away.",
-    "continueWithoutAccount": "Continue without account"
-  },
-  "startScreen": {
-    "createAssistant": "Create your assistant"
   },
   "hostingScreen": {
     "title": "Hosting",
@@ -72,7 +63,6 @@
   "stepIndicator": {
     "ariaLabel": "Step {current} of {total}"
   },
-
   "introductionScreen": {
     "greetingNamed": "Hey, {name}!",
     "greeting": "Hey!",
@@ -139,7 +129,6 @@
     "hobbiesLabel": "Any hobbies?",
     "hobbiesPlaceholder": "Cars, books, growing tomatoes?"
   },
-
   "existingAssistantStep": {
     "titleNamed": "{name} is already up and running",
     "title": "Your assistant is already up and running",
@@ -150,7 +139,6 @@
     "redoNamed": "Start over and rebuild {name}'s personality",
     "redo": "Start over and rebuild its personality"
   },
-
   "lookingYouUpStep": {
     "searching": "Searching the web to get to know you…",
     "readingProfiles": "Reading public profiles…",

@@ -91,7 +91,8 @@
     "title": "Welcome to Cadet",
     "body": "Your own personal intelligence is just a step away.",
     "cancel": "Cancel",
-    "logIn": "Log In"
+    "logIn": "Log In",
+    "continueWithoutAccount": "Continue without account"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Assistants",
@@ -169,5 +170,8 @@
     "retire": "Retire Assistant",
     "repairFailed": "Repair failed. Please try again.",
     "retireFailed": "Failed to retire the assistant. Please try again."
+  },
+  "startScreen": {
+    "createAssistant": "Create your assistant"
   }
 }

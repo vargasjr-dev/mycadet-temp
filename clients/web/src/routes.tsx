@@ -344,16 +344,6 @@ export const routeTree = [
       {
         ErrorBoundary: RouteErrorBoundary,
         children: [
-          // Standalone pre-app routes (not part of the new-user onboarding funnel).
-          {
-            path: "welcome",
-            lazy: {
-              Component: () =>
-                import("@/domains/onboarding/pages/welcome-screen").then(
-                  (m) => m.WelcomeScreen,
-                ),
-            },
-          },
           // SPIKE — research-onboarding front door. Placed here (not in the
           // onboarding funnel block) so it's reachable on demand behind auth
           // alone, without the onboarding-completed guard bouncing already-
@@ -406,15 +396,9 @@ export const routeTree = [
                   },
                 ],
               },
-              {
-                path: "onboarding/start",
-                lazy: {
-                  Component: () =>
-                    import("@/domains/onboarding/pages/start-screen").then(
-                      (m) => m.StartScreen,
-                    ),
-                },
-              },
+              // `onboarding/start` moved to the app bundle
+              // (`/account/onboarding/start`) — web's route is deleted and
+              // the app path is emitted by the resolver's welcome fork.
               {
                 path: "onboarding/hatching",
                 lazy: {

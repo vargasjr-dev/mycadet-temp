@@ -94,6 +94,7 @@ import { GlobalPushToTalkBridge } from "@/domains/chat/voice/global-push-to-talk
 import { TimezoneSync } from "@/components/timezone-sync";
 import { RoutePendingIndicator } from "@/components/route-pending-indicator";
 import { UpdateToast } from "@/components/update-toast";
+import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { retireAssistant } from "@/assistant/retire-service";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
 import { toast } from "@mycadet/design-library/components/toast";
@@ -521,7 +522,11 @@ export function RootLayout() {
     if (outcome.ok) {
       setRetireId(null);
       setRetirePending(false);
-      navigate(outcome.nextRoute, { replace: true });
+      // The post-retire route can be the app bundle's welcome screen — a
+      // cross-bundle target riding the full-page bounce.
+      if (!hardNavigateIfCrossBundle(outcome.nextRoute)) {
+        navigate(outcome.nextRoute, { replace: true });
+      }
       return;
     }
     toast.error(outcome.error);

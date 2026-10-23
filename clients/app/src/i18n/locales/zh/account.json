@@ -91,7 +91,8 @@
     "title": "欢迎使用 Cadet",
     "body": "您的专属智能助手触手可及。",
     "cancel": "取消",
-    "logIn": "登录"
+    "logIn": "登录",
+    "continueWithoutAccount": "不登录继续"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "助手",
@@ -169,5 +170,8 @@
     "retire": "停用助手",
     "repairFailed": "修复失败，请重试。",
     "retireFailed": "移除助手失败，请重试。"
+  },
+  "startScreen": {
+    "createAssistant": "创建您的助手"
   }
 }

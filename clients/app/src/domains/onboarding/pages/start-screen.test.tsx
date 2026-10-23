@@ -1,16 +1,12 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-
 const navigateMock = mock((..._args: unknown[]) => {});
 mock.module("react-router", () => ({
   useNavigate: () => navigateMock,
 }));
 
-// Light passthroughs so the screen renders in happy-dom.
-mock.module("@/components/onboarding-layout", () => ({
-  OnboardingLayout: ({ children }: { children: React.ReactNode }) => children,
-}));
+// Light passthrough so the screen renders in happy-dom.
 mock.module("@mycadet/design-library/components/button", () => ({
   Button: ({
     children,
@@ -21,7 +17,9 @@ mock.module("@mycadet/design-library/components/button", () => ({
   }) => <button onClick={onClick}>{children}</button>,
 }));
 
-const { StartScreen } = await import("@/domains/onboarding/pages/start-screen");
+const { StartScreen } = await import(
+  "@app/domains/onboarding/pages/start-screen"
+);
 
 describe("StartScreen", () => {
   beforeEach(() => navigateMock.mockClear());

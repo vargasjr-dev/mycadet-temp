@@ -111,8 +111,6 @@ const LOCAL_ONLY_ONBOARDING_PATHS: Set<string> = new Set([
   routes.onboarding.apiKey,
 ]);
 
-const LOCAL_ONLY_STANDALONE_PATHS: Set<string> = new Set([routes.welcome]);
-
 function isOnboardingPath(pathname: string): boolean {
   return (
     pathname.startsWith(`${ONBOARDING_PREFIX}/`) ||
@@ -149,9 +147,10 @@ export function resolveLoginReturnTo(
   state: NavigationState,
   fromPath: string,
 ): string {
-  if (fromPath === routes.welcome) {
-    return state.hasAssistants ? routes.assistant : routes.onboarding.hosting;
-  }
+  // The welcome fork is gone: the local front door moved to the app bundle
+  // (`/account/onboarding/welcome`), so web never hosts it and its login
+  // return-to fork died with the route. The app's post-auth destination owns
+  // that fork now.
   return fromPath;
 }
 
@@ -306,10 +305,7 @@ function requireAuth(
     return null;
   }
 
-  if (
-    state.isLocalClient &&
-    (isOnboardingPath(path) || LOCAL_ONLY_STANDALONE_PATHS.has(path))
-  ) {
+  if (state.isLocalClient && isOnboardingPath(path)) {
     return { action: "allow" };
   }
   if (state.isLocalClient && !state.hasAssistants) {
@@ -334,12 +330,9 @@ function enforceModeBoundary(
   state: NavigationState,
   path: string,
 ): NavigationDecision | null {
-  if (LOCAL_ONLY_STANDALONE_PATHS.has(path)) {
-    if (!state.isLocalClient) {
-      return { action: "redirect", to: routes.assistant };
-    }
-    return { action: "allow" };
-  }
+  // (The standalone set died with the welcome route: the local front door
+  // moved to the app bundle's /account/onboarding/welcome, which web never
+  // serves, so there is no web-side mode boundary to enforce for it.)
 
   if (LOCAL_ONLY_ONBOARDING_PATHS.has(path) && !state.isLocalClient) {
     return { action: "redirect", to: routes.assistant };
