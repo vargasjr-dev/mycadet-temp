@@ -3,7 +3,7 @@
  *
  * For platform-bound requests, attaches:
  *   - `Cadet-Organization-Id` — selects the active org server-side.
- *   - `X-CSRFToken` (mutations only) — required by Django's
+ *   - `X-CSRFToken` (mutations only) — required by the cloud's
  *     SessionAuthentication.
  *   - `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` — identify the
  *     originating tab/interface to the daemon. Required by self-echo
@@ -117,7 +117,7 @@ const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
   // assistant-scoped requests without this list: that is the paved road
   // for new endpoints. Deliberately NOT listed: `artifacts` (no
   // gateway/daemon route exists) and
-  // `push-tokens` / `live-activity` (Django-owned token registration).
+  // `push-tokens` / `live-activity` (cloud-owned token registration).
   // Those stay on the cloud in cloud and local-with-ingress. Remote
   // gateway authorizes the last two via
   // {@link authorizeRemoteGatewayRequest} so the features gate does not
@@ -128,10 +128,10 @@ const RUNTIME_PROXIED_FIRST_SEGMENTS = new Set<string>([
 ]);
 
 /**
- * Django-owned device and Live Activity token routes. In remote-gateway
+ * Cloud-owned device and Live Activity token routes. In remote-gateway
  * mode they are same-origin to the ingress, so they must carry the
  * paired bearer or {@link platformFeaturesGate} aborts them before
- * Django (or the gateway proxy that reaches Django) sees them.
+ * The cloud (or the gateway proxy that reaches it) sees them.
  */
 const PLATFORM_PUSH_FIRST_SEGMENTS = new Set<string>([
   "push-tokens",
@@ -258,7 +258,7 @@ export async function rewriteForSelfHostedIngress(
   }
 
   // Splice the cloud's base out and the user's gateway in. Contact-family
-  // paths are flattened to `/v1/<rest>` — the shape cloud's Django strip
+  // paths are flattened to `/v1/<rest>` — the shape cloud's runtime proxy strip
   // delivers to the gateway, which serves them on its flat control-plane
   // routes. Every other segment keeps the scoped path verbatim: the gateway
   // exposes the same `/v1/assistants/{id}/...` routes the cloud's
@@ -368,7 +368,7 @@ export function authorizeRemoteGatewayRequest(
  *   without consulting {@link RUNTIME_PROXIED_FIRST_SEGMENTS}. `false` for the
  *   cloud and auth clients, where only allowlisted segments are forwarded
  *   (platform-owned routes like system-events, etc. fall
- *   through to Django).
+ *   through to the cloud).
  */
 function createInterceptor({
   isDaemonClient = false,
@@ -420,7 +420,7 @@ function createInterceptor({
       }
     }
 
-    // Platform path — Django session auth.
+    // Platform path — cloud session auth.
     if (isElectron() && MUTATING_METHODS.has(request.method)) {
       newRequest.headers.set(
         ELECTRON_RENDERER_ORIGIN_HEADER,

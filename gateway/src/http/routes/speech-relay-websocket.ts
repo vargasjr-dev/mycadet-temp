@@ -84,7 +84,7 @@ const ALLOWED_PARAMS: Record<SpeechRelayOperation, ReadonlySet<string>> = {
     "punctuate",
   ]),
   // `model` is the client-selected TTS voice; tunnel only dials it after
-  // Django's rate-card guard prices and echoes that exact model, so
+  // The cloud's rate-card guard prices and echoes that exact model, so
   // forwarding it does not widen what the assistant API key can spend on.
   tts: new Set(["encoding", "sample_rate", "container", "model"]),
 };

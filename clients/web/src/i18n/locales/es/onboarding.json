@@ -8,19 +8,10 @@
     "adding": "Añadiendo…",
     "tryAgain": "Volver a intentarlo",
     "remove": "Quitar {value}",
-    "logIn": "Iniciar sesión",
     "loginToUse": "Inicia sesión para usar",
     "downloadMacOSApp": "Descargar la app de macOS",
     "downloadWindowsApp": "Descargar la app de Windows",
     "claim": "Reclamar"
-  },
-  "welcome": {
-    "title": "Te damos la bienvenida a Cadet",
-    "body": "Tu propia inteligencia personal está a un paso.",
-    "continueWithoutAccount": "Continuar sin cuenta"
-  },
-  "startScreen": {
-    "createAssistant": "Crear tu asistente"
   },
   "hostingScreen": {
     "title": "Alojamiento",
@@ -138,7 +129,6 @@
     "hobbiesLabel": "¿Algún hobby?",
     "hobbiesPlaceholder": "Coches, libros, cultivar tomates?"
   },
-
   "existingAssistantStep": {
     "titleNamed": "{name} ya está en marcha",
     "title": "Tu asistente ya está en marcha",
@@ -149,7 +139,6 @@
     "redoNamed": "Empezar de cero y reconstruir la personalidad de {name}",
     "redo": "Empezar de cero y reconstruir su personalidad"
   },
-
   "lookingYouUpStep": {
     "searching": "Buscando en la web para conocerte…",
     "readingProfiles": "Leyendo perfiles públicos…",

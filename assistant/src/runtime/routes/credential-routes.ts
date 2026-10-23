@@ -191,7 +191,7 @@ function resolveCredentialLookup(
  * identity id would silently misroute or impersonate every platform call.
  *
  * The cloud's own provisioning does not come through here. It writes over
- * `POST /v1/secrets` (Django to vembda to the pod), as does the CLI and the
+ * `POST /v1/secrets` (cloud to vembda to the pod), as does the CLI and the
  * local-mode connect flow in the web client.
  */
 function assertNotPlatformManaged(

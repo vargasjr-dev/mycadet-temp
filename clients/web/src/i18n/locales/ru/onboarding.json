@@ -8,19 +8,10 @@
     "adding": "Добавление…",
     "tryAgain": "Попробовать снова",
     "remove": "Убрать {value}",
-    "logIn": "Войти",
     "loginToUse": "Войти, чтобы пользоваться",
     "downloadMacOSApp": "Скачать приложение для macOS",
     "downloadWindowsApp": "Скачать приложение для Windows",
     "claim": "Забрать"
-  },
-  "welcome": {
-    "title": "Добро пожаловать в Cadet",
-    "body": "Личный интеллект уже в одном шаге.",
-    "continueWithoutAccount": "Продолжить без аккаунта"
-  },
-  "startScreen": {
-    "createAssistant": "Создание ассистента"
   },
   "hostingScreen": {
     "title": "Хостинг",
@@ -138,7 +129,6 @@
     "hobbiesLabel": "Есть хобби?",
     "hobbiesPlaceholder": "Машины, книги, помидоры на подоконнике?"
   },
-
   "existingAssistantStep": {
     "titleNamed": "{name} уже запущен и работает",
     "title": "Ассистент уже запущен и работает",
@@ -149,7 +139,6 @@
     "redoNamed": "Начать заново и собрать характер {name} снова",
     "redo": "Начать заново и собрать характер заново"
   },
-
   "lookingYouUpStep": {
     "searching": "Поиск в интернете…",
     "readingProfiles": "Читаю публичные профили…",

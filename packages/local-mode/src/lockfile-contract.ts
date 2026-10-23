@@ -124,7 +124,7 @@ export function isUsableRuntimeUrl(url: unknown): url is string {
 /**
  * First segments whose scoped `/v1/assistants/{id}/` prefix the gateway does
  * not serve: the contact family lives on flat `/v1/...` control-plane routes
- * (the shape the cloud's Django `RuntimeProxyView` strip delivers). Every
+ * (the shape the cloud's runtime-proxy strip delivers). Every
  * forwarder to the gateway — the scoped host proxy and the request
  * interceptor's remote-ingress rewrite alike — flattens them to match.
  */

@@ -91,7 +91,8 @@
     "title": "Te damos la bienvenida a Cadet",
     "body": "Tu propia inteligencia personal está a un paso.",
     "cancel": "Cancelar",
-    "logIn": "Iniciar sesión"
+    "logIn": "Iniciar sesión",
+    "continueWithoutAccount": "Continuar sin cuenta"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Asistentes",
@@ -169,5 +170,8 @@
     "retire": "Retirar el asistente",
     "repairFailed": "No se pudo reparar. Inténtalo de nuevo.",
     "retireFailed": "No se pudo retirar el asistente. Inténtalo de nuevo."
+  },
+  "startScreen": {
+    "createAssistant": "Crear tu asistente"
   }
 }

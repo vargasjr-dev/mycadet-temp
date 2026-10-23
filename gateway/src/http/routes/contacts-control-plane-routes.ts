@@ -12,8 +12,8 @@ import type { GatewayRouteDefinition } from "./types.js";
  * contact-prompt submit, contact-record submit, and manual channel verify. Clients consume them
  * through the generated gateway SDK, which emits assistant-scoped
  * `/v1/assistants/{assistant_id}/...` URLs — but both deployment boundaries
- * strip the scope before the gateway routes the request (Django's
- * RuntimeProxyView in cloud; `rewriteForSelfHostedIngress` contact-family
+ * strip the scope before the gateway routes the request (the cloud's
+ * runtime proxy; `rewriteForSelfHostedIngress` contact-family
  * flattening in self-hosted), so the gateway serves exactly the flat paths
  * in this spec.
  *

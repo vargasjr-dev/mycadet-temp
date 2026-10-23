@@ -14,6 +14,7 @@ import { isElectron } from "@/runtime/is-electron";
 import { useHasCloudSession } from "@/stores/auth-store";
 import { useTranslation } from "@/i18n";
 import { docsUrl, routes } from "@/utils/routes";
+import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { Button } from "@mycadet/design-library/components/button";
 
 type HostingMode = "cadet-cloud" | "local" | "docker";
@@ -107,7 +108,9 @@ export function HostingScreen() {
   };
 
   const onBack = () => {
-    void navigate(routes.welcome, SETUP_NAVIGATE);
+    // Back now crosses to the app bundle's welcome screen — full-page nav,
+    // the same bounce the consent screens ride (see shell-consent-bounce).
+    hardNavigateIfCrossBundle(routes.welcome);
   };
 
   return (

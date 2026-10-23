@@ -65,7 +65,7 @@ const CLOUD_ONLY_PATHS: readonly string[] = [routes.account.root];
  * gateway identity enough?
  *
  * Two families need one. Anything the cloud serves rather than this SPA:
- * the Django account routes, the API, the marketing import funnel and any
+ * the cloud account routes, the API, the marketing import funnel and any
  * mycadet.ai URL. And the cloud-only in-app surfaces above.
  *
  * Everything else is daemon-served and works on a local session, including

@@ -1,7 +1,7 @@
 /**
  * Bound platform identity (assistant, organization, user).
  *
- * Django maps an assistant API key to these ids via
+ * The cloud maps an assistant API key to these ids via
  * `POST /v1/internal/assistants/validate/`. Resolution reads the in-memory
  * overrides the validate response populates — nothing else. When the bound
  * ids are empty, or the

@@ -8,19 +8,10 @@
     "adding": "正在新增…",
     "tryAgain": "再試一次",
     "remove": "移除 {value}",
-    "logIn": "登入",
     "loginToUse": "登入以使用",
     "downloadMacOSApp": "下載 macOS 應用程式",
     "downloadWindowsApp": "下載 Windows 應用程式",
     "claim": "認領"
-  },
-  "welcome": {
-    "title": "歡迎使用 Cadet",
-    "body": "您的專屬智慧助理近在咫尺。",
-    "continueWithoutAccount": "不登入繼續"
-  },
-  "startScreen": {
-    "createAssistant": "建立您的助理"
   },
   "hostingScreen": {
     "title": "託管",
@@ -138,7 +129,6 @@
     "hobbiesLabel": "有什麼嗜好嗎？",
     "hobbiesPlaceholder": "汽車、書籍、種植番茄？"
   },
-
   "existingAssistantStep": {
     "titleNamed": "{name} 已啟動並正在執行",
     "title": "您的助理已啟動並正在執行",
@@ -149,7 +139,6 @@
     "redoNamed": "重新開始並重建 {name} 的個性",
     "redo": "重新開始並重建其個性"
   },
-
   "lookingYouUpStep": {
     "searching": "正在搜尋網路以了解您…",
     "readingProfiles": "正在閱讀公開個人資料…",
@@ -200,7 +189,6 @@
       }
     }
   },
-
   "authErrors": {
     "genericFailure": "發生錯誤。請再試一次。",
     "signupClosed": "很抱歉，Cadet 目前不接受新用戶註冊。歡迎稍後再試。",

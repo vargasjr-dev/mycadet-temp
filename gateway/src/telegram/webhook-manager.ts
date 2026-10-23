@@ -14,7 +14,7 @@ import { resolveCloudAssistantIdOrUndefined } from "../cloud-identity.js";
 const log = getLogger("webhook-manager");
 const TELEGRAM_CALLBACK_PATH = "webhooks/telegram";
 const TELEGRAM_CALLBACK_TYPE = "telegram";
-/** The registry and the gateway route hold the path with its leading slash; Django's callback registration takes it without. */
+/** The registry and the gateway route hold the path with its leading slash; the cloud's callback registration takes it without. */
 const TELEGRAM_WEBHOOK_INGRESS_PATH = `/${TELEGRAM_CALLBACK_PATH}`;
 
 interface WebhookInfo {
@@ -91,7 +91,7 @@ async function registerManagedTelegramCallbackRoute(
 
   // Self-hosted assistants send their public ingress URL so the cloud
   // can register a callback that points at this gateway. Cloud pods may
-  // also include it; Django ignores a client-provided base for those.
+  // also include it; The cloud ignores a client-provided base for those.
   const ingressUrl = readIngressBaseUrl(caches);
 
   const requestBody: Record<string, string> = {

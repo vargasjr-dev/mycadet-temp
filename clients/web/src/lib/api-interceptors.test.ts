@@ -310,7 +310,7 @@ describe("api-interceptors / Electron session-token header", () => {
 // The cloud client uses the segment allowlist — only explicitly
 // listed segments are rewritten. Platform-owned routes like
 // `system-events/`, `terminal/`,
-// `doctor/` fall through to Django.
+// `doctor/` fall through to the cloud.
 //
 // These tests pin the invariants that make that handoff safe:
 //   - URL origin gets swapped to the registered ingress.
@@ -521,13 +521,12 @@ describe("api-interceptors / self-hosted rewriting", () => {
       "system-events",
       "terminal",
       "doctor",
-      "release-channel",
       "domains",
       "email-addresses",
       "oauth",
-      // `/a2a/invites/redeem` is a cloud broker (Django) route.
+      // `/a2a/invites/redeem` is a cloud broker route.
       "a2a",
-      // Device and Live Activity token registration is Django-owned. Cloud
+      // Device and Live Activity token registration is cloud-owned. Cloud
       // and local-with-ingress keep the session path; remote-gateway
       // authorizes these separately rather than rewriting them here.
       "push-tokens",
@@ -655,7 +654,7 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
 //
 // Contact-family paths (`contacts`, `contact-channels`) are forwarded to
 // the ingress prefix-stripped — `/v1/assistants/{id}/<rest>` becomes
-// `/v1/<rest>` — matching what cloud's Django RuntimeProxyView delivers
+// `/v1/<rest>` — matching what cloud's runtime proxy delivers
 // to the gateway, which serves the family on its flat control-plane
 // routes. Both interceptor entry points (platform client and daemon
 // client) converge on the same flat path; every other segment keeps

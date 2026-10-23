@@ -103,7 +103,7 @@ export type ChatAttachment =
 const STORAGE_KEY_PREFIX = "cadet:chatDrafts:";
 
 /**
- * Size limit enforced on the client before we attempt an upload. The Django
+ * Size limit enforced on the client before we attempt an upload. The cloud
  * backend caps attachments at 50 MB (`_MAX_ATTACHMENT_BYTES`) — we use the same
  * value here so the UI can reject oversized files immediately instead of
  * round-tripping the upload just to surface an error.

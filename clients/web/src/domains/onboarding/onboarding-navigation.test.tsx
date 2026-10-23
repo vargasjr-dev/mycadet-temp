@@ -27,6 +27,10 @@ import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination
 import { routes } from "@/utils/routes";
 
 const navigateMock = mock((_to: string, _opts?: unknown) => {});
+const hardNavigateMock = mock((_to: string) => {});
+mock.module("@/lib/auth/hard-navigate", () => ({
+  hardNavigate: hardNavigateMock,
+}));
 let searchParamsValue = new URLSearchParams();
 
 mock.module("react-router", () => ({
@@ -123,8 +127,6 @@ mock.module("@mycadet/design-library/components/input", () => ({
   Input: () => null,
 }));
 
-const { WelcomeScreen } =
-  await import("@/domains/onboarding/pages/welcome-screen");
 const { HostingScreen } =
   await import("@/domains/onboarding/pages/hosting-screen");
 const { ApiKeyScreen } =
@@ -149,24 +151,8 @@ describe("onboarding funnel history contract", () => {
   });
   afterEach(cleanup);
 
-  test("WelcomeScreen replaces on the way into the funnel", () => {
-    render(<WelcomeScreen />);
-    click("Continue without account");
-
-    const { to, opts } = navigatedWith();
-    expect(to).toBe(routes.onboarding.hosting);
-    expect(opts).toEqual({ replace: true });
-  });
-
-  test("WelcomeScreen replaces on the way to the assistant too", () => {
-    localAssistants = true;
-    render(<WelcomeScreen />);
-    click("Continue without account");
-
-    const { to, opts } = navigatedWith();
-    expect(to).toBe(routes.assistant);
-    expect(opts).toEqual({ replace: true });
-  });
+  // The WelcomeScreen cases moved to the app bundle with the screen — its
+  // replace-on-entry contract is covered by the app's own onboarding tests.
 
   test("HostingScreen replaces going forward", () => {
     render(<HostingScreen />);
@@ -181,13 +167,14 @@ describe("onboarding funnel history contract", () => {
 
   // The in-screen Back affordances have to replace too: a pushed back-step is
   // an entry the user can then Back INTO after finishing.
-  test("HostingScreen replaces going back", () => {
+  test("HostingScreen bounces back to the app-owned welcome", () => {
     render(<HostingScreen />);
     click("Back");
 
-    const { to, opts } = navigatedWith();
-    expect(to).toBe(routes.welcome);
-    expect(opts).toEqual({ replace: true });
+    // The predecessor moved to the app bundle
+    // (`/account/onboarding/welcome`) — the Back handoff is a cross-bundle
+    // full-page navigation, not a client-side replace.
+    expect(hardNavigateMock).toHaveBeenCalledWith(routes.welcome);
   });
 
   test("ApiKeyScreen replaces in both directions", () => {

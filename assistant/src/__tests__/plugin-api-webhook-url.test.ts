@@ -130,7 +130,7 @@ describe("resolveWebhookUrl", () => {
   });
 
   test("hands the vendor a URL with a trailing slash", async () => {
-    // Django in front of managed callbacks canonicalizes onto `/`. A vendor
+    // The cloud in front of managed callbacks canonicalizes onto `/`. A vendor
     // given the slashless spelling is 301'd, and clients that follow a 301
     // on POST typically retry as GET and drop the body.
     const spy = spyOn(registration, "resolveCallbackUrl").mockResolvedValue(

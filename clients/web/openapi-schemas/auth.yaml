@@ -727,7 +727,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ConfigurationResponse'
-      description: 'The django-allauth configuration.
+      description: 'The allauth configuration.
 
         '
     EmailAddresses:
@@ -1097,7 +1097,7 @@ components:
       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdW
       type: string
     AccountConfiguration:
-      description: 'Configuration of the Django `allauth.account` app.
+      description: 'Configuration of the `allauth.account` app.
 
         '
       properties:
@@ -1631,7 +1631,7 @@ components:
       - code
       type: object
     MFAConfiguration:
-      description: 'Configuration of the Django `allauth.mfa` app.
+      description: 'Configuration of the `allauth.mfa` app.
 
         '
       properties:
@@ -2057,7 +2057,7 @@ components:
         - password
         type: object
     SocialAccountConfiguration:
-      description: 'Configuration of the Django `allauth.socialaccount` app.
+      description: 'Configuration of the `allauth.socialaccount` app.
 
         '
       properties:
@@ -2135,7 +2135,7 @@ components:
       - is_staff
       type: object
     UserSessionsConfiguration:
-      description: 'Configuration of the Django `allauth.usersessions` app.
+      description: 'Configuration of the `allauth.usersessions` app.
 
         '
       properties:
@@ -2242,12 +2242,12 @@ components:
       - request_options
       type: object
 externalDocs:
-  description: The django-allauth project.
+  description: The allauth project.
   url: http://allauth.org
 info:
   contact:
     email: info@allauth.org
-  description: "# Introduction\n\nWelcome to the django-allauth API specification.\
+  description: "# Introduction\n\nWelcome to the allauth API specification.\
     \ This API is intended to be\nconsumed by two different kind of clients:\n\n-\
     \ Web applications running in a **browser** context. For example, a\n  single-page\
     \ React application, to which the end user can navigate using a web\n  browser.\n\
@@ -2279,7 +2279,7 @@ info:
     \ those sessions.\n\n\n# Browser Usage\n\nFor web applications running in a browser,\
     \ routing needs to be setup correctly\nsuch that the sessions initiated at the\
     \ backend are accessible in the frontend.\n\n## Routing\n\nWhen using the API\
-    \ in a browser context, regular Django sessions are used, along\nwith the usual\
+    \ in a browser context, regular sessions are used, along\nwith the usual\
     \ session cookies. There are several options for setting up the\nrouting of your\
     \ application.\n\n\n###  Single Domain Routing\n\nWith single domain, path-based\
     \ routing, both your frontend and backend are\nserved from the same domain, for\
@@ -2289,7 +2289,7 @@ info:
     \ domains.  However, as session cookies are used, these different\ndomains must\
     \ share common main domain.\n\nFor example, you may use `app.project.org` for\
     \ the frontend, which\ninterfaces with the backend over at `backend.project.org`.\
-    \  In this\nsetup, Django will need to be configured with:\n\n```\nSESSION_COOKIE_DOMAIN\
+    \  In this\nsetup, The server will need to be configured with:\n\n```\nSESSION_COOKIE_DOMAIN\
     \ = \"project.org\"\nCSRF_COOKIE_DOMAIN = \"project.org\"\n```\n\nIf your organization\
     \ hosts unrelated applications, for example, a CMS for\nmarketing purposes, on\
     \ the top level domain (`project.org`), it is not advisable\nto set the session\
@@ -2318,11 +2318,11 @@ info:
     \ case having a\n stateless token, possibly a JWT encoding the user ID, might\
     \ be a good fit.\n\nIn this API and its implementation no assumptions, and no\
     \ (limiting) design\ndecisions are made in this regard. The token strategy of\
-    \ django-allauth is\npluggable, such that you can expose your own access token\
+    \ allauth is\npluggable, such that you can expose your own access token\
     \ when the user\nauthenticates. As for as the API specification is concerned,\
     \ the access token\nwill appear in the response of metadata (`meta.access_token`)\
     \ of a successful\nauthentication request. How you can customize the token strategy\
-    \ can be found\nover at the documentation of the `allauth.headless` Django application.\n\
+    \ can be found\nover at the documentation of the `allauth.headless` application.\n\
     \n\n# Responses\n\nUnless documented otherwise, responses are objects with the\
     \ following\nproperties:\n- The `status`, matching the HTTP status code.\n- Data,\
     \ if any, is returned as part of the `data` key.\n- Metadata, if any, is returned\
@@ -2346,7 +2346,7 @@ info:
     \ over a third-party provider retrieved elsewhere (`provider_token`).\n- Login\
     \ using a special code (`login_by_code`).\n- Login using a passkey (`mfa_login_webauthn`).\n\
     - Signup using a passkey (`mfa_signup_webauthn`).\n\nDepending on the state of\
-    \ the account, and the configuration of django-allauth, the flows above\ncan either\
+    \ the account, and the configuration of allauth, the flows above\ncan either\
     \ lead to becoming directly authenticated, or, to followup flows:\n- Provider\
     \ signup (`provider_signup`).\n- Email verification (`verify_email`).\n- Phone\
     \ verification (`phone_email`).\n- Two-factor authentication required (TOTP, recovery\
@@ -2355,10 +2355,10 @@ info:
     \ when sensitive actions\nare performed. The re-authentication flows are the following:\n\
     - Re-authenticate using password (`reauthenticate`).\n- Re-authenticate using\
     \ a 2FA authenticator (TOTP, recovery codes, or WebAuthn) (`mfa_reauthenticate`).\n\
-    \n\n# Security Considerations\n\n## Input Sanitization\n\nThe Django framework,\
+    \n\n# Security Considerations\n\n## Input Sanitization\n\nThe framework,\
     \ by design, does *not* perform input sanitization. For\nexample, there is nothing\
     \ preventing end users from signing up using `<script>`\nor `Robert'); DROP TABLE\
-    \ students` as a first name. Django relies on its\ntemplate language for proper\
+    \ students` as a first name. It relies on its\ntemplate language for proper\
     \ escaping of such values and mitigate any XSS\nattacks.\n\nAs a result, any `allauth.headless`\
     \ client **must** have proper XSS protection\nin place as well. Be prepared that,\
     \ for example, the WebAuthn endpoints could\nreturn authenticator names as follows:\n\
@@ -2367,7 +2367,7 @@ info:
   license:
     name: MIT
     url: https://opensource.org/license/mit
-  title: 'django-allauth: Headless API'
+  title: 'allauth: Headless API'
   version: '1'
 openapi: 3.0.3
 paths:
@@ -2750,7 +2750,7 @@ paths:
     get:
       description: 'There are many configuration options that alter the functionality
 
-        and behavior of django-allauth, some of which can also impact the
+        and behavior of allauth, some of which can also impact the
 
         frontend. Therefore, relevant configuration options are exposed via
 
@@ -2770,7 +2770,7 @@ paths:
       tags:
       - Configuration
 tags:
-- description: 'Exposes information on the configuration of django-allauth.
+- description: 'Exposes information on the configuration of allauth.
 
     '
   name: Configuration

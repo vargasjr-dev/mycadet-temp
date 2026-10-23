@@ -1,7 +1,7 @@
 /**
  * Best-effort upstream OAuth token revocation.
  *
- * Mirrors the cloud's `try_revoke_token` (django/app/assistant/oauth/providers/base.py).
+ * Mirrors the cloud's `try_revoke_token`.
  * The HTTP shape is fixed: POST + application/x-www-form-urlencoded body, no auth headers
  * (credentials are expected to live in the body via {access_token}/{client_id} substitution),
  * 10 second timeout, all errors swallowed and logged as warnings.

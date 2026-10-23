@@ -6,7 +6,7 @@ app, so every public URL and asset lives under the `/docs` prefix.
 
 ## Development
 
-The app is self-contained: no platform environment (`vel up`, Django) is
+The app is self-contained: no platform environment is
 required. The only network dependency is the releases page, which fetches
 published release notes from the public `mycadet.ai` API at request time
 (override with `RELEASES_API_URL`) and renders an empty list if unreachable.

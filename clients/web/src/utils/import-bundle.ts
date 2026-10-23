@@ -2,7 +2,7 @@
  * Import a `.cadet` bundle file into the assistant daemon.
  *
  * Sends the raw file bytes as `application/octet-stream`. We use
- * octet-stream (not multipart) because the Django wildcard proxy only
+ * octet-stream (not multipart) because the cloud wildcard proxy only
  * forwards `application/octet-stream` as raw binary — multipart is
  * parsed by DRF which drops the file from the forwarded body.
  */

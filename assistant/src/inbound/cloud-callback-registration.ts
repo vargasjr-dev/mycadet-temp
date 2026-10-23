@@ -166,7 +166,7 @@ export async function registerCallbackRoute(
 
 /**
  * Self-hosted assistants must send the public ingress URL when registering
- * with the cloud. Cloud pods omit it: Django ignores client-provided
+ * with the cloud. Cloud pods omit it: the cloud ignores client-provided
  * bases and always uses the cloud callback URL.
  */
 function resolveSelfHostedCallbackBaseUrl(): string | undefined {

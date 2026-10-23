@@ -91,7 +91,8 @@
     "title": "Добро пожаловать в Cadet",
     "body": "Личный интеллект уже в одном шаге.",
     "cancel": "Отмена",
-    "logIn": "Войти"
+    "logIn": "Войти",
+    "continueWithoutAccount": "Continue without account"
   },
   "selectAssistantScreen": {
     "listAriaLabel": "Ассистенты",
@@ -169,5 +170,8 @@
     "retire": "Отключить ассистента",
     "repairFailed": "Не удалось восстановить. Попробуйте снова.",
     "retireFailed": "Не удалось удалить ассистента. Попробуйте снова."
+  },
+  "startScreen": {
+    "createAssistant": "Create your assistant"
   }
 }

@@ -36,8 +36,8 @@ export function toDaemonGroupBy(
   }
 }
 
-// Maps the frontend dimension to the Django billing usage group_by wire format.
-// The Django routes are /v1/organizations/billing/usage/{series,totals,breakdown}.
+// Maps the frontend dimension to the cloud billing usage group_by wire format.
+// The cloud routes are /v1/organizations/billing/usage/{series,totals,breakdown}.
 export function toBillingGroupBy(
   d: LlmUsageDimension,
 ): "model" | "llm_call_site" | "inference_profile" {

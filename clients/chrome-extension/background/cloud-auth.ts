@@ -12,14 +12,14 @@
  *      the extension.
  *   4. Exchange the authorization code at WorkOS as a public client.
  *   5. Swap the WorkOS access token for a cloud session token via allauth's
- *      headless provider-token endpoint (`meta.session_token`, the Django
+ *      headless provider-token endpoint (`meta.session_token`, the cloud
  *      session key).
  *
  * The resulting session token is stored in `chrome.storage.local` and sent as
  * `X-Session-Token` on platform API calls (SameSite=Lax prevents session
  * cookies from being sent cross-site from the extension service worker).
  *
- * The legacy `/accounts/chrome-extension/start` Django endpoint is no longer
+ * The legacy `/accounts/chrome-extension/start` endpoint is no longer
  * used by this client; it remains alive server-side for older extension
  * versions.
  */
@@ -75,7 +75,7 @@ export interface CloudSession {
   /** The user's active organization ID (first org from the API). */
   organizationId: string | null;
   /**
-   * Allauth session token (= Django session key) obtained by exchanging the
+   * Allauth session token (= cloud session key) obtained by exchanging the
    * WorkOS access token at the headless provider-token endpoint.  Sent as
    * X-Session-Token on platform API calls because SameSite=Lax prevents
    * session cookies from being sent cross-site from the extension service

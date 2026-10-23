@@ -249,9 +249,8 @@ const SecretReadResponseSchema = z
   })
   .catch({ found: false });
 
-const ReleaseChannelResponseSchema = z.object({
+const AssistantDetailResponseSchema = z.object({
   current_release_version: z.string().nullable().optional(),
-  release_channel: z.string().optional(),
 });
 
 const OrganizationListResponseSchema = z.object({
@@ -756,7 +755,6 @@ export async function fetchCloudAssistants(
 
 export interface CloudAssistantDetail {
   currentReleaseVersion: string | null;
-  releaseChannel: "stable" | "preview";
 }
 
 /**
@@ -780,13 +778,12 @@ export async function fetchAssistantDetail(
 
     if (!response.ok) return null;
 
-    const parsed = ReleaseChannelResponseSchema.safeParse(
+    const parsed = AssistantDetailResponseSchema.safeParse(
       await response.json(),
     );
     const body = parsed.success ? parsed.data : {};
     return {
       currentReleaseVersion: body.current_release_version ?? null,
-      releaseChannel: body.release_channel === "preview" ? "preview" : "stable",
     };
   } catch {
     return null;

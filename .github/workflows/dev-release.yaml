@@ -3,15 +3,12 @@ name: Dev Release
 on:
   # The cloud drives releases by dispatching this workflow.
   workflow_dispatch: {}
-  schedule:
-    - cron: "0 9 * * *"
 
 concurrency:
   group: dev-release
-  # Queue instead of cancel: the scheduled fire must not kill an
-  # in-flight manual release mid-publish. A queued scheduled run is cheap —
-  # its gate re-checks freshness and bails as a green no-op if the manual
-  # run already shipped the tip.
+  # Queue instead of cancel: an overlapping fire must not kill an
+  # in-flight release mid-publish. Overlapping runs ship distinct
+  # timestamped versions and the sync ships the newest.
   cancel-in-progress: false
 
 env:
@@ -20,68 +17,7 @@ env:
   CREDENTIAL_EXECUTOR_IMAGE_NAME: mycadet-credential-executor-dev
 
 jobs:
-  should-release:
-    # Gate for the scheduled daily fire: bail as a green no-op unless main
-    # has commits the last successful dev release didn't already ship (a
-    # failed release counts as unshipped, so the next fire retries it).
-    # Manual
-    # dispatches bypass the freshness checks and always release — but the
-    # JOB itself must still RUN, never skip: a skipped job poisons every
-    # environment:dev job transitively downstream of it (GitHub skips those
-    # even through successful intermediates — runs 53/54/55), which
-    # green-no-ops the whole release. Every other job in this workflow
-    # needs this one; on schedule the proceed=false path still skips them
-    # via their own needs cascade.
-    if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    permissions:
-      contents: read
-      actions: read
-    outputs:
-      proceed: ${{ steps.gate.outputs.proceed }}
-    steps:
-      - name: Schedule gate (fresh commits on main)
-        id: gate
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ "${{ github.event_name }}" != "schedule" ]; then
-            echo "proceed=true" >> "$GITHUB_OUTPUT"
-            echo "RELEASE: manual dispatch always releases."
-            exit 0
-          fi
-
-          REPO="${{ github.repository }}"
-          TIP=$(gh api "repos/${REPO}/commits/main" --jq '.sha')
-          echo "main tip: ${TIP}"
-
-          # Ship only when the last successful dev release didn't already
-          # cover this tip. No queued-run guard: it counted THIS run (the
-          # run status still reads "queued" seconds into job start), so the
-          # schedule skipped itself forever — run 39435991306 exited in 10s
-          # that way. Overlapping fires ship distinct timestamped versions
-          # and the sync ships the newest; nothing needs guarding.
-          LAST=$(gh run list --repo "${REPO}" --workflow=dev-release.yaml \
-                   --status=completed --limit=30 --json conclusion,headSha \
-                   --jq '[.[] | select(.conclusion == "success")][0].headSha // ""')
-          if [ -n "${LAST}" ] && [ "${LAST}" = "${TIP}" ]; then
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "SKIP: main tip ${TIP} was already shipped by the last successful dev release — nothing new to release."
-            exit 0
-          fi
-
-          echo "proceed=true" >> "$GITHUB_OUTPUT"
-          echo "RELEASE: main tip ${TIP} is newer than the last successful dev release (${LAST:-none})."
-
-  # ── Skip-if-idle gate ───────────────────────────────────────────────────
   compute-version:
-    # !cancelled() is load-bearing: on manual dispatch should-release SKIPS
-    # (schedule-only gate), and GitHub's default rule skips any job whose
-    # need was skipped — without it the whole run cascades to a green no-op
-    # (runs 53/54 on 10/17).
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
@@ -107,8 +43,6 @@ jobs:
   # ── CI Checks (gate image builds) ───────────────────────────────────────
 
   ci-assistant-lint:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -134,8 +68,6 @@ jobs:
         working-directory: assistant
 
   ci-assistant-types:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -163,8 +95,6 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-assistant-tests:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -198,8 +128,6 @@ jobs:
           TEST_SHARD: "${{ matrix.shard }}/8"
 
   ci-gateway:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -226,8 +154,6 @@ jobs:
         working-directory: gateway
 
   ci-credential-executor:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -250,8 +176,6 @@ jobs:
         working-directory: credential-executor
 
   ci-cli:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -274,8 +198,6 @@ jobs:
         working-directory: cli
 
   ci-web-lint:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -298,8 +220,6 @@ jobs:
         working-directory: clients/web
 
   ci-web-types:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -324,8 +244,6 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=8192
 
   ci-web-tests:
-    needs: should-release
-    if: ${{ !cancelled() && (github.event_name != 'schedule' || needs.should-release.outputs.proceed == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:

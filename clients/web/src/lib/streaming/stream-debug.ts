@@ -65,7 +65,7 @@ export interface SseDebugClient {
   /**
    * Epoch ms of the FIRST frame of any kind, data or keepalive. Isolates
    * connect latency from stream silence: a late `firstFrameAt` means the
-   * Django/vembda/pod connect was slow, not that the stream went quiet.
+   * cloud/vembda/pod connect was slow, not that the stream went quiet.
    */
   firstFrameAt: number | null;
   /**

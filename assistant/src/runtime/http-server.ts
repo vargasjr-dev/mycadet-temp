@@ -152,7 +152,7 @@ const PAGES_PATH_RE = /^\/pages\/[^/]+$/;
 function routerEndpointForPath(path: string): string | null {
   if (path.startsWith("/v1/")) {
     // Strip trailing slashes so routes match regardless of whether the caller
-    // includes one (e.g. cloud proxy paths use Django's trailing-slash
+    // includes one (e.g. cloud proxy paths use the cloud's trailing-slash
     // convention, so the gateway may forward paths with a trailing /).
     return path.slice("/v1/".length).replace(/\/$/, "");
   }

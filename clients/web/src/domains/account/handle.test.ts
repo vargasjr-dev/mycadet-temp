@@ -5,7 +5,7 @@
  * vocabulary by design, so any divergence between these two files is a
  * smell worth investigating.
  *
- * The actual HTTP path is exercised end-to-end by the Django integration
+ * The actual HTTP path is exercised end-to-end by the cloud api integration
  * tests on the cloud side. Here we just verify the client wrappers map
  * server responses to the right discriminator variant.
  */
@@ -24,7 +24,7 @@ import {
 
 describe("HANDLE_ERROR_COPY", () => {
   test("covers every backend error code", () => {
-    // Mirror of constants in django/app/assistant/handle_validation.py.
+    // Mirror of the cloud api's handle-validation constants.
     // Keep in sync — adding a new code on the backend requires a copy
     // string here. The set is identical to the user-handle surface by
     // design (same vocabulary, same copy strings).

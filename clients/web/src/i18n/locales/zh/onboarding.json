@@ -8,19 +8,10 @@
     "adding": "正在添加…",
     "tryAgain": "重试",
     "remove": "移除 {value}",
-    "logIn": "登录",
     "loginToUse": "登录以使用",
     "downloadMacOSApp": "下载 macOS 应用",
     "downloadWindowsApp": "下载 Windows 应用",
     "claim": "认领"
-  },
-  "welcome": {
-    "title": "欢迎使用 Cadet",
-    "body": "您的专属智能助手触手可及。",
-    "continueWithoutAccount": "不登录继续"
-  },
-  "startScreen": {
-    "createAssistant": "创建您的助手"
   },
   "hostingScreen": {
     "title": "托管",
@@ -138,7 +129,6 @@
     "hobbiesLabel": "有什么爱好吗？",
     "hobbiesPlaceholder": "汽车、书籍、种植番茄？"
   },
-
   "existingAssistantStep": {
     "titleNamed": "{name} 已启动并正在运行",
     "title": "您的助手已启动并正在运行",
@@ -149,7 +139,6 @@
     "redoNamed": "重新开始并重建 {name} 的个性",
     "redo": "重新开始并重建其个性"
   },
-
   "lookingYouUpStep": {
     "searching": "正在搜索网络以了解您…",
     "readingProfiles": "正在阅读公开资料…",
@@ -200,7 +189,6 @@
       }
     }
   },
-
   "authErrors": {
     "genericFailure": "发生错误。请重试。",
     "signupClosed": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",

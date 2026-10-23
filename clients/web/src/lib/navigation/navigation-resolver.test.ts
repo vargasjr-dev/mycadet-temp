@@ -157,18 +157,9 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("allows unauthenticated local-mode user on onboarding route", () => {
-      expect(
-        guard(
-          s({
-            isAuthenticated: false,
-            isLocalClient: true,
-            hasAssistants: false,
-          }),
-          "/assistant/welcome",
-        ),
-      ).toEqual(ALLOW);
-    });
+    // The standalone welcome route moved to the app bundle
+    // (/account/onboarding/welcome) — web's route table never sees it, so
+    // there is no unauthenticated-allow pin to keep for it here.
 
     test("redirects unauthenticated local-mode fresh user to welcome", () => {
       expect(
@@ -179,7 +170,7 @@ describe("resolveNavigation", () => {
             hasAssistants: false,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/onboarding/welcome" });
     });
 
     test("redirects unauthenticated local-mode returning user (has assistants) to the assistant", () => {
@@ -228,10 +219,8 @@ describe("resolveNavigation", () => {
     });
 
     test("redirects non-local user from local-only onboarding screen", () => {
-      expect(guard(s({ isLocalClient: false }), "/assistant/welcome")).toEqual({
-        action: "redirect",
-        to: "/assistant",
-      });
+      // The welcome pin moved to the app bundle with its route — web's
+      // local-only screens are hosting and api-key only now.
       expect(
         guard(s({ isLocalClient: false }), "/assistant/onboarding/hosting"),
       ).toEqual({ action: "redirect", to: "/assistant" });
@@ -380,7 +369,7 @@ describe("resolveNavigation", () => {
             cloudSession: "absent",
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/onboarding/welcome" });
     });
 
     test("allows local mode with assistants", () => {
@@ -523,7 +512,7 @@ describe("resolveNavigation", () => {
             consentHydrated: false,
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/onboarding/welcome" });
       // ...and stale-consent enforcement decides immediately: the local paths
       // that enforce consent hydrate synchronously during session init.
       expect(
@@ -937,7 +926,7 @@ describe("resolveNavigation", () => {
           }),
           "/assistant",
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/welcome" });
+      ).toEqual({ action: "redirect", to: "/account/onboarding/welcome" });
     });
 
     test("redirects to consent in platform mode", () => {
@@ -1183,7 +1172,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/welcome",
+        to: "/account/onboarding/welcome",
       });
     });
   });
@@ -1341,12 +1330,6 @@ describe("resolveNavigation", () => {
   // resolveLoginReturnTo
   // -----------------------------------------------------------------------
   describe("resolveLoginReturnTo", () => {
-    test("returns the assistant from welcome when assistants exist", () => {
-      expect(
-        resolveLoginReturnTo(s({ hasAssistants: true }), "/assistant/welcome"),
-      ).toBe("/assistant");
-    });
-
     test("returns hosting from welcome when no assistants", () => {
       expect(
         resolveLoginReturnTo(

@@ -1,12 +1,10 @@
 /**
- * CSRF token management for Django-backed requests.
+ * CSRF token management for cloud-backed requests.
  *
- * The browser's cookie jar holds the CSRF token set by Django. Mutating
+ * The browser's cookie jar holds the CSRF token set by the cloud. Mutating
  * requests (POST, PUT, PATCH, DELETE) must send it back in the
- * `X-CSRFToken` header so Django's CSRF middleware can verify the request
+ * `X-CSRFToken` header so the cloud's CSRF middleware can verify the request
  * wasn't forged.
- *
- * Reference: https://docs.djangoproject.com/en/5.1/howto/csrf/#acquiring-the-token-if-csrf-use-sessions-and-csrf-cookie-httponly-are-not-in-use
  */
 import { getAllauthByClientV1AuthSession } from "@/generated/auth/sdk.gen";
 import { isGatewaySessionLive } from "@/lib/local-mode";
@@ -20,8 +18,8 @@ const CSRF_COOKIE_NAME = import.meta.env.PROD
  * Read the CSRF token from the browser cookie jar.
  *
  * When duplicate cookies exist (e.g. a stale host-specific cookie alongside
- * the domain cookie), return the last match to match Django's `SimpleCookie`
- * last-wins semantics.
+ * the domain cookie), return the last match to match the server's
+ * last-wins cookie semantics.
  */
 export function getCsrfToken(): string | undefined {
   const match = document.cookie

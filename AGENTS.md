@@ -297,9 +297,9 @@ The daemon must not invoke LLM providers at startup or on unconditional timers �
 
 ## Companion Repos
 
-- **[`mycadet-platform`](../mycadet-platform)** — Django backend that manages cloud-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: Python 3.14, Django, DRF, PostgreSQL, Redis/Valkey. See `../mycadet-platform/AGENTS.md` for development instructions.
+- **[`mycadet-cloud`](../mycadet-cloud)** — cloud api backend that manages cloud-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: TypeScript (Node), PostgreSQL (Drizzle). See `../mycadet-cloud/AGENTS.md` for development instructions.
 
-When making changes that could affect the cloud platform, review the sibling `../mycadet-platform` repo for compatibility and required follow-up updates. High-risk change areas include:
+When making changes that could affect the cloud platform, review the sibling `../mycadet-cloud` repo for compatibility and required follow-up updates. High-risk change areas include:
 
 - HTTP server behavior and API contracts.
 - Stored file and directory structure changes (workspace paths, on-disk formats, exports/imports, migrations).

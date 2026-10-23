@@ -443,8 +443,8 @@ function retryErrorType(error: unknown): string {
 
 /**
  * The cloud proxy's preflight guard rejects a model with no billing rate
- * card using a 400 whose body carries this phrase (django
- * `app/runtime_proxy/views.py`). It marks a model rename/retirement incident
+ * card using a 400 whose body carries this phrase (the cloud's
+ * runtime proxy). It marks a model rename/retirement incident
  * (a route problem, not a request problem), so it is fallback-eligible even
  * though 400s are otherwise final.
  */

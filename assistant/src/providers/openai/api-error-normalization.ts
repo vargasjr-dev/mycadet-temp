@@ -14,7 +14,7 @@ import {
 /**
  * Normalized view of an OpenAI-compatible `APIError`. The SDK reads
  * `error.message` and renders bodies it can't parse as "(no body)", so
- * Django `{"detail": "..."}` payloads from the cloud runtime proxy and
+ * Cloud `{"detail": "..."}` payloads from the cloud runtime proxy and
  * OpenRouter's nested `error.metadata.raw` get dropped. We capture the raw
  * non-2xx body in a `fetch` wrapper and reconstruct the useful fields here.
  */
@@ -153,7 +153,7 @@ const REQUEST_ID_HEADERS = [
 ] as const;
 
 // The OpenAI SDK keeps only the `.error` key of a parsed JSON error body and
-// discards the rest, so a Django-proxy `{ "detail": … }` payload never reaches
+// discards the rest, so a cloud-proxy `{ "detail": … }` payload never reaches
 // the thrown APIError. captureRawErrorBodyFetch stashes the raw body in a
 // WeakMap keyed by the response's headers object — which the SDK passes through
 // to `APIError.headers` by reference — so it stays correlated to its own
@@ -323,7 +323,7 @@ function extractBody(body: unknown): BodyDetails {
     return {};
   }
 
-  // OpenAI/OpenRouter nest under `error`; Django puts `detail` at the top.
+  // OpenAI/OpenRouter nest under `error`; the cloud puts `detail` at the top.
   // A plain `error: "string"` is the whole message but may still carry
   // sibling code/type/param, so fall through to the metadata extraction below.
   const err = asRecord(rec.error) ?? rec;
