@@ -7,8 +7,7 @@ import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import { routes } from "@app/utils/routes";
 
 /**
- * `/account/onboarding/welcome` — the local client's front door. Ported from
- * web's `/assistant/welcome` (bucket D of the unbundling plan): shares its
+ * `/account/onboarding/welcome` — the local client's front door. Shares its
  * screen with `/account/login`; the account this build doesn't require is what
  * makes the difference, so the second button walks past the login entirely.
  */
@@ -20,7 +19,9 @@ export function WelcomeScreen() {
     // `replace`, like every other step of the setup flow: the funnel occupies a
     // single history entry so a Back press can never re-enter it (see
     // `SETUP_NAVIGATE` in `onboarding-navigation.ts`).
-    if ((useLocalLockfileStore.getState().lockfile?.assistants ?? []).length > 0) {
+    if (
+      (useLocalLockfileStore.getState().lockfile?.assistants ?? []).length > 0
+    ) {
       void navigate(routes.assistant, SETUP_NAVIGATE);
     } else {
       void navigate(routes.onboarding.hosting, SETUP_NAVIGATE);

@@ -396,9 +396,6 @@ export const routeTree = [
                   },
                 ],
               },
-              // `onboarding/start` moved to the app bundle
-              // (`/account/onboarding/start`) — web's route is deleted and
-              // the app path is emitted by the resolver's welcome fork.
               {
                 path: "onboarding/hatching",
                 lazy: {

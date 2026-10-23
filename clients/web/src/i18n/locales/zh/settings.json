@@ -420,12 +420,8 @@
     "computeResourcesTitle": "计算与资源",
     "current": "当前",
     "customize": "自定义",
-    "dangerZoneTitle": "危险区域",
     "preferencesSubtitle": "自定义 Cadet 在此设备上的外观和行为。",
     "preferencesTitle": "偏好设置",
-    "retireAssistantDescription": "永久停用此助手并删除所有相关数据。",
-    "retireAssistantLoginNotice": "登录 Cadet 平台以停用此助手。",
-    "retireAssistantTitle": "停用助手",
     "switchAssistantSubtitle": "选择此设备连接的助手。",
     "switchAssistantTitle": "切换助手",
     "updateWindow": "更新窗口",
@@ -1027,9 +1023,6 @@
     "failStop": "停止助手失败。",
     "toastFailed": "重启助手失败。",
     "toastRestarting": "助手正在重启。"
-  },
-  "retireAssistant": {
-    "button": "停用助手"
   },
   "riskToleranceSettings": {
     "advanced": "高级",

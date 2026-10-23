@@ -140,21 +140,6 @@ function extractPathname(destination: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Login return-to
-// ---------------------------------------------------------------------------
-
-export function resolveLoginReturnTo(
-  state: NavigationState,
-  fromPath: string,
-): string {
-  // The welcome fork is gone: the local front door moved to the app bundle
-  // (`/account/onboarding/welcome`), so web never hosts it and its login
-  // return-to fork died with the route. The app's post-auth destination owns
-  // that fork now.
-  return fromPath;
-}
-
-// ---------------------------------------------------------------------------
 // Core resolver
 // ---------------------------------------------------------------------------
 
@@ -330,10 +315,6 @@ function enforceModeBoundary(
   state: NavigationState,
   path: string,
 ): NavigationDecision | null {
-  // (The standalone set died with the welcome route: the local front door
-  // moved to the app bundle's /account/onboarding/welcome, which web never
-  // serves, so there is no web-side mode boundary to enforce for it.)
-
   if (LOCAL_ONLY_ONBOARDING_PATHS.has(path) && !state.isLocalClient) {
     return { action: "redirect", to: routes.assistant };
   }

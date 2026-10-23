@@ -426,12 +426,8 @@
     "computeResourcesTitle": "Compute & Resources",
     "current": "Current",
     "customize": "Customize",
-    "dangerZoneTitle": "Danger Zone",
     "preferencesSubtitle": "Customize how Cadet looks and behaves on this device.",
     "preferencesTitle": "Preferences",
-    "retireAssistantDescription": "Permanently retire this assistant and delete all associated data.",
-    "retireAssistantLoginNotice": "Log in to Cadet Cloud to retire this assistant.",
-    "retireAssistantTitle": "Retire Assistant",
     "switchAssistantSubtitle": "Choose which assistant this device is connected to.",
     "switchAssistantTitle": "Switch Assistant",
     "updateWindow": "Update Window",
@@ -1118,9 +1114,6 @@
     "failStop": "Failed to stop assistant.",
     "toastFailed": "Failed to restart assistant.",
     "toastRestarting": "Assistant is restarting."
-  },
-  "retireAssistant": {
-    "button": "Retire Assistant"
   },
   "riskToleranceSettings": {
     "advanced": "Advanced",

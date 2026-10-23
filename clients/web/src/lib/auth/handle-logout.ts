@@ -1,5 +1,3 @@
-import type { NavigateFunction } from "react-router";
-
 import { getOnboardingEntrypoint } from "@/domains/onboarding/gate";
 import { stopWatch } from "@/domains/chat/watch/watch-controller";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
@@ -14,7 +12,7 @@ import { setMenuCloudSession } from "@/runtime/menu";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 
-export async function handleLogout(_navigate: NavigateFunction): Promise<void> {
+export async function handleLogout(): Promise<void> {
   if (isLocalClient()) {
     const active = getActiveAssistant();
     if (active && isLocalAssistant(active)) {
@@ -31,9 +29,9 @@ export async function handleLogout(_navigate: NavigateFunction): Promise<void> {
     // on the desktop of someone who has signed out of it.
     setAssistantName("");
     clearCompanionWorking();
-    // The local entrypoint is the app bundle's welcome screen now
-    // (`/account/onboarding/welcome`) — a cross-bundle target, so this must
-    // destroy the web JS context like the hosted branch's hard navigation does.
+    // The local entrypoint (/account/onboarding/welcome) renders in the app
+    // bundle: a cross-bundle target that must destroy this JS context, like
+    // the hosted branch's hard navigation does.
     hardNavigate(getOnboardingEntrypoint());
   } else {
     await useAuthStore.getState().logout();

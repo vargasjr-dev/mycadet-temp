@@ -151,9 +151,6 @@ describe("onboarding funnel history contract", () => {
   });
   afterEach(cleanup);
 
-  // The WelcomeScreen cases moved to the app bundle with the screen — its
-  // replace-on-entry contract is covered by the app's own onboarding tests.
-
   test("HostingScreen replaces going forward", () => {
     render(<HostingScreen />);
     click("Continue");

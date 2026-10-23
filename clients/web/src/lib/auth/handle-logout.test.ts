@@ -103,13 +103,13 @@ describe("the watch session when the user signs out", () => {
    * a real capture nothing draws.
    */
   test("is ended on the path that replaces the page", async () => {
-    await handleLogout(navigateMock as never);
+    await handleLogout();
 
     expect(stopWatchMock).toHaveBeenCalledTimes(1);
   });
 
   test("is ended before the navigation that would strand it", async () => {
-    await handleLogout(navigateMock as never);
+    await handleLogout();
 
     expect(at("stopWatch")).toBeLessThan(at("hardNavigate"));
   });
@@ -120,13 +120,13 @@ describe("the watch session when the user signs out", () => {
    * clear ran first.
    */
   test("is ended before the working claim is given up", async () => {
-    await handleLogout(navigateMock as never);
+    await handleLogout();
 
     expect(at("stopWatch")).toBeLessThan(at("clearCompanionWorking"));
   });
 
   test("waits for the sign-out itself, so nothing is torn down early", async () => {
-    await handleLogout(navigateMock as never);
+    await handleLogout();
 
     expect(at("logout")).toBeLessThan(at("stopWatch"));
   });

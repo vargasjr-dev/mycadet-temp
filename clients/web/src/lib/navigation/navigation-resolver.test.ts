@@ -4,7 +4,6 @@ import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination
 
 import {
   resolveNavigation,
-  resolveLoginReturnTo,
   type NavigationState,
   type NavigationDecision,
 } from "./navigation-resolver";
@@ -1323,26 +1322,6 @@ describe("resolveNavigation", () => {
           "/assistant/onboarding/hatching?skip_research=1",
         )}`,
       });
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // resolveLoginReturnTo
-  // -----------------------------------------------------------------------
-  describe("resolveLoginReturnTo", () => {
-    test("returns hosting from welcome when no assistants", () => {
-      expect(
-        resolveLoginReturnTo(
-          s({ hasAssistants: false }),
-          "/assistant/onboarding/hosting",
-        ),
-      ).toBe("/assistant/onboarding/hosting");
-    });
-
-    test("returns the same path for other non-welcome pages", () => {
-      expect(resolveLoginReturnTo(s({}), "/assistant/onboarding/hosting")).toBe(
-        "/assistant/onboarding/hosting",
-      );
     });
   });
 });

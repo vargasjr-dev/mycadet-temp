@@ -1,6 +1,6 @@
 import { LogIn, LogOut } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useLocation } from "react-router";
 
 import { useTranslation } from "@/i18n";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
@@ -47,7 +47,6 @@ export function SettingsLayout() {
   // daemon and works for every assistant. Billing management moved off web
   // (the cloud's account pages own it), so the label is just "Usage".
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   // Show Log Out when a cloud session exists, Log In otherwise.
   const hasCloudSession = useHasCloudSession();
   const { login } = useOnboardingLogin();
@@ -110,7 +109,7 @@ export function SettingsLayout() {
             id: "logout",
             label: t("sidebar.logout", "Log Out"),
             icon: LogOut,
-            onSelect: () => void handleLogout(navigate),
+            onSelect: () => void handleLogout(),
           }
         : {
             id: "login",
@@ -120,7 +119,7 @@ export function SettingsLayout() {
           },
     );
     return items;
-  }, [hasCloudSession, navigate, login, t]);
+  }, [hasCloudSession, login, t]);
 
   const pageTitle = useMemo(() => {
     if (pathname === routes.settings.root) {

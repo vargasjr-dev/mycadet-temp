@@ -9,16 +9,15 @@ export const routes = {
     privacy: "/assistant/onboarding/privacy",
     research: "/assistant/onboarding/research",
   },
-  // The local client's front door — ported from web's `/assistant/welcome`
-  // (web's copy is deleted; this path renders the app-owned screen).
+  // The local client's front door, rendered by the app's onboarding screens.
   welcome: "/account/onboarding/welcome",
   account: {
     root: "/account",
     consent: "/account/consent",
     // The pre-hatch onboarding front door, app-owned like the consent screens
-    // above. The remaining funnel steps (hosting, api-key, hatching, research)
-    // still render in the web bundle under /assistant/onboarding/* and are
-    // reached through the AssistantPage iframe mount.
+    // above. The provisioning steps (hosting, api-key, hatching, research)
+    // render in the web bundle under /assistant/onboarding/*, reached through
+    // the AssistantPage iframe mount.
     onboarding: {
       welcome: "/account/onboarding/welcome",
       start: "/account/onboarding/start",

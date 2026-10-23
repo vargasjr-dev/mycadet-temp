@@ -11,10 +11,8 @@ import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 
 /**
- * Platform onboarding welcome / front door. Ported from web's
- * `/assistant/onboarding/start` (bucket D of the unbundling plan) — now
- * `/account/onboarding/start`, rendered with the account screens' compact
- * chrome.
+ * Platform onboarding welcome / front door (`/account/onboarding/start`),
+ * rendered with the account screens' compact chrome.
  *
  * The in-SPA landing spot for "Back" in platform mode (its only happy-path
  * predecessor, hosting, is local-only, and the marketing host `/` would
