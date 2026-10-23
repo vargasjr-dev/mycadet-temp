@@ -313,6 +313,7 @@ export function upsertLockfileAssistant(
  * directly, one schema with no second allowlist to drift.
  */
 const HOST_OWNED_FIELDS = [
+  "cloud",
   "resources",
   "bearerToken",
   "watcherPid",
@@ -353,9 +354,9 @@ export function upsertRendererLockfileAssistant(
       return { ok: false, status: 400, error: "Invalid assistant metadata" };
     }
     const update: Record<string, unknown> = {};
-    for (const key of Object.keys(parsed.data)) {
+    for (const [key, value] of Object.entries(parsed.data)) {
       if (key in payload) {
-        update[key] = parsed.data[key];
+        update[key] = value;
       }
     }
     return upsertLockfileAssistant(lockfilePaths, update, activeAssistant);
