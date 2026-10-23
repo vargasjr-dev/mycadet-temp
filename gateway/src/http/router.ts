@@ -110,93 +110,109 @@ export function createRouter(
     const getRawPeerIp: GetRawPeerIp = () =>
       server?.requestIP(req)?.address ?? "unknown";
 
-    for (const route of routes) {
-      const matchResult = matchRoute(route, url.pathname, req.method);
-      if (!matchResult) continue;
+    const dispatchAt = async (pathname: string): Promise<Response | null> => {
+      for (const route of routes) {
+        const matchResult = matchRoute(route, pathname, req.method);
+        if (!matchResult) continue;
 
-      // Precondition guard (e.g. "is integration configured?")
-      if (route.precondition) {
-        const preconditionResponse = route.precondition();
-        if (preconditionResponse) return preconditionResponse;
+        // Precondition guard (e.g. "is integration configured?")
+        if (route.precondition) {
+          const preconditionResponse = route.precondition();
+          if (preconditionResponse) return preconditionResponse;
+        }
+
+        const auth = route.auth ?? "none";
+
+        switch (auth) {
+          case "none":
+          case "custom":
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+
+          case "edge": {
+            const { requireEdgeAuth } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeAuth(req, server);
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "edge-scoped": {
+            const { requireEdgeAuthWithScope } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeAuthWithScope(
+              req,
+              route.scope!,
+              server,
+            );
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "edge-guardian": {
+            const { requireEdgeGuardianAuth } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeGuardianAuth(req, server);
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "track-failures": {
+            return wrapWithAuthFailureTracking(
+              (r) =>
+                route.handler(r, matchResult.params, getClientIp, getRawPeerIp),
+              authRateLimiter,
+              getClientIp,
+              route.trackFailureStatuses,
+            )(req);
+          }
+        }
       }
 
-      const auth = route.auth ?? "none";
+      return null;
+    };
 
-      switch (auth) {
-        case "none":
-        case "custom":
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
+    const response = await dispatchAt(url.pathname);
+    if (response) return response;
 
-        case "edge": {
-          const { requireEdgeAuth } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeAuth(req, server);
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "edge-scoped": {
-          const { requireEdgeAuthWithScope } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeAuthWithScope(
-            req,
-            route.scope!,
-            server,
-          );
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "edge-guardian": {
-          const { requireEdgeGuardianAuth } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeGuardianAuth(req, server);
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "track-failures": {
-          return wrapWithAuthFailureTracking(
-            (r) =>
-              route.handler(r, matchResult.params, getClientIp, getRawPeerIp),
-            authRateLimiter,
-            getClientIp,
-            route.trackFailureStatuses,
-          )(req);
-        }
-      }
-    }
-
-    return null;
+    // The /v1 version prefix is optional: a dial without it that matches
+    // nothing raw gets one more look with the prefix re-added. Auth and
+    // params resolve against the versioned shape; the handler's `req` keeps
+    // the dial exactly as sent. The version digit leaves the URL path
+    // entirely once every caller migrates (the one-url plan's P7); until
+    // then both spellings are live. The unversioned WS upgrade paths (stt,
+    // watch, live-voice) still route versioned — their pre-router checks run
+    // before this router and move with the caller migration.
+    if (url.pathname.startsWith("/v1/") || url.pathname === "/") return null;
+    return dispatchAt(`/v1${url.pathname}`);
   };
 }
 
