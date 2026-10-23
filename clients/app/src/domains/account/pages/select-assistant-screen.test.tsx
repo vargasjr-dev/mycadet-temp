@@ -28,6 +28,22 @@ const originalConfig = Object.getOwnPropertyDescriptor(
   window,
   "__CADET_CONFIG__",
 );
+const originalLocation = Object.getOwnPropertyDescriptor(window, "location");
+// The chooser's hosting label follows the origin serving the bundle; tests
+// stub it to place rows in the cloud or self-hosted family.
+function stubLocation(origin: string): void {
+  const { protocol, hostname, host } = new URL(origin);
+  Object.defineProperty(window, "location", {
+    configurable: true,
+    value: {
+      protocol,
+      hostname,
+      host,
+      origin,
+      href: `${origin}/account/select-assistant`,
+    },
+  });
+}
 const routers: ReturnType<typeof createMemoryRouter>[] = [];
 // The retire mutation's csrf bootstrap reads this cookie; seed it so no
 // test fetch is spent (or delayed) on a session probe.
@@ -81,6 +97,9 @@ afterEach(() => {
     router.dispose();
   }
   request.mockReset();
+  if (originalLocation) {
+    Object.defineProperty(window, "location", originalLocation);
+  }
   if (originalConfig) {
     Object.defineProperty(window, "__CADET_CONFIG__", originalConfig);
   } else {
@@ -162,6 +181,7 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
 });
 
 test("rows render the cloud-hosted subtitle with a relative creation date", async () => {
+  stubLocation("https://app.mycadet.ai");
   request.mockResolvedValueOnce(
     Response.json({
       results: [
@@ -184,6 +204,19 @@ test("rows render the cloud-hosted subtitle with a relative creation date", asyn
   const withoutDate = screen.getByRole("radio", { name: /^Two/ });
   expect(withoutDate.textContent).toContain("Cloud-hosted");
   expect(withoutDate.textContent).not.toContain("Created");
+});
+
+test("rows on a non-cloud origin render the self-hosted subtitle", async () => {
+  // The test origin (localhost) stands in for a daemon-served bundle: its
+  // list rows are the machine's own assistants, not the cloud's.
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [{ id: "assistant-1", name: "One" }],
+    }),
+  );
+  setup();
+  const row = await screen.findByRole("radio", { name: /^One/ });
+  expect(row.textContent).toContain("Self-hosted");
 });
 
 test("arrow keys move focus across cards without selecting", async () => {

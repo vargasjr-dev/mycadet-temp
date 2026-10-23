@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { describeError } from "./describe-error";
 import {
   AssistantResolutionSchema,
   type AssistantResolution,
@@ -80,7 +81,9 @@ export function useAssistantRequest({
         },
         (error) => {
           if (!controller.signal.aborted) {
-            console.error("Assistant request failed:", error);
+            console.error(
+              `Assistant request failed: ${describeError(error)} (apiBaseUrl ${apiBaseUrl}, origin ${origin}, assistantId ${assistantId ?? "none"})`,
+            );
             clearTimeout(timer);
             settle({ status: "error" });
           }

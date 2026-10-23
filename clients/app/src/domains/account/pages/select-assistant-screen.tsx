@@ -14,6 +14,7 @@ import { AccountHeading } from "@app/components/account/account-form";
 import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
 import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
+import { isCadetDomain } from "@app/utils/domains";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
   isLocalModeHostAvailable,
@@ -43,16 +44,20 @@ import { routes } from "@app/utils/routes";
 import { formatRelativeDate } from "@app/utils/format-date";
 
 /**
- * The chooser lists cloud assistants plus remembered remote origins, so web's
- * assistantSubtitle hosting tree (paired, self-hosted, local) collapses to one
- * label here; web's other branches arrive with their own transports (chooser
- * roadmap steps 4-5).
+ * The chooser's rows come from the origin's own list endpoint, so the hosting
+ * label follows that origin's family: a mycadet.ai host lists the cloud's
+ * assistants, and any other origin is the user's own host serving its
+ * self-hosted ones. Web's other branches (paired, local lockfile entries)
+ * arrive with their own transports (chooser roadmap steps 4-5).
  */
-function assistantSubtitle(created: string | null | undefined): string {
+function assistantSubtitle(
+  hostingLabel: string,
+  created: string | null | undefined,
+): string {
   if (!created) {
-    return "Cloud-hosted";
+    return hostingLabel;
   }
-  return `Cloud-hosted · Created ${formatRelativeDate(created)}`;
+  return `${hostingLabel} · Created ${formatRelativeDate(created)}`;
 }
 
 /**
@@ -96,6 +101,9 @@ function DashedActionButton({
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
+  // The list endpoint answers from the origin serving this bundle: the
+  // cloud's rows on a mycadet.ai host, the machine's own rows on its daemon.
+  const hosted = isCadetDomain(window.location.hostname);
   const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
     id: string;
@@ -379,7 +387,12 @@ export function SelectAssistantScreen() {
                 />
               }
               title={assistant.name}
-              subtitle={assistantSubtitle(assistant.created)}
+              subtitle={assistantSubtitle(
+                hosted
+                  ? t("selectAssistantScreen.cloudHosted")
+                  : t("selectAssistantScreen.selfHosted"),
+                assistant.created,
+              )}
               removeMenu={
                 <RetireCardMenu
                   label={assistant.name}
