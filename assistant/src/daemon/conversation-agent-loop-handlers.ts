@@ -3001,6 +3001,29 @@ export async function handleMessageComplete(
     state.inflightWriters.delete(assistantMessageId);
   }
   state.assistantRowAwaitingFinalization = false;
+
+  // Mirror EVERY assistant row into the JSONL disk view as its content
+  // finalizes — intermediate tool_use turns included — so messages.jsonl
+  // stays 1-1 with the runtime transcript instead of surfacing only the
+  // turn's last row (previously ~99% of assistant tool-call turns were
+  // invisible on disk). Re-syncs of the same row upsert via messageId.
+  if (persisted) {
+    try {
+      const conv = getConversation(deps.ctx.conversationId);
+      if (conv != null) {
+        syncMessageToDisk(
+          deps.ctx.conversationId,
+          assistantMessageId,
+          conv.createdAt,
+        );
+      }
+    } catch (err) {
+      deps.rlog.warn(
+        { err, assistantMessageId },
+        "Failed to sync intermediate assistant message to disk view (non-fatal)",
+      );
+    }
+  }
   // The assistant row now holds the authoritative content (text + thinking +
   // tool_use blocks from `event.message`), and any drained tool-result rows
   // are durable. `lastStreamedContentSeq` is the last streamed text/thinking
