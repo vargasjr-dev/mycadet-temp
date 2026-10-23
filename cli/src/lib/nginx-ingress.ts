@@ -596,75 +596,27 @@ ${serverLocations}
 }
 
 /**
- * The gateway's /v1 API top-level segments that are also reachable at the
- * UNVERSIONED spelling: the edge forwards the dial and the gateway's router
- * resolves an absent /v1 prefix (P7 of the one-url plan — the version digit
- * leaves the URL path once every caller migrates). Excluded on purpose:
- *   - the sensitive pairing routes (denylisted above; their callers keep
- *     the versioned spelling);
- *   - `integrations` and `oauth`, where the gateway also serves different
- *     native unversioned routes — those namespaces are reconciled
- *     deliberately at the nuke, not silently here;
- *   - `assistant`, the serving mount the edge owns;
- *   - `healthz`, owned by the exact-location probe.
- * Derived from the gateway's route table (`gateway/src/index.ts` + the
- * route modules) — keep in sync with it.
+ * The unversioned gateway API surface (P7 of the one-url plan): the edge
+ * forwards every path it does not serve itself to the gateway, whose router
+ * resolves an optional /v1 prefix — no per-route enumeration. The lookaheads
+ * spare only the edge's OWN surface: the /web twin hands the iframe
+ * namespace's remainder to the same /v1 translation the ^~ /web/v1/ location
+ * does, and the root forward excludes the app shell's routes and shipped
+ * root files (the edge's other prefixes — v1, webhooks, assets, assistant —
+ * are already claimed by exact or ^~ prefix locations, which pre-empt regex
+ * matching). The twin is emitted first so /web paths reach it, not the root
+ * catch-all; the denylist's exact blocks always win over both.
  */
-const UNVERSIONED_GATEWAY_API_SEGMENTS = [
-  "admin",
-  "assistants",
-  "attachments",
-  "audio",
-  "brain-graph",
-  "brain-graph-ui",
-  "calls",
-  "channel-admission-policy",
-  "channel-ingress",
-  "channel-permission-overrides",
-  "channel-verification-sessions",
-  "channels",
-  "contact-channels",
-  "contacts",
-  "credential-requests",
-  "desktop",
-  "health",
-  "ingress",
-  "internal",
-  "live-voice",
-  "logs",
-  "permissions",
-  "ps",
-  "slack",
-  "speech",
-  "stt",
-  "trust-rules",
-  "tunnel",
-  "watch",
-] as const;
-
-/**
- * Unversioned gateway API locations for the app-shell edge (app mode): the
- * origin root serves the app bundle and the /web/assistant/ iframe serves
- * the web bundle, so a regex — matched in order ahead of the SPA fallback —
- * is how an unversioned API dial finds the gateway without swallowing page
- * routes. The root spelling forwards verbatim (the gateway's router resolves
- * the missing /v1); the iframe twin rewrites to the versioned route, the
- * same translation the /web/v1/ location does. Ordered FIRST among the
- * config's regex locations.
- */
-function unversionedGatewayApiLocations(gatewayPort: number): string {
+function unversionedGatewayForwardLocations(gatewayPort: number): string {
   const proxyBlock = gatewayProxyBlock(gatewayPort);
-  const alternation = UNVERSIONED_GATEWAY_API_SEGMENTS.join("|");
   return `    # The unversioned gateway API surface (P7): forwarded verbatim — the
     # gateway's router resolves the /v1 prefix.
-    location ~ ^/(?:${alternation})(?:/|$) {
+    location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {
+      rewrite ^/web/(.*)$ /v1/$1 break;
 ${proxyBlock}
     }
 
-    # The iframe twin: /web/<segment> rides the same /v1 translation the
-    # prefixed /web/v1/ location does.
-    location ~ ^/web/(?:${alternation})(?:/|$) {
-      rewrite ^/web/(.*)$ /v1/$1 break;
+    location ~ ^/(?!account(?:/|$)|logout(?:/|$)|index\\.html$|favicon\\.svg$|cadet-logo-white\\.svg$|cadet-scene-cut\\.mp4$) {
 ${proxyBlock}
     }`;
 }
@@ -791,7 +743,7 @@ ${assistantMetadataLocations({
 
 ${gatewayProxyLocations(opts.gatewayPort)}
 
-${unversionedGatewayApiLocations(opts.gatewayPort)}
+${unversionedGatewayForwardLocations(opts.gatewayPort)}
 
     location ^~ /web/v1/ {
 ${gatewayProxyBlock(opts.gatewayPort, "/v1/")}
@@ -806,16 +758,6 @@ ${webSpaLocations({
 
     location = /web {
       return 302 /web/assistant/;
-    }
-
-    # The iframe namespace has no other routes: anything under /web that is
-    # not the assistant mount, its prefixed API path, or the unversioned API
-    # surface above is a probe, not a page. A regex (not ^~) so the ordered
-    # unversioned-API locations above get first claim — and a lookahead so
-    # the assistant mount and the versioned API twin keep their own
-    # exact/prefix locations.
-    location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {
-      return 404;
     }
 
     # The web bundle's hashed chunks and unhashed public files under its baked

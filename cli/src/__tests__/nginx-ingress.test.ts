@@ -459,41 +459,52 @@ describe("buildIngressNginxConfig", () => {
     expect(conf).toContain("proxy_read_timeout 1h;");
   });
 
-  test("the app-mode edge serves the unversioned gateway API surface", () => {
-    // Root spelling forwards verbatim; the gateway's router resolves the
-    // missing /v1 prefix (P7).
+  test("the app-mode edge forwards every unversioned path to the gateway", () => {
+    // No route enumeration lives at the edge: the forward matches any path
+    // the edge does not serve itself, and the gateway's router resolves the
+    // optional /v1 prefix (P7).
     const rootLocation = remoteConf
-      .split("location ~ ^/(?:")[1]
+      .split("location ~ ^/(?!")[1]
       ?.split("    }")[0];
     expect(rootLocation).toBeDefined();
     expect(rootLocation).toContain("proxy_pass http://127.0.0.1:7830;");
     expect(rootLocation).not.toContain("rewrite");
-  });
-
-  test("the iframe twin translates /web/<segment> to the /v1 route", () => {
-    expect(remoteConf).toContain("location ~ ^/web/(?:");
-    expect(remoteConf).toContain("rewrite ^/web/(.*)$ /v1/$1 break;");
-  });
-
-  test("the unversioned surface excludes the sensitive and gateway-native segments", () => {
-    const rootLocation = remoteConf.split("location ~ ^/(?:")[1] ?? "";
-    for (const excluded of [
-      "pair",
-      "devices",
-      "guardian",
-      "remote-web",
-      "shared",
-      "integrations",
-      "oauth",
-      "assistant",
-      "healthz",
+    // The lookahead spares only the edge's own surface — the shell's routes
+    // and the root files it ships.
+    for (const owned of [
+      "account(?:/|$)",
+      "logout(?:/|$)",
+      "index\\.html$",
+      "favicon\\.svg$",
+      "cadet-logo-white\\.svg$",
+      "cadet-scene-cut\\.mp4$",
     ]) {
-      // Exact-entry match: the trailing "|" keeps a prefix like "assistant"
-      // from false-matching the real "assistants" segment.
-      expect(rootLocation).not.toContain(`|${excluded}|`);
+      expect(rootLocation).toContain(owned);
     }
-    // The first entry is never one of the excluded segments either.
-    expect(rootLocation.startsWith("admin|")).toBe(true);
+    // Never gateway API vocabulary: a new gateway route needs no edge edit.
+    for (const segment of [
+      "admin",
+      "assistants",
+      "channels",
+      "contacts",
+      "oauth",
+      "integrations",
+    ]) {
+      expect(rootLocation).not.toContain(segment);
+    }
+  });
+
+  test("the iframe twin forwards the /web namespace's remainder to the /v1 route", () => {
+    expect(remoteConf).toContain(
+      "location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$))",
+    );
+    expect(remoteConf).toContain("rewrite ^/web/(.*)$ /v1/$1 break;");
+    // Ordered ahead of the root catch-all so /web paths reach the twin
+    // instead of forwarding verbatim with their iframe prefix.
+    expect(remoteConf.indexOf("location ~ ^/web/(?!")).toBeLessThan(
+      remoteConf.indexOf("location ~ ^/(?!"),
+    );
+    expect(remoteConf).not.toContain("location ^~ /web/ {");
   });
 
   test("web mode keeps its surface versioned (the gateway handles both spellings)", () => {
@@ -514,13 +525,6 @@ describe("buildIngressNginxConfig", () => {
     }
     // Web mode's denylist also gains the unversioned twins.
     expect(conf).toContain("location = /pair { return 404; }");
-  });
-
-  test("the iframe catch-all 404 spares the assistant mount, the v1 prefix, and the API", () => {
-    expect(remoteConf).toContain(
-      "location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$))",
-    );
-    expect(remoteConf).not.toContain("location ^~ /web/ {");
   });
 });
 
@@ -2374,12 +2378,9 @@ describe("the app shell edge", () => {
     // Prefixed API paths the web UI builds from its serving prefix.
     expect(conf).toContain("location ^~ /web/v1/ {");
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830/v1/;");
-    // Nothing else under /web exists, so the namespace cannot serve the shell
-    // (or anything else) recursively. The catch-all is an ordered regex (not
-    // ^~) so the unversioned API locations above it get first claim, and its
-    // lookahead spares the assistant mount and the versioned API twin.
+    // Nothing else under /web is served by the edge: the twin forwards the
+    // namespace's remainder to the gateway, which 404s unknown paths.
     expect(conf).toContain("location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {");
-    expect(conf).toContain("location ~ ^/web/(?:");
   });
 
   test("blocks the sensitive gateway routes under both prefixes", () => {
