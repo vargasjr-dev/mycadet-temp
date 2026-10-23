@@ -3,6 +3,7 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistantsAcrossEnvs,
   type LockfileAssistant,
 } from "./assistant-config.js";
@@ -123,7 +124,7 @@ export function getKnownPidsFromAssistants(
 ): Set<string> {
   const pids = new Set<string>();
   for (const entry of entries) {
-    if (entry.cloud === "local" && entry.resources) {
+    if (entry.cloud === "local" && isLocalInstanceResources(entry.resources)) {
       const stateDir = entry.resources.instanceDir;
       const candidates = [
         getDaemonPidPath(entry.resources),

@@ -4,6 +4,7 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
@@ -35,7 +36,7 @@ type ActiveCallLease = {
 };
 
 function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (!entry.resources) {
+  if (!isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -272,7 +273,7 @@ export async function sleepAssistant(
     );
   }
 
-  if (!entry.resources) {
+  if (!isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );

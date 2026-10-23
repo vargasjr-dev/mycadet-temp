@@ -68,9 +68,11 @@ const defaultOps: HostTeleportOps = {
   sleep: (entry) =>
     sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
   backup: async (entry) => {
-    const archive = await createBackup(entry.runtimeUrl, entry.assistantId, {
-      prefix: `${entry.assistantId}-pre-teleport`,
-    });
+    const archive = entry.runtimeUrl
+      ? await createBackup(entry.runtimeUrl, entry.assistantId, {
+          prefix: `${entry.assistantId}-pre-teleport`,
+        })
+      : undefined;
     if (!archive) {
       throw new Error(
         `Could not capture '${entry.assistantId}'; teleport aborted.`,
@@ -129,7 +131,7 @@ export async function readHostRuntimeVersion(
 ): Promise<string | undefined> {
   if (entry.cloud !== "docker") {
     return (
-      (await fetchCurrentVersion(entry.runtimeUrl)) ??
+      (entry.runtimeUrl ? await fetchCurrentVersion(entry.runtimeUrl) : undefined) ??
       entry.resources?.runtimeVersion
     );
   }
@@ -410,7 +412,13 @@ async function dockerReplacementOptions(
     env(res.assistantContainer),
     env(res.gatewayContainer),
   );
-  const gatewayPort = Number(new URL(entry.runtimeUrl).port);
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
+  const gatewayPort = Number(new URL(gatewayUrl).port);
   const assistantPort = entry.containerInfo?.assistantPort;
   if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1 || !assistantPort) {
     throw new Error(

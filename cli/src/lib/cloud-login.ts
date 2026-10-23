@@ -361,11 +361,17 @@ export async function registerLocalAssistantWithPlatform(
   // Skip managed ("cadet") assistants — they are handled by the cloud.
   if (!entry || isCloudHome(entry.cloud)) return;
 
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    log(`Assistant '${entry.assistantId}' has no recorded gateway URL; skipping credential injection.`);
+    return;
+  }
+
   const orgId = await fetchOrganizationId(token);
   const clientInstallationId = computeDeviceId();
   const [assistantVersion, ingressUrl] = await Promise.all([
-    fetchCurrentVersion(entry.runtimeUrl),
-    fetchAssistantIngressUrl(entry.runtimeUrl, options.bearerToken ?? entry.bearerToken),
+    fetchCurrentVersion(gatewayUrl),
+    fetchAssistantIngressUrl(gatewayUrl, options.bearerToken ?? entry.bearerToken),
   ]);
   const cloudUrl = getCloudUrl();
   const registration = await ensureSelfHostedLocalRegistration(
@@ -392,7 +398,7 @@ export async function registerLocalAssistantWithPlatform(
   // the two injection paths cannot drift.
   const resolved = await resolveAssistantApiKeyForInjection({
     registrationApiKey: registration.assistant_api_key,
-    runtimeUrl: entry.runtimeUrl,
+    runtimeUrl: gatewayUrl,
     bearerToken: options.bearerToken ?? entry.bearerToken,
     token,
     organizationId: orgId,
@@ -408,7 +414,7 @@ export async function registerLocalAssistantWithPlatform(
   // Inject credentials into the running assistant via the gateway,
   // mirroring the desktop app's LocalAssistantBootstrapService flow.
   const allInjected = await injectCredentialsIntoAssistant({
-    gatewayUrl: entry.runtimeUrl,
+    gatewayUrl: gatewayUrl,
     bearerToken: options.bearerToken ?? entry.bearerToken,
     assistantApiKey,
     cloudAssistantId: registration.assistant.id,

@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
@@ -35,7 +36,7 @@ async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
     return;
   }
   const resources = entry.resources;
-  if (!resources) return;
+  if (!isLocalInstanceResources(resources)) return;
   await stopProcessByPidFile(
     join(resources.instanceDir, "gateway.pid"),
     "gateway",

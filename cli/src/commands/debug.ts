@@ -72,6 +72,12 @@ export const debug = Object.assign(
       console.error(`Not logged in. Run '${cliCommand()} login' first.`);
       process.exit(1);
     }
+    if (!entry.runtimeUrl) {
+      console.error(
+        `Error: '${reference}' has no recorded gateway URL to export logs from.`,
+      );
+      process.exit(1);
+    }
     const cloudAssistantId = entry.cloudAssistantId?.trim();
     if (!cloudAssistantId) {
       console.error(
@@ -82,7 +88,15 @@ export const debug = Object.assign(
     const cloudUrl = entry.cloudBaseUrl?.trim() || getCloudUrl();
     const organizationId = entry.cloudOrganizationId?.trim();
 
-    const accessToken = await daemonAccessToken(entry, reference, false);
+    const accessToken = await daemonAccessToken(
+      {
+        assistantId: entry.assistantId,
+        runtimeUrl: entry.runtimeUrl,
+        guardianBootstrapSecret: entry.guardianBootstrapSecret,
+      },
+      reference,
+      false,
+    );
     const headers = organizationId
       ? authHeadersForKnownOrganization(cloudToken, organizationId)
       : await authHeaders(cloudToken, cloudUrl);

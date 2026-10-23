@@ -20,7 +20,9 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
+  type LocalInstanceResources,
   lookupAssistantByIdentifier,
   readRootProcesses,
   type LockfileAssistant,
@@ -339,7 +341,7 @@ function formatDetectionInfo(proc: DetectedProcess): string {
 
 async function getLocalProcesses(entry: LockfileAssistant): Promise<TableRow[]> {
   const resources = entry.resources;
-  if (!resources?.instanceDir) {
+  if (!isLocalInstanceResources(resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -381,7 +383,7 @@ async function getLocalProcesses(entry: LockfileAssistant): Promise<TableRow[]> 
 // gateway version that predates the route): probe each known process
 // directly.
 async function detectLocalProcessesFallback(
-  resources: NonNullable<LockfileAssistant["resources"]>,
+  resources: LocalInstanceResources,
   cadetDir: string,
 ): Promise<TableRow[]> {
   const assistantSpec: ProcessSpec = {
@@ -520,7 +522,9 @@ async function getAssistantProcessRows(
   if (isCloudHome(cloud)) {
     console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
 
-    const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
+    const psData = entry.runtimeUrl
+      ? await fetchManagedPs(entry.runtimeUrl, entry.assistantId)
+      : null;
 
     if (!psData) {
       return [
@@ -787,7 +791,7 @@ async function getAssistantListHealth(
   entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
   const resources = entry.resources;
-  if (entry.cloud === "local" && resources) {
+  if (entry.cloud === "local" && isLocalInstanceResources(resources)) {
     // TODO(ATL-306): Remove readPidFile/getDaemonPidPath in favor of
     // fetching daemon PIDs via the health API (Gateway Security Migration).
     const pid = readPidFile(getDaemonPidPath(resources));
@@ -819,7 +823,9 @@ async function getAssistantListHealth(
   }
 
   if (isCloudHome(entry.cloud)) {
-    return checkManagedHealth(entry.runtimeUrl, entry.assistantId);
+    return entry.runtimeUrl
+      ? checkManagedHealth(entry.runtimeUrl, entry.assistantId)
+      : { status: "unknown", detail: "no runtime URL" };
   }
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
