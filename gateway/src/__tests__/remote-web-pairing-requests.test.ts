@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const { handleCreateRemoteWebPairingChallenge } =
   await import("../http/routes/remote-web-pairing-challenge.js");
@@ -12,6 +14,7 @@ const {
   resetRemoteWebPairingChallengesForTests,
   setRemoteWebPairingChallengeNowForTests,
 } = await import("../remote-web/pairing-challenge-store.js");
+const { testWorkspaceDir } = await import("./test-preload.js");
 
 import {
   LOOPBACK_IP,
@@ -24,6 +27,15 @@ import {
 const LIST_PATH = "/v1/remote-web/pairing-requests";
 const APPROVE_PATH = "/v1/remote-web/pairing-requests/approve";
 const DENY_PATH = "/v1/remote-web/pairing-requests/deny";
+
+// The challenge route self-sources the public URL from this gateway's own
+// workspace record (#519) — the tests seed it before minting.
+function seedIngressPublicBaseUrl(url: string): void {
+  writeFileSync(
+    join(testWorkspaceDir, "config.json"),
+    JSON.stringify({ ingress: { publicBaseUrl: url } }),
+  );
+}
 
 function makeActionRequest(path: string, body: unknown): Request {
   return makeLocalRequest(path, {
@@ -38,10 +50,11 @@ async function createChallenge(): Promise<{
   verificationUri: string;
   expiresAt: string;
 }> {
+  seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
   const res = await handleCreateRemoteWebPairingChallenge(
     makeLocalRequest("/v1/remote-web/pairing-challenge", {
       method: "POST",
-      body: JSON.stringify({ publicBaseUrl: PUBLIC_BASE_URL }),
+      body: JSON.stringify({}),
       headers: { "user-agent": "test-suite/1.0" },
     }),
     LOOPBACK_IP,
@@ -75,6 +88,9 @@ async function listRequests(): Promise<ListedRequest[]> {
 
 beforeEach(() => {
   resetRemoteWebPairingChallengesForTests();
+  // The loopback self-source reads the workspace record — clear it between
+  // tests so seeded state never leaks.
+  rmSync(join(testWorkspaceDir, "config.json"), { force: true });
 });
 
 describe("remote web pairing requests", () => {
