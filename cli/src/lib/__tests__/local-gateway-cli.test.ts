@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 
-import type { LocalInstanceResources } from "../assistant-config.js";
+import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { gatewayCliInvocation } from "../local.js";
 
-function fakeResources(instanceDir: string): LocalInstanceResources {
+function fakeResources(instanceDir: string): LocalAssistantResources {
   // gatewayCliInvocation only reads instanceDir; the rest of the resources
   // shape is irrelevant here.
-  return { instanceDir } as unknown as LocalInstanceResources;
+  return { instanceDir, daemonPort: 0, gatewayPort: 0 };
 }
 
 describe("gatewayCliInvocation", () => {

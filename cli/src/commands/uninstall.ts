@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 
 import {
   getDaemonPidPath,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
@@ -36,9 +36,9 @@ async function retireAssistantData(entry: LockfileAssistant): Promise<void> {
     return;
   }
   const resources = entry.resources;
-  if (!isLocalInstanceResources(resources)) return;
+  if (!resources) return;
   await stopProcessByPidFile(
-    join(resources.instanceDir, "gateway.pid"),
+    join(getLocalInstanceDir(resources), "gateway.pid"),
     "gateway",
   );
   await stopProcessByPidFile(getDaemonPidPath(resources), "assistant");
@@ -188,7 +188,8 @@ function collectDeleteTargets(env = getCurrentEnvironment()): DeleteTarget[] {
   const targets: DeleteTarget[] = [
     {
       path: getStateDir(env),
-      description: "assistant state, retired archives, and the assistants it holds",
+      description:
+        "assistant state, retired archives, and the assistants it holds",
     },
     ...getConfigDirs(env).map((dir) => ({
       path: dir,

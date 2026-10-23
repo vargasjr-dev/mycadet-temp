@@ -30,11 +30,7 @@ import {
   saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
-import {
-  DEFAULT_DAEMON_PORT,
-  DEFAULT_GATEWAY_PORT,
-  DEFAULT_QDRANT_PORT,
-} from "../lib/constants.js";
+import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
 
 afterAll(() => {
@@ -43,10 +39,7 @@ afterAll(() => {
 });
 
 function writeLockfile(data: unknown): void {
-  writeFileSync(
-    join(testDir, "lockfile.json"),
-    JSON.stringify(data, null, 2),
-  );
+  writeFileSync(join(testDir, "lockfile.json"), JSON.stringify(data, null, 2));
 }
 
 function readLockfileRaw(): Record<string, unknown> {
@@ -108,7 +101,6 @@ describe("multi-local", () => {
         // AND it gets the default ports since no other instances exist
         expect(res.daemonPort).toBe(DEFAULT_DAEMON_PORT);
         expect(res.gatewayPort).toBe(DEFAULT_GATEWAY_PORT);
-        expect(res.qdrantPort).toBe(DEFAULT_QDRANT_PORT);
       } finally {
         if (prevXdg !== undefined) {
           process.env.XDG_DATA_HOME = prevXdg;
@@ -162,7 +154,6 @@ describe("multi-local", () => {
         const res = await allocateLocalResources("dev-a");
         expect(res.daemonPort).toBe(18000);
         expect(res.gatewayPort).toBe(18100);
-        expect(res.qdrantPort).toBe(18200);
         expect(res.cesPort).toBe(18300);
       } finally {
         if (prevEnv !== undefined) {
@@ -187,7 +178,6 @@ describe("multi-local", () => {
       const occupiedPorts = new Set([
         DEFAULT_DAEMON_PORT,
         DEFAULT_GATEWAY_PORT,
-        DEFAULT_QDRANT_PORT,
       ]);
       probePortMock.mockImplementation((port: number) =>
         Promise.resolve(occupiedPorts.has(port)),
@@ -199,7 +189,6 @@ describe("multi-local", () => {
       // THEN the second instance gets non-default ports
       expect(occupiedPorts.has(b.daemonPort)).toBe(false);
       expect(occupiedPorts.has(b.gatewayPort)).toBe(false);
-      expect(occupiedPorts.has(b.qdrantPort)).toBe(false);
 
       // AND it gets its own dedicated instance directory
       expect(b.instanceDir).toContain("instance-b");

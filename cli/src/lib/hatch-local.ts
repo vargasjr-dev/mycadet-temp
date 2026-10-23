@@ -18,6 +18,7 @@ import cliPkg from "../../package.json";
 import {
   allocateLocalResources,
   findAssistantByName,
+  getLocalInstanceDir,
   saveLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config.js";
@@ -218,7 +219,12 @@ export async function hatchLocal(
 
       const resources = await allocateLocalResources(instanceName);
 
-      const logsDir = join(resources.instanceDir, "workspace", "data", "logs");
+      const logsDir = join(
+        getLocalInstanceDir(resources),
+        "workspace",
+        "data",
+        "logs",
+      );
       archiveLogFile("hatch.log", logsDir);
       resetLogFile("hatch.log");
 
@@ -304,7 +310,7 @@ export async function hatchLocal(
             params.initialArchive,
           )
         : generateLocalSigningKey();
-      persistRootSigningKey(resources.instanceDir, signingKey);
+      persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
       const bootstrapSecret = generateLocalSigningKey();
       let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       try {

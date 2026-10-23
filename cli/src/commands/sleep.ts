@@ -4,7 +4,7 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
@@ -36,12 +36,12 @@ type ActiveCallLease = {
 };
 
 function getAssistantRootDir(entry: LockfileAssistant): string {
-  if (!isLocalInstanceResources(entry.resources)) {
+  if (!entry.resources) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  return entry.resources.instanceDir;
+  return getLocalInstanceDir(entry.resources);
 }
 
 function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
@@ -67,107 +67,120 @@ function readActiveCallLeases(cadetDir: string): ActiveCallLease[] {
 
 export const sleep = Object.assign(
   async function sleep(): Promise<void> {
-  const args = process.argv.slice(3);
-  if (args.includes("--help") || args.includes("-h")) {
-    console.log(`Usage: ${cliCommand()} sleep [<name> | --all] [--force] [--wait [<duration>]]`);
-    console.log("");
-    console.log("Gracefully stop all services; abort if they do not exit without forced termination.");
-    console.log("");
-    console.log("Arguments:");
-    console.log(
-      "  <name>    Name of the assistant to stop, defaults to active or only local",
-    );
-    console.log("");
-    console.log("Options:");
-    console.log(
-      "  --all     Stop every assistant across all remotes instead of one",
-    );
-    console.log(
-      "  --force   Stop the assistant even if a phone call keepalive lease is active",
-    );
-    console.log(
-      "  --wait    Wait for in-flight background work (heartbeats, memory jobs,",
-    );
-    console.log(
-      "            schedules) to finish before stopping. Waits as long as it",
-    );
-    console.log(
-      "            takes by default; pass a duration, e.g. --wait 90s or --wait 10m",
-    );
-    console.log(
-      "            to bound the wait. Ctrl-C cancels and leaves the assistant running.",
-    );
-    process.exit(0);
-  }
-
-  const knownFlags = new Set(["--all", "--force", "--wait"]);
-  const unknownFlag = args.find((arg) => arg.startsWith("-") && !knownFlags.has(arg) && !arg.startsWith("--wait="));
-  if (unknownFlag) { console.error(`Unknown sleep option: ${unknownFlag}`); process.exit(1); }
-
-  const force = args.includes("--force");
-  let wait = false;
-  let waitMs: number | null = null;
-  let waitDurationToken: string | null = null;
-  const waitEqArg = args.find((a) => a.startsWith("--wait="));
-  if (waitEqArg) {
-    wait = true;
-    const raw = waitEqArg.slice("--wait=".length);
-    waitMs = parseWaitDuration(raw);
-    if (waitMs == null) {
-      console.error(
-        `Error: invalid --wait duration '${raw}'. Use seconds or a value like 90s or 10m.`,
+    const args = process.argv.slice(3);
+    if (args.includes("--help") || args.includes("-h")) {
+      console.log(
+        `Usage: ${cliCommand()} sleep [<name> | --all] [--force] [--wait [<duration>]]`,
       );
+      console.log("");
+      console.log(
+        "Gracefully stop all services; abort if they do not exit without forced termination.",
+      );
+      console.log("");
+      console.log("Arguments:");
+      console.log(
+        "  <name>    Name of the assistant to stop, defaults to active or only local",
+      );
+      console.log("");
+      console.log("Options:");
+      console.log(
+        "  --all     Stop every assistant across all remotes instead of one",
+      );
+      console.log(
+        "  --force   Stop the assistant even if a phone call keepalive lease is active",
+      );
+      console.log(
+        "  --wait    Wait for in-flight background work (heartbeats, memory jobs,",
+      );
+      console.log(
+        "            schedules) to finish before stopping. Waits as long as it",
+      );
+      console.log(
+        "            takes by default; pass a duration, e.g. --wait 90s or --wait 10m",
+      );
+      console.log(
+        "            to bound the wait. Ctrl-C cancels and leaves the assistant running.",
+      );
+      process.exit(0);
+    }
+
+    const knownFlags = new Set(["--all", "--force", "--wait"]);
+    const unknownFlag = args.find(
+      (arg) =>
+        arg.startsWith("-") &&
+        !knownFlags.has(arg) &&
+        !arg.startsWith("--wait="),
+    );
+    if (unknownFlag) {
+      console.error(`Unknown sleep option: ${unknownFlag}`);
       process.exit(1);
     }
-  } else {
-    const waitIndex = args.indexOf("--wait");
-    if (waitIndex !== -1) {
+
+    const force = args.includes("--force");
+    let wait = false;
+    let waitMs: number | null = null;
+    let waitDurationToken: string | null = null;
+    const waitEqArg = args.find((a) => a.startsWith("--wait="));
+    if (waitEqArg) {
       wait = true;
-      // A bare `--wait` waits indefinitely; a following duration token
-      // (e.g. `90s`, `10m`, `120`) bounds it. Anything else is the name arg.
-      const next = args[waitIndex + 1];
-      if (next !== undefined && /^\d+(s|m)?$/.test(next)) {
-        waitDurationToken = next;
-        waitMs = parseWaitDuration(next);
-        if (waitMs == null) {
-          console.error(
-            `Error: invalid --wait duration '${next}'. Use seconds or a value like 90s or 10m.`,
-          );
-          process.exit(1);
+      const raw = waitEqArg.slice("--wait=".length);
+      waitMs = parseWaitDuration(raw);
+      if (waitMs == null) {
+        console.error(
+          `Error: invalid --wait duration '${raw}'. Use seconds or a value like 90s or 10m.`,
+        );
+        process.exit(1);
+      }
+    } else {
+      const waitIndex = args.indexOf("--wait");
+      if (waitIndex !== -1) {
+        wait = true;
+        // A bare `--wait` waits indefinitely; a following duration token
+        // (e.g. `90s`, `10m`, `120`) bounds it. Anything else is the name arg.
+        const next = args[waitIndex + 1];
+        if (next !== undefined && /^\d+(s|m)?$/.test(next)) {
+          waitDurationToken = next;
+          waitMs = parseWaitDuration(next);
+          if (waitMs == null) {
+            console.error(
+              `Error: invalid --wait duration '${next}'. Use seconds or a value like 90s or 10m.`,
+            );
+            process.exit(1);
+          }
         }
       }
     }
-  }
-  const nameArg = args.find(
-    (a) => !a.startsWith("-") && a !== waitDurationToken,
-  );
-  const all = args.includes("--all");
+    const nameArg = args.find(
+      (a) => !a.startsWith("-") && a !== waitDurationToken,
+    );
+    const all = args.includes("--all");
 
-  if (all && nameArg) {
-    console.error("Error: --all cannot be combined with an assistant name.");
-    process.exit(1);
-  }
-
-  if (all) {
-    await sleepAll({ force, wait, waitMs });
-    return;
-  }
-
-  const entry = resolveTargetAssistant(nameArg);
-  try {
-    await sleepAssistant(entry, { force, wait, waitMs });
-  } catch (err) {
-    if (err instanceof SleepExit) {
-      console.log(err.message);
-      process.exit(err.exitCode);
+    if (all && nameArg) {
+      console.error("Error: --all cannot be combined with an assistant name.");
+      process.exit(1);
     }
-    console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  }
-},
+
+    if (all) {
+      await sleepAll({ force, wait, waitMs });
+      return;
+    }
+
+    const entry = resolveTargetAssistant(nameArg);
+    try {
+      await sleepAssistant(entry, { force, wait, waitMs });
+    } catch (err) {
+      if (err instanceof SleepExit) {
+        console.log(err.message);
+        process.exit(err.exitCode);
+      }
+      console.error(
+        `Error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      process.exit(1);
+    }
+  },
   { description: "Stop the assistant process" },
 );
-
 
 type SleepOptions = {
   force: boolean;
@@ -199,7 +212,9 @@ class SleepExit extends Error {
 async function sleepAll(opts: SleepOptions): Promise<void> {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
-    console.error(`Error: no assistants found. Run '${cliCommand()} hatch' first.`);
+    console.error(
+      `Error: no assistants found. Run '${cliCommand()} hatch' first.`,
+    );
     process.exit(1);
   }
 
@@ -273,14 +288,16 @@ export async function sleepAssistant(
     );
   }
 
-  if (!isLocalInstanceResources(entry.resources)) {
+  if (!entry.resources) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
   const resources = entry.resources;
   if (process.platform === "win32") {
-    throw new Error("Graceful-only shutdown is not supported for Windows local services.");
+    throw new Error(
+      "Graceful-only shutdown is not supported for Windows local services.",
+    );
   }
   const assistantPidFile = getDaemonPidPath(resources);
   const cadetDir = getAssistantRootDir(entry);
@@ -313,7 +330,10 @@ export async function sleepAssistant(
   if (wait) {
     const outcome = await runDrainPhase(entry, assistantPidFile, waitMs);
     if (outcome === "cancelled") {
-      throw new SleepExit(130, "Sleep cancelled — the assistant is still running.");
+      throw new SleepExit(
+        130,
+        "Sleep cancelled — the assistant is still running.",
+      );
     }
   }
 

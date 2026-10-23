@@ -52,10 +52,7 @@ function spawnStateRoot(): string {
   return root;
 }
 
-import {
-  getDaemonPidPath,
-  type LocalInstanceResources,
-} from "./assistant-config.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import { getStateDir } from "./environments/paths.js";
@@ -108,11 +105,11 @@ function normalizeRuntimeVersion(version: string): string {
 }
 
 export function getLocalRuntimeInstallDir(
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   version: string,
 ): string {
   return join(
-    resources.instanceDir,
+    getLocalInstanceDir(resources),
     "runtime",
     normalizeRuntimeVersion(version),
   );
@@ -220,7 +217,7 @@ function envWithBunPath(
 }
 
 function localRuntimeAssistantIndex(
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
 ): string | undefined {
   const installDir = resources.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -251,7 +248,7 @@ function localRuntimeCesDir(
 }
 
 export function ensureLocalRuntime(
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   version: string,
   options: { force?: boolean } = {},
 ): LocalRuntimeInstall {
@@ -431,7 +428,7 @@ function findGatewaySourceFromCwd(): string | undefined {
 }
 
 function resolveAssistantIndexPath(
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
 ): string | undefined {
   if (resources) {
     const runtimeIndex = localRuntimeAssistantIndex(resources);
@@ -580,11 +577,11 @@ type DaemonStartOptions = {
  * writable per-instance directory used outside containers.
  */
 function resolveCesBootstrapSocketDir(
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
   env?: Record<string, string | undefined>,
 ): string {
   if (resources) {
-    return join(resources.instanceDir, "ces-data");
+    return join(getLocalInstanceDir(resources), "ces-data");
   }
   const dataDir =
     env?.CES_DATA_DIR?.trim() || join(defaultCadetRoot(), "ces-data");
@@ -598,17 +595,22 @@ function resolveCesBootstrapSocketDir(
  */
 function applyDaemonEnvOverrides(
   env: Record<string, string | undefined>,
-  resources: LocalInstanceResources | undefined,
+  resources: LocalAssistantResources | undefined,
   options?: DaemonStartOptions,
 ): void {
   if (resources) {
-    env.CADET_WORKSPACE_DIR = join(resources.instanceDir, "workspace");
-    env.GATEWAY_SECURITY_DIR = join(resources.instanceDir, "gateway-security");
-    env.CREDENTIAL_SECURITY_DIR = join(resources.instanceDir, "ces-security");
-    env.CES_DATA_DIR = join(resources.instanceDir, "ces-data");
+    env.CADET_WORKSPACE_DIR = join(getLocalInstanceDir(resources), "workspace");
+    env.GATEWAY_SECURITY_DIR = join(
+      getLocalInstanceDir(resources),
+      "gateway-security",
+    );
+    env.CREDENTIAL_SECURITY_DIR = join(
+      getLocalInstanceDir(resources),
+      "ces-security",
+    );
+    env.CES_DATA_DIR = join(getLocalInstanceDir(resources), "ces-data");
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
     env.GATEWAY_PORT = String(resources.gatewayPort);
-    env.QDRANT_HTTP_PORT = String(resources.qdrantPort);
     delete env.QDRANT_URL;
   }
   if (options?.signingKey) {
@@ -776,7 +778,7 @@ function logAssistantAlreadyRunning(
 
 async function startDaemonFromSource(
   assistantIndex: string,
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const foreground = options?.foreground ?? false;
@@ -873,7 +875,7 @@ async function startDaemonFromSource(
 // assistant-side equivalent.
 async function startDaemonWatchFromSource(
   assistantIndex: string,
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   options?: DaemonStartOptions,
 ): Promise<DaemonSpawn | null> {
   const mainPath = resolveDaemonMainPath(assistantIndex);
@@ -1018,9 +1020,12 @@ export function gatewayCliInvocation(
       ...process.env,
       ...(resources?.instanceDir
         ? {
-            CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace"),
+            CADET_WORKSPACE_DIR: join(
+              getLocalInstanceDir(resources),
+              "workspace",
+            ),
             GATEWAY_SECURITY_DIR: join(
-              resources.instanceDir,
+              getLocalInstanceDir(resources),
               "gateway-security",
             ),
           }
@@ -1029,7 +1034,7 @@ export function gatewayCliInvocation(
   };
 }
 
-function resolveCesDir(resources?: LocalInstanceResources): string {
+function resolveCesDir(resources?: LocalAssistantResources): string {
   const runtimeCesDir = localRuntimeCesDir(resources);
   if (runtimeCesDir) return runtimeCesDir;
 
@@ -1065,7 +1070,7 @@ function resolveCesDir(resources?: LocalInstanceResources): string {
  * a Unix socket, including the shared macOS AF_UNIX fallback.
  */
 export function resolveCesSocketPath(
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
   hostPlatform: NodeJS.Platform = platform(),
 ): string {
   return resolveIpcEndpoint("ces", {
@@ -1107,9 +1112,11 @@ async function isIpcEndpointReady(endpointPath: string): Promise<boolean> {
  */
 export async function startCes(
   watch: boolean = false,
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
 ): Promise<void> {
-  const cadetDir = resources ? resources.instanceDir : defaultCadetRoot();
+  const cadetDir = resources
+    ? getLocalInstanceDir(resources)
+    : defaultCadetRoot();
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1124,13 +1131,13 @@ export async function startCes(
   removeIpcEndpointFile(socketPath);
 
   const securityDir = resources
-    ? join(resources.instanceDir, "ces-security")
+    ? join(getLocalInstanceDir(resources), "ces-security")
     : join(defaultCadetRoot(), "ces-security");
   const dataDir = resources
-    ? join(resources.instanceDir, "ces-data")
+    ? join(getLocalInstanceDir(resources), "ces-data")
     : join(defaultCadetRoot(), "ces-data");
   const workspaceDir = resources
-    ? join(resources.instanceDir, "workspace")
+    ? join(getLocalInstanceDir(resources), "workspace")
     : join(defaultCadetRoot(), "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
@@ -1456,17 +1463,20 @@ export function isGatewayWatchModeAvailable(): boolean {
  *
  * The wrapper is idempotent: safe to call on every daemon wake.
  */
-function writeAssistantWrapper(resources: LocalInstanceResources): void {
+function writeAssistantWrapper(resources: LocalAssistantResources): void {
   if (platform() === "win32") {
     return;
   }
   const assistantBinary = compiledSibling("assistant");
   if (!isCompiledCli() || !existsSync(assistantBinary)) return;
 
-  const workspaceDir = join(resources.instanceDir, "workspace");
-  const gatewaySecurityDir = join(resources.instanceDir, "gateway-security");
-  const cesSecurityDir = join(resources.instanceDir, "ces-security");
-  const cesDataDir = join(resources.instanceDir, "ces-data");
+  const workspaceDir = join(getLocalInstanceDir(resources), "workspace");
+  const gatewaySecurityDir = join(
+    getLocalInstanceDir(resources),
+    "gateway-security",
+  );
+  const cesSecurityDir = join(getLocalInstanceDir(resources), "ces-security");
+  const cesDataDir = join(getLocalInstanceDir(resources), "ces-data");
   const binDir = join(workspaceDir, "bin");
 
   mkdirSync(binDir, { recursive: true });
@@ -1492,7 +1502,7 @@ function writeAssistantWrapper(resources: LocalInstanceResources): void {
 // assistant-side equivalent.
 export async function startLocalDaemon(
   watch: boolean = false,
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   options?: DaemonStartOptions,
 ): Promise<void> {
   writeAssistantWrapper(resources);
@@ -1793,7 +1803,7 @@ export async function startLocalDaemon(
 
 export async function startGateway(
   watch: boolean = false,
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
   options?: {
     signingKey?: string;
     bootstrapSecret?: string;
@@ -1806,7 +1816,9 @@ export async function startGateway(
   // Without this, crashed/stale gateways accumulate as zombies — the old
   // process holds the port (or lingers after losing it), and every restart
   // attempt spawns yet another process that fails with EADDRINUSE.
-  const gwPidDir = resources ? resources.instanceDir : defaultCadetRoot();
+  const gwPidDir = resources
+    ? getLocalInstanceDir(resources)
+    : defaultCadetRoot();
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1841,10 +1853,19 @@ export async function startGateway(
     // assistant DB directly for guardian bootstrap.
     ...(resources
       ? {
-          CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace"),
-          GATEWAY_SECURITY_DIR: join(resources.instanceDir, "gateway-security"),
-          CREDENTIAL_SECURITY_DIR: join(resources.instanceDir, "ces-security"),
-          CES_DATA_DIR: join(resources.instanceDir, "ces-data"),
+          CADET_WORKSPACE_DIR: join(
+            getLocalInstanceDir(resources),
+            "workspace",
+          ),
+          GATEWAY_SECURITY_DIR: join(
+            getLocalInstanceDir(resources),
+            "gateway-security",
+          ),
+          CREDENTIAL_SECURITY_DIR: join(
+            getLocalInstanceDir(resources),
+            "ces-security",
+          ),
+          CES_DATA_DIR: join(getLocalInstanceDir(resources), "ces-data"),
         }
       : {}),
   };
@@ -1905,7 +1926,9 @@ export async function startGateway(
   gateway.unref();
 
   if (gateway.pid) {
-    const gwPidDir = resources ? resources.instanceDir : defaultCadetRoot();
+    const gwPidDir = resources
+      ? getLocalInstanceDir(resources)
+      : defaultCadetRoot();
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 
@@ -1939,9 +1962,11 @@ export async function startGateway(
  * the default ~/.cadet/ paths.
  */
 export async function stopLocalProcesses(
-  resources?: LocalInstanceResources,
+  resources?: LocalAssistantResources,
 ): Promise<void> {
-  const cadetDir = resources ? resources.instanceDir : defaultCadetRoot();
+  const cadetDir = resources
+    ? getLocalInstanceDir(resources)
+    : defaultCadetRoot();
   const daemonPidFile = getDaemonPidPath(resources);
   await stopProcessByPidFile(
     daemonPidFile,

@@ -13,7 +13,7 @@ import { basename, dirname, join } from "path";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import {
   findAssistantByName,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   saveLockfileAssistant,
 } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
@@ -36,7 +36,9 @@ import {
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
 
 function printUsage(): void {
-  console.log(`Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`);
+  console.log(
+    `Usage: ${cliCommand()} restore <name> [--from <path>] [--dry-run]`,
+  );
   console.log("");
   console.log(
     "Restore all persistent roots from a tar archive into an assistant.",
@@ -58,8 +60,12 @@ function printUsage(): void {
   console.log("Examples:");
   console.log(`  ${cliCommand()} restore my-retired-assistant`);
   console.log(`  ${cliCommand()} restore my-assistant --from backup.tar.gz`);
-  console.log(`  ${cliCommand()} restore my-cloud-assistant --from backup.tar.gz`);
-  console.log(`  ${cliCommand()} restore my-assistant --from backup.tar.gz --dry-run`);
+  console.log(
+    `  ${cliCommand()} restore my-cloud-assistant --from backup.tar.gz`,
+  );
+  console.log(
+    `  ${cliCommand()} restore my-assistant --from backup.tar.gz --dry-run`,
+  );
 }
 
 function parseArgs(argv: string[]): {
@@ -194,7 +200,9 @@ async function restorePlatform(
       preflightResult.statusCode === 401 ||
       preflightResult.statusCode === 403
     ) {
-      console.error(`Authentication failed. Run '${cliCommand()} login' to refresh.`);
+      console.error(
+        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
+      );
       process.exit(1);
     }
 
@@ -302,7 +310,9 @@ async function restorePlatform(
   }
 
   if (importResult.statusCode === 401 || importResult.statusCode === 403) {
-    console.error(`Authentication failed. Run '${cliCommand()} login' to refresh.`);
+    console.error(
+      `Authentication failed. Run '${cliCommand()} login' to refresh.`,
+    );
     process.exit(1);
   }
 
@@ -459,8 +469,10 @@ async function recoverFromArchive(name: string): Promise<void> {
   }
 
   // Read and validate metadata before any side effects
-  const entry: LockfileAssistant = JSON.parse(readFileSync(metadataPath, "utf-8"));
-  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
+  const entry: LockfileAssistant = JSON.parse(
+    readFileSync(metadataPath, "utf-8"),
+  );
+  if (!entry.resources) {
     throw new Error(
       `Retired assistant '${name}' is missing resource configuration. ` +
         `Fix the archive metadata at ${metadataPath} and retry, ` +
@@ -470,7 +482,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   const resources = entry.resources;
 
   // Check that the recovering entry's own target directory is free.
-  const target = resources.instanceDir;
+  const target = getLocalInstanceDir(resources);
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -489,7 +501,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   // Correct restoration: extract to retiredDir, then rename the staging entry
   // back to the original target path. Using homedir() as the -C target was
   // wrong for any instance stored outside the home directory.
-  const targetDir = resources.instanceDir;
+  const targetDir = getLocalInstanceDir(resources);
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 

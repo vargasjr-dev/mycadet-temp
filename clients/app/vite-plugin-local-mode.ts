@@ -16,7 +16,9 @@ import {
   readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  upsertRendererLockfileAssistant,
+  LockfileAssistantSchema,
+  readRawLockfileStrict,
+  upsertLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -403,11 +405,23 @@ function lockfileMiddleware(
             onboarded.onboardedAt as string,
           );
         } else {
-          result = upsertRendererLockfileAssistant(
-            lockfilePaths,
-            body.assistant as Record<string, unknown>,
-            body.activeAssistant as string | undefined,
-          );
+          const strictRead = readRawLockfileStrict(lockfilePaths);
+          if (!strictRead.ok) {
+            result = { ok: false, status: 409, error: strictRead.error };
+          } else {
+            const parsed = LockfileAssistantSchema.safeParse(body.assistant);
+            result = parsed.success
+              ? upsertLockfileAssistant(
+                  lockfilePaths,
+                  parsed.data,
+                  body.activeAssistant as string | undefined,
+                )
+              : {
+                  ok: false,
+                  status: 400,
+                  error: "Invalid assistant metadata",
+                };
+          }
         }
         res.statusCode = result.ok ? 200 : result.status;
         res.setHeader("Content-Type", "application/json");
@@ -1267,9 +1281,7 @@ function pipeGatewayProxyWithBearerRetry(
     } else {
       delete headers.authorization;
     }
-    const proxyReq = transport.request(
-      { ...options, headers },
-      (proxyRes) => {
+    const proxyReq = transport.request({ ...options, headers }, (proxyRes) => {
       if (!isRetry && injectedBearer !== null && proxyRes.statusCode === 401) {
         proxyRes.resume();
         void reMint().then((fresh) => {

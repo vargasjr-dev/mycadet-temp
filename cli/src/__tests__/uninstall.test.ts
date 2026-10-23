@@ -20,7 +20,7 @@ import {
   getStateDir,
 } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.
 const ORIGINAL_ARGV = process.argv;
@@ -73,21 +73,6 @@ function withRestoredEnv(run: () => Promise<void>): Promise<void> {
   });
 }
 
-function makeEntry(assistantId: string): LockfileAssistant {
-  return {
-    assistantId,
-    runtimeUrl: "http://127.0.0.1:7801",
-    cloud: "local",
-    resources: {
-      instanceDir: join(tmpdir(), "cadet-uninstall-instance"),
-      daemonPort: 7801,
-      gatewayPort: 7831,
-      qdrantPort: 6334,
-      cesPort: 7790,
-    },
-  };
-}
-
 describe("cadet uninstall", () => {
   const logSpy = spyOn(console, "log").mockImplementation(() => {});
   const errorSpy = spyOn(console, "error").mockImplementation(() => {});
@@ -122,13 +107,17 @@ describe("cadet uninstall", () => {
       // blocked the uninstall; the fs sweep deletes the archives anyway).
       writeFileSync(
         join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
-        JSON.stringify({ assistants: [makeEntry("test-assistant")] }) + "\n",
+        JSON.stringify({
+          assistants: [makeEntry({ assistantId: "test-assistant" })],
+        }) + "\n",
       );
 
       const exitMock = spyOn(process, "exit");
-      exitMock.mockImplementation((code?: number | string | undefined): never => {
-        throw new Error(`process.exit:${code}`);
-      });
+      exitMock.mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
       try {
         // Non-interactive without --yes, the CONFIRM gate is what refuses —
         // not an assistant guard.
@@ -154,9 +143,11 @@ describe("cadet uninstall", () => {
       const root = redirectXdg();
 
       const exitMock = spyOn(process, "exit");
-      exitMock.mockImplementation((code?: number | string | undefined): never => {
-        throw new Error(`process.exit:${code}`);
-      });
+      exitMock.mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
       try {
         process.argv = ["bun", "cadet", "uninstall"];
         await expect(uninstall()).rejects.toThrow("process.exit:1");
@@ -176,14 +167,21 @@ describe("cadet uninstall", () => {
       writeFileSync(
         join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
         JSON.stringify({
-          assistants: [{ ...makeEntry("docker-assistant"), cloud: "docker" }],
+          assistants: [
+            {
+              ...makeEntry({ assistantId: "docker-assistant" }),
+              cloud: "docker",
+            },
+          ],
         }) + "\n",
       );
 
       const exitMock = spyOn(process, "exit");
-      exitMock.mockImplementation((code?: number | string | undefined): never => {
-        throw new Error(`process.exit:${code}`);
-      });
+      exitMock.mockImplementation(
+        (code?: number | string | undefined): never => {
+          throw new Error(`process.exit:${code}`);
+        },
+      );
       try {
         process.argv = ["bun", "cadet", "uninstall"];
         await expect(uninstall()).rejects.toThrow("process.exit:1");
@@ -204,7 +202,12 @@ describe("cadet uninstall", () => {
       writeFileSync(
         join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
         JSON.stringify({
-          assistants: [{ ...makeEntry("docker-assistant"), cloud: "docker" }],
+          assistants: [
+            {
+              ...makeEntry({ assistantId: "docker-assistant" }),
+              cloud: "docker",
+            },
+          ],
         }) + "\n",
       );
       mkdirSync(getConfigDirs(getCurrentEnvironment())[0]!, {

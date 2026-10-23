@@ -34,7 +34,10 @@ import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { getLogDir } from "../lib/xdg-log.js";
 import { saveIngressUrl } from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
-import type { LocalInstanceResources, LockfileAssistant } from "../lib/assistant-config.js";
+import {
+  getLocalInstanceDir,
+  type LockfileAssistant,
+} from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
@@ -131,10 +134,7 @@ const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
 
-function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant & {
-    runtimeUrl: string;
-    resources: LocalInstanceResources;
-  } {
+function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
   const instanceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-test-"));
   tempDirs.push(instanceDir);
   return {
@@ -145,15 +145,12 @@ function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant & {
       instanceDir,
       daemonPort: 7821,
       gatewayPort: 7830,
-      qdrantPort: 6333,
       cesPort: 7822,
     },
   };
 }
 
-function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant & {
-    runtimeUrl: string;
-  } {
+function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: `https://runtime.example.com/${assistantId}`,
@@ -181,10 +178,10 @@ function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
 
 /** Seed a local entry's workspace config; returns that workspace dir. */
 function writeEntryWorkspaceConfig(
-  entry: LockfileAssistant & { resources: LocalInstanceResources },
+  entry: LockfileAssistant,
   config: Record<string, unknown>,
 ): string {
-  const workspaceDir = join(entry.resources.instanceDir, "workspace");
+  const workspaceDir = join(getLocalInstanceDir(entry.resources), "workspace");
   mkdirSync(workspaceDir, { recursive: true });
   writeFileSync(
     join(workspaceDir, "config.json"),
@@ -364,7 +361,10 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    const workspaceDir = join(entry.resources!.instanceDir, "workspace");
+    const workspaceDir = join(
+      getLocalInstanceDir(entry.resources),
+      "workspace",
+    );
     expect(ensureAppServerMock).toHaveBeenCalledWith({
       assistantId: "assistant-1",
       workspaceDir,
@@ -423,7 +423,10 @@ describe("app server targeting", () => {
 
     const logs = await runTunnelCapturingLogs();
 
-    const workspaceDir = join(local.resources!.instanceDir, "workspace");
+    const workspaceDir = join(
+      getLocalInstanceDir(local.resources),
+      "workspace",
+    );
     expect(logs).toContain(
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'assistant-1' instead.",
@@ -675,7 +678,7 @@ describe("app server targeting", () => {
     expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
     });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
@@ -702,7 +705,7 @@ describe("app server targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -718,7 +721,7 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
     });
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -909,7 +912,7 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(entry.resources!.instanceDir, "workspace"),
+      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
       domain: "foo.ngrok.app",
     });
   });
@@ -940,7 +943,10 @@ describe("app server targeting", () => {
   test("--clear-domain drops the saved domain and runs domainless", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = join(entry.resources!.instanceDir, "workspace");
+    const workspaceDir = join(
+      getLocalInstanceDir(entry.resources),
+      "workspace",
+    );
     mkdirSync(workspaceDir, { recursive: true });
     realNgrok.saveNgrokDomain("dead.ngrok.app");
     process.argv = [

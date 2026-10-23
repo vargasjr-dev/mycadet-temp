@@ -49,7 +49,6 @@ beforeEach(() => {
       gatewayPort: 7830,
       daemonPort: 7821,
       cesPort: 8090,
-      qdrantPort: 6333,
     },
   });
   writeFileSync(

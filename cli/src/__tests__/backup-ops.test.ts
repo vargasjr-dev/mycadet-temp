@@ -26,13 +26,14 @@ const entry: config.LockfileAssistant & { runtimeUrl: string } = {
     daemonPort: 1,
     gatewayPort: 2,
     cesPort: 3,
-    qdrantPort: 4,
     signingKey: "07".repeat(32),
   },
 };
 const lookup = spyOn(config, "findAssistantByName").mockReturnValue(entry);
 const location = spyOn(backups, "getBackupsDir").mockReturnValue(backupDir);
-const save = spyOn(config, "saveLockfileAssistant").mockImplementation(() => {});
+const save = spyOn(config, "saveLockfileAssistant").mockImplementation(
+  () => {},
+);
 const tokens = spyOn(guardian, "loadGuardianToken").mockImplementation(() => {
   throw new Error("no guardian token access allowed");
 });

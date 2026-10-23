@@ -4,7 +4,7 @@ import { basename, dirname, join, win32 } from "path";
 
 import {
   getDaemonPidPath,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
   loadAllAssistantsAcrossEnvs,
 } from "./assistant-config.js";
@@ -94,13 +94,13 @@ export async function retireLocal(
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
 
-  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
+  if (!entry.resources) {
     throw new Error(
       `Local assistant '${name}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
   const resources = entry.resources;
-  const cadetDir = resources.instanceDir;
+  const cadetDir = getLocalInstanceDir(resources);
 
   // Check whether another local assistant shares the same data directory.
   const otherSharesDir = loadAllAssistants().some((other) => {
@@ -129,7 +129,12 @@ export async function retireLocal(
 
   // Stop gateway via PID file — use a longer timeout because the gateway has a
   // drain window (5s) before it exits.
-  await stopProcessByPidFile(join(cadetDir, "gateway.pid"), "gateway", undefined, 7000);
+  await stopProcessByPidFile(
+    join(cadetDir, "gateway.pid"),
+    "gateway",
+    undefined,
+    7000,
+  );
 
   // Stop the CES sibling — it is stopped by its PID file, a no-op when the
   // PID file is absent (e.g. the sibling was never started or already exited).
@@ -153,7 +158,7 @@ export async function retireLocal(
   }
 
   // Archive and remove the entire instance directory.
-  const dirToArchive = resources.instanceDir;
+  const dirToArchive = getLocalInstanceDir(resources);
 
   // Move the data directory out of the way so the path is immediately available
   // for the next hatch, then kick off the tar archive in the background.

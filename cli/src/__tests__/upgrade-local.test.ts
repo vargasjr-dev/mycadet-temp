@@ -13,7 +13,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import cliPkg from "../../package.json";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import {
+  getLocalInstanceDir,
+  type LockfileAssistant,
+} from "../lib/assistant-config.js";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
@@ -41,9 +44,9 @@ const getActiveAssistantMock = mock<typeof assistantConfig.getActiveAssistant>(
 const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
-const saveLockfileAssistantMock = mock<typeof assistantConfig.saveLockfileAssistant>(
-  () => {},
-);
+const saveLockfileAssistantMock = mock<
+  typeof assistantConfig.saveLockfileAssistant
+>(() => {});
 
 mock.module("../lib/assistant-config", () => ({
   ...realAssistantConfig,
@@ -110,7 +113,7 @@ const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
   (resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, "runtime", version),
+    installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }),
 );
 const startLocalDaemonMock = mock<typeof local.startLocalDaemon>(
@@ -199,7 +202,6 @@ function makeLocalEntry(): LockfileAssistant {
       instanceDir: tempDir,
       daemonPort: 7821,
       gatewayPort: 7830,
-      qdrantPort: 6333,
       cesPort: 7822,
       signingKey: "ab".repeat(32),
     },
@@ -258,7 +260,7 @@ beforeEach(() => {
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
-    installDir: join(resources.instanceDir, "runtime", version),
+    installDir: join(getLocalInstanceDir(resources), "runtime", version),
   }));
   startLocalDaemonMock.mockReset();
   startLocalDaemonMock.mockResolvedValue(undefined);
@@ -455,9 +457,16 @@ describe("cadet upgrade local", () => {
   });
 
   test("failed target startup restores prior runtime selection and all roots before restarting", async () => {
-    startLocalDaemonMock.mockRejectedValueOnce(new Error("target startup failed"));
+    startLocalDaemonMock.mockRejectedValueOnce(
+      new Error("target startup failed"),
+    );
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
-    expect(restoreBackupMock).toHaveBeenCalledWith("http://127.0.0.1:7830", "local-assistant", "/tmp/local-pre-upgrade.tar.gz", { resume: false });
+    expect(restoreBackupMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:7830",
+      "local-assistant",
+      "/tmp/local-pre-upgrade.tar.gz",
+      { resume: false },
+    );
     expect(startLocalDaemonMock).toHaveBeenCalledTimes(2);
     expect(startCesMock).toHaveBeenCalledTimes(2);
     expect(stopLocalProcessesMock).toHaveBeenCalledTimes(2);

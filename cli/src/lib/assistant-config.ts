@@ -36,39 +36,10 @@ import { probePort } from "./port-probe.js";
 /**
  * Per-instance resource paths and ports. Each local assistant instance gets
  * its own directory tree, ports, and socket so multiple instances can run
- * side-by-side without conflicts. The contract models every field; this
- * narrowing carries the guarantees this module's own writers make:
- * `instanceDir`, and the two host-only ports allocated here, are always
- * present on entries this CLI wrote.
+ * side-by-side without conflicts. The contract models every field, optional
+ * fields are optional everywhere, and code that needs one guards once and
+ * falls back (see {@link getLocalInstanceDir} / {@link getDaemonPidPath}).
  */
-export type LocalInstanceResources = LocalAssistantResources & {
-  /**
-   * Instance-specific data root. New local assistants are placed under
-   * `$XDG_DATA_HOME/cadet{-env}/assistants/<name>/` with state flattened
-   * directly into it. Legacy entries (pre env-data-layout) may still point
-   * at `~` — the read path honors whatever `instanceDir` is stored, with
-   * state in `~/.cadet` for those.
-   */
-  instanceDir: string;
-  qdrantPort: number;
-  cesPort: number;
-};
-
-/**
- * Local entries this CLI wrote always carry the instance dir and the two
- * host-only ports — the writer's guarantee, not the schema's. Narrow at the
- * flow boundary (guard-and-exit) instead of casting.
- */
-export function isLocalInstanceResources(
-  resources: LocalAssistantResources | undefined,
-): resources is LocalInstanceResources {
-  return (
-    resources !== undefined &&
-    resources.instanceDir !== undefined &&
-    resources.qdrantPort !== undefined &&
-    resources.cesPort !== undefined
-  );
-}
 
 export type AssistantLookupResult =
   | { status: "found"; entry: LockfileAssistant }
@@ -92,10 +63,18 @@ export type RootProcessKind = keyof RootProcessRecords;
  * data root's workspace when the entry carries no instance dir
  * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
  */
+/**
+ * The instance's data root: the recorded instanceDir, or the shared state
+ * root for legacy entries predating per-instance dirs.
+ */
+export function getLocalInstanceDir(
+  resources?: LocalAssistantResources,
+): string {
+  return resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
+}
+
 export function getDaemonPidPath(resources?: LocalAssistantResources): string {
-  const cadetDir =
-    resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
-  return join(cadetDir, "workspace", "cadet.pid");
+  return join(getLocalInstanceDir(resources), "workspace", "cadet.pid");
 }
 
 function readLockfile(): Lockfile {
@@ -542,7 +521,7 @@ async function findAvailablePort(
  */
 export async function allocateLocalResources(
   instanceName: string,
-): Promise<LocalInstanceResources> {
+): Promise<LocalAssistantResources> {
   const env = getCurrentEnvironment();
   const instanceDir = join(getMultiInstanceDir(env), instanceName);
   mkdirSync(instanceDir, { recursive: true });
@@ -552,11 +531,8 @@ export async function allocateLocalResources(
   for (const entry of loadAllAssistants()) {
     if (entry.cloud !== "local" || !entry.resources) continue;
     reservedPorts.push(entry.resources.daemonPort, entry.resources.gatewayPort);
-    for (const optionalPort of [
-      entry.resources.qdrantPort,
-      entry.resources.cesPort,
-    ]) {
-      if (optionalPort !== undefined) reservedPorts.push(optionalPort);
+    if (entry.resources.cesPort !== undefined) {
+      reservedPorts.push(entry.resources.cesPort);
     }
   }
 
@@ -569,23 +545,16 @@ export async function allocateLocalResources(
     ...reservedPorts,
     daemonPort,
   ]);
-  const qdrantPort = await findAvailablePort(basePorts.qdrant, [
-    ...reservedPorts,
-    daemonPort,
-    gatewayPort,
-  ]);
   const cesPort = await findAvailablePort(basePorts.ces, [
     ...reservedPorts,
     daemonPort,
     gatewayPort,
-    qdrantPort,
   ]);
 
   return {
     instanceDir,
     daemonPort,
     gatewayPort,
-    qdrantPort,
     cesPort,
   };
 }

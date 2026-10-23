@@ -191,7 +191,6 @@ describe("setup command", () => {
         instanceDir: testDir,
         gatewayPort: 3000,
         daemonPort: 8501,
-        qdrantPort: 9001,
         cesPort: 9002,
       },
     });
@@ -226,7 +225,6 @@ describe("setup command", () => {
         instanceDir: testDir,
         gatewayPort: 3000,
         daemonPort: 8501,
-        qdrantPort: 9001,
         cesPort: 9002,
       },
     });
@@ -254,7 +252,6 @@ describe("setup command", () => {
         instanceDir: testDir,
         gatewayPort: 3000,
         daemonPort: 8501,
-        qdrantPort: 9001,
         cesPort: 9002,
       },
     });

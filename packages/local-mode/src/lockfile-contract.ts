@@ -200,8 +200,6 @@ export const LocalAssistantResourcesSchema = z.object({
   instanceDir: z.string().optional(),
   gatewayPort: z.number(),
   daemonPort: z.number(),
-  /** HTTP port for the Qdrant vector store (host-only). */
-  qdrantPort: z.number().optional(),
   /** HTTP port for the CES (Claude Extension Server) (host-only). */
   cesPort: z.number().optional(),
   runtimeVersion: z.string().optional(),

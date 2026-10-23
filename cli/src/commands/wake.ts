@@ -7,7 +7,7 @@ import { cliCommand } from "../lib/cli-name.js";
 
 import {
   getDaemonPidPath,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
   saveLockfileAssistant,
@@ -52,91 +52,91 @@ import {
 
 export const wake = Object.assign(
   async function wake(): Promise<void> {
-  const args = process.argv.slice(3);
-  if (args.includes("--help") || args.includes("-h")) {
-    console.log(`Usage: ${cliCommand()} wake [<name> | --all] [options]`);
-    console.log("");
-    console.log("Start the assistant and gateway processes.");
-    console.log("");
-    console.log("Arguments:");
-    console.log(
-      "  <name>    Name of the assistant to start, defaults to active or only local",
-    );
-    console.log("");
-    console.log("Options:");
-    console.log(
-      "  --all          Start every assistant across all remotes instead of one",
-    );
-    console.log(
-      "  --watch        Run assistant and gateway in watch mode (hot reload on source changes)",
-    );
-    console.log(
-      "  --foreground   Run assistant in foreground with logs printed to terminal",
-    );
-    console.log(
-      "  --repair-guardian  Force-re-provision the guardian token (resets the\n" +
-        "                     gateway bootstrap and re-leases — REVOKES other device-bound\n" +
-        "                     tokens; replaces an unrecoverable signing key and restarts services only then.\n" +
-        "                     Clients may need to authenticate again. Use deliberately.)",
-    );
-    process.exit(0);
-  }
+    const args = process.argv.slice(3);
+    if (args.includes("--help") || args.includes("-h")) {
+      console.log(`Usage: ${cliCommand()} wake [<name> | --all] [options]`);
+      console.log("");
+      console.log("Start the assistant and gateway processes.");
+      console.log("");
+      console.log("Arguments:");
+      console.log(
+        "  <name>    Name of the assistant to start, defaults to active or only local",
+      );
+      console.log("");
+      console.log("Options:");
+      console.log(
+        "  --all          Start every assistant across all remotes instead of one",
+      );
+      console.log(
+        "  --watch        Run assistant and gateway in watch mode (hot reload on source changes)",
+      );
+      console.log(
+        "  --foreground   Run assistant in foreground with logs printed to terminal",
+      );
+      console.log(
+        "  --repair-guardian  Force-re-provision the guardian token (resets the\n" +
+          "                     gateway bootstrap and re-leases — REVOKES other device-bound\n" +
+          "                     tokens; replaces an unrecoverable signing key and restarts services only then.\n" +
+          "                     Clients may need to authenticate again. Use deliberately.)",
+      );
+      process.exit(0);
+    }
 
-  const watch = args.includes("--watch");
-  const foreground = args.includes("--foreground");
-  // Re-leasing the guardian token calls guardian/init, which revokes every
-  // other device-bound token (other tabs, other local clients on this machine).
-  // Gate it behind an explicit flag so the automatic connect-repair path
-  // (`runWake` spawns `wake <id>` with no flags) can never revoke a live session
-  // — it only ever restarts + sibling-seeds. A genuine spent-bootstrap brick is
-  // recovered deliberately via `cadet wake <id> --repair-guardian`.
-  const repairGuardian = args.includes("--repair-guardian");
-  const nameArg = args.find((a) => !a.startsWith("-"));
-  const all = args.includes("--all");
+    const watch = args.includes("--watch");
+    const foreground = args.includes("--foreground");
+    // Re-leasing the guardian token calls guardian/init, which revokes every
+    // other device-bound token (other tabs, other local clients on this machine).
+    // Gate it behind an explicit flag so the automatic connect-repair path
+    // (`runWake` spawns `wake <id>` with no flags) can never revoke a live session
+    // — it only ever restarts + sibling-seeds. A genuine spent-bootstrap brick is
+    // recovered deliberately via `cadet wake <id> --repair-guardian`.
+    const repairGuardian = args.includes("--repair-guardian");
+    const nameArg = args.find((a) => !a.startsWith("-"));
+    const all = args.includes("--all");
 
-  if (all && nameArg) {
-    console.error("Error: --all cannot be combined with an assistant name.");
-    process.exit(1);
-  }
-  if (all && (foreground || repairGuardian)) {
-    console.error(
-      "Error: --all cannot be combined with --foreground or --repair-guardian.",
-    );
-    process.exit(1);
-  }
-
-  if (all) {
-    await wakeAll({ watch });
-    return;
-  }
-
-  const entry = resolveTargetAssistant(nameArg);
-  try {
-    await wakeAssistant(entry, { watch, foreground, repairGuardian });
-  } catch (err) {
-    if (err instanceof WakeExit) {
-      console.error(`Error: ${err.message}`);
+    if (all && nameArg) {
+      console.error("Error: --all cannot be combined with an assistant name.");
       process.exit(1);
     }
-    throw err;
-  }
+    if (all && (foreground || repairGuardian)) {
+      console.error(
+        "Error: --all cannot be combined with --foreground or --repair-guardian.",
+      );
+      process.exit(1);
+    }
 
-  // Foreground blocking is a single-assistant concern (--all refuses the
-  // flag), and the docker path already warned that foreground is ignored.
-  if (foreground && entry.cloud !== "docker") {
-    console.log("Running in the foreground, Ctrl+C to stop...\n");
-    // Block forever — the daemon is running with inherited stdio so its
-    // output streams to this terminal. When the user hits Ctrl+C, SIGINT
-    // propagates to the daemon child and both exit.
-    await new Promise<void>((resolve) => {
-      process.on("SIGINT", () => {
-        console.log("\nShutting down...");
-        resolve();
+    if (all) {
+      await wakeAll({ watch });
+      return;
+    }
+
+    const entry = resolveTargetAssistant(nameArg);
+    try {
+      await wakeAssistant(entry, { watch, foreground, repairGuardian });
+    } catch (err) {
+      if (err instanceof WakeExit) {
+        console.error(`Error: ${err.message}`);
+        process.exit(1);
+      }
+      throw err;
+    }
+
+    // Foreground blocking is a single-assistant concern (--all refuses the
+    // flag), and the docker path already warned that foreground is ignored.
+    if (foreground && entry.cloud !== "docker") {
+      console.log("Running in the foreground, Ctrl+C to stop...\n");
+      // Block forever — the daemon is running with inherited stdio so its
+      // output streams to this terminal. When the user hits Ctrl+C, SIGINT
+      // propagates to the daemon child and both exit.
+      await new Promise<void>((resolve) => {
+        process.on("SIGINT", () => {
+          console.log("\nShutting down...");
+          resolve();
+        });
+        process.on("SIGTERM", () => resolve());
       });
-      process.on("SIGTERM", () => resolve());
-    });
-  }
-},
+    }
+  },
   { description: "Start the assistant and gateway" },
 );
 
@@ -149,7 +149,9 @@ export const wake = Object.assign(
 async function wakeAll(opts: { watch: boolean }): Promise<void> {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
-    console.error(`Error: no assistants found. Run '${cliCommand()} hatch' first.`);
+    console.error(
+      `Error: no assistants found. Run '${cliCommand()} hatch' first.`,
+    );
     process.exit(1);
   }
 
@@ -214,9 +216,7 @@ export async function wakeAssistant(
       const ignored = [watch && "--watch", foreground && "--foreground"]
         .filter(Boolean)
         .join(" and ");
-      console.warn(
-        `Warning: ${ignored} ignored for Docker instances.`,
-      );
+      console.warn(`Warning: ${ignored} ignored for Docker instances.`);
     }
     const res = dockerResourceNames(entry.assistantId);
     try {
@@ -250,7 +250,7 @@ export async function wakeAssistant(
     );
   }
 
-  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
+  if (!entry.resources) {
     throw new WakeExit(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -280,7 +280,7 @@ export async function wakeAssistant(
   if (replacingSigningKey) {
     for (const [file, label, port] of [
       [
-        join(resources.instanceDir, "gateway.pid"),
+        join(getLocalInstanceDir(resources), "gateway.pid"),
         "gateway",
         resources.gatewayPort,
       ],
@@ -421,7 +421,7 @@ export async function wakeAssistant(
     // means credential operations will fail until the next wake. Relaunch the
     // sibling so the daemon's lazy reconnect (secure-keys.ts) picks it up on
     // the next credential read. startCes always launches the sibling.
-    const cadetDir = resources.instanceDir;
+    const cadetDir = getLocalInstanceDir(resources);
     const cesPidFile = join(cadetDir, "ces.pid");
     const cesAlive = isProcessAlive(cesPidFile).alive;
     if (!cesAlive) {
@@ -433,7 +433,7 @@ export async function wakeAssistant(
   // Start gateway
   let gatewayStarted = false;
   {
-    const cadetDir = resources.instanceDir;
+    const cadetDir = getLocalInstanceDir(resources);
     const gatewayPidFile = join(cadetDir, "gateway.pid");
     const gatewayState = await resolveProcessState(
       gatewayPidFile,
@@ -565,7 +565,7 @@ export async function wakeAssistant(
           await new Promise((r) => setTimeout(r, 2000 * 2 ** (attempt - 1)));
         } else {
           console.warn(
-            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ?", not retrying — a malformed 200 will not fix itself" : ` after ${maxAttempts} attempts`}: ${err}`,
+            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxAttempts} attempts`}: ${err}`,
           );
           // The user explicitly confirmed this destructive repair — a
           // success exit here would make callers (the web recovery flow)
@@ -580,7 +580,7 @@ export async function wakeAssistant(
   // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.
-  const workspaceDir = join(resources.instanceDir, "workspace");
+  const workspaceDir = join(getLocalInstanceDir(resources), "workspace");
   await restoreAppServerAndAutoTunnel(
     entry.assistantId,
     resources.gatewayPort,
@@ -598,4 +598,3 @@ export async function wakeAssistant(
   }
   console.log("Wake complete.");
 }
-

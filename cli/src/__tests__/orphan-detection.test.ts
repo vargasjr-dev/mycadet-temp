@@ -50,7 +50,10 @@ function makeLocalEntry(
     );
   }
   if (pids.embed !== undefined) {
-    writeFileSync(join(instanceDir, "workspace", "embed-worker.pid"), pids.embed);
+    writeFileSync(
+      join(instanceDir, "workspace", "embed-worker.pid"),
+      pids.embed,
+    );
   }
   return {
     assistantId: id,
@@ -60,7 +63,6 @@ function makeLocalEntry(
       instanceDir,
       daemonPort: 7821,
       gatewayPort: 7830,
-      qdrantPort: 6333,
       cesPort: 8090,
     },
   };
@@ -242,7 +244,6 @@ describe("loadAllAssistantsAcrossEnvs", () => {
               instanceDir,
               daemonPort: 18000,
               gatewayPort: 18100,
-              qdrantPort: 18200,
               cesPort: 18300,
             },
           },

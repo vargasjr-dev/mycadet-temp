@@ -489,7 +489,7 @@ describe("lockfile IPC handlers", () => {
     });
   });
 
-  test("saveLockfileAssistant preserves host identity and unknown stored fields", () => {
+  test("saveLockfileAssistant is a schema-canonical merge — unknown stored fields and secrets absent from the payload survive", () => {
     const stored = {
       assistantId: "asst-1",
       cloud: "local",
@@ -510,16 +510,35 @@ describe("lockfile IPC handlers", () => {
       {
         assistantId: "asst-1",
         name: "Renamed Assistant",
-        resources: { instanceDir: "/instances/example" },
-        guardianBootstrapSecret: "renderer-cannot-replace-this",
-        futureField: "renderer-cannot-replace-this",
+        cloud: "local",
+        runtimeUrl: "http://127.0.0.1:1",
+        resources: {
+          instanceDir: "/instances/example",
+          daemonPort: 7821,
+          gatewayPort: 7830,
+          signingKey: "cd".repeat(32),
+        },
       },
       "asst-1",
     );
 
     expect(result.ok).toBe(true);
+    // The schema is the only boundary: what the payload carried rides, and
+    // every secret it never carried (the guardian bootstrap secret) survives
+    // from the stored entry via the merge.
     expect(JSON.parse(fs.readFileSync(lockfilePath, "utf-8"))).toEqual({
-      assistants: [{ ...stored, name: "Renamed Assistant" }],
+      assistants: [
+        {
+          ...stored,
+          name: "Renamed Assistant",
+          resources: {
+            instanceDir: "/instances/example",
+            daemonPort: 7821,
+            gatewayPort: 7830,
+            signingKey: "cd".repeat(32),
+          },
+        },
+      ],
       activeAssistant: "asst-1",
     });
   });
@@ -531,7 +550,7 @@ describe("lockfile IPC handlers", () => {
     if (result.ok) {
       return;
     }
-    expect(result.error).toContain("assistantId");
+    expect(result.error).toBe("Invalid assistant metadata");
     expect(fs.existsSync(lockfilePath)).toBe(false);
   });
 

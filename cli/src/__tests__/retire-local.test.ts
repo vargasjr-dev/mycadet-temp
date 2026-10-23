@@ -18,6 +18,7 @@ import {
 } from "../lib/assistant-config.js";
 import { getLockfilePath } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
 const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
@@ -77,21 +78,6 @@ import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
 
-function makeEntry(assistantId: string): LockfileAssistant {
-  return {
-    assistantId,
-    runtimeUrl: "http://127.0.0.1:7801",
-    cloud: "local",
-    resources: {
-      instanceDir,
-      daemonPort: 7801,
-      gatewayPort: 7831,
-      qdrantPort: 6334,
-      cesPort: 7790,
-    },
-  };
-}
-
 function writeLockfile(entries: LockfileAssistant[]): void {
   writeFileSync(
     getLockfilePath(getCurrentEnvironment()),
@@ -115,7 +101,7 @@ describe("retireLocal — CES sibling stop", () => {
     rmSync(instanceDir, { recursive: true, force: true });
     rmSync(join(testDir, "retired"), { recursive: true, force: true });
     mkdirSync(instanceDir, { recursive: true });
-    writeLockfile([makeEntry("test-assistant")]);
+    writeLockfile([makeEntry({ assistantId: "test-assistant" })]);
 
     // Suppress console output from the lifecycle reporter.
     spyOn(console, "log").mockImplementation(() => {});
@@ -132,7 +118,10 @@ describe("retireLocal — CES sibling stop", () => {
   });
 
   test("stops the CES sibling alongside daemon and gateway", async () => {
-    const entry = makeEntry("test-assistant");
+    const entry = makeEntry({
+      assistantId: "test-assistant",
+      resources: { instanceDir },
+    });
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -165,7 +154,7 @@ describe("retireLocal — CES sibling stop", () => {
   // default in stopProcess would SIGKILL it first, stranding those workers as
   // orphans that outlive the runtime that spawned them.
   test("gives the daemon its full stop budget, not the default grace", async () => {
-    const entry = makeEntry("test-assistant");
+    const entry = makeEntry({ assistantId: "test-assistant" });
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -193,7 +182,10 @@ describe("retireLocal — CES sibling stop", () => {
       },
     );
 
-    const entry = makeEntry("test-assistant");
+    const entry = makeEntry({
+      assistantId: "test-assistant",
+      resources: { instanceDir },
+    });
     await retireLocal("test-assistant", entry, {
       progress: () => {},
       log: () => {},
@@ -212,7 +204,7 @@ describe("retireLocal — CES sibling stop", () => {
 
   test("protects other assistants during orphan cleanup", async () => {
     const otherInstanceDir = join(testDir, "other-instance");
-    const otherEntry = makeEntry("other-assistant");
+    const otherEntry = makeEntry({ assistantId: "other-assistant" });
     otherEntry.resources!.instanceDir = otherInstanceDir;
     const otherPid = "4242";
     const otherPidFile = getDaemonPidPath(otherEntry.resources);
@@ -220,18 +212,22 @@ describe("retireLocal — CES sibling stop", () => {
       recursive: true,
     });
     writeFileSync(otherPidFile, otherPid);
-    writeLockfile([makeEntry("test-assistant"), otherEntry]);
+    writeLockfile([makeEntry({ assistantId: "test-assistant" }), otherEntry]);
     stopProcessByPidFileMock.mockImplementation(
       async (_pidFile: string, label: string): Promise<boolean> =>
         label !== "daemon",
     );
 
-    await retireLocal("test-assistant", makeEntry("test-assistant"), {
-      progress: () => {},
-      log: () => {},
-      warn: () => {},
-      error: () => {},
-    });
+    await retireLocal(
+      "test-assistant",
+      makeEntry({ assistantId: "test-assistant" }),
+      {
+        progress: () => {},
+        log: () => {},
+        warn: () => {},
+        error: () => {},
+      },
+    );
 
     expect(stopOrphanedDaemonProcessesMock).toHaveBeenCalledTimes(1);
     const excludedPids = stopOrphanedDaemonProcessesMock.mock.calls[0]?.[0];

@@ -46,7 +46,6 @@ export {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   upsertLockfileAssistant,
-  upsertRendererLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -54,7 +53,12 @@ export {
 export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
-export { getLoopbackGatewayPort, parseLockfile } from "./lockfile-contract";
+export {
+  getLoopbackGatewayPort,
+  LockfileAssistantSchema,
+  parseLockfile,
+} from "./lockfile-contract";
+export { readRawLockfileStrict } from "./lockfile";
 export type {
   Lockfile,
   LockfileAssistant,
