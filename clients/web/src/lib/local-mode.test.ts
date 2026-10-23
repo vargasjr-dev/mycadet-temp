@@ -1119,7 +1119,9 @@ describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", 
     expect(hasGatewayAssistant()).toBe(true);
 
     setLockfile({
-      assistants: [{ ...pairedEntry, runtimeUrl: undefined } as LockfileAssistant],
+      assistants: [
+        { ...pairedEntry, runtimeUrl: undefined } as LockfileAssistant,
+      ],
       activeAssistant: "paired-a",
     });
     expect(hasGatewayAssistant()).toBe(false);
@@ -1150,14 +1152,12 @@ describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", 
 
   test("a local selection's session is topology — live with a resolvable gateway, off without one", () => {
     enableLocalMode();
-    setLockfile(
-      {
-        assistants: [
-          { ...localA, resources: undefined } as unknown as LockfileAssistant,
-        ],
-        activeAssistant: "local-a",
-      },
-    );
+    setLockfile({
+      assistants: [
+        { ...localA, resources: undefined } as unknown as LockfileAssistant,
+      ],
+      activeAssistant: "local-a",
+    });
     expect(isGatewaySessionLive()).toBe(false);
 
     setLockfile({ assistants: [localA], activeAssistant: "local-a" });

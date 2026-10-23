@@ -172,8 +172,6 @@ mock.module("@/lib/local-mode", () => ({
     primeLocalGatewayConnectionWithRepairMock,
 }));
 
-
-
 mock.module("@/lib/auth/remote-gateway-session", () => ({
   refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
   remoteGatewayPublicPathPrefix: () => "",
@@ -2312,9 +2310,9 @@ describe("identity kind (platform vs local gateway access)", () => {
 test("explicit cloud-account logout revokes cloud and biometric credentials even in gateway mode", async () => {
   mockIsGatewayAuth = true;
   setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
+    url: window.location.origin,
+    token: "slot-token",
+  });
   const revokeSession = mock(async () => {});
   await useAuthStore.getState().logout({ cloudAccount: { revokeSession } });
   expect(revokeSession).toHaveBeenCalledTimes(1);
@@ -2326,9 +2324,9 @@ test("explicit cloud-account logout revokes cloud and biometric credentials even
 test("default gateway logout retains gateway-only behavior", async () => {
   mockIsGatewayAuth = true;
   setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
+    url: window.location.origin,
+    token: "slot-token",
+  });
   await useAuthStore.getState().logout();
   expect(logoutMock).not.toHaveBeenCalled();
 });

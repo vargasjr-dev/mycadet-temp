@@ -82,9 +82,9 @@ describe("resolveNavigation", () => {
     });
 
     test("allows gateway auth regardless of auth status", () => {
-      expect(guard(s({ isGatewaySessionLive: true, isAuthenticated: false }))).toEqual(
-        ALLOW,
-      );
+      expect(
+        guard(s({ isGatewaySessionLive: true, isAuthenticated: false })),
+      ).toEqual(ALLOW);
     });
 
     // -- unauthenticated --------------------------------------------------

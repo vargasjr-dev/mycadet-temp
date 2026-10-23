@@ -5,7 +5,10 @@ import type {
   RemoteWebPairingTokenRequest,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { getSelfHostedActorToken, setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import {
+  getSelfHostedActorToken,
+  setSelfHostedConnection,
+} from "@/lib/self-hosted/connection";
 
 export {
   parseRemoteWebPairingParams,

@@ -425,9 +425,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const output = await requestInterceptor(input);
     const outUrl = new URL(output.url);
     expect(outUrl.origin).toBe("http://localhost:3000");
-    expect(outUrl.pathname).toBe(
-      "/web/20100/v1/assistants/self/conversations",
-    );
+    expect(outUrl.pathname).toBe("/web/20100/v1/assistants/self/conversations");
   });
 
   test("strips platform-only headers from the rewritten request", async () => {
