@@ -17,6 +17,8 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { Command } from "commander";
 
+import { useMemorySecureKeys } from "../../../__tests__/helpers/secure-keys.js";
+
 // ---------------------------------------------------------------------------
 // Mock state
 // ---------------------------------------------------------------------------
@@ -68,6 +70,8 @@ let savedConversationId: string | undefined;
 let savedSkillContextJson: string | undefined;
 
 beforeEach(() => {
+  // Any stray direct secure-keys write lands in memory, not the vault.
+  useMemorySecureKeys();
   mockSetSecureKeyViaDaemon = mock(() => Promise.resolve({ ok: true }));
   mockDeleteSecureKeyViaDaemon = mock(
     (): Promise<DeleteResultStub> => Promise.resolve({ result: "deleted" }),
