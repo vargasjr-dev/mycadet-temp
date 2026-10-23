@@ -94,7 +94,7 @@ describe("cadet use", () => {
 
     expect(getActiveAssistant()).toBe("assistant-1");
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
-      "Active assistant set to Alice (assistant-1).",
+      "Active assistant set to Alice.",
     );
   });
 
@@ -109,7 +109,7 @@ describe("cadet use", () => {
 
     expect(getActiveAssistant()).toBe("assistant-1");
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
-      "Active assistant set to Example Assistant (assistant-1).",
+      "Active assistant set to Example Assistant.",
     );
   });
 
@@ -119,7 +119,7 @@ describe("cadet use", () => {
     await use();
 
     expect(consoleLogSpy.mock.calls.flat().join("\n")).toContain(
-      "Active assistant: Alice (assistant-1)",
+      "Active assistant: Alice",
     );
   });
 
