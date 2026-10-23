@@ -4,6 +4,7 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import {
   getAssistantDisplayName,
   resolveTargetAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { loadGuardianToken, leaseGuardianToken } from "../lib/guardian-token";
@@ -88,15 +89,7 @@ export const debug = Object.assign(
     const cloudUrl = entry.cloudBaseUrl?.trim() || getCloudUrl();
     const organizationId = entry.cloudOrganizationId?.trim();
 
-    const accessToken = await daemonAccessToken(
-      {
-        assistantId: entry.assistantId,
-        runtimeUrl: entry.runtimeUrl,
-        guardianBootstrapSecret: entry.guardianBootstrapSecret,
-      },
-      reference,
-      false,
-    );
+    const accessToken = await daemonAccessToken(entry, reference, false);
     const headers = organizationId
       ? authHeadersForKnownOrganization(cloudToken, organizationId)
       : await authHeaders(cloudToken, cloudUrl);
@@ -148,11 +141,7 @@ export const debug = Object.assign(
 );
 
 async function daemonAccessToken(
-  entry: {
-    assistantId: string;
-    runtimeUrl: string;
-    guardianBootstrapSecret?: string;
-  },
+  entry: LockfileAssistant,
   reference: string,
   forceRefresh: boolean,
 ): Promise<string> {
@@ -165,6 +154,11 @@ async function daemonAccessToken(
     ) {
       return cached.accessToken;
     }
+  }
+  if (!entry.runtimeUrl) {
+    throw new Error(
+      `No recorded gateway URL to lease a guardian token from for ${reference}.`,
+    );
   }
   try {
     return (

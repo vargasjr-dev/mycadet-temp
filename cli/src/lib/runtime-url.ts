@@ -19,7 +19,7 @@ import type { LockfileAssistant } from "./assistant-config.js";
  * The `subpath` is appended verbatim (e.g. `"identity"`).
  */
 export function resolveRuntimeUrl(
-  entry: Pick<LockfileAssistant, "cloud" | "runtimeUrl" | "assistantId">,
+  entry: LockfileAssistant,
   subpath: string,
 ): string {
   if (isCloudHome(entry.cloud)) {

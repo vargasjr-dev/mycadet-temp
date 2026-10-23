@@ -88,14 +88,13 @@ export type RootProcessKind = keyof RootProcessRecords;
 
 /**
  * Derive the daemon PID file path from a resources object. The PID file
- * lives inside the instance's workspace directory. When no resources are
- * available, falls back to the XDG data root's workspace
+ * lives inside the instance's workspace directory. Falls back to the XDG
+ * data root's workspace when the entry carries no instance dir
  * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
  */
-export function getDaemonPidPath(resources?: LocalInstanceResources): string {
-  const cadetDir = resources
-    ? resources.instanceDir
-    : getStateDir(getCurrentEnvironment());
+export function getDaemonPidPath(resources?: LocalAssistantResources): string {
+  const cadetDir =
+    resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
   return join(cadetDir, "workspace", "cadet.pid");
 }
 

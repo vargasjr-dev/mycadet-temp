@@ -42,11 +42,11 @@ const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
 const loadAllAssistantsAcrossEnvsMock = mock<
   typeof assistantConfig.loadAllAssistantsAcrossEnvs
 >(() => []);
-const saveLockfileAssistantMock = mock<typeof assistantConfig.saveLockfileAssistant>(
-  () => {},
-);
+const saveLockfileAssistantMock = mock<
+  typeof assistantConfig.saveLockfileAssistant
+>(() => {});
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
-  (resources) => join(resources!.instanceDir, "daemon.pid"),
+  (resources) => join(resources?.instanceDir ?? "missing", "daemon.pid"),
 );
 
 mock.module("../lib/assistant-config.js", () => ({
@@ -259,7 +259,7 @@ beforeEach(() => {
   saveLockfileAssistantMock.mockReset();
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
-    join(resources!.instanceDir, "daemon.pid"),
+    join(resources?.instanceDir ?? "missing", "daemon.pid"),
   );
   resolveProcessStateMock.mockReset();
   resolveProcessStateMock.mockImplementation(

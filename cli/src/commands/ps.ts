@@ -32,10 +32,10 @@ import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
 import {
+  checkCloudHealth,
   checkHealth,
-  checkManagedHealth,
+  fetchCloudPs,
   fetchGatewayPs,
-  fetchManagedPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
 import { readCloudToken } from "../lib/cloud-client";
@@ -339,7 +339,9 @@ function formatDetectionInfo(proc: DetectedProcess): string {
   return parts.join(" | ");
 }
 
-async function getLocalProcesses(entry: LockfileAssistant): Promise<TableRow[]> {
+async function getLocalProcesses(
+  entry: LockfileAssistant,
+): Promise<TableRow[]> {
   const resources = entry.resources;
   if (!isLocalInstanceResources(resources)) {
     throw new Error(
@@ -448,7 +450,9 @@ function isLocalProcessAlive(pid: number): boolean {
   }
 }
 
-async function getDockerProcesses(entry: LockfileAssistant): Promise<TableRow[]> {
+async function getDockerProcesses(
+  entry: LockfileAssistant,
+): Promise<TableRow[]> {
   const res = dockerResourceNames(entry.assistantId);
 
   const containers: { name: string; containerName: string }[] = [
@@ -522,9 +526,7 @@ async function getAssistantProcessRows(
   if (isCloudHome(cloud)) {
     console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
 
-    const psData = entry.runtimeUrl
-      ? await fetchManagedPs(entry.runtimeUrl, entry.assistantId)
-      : null;
+    const psData = await fetchCloudPs(entry);
 
     if (!psData) {
       return [
@@ -823,9 +825,7 @@ async function getAssistantListHealth(
   }
 
   if (isCloudHome(entry.cloud)) {
-    return entry.runtimeUrl
-      ? checkManagedHealth(entry.runtimeUrl, entry.assistantId)
-      : { status: "unknown", detail: "no runtime URL" };
+    return checkCloudHealth(entry);
   }
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;

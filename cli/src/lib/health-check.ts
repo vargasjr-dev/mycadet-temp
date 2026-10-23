@@ -1,4 +1,5 @@
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import { z } from "zod";
 
 const HealthResponseSchema = z.object({
@@ -58,9 +59,7 @@ export async function checkManagedHealth(
       return { status: `error (${response.status})`, detail: null };
     }
 
-    const data = HealthResponseSchema
-      .catch({})
-      .parse(await response.json());
+    const data = HealthResponseSchema.catch({}).parse(await response.json());
     const status = data.status || "unknown";
     return {
       status,
@@ -130,8 +129,7 @@ export async function fetchManagedPs(
   runtimeUrl: string,
   assistantId: string,
 ): Promise<ManagedPsResponse | null> {
-  const { readCloudToken, authHeaders } =
-    await import("./cloud-client.js");
+  const { readCloudToken, authHeaders } = await import("./cloud-client.js");
   const token = readCloudToken();
   if (!token) return null;
 
@@ -247,9 +245,7 @@ export async function checkHealth(
       return { status: `error (${response.status})`, detail: null };
     }
 
-    const data = HealthResponseSchema
-      .catch({})
-      .parse(await response.json());
+    const data = HealthResponseSchema.catch({}).parse(await response.json());
     const status = data.status || "unknown";
     return {
       status,
@@ -263,4 +259,28 @@ export async function checkHealth(
         : "unreachable";
     return { status, detail: null };
   }
+}
+
+/**
+ * Cadet Cloud process listing for an entry, tolerating a missing recorded
+ * gateway URL (cloud entries may never have one).
+ */
+export async function fetchCloudPs(
+  entry: LockfileAssistant,
+): Promise<ManagedPsResponse | null> {
+  return entry.runtimeUrl
+    ? fetchManagedPs(entry.runtimeUrl, entry.assistantId)
+    : null;
+}
+
+/**
+ * Cadet Cloud health for an entry, tolerating a missing recorded gateway URL
+ * (cloud entries may never have one).
+ */
+export async function checkCloudHealth(
+  entry: LockfileAssistant,
+): Promise<HealthCheckResult> {
+  return entry.runtimeUrl
+    ? checkManagedHealth(entry.runtimeUrl, entry.assistantId)
+    : { status: "unknown", detail: "no runtime URL" };
 }

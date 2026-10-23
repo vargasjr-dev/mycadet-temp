@@ -121,7 +121,9 @@ function parseArgs(): UpgradeArgs {
       console.log(`Usage: ${cliCommand()} upgrade [<name>] [options]`);
       console.log("");
       console.log("Upgrade an assistant to a newer version.");
-      console.log("To roll back to a previous version, use `cadet restore` with a backup.");
+      console.log(
+        "To roll back to a previous version, use `cadet restore` with a backup.",
+      );
       console.log("");
       console.log("Arguments:");
       console.log(
@@ -637,7 +639,9 @@ async function upgradeDocker(
             if (restored) {
               console.log("   ✅ Data restored successfully\n");
             } else {
-              throw new Error(`Root restore failed; rollback recovery is incomplete. Backup: ${backupPath}`);
+              throw new Error(
+                `Root restore failed; rollback recovery is incomplete. Backup: ${backupPath}`,
+              );
             }
           } else {
             console.log(
@@ -970,15 +974,34 @@ async function upgradeLocal(
       throw new Error(msg);
     }
   } catch (error) {
-    console.error("Local upgrade failed; restoring the previous runtime and service roots...");
+    console.error(
+      "Local upgrade failed; restoring the previous runtime and service roots...",
+    );
     await stopLocalProcesses(upgradedResources);
     entry.resources = originalResources;
     saveLockfileAssistant(entry);
     if (backupPath) {
-      const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
-      if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
-      await Promise.all([startCes(false, originalResources), startLocalDaemon(false, originalResources, { signingKey }), startGateway(false, originalResources, { signingKey, bootstrapSecret })]);
-      if (!await waitForReady(adminUrl)) throw new Error(`Previous local runtime did not recover. Backup: ${backupPath}`, { cause: error });
+      const restored = await restoreBackup(
+        adminUrl,
+        entry.assistantId,
+        backupPath,
+        { resume: false },
+      );
+      if (!restored)
+        throw new Error(
+          `Local recovery failed; services remain stopped. Backup: ${backupPath}`,
+          { cause: error },
+        );
+      await Promise.all([
+        startCes(false, originalResources),
+        startLocalDaemon(false, originalResources, { signingKey }),
+        startGateway(false, originalResources, { signingKey, bootstrapSecret }),
+      ]);
+      if (!(await waitForReady(adminUrl)))
+        throw new Error(
+          `Previous local runtime did not recover. Backup: ${backupPath}`,
+          { cause: error },
+        );
     }
     throw error;
   }
@@ -1113,7 +1136,7 @@ async function waitForPlatformUpgrade(
   );
 }
 
-async function upgradePlatform(
+async function upgradeCloud(
   entry: LockfileAssistant,
   version: string | null,
   wait: boolean,
@@ -1489,72 +1512,71 @@ async function resolveLatestAndMaybeSelfUpdate(
 
 export const upgrade = Object.assign(
   async function upgrade(): Promise<void> {
-  const { name, version, latest, prepare, finalize, noWait, force } =
-    parseArgs();
-  const entry = resolveTargetAssistant(name);
+    const { name, version, latest, prepare, finalize, noWait, force } =
+      parseArgs();
+    const entry = resolveTargetAssistant(name);
 
-  if (prepare) {
-    await upgradePrepare(entry, version);
-    return;
-  }
-
-  if (finalize) {
-    await upgradeFinalize(entry, version);
-    return;
-  }
-
-  // When --latest is passed, resolve the target from the cloud API and
-  // self-update the CLI if it's behind.  The resolved version is then used
-  // as the explicit target for the rest of the upgrade flow.
-  let effectiveVersion = version;
-  const cloud = entry.cloud;
-  if (latest) {
-    effectiveVersion =
-      cloud === "local"
-        ? await resolveLatestStableTag()
-        : await resolveLatestAndMaybeSelfUpdate(name, {
-            noWait,
-            force,
-          });
-  }
-
-  try {
-    if (cloud === "docker") {
-      await upgradeDocker(entry, effectiveVersion, force);
+    if (prepare) {
+      await upgradePrepare(entry, version);
       return;
     }
 
-    if (cloud === "local") {
-      await upgradeLocal(entry, effectiveVersion, force);
+    if (finalize) {
+      await upgradeFinalize(entry, version);
       return;
     }
 
-    if (isCloudHome(cloud)) {
-      await upgradePlatform(entry, effectiveVersion, !noWait);
-      return;
+    // When --latest is passed, resolve the target from the cloud API and
+    // self-update the CLI if it's behind.  The resolved version is then used
+    // as the explicit target for the rest of the upgrade flow.
+    let effectiveVersion = version;
+    const cloud = entry.cloud;
+    if (latest) {
+      effectiveVersion =
+        cloud === "local"
+          ? await resolveLatestStableTag()
+          : await resolveLatestAndMaybeSelfUpdate(name, {
+              noWait,
+              force,
+            });
     }
-  } catch (err) {
-    const detail = err instanceof Error ? err.message : String(err);
-    console.error(`\n❌ Upgrade failed: ${detail}`);
-    // Best-effort: notify connected clients that the upgrade failed.
-    // A `starting` event may have been sent inside upgradeDocker/upgradePlatform
-    // before the error was thrown, so we must close with `complete`.
-    if (entry.runtimeUrl) {
-      await broadcastUpgradeEvent(
-        entry.runtimeUrl,
-        entry.assistantId,
-        buildCompleteEvent("unknown", false),
-      );
+
+    try {
+      if (cloud === "docker") {
+        await upgradeDocker(entry, effectiveVersion, force);
+        return;
+      }
+
+      if (cloud === "local") {
+        await upgradeLocal(entry, effectiveVersion, force);
+        return;
+      }
+
+      if (isCloudHome(cloud)) {
+        await upgradeCloud(entry, effectiveVersion, !noWait);
+        return;
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error(`\n❌ Upgrade failed: ${detail}`);
+      // Best-effort: notify connected clients that the upgrade failed.
+      // A `starting` event may have been sent inside upgradeDocker/upgradeCloud
+      // before the error was thrown, so we must close with `complete`.
+      if (entry.runtimeUrl) {
+        await broadcastUpgradeEvent(
+          entry.runtimeUrl,
+          entry.assistantId,
+          buildCompleteEvent("unknown", false),
+        );
+      }
+      emitCliError(categorizeUpgradeError(err), "Upgrade failed", detail);
+      process.exit(1);
     }
-    emitCliError(categorizeUpgradeError(err), "Upgrade failed", detail);
+
+    const msg = `Error: Upgrade is not supported for '${cloud}' assistants. Only 'local', 'docker', and 'cadet' assistants can be upgraded via the CLI.`;
+    console.error(msg);
+    emitCliError("UNSUPPORTED_TOPOLOGY", msg);
     process.exit(1);
-  }
-
-  const msg = `Error: Upgrade is not supported for '${cloud}' assistants. Only 'local', 'docker', and 'cadet' assistants can be upgraded via the CLI.`;
-  console.error(msg);
-  emitCliError("UNSUPPORTED_TOPOLOGY", msg);
-  process.exit(1);
-},
+  },
   { description: "Upgrade an assistant to a newer version" },
 );
-

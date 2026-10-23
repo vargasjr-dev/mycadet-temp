@@ -10,7 +10,11 @@ import {
 
 import type { LockfileAssistant } from "./assistant-config.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { authHeaders, invalidateOrgIdCache } from "./cloud-client.js";
+import {
+  authHeaders,
+  getCloudUrl,
+  invalidateOrgIdCache,
+} from "./cloud-client.js";
 import { z } from "zod";
 
 const ManagedBackupEntrySchema = z.object({
@@ -28,10 +32,8 @@ const CreatedBackupResponseSchema = z.object({
   ready_to_use: z.boolean().optional(),
 });
 
-type PlatformEntry = Pick<LockfileAssistant, "runtimeUrl" | "assistantId">;
-
-function platformBackupsUrl(entry: PlatformEntry): string {
-  return `${entry.runtimeUrl}/v1/assistants/${entry.assistantId}/backups/`;
+function cloudBackupsUrl(entry: LockfileAssistant): string {
+  return `${getCloudUrl()}/v1/assistants/${entry.assistantId}/backups/`;
 }
 
 async function errorSuffix(response: Response): Promise<string> {
@@ -45,28 +47,28 @@ async function errorSuffix(response: Response): Promise<string> {
  * probe applies).
  */
 async function platformBackupRequest(
-  entry: PlatformEntry,
+  entry: LockfileAssistant,
   token: string,
   method: "GET" | "POST",
 ): Promise<Response> {
   const doRequest = async (): Promise<Response> =>
-    loopbackSafeFetch(platformBackupsUrl(entry), {
+    loopbackSafeFetch(cloudBackupsUrl(entry), {
       method,
       headers: {
-        ...(await authHeaders(token, entry.runtimeUrl)),
+        ...(await authHeaders(token, getCloudUrl())),
         Accept: "application/json",
       },
     });
   let response = await doRequest();
   if (response.status === 401) {
-    invalidateOrgIdCache(token, entry.runtimeUrl);
+    invalidateOrgIdCache(token, getCloudUrl());
     response = await doRequest();
   }
   return response;
 }
 
 async function fetchPlatformBackups(
-  entry: PlatformEntry,
+  entry: LockfileAssistant,
   token: string,
 ): Promise<ManagedBackupEntry[]> {
   const response = await platformBackupRequest(entry, token, "GET");
@@ -84,7 +86,7 @@ async function fetchPlatformBackups(
  * `GET /v1/assistants/<id>/backups/`.
  */
 export async function listPlatformBackups(
-  entry: PlatformEntry,
+  entry: LockfileAssistant,
   token: string,
 ): Promise<Array<string | undefined>> {
   return readyManagedBackupCreatedAts(await fetchPlatformBackups(entry, token));
@@ -102,7 +104,7 @@ export interface CreatePlatformBackupOptions {
  * or the snapshot is not ready within `timeoutMs`.
  */
 export async function createPlatformBackup(
-  entry: PlatformEntry,
+  entry: LockfileAssistant,
   token: string,
   options: CreatePlatformBackupOptions = {},
 ): Promise<void> {

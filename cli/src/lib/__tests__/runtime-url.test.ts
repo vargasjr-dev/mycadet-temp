@@ -1,20 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
+import { LockfileAssistantSchema } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "../assistant-config.js";
 import { resolveRuntimeUrl } from "../runtime-url.js";
 
-function makeEntry(
-  overrides: Partial<LockfileAssistant> & {
-    cloud: string;
-    runtimeUrl: string;
-    assistantId: string;
-  },
-): Pick<LockfileAssistant, "cloud" | "runtimeUrl" | "assistantId"> {
-  return {
-    cloud: overrides.cloud,
-    runtimeUrl: overrides.runtimeUrl,
-    assistantId: overrides.assistantId,
-  };
+function makeEntry(overrides: Partial<LockfileAssistant>): LockfileAssistant {
+  return LockfileAssistantSchema.parse(overrides);
 }
 
 describe("resolveRuntimeUrl", () => {
