@@ -295,17 +295,6 @@ There is currently **no release-note surfacing mechanism**. The update-bulletin 
 
 The daemon must not invoke LLM providers at startup or on unconditional timers — boot-time generation costs the user money before they have asked for anything. Generated content that clients display (home greeting, suggested prompts, conversation starters, identity intro) is produced on demand: GET handlers serve cached content and trigger a bounded, single-flight, TTL-gated background refresh only when a client actually fetches (GET handlers may trigger a bounded refresh only; they never generate on every request). User-facing scheduled work (heartbeat, user-created schedules) is exempt — it is explicit, user-visible, and user-disableable.
 
-## Companion Repos
-
-- **[`mycadet-cloud`](../mycadet-cloud)** — cloud api backend that manages cloud-hosted ("managed") assistants. Handles authentication (WorkOS OIDC), organization management, assistant lifecycle, and runtime proxying. The desktop app authenticates against it and proxies all runtime traffic through it. Stack: TypeScript (Node), PostgreSQL (Drizzle). See `../mycadet-cloud/AGENTS.md` for development instructions.
-
-When making changes that could affect the cloud platform, review the sibling `../mycadet-cloud` repo for compatibility and required follow-up updates. High-risk change areas include:
-
-- HTTP server behavior and API contracts.
-- Stored file and directory structure changes (workspace paths, on-disk formats, exports/imports, migrations).
-- Dockerfile or container runtime/build changes.
-- **Feature flags**: Adding a flag to `meta/feature-flags/feature-flag-registry.json` requires a companion PR in `mycadet-platform` to provision the flag in Terraform. See the [Assistant Feature Flags](#assistant-feature-flags) section.
-
 ## Build Environment (`CADET_ENVIRONMENT`)
 
 `CADET_ENVIRONMENT` identifies the runtime environment for all clients (Electron macOS app, CLI, Chrome extension). It's embedded at build time by each platform's build tooling, or injected via `--define` for the Chrome-ext bundler. CI/devs can override by exporting it before building; per-client default-resolution logic lives in each client's build script.
