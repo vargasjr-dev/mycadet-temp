@@ -17,7 +17,7 @@ import { stageRootArchive, STATE_ROOTS } from "../lib/root-backup.js";
 const directory = await mkdtemp(join(tmpdir(), "safety-root-backup-"));
 const root = join(directory, "instance");
 const backupDir = join(directory, "backups");
-const entry: config.LockfileAssistant = {
+const entry: config.LockfileAssistant & { runtimeUrl: string } = {
   assistantId: "alpha",
   cloud: "local",
   runtimeUrl: "http://127.0.0.1:1",

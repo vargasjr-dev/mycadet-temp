@@ -210,6 +210,11 @@ function makeLocalEntry(): LockfileAssistant {
 beforeEach(() => {
   originalArgv = [...process.argv];
   tempDir = "";
+  assistantConfig.stampRootProcess("tunnel", {
+    pid: 4321,
+    provider: "ngrok",
+    startedAt: new Date().toISOString(),
+  });
   process.argv = [
     "bun",
     "cadet",

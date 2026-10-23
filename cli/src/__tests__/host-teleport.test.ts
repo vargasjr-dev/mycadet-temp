@@ -4,8 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   findAssistantByName,
-  saveLockfileAssistant,
+  type LocalInstanceResources,
   type LockfileAssistant,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
 import {
   teleportHostInstallation,
@@ -20,8 +21,8 @@ import {
 } from "../lib/root-backup.js";
 
 let directory: string,
-  source: LockfileAssistant,
-  target: LockfileAssistant,
+  source: LockfileAssistant & { resources: LocalInstanceResources },
+  target: LockfileAssistant & { resources: LocalInstanceResources },
   ops: HostTeleportOps;
 let order: string[],
   running: Map<string, boolean>,
@@ -32,7 +33,9 @@ async function instance(
   name: string,
   cloud: "local" | "docker",
   byte: number,
-): Promise<LockfileAssistant> {
+): Promise<
+  LockfileAssistant & { resources: LocalInstanceResources }
+> {
   const root = join(directory, name);
   for (const state of STATE_ROOTS) {
     await mkdir(join(root, state), { recursive: true });

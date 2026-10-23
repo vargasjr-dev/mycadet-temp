@@ -34,7 +34,7 @@ import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { getLogDir } from "../lib/xdg-log.js";
 import { saveIngressUrl } from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
+import type { LocalInstanceResources, LockfileAssistant } from "../lib/assistant-config.js";
 import { withPreconnect } from "./helpers/http.js";
 
 const realCloudflareTunnel = { ...cloudflareTunnel };
@@ -131,7 +131,10 @@ const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
 
-function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
+function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant & {
+    runtimeUrl: string;
+    resources: LocalInstanceResources;
+  } {
   const instanceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-test-"));
   tempDirs.push(instanceDir);
   return {
@@ -148,7 +151,9 @@ function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
   };
 }
 
-function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant {
+function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant & {
+    runtimeUrl: string;
+  } {
   return {
     assistantId,
     runtimeUrl: `https://runtime.example.com/${assistantId}`,
@@ -176,10 +181,10 @@ function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
 
 /** Seed a local entry's workspace config; returns that workspace dir. */
 function writeEntryWorkspaceConfig(
-  entry: LockfileAssistant,
+  entry: LockfileAssistant & { resources: LocalInstanceResources },
   config: Record<string, unknown>,
 ): string {
-  const workspaceDir = join(entry.resources!.instanceDir, "workspace");
+  const workspaceDir = join(entry.resources.instanceDir, "workspace");
   mkdirSync(workspaceDir, { recursive: true });
   writeFileSync(
     join(workspaceDir, "config.json"),

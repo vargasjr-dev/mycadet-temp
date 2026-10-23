@@ -297,17 +297,18 @@ describe("assistant-config", () => {
     expect(latest!.assistantId).toBe("with-date");
   });
 
-  test("loadAllAssistants filters out entries missing required fields", () => {
+  test("loadAllAssistants returns every schema-valid entry", () => {
     writeLockfile({
       assistants: [
         makeEntry("valid"),
-        { cloud: "local" }, // missing assistantId and runtimeUrl
-        { assistantId: "no-url", cloud: "local" }, // missing runtimeUrl
+        { cloud: "local" }, // missing assistantId: the schema drops it
+        { assistantId: "no-url", cloud: "local" }, // valid: runtimeUrl is optional
       ],
     });
     const all = loadAllAssistants();
-    expect(all).toHaveLength(1);
+    expect(all).toHaveLength(2);
     expect(all[0].assistantId).toBe("valid");
+    expect(all[1].assistantId).toBe("no-url");
   });
 });
 

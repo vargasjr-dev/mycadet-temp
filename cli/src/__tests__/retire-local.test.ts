@@ -14,6 +14,8 @@ import { join } from "node:path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
+  type LocalInstanceResources,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getLockfilePath } from "../lib/environments/paths.js";
@@ -77,7 +79,10 @@ import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
 
-function makeEntry(assistantId: string): LockfileAssistant {
+function makeEntry(assistantId: string): LockfileAssistant & {
+    runtimeUrl: string;
+    resources: LocalInstanceResources;
+  } {
   return {
     assistantId,
     runtimeUrl: "http://127.0.0.1:7801",

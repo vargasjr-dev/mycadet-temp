@@ -198,14 +198,14 @@ describe("loadAllAssistantsAcrossEnvs", () => {
     expect(all).toEqual([]);
   });
 
-  test("skips entries missing required fields", () => {
+  test("keeps schema-valid entries; the schema drops id-less rows", () => {
     const envDir = mkdtempSync(join(testDir, "partial-"));
     writeFileSync(
       join(envDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
-          { assistantId: "no-url" }, // missing runtimeUrl
-          { runtimeUrl: "http://x" }, // missing assistantId
+          { assistantId: "no-url" }, // valid: runtimeUrl is optional now
+          { runtimeUrl: "http://x" }, // missing assistantId: dropped
           {
             assistantId: "good",
             runtimeUrl: "http://localhost:7821",
@@ -215,7 +215,7 @@ describe("loadAllAssistantsAcrossEnvs", () => {
       }),
     );
     const all = loadAllAssistantsAcrossEnvs([makeEnv("partial", envDir)]);
-    expect(all.map((e) => e.assistantId)).toEqual(["good"]);
+    expect(all.map((e) => e.assistantId)).toEqual(["no-url", "good"]);
   });
 
   test("end-to-end: dev env's daemon is not flagged as orphan from local env", () => {
