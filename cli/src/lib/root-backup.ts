@@ -22,7 +22,12 @@ import * as tar from "tar";
 import { z } from "zod";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config.js";
-import { getDaemonPidPath, saveLockfileAssistant } from "./assistant-config.js";
+import {
+  getDaemonPidPath,
+  isLocalInstanceResources,
+  saveLockfileAssistant,
+  type LocalInstanceResources,
+} from "./assistant-config.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";
@@ -263,22 +268,24 @@ export interface RootStorage {
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
   initialRunning?: Set<string>;
+  private readonly resources: LocalInstanceResources;
   constructor(readonly entry: LockfileAssistant) {
-    if (!entry.resources)
+    if (!entry.resources || !isLocalInstanceResources(entry.resources))
       throw new Error("Local backup requires the instance's resource paths.");
+    this.resources = entry.resources;
     this.root = resolve(entry.resources.instanceDir);
   }
   async running(): Promise<boolean> {
     const running = new Set(
       [
-        ["assistant", getDaemonPidPath(this.entry.resources)],
+        ["assistant", getDaemonPidPath(this.resources)],
         ["gateway", join(this.root, "gateway.pid")],
         ["ces", join(this.root, "ces.pid")],
       ]
         .filter(([, file]) => isProcessAlive(file!).alive)
         .map(([service]) => service!),
     );
-    const resources = this.entry.resources!;
+    const resources = this.resources;
     for (const [service, port] of [
       ["assistant", resources.daemonPort],
       ["gateway", resources.gatewayPort],
@@ -303,7 +310,7 @@ export class LocalRootStorage implements RootStorage {
       await this.checkReady();
       return;
     }
-    const resources = this.entry.resources!;
+    const resources = this.resources;
     const signingKey = resolveExistingLocalSigningKey(resources);
     if (
       this.initialRunning?.has("ces") &&
@@ -326,7 +333,7 @@ export class LocalRootStorage implements RootStorage {
     await this.checkReady();
   }
   private async checkReady(): Promise<void> {
-    const resources = this.entry.resources!;
+    const resources = this.resources;
     if (
       this.initialRunning?.has("assistant") &&
       (await waitForDaemonMigrationsReady(
@@ -802,7 +809,7 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (entry.cloud !== "docker" && entry.resources) {
+  if (entry.cloud !== "docker" && isLocalInstanceResources(entry.resources)) {
     for (const root of STATE_ROOTS) {
       const path = resolve(entry.resources.instanceDir, root);
       if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
@@ -909,7 +916,7 @@ async function restoreBackup(
     replacing = true;
     try {
       await ops.storage.replace(source);
-      if (entry.cloud !== "docker" && entry.resources) {
+      if (entry.cloud !== "docker" && isLocalInstanceResources(entry.resources)) {
         entry.resources = { ...entry.resources, signingKey };
         ops.save(entry);
       }

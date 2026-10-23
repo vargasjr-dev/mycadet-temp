@@ -4,6 +4,7 @@ import { basename, dirname, join, win32 } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   loadAllAssistantsAcrossEnvs,
 } from "./assistant-config.js";
@@ -93,7 +94,7 @@ export async function retireLocal(
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
 
-  if (!entry.resources) {
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${name}' is missing resource configuration. Re-hatch to fix.`,
     );
