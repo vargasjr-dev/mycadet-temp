@@ -10,6 +10,7 @@ import {
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
+  isLocalInstanceResources,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   saveLockfileAssistant,
@@ -788,12 +789,14 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  if (!entry.resources) {
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     const msg = `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`;
     console.error(msg);
     emitCliError("UNKNOWN", msg);
     process.exit(1);
   }
+
+  const resources = entry.resources;
 
   const gatewayUrl = entry.runtimeUrl;
   if (!gatewayUrl) {
@@ -803,15 +806,15 @@ async function upgradeLocal(
     process.exit(1);
   }
 
-  const originalResources = { ...entry.resources };
-  const signingKey = resolveExistingLocalSigningKey(entry.resources);
-  if (entry.resources.signingKey !== signingKey) {
-    entry.resources.signingKey = signingKey;
+  const originalResources = { ...resources };
+  const signingKey = resolveExistingLocalSigningKey(resources);
+  if (resources.signingKey !== signingKey) {
+    resources.signingKey = signingKey;
     saveLockfileAssistant(entry);
   }
 
   const targetVersion = await targetVersionFromCli(version);
-  const adminUrl = `http://127.0.0.1:${entry.resources.gatewayPort}`;
+  const adminUrl = `http://127.0.0.1:${resources.gatewayPort}`;
   const currentVersion = await fetchCurrentVersion(adminUrl);
 
   if (!currentVersion && targetVersion) {
@@ -904,20 +907,21 @@ async function upgradeLocal(
   console.log(
     "⬇️  Downloading local runtime packages (assistant, gateway, credential-executor)...",
   );
-  const runtimeInstall = ensureLocalRuntime(entry.resources, targetVersion, {
+  const runtimeInstall = ensureLocalRuntime(resources, targetVersion, {
     force,
   });
-  entry.resources = {
-    ...entry.resources,
+  const upgradedResources = {
+    ...resources,
     runtimeVersion: runtimeInstall.version,
     runtimeInstallDir: runtimeInstall.installDir,
   };
+  entry.resources = upgradedResources;
   saveLockfileAssistant(entry);
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   try {
     console.log("🛑 Stopping local assistant processes...");
-    await stopLocalProcesses(entry.resources);
+    await stopLocalProcesses(upgradedResources);
     console.log("✅ Local assistant processes stopped\n");
 
     console.log("🚀 Starting upgraded local assistant...");
@@ -928,9 +932,9 @@ async function upgradeLocal(
       // topology starts its sibling processes together. startCes always
       // launches the CES sibling.
       await Promise.all([
-        startCes(false, entry.resources),
-        startLocalDaemon(false, entry.resources, { signingKey }),
-        startGateway(false, entry.resources, { signingKey, bootstrapSecret }),
+        startCes(false, upgradedResources),
+        startLocalDaemon(false, upgradedResources, { signingKey }),
+        startGateway(false, upgradedResources, { signingKey, bootstrapSecret }),
       ]);
     } finally {
       if (previousAppVersion === undefined) {
@@ -941,15 +945,15 @@ async function upgradeLocal(
     }
     await ensureGuardianTokenAfterLocalUpgrade(
       entry,
-      entry.resources.gatewayPort,
+      upgradedResources.gatewayPort,
       bootstrapSecret,
     );
     console.log("✅ Local assistant processes started\n");
 
-    const workspaceDir = join(entry.resources.instanceDir, "workspace");
+    const workspaceDir = join(upgradedResources.instanceDir, "workspace");
     await restoreAppServerAndAutoTunnel(
       entry.assistantId,
-      entry.resources.gatewayPort,
+      upgradedResources.gatewayPort,
       workspaceDir,
     );
 
@@ -967,13 +971,13 @@ async function upgradeLocal(
     }
   } catch (error) {
     console.error("Local upgrade failed; restoring the previous runtime and service roots...");
-    await stopLocalProcesses(entry.resources);
+    await stopLocalProcesses(upgradedResources);
     entry.resources = originalResources;
     saveLockfileAssistant(entry);
     if (backupPath) {
       const restored = await restoreBackup(adminUrl, entry.assistantId, backupPath, { resume: false });
       if (!restored) throw new Error(`Local recovery failed; services remain stopped. Backup: ${backupPath}`, { cause: error });
-      await Promise.all([startCes(false, entry.resources), startLocalDaemon(false, entry.resources, { signingKey }), startGateway(false, entry.resources, { signingKey, bootstrapSecret })]);
+      await Promise.all([startCes(false, originalResources), startLocalDaemon(false, originalResources, { signingKey }), startGateway(false, originalResources, { signingKey, bootstrapSecret })]);
       if (!await waitForReady(adminUrl)) throw new Error(`Previous local runtime did not recover. Backup: ${backupPath}`, { cause: error });
     }
     throw error;

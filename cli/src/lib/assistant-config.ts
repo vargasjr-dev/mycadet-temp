@@ -54,6 +54,21 @@ export type LocalInstanceResources = LocalAssistantResources & {
   cesPort: number;
 };
 
+/**
+ * Local entries this CLI wrote always carry the instance dir and the two
+ * host-only ports — the writer's guarantee, not the schema's. Narrow at the
+ * flow boundary (guard-and-exit) instead of casting.
+ */
+export function isLocalInstanceResources(
+  resources: LocalAssistantResources,
+): resources is LocalInstanceResources {
+  return (
+    resources.instanceDir !== undefined &&
+    resources.qdrantPort !== undefined &&
+    resources.cesPort !== undefined
+  );
+}
+
 export type AssistantLookupResult =
   | { status: "found"; entry: LockfileAssistant }
   | { status: "not_found" }
