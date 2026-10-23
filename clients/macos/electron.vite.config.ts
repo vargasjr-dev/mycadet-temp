@@ -4,8 +4,13 @@ import path from "node:path";
 
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
-import { SHARED_DESKTOP_INLINE_DEPS } from "@mycadet/electron-desktop/src/inline-deps";
-import { resolveVersion } from "@mycadet/shared/version";
+// Relative paths, not bare package subpaths: electron-vite externalizes bare
+// imports when it bundles this config, and Node then has to import the raw
+// .ts sources itself, which it can't (ERR_UNKNOWN_FILE_EXTENSION). Relative
+// paths get inlined into the config bundle instead — see the header note in
+// packages/electron-desktop/src/inline-deps.ts.
+import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/inline-deps";
+import { resolveVersion } from "../../packages/shared/version";
 
 // Reference: https://electron-vite.org/config/
 //

@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * The version string a source checkout reports for `--version`.
@@ -39,6 +40,18 @@ function isSourceCheckout(entryPath: string): boolean {
   return entryPath.endsWith(".ts");
 }
 
+/**
+ * This module's own file path, in whichever runtime is asking. Node only has
+ * `import.meta.url` — and bundlers rewrite it back to this file's real path
+ * (electron-vite's config loader injects it per module; rollup shims it to
+ * `__filename` in CJS output), so the URL is the trustworthy source everywhere:
+ * Bun, Node, and bundled evaluation all resolve it to this file on disk.
+ */
+function moduleEntryPath(): string {
+  if (typeof import.meta.url === "string") return fileURLToPath(import.meta.url);
+  return import.meta.path;
+}
+
 function gitRepoRoot(entryPath: string): string | null {
   let dir = dirname(entryPath);
   for (;;) {
@@ -72,7 +85,7 @@ function headCommitTime(root: string): Date | null {
 export function stampedVersion(
   base: string,
   now: Date = new Date(),
-  entryPath: string = import.meta.path,
+  entryPath: string = moduleEntryPath(),
 ): string {
   if (!isSourceCheckout(entryPath)) return base;
   const root = gitRepoRoot(entryPath);
@@ -103,5 +116,5 @@ export function resolveVersion(packageRoot: string = process.cwd()): string {
   }
   if (!base) return "";
   if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return base;
-  return stampedVersion(base, new Date(), import.meta.path);
+  return stampedVersion(base, new Date(), moduleEntryPath());
 }
