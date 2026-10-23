@@ -9,7 +9,7 @@ describe("isTransientNetworkError", () => {
     );
   });
 
-  test("matches 'Failed to fetch' with hostname suffix (Sentry enrichment)", () => {
+  test("matches 'Failed to fetch' with hostname suffix (error-reporter enrichment)", () => {
     expect(
       isTransientNetworkError(new TypeError("Failed to fetch (www.mycadet.ai)")),
     ).toBe(true);

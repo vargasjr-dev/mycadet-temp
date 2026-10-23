@@ -40,21 +40,21 @@ function surface(
     surfaceId: "surface-watch-1",
     surfaceType: "card",
     data: {
-      title: "Filing a Linear bug from a Sentry alert",
+      title: "Filing a Linear bug from a production alert",
       subtitle: "So an overnight crash has a ticket by morning.",
-      body: "1. Open the Sentry issue\n2. New Linear issue in JARVIS",
+      body: "1. Open the production issue\n2. New Linear issue in JARVIS",
       template: "watch_retro",
       templateData: {
-        task: "Filing a Linear bug from a Sentry alert",
+        task: "Filing a Linear bug from a production alert",
         purpose: "So an overnight crash has a ticket by morning.",
         eyebrow: "Watched 4 min · 11 screens",
-        steps: ["Open the Sentry issue", "New Linear issue in JARVIS"],
+        steps: ["Open the production issue", "New Linear issue in JARVIS"],
         questions: [
           {
             id: "trigger",
             kind: "fill",
             prompt: "What would you say to start this?",
-            suggestion: "file this Sentry bug",
+            suggestion: "file this production bug",
           },
           {
             id: "priority",
@@ -68,7 +68,7 @@ function surface(
           {
             id: "resolve",
             kind: "gate",
-            prompt: "Resolving the Sentry issue, on my own?",
+            prompt: "Resolving the production issue, on my own?",
             options: [
               { id: "ask", label: "Ask me first" },
               { id: "go", label: "Go ahead" },
@@ -87,14 +87,14 @@ describe("WatchRetroSurface", () => {
     render(<CardSurface surface={surface()} onAction={() => undefined} />);
 
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
-    expect(screen.getByText("Open the Sentry issue")).toBeDefined();
+    expect(screen.getByText("Open the production issue")).toBeDefined();
     // The whole point of paging: a question the old card stacked underneath
     // the steps is not on this page at all.
     expect(screen.queryByText("What would you say to start this?")).toBeNull();
     expect(
-      screen.queryByText("Resolving the Sentry issue, on my own?"),
+      screen.queryByText("Resolving the production issue, on my own?"),
     ).toBeNull();
   });
 
@@ -137,7 +137,7 @@ describe("WatchRetroSurface", () => {
     // trigger phrase rather than an empty string it has to guess around.
     expect(answers[0]).toMatchObject({
       questionId: "trigger",
-      answer: "file this Sentry bug",
+      answer: "file this production bug",
       skipped: true,
     });
     // Tapping the recommended option is still a choice: it goes out as the
@@ -186,7 +186,7 @@ describe("WatchRetroSurface", () => {
     fireEvent.click(screen.getByText("Next"));
     fireEvent.click(screen.getByText("It hit a customer"));
     expect(
-      screen.getByText("Resolving the Sentry issue, on my own?"),
+      screen.getByText("Resolving the production issue, on my own?"),
     ).toBeDefined();
 
     // Back on the pick, the answer is still marked, and Next has appeared so
@@ -196,7 +196,7 @@ describe("WatchRetroSurface", () => {
     expect(chosen.textContent).toContain("It hit a customer");
     fireEvent.click(screen.getByText("Next"));
     expect(
-      screen.getByText("Resolving the Sentry issue, on my own?"),
+      screen.getByText("Resolving the production issue, on my own?"),
     ).toBeDefined();
   });
 
@@ -218,7 +218,7 @@ describe("WatchRetroSurface", () => {
 
     expect(calls).toHaveLength(0);
     expect(
-      screen.getByText("Resolving the Sentry issue, on my own?"),
+      screen.getByText("Resolving the production issue, on my own?"),
     ).toBeDefined();
 
     fireEvent.click(screen.getByText("Go ahead"));
@@ -265,7 +265,7 @@ describe("WatchRetroSurface", () => {
     // Back steps one page at a time.
     fireEvent.click(screen.getByText("Back"));
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
 
     // The step row jumps further than one page: a decision made three pages
@@ -278,7 +278,7 @@ describe("WatchRetroSurface", () => {
     ).toBeDefined();
     fireEvent.click(screen.getByText("Recap"));
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
   });
 
@@ -356,9 +356,9 @@ describe("WatchRetroSurface", () => {
       />,
     );
     expect(screen.queryByText("Looks right")).toBeNull();
-    expect(screen.queryByText("Open the Sentry issue")).toBeNull();
+    expect(screen.queryByText("Open the production issue")).toBeNull();
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
     expect(screen.getByText("Done")).toBeDefined();
 
@@ -444,12 +444,12 @@ describe("WatchRetroSurface", () => {
     );
 
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
     expect(
       screen.getByText("So an overnight crash has a ticket by morning."),
     ).toBeDefined();
-    expect(screen.getByText(/Open the Sentry issue/)).toBeDefined();
+    expect(screen.getByText(/Open the production issue/)).toBeDefined();
     // Never the dead end a bespoke surface type would have produced.
     expect(screen.queryByText(/Unsupported surface type/)).toBeNull();
   });
@@ -576,9 +576,9 @@ describe("WatchRetroSurface", () => {
     );
 
     expect(
-      screen.getByText("Filing a Linear bug from a Sentry alert"),
+      screen.getByText("Filing a Linear bug from a production alert"),
     ).toBeDefined();
-    expect(screen.getByText("Open the Sentry issue")).toBeDefined();
+    expect(screen.getByText("Open the production issue")).toBeDefined();
     expect(screen.queryByText("undefined")).toBeNull();
     // Dropped rather than drawn: the record page is the only page, so it
     // carries the closing button rather than a hand-off to a blank question.

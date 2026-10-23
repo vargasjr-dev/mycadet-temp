@@ -467,7 +467,7 @@ describe("handleQuestionResponse: a late completion must not rewrite newer state
 });
 
 describe("handleDismissPendingQuestion: stale (404) interaction", () => {
-  it("does not report a 404 close to Sentry", async () => {
+  it("does not report a stale 404 close", async () => {
     submitQuestionResult = {
       ok: false,
       status: 404,

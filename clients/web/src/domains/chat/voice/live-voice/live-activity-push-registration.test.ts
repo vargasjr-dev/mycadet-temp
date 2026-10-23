@@ -60,7 +60,7 @@ mock.module("@/generated/api/sdk.gen", () => ({
   assistantsLiveActivityTokensDelete: deleteMock,
 }));
 
-// ── Sentry capture-error ─────────────────────────────────────────────────────
+// ── capture-error ─────────────────────────────────────────────────────
 
 const captureErrorMock = mock(() => {});
 mock.module("@/lib/error-reporting/capture-error", () => ({

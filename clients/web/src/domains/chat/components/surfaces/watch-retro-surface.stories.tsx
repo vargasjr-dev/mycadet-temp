@@ -116,7 +116,7 @@ const TRIGGER_QUESTION = {
   kind: "fill",
   eyebrow: "Trigger",
   prompt: "What would you say to start this?",
-  suggestion: "file this Sentry bug",
+  suggestion: "file this production bug",
 };
 
 const PRIORITY_QUESTION = {
@@ -139,7 +139,7 @@ const RESOLVE_QUESTION = {
   id: "resolve",
   kind: "gate",
   eyebrow: "Resolving",
-  prompt: "Resolving the Sentry issue once the ticket exists, on my own?",
+  prompt: "Resolving the production issue once the ticket exists, on my own?",
   options: [
     { id: "confirm", label: "Ask me first", note: "The safer default" },
     { id: "auto", label: "Go ahead and resolve it" },
@@ -147,16 +147,16 @@ const RESOLVE_QUESTION = {
 };
 
 const FULL_REPORT: RetroTemplateData = {
-  task: "Filing a Linear bug from a Sentry alert",
+  task: "Filing a Linear bug from a production alert",
   purpose: "So an overnight crash has a ticket by morning.",
   eyebrow: "Taught in 4 min, 11 screens",
   steps: [
-    "Open the Sentry issue from the alert email",
+    "Open the production issue from the alert email",
     "Copy the stack trace and the first-seen timestamp",
     "Open a new Linear issue in JARVIS",
     "Paste the trace into the description",
     "Set priority and assign to the on-call engineer",
-    "Paste the Linear link back into the Sentry issue",
+    "Paste the Linear link back into the production issue",
   ],
   questions: [TRIGGER_QUESTION, PRIORITY_QUESTION, RESOLVE_QUESTION],
 };

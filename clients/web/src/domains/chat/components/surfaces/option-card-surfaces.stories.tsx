@@ -41,15 +41,15 @@ const watchRetroSurface = {
   surfaceId: "watch-retro-surface",
   surfaceType: "card",
   data: {
-    title: "Filing a Linear bug from a Sentry alert",
+    title: "Filing a Linear bug from a production alert",
     subtitle: "So an overnight crash has a ticket by morning.",
-    body: "1. Open the Sentry issue\n2. New Linear issue in JARVIS",
+    body: "1. Open the production issue\n2. New Linear issue in JARVIS",
     template: "watch_retro",
     templateData: {
-      task: "Filing a Linear bug from a Sentry alert",
+      task: "Filing a Linear bug from a production alert",
       purpose: "So an overnight crash has a ticket by morning.",
       eyebrow: "Watched 4 min · 11 screens",
-      steps: ["Open the Sentry issue", "New Linear issue in JARVIS"],
+      steps: ["Open the production issue", "New Linear issue in JARVIS"],
       questions: [
         {
           id: "priority",
@@ -63,7 +63,7 @@ const watchRetroSurface = {
         {
           id: "resolve",
           kind: "gate",
-          prompt: "Resolving the Sentry issue, on my own?",
+          prompt: "Resolving the production issue, on my own?",
           options: [
             { id: "ask", label: "Ask me first" },
             { id: "go", label: "Go ahead" },

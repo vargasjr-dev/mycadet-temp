@@ -244,8 +244,10 @@ export interface BuildGatewayWsUrlArgs {
   /** Gateway route to open, e.g. `/v1/live-voice` or `/v1/stt/stream`. */
   routePath: string;
   /**
-   * The paired/remote plane's actor edge JWT, when the slot carries one.
-   * Local-plane sockets ride host-side auth instead and pass none.
+   * The connection slot's token when present: a browser socket can't set the
+   * Authorization header (the gateway's other credential shape), so the query
+   * param is its only credential transport. Local planes ride host-side auth
+   * and pass none.
    */
   token?: string;
   /** Extra query params to append after `token` (e.g. `conversationId`). */
