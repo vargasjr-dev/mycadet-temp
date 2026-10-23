@@ -59,30 +59,6 @@ function capacityLimitedResponse(
   );
 }
 
-function publicBaseUrlMatchesRequestHost(
-  req: Request,
-  publicBaseUrl: string,
-): boolean {
-  const host = req.headers.get("host");
-  if (!host) return false;
-  const parsedHost = parseHostHeader(host);
-  if (!parsedHost) return false;
-
-  const publicUrl = new URL(publicBaseUrl);
-  return publicUrl.hostname.toLowerCase() === parsedHost.toLowerCase();
-}
-
-/**
- * The public URL an edge-proxied mint is for: the request's own host, which
- * the edge fronts by construction.
- */
-function selfSourceFromRequestHost(req: Request): string | null {
-  const host = req.headers.get("host");
-  if (!host) return null;
-  const parsedHost = parseHostHeader(host);
-  return parsedHost ? `https://${parsedHost}` : null;
-}
-
 /**
  * A self-sourced URL must serve devices outside the host machine — a link
  * that encodes a loopback or plain-http address is unusable from another
@@ -122,37 +98,29 @@ export async function handleCreateRemoteWebPairingChallenge(
     if (guardError) return guardError;
   }
 
-  // The public URL the challenge is minted for. Callers with their own URL
-  // state it (the device-side broker passes the address the user typed);
-  // otherwise the gateway self-sources — the request's own host when it
-  // arrived through the trusted edge (the edge fronts the public URL), else
-  // the ingress URL recorded in this gateway's own workspace.
+  // The public URL the challenge is minted for is always the gateway's own —
+  // the request's host when it arrived through the trusted edge (the edge
+  // fronts the public URL), else the ingress URL recorded in this gateway's
+  // own workspace. Callers cannot request a URL.
   const body = await readJsonObjectBody(req, MAX_CHALLENGE_BODY_BYTES);
   if (body instanceof Response) {
     return body;
   }
-  const stated = body.publicBaseUrl;
 
   let publicBaseUrl: string | null;
-  if (typeof stated === "string" && stated.trim()) {
-    publicBaseUrl = parsePublicBaseUrl(stated);
-    if (!publicBaseUrl) {
-      return errorResponse("BAD_REQUEST", "publicBaseUrl is required", 400);
-    }
-    if (
-      arrivedViaTrustedEdgeProxy &&
-      !publicBaseUrlMatchesRequestHost(req, publicBaseUrl)
-    ) {
+  if (arrivedViaTrustedEdgeProxy) {
+    const host = req.headers.get("host");
+    const parsedHost = host ? parseHostHeader(host) : null;
+    if (!parsedHost) {
       return errorResponse(
-        "PUBLIC_BASE_URL_MISMATCH",
-        "publicBaseUrl must match the request host",
+        "BAD_REQUEST",
+        "no host header to self-source the public url from",
         400,
       );
     }
+    publicBaseUrl = `https://${parsedHost}`;
   } else {
-    publicBaseUrl = arrivedViaTrustedEdgeProxy
-      ? selfSourceFromRequestHost(req)
-      : readSavedIngressPublicBaseUrl();
+    publicBaseUrl = readSavedIngressPublicBaseUrl();
     if (publicBaseUrl) {
       const strict = parsePublicBaseUrl(publicBaseUrl);
       publicBaseUrl =

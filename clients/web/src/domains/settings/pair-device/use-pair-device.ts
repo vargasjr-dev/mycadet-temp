@@ -128,7 +128,6 @@ export function usePairDevice(
       try {
         const pairing: DevicePairing = await mintDevicePairing({
           base,
-          publicBaseUrl: resolved.url,
           signal: controller.signal,
         });
         if (controller.signal.aborted) {

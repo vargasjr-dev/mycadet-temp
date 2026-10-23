@@ -9,7 +9,6 @@ import {
   tunnelProviderWebsiteName,
   type PairingFailureReason,
   type PublicBaseUrlRejection,
-  type RemoteWebPairingChallengeRequest,
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingTokenPendingResponse,
   type RemoteWebPairingTokenRequest,
@@ -907,9 +906,7 @@ export async function pairingStart(
   const posted = await postPairingRequest(
     parsed.publicBaseUrl,
     PAIRING_CHALLENGE_PATH,
-    {
-      publicBaseUrl: parsed.publicBaseUrl,
-    } satisfies RemoteWebPairingChallengeRequest,
+    {},
   );
   if (!posted.ok) {
     return posted.failure;
@@ -926,7 +923,8 @@ export async function pairingStart(
   const challenge = posted.body;
   return openPairingSession(
     {
-      publicBaseUrl: parsed.publicBaseUrl,
+      // The gateway self-sourced the URL; its echo is what it minted for.
+      publicBaseUrl: challenge.publicBaseUrl,
       deviceCode: challenge.deviceCode,
       deviceId,
       // A challenge expires somewhere inside the code's own TTL, so that TTL

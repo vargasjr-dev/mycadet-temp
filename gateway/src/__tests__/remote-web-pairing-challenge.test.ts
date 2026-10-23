@@ -30,14 +30,26 @@ import {
 beforeEach(() => {
   resetRemoteWebPairingChallengesForTests();
   resetRemoteWebPairingChallengeRateLimiterForTests();
+  // The loopback self-source reads this gateway's own workspace record;
+  // each test seeds exactly what it needs.
+  rmSync(join(testWorkspaceDir, "config.json"), { force: true });
 });
+
+/** Seed the workspace record the loopback self-source reads. */
+function seedIngressPublicBaseUrl(url: string): void {
+  writeFileSync(
+    join(testWorkspaceDir, "config.json"),
+    JSON.stringify({ ingress: { publicBaseUrl: url } }),
+  );
+}
 
 describe("remote web pairing challenge", () => {
   test("creates an RFC-style short-lived challenge over direct loopback", async () => {
     setRemoteWebPairingChallengeNowForTests(() => 1_000);
+    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
 
     const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({ publicBaseUrl: `${PUBLIC_BASE_URL}/` }),
+      makeRequest(),
       LOOPBACK_IP,
     );
 
@@ -61,10 +73,10 @@ describe("remote web pairing challenge", () => {
   });
 
   test("preserves path-prefixed public base URLs in the verification URI", async () => {
-    const publicBaseUrl = "https://tunnel.example.test/assistant-123/";
+    seedIngressPublicBaseUrl("https://tunnel.example.test/assistant-123/");
 
     const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({ publicBaseUrl }),
+      makeRequest(),
       LOOPBACK_IP,
     );
 
@@ -85,6 +97,8 @@ describe("remote web pairing challenge", () => {
   });
 
   test("stores only hashed challenge secrets", async () => {
+    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
+
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest(),
       LOOPBACK_IP,
@@ -108,7 +122,6 @@ describe("remote web pairing challenge", () => {
       makeRequest({
         edgeForwarded: true,
         host: "paired.example.com",
-        publicBaseUrl: PUBLIC_BASE_URL,
       }),
       REMOTE_IP,
       LOOPBACK_IP,
@@ -125,10 +138,7 @@ describe("remote web pairing challenge", () => {
 
   test("rejects direct non-loopback challenge creation without the edge marker", async () => {
     const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        host: "paired.example.com",
-        publicBaseUrl: PUBLIC_BASE_URL,
-      }),
+      makeRequest({ host: "paired.example.com" }),
       REMOTE_IP,
     );
 
@@ -140,7 +150,6 @@ describe("remote web pairing challenge", () => {
       makeRequest({
         edgeForwarded: true,
         host: "paired.example.com",
-        publicBaseUrl: PUBLIC_BASE_URL,
       }),
       REMOTE_IP,
       REMOTE_IP,
@@ -154,32 +163,12 @@ describe("remote web pairing challenge", () => {
       makeRequest({
         edgeForwarded: true,
         host: "paired.example.com",
-        publicBaseUrl: PUBLIC_BASE_URL,
       }),
       LOOPBACK_IP,
       REMOTE_IP,
     );
 
     expect(res.status).toBe(403);
-  });
-
-  test("rejects edge challenge creation when publicBaseUrl host does not match request host", async () => {
-    const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({
-        edgeForwarded: true,
-        host: "paired.example.com",
-        publicBaseUrl: "https://attacker.example.com",
-      }),
-      LOOPBACK_IP,
-    );
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
-      error: {
-        code: "PUBLIC_BASE_URL_MISMATCH",
-        message: "publicBaseUrl must match the request host",
-      },
-    });
   });
 
   test("rate limits repeated challenge creation globally across rotated public hosts", async () => {
@@ -189,7 +178,6 @@ describe("remote web pairing challenge", () => {
         makeRequest({
           edgeForwarded: true,
           host,
-          publicBaseUrl: `https://${host}/prefix-${i}`,
         }),
         LOOPBACK_IP,
       );
@@ -200,7 +188,6 @@ describe("remote web pairing challenge", () => {
       makeRequest({
         edgeForwarded: true,
         host: "paired.example.com",
-        publicBaseUrl: PUBLIC_BASE_URL,
       }),
       LOOPBACK_IP,
     );
@@ -211,6 +198,7 @@ describe("remote web pairing challenge", () => {
 
   test("caps active challenge records even when rate limit state is reset", async () => {
     setRemoteWebPairingChallengeNowForTests(() => 1_000);
+    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
 
     for (let i = 0; i < 200; i++) {
       resetRemoteWebPairingChallengeRateLimiterForTests();
@@ -238,6 +226,8 @@ describe("remote web pairing challenge", () => {
   });
 
   test("records requester metadata from the mint request", async () => {
+    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
+
     const req = makeRequest();
     req.headers.set("user-agent", "PairBrowser/1.0");
     const res = await handleCreateRemoteWebPairingChallenge(req, LOOPBACK_IP);
@@ -284,6 +274,8 @@ describe("remote web pairing challenge", () => {
   });
 
   test("ignores a forged client-ip header on direct loopback mints", async () => {
+    seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
+
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({ edgeClientIp: "198.51.100.99" }),
       LOOPBACK_IP,
@@ -297,15 +289,10 @@ describe("remote web pairing challenge", () => {
   });
 
   test("self-sources the recorded ingress url on a direct loopback mint", async () => {
-    writeFileSync(
-      join(testWorkspaceDir, "config.json"),
-      JSON.stringify({
-        ingress: { publicBaseUrl: "https://saved.example.test" },
-      }),
-    );
+    seedIngressPublicBaseUrl("https://saved.example.test");
 
     const res = await handleCreateRemoteWebPairingChallenge(
-      makeRequest({ body: JSON.stringify({}) }),
+      makeRequest(),
       LOOPBACK_IP,
     );
 
@@ -339,8 +326,6 @@ describe("remote web pairing challenge", () => {
   });
 
   test("refuses a self-sourced loopback mint when no ingress url is recorded", async () => {
-    rmSync(join(testWorkspaceDir, "config.json"), { force: true });
-
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({ body: JSON.stringify({}) }),
       LOOPBACK_IP,
@@ -357,7 +342,7 @@ describe("remote web pairing challenge", () => {
   });
 
   test("rejects oversized challenge request bodies", async () => {
-    const body = JSON.stringify({ publicBaseUrl: "A".repeat(1024) });
+    const body = JSON.stringify({ padding: "A".repeat(1024) });
     const res = await handleCreateRemoteWebPairingChallenge(
       makeRequest({
         edgeForwarded: true,

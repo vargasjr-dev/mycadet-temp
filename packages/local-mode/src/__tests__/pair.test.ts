@@ -149,6 +149,7 @@ const challengeBody = (
 ): Record<string, unknown> => ({
   deviceCode: "device-code-abc",
   userCode: "ABCD-EFGH",
+  publicBaseUrl: "https://gw.example.com",
   verificationUri: "https://gw.example.com/assistant/pair",
   expiresAt: new Date(Date.now() + 600_000).toISOString(),
   expiresInSeconds: 600,
@@ -720,7 +721,7 @@ describe("pairingStart", () => {
     expect(fetchCalls).toEqual([
       {
         url: "https://gw.example.com/v1/remote-web/pairing-challenge",
-        body: { publicBaseUrl: "https://gw.example.com" },
+        body: {},
         redirect: "error",
         signal: expect.any(AbortSignal) as unknown as AbortSignal,
       },

@@ -20,7 +20,6 @@ import qrcodeTerminal from "qrcode-terminal";
 
 import {
   buildRemoteWebPairingUrl,
-  type RemoteWebPairingChallengeRequest,
   type RemoteWebPairingChallengeResponse,
   type RemoteWebPairingVerificationRequest,
   type RemoteWebPairingVerificationResponse,
@@ -269,7 +268,7 @@ async function mintPairingChallengeOverLoopbackOrExit(
   const response = await gatewayPostOrExit(
     mintUrl,
     "/v1/remote-web/pairing-challenge",
-    {} satisfies RemoteWebPairingChallengeRequest,
+    {},
   );
   const challenge: RemoteWebPairingChallengeResponse =
     await response.json();

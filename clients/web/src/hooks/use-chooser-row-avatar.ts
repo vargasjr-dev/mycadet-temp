@@ -200,7 +200,7 @@ function canLookUpRowAvatarByCloudId(row: ResolvedAssistant): boolean {
  * under `cloudAssistantId`; the avatar sources are assistant-rooted, so the
  * row id is the lookup key everywhere.
  */
-function usePlatformLookupId(row: ResolvedAssistant): string | null {
+function useCloudLookupId(row: ResolvedAssistant): string | null {
   return row.cloudAssistantId ?? row.id;
 }
 
@@ -324,7 +324,7 @@ async function readCachedRowAvatar(assistantId: string): Promise<AvatarRead> {
  *    platform id up in the cloud list (`useCloudAvatarUrls`): lockfile
  *    rows never carry `avatarUrl`, so this is how a logged-in desktop shows a
  *    sibling's synced thumbnail. A paired row first resolves its platform
- *    UUID from the paired daemon (`usePlatformLookupId`).
+ *    UUID from the paired daemon (`useCloudLookupId`).
  * 6. The last-seen cache: whatever a live source last resolved for this id,
  *    so a row keeps its avatar while the assistant is unreachable.
  * Only live sources (1 and 3) feed the cache, at fetch time (1 does so
@@ -423,7 +423,7 @@ export function useChooserRowAvatar(
 
   const cloudAvatarUrls = useCloudAvatarUrls();
   const canLookUp = canLookUpRowAvatarByCloudId(assistant);
-  const lookupId = usePlatformLookupId(assistant);
+  const lookupId = useCloudLookupId(assistant);
   const lookupCandidate =
     canLookUp && lookupId !== null
       ? (cloudAvatarUrls.get(lookupId) ?? null)

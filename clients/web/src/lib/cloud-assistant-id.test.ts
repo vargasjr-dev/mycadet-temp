@@ -22,20 +22,8 @@ mock.module("@/lib/local-cloud-identity", () => ({
   resolveLocalAssistantCloudIdentity: resolveLocalAssistantCloudIdentityMock,
   fetchCloudStatus: fetchCloudStatusMock,
 }));
-/** The paired lockfile entry the private paired leg resolves against. */
-let mockPairedEntry: {
-  assistantId: string;
-  cloud: string;
-  runtimeUrl: string;
-} | null = null;
 mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
-  getLockfileAssistant: (id: string) =>
-    mockPairedEntry && mockPairedEntry.assistantId === id
-      ? mockPairedEntry
-      : null,
-  hasPairedGateway: (entry: { runtimeUrl?: string } | null) =>
-    !!entry?.runtimeUrl,
 }));
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedActorToken: () => "actor-token",
@@ -52,7 +40,6 @@ beforeEach(() => {
   );
   fetchCloudStatusMock.mockClear();
   fetchCloudStatusMock.mockImplementation(async () => null);
-  mockPairedEntry = null;
 });
 
 describe("resolveCloudAssistantId", () => {
@@ -73,12 +60,7 @@ describe("resolveCloudAssistantId", () => {
     );
   });
 
-  test("falls through to the paired lookup when local identity is not a UUID", async () => {
-    mockPairedEntry = {
-      assistantId: "paired-slug",
-      cloud: "local",
-      runtimeUrl: "https://gw.example.com",
-    };
+  test("falls through to the remote-gateway lookup when local identity is not a UUID", async () => {
     fetchCloudStatusMock.mockImplementationOnce(async () => ({
       assistantId: PLATFORM_ASSISTANT_ID,
     }));
@@ -107,11 +89,6 @@ describe("resolveCloudAssistantId", () => {
     resolveLocalAssistantCloudIdentityMock.mockImplementationOnce(async () => {
       throw new Error("no lockfile");
     });
-    mockPairedEntry = {
-      assistantId: "paired-slug",
-      cloud: "local",
-      runtimeUrl: "https://gw.example.com",
-    };
     fetchCloudStatusMock.mockImplementationOnce(async () => ({
       assistantId: PLATFORM_ASSISTANT_ID,
     }));
