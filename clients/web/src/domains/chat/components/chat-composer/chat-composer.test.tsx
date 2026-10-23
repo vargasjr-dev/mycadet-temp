@@ -273,6 +273,14 @@ mock.module("@/domains/chat/components/composer-settings-menu", () => ({
 // renders without a QueryClientProvider (the real hook is React Query). The
 // real module is spread back in so its other exports survive the mock: the
 // auth store reaches `avatarQueryKey` through the takeover avatar stash.
+/* The cloud gate's resolution read (useAssistantResolution) is react-query;
+   stubbed spread-real so the composer renders without a QueryClientProvider. */
+const assistantQueries = await import("@/assistant/queries");
+mock.module("@/assistant/queries", () => ({
+  ...assistantQueries,
+  useAssistantResolution: () => ({ state: { kind: "active", isLocal: true } }),
+}));
+
 mock.module("@/hooks/use-assistant-avatar", () => ({
   ...assistantAvatarMod,
   useAssistantAvatar: () => ({
@@ -1320,7 +1328,6 @@ describe("ChatComposer: send/stop while the assistant is busy", () => {
     const html = renderComposer({ input: "hello", isAssistantBusy: true });
     expect(html).toContain('aria-label="Attach file"');
   });
-
 });
 
 /**
@@ -1742,7 +1749,6 @@ describe("ChatComposer: single-row mobile composer", () => {
     // THEN the plus opens ours rather than the OS chooser
     expect(addSheet(container)).not.toBeNull();
   });
-
 
   test("the card is a pill on a phone and keeps its desktop corner elsewhere", () => {
     // GIVEN a phone composer

@@ -6,7 +6,7 @@ import { setBroadcastOverrideForTesting } from "../runtime/assistant-event-hub.j
 import { setConfig } from "./helpers/set-config.js";
 
 // Use a tiny timeout so the setTimeout branch fires quickly in tests
-setConfig("timeouts", { permissionTimeoutSec: 0.01 });
+setConfig("timeouts", { secretPromptTimeoutSec: 0.01 });
 setConfig("secretDetection", { allowOneTimeSend: false });
 
 let broadcastMessages: AssistantEvent[] = [];

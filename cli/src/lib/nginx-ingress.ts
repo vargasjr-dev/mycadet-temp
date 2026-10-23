@@ -825,7 +825,7 @@ function readPidFile(pidPath: string): number | null {
   }
 }
 
-function isPidAlive(pid: number): boolean {
+export function isPidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;

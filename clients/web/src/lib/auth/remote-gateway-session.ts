@@ -296,9 +296,7 @@ export async function createRemoteWebPairingChallenge(
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      publicBaseUrl: remoteGatewayPublicBaseUrl(),
-    } satisfies RemoteWebPairingChallengeRequest),
+    body: JSON.stringify({} satisfies RemoteWebPairingChallengeRequest),
     signal,
   });
   const body = (await response.json().catch(() => null)) as unknown;

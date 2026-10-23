@@ -26,7 +26,15 @@ export const TimeoutConfigSchema = z
       .positive("timeouts.permissionTimeoutSec must be a positive number")
       .default(300)
       .describe(
-        "How long to wait for a human to approve a tool call before timing out (seconds). Spent by both approval paths: the interactive permission prompt, and the inline wait when a contact's sensitive tool call is escalated to the guardian.",
+        "How long to wait for a human to approve a tool call before timing out (seconds). Spent by both approval paths: the interactive permission prompt, and the inline wait when a contact's sensitive tool call is escalated to the guardian. Credential (secret) prompts have their own budget — see secretPromptTimeoutSec.",
+      ),
+    secretPromptTimeoutSec: z
+      .number({ error: "timeouts.secretPromptTimeoutSec must be a number" })
+      .finite("timeouts.secretPromptTimeoutSec must be finite")
+      .positive("timeouts.secretPromptTimeoutSec must be a positive number")
+      .default(300)
+      .describe(
+        "How long to wait for a human to enter a credential before the secure secret prompt times out (seconds). Independent of permissionTimeoutSec, so permission approvals can fail fast while credential entry stays patient.",
       ),
     questionResponseTimeoutSec: z
       .number({ error: "timeouts.questionResponseTimeoutSec must be a number" })

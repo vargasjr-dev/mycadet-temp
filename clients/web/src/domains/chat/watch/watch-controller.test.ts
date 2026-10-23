@@ -407,7 +407,7 @@ describe("the watch stream URL", () => {
   test("carries the actor token and the capture's audio format", async () => {
     const url = new URL(await resolveWatchStreamWsUrl(ASSISTANT_ID));
     expect(url.protocol).toBe("ws:");
-    expect(url.pathname).toBe("/v1/watch/stream");
+    expect(url.pathname).toBe(`/v1/assistants/${ASSISTANT_ID}/watch/stream`);
     expect(url.searchParams.get("token")).toBe("actor-jwt");
     expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
     expect(url.searchParams.get("sampleRate")).toBe("16000");
@@ -473,7 +473,7 @@ describe("toggling a watch session", () => {
     await startRunning();
 
     expect(sockets).toHaveLength(1);
-    expect(socket().url).toContain("/v1/watch/stream");
+    expect(socket().url).toContain("/watch/stream");
     expect(capture.calls.started).toBe(1);
     expect(useWatchStore.getState().watching).toBe(true);
   });
@@ -538,14 +538,14 @@ describe("toggling a watch session", () => {
     expect(useWatchStore.getState().watching).toBe(true);
   });
 
-  test("opens nothing without an actor token to authenticate with", async () => {
+  test("dials without a token when none is provisioned — the host injects", async () => {
     actorToken = null;
     applyConnection();
 
-    await toggle();
+    await startRunning();
 
-    expect(sockets).toHaveLength(0);
-    expect(useWatchStore.getState().watching).toBe(false);
+    expect(sockets).toHaveLength(1);
+    expect(new URL(socket().url).searchParams.has("token")).toBe(false);
   });
 
   test("opens nothing where the capture pipeline cannot run", async () => {

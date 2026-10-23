@@ -5,16 +5,9 @@ import {
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
-import {
-  loadAllAssistants,
-  readRootProcesses,
-} from "../lib/assistant-config";
+import { readRootProcesses } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
-import {
-  getDefaultWorkspaceDir,
-  readIngressPublicBaseUrl,
-} from "../lib/ingress-config.js";
-import { readLineText } from "../lib/ensure-binary.js";
+import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
@@ -32,12 +25,8 @@ import {
   runProviderTunnel,
   stopTunnelProcess,
   summarizeStartupFailure,
-  toLocalTunnelTarget,
 } from "../lib/tunnel.js";
 import {
-  confirmStopAnswer,
-  ngrokHolderPid,
-  stopNgrokHolderPid,
 } from "../lib/tunnels/ngrok.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
@@ -364,44 +353,6 @@ async function spawnDetachedTunnel(): Promise<void> {
 }
 
 /**
- * No lockfile tunnel record — but an untracked ngrok agent may still hold
- * the environment's tunnel. When the saved ingress URL's domain is served
- * by a live, pid-verified ngrok agent, ask before stopping it: the command
- * is an explicit stop request, but the process is not ours to take down
- * silently. Returns whether the stop went through.
- */
-async function offerStopUntrackedNgrokHolder(): Promise<boolean> {
-  for (const entry of loadAllAssistants()) {
-    const target = toLocalTunnelTarget(entry);
-    if (!target) continue;
-    const publicBaseUrl = readIngressPublicBaseUrl(target.workspaceDir);
-    if (!publicBaseUrl) continue;
-    let host: string | null = null;
-    try {
-      host = new URL(publicBaseUrl).hostname;
-    } catch {
-      continue;
-    }
-    const pid = await ngrokHolderPid(host);
-    if (pid === null) continue;
-    console.log(
-      `No Cadet-managed tunnel is recorded, but an ngrok agent (pid ${pid}) is serving ${publicBaseUrl}.`,
-    );
-    const answer = await readLineText("Stop it? [Y/n] ");
-    if (!confirmStopAnswer(answer)) return false;
-    if (!(await stopNgrokHolderPid(pid))) {
-      console.error(
-        `Could not stop the ngrok agent (pid ${pid}). Stop it yourself and re-run this command.`,
-      );
-      return false;
-    }
-    console.log("Tunnel stopped. nginx and the saved domain are unchanged.");
-    return true;
-  }
-  return false;
-}
-
-/**
  * The workspace the tunnel fronts — the same resolution the start flow uses
  * (the active, or the sole locally-reachable, assistant). Falls back to the
  * default workspace when nothing resolves locally.
@@ -418,12 +369,6 @@ function tunnelWorkspace(): string {
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
   if (!record) {
-    // No recorded tunnel — but an untracked ngrok agent may still hold
-    // the environment's tunnel: started before root-process tracking
-    // existed, or adopted and cleared while it stayed alive. When a saved
-    // ingress URL's domain is served by a live, pid-verified ngrok agent,
-    // ask before stopping it.
-    if (await offerStopUntrackedNgrokHolder()) return;
     console.log(
       "No Cadet-managed tunnel is recorded. Externally started tunnels must be stopped directly.",
     );

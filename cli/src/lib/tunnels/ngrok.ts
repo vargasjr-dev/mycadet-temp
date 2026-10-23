@@ -586,33 +586,6 @@ export function pidListeningOnPort(port: number): number | null {
 }
 
 /**
- * Identify an untracked ngrok agent holding the given domain: one whose
- * inspection API serves a tunnel for it, with the pid listening on that
- * inspection port verified as an ngrok process (PID reuse guard). These
- * agents have no lockfile record — started before this CLI tracked tunnel
- * processes, or adopted and cleared — yet on the free plan they hold the
- * one domain a fresh agent needs. Returns the pid, or null when the holder
- * cannot be identified: an unverified process is never signaled.
- */
-export function untrackedNgrokHolderPid(
-  agents: NgrokAgentView[],
-  domainHost: string,
-  matchesPid: (pid: number) => boolean = isNgrokProcess,
-  findPid: (port: number) => number | null = pidListeningOnPort,
-): number | null {
-  for (const agent of agents) {
-    const holds = agent.tunnels.some((t) =>
-      urlMatchesDomain(t.public_url, domainHost),
-    );
-    if (!holds) continue;
-    const port = Number(agent.apiAddr.split(":").pop());
-    const pid = findPid(port);
-    if (pid !== null && matchesPid(pid)) return pid;
-  }
-  return null;
-}
-
-/**
  * Stop the leftover tracked ngrok agent after the user confirmed it. The
  * caller selects the record (staleTrackedNgrokAgent) and asks first — this
  * only runs once a yes came back. Returns the record on success, or null
@@ -641,43 +614,17 @@ async function stopConfirmedNgrokAgent(
 }
 
 /**
- * Stop the untracked holder pid after the user confirmed it. The pid was
- * identified through its inspection port; verify it still names an ngrok
- * process (PID reuse guard) before signaling. Unlike the tracked stop,
- * there is no lockfile record to clear — the retry's success path saves
- * fresh state.
- */
-async function stopUntrackedNgrokAgent(pid: number | null): Promise<boolean> {
-  if (pid === null) return false;
-  try {
-    if (!isNgrokProcess(pid)) return false;
-    return await stopProcess(pid, "tunnel ngrok agent");
-  } catch {
-    return false;
-  }
-}
-
-/**
- * The pid of the live ngrok agent holding the given domain, for a caller
- * OUTSIDE the spawn loop — the detached tunnel process has no TTY, so the
- * foreground `cadet tunnel` command is where a confirm-first stop can ask.
- * A tracked agent comes from the lockfile record; an untracked one is
- * identified through its own inspection API plus the verified ngrok process
- * behind that port. Returns null when no live holder can be identified.
+ * The pid of the tracked ngrok agent holding the tunnel, for a caller OUTSIDE
+ * the spawn loop — the detached tunnel process has no TTY, so the foreground
+ * `cadet tunnel` command is where a confirm-first stop can ask. Returns null
+ * when the lockfile names no live holder; externally started agents are never
+ * touched.
  */
 export async function ngrokHolderPid(
-  domainHost: string,
   matchesPid: (pid: number) => boolean = isNgrokProcess,
 ): Promise<number | null> {
-  const tracked = staleTrackedNgrokAgent(
-    readRootProcesses().tunnel,
-    matchesPid,
-  );
-  if (tracked) return tracked.pid;
-  return untrackedNgrokHolderPid(
-    await discoverNgrokAgents(),
-    domainHost,
-    matchesPid,
+  return (
+    staleTrackedNgrokAgent(readRootProcesses().tunnel, matchesPid)?.pid ?? null
   );
 }
 
@@ -1192,12 +1139,7 @@ export async function runNgrokTunnel(
         // behind that port. A process that cannot be identified is never
         // touched.
         const stale = staleTrackedNgrokAgent(readRootProcesses().tunnel);
-        const holderHost = endpoint ? endpointHost(endpoint) : domain;
-        const untrackedPid =
-          stale || !holderHost
-            ? null
-            : await untrackedNgrokHolderPid(agents, holderHost);
-        const stalePid = stale?.pid ?? untrackedPid;
+        const stalePid = stale?.pid ?? null;
         const interactive = "isTTY" in process.stdin && process.stdin.isTTY;
         if (
           stalePid !== null &&
@@ -1215,13 +1157,11 @@ export async function runNgrokTunnel(
             "Stop the other ngrok tunnel and start a new one pointing at this installation? [Y/n] ",
           );
           if (confirmStopAnswer(answer)) {
-            const stopped = stale
-              ? await stopConfirmedNgrokAgent(
-                  stale,
-                  opts.assistantId,
-                  workspaceDir,
-                )
-              : await stopUntrackedNgrokAgent(untrackedPid);
+            const stopped = await stopConfirmedNgrokAgent(
+              stale!,
+              opts.assistantId,
+              workspaceDir,
+            );
             if (stopped) {
               console.log(
                 "Stopped the old ngrok agent. Retrying the tunnel...",

@@ -119,6 +119,28 @@ describe("createLiveVoiceWebsocketHandler", () => {
     });
   });
 
+  test("upgrades the assistant-scoped spelling of the route, discarding the id", async () => {
+    // The scoped data plane dials /v1/assistants/<id>/live-voice — the same
+    // verbatim shape every scoped forwarder carries. The mirror admits it
+    // and discards the id, like the route table's tunnel/status mirror.
+    const config = makeConfig();
+    const handler = createLiveVoiceWebsocketHandler(config);
+    const req = new Request(
+      `http://localhost:7830/v1/assistants/assistant-1/live-voice?token=${TEST_TOKEN}`,
+      { headers: { upgrade: "websocket" } },
+    );
+    const server = makeFakeServer();
+    const res = await handler(req, server);
+
+    expect(res).toBeUndefined();
+    expect(server.upgrade).toHaveBeenCalledTimes(1);
+    expect(upgradedData<LiveVoiceSocketData>(server)).toEqual({
+      wsType: "live-voice",
+      config,
+      guardianPrincipalId: "test-user",
+    });
+  });
+
   test("upgrades when Authorization header is a valid actor edge token", async () => {
     const handler = createLiveVoiceWebsocketHandler(makeConfig());
     const req = new Request("http://localhost:7830/v1/live-voice", {

@@ -61,14 +61,6 @@ export function saveRawConfig(
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
 }
 
-/** The saved public base URL from the workspace `ingress` record, or null. */
-export function readIngressPublicBaseUrl(workspaceDir: string): string | null {
-  const config = loadRawConfig(workspaceDir);
-  const ingress = config.ingress as Record<string, unknown> | undefined;
-  const url = ingress?.publicBaseUrl;
-  return typeof url === "string" && url.trim() ? url : null;
-}
-
 /**
  * Persist a public ingress URL to the workspace config and enable ingress.
  * `provider`/`assistantId` also land under `ingress.lastTunnel` and

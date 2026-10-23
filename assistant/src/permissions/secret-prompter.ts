@@ -72,7 +72,7 @@ export class SecretPrompter {
     const effectiveConversationId = conversationId ?? "unknown";
 
     return new Promise((resolve, reject) => {
-      const timeoutMs = getConfig().timeouts.permissionTimeoutSec * 1000;
+      const timeoutMs = getConfig().timeouts.secretPromptTimeoutSec * 1000;
 
       const timer = setTimeout(() => {
         pendingInteractions.resolve(requestId, "cancelled");

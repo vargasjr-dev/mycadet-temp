@@ -53,17 +53,8 @@ const mockOauthConnections: Array<{
   status: string;
   accountInfo?: string | null;
 }> = [];
-const mockManagedConnections: Array<{
-  provider: string;
-  accountInfo?: string | null;
-}> = [];
-
 mock.module("../oauth/oauth-store.js", () => ({
   listConnections: () => mockOauthConnections,
-}));
-
-mock.module("../credential-execution/cloud-catalog.js", () => ({
-  getCachedManagedConnections: () => mockManagedConnections,
 }));
 
 // Import after mock
@@ -80,7 +71,6 @@ describe("buildSystemPrompt", () => {
     mockPersona.userSlug = null;
     mockPersona.guardianPersona = null;
     mockOauthConnections.length = 0;
-    mockManagedConnections.length = 0;
   });
 
   afterEach(() => {
@@ -138,9 +128,10 @@ describe("buildSystemPrompt", () => {
       join(systemPromptsDir, "99-org-policy.md"),
       "# Org policy\n\nMostly static workspace policy.\n",
     );
-    mockManagedConnections.push({
+    mockOauthConnections.push({
       provider: "google",
       accountInfo: "user@example.com",
+      status: "active",
     });
 
     const result = buildSystemPrompt();

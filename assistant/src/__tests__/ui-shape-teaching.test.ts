@@ -155,7 +155,6 @@ describe("ui_show missing-content teaching", () => {
     },
     { surfaceType: "confirmation", data: {}, expectInError: "confirmLabel" },
     { surfaceType: "work_result", data: {}, expectInError: "summary" },
-    { surfaceType: "oauth_connect", data: {}, expectInError: "providerKey" },
     {
       surfaceType: "channel_setup",
       data: { channel: "email" },

@@ -17,31 +17,13 @@ import {
   errorResponse,
   parseHostHeader,
 } from "../loopback-guard.js";
-import { methodNotAllowed, readJsonStringField } from "../route-helpers.js";
+import {
+  parsePublicBaseUrl,
+  readSavedIngressPublicBaseUrl,
+} from "../../remote-web/public-base-url.js";
+import { methodNotAllowed, readJsonObjectBody } from "../route-helpers.js";
 
 const MAX_CHALLENGE_BODY_BYTES = 512;
-
-/**
- * Normalize an advertised base URL to `origin + trailing-slash-stripped path`,
- * or null when the value is empty, unparseable, non-http(s), or hostless.
- * Shared with the direct pairing mint (remote-web/pairing-mint.ts), which
- * validates the CLI-passed URL with the exact same rules the HTTP route
- * applies.
- */
-export function parsePublicBaseUrl(value: string): string | null {
-  if (!value.trim()) {
-    return null;
-  }
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    if (!url.host) return null;
-    const pathPrefix = url.pathname.replace(/\/+$/, "");
-    return `${url.origin}${pathPrefix}`;
-  } catch {
-    return null;
-  }
-}
 
 function rateLimitedResponse(
   rateLimit: RemoteWebPairingChallengeRateLimit,
@@ -90,6 +72,35 @@ function publicBaseUrlMatchesRequestHost(
   return publicUrl.hostname.toLowerCase() === parsedHost.toLowerCase();
 }
 
+/**
+ * The public URL an edge-proxied mint is for: the request's own host, which
+ * the edge fronts by construction.
+ */
+function selfSourceFromRequestHost(req: Request): string | null {
+  const host = req.headers.get("host");
+  if (!host) return null;
+  const parsedHost = parseHostHeader(host);
+  return parsedHost ? `https://${parsedHost}` : null;
+}
+
+/**
+ * A self-sourced URL must serve devices outside the host machine — a link
+ * that encodes a loopback or plain-http address is unusable from another
+ * device.
+ */
+function isPublicHttpAddress(url: string): boolean {
+  try {
+    return (
+      new URL(url).protocol === "https:" &&
+      !["localhost", "127.0.0.1", "::1"].includes(
+        new URL(url).hostname.toLowerCase(),
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function handleCreateRemoteWebPairingChallenge(
   req: Request,
   clientIp: string,
@@ -111,29 +122,49 @@ export async function handleCreateRemoteWebPairingChallenge(
     if (guardError) return guardError;
   }
 
-  const rawPublicBaseUrl = await readJsonStringField(
-    req,
-    MAX_CHALLENGE_BODY_BYTES,
-    "publicBaseUrl",
-  );
-  if (rawPublicBaseUrl instanceof Response) {
-    return rawPublicBaseUrl;
+  // The public URL the challenge is minted for. Callers with their own URL
+  // state it (the device-side broker passes the address the user typed);
+  // otherwise the gateway self-sources — the request's own host when it
+  // arrived through the trusted edge (the edge fronts the public URL), else
+  // the ingress URL recorded in this gateway's own workspace.
+  const body = await readJsonObjectBody(req, MAX_CHALLENGE_BODY_BYTES);
+  if (body instanceof Response) {
+    return body;
   }
+  const stated = body.publicBaseUrl;
 
-  const publicBaseUrl = parsePublicBaseUrl(rawPublicBaseUrl);
-  if (!publicBaseUrl) {
-    return errorResponse("BAD_REQUEST", "publicBaseUrl is required", 400);
-  }
-
-  if (
-    arrivedViaTrustedEdgeProxy &&
-    !publicBaseUrlMatchesRequestHost(req, publicBaseUrl)
-  ) {
-    return errorResponse(
-      "PUBLIC_BASE_URL_MISMATCH",
-      "publicBaseUrl must match the request host",
-      400,
-    );
+  let publicBaseUrl: string | null;
+  if (typeof stated === "string" && stated.trim()) {
+    publicBaseUrl = parsePublicBaseUrl(stated);
+    if (!publicBaseUrl) {
+      return errorResponse("BAD_REQUEST", "publicBaseUrl is required", 400);
+    }
+    if (
+      arrivedViaTrustedEdgeProxy &&
+      !publicBaseUrlMatchesRequestHost(req, publicBaseUrl)
+    ) {
+      return errorResponse(
+        "PUBLIC_BASE_URL_MISMATCH",
+        "publicBaseUrl must match the request host",
+        400,
+      );
+    }
+  } else {
+    publicBaseUrl = arrivedViaTrustedEdgeProxy
+      ? selfSourceFromRequestHost(req)
+      : readSavedIngressPublicBaseUrl();
+    if (publicBaseUrl) {
+      const strict = parsePublicBaseUrl(publicBaseUrl);
+      publicBaseUrl =
+        strict !== null && isPublicHttpAddress(strict) ? strict : null;
+    }
+    if (!publicBaseUrl) {
+      return errorResponse(
+        "BAD_REQUEST",
+        "no public URL is recorded for this gateway — run `cadet tunnel start` first",
+        400,
+      );
+    }
   }
 
   const rateLimited = recordRemoteWebPairingChallengeCreation();

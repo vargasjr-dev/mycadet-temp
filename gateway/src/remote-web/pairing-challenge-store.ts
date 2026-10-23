@@ -258,6 +258,7 @@ export function createRemoteWebPairingChallenge(
     deviceCode,
     userCode,
     verificationUri,
+    publicBaseUrl,
     expiresAt: new Date(expiresAtMs).toISOString(),
     expiresInSeconds: Math.ceil(CODE_TTL_MS / 1000),
     intervalSeconds: POLL_INTERVAL_SECONDS,

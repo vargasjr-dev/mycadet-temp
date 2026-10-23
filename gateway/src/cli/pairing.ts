@@ -27,9 +27,8 @@ import {
   type PendingRemoteWebPairingChallenge,
 } from "../remote-web/pairing-challenge-store.js";
 import { mintAndApproveRemoteWebPairingChallenge } from "../remote-web/pairing-mint.js";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { getWorkspaceDir } from "../paths.js";
+import { readSavedIngressPublicBaseUrl } from "../remote-web/public-base-url.js";
+
 
 function printUsage(): void {
   console.log("Usage: gateway pairing <subcommand>");
@@ -79,19 +78,6 @@ export function parsePairingArgs(args: string[]): {
  * mint self-sources it: this CLI runs where the workspace lives, so no
  * caller needs to pass a URL.
  */
-function readSavedIngressPublicBaseUrl(): string | null {
-  try {
-    const config = JSON.parse(
-      readFileSync(join(getWorkspaceDir(), "config.json"), "utf-8"),
-    ) as Record<string, unknown>;
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    return typeof url === "string" && url.trim() ? url : null;
-  } catch {
-    return null;
-  }
-}
-
 function listLiveness(
   challenge: PendingRemoteWebPairingChallenge,
   now: number,

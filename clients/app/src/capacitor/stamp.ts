@@ -3,6 +3,7 @@ import {
   InjectedConfigSchema,
   type InjectedConfig,
 } from "@app/lib/injected-config";
+import { resolveLocalServerUrl } from "./local-server";
 
 /**
  * The build-time config the mobile shells bake in: `build:capacitor` stamps
@@ -20,9 +21,9 @@ import {
  * account session lives there too — the same origin `webUrl` encodes for
  * the pair flow.
  *
- * The local stamp resolves the RUNNING cadet's control plane the same way
- * the pair flow does (see `resolveLocalServerUrl`): the tunnel URL when one
- * is up, else the app server's loopback port — reachable from the simulator
+ * The local stamp resolves the RUNNING cadet's control plane from the
+ * lockfile (see `resolveLocalServerUrl`): the tunnel URL when one is up,
+ * else the app server edge's loopback port — reachable from the simulator
  * only, since a device's `127.0.0.1` is the phone itself. Unresolved builds
  * keep the seed's dev-stack default.
  *
@@ -30,23 +31,17 @@ import {
  * replaces: the release workflows set `CADET_ENVIRONMENT`; `CADET_SERVER_URL` overrides with an
  * https origin for self-hosted assistants; unset means the local cadet.
  */
-export function capacitorInjectedConfig(
-  env: {
-    CADET_ENVIRONMENT?: string;
-    CADET_SERVER_URL?: string;
-  },
-  options: { localServerUrl?: string } = {},
-): InjectedConfig {
-  const override = env.CADET_SERVER_URL?.trim();
+export function capacitorInjectedConfig(): InjectedConfig {
+  const override = process.env.CADET_SERVER_URL?.trim();
   if (!override) {
-    const environment = env.CADET_ENVIRONMENT ?? "local";
+    const environment = process.env.CADET_ENVIRONMENT ?? "local";
     if (environment === "local") {
       // The local backend is a full control plane — the web dev server
       // proxies /v1 at it — so the simulator reaches the same stack every
       // other local surface uses.
       return InjectedConfigSchema.parse({
         remote: "local",
-        cloudUrl: options.localServerUrl ?? SEEDS.local.cloudUrl,
+        cloudUrl: resolveLocalServerUrl() ?? SEEDS.local.cloudUrl,
       });
     }
     const seed = SEEDS[environment] ?? SEEDS.dev;
@@ -81,6 +76,7 @@ export function capacitorInjectedConfig(
  * the tag and break out (`</script>` becomes `\u003c/script>`) — the same
  * mitigation the CLI's `buildRemoteWebIndexHtml` applies to its own stamps.
  */
-export function injectedConfigScript(config: InjectedConfig): string {
+export function injectedConfigScript(): string {
+  const config = capacitorInjectedConfig();
   return `<script>window.__CADET_CONFIG__=${JSON.stringify(config).replaceAll("<", "\\u003c")}</script>`;
 }

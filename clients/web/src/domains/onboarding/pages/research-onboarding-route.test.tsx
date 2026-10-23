@@ -35,8 +35,9 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { type ReactNode } from "react";
 
 import { readOnboardedAt } from "@/domains/onboarding/onboarded-assistant-record";
 import {
@@ -141,11 +142,15 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
+const gatewaySessionModule = await import("@/lib/auth/gateway-session");
 mock.module("@/lib/auth/gateway-session", () => ({
+  ...gatewaySessionModule,
   isGatewayAuthMode: () => false,
 }));
 
+const localModeModule = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
+  ...localModeModule,
   isLocalClient: () => false,
 }));
 
@@ -252,6 +257,15 @@ mock.module("@/stores/onboarding-focus-store", () => ({
 mock.module("@/domains/onboarding/established-assistant", () => ({
   checkEstablishedAssistant: checkEstablishedAssistantMock,
   FRESH_ASSISTANT_CHECK: { established: false, assistantName: null },
+}));
+
+/* The handoff's post-establishment recheck re-fetches the assistant over the
+   same-origin /v1 — stubbed: the verdict it would refresh is what these tests
+   drive through the established-assistant mock above. */
+const assistantQueries = await import("@/assistant/queries");
+mock.module("@/assistant/queries", () => ({
+  ...assistantQueries,
+  recheckAssistant: async () => undefined,
 }));
 
 mock.module("@/domains/onboarding/screens/research-onboarding-screen", () => ({
@@ -399,6 +413,23 @@ mock.module("@/runtime/desktop-app-platform", () => ({
 const { ResearchOnboardingRoute } =
   await import("@/domains/onboarding/pages/research-onboarding-route");
 
+/* The route reads the query client directly (post-hatch invalidations) —
+   renders ride a per-test provider instead of mocking the client seam. */
+function TestQueryProvider({ children }: { children: ReactNode }) {
+  const [client] = useState(
+    () => new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
+
+function routeElement() {
+  return (
+    <TestQueryProvider>
+      <ResearchOnboardingRoute />
+    </TestQueryProvider>
+  );
+}
+
 function postFormSnapshot(
   overrides: Partial<ResearchOnboardingSnapshot> = {},
 ): ResearchOnboardingSnapshot {
@@ -470,7 +501,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     establishedResult = { established: true, assistantName: "Viper" };
     writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("existing-step")).toBeTruthy(),
@@ -485,7 +516,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     establishedResult = { established: false, assistantName: null };
     writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
     // No guard flash for a genuinely-new assistant; it resumes mid-flow.
@@ -496,7 +527,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
   test("submitting the form still diverts to the decision screen when established", async () => {
     establishedResult = { established: true, assistantName: "Viper" };
     // No snapshot: a fresh visit lands on the form.
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     fireEvent.click(await screen.findByTestId("form-submit"));
 
@@ -514,7 +545,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     researchStatus = "done";
     writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("existing-step")).toBeTruthy(),
@@ -529,7 +560,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     researchStatus = "done";
     writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     // personalityEnabled → the suggestions step renders the chat handoff.
     await waitFor(() =>
@@ -550,7 +581,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     researchStatus = "done";
     writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     // The terminal step is on screen, but the guard hasn't settled → handoff held.
     await waitFor(() =>
@@ -581,7 +612,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     researchStatus = "done";
     writeResearchSnapshot(ASSISTANT_ID, doneSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     // Held while the verdict is pending.
     await waitFor(() =>
@@ -614,7 +645,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     backgroundHatch.ready = true;
     backgroundHatch.assistantId = "asst-1";
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(
@@ -635,7 +666,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     backgroundHatch.ready = true;
     backgroundHatch.assistantId = "asst-1";
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await waitFor(() =>
       expect(screen.getByTestId("existing-step")).toBeTruthy(),
     );
@@ -649,7 +680,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     establishedResult = { established: true, assistantName: "Viper" };
     writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await waitFor(() =>
       expect(screen.getByTestId("existing-step")).toBeTruthy(),
     );
@@ -662,7 +693,7 @@ describe("ResearchOnboardingRoute resume guard", () => {
     // A refresh (fresh mount, same snapshot) re-lands on the keep/redo choice
     // rather than auto-resuming past the guard.
     cleanup();
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await waitFor(() =>
       expect(screen.getByTestId("existing-step")).toBeTruthy(),
     );
@@ -679,7 +710,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
   };
 
   test("a name-only submit hydrates empty results and never starts research", async () => {
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     fireEvent.click(await screen.findByTestId("form-submit-name-only"));
 
     await waitFor(() => expect(screen.getByTestId("face-step")).toBeTruthy());
@@ -699,7 +730,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
       postFormSnapshot({ step: "looking", formValues: nameOnly }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("finishing-step")).toBeTruthy(),
@@ -725,7 +756,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
       }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId("looking-step")).toBeTruthy();
@@ -739,7 +770,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
       }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId("looking-step")).toBeTruthy();
@@ -754,7 +785,7 @@ describe("ResearchOnboardingRoute empty-details research skip", () => {
       }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("finishing-step")).toBeTruthy(),
@@ -791,7 +822,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
     // The retry recovers an assistant that already has a life.
     establishedResult = { established: true, assistantName: "Viper" };
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await screen.findByRole("alert");
     // The dead hatch never got far enough to ask.
     expect(checkEstablishedAssistantMock).not.toHaveBeenCalled();
@@ -811,7 +842,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
   });
 
   test("re-fires a research turn that died with the hatch", async () => {
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     fireEvent.click(await screen.findByTestId("form-submit"));
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
 
@@ -819,7 +850,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
     // and the turn settles "error", still holding the submitted subject key.
     researchStatus = "error";
     backgroundHatch.error = HATCH_ERROR;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     recoverOnRetry();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
@@ -835,14 +866,14 @@ describe("ResearchOnboardingRoute hatch retry", () => {
   });
 
   test("does not re-fire a research turn that never errored", async () => {
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     fireEvent.click(await screen.findByTestId("form-submit"));
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
 
     // Still running when the hatch failed — the turn is already parked on the
     // runner's own `awaitAssistantId`, so a retry must not double-fire it.
     backgroundHatch.error = HATCH_ERROR;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     recoverOnRetry();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
@@ -861,7 +892,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
       postFormSnapshot({ researchConversationId: "conv-1" }),
     );
 
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
     const resumed = startResearchMock.mock.calls[0]?.[0] as {
       resumeConversationId?: string;
@@ -870,7 +901,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
 
     researchStatus = "error";
     backgroundHatch.error = HATCH_ERROR;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     recoverOnRetry();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
@@ -885,13 +916,13 @@ describe("ResearchOnboardingRoute hatch retry", () => {
   });
 
   test("a journey with no research conversation re-fires without one", async () => {
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     fireEvent.click(await screen.findByTestId("form-submit"));
     await waitFor(() => expect(startResearchMock).toHaveBeenCalledTimes(1));
 
     researchStatus = "error";
     backgroundHatch.error = HATCH_ERROR;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     recoverOnRetry();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
@@ -924,7 +955,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
     );
     failFirstHatch();
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await screen.findByRole("alert");
 
     recoverOnRetry();
@@ -953,13 +984,13 @@ describe("ResearchOnboardingRoute hatch retry", () => {
       postFormSnapshot({ step: "personality" }),
     );
 
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     fireEvent.click(await screen.findByTestId("personality-slide"));
     fireEvent.click(screen.getByTestId("personality-continue"));
     await waitFor(() => expect(applyPersonalityMock).toHaveBeenCalledTimes(1));
 
     backgroundHatch.error = HATCH_ERROR;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     recoverOnRetry();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
@@ -978,7 +1009,7 @@ describe("ResearchOnboardingRoute hatch retry", () => {
     failFirstHatch();
     writeResearchSnapshot(ASSISTANT_ID, postFormSnapshot());
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     await screen.findByRole("alert");
 
     recoverOnRetry();
@@ -1007,7 +1038,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       postFormSnapshot({ step: "personality" }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     fireEvent.click(await screen.findByTestId("personality-continue"));
 
     // Straight to the research reveal: the calendar steps are skipped for
@@ -1026,7 +1057,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       postFormSnapshot({ step: "personality" }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     fireEvent.click(await screen.findByTestId("personality-continue"));
 
     await waitFor(() =>
@@ -1043,7 +1074,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       postFormSnapshot({ step: "personality" }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
     fireEvent.click(await screen.findByTestId("personality-continue"));
 
     // "No session yet" is not an answer: a signed-in user racing the probe
@@ -1062,13 +1093,13 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       postFormSnapshot({ step: "integration" }),
     );
 
-    const { rerender } = render(<ResearchOnboardingRoute />);
+    const { rerender } = render(routeElement());
     await waitFor(() =>
       expect(screen.getByTestId("integration-step")).toBeTruthy(),
     );
 
     cloudSessionSettled = true;
-    rerender(<ResearchOnboardingRoute />);
+    rerender(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("looking-step")).toBeTruthy(),
@@ -1083,7 +1114,7 @@ describe("ResearchOnboardingRoute claim-credits skip", () => {
       postFormSnapshot({ step: "integration" }),
     );
 
-    render(<ResearchOnboardingRoute />);
+    render(routeElement());
 
     await waitFor(() =>
       expect(screen.getByTestId("looking-step")).toBeTruthy(),

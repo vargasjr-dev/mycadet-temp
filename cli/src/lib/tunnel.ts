@@ -22,6 +22,7 @@ import {
 import {
   ensureAppServer,
   getNginxVersion,
+  isPidAlive,
   isIngressRunning,
   readIngressState,
   type AppServer,
@@ -29,9 +30,7 @@ import {
 import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,
-  endpointHost,
   isNgrokEndpointOnlineError,
-  loadNgrokDomain,
   ngrokHolderPid,
   ngrokOnlineEndpoint,
   NGROK_TUNNEL_META,
@@ -67,21 +66,18 @@ export const DEFAULT_TUNNEL_PROVIDER: TunnelProviderName = "ngrok";
  * tunnel` command: the detached tunnel process has no TTY, so its #402/#406
  * prompt can never fire — a 334 there surfaces here instead, in the
  * terminal that ran the command. When the startup log shows the collision
- * and the holder can be identified (tracked record, or inspection API +
- * verified pid), ask before stopping it; an unverified process is never
- * touched. Returns whether the caller should relaunch the tunnel.
+ * and the lockfile records a live tracked agent, ask before stopping it;
+ * externally started agents are never touched. Returns whether the caller
+ * should relaunch the tunnel.
  */
 export async function offerStopNgrokHolder(logText: string): Promise<boolean> {
   if (!isNgrokEndpointOnlineError(logText)) return false;
   if (!("isTTY" in process.stdin && process.stdin.isTTY)) return false;
   const endpoint = ngrokOnlineEndpoint(logText);
-  const holderHost =
-    (endpoint ? endpointHost(endpoint) : null) ?? loadNgrokDomain();
-  if (!holderHost) return false;
-  const pid = await ngrokHolderPid(holderHost);
+  const pid = await ngrokHolderPid();
   if (pid === null) return false;
   console.error(
-    `\nngrok refused the tunnel: ${endpoint ?? holderHost} is already online.`,
+    `\nngrok refused the tunnel: ${endpoint ?? "the ngrok endpoint"} is already online.`,
   );
   console.error(
     `An ngrok agent from an earlier run (pid ${pid}) is holding your free ngrok domain.`,
@@ -131,10 +127,21 @@ export interface ProviderMeta {
  * validation, and dispatch all read one shape.
  */
 export const PROVIDER_META: Record<TunnelProviderName, ProviderMeta> = {
-  cadet: CADET_TUNNEL_META,
-  ngrok: NGROK_TUNNEL_META,
-  cloudflare: CLOUDFLARE_TUNNEL_META,
-  tailscale: TAILSCALE_TUNNEL_META,
+  // Getters, like the providers map below: the provider modules' import chain
+  // cycles back through this file (runtime-url → local → tunnel), and an
+  // eager read would touch a still-initializing meta const.
+  get cadet() {
+    return CADET_TUNNEL_META;
+  },
+  get ngrok() {
+    return NGROK_TUNNEL_META;
+  },
+  get cloudflare() {
+    return CLOUDFLARE_TUNNEL_META;
+  },
+  get tailscale() {
+    return TAILSCALE_TUNNEL_META;
+  },
 };
 
 /**
@@ -596,15 +603,18 @@ export async function restoreAppServer(
  *
  * Waking one container must not repoint another's public endpoint at its own
  * gateway, and `ensureAppServer` cannot make that call: it restarts an edge
- * whose recorded gateway port drifts, which is the hijack itself. A running
- * edge records its `gatewayPort` — an edge serving a different recorded
- * gateway port disqualifies the wake; with no running edge (or one already
- * fronting this assistant), the restore may proceed.
+ * whose recorded gateway port drifts, which is the hijack itself. The root
+ * lockfile's `app` record names the assistant a live edge fronts — an edge
+ * fronting a different assistant disqualifies the wake; with no running edge
+ * (or one already fronting this assistant), the restore may proceed.
  */
-function ownsSharedIngress(gatewayPort: number, workspaceDir: string): boolean {
-  return !(
-    isIngressRunning(workspaceDir) &&
-    readIngressState(workspaceDir)?.gatewayPort !== gatewayPort
+function edgeFrontsAnotherAssistant(entry: AssistantEntry): boolean {
+  const appRecord = readRootProcesses().app;
+  return (
+    appRecord?.assistantId !== undefined &&
+    appRecord.assistantId !== entry.assistantId &&
+    appRecord.pid !== undefined &&
+    isPidAlive(appRecord.pid)
   );
 }
 
@@ -630,7 +640,7 @@ export async function restoreContainerAppServer(
     return;
   }
   const workspaceDir = getDefaultWorkspaceDir();
-  if (!ownsSharedIngress(gatewayPort, workspaceDir)) {
+  if (edgeFrontsAnotherAssistant(entry)) {
     return;
   }
   // Gate before waiting: a container that never established an app server

@@ -86,6 +86,7 @@ describe("remote gateway token exchange", () => {
         deviceCode: "device-code",
         userCode: "B8C2-S2J3",
         verificationUri: "http://localhost:3000/assistant-123/assistant/pair",
+        publicBaseUrl: "http://localhost:3000/assistant-123",
         expiresAt: "2026-06-16T12:00:00.000Z",
         expiresInSeconds: 600,
         intervalSeconds: 5,
@@ -96,6 +97,7 @@ describe("remote gateway token exchange", () => {
       deviceCode: "device-code",
       userCode: "B8C2-S2J3",
       verificationUri: "http://localhost:3000/assistant-123/assistant/pair",
+      publicBaseUrl: "http://localhost:3000/assistant-123",
       expiresAt: "2026-06-16T12:00:00.000Z",
       expiresInSeconds: 600,
       intervalSeconds: 5,
@@ -106,11 +108,9 @@ describe("remote gateway token exchange", () => {
       "/assistant-123/v1/remote-web/pairing-challenge",
     );
     expect(calls[0].init?.credentials).toBe("include");
-    expect(calls[0].init?.body).toBe(
-      JSON.stringify({
-        publicBaseUrl: "http://localhost:3000/assistant-123",
-      }),
-    );
+    // The gateway self-sources the public URL; the browser sends no body
+    // fields.
+    expect(calls[0].init?.body).toBe(JSON.stringify({}));
   });
 
   test("surfaces a non-JSON challenge error as a RemoteWebPairingError, not a parse error", async () => {

@@ -46,6 +46,5 @@ export function resolveDesktopStreamWsUrl(
   return resolveGatewayWsUrl({
     assistantId,
     routePath: DESKTOP_STREAM_ROUTE,
-    label: "desktop",
   });
 }

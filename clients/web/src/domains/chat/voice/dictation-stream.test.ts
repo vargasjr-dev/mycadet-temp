@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { useLockfileStore } from "@/stores/lockfile-store";
+import { client } from "@/generated/api/client.gen";
 
 import type {
   LiveVoiceAudioCaptureOptions,
@@ -14,8 +14,6 @@ let pcmSupported = true;
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => ingressUrl,
   getSelfHostedActorToken: () => actorToken,
-  // local-mode.ts (reached through live-voice/connection's lockfile imports)
-  // statically references the setter; these tests never prime a connection.
   setSelfHostedConnection: () => {},
 }));
 
@@ -34,7 +32,7 @@ mock.module("@/domains/chat/voice/live-voice/pcm-capture", () => ({
   },
 }));
 
-const { buildSttStreamWsUrl, startDictationStream } =
+const { resolveDictationStreamWsUrl, startDictationStream } =
   await import("./dictation-stream");
 
 // ---------------------------------------------------------------------------
@@ -144,7 +142,6 @@ async function startWithFakes(
 const flushMicrotasks = () => Promise.resolve();
 
 afterEach(() => {
-  useLockfileStore.setState({ lockfile: null });
   ingressUrl = "http://localhost:8500";
   actorToken = "actor-jwt";
   pcmSupported = true;
@@ -154,52 +151,67 @@ afterEach(() => {
 // URL building
 // ---------------------------------------------------------------------------
 
-describe("buildSttStreamWsUrl", () => {
-  test("local __gateway proxy path dials the entry's recorded loopback port", () => {
-    // The HTTP-only __gateway proxy can't carry a WS upgrade, so the dictation
-    // stream must bypass it and hit 127.0.0.1:<port> directly (shared bypass);
-    // the id-keyed path resolves the port through the lockfile entry.
-    useLockfileStore.setState({
-      lockfile: {
-        activeAssistant: null,
-        assistants: [
-          {
-            assistantId: "stt-1",
-            cloud: "local",
-            resources: { gatewayPort: 8500, daemonPort: 8501 },
-          },
-        ],
-      },
-    });
-    const url = new URL(
-      buildSttStreamWsUrl({
-        assistantId: "stt-1",
-        ingressUrl: "http://localhost:3000",
-        token: "tok en",
-      }),
-    );
+describe("resolveDictationStreamWsUrl", () => {
+  type CapturedPostOptions = { url: string; body?: Record<string, unknown> };
+  const originalPost = client.post;
+  let captured: CapturedPostOptions | null = null;
 
-    expect(url.protocol).toBe("ws:");
-    expect(url.host).toBe("127.0.0.1:8500");
-    expect(url.pathname).toBe("/v1/stt/stream");
-    expect(url.searchParams.get("token")).toBe("tok en");
-    expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
-    expect(url.searchParams.get("sampleRate")).toBe("16000");
+  beforeEach(() => {
+    captured = null;
+    client.post = mock(async (options: CapturedPostOptions) => {
+      captured = options;
+      return {
+        data: { token: "tok-abc", expiresAt: "2026-06-01T00:05:00Z" },
+        error: null,
+        response: new Response(null, { status: 200 }),
+      };
+    }) as typeof client.post;
   });
 
-  test("https ingress maps to wss and drops query/hash", () => {
-    const url = new URL(
-      buildSttStreamWsUrl({
-        assistantId: "stt-1",
-        ingressUrl: "https://x.example.com?foo=1#bar",
-        token: "t",
-      }),
-    );
+  afterEach(() => {
+    client.post = originalPost;
+  });
 
+  test("self-hosted: dials the scoped STT path with the audio-format params", async () => {
+    ingressUrl = "http://localhost:8500";
+    actorToken = "actor-jwt";
+
+    const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
+
+    expect(url.protocol).toBe("ws:");
+    expect(url.host).toBe("localhost:8500");
+    expect(url.pathname).toBe("/v1/assistants/stt-1/stt/stream");
+    expect(url.searchParams.get("token")).toBe("actor-jwt");
+    expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
+    expect(url.searchParams.get("sampleRate")).toBe("16000");
+    expect(captured).toBeNull();
+  });
+
+  test("self-hosted without an actor token dials without one — the host injects", async () => {
+    ingressUrl = "http://localhost:8500";
+    actorToken = null;
+
+    const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
+
+    expect(url.pathname).toBe("/v1/assistants/stt-1/stt/stream");
+    expect(url.searchParams.has("token")).toBe(false);
+    expect(captured).toBeNull();
+  });
+
+  test("cloud: mints a tunnel token and dials tunnel with the audio-format params", async () => {
+    ingressUrl = null;
+
+    const url = new URL(await resolveDictationStreamWsUrl("stt-1"));
+
+    expect(captured?.body).toEqual({ assistantId: "stt-1" });
     expect(url.protocol).toBe("wss:");
-    expect(url.pathname).toBe("/v1/stt/stream");
-    expect(url.searchParams.get("foo")).toBeNull();
-    expect(url.hash).toBe("");
+    expect(url.host).toBe("tunnel.mycadet.ai");
+    // The `/<assistantId>` prefix selects the tunnel; tunnel strips it to
+    // recover the upstream path its allowlist matches against.
+    expect(url.pathname).toBe("/stt-1/v1/stt/stream");
+    expect(url.searchParams.get("token")).toBe("tok-abc");
+    expect(url.searchParams.get("mimeType")).toBe("audio/pcm");
+    expect(url.searchParams.get("sampleRate")).toBe("16000");
   });
 });
 

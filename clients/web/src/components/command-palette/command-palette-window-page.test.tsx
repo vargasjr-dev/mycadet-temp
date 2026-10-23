@@ -23,11 +23,9 @@ const orgRef = {
   currentOrganizationId: "org-1" as string | null,
 };
 
-const useAssistantLifecycleMock = mock((_options: unknown) => undefined);
-mock.module("@/assistant/use-lifecycle", () => ({
-  useAssistantLifecycle: useAssistantLifecycleMock,
+const useAssistantBootResolutionMock = mock(() => ({
+  state: { kind: "active" },
 }));
-
 mock.module("@/hooks/use-app-theme", () => ({
   useAppTheme: () => undefined,
 }));
@@ -55,7 +53,18 @@ mock.module("@/hooks/conversation-queries", () => ({
 const localSelectedRef = {
   value: null as { assistantId: string; name?: string } | null,
 };
+/* The page's boot resolution (react-query) is fire-and-forget — the
+   resolved-assistants store mock carries the state it renders. Stubbed
+   spread-real so the render never needs a QueryClientProvider. */
+const assistantQueries = await import("@/assistant/queries");
+mock.module("@/assistant/queries", () => ({
+  ...assistantQueries,
+  useAssistantBootResolution: useAssistantBootResolutionMock,
+}));
+
+const localModeModule = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
+  ...localModeModule,
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   getSelectedAssistant: () => localSelectedRef.value,
@@ -90,6 +99,7 @@ mock.module("@/stores/organization-store", () => {
   const useOrganizationStore = () => null;
   useOrganizationStore.use = {
     currentOrganizationId: () => orgRef.currentOrganizationId,
+    status: () => "idle",
   };
   useOrganizationStore.getState = () => ({
     currentOrganizationId: orgRef.currentOrganizationId,
@@ -174,7 +184,7 @@ beforeEach(() => {
   orgRef.currentOrganizationId = "org-1";
   localSelectedRef.value = null;
 
-  useAssistantLifecycleMock.mockClear();
+  useAssistantBootResolutionMock.mockClear();
   useConversationListQueryMock.mockClear();
   useCommandPaletteSectionsMock.mockClear();
 });
@@ -187,17 +197,16 @@ describe("CommandPaletteWindowPage", () => {
   test("bootstraps assistant context for the standalone floating window", () => {
     render(<CommandPaletteWindowPage />);
 
-    expect(useAssistantLifecycleMock).toHaveBeenCalledWith({
-      sessionStatus: "authenticated",
-      hasCloudSession: true,
-    });
+    // The #502 boot resolution replaced the lifecycle machine: the page
+    // primes assistant context through it and renders the store's state.
+    expect(useAssistantBootResolutionMock).toHaveBeenCalled();
     expect(useConversationListQueryMock).toHaveBeenCalledWith(
       "assistant-1",
       true,
     );
   });
 
-  test("uses the selected platform assistant while lifecycle is still resolving", () => {
+  test("uses the selected platform assistant while boot resolution is still resolving", () => {
     resolvedRef.assistants = [
       {
         id: "assistant-1",

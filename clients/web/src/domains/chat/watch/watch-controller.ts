@@ -293,7 +293,6 @@ export function resolveWatchStreamWsUrl(
   return resolveGatewayWsUrl({
     assistantId,
     routePath: WATCH_STREAM_ROUTE,
-    label: "watch",
     params: watchStreamParams(target),
   });
 }

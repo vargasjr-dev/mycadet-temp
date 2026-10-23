@@ -155,7 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
-  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "No hay datos de uso para este período"
   },
@@ -229,7 +228,6 @@
     "tryAgain": "Intentar de nuevo",
     "urlPlaceholder": "Pega aquí la URL de devolución de llamada..."
   },
-  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Muestras, guías y proyectos compartidos por la comunidad.",
     "communityHubTitle": "Centro de la comunidad",
@@ -257,7 +255,6 @@
     "youtubeChannelDescription": "Recorridos, tutoriales y análisis profundos del producto.",
     "youtubeChannelTitle": "Canal de YouTube"
   },
-  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Avanzado: escribe una expresión cron",
     "atMinute": "En el minuto",
@@ -337,7 +334,6 @@
     "subtitleOwn": "Guardadas cifradas en la bóveda de credenciales de tu asistente. Revela un valor bajo demanda, o reemplázalo o elimínalo en cualquier momento.",
     "title": "Credenciales"
   },
-  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Envía registros de diagnóstico y configuración saneada al soporte de Cadet. Se excluyen las credenciales. El archivo se conserva durante siete días.",
     "export": "Exportar paquete de depuración",
@@ -417,7 +413,6 @@
     "keepPro": "Mantener Pro",
     "title": "¿Bajar a Base?"
   },
-  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Elegir asistente",
     "computeResourcesLoginNotice": "Inicia sesión en la plataforma Cadet para administrar los recursos de cómputo.",
@@ -770,7 +765,6 @@
     "requestedMetaHost": "Solicitado {when} desde este equipo",
     "title": "Solicitudes de vinculación"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Compositor",
     "description": "Personaliza los atajos y el comportamiento de Cadet en este dispositivo.",
@@ -1035,7 +1029,6 @@
     "loadError": "No se pudieron cargar los proveedores. Inténtalo de nuevo.",
     "title": "Proveedores"
   },
-  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "Aún no hay ejecuciones.",
     "error": "Error",
@@ -1047,7 +1040,6 @@
     "skipped": "Saltada",
     "title": "Ejecuciones recientes"
   },
-  "resizeCard": {},
   "restartAssistant": {
     "button": "Reiniciar",
     "confirmLabel": "Reiniciar",
@@ -1301,7 +1293,6 @@
     "updateWindowWithTz": "Ventana de actualización ({tz})",
     "weekly": "Semanal"
   },
-  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Analizar costos con el asistente",
     "breakdownTitle": "Desglose",
@@ -1350,7 +1341,6 @@
     "noUsageInRange": "No hay uso registrado en este intervalo",
     "total": "Total"
   },
-  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "El asistente no está listo. Inténtalo de nuevo.",
     "saveApiKeyFailedToast": "No se pudo guardar la clave de API de {providerName}. Inténtalo de nuevo."

@@ -141,7 +141,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
   },
-  "billingStatusHandler": {},
   "inferenceUsageChart": {
     "empty": "Нет данных об использовании за этот период"
   },
@@ -215,7 +214,6 @@
     "tryAgain": "Попробовать снова",
     "urlPlaceholder": "Callback URL..."
   },
-  "checkoutPage": {},
   "communityPage": {
     "communityHubDescription": "Витрины, гайды и проекты от сообщества.",
     "communityHubTitle": "Центр сообщества",
@@ -243,7 +241,6 @@
     "youtubeChannelDescription": "Обзоры, туториалы и разборы продукта.",
     "youtubeChannelTitle": "Канал YouTube"
   },
-  "completeState": {},
   "createScheduleModal": {
     "advancedCron": "Дополнительно: cron-выражение",
     "atMinute": "В минуту",
@@ -323,7 +320,6 @@
     "subtitleOwn": "Хранятся в зашифрованном виде в хранилище учётных данных ассистента. Значение можно показать по запросу, заменить или удалить в любой момент.",
     "title": "Секреты"
   },
-  "creditBundlePicker": {},
   "debugBundleExport": {
     "description": "Отправить журналы диагностики и очищенную конфигурацию в поддержку Cadet. Учётные данные исключены. Архив хранится семь дней.",
     "export": "Экспортировать отладочный пакет",
@@ -403,7 +399,6 @@
     "keepPro": "Оставить Pro",
     "title": "Перейти на Base?"
   },
-  "errorStates": {},
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",
     "computeResourcesLoginNotice": "Вход на платформу Cadet для управления вычислительными ресурсами.",
@@ -755,7 +750,6 @@
     "requestedMetaHost": "Запрос {when} с этого компьютера",
     "title": "Запросы на привязку"
   },
-  "planCard": {},
   "preferencesModal": {
     "composerTitle": "Поле ввода",
     "description": "Настройка сочетаний клавиш и поведения Cadet на этом устройстве.",
@@ -1018,7 +1012,6 @@
     "loadError": "Не удалось загрузить провайдеров. Повторите попытку.",
     "title": "Провайдеры"
   },
-  "provisioningState": {},
   "recentRunsCard": {
     "emptyDefault": "Запусков пока нет.",
     "error": "Ошибка",
@@ -1030,7 +1023,6 @@
     "skipped": "Пропущен",
     "title": "Недавние запуски"
   },
-  "resizeCard": {},
   "restartAssistant": {
     "button": "Перезапустить",
     "confirmLabel": "Перезапустить",
@@ -1279,7 +1271,6 @@
     "updateWindowWithTz": "Окно обновления ({tz})",
     "weekly": "Еженедельно"
   },
-  "upgradeSuccessPage": {},
   "usageTab": {
     "analyzeCostsButton": "Разобрать расходы с ассистентом",
     "breakdownTitle": "По действиям",
@@ -1328,7 +1319,6 @@
     "noUsageInRange": "В этом диапазоне использования нет",
     "total": "Итого"
   },
-  "useBillingPortalSession": {},
   "useDaemonConfig": {
     "assistantNotReadyToast": "Ассистент не готов. Повторите попытку.",
     "saveApiKeyFailedToast": "Не удалось сохранить API-ключ {providerName}. Повторите попытку."
