@@ -7,6 +7,7 @@ import { cliCommand } from "../lib/cli-name.js";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   resolveTargetAssistant,
   saveLockfileAssistant,
@@ -249,7 +250,7 @@ export async function wakeAssistant(
     );
   }
 
-  if (!entry.resources) {
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     throw new WakeExit(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
