@@ -284,7 +284,7 @@ const TokenErrorSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/credential-requests/peek",
+    path: "/credential-requests/peek",
     method: "post",
     operationId: "credential_requests_peek",
     summary: "Validate a credential-request token without consuming it",
@@ -303,7 +303,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     ]),
   },
   {
-    path: "/v1/credential-requests/submit",
+    path: "/credential-requests/submit",
     method: "post",
     operationId: "credential_requests_submit",
     summary: "Consume a credential-request token and store the value",

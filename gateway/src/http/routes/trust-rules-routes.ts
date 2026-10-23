@@ -106,7 +106,7 @@ const TrustRuleSuggestionSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/trust-rules",
+    path: "/trust-rules",
     method: "get",
     operationId: "trustRulesList",
     summary: "List trust rules",
@@ -131,7 +131,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ rules: z.array(TrustRuleSchema) }),
   },
   {
-    path: "/v1/trust-rules",
+    path: "/trust-rules",
     method: "post",
     operationId: "trustRuleCreate",
     summary: "Create a trust rule",
@@ -141,7 +141,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ rule: TrustRuleSchema }),
   },
   {
-    path: "/v1/trust-rules/suggest",
+    path: "/trust-rules/suggest",
     method: "post",
     operationId: "trustRuleSuggest",
     summary: "Generate a trust-rule suggestion",
@@ -152,7 +152,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ suggestion: TrustRuleSuggestionSchema }),
   },
   {
-    path: "/v1/trust-rules/{rule_id}",
+    path: "/trust-rules/{rule_id}",
     method: "patch",
     operationId: "trustRuleUpdate",
     summary: "Update a trust rule",
@@ -164,7 +164,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ rule: TrustRuleSchema }),
   },
   {
-    path: "/v1/trust-rules/{rule_id}",
+    path: "/trust-rules/{rule_id}",
     method: "delete",
     operationId: "trustRuleDelete",
     summary: "Delete a trust rule",
@@ -175,7 +175,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ success: z.boolean() }),
   },
   {
-    path: "/v1/trust-rules/{rule_id}/reset",
+    path: "/trust-rules/{rule_id}/reset",
     method: "post",
     operationId: "trustRuleReset",
     summary: "Reset a default trust rule",

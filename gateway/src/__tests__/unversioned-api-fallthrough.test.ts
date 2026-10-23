@@ -8,18 +8,18 @@ const { createRouter } = await import("../http/router.js");
 
 const ROUTES: RouteDefinition[] = [
   {
-    path: "/v1/ps",
+    path: "/ps",
     method: "GET",
     handler: (req) =>
       Response.json({ route: "ps", seen: new URL(req.url).pathname }),
   },
   {
-    path: /^\/v1\/assistants\/([^/]+)$/,
+    path: /^\/assistants\/([^/]+)$/,
     method: "GET",
     handler: (_req, params) => Response.json({ route: "assistant", params }),
   },
-  // The gateway's native unversioned routes stay reachable raw-first.
   {
+    // The gateway's native unversioned routes read the same way.
     path: "/integrations",
     method: "GET",
     handler: () => Response.json({ route: "native-unversioned" }),
@@ -39,27 +39,28 @@ async function dispatch(
   return makeRouter()(req, url, () => "203.0.113.9");
 }
 
-describe("unversioned api fallthrough (P7: the /v1 prefix is optional)", () => {
-  test("an unversioned dial reaches the same handler as its /v1 spelling", async () => {
+describe("unversioned api routing (P7: the /v1 prefix is optional)", () => {
+  test("both spellings reach the same route; the dial rides through as sent", async () => {
     const unversioned = await dispatch("GET", "/ps");
-    expect(unversioned?.status).toBe(200);
     expect(await unversioned?.json()).toEqual({ route: "ps", seen: "/ps" });
-
     const versioned = await dispatch("GET", "/v1/ps");
-    expect(versioned?.status).toBe(200);
     expect(await versioned?.json()).toEqual({ route: "ps", seen: "/v1/ps" });
   });
 
-  test("regex routes resolve params against the versioned shape", async () => {
-    const response = await dispatch("GET", "/assistants/assistant-1");
-    expect(response?.status).toBe(200);
-    expect(await response?.json()).toEqual({
-      route: "assistant",
-      params: ["assistant-1"],
-    });
+  test("regex routes resolve params in either spelling", async () => {
+    for (const path of [
+      "/assistants/assistant-1",
+      "/v1/assistants/assistant-1",
+    ]) {
+      const response = await dispatch("GET", path);
+      expect(await response?.json()).toEqual({
+        route: "assistant",
+        params: ["assistant-1"],
+      });
+    }
   });
 
-  test("a native unversioned route wins over the versioned twin (raw first)", async () => {
+  test("a native unversioned route serves its path directly", async () => {
     const response = await dispatch("GET", "/integrations");
     expect(await response?.json()).toEqual({ route: "native-unversioned" });
   });
@@ -69,12 +70,12 @@ describe("unversioned api fallthrough (P7: the /v1 prefix is optional)", () => {
     expect(response?.status).toBe(200);
   });
 
-  test("unknown unversioned paths still miss (no blanket acceptance)", async () => {
+  test("unknown paths still miss (no blanket acceptance)", async () => {
     expect(await dispatch("GET", "/not-a-segment")).toBeNull();
     expect(await dispatch("GET", "/v1/not-a-segment")).toBeNull();
   });
 
-  test("the fallback only strips one /v1 prefix", async () => {
+  test("the strip only removes one /v1 prefix", async () => {
     expect(await dispatch("GET", "/v1/v1/ps")).toBeNull();
   });
 

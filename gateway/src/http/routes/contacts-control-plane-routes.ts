@@ -195,7 +195,7 @@ const ContactRecordSubmitRequestSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/contacts",
+    path: "/contacts",
     method: "post",
     operationId: "contactsUpsert",
     summary: "Create or update a contact",
@@ -209,7 +209,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contacts/{contact_id}",
+    path: "/contacts/{contact_id}",
     method: "delete",
     operationId: "contactDelete",
     summary: "Delete a contact",
@@ -220,7 +220,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseStatus: "204",
   },
   {
-    path: "/v1/contacts/prompt/submit",
+    path: "/contacts/prompt/submit",
     method: "post",
     operationId: "contactsPromptSubmit",
     summary: "Submit a contact-prompt address",
@@ -240,7 +240,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contacts/record/submit",
+    path: "/contacts/record/submit",
     method: "post",
     operationId: "contactsRecordSubmit",
     summary: "Submit a contact-record form",
@@ -260,7 +260,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contact-channels/{channel_id}/verify",
+    path: "/contact-channels/{channel_id}/verify",
     method: "post",
     operationId: "contactChannelVerify",
     summary: "Manually verify a contact channel",

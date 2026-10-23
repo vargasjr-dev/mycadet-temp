@@ -38,7 +38,7 @@ const ChannelPermissionCellRowSchema = ChannelPermissionCellSchema.extend({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/channel-permission-overrides",
+    path: "/channel-permission-overrides",
     method: "get",
     operationId: "channelPermissionOverridesList",
     summary: "List channel-permission matrix cells",
@@ -50,7 +50,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/channel-permission-overrides",
+    path: "/channel-permission-overrides",
     method: "put",
     operationId: "channelPermissionOverrideSet",
     summary: "Upsert a channel-permission matrix cell",
@@ -61,7 +61,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ cell: ChannelPermissionCellRowSchema }),
   },
   {
-    path: "/v1/channel-permission-overrides/resolve",
+    path: "/channel-permission-overrides/resolve",
     method: "post",
     operationId: "channelPermissionResolve",
     summary: "Resolve the effective channel-permission threshold",
@@ -79,7 +79,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/channel-permission-overrides/delete",
+    path: "/channel-permission-overrides/delete",
     method: "post",
     operationId: "channelPermissionOverrideDelete",
     summary: "Delete a channel-permission matrix cell",

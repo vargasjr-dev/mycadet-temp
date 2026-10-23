@@ -27,7 +27,7 @@ const GlobalThresholdsSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/permissions/thresholds",
+    path: "/permissions/thresholds",
     method: "get",
     operationId: "permissionsThresholdsGet",
     summary: "Get global auto-approve thresholds",
@@ -35,7 +35,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: GlobalThresholdsSchema,
   },
   {
-    path: "/v1/permissions/thresholds",
+    path: "/permissions/thresholds",
     method: "put",
     operationId: "permissionsThresholdsPut",
     summary: "Update global auto-approve thresholds",
@@ -50,7 +50,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: GlobalThresholdsSchema,
   },
   {
-    path: "/v1/permissions/thresholds/conversations/{conversation_id}",
+    path: "/permissions/thresholds/conversations/{conversation_id}",
     method: "get",
     operationId: "conversationThresholdGet",
     summary: "Get a conversation's threshold override",
@@ -63,7 +63,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: z.object({ threshold: z.string().nullable() }),
   },
   {
-    path: "/v1/permissions/thresholds/conversations/{conversation_id}",
+    path: "/permissions/thresholds/conversations/{conversation_id}",
     method: "put",
     operationId: "conversationThresholdPut",
     summary: "Set a conversation's threshold override",
@@ -78,7 +78,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/permissions/thresholds/conversations/{conversation_id}",
+    path: "/permissions/thresholds/conversations/{conversation_id}",
     method: "delete",
     operationId: "conversationThresholdDelete",
     summary: "Clear a conversation's threshold override",

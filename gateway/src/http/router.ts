@@ -200,25 +200,31 @@ export function createRouter(
       return null;
     };
 
-    const response = await dispatchAt(url.pathname);
-    if (response) return response;
-
-    // The /v1 version prefix is optional: a dial without it that matches
-    // nothing raw gets one more look with the prefix re-added. Auth and
-    // params resolve against the versioned shape; the handler's `req` keeps
-    // the dial exactly as sent. The version digit leaves the URL path
-    // entirely once every caller migrates (the one-url plan's P7); until
-    // then both spellings are live. The unversioned WS upgrade paths (stt,
-    // watch, live-voice) still route versioned — their pre-router checks run
-    // before this router and move with the caller migration.
-    if (url.pathname.startsWith("/v1/") || url.pathname === "/") return null;
-    return dispatchAt(`/v1${url.pathname}`);
+    // The /v1 version prefix is optional (P7 of the one-url plan): route
+    // definitions read unversioned and the dispatcher strips one optional
+    // /v1 from the dial, so both spellings resolve to the same routes. The
+    // handler's `req` keeps the dial exactly as sent. The unversioned WS
+    // upgrade paths (stt, watch, live-voice, desktop) still arrive only in
+    // the /v1 spelling — their pre-router checks run before this router and
+    // move with the caller migration.
+    return dispatchAt(withoutVersionPrefix(url.pathname));
   };
 }
 
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
+
+/**
+ * Strip one optional leading `/v1` version segment (P7 of the one-url plan:
+ * the version digit is leaving the URL path — match definitions read the
+ * unversioned shape, and the dispatcher strips the prefix from
+ * not-yet-migrated `/v1`-spelled dials so both spellings stay live).
+ */
+export function withoutVersionPrefix(pathname: string): string {
+  const stripped = pathname.replace(/^\/v1(?=\/|$)/, "");
+  return stripped === "" ? "/" : stripped;
+}
 
 interface MatchResult {
   params: RouteParams;

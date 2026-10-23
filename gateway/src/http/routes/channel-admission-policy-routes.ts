@@ -39,7 +39,7 @@ export const SetChannelPolicyRequestSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/channel-admission-policy",
+    path: "/channel-admission-policy",
     method: "get",
     operationId: "channelAdmissionPolicyList",
     summary: "List per-channel admission floors",
@@ -51,7 +51,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/channel-admission-policy/{channel_type}",
+    path: "/channel-admission-policy/{channel_type}",
     method: "put",
     operationId: "channelAdmissionPolicySet",
     summary: "Set a channel's admission floor",
