@@ -1,7 +1,7 @@
 import { isCloudHome } from "./cloud-values.js";
 import { hostname } from "node:os";
 
-import { getLocalLanIPv4 } from "./local";
+import { getLocalLanIPv4 } from "./lan-ip.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import type { AssistantEntry } from "./assistant-config.js";

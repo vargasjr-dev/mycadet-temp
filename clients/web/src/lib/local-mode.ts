@@ -540,7 +540,7 @@ export function hasLocalGateway(
  * loopback-gateway entry whose `runtimeUrl` points off this machine, in local
  * (non-remote-gateway) mode.
  * Whether the entry records a usable `runtimeUrl` is a separate question
- * answered by `getPairedGatewayUrl`. Deliberately not a type predicate: its
+ * answered by `hasPairedGateway`. Deliberately not a type predicate: its
  * false branch must not narrow `assistant` (a local entry also lands there).
  */
 export function expectsPairedGateway(assistant: LockfileAssistant): boolean {

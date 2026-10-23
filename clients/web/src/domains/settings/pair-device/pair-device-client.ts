@@ -21,7 +21,6 @@
  */
 
 import type {
-  RemoteWebPairingChallengeRequest,
   RemoteWebPairingChallengeResponse,
   RemoteWebPairingRequestActionRequest,
   RemoteWebPairingRequestListResponse,
@@ -195,14 +194,13 @@ function postPairingRoute<T>(
  */
 export async function mintDevicePairing(args: {
   base: string;
-  publicBaseUrl: string;
   signal?: AbortSignal;
 }): Promise<DevicePairing> {
-  const { base, publicBaseUrl, signal } = args;
+  const { base, signal } = args;
 
   const challenge = await postPairingRoute<RemoteWebPairingChallengeResponse>(
     `${base}${PAIRING_CHALLENGE_PATH}`,
-    { publicBaseUrl } satisfies RemoteWebPairingChallengeRequest,
+    {},
     signal,
     pairingConnectivityHint(),
   );

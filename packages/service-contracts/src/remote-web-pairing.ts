@@ -37,20 +37,6 @@
  */
 export const REMOTE_WEB_PAIRING_CODE_TTL_MS = 10 * 60 * 1000;
 
-/**
- * `POST /v1/remote-web/pairing-challenge` request body.
- *
- * `publicBaseUrl` is knowledge only some callers have — a device broker passes
- * the address the user typed (which the gateway cannot know). Callers without
- * their own URL omit it and the gateway self-sources: the request's own host
- * when it arrived through the trusted edge proxy, else the ingress URL
- * recorded in the gateway's own workspace.
- */
-export interface RemoteWebPairingChallengeRequest {
-  /** Public base URL the scanning device can reach the assistant at. */
-  publicBaseUrl?: string;
-}
-
 /** `POST /v1/remote-web/pairing-challenge` success response body (200). */
 export interface RemoteWebPairingChallengeResponse {
   /** Opaque secret the paired device exchanges for a token. */
@@ -59,7 +45,11 @@ export interface RemoteWebPairingChallengeResponse {
   userCode: string;
   /** URL the device opens to complete pairing. */
   verificationUri: string;
-  /** The base URL the challenge was minted for (echoed into verificationUri). */
+  /**
+   * The base URL the challenge was minted for (echoed into verificationUri).
+   * The gateway self-sources it — the request's own host through the trusted
+   * edge, else its recorded ingress URL; callers cannot request a URL.
+   */
   publicBaseUrl: string;
   /** ISO-8601 instant the challenge expires. */
   expiresAt: string;

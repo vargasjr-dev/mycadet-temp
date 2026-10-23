@@ -15,7 +15,7 @@ import {
 } from "fs";
 import { createRequire } from "module";
 import { Socket } from "net";
-import { homedir, networkInterfaces, platform, tmpdir } from "os";
+import { homedir, platform, tmpdir } from "os";
 import { basename, dirname, isAbsolute, join, resolve } from "path";
 
 import {
@@ -1405,55 +1405,6 @@ async function discoverCloudExternalIp(): Promise<string | undefined> {
 
   const [gcpIp, awsIp] = await Promise.all([gcpPromise, awsPromise]);
   return gcpIp ?? awsIp;
-}
-
-/**
- * Returns the local IPv4 address most likely to be reachable from other
- * devices on the same LAN.
- *
- * Priority order:
- *   1. en0 (Wi-Fi on macOS)
- *   2. en1 (secondary network on macOS)
- *   3. First non-loopback IPv4 on any interface
- *
- * Skips link-local addresses (169.254.x.x) and IPv6.
- * Returns undefined if no suitable address is found.
- */
-export function getLocalLanIPv4(): string | undefined {
-  const ifaces = networkInterfaces();
-
-  // Priority interfaces in order
-  const priorityInterfaces = ["en0", "en1"];
-
-  for (const ifName of priorityInterfaces) {
-    const addrs = ifaces[ifName];
-    if (!addrs) continue;
-    for (const addr of addrs) {
-      if (
-        addr.family === "IPv4" &&
-        !addr.internal &&
-        !addr.address.startsWith("169.254.")
-      ) {
-        return addr.address;
-      }
-    }
-  }
-
-  // Fallback: first non-loopback, non-link-local IPv4 on any interface
-  for (const [, addrs] of Object.entries(ifaces)) {
-    if (!addrs) continue;
-    for (const addr of addrs) {
-      if (
-        addr.family === "IPv4" &&
-        !addr.internal &&
-        !addr.address.startsWith("169.254.")
-      ) {
-        return addr.address;
-      }
-    }
-  }
-
-  return undefined;
 }
 
 /**
