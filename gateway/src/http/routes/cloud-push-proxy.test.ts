@@ -122,7 +122,7 @@ describe("platform push proxy", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  test("forwards a push-token upsert to Django with the stored UUID and API key", async () => {
+  test("forwards a push-token upsert to the cloud with the stored UUID and API key", async () => {
     fetchMock = mock(
       async () =>
         new Response(JSON.stringify({ token: "device-token" }), {
@@ -186,7 +186,7 @@ describe("platform push proxy", () => {
     );
   });
 
-  test("forwards a Live Activity token upsert to Django", async () => {
+  test("forwards a Live Activity token upsert to the cloud", async () => {
     fetchMock = mock(
       async () =>
         new Response(JSON.stringify({ token: "activity-token" }), {
@@ -214,7 +214,7 @@ describe("platform push proxy", () => {
     );
   });
 
-  test("forwards a Live Activity token delete to Django", async () => {
+  test("forwards a Live Activity token delete to the cloud", async () => {
     fetchMock = mock(async () => new Response(null, { status: 204 }));
     const handler = createCloudPushProxyHandler(registeredCredentials());
 
@@ -233,7 +233,7 @@ describe("platform push proxy", () => {
     );
   });
 
-  test("passes through a Django 400", async () => {
+  test("passes through a cloud 400", async () => {
     fetchMock = mock(
       async () =>
         new Response(JSON.stringify({ detail: "bundle_id is required." }), {

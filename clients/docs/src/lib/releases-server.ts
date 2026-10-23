@@ -10,13 +10,13 @@ export interface ApiRelease {
 
 /**
  * Resolves where release data is fetched from. Defaults to the public API;
- * RELEASES_API_URL overrides explicitly, and DJANGO_INTERNAL_URL supports
+ * RELEASES_API_URL overrides explicitly, and CLOUD_INTERNAL_URL supports
  * in-cluster fetch against the backend service directly.
  */
 function getReleasesBaseUrl(): string {
   return (
     process.env.RELEASES_API_URL ||
-    process.env.DJANGO_INTERNAL_URL ||
+    process.env.CLOUD_INTERNAL_URL ||
     "https://www.mycadet.ai"
   );
 }

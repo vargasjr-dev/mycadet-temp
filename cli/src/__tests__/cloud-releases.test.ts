@@ -58,14 +58,6 @@ describe("fetchReleases", () => {
     expect(url).toContain("limit=100");
   });
 
-  test("passes the channel param when given", async () => {
-    const fetchMock = mockFetchJson([RELEASE]);
-    await fetchReleases({ channel: "preview" });
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("/v1/releases/?channel=preview");
-    expect(url).toContain("limit=100");
-  });
-
   test("uses the cloudUrl override over the resolved default", async () => {
     const fetchMock = mockFetchJson([RELEASE]);
     await fetchReleases({ cloudUrl: "https://other-platform.test" });
@@ -186,27 +178,13 @@ describe("version-shape helpers", () => {
 });
 
 describe("fetchLatestVersion", () => {
-  test("defaults to the stable channel", async () => {
+  test("requests stable releases", async () => {
     const fetchMock = mockFetchJson([RELEASE]);
     const version = await fetchLatestVersion();
     expect(version).toBe("0.7.0");
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toContain("stable=true");
     expect(url).not.toContain("channel=");
-  });
-
-  test("requests the preview channel when asked", async () => {
-    const preview = { ...RELEASE, version: "0.8.0-preview.3" };
-    const fetchMock = mockFetchJson([preview]);
-    const version = await fetchLatestVersion("preview");
-    expect(version).toBe("0.8.0-preview.3");
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("channel=preview");
-  });
-
-  test("returns null when the channel has no releases", async () => {
-    mockFetchJson([]);
-    expect(await fetchLatestVersion("preview")).toBeNull();
   });
 });
 
@@ -262,12 +240,6 @@ describe("stable release fallback", () => {
   test("does not contact GitHub when cloud discovery succeeds", async () => {
     const fetchMock = withGitHubFallback([RELEASE]);
     expect(await fetchLatestVersion()).toBe(RELEASE.version);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("does not substitute stable for an unavailable preview channel", async () => {
-    const fetchMock = withGitHubFallback([], 503);
-    expect(await fetchLatestVersion("preview")).toBeNull();
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

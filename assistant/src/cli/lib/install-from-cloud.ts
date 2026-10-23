@@ -299,7 +299,7 @@ async function downloadInstallArchive(
 ): Promise<{ body: Buffer; meta: InstallResponseMeta }> {
   const url = buildInstallUrl(deps.cloudBaseUrl, name, opts);
   const headers: Record<string, string> = {
-    // The cloud (Django) 406s a specific `application/gzip` Accept, so ask
+    // The cloud 406s a specific `application/gzip` Accept, so ask
     // for anything and sniff the body ourselves (see extractPluginTarball).
     Accept: "*/*",
     "User-Agent": USER_AGENT,

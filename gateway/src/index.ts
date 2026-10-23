@@ -1317,9 +1317,9 @@ async function main() {
     },
 
     // ── Platform push / Live Activity tokens ──
-    // Django-owned registration. Remote-gateway clients hit these
+    // Cloud-owned registration. Remote-gateway clients hit these
     // same-origin; without a dedicated route they fall through to the
-    // runtime-proxy catch-all and 404. The handler forwards to Django
+    // runtime-proxy catch-all and 404. The handler forwards to the cloud
     // with the stored assistant API key and platform assistant UUID.
     {
       path: /^\/v1\/assistants\/[^/]+\/push-tokens\/?$/,

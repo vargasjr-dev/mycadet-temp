@@ -533,7 +533,7 @@ paths:
       description: |-
         Return a single persisted Doctor session with its message ledger.
 
-        Looks up the session by Django UUID PK *and* by assistant
+        Looks up the session by UUID PK *and* by assistant
         ownership; lookups across assistants always return 404, never 200.
         Messages are returned in ``sequence`` order.
       parameters:
@@ -842,7 +842,7 @@ paths:
       description: |-
         Record whether the Doctor solved the user's problem.
 
-        Writes only to the persisted Django row (no upstream Doctor call),
+        Writes only to the persisted row (no upstream Doctor call),
         so it works for live sessions and for sessions that already ended.
         Idempotent: the latest answer wins.
       parameters:
@@ -1900,195 +1900,6 @@ paths:
           description: No response body
         '400':
           description: No response body
-      x-cadet-api-clients:
-      - platform
-  /v1/assistants/{assistant_id}/release-channel/:
-    get:
-      operationId: assistants_release_channel_retrieve
-      description: Read release-channel state and preview safety backups for an assistant.
-      parameters:
-      - in: header
-        name: Cadet-Organization-Id
-        schema:
-          type: string
-          format: uuid
-        description: Required if using Cookie-based or X-Session-Token authentication
-          methods.
-      - in: path
-        name: assistant_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - assistants
-      security:
-      - CadetAPIKey: []
-      - cookieAuth: []
-      - XSessionTokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReleaseChannelStatus'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '502':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-      x-cadet-api-clients:
-      - platform
-  /v1/assistants/{assistant_id}/release-channel/preview/opt-in/:
-    post:
-      operationId: assistants_release_channel_preview_opt_in_create
-      description: Switch a stable-channel assistant to the preview release channel.
-      parameters:
-      - in: header
-        name: Cadet-Organization-Id
-        schema:
-          type: string
-          format: uuid
-        description: Required if using Cookie-based or X-Session-Token authentication
-          methods.
-      - in: path
-        name: assistant_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - assistants
-      security:
-      - CadetAPIKey: []
-      - cookieAuth: []
-      - XSessionTokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PreviewChannelOptInResult'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '502':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '504':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-      x-cadet-api-clients:
-      - platform
-  /v1/assistants/{assistant_id}/release-channel/preview/opt-out/:
-    post:
-      operationId: assistants_release_channel_preview_opt_out_create
-      description: Switch a preview-channel assistant back to the stable release channel.
-      parameters:
-      - in: header
-        name: Cadet-Organization-Id
-        schema:
-          type: string
-          format: uuid
-        description: Required if using Cookie-based or X-Session-Token authentication
-          methods.
-      - in: path
-        name: assistant_id
-        schema:
-          type: string
-          format: uuid
-        required: true
-      tags:
-      - assistants
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PreviewChannelOptOutRequestRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PreviewChannelOptOutRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PreviewChannelOptOutRequestRequest'
-        required: true
-      security:
-      - CadetAPIKey: []
-      - cookieAuth: []
-      - XSessionTokenAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PreviewChannelOptOutResult'
-          description: ''
-        '400':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '409':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
-        '502':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailResponse'
-          description: ''
       x-cadet-api-clients:
       - platform
   /v1/assistants/{assistant_id}/system-events/:
@@ -5965,10 +5776,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        release_channel:
-          allOf:
-          - $ref: '#/components/schemas/ReleaseChannelEnum'
-          readOnly: true
         current_release_version:
           type: string
           nullable: true
@@ -6036,7 +5843,6 @@ components:
       - modified
       - platform_actor_token
       - provisioned_storage_gib
-      - release_channel
       - vembda_cluster_id
     AssistantDomain:
       type: object
@@ -6263,7 +6069,6 @@ components:
           description: |-
             Component that produced the event.
 
-            * `django` - Django
             * `vembda` - Vembda
         reason:
           type: string
@@ -9255,79 +9060,6 @@ components:
             ProPlan, discriminated by ``id``.
       required:
       - plans
-    PreviewChannelOptInResult:
-      type: object
-      properties:
-        detail:
-          type: string
-        release_channel:
-          type: string
-        version:
-          type: string
-        backup:
-          $ref: '#/components/schemas/PreviewSafetyBackup'
-      required:
-      - backup
-      - detail
-      - release_channel
-      - version
-    PreviewChannelOptOutRequestRequest:
-      type: object
-      properties:
-        mode:
-          $ref: '#/components/schemas/ModeEnum'
-        snapshot_name:
-          type: string
-          minLength: 1
-      required:
-      - mode
-    PreviewChannelOptOutResult:
-      type: object
-      properties:
-        detail:
-          type: string
-        release_channel:
-          type: string
-        version:
-          type: string
-          nullable: true
-        backup:
-          $ref: '#/components/schemas/PreviewSafetyBackup'
-        restore:
-          type: object
-          additionalProperties: {}
-      required:
-      - detail
-      - release_channel
-      - version
-    PreviewSafetyBackup:
-      type: object
-      properties:
-        snapshot_name:
-          type: string
-        pvc:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        ready_to_use:
-          type: boolean
-        backup_type:
-          type: string
-        source_release_channel:
-          type: string
-          nullable: true
-        source_release_version:
-          type: string
-          nullable: true
-        expires_at:
-          type: string
-          format: date-time
-          nullable: true
-      required:
-      - backup_type
-      - ready_to_use
-      - snapshot_name
     ProMachineResizeRequestRequest:
       type: object
       properties:
@@ -9478,62 +9210,6 @@ components:
       - pro
       type: string
       description: '* `pro` - pro'
-    ReleaseChannelEnum:
-      enum:
-      - stable
-      - preview
-      type: string
-      description: |-
-        * `stable` - Stable
-        * `preview` - Preview
-    ReleaseChannelRelease:
-      type: object
-      properties:
-        version:
-          type: string
-        released_at:
-          type: string
-          format: date-time
-      required:
-      - released_at
-      - version
-    ReleaseChannelStatus:
-      type: object
-      properties:
-        feature_enabled:
-          type: boolean
-        current_channel:
-          type: string
-        latest_stable_release:
-          allOf:
-          - $ref: '#/components/schemas/ReleaseChannelRelease'
-          nullable: true
-        latest_preview_release:
-          allOf:
-          - $ref: '#/components/schemas/ReleaseChannelRelease'
-          nullable: true
-        preview_backups:
-          type: array
-          items:
-            $ref: '#/components/schemas/PreviewSafetyBackup'
-        preview_backup_count:
-          type: integer
-        preview_backup_limit:
-          type: integer
-        preview_backup_limit_reached:
-          type: boolean
-        standard_upgrade_available:
-          type: boolean
-      required:
-      - current_channel
-      - feature_enabled
-      - latest_preview_release
-      - latest_stable_release
-      - preview_backup_count
-      - preview_backup_limit
-      - preview_backup_limit_reached
-      - preview_backups
-      - standard_upgrade_available
     ReleaseListItem:
       type: object
       properties:
@@ -9636,11 +9312,9 @@ components:
       - snoozed_until
     SourceEnum:
       enum:
-      - django
       - vembda
       type: string
       description: |-
-        * `django` - Django
         * `vembda` - Vembda
     StorageTier:
       type: object

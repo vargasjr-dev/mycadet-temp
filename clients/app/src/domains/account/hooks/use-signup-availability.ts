@@ -16,7 +16,7 @@ interface SignupAvailabilityOptions {
 /**
  * Whether the cloud accepts new accounts, read from allauth's config
  * endpoint (`account.is_open_for_signup`, which follows the cloud's
- * `DJANGO_ACCOUNT_ALLOW_REGISTRATION` setting).
+ * account-registration setting).
  *
  * Fails open: only a definite `false` closes the sign-up screen. A probe that
  * errors, returns a malformed payload, or stalls past `timeoutMs` leaves the

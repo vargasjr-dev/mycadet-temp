@@ -3,9 +3,9 @@
 This doc is the single cross-repo source of truth for **marketplace plugin icons** — the small glyph shown next to a plugin in `assistant plugins search`, the desktop/web catalog, and the marketing site. It mirrors how skill icons work. Two repos consume this contract and MUST enforce identical rules:
 
 - **`vargasjr-dev/mycadet`** (this repo) — the assistant validator at [`assistant/src/cli/lib/plugin-icon-file.ts`](../assistant/src/cli/lib/plugin-icon-file.ts) is the authoritative implementation. In-repo curation lives here (`plugins/assets/`, `plugins/plugin-icons.json`); the catalog's emoji `icon` values live in the Cadet Cloud catalog.
-- **`vargasjr-dev/mycadet-platform`** — a Django validator behind `/v1/plugins/` that MUST match this doc byte-for-byte. Uploads the PNGs to GCS and serves the combined catalog `icon` value.
+- **the cloud api** — a validator behind `/v1/plugins/` that MUST match this doc byte-for-byte. Uploads the PNGs to GCS and serves the combined catalog `icon` value.
 
-Any change to the format, limits, or manifest shape below is a **coordinated cross-repo change** — the TS validator and the Python validator move together, or a plugin that validates in one repo silently gets "no icon" in the other.
+Any change to the format, limits, or manifest shape below is a **coordinated cross-repo change** — the TS validator and the cloud api validator move together, or a plugin that validates in one repo silently gets "no icon" in the other.
 
 ## PNG icon rules (author-bundled)
 

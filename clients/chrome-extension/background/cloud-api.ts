@@ -1,7 +1,7 @@
 /**
  * Centralized HTTP client for cadet-cloud platform API calls.
  *
- * All authenticated requests to the cloud (Django) go through
+ * All authenticated requests to the cloud go through
  * `cloudApiFetch()`, which automatically includes:
  *   - `Cadet-Organization-Id` header (from the stored CloudSession)
  *   - `X-Session-Token` header (allauth headless session token)

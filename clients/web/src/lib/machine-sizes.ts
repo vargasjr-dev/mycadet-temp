@@ -49,7 +49,7 @@ export const MACHINE_TIER_LABEL: Record<string, string> = {
 };
 
 // Descriptions reflect the cpu_limit / memory_limit from
-// `MACHINE_SIZE_RESOURCE_PRESETS` in `django/app/domain_models/constants.py`,
+// the cloud api's domain constants,
 // rounded to integers where the underlying value is a whole number of cores
 // (e.g. small's 2000m CPU limit displays as 2 vCPU). Keep these in sync if
 // the backend presets change.

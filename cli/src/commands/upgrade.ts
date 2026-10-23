@@ -26,7 +26,7 @@ import {
   sleepContainers,
 } from "../lib/docker";
 import {
-  fetchLatestStableVersion,
+  fetchLatestVersion,
   fetchReleases,
   resolveImageRefs,
 } from "../lib/cloud-releases";
@@ -1124,11 +1124,9 @@ async function upgradePlatform(
   const currentVersion =
     health.version ?? assistantDetail?.currentReleaseVersion ?? undefined;
 
-  const releaseChannel = assistantDetail?.releaseChannel ?? "stable";
   // Target the same platform as the detail/health/POST calls — the entry's
   // platform may differ from the active lockfile default.
   const releases = await fetchReleases({
-    channel: releaseChannel,
     cloudUrl: entry.runtimeUrl,
   });
 
@@ -1139,7 +1137,7 @@ async function upgradePlatform(
   });
 
   if (resolution.kind === "version-not-found") {
-    const msg = `Version ${version} not found in Cadet Cloud releases (channel: ${releaseChannel}).`;
+    const msg = `Version ${version} not found in Cadet Cloud releases.`;
     console.error(msg);
     emitCliError("MISSING_VERSION", msg);
     process.exit(1);
@@ -1385,7 +1383,7 @@ async function upgradeFinalize(
  */
 async function resolveLatestStableTag(): Promise<string> {
   console.log("🔍 Fetching latest stable release...");
-  const latestVersion = await fetchLatestStableVersion();
+  const latestVersion = await fetchLatestVersion();
   if (!latestVersion) {
     console.error(
       "Error: Could not determine the latest stable release from Cadet Cloud or GitHub Releases.",

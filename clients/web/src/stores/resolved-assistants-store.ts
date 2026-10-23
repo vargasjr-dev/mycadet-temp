@@ -58,7 +58,7 @@ import {
 } from "@/assistant/selected-assistant-storage";
 import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile } from "@/runtime/local-mode-host";
-import type { Assistant, ReleaseChannelEnum } from "@/generated/api/types.gen";
+import type { Assistant } from "@/generated/api/types.gen";
 
 export interface ResolvedAssistant {
   id: string;
@@ -73,7 +73,6 @@ export interface ResolvedAssistant {
   cloud?: string;
   runtimeVersion?: string;
   currentReleaseVersion?: string | null;
-  releaseChannel?: ReleaseChannelEnum;
   isActiveLockfileAssistant?: boolean;
   isLocal: boolean;
   isCloudHosted: boolean;
@@ -211,7 +210,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         avatarUrl: existingById.get(a.assistantId)?.avatarUrl,
         currentReleaseVersion: existingById.get(a.assistantId)
           ?.currentReleaseVersion,
-        releaseChannel: existingById.get(a.assistantId)?.releaseChannel,
         isActiveLockfileAssistant: activeLockfileAssistantId === a.assistantId,
         isLocal: isLocalAssistant(a),
         isCloudHosted: isCloudAssistant(a),
@@ -253,7 +251,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
               ingressUrl: a.ingress_url,
               avatarUrl: apiAvatarUrl(a),
               currentReleaseVersion: a.current_release_version,
-              releaseChannel: a.release_channel,
               isActiveLockfileAssistant:
                 lockfileFields.isActiveLockfileAssistant,
               ...classifyApiEntry(a.is_local, lockfileFields.isPaired),
@@ -279,7 +276,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
           ingressUrl: assistant.ingress_url,
           avatarUrl: apiAvatarUrl(assistant),
           currentReleaseVersion: assistant.current_release_version,
-          releaseChannel: assistant.release_channel,
           ...classifyApiEntry(
             assistant.is_local,
             lockfileFields.isPaired,

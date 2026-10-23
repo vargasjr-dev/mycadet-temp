@@ -3,7 +3,7 @@
  *
  * The generated gateway SDK emits assistant-scoped URLs, but both deployment
  * boundaries flatten contact-family paths before the gateway routes them
- * (Django's RuntimeProxyView in cloud; `rewriteForSelfHostedIngress` in
+ * (the cloud's runtime proxy; `rewriteForSelfHostedIngress` in
  * self-hosted), so the gateway serves only the flat contact routes and a
  * scoped contact request falls through to the runtime-proxy catch-all.
  */

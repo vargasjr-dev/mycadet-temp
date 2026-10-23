@@ -1,7 +1,7 @@
 /**
  * Assistant-handle API wrappers (claim flow + live availability check).
  *
- * Parallel to ``domains/account/profile.ts`` (user handle). The Django server
+ * Parallel to ``domains/account/profile.ts`` (user handle). The cloud server
  * uses the same error codes on both surfaces so the client can share the
  * ``UsernameErrorCode`` enum and ``USERNAME_ERROR_COPY`` map. We re-export
  * them from this module under handle-specific aliases so consumers can

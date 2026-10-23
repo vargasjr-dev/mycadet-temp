@@ -1,5 +1,5 @@
 /**
- * Proxy Django-owned device and Live Activity token routes.
+ * Proxy cloud-owned device and Live Activity token routes.
  *
  * Remote-gateway clients register APNs/FCM and ActivityKit tokens on
  * `/v1/assistants/{id}/push-tokens/` and
@@ -8,7 +8,7 @@
  * catch-all and 404.
  *
  * The bound platform assistant UUID is used on the upstream path, not the
- * URL id (which may be `"self"` or a client-resolved slug). Django
+ * URL id (which may be `"self"` or a client-resolved slug). The cloud
  * authenticates the hop with the stored assistant API key.
  */
 

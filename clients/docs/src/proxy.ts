@@ -94,8 +94,8 @@ const CLICK_ID_PARAMS: readonly string[] = PAID_CLICK_IDS.flatMap(
   (rule) => rule.params,
 );
 
-// Mirrors the cloud's cap (_CLICK_ID_FIELD_MAX_LENGTHS in Django's
-// marketing_attribution middleware).
+// Mirrors the cloud's cap (the cloud api's marketing-attribution
+// middleware).
 const CLICK_ID_MAX_LENGTH = 512;
 
 const LOGGED_ATTRIBUTION_KEYS: readonly string[] = [

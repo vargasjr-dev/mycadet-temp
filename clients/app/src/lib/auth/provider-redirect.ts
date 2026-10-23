@@ -58,7 +58,7 @@ export function buildProviderRedirectFields(
  * Extracted as a tiny pure helper so the assertion behavior can be unit tested
  * without a DOM environment. `ensureCsrfCookie()` swallows bootstrap failures
  * (see `@app/lib/auth/csrf`), so without this guard we would silently POST to
- * `PROVIDER_REDIRECT_PATH` with no token and get a 403 back from Django — the
+ * `PROVIDER_REDIRECT_PATH` with no token and get a 403 back from the cloud — the
  * user would be stuck on the auth page with no feedback. Failing loudly here
  * surfaces the problem in the browser console instead.
  */

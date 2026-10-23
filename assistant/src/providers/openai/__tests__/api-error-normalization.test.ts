@@ -29,7 +29,7 @@ function apiError(
 }
 
 describe("normalizeOpenAIAPIError", () => {
-  test("surfaces Django {detail} bodies the SDK would drop", () => {
+  test("surfaces cloud {detail} bodies the SDK would drop", () => {
     const n = normalizeOpenAIAPIError(
       apiError(400),
       JSON.stringify({

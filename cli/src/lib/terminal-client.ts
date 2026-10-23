@@ -1,7 +1,7 @@
 /**
  * Platform terminal API client.
  *
- * Wraps the Django terminal session endpoints that proxy through vembda to
+ * Wraps the cloud terminal session endpoints that proxy through vembda to
  * open K8s exec streams into cloud assistant containers. Same transport
  * the web UI's xterm.js terminal uses.
  */
