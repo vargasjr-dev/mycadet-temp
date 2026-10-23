@@ -6,8 +6,6 @@ import { routes } from "@/utils/routes";
 describe("shouldDeferRootTopInset", () => {
   test("suppresses onboarding funnel routes", () => {
     for (const pathname of [
-      routes.onboarding.hosting,
-      routes.onboarding.apiKey,
       routes.onboarding.hatching,
       `${routes.assistant}/onboarding`,
     ]) {

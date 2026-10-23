@@ -8,30 +8,9 @@
     "adding": "正在添加…",
     "tryAgain": "重试",
     "remove": "移除 {value}",
-    "loginToUse": "登录以使用",
     "downloadMacOSApp": "下载 macOS 应用",
     "downloadWindowsApp": "下载 Windows 应用",
     "claim": "认领"
-  },
-  "hostingScreen": {
-    "title": "托管",
-    "body": "选择您希望助手驻留的位置。",
-    "needHelp": "需要帮助来决定？",
-    "optionsAriaLabel": "托管选项"
-  },
-  "apiKeyScreen": {
-    "title": "连接模型提供商",
-    "body": "选择您的助手应使用的模型提供商。",
-    "providerLabel": "提供商",
-    "modelLabel": "模型",
-    "baseUrlLabel": "基础 URL",
-    "modelsLabel": "模型",
-    "modelsPlaceholder": "model-1, model-2",
-    "modelsHelp": "您的端点公开的逗号分隔模型标识符。",
-    "apiKeyLabel": "{provider} API 密钥",
-    "apiKeyPlaceholder": "输入您的 API 密钥",
-    "noKeyPrompt": "没有密钥？",
-    "getKeyLink": "在此处获取 API 密钥"
   },
   "hatchingScreen": {
     "apiKeyFailed": "您的 API 密钥无效",

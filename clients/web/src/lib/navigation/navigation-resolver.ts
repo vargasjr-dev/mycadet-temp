@@ -106,11 +106,6 @@ function hasCompletedOnboarding(state: NavigationState): boolean {
 
 const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
 
-const LOCAL_ONLY_ONBOARDING_PATHS: Set<string> = new Set([
-  routes.onboarding.hosting,
-  routes.onboarding.apiKey,
-]);
-
 function isOnboardingPath(pathname: string): boolean {
   return (
     pathname.startsWith(`${ONBOARDING_PREFIX}/`) ||
@@ -208,7 +203,6 @@ const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
   requireRemoteGatewayPairing,
   allowGatewayAuth,
   requireAuth,
-  enforceModeBoundary,
   allowSetupRoutes,
   requireAssistant,
   requireConsent,
@@ -289,8 +283,8 @@ function requireRemoteGatewayPairing(
 
 /**
  * The local-mode chooser, decided the same way for an unauthenticated visit
- * (`requireAuth`) and an authenticated one (`enforceModeBoundary`): an empty
- * lockfile has nothing to choose from, so the visit funnels to hosting.
+ * (`requireAuth`) and an authenticated one: an empty lockfile has nothing to
+ * choose from, so the visit funnels to hosting.
  *
  * Deciding either way is what keeps the local chooser short-circuiting ahead of
  * the assistant and consent gates: it is itself an onboarding surface,
@@ -324,21 +318,6 @@ function requireAuth(
       stripRemoteGatewayPublicPathPrefix(state, pathnameWithSearch),
     )}`,
   };
-}
-
-function enforceModeBoundary(
-  state: NavigationState,
-  path: string,
-): NavigationDecision | null {
-  // (The standalone set died with the welcome route: the local front door
-  // moved to the app bundle's /account/onboarding/welcome, which web never
-  // serves, so there is no web-side mode boundary to enforce for it.)
-
-  if (LOCAL_ONLY_ONBOARDING_PATHS.has(path) && !state.isLocalClient) {
-    return { action: "redirect", to: routes.assistant };
-  }
-
-  return null;
 }
 
 function allowSetupRoutes(

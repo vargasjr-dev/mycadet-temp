@@ -31,6 +31,19 @@ import type { ReactNode } from "react";
 const navigateMock = mock((_to: string, _opts?: unknown) => {});
 let searchParams = new URLSearchParams();
 
+const hardNavigateMock = mock((_to: string) => {});
+// The api-key step moved to the app bundle, so the rejected-key paths ride the
+// cross-bundle full-page navigation — mirror the real predicate here.
+mock.module("@/lib/navigation/shell-consent-bounce", () => ({
+  hardNavigateIfCrossBundle: (to: string) => {
+    if (!to.startsWith("/account/")) {
+      return false;
+    }
+    hardNavigateMock(to);
+    return true;
+  },
+}));
+
 let isLocalClientValue = false;
 
 // Whether the no-id pre-flight getAssistant resolves an already-active
@@ -323,9 +336,9 @@ mock.module("@/utils/routes", () => ({
     assistant: "/assistant",
     onboarding: {
       research: "/onboarding/research",
-      hosting: "/onboarding/hosting",
+      hosting: "/account/onboarding/hosting",
       privacy: "/onboarding/privacy",
-      apiKey: "/onboarding/api-key",
+      apiKey: "/account/onboarding/api-key",
     },
   },
 }));
@@ -353,6 +366,7 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
   beforeEach(() => {
     setSystemTime();
     navigateMock.mockClear();
+    hardNavigateMock.mockClear();
     getAssistantMock.mockClear();
     getAssistantHealthzMock.mockClear();
     hatchAssistantMock.mockClear();
@@ -466,9 +480,8 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     // the primary action is the path back to the API-key screen instead.
     expect(screen.queryByText("Try again")).toBeNull();
     screen.getByText("Update API key").click();
-    expect(navigateMock).toHaveBeenCalledWith(
-      "/onboarding/api-key?hosting=local",
-      { replace: true },
+    expect(hardNavigateMock).toHaveBeenCalledWith(
+      "/account/onboarding/api-key?hosting=local",
     );
 
     // Returning with a corrected key remounts the screen. The held module

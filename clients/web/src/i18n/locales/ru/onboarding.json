@@ -8,30 +8,9 @@
     "adding": "Добавление…",
     "tryAgain": "Попробовать снова",
     "remove": "Убрать {value}",
-    "loginToUse": "Войти, чтобы пользоваться",
     "downloadMacOSApp": "Скачать приложение для macOS",
     "downloadWindowsApp": "Скачать приложение для Windows",
     "claim": "Забрать"
-  },
-  "hostingScreen": {
-    "title": "Хостинг",
-    "body": "Выбор места, где будет жить ассистент.",
-    "needHelp": "Нужна помощь с выбором?",
-    "optionsAriaLabel": "Варианты хостинга"
-  },
-  "apiKeyScreen": {
-    "title": "Подключение провайдера моделей",
-    "body": "Выбор провайдера моделей для ассистента.",
-    "providerLabel": "Провайдер",
-    "modelLabel": "Модель",
-    "baseUrlLabel": "Базовый URL",
-    "modelsLabel": "Модели",
-    "modelsPlaceholder": "model-1, model-2",
-    "modelsHelp": "Идентификаторы моделей через запятую, которые отдаёт endpoint.",
-    "apiKeyLabel": "API-ключ {provider}",
-    "apiKeyPlaceholder": "API-ключ",
-    "noKeyPrompt": "Нет ключа?",
-    "getKeyLink": "Получить API-ключ"
   },
   "hatchingScreen": {
     "apiKeyFailed": "API-ключ не сработал",

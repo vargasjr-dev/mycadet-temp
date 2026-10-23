@@ -82,8 +82,8 @@ describe("useOnboardingWindowSize", () => {
     for (const step of [
       "/assistant/welcome",
       "/assistant/review-terms",
-      "/assistant/onboarding/hosting",
-      "/assistant/onboarding/api-key",
+      "/account/onboarding/hosting",
+      "/account/onboarding/api-key",
       "/assistant/onboarding/privacy",
       "/assistant/onboarding/hatching",
     ]) {
