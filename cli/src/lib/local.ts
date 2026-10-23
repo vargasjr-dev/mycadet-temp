@@ -56,6 +56,7 @@ import {
   getDaemonPidPath,
   type LocalInstanceResources,
 } from "./assistant-config.js";
+import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";

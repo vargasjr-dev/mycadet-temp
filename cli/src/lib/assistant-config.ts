@@ -60,9 +60,10 @@ export type LocalInstanceResources = LocalAssistantResources & {
  * flow boundary (guard-and-exit) instead of casting.
  */
 export function isLocalInstanceResources(
-  resources: LocalAssistantResources,
+  resources: LocalAssistantResources | undefined,
 ): resources is LocalInstanceResources {
   return (
+    resources !== undefined &&
     resources.instanceDir !== undefined &&
     resources.qdrantPort !== undefined &&
     resources.cesPort !== undefined
