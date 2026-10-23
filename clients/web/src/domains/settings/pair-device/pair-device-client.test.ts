@@ -257,7 +257,7 @@ describe("denyPairingRequest", () => {
 });
 
 describe("mintDevicePairing", () => {
-  const MINT_ARGS = { base: BASE, publicBaseUrl: "https://foo.ts.net" };
+  const MINT_ARGS = { base: BASE };
   const CHALLENGE_URL = `${BASE}/pairing-challenge`;
   const VERIFICATION_URL = `${BASE}/pairing-verification`;
   const LIST_URL = `${BASE}/pairing-requests`;

@@ -49,7 +49,6 @@ export function makeRemoteRequest(
 /** A mint request against the pairing-challenge route. */
 export function makePairingChallengeRequest(
   overrides: {
-    publicBaseUrl?: string;
     edgeForwarded?: boolean;
     edgeClientIp?: string;
     host?: string;
@@ -73,10 +72,6 @@ export function makePairingChallengeRequest(
   return makeLocalRequest("/v1/remote-web/pairing-challenge", {
     method: "POST",
     headers,
-    body:
-      overrides.body ??
-      JSON.stringify({
-        publicBaseUrl: overrides.publicBaseUrl ?? PUBLIC_BASE_URL,
-      }),
+    body: overrides.body ?? JSON.stringify({}),
   });
 }
