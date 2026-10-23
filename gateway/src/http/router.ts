@@ -110,99 +110,121 @@ export function createRouter(
     const getRawPeerIp: GetRawPeerIp = () =>
       server?.requestIP(req)?.address ?? "unknown";
 
-    for (const route of routes) {
-      const matchResult = matchRoute(route, url.pathname, req.method);
-      if (!matchResult) continue;
+    const dispatchAt = async (pathname: string): Promise<Response | null> => {
+      for (const route of routes) {
+        const matchResult = matchRoute(route, pathname, req.method);
+        if (!matchResult) continue;
 
-      // Precondition guard (e.g. "is integration configured?")
-      if (route.precondition) {
-        const preconditionResponse = route.precondition();
-        if (preconditionResponse) return preconditionResponse;
+        // Precondition guard (e.g. "is integration configured?")
+        if (route.precondition) {
+          const preconditionResponse = route.precondition();
+          if (preconditionResponse) return preconditionResponse;
+        }
+
+        const auth = route.auth ?? "none";
+
+        switch (auth) {
+          case "none":
+          case "custom":
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+
+          case "edge": {
+            const { requireEdgeAuth } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeAuth(req, server);
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "edge-scoped": {
+            const { requireEdgeAuthWithScope } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeAuthWithScope(
+              req,
+              route.scope!,
+              server,
+            );
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "edge-guardian": {
+            const { requireEdgeGuardianAuth } = createAuthMiddleware(
+              authRateLimiter,
+              getClientIp,
+              trustProxy,
+            );
+            const authError = await requireEdgeGuardianAuth(req, server);
+            if (authError) return authError;
+            return route.handler(
+              req,
+              matchResult.params,
+              getClientIp,
+              getRawPeerIp,
+            );
+          }
+
+          case "track-failures": {
+            return wrapWithAuthFailureTracking(
+              (r) =>
+                route.handler(r, matchResult.params, getClientIp, getRawPeerIp),
+              authRateLimiter,
+              getClientIp,
+              route.trackFailureStatuses,
+            )(req);
+          }
+        }
       }
 
-      const auth = route.auth ?? "none";
+      return null;
+    };
 
-      switch (auth) {
-        case "none":
-        case "custom":
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-
-        case "edge": {
-          const { requireEdgeAuth } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeAuth(req, server);
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "edge-scoped": {
-          const { requireEdgeAuthWithScope } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeAuthWithScope(
-            req,
-            route.scope!,
-            server,
-          );
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "edge-guardian": {
-          const { requireEdgeGuardianAuth } = createAuthMiddleware(
-            authRateLimiter,
-            getClientIp,
-            trustProxy,
-          );
-          const authError = await requireEdgeGuardianAuth(req, server);
-          if (authError) return authError;
-          return route.handler(
-            req,
-            matchResult.params,
-            getClientIp,
-            getRawPeerIp,
-          );
-        }
-
-        case "track-failures": {
-          return wrapWithAuthFailureTracking(
-            (r) =>
-              route.handler(r, matchResult.params, getClientIp, getRawPeerIp),
-            authRateLimiter,
-            getClientIp,
-            route.trackFailureStatuses,
-          )(req);
-        }
-      }
-    }
-
-    return null;
+    // The /v1 version prefix is optional (P7 of the one-url plan): route
+    // definitions read unversioned and the dispatcher strips one optional
+    // /v1 from the dial, so both spellings resolve to the same routes. The
+    // handler's `req` keeps the dial exactly as sent. The unversioned WS
+    // upgrade paths (stt, watch, live-voice, desktop) still arrive only in
+    // the /v1 spelling — their pre-router checks run before this router and
+    // move with the caller migration.
+    return dispatchAt(withoutVersionPrefix(url.pathname));
   };
 }
 
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
+
+/**
+ * Strip one optional leading `/v1` version segment (P7 of the one-url plan:
+ * the version digit is leaving the URL path — match definitions read the
+ * unversioned shape, and the dispatcher strips the prefix from
+ * not-yet-migrated `/v1`-spelled dials so both spellings stay live).
+ */
+export function withoutVersionPrefix(pathname: string): string {
+  const stripped = pathname.replace(/^\/v1(?=\/|$)/, "");
+  return stripped === "" ? "/" : stripped;
+}
 
 interface MatchResult {
   params: RouteParams;

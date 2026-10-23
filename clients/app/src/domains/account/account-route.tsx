@@ -90,6 +90,24 @@ export const accountRoute = {
               },
             },
             {
+              path: "onboarding/hosting",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/hosting-screen").then(
+                    (m) => m.HostingScreen,
+                  ),
+              },
+            },
+            {
+              path: "onboarding/api-key",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/api-key-screen").then(
+                    (m) => m.ApiKeyScreen,
+                  ),
+              },
+            },
+            {
               path: "provider/callback",
               lazy: {
                 Component: () =>

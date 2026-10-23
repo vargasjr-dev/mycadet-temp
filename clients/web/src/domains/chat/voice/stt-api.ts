@@ -214,7 +214,7 @@ function reasonFromHttp(
 /** Best-effort extraction of the daemon's textual error detail.
  *
  * The daemon's `httpError()` wraps errors in `{ error: { code, message } }`.
- * Some proxy layers (e.g. Django DRF) use `{ detail: "..." }` instead.
+ * Some proxy layers use `{ detail: "..." }` instead.
  * This function handles both shapes.
  */
 function extractMessage(data: unknown): string | undefined {

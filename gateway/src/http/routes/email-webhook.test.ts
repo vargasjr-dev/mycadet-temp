@@ -381,7 +381,7 @@ describe("email-webhook", () => {
   });
 
   // Intercept response-shape pins. The cloud email relay
-  // (mycadet-platform django/app/email/views.py) gates only on
+  // gates only on
   // `denied` in the gateway body and returns everything else verbatim — it
   // reads neither intercept flag nor `replyText`. The flags name which
   // intercept fired; keep both shapes stable for relay-side consumers.

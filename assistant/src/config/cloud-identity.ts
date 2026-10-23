@@ -1,7 +1,7 @@
 /**
  * Bound platform identity (assistant, organization, user).
  *
- * Django maps an assistant API key to these ids via
+ * The cloud maps an assistant API key to these ids via
  * `POST /v1/internal/assistants/validate/`. Process startup rehydrates from
  * that endpoint into the in-memory overrides. Resolution reads only those
  * overrides. When the in-memory assistant id is empty, the next resolve

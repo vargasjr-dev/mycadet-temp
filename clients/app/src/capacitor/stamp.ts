@@ -25,48 +25,40 @@ import { resolveLocalServerUrl } from "./local-server";
  * lockfile (see `resolveLocalServerUrl`): the tunnel URL when one is up,
  * else the app server edge's loopback port — reachable from the simulator
  * only, since a device's `127.0.0.1` is the phone itself. Unresolved builds
- * keep the seed's dev-stack default.
+ * keep the seed's dev-stack default — the warn below makes that fallback
+ * loud, since the commonest cause is building before the stack is up.
  *
- * Otherwise resolution mirrors the native `server.url` bake this
- * replaces: the release workflows set `CADET_ENVIRONMENT`; `CADET_SERVER_URL` overrides with an
- * https origin for self-hosted assistants; unset means the local cadet.
+ * Otherwise resolution mirrors the native `server.url` bake this replaces:
+ * the release workflows set `CADET_ENVIRONMENT`; unset means the local
+ * cadet. That default is pinned here rather than only read, because the
+ * lockfile read underneath resolves the environment the same way
+ * (`CADET_ENVIRONMENT` → persisted default → production) — without the pin
+ * a bare build resolves "production", reads the production config dir, and
+ * never sees the local stack's records.
  */
 export function capacitorInjectedConfig(): InjectedConfig {
-  const override = process.env.CADET_SERVER_URL?.trim();
-  if (!override) {
-    const environment = process.env.CADET_ENVIRONMENT ?? "local";
-    if (environment === "local") {
-      // The local backend is a full control plane — the web dev server
-      // proxies /v1 at it — so the simulator reaches the same stack every
-      // other local surface uses.
-      return InjectedConfigSchema.parse({
-        remote: "local",
-        cloudUrl: resolveLocalServerUrl() ?? SEEDS.local.cloudUrl,
-      });
+  process.env.CADET_ENVIRONMENT ??= "local";
+  const environment = process.env.CADET_ENVIRONMENT;
+  if (environment === "local") {
+    // The local backend is a full control plane — the web dev server
+    // proxies /v1 at it — so the simulator reaches the same stack every
+    // other local surface uses.
+    const resolved = resolveLocalServerUrl();
+    if (!resolved) {
+      console.warn(
+        `[capacitor] no local server resolved from the lockfile (no tunnel record, no app edge port) — the stamp falls back to ${SEEDS.local.cloudUrl}. Start \`cadet-local app start\` (or \`cadet-local tunnel start\` for a device build) before building so the shell dials the real stack.`,
+      );
     }
-    const seed = SEEDS[environment] ?? SEEDS.dev;
     return InjectedConfigSchema.parse({
-      remote: "cloud",
-      cloudUrl: seed.webUrl,
+      remote: "local",
+      cloudUrl: resolved ?? SEEDS.local.cloudUrl,
     });
   }
-
-  let parsed: URL;
-  try {
-    parsed = new URL(override);
-  } catch {
-    throw new Error(
-      `CADET_SERVER_URL is not a valid URL: ${JSON.stringify(override)}`,
-    );
-  }
-
-  if (parsed.protocol !== "https:") {
-    throw new Error(
-      `CADET_SERVER_URL must use https: (got ${JSON.stringify(override)}); native builds require valid TLS.`,
-    );
-  }
-
-  return InjectedConfigSchema.parse({ remote: "custom", cloudUrl: override });
+  const seed = SEEDS[environment] ?? SEEDS.dev;
+  return InjectedConfigSchema.parse({
+    remote: "cloud",
+    cloudUrl: seed.webUrl,
+  });
 }
 
 /**

@@ -238,7 +238,6 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
   test("fetchAssistantDetail maps fields", async () => {
     const fetchMock = mockFetchJson({
       current_release_version: "0.7.0",
-      release_channel: "preview",
     });
     const detail = await fetchAssistantDetail(
       TOKEN,
@@ -247,7 +246,6 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
     );
     expect(detail).toEqual({
       currentReleaseVersion: "0.7.0",
-      releaseChannel: "preview",
     });
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toBe(`${PLATFORM_URL}/v1/assistants/${ASSISTANT_ID}/`);
@@ -262,7 +260,6 @@ describe("fetchAssistantDetail / fetchUpgradeInProgress", () => {
     );
     expect(detail).toEqual({
       currentReleaseVersion: null,
-      releaseChannel: "stable",
     });
   });
 

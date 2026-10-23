@@ -4,7 +4,7 @@ import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
 import {
-  saveAssistantEntry,
+  saveLockfileAssistant,
   setActiveAssistant,
 } from "../lib/assistant-config";
 import { green } from "../lib/color";
@@ -291,7 +291,7 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const cloudUrl = getCloudUrl();
 
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: result.id,
     runtimeUrl: cloudUrl,
     cloud: "cloud",

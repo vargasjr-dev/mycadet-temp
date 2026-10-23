@@ -30,7 +30,7 @@ import {
   lookupAssistantByIdentifier,
   readRootProcesses,
   stampRootProcess,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "./assistant-config.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { RemoteHost } from "./constants.js";
@@ -115,7 +115,9 @@ function gatewayProxyBlock(gatewayPort: number, upstreamPath = ""): string {
 /**
  * Sensitive local-only gateway paths the edge must never expose to the
  * internet, regardless of which client bundles are being served. Each exact
- * path is blocked with and without its trailing slash.
+ * path is blocked with and without its trailing slash, in both the versioned
+ * and — since the version prefix is optional at the gateway — the unversioned
+ * spelling.
  */
 const SENSITIVE_GATEWAY_ROUTES = [
   "/auth/token",
@@ -143,7 +145,14 @@ function denylistLocations(prefix = ""): string {
   const exact = SENSITIVE_GATEWAY_ROUTES.map((route) => {
     const block = (path: string) =>
       `    location = ${prefix}${path} { return 404; }`;
-    return `${block(route)}\n${block(`${route}/`)}`;
+    // The version prefix is optional at the gateway (P7 of the one-url plan):
+    // block the unversioned spelling of every /v1 route too, so the sensitive
+    // paths never gain a reachable alias through the new unversioned surface.
+    const unversioned = route.replace(/^\/v1(?=\/)/, "");
+    const spellings = unversioned === route ? [route] : [route, unversioned];
+    return spellings
+      .map((spelling) => `${block(spelling)}\n${block(`${spelling}/`)}`)
+      .join("\n");
   });
   return exact.join("\n");
 }
@@ -587,6 +596,32 @@ ${serverLocations}
 }
 
 /**
+ * The unversioned gateway API surface (P7 of the one-url plan): the edge
+ * forwards every path it does not serve itself to the gateway, whose router
+ * resolves an optional /v1 prefix — no per-route enumeration. The lookaheads
+ * spare only the edge's OWN surface: the /web twin hands the iframe
+ * namespace's remainder to the same /v1 translation the ^~ /web/v1/ location
+ * does, and the root forward excludes the app shell's routes and shipped
+ * root files (the edge's other prefixes — v1, webhooks, assets, assistant —
+ * are already claimed by exact or ^~ prefix locations, which pre-empt regex
+ * matching). The twin is emitted first so /web paths reach it, not the root
+ * catch-all; the denylist's exact blocks always win over both.
+ */
+function unversionedGatewayForwardLocations(gatewayPort: number): string {
+  const proxyBlock = gatewayProxyBlock(gatewayPort);
+  return `    # The unversioned gateway API surface (P7): forwarded verbatim — the
+    # gateway's router resolves the /v1 prefix.
+    location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {
+      rewrite ^/web/(.*)$ /v1/$1 break;
+${proxyBlock}
+    }
+
+    location ~ ^/(?!account(?:/|$)|logout(?:/|$)|index\\.html$|favicon\\.svg$|cadet-logo-white\\.svg$|cadet-scene-cut\\.mp4$) {
+${proxyBlock}
+    }`;
+}
+
+/**
  * Gateway-facing locations shared by both shell modes: liveness probes and
  * the runtime API surface, all proxied verbatim.
  */
@@ -708,6 +743,8 @@ ${assistantMetadataLocations({
 
 ${gatewayProxyLocations(opts.gatewayPort)}
 
+${unversionedGatewayForwardLocations(opts.gatewayPort)}
+
     location ^~ /web/v1/ {
 ${gatewayProxyBlock(opts.gatewayPort, "/v1/")}
     }
@@ -721,12 +758,6 @@ ${webSpaLocations({
 
     location = /web {
       return 302 /web/assistant/;
-    }
-
-    # The iframe namespace has no other routes: anything under /web that is
-    # not the assistant mount or its prefixed API path is a probe, not a page.
-    location ^~ /web/ {
-      return 404;
     }
 
     # The web bundle's hashed chunks and unhashed public files under its baked
@@ -1381,7 +1412,7 @@ function lockfileAssistantName(assistantId: string): string | undefined {
  * with no recorded port cannot be attributed, so it is left alone.
  */
 export async function stopContainerAppServer(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<boolean> {
   if (!isLocalContainerEntry(entry)) {
     return false;

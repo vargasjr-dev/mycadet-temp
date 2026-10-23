@@ -130,7 +130,7 @@ export function useIsNativePlatform(): boolean {
 }
 
 /**
- * Run the native login flow end to end. On success the Django session
+ * Run the native login flow end to end. On success the cloud session
  * cookie is installed into the native WebView cookie store and the page is
  * navigated to `returnTo` (sanitized) or `/assistant`, so `AuthProvider`
  * re-fetches `/_allauth/browser/v1/auth/session` and renders the
@@ -195,7 +195,7 @@ async function completeNativeLogin(
   sessionToken: string,
   destination: string,
 ): Promise<void> {
-  // `document.cookie` can't set HttpOnly, but Django validates the
+  // `document.cookie` can't set HttpOnly, but the cloud validates the
   // session by DB lookup; the HttpOnly flag is client-side only.
   //
   // We set BOTH `sessionid` (dev) and `__Secure-sessionid` (prod) so
@@ -210,14 +210,14 @@ async function completeNativeLogin(
   // Native WebViews can flush `document.cookie` writes asynchronously.
   // Without a synchronization step, the subsequent
   // hard navigation can race the flush and the request to `/assistant`
-  // goes out without the session cookie — Django sees an anonymous user,
+  // goes out without the session cookie — the cloud sees an anonymous user,
   // `AuthProvider` redirects back to `/account/login`, and the user is
   // dumped at the login screen even though auth itself succeeded.
   //
   // Probe `/_allauth/browser/v1/auth/session` until the server agrees
   // we're authenticated. This both (a) forces the WebView to flush the
   // cookie store so subsequent requests carry the cookie and (b) confirms
-  // Django actually recognized it before we navigate.
+  // The cloud actually recognized it before we navigate.
   //
   // The biometric branch below incidentally awaited enough async work
   // to mask the race for biometrics-enabled users, which is why this
@@ -242,7 +242,7 @@ async function completeNativeLogin(
 }
 
 /**
- * Block until the just-written session cookie is reachable to Django.
+ * Block until the just-written session cookie is reachable to the cloud.
  *
  * Polls `getSession()` with backoff. Each call is a real same-origin
  * fetch with `credentials: "include"`, so the native WebView has to send the
@@ -270,7 +270,7 @@ export async function waitForNativeSessionCookie(): Promise<void> {
 }
 
 /**
- * Install Django session cookies for both dev and prod environments. Sets both
+ * Install cloud session cookies for both dev and prod environments. Sets both
  * `sessionid` (dev) and `__Secure-sessionid` (prod) so the same code works
  * across environments without runtime host sniffing.
  */
@@ -285,7 +285,7 @@ export function installSessionCookies(sessionToken: string): void {
 }
 
 /**
- * Read the current Django session token from cookies.
+ * Read the current cloud session token from cookies.
  * Checks `__Secure-sessionid` (prod) then `sessionid` (dev).
  */
 export function getSessionTokenFromCookies(): string | null {

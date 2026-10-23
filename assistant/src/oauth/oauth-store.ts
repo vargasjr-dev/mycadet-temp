@@ -1136,8 +1136,7 @@ export async function disconnectOAuthProvider(
     return "not-found";
   }
 
-  // Best-effort upstream revoke. Mirrors platform's try_revoke_token in
-  // django/app/assistant/oauth/providers/base.py. Failures here never
+  // Best-effort upstream revoke. Mirrors the cloud's try_revoke_token. Failures here never
   // block local cleanup — the connection is always cleaned up locally
   // regardless of whether the upstream call succeeds.
   try {

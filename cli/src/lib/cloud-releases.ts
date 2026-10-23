@@ -6,25 +6,6 @@ import { dockerhubImages } from "./docker.js";
 import type { ServiceName } from "./docker.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 
-/**
- * Release channel to resolve releases for. `stable` is the default and maps
- * to the server's `stable=true` filter. `preview` opts into the Cadet
- * Cloud's preview channel — the newest release regardless of stability —
- * used by callers (e.g. managed-assistant upgrades) that want the latest
- * preview release.
- */
-export type ReleaseChannel = "stable" | "preview";
-
-/**
- * Map a channel to `fetchReleases` options. `stable` passes no `channel`
- * param so the server keeps its `stable=true` default (we don't rely on an
- * unverified `channel=stable` filter); `preview` requests the preview
- * channel explicitly.
- */
-function releasesOptsFor(channel: ReleaseChannel): { channel?: "preview" } {
-  return channel === "preview" ? { channel: "preview" } : {};
-}
-
 const ReleaseListItemSchema = z.object({
   version: z.string().min(1),
   is_stable: z.boolean().optional(),
@@ -69,22 +50,20 @@ async function fetchLatestGitHubStableVersion(): Promise<string | null> {
 const RELEASES_FETCH_LIMIT = 100;
 
 /**
- * Fetch the releases list from Cadet Cloud, optionally filtered by channel
- * (the `channel` param takes precedence over `stable` server-side).
- * `cloudUrl` overrides the lockfile/env-resolved default — pass the
- * target assistant's platform URL when it may differ from the active one.
+ * Fetch the releases list from Cadet Cloud (stable releases — the server's
+ * `stable=true` default). `cloudUrl` overrides the lockfile/env-resolved
+ * default — pass the target assistant's platform URL when it may differ
+ * from the active one.
  * Returns `null` when Cadet Cloud is unreachable or responds non-OK —
  * distinct from `[]` (it answered, no releases).
  */
 export async function fetchReleases(opts?: {
-  channel?: "stable" | "preview";
   cloudUrl?: string;
 }): Promise<ReleaseListItem[] | null> {
   try {
     const cloudUrl = opts?.cloudUrl || getCloudUrl();
-    const filter = opts?.channel ? `channel=${opts.channel}` : "stable=true";
     const response = await loopbackSafeFetch(
-      `${cloudUrl}/v1/releases/?${filter}&limit=${RELEASES_FETCH_LIMIT}`,
+      `${cloudUrl}/v1/releases/?stable=true&limit=${RELEASES_FETCH_LIMIT}`,
       { signal: AbortSignal.timeout(10_000) },
     );
     if (!response.ok) {
@@ -104,28 +83,15 @@ export async function fetchReleases(opts?: {
  * for stable releases when the cloud has no usable result.
  * Returns the version string (e.g. "0.7.0") or null if unavailable.
  * The releases endpoint returns entries ordered newest-first, so the first
- * entry is the latest for the requested channel.
+ * stable entry is the latest.
  */
-export async function fetchLatestVersion(
-  channel: ReleaseChannel = "stable",
-): Promise<string | null> {
-  const releases = await fetchReleases(releasesOptsFor(channel));
-  if (channel === "preview") {
-    return releases?.[0]?.version ?? null;
-  }
+export async function fetchLatestVersion(): Promise<string | null> {
+  const releases = await fetchReleases();
   const latest = releases?.find(
     (release) =>
       release.is_stable !== false && STABLE_VERSION.test(release.version),
   );
   return latest?.version ?? fetchLatestGitHubStableVersion();
-}
-
-/**
- * Fetch the latest stable release version. Thin back-compat wrapper around
- * {@link fetchLatestVersion} for existing callers.
- */
-export async function fetchLatestStableVersion(): Promise<string | null> {
-  return fetchLatestVersion("stable");
 }
 
 /**

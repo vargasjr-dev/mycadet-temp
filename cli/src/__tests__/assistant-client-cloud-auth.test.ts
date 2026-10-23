@@ -22,7 +22,7 @@ const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { AssistantClient } from "../lib/assistant-client.js";
-import { saveAssistantEntry } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "../lib/assistant-config.js";
 import {
   clearCloudToken,
   saveCloudToken,
@@ -34,7 +34,7 @@ const ORG_ID = "org-abc";
 
 /** Seed a cloud-managed lockfile entry, optionally with a stored token. */
 function seedCloud(token?: string): void {
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: ASSISTANT_ID,
     name: "Credence",
     runtimeUrl: PLATFORM_URL,

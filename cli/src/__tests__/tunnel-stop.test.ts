@@ -18,7 +18,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import { tunnel } from "../commands/tunnel.js";
 import {
   readRootProcesses,
-  saveAssistantEntry,
+  saveLockfileAssistant,
   stampRootProcess,
 } from "../lib/assistant-config.js";
 
@@ -39,7 +39,7 @@ beforeEach(() => {
   mkdirSync(workspace, { recursive: true });
   process.env.CADET_LOCKFILE_DIR = root;
   process.env.XDG_CONFIG_HOME = root;
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: "fixture",
     name: "fixture",
     cloud: "local",

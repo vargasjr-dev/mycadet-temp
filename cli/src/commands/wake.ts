@@ -7,11 +7,12 @@ import { cliCommand } from "../lib/cli-name.js";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   resolveTargetAssistant,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   dockerResourceNames,
   isNoSuchContainerError,
@@ -203,7 +204,7 @@ class WakeExit extends Error {}
  * continuing to the next entry (`--all`).
  */
 export async function wakeAssistant(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   opts: WakeAssistantOptions,
 ): Promise<void> {
   const { watch, foreground, repairGuardian } = opts;
@@ -249,7 +250,7 @@ export async function wakeAssistant(
     );
   }
 
-  if (!entry.resources) {
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     throw new WakeExit(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -308,7 +309,7 @@ export async function wakeAssistant(
   }
   if (replacingSigningKey || signingKey !== resources.signingKey) {
     resources.signingKey = signingKey;
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
   }
 
   const pidFile = getDaemonPidPath(resources);
@@ -380,7 +381,7 @@ export async function wakeAssistant(
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSigningKey();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
     bootstrapSecretBackfilled = true;
   }
 

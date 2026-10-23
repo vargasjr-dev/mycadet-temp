@@ -40,9 +40,8 @@ const { createRouter } = await import("../http/router.js");
 // Registration pinning — the route table index.ts spreads
 // ---------------------------------------------------------------------------
 
-const { buildMarkedContactRoutes, markedHandlerName } = await import(
-  "./helpers/contact-route-table.js"
-);
+const { buildMarkedContactRoutes, markedHandlerName } =
+  await import("./helpers/contact-route-table.js");
 
 describe("invite route registrations (contact route table)", () => {
   test("all five invite routes use edge-scoped auth with the original runtime scopes", async () => {
@@ -80,35 +79,35 @@ const ACTOR_TOKEN = "tok-actor"; // actor_client_v1 → settings.read + write
 function makeInviteRouter() {
   const routes: RouteDefinition[] = [
     {
-      path: "/v1/contacts/invites",
+      path: "/contacts/invites",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: () => Response.json({ ok: true, route: "list" }),
     },
     {
-      path: "/v1/contacts/invites",
+      path: "/contacts/invites",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "create" }),
     },
     {
-      path: "/v1/contacts/invites/redeem",
+      path: "/contacts/invites/redeem",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "redeem" }),
     },
     {
-      path: /^\/v1\/contacts\/invites\/([^/]+)\/call$/,
+      path: /^\/contacts\/invites\/([^/]+)\/call$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "call" }),
     },
     {
-      path: /^\/v1\/contacts\/invites\/([^/]+)$/,
+      path: /^\/contacts\/invites\/([^/]+)$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",

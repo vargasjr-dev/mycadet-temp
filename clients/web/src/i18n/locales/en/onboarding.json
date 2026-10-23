@@ -8,30 +8,9 @@
     "adding": "Adding…",
     "tryAgain": "Try again",
     "remove": "Remove {value}",
-    "loginToUse": "Log in to use",
     "downloadMacOSApp": "Download the macOS app",
     "downloadWindowsApp": "Download the Windows app",
     "claim": "Claim"
-  },
-  "hostingScreen": {
-    "title": "Hosting",
-    "body": "Choose where you want your assistant to live.",
-    "needHelp": "Need help deciding?",
-    "optionsAriaLabel": "Hosting options"
-  },
-  "apiKeyScreen": {
-    "title": "Connect a Model Provider",
-    "body": "Choose the model provider your assistant should use.",
-    "providerLabel": "Provider",
-    "modelLabel": "Model",
-    "baseUrlLabel": "Base URL",
-    "modelsLabel": "Models",
-    "modelsPlaceholder": "model-1, model-2",
-    "modelsHelp": "Comma-separated model identifiers exposed by your endpoint.",
-    "apiKeyLabel": "{provider} API Key",
-    "apiKeyPlaceholder": "Enter your API key",
-    "noKeyPrompt": "Don't have it?",
-    "getKeyLink": "Get an API key here"
   },
   "hatchingScreen": {
     "apiKeyFailed": "Your API key didn't work",

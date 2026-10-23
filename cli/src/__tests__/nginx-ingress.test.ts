@@ -27,7 +27,7 @@ import { z } from "zod";
 
 import * as httpClient from "../lib/http-client.js";
 import * as versionModule from "@mycadet/shared/version";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 
 const realChildProcess = { ...childProcess };
 const realFs = { ...fsModule };
@@ -457,6 +457,74 @@ describe("buildIngressNginxConfig", () => {
     expect(conf).toContain("proxy_request_buffering off;");
     expect(conf).toContain("proxy_buffering off;");
     expect(conf).toContain("proxy_read_timeout 1h;");
+  });
+
+  test("the app-mode edge forwards every unversioned path to the gateway", () => {
+    // No route enumeration lives at the edge: the forward matches any path
+    // the edge does not serve itself, and the gateway's router resolves the
+    // optional /v1 prefix (P7).
+    const rootLocation = remoteConf
+      .split("location ~ ^/(?!")[1]
+      ?.split("    }")[0];
+    expect(rootLocation).toBeDefined();
+    expect(rootLocation).toContain("proxy_pass http://127.0.0.1:7830;");
+    expect(rootLocation).not.toContain("rewrite");
+    // The lookahead spares only the edge's own surface — the shell's routes
+    // and the root files it ships.
+    for (const owned of [
+      "account(?:/|$)",
+      "logout(?:/|$)",
+      "index\\.html$",
+      "favicon\\.svg$",
+      "cadet-logo-white\\.svg$",
+      "cadet-scene-cut\\.mp4$",
+    ]) {
+      expect(rootLocation).toContain(owned);
+    }
+    // Never gateway API vocabulary: a new gateway route needs no edge edit.
+    for (const segment of [
+      "admin",
+      "assistants",
+      "channels",
+      "contacts",
+      "oauth",
+      "integrations",
+    ]) {
+      expect(rootLocation).not.toContain(segment);
+    }
+  });
+
+  test("the iframe twin forwards the /web namespace's remainder to the /v1 route", () => {
+    expect(remoteConf).toContain(
+      "location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$))",
+    );
+    expect(remoteConf).toContain("rewrite ^/web/(.*)$ /v1/$1 break;");
+    // Ordered ahead of the root catch-all so /web paths reach the twin
+    // instead of forwarding verbatim with their iframe prefix.
+    expect(remoteConf.indexOf("location ~ ^/web/(?!")).toBeLessThan(
+      remoteConf.indexOf("location ~ ^/(?!"),
+    );
+    expect(remoteConf).not.toContain("location ^~ /web/ {");
+  });
+
+  test("web mode keeps its surface versioned (the gateway handles both spellings)", () => {
+    expect(conf).not.toContain("location ~ ^/(?:");
+    expect(conf).not.toContain("location ~ ^/web/");
+  });
+
+  test("the sensitive routes are blocked in both spellings at both prefixes", () => {
+    for (const location of [
+      "location = /pair ",
+      "location = /pair/ ",
+      "location = /devices ",
+      "location = /v1/pair ",
+      "location = /web/pair ",
+      "location = /web/v1/pair ",
+    ]) {
+      expect(remoteConf).toContain(`${location}{ return 404; }`);
+    }
+    // Web mode's denylist also gains the unversioned twins.
+    expect(conf).toContain("location = /pair { return 404; }");
   });
 });
 
@@ -2039,7 +2107,7 @@ describe("stopContainerAppServer", () => {
   });
 
   /** A container entry whose gateway port is only recoverable from its URLs. */
-  function containerEntry(port: number): AssistantEntry {
+  function containerEntry(port: number): LockfileAssistant {
     return {
       assistantId: "docker-1",
       runtimeUrl: `http://localhost:${port}`,
@@ -2310,9 +2378,9 @@ describe("the app shell edge", () => {
     // Prefixed API paths the web UI builds from its serving prefix.
     expect(conf).toContain("location ^~ /web/v1/ {");
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830/v1/;");
-    // Nothing else under /web exists, so the namespace cannot serve the shell
-    // (or anything else) recursively.
-    expect(conf).toContain("location ^~ /web/ {\n      return 404;\n    }");
+    // Nothing else under /web is served by the edge: the twin forwards the
+    // namespace's remainder to the gateway, which 404s unknown paths.
+    expect(conf).toContain("location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {");
   });
 
   test("blocks the sensitive gateway routes under both prefixes", () => {

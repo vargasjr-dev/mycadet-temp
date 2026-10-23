@@ -135,7 +135,9 @@
     "adding": "正在新增…",
     "connect": "連線",
     "connecting": "正在連線…",
-    "continue": "繼續"
+    "continue": "繼續",
+    "back": "返回",
+    "loginToUse": "登入以使用"
   },
   "addRemoteOriginDialog": {
     "title": "新增遠端助理",
@@ -173,5 +175,25 @@
   },
   "startScreen": {
     "createAssistant": "建立您的助理"
+  },
+  "hostingScreen": {
+    "title": "託管",
+    "body": "選擇您希望助理駐留的位置。",
+    "needHelp": "需要協助決定嗎？",
+    "optionsAriaLabel": "託管選項"
+  },
+  "apiKeyScreen": {
+    "title": "連線模型供應商",
+    "body": "選擇您的助理應使用的模型供應商。",
+    "providerLabel": "供應商",
+    "modelLabel": "模型",
+    "baseUrlLabel": "基礎 URL",
+    "modelsLabel": "模型",
+    "modelsPlaceholder": "model-1, model-2",
+    "modelsHelp": "您的端點所公開，以逗號分隔的模型識別碼。",
+    "apiKeyLabel": "{provider} API 金鑰",
+    "apiKeyPlaceholder": "輸入您的 API 金鑰",
+    "noKeyPrompt": "沒有金鑰？",
+    "getKeyLink": "在此取得 API 金鑰"
   }
 }

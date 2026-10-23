@@ -33,6 +33,7 @@ import {
   getCredentialMetadata,
 } from "../tools/credentials/metadata-store.js";
 import { storeCredentialValue } from "../tools/credentials/store.js";
+import { useMemorySecureKeys } from "./helpers/secure-keys.js";
 
 // Real metadata store backed by a temp file. A mock.module on metadata-store
 // or secure-keys would replace the whole module namespace, so only the secure
@@ -69,6 +70,9 @@ beforeEach(() => {
   }
   mkdirSync(TEST_DIR, { recursive: true });
   _setMetadataPath(META_PATH);
+  // Belt-and-suspenders vs the module spies: if a spy ever fails to
+  // intercept, seeded credentials land in a memory backend, not the vault.
+  useMemorySecureKeys();
 
   secureStore = new Map();
   writeSucceeds = true;

@@ -8,8 +8,8 @@ import { injectedConfigScript } from "../src/capacitor/stamp";
 // dist/capacitor and stamped with the environment-resolved
 // `__CADET_CONFIG__`. The stamp happens at build time (not cap-sync time)
 // because the resolution is pure environment reading — the same
-// `CADET_ENVIRONMENT` / `CADET_SERVER_URL` inputs the native `server.url`
-// bake used to consume at sync time.
+// `CADET_ENVIRONMENT` input the native `server.url` bake used to consume
+// at sync time.
 process.env.APP_BUILD_TARGET = "capacitor";
 await build();
 

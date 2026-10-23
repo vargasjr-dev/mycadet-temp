@@ -13,7 +13,7 @@ type CloudAssistantIdState = {
  * Resolve the active assistant's **platform** id for platform-API path
  * params. Local-mode lockfile ids are slugs (e.g. `cadet-dark-cub`),
  * but every platform assistant route uses a `<uuid:assistant_id>` path
- * converter — a slug id falls off Django's URL table and surfaces as a
+ * converter — a slug id falls off the cloud's URL table and surfaces as a
  * bare "Not found". Platform-hosted ids (already UUIDs) resolve to
  * themselves without any network round-trip.
  */

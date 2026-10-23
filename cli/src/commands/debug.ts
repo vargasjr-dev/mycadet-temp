@@ -4,6 +4,7 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import {
   getAssistantDisplayName,
   resolveTargetAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { loadGuardianToken, leaseGuardianToken } from "../lib/guardian-token";
@@ -72,6 +73,12 @@ export const debug = Object.assign(
       console.error(`Not logged in. Run '${cliCommand()} login' first.`);
       process.exit(1);
     }
+    if (!entry.runtimeUrl) {
+      console.error(
+        `Error: '${reference}' has no recorded gateway URL to export logs from.`,
+      );
+      process.exit(1);
+    }
     const cloudAssistantId = entry.cloudAssistantId?.trim();
     if (!cloudAssistantId) {
       console.error(
@@ -134,11 +141,7 @@ export const debug = Object.assign(
 );
 
 async function daemonAccessToken(
-  entry: {
-    assistantId: string;
-    runtimeUrl: string;
-    guardianBootstrapSecret?: string;
-  },
+  entry: LockfileAssistant,
   reference: string,
   forceRefresh: boolean,
 ): Promise<string> {
@@ -151,6 +154,11 @@ async function daemonAccessToken(
     ) {
       return cached.accessToken;
     }
+  }
+  if (!entry.runtimeUrl) {
+    throw new Error(
+      `No recorded gateway URL to lease a guardian token from for ${reference}.`,
+    );
   }
   try {
     return (

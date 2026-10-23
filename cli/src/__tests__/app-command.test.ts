@@ -18,7 +18,7 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 import * as tunnelLib from "../lib/tunnel.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 
 const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
@@ -90,7 +90,7 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
 });
 
-const LOCAL_ENTRY: AssistantEntry = {
+const LOCAL_ENTRY: LockfileAssistant = {
   assistantId: "assistant-1",
   runtimeUrl: "http://127.0.0.1:7830",
   cloud: "local",

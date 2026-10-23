@@ -18,10 +18,10 @@ import cliPkg from "../../package.json";
 import {
   allocateLocalResources,
   findAssistantByName,
-  saveAssistantEntry,
+  saveLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config.js";
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import { green, yellow } from "./color.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
@@ -343,7 +343,7 @@ export async function hatchLocal(
       }
 
       const loopbackUrl = `http://127.0.0.1:${resources.gatewayPort}`;
-      const localEntry: AssistantEntry = {
+      const localEntry: LockfileAssistant = {
         assistantId: instanceName,
         runtimeUrl,
         cloud: "local",
@@ -353,7 +353,7 @@ export async function hatchLocal(
       };
 
       reporter.progress(5, 6, "Saving configuration...");
-      saveAssistantEntry(localEntry);
+      saveLockfileAssistant(localEntry);
       setActiveAssistant(instanceName);
 
       return { resources, runtimeUrl, loopbackUrl, bootstrapSecret };

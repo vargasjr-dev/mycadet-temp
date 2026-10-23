@@ -10,6 +10,7 @@ import {
 } from "bun:test";
 
 import * as cloudClient from "../lib/cloud-client.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   createPlatformBackup,
   listPlatformBackups,
@@ -24,10 +25,14 @@ const invalidateOrgIdCacheSpy = spyOn(
   cloudClient,
   "invalidateOrgIdCache",
 ).mockImplementation(() => {});
+const getCloudUrlSpy = spyOn(cloudClient, "getCloudUrl").mockReturnValue(
+  "https://cloud.mycadet.ai",
+);
 
 afterAll(() => {
   authHeadersSpy.mockRestore();
   invalidateOrgIdCacheSpy.mockRestore();
+  getCloudUrlSpy.mockRestore();
 });
 
 let originalFetch: typeof globalThis.fetch;
@@ -53,14 +58,15 @@ beforeEach(() => {
   ) as unknown as typeof globalThis.fetch;
   authHeadersSpy.mockClear();
   invalidateOrgIdCacheSpy.mockClear();
+  getCloudUrlSpy.mockClear();
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
 });
 
-const ENTRY = {
-  runtimeUrl: "https://cloud.mycadet.ai",
+const ENTRY: LockfileAssistant = {
+  cloud: "cloud",
   assistantId: "11111111-2222-3333-4444-555555555555",
 };
 const BACKUPS_URL = `https://cloud.mycadet.ai/v1/assistants/${ENTRY.assistantId}/backups/`;

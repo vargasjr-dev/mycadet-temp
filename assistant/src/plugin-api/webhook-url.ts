@@ -93,14 +93,14 @@ function registrationType(plugin: string, route: string): string {
 /**
  * Keep a trailing slash on a cloud callback URL.
  *
- * Django in front of managed callbacks canonicalizes onto `/`. A vendor given
+ * The cloud in front of managed callbacks canonicalizes onto `/`. A vendor given
  * the slashless spelling is 301'd, and clients that follow a 301 on POST
  * typically retry as GET and drop the body.
  *
  * Query-bearing URLs are left alone: this resolver passes no query
  * parameters, and appending there would cut into the query rather than the
  * path. The callback path registered with the cloud stays slashless. The
- * platform strips slashes on store, and Django's path converter typically
+ * platform strips slashes on store, and the cloud's path converter typically
  * does not include the final `/` in the lookup key.
  */
 function withTrailingSlash(url: string): string {

@@ -1,7 +1,7 @@
 import { createConnection } from "net";
 import { existsSync } from "fs";
 
-import type { AssistantEntry } from "./assistant-config";
+import type { LockfileAssistant } from "./assistant-config";
 
 /**
  * Execute a command inside an Apple Container assistant via the management
@@ -9,7 +9,7 @@ import type { AssistantEntry } from "./assistant-config";
  * terminal, and exits with the appropriate code.
  */
 export async function execAppleContainer(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   command: string[],
   service: string,
 ): Promise<void> {

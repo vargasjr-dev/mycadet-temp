@@ -31,7 +31,7 @@ export type ReturnToShortCircuit =
 /**
  * Send an already-signed-in visitor to a sanitized `returnTo` destination.
  *
- * Destinations outside this SPA (absolute URLs, Django routes, the marketing
+ * Destinations outside this SPA (absolute URLs, cloud routes, the marketing
  * import funnel) need a real page load — routing them through `<Navigate>`
  * would dead-end on the SPA's not-found route.
  */

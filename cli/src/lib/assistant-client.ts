@@ -102,9 +102,12 @@ export class AssistantClient {
 
     this._assistantId = entry.assistantId;
     const cloudManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
-    const cloudHost = stripTrailingSlashes(entry.runtimeUrl);
+    const cloudHost = entry.runtimeUrl
+      ? stripTrailingSlashes(entry.runtimeUrl)
+      : undefined;
 
-    this.runtimeUrl = cloudManaged ? cloudHost : getGatewayUrl(entry);
+    this.runtimeUrl =
+      cloudManaged && cloudHost ? cloudHost : getGatewayUrl(entry);
 
     if (opts?.sessionToken) {
       // Caller supplied the credential: X-Session-Token + Cadet-Organization-Id.

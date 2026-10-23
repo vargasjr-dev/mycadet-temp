@@ -13,9 +13,10 @@ import { basename, dirname, join } from "path";
 import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import {
   findAssistantByName,
-  saveAssistantEntry,
+  isLocalInstanceResources,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   generateLocalSigningKey,
   startCes,
@@ -145,7 +146,7 @@ interface ImportResponse {
 // ---------------------------------------------------------------------------
 
 async function restorePlatform(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   name: string,
   bundleData: Buffer,
   opts: { dryRun: boolean },
@@ -458,17 +459,18 @@ async function recoverFromArchive(name: string): Promise<void> {
   }
 
   // Read and validate metadata before any side effects
-  const entry: AssistantEntry = JSON.parse(readFileSync(metadataPath, "utf-8"));
-  if (!entry.resources) {
+  const entry: LockfileAssistant = JSON.parse(readFileSync(metadataPath, "utf-8"));
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Retired assistant '${name}' is missing resource configuration. ` +
         `Fix the archive metadata at ${metadataPath} and retry, ` +
         `or run 'cadet hatch' to re-provision with proper resource allocation.`,
     );
   }
+  const resources = entry.resources;
 
   // Check that the recovering entry's own target directory is free.
-  const target = entry.resources.instanceDir;
+  const target = resources.instanceDir;
   if (existsSync(target)) {
     console.error(
       `Error: ${target} already exists (owned by ${entry.assistantId}). ` +
@@ -487,32 +489,30 @@ async function recoverFromArchive(name: string): Promise<void> {
   // Correct restoration: extract to retiredDir, then rename the staging entry
   // back to the original target path. Using homedir() as the -C target was
   // wrong for any instance stored outside the home directory.
-  const targetDir = entry.resources.instanceDir;
+  const targetDir = resources.instanceDir;
   const retiredDir = dirname(archivePath);
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
   await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
   // Validate the staged identity before occupying the destination or updating
   // the registry. A failed validation leaves the archive available for retry.
-  const signingKey = resolveExistingLocalSigningKey(
-    entry.resources,
-    extractedPath,
-  );
+  const signingKey = resolveExistingLocalSigningKey(resources, extractedPath);
   const bootstrapSecret =
     entry.guardianBootstrapSecret ?? generateLocalSigningKey();
-  entry.resources = { ...entry.resources, signingKey };
+  const updatedResources = { ...resources, signingKey };
+  entry.resources = updatedResources;
   entry.guardianBootstrapSecret = bootstrapSecret;
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
-  saveAssistantEntry(entry);
+  saveLockfileAssistant(entry);
 
   // Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([
-    startCes(false, entry.resources),
-    startLocalDaemon(false, entry.resources, { signingKey }),
-    startGateway(false, entry.resources, { signingKey, bootstrapSecret }),
+    startCes(false, updatedResources),
+    startLocalDaemon(false, updatedResources, { signingKey }),
+    startGateway(false, updatedResources, { signingKey, bootstrapSecret }),
   ]);
 
   unlinkSync(archivePath);

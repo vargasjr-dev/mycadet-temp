@@ -24,7 +24,7 @@
  * ---------------------------------------------------------------------------
  *
  *   POST /v1/auth/live-voice-token/
- *     Auth:     Django SessionAuthentication — session cookie + CSRF
+ *     Auth:     cloud session auth — session cookie + CSRF
  *               (`X-CSRFToken`) + `Cadet-Organization-Id`, all attached
  *               automatically by the cloud HeyAPI client interceptor.
  *               Do NOT hand-roll an `Authorization` header.
@@ -106,7 +106,7 @@ function isTunnelWsToken(value: unknown): value is LiveVoiceTokenResponse {
  * Named for tunnel rather than for live voice because the token is not a
  * live-voice token in substance: the cloud stores it as an opaque random
  * string against a scope of `{user_id, organization_id, assistant_id}` and
- * nothing else (`django/app/auth/live_voice_token.py`). There is no route in
+ * nothing else. There is no route in
  * the scope, so the same token authorizes any tunnel WebSocket route that
  * requires per-user validation, and a second one now does
  * (`/v1/watch/stream`). Only the endpoint's URL still carries the original

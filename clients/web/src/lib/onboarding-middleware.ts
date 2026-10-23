@@ -5,24 +5,6 @@ import { buildNavigationState } from "@/lib/navigation/build-state";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { routes } from "@/utils/routes";
 
-export const localModeOnlyMiddleware: MiddlewareFunction = async (
-  _args,
-  next,
-) => {
-  // Auth has already been verified by the parent auth middleware.
-  const decision = resolveNavigation(
-    buildNavigationState({ sessionSettled: true, isAuthenticated: true }),
-    { kind: "route-guard", pathname: "/assistant/onboarding/hosting" },
-  );
-  if (decision.action === "redirect") {
-    if (hardNavigateIfCrossBundle(decision.to)) {
-      return next();
-    }
-    throw redirect(decision.to);
-  }
-  return next();
-};
-
 export const onboardingCompletedMiddleware: MiddlewareFunction = async (
   { request },
   next,

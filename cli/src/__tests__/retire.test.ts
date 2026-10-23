@@ -18,7 +18,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { loadAllAssistants } from "../lib/assistant-config.js";
 import * as loopbackFetchModule from "../lib/loopback-fetch.js";
 import * as cloudClientModule from "../lib/cloud-client.js";
@@ -91,8 +91,8 @@ let consoleWarnSpy: ReturnType<typeof spyOn>;
 
 function makeEntry(
   assistantId: string,
-  extra: Partial<AssistantEntry> = {},
-): AssistantEntry {
+  extra: Partial<LockfileAssistant> = {},
+): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: `http://127.0.0.1:${7800 + assistantId.length}`,
@@ -108,7 +108,7 @@ function makeEntry(
   };
 }
 
-function writeLockfile(entries: AssistantEntry[]): void {
+function writeLockfile(entries: LockfileAssistant[]): void {
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
     join(testDir, "lockfile.json"),

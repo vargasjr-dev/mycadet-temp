@@ -16,7 +16,7 @@ export function resolveNativePostAuthDestination(
     const firstRun =
       new URLSearchParams(search).get("new_assistant") !== "1" &&
       [
-        routes.onboarding.hosting,
+        routes.account.onboarding.hosting,
         routes.onboarding.privacy,
         routes.onboarding.research,
       ].some((path) => path === pathname);

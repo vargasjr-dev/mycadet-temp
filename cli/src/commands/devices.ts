@@ -16,7 +16,7 @@ import { hostname } from "node:os";
 import type { DeviceRecord } from "@mycadet/local-mode";
 
 import {
-  type AssistantEntry,
+  type LockfileAssistant,
   getAssistantDisplayName,
   resolveTargetAssistant,
 } from "../lib/assistant-config";
@@ -75,7 +75,7 @@ EXAMPLES:
  * Resolve the LOOPBACK gateway base URL for a host-side assistant, or exit with
  * a helpful error. Never falls back to a non-loopback URL.
  */
-function resolveLoopbackBase(entry: AssistantEntry): string {
+function resolveLoopbackBase(entry: LockfileAssistant): string {
   const displayName = getAssistantDisplayName(entry);
 
   if (entry.cloud === "docker")
@@ -97,7 +97,7 @@ function resolveLoopbackBase(entry: AssistantEntry): string {
 
 /** Docker host management enters the gateway network namespace before calling loopback-only routes. */
 async function deviceRequest(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   url: string,
   init: RequestInit,
 ): Promise<Response> {
@@ -164,7 +164,7 @@ function formatTimestamp(ms: number | null, absent: string): string {
 }
 
 async function listDevices(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   base: string,
   jsonOutput: boolean,
 ): Promise<void> {
@@ -245,7 +245,7 @@ async function listDevices(
 }
 
 async function revokeDevice(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   base: string,
   hashedDeviceId: string,
   yes: boolean,

@@ -809,7 +809,7 @@ async function main() {
 
     // ── Guardian channel creation (platform auto-verify) ──
     {
-      path: "/v1/contacts/guardian/channel",
+      path: "/contacts/guardian/channel",
       method: "POST",
       auth: "edge-guardian",
       handler: (req) => handleGuardianChannelCreate(req),
@@ -817,7 +817,7 @@ async function main() {
 
     // ── Audio serving (unauthenticated — Twilio fetches these URLs directly) ──
     {
-      path: /^\/v1\/audio\/([^/]+)$/,
+      path: /^\/audio\/([^/]+)$/,
       method: "GET",
       handler: (_req, params) => audioProxy.handleGetAudio(_req, params[0]),
     },
@@ -836,13 +836,13 @@ async function main() {
 
     // ── Runtime health ──
     {
-      path: "/v1/health",
+      path: "/health",
       method: "GET",
       auth: "edge",
       handler: (req) => runtimeHealthProxy.handleRuntimeHealth(req),
     },
     {
-      path: "/v1/healthz",
+      path: "/healthz",
       method: "GET",
       auth: "edge",
       handler: (req) => runtimeHealthProxy.handleRuntimeHealth(req),
@@ -850,7 +850,7 @@ async function main() {
 
     // ── Process status ──
     {
-      path: "/v1/ps",
+      path: "/ps",
       method: "GET",
       auth: "edge",
       handler: () => psHandler.handlePs(),
@@ -858,7 +858,7 @@ async function main() {
 
     // ── Ingress domain recording (guardian bearer, loopback fallback) ──
     {
-      path: "/v1/ingress/domains",
+      path: "/ingress/domains",
       method: "POST",
       auth: "edge-guardian",
       handler: (req, _params, getClientIp) =>
@@ -867,7 +867,7 @@ async function main() {
 
     // ── Tunnel status ──
     {
-      path: "/v1/tunnel/status",
+      path: "/tunnel/status",
       method: "GET",
       auth: "edge",
       handler: () => tunnelStatusHandler.handleTunnelStatus(),
@@ -876,7 +876,7 @@ async function main() {
     // and rewriteForSelfHostedIngress preserves that path, so a flat-only route
     // would fall through to the runtime proxy and 404. The assistant id is discarded.
     {
-      path: /^\/v1\/assistants\/[^/]+\/tunnel\/status\/?$/,
+      path: /^\/assistants\/[^/]+\/tunnel\/status\/?$/,
       method: "GET",
       auth: "edge-scoped",
       handler: () => tunnelStatusHandler.handleTunnelStatus(),
@@ -884,46 +884,46 @@ async function main() {
 
     // ── Brain graph ──
     {
-      path: "/v1/brain-graph",
+      path: "/brain-graph",
       method: "GET",
       auth: "edge",
       handler: (req) => brainGraphProxy.handleBrainGraph(req),
     },
     {
-      path: "/v1/brain-graph-ui",
+      path: "/brain-graph-ui",
       method: "GET",
       auth: "edge",
       handler: (req) => brainGraphProxy.handleBrainGraphUI(req),
     },
     // ── Telegram control plane ──
     {
-      path: "/v1/integrations/telegram/config",
+      path: "/integrations/telegram/config",
       method: "GET",
       auth: "edge",
       handler: (req) => telegramControlPlaneProxy.handleGetTelegramConfig(req),
     },
     {
-      path: "/v1/integrations/telegram/config",
+      path: "/integrations/telegram/config",
       method: "POST",
       auth: "edge",
       handler: (req) => telegramControlPlaneProxy.handleSetTelegramConfig(req),
     },
     {
-      path: "/v1/integrations/telegram/config",
+      path: "/integrations/telegram/config",
       method: "DELETE",
       auth: "edge",
       handler: (req) =>
         telegramControlPlaneProxy.handleClearTelegramConfig(req),
     },
     {
-      path: "/v1/integrations/telegram/commands",
+      path: "/integrations/telegram/commands",
       method: "POST",
       auth: "edge",
       handler: (req) =>
         telegramControlPlaneProxy.handleSetTelegramCommands(req),
     },
     {
-      path: "/v1/integrations/telegram/setup",
+      path: "/integrations/telegram/setup",
       method: "POST",
       auth: "edge",
       handler: (req) => telegramControlPlaneProxy.handleSetupTelegram(req),
@@ -933,21 +933,21 @@ async function main() {
     // The dedicated proxy mints a gateway service token, so the daemon
     // never sees the caller's scopes. Edge-scoped auth is the check.
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => vercelControlPlaneProxy.handleGetVercelConfig(req),
     },
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => vercelControlPlaneProxy.handleSetVercelConfig(req),
     },
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -965,13 +965,13 @@ async function main() {
 
     // ── Generic loopback pairing (localhost-only, auth: none) ──
     {
-      path: "/v1/pair",
+      path: "/pair",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) => handlePair(req, getClientIp()),
     },
     {
-      path: "/v1/remote-web/pairing-challenge",
+      path: "/remote-web/pairing-challenge",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp, getRawPeerIp) =>
@@ -982,34 +982,34 @@ async function main() {
         ),
     },
     {
-      path: "/v1/remote-web/pairing-verification",
+      path: "/remote-web/pairing-verification",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
         handleVerifyRemoteWebPairingChallenge(req, getClientIp()),
     },
     {
-      path: "/v1/remote-web/pairing-token",
+      path: "/remote-web/pairing-token",
       method: "POST",
       auth: "none",
       handler: (req) => handleRemoteWebPairingToken(req),
     },
     {
-      path: "/v1/remote-web/pairing-requests",
+      path: "/remote-web/pairing-requests",
       method: "GET",
       auth: "none",
       handler: (req, _params, getClientIp) =>
         handleListRemoteWebPairingRequests(req, getClientIp()),
     },
     {
-      path: "/v1/remote-web/pairing-requests/approve",
+      path: "/remote-web/pairing-requests/approve",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
         handleApproveRemoteWebPairingRequest(req, getClientIp()),
     },
     {
-      path: "/v1/remote-web/pairing-requests/deny",
+      path: "/remote-web/pairing-requests/deny",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
@@ -1018,7 +1018,7 @@ async function main() {
     // ── Shared-invite redemption (auth: none) ──
     // The invite link token in the request body is the credential.
     {
-      path: "/v1/shared/invites/redeem",
+      path: "/shared/invites/redeem",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
@@ -1037,14 +1037,14 @@ async function main() {
       handler: (req) => handleCredentialEntryPage(req),
     },
     {
-      path: "/v1/credential-requests/peek",
+      path: "/credential-requests/peek",
       method: "POST",
       auth: "track-failures",
       trackFailureStatuses: [404],
       handler: (req) => handleCredentialRequestPeek(req),
     },
     {
-      path: "/v1/credential-requests/submit",
+      path: "/credential-requests/submit",
       method: "POST",
       auth: "track-failures",
       trackFailureStatuses: [404],
@@ -1052,14 +1052,14 @@ async function main() {
     },
     // ── Device management (localhost-only, auth: none; self-guards loopback) ──
     {
-      path: "/v1/devices",
+      path: "/devices",
       method: "GET",
       auth: "none",
       handler: (req, _params, getClientIp) =>
         handleListDevices(req, getClientIp()),
     },
     {
-      path: "/v1/devices/revoke",
+      path: "/devices/revoke",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
@@ -1068,7 +1068,7 @@ async function main() {
 
     // ── The caller's own paired-device row (bearer-authed, browser-legit) ──
     {
-      path: "/v1/devices/mine",
+      path: "/devices/mine",
       method: "GET",
       auth: "edge",
       handler: (req) => handleGetMyDevice(req),
@@ -1078,14 +1078,14 @@ async function main() {
     {
       // Bootstrap endpoint — may be replaced with an SSH-based exchange in the
       // future so that remote clients never need an exposed HTTP endpoint.
-      path: "/v1/guardian/init",
+      path: "/guardian/init",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
         channelVerificationSessionProxy.handleGuardianInit(req, getClientIp()),
     },
     {
-      path: "/v1/guardian/reset-bootstrap",
+      path: "/guardian/reset-bootstrap",
       method: "POST",
       auth: "none",
       handler: (req, _params, getClientIp) =>
@@ -1095,35 +1095,35 @@ async function main() {
         ),
     },
     {
-      path: "/v1/channel-verification-sessions",
+      path: "/channel-verification-sessions",
       method: "POST",
       auth: "edge",
       handler: (req) =>
         channelVerificationSessionProxy.handleCreateVerificationSession(req),
     },
     {
-      path: "/v1/channel-verification-sessions",
+      path: "/channel-verification-sessions",
       method: "DELETE",
       auth: "edge",
       handler: (req) =>
         channelVerificationSessionProxy.handleCancelVerificationSession(req),
     },
     {
-      path: "/v1/channel-verification-sessions/resend",
+      path: "/channel-verification-sessions/resend",
       method: "POST",
       auth: "edge",
       handler: (req) =>
         channelVerificationSessionProxy.handleResendVerificationSession(req),
     },
     {
-      path: "/v1/channel-verification-sessions/status",
+      path: "/channel-verification-sessions/status",
       method: "GET",
       auth: "edge",
       handler: (req) =>
         channelVerificationSessionProxy.handleGetVerificationStatus(req),
     },
     {
-      path: "/v1/channel-verification-sessions/revoke",
+      path: "/channel-verification-sessions/revoke",
       method: "POST",
       auth: "edge",
       handler: (req) =>
@@ -1136,7 +1136,7 @@ async function main() {
     // expires. Signature, audience, and policy epoch are still verified
     // — only the expiration check is relaxed.
     {
-      path: "/v1/guardian/refresh",
+      path: "/guardian/refresh",
       method: "POST",
       auth: "custom",
       handler: (req, _params, getClientIp) => {
@@ -1169,58 +1169,58 @@ async function main() {
 
     // ── Twilio control plane ──
     {
-      path: "/v1/integrations/twilio/config",
+      path: "/integrations/twilio/config",
       method: "GET",
       auth: "edge",
       handler: (req) => twilioControlPlaneProxy.handleGetTwilioConfig(req),
     },
     {
-      path: "/v1/integrations/twilio/credentials",
+      path: "/integrations/twilio/credentials",
       method: "POST",
       auth: "edge",
       handler: (req) => twilioControlPlaneProxy.handleSetTwilioCredentials(req),
     },
     {
-      path: "/v1/integrations/twilio/credentials",
+      path: "/integrations/twilio/credentials",
       method: "DELETE",
       auth: "edge",
       handler: (req) =>
         twilioControlPlaneProxy.handleClearTwilioCredentials(req),
     },
     {
-      path: "/v1/integrations/twilio/numbers",
+      path: "/integrations/twilio/numbers",
       method: "GET",
       auth: "edge",
       handler: (req) => twilioControlPlaneProxy.handleListTwilioNumbers(req),
     },
     {
-      path: "/v1/integrations/twilio/numbers/provision",
+      path: "/integrations/twilio/numbers/provision",
       method: "POST",
       auth: "edge",
       handler: (req) =>
         twilioControlPlaneProxy.handleProvisionTwilioNumber(req),
     },
     {
-      path: "/v1/integrations/twilio/numbers/assign",
+      path: "/integrations/twilio/numbers/assign",
       method: "POST",
       auth: "edge",
       handler: (req) => twilioControlPlaneProxy.handleAssignTwilioNumber(req),
     },
     {
-      path: "/v1/integrations/twilio/numbers/release",
+      path: "/integrations/twilio/numbers/release",
       method: "POST",
       auth: "edge",
       handler: (req) => twilioControlPlaneProxy.handleReleaseTwilioNumber(req),
     },
     // ── Slack control plane ──
     {
-      path: "/v1/slack/channels",
+      path: "/slack/channels",
       method: "GET",
       auth: "edge",
       handler: (req) => slackControlPlaneProxy.handleListSlackChannels(req),
     },
     {
-      path: "/v1/slack/share",
+      path: "/slack/share",
       method: "POST",
       auth: "edge",
       handler: (req) => slackControlPlaneProxy.handleShareToSlack(req),
@@ -1228,14 +1228,14 @@ async function main() {
 
     // ── OAuth providers ──
     {
-      path: "/v1/oauth/providers",
+      path: "/oauth/providers",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => oauthProvidersProxy.handleListProviders(req),
     },
     {
-      path: /^\/v1\/oauth\/providers\/([^/]+)\/?$/,
+      path: /^\/oauth\/providers\/([^/]+)\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1245,28 +1245,28 @@ async function main() {
 
     // ── OAuth apps ──
     {
-      path: "/v1/oauth/apps",
+      path: "/oauth/apps",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => oauthAppsProxy.handleListApps(req),
     },
     {
-      path: "/v1/oauth/apps",
+      path: "/oauth/apps",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => oauthAppsProxy.handleCreateApp(req),
     },
     {
-      path: /^\/v1\/oauth\/apps\/([^/]+)\/?$/,
+      path: /^\/oauth\/apps\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => oauthAppsProxy.handleDeleteApp(req, params[0]),
     },
     {
-      path: /^\/v1\/oauth\/apps\/([^/]+)\/connections\/?$/,
+      path: /^\/oauth\/apps\/([^/]+)\/connections\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1274,7 +1274,7 @@ async function main() {
         oauthAppsProxy.handleListConnections(req, params[0]),
     },
     {
-      path: /^\/v1\/oauth\/connections\/([^/]+)\/?$/,
+      path: /^\/oauth\/connections\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1282,7 +1282,7 @@ async function main() {
         oauthAppsProxy.handleDeleteConnection(req, params[0]),
     },
     {
-      path: /^\/v1\/oauth\/apps\/([^/]+)\/connect\/?$/,
+      path: /^\/oauth\/apps\/([^/]+)\/connect\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1291,7 +1291,7 @@ async function main() {
 
     // ── Upgrade broadcast ──
     {
-      path: "/v1/admin/upgrade-broadcast",
+      path: "/admin/upgrade-broadcast",
       method: "POST",
       auth: "edge-scoped",
       scope: "admin.write",
@@ -1300,7 +1300,7 @@ async function main() {
 
     // ── Workspace commit ──
     {
-      path: "/v1/admin/workspace-commit",
+      path: "/admin/workspace-commit",
       method: "POST",
       auth: "edge-scoped",
       scope: "admin.write",
@@ -1309,7 +1309,7 @@ async function main() {
 
     // ── Migration rollback ──
     {
-      path: "/v1/admin/rollback-migrations",
+      path: "/admin/rollback-migrations",
       method: "POST",
       auth: "edge-scoped",
       scope: "admin.write",
@@ -1317,19 +1317,19 @@ async function main() {
     },
 
     // ── Platform push / Live Activity tokens ──
-    // Django-owned registration. Remote-gateway clients hit these
+    // Cloud-owned registration. Remote-gateway clients hit these
     // same-origin; without a dedicated route they fall through to the
-    // runtime-proxy catch-all and 404. The handler forwards to Django
+    // runtime-proxy catch-all and 404. The handler forwards to the cloud
     // with the stored assistant API key and platform assistant UUID.
     {
-      path: /^\/v1\/assistants\/[^/]+\/push-tokens\/?$/,
+      path: /^\/assistants\/[^/]+\/push-tokens\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => cloudPushProxy.handleUpsertPushToken(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/push-tokens\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1337,14 +1337,14 @@ async function main() {
         cloudPushProxy.handleDeletePushToken(req, params[0]),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
+      path: /^\/assistants\/[^/]+\/live-activity\/tokens\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => cloudPushProxy.handleUpsertLiveActivityToken(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/live-activity\/tokens\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1354,13 +1354,13 @@ async function main() {
 
     // ── Channel readiness ──
     {
-      path: "/v1/channels/readiness",
+      path: "/channels/readiness",
       method: "GET",
       auth: "edge",
       handler: (req) => channelReadinessProxy.handleGetChannelReadiness(req),
     },
     {
-      path: "/v1/channels/readiness/refresh",
+      path: "/channels/readiness/refresh",
       method: "POST",
       auth: "edge",
       handler: (req) =>
@@ -1368,7 +1368,7 @@ async function main() {
     },
 
     {
-      path: /^\/v1\/assistants\/([^/]+)\/channels\/readiness\/$/,
+      path: /^\/assistants\/([^/]+)\/channels\/readiness\/$/,
       method: "GET",
       auth: "edge",
       handler: (req) => channelReadinessProxy.handleGetChannelReadiness(req),
@@ -1387,7 +1387,7 @@ async function main() {
         }),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/integrations\/status\/$/,
+      path: /^\/assistants\/([^/]+)\/integrations\/status\/$/,
       method: "GET",
       auth: "edge",
       handler: () =>
@@ -1400,28 +1400,28 @@ async function main() {
 
     // ── Auto-approve thresholds (scope-protected) ──
     {
-      path: "/v1/permissions/thresholds",
+      path: "/permissions/thresholds",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleGlobalThresholdGet(req),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
+      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleGlobalThresholdGet(req),
     },
     {
-      path: "/v1/permissions/thresholds",
+      path: "/permissions/thresholds",
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleGlobalThresholdPut(req),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
+      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1430,14 +1430,14 @@ async function main() {
 
     // ── Per-conversation threshold overrides (scope-protected) ──
     {
-      path: /^\/v1\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req, params) => handleConversationThresholdGet(req, params),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1445,14 +1445,14 @@ async function main() {
         handleConversationThresholdGet(req, params.slice(1)),
     },
     {
-      path: /^\/v1\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleConversationThresholdPut(req, params),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1460,14 +1460,14 @@ async function main() {
         handleConversationThresholdPut(req, params.slice(1)),
     },
     {
-      path: /^\/v1\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleConversationThresholdDelete(req, params),
     },
     {
-      path: /^\/v1\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
+      path: /^\/assistants\/([^/]+)\/permissions\/thresholds\/conversations\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1477,14 +1477,14 @@ async function main() {
 
     // ── Log export ──
     {
-      path: "/v1/logs/export",
+      path: "/logs/export",
       method: "POST",
       auth: "edge",
       handler: (req, params, getClientIp) =>
         handleLogExport(req, params, getClientIp),
     },
     {
-      path: "/v1/logs/tail",
+      path: "/logs/tail",
       method: "GET",
       auth: "edge",
       handler: (req) => handleLogTail(req),
@@ -1492,7 +1492,7 @@ async function main() {
 
     // ── Trust rules v3 ──
     {
-      path: "/v1/trust-rules",
+      path: "/trust-rules",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1501,14 +1501,14 @@ async function main() {
     {
       // Must appear before the POST /v1/trust-rules create entry and before
       // the /:id catch-all regex so the literal path is matched first.
-      path: "/v1/trust-rules/suggest",
+      path: "/trust-rules/suggest",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleTrustRulesSuggest(req),
     },
     {
-      path: "/v1/trust-rules",
+      path: "/trust-rules",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1516,21 +1516,21 @@ async function main() {
     },
     {
       // Reset must be registered before the /:id catch-all regex
-      path: /^\/v1\/trust-rules\/([^/]+)\/reset$/,
+      path: /^\/trust-rules\/([^/]+)\/reset$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleTrustRulesReset(req, params[0]),
     },
     {
-      path: /^\/v1\/trust-rules\/([^/]+)$/,
+      path: /^\/trust-rules\/([^/]+)$/,
       method: "PATCH",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleTrustRulesUpdate(req, params[0]),
     },
     {
-      path: /^\/v1\/trust-rules\/([^/]+)$/,
+      path: /^\/trust-rules\/([^/]+)$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1545,28 +1545,28 @@ async function main() {
     // routes are what actually serve client traffic. The mutation regexes
     // tolerate a trailing slash.
     {
-      path: /^\/v1\/channel-admission-policy\/?$/,
+      path: /^\/channel-admission-policy\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleChannelAdmissionPolicyList(req),
     },
     {
-      path: /^\/v1\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
     },
     {
-      path: /^\/v1\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
     },
     {
-      path: /^\/v1\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/channel-admission-policy\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1584,28 +1584,28 @@ async function main() {
     // discarded — same precedent as the assistant-scoped trust-rules routes
     // below.
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-admission-policy\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-admission-policy\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleChannelAdmissionPolicyList(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleChannelAdmissionPolicySet(req, params[0]),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-admission-policy\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1624,19 +1624,19 @@ async function main() {
     // creates one. The listing is guardian-only for a different reason: it says
     // which declarations are waiting, which the public surface will not.
     {
-      path: /^\/v1\/channel-ingress\/?$/,
+      path: /^\/channel-ingress\/?$/,
       method: "GET",
       auth: "edge-guardian",
       handler: () => handleChannelIngressList(),
     },
     {
-      path: /^\/v1\/channel-ingress\/([^/]+)\/approve\/?$/,
+      path: /^\/channel-ingress\/([^/]+)\/approve\/?$/,
       method: "POST",
       auth: "edge-guardian",
       handler: (req, params) => handleChannelIngressApprove(req, params[0]!),
     },
     {
-      path: /^\/v1\/channel-ingress\/([^/]+)\/revoke\/?$/,
+      path: /^\/channel-ingress\/([^/]+)\/revoke\/?$/,
       method: "POST",
       auth: "edge-guardian",
       handler: (req, params) => handleChannelIngressRevoke(req, params[0]!),
@@ -1651,19 +1651,19 @@ async function main() {
     // guardian decision they carry is unchanged, since `edge-guardian` is what
     // decides who may call them and it applies to both spellings.
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-ingress\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-ingress\/?$/,
       method: "GET",
       auth: "edge-guardian",
       handler: () => handleChannelIngressList(),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/approve\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/approve\/?$/,
       method: "POST",
       auth: "edge-guardian",
       handler: (req, params) => handleChannelIngressApprove(req, params[0]!),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/revoke\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-ingress\/([^/]+)\/revoke\/?$/,
       method: "POST",
       auth: "edge-guardian",
       handler: (req, params) => handleChannelIngressRevoke(req, params[0]!),
@@ -1676,21 +1676,21 @@ async function main() {
     // delete is a POST verb path because cells are keyed by a composite
     // (selector × contact-type), not a row id.
     {
-      path: /^\/v1\/channel-permission-overrides\/?$/,
+      path: /^\/channel-permission-overrides\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleChannelPermissionOverridesList(req),
     },
     {
-      path: /^\/v1\/channel-permission-overrides\/?$/,
+      path: /^\/channel-permission-overrides\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleChannelPermissionOverrideSet(req),
     },
     {
-      path: /^\/v1\/channel-permission-overrides\/delete\/?$/,
+      path: /^\/channel-permission-overrides\/delete\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1699,7 +1699,7 @@ async function main() {
     // Resolve is a read (settings.read) despite the POST verb — the body
     // carries a composite query, same rationale as /delete above.
     {
-      path: /^\/v1\/channel-permission-overrides\/resolve\/?$/,
+      path: /^\/channel-permission-overrides\/resolve\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1710,28 +1710,28 @@ async function main() {
     // Matrix cells are gateway-global, so the assistant id is matched and
     // discarded — same precedent as channel-admission-policy above.
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: (req) => handleChannelPermissionOverridesList(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/?$/,
       method: "PUT",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleChannelPermissionOverrideSet(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-permission-overrides\/delete\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/delete\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleChannelPermissionOverrideDelete(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/channel-permission-overrides\/resolve\/?$/,
+      path: /^\/assistants\/[^/]+\/channel-permission-overrides\/resolve\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1749,7 +1749,7 @@ async function main() {
     // Trust rules are gateway-global, so the assistant id is matched and
     // discarded. Same precedent as channel-admission-policy above.
     {
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/?$/,
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
@@ -1758,14 +1758,14 @@ async function main() {
     {
       // Must appear before the create entry and before the /:id catch-all
       // so the literal /suggest segment is matched first.
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/suggest\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/suggest\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req) => handleTrustRulesSuggest(req),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1773,21 +1773,21 @@ async function main() {
     },
     {
       // Reset must be registered before the /:id catch-all regex.
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/([^/]+)\/reset\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/reset\/?$/,
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleTrustRulesReset(req, params[0]),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
       method: "PATCH",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: (req, params) => handleTrustRulesUpdate(req, params[0]),
     },
     {
-      path: /^\/v1\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
+      path: /^\/assistants\/[^/]+\/trust-rules\/([^/]+)\/?$/,
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",
@@ -1810,8 +1810,8 @@ async function main() {
       handler: desktopSetupProxy,
     };
     routes.push(
-      { path: /^\/v1\/desktop\/setup\/?$/, ...setupRoute },
-      { path: /^\/v1\/assistants\/[^/]+\/desktop\/setup\/?$/, ...setupRoute },
+      { path: /^\/desktop\/setup\/?$/, ...setupRoute },
+      { path: /^\/assistants\/[^/]+\/desktop\/setup\/?$/, ...setupRoute },
     );
   }
 

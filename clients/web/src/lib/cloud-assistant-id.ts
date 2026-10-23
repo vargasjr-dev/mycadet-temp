@@ -12,7 +12,7 @@ import { getSelfHostedActorToken } from "@/lib/self-hosted/connection";
  * Platform routes such as push-token upsert take a UUID. A self-hosted
  * phone may only know a lockfile slug, a paired id, or remote-gateway
  * `"self"`. Resolve those to the cloud registration; a leftover
- * non-UUID would 404 on Django's `<uuid:assistant_id>` converter.
+ * non-UUID would 404 on the cloud's `<uuid:assistant_id>` converter.
  */
 export async function resolveCloudAssistantId(
   assistantId: string,

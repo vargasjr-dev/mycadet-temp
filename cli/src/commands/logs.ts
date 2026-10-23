@@ -8,7 +8,7 @@ import { join } from "path";
 import {
   extractHostFromEntry,
   resolveAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import { getLogDir } from "../lib/xdg-log";
@@ -169,7 +169,7 @@ function extractServiceTag(line: string): string | null {
 // ── Local topology ──────────────────────────────────────────────
 
 async function showLocalLogs(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   opts: LogsArgs,
 ): Promise<void> {
   const logDir = getLogDir();
@@ -291,7 +291,7 @@ async function showLocalLogs(
 // ── Docker topology ─────────────────────────────────────────────
 
 async function showDockerLogs(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   opts: LogsArgs,
 ): Promise<void> {
   const res = dockerResourceNames(entry.assistantId);
@@ -441,7 +441,7 @@ function buildRemoteLogCommand(opts: LogsArgs): string {
 }
 
 async function showCustomLogs(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   opts: LogsArgs,
 ): Promise<void> {
   const host = extractHostFromEntry(entry);

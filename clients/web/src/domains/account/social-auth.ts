@@ -34,7 +34,7 @@ export const PROVIDER_REDIRECT_PATH =
  * Marketing attribution params the backend accepts on the redirect POST.
  *
  * Mirrors the keys `read_request_attribution` reads off the request in
- * `django/config/middleware/marketing_attribution.py`.
+ * the cloud's marketing-attribution middleware.
  */
 const ATTRIBUTION_PARAMS: readonly string[] = [
   "utm_source",
@@ -157,7 +157,7 @@ export function buildProviderRedirectFields(
  * Extracted as a tiny pure helper so the assertion behavior can be unit tested
  * without a DOM environment. `ensureCsrfCookie()` swallows bootstrap failures
  * (see `@/lib/auth/csrf`), so without this guard we would silently POST to
- * `PROVIDER_REDIRECT_PATH` with no token and get a 403 back from Django — the
+ * `PROVIDER_REDIRECT_PATH` with no token and get a 403 back from the cloud — the
  * user would be stuck on the auth page with no feedback. Failing loudly here
  * surfaces the problem in the browser console instead.
  */

@@ -4,10 +4,11 @@ import { basename, dirname, join, win32 } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   loadAllAssistantsAcrossEnvs,
 } from "./assistant-config.js";
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import { stopIngressNginx } from "./nginx-ingress.js";
 import { getKnownPidsFromAssistants } from "./orphan-detection.js";
 import {
@@ -88,12 +89,12 @@ export function getRetireArchiveCommand(
 
 export async function retireLocal(
   name: string,
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   reporter: LifecycleReporter = consoleLifecycleReporter,
 ): Promise<RetireLocalResult> {
   reporter.log("\u{1F5D1}\ufe0f  Stopping local assistant...\n");
 
-  if (!entry.resources) {
+  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${name}' is missing resource configuration. Re-hatch to fix.`,
     );

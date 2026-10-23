@@ -14,7 +14,7 @@ const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { resolveFreshBearerToken } from "../commands/client.js";
-import { saveAssistantEntry } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "../lib/assistant-config.js";
 import { saveGuardianToken } from "../lib/guardian-token.js";
 
 const RUNTIME = "https://gw.example.com";
@@ -26,7 +26,7 @@ const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
  *  The paired shape is a loopback-cloud entry whose runtimeUrl points
  *  off-machine — paired-ness derives from it, no stored flag. */
 function seedEntry(): void {
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: "px",
     name: "Paired",
     runtimeUrl: RUNTIME,
@@ -80,7 +80,7 @@ describe("resolveFreshBearerToken", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "client-tui-refresh-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Isolate the lockfile too — saveAssistantEntry writes the prod lockfile
+    // Isolate the lockfile too — saveLockfileAssistant writes the prod lockfile
     // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set.
     process.env.CADET_LOCKFILE_DIR = tempHome;
     delete process.env.CADET_ENVIRONMENT; // prod config dir

@@ -49,13 +49,17 @@ if (fixturesDir) {
   cpSync(join(fixturesDir, "migrated"), testDir, { recursive: true });
 }
 
-// Prevent tests from routing credential writes through the real CES
-// (Credential Execution Service). Without this, setSecureKeyAsync() in
-// containerized environments writes to the live credential store.
+// Prevent tests from routing credential ops through the real CES. The HTTP
+// failover arm dies with IS_CONTAINERIZED/CES_CREDENTIAL_URL; the RPC primary
+// dies with a dead per-process socket dir — deleting the var is not enough,
+// discovery falls back to the hardcoded /run/ces-bootstrap, which fronts the
+// real vault on containerized dev machines.
 const savedIsContainerized = process.env.IS_CONTAINERIZED;
 const savedCesCredentialUrl = process.env.CES_CREDENTIAL_URL;
 delete process.env.IS_CONTAINERIZED;
 delete process.env.CES_CREDENTIAL_URL;
+const savedCesBootstrapSocketDir = process.env.CES_BOOTSTRAP_SOCKET_DIR;
+process.env.CES_BOOTSTRAP_SOCKET_DIR = join(tmpRoot, "ces-bootstrap-absent");
 
 // A test runs daemon code in-process, so it acts as the main daemon for the
 // event hub's publish routing (a non-daemon forwards publishes over IPC to a
@@ -90,6 +94,9 @@ afterAll(() => {
   }
   if (savedCesCredentialUrl !== undefined) {
     process.env.CES_CREDENTIAL_URL = savedCesCredentialUrl;
+  }
+  if (savedCesBootstrapSocketDir !== undefined) {
+    process.env.CES_BOOTSTRAP_SOCKET_DIR = savedCesBootstrapSocketDir;
   }
   try {
     rmSync(tmpRoot, { recursive: true, force: true });

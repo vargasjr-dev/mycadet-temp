@@ -45,7 +45,7 @@ function extractVercelRouteObjects(): string[] {
   return vercelRoutesSource
     .split(/\n    \},\n/)
     .filter((routeObject) =>
-      routeObject.includes("/v1/integrations/vercel/config"),
+      routeObject.includes("/integrations/vercel/config"),
     );
 }
 
@@ -80,21 +80,21 @@ const ACTOR_TOKEN = "tok-actor";
 function makeVercelRouter() {
   const routes: RouteDefinition[] = [
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "GET",
       auth: "edge-scoped",
       scope: "settings.read",
       handler: () => Response.json({ ok: true, route: "get" }),
     },
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "POST",
       auth: "edge-scoped",
       scope: "settings.write",
       handler: () => Response.json({ ok: true, route: "post" }),
     },
     {
-      path: "/v1/integrations/vercel/config",
+      path: "/integrations/vercel/config",
       method: "DELETE",
       auth: "edge-scoped",
       scope: "settings.write",

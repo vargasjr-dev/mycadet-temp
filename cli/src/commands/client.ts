@@ -9,8 +9,8 @@ import {
   lookupAssistantByIdentifier,
   resolveAssistant,
   resolveConversationKey,
-  saveAssistantEntry,
-  type AssistantEntry,
+  saveLockfileAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { GATEWAY_PORT } from "../lib/constants";
 import {
@@ -63,7 +63,7 @@ function collapseHomeForDisplay(dir: string): string {
 }
 
 /** The assistant's data root (from the lockfile), for the TUI details panel. */
-function readWorkspaceRoot(entry: AssistantEntry | null): string | undefined {
+function readWorkspaceRoot(entry: LockfileAssistant | null): string | undefined {
   const instanceDir = entry?.resources?.instanceDir;
   return instanceDir ? collapseHomeForDisplay(instanceDir) : undefined;
 }
@@ -99,7 +99,7 @@ export function parseArgs(): ParsedArgs {
     }
   }
 
-  let entry: AssistantEntry | null = null;
+  let entry: LockfileAssistant | null = null;
   if (positionalName) {
     const result = lookupAssistantByIdentifier(positionalName);
     if (result.status !== "found") {
@@ -250,7 +250,7 @@ async function maybeHydrateCloudAssistantName(
 
     const entry = findAssistantByName(assistantId);
     if (entry && entry.name !== hydratedName) {
-      saveAssistantEntry({
+      saveLockfileAssistant({
         ...entry,
         name: hydratedName,
       });

@@ -31,7 +31,7 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   resolveTargetAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../assistant-config.js";
 import { getGatewayUrl } from "../runtime-url.js";
 import { getCloudUrl, readCloudToken } from "../cloud-client.js";
@@ -138,7 +138,7 @@ export async function resolveLiveVoiceConnection(
  * by the upgrade that uses it.
  */
 async function resolveCloudConnection(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<LiveVoiceConnection> {
   const sessionToken = readCloudToken();
   if (!sessionToken) {

@@ -3,8 +3,9 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistantsAcrossEnvs,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "./assistant-config.js";
 import { execOutput } from "./step-runner";
 
@@ -119,11 +120,11 @@ export interface OrphanedProcess {
  * matches a recorded PID for *any* env's assistant, it's not an orphan.
  */
 export function getKnownPidsFromAssistants(
-  entries: AssistantEntry[],
+  entries: LockfileAssistant[],
 ): Set<string> {
   const pids = new Set<string>();
   for (const entry of entries) {
-    if (entry.cloud === "local" && entry.resources) {
+    if (entry.cloud === "local" && isLocalInstanceResources(entry.resources)) {
       const stateDir = entry.resources.instanceDir;
       const candidates = [
         getDaemonPidPath(entry.resources),

@@ -12,8 +12,8 @@ import type { GatewayRouteDefinition } from "./types.js";
  * contact-prompt submit, contact-record submit, and manual channel verify. Clients consume them
  * through the generated gateway SDK, which emits assistant-scoped
  * `/v1/assistants/{assistant_id}/...` URLs — but both deployment boundaries
- * strip the scope before the gateway routes the request (Django's
- * RuntimeProxyView in cloud; `rewriteForSelfHostedIngress` contact-family
+ * strip the scope before the gateway routes the request (the cloud's
+ * runtime proxy; `rewriteForSelfHostedIngress` contact-family
  * flattening in self-hosted), so the gateway serves exactly the flat paths
  * in this spec.
  *
@@ -195,7 +195,7 @@ const ContactRecordSubmitRequestSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/contacts",
+    path: "/contacts",
     method: "post",
     operationId: "contactsUpsert",
     summary: "Create or update a contact",
@@ -209,7 +209,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contacts/{contact_id}",
+    path: "/contacts/{contact_id}",
     method: "delete",
     operationId: "contactDelete",
     summary: "Delete a contact",
@@ -220,7 +220,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseStatus: "204",
   },
   {
-    path: "/v1/contacts/prompt/submit",
+    path: "/contacts/prompt/submit",
     method: "post",
     operationId: "contactsPromptSubmit",
     summary: "Submit a contact-prompt address",
@@ -240,7 +240,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contacts/record/submit",
+    path: "/contacts/record/submit",
     method: "post",
     operationId: "contactsRecordSubmit",
     summary: "Submit a contact-record form",
@@ -260,7 +260,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     }),
   },
   {
-    path: "/v1/contact-channels/{channel_id}/verify",
+    path: "/contact-channels/{channel_id}/verify",
     method: "post",
     operationId: "contactChannelVerify",
     summary: "Manually verify a contact channel",

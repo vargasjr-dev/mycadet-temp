@@ -4,7 +4,6 @@ export const routes = {
   assistant: "/assistant",
   checkout: "/assistant/checkout",
   onboarding: {
-    hosting: "/assistant/onboarding/hosting",
     hatching: "/assistant/onboarding/hatching",
     privacy: "/assistant/onboarding/privacy",
     research: "/assistant/onboarding/research",
@@ -15,12 +14,14 @@ export const routes = {
     root: "/account",
     consent: "/account/consent",
     // The pre-hatch onboarding front door, app-owned like the consent screens
-    // above. The provisioning steps (hosting, api-key, hatching, research)
-    // render in the web bundle under /assistant/onboarding/*, reached through
+    // above. The remaining funnel steps (hatching, research) still render in
+    // the web bundle under /assistant/onboarding/* and are reached through
     // the AssistantPage iframe mount.
     onboarding: {
       welcome: "/account/onboarding/welcome",
       start: "/account/onboarding/start",
+      hosting: "/account/onboarding/hosting",
+      apiKey: "/account/onboarding/api-key",
     },
     login: "/account/login",
     selectAssistant: "/account/select-assistant",
@@ -33,7 +34,10 @@ export const routes = {
       desktopComplete: "/account/oauth/desktop-complete",
     },
   },
-  docs: { localHosting: "/docs/hosting-options/local-hosting" },
+  docs: {
+    hostingOptions: "/docs/hosting-options",
+    localHosting: "/docs/hosting-options/local-hosting",
+  },
 } as const;
 
 export function docsUrl(path: string): string {

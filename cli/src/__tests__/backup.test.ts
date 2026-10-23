@@ -58,7 +58,7 @@ afterAll(() => {
 
 for (const topology of ["local", "docker"] as const) {
   test(`${topology} backup uses root storage without runtime auth`, async () => {
-    const entry: config.AssistantEntry = {
+    const entry: config.LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
       runtimeUrl: "http://127.0.0.1:1",
@@ -77,7 +77,7 @@ for (const topology of ["local", "docker"] as const) {
 }
 
 test("cloud backup calls the cloud backup API with session authentication", async () => {
-  const entry: config.AssistantEntry = {
+  const entry: config.LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
     runtimeUrl: "https://cloud.mycadet.ai",

@@ -3,9 +3,9 @@ import { cliCommand } from "../../lib/cli-name.js";
 import { getGatewayUrl } from "../../lib/runtime-url.js";
 
 import {
-  type AssistantEntry,
+  type LockfileAssistant,
   resolveTargetAssistant,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "../../lib/assistant-config.js";
 import {
   GuardianLeasePermanentError,
@@ -40,14 +40,14 @@ function printUsage(): void {
  * stderr. Returns true on success (the newly leased token is persisted).
  */
 async function repairGuardianCredential(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   gatewayUrl: string,
 ): Promise<boolean> {
   let bootstrapSecret = entry.guardianBootstrapSecret;
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSigningKey();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    saveAssistantEntry(entry);
+    saveLockfileAssistant(entry);
   }
 
   const maxAttempts = 3;

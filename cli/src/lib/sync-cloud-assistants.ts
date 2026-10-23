@@ -16,8 +16,8 @@
 import { isCloudHome } from "./cloud-values.js";
 import {
   loadAllAssistants,
-  removeAssistantEntry,
-  saveAssistantEntry,
+  removeLockfileAssistant,
+  saveLockfileAssistant,
 } from "./assistant-config.js";
 import {
   fetchCurrentUser,
@@ -129,7 +129,7 @@ export async function syncCloudAssistants(
     const nameFields = assistantName ? { name: assistantName } : {};
     if (!existing) {
       log?.(`Adding ${pa.name || pa.id} to lockfile`);
-      saveAssistantEntry({
+      saveLockfileAssistant({
         assistantId: pa.id,
         ...nameFields,
         runtimeUrl: getCloudUrl(),
@@ -139,7 +139,7 @@ export async function syncCloudAssistants(
       added++;
     } else if (assistantName && existing.name !== assistantName) {
       log?.(`Updating ${pa.id} name to ${assistantName}`);
-      saveAssistantEntry({
+      saveLockfileAssistant({
         ...existing,
         name: assistantName,
       });
@@ -152,7 +152,7 @@ export async function syncCloudAssistants(
   for (const id of existingCloudIds) {
     if (!platformIds.has(id)) {
       log?.(`Removing stale entry ${id} from lockfile`);
-      removeAssistantEntry(id);
+      removeLockfileAssistant(id);
       removed++;
     }
   }

@@ -90,7 +90,7 @@ const ChannelIngressListSchema = z.object({
 
 export const ROUTES: GatewayRouteDefinition[] = [
   {
-    path: "/v1/channel-ingress",
+    path: "/channel-ingress",
     method: "get",
     operationId: "channelIngressList",
     summary: "List ingress declarations and their approval state",
@@ -100,7 +100,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: ChannelIngressListSchema,
   },
   {
-    path: "/v1/channel-ingress/{source}/approve",
+    path: "/channel-ingress/{source}/approve",
     method: "post",
     operationId: "channelIngressApprove",
     summary: "Approve an ingress declaration",
@@ -117,7 +117,7 @@ export const ROUTES: GatewayRouteDefinition[] = [
     responseBody: ApprovalViewSchema,
   },
   {
-    path: "/v1/channel-ingress/{source}/revoke",
+    path: "/channel-ingress/{source}/revoke",
     method: "post",
     operationId: "channelIngressRevoke",
     summary: "Revoke an ingress approval",

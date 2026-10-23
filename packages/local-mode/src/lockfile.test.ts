@@ -586,6 +586,76 @@ describe("upsertRendererLockfileAssistant", () => {
       activeAssistant: "paired-1",
     });
   });
+
+  test("a forged renderer save cannot overwrite host-owned state", () => {
+    const hostResources = {
+      instanceDir: "/data/assistants/paired-1",
+      gatewayPort: 7830,
+      daemonPort: 7821,
+      signingKey: "host-key",
+    };
+    writeOnDisk({
+      assistants: [
+        {
+          ...paired,
+          cloud: "docker",
+          resources: hostResources,
+          bearerToken: "host-bearer",
+          conversationKey: "cli-minted",
+        },
+      ],
+      activeAssistant: null,
+    });
+
+    const result = upsertRendererLockfileAssistant(
+      [lockfilePath],
+      {
+        assistantId: "paired-1",
+        name: "Forged name",
+        cloud: "local",
+        resources: { instanceDir: "/attacker", gatewayPort: 1, daemonPort: 2 },
+        bearerToken: "forged-bearer",
+        conversationKey: "forged-key",
+      },
+      "paired-1",
+    );
+
+    expect(result.ok).toBe(true);
+    const stored = readOnDisk();
+    const entry = (Array.isArray(stored.assistants)
+      ? stored.assistants[0]
+      : {}) as Record<string, unknown>;
+    expect(entry.name).toBe("Forged name");
+    expect(entry.cloud).toBe("docker");
+    expect(entry.resources).toEqual(hostResources);
+    expect(entry.bearerToken).toBe("host-bearer");
+    expect(entry.conversationKey).toBe("cli-minted");
+  });
+
+  test("a renderer-created entry never carries host-owned fields", () => {
+    writeOnDisk({ assistants: [], activeAssistant: null });
+
+    const result = upsertRendererLockfileAssistant(
+      [lockfilePath],
+      {
+        assistantId: "fresh-1",
+        name: "Fresh",
+        cloud: "docker",
+        resources: { instanceDir: "/attacker", gatewayPort: 1, daemonPort: 2 },
+      },
+      "fresh-1",
+    );
+
+    expect(result.ok).toBe(true);
+    const stored = readOnDisk();
+    const entry = (Array.isArray(stored.assistants)
+      ? stored.assistants[0]
+      : {}) as Record<string, unknown>;
+    expect(entry.assistantId).toBe("fresh-1");
+    expect(entry.name).toBe("Fresh");
+    expect(entry.cloud).toBeUndefined();
+    expect(entry.resources).toBeUndefined();
+  });
 });
 
 describe("replaceCloudAssistants", () => {

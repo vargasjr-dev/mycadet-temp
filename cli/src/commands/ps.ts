@@ -20,20 +20,22 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
+  type LocalInstanceResources,
   lookupAssistantByIdentifier,
   readRootProcesses,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
 import {
+  checkCloudHealth,
   checkHealth,
-  checkManagedHealth,
+  fetchCloudPs,
   fetchGatewayPs,
-  fetchManagedPs,
   type ManagedProcessEntry,
 } from "../lib/health-check";
 import { readCloudToken } from "../lib/cloud-client";
@@ -243,7 +245,7 @@ const REMOTE_PS_CMD = [
 const REMOTE_SSH_TIMEOUT_MS = 30_000;
 
 async function getRemoteProcessesCustom(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<string> {
   const host = extractHostFromEntry(entry);
   return execOutput("ssh", [...SSH_OPTS, `root@${host}`, REMOTE_PS_CMD], {
@@ -337,9 +339,11 @@ function formatDetectionInfo(proc: DetectedProcess): string {
   return parts.join(" | ");
 }
 
-async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
+async function getLocalProcesses(
+  entry: LockfileAssistant,
+): Promise<TableRow[]> {
   const resources = entry.resources;
-  if (!resources?.instanceDir) {
+  if (!isLocalInstanceResources(resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -381,7 +385,7 @@ async function getLocalProcesses(entry: AssistantEntry): Promise<TableRow[]> {
 // gateway version that predates the route): probe each known process
 // directly.
 async function detectLocalProcessesFallback(
-  resources: NonNullable<AssistantEntry["resources"]>,
+  resources: LocalInstanceResources,
   cadetDir: string,
 ): Promise<TableRow[]> {
   const assistantSpec: ProcessSpec = {
@@ -446,7 +450,9 @@ function isLocalProcessAlive(pid: number): boolean {
   }
 }
 
-async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
+async function getDockerProcesses(
+  entry: LockfileAssistant,
+): Promise<TableRow[]> {
   const res = dockerResourceNames(entry.assistantId);
 
   const containers: { name: string; containerName: string }[] = [
@@ -491,7 +497,7 @@ async function getDockerProcesses(entry: AssistantEntry): Promise<TableRow[]> {
   return results;
 }
 
-function locationFor(entry: AssistantEntry): string {
+function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "local") {
     return entry.resources?.instanceDir ?? "unknown — no instance dir recorded";
   }
@@ -502,7 +508,7 @@ function locationFor(entry: AssistantEntry): string {
 }
 
 async function getAssistantProcessRows(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<TableRow[]> {
   const cloud = entry.cloud;
 
@@ -520,7 +526,7 @@ async function getAssistantProcessRows(
   if (isCloudHome(cloud)) {
     console.log(`  Cadet Cloud ID: ${entry.assistantId}\n`);
 
-    const psData = await fetchManagedPs(entry.runtimeUrl, entry.assistantId);
+    const psData = await fetchCloudPs(entry);
 
     if (!psData) {
       return [
@@ -761,7 +767,7 @@ function assistantLabelFor(assistantId: string | undefined): string | null {
  * splits into /app and /ui — so every CLI-managed row renders machine-level.
  */
 async function assistantRowsWithRootProcesses(
-  assistants: AssistantEntry[],
+  assistants: LockfileAssistant[],
   healths: AssistantHealth[],
   activeAssistantId: string | null,
 ): Promise<TableRow[]> {
@@ -784,10 +790,10 @@ type AssistantHealth = {
 };
 
 async function getAssistantListHealth(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
   const resources = entry.resources;
-  if (entry.cloud === "local" && resources) {
+  if (entry.cloud === "local" && isLocalInstanceResources(resources)) {
     // TODO(ATL-306): Remove readPidFile/getDaemonPidPath in favor of
     // fetching daemon PIDs via the health API (Gateway Security Migration).
     const pid = readPidFile(getDaemonPidPath(resources));
@@ -819,7 +825,7 @@ async function getAssistantListHealth(
   }
 
   if (isCloudHome(entry.cloud)) {
-    return checkManagedHealth(entry.runtimeUrl, entry.assistantId);
+    return checkCloudHealth(entry);
   }
 
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
@@ -827,7 +833,7 @@ async function getAssistantListHealth(
 }
 
 function formatAssistantListRow(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   activeAssistantId: string | null,
   health: AssistantHealth,
 ): TableRow {

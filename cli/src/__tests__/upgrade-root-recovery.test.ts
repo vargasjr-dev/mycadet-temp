@@ -10,7 +10,7 @@ const capture = spyOn(backups, "createBackup");
 const images = spyOn(docker, "captureImageRefs");
 const pull = spyOn(docker, "pullImage");
 const wake = spyOn(docker, "wakeContainers");
-const save = spyOn(config, "saveAssistantEntry");
+const save = spyOn(config, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(docker, "sleepContainers");
 const stop = spyOn(docker, "stopContainers");
@@ -128,7 +128,7 @@ test("versioned restore installs roots into stopped target containers before fir
       stdout: JSON.stringify(["ACTOR_TOKEN_SIGNING_KEY=" + "01".repeat(32)]),
     }),
   );
-  const entry: config.AssistantEntry = {
+  const entry: config.LockfileAssistant = {
     assistantId: "recovery",
     cloud: "docker",
     runtimeUrl: "http://127.0.0.1:1",

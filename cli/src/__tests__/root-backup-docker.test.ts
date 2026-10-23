@@ -25,10 +25,10 @@ import {
   sleepContainers,
   startContainers,
 } from "../lib/docker.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { mockCommands } from "./commands-mock.js";
 
-const entry: AssistantEntry = {
+const entry: LockfileAssistant = {
   assistantId: "docker-backup",
   cloud: "docker",
   runtimeUrl: "http://127.0.0.1:1",

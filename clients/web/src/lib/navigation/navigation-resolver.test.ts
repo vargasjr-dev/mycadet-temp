@@ -217,17 +217,6 @@ describe("resolveNavigation", () => {
       ).toEqual(ALLOW);
     });
 
-    test("redirects non-local user from local-only onboarding screen", () => {
-      // The welcome pin moved to the app bundle with its route — web's
-      // local-only screens are hosting and api-key only now.
-      expect(
-        guard(s({ isLocalClient: false }), "/assistant/onboarding/hosting"),
-      ).toEqual({ action: "redirect", to: "/assistant" });
-      expect(
-        guard(s({ isLocalClient: false }), "/assistant/onboarding/api-key"),
-      ).toEqual({ action: "redirect", to: "/assistant" });
-    });
-
     test("allows non-local user on onboarding screens regardless of assistant count", () => {
       expect(
         guard(s({ isLocalClient: false }), "/assistant/onboarding/hatching"),
@@ -356,7 +345,7 @@ describe("resolveNavigation", () => {
             cloudSession: "present",
           }),
         ),
-      ).toEqual({ action: "redirect", to: "/assistant/onboarding/hosting" });
+      ).toEqual({ action: "redirect", to: "/account/onboarding/hosting" });
     });
 
     test("redirects to welcome when local mode + no platform session", () => {
@@ -1156,7 +1145,7 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/hosting",
+        to: "/account/onboarding/hosting",
       });
     });
 

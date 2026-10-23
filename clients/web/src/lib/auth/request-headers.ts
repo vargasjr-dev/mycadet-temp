@@ -66,7 +66,7 @@ export function buildCadetHeaders(
 /**
  * Headers for a mutating (POST/PUT/PATCH/DELETE) request. Adds the org
  * header and, after bootstrapping the CSRF cookie, the `X-CSRFToken`
- * header that Django's `SessionAuthentication` requires.
+ * header that the cloud's session auth requires.
  */
 export async function buildCadetMutatingHeaders(
   extra?: Record<string, string>,

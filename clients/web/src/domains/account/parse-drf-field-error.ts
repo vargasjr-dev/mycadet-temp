@@ -1,5 +1,5 @@
 /**
- * Shared DRF (Django REST Framework) field-error parser.
+ * Shared field-error parser (server `{field: [messages]}` shape).
  *
  * DRF validation errors arrive in two shapes depending on whether the
  * serializer raises with a ``code=`` keyword:

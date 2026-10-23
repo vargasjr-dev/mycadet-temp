@@ -2,9 +2,8 @@
  * Smoke tests for `ProfileCard`.
  *
  * The fetch surface and debounced availability check are tested at the
- * lib level (`profile.test.ts`, `handle.test.ts`) and via the Django
- * integration tests (`app/users/tests/test_views.py`,
- * `app/assistant/tests/test_handle_*.py`). Here we verify the React render:
+ * lib level (`profile.test.ts`, `handle.test.ts`) and via the cloud api's
+ * integration tests. Here we verify the React render:
  *
  *  - mounts with a loading placeholder
  *  - renders the user handle editor once `fetchMe` resolves
@@ -110,7 +109,7 @@ const { ProfileCard } = await import("@/components/profile-card");
 
 function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
   // OSS Assistant type carries a few more fields than the cloud type
-  // (release_channel, access_consented). Populate the union of both so the
+  // (access_consented). Populate the union of both so the
   // fixture stays type-safe if either generator regenerates.
   return {
     id: "asst-1",
@@ -120,7 +119,6 @@ function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
     status: "active",
     created: "2026-01-01T00:00:00Z",
     modified: "2026-01-01T00:00:00Z",
-    release_channel: "stable",
     current_release_version: null,
     machine_id: null,
     vembda_cluster_id: null,

@@ -8,30 +8,9 @@
     "adding": "Añadiendo…",
     "tryAgain": "Volver a intentarlo",
     "remove": "Quitar {value}",
-    "loginToUse": "Inicia sesión para usar",
     "downloadMacOSApp": "Descargar la app de macOS",
     "downloadWindowsApp": "Descargar la app de Windows",
     "claim": "Reclamar"
-  },
-  "hostingScreen": {
-    "title": "Alojamiento",
-    "body": "Elige dónde quieres que viva tu asistente.",
-    "needHelp": "¿Necesitas ayuda para decidir?",
-    "optionsAriaLabel": "Opciones de alojamiento"
-  },
-  "apiKeyScreen": {
-    "title": "Conectar un proveedor de modelos",
-    "body": "Elige el proveedor de modelos que debe usar tu asistente.",
-    "providerLabel": "Proveedor",
-    "modelLabel": "Modelo",
-    "baseUrlLabel": "URL base",
-    "modelsLabel": "Modelos",
-    "modelsPlaceholder": "modelo-1, modelo-2",
-    "modelsHelp": "Identificadores de modelo separados por comas que expone tu endpoint.",
-    "apiKeyLabel": "Clave de API de {provider}",
-    "apiKeyPlaceholder": "Introduce tu clave de API",
-    "noKeyPrompt": "¿No la tienes?",
-    "getKeyLink": "Consigue una clave de API aquí"
   },
   "hatchingScreen": {
     "apiKeyFailed": "Tu clave de API no ha funcionado",
