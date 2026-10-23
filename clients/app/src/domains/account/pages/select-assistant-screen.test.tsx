@@ -94,14 +94,20 @@ afterEach(() => {
 });
 
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
-  request
-    .mockResolvedValueOnce(
-      Response.json({
+  // The route's own auth machinery probes the platform session between API
+  // calls (see the create-flow pin below) — seed by URL, not FIFO order.
+  const router = setup(undefined, true, async (url) => {
+    const target = String(url);
+    if (target.includes("/v1/assistants/?")) {
+      return Response.json({
         results: [{ id: "assistant-1", name: "One" }, { id: "assistant-2" }],
-      }),
-    )
-    .mockResolvedValueOnce(Response.json(detail));
-  const router = setup(undefined, true);
+      });
+    }
+    if (target.includes("/v1/assistants/assistant-2/")) {
+      return Response.json(detail);
+    }
+    return iframeDocument.clone();
+  });
   expect(await screen.findByRole("radio", { name: /^One/ })).toBeDefined();
   expect(request).toHaveBeenCalledTimes(1);
   fireEvent.click(screen.getByRole("radio", { name: /^New Assistant/ }));
@@ -117,7 +123,7 @@ test("the account route lists names, defaulting unnamed assistants, then resolve
   expect(
     request.mock.calls
       .map(([url]) => String(url))
-      .filter((url) => url.includes("/v1/")),
+      .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
     "http://localhost:3001/v1/assistants/?limit=100&offset=0",
     "http://localhost:3001/v1/assistants/assistant-2/",
@@ -201,14 +207,18 @@ test("arrow keys move focus across cards without selecting", async () => {
 });
 
 test("Enter selects the focused card", async () => {
-  request
-    .mockResolvedValueOnce(
-      Response.json({ results: [{ id: "assistant-1", name: "One" }] }),
-    )
+  const router = setup(undefined, false, async (url) => {
+    const target = String(url);
+    if (target.includes("/v1/assistants/?")) {
+      return Response.json({ results: [{ id: "assistant-1", name: "One" }] });
+    }
     // The shell rejects a detail whose id mismatches the selection, so the
-    // queued detail must answer the assistant the card navigated with.
-    .mockResolvedValueOnce(Response.json({ ...detail, id: "assistant-1" }));
-  const router = setup();
+    // detail must answer the assistant the card navigated with.
+    if (target.includes("/v1/assistants/assistant-1/")) {
+      return Response.json({ ...detail, id: "assistant-1" });
+    }
+    return iframeDocument.clone();
+  });
   const one = await screen.findByRole("radio", { name: /^One/ });
   fireEvent.keyDown(one, { key: "Enter" });
   const frame = await screen.findByTitle("Assistant");
@@ -411,11 +421,19 @@ test("leaving the chooser aborts its request and ignores a late reply", async ()
 });
 
 test("browser history restores selection and frame navigation retains it", async () => {
-  request.mockResolvedValueOnce(Response.json(detail));
-  const router = setup({
-    pathname: "/assistant/files",
-    state: assistantSelectionState("assistant-2"),
-  });
+  const router = setup(
+    {
+      pathname: "/assistant/files",
+      state: assistantSelectionState("assistant-2"),
+    },
+    false,
+    async (url) => {
+      if (String(url).includes("/v1/assistants/assistant-2/")) {
+        return Response.json(detail);
+      }
+      return iframeDocument.clone();
+    },
+  );
   const frame = await screen.findByTitle("Assistant");
   if (!(frame instanceof HTMLIFrameElement)) {
     throw new Error("Missing iframe");
@@ -438,7 +456,12 @@ test("browser history restores selection and frame navigation retains it", async
   expect(router.state.location.state).toEqual(
     assistantSelectionState("assistant-2"),
   );
-  expect(request).toHaveBeenCalledTimes(1);
+  // The auth machinery's platform-session probe rides along; pin the API.
+  expect(
+    request.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
+  ).toEqual(["http://localhost:3001/v1/assistants/assistant-2/"]);
 });
 
 function seedOrigin(url: string, name?: string): void {
@@ -607,8 +630,8 @@ describe("remembered origins", () => {
       // entry from the id in the path (bearer injected server-side).
       await waitFor(() => {
         expect(
-          request.mock.calls.some(
-            ([url]) => String(url).includes("/v1/assistants/paired-1"),
+          request.mock.calls.some(([url]) =>
+            String(url).includes("/v1/assistants/paired-1"),
           ),
         ).toBe(true);
       });

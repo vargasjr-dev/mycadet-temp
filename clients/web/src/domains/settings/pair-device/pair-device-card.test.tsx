@@ -303,7 +303,7 @@ describe("PairDeviceCard", () => {
     expect(mintCalls()[0]?.url).toContain(
       "/v1/assistants/self/remote-web/pairing-challenge",
     );
-    expect(requestBody(mintCalls()[0])).toEqual({ publicBaseUrl: PUBLIC_URL });
+    expect(requestBody(mintCalls()[0])).toEqual({});
     expect(mintCalls()[1]?.url).toContain(
       "/v1/assistants/self/remote-web/pairing-verification",
     );
@@ -1012,7 +1012,7 @@ describe("PairDeviceCard: tunnel status", () => {
     await waitFor(() =>
       expect(screen.getByTitle("Device pairing QR code")).toBeTruthy(),
     );
-    expect(requestBody(mintCalls()[0])).toEqual({ publicBaseUrl: PUBLIC_URL });
+    expect(requestBody(mintCalls()[0])).toEqual({});
   });
 });
 
