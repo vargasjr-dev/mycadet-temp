@@ -14,7 +14,6 @@ mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: isLocalClientMock,
   hasAssistants: hasAssistantsMock,
-  getLocalGatewayUrl: () => undefined,
   getSelectedAssistant: () => mockSelectedAssistant,
   getActiveAssistant: () => mockSelectedAssistant,
   isLocalAssistant: (a: {
@@ -22,17 +21,13 @@ mock.module("@/lib/local-mode", () => ({
     resources?: { gatewayPort?: number };
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
   isCadetCloudRemote: () => false,
+  getSelfHostedActorToken: () => (mockGatewayTokenPresent ? "gw-token" : null),
+  isGatewaySessionLive: () => mockGatewayAuthMode,
 }));
 
-// Drive the non-reactive gateway token off a flag.
+// Drive the gateway session off a flag (the slot's token is the credential).
 let mockGatewayTokenPresent = false;
 let mockGatewayAuthMode = false;
-const gatewaySessionActual = await import("@/lib/auth/gateway-session");
-mock.module("@/lib/auth/gateway-session", () => ({
-  ...gatewaySessionActual,
-  getGatewayToken: () => (mockGatewayTokenPresent ? "gw-token" : null),
-  isGatewayAuthMode: () => mockGatewayAuthMode,
-}));
 
 // Consent prefs are read by buildNavigationState; pinned current by default so
 // the consent gate doesn't interfere with the session-admission assertions

@@ -67,20 +67,13 @@ mock.module("@/lib/local-mode", () => ({
   ...localModeModule,
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
+  isGatewaySessionLive: () => false,
   getSelectedAssistant: () => localSelectedRef.value,
   getActiveAssistant: () =>
     resolvedRef.activeAssistantId
       ? { assistantId: resolvedRef.activeAssistantId }
       : undefined,
   setActiveLockfileAssistant: async () => undefined,
-}));
-
-mock.module("@/lib/auth/gateway-session", () => ({
-  setRemoteGatewayToken: () => {},
-  isGatewayAuthMode: () => false,
-  // lifecycle-service (in the palette's import graph) reads the token at
-  // call time; no gateway session exists under these tests.
-  getGatewayToken: () => null,
 }));
 
 mock.module("@/stores/auth-store", () => {

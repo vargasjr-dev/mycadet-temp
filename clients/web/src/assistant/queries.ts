@@ -33,10 +33,13 @@ import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { isAuthenticated } from "@/stores/session-status";
 import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
-import { isGatewayAuthMode, getGatewayToken } from "@/lib/auth/gateway-session";
+import {
+  getSelfHostedActorToken,
+  setSelfHostedConnection,
+} from "@/lib/self-hosted/connection";
 import {
   getLocalAssistants,
+  isGatewaySessionLive,
   isLocalClient,
   isServedGatewayRuntime,
   getSelectedAssistant,
@@ -136,7 +139,7 @@ function resolveSelectedCloudAssistantId(): string | null {
 export function applyGatewayAuthBoot(): void {
   let ingressUrl = window.location.origin;
   let resolvedAssistantId = "self";
-  let rendererToken = getGatewayToken();
+  let rendererToken = getSelfHostedActorToken();
   if (isServedGatewayRuntime()) {
     ingressUrl = getRemoteGatewayIngressUrl();
   } else {
@@ -206,7 +209,7 @@ export async function recheckAssistant(
   queryClient: QueryClient,
   assistantIdOverride?: string,
 ): Promise<GetAssistantResult | undefined> {
-  if (isGatewayAuthMode()) {
+  if (isGatewaySessionLive()) {
     applyGatewayAuthBoot();
     return queryClient.getQueryData(assistantQueryKey(null));
   }
@@ -248,7 +251,7 @@ function useShouldQueryServer(): boolean {
   const isOrgReady = useIsOrgReady();
   return (
     isAuthenticated(sessionStatus) &&
-    !isGatewayAuthMode() &&
+    !isGatewaySessionLive() &&
     (hasCloudSession || !isLocalClient()) &&
     isOrgReady
   );
@@ -274,7 +277,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
   const state = useMemo<AssistantResolutionState>(() => {
     // Gateway-auth mode resolves the assistant locally — the gateway issues
     // the session token directly and there is nothing to fetch.
-    if (isGatewayAuthMode()) {
+    if (isGatewaySessionLive()) {
       return { kind: "active", isLocal: true };
     }
     if (!shouldQueryServer || query.isPending) {
@@ -314,7 +317,7 @@ export function useAssistantBootResolution(): AssistantResolutionResult {
   // state. Re-runs when the selection changes so a newly connected assistant
   // takes over.
   useEffect(() => {
-    if (!isGatewayAuthMode()) {
+    if (!isGatewaySessionLive()) {
       return;
     }
     applyGatewayAuthBoot();

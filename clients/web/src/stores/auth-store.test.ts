@@ -50,7 +50,6 @@ let mockSelectedAssistant:
 let mockLockfileAssistants: Array<{ assistantId: string; cloud: string }> = [];
 let mockCloudAssistants: unknown[] = [];
 let mockPrimeError: Error | null = null;
-let mockGatewayToken: string | null = null;
 const setSelectedAssistantMock = mock(async (_id: string | null) => {});
 const primeLocalGatewayConnectionMock = mock(
   async (_target?: { assistantId: string; cloud: string }) => {
@@ -69,7 +68,6 @@ const primeLocalGatewayConnectionWithRepairMock = mock(async () => {
     throw mockPrimeError;
   }
 });
-const ensureGatewayTokenMock = mock(async () => {});
 const refreshRemoteGatewaySessionMock = mock(async () => false);
 const restoreConsentForUserMock = mock(
   (_userId: string | null): { tos: boolean; privacy: boolean } => ({
@@ -153,26 +151,15 @@ const mockPairedSelection = () =>
   mockSelectedAssistant?.runtimeUrl != null &&
   !/\/\/127\.0\.0\.1|\/\/localhost/.test(mockSelectedAssistant.runtimeUrl);
 
-mock.module("@/lib/auth/gateway-session", () => ({
-  isGatewayAuthEnabled: () => mockIsGatewayAuth,
-  isGatewayAuthMode: () => mockGatewayToken !== null || mockPairedSelection(),
-  ensureGatewayToken: ensureGatewayTokenMock,
-  clearGatewayToken: () => {},
-  getGatewayToken: () => mockGatewayToken,
-  getLocalTokenUrl: () => "http://localhost/token",
-}));
-
-mock.module("@/lib/auth/remote-gateway-session", () => ({
-  refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
-  remoteGatewayPublicPathPrefix: () => "",
-}));
-
 mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => mockIsLocalClient,
   isLocalAssistant: (a: { cloud?: string }) => a.cloud === "local",
   isCloudAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isCadetCloudRemote: () => mockIsCadetCloudRemote,
   isServedGatewayRuntime: () => mockIsServedGatewayRuntime,
+  hasGatewayAssistant: () => mockIsGatewayAuth,
+  isGatewaySessionLive: () =>
+    getSelfHostedActorToken() !== null || mockPairedSelection(),
   getCloudAssistants: () => mockCloudAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,
@@ -183,6 +170,13 @@ mock.module("@/lib/local-mode", () => ({
     primeLocalGatewayConnectionWithStartupRetryMock,
   primeLocalGatewayConnectionWithRepair:
     primeLocalGatewayConnectionWithRepairMock,
+}));
+
+
+
+mock.module("@/lib/auth/remote-gateway-session", () => ({
+  refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
+  remoteGatewayPublicPathPrefix: () => "",
 }));
 
 mock.module("@/lib/local-cloud-identity", () => ({
@@ -369,14 +363,12 @@ beforeEach(() => {
   mockIsNativePlatform = false;
   mockIsBiometricEnabled = false;
   mockBiometricToken = null;
-  mockGatewayToken = null;
   setSelfHostedConnection(null);
   mockPrimeError = null;
   setSelectedAssistantMock.mockClear();
   primeLocalGatewayConnectionMock.mockClear();
   primeLocalGatewayConnectionWithStartupRetryMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
-  ensureGatewayTokenMock.mockClear();
   refreshRemoteGatewaySessionMock.mockClear();
   restoreConsentForUserMock.mockClear();
   persistConsentForUserMock.mockClear();
@@ -423,7 +415,6 @@ describe("auth store onboarding flag reconciliation", () => {
         expect(
           primeLocalGatewayConnectionWithStartupRetryMock,
         ).not.toHaveBeenCalled();
-        expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
         expect(useAuthStore.getState().cloudSession).toBe("absent");
         expect(useAuthStore.getState().sessionStatus).toBe(
           refreshSucceeds ? "authenticated" : "unauthenticated",
@@ -452,7 +443,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
@@ -563,7 +553,10 @@ describe("auth store onboarding flag reconciliation", () => {
   });
 
   test("refreshSession keeps remote-gateway sessions when refresh throws but a token is still valid", async () => {
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => {
       throw new TypeError("Failed to fetch");
     });
@@ -583,7 +576,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // stale platform user and "present" status are cleared.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true; // isGatewayAuthEnabled() === true
-    mockGatewayToken = null; // isGatewayAuthMode() === false (token not minted)
     sessionUser = null; // platform probe settles 401
     useAuthStore.setState({
       sessionStatus: "authenticated",
@@ -603,7 +595,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // platform account for the probe to find.
     mockIsLocalClient = true;
     mockIsGatewayAuth = false;
-    mockGatewayToken = null;
     mockCloudAssistants = [];
     sessionUser = null;
     useAuthStore.setState({
@@ -623,7 +614,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // demotion above excludes this case and login is the right destination.
     mockIsLocalClient = true;
     mockIsGatewayAuth = false;
-    mockGatewayToken = null;
     mockCloudAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
     sessionUser = null;
     useAuthStore.setState({
@@ -641,7 +631,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // still logs out.
     mockIsLocalClient = false;
     mockIsGatewayAuth = false;
-    mockGatewayToken = null;
     mockCloudAssistants = [];
     sessionUser = null;
     useAuthStore.setState({
@@ -661,7 +650,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // settles the session once its token mints (via connectLocalAssistant).
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     sessionUser = null;
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
@@ -680,7 +668,6 @@ describe("auth store onboarding flag reconciliation", () => {
     // update the store, even while the gateway token isn't minted.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
 
@@ -697,7 +684,10 @@ describe("auth store onboarding flag reconciliation", () => {
   test("successful local platform probe bootstraps the selected local assistant identity", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     sessionUser = { id: "user-1", email: "user@example.com" };
 
@@ -861,7 +851,10 @@ describe("session cleanup on logout", () => {
   // first re-render after logout.
   test("gateway logout clears the active id before clearing the selection", async () => {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     useAuthStore.setState({ sessionStatus: "authenticated" });
     const order: string[] = [];
     const unsubscribe = useResolvedAssistantsStore.subscribe((state) => {
@@ -964,7 +957,10 @@ describe("iOS widget snapshot on session end", () => {
 
   test("gateway logout drops the widget snapshot", async () => {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     useAuthStore.setState({ sessionStatus: "authenticated" });
 
     await useAuthStore.getState().logout();
@@ -1083,7 +1079,6 @@ describe("iOS widget snapshot on session end", () => {
     // local assistant's conversations are still the user's own.
     mockIsLocalClient = true;
     mockIsGatewayAuth = false;
-    mockGatewayToken = null;
     mockCloudAssistants = [];
     sessionUser = null;
     useAuthStore.setState({
@@ -1181,7 +1176,10 @@ describe("iOS widget snapshot on session end", () => {
 
   test("a gateway logout outlasts a refresh that authenticates during the clear", async () => {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     mockIsLocalClient = false;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ sessionStatus: "authenticated" });
@@ -1211,7 +1209,10 @@ describe("iOS widget snapshot on session end", () => {
     await flushTasks();
 
     mockPrimeError = null;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     releaseClear();
@@ -1374,7 +1375,10 @@ describe("platform session probe resolution", () => {
   // consumers don't flicker mid-session.
   test("a re-run gateway probe retains the last status until it settles", async () => {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
@@ -1400,7 +1404,10 @@ describe("platform session probe resolution", () => {
   // probe's outcome.
   test("a stale probe completing after a newer one does not change status", async () => {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
@@ -1613,7 +1620,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     // the non-gateway branch (isGatewayAuthMode() is false without a token).
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
     useAuthStore.setState({
@@ -1634,7 +1640,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
   test("refreshSession settles absent on an assistants-list rejection", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockListAssistantsResult = { ok: false, status: 401, error: {} };
     useAuthStore.setState({
@@ -1999,7 +2004,6 @@ describe("paired selection in the gateway-auth session paths", () => {
   test("refreshSession re-primes a paired selection and never fetches the SPA origin's /auth/token", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     mockSelectedAssistant = pairedSelection;
     const fetchedUrls: string[] = [];
     const realFetch = globalThis.fetch;
@@ -2019,8 +2023,6 @@ describe("paired selection in the gateway-auth session paths", () => {
     // target and resolves the selection itself.
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith();
-    // The undefined-token-URL fallback would mint at the SPA's own origin.
-    expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
     expect(fetchedUrls).toEqual([]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
@@ -2028,7 +2030,6 @@ describe("paired selection in the gateway-auth session paths", () => {
   test("refreshSession ends the session when paired proxy authorization fails", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = null;
     mockSelectedAssistant = pairedSelection;
     mockPrimeError = new Error("paired proxy authorization failed");
     useAuthStore.setState({ sessionStatus: "authenticated" });
@@ -2036,20 +2037,20 @@ describe("paired selection in the gateway-auth session paths", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
   });
 
   test("refreshSession rotates a local selection's gateway JWT without re-minting", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
-    mockGatewayToken = "access-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    // The gateway-JWT rotation covers the refresh; the token-URL mint only
-    // runs when no session exists to rotate.
-    expect(ensureGatewayTokenMock).not.toHaveBeenCalled();
+    // The gateway-JWT rotation covers the refresh.
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
@@ -2310,7 +2311,10 @@ describe("identity kind (platform vs local gateway access)", () => {
 
 test("explicit cloud-account logout revokes cloud and biometric credentials even in gateway mode", async () => {
   mockIsGatewayAuth = true;
-  mockGatewayToken = "gateway-token";
+  setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
   const revokeSession = mock(async () => {});
   await useAuthStore.getState().logout({ cloudAccount: { revokeSession } });
   expect(revokeSession).toHaveBeenCalledTimes(1);
@@ -2321,7 +2325,10 @@ test("explicit cloud-account logout revokes cloud and biometric credentials even
 
 test("default gateway logout retains gateway-only behavior", async () => {
   mockIsGatewayAuth = true;
-  mockGatewayToken = "gateway-token";
+  setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
   await useAuthStore.getState().logout();
   expect(logoutMock).not.toHaveBeenCalled();
 });
@@ -2332,7 +2339,10 @@ test("cloud logout scopes notify account sources until cleanup finishes; gateway
   const unsubscribe = subscribeCloudAccountLogout(started);
   try {
     mockIsGatewayAuth = true;
-    mockGatewayToken = "gateway-token";
+    setSelfHostedConnection({
+      url: window.location.origin,
+      token: "slot-token",
+    });
     await useAuthStore.getState().logout();
     expect(started).not.toHaveBeenCalled();
     await useAuthStore.getState().logout({

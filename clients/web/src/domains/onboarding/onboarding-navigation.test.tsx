@@ -72,9 +72,6 @@ mock.module("@/utils/native-anchor", () => ({
   handleNativeAnchorClick: () => {},
 }));
 
-mock.module("@/lib/auth/gateway-session", () => ({
-  clearGatewayToken: mock(() => {}),
-}));
 mock.module("@/lib/self-hosted/connection", () => ({
   setSelfHostedConnection: mock(() => {}),
 }));

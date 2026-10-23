@@ -31,7 +31,6 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
@@ -491,7 +490,7 @@ const gatewayRequestInterceptor = createInterceptor({
  * Neither path clears anything first: the slot's token is null in this mode
  * — bearer custody lives in the trusted host, whose forward already forces
  * one re-mint and retry of its own before a 401 can reach this interceptor
- * at all — so predicates such as `isGatewayAuthMode()` (topology-based
+ * at all — so predicates such as `isGatewaySessionLive()` (topology-based
  * here) hold steady across the recovery. A session refresh or lifecycle
  * pass that fires mid-recovery therefore keeps taking the gateway branch.
  *
@@ -572,7 +571,6 @@ async function recoverRemoteGatewaySessionInPlace(): Promise<boolean> {
   // this session, so boot into the pairing flow.
   recordLifecycleDiagnostic("gw_401_recovery", { outcome: "reload" });
   gw401ReloadFired = true;
-  clearGatewayToken();
   window.location.reload();
   return false;
 }

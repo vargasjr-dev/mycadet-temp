@@ -16,7 +16,7 @@ export interface NavigationState {
   isLocalClient: boolean;
   isRemoteGateway: boolean;
   remoteGatewayPublicPathPrefix: string;
-  isGatewayAuth: boolean;
+  isGatewaySessionLive: boolean;
   hasAssistants: boolean;
   sessionSettled: boolean;
   isAuthenticated: boolean;
@@ -240,7 +240,7 @@ function waitForSession(state: NavigationState): NavigationDecision | null {
  * A gateway session answers for itself, so it skips the rest of the pipeline.
  */
 function allowGatewayAuth(state: NavigationState): NavigationDecision | null {
-  if (!state.isGatewayAuth) {
+  if (!state.isGatewaySessionLive) {
     return null;
   }
   return { action: "allow" };
@@ -264,17 +264,17 @@ function stripRemoteGatewayPublicPathPrefix(
 }
 
 /**
- * The gateway-session token decides, not the auth store: the pairing page's
- * boot settles the store unauthenticated on the public pair route before the
- * approved exchange lands, and the token the exchange establishes is the
- * same signal `allowGatewayAuth` reads next.
+ * The connection slot's device credential decides, not the auth store: the
+ * pairing page's boot settles the store unauthenticated on the public pair
+ * route before the approved exchange lands, and the credential the exchange
+ * establishes is the same signal `isGatewaySessionLive` reads next.
  */
 function requireRemoteGatewayPairing(
   state: NavigationState,
   _path: string,
   pathnameWithSearch: string,
 ): NavigationDecision | null {
-  if (!state.isRemoteGateway || state.isGatewayAuth) {
+  if (!state.isRemoteGateway || state.isGatewaySessionLive) {
     return null;
   }
 

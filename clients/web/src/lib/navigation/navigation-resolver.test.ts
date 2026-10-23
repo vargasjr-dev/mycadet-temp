@@ -13,7 +13,7 @@ const base: NavigationState = {
   isLocalClient: false,
   isRemoteGateway: false,
   remoteGatewayPublicPathPrefix: "",
-  isGatewayAuth: false,
+  isGatewaySessionLive: false,
   hasAssistants: true,
   sessionSettled: true,
   isAuthenticated: true,
@@ -82,7 +82,7 @@ describe("resolveNavigation", () => {
     });
 
     test("allows gateway auth regardless of auth status", () => {
-      expect(guard(s({ isGatewayAuth: true, isAuthenticated: false }))).toEqual(
+      expect(guard(s({ isGatewaySessionLive: true, isAuthenticated: false }))).toEqual(
         ALLOW,
       );
     });
@@ -128,7 +128,7 @@ describe("resolveNavigation", () => {
       const result = guard(
         s({
           isAuthenticated: false,
-          isGatewayAuth: true,
+          isGatewaySessionLive: true,
           isLocalClient: true,
           isRemoteGateway: true,
           hasAssistants: true,

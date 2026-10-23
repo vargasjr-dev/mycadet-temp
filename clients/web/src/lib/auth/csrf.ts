@@ -9,7 +9,7 @@
  * Reference: https://docs.djangoproject.com/en/5.1/howto/csrf/#acquiring-the-token-if-csrf-use-sessions-and-csrf-cookie-httponly-are-not-in-use
  */
 import { getAllauthByClientV1AuthSession } from "@/generated/auth/sdk.gen";
-import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
+import { isGatewaySessionLive } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 
 const CSRF_COOKIE_NAME = import.meta.env.PROD
@@ -46,7 +46,7 @@ export async function ensureCsrfCookie(): Promise<void> {
   if (isElectron()) {
     return;
   }
-  if (isGatewayAuthMode()) {
+  if (isGatewaySessionLive()) {
     return;
   }
 

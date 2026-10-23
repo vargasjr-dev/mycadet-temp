@@ -21,7 +21,7 @@ export function shouldAdoptExistingAssistant({
   hostingParam: string | null;
   /** Build-time local mode (`isLocalClient()`). */
   localMode: boolean;
-  /** A live local gateway session exists (`isGatewayAuthMode()`). */
+  /** A live gateway session exists (`isGatewaySessionLive()`). */
   gatewayAuthSession: boolean;
 }): boolean {
   if (!localMode) {

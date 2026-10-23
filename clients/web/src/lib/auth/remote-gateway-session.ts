@@ -6,11 +6,7 @@ import type {
   RemoteWebPairingTokenRequest,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import {
-  getGatewayToken,
-  setRemoteGatewayToken,
-} from "@/lib/auth/gateway-session";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import { getSelfHostedActorToken, setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 export {
   parseRemoteWebPairingParams,
@@ -109,7 +105,7 @@ function toEpochMilliseconds(value: string | number): number {
 }
 
 function shouldRefreshRemoteGatewaySession(): boolean {
-  if (!getGatewayToken()) {
+  if (!getSelfHostedActorToken()) {
     return true;
   }
   if (remoteGatewayRefreshAfterMs <= 0) {
@@ -232,10 +228,6 @@ export function activateRemoteGatewaySession(
   session: RemoteGatewaySessionCredentials,
 ): void {
   remoteGatewayRefreshAfterMs = toEpochMilliseconds(session.refreshAfter);
-  setRemoteGatewayToken({
-    accessToken: session.accessToken,
-    accessTokenExpiresAt: session.accessTokenExpiresAt,
-  });
   setSelfHostedConnection({
     url: `${window.location.origin}${remoteGatewayPublicPathPrefix()}`,
     token: session.accessToken,

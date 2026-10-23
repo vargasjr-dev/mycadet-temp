@@ -38,12 +38,6 @@ import {
 } from "@/runtime/session-token";
 import { clearWidgetSnapshot } from "@/runtime/widget-snapshot";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
-import {
-  isGatewayAuthEnabled,
-  isGatewayAuthMode,
-  clearGatewayToken,
-  getGatewayToken,
-} from "@/lib/auth/gateway-session";
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
@@ -52,6 +46,8 @@ import {
   getLocalAssistants,
   isCadetCloudRemote,
   isServedGatewayRuntime,
+  hasGatewayAssistant,
+  isGatewaySessionLive,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
@@ -86,7 +82,10 @@ import {
   useOrganizationStore,
 } from "@/stores/organization-store";
 import { clearUserScopedStorage } from "@/lib/auth/session-cleanup";
-import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
+import {
+  getSelfHostedActorToken,
+  setSelfHostedConnection,
+} from "@/lib/self-hosted/connection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { subscribe } from "@/lib/event-bus";
 import { isElectron } from "@/runtime/is-electron";
@@ -703,7 +702,7 @@ function probeCloudSessionIfReachable(
 ): void {
   if (
     !isLocalClient() ||
-    isGatewayAuthEnabled() ||
+    hasGatewayAssistant() ||
     getCloudAssistants().length > 0
   ) {
     probeCloudSession(set, options);
@@ -734,7 +733,7 @@ async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
   } catch {
     // A network failure says nothing about an already-valid in-memory token.
   }
-  return getGatewayToken() !== null;
+  return getSelfHostedActorToken() !== null;
 }
 
 const useAuthStoreBase = create<AuthStore>()((set, get) => ({
@@ -794,7 +793,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       return;
     }
 
-    if (isGatewayAuthEnabled()) {
+    if (hasGatewayAssistant()) {
       try {
         // Ride out the gateway's startup window: on reboot the gateway (a
         // Login Item) restarts concurrently with the app. The mint fails to
@@ -814,7 +813,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       return;
     }
 
-    if (isLocalClient() && !isGatewayAuthEnabled()) {
+    if (isLocalClient() && !hasGatewayAssistant()) {
       const hasCloudAssistants = getCloudAssistants().length > 0;
       if (hasCloudAssistants) {
         // Platform assistants require a valid session — await the check
@@ -1048,7 +1047,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       return false;
     }
 
-    if (isGatewayAuthMode()) {
+    if (isGatewaySessionLive()) {
       try {
         // Both selection kinds collapse into the prime: it probes the
         // gateway through the host-routed readyz route and seeds the
@@ -1142,7 +1141,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // already made false.
     const localSessionStandsAlone =
       isLocalClient() &&
-      (isGatewayAuthEnabled() || getCloudAssistants().length === 0);
+      (hasGatewayAssistant() || getCloudAssistants().length === 0);
     if (localSessionStandsAlone) {
       const wasAuthenticated = isAuthenticated(get().sessionStatus);
       if (wasAuthenticated) {
@@ -1159,7 +1158,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
 
   logout: async (options) => {
     const finishes =
-      !isGatewayAuthMode() || options?.cloudAccount
+      !isGatewaySessionLive() || options?.cloudAccount
         ? [...cloudLogoutListeners].map((listener) => listener())
         : [];
     try {
@@ -1168,7 +1167,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       // that resumes partway through would otherwise re-persist the departing
       // user's snapshot and consent on its way to an authenticated write.
       logoutGeneration += 1;
-      if (isGatewayAuthMode() && !options?.cloudAccount) {
+      if (isGatewaySessionLive() && !options?.cloudAccount) {
         // Clear lifecycle state BEFORE `sessionStatus` leaves `authenticated`
         // so the assistant sync hooks don't observe a stale assistant id in
         // their first re-render, and BEFORE the selection clear so the
@@ -1179,7 +1178,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         useResolvedAssistantsStore.getState().setActiveAssistantId(null);
         setSelfHostedConnection(null);
         await setSelectedAssistant(null);
-        clearGatewayToken();
         clearOrganization();
         clearUserScopedStorage();
         await endSession(set, { authoritative: true });
@@ -1216,8 +1214,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           await clearLocalCloudSession();
         }
         void deleteBiometricToken();
-        if (options?.cloudAccount && isGatewayAuthMode()) {
-          clearGatewayToken();
+        if (options?.cloudAccount && isGatewaySessionLive()) {
           setSelfHostedConnection(null);
         }
         clearOrganization();

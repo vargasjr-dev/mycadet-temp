@@ -75,11 +75,9 @@ import {
   reconcileSelectedAssistant,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
+  hasGatewayAssistant,
+  isGatewaySessionLive,
 } from "@/lib/local-mode";
-import {
-  clearGatewayToken,
-  isGatewayAuthMode,
-} from "@/lib/auth/gateway-session";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -152,7 +150,6 @@ afterEach(() => {
   pairingStartHost.mockClear();
   pairingPollHost.mockClear();
   pairingCancelHost.mockClear();
-  clearGatewayToken();
   setSelfHostedConnection(null);
   useAssistantIdentityStore.getState().clearIdentity();
 });
@@ -322,7 +319,7 @@ describe("removePairedAssistantFromLockfile", () => {
 
     expect(result.ok).toBe(true);
     expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
-    // clearGatewayToken is memory-only now — stored keys are never scrubbed.
+    // The slot is memory-only now — stored keys are never scrubbed.
     expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe("tok");
     expect(getSelfHostedIngressUrl()).toBeNull();
   });
@@ -887,7 +884,7 @@ describe("primeLocalGatewayConnection", () => {
     // directly (packaged-app CSP and browser CORS both block it).
     expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
     expect(getSelfHostedActorToken()).toBeNull();
-    expect(isGatewayAuthMode()).toBe(true);
+    expect(isGatewaySessionLive()).toBe(true);
     // The prime neither reads nor scrubs stored credentials — LS rides out untouched.
     expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe(
       "legacy-paired-guardian",
@@ -908,7 +905,7 @@ describe("primeLocalGatewayConnection", () => {
     let authModeDuringProbe: boolean | undefined;
     globalThis.fetch = mock(async () => {
       ingressDuringProbe = getSelfHostedIngressUrl();
-      authModeDuringProbe = isGatewayAuthMode();
+      authModeDuringProbe = isGatewaySessionLive();
       return Response.json({ status: "ok", ready: true });
     }) as unknown as typeof fetch;
 
@@ -926,7 +923,7 @@ describe("primeLocalGatewayConnection", () => {
       Response.json({ status: "ok", ready: true }),
     ) as unknown as typeof fetch;
     await primeLocalGatewayConnection(pairedEntry);
-    expect(isGatewayAuthMode()).toBe(true);
+    expect(isGatewaySessionLive()).toBe(true);
 
     globalThis.fetch = mock(
       async () => new Response("Guardian token not found", { status: 404 }),
@@ -939,7 +936,7 @@ describe("primeLocalGatewayConnection", () => {
     expect(error).toBeInstanceOf(localModeHost.GuardianTokenError);
     expect((error as localModeHost.GuardianTokenError).status).toBe(404);
     expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-    expect(isGatewayAuthMode()).toBe(false);
+    expect(isGatewaySessionLive()).toBe(false);
   });
 
   test("unready paired prime clears the shared same-origin slot", async () => {
@@ -966,7 +963,7 @@ describe("primeLocalGatewayConnection", () => {
     expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
     // The local selection's session signal is topology, not the slot.
-    expect(isGatewayAuthMode()).toBe(true);
+    expect(isGatewaySessionLive()).toBe(true);
   });
 });
 
@@ -1099,5 +1096,71 @@ describe("getLockfile persisted-storage read", () => {
   test("falls back to an empty lockfile when the stored value is not JSON", () => {
     localStorage.setItem(LOCKFILE_STORAGE_KEY, "{not json");
     expect(getLockfile()).toEqual({ assistants: [], activeAssistant: null });
+  });
+});
+
+describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", () => {
+  test("a served runtime always has a gateway assistant; the session goes live with the slot token", () => {
+    window.__CADET_CONFIG__ = { remote: "docker" };
+
+    expect(hasGatewayAssistant()).toBe(true);
+    expect(isGatewaySessionLive()).toBe(false);
+
+    // The pairing exchange plants the device credential in the connection
+    // slot — the single bearer custody.
+    setSelfHostedConnection({ url: window.location.origin, token: "tok" });
+
+    expect(isGatewaySessionLive()).toBe(true);
+  });
+
+  test("a paired selection has a gateway assistant only with a usable runtimeUrl", () => {
+    enableLocalMode();
+    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    expect(hasGatewayAssistant()).toBe(true);
+
+    setLockfile({
+      assistants: [{ ...pairedEntry, runtimeUrl: undefined } as LockfileAssistant],
+      activeAssistant: "paired-a",
+    });
+    expect(hasGatewayAssistant()).toBe(false);
+  });
+
+  test("a paired selection outside local mode has no gateway assistant", () => {
+    window.__CADET_CONFIG__ = { remote: "cloud" };
+    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    expect(hasGatewayAssistant()).toBe(false);
+    expect(isGatewaySessionLive()).toBe(false);
+  });
+
+  test("paired mode goes live only once the prime has seeded the slot", () => {
+    enableLocalMode();
+    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    const fetchSpy = mock(async () => {
+      throw new Error("unexpected fetch");
+    });
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    expect(isGatewaySessionLive()).toBe(false);
+
+    setSelfHostedConnection({ url: window.location.origin, token: null });
+
+    expect(isGatewaySessionLive()).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("a local selection's session is topology — live with a resolvable gateway, off without one", () => {
+    enableLocalMode();
+    setLockfile(
+      {
+        assistants: [
+          { ...localA, resources: undefined } as unknown as LockfileAssistant,
+        ],
+        activeAssistant: "local-a",
+      },
+    );
+    expect(isGatewaySessionLive()).toBe(false);
+
+    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+    expect(isGatewaySessionLive()).toBe(true);
   });
 });

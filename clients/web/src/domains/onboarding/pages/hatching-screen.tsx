@@ -45,7 +45,6 @@ import {
   primeLocalGatewayConnection,
   probeLocalGatewayReady,
 } from "@/lib/local-mode";
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
@@ -249,7 +248,6 @@ export function HatchingScreen() {
     // connection is primed. Dropping both is the same handoff the hosting
     // screen performs for its Cadet Cloud choice.
     if (managedHatch && isLocalClient()) {
-      clearGatewayToken();
       setSelfHostedConnection(null);
     }
 
@@ -436,7 +434,6 @@ export function HatchingScreen() {
           let gatewayReady = false;
           while (!cancelled && !gatewayReady) {
             if (await probeLocalGatewayReady()) {
-              clearGatewayToken();
               await primeLocalGatewayConnection();
               gatewayReady = true;
               break;

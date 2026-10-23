@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import { clearGatewayToken, getGatewayToken } from "@/lib/auth/gateway-session";
 import {
   activateRemoteGatewaySession,
   createRemoteWebPairingChallenge,
@@ -26,7 +25,6 @@ function setLocation(path: string): void {
 afterEach(() => {
   globalThis.fetch = realFetch;
   window.__CADET_CONFIG__ = undefined;
-  clearGatewayToken();
   setSelfHostedConnection(null);
   localStorage.clear();
   setLocation("/assistant/pair");
@@ -210,7 +208,7 @@ describe("remote gateway token exchange", () => {
       refreshAfter: "2999-01-01T00:00:00.000Z",
     });
 
-    expect(getGatewayToken()).toBe("access-token");
+    expect(getSelfHostedActorToken()).toBe("access-token");
     expect(getSelfHostedIngressUrl()).toBe(
       "http://localhost:3000/assistant-123",
     );
@@ -234,7 +232,7 @@ describe("remote gateway token exchange", () => {
     await expect(refreshRemoteGatewaySession()).resolves.toBe(true);
 
     expect(globalThis.fetch).not.toHaveBeenCalled();
-    expect(getGatewayToken()).toBe("access-token");
+    expect(getSelfHostedActorToken()).toBe("access-token");
   });
 
   test("refreshes from the HttpOnly cookie endpoint", async () => {
@@ -257,7 +255,7 @@ describe("remote gateway token exchange", () => {
     expect(calls[0].input).toBe("/assistant-123/v1/guardian/refresh");
     expect(calls[0].init?.credentials).toBe("include");
     expect(calls[0].init?.body).toBe("{}");
-    expect(getGatewayToken()).toBe("refreshed-access-token");
+    expect(getSelfHostedActorToken()).toBe("refreshed-access-token");
   });
 
   test("shares concurrent same-tab refresh attempts", async () => {
@@ -287,6 +285,6 @@ describe("remote gateway token exchange", () => {
     await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
 
     expect(calls).toHaveLength(1);
-    expect(getGatewayToken()).toBe("shared-access-token");
+    expect(getSelfHostedActorToken()).toBe("shared-access-token");
   });
 });

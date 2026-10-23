@@ -121,7 +121,6 @@ const hatchLocalAssistantMock = mock(async (_remote?: string) => ({
   assistantId: "local-1",
 }));
 
-const clearGatewayTokenMock = mock(() => {});
 const setSelfHostedConnectionMock = mock((_connection: unknown) => {});
 
 mock.module("react-router", () => ({
@@ -133,24 +132,38 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-const stableQueryClient = {};
+const stableQueryClient = {
+  // `recheckAssistant` dials fetchQuery with the api-layer queryFn — the
+  // api mocks above own the answer.
+  fetchQuery: async (opts: { queryFn: () => Promise<unknown> }) =>
+    opts.queryFn(),
+};
+const reactQueryActual = await import("@tanstack/react-query");
 mock.module("@tanstack/react-query", () => ({
+  ...reactQueryActual,
   useQueryClient: () => stableQueryClient,
 }));
 
+const assistantApiActual = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({
+  ...assistantApiActual,
   getAssistant: getAssistantMock,
   getAssistantHealthz: getAssistantHealthzMock,
   hatchAssistant: hatchAssistantMock,
 }));
 
-mock.module("@/generated/api/sdk.gen", () => ({}));
+const sdkActual = await import("@/generated/api/sdk.gen");
+mock.module("@/generated/api/sdk.gen", () => ({
+  ...sdkActual,
+}));
 
 mock.module("@/assistant/seed-hatch-avatar", () => ({
   seedHatchAvatar: async () => {},
 }));
 
+const lifecycleActual = await import("@/assistant/lifecycle");
 mock.module("@/assistant/lifecycle", () => ({
+  ...lifecycleActual,
   isCloudHostedDisabled: () => false,
   PLATFORM_HOSTED_DISABLED_MESSAGE: "disabled",
   shouldRecoverFromHatchFailure: () => true,
@@ -210,18 +223,18 @@ mock.module("@/domains/onboarding/plugin-attribution", () => ({
   ATTRIBUTED_PLUGIN_PARAM: "attributed_plugin",
 }));
 
+const localModeActual = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
   isLocalClient: () => isLocalClientValue,
   loadLockfile: async () => {},
   primeLocalGatewayConnection: async () => {},
   probeLocalGatewayReady: async () => true,
 }));
 
-mock.module("@/lib/auth/gateway-session", () => ({
-  clearGatewayToken: clearGatewayTokenMock,
-}));
-
+const connectionActual = await import("@/lib/self-hosted/connection");
 mock.module("@/lib/self-hosted/connection", () => ({
+  ...connectionActual,
   setSelfHostedConnection: setSelfHostedConnectionMock,
 }));
 
@@ -242,28 +255,41 @@ mock.module("@/runtime/is-electron", () => ({
   isElectron: () => false,
 }));
 
+const selectionActual = await import("@/assistant/selection");
 mock.module("@/assistant/selection", () => ({
+  ...selectionActual,
   setSelectedAssistant: () => {},
 }));
 
+const authStoreActual = await import("@/stores/auth-store");
 mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
+  ...authStoreActual,
+  useAuthStore: Object.assign(() => null, {
     use: {
       sessionStatus: () => "authenticated",
     },
     getState: () => ({
       connectLocalAssistant: async () => {},
     }),
-  },
+  }),
+  useHasCloudSession: () => false,
 }));
 
+const organizationStoreActual = await import("@/stores/organization-store");
 mock.module("@/stores/organization-store", () => ({
+  ...organizationStoreActual,
   getActiveOrganizationIdForRequests: () => null,
 }));
 
 mock.module("@/stores/resolved-assistants-store", () => ({
   useResolvedAssistantsStore: {
-    getState: () => ({ upsertFromApi: () => {} }),
+    getState: () => ({
+      upsertFromApi: () => {},
+      assistants: [],
+      assistantsHydrated: true,
+      selectedAssistantId: null,
+      setActiveAssistantId: () => {},
+    }),
   },
 }));
 
@@ -333,7 +359,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     hatchLocalAssistantMock.mockClear();
     applyPendingProviderKeyMock.mockClear();
     applyPendingProviderKeyMock.mockImplementation(async () => {});
-    clearGatewayTokenMock.mockClear();
     setSelfHostedConnectionMock.mockClear();
     searchParams = new URLSearchParams();
     isLocalClientValue = false;
@@ -413,7 +438,6 @@ describe("HatchingScreen — post-payment provisioning wait", () => {
     expect(hatchAssistantMock).toHaveBeenCalled();
     // The local gateway is dropped up front so the hatch, its polls and its
     // healthz probes address the cloud.
-    expect(clearGatewayTokenMock).toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).toHaveBeenCalledWith(null);
   });
 

@@ -28,12 +28,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { recheckAssistant } from "@/assistant/queries";
 import { useAutoGreetStore } from "@/domains/chat/auto-greet-store";
-import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
+import { isGatewaySessionLive, isLocalClient } from "@/lib/local-mode";
 import {
   resolveOnboardingFirstName,
   takeSignupOnboardingFirstName,
 } from "@/lib/auth/signup-onboarding-handoff";
-import { isLocalClient } from "@/lib/local-mode";
 import {
   useAuthStore,
   useHasCloudSession,
@@ -247,7 +246,7 @@ export function ResearchOnboardingRoute() {
   const adoptExistingAssistant = shouldAdoptExistingAssistant({
     hostingParam,
     localMode: isLocalClient(),
-    gatewayAuthSession: isGatewayAuthMode(),
+    gatewayAuthSession: isGatewaySessionLive(),
   });
   // The hatching screen names the assistant it provisioned in the `assistant`
   // param, pinning adoption to that exact one — a stale selection or leftover

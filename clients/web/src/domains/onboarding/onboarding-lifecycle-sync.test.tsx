@@ -137,7 +137,7 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
 mock.module("@/lib/navigation/build-state", () => ({
   buildNavigationState: (overrides: Record<string, unknown> = {}) => ({
     isLocalClient: isLocalClientValue,
-    isGatewayAuth: false,
+    isGatewaySessionLive: false,
     hasAssistants: false,
     sessionSettled: true,
     isAuthenticated: true,

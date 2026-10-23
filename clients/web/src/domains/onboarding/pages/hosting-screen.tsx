@@ -9,7 +9,6 @@ import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination
 import { SETUP_NAVIGATE } from "@/domains/onboarding/onboarding-navigation";
 import { setPendingProviderKey } from "@/domains/onboarding/provider-key";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
 import { useHasCloudSession } from "@/stores/auth-store";
@@ -88,7 +87,6 @@ export function HostingScreen() {
 
   const onContinue = () => {
     if (selected === "cadet-cloud") {
-      clearGatewayToken();
       setSelfHostedConnection(null);
       // Cloud is managed: drop any provider key staged from a prior
       // Local/Docker visit so it can't leak into a later local hatch.

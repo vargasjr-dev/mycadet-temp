@@ -57,7 +57,7 @@ export function GeneralPage() {
   // The card supersedes the in-page picker so the two never render together.
   //
   // Deliberately wider than `useGatedSelectedAssistantId` in
-  // `assistant/selection.ts`: that gate closes under `isGatewayAuthMode()`,
+  // `assistant/selection.ts`: that gate closes under `isGatewaySessionLive()`,
   // which is exactly where this card hands off to the hub chooser.
   const showAssistantSwitcherCard =
     isLocalClient() ||

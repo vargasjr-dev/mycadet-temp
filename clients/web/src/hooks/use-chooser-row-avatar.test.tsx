@@ -48,11 +48,6 @@ mock.module("@/lib/local-mode", () => ({
   isServedGatewayRuntime: () => servedGatewayRuntime,
 }));
 
-let gatewayAuthEnabled = false;
-mock.module("@/lib/auth/gateway-session", () => ({
-  isGatewayAuthEnabled: () => gatewayAuthEnabled,
-}));
-
 let selfHostedIngressUrl: string | null = null;
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => selfHostedIngressUrl,
@@ -266,7 +261,6 @@ beforeEach(() => {
   localClient = false;
   cloudRemote = true;
   servedGatewayRuntime = false;
-  gatewayAuthEnabled = false;
   selfHostedIngressUrl = null;
   orgReady = true;
   hostAvailable = false;
@@ -317,7 +311,6 @@ describe("canFetchRowAvatarViaCloudProxy", () => {
   test.each([
     ["local client", () => (localClient = true)],
     ["served-gateway runtime", () => (servedGatewayRuntime = true)],
-    ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
       () => (selfHostedIngressUrl = "https://gw.example"),
@@ -341,7 +334,6 @@ describe("useChooserRowAvatar", () => {
   test.each([
     ["local client", () => (localClient = true)],
     ["served-gateway runtime", () => (servedGatewayRuntime = true)],
-    ["gateway auth", () => (gatewayAuthEnabled = true)],
     [
       "self-hosted ingress",
       () => (selfHostedIngressUrl = "https://gw.example"),
@@ -382,7 +374,6 @@ describe("useChooserRowAvatar", () => {
     test.each([
       ["local client", () => (localClient = true)],
       ["served-gateway runtime", () => (servedGatewayRuntime = true)],
-      ["gateway auth", () => (gatewayAuthEnabled = true)],
     ])(
       "renders a non-connected platform row's avatarUrl under %s with zero SDK calls",
       async (_l, arrange) => {

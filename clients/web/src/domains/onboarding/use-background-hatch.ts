@@ -18,7 +18,6 @@ import {
   POLL_INTERVAL_MS,
 } from "@/domains/onboarding/hatch-wait";
 import { awaitOrgHeaderSettled } from "@/hooks/await-org-header-settled";
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import {
   getLockfileAssistant,
   isLocalClient,
@@ -294,7 +293,6 @@ export function useBackgroundHatch({
         // path. Both are module-level writes — idempotent under `retry()`, and
         // no auth/org store slice moves, so nothing remounts this hook.
         if (isLocalClient()) {
-          clearGatewayToken();
           setSelfHostedConnection(null);
         }
         try {

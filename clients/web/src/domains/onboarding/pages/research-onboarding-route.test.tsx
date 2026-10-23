@@ -142,16 +142,11 @@ mock.module("@/assistant/lifecycle-service", () => ({
   },
 }));
 
-const gatewaySessionModule = await import("@/lib/auth/gateway-session");
-mock.module("@/lib/auth/gateway-session", () => ({
-  ...gatewaySessionModule,
-  isGatewayAuthMode: () => false,
-}));
-
 const localModeModule = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...localModeModule,
   isLocalClient: () => false,
+  isGatewaySessionLive: () => false,
 }));
 
 // The real module builds its destinations from `routes` at import time, and the

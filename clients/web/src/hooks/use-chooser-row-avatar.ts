@@ -14,7 +14,6 @@ import {
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAvatarUrls } from "@/hooks/use-cloud-avatar-urls";
-import { isGatewayAuthEnabled } from "@/lib/auth/gateway-session";
 import {
   deleteLastSeenAvatar,
   readLastSeenAvatar,
@@ -156,7 +155,7 @@ export function forgetAssistantAvatar(
  * routes by that id. Every other transport pins the request to ONE
  * assistant regardless of the id in the path, so a fetch for a sibling
  * row would answer with the connected assistant's avatar (or 404):
- * - local / remote-gateway / gateway-auth clients talk to a single gateway;
+ * - local / served-gateway clients talk to a single gateway;
  * - a self-hosted ingress (`getSelfHostedIngressUrl()`) makes the request
  *   interceptor rewrite every daemon call to that gateway, whose
  *   runtime-proxy discards the id;
@@ -168,7 +167,6 @@ export function canFetchRowAvatarViaCloudProxy(
   return (
     !isLocalClient() &&
     !isServedGatewayRuntime() &&
-    !isGatewayAuthEnabled() &&
     getSelfHostedIngressUrl() === null &&
     row.isCloudHosted
   );

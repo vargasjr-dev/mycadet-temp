@@ -11,12 +11,7 @@ mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: () => mockIsLocalClient,
   isCadetCloudRemote: () => mockIsCloudRemote,
-}));
-
-const gatewaySessionActual = await import("@/lib/auth/gateway-session");
-mock.module("@/lib/auth/gateway-session", () => ({
-  ...gatewaySessionActual,
-  isGatewayAuthMode: () => false,
+  isGatewaySessionLive: () => false,
 }));
 
 // Consent prefs read storage; pin them so the access decision is isolated.

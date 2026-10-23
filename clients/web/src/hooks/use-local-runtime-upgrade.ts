@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import { loadLockfile } from "@/lib/local-mode";
 import { upgradeLocalAssistantHost } from "@/runtime/local-mode-host";
 import { useAuthStore } from "@/stores/auth-store";
@@ -37,7 +36,6 @@ export function useLocalRuntimeUpgrade({
       }
       const result = await mutation.mutateAsync();
       await loadLockfile();
-      clearGatewayToken();
       await useAuthStore.getState().connectLocalAssistant(assistantId);
       return result;
     },

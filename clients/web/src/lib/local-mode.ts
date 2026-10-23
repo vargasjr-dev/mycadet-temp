@@ -16,8 +16,8 @@ import {
   clearSelectedAssistantId,
   readSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
-import { clearGatewayToken } from "@/lib/auth/gateway-session";
 import {
+  getSelfHostedActorToken,
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
@@ -223,12 +223,11 @@ export function getLockfile(): Lockfile {
 /**
  * Drop the session state bound to the selected assistant: the raw selection
  * key (no store import here, that would cycle; the reactive slice reconciles
- * via `setFromLockfile` on the next lockfile commit/load), the gateway token,
- * and the self-hosted connection.
+ * via `setFromLockfile` on the next lockfile commit/load) and the
+ * self-hosted connection (whose token slot is the only bearer custody).
  */
 function clearSelectedAssistantSession(): void {
   clearSelectedAssistantId();
-  clearGatewayToken();
   setSelfHostedConnection(null);
 }
 
@@ -569,6 +568,46 @@ export function hasPairedGateway(
 }
 
 /**
+ * Whether this client's data plane is a gateway: the served-gateway browser,
+ * or a local client whose selected assistant carries a local or paired
+ * gateway. The session vision's device side — such clients authenticate by
+ * device (the trusted host's injected bearer, or the pairing slot's token),
+ * never by user session.
+ */
+export function hasGatewayAssistant(): boolean {
+  if (isServedGatewayRuntime()) {
+    return true;
+  }
+  if (!isLocalClient()) {
+    return false;
+  }
+  const assistant = getSelectedAssistant();
+  return hasLocalGateway(assistant) || hasPairedGateway(assistant);
+}
+
+/**
+ * Whether the gateway session is live: on a served runtime the paired
+ * browser's device credential (the connection slot's token); on a local
+ * client the trusted host owns bearer custody, so topology decides.
+ */
+export function isGatewaySessionLive(): boolean {
+  if (!hasGatewayAssistant()) {
+    return false;
+  }
+  if (!isServedGatewayRuntime()) {
+    const selectedAssistant = getSelectedAssistant();
+    if (hasPairedGateway(selectedAssistant)) {
+      // The paired prime seeds the shared same-origin data-plane slot.
+      return getSelfHostedIngressUrl() != null;
+    }
+    // The local signal is topology — a resolvable gateway — not token
+    // presence: the trusted host owns bearer custody in this mode.
+    return hasLocalGateway(selectedAssistant);
+  }
+  return getSelfHostedActorToken() !== null;
+}
+
+/**
  * Whether a readyz body reports ready: the gateway answers `status: "ok"`
  * with no `ready: false`.
  */
@@ -688,7 +727,6 @@ export async function primeLocalGatewayConnection(
     }
     throw error;
   }
-  clearGatewayToken();
   setSelfHostedConnection({
     url: window.location.origin,
     token: null,

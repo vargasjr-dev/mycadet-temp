@@ -31,23 +31,18 @@ let healthzResult: GetHealthzResult = {
   data: {} as never,
 };
 
-// Local-gateway routing state. A managed hatch drops both before it POSTs so
-// discovery, healthz and the onboarding writes address the cloud.
-const clearGatewayTokenMock = mock(() => {});
+// Local-gateway routing state. A managed hatch drops the connection before
+// it POSTs so discovery, healthz and the onboarding writes address the cloud.
 const setSelfHostedConnectionMock = mock((_connection: unknown) => {});
-mock.module("@/lib/auth/gateway-session", () => ({
-  clearGatewayToken: clearGatewayTokenMock,
-}));
 mock.module("@/lib/self-hosted/connection", () => ({
   setSelfHostedConnection: setSelfHostedConnectionMock,
 }));
 // Clear counts sampled when the hatch POST fires, so ordering is asserted
 // rather than mere occurrence.
-let clearsAtHatch = { gateway: 0, selfHosted: 0 };
+let clearsAtHatch = { selfHosted: 0 };
 
 const hatchAssistantMock = mock(async (): Promise<HatchResult> => {
   clearsAtHatch = {
-    gateway: clearGatewayTokenMock.mock.calls.length,
     selfHosted: setSelfHostedConnectionMock.mock.calls.length,
   };
   return hatchResult;
@@ -176,9 +171,8 @@ beforeEach(() => {
   probeLocalGatewayReadyMock.mockClear();
   getLockfileAssistantMock.mockClear();
   seedHatchAvatarMock.mockClear();
-  clearGatewayTokenMock.mockClear();
   setSelfHostedConnectionMock.mockClear();
-  clearsAtHatch = { gateway: 0, selfHosted: 0 };
+  clearsAtHatch = { selfHosted: 0 };
 });
 
 describe("useBackgroundHatch", () => {
@@ -544,9 +538,8 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(clearGatewayTokenMock).toHaveBeenCalledTimes(1);
     expect(setSelfHostedConnectionMock).toHaveBeenCalledWith(null);
-    expect(clearsAtHatch).toEqual({ gateway: 1, selfHosted: 1 });
+    expect(clearsAtHatch).toEqual({ selfHosted: 1 });
   });
 
   test("an adopting hatch keeps its gateway session", async () => {
@@ -563,7 +556,6 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(clearGatewayTokenMock).not.toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).not.toHaveBeenCalled();
   });
 
@@ -577,7 +569,6 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(clearGatewayTokenMock).not.toHaveBeenCalled();
     expect(setSelfHostedConnectionMock).not.toHaveBeenCalled();
   });
 
@@ -596,7 +587,7 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.error).toBe("Bad hatch request"));
-    expect(clearsAtHatch).toEqual({ gateway: 1, selfHosted: 1 });
+    expect(clearsAtHatch).toEqual({ selfHosted: 1 });
 
     hatchResult = {
       ok: true,
@@ -609,7 +600,7 @@ describe("useBackgroundHatch", () => {
     });
 
     await waitFor(() => expect(result.current.ready).toBe(true));
-    expect(clearsAtHatch).toEqual({ gateway: 2, selfHosted: 2 });
+    expect(clearsAtHatch).toEqual({ selfHosted: 2 });
     expect(setSelfHostedConnectionMock.mock.calls).toEqual([[null], [null]]);
   });
 

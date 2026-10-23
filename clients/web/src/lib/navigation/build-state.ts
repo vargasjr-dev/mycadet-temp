@@ -1,8 +1,11 @@
 import { useAuthStore } from "@/stores/auth-store";
 import { isSessionSettled, isAuthenticated } from "@/stores/session-status";
-import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import { isLocalClient, isServedGatewayRuntime } from "@/lib/local-mode";
+import {
+  isGatewaySessionLive,
+  isLocalClient,
+  isServedGatewayRuntime,
+} from "@/lib/local-mode";
 import {
   readHasConsentRecord,
   readTosAccepted,
@@ -33,7 +36,7 @@ export function buildNavigationState(
     remoteGatewayPublicPathPrefix: isRemoteGateway
       ? remoteGatewayPublicPathPrefix()
       : "",
-    isGatewayAuth: isGatewayAuthMode(),
+    isGatewaySessionLive: isGatewaySessionLive(),
     hasAssistants: assistants.length > 0,
     sessionSettled: isSessionSettled(sessionStatus),
     // `isAuthenticated` mirrors `sessionStatus`. The local gateway is the sole

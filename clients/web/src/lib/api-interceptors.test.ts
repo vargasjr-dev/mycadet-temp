@@ -150,8 +150,8 @@ import {
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
 import { subscribe } from "@/lib/event-bus";
+import { isGatewaySessionLive } from "@/lib/local-mode";
 import { ApiError } from "@/utils/api-errors";
-import { isGatewayAuthMode } from "@/lib/auth/gateway-session";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
@@ -1352,10 +1352,10 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(result).toBe(response);
   });
 
-  test("the connection stays primed and gateway-auth mode reads true across the recovery", async () => {
+  test("the connection stays primed and the session predicate reads true across the recovery", async () => {
     /**
      * A recovery must not unprime the slot while the prime is in flight:
-     * `isGatewayAuthMode()` reads it, and a session refresh or a lifecycle
+     * `isGatewaySessionLive()` reads it, and a session refresh or a lifecycle
      * pass landing in that window would take the cloud branch and could
      * log a local-gateway user out. The renderer holds no bearer in this
      * mode — the trusted host mints and injects — so the slot's null token
@@ -1369,7 +1369,7 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     let authModeDuringPrime: boolean | undefined;
     primeGatewayWithRepairImpl = async () => {
       ingressDuringPrime = getSelfHostedIngressUrl();
-      authModeDuringPrime = isGatewayAuthMode();
+      authModeDuringPrime = isGatewaySessionLive();
       setSelfHostedConnection({ url: GATEWAY_URL, token: null });
     };
 
