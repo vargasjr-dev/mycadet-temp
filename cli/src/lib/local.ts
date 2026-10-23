@@ -233,7 +233,7 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  resources: LocalInstanceResources | undefined,
+  resources: LocalAssistantResources | undefined,
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -242,7 +242,7 @@ function localRuntimeGatewayDir(
 }
 
 function localRuntimeCesDir(
-  resources: LocalInstanceResources | undefined,
+  resources: LocalAssistantResources | undefined,
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -949,7 +949,7 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(resources?: LocalInstanceResources): string {
+function resolveGatewayDir(resources?: LocalAssistantResources): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(resources);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
