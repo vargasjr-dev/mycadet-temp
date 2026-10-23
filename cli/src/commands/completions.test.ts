@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-import { saveAssistantEntry } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "../lib/assistant-config.js";
 import { completeCadet } from "./completions.js";
 
 const COMMAND_NAMES = [
@@ -38,7 +38,7 @@ describe("completeCadet", () => {
   });
 
   function seed(id: string): void {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: id,
       cloud: "docker",
       runtimeUrl: "http://localhost:7830",

@@ -20,7 +20,7 @@ import {
   type TunnelProcessRecord,
 } from "@mycadet/local-mode/contract";
 
-export type { AppProcessRecord, TunnelProcessRecord };
+export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 
 import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
@@ -55,24 +55,25 @@ export type LocalInstanceResources = LocalAssistantResources & {
 };
 
 /**
- * The CLI's full view of an assistant entry: the one canonical Zod contract
- * (`LockfileAssistant` — strict; every field the CLI reads and writes is
- * modeled there) plus the two narrowings the CLI's load path guarantees.
- * `runtimeUrl` is required (`loadAllAssistants` only returns entries that
- * have one) and `resources` carries the host's required `instanceDir`.
- * `cloud` is always present (normalized at the read seam — see
- * `loadAllAssistants`).
+ * Local entries this CLI wrote always carry the instance dir and the two
+ * host-only ports — the writer's guarantee, not the schema's. Narrow at the
+ * flow boundary (guard-and-exit) instead of casting.
  */
-export type AssistantEntry = LockfileAssistant & {
-  runtimeUrl: string;
-  /** Per-instance resource config. Present for local entries in multi-instance setups. */
-  resources?: LocalInstanceResources;
-};
+export function isLocalInstanceResources(
+  resources: LocalAssistantResources | undefined,
+): resources is LocalInstanceResources {
+  return (
+    resources !== undefined &&
+    resources.instanceDir !== undefined &&
+    resources.qdrantPort !== undefined &&
+    resources.cesPort !== undefined
+  );
+}
 
 export type AssistantLookupResult =
-  | { status: "found"; entry: AssistantEntry }
+  | { status: "found"; entry: LockfileAssistant }
   | { status: "not_found" }
-  | { status: "ambiguous"; matches: AssistantEntry[] };
+  | { status: "ambiguous"; matches: LockfileAssistant[] };
 
 /** Either lockfile-root process record, keyed by `RootProcessKind`. */
 export type RootProcessRecord = TunnelProcessRecord | AppProcessRecord;
@@ -87,14 +88,13 @@ export type RootProcessKind = keyof RootProcessRecords;
 
 /**
  * Derive the daemon PID file path from a resources object. The PID file
- * lives inside the instance's workspace directory. When no resources are
- * available, falls back to the XDG data root's workspace
+ * lives inside the instance's workspace directory. Falls back to the XDG
+ * data root's workspace when the entry carries no instance dir
  * (`$XDG_DATA_HOME/cadet[-<env>]/workspace/cadet.pid`).
  */
-export function getDaemonPidPath(resources?: LocalInstanceResources): string {
-  const cadetDir = resources
-    ? resources.instanceDir
-    : getStateDir(getCurrentEnvironment());
+export function getDaemonPidPath(resources?: LocalAssistantResources): string {
+  const cadetDir =
+    resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
   return join(cadetDir, "workspace", "cadet.pid");
 }
 
@@ -241,20 +241,11 @@ export function clearAppProcessRecord(expectedPid?: number): void {
  * Returns undefined if the URL is malformed or has no explicit port.
  */
 
-export function loadAllAssistants(): AssistantEntry[] {
-  const data = readLockfile();
-  return data.assistants.filter(isAssistantEntry);
+export function loadAllAssistants(): LockfileAssistant[] {
+  return readLockfile().assistants;
 }
 
-/**
- * `assistantId` is the schema's job; `runtimeUrl` stays a plain read because
- * only entries that carry one are addressable.
- */
-function isAssistantEntry(entry: LockfileAssistant): entry is AssistantEntry {
-  return typeof entry.runtimeUrl === "string";
-}
-
-function writeAssistants(entries: AssistantEntry[]): void {
+function writeAssistants(entries: LockfileAssistant[]): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
     data.assistants = entries;
@@ -262,7 +253,7 @@ function writeAssistants(entries: AssistantEntry[]): void {
   });
 }
 
-export function loadLatestAssistant(): AssistantEntry | null {
+export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
     return null;
@@ -275,17 +266,17 @@ export function loadLatestAssistant(): AssistantEntry | null {
   return sorted[0];
 }
 
-export function findAssistantByName(name: string): AssistantEntry | null {
+export function findAssistantByName(name: string): LockfileAssistant | null {
   return (
     loadAllAssistants().find((entry) => entry.assistantId === name) ?? null
   );
 }
 
-export function getAssistantDisplayName(entry: AssistantEntry): string {
+export function getAssistantDisplayName(entry: LockfileAssistant): string {
   return entry.name?.trim() || entry.assistantId;
 }
 
-function getAssistantDisplayNameCandidates(entry: AssistantEntry): string[] {
+function getAssistantDisplayNameCandidates(entry: LockfileAssistant): string[] {
   const name = entry.name?.trim();
   return name ? [name] : [];
 }
@@ -328,7 +319,7 @@ export function formatAssistantLookupError(
   return `No assistant found with name or ID '${identifier}'.${crossEnvironmentAssistantHint() ?? ""}`;
 }
 
-export function removeAssistantEntry(assistantId: string): void {
+export function removeLockfileAssistant(assistantId: string): void {
   withCliLockfileLock(() => {
     const data = readLockfile();
     const entries = data.assistants.filter(
@@ -390,11 +381,11 @@ function readLockfileForEnv(env: EnvironmentDefinition): Lockfile {
  */
 export function loadAllAssistantsAcrossEnvs(
   envs?: EnvironmentDefinition[],
-): AssistantEntry[] {
+): LockfileAssistant[] {
   const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
-  const all: AssistantEntry[] = [];
+  const all: LockfileAssistant[] = [];
   for (const env of envList) {
-    all.push(...readLockfileForEnv(env).assistants.filter(isAssistantEntry));
+    all.push(...readLockfileForEnv(env).assistants);
   }
   return all;
 }
@@ -421,7 +412,7 @@ export function setActiveAssistant(assistantId: string): void {
  * 2. Active assistant set via `cadet use`
  * 3. Sole lockfile entry (any cloud)
  */
-export function resolveAssistant(nameArg?: string): AssistantEntry | null {
+export function resolveAssistant(nameArg?: string): LockfileAssistant | null {
   if (nameArg) {
     return findAssistantByName(nameArg);
   }
@@ -448,7 +439,7 @@ export function resolveAssistant(nameArg?: string): AssistantEntry | null {
  * 2. Active assistant set via `cadet use`
  * 3. Sole lockfile entry (any cloud)
  */
-export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
+export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
   if (nameArg) {
     const result = lookupAssistantByIdentifier(nameArg);
     if (result.status === "found") return result.entry;
@@ -486,7 +477,8 @@ export function resolveTargetAssistant(nameArg?: string): AssistantEntry {
  * entry's recorded runtime URL. One seam so the runtimeUrl death (a later
  * PR) rewires a single site instead of every ssh flow.
  */
-export function extractHostFromEntry(entry: AssistantEntry): string {
+export function extractHostFromEntry(entry: LockfileAssistant): string {
+  if (!entry.runtimeUrl) return "";
   try {
     return new URL(entry.runtimeUrl).hostname;
   } catch {
@@ -494,7 +486,7 @@ export function extractHostFromEntry(entry: AssistantEntry): string {
   }
 }
 
-export function saveAssistantEntry(entry: AssistantEntry): void {
+export function saveLockfileAssistant(entry: LockfileAssistant): void {
   withCliLockfileLock(() => {
     const entries = loadAllAssistants().filter(
       (e) => e.assistantId !== entry.assistantId,
@@ -511,10 +503,10 @@ export function saveAssistantEntry(entry: AssistantEntry): void {
  * conversation key so creation is retry-safe). Minted once and persisted
  * on the entry so every session shares one conversation.
  */
-export function resolveConversationKey(entry: AssistantEntry): string {
+export function resolveConversationKey(entry: LockfileAssistant): string {
   if (entry.conversationKey) return entry.conversationKey;
   const minted = crypto.randomUUID();
-  saveAssistantEntry({ ...entry, conversationKey: minted });
+  saveLockfileAssistant({ ...entry, conversationKey: minted });
   return minted;
 }
 
@@ -559,12 +551,13 @@ export async function allocateLocalResources(
   const reservedPorts: number[] = [];
   for (const entry of loadAllAssistants()) {
     if (entry.cloud !== "local" || !entry.resources) continue;
-    reservedPorts.push(
-      entry.resources.daemonPort,
-      entry.resources.gatewayPort,
+    reservedPorts.push(entry.resources.daemonPort, entry.resources.gatewayPort);
+    for (const optionalPort of [
       entry.resources.qdrantPort,
       entry.resources.cesPort,
-    );
+    ]) {
+      if (optionalPort !== undefined) reservedPorts.push(optionalPort);
+    }
   }
 
   // Env-aware bases: non-prod envs sit in their own 1000-port window so

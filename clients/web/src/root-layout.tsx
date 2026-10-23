@@ -371,7 +371,7 @@ export function RootLayout() {
       void login();
     },
     logout: () => {
-      void handleLogout(navigate);
+      void handleLogout();
     },
     shareFeedback: () => setFeedbackOpen(true),
     retireAssistant: (command) => {

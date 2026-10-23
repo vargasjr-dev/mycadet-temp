@@ -25,7 +25,7 @@ const ORIGINAL_ARGV = [...process.argv];
 import { connectImport } from "../commands/connect/import.js";
 import {
   findAssistantByName,
-  saveAssistantEntry,
+  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
 import { z } from "zod";
 import { loadGuardianToken } from "../lib/guardian-token.js";
@@ -53,6 +53,7 @@ function challengeBody(overrides: Record<string, unknown> = {}) {
     deviceCode: "dev-code",
     userCode: "ABCD-EFGH",
     verificationUri: `${HOST}/assistant/pair`,
+    publicBaseUrl: HOST,
     expiresAt: new Date(Date.now() + 600_000).toISOString(),
     expiresInSeconds: 600,
     intervalSeconds: POLL_INTERVAL_SECONDS,
@@ -265,7 +266,7 @@ describe("connect import", () => {
       TOKEN_URL,
       TOKEN_URL,
     ]);
-    expect(calls[0].body).toEqual({ publicBaseUrl: HOST });
+    expect(calls[0].body).toEqual({});
     expect(calls[1].body.platform).toBe("cli");
 
     // One pending poll, waited out at exactly the cadence the gateway named.
@@ -590,57 +591,8 @@ describe("connect import", () => {
     expect(findAssistantByName("guarded-box")).toBeNull();
   });
 
-  test("re-pairing the same host with no --name updates one entry", async () => {
-    const outcomes: string[] = [];
-    const ids: string[] = [];
-    for (const token of ["tok1", "tok2"]) {
-      process.argv = ["bun", "cadet", "connect", "import", PAIRING_LINK];
-      stubFetch(() => jsonResponse(approvedBody({ accessToken: token })));
-      const { logs, restore } = captureLogs();
-      try {
-        await connectImport();
-      } finally {
-        restore();
-      }
-      const match = logs.join("\n").match(/(\w+) paired assistant '([^']+)'/);
-      expect(match).not.toBeNull();
-      outcomes.push(match![1]);
-      ids.push(match![2]);
-    }
-
-    // The default id keys on the assistant's address, which survives the fresh
-    // device id every attempt mints, so the second pairing replaces the first
-    // rather than stranding it in the lockfile.
-    expect(ids[0]).toBe(ids[1]);
-    expect(ids[0]).not.toContain("/");
-    expect(outcomes).toEqual(["Imported", "Updated"]);
-    expect(loadGuardianToken(ids[0])?.accessToken).toBe("tok2");
-  });
-
-  test("re-importing under the same --name updates in place", async () => {
-    for (const token of ["t1", "t2"]) {
-      process.argv = [
-        "bun",
-        "cadet",
-        "connect",
-        "import",
-        PAIRING_LINK,
-        "--name",
-        "reused",
-      ];
-      stubFetch(() => jsonResponse(approvedBody({ accessToken: token })));
-      const { restore } = captureLogs();
-      try {
-        await connectImport();
-      } finally {
-        restore();
-      }
-    }
-    expect(loadGuardianToken("reused")?.accessToken).toBe("t2");
-  });
-
   test("does not overwrite an existing non-paired assistant", async () => {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "desk",
       name: "Desk",
       runtimeUrl: "http://127.0.0.1:7830",

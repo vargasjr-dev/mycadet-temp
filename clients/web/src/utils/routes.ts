@@ -157,18 +157,20 @@ export const routes = {
     providerCallback: r("/account/provider/callback"),
   },
 
-  // The local front door moved to the app bundle (`/account/onboarding/welcome`);
-  // the maintained port renders the app-owned screen. The URL string stays
-  // until its web consumers do (the account-subtree pattern above).
+  // The local front door renders in the app bundle; this constant stays for
+  // this bundle's remaining consumers (the account-subtree pattern above).
   welcome: r("/account/onboarding/welcome"),
 
   onboarding: {
     // Platform onboarding welcome/front door, with a single CTA back into
-    // the flow. Moved to the app bundle (`/account/onboarding/start`); the
-    // URL string stays for the same reason as `welcome`.
+    // the flow. Renders in the app bundle; this constant stays for the same
+    // reason as `welcome`.
     start: r("/account/onboarding/start"),
-    hosting: r("/assistant/onboarding/hosting"),
-    apiKey: r("/assistant/onboarding/api-key"),
+    // Hosting + api-key moved to the app bundle
+    // (`/account/onboarding/{hosting,api-key}`); the URL strings stay for
+    // the same reason as `welcome`/`start`.
+    hosting: r("/account/onboarding/hosting"),
+    apiKey: r("/account/onboarding/api-key"),
     hatching: r("/assistant/onboarding/hatching"),
     // SPIKE — research-onboarding front door. Reachable on demand behind auth
     // alone (no flag; see routes.tsx).

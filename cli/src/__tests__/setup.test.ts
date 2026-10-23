@@ -11,7 +11,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   saveGuardianToken,
   type GuardianTokenData,
@@ -58,7 +58,7 @@ function guardianTokenFixture(
   };
 }
 
-function writeLockfile(entry: AssistantEntry): void {
+function writeLockfile(entry: LockfileAssistant): void {
   const lockfileDir = process.env.CADET_LOCKFILE_DIR!;
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(

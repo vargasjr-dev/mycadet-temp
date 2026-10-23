@@ -7,7 +7,7 @@ import {
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
-  type AssistantEntry,
+  type LockfileAssistant,
   type TunnelProcessRecord,
 } from "./assistant-config.js";
 import { isCloudHome } from "./cloud-values.js";
@@ -206,7 +206,7 @@ const providerNameSchema = z.enum(TUNNEL_PROVIDERS);
  * A tunnelable assistant plus the gateway port and workspace the edge fronts.
  */
 export interface LocalTunnelTarget {
-  entry: AssistantEntry;
+  entry: LockfileAssistant;
   gatewayPort: number;
   workspaceDir: string;
 }
@@ -220,7 +220,7 @@ export interface LocalTunnelTarget {
  * state lives in the default workspace.
  */
 export function toLocalTunnelTarget(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): LocalTunnelTarget | null {
   if (entry.resources?.instanceDir) {
     return {
@@ -238,7 +238,7 @@ export function toLocalTunnelTarget(
   return null;
 }
 
-export function describeUntunnelableEntry(entry: AssistantEntry): string {
+export function describeUntunnelableEntry(entry: LockfileAssistant): string {
   const reference = getAssistantDisplayName(entry);
   return isCloudHome(entry.cloud)
     ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
@@ -597,7 +597,7 @@ export async function restoreAppServer(
  * fronting a different assistant disqualifies the wake; with no running edge
  * (or one already fronting this assistant), the restore may proceed.
  */
-function edgeFrontsAnotherAssistant(entry: AssistantEntry): boolean {
+function edgeFrontsAnotherAssistant(entry: LockfileAssistant): boolean {
   const appRecord = readRootProcesses().app;
   return (
     appRecord?.assistantId !== undefined &&
@@ -618,7 +618,7 @@ function edgeFrontsAnotherAssistant(entry: AssistantEntry): boolean {
  * the stop paths can see it instead of it leaking past the next sleep.
  */
 export async function restoreContainerAppServer(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   gatewayReadyTimeoutMs = 0,
 ): Promise<void> {
   if (!isLocalContainerEntry(entry)) {

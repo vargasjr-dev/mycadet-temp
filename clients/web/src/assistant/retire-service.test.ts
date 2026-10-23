@@ -80,7 +80,7 @@ mock.module("@/lib/navigation/navigation-resolver", () => ({
       return { action: "redirect", to: "/assistant/onboarding/privacy" };
     }
     if (state.cloudSession === "present") {
-      return { action: "redirect", to: "/assistant/onboarding/hosting" };
+      return { action: "redirect", to: "/account/onboarding/hosting" };
     }
     return { action: "redirect", to: "/assistant/welcome" };
   },
@@ -108,7 +108,7 @@ mock.module("@/utils/routes", () => ({
     assistant: "/assistant",
     welcome: "/assistant/welcome",
     onboarding: {
-      hosting: "/assistant/onboarding/hosting",
+      hosting: "/account/onboarding/hosting",
       privacy: "/assistant/onboarding/privacy",
     },
   },

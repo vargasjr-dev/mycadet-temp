@@ -87,6 +87,7 @@ afterAll(() => {
 
 import { sleep } from "../commands/sleep.js";
 import {
+  DEFAULT_CES_PORT,
   DEFAULT_DAEMON_PORT,
   DEFAULT_GATEWAY_PORT,
   DEFAULT_QDRANT_PORT,
@@ -110,6 +111,7 @@ function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
               daemonPort: DEFAULT_DAEMON_PORT,
               gatewayPort: DEFAULT_GATEWAY_PORT,
               qdrantPort: DEFAULT_QDRANT_PORT,
+              cesPort: DEFAULT_CES_PORT,
             },
             ...extraEntryFields,
           },
@@ -273,6 +275,7 @@ describe("sleep command", () => {
           daemonPort: 8501,
           gatewayPort: 9999,
           qdrantPort: DEFAULT_QDRANT_PORT,
+          cesPort: DEFAULT_CES_PORT,
         },
       });
       isProcessAliveMock.mockReturnValue({ alive: true, pid: 4321 });
@@ -403,6 +406,7 @@ describe("sleep command", () => {
                   daemonPort: DEFAULT_DAEMON_PORT,
                   gatewayPort: DEFAULT_GATEWAY_PORT,
                   qdrantPort: DEFAULT_QDRANT_PORT,
+                  cesPort: DEFAULT_CES_PORT,
                 },
               },
               {
@@ -414,6 +418,7 @@ describe("sleep command", () => {
                   daemonPort: DEFAULT_DAEMON_PORT,
                   gatewayPort: DEFAULT_GATEWAY_PORT,
                   qdrantPort: DEFAULT_QDRANT_PORT,
+                  cesPort: DEFAULT_CES_PORT,
                 },
               },
             ],

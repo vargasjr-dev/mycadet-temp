@@ -1,5 +1,5 @@
 import { CloudOff, Loader2 } from "lucide-react";
-import { Outlet, useNavigate } from "react-router";
+import { Outlet } from "react-router";
 
 import { Typography } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
@@ -92,7 +92,6 @@ function RetryButton() {
 
 function ActiveAssistantPlaceholder() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   // Keep an auth escape hatch reachable while the assistant lifecycle is
   // unresolved: Log Out with a cloud session, Log In without one.
   const hasCloudSession = useHasCloudSession();
@@ -109,7 +108,7 @@ function ActiveAssistantPlaceholder() {
         {t("activeAssistantGate.connecting")}
       </Typography>
       {hasCloudSession ? (
-        <Button variant="ghost" onClick={() => void handleLogout(navigate)}>
+        <Button variant="ghost" onClick={() => void handleLogout()}>
           {t("activeAssistantGate.logOut")}
         </Button>
       ) : (

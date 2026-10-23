@@ -406,12 +406,8 @@
     "computeResourcesTitle": "Вычисления и ресурсы",
     "current": "Текущий",
     "customize": "Настроить",
-    "dangerZoneTitle": "Опасная зона",
     "preferencesSubtitle": "Настройка того, как ассистент выглядит на этом устройстве.",
     "preferencesTitle": "Предпочтения",
-    "retireAssistantDescription": "Навсегда удалить этого ассистента и все связанные данные.",
-    "retireAssistantLoginNotice": "Вход на платформу Cadet для удаления этого ассистента.",
-    "retireAssistantTitle": "Удалить ассистента",
     "switchAssistantSubtitle": "Выбор ассистента, к которому подключено это устройство.",
     "switchAssistantTitle": "Сменить ассистента",
     "updateWindow": "Окно обновления",
@@ -1032,9 +1028,6 @@
     "failStop": "Не удалось остановить ассистента.",
     "toastFailed": "Не удалось перезапустить ассистента.",
     "toastRestarting": "Ассистент перезапускается."
-  },
-  "retireAssistant": {
-    "button": "Удалить ассистента"
   },
   "riskToleranceSettings": {
     "advanced": "Дополнительно",

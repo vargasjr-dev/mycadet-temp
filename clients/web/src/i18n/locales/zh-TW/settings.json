@@ -420,12 +420,8 @@
     "computeResourcesTitle": "運算與資源",
     "current": "目前",
     "customize": "自訂",
-    "dangerZoneTitle": "危險區域",
     "preferencesSubtitle": "自訂 Cadet 在此裝置上的外觀和行為。",
     "preferencesTitle": "偏好設定",
-    "retireAssistantDescription": "永久停用此助理並刪除所有相關資料。",
-    "retireAssistantLoginNotice": "登入 Cadet 平台以停用此助理。",
-    "retireAssistantTitle": "停用助理",
     "switchAssistantSubtitle": "選擇此裝置連接的助理。",
     "switchAssistantTitle": "切換助理",
     "updateWindow": "更新視窗",
@@ -1027,9 +1023,6 @@
     "failStop": "停止助理失敗。",
     "toastFailed": "重新啟動助理失敗。",
     "toastRestarting": "助理正在重新啟動。"
-  },
-  "retireAssistant": {
-    "button": "停用助理"
   },
   "riskToleranceSettings": {
     "advanced": "進階",

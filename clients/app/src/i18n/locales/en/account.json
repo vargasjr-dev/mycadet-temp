@@ -135,7 +135,9 @@
     "adding": "Adding…",
     "connect": "Connect",
     "connecting": "Connecting…",
-    "continue": "Continue"
+    "continue": "Continue",
+    "back": "Back",
+    "loginToUse": "Log in to use"
   },
   "addRemoteOriginDialog": {
     "title": "Add a Remote Assistant",
@@ -173,5 +175,25 @@
   },
   "startScreen": {
     "createAssistant": "Create your assistant"
+  },
+  "hostingScreen": {
+    "title": "Hosting",
+    "body": "Choose where you want your assistant to live.",
+    "needHelp": "Need help deciding?",
+    "optionsAriaLabel": "Hosting options"
+  },
+  "apiKeyScreen": {
+    "title": "Connect a Model Provider",
+    "body": "Choose the model provider your assistant should use.",
+    "providerLabel": "Provider",
+    "modelLabel": "Model",
+    "baseUrlLabel": "Base URL",
+    "modelsLabel": "Models",
+    "modelsPlaceholder": "model-1, model-2",
+    "modelsHelp": "Comma-separated model identifiers exposed by your endpoint.",
+    "apiKeyLabel": "{provider} API Key",
+    "apiKeyPlaceholder": "Enter your API key",
+    "noKeyPrompt": "Don't have it?",
+    "getKeyLink": "Get an API key here"
   }
 }

@@ -213,9 +213,9 @@ describe("authMiddleware — local-mode onboarding fork", () => {
       cloudSession: "unknown",
     });
 
-    let settled: Response | null = null;
-    const pending = runMiddleware(routes.identity).then((res) => {
-      settled = res;
+    let settled: { admitted: boolean } | null = null;
+    const pending = runMiddlewareOutcome(routes.identity).then((outcome) => {
+      settled = outcome;
     });
 
     // Probe still in flight: the middleware must not have decided yet, so a
@@ -223,13 +223,14 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     await tick();
     expect(settled).toBeNull();
 
-    // Probe settles with a live platform session.
+    // Probe settles with a live platform session. The hosting fork targets
+    // the app bundle — a full-page navigation, so the middleware admits and
+    // the page URL carries it.
     useAuthStore.setState({ cloudSession: "present" });
     await pending;
 
-    expect(settled).not.toBeNull();
-    expect(settled!.status).toBe(302);
-    expect(settled!.headers.get("Location")).toBe(routes.onboarding.hosting);
+    expect(settled!.admitted).toBe(true);
+    expect(window.location.href.endsWith(routes.onboarding.hosting)).toBe(true);
   });
 
   test("admits a resolved session with no platform session — the app bundle owns the welcome fork", async () => {
@@ -242,8 +243,11 @@ describe("authMiddleware — local-mode onboarding fork", () => {
       cloudSession: "absent",
     });
 
+    // The welcome fork targets the app bundle's front door — a full-page
+    // navigation, so the middleware admits and the page URL carries it.
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
+    expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
   test("a probe that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
@@ -260,6 +264,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // decides on a settled-absent session rather than re-entering the wait.
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
+    expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
   test("routes to hosting when a resolved platform session exists", async () => {
@@ -269,9 +274,9 @@ describe("authMiddleware — local-mode onboarding fork", () => {
       cloudSession: "present",
     });
 
-    const res = await runMiddleware(routes.identity);
-    expect(res.status).toBe(302);
-    expect(res.headers.get("Location")).toBe(routes.onboarding.hosting);
+    const outcome = await runMiddlewareOutcome(routes.identity);
+    expect(outcome.admitted).toBe(true);
+    expect(window.location.href.endsWith(routes.onboarding.hosting)).toBe(true);
   });
 });
 

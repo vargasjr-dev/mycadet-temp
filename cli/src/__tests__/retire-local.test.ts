@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 import {
   getDaemonPidPath,
-  type AssistantEntry,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getLockfilePath } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
@@ -77,7 +77,7 @@ import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 
 const instanceDir = join(testDir, "test-instance");
 
-function makeEntry(assistantId: string): AssistantEntry {
+function makeEntry(assistantId: string): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: "http://127.0.0.1:7801",
@@ -92,7 +92,7 @@ function makeEntry(assistantId: string): AssistantEntry {
   };
 }
 
-function writeLockfile(entries: AssistantEntry[]): void {
+function writeLockfile(entries: LockfileAssistant[]): void {
   writeFileSync(
     getLockfilePath(getCurrentEnvironment()),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",

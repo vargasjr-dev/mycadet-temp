@@ -811,14 +811,17 @@ export function HatchingScreen() {
                 variant="primary"
                 size={electron ? "regular" : "large"}
                 fullWidth
-                onClick={() =>
-                  void navigate(
-                    hostingParam
-                      ? `${routes.onboarding.apiKey}?hosting=${hostingParam}`
-                      : routes.onboarding.apiKey,
-                    { replace: true },
-                  )
-                }
+                onClick={() => {
+                  const to = hostingParam
+                    ? `${routes.onboarding.apiKey}?hosting=${hostingParam}`
+                    : routes.onboarding.apiKey;
+                  // Full-page nav when the target is the app bundle's api-key
+                  // step — a client-side navigate would splat on web's table.
+                  if (hardNavigateIfCrossBundle(to)) {
+                    return;
+                  }
+                  void navigate(to, { replace: true });
+                }}
               >
                 {t("hatchingScreen.updateApiKey")}
               </Button>
@@ -847,14 +850,15 @@ export function HatchingScreen() {
               variant="outlined"
               size={electron ? "regular" : "large"}
               fullWidth
-              onClick={() =>
-                void navigate(
-                  useLocalHatch
-                    ? routes.onboarding.hosting
-                    : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
-                  { replace: true },
-                )
-              }
+              onClick={() => {
+                const to = useLocalHatch
+                  ? routes.onboarding.hosting
+                  : `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`;
+                if (hardNavigateIfCrossBundle(to)) {
+                  return;
+                }
+                void navigate(to, { replace: true });
+              }}
             >
               {t("actions.back")}
             </Button>

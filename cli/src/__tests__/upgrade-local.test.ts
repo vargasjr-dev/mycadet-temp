@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import cliPkg from "../../package.json";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
@@ -41,7 +41,7 @@ const getActiveAssistantMock = mock<typeof assistantConfig.getActiveAssistant>(
 const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
-const saveAssistantEntryMock = mock<typeof assistantConfig.saveAssistantEntry>(
+const saveLockfileAssistantMock = mock<typeof assistantConfig.saveLockfileAssistant>(
   () => {},
 );
 
@@ -51,7 +51,7 @@ mock.module("../lib/assistant-config", () => ({
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  saveAssistantEntry: saveAssistantEntryMock,
+  saveLockfileAssistant: saveLockfileAssistantMock,
 }));
 
 const createBackupMock = mock<typeof backupOps.createBackup>(
@@ -189,7 +189,7 @@ let consoleWarnSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
 let exitSpy: ReturnType<typeof spyOn>;
 
-function makeLocalEntry(): AssistantEntry {
+function makeLocalEntry(): LockfileAssistant {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-upgrade-local-test-"));
   return {
     assistantId: "local-assistant",
@@ -210,6 +210,11 @@ function makeLocalEntry(): AssistantEntry {
 beforeEach(() => {
   originalArgv = [...process.argv];
   tempDir = "";
+  assistantConfig.stampRootProcess("tunnel", {
+    pid: 4321,
+    provider: "ngrok",
+    startedAt: new Date().toISOString(),
+  });
   process.argv = [
     "bun",
     "cadet",
@@ -235,7 +240,7 @@ beforeEach(() => {
   getActiveAssistantMock.mockReturnValue("local-assistant");
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([entry]);
-  saveAssistantEntryMock.mockReset();
+  saveLockfileAssistantMock.mockReset();
   createBackupMock.mockReset();
   createBackupMock.mockResolvedValue("/tmp/local-pre-upgrade.tar.gz");
   pruneOldBackupsMock.mockReset();
@@ -316,7 +321,7 @@ describe("cadet upgrade local", () => {
     expect(startGatewayMock).not.toHaveBeenCalled();
     expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
     expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-    expect(saveAssistantEntryMock).not.toHaveBeenCalled();
+    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
   });
 
   test("uses explicit target versions as-is", async () => {
@@ -488,8 +493,8 @@ describe("cadet upgrade local", () => {
 // lookup rules themselves.
 describe("cadet upgrade assistant targeting", () => {
   function makeQuillEntry(
-    overrides: Partial<AssistantEntry> = {},
-  ): AssistantEntry {
+    overrides: Partial<LockfileAssistant> = {},
+  ): LockfileAssistant {
     return {
       ...makeLocalEntry(),
       assistantId: "quill-uuid",

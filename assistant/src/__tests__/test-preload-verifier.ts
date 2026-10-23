@@ -66,3 +66,21 @@ if (
     `CADET_WORKSPACE_DIR resolves to ${resolvedWorkspace}, which is not under ${tmpRoot}`,
   );
 }
+
+// The main preload also strands CES credential-RPC discovery: the socket dir
+// must be set AND resolve under tmpdir (deleting the var is not enough —
+// discovery falls back to the hardcoded /run/ces-bootstrap).
+const cesSocketDir = process.env.CES_BOOTSTRAP_SOCKET_DIR?.trim();
+if (!cesSocketDir) {
+  fail("CES_BOOTSTRAP_SOCKET_DIR is not set after main preload");
+}
+
+const resolvedCesSocket = canonicalize(cesSocketDir);
+if (
+  resolvedCesSocket !== tmpRoot &&
+  !resolvedCesSocket.startsWith(tmpRoot + sep)
+) {
+  fail(
+    `CES_BOOTSTRAP_SOCKET_DIR resolves to ${resolvedCesSocket}, which is not under ${tmpRoot}`,
+  );
+}

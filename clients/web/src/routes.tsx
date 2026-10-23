@@ -1,10 +1,7 @@
 import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
 
 import { authMiddleware } from "@/lib/auth/auth-middleware";
-import {
-  localModeOnlyMiddleware,
-  onboardingCompletedMiddleware,
-} from "@/lib/onboarding-middleware";
+import { onboardingCompletedMiddleware } from "@/lib/onboarding-middleware";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
@@ -373,29 +370,8 @@ export const routeTree = [
           {
             middleware: [onboardingCompletedMiddleware],
             children: [
-              {
-                middleware: [localModeOnlyMiddleware],
-                children: [
-                  {
-                    path: "onboarding/hosting",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/onboarding/pages/hosting-screen").then(
-                          (m) => m.HostingScreen,
-                        ),
-                    },
-                  },
-                  {
-                    path: "onboarding/api-key",
-                    lazy: {
-                      Component: () =>
-                        import("@/domains/onboarding/pages/api-key-screen").then(
-                          (m) => m.ApiKeyScreen,
-                        ),
-                    },
-                  },
-                ],
-              },
+              // Hosting + api-key moved to the app bundle
+              // (`/account/onboarding/{hosting,api-key}`).
               // `onboarding/start` moved to the app bundle
               // (`/account/onboarding/start`) — web's route is deleted and
               // the app path is emitted by the resolver's welcome fork.

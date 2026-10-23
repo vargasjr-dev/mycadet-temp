@@ -15,7 +15,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as tar from "tar";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   createRootBackup,
   initializeRootArchive,
@@ -63,7 +63,7 @@ async function fixture() {
   );
   await writeFile(join(root, "ces-data", "grants.json"), "CES policies");
   await symlink("notes.md", join(root, "workspace", "notes-link"));
-  const entry: AssistantEntry = {
+  const entry: LockfileAssistant = {
     assistantId: "test",
     cloud: "local",
     runtimeUrl: "http://127.0.0.1:7831",

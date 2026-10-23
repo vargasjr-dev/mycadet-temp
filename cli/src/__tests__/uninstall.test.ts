@@ -20,7 +20,7 @@ import {
   getStateDir,
 } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 
 // The command reads its argv at call time.
 const ORIGINAL_ARGV = process.argv;
@@ -73,7 +73,7 @@ function withRestoredEnv(run: () => Promise<void>): Promise<void> {
   });
 }
 
-function makeEntry(assistantId: string): AssistantEntry {
+function makeEntry(assistantId: string): LockfileAssistant {
   return {
     assistantId,
     runtimeUrl: "http://127.0.0.1:7801",

@@ -72,11 +72,6 @@ export const accountRoute = {
               },
             },
             {
-              // The pre-hatch onboarding front door (bucket D): ported from
-              // web's `/assistant/welcome` + `/assistant/onboarding/start`,
-              // which now bounce here cross-bundle. The remaining funnel
-              // steps stay web-side and are reached through the
-              // AssistantPage iframe mount.
               path: "onboarding/welcome",
               lazy: {
                 Component: () =>
@@ -91,6 +86,24 @@ export const accountRoute = {
                 Component: () =>
                   import("@app/domains/onboarding/pages/start-screen").then(
                     (m) => m.StartScreen,
+                  ),
+              },
+            },
+            {
+              path: "onboarding/hosting",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/hosting-screen").then(
+                    (m) => m.HostingScreen,
+                  ),
+              },
+            },
+            {
+              path: "onboarding/api-key",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/api-key-screen").then(
+                    (m) => m.ApiKeyScreen,
                   ),
               },
             },

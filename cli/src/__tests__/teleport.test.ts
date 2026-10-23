@@ -3,7 +3,7 @@ import * as assistants from "../lib/assistant-config.js";
 import * as host from "../lib/host-teleport.js";
 import { parseArgs, teleport } from "../commands/teleport.js";
 
-const entry: assistants.AssistantEntry = {
+const entry: assistants.LockfileAssistant = {
   assistantId: "source-1",
   name: "source",
   cloud: "local",

@@ -4,7 +4,7 @@ import { hostname } from "node:os";
 import { getLocalLanIPv4 } from "./lan-ip.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 
 /**
  * Resolve the URL for a generic runtime endpoint under `/v1/<subpath>`,
@@ -19,7 +19,7 @@ import type { AssistantEntry } from "./assistant-config.js";
  * The `subpath` is appended verbatim (e.g. `"identity"`).
  */
 export function resolveRuntimeUrl(
-  entry: Pick<AssistantEntry, "cloud" | "runtimeUrl" | "assistantId">,
+  entry: LockfileAssistant,
   subpath: string,
 ): string {
   if (isCloudHome(entry.cloud)) {
@@ -94,7 +94,7 @@ export function normalizeRuntimeUrl(url: string): string {
  * `null` when the candidate is untrusted (caller must skip the refresh).
  */
 export function trustedRefreshUrl(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   candidateUrl: string,
 ): string | null {
   const candidate = normalizeRuntimeUrl(candidateUrl);
@@ -106,7 +106,7 @@ export function trustedRefreshUrl(
 }
 
 /** The URL to dial an entry's gateway on: its loopback gateway port, else its recorded runtimeUrl, else the default gateway port. */
-export function getGatewayUrl(entry: AssistantEntry): string {
+export function getGatewayUrl(entry: LockfileAssistant): string {
   const port = getLoopbackGatewayPort(entry);
   if (port) return `http://127.0.0.1:${port}`;
   return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(

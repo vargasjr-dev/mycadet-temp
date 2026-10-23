@@ -420,12 +420,8 @@
     "computeResourcesTitle": "Cómputo y recursos",
     "current": "Actual",
     "customize": "Personalizar",
-    "dangerZoneTitle": "Zona de peligro",
     "preferencesSubtitle": "Personaliza cómo se ve y se comporta Cadet en este dispositivo.",
     "preferencesTitle": "Preferencias",
-    "retireAssistantDescription": "Retira permanentemente este asistente y elimina todos los datos asociados.",
-    "retireAssistantLoginNotice": "Inicia sesión en la plataforma Cadet para retirar este asistente.",
-    "retireAssistantTitle": "Retirar asistente",
     "switchAssistantSubtitle": "Elige a qué asistente está conectado este dispositivo.",
     "switchAssistantTitle": "Cambiar asistente",
     "updateWindow": "Ventana de actualización",
@@ -1049,9 +1045,6 @@
     "failStop": "No se pudo detener el asistente.",
     "toastFailed": "No se pudo reiniciar el asistente.",
     "toastRestarting": "El asistente se está reiniciando."
-  },
-  "retireAssistant": {
-    "button": "Retirar asistente"
   },
   "riskToleranceSettings": {
     "advanced": "Avanzado",

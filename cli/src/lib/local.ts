@@ -56,6 +56,7 @@ import {
   getDaemonPidPath,
   type LocalInstanceResources,
 } from "./assistant-config.js";
+import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
@@ -232,7 +233,7 @@ function localRuntimeAssistantIndex(
 }
 
 function localRuntimeGatewayDir(
-  resources: LocalInstanceResources | undefined,
+  resources: LocalAssistantResources | undefined,
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -241,7 +242,7 @@ function localRuntimeGatewayDir(
 }
 
 function localRuntimeCesDir(
-  resources: LocalInstanceResources | undefined,
+  resources: LocalAssistantResources | undefined,
 ): string | undefined {
   const installDir = resources?.runtimeInstallDir;
   if (!installDir) return undefined;
@@ -948,7 +949,7 @@ async function startDaemonWatchFromSource(
   return trackDaemonSpawn(child);
 }
 
-function resolveGatewayDir(resources?: LocalInstanceResources): string {
+function resolveGatewayDir(resources?: LocalAssistantResources): string {
   const runtimeGatewayDir = localRuntimeGatewayDir(resources);
   if (runtimeGatewayDir) return runtimeGatewayDir;
 
@@ -1001,7 +1002,9 @@ function resolveGatewayDir(resources?: LocalInstanceResources): string {
  * entry's `resources` (undefined for the default instance, where both
  * processes fall back to the same cwd-relative paths).
  */
-export function gatewayCliInvocation(resources?: LocalInstanceResources): {
+export function gatewayCliInvocation(
+  resources?: LocalAssistantResources | undefined,
+): {
   command: string;
   args: string[];
   cwd: string;
@@ -1013,7 +1016,7 @@ export function gatewayCliInvocation(resources?: LocalInstanceResources): {
     cwd: spawnStateRoot(),
     env: {
       ...process.env,
-      ...(resources
+      ...(resources?.instanceDir
         ? {
             CADET_WORKSPACE_DIR: join(resources.instanceDir, "workspace"),
             GATEWAY_SECURITY_DIR: join(

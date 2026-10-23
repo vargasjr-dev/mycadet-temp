@@ -6,8 +6,8 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import type { AssistantEntry } from "./assistant-config.js";
-import { saveAssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
+import { saveLockfileAssistant } from "./assistant-config.js";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
@@ -578,9 +578,15 @@ export interface PerformDockerRollbackOptions {
  * - Auto-rollback on failure
  */
 export async function performDockerRollback(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
   const { targetVersion, backupPath } = options;
 
   if (!targetVersion) {
@@ -609,7 +615,7 @@ export async function performDockerRollback(
   } = {};
   try {
     const healthResp = await loopbackSafeFetch(
-      `${entry.runtimeUrl}/healthz?include=migrations`,
+      `${gatewayUrl}/healthz?include=migrations`,
       { signal: AbortSignal.timeout(5000) },
     );
     if (healthResp.ok) {
@@ -651,7 +657,7 @@ export async function performDockerRollback(
 
   // Record rollback start in workspace git history
   await commitWorkspaceViaGateway(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildUpgradeCommitMessage({
       action: "rollback",
@@ -670,7 +676,7 @@ export async function performDockerRollback(
   // Create a pre-rollback backup as a safety net
   console.log("📦 Creating pre-rollback backup...");
   const preRollbackBackupPath = await createBackup(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     {
       prefix: `${entry.assistantId}-pre-rollback`,
@@ -697,7 +703,7 @@ export async function performDockerRollback(
   // Parse gateway port from entry's runtimeUrl
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
-    const parsed = new URL(entry.runtimeUrl);
+    const parsed = new URL(gatewayUrl);
     const port = parseInt(parsed.port, 10);
     if (!isNaN(port)) {
       gatewayPort = port;
@@ -713,7 +719,7 @@ export async function performDockerRollback(
   // Broadcast SSE "starting" event
   console.log("📢 Notifying connected clients...");
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildStartingEvent(targetVersion),
   );
@@ -722,7 +728,7 @@ export async function performDockerRollback(
 
   // Pull target version Docker images
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.DOWNLOADING),
   );
@@ -741,7 +747,7 @@ export async function performDockerRollback(
     const detail = pullErr instanceof Error ? pullErr.message : String(pullErr);
     console.error(`\n❌ Failed to pull Docker images: ${detail}`);
     await broadcastUpgradeEvent(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildCompleteEvent(currentVersion ?? "unknown", false),
     );
@@ -752,7 +758,7 @@ export async function performDockerRollback(
 
   // Progress: switching version
   await broadcastUpgradeEvent(
-    entry.runtimeUrl,
+    gatewayUrl,
     entry.assistantId,
     buildProgressEvent(UPGRADE_PROGRESS.SWITCHING),
   );
@@ -783,14 +789,14 @@ export async function performDockerRollback(
       (msg) => console.log(msg),
     );
     if (
-      !(await restoreBackup(entry.runtimeUrl, entry.assistantId, backupPath, {
+      !(await restoreBackup(gatewayUrl, entry.assistantId, backupPath, {
         resume: false,
       }))
     )
       throw new Error("Target backup roots could not be restored.");
     await wakeContainers(res);
     console.log("Waiting for restored assistant to become ready...");
-    ready = await waitForReady(entry.runtimeUrl);
+    ready = await waitForReady(gatewayUrl);
   } catch (error) {
     console.error(
       `Versioned restore failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -800,7 +806,7 @@ export async function performDockerRollback(
   if (ready) {
     // Success path
 
-    const updatedEntry: AssistantEntry = {
+    const updatedEntry: LockfileAssistant = {
       ...entry,
       containerInfo: {
         assistantImage: targetImageTags.assistant,
@@ -809,18 +815,18 @@ export async function performDockerRollback(
         assistantPort,
       },
     };
-    saveAssistantEntry(updatedEntry);
+    saveLockfileAssistant(updatedEntry);
 
     // Notify clients that the rollback succeeded
     await broadcastUpgradeEvent(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildCompleteEvent(targetVersion, true),
     );
 
     // Record successful rollback in workspace git history
     await commitWorkspaceViaGateway(
-      entry.runtimeUrl,
+      gatewayUrl,
       entry.assistantId,
       buildUpgradeCommitMessage({
         action: "rollback",
@@ -850,7 +856,7 @@ export async function performDockerRollback(
 
     if (currentImageRefs) {
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildProgressEvent(UPGRADE_PROGRESS.REVERTING),
       );
@@ -863,12 +869,12 @@ export async function performDockerRollback(
         ) {
           console.log("🔄 Reverting database changes...");
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildProgressEvent(UPGRADE_PROGRESS.REVERTING_MIGRATIONS),
           );
           await rollbackMigrations(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             preMigrationState.dbVersion,
             preMigrationState.lastWorkspaceMigrationId,
@@ -894,11 +900,11 @@ export async function performDockerRollback(
           (msg) => console.log(msg),
         );
 
-        let revertReady = await waitForReady(entry.runtimeUrl);
+        let revertReady = await waitForReady(gatewayUrl);
         let restoredViaFailedState = false;
         if (!revertReady && preRollbackBackupPath) {
           const recovery = await attemptFailedStateRestore({
-            runtimeUrl: entry.runtimeUrl,
+            runtimeUrl: gatewayUrl,
             assistantId: entry.assistantId,
             backupPath: preRollbackBackupPath,
             backupLabel: "pre-rollback",
@@ -929,14 +935,14 @@ export async function performDockerRollback(
             );
           } else if (preRollbackBackupPath) {
             await broadcastUpgradeEvent(
-              entry.runtimeUrl,
+              gatewayUrl,
               entry.assistantId,
               buildProgressEvent(UPGRADE_PROGRESS.RESTORING),
             );
             console.log(`📦 Restoring data from pre-rollback backup...`);
             console.log(`   Source: ${preRollbackBackupPath}`);
             const restored = await restoreBackup(
-              entry.runtimeUrl,
+              gatewayUrl,
               entry.assistantId,
               preRollbackBackupPath,
               {},
@@ -951,7 +957,7 @@ export async function performDockerRollback(
           }
 
           // Restore lockfile state
-          const revertedEntry: AssistantEntry = {
+          const revertedEntry: LockfileAssistant = {
             ...entry,
             containerInfo: {
               assistantImage:
@@ -965,10 +971,10 @@ export async function performDockerRollback(
               assistantPort,
             },
           };
-          saveAssistantEntry(revertedEntry);
+          saveLockfileAssistant(revertedEntry);
 
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildCompleteEvent(
               currentVersion ?? "unknown",
@@ -992,7 +998,7 @@ export async function performDockerRollback(
             `   Check logs with: docker logs -f ${res.assistantContainer}`,
           );
           await broadcastUpgradeEvent(
-            entry.runtimeUrl,
+            gatewayUrl,
             entry.assistantId,
             buildCompleteEvent(currentVersion ?? "unknown", false),
           );
@@ -1010,7 +1016,7 @@ export async function performDockerRollback(
           `   Check logs with: docker logs -f ${res.assistantContainer}`,
         );
         await broadcastUpgradeEvent(
-          entry.runtimeUrl,
+          gatewayUrl,
           entry.assistantId,
           buildCompleteEvent(currentVersion ?? "unknown", false),
         );
@@ -1026,7 +1032,7 @@ export async function performDockerRollback(
         `   Check logs with: docker logs -f ${res.assistantContainer}`,
       );
       await broadcastUpgradeEvent(
-        entry.runtimeUrl,
+        gatewayUrl,
         entry.assistantId,
         buildCompleteEvent(currentVersion ?? "unknown", false),
       );

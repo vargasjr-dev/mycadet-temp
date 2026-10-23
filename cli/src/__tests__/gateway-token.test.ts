@@ -26,7 +26,7 @@ import { join } from "node:path";
 
 import { gatewayToken } from "../commands/gateway/token.js";
 import {
-  saveAssistantEntry,
+  saveLockfileAssistant,
   setActiveAssistant,
 } from "../lib/assistant-config.js";
 import {
@@ -45,7 +45,7 @@ const REAL_FETCH = globalThis.fetch;
 let tempHome: string;
 
 function seedLocalEntry(overrides: Record<string, unknown> = {}): void {
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: "px",
     name: "Prime Quail",
     runtimeUrl: "http://127.0.0.1:7830",
@@ -176,7 +176,7 @@ describe("gateway token command", () => {
 
   test("get without a name targets the active assistant", async () => {
     seedLocalEntry();
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "py",
       name: "Other Box",
       runtimeUrl: "http://127.0.0.1:7831",

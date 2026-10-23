@@ -26,9 +26,9 @@ import {
   resolveTargetAssistant,
   setActiveAssistant,
   getActiveAssistant,
-  removeAssistantEntry,
-  saveAssistantEntry,
-  type AssistantEntry,
+  removeLockfileAssistant,
+  saveLockfileAssistant,
+  type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import {
   DEFAULT_DAEMON_PORT,
@@ -58,11 +58,11 @@ function readLockfileRaw(): Record<string, unknown> {
 const makeEntry = (
   id: string,
   remote: Remote = "local",
-  extra?: Partial<AssistantEntry>,
-): AssistantEntry => ({
+  extra?: Partial<LockfileAssistant>,
+): LockfileAssistant => ({
   assistantId: id,
   runtimeUrl: `http://localhost:${DEFAULT_DAEMON_PORT}`,
-  // The AssistantEntry field is `cloud` — the rename happens only here,
+  // The LockfileAssistant field is `cloud` — the rename happens only here,
   // where the type forces it.
   cloud: remote,
   ...extra,
@@ -181,7 +181,7 @@ describe("multi-local", () => {
 
     test("second instance gets distinct ports and dir when first instance is saved", async () => {
       // GIVEN a first local assistant already exists in the lockfile
-      saveAssistantEntry(makeEntry("instance-a"));
+      saveLockfileAssistant(makeEntry("instance-a"));
 
       // AND the default ports are occupied
       const occupiedPorts = new Set([
@@ -207,7 +207,7 @@ describe("multi-local", () => {
 
     test("skips ports that probePort reports as in-use", async () => {
       // GIVEN a first local assistant already exists in the lockfile
-      saveAssistantEntry(makeEntry("existing"));
+      saveLockfileAssistant(makeEntry("existing"));
 
       // AND the default daemon ports are occupied
       const portsInUse = new Set([
@@ -302,13 +302,13 @@ describe("multi-local", () => {
     });
   });
 
-  describe("removeAssistantEntry() reassigns activeAssistant on removal", () => {
+  describe("removeLockfileAssistant() reassigns activeAssistant on removal", () => {
     test("set active to foo, remove foo, verify active is reassigned to bar", () => {
       writeLockfile({
         assistants: [makeEntry("foo"), makeEntry("bar")],
         activeAssistant: "foo",
       });
-      removeAssistantEntry("foo");
+      removeLockfileAssistant("foo");
       expect(getActiveAssistant()).toBe("bar");
     });
 
@@ -317,7 +317,7 @@ describe("multi-local", () => {
         assistants: [makeEntry("foo"), makeEntry("bar")],
         activeAssistant: "foo",
       });
-      removeAssistantEntry("bar");
+      removeLockfileAssistant("bar");
       expect(getActiveAssistant()).toBe("foo");
     });
   });
@@ -343,7 +343,7 @@ describe("multi-local", () => {
       });
       writeLockfile({ assistants: [remoteEntry] });
       // Save and reload to verify resources are not injected
-      saveAssistantEntry(remoteEntry);
+      saveLockfileAssistant(remoteEntry);
       const result = resolveTargetAssistant("cloud-box");
       expect(result.resources).toBeUndefined();
     });

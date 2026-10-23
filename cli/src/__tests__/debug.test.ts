@@ -61,7 +61,7 @@ const LOCAL_ENTRY = {
   cloudAssistantId: "11111111-2222-3333-4444-555555555555",
   cloudBaseUrl: "https://cloud.mycadet.ai",
   cloudOrganizationId: "org-1",
-} satisfies assistantConfig.AssistantEntry;
+} satisfies assistantConfig.LockfileAssistant;
 
 let originalFetch: typeof globalThis.fetch;
 let originalExit: typeof process.exit;

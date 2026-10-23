@@ -1,10 +1,10 @@
 import { rm } from "node:fs/promises";
 import { z } from "zod";
 import cliPkg from "../../package.json";
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import {
   findAssistantByName,
-  removeAssistantEntry,
+  removeLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
@@ -40,24 +40,24 @@ type HostEnvironment = "local" | "docker";
 export class TeleportRecoveryError extends AggregateError {}
 
 export interface HostTeleportOps {
-  storage(entry: AssistantEntry): HostStorage;
-  sleep(entry: AssistantEntry): Promise<void>;
-  backup(entry: AssistantEntry): Promise<string>;
-  version(entry: AssistantEntry): Promise<string | undefined>;
+  storage(entry: LockfileAssistant): HostStorage;
+  sleep(entry: LockfileAssistant): Promise<void>;
+  backup(entry: LockfileAssistant): Promise<string>;
+  version(entry: LockfileAssistant): Promise<string | undefined>;
   hatch(
     env: HostEnvironment,
     name: string | undefined,
     archive: string,
-  ): Promise<AssistantEntry>;
+  ): Promise<LockfileAssistant>;
   restore(
-    entry: AssistantEntry,
+    entry: LockfileAssistant,
     archive: string,
     recovery: string,
   ): Promise<void>;
-  retire(entry: AssistantEntry): Promise<void>;
+  retire(entry: LockfileAssistant): Promise<void>;
 }
 
-function storageFor(entry: AssistantEntry): HostStorage {
+function storageFor(entry: LockfileAssistant): HostStorage {
   return entry.cloud === "docker"
     ? new DockerRootStorage(entry)
     : new LocalRootStorage(entry);
@@ -68,9 +68,11 @@ const defaultOps: HostTeleportOps = {
   sleep: (entry) =>
     sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
   backup: async (entry) => {
-    const archive = await createBackup(entry.runtimeUrl, entry.assistantId, {
-      prefix: `${entry.assistantId}-pre-teleport`,
-    });
+    const archive = entry.runtimeUrl
+      ? await createBackup(entry.runtimeUrl, entry.assistantId, {
+          prefix: `${entry.assistantId}-pre-teleport`,
+        })
+      : undefined;
     if (!archive) {
       throw new Error(
         `Could not capture '${entry.assistantId}'; teleport aborted.`,
@@ -120,16 +122,16 @@ const defaultOps: HostTeleportOps = {
     } else {
       await retireLocal(entry.assistantId, entry);
     }
-    removeAssistantEntry(entry.assistantId);
+    removeLockfileAssistant(entry.assistantId);
   },
 };
 
 export async function readHostRuntimeVersion(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<string | undefined> {
   if (entry.cloud !== "docker") {
     return (
-      (await fetchCurrentVersion(entry.runtimeUrl)) ??
+      (entry.runtimeUrl ? await fetchCurrentVersion(entry.runtimeUrl) : undefined) ??
       entry.resources?.runtimeVersion
     );
   }
@@ -190,7 +192,7 @@ async function startAndCheck(storage: HostStorage): Promise<void> {
 }
 
 export async function teleportHostInstallation(
-  source: AssistantEntry,
+  source: LockfileAssistant,
   targetEnv: HostEnvironment,
   targetName: string | undefined,
   options: { dryRun: boolean; keepSource: boolean },
@@ -208,10 +210,10 @@ export async function teleportHostInstallation(
 }
 
 async function performHostTeleport(
-  source: AssistantEntry,
+  source: LockfileAssistant,
   targetEnv: HostEnvironment,
   targetName: string | undefined,
-  existing: AssistantEntry | null,
+  existing: LockfileAssistant | null,
   options: { dryRun: boolean; keepSource: boolean },
   ops: HostTeleportOps,
 ): Promise<void> {
@@ -246,7 +248,7 @@ async function performHostTeleport(
   );
   const sourceStorage = ops.storage(source);
   const sourceWasRunning = await sourceStorage.running();
-  let target: AssistantEntry | undefined;
+  let target: LockfileAssistant | undefined;
   let ready = false;
   try {
     await ops.sleep(source);
@@ -331,7 +333,7 @@ const DockerConfiguration = z.object({
 
 /** Recreate standard CLI containers so immutable env cannot override imported identity. */
 async function dockerReplacementOptions(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
 ): Promise<Parameters<typeof startContainers>[0]> {
   const res = dockerResourceNames(entry.assistantId);
   const states = new Map<string, z.infer<typeof DockerConfiguration>>();
@@ -410,7 +412,13 @@ async function dockerReplacementOptions(
     env(res.assistantContainer),
     env(res.gatewayContainer),
   );
-  const gatewayPort = Number(new URL(entry.runtimeUrl).port);
+  const gatewayUrl = entry.runtimeUrl;
+  if (!gatewayUrl) {
+    throw new Error(
+      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
+    );
+  }
+  const gatewayPort = Number(new URL(gatewayUrl).port);
   const assistantPort = entry.containerInfo?.assistantPort;
   if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1 || !assistantPort) {
     throw new Error(
@@ -433,7 +441,7 @@ async function dockerReplacementOptions(
 }
 
 export async function restoreHostTeleportTarget(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   archive: string,
   recovery: string,
 ): Promise<void> {

@@ -135,7 +135,9 @@
     "adding": "Добавление…",
     "connect": "Подключить",
     "connecting": "Подключение…",
-    "continue": "Продолжить"
+    "continue": "Продолжить",
+    "back": "Назад",
+    "loginToUse": "Войти, чтобы пользоваться"
   },
   "addRemoteOriginDialog": {
     "title": "Добавить удалённого ассистента",
@@ -173,5 +175,25 @@
   },
   "startScreen": {
     "createAssistant": "Create your assistant"
+  },
+  "hostingScreen": {
+    "title": "Хостинг",
+    "body": "Выбор места, где будет жить ассистент.",
+    "needHelp": "Нужна помощь с выбором?",
+    "optionsAriaLabel": "Варианты хостинга"
+  },
+  "apiKeyScreen": {
+    "title": "Подключение провайдера моделей",
+    "body": "Выбор провайдера моделей для ассистента.",
+    "providerLabel": "Провайдер",
+    "modelLabel": "Модель",
+    "baseUrlLabel": "Базовый URL",
+    "modelsLabel": "Модели",
+    "modelsPlaceholder": "model-1, model-2",
+    "modelsHelp": "Идентификаторы моделей через запятую, которые отдаёт endpoint.",
+    "apiKeyLabel": "API-ключ {provider}",
+    "apiKeyPlaceholder": "API-ключ",
+    "noKeyPrompt": "Нет ключа?",
+    "getKeyLink": "Получить API-ключ"
   }
 }

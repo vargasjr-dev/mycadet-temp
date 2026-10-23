@@ -135,7 +135,9 @@
     "adding": "Añadiendo…",
     "connect": "Conectar",
     "connecting": "Conectando…",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "back": "Atrás",
+    "loginToUse": "Inicia sesión para usar"
   },
   "addRemoteOriginDialog": {
     "title": "Añadir un asistente remoto",
@@ -173,5 +175,25 @@
   },
   "startScreen": {
     "createAssistant": "Crear tu asistente"
+  },
+  "hostingScreen": {
+    "title": "Alojamiento",
+    "body": "Elige dónde quieres que viva tu asistente.",
+    "needHelp": "¿Necesitas ayuda para decidir?",
+    "optionsAriaLabel": "Opciones de alojamiento"
+  },
+  "apiKeyScreen": {
+    "title": "Conectar un proveedor de modelos",
+    "body": "Elige el proveedor de modelos que debe usar tu asistente.",
+    "providerLabel": "Proveedor",
+    "modelLabel": "Modelo",
+    "baseUrlLabel": "URL base",
+    "modelsLabel": "Modelos",
+    "modelsPlaceholder": "modelo-1, modelo-2",
+    "modelsHelp": "Identificadores de modelo separados por comas que expone tu endpoint.",
+    "apiKeyLabel": "Clave de API de {provider}",
+    "apiKeyPlaceholder": "Introduce tu clave de API",
+    "noKeyPrompt": "¿No la tienes?",
+    "getKeyLink": "Consigue una clave de API aquí"
   }
 }

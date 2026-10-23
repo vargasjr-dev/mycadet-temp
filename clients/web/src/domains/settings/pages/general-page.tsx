@@ -20,7 +20,6 @@ import {
 import { NativeAppCard } from "@/domains/settings/components/native-app-card";
 import { PairDeviceCard } from "@/domains/settings/pair-device/pair-device-card";
 import { PreferencesModal } from "@/domains/settings/components/preferences-modal";
-import { RetireAssistant } from "@/domains/settings/components/retire-assistant";
 import { TimezoneSection } from "@/domains/settings/components/timezone-section";
 import { ThisDeviceSection } from "@/domains/settings/components/this-device-section";
 import { UpdateWindowModal } from "@/domains/settings/components/update-window-modal";
@@ -92,7 +91,6 @@ export function GeneralPage() {
   const selected = getSelectedAssistant();
   const hasSelectedLocalAssistant =
     isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
-  const canRetireLocally = hasSelectedLocalAssistant;
   const canUpgradeLocally = hasSelectedLocalAssistant && !!isCadetCloudRemote();
   // Whether an upgrade panel (platform or local) is on screen. Both panels
   // render the "Current" version line that carries the 7-tap developer-mode
@@ -140,10 +138,6 @@ export function GeneralPage() {
     }
     void navigate(routes.assistant);
   };
-
-  const showRetire =
-    ((cloudGate === "full" || canRetireLocally) && !!assistant) ||
-    (cloudGate === "disabled" && !canRetireLocally);
 
   return (
     <div className="space-y-4">
@@ -290,32 +284,6 @@ export function GeneralPage() {
       )}
 
       {isElectron() && <TeleportCard />}
-
-      {showRetire && (
-        <DetailCard variant="danger" title={t("generalPage.dangerZoneTitle")}>
-          <div className="flex flex-col gap-6">
-            {showRetire && (
-              <section className="flex flex-col gap-2">
-                <h3 className="text-title-small text-[var(--content-emphasised)]">
-                  {t("generalPage.retireAssistantTitle")}
-                </h3>
-                <p className="text-body-medium-default text-[var(--content-tertiary)]">
-                  {t("generalPage.retireAssistantDescription")}
-                </p>
-                <div className="mt-1">
-                  {(cloudGate === "full" || canRetireLocally) && assistant ? (
-                    <RetireAssistant assistantId={assistant.id} />
-                  ) : (
-                    <CloudLoginNotice>
-                      {t("generalPage.retireAssistantLoginNotice")}
-                    </CloudLoginNotice>
-                  )}
-                </div>
-              </section>
-            )}
-          </div>
-        </DetailCard>
-      )}
     </div>
   );
 }

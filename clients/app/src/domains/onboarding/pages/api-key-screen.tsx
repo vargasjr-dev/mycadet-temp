@@ -1,44 +1,49 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
-import { ExternalAnchor } from "@/components/external-anchor";
-import { OnboardingLayout } from "@/components/onboarding-layout";
+import { AccountShell } from "@app/components/account/account-shell";
+import { ExternalAnchor } from "@app/components/external-anchor";
 import {
   NEW_ASSISTANT_PARAM,
   onboardingDestinationAfterConsent,
-} from "@/domains/onboarding/onboarding-destination";
-import { ATTRIBUTED_PLUGIN_PARAM } from "@/domains/onboarding/plugin-attribution";
-import { isSelectedAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant";
-import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { isLocalClient } from "@/lib/local-mode";
+} from "@app/domains/onboarding/onboarding-destination";
+import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
+import { ATTRIBUTED_PLUGIN_PARAM } from "@app/domains/onboarding/plugin-attribution";
 import {
   DEFAULT_ONBOARDING_PROVIDER,
   ONBOARDING_PROVIDERS,
   defaultModelForOnboardingProvider,
   onboardingProvider,
   type OnboardingProviderId,
-} from "@/domains/onboarding/provider-catalog";
-import { SETUP_NAVIGATE } from "@/domains/onboarding/onboarding-navigation";
+} from "@app/domains/onboarding/provider-catalog";
 import {
   peekPendingProviderKey,
   setPendingProviderKey,
-} from "@/domains/onboarding/provider-key";
-import { isElectron } from "@/runtime/is-electron";
-import { useTranslation } from "@/i18n";
-import { routes } from "@/utils/routes";
+} from "@app/domains/onboarding/provider-key";
+import { isLocalClient } from "@app/lib/runtime-mode";
+import { useTranslation } from "@app/i18n";
+import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
-import { Select } from "@mycadet/design-library/components/select";
 import { Input } from "@mycadet/design-library/components/input";
+import { Select } from "@mycadet/design-library/components/select";
 
-import { MOBILE_INPUT_NO_ZOOM } from "@/domains/onboarding/onboarding-step-layout";
+/**
+ * 16px inputs under the compact `touch-mobile` guard (width < 48rem and
+ * `pointer: coarse`) so iOS Safari doesn't zoom the field on focus. LUM-2597.
+ */
+const MOBILE_INPUT_NO_ZOOM = "touch-mobile:text-[16px]";
 
+/**
+ * The funnel's model-provider step, ported from web's
+ * `/assistant/onboarding/api-key` — now `/account/onboarding/api-key`, rendered
+ * with the account screens' compact chrome. Stages the collected key in
+ * sessionStorage for the hatching screen to consume (see `provider-key`).
+ */
 export function ApiKeyScreen() {
-  const { t } = useTranslation("onboarding");
+  const { t } = useTranslation("account");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const hosting = searchParams.get("hosting");
-  const electron = isElectron();
   const pendingProviderKey = peekPendingProviderKey();
 
   const [provider, setProvider] = useState<OnboardingProviderId>(
@@ -107,52 +112,34 @@ export function ApiKeyScreen() {
     // onboarding (hosting=local/docker in a local-mode build) must run the
     // foreground local hatch first, so it goes to `hatching`, which then
     // redirects into the research flow. Cadet-Cloud goes straight to research
-    // (managed background hatch).
+    // (managed background hatch). Web's copy also probes the selected
+    // assistant's onboarded stamp here, but this call pins newAssistant: true,
+    // which mutes that probe — the port drops it.
     const isLocalHatch =
       isLocalClient() && hosting !== null && hosting !== "cadet-cloud";
-    const selectedAssistantOnboarded = isSelectedAssistantOnboarded(
-      useResolvedAssistantsStore.getState().assistants,
-      readSelectedAssistantId(),
-    );
     const destination = onboardingDestinationAfterConsent({
       isLocalHatch,
-      selectedAssistantOnboarded,
       newAssistant: true,
     });
     void navigate(`${destination}${qs ? `?${qs}` : ""}`, SETUP_NAVIGATE);
   };
 
   const onBack = () => {
-    void navigate(routes.onboarding.hosting, SETUP_NAVIGATE);
+    void navigate(routes.account.onboarding.hosting, SETUP_NAVIGATE);
   };
 
   return (
-    <OnboardingLayout avatarWave="beside">
-      <div
-        className={`mx-auto flex w-full max-w-xl flex-col items-center ${electron ? "min-h-full px-8 pt-21 pb-4 electron-prechat-type" : "px-6 py-16"} text-[var(--content-default)]`}
-      >
-        <h1
-          className={
-            electron
-              ? "text-title-large"
-              : "text-3xl font-semibold tracking-tight"
-          }
-          style={{ animation: "fadeInUp 0.5s ease-out 0.1s both" }}
-        >
+    <AccountShell>
+      <div className="flex w-full flex-col items-center text-center text-[var(--content-default)]">
+        <h1 className="text-3xl font-semibold tracking-tight">
           {t("apiKeyScreen.title")}
         </h1>
-        <p
-          className={`text-center text-body-medium-lighter text-[var(--content-tertiary)] ${electron ? "mt-3.5" : "mt-3"}`}
-          style={{ animation: "fadeInUp 0.5s ease-out 0.3s both" }}
-        >
+        <p className="mt-3 text-body-medium-lighter text-[var(--content-tertiary)]">
           {t("apiKeyScreen.body")}
         </p>
 
-        <div
-          className={`flex w-full flex-col gap-4 ${electron ? "mt-8" : "mt-10"}`}
-          style={{ animation: "fadeInUp 0.5s ease-out 0.4s both" }}
-        >
-          <div className={`flex flex-col ${electron ? "gap-2" : "gap-1"}`}>
+        <div className="mt-10 flex w-full flex-col gap-4 text-left">
+          <div className="flex flex-col gap-1">
             <label className="text-body-small-default text-[var(--content-tertiary)]">
               {t("apiKeyScreen.providerLabel")}
             </label>
@@ -175,7 +162,7 @@ export function ApiKeyScreen() {
           </div>
 
           {models.length > 0 && (
-            <div className={`flex flex-col ${electron ? "gap-2" : "gap-1"}`}>
+            <div className="flex flex-col gap-1">
               <label className="text-body-small-default text-[var(--content-tertiary)]">
                 {t("apiKeyScreen.modelLabel")}
               </label>
@@ -193,7 +180,7 @@ export function ApiKeyScreen() {
 
           {isOpenAICompatible && (
             <>
-              <div className={`flex flex-col ${electron ? "gap-2" : "gap-1"}`}>
+              <div className="flex flex-col gap-1">
                 <label className="text-body-small-default text-[var(--content-tertiary)]">
                   {t("apiKeyScreen.baseUrlLabel")}
                 </label>
@@ -205,7 +192,7 @@ export function ApiKeyScreen() {
                   fullWidth
                 />
               </div>
-              <div className={`flex flex-col ${electron ? "gap-2" : "gap-1"}`}>
+              <div className="flex flex-col gap-1">
                 <label className="text-body-small-default text-[var(--content-tertiary)]">
                   {t("apiKeyScreen.modelsLabel")}
                 </label>
@@ -255,29 +242,21 @@ export function ApiKeyScreen() {
           )}
         </div>
 
-        <div
-          className={`mt-8 flex w-full flex-col ${electron ? "gap-2.5" : "gap-2"}`}
-          style={{ animation: "fadeInUp 0.5s ease-out 0.5s both" }}
-        >
+        <div className="mt-8 flex w-full flex-col gap-2">
           <Button
             variant="primary"
-            size={electron ? "regular" : "large"}
+            size="large"
             fullWidth
             disabled={!canContinue}
             onClick={onContinue}
           >
             {t("actions.continue")}
           </Button>
-          <Button
-            variant="outlined"
-            size={electron ? "regular" : "large"}
-            fullWidth
-            onClick={onBack}
-          >
+          <Button variant="outlined" size="large" fullWidth onClick={onBack}>
             {t("actions.back")}
           </Button>
         </div>
       </div>
-    </OnboardingLayout>
+    </AccountShell>
   );
 }

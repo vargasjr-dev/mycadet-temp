@@ -15,22 +15,21 @@ const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
-import { saveAssistantEntry } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "../lib/assistant-config";
 import { saveGuardianToken } from "../lib/guardian-token";
 
 const RUNTIME = "https://gw.example.com";
 const future = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const past = () => new Date(Date.now() - 60_000).toISOString();
 
-function seedEntry(kind: "paired" | "local", localUrl?: string): void {
+function seedEntry(kind: "paired" | "local"): void {
   // Paired-ness derives from the addressing (no stored flag): the paired
   // shape is a loopback-cloud entry whose runtimeUrl points off-machine;
   // the plain-local shape uses a loopback runtimeUrl.
-  saveAssistantEntry({
+  saveLockfileAssistant({
     assistantId: "px",
     name: kind === "paired" ? "Paired" : "Local",
     runtimeUrl: kind === "paired" ? RUNTIME : "http://127.0.0.1:7830",
-    ...(localUrl ? { localUrl } : {}),
     cloud: "local",
   });
 }
@@ -81,7 +80,7 @@ describe("maybeRefreshAuthHeaders", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "tui-midsession-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Isolate the lockfile too — saveAssistantEntry writes the prod lockfile
+    // Isolate the lockfile too — saveLockfileAssistant writes the prod lockfile
     // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set, which would
     // mutate the real user/CI lockfile.
     process.env.CADET_LOCKFILE_DIR = tempHome;
@@ -128,24 +127,6 @@ describe("maybeRefreshAuthHeaders", () => {
     expect(ok).toBe(false);
     expect(auth.Authorization).toBe("Bearer old-acc"); // unchanged
     expect(refresh.hit()).toBe(false); // no refresh POST anywhere
-  });
-
-  test("refreshes against the matched persisted URL, keeping the session's interface", async () => {
-    // When an entry persists both a loopback localUrl and a different
-    // runtimeUrl, a session on the loopback URL must refresh against THAT URL,
-    // not the external runtimeUrl (which may be unreachable / public-facing).
-    const localUrl = "http://127.0.0.1:7830";
-    seedEntry("paired", localUrl); // runtimeUrl = RUNTIME (10.0.0.9), localUrl = loopback
-    seedToken("old-acc", "ref");
-    const refresh = stubRefresh(true);
-    const auth = { Authorization: "Bearer old-acc" };
-
-    const ok = await maybeRefreshAuthHeaders(localUrl, "px", auth);
-
-    expect(ok).toBe(true);
-    expect(refresh.hit()).toBe(true);
-    expect(refresh.url()).toContain("127.0.0.1");
-    expect(refresh.url()).not.toContain("10.0.0.9");
   });
 
   test("does NOT refresh a local assistant (scoped to paired only)", async () => {

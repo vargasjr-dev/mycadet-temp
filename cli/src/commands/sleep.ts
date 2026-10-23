@@ -4,10 +4,11 @@ import { join } from "path";
 
 import {
   getDaemonPidPath,
+  isLocalInstanceResources,
   loadAllAssistants,
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
-import type { AssistantEntry } from "../lib/assistant-config.js";
+import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
@@ -34,8 +35,8 @@ type ActiveCallLease = {
   callSessionId: string;
 };
 
-function getAssistantRootDir(entry: AssistantEntry): string {
-  if (!entry.resources) {
+function getAssistantRootDir(entry: LockfileAssistant): string {
+  if (!isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -240,7 +241,7 @@ async function sleepAll(opts: SleepOptions): Promise<void> {
  * (single-assistant path) and continuing to the next entry (`--all`).
  */
 export async function sleepAssistant(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   opts: SleepOptions,
 ): Promise<void> {
   const { force, wait, waitMs } = opts;
@@ -272,7 +273,7 @@ export async function sleepAssistant(
     );
   }
 
-  if (!entry.resources) {
+  if (!isLocalInstanceResources(entry.resources)) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
@@ -373,7 +374,7 @@ export async function sleepAssistant(
  * never make `cadet sleep` less reliable than it is without `--wait`.
  */
 async function runDrainPhase(
-  entry: AssistantEntry,
+  entry: LockfileAssistant,
   assistantPidFile: string,
   waitMs: number | null,
 ): Promise<DrainOutcome | "skipped"> {

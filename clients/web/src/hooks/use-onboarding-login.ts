@@ -10,9 +10,7 @@ import {
   nativeAuthErrorDetail,
   nativeAuthErrorKey,
 } from "@/domains/account/native-auth-error";
-import { buildNavigationState } from "@/lib/navigation/build-state";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { resolveLoginReturnTo } from "@/lib/navigation/navigation-resolver";
 import { isElectron } from "@/runtime/is-electron";
 import { startAuthFlow } from "@/runtime/native-auth";
 
@@ -40,16 +38,7 @@ export function useOnboardingLogin(
   const flowIdRef = useRef(0);
 
   const login = async () => {
-    const returnTo =
-      returnToOverride !== undefined
-        ? returnToOverride
-        : resolveLoginReturnTo(
-            buildNavigationState({
-              sessionSettled: true,
-              isAuthenticated: true,
-            }),
-            location.pathname,
-          );
+    const returnTo = returnToOverride ?? location.pathname;
 
     const flowId = ++flowIdRef.current;
     setError(null);

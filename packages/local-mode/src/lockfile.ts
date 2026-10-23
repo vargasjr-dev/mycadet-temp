@@ -306,28 +306,29 @@ export function upsertLockfileAssistant(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
-// The renderer surface is an ALLOWLIST over the strict base schema: the base
-// models host-owned fields (the secrets, resources, addressing, process
-// bookkeeping) that must never ride a renderer payload, so a renderer save
-// parses through the fields a renderer may write and nothing else — a newly
-// modeled field is renderer-invisible until deliberately added here.
-// `cloud` additionally never rides because the schema's `catch` would
-// otherwise materialize a spurious "local" into every upsert, clobbering the
-// recorded topology on merge.
-const RendererAssistantUpdateSchema = LockfileAssistantSchema.pick({
-  assistantId: true,
-  name: true,
-  runtimeUrl: true,
-  hatchedAt: true,
-  onboardedAt: true,
-  cloudAssistantId: true,
-  cloudBaseUrl: true,
-  cloudOrganizationId: true,
-});
+/**
+ * Host-owned lockfile fields that never ride a renderer payload: the secrets,
+ * resources, process bookkeeping, and the recorded topology. The strip is the
+ * renderer boundary — the payload parses through `LockfileAssistantSchema`
+ * directly, one schema with no second allowlist to drift.
+ */
+const HOST_OWNED_FIELDS = [
+  "cloud",
+  "resources",
+  "bearerToken",
+  "watcherPid",
+  "guardianBootstrapSecret",
+  "containerInfo",
+  "mgmtSocket",
+  "conversationKey",
+] as const;
 
 /**
- * Apply a renderer-originated lockfile upsert. Resources and secrets are
- * host-owned and never accepted from a renderer.
+ * Apply a renderer-originated lockfile upsert. The stripped payload parses
+ * through the lockfile schema directly, and the merge writes only keys the
+ * payload carried — a parse materializes defaults and catches for omitted
+ * keys (cloud's `catch` would read "local"), which would clobber host state
+ * the renderer never sent.
  */
 export function upsertRendererLockfileAssistant(
   lockfilePaths: string[],
@@ -344,11 +345,21 @@ export function upsertRendererLockfileAssistant(
       return { ok: false, status: 409, error: read.error };
     }
 
-    const update = RendererAssistantUpdateSchema.safeParse(assistant);
-    if (!update.success) {
+    const payload = { ...assistant };
+    for (const field of HOST_OWNED_FIELDS) {
+      delete payload[field];
+    }
+    const parsed = LockfileAssistantSchema.safeParse(payload);
+    if (!parsed.success) {
       return { ok: false, status: 400, error: "Invalid assistant metadata" };
     }
-    return upsertLockfileAssistant(lockfilePaths, update.data, activeAssistant);
+    const update: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed.data)) {
+      if (key in payload) {
+        update[key] = value;
+      }
+    }
+    return upsertLockfileAssistant(lockfilePaths, update, activeAssistant);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

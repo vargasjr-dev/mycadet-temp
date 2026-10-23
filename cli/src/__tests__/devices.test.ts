@@ -28,7 +28,7 @@ import { createHash } from "node:crypto";
 
 import * as stepRunner from "../lib/step-runner.js";
 import { devices } from "../commands/devices.js";
-import { saveAssistantEntry } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "../lib/assistant-config.js";
 import { computeDeviceId } from "../lib/guardian-token.js";
 
 interface FetchCall {
@@ -104,7 +104,7 @@ describe("cadet devices", () => {
   });
 
   test("Docker devices list and revoke execute inside the gateway without a host port", async () => {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "docker-fixture",
       cloud: "docker",
       runtimeUrl: "https://tunnel.example",
@@ -146,7 +146,7 @@ describe("cadet devices", () => {
   });
 
   test("Docker gateway output rejects malformed status and body fields", async () => {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "docker-invalid",
       cloud: "docker",
       runtimeUrl: "https://tunnel.example",
@@ -179,7 +179,7 @@ describe("cadet devices", () => {
   });
 
   function seedLocal(id: string, gatewayPort = 7830): void {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: id,
       name: id,
       runtimeUrl: "http://127.0.0.1:7830",
@@ -427,7 +427,7 @@ describe("cadet devices", () => {
   });
 
   test("host-gates a paired connection (points to the host)", async () => {
-    saveAssistantEntry({
+    saveLockfileAssistant({
       assistantId: "paired-box",
       name: "Paired Box",
       runtimeUrl: "http://10.0.0.9:7830",

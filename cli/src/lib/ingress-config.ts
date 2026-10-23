@@ -9,7 +9,7 @@ import {
   type TunnelRecord,
 } from "@mycadet/service-contracts/ingress";
 
-import type { AssistantEntry } from "./assistant-config.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import { getStateDir } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 
@@ -22,7 +22,7 @@ import { getCurrentEnvironment } from "./environments/resolve.js";
  */
 
 /** Container topologies whose gateway runs on this machine without host `resources`. */
-export function isLocalContainerEntry(entry: AssistantEntry): boolean {
+export function isLocalContainerEntry(entry: LockfileAssistant): boolean {
   return entry.cloud === "docker" || entry.cloud === "apple-container";
 }
 
