@@ -2,9 +2,8 @@ import { routes } from "@/utils/routes";
 
 /**
  * Query param that asks the hatch screen to hand off to chat instead of the
- * research/personality funnel. Set only by the non-production "Skip to chat"
- * control on the consent screen (and carried through checkout / paid-return
- * resumptions of that click). Production builds ignore it.
+ * research/personality funnel. Set by the non-production signup and start
+ * screen hand-offs through {@link withSkipResearch}.
  */
 export const SKIP_RESEARCH_PARAM = "skip_research";
 
