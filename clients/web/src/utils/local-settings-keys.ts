@@ -33,12 +33,6 @@ export const LS_ASSISTANT_INBOX_READ_EMAILS_PREFIX =
 export const LS_ASSISTANT_INBOX_PINNED_PREFIX =
   "cadet:ui:assistantInboxPinned:";
 /**
- * Prefix, completed with the assistant id: "1" while the user has closed the
- * profile's Email card on this device. Honoured only while the org's plan
- * has no managed email; the card returns once there is an inbox to open.
- */
-export const LS_ASSISTANT_INBOX_CARD_DISMISSED_PREFIX =
-  "cadet:ui:assistantInboxCardDismissed:";
 /**
  * Prefix, completed with a feature intro id (`FeatureIntroId` in
  * `hooks/use-feature-intro-seen.ts`): "1" once the one-time intro modal for

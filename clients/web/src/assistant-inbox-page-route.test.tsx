@@ -100,15 +100,6 @@ function page<T>(results: T[]) {
 
 mock.module("@/generated/api/sdk.gen", () => ({
   ...apiSdk,
-  organizationsBillingSubscriptionRetrieve: () =>
-    Promise.resolve({
-      data: {
-        plan_id: "pro",
-        status: "active",
-        entitlements: { cloud_email: true, phone_number: false },
-      },
-      response: { ok: true },
-    }),
   assistantsList: () =>
     Promise.resolve(
       page([

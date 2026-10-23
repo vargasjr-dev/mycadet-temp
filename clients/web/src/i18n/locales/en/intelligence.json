@@ -111,10 +111,8 @@
     "setUpSchedule": "Set one up",
     "updateAvatarAndName": "Update avatar and name",
     "viewMoreSchedules": "{count, plural, one {View # more…} other {View # more…}}",
-    "lockedBadge": "Needs the Super plan",
     "pinEmail": "Pin Email to the side menu",
-    "unpinEmail": "Unpin Email from the side menu",
-    "dismissEmail": "Close"
+    "unpinEmail": "Unpin Email from the side menu"
   },
   "identitySections": {
     "channels": {

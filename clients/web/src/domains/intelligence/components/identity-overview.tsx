@@ -10,7 +10,7 @@
  * small stat line).
  */
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   Brain,
@@ -25,7 +25,6 @@ import {
   Radio,
   Sparkles,
   Users,
-  X,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -48,10 +47,8 @@ import { PageShell } from "@/components/page-shell";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useElementSize } from "@/hooks/use-element-size";
 import { useTranslation } from "@/i18n";
-import { useEmailCardDismissed } from "@/hooks/use-email-card-dismissed";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
 import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
-import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surface";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
@@ -286,42 +283,12 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
   }, [invalidateAvatar]);
 
   /* The Email card is the way into the Assistant Inbox, which exists only
-     on the cloud. Its lock reads the same entitlement the inbox gates
-     on, and only an explicit denial locks it: a subscription that has not
-     loaded, or failed to, leaves the card open, since the inbox itself
-     decides what to show. */
+     on the cloud. */
   const cloudGate = useCloudGateWithPending({ cloudHostedOnly: true });
   const showsEmail = cloudGate === "full";
-  const subscriptionQuery = useQuery({
-    ...organizationsBillingSubscriptionRetrieveOptions(),
-    enabled: showsEmail,
-  });
-  const entitlements = subscriptionQuery.data?.entitlements as
-    | Record<string, unknown>
-    | undefined;
-  const emailLocked = !!entitlements && entitlements.cloud_email !== true;
-  /* A locked card is a pitch, so it can be closed; the closing stops
-     applying once the plan has email, since then the card is the way in.
-     An open card can be pinned to the side menu instead. */
-  const emailCard = useEmailCardDismissed(assistantId);
   const emailPin = useEmailPinned(assistantId);
-  const sections = buildIdentitySections({
-    email:
-      showsEmail && !(emailLocked && emailCard.dismissed)
-        ? { locked: emailLocked }
-        : undefined,
-  });
-  const emailTrailing = emailLocked ? (
-    <button
-      type="button"
-      aria-label={t("identityOverview.dismissEmail")}
-      title={t("identityOverview.dismissEmail")}
-      onClick={emailCard.dismiss}
-      className="flex size-7 items-center justify-center rounded-full text-[var(--content-secondary)] transition-colors hover:bg-[color-mix(in_srgb,var(--content-default)_10%,transparent)] hover:text-[var(--content-strong)] outline-none keyboard-focus:ring-2 keyboard-focus:ring-[var(--ring)]"
-    >
-      <X className="h-4 w-4" aria-hidden />
-    </button>
-  ) : (
+  const sections = buildIdentitySections({ email: showsEmail });
+  const emailTrailing = (
     <button
       type="button"
       aria-label={
@@ -589,20 +556,6 @@ export function SectionCard({
     />
   );
 
-  // The lock on a section the org's plan does not include. Emoji rather
-  // than a glyph so it reads at a glance beside the title, the way the
-  // request put it.
-  const lockBadge = section.locked ? (
-    <span
-      role="img"
-      aria-label={t("identityOverview.lockedBadge")}
-      title={t("identityOverview.lockedBadge")}
-      className="shrink-0 text-[13px] leading-none"
-    >
-      🔒
-    </span>
-  ) : null;
-
   if (mini) {
     // Bottom-strip tile per Figma (New-App 6944-89405): left-aligned,
     // 12px radius, 40px icon slot in the secondary tone, 16px title over
@@ -642,7 +595,6 @@ export function SectionCard({
                 className={`flex items-center gap-1.5 truncate text-title-small leading-normal transition-colors duration-300 ${fgStrong}`}
               >
                 {section.label}
-                {lockBadge}
               </span>
               {stat?.text && (
                 <span
@@ -785,7 +737,6 @@ export function SectionCard({
                 className={`flex items-center gap-1.5 text-body-medium-default transition-colors duration-300 ${fg}`}
               >
                 {section.label}
-                {lockBadge}
               </span>
               <span
                 className={`text-[13px] transition-colors duration-300 ${fgMuted}`}
@@ -974,7 +925,7 @@ function OverviewBento({
   customImageUrl: string | null;
   name: string;
   sections: IdentitySection[];
-  /** The Email row's trailing control (pin, or close for a locked card). */
+  /** The Email row's trailing pin control. */
   emailTrailing?: ReactNode;
   stats: Record<string, IdentitySectionStat | undefined>;
   avatarHex: string | null;
@@ -1002,7 +953,7 @@ function OverviewBento({
 
   /* Email lives inside the Channels tile as a pill, the way the side menu
      draws its entries: the assistant's wash with the glyph in the accent,
-     a lock when the plan has no email, and its pin or close beside it. */
+     and its pin beside it. */
   const emailSection = sections.find((s) => s.key === "email");
   const emailPill = emailSection ? (
     /* The pill is a link with its control inside the same shape, as the
@@ -1028,16 +979,6 @@ function OverviewBento({
           aria-hidden
         />
         <span className="truncate">{emailSection.label}</span>
-        {emailSection.locked ? (
-          <span
-            role="img"
-            aria-label={t("identityOverview.lockedBadge")}
-            title={t("identityOverview.lockedBadge")}
-            className="text-[13px] leading-none"
-          >
-            🔒
-          </span>
-        ) : null}
       </Link>
       {emailTrailing}
     </span>

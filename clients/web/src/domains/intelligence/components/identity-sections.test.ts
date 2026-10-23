@@ -24,19 +24,14 @@ describe("buildIdentitySections", () => {
     ]);
   });
 
-  test("draws Email after Channels only when asked, carrying the lock", () => {
-    const withEmail = buildIdentitySections({ email: { locked: true } });
+  test("draws Email after Channels only when asked", () => {
+    const withEmail = buildIdentitySections({ email: true });
     const emailIndex = withEmail.findIndex((s) => s.key === "email");
     expect(emailIndex).toBe(
       withEmail.findIndex((s) => s.key === "channels") + 1,
     );
-    expect(withEmail[emailIndex]?.locked).toBe(true);
     expect(withEmail[emailIndex]?.to).toBe("/assistant/inbox");
-    expect(
-      buildIdentitySections({ email: { locked: false } }).find(
-        (s) => s.key === "email",
-      )?.locked,
-    ).toBe(false);
+    expect(buildIdentitySections().some((s) => s.key === "email")).toBe(false);
   });
 
   test("every section carries a label, description and path", () => {

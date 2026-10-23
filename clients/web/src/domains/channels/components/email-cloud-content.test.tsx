@@ -22,7 +22,6 @@ import {
   assistantsDomainsVerificationStatusRetrieveQueryKey,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesStatusRetrieveOptions,
-  organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import * as sdkGen from "@/generated/api/sdk.gen";
 import type {
@@ -30,7 +29,6 @@ import type {
   AssistantEmailAddress,
   DomainVerificationStatus,
   DomainVerificationStatusStatusEnum,
-  SubscriptionResponse,
 } from "@/generated/api/types.gen";
 
 const ASSISTANT_ID = "assistant-123";
@@ -77,11 +75,6 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 
 mock.module("@/generated/api/sdk.gen", () => ({
   ...sdkGen,
-  organizationsBillingSubscriptionRetrieve: () =>
-    Promise.resolve({
-      data: makeSubscription(),
-      response: { ok: true },
-    }),
   assistantsDomainsList: () =>
     Promise.resolve({
       data: { count: 1, next: null, previous: null, results: [makeDomain()] },
@@ -129,19 +122,6 @@ const {
   domainVerificationRefetchInterval,
 } = await import("@/domains/channels/components/email-cloud-content");
 
-function makeSubscription(): SubscriptionResponse {
-  return {
-    plan_id: "pro",
-    status: "active",
-    renewal_date: null,
-    current_period_start: null,
-    current_period_end: null,
-    cancel_at_period_end: false,
-    cancel_at: null,
-    entitlements: { cloud_email: true, phone_number: false },
-  };
-}
-
 function makeDomain(): AssistantDomain {
   return {
     id: DOMAIN_ID,
@@ -177,10 +157,6 @@ function seedClient(
   status: DomainVerificationStatusStatusEnum,
 ): void {
   const path = { assistant_id: ASSISTANT_ID };
-  client.setQueryData(
-    organizationsBillingSubscriptionRetrieveOptions().queryKey,
-    makeSubscription(),
-  );
   client.setQueryData(assistantsDomainsListOptions({ path }).queryKey, {
     count: 1,
     next: null,
