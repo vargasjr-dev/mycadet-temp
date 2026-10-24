@@ -40,7 +40,7 @@ describe("StartScreen", () => {
     fireEvent.click(screen.getByText("Create your assistant"));
 
     expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/onboarding/hatching?new_assistant=1&skip_research=1",
+      "/account/onboarding/hatching?new_assistant=1&skip_research=1",
       { replace: true },
     );
   });
