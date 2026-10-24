@@ -13,3 +13,31 @@
 
 /** Query-param name carrying the marketing-attributed plugin. */
 export const ATTRIBUTED_PLUGIN_PARAM = "plugin";
+
+/**
+ * The attributed plugin id from a query string, or `null` when there is none.
+ * `search` defaults to the current URL's query so the runner can read it
+ * without threading; pass an explicit string in tests.
+ */
+function readAttributedPluginId(search: string): string | null {
+  let params: URLSearchParams;
+  try {
+    params = new URLSearchParams(search);
+  } catch {
+    return null;
+  }
+  const id = params.get(ATTRIBUTED_PLUGIN_PARAM)?.trim();
+  return id ? id : null;
+}
+
+/**
+ * Plugin names to install for the user based on marketing attribution — the
+ * plugin they clicked "Hatch an assistant with this plugin" on before
+ * onboarding. Empty when there's none.
+ */
+export function pluginsFromAttribution(
+  search: string = typeof window !== "undefined" ? window.location.search : "",
+): string[] {
+  const pluginId = readAttributedPluginId(search);
+  return pluginId ? [pluginId] : [];
+}
