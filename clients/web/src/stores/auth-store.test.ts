@@ -163,6 +163,7 @@ mock.module("@/lib/local-mode", () => ({
   getCloudAssistants: () => mockCloudAssistants,
   getLocalAssistants: () => [],
   getSelectedAssistant: () => mockSelectedAssistant,
+  getLockfile: () => ({ assistants: [], activeAssistant: null }),
   getLockfileAssistant: (id: string) =>
     mockLockfileAssistants.find((a) => a.assistantId === id),
   primeLocalGatewayConnection: primeLocalGatewayConnectionMock,
@@ -605,23 +606,6 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
-
-  test("refreshSession still ends a local session whose assistants are cloud-hosted", async () => {
-    // A cloud assistant is unreachable without a cloud session, so the
-    // demotion above excludes this case and login is the right destination.
-    mockIsLocalClient = true;
-    mockIsGatewayAuth = false;
-    mockCloudAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
-    sessionUser = null;
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
   test("refreshSession still ends the session for a cloud-mode client on a settled 401", async () => {
@@ -1651,25 +1635,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().user?.kind).toBe("local");
   });
 
-  test("refreshSession ends a half-dead session whose assistants are cloud-hosted", async () => {
-    // Same stands-alone exclusion as a settled getSession 401: a cloud
-    // assistant is unreachable without a cloud session, so login wins.
-    mockIsLocalClient = true;
-    mockIsGatewayAuth = false;
-    mockCloudAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-  });
-
   test("a resume refresh does not flip a probe-settled absent session back to present", async () => {
     // Pin the oscillation regression: the probe settles absent on rejection,
     // then the app-resume refresh runs against the same half-dead session.
@@ -1711,9 +1676,11 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().user?.kind).toBe("platform");
   });
 
-  test("initSession with platform assistants routes a rejected session to login", async () => {
+  test("initSession settles a rejected platform session to the local user (never login)", async () => {
+    // Web holds no platform roster to gate the probe on, so the plain local
+    // arm always probes; a settled rejection clears the snapshot and falls
+    // back to the local user. Login routing is the app shell's decision.
     mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     localStorage.setItem(
       "cadet:auth:userSnapshot",
@@ -1722,33 +1689,36 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
     await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    expect(useAuthStore.getState().user?.kind).toBe("local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
     expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
 
-  test("initSession with platform assistants routes an assistants-list rejection to login", async () => {
+  test("initSession settles an assistants-list rejection to the local user", async () => {
     mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockListAssistantsResult = { ok: false, status: 410, error: {} };
 
     await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    expect(useAuthStore.getState().user?.kind).toBe("local");
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("initSession with platform assistants keeps the session on a transport-failed sync", async () => {
+  test("initSession keeps the adopted platform session on a transport-failed sync", async () => {
     mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchError = new TypeError("Failed to fetch");
 
     await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.kind).toBe("platform");
@@ -2202,19 +2172,6 @@ describe("offline session restore (LUM-2412)", () => {
       id: "user-9",
       email: "nine@example.com",
     });
-  });
-
-  test("local-mode platform-assistants boot also restores from cache on transport failure", async () => {
-    mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
-    getSessionThrows = true;
-    mockElectronSessionToken = "tok-1";
-    seedSnapshot();
-
-    await useAuthStore.getState().initSession();
-
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
   });
 
   test("refreshSession transport failure keeps the authenticated session (offline resume)", async () => {

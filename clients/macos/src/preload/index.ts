@@ -741,10 +741,30 @@ const bridge: CadetBridge = {
 
 contextBridge.exposeInMainWorld("cadet", bridge);
 
-const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
+// The shared selection key the app shell's chooser writes (the web frame's
+// copy lives at clients/web/src/assistant/selected-assistant-storage.ts, the
+// app's at clients/app/src/assistant/selected-assistant-storage.ts — the
+// literal is deliberately duplicated across bundles). Forwarding it lets the
+// main process stamp THE assistant this surface serves.
+const SELECTED_ASSISTANT_STORAGE_KEY = "cadet:selectedAssistantId";
+const selectedAssistantId = (() => {
+  try {
+    return localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+})();
+const cadetConfig = ipcRenderer.sendSync(
+  "cadet:config:get",
+  selectedAssistantId,
+) as {
   cloudUrl: string;
   deviceId: string | null;
   version?: string;
+  assistantId?: string;
+  assistantName?: string;
+  assistantCloud?: string;
+  assistantRuntimeUrl?: string;
 } | null;
 if (cadetConfig) {
   contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);

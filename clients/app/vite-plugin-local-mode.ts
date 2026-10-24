@@ -122,29 +122,48 @@ export function localModePlugin(env: Record<string, string>): Plugin {
   const config = resolveLocalConfigFromEnv(env);
   const baseDir = path.resolve(import.meta.dirname, "..", "..");
 
-  // The `/assistant/__config` document, also injected into the index. No
-  // `assistantId`: the dev server fronts every assistant in the lockfile at
-  // once, so it has no single identity to report the way an nginx edge does.
-  // `version` is stamped here the same way `cadet --version` stamps itself,
-  // so the page's version row answers the same thing `cadet-local --version`
-  // does and nothing can override it out of band.
-  const configJson = JSON.stringify({
-    cloudUrl: config.cloudUrl,
-    version: stampedVersion(cliPkg.version),
-  });
+  // The `/assistant/__config` document, also injected into the index. The
+  // dev server fronts the lockfile's ACTIVE assistant — the same one-assistant
+  // identity every host stamps (the nginx edge at tunnel start, the desktop
+  // preload at page load), so the renderer's synthesis has one shape
+  // everywhere. `version` is stamped here the same way `cadet --version`
+  // stamps itself, so the page's version row answers the same thing
+  // `cadet-local --version` does and nothing can override it out of band.
+  const resolveServedAssistant = () => {
+    const result = getLockfileData(config.lockfilePaths);
+    if (!result.ok) {
+      return undefined;
+    }
+    const { assistants, activeAssistant } = result.data;
+    return (
+      assistants.find((a) => a.assistantId === activeAssistant) ??
+      (assistants.length === 1 ? assistants[0] : undefined)
+    );
+  };
+  const buildConfigJson = (): string => {
+    const served = resolveServedAssistant();
+    return JSON.stringify({
+      cloudUrl: config.cloudUrl,
+      version: stampedVersion(cliPkg.version),
+      assistantId: served?.assistantId,
+      assistantName: served?.name,
+      assistantCloud: served?.cloud,
+      assistantRuntimeUrl: served?.runtimeUrl,
+    });
+  };
 
   return {
     name: "cadet-local-mode",
     transformIndexHtml(html) {
       return html.replace(
         "</head>",
-        `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
+        `<script>window.__CADET_CONFIG__=${buildConfigJson()}</script></head>`,
       );
     },
     configureServer(server) {
       server.middlewares.use(loopbackCallbackMiddleware());
       server.middlewares.use(cloudSessionMiddleware());
-      server.middlewares.use(configMiddleware(configJson));
+      server.middlewares.use(configMiddleware(buildConfigJson));
       server.middlewares.use(lockfileMiddleware(config.lockfilePaths));
       server.middlewares.use(hatchMiddleware(baseDir));
       server.middlewares.use(retireMiddleware(baseDir, config.lockfilePaths));
@@ -307,13 +326,17 @@ function cloudSessionMiddleware(): Connect.NextHandleFunction {
   };
 }
 
-function configMiddleware(configJson: string): Connect.NextHandleFunction {
+function configMiddleware(
+  buildConfigJson: () => string,
+): Connect.NextHandleFunction {
   return (req, res, next) => {
     if (req.url !== "/assistant/__config" && req.url !== "/__config") {
       return next();
     }
+    // Built per request: the stamp reflects the lockfile's active assistant
+    // as of NOW, so a freshly hatched assistant is served without a restart.
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(configJson);
+    res.end(buildConfigJson());
   };
 }
 

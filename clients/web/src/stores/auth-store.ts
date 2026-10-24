@@ -42,7 +42,6 @@ import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
   getLockfileAssistant,
-  getCloudAssistants,
   getLocalAssistants,
   isCadetCloudRemote,
   isServedGatewayRuntime,
@@ -568,18 +567,17 @@ function probeCloudSession(
       }
       if (result.ok && result.data.user) {
         const probedUser = toAuthUser(result.data.user);
-        // Sync platform assistants to the lockfile BEFORE setting
-        // cloudSession to "present". The auth middleware unblocks on
-        // `cloudSession !== "unknown"`, and hasAssistants() must
-        // already reflect synced platform assistants at that point.
-        // The whole sequence (org fetch, list, host replace) is bounded
-        // to 3s so a hanging call can't block the probe from settling;
-        // the middleware's 5s timeout would loop indefinitely otherwise.
-        // The race does not cancel the inner branch, so the guard also
-        // checks `timedOut`: once the probe settles without the sync, a
-        // late commit must not land after routing decisions were made on
-        // the un-synced lockfile. `!isStale()` likewise keeps a
-        // superseded probe from committing an out-of-date lockfile.
+        // For a local client, fetch the orgs + platform assistant list
+        // BEFORE setting cloudSession to "present" — not to build a roster
+        // (web holds none), but because a settled rejection by the cloud
+        // API is conclusive evidence the confirmed credential is dead and
+        // must settle "absent" instead. The whole sequence is bounded to
+        // 3s so a hanging call can't block the probe from settling; the
+        // middleware's 5s timeout would loop indefinitely otherwise. The
+        // race does not cancel the inner branch, so the guard also checks
+        // `timedOut`: a late settled rejection must not land after routing
+        // decisions were made. `!isStale()` likewise keeps a superseded
+        // probe from committing state.
         let sessionRejected = false;
         if (isLocalClient()) {
           let timedOut = false;
@@ -690,21 +688,18 @@ export async function whenCloudSessionSettled(): Promise<void> {
 }
 
 /**
- * Probe the cloud session when one could exist: non-local mode, gateway
- * auth enabled, or local mode with platform assistants in the lockfile.
- * Gateway auth always probes because the user may have logged into the
- * platform (e.g. via the login flow) without having added platform
- * assistants yet. When nothing qualifies, settle to `"absent"`.
+ * Probe the cloud session when one could exist: non-local mode, or gateway
+ * auth enabled. Gateway auth always probes because the user may have logged
+ * into the platform (e.g. via the login flow) without having added platform
+ * assistants yet; plain local clients without a gateway session hold no
+ * platform roster for a probe to illuminate (the app bundle's chooser owns
+ * that list). When nothing qualifies, settle to `"absent"`.
  */
 function probeCloudSessionIfReachable(
   set: AuthSet,
   options?: { setUserOnSuccess?: boolean; clearOnFailure?: boolean },
 ): void {
-  if (
-    !isLocalClient() ||
-    hasGatewayAssistant() ||
-    getCloudAssistants().length > 0
-  ) {
+  if (!isLocalClient() || hasGatewayAssistant()) {
     probeCloudSession(set, options);
   } else {
     set({ cloudSession: "absent" });
@@ -814,43 +809,10 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     }
 
     if (isLocalClient() && !hasGatewayAssistant()) {
-      const hasCloudAssistants = getCloudAssistants().length > 0;
-      if (hasCloudAssistants) {
-        // Platform assistants require a valid session — await the check
-        // so the auth middleware can redirect to login if it fails.
-        let result: Awaited<ReturnType<typeof getSession>> | null = null;
-        try {
-          result = await getSession();
-          if (result.ok && result.data.user) {
-            const user = toAuthUser(result.data.user);
-            // Re-sync platform assistants to remove stale lockfile entries.
-            // The rejection evidence gates the user-scoped sync: a rejected
-            // account's consent and org state must not be (re)installed.
-            const sessionRejected = await reconcileCloudAssistants();
-            if (!sessionRejected) {
-              await syncUserScopedState(user?.id ?? null);
-              set(authenticatedPlatformUser(user));
-              return;
-            }
-            // A settled org/assistants rejection falls through to the
-            // settled-answer handling (login), never the offline restore.
-          }
-        } catch {
-          // Thrown fetch — classified as a transport failure below.
-        }
-        // Offline boot with a still-valid local credential must not bounce
-        // to the login screen (LUM-2412); only a settled "no session"
-        // answer ends the session (and invalidates the snapshot).
-        if (isInconclusiveProbe(result)) {
-          if (await restoreOfflineSession(set)) {
-            return;
-          }
-        } else {
-          clearUserSnapshot();
-        }
-        await endSession(set);
-        return;
-      }
+      // Web holds no platform roster (the app bundle's chooser owns the
+      // cloud assistant list), so a plain local session is the answer;
+      // the probe still runs so a live platform session is adopted as the
+      // user identity.
       set(authenticatedLocalUser());
       if (!suppressPlatformProbe) {
         probeCloudSession(set, { setUserOnSuccess: true });
@@ -1130,19 +1092,14 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     //
     // The predicate asks whether the local session can stand on its own,
     // mirroring how `initSession` branches: a local gateway answers for itself,
-    // and so does a client with no platform assistant to reach. A local client
-    // whose assistants are cloud-hosted is excluded, since a cloud
-    // assistant is unreachable without a cloud session and routing to login
-    // beats stranding the user beside one that cannot answer. Remote-gateway
-    // mode returns at the top of this action.
+    // and so does a client with no platform assistant to reach. Web holds
+    // no platform roster (the app bundle's chooser owns that list), so any
+    // local client's session stands alone.
     //
     // The demotion needs no `supersededByLogout` check: it writes only when
     // the store still reads authenticated, which a completed logout has
     // already made false.
-    const localSessionStandsAlone =
-      isLocalClient() &&
-      (hasGatewayAssistant() || getCloudAssistants().length === 0);
-    if (localSessionStandsAlone) {
+    if (isLocalClient()) {
       const wasAuthenticated = isAuthenticated(get().sessionStatus);
       if (wasAuthenticated) {
         clearUserSnapshot();
