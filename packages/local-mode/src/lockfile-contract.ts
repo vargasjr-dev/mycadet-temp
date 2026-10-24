@@ -56,11 +56,7 @@ export type Remote = z.infer<typeof RemoteSchema>;
  * from the renderer-facing schema below; the CLI's extended type is the only
  * place they are modeled.
  */
-export const SENSITIVE_KEYS = [
-  "signingKey",
-  "bearerToken",
-  "guardianBootstrapSecret",
-] as const;
+export const SENSITIVE_KEYS = ["bearerToken", "guardianBootstrapSecret"] as const;
 
 /**
  * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from
@@ -204,8 +200,6 @@ export const LocalAssistantResourcesSchema = z.object({
   cesPort: z.number().optional(),
   runtimeVersion: z.string().optional(),
   runtimeInstallDir: z.string().optional(),
-  /** Persisted HMAC signing key (hex); survives daemon/gateway restarts so client actor tokens remain valid across wake cycles. */
-  signingKey: z.string().optional(),
 });
 export type LocalAssistantResources = z.infer<
   typeof LocalAssistantResourcesSchema

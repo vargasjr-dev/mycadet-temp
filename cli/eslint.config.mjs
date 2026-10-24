@@ -10,7 +10,7 @@ const eslintConfig = defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      // Ban `as` casts (the platform repo's rule) at warning level: the
+      // Ban `as` casts (the cloud repo's rule) at warning level: the
       // lint script pins --max-warnings to the current count and each PR
       // chips away at it — prefer zod schemas or `in`-narrowing.
       "@typescript-eslint/consistent-type-assertions": [

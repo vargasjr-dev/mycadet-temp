@@ -16,9 +16,6 @@ import {
   readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  LockfileAssistantSchema,
-  readRawLockfileStrict,
-  upsertLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -405,23 +402,7 @@ function lockfileMiddleware(
             onboarded.onboardedAt as string,
           );
         } else {
-          const strictRead = readRawLockfileStrict(lockfilePaths);
-          if (!strictRead.ok) {
-            result = { ok: false, status: 409, error: strictRead.error };
-          } else {
-            const parsed = LockfileAssistantSchema.safeParse(body.assistant);
-            result = parsed.success
-              ? upsertLockfileAssistant(
-                  lockfilePaths,
-                  parsed.data,
-                  body.activeAssistant as string | undefined,
-                )
-              : {
-                  ok: false,
-                  status: 400,
-                  error: "Invalid assistant metadata",
-                };
-          }
+          result = { ok: false, status: 400, error: "Unknown lockfile mutation" };
         }
         res.statusCode = result.ok ? 200 : result.status;
         res.setHeader("Content-Type", "application/json");

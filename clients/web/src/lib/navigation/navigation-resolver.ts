@@ -113,7 +113,7 @@ function isOnboardingPath(pathname: string): boolean {
   );
 }
 
-// The platform arm targets the app bundle's consent screen — a cross-bundle
+// The cloud arm targets the app bundle's consent screen — a cross-bundle
 // literal (house pattern): it lives outside web's route table on purpose.
 function onboardingEntrypoint(isLocalClient: boolean): string {
   return isLocalClient ? routes.welcome : "/account/consent";

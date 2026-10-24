@@ -94,7 +94,7 @@ afterEach(() => {
 });
 
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
-  // The route's own auth machinery probes the platform session between API
+  // The route's own auth machinery probes the cloud session between API
   // calls (see the create-flow pin below) — seed by URL, not FIFO order.
   const router = setup(undefined, true, async (url) => {
     const target = String(url);
@@ -282,7 +282,7 @@ test("an empty list offers creation and lands in the created assistant", async (
     request.mock.calls
       .map(([url]) => String(url))
       // The create flow rides the bundle's own auth machinery, which probes
-      // the platform session between API calls; pin the load-bearing chain.
+      // the cloud session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
     "http://localhost:3001/v1/assistants/?limit=100&offset=0",

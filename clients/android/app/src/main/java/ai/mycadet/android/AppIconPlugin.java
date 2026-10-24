@@ -131,7 +131,7 @@ public class AppIconPlugin extends Plugin {
     }
 
     /**
-     * Whether the platform is offered the icon picker at all. The picker is
+     * Whether the cloud is offered the icon picker at all. The picker is
      * API 26 and newer while {@code minSdkVersion} is 24, so both methods give
      * the API 24 and 25 devices a build admits the same answer.
      */
@@ -141,7 +141,7 @@ public class AppIconPlugin extends Plugin {
 
     /**
      * Why {@code set} refuses to record an alias target, or null when it takes
-     * it. The platform check comes first, so a caller that skipped
+     * it. The cloud check comes first, so a caller that skipped
      * {@code supported} is refused rather than leaving a target behind that the
      * next background would toggle onto an API 24 or 25 launcher.
      */

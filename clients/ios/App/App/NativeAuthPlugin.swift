@@ -10,7 +10,7 @@ import UIKit
 /// WKWebViews with `disallowed_useragent`. The flow is:
 ///
 /// 1. JS calls `NativeAuth.startAuth({ baseURL })`.
-/// 2. This plugin discovers the WorkOS client id from the platform's
+/// 2. This plugin discovers the WorkOS client id from the cloud's
 ///    `/_allauth/app/v1/config`, generates `state` + a PKCE pair, builds
 ///    the WorkOS `user_management/authorize` URL (redirect
 ///    `{scheme}://auth/callback`), and opens `ASWebAuthenticationSession`.
@@ -21,7 +21,7 @@ import UIKit
 ///    `user_management/authenticate` as a public client (no secret) for an
 ///    access token, then POST it to `/_allauth/app/v1/auth/provider/token`
 ///    (`provider: "workos"`, campaign attribution on the query string)
-///    to receive the platform session token.
+///    to receive the cloud session token.
 /// 6. JS sets `document.cookie = "sessionid=<token>; ..."` and navigates;
 ///    the `AuthProvider` re-fetches `/_allauth/browser/v1/auth/session`
 ///    and the app is authenticated.
@@ -113,8 +113,8 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         let codeChallenge = WorkOSAuth.codeChallenge(forVerifier: codeVerifier)
         let redirectURI = "\(NativeAuthPlugin.callbackScheme)://auth/callback"
 
-        // Discover the WorkOS client id from the platform's headless config,
-        // then open the AuthKit sheet against WorkOS directly. The platform
+        // Discover the WorkOS client id from the cloud's headless config,
+        // then open the AuthKit sheet against WorkOS directly. The cloud
         // is otherwise only involved in the final session-token exchange.
         fetchWorkOSClientId(baseURL: baseURL) { [weak self] result in
             guard let self = self else { return }
@@ -382,7 +382,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
         components.port = baseURL.port
         components.path = "/_allauth/app/v1/auth/provider/token"
         // allauth headless takes a JSON body, so `request.POST` is empty on
-        // the platform side and attribution has to ride the query string.
+        // the cloud side and attribution has to ride the query string.
         let attributionQuery = Attribution.query(from: attribution)
         if !attributionQuery.isEmpty {
             components.percentEncodedQuery = attributionQuery
@@ -405,7 +405,7 @@ public class NativeAuthPlugin: CAPPlugin, CAPBridgedPlugin {
                 completion(.failure(AuthFlowError(message: "Session exchange returned no response")))
                 return
             }
-            // A non-200 here is the platform refusing the sign-in — signups
+            // A non-200 here is the cloud refusing the sign-in — signups
             // closed, an unlinked provider account, a step this shell cannot
             // run. Carry its cause across so the login screen can say which,
             // and name the status in the message either way so a failure we

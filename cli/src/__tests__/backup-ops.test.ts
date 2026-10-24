@@ -7,6 +7,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
@@ -26,9 +27,13 @@ const entry: config.LockfileAssistant & { runtimeUrl: string } = {
     daemonPort: 1,
     gatewayPort: 2,
     cesPort: 3,
-    signingKey: "07".repeat(32),
   },
 };
+mkdirSync(join(root, "gateway-security"), { recursive: true });
+writeFileSync(
+  join(root, "gateway-security", "actor-token-signing-key"),
+  Buffer.from("07".repeat(32), "hex"),
+);
 const lookup = spyOn(config, "findAssistantByName").mockReturnValue(entry);
 const location = spyOn(backups, "getBackupsDir").mockReturnValue(backupDir);
 const save = spyOn(config, "saveLockfileAssistant").mockImplementation(
