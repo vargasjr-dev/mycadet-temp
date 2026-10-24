@@ -1,6 +1,6 @@
 import { app, BrowserWindow, net, powerMonitor } from "electron";
 
-import { getLockfileData } from "@mycadet/local-mode";
+import { readLockfile } from "@mycadet/local-mode";
 import {
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
@@ -36,11 +36,7 @@ type ProbeTarget =
   | { kind: "unknown" };
 
 function resolveProbeTarget(lockfilePaths: string[]): ProbeTarget {
-  const result = getLockfileData(lockfilePaths);
-  if (!result.ok) {
-    return { kind: "unknown" };
-  }
-  const { assistants, activeAssistant } = result.data;
+  const { assistants, activeAssistant } = readLockfile(lockfilePaths);
   if (!activeAssistant) {
     return { kind: "unknown" };
   }

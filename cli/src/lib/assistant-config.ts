@@ -1,18 +1,13 @@
 import { randomBytes } from "crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  unlinkSync,
-  writeFileSync,
-} from "fs";
+import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-import { withLockfileLock } from "@mycadet/local-mode";
 import {
-  LockfileSchema,
+  readLockfile as readLockfileAtPaths,
+  withLockfileLock,
+} from "@mycadet/local-mode";
+import {
   type AppProcessRecord,
   type LocalAssistantResources,
   type Lockfile,
@@ -78,20 +73,7 @@ export function getDaemonPidPath(resources?: LocalAssistantResources): string {
 }
 
 function readLockfile(): Lockfile {
-  for (const lockfilePath of getLockfilePaths(getCurrentEnvironment())) {
-    if (!existsSync(lockfilePath)) continue;
-    try {
-      const parsed = LockfileSchema.safeParse(
-        JSON.parse(readFileSync(lockfilePath, "utf-8")),
-      );
-      if (parsed.success) {
-        return parsed.data;
-      }
-    } catch {
-      // Malformed lockfile; try next
-    }
-  }
-  return LockfileSchema.parse({});
+  return readLockfileAtPaths(getLockfilePaths(getCurrentEnvironment()));
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
@@ -319,29 +301,15 @@ export function removeLockfileAssistant(assistantId: string): void {
 }
 
 /**
- * Read the first existing lockfile for an explicitly-provided environment,
- * without applying legacy migrations. This is the cross-env read path used by
- * {@link loadAllAssistantsAcrossEnvs}: it deliberately bypasses
- * {@link readLockfile} (which always resolves the *current* env) so callers
- * can enumerate state from every env without flipping `process.env` or the
- * persisted default. Migrations are skipped because we never want to write
- * to another env's lockfile from the current env's process.
+ * Read the first existing lockfile for an explicitly-provided environment.
+ * This is the cross-env read path used by {@link loadAllAssistantsAcrossEnvs}
+ * (the shared {@link readLockfile} resolves the *current* env): callers can
+ * enumerate state from every env without flipping `process.env` or the
+ * persisted default. Reads never write, so no env's lockfile is touched from
+ * the current env's process.
  */
 function readLockfileForEnv(env: EnvironmentDefinition): Lockfile {
-  for (const lockfilePath of getLockfilePaths(env)) {
-    if (!existsSync(lockfilePath)) continue;
-    try {
-      const parsed = LockfileSchema.safeParse(
-        JSON.parse(readFileSync(lockfilePath, "utf-8")),
-      );
-      if (parsed.success) {
-        return parsed.data;
-      }
-    } catch {
-      // Malformed; try next candidate
-    }
-  }
-  return LockfileSchema.parse({});
+  return readLockfileAtPaths(getLockfilePaths(env));
 }
 
 /**

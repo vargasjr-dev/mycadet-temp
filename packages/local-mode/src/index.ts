@@ -42,7 +42,7 @@ export {
   resolveEnvironmentName,
 } from "./environment";
 export {
-  getLockfileData,
+  readLockfile,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   upsertLockfileAssistant,

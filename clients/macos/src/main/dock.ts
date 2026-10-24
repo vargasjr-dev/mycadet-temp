@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
+import { readLockfile, resolveLockfilePaths } from "@mycadet/local-mode";
 import { app, nativeImage, type NativeImage } from "electron";
 import { z } from "zod";
 
@@ -286,8 +286,7 @@ export const installDock = (): void => {
     if (getSessionToken() !== null) {
       return true;
     }
-    const lockfile = getLockfileData(lockfilePaths);
-    return lockfile.ok && lockfile.data.assistants.length > 0;
+    return readLockfile(lockfilePaths).assistants.length > 0;
   };
   state.signedIn = deriveSignedIn();
   onSessionTokenChange(() => {

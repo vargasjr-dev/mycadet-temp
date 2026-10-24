@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 import {
-  getLockfileData,
+  readLockfile,
   resolveExistingLocalSigningKey,
   upsertLockfileAssistant,
 } from "@mycadet/local-mode";
@@ -144,14 +144,11 @@ describe("local signing identity continuity", () => {
         }),
       );
       for (let cycle = 0; cycle < 3; cycle++) {
-        const view = getLockfileData([registry]);
-        if (!view.ok) {
-          throw new Error("fixture read failed");
-        }
+        const view = readLockfile([registry]);
         expect(
           upsertLockfileAssistant(
             [registry],
-            { ...view.data.assistants[0]! },
+            { ...view.assistants[0]! },
             "example",
           ).ok,
         ).toBe(true);
