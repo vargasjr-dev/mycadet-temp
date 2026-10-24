@@ -400,13 +400,36 @@ function assistantHostConfig(config: Record<string, unknown>) {
   return result.data;
 }
 
+/**
+ * The Capacitor mobile shells' own webview origins: the iOS WKWebView serves
+ * the bundled app from `capacitor://localhost`, and the Android WebView from
+ * `https://localhost` (Capacitor's default `androidScheme`; `http://localhost`
+ * was the pre-Capacitor-5 default). No web page can dispatch a fetch bearing
+ * a custom-scheme Origin — a browser only emits it from the shell itself —
+ * so allowlisting them at every edge is the mobile-shell equivalent of the
+ * loopback allowlist.
+ */
+const CAPACITOR_APP_ORIGINS = [
+  "capacitor://localhost",
+  "https://localhost",
+  "http://localhost",
+];
+
 function appOrigins(config: Record<string, unknown>): string[] {
   const metadata = assistantHostConfig(config);
   const origins = [
+    ...CAPACITOR_APP_ORIGINS,
     ...metadata.appAllowedOrigins,
     ...(metadata.hubUrl ? [new URL(metadata.hubUrl).origin] : []),
   ];
   return [...new Set(origins)].map((origin) => {
+    // The Capacitor shells' origins are fixed platform values, not parsed:
+    // `new URL("capacitor://localhost").origin` serializes as "null" (a
+    // non-special scheme), so they are matched literally above the URL
+    // validation the configurable origins go through.
+    if (CAPACITOR_APP_ORIGINS.includes(origin)) {
+      return origin;
+    }
     const url = new URL(origin);
     if (
       (url.protocol !== "https:" &&
