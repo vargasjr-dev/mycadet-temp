@@ -57,10 +57,8 @@ mock.module(
     isCloudAssistant: () => false,
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
-    loadLockfile: async () => ({ assistants: [], activeAssistant: null }),
     primeLocalGatewayConnection: async () => {},
     primeLocalGatewayConnectionWithRepair: primeGatewayWithRepairMock,
-    reconcileSelectedAssistant: () => {},
     retireLocalAssistant: async () => ({ ok: false }),
   }),
 );

@@ -337,6 +337,7 @@ handleSync("cadet:config:get", (selectedAssistantId?: unknown) => {
     assistantId: served?.assistantId,
     assistantName: served?.name,
     assistantCloud: served?.cloud,
+    assistantRuntimeUrl: served?.runtimeUrl,
   };
 });
 

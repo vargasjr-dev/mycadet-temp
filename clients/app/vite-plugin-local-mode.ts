@@ -148,6 +148,7 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       assistantId: served?.assistantId,
       assistantName: served?.name,
       assistantCloud: served?.cloud,
+      assistantRuntimeUrl: served?.runtimeUrl,
     });
   };
 

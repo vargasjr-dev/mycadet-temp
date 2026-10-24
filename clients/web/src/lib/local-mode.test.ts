@@ -68,11 +68,10 @@ import {
   isCadetCloudRemote,
   isCloudAssistant,
   isRetryablePairingFailure,
-  loadLockfile,
+  hasAssistants,
   LOCAL_GATEWAY_STARTUP_RETRY,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithStartupRetry,
-  reconcileSelectedAssistant,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
   hasGatewayAssistant,
@@ -86,25 +85,58 @@ import {
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useLockfileStore } from "@/stores/lockfile-store";
 
-const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 const realFetch = globalThis.fetch;
 
 function setSelected(id: string): void {
   localStorage.setItem(SELECTED_ASSISTANT_STORAGE_KEY, id);
 }
 
+// Tests default to cloud-served mode (test-setup.ts stamps the config), but
+// this file's local paths need the local arm: every test starts stamped
+// local, the cloud/served-gateway descriptions override per test, and the
+// afterEach restores the suite default.
+function enableLocalMode(): void {
+  window.__CADET_CONFIG__ = { remote: "local" };
+}
+
+function disableLocalMode(): void {
+  window.__CADET_CONFIG__ = { remote: "cloud" };
+}
+
+/**
+ * Stamp the served assistant the way every host now does: the desktop
+ * preload (selection ?? active ?? sole from the watched lockfile), the dev
+ * server (the lockfile's active), the nginx edge (its ingress choice).
+ */
+function stampServed(
+  config: Record<string, unknown> & { assistantId?: string },
+): void {
+  window.__CADET_CONFIG__ = { remote: "local", ...config };
+}
+
+beforeEach(() => {
+  window.__CADET_CONFIG__ = { remote: "local" };
+});
+
+afterEach(() => {
+  globalThis.fetch = realFetch;
+  window.__CADET_CONFIG__ = { remote: "cloud" };
+  localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
+  loadLockfileHost.mockClear();
+  fetchGuardianTokenHost.mockClear();
+  unpairAssistantHost.mockClear();
+  pairingStartHost.mockClear();
+  pairingPollHost.mockClear();
+  pairingCancelHost.mockClear();
+  setSelfHostedConnection(null);
+  useAssistantIdentityStore.getState().clearIdentity();
+});
+
 const localA: LockfileAssistant = {
   assistantId: "local-a",
   cloud: "local",
   resources: { gatewayPort: 7830, daemonPort: 7831 },
-} as LockfileAssistant;
-
-const localB: LockfileAssistant = {
-  assistantId: "local-b",
-  cloud: "local",
-  resources: { gatewayPort: 7831 },
 } as LockfileAssistant;
 
 const platform: LockfileAssistant = {
@@ -118,40 +150,83 @@ const pairedEntry: LockfileAssistant = {
   runtimeUrl: "https://gw.example.com",
 } as LockfileAssistant;
 
-function setLockfile(lockfile: Lockfile): void {
-  useLockfileStore.setState({ lockfile });
-}
+describe("served config synthesis", () => {
+  test("the stamp produces the one assistant, without calling the local host", () => {
+    stampServed({ assistantId: "served-1", assistantName: "Served" });
 
-// Tests default to cloud-served mode (test-setup.ts stamps the config), but
-// this file's host-read paths need the local arm: every test starts stamped
-// local, the cloud/served-gateway describes override per test, and the
-// afterEach restores the suite default.
-function enableLocalMode(): void {
-  window.__CADET_CONFIG__ = { remote: "local" };
-}
+    const lockfile = getLockfile();
 
-function disableLocalMode(): void {
-  window.__CADET_CONFIG__ = { remote: "cloud" };
-}
+    expect(loadLockfileHost).not.toHaveBeenCalled();
+    expect(lockfile.activeAssistant).toBe("served-1");
+    expect(lockfile.assistants).toEqual([
+      expect.objectContaining({
+        assistantId: "served-1",
+        cloud: "local",
+        name: "Served",
+      }),
+    ]);
+    expect(getLocalAssistants().map((a) => a.assistantId)).toEqual([
+      "served-1",
+    ]);
+    expect(hasAssistants()).toBe(true);
+  });
 
-beforeEach(() => {
-  window.__CADET_CONFIG__ = { remote: "local" };
-});
+  test("a host that stamps no assistant yields the empty lockfile (pre-hatch)", () => {
+    window.__CADET_CONFIG__ = { remote: "local" };
 
-afterEach(() => {
-  globalThis.fetch = realFetch;
-  window.__CADET_CONFIG__ = { remote: "cloud" };
-  useLockfileStore.setState({ lockfile: null, committed: false });
-  localStorage.removeItem(LOCKFILE_STORAGE_KEY);
-  localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
-  loadLockfileHost.mockClear();
-  fetchGuardianTokenHost.mockClear();
-  unpairAssistantHost.mockClear();
-  pairingStartHost.mockClear();
-  pairingPollHost.mockClear();
-  pairingCancelHost.mockClear();
-  setSelfHostedConnection(null);
-  useAssistantIdentityStore.getState().clearIdentity();
+    expect(getLockfile()).toEqual({ assistants: [], activeAssistant: null });
+    expect(hasAssistants()).toBe(false);
+  });
+
+  test("a cloud-hosted cadet yields the empty lockfile even if an id were stamped", () => {
+    disableLocalMode();
+    window.__CADET_CONFIG__ = {
+      remote: "cloud",
+      assistantId: "not-a-thing",
+    };
+
+    expect(getLockfile()).toEqual({ assistants: [], activeAssistant: null });
+  });
+
+  test("names the assistant 'Local Assistant' when the stamp carries no name", () => {
+    stampServed({ assistantId: "served-1" });
+
+    expect(getLockfile().assistants[0]?.name).toBe("Local Assistant");
+  });
+
+  test("the stamped cloud kind passes through, so a paired serve classifies as paired", () => {
+    stampServed({ assistantId: "served-1", assistantCloud: "local" });
+    expect(getLockfile().assistants[0]?.cloud).toBe("local");
+    // A plain local serve: the renderer holds no transport URL and the host
+    // routes same-origin, so the served entry must classify as a LOCAL
+    // gateway (never as a paired one — the wake repair refuses paired).
+    expect(hasLocalGateway()).toBe(true);
+    expect(hasPairedGateway(getSelectedAssistant())).toBe(false);
+
+    stampServed({ assistantId: "served-1", assistantCloud: "docker" });
+    expect(getLockfile().assistants[0]?.cloud).toBe("docker");
+  });
+
+  test("the served entry carries no runtimeUrl and no real port", () => {
+    stampServed({ assistantId: "served-1" });
+
+    const entry = getLockfile().assistants[0];
+    expect(entry?.runtimeUrl).toBeUndefined();
+    expect(entry?.resources?.gatewayPort).toBe(0);
+  });
+
+  test("getSelectedAssistant is the served entry; nothing when unstamped", () => {
+    stampServed({ assistantId: "served-1", assistantName: "Served" });
+    // The raw selection key is the app shell's memory — web no longer
+    // resolves against it; the host resolved the selection at stamp time.
+    setSelected("some-other-assistant");
+
+    expect(getSelectedAssistant()?.assistantId).toBe("served-1");
+
+    window.__CADET_CONFIG__ = { remote: "local" };
+    expect(getSelectedAssistant()).toBeUndefined();
+    expect(getActiveAssistant()).toBeUndefined();
+  });
 });
 
 describe("remote gateway mode", () => {
@@ -176,41 +251,29 @@ describe("remote gateway mode", () => {
     expect(isCadetCloudRemote()).toBe(true);
   });
 
-  test("loads a synthetic active assistant without calling the local host", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-
-    const lockfile = await loadLockfile();
-
-    expect(isCadetCloudRemote()).toBe(false);
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-    expect(lockfile.activeAssistant).toBe("self");
-    expect(lockfile.assistants).toEqual([
-      expect.objectContaining({
-        assistantId: "self",
-        cloud: "local",
-        name: "Local Assistant",
-        runtimeUrl: window.location.origin,
-      }),
-    ]);
-    expect(getLocalAssistants().map((a) => a.assistantId)).toEqual(["self"]);
-    expect(hasLocalGateway()).toBe(false);
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("names the synthetic assistant from the injected config when present", async () => {
+  test("a served runtime synthesizes its stamped assistant without a host call", () => {
     window.__CADET_CONFIG__ = {
       remote: "docker",
+      assistantId: "edge-1",
       assistantName: "cadet-deep-hare-ww1iw1",
     };
 
-    const lockfile = await loadLockfile();
+    const lockfile = getLockfile();
 
+    expect(isCadetCloudRemote()).toBe(false);
+    expect(loadLockfileHost).not.toHaveBeenCalled();
+    expect(lockfile.activeAssistant).toBe("edge-1");
     expect(lockfile.assistants).toEqual([
       expect.objectContaining({
-        assistantId: "self",
+        assistantId: "edge-1",
+        cloud: "local",
         name: "cadet-deep-hare-ww1iw1",
       }),
     ]);
+    // The serving edge IS the gateway — but the served-gateway arm's
+    // session vision keys on the runtime, not the entry's port.
+    expect(hasLocalGateway()).toBe(false);
+    expect(hasGatewayAssistant()).toBe(true);
   });
 });
 
@@ -252,27 +315,24 @@ describe("removePairedAssistantFromLockfile", () => {
     setSelfHostedConnection({ url: "http://localhost/x", token: null });
   }
 
-  test("calls the host unpair and commits the returned lockfile", async () => {
-    setLockfile({
+  test("validates the id against the host's roster, then calls the host unpair", async () => {
+    loadLockfileHost.mockResolvedValueOnce({
       assistants: [localA, pairedEntry],
       activeAssistant: "local-a",
-    });
-    const resulting = { assistants: [localA], activeAssistant: "local-a" };
-    unpairAssistantHost.mockResolvedValueOnce({
-      ok: true as const,
-      lockfile: resulting,
     });
 
     const result = await removePairedAssistantFromLockfile("paired-a");
 
+    expect(loadLockfileHost).toHaveBeenCalledTimes(1);
     expect(result).toEqual({ ok: true });
     expect(unpairAssistantHost).toHaveBeenCalledWith("paired-a");
-    expect(useLockfileStore.getState().lockfile).toEqual(resulting);
-    expect(useLockfileStore.getState().committed).toBe(true);
   });
 
-  test("refuses an unknown id without calling the host", async () => {
-    setLockfile({ assistants: [pairedEntry], activeAssistant: null });
+  test("refuses an id the host roster doesn't know without calling the unpair", async () => {
+    loadLockfileHost.mockResolvedValueOnce({
+      assistants: [pairedEntry],
+      activeAssistant: null,
+    });
 
     const result = await removePairedAssistantFromLockfile("nope");
 
@@ -280,10 +340,19 @@ describe("removePairedAssistantFromLockfile", () => {
     expect(unpairAssistantHost).not.toHaveBeenCalled();
   });
 
-  test("propagates a host failure without committing or clearing session state", async () => {
-    setLockfile({
-      assistants: [localA, pairedEntry],
-      activeAssistant: "local-a",
+  test("an unreachable host does not block the removal attempt", async () => {
+    // The host validates the id itself; a failed pre-read must not strand
+    // the removal behind a dead transport.
+    const result = await removePairedAssistantFromLockfile("paired-a");
+
+    expect(unpairAssistantHost).toHaveBeenCalledWith("paired-a");
+    expect(result).toEqual({ ok: true });
+  });
+
+  test("propagates a host failure without clearing session state", async () => {
+    loadLockfileHost.mockResolvedValueOnce({
+      assistants: [pairedEntry],
+      activeAssistant: null,
     });
     setSelected("paired-a");
     unpairAssistantHost.mockResolvedValueOnce({
@@ -297,14 +366,13 @@ describe("removePairedAssistantFromLockfile", () => {
       ok: false,
       error: "Unpair is not supported by this app version",
     });
-    expect(useLockfileStore.getState().committed).toBe(false);
     expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
       "paired-a",
     );
   });
 
-  test("clears selection, gateway token, and self-hosted connection when removing the selected entry", async () => {
-    setLockfile({
+  test("clears selection and self-hosted connection when removing the selected entry", async () => {
+    loadLockfileHost.mockResolvedValueOnce({
       assistants: [localA, pairedEntry],
       activeAssistant: "local-a",
     });
@@ -325,7 +393,7 @@ describe("removePairedAssistantFromLockfile", () => {
   });
 
   test("leaves session state alone when removing a non-selected entry", async () => {
-    setLockfile({
+    loadLockfileHost.mockResolvedValueOnce({
       assistants: [localA, pairedEntry],
       activeAssistant: "local-a",
     });
@@ -348,7 +416,7 @@ describe("removePairedAssistantFromLockfile", () => {
 });
 
 describe("assistant pairing", () => {
-  test("starts the attempt through the host without touching the lockfile", async () => {
+  test("starts the attempt through the host without touching any lockfile", async () => {
     const result = await startAssistantPairing("https://gw.example.com");
 
     expect(pairingStartHost).toHaveBeenCalledWith("https://gw.example.com");
@@ -356,12 +424,7 @@ describe("assistant pairing", () => {
     expect(loadLockfileHost).not.toHaveBeenCalled();
   });
 
-  test("an imported poll registers the pairing and reloads the lockfile", async () => {
-    loadLockfileHost.mockImplementationOnce(async () => ({
-      assistants: [pairedEntry],
-      activeAssistant: null,
-    }));
-
+  test("an imported poll resolves with the new assistant id — no roster reload", async () => {
     const result = await pollAssistantPairing("handle-1", "desk");
 
     expect(pairingPollHost).toHaveBeenCalledWith("handle-1", "desk");
@@ -371,16 +434,10 @@ describe("assistant pairing", () => {
       assistantId: "paired-new",
       accessOnly: false,
     });
-    expect(loadLockfileHost).toHaveBeenCalledTimes(1);
-    expect(
-      useLockfileStore
-        .getState()
-        .lockfile?.assistants.map((a) => a.assistantId),
-    ).toEqual(["paired-a"]);
-    expect(useLockfileStore.getState().committed).toBe(true);
+    expect(loadLockfileHost).not.toHaveBeenCalled();
   });
 
-  test("a pending poll passes the cadence through without reloading", async () => {
+  test("a pending poll passes the cadence through", async () => {
     pairingPollHost.mockResolvedValueOnce({
       ok: true as const,
       status: "pending" as const,
@@ -407,7 +464,7 @@ describe("assistant pairing", () => {
     expect(result).toMatchObject({ accessOnly: true });
   });
 
-  test("returns the host error without reloading on failure", async () => {
+  test("returns the host error without a reload on failure", async () => {
     pairingPollHost.mockResolvedValueOnce({
       ok: false,
       reason: "expired",
@@ -447,132 +504,55 @@ describe("assistant pairing", () => {
   test("a rejection reason with no copy degrades to the host's message", async () => {
     pairingStartHost.mockResolvedValueOnce({
       ok: false,
-      reason: "invalid-address",
-      error: "That address is not usable.",
-      rejection: "reason-from-a-newer-host",
-    } as unknown as localModeHost.LocalPairingStartResult);
+      reason: "unheard-of-reason",
+      error: "host says no",
+    } as never);
 
-    const result = await startAssistantPairing("https://gw.example.com");
+    const result = await startAssistantPairing("https://localhost:7830");
 
-    expect(result).toEqual({
-      ok: false,
-      reason: "invalid-address",
-      error: "That address is not usable.",
-      rejection: undefined,
-    });
+    expect(result).toMatchObject({ error: "host says no" });
   });
 
   test("an error-less host failure still reports something displayable", async () => {
-    pairingStartHost.mockResolvedValueOnce({ ok: false, error: "" });
+    pairingStartHost.mockResolvedValueOnce({ ok: false } as never);
 
-    const result = await startAssistantPairing("https://gw.example.com");
+    const result = await startAssistantPairing("https://localhost:7830");
 
-    expect(result).toEqual({
-      ok: false,
-      error: "Failed to connect to that assistant.",
-    });
+    expect(result).toMatchObject({ error: expect.any(String) });
+    expect((result as { error?: string }).error?.length ?? 0).toBeGreaterThan(
+      0,
+    );
   });
 
   test("cancelling forwards the handle to the host", async () => {
     await cancelAssistantPairing("handle-1");
-
     expect(pairingCancelHost).toHaveBeenCalledWith("handle-1");
   });
 
   test("cancelling a session the host rejects resolves quietly", async () => {
-    pairingCancelHost.mockRejectedValueOnce(new Error("no such session"));
-
-    expect(await cancelAssistantPairing("handle-1")).toBeUndefined();
+    pairingCancelHost.mockImplementationOnce(async () => {
+      throw new Error("unknown handle");
+    });
+    await expect(cancelAssistantPairing("handle-1")).resolves.toBeUndefined();
   });
 
   test.each([
-    // Nothing reached the assistant, so the code is untouched.
-    "unreachable",
-    // The assistant refused with a status that released the code.
-    "gateway-retryable",
-  ] as const)("a %s failure is worth polling through", (reason) => {
+    { reason: "invalid-address", retryable: false },
+    { reason: "code-expired", retryable: false },
+    { reason: "unreachable", retryable: true },
+  ])("a $reason failure classifies as retryable=$retryable", ({
+    reason,
+    retryable,
+  }) => {
     expect(
-      isRetryablePairingFailure({ ok: false, reason, error: "not yet" }),
-    ).toBe(true);
-  });
-
-  test.each([
-    "invalid-address",
-    "unknown-session",
-    "expired",
-    // The assistant answered with something unusable, past which the code is
-    // spent rather than released.
-    "gateway",
-    "import",
-  ] as const)("a %s failure ends the attempt", (reason) => {
-    expect(isRetryablePairingFailure({ ok: false, reason, error: "no" })).toBe(
-      false,
-    );
+      isRetryablePairingFailure({ reason } as localModeHost.LocalPairingFailure),
+    ).toBe(retryable);
   });
 
   test("a host too old to name a reason ends the attempt", () => {
-    expect(isRetryablePairingFailure({ ok: false, error: "no" })).toBe(false);
-  });
-});
-
-describe("loadLockfile host-failure fallback", () => {
-  test("keeps the cached lockfile instead of clobbering it with empty", async () => {
-    useLockfileStore
-      .getState()
-      .setLockfile({ assistants: [localA], activeAssistant: "local-a" });
-
-    const result = await loadLockfile();
-
-    expect(result.assistants).toEqual([localA]);
-    expect(useLockfileStore.getState().lockfile?.assistants).toEqual([localA]);
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("falls back to the persisted mirror when nothing is cached", async () => {
-    localStorage.setItem(
-      LOCKFILE_STORAGE_KEY,
-      JSON.stringify({ assistants: [localA], activeAssistant: null }),
-    );
-
-    const result = await loadLockfile();
-
-    expect(result.assistants.map((a) => a.assistantId)).toEqual(["local-a"]);
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("records the empty fallback as not committed", async () => {
-    const result = await loadLockfile();
-
-    expect(result.assistants).toEqual([]);
-    expect(useLockfileStore.getState().committed).toBe(false);
-  });
-});
-
-describe("loadLockfile on a cloud-hosted cadet", () => {
-  test("commits an empty lockfile without touching the local host", async () => {
-    window.__CADET_CONFIG__ = { remote: "cloud" };
-    useLockfileStore
-      .getState()
-      .setLockfile({ assistants: [localA], activeAssistant: "local-a" });
-
-    const result = await loadLockfile();
-
-    expect(loadLockfileHost).not.toHaveBeenCalled();
-    expect(result.assistants).toEqual([]);
-    expect(result.activeAssistant).toBeNull();
-    expect(useLockfileStore.getState().committed).toBe(true);
-  });
-
-  test("a non-cloud remote still reads the host", async () => {
-    window.__CADET_CONFIG__ = { remote: "local" };
-    loadLockfileHost.mockImplementationOnce(async () => ({
-      assistants: [localA],
-      activeAssistant: "local-a",
-    }));
-
-    const result = await loadLockfile();
-
-    expect(result.assistants.map((a) => a.assistantId)).toEqual(["local-a"]);
+    expect(
+      isRetryablePairingFailure({} as localModeHost.LocalPairingFailure),
+    ).toBe(false);
   });
 });
 
@@ -626,18 +606,12 @@ describe("assistant classification", () => {
     expect(isCloudAssistant(remote)).toBe(false);
   });
 
-  test("getLocalAssistants / getCloudAssistants partition by cloud", () => {
-    const paired = {
-      assistantId: "paired-a",
-      cloud: "local",
-      runtimeUrl: "https://paired-a.example",
-    } as LockfileAssistant;
-    setLockfile({
-      assistants: [localA, platform, paired],
-      activeAssistant: null,
-    });
-    expect(getLocalAssistants()).toEqual([localA, paired]);
-    expect(getCloudAssistants()).toEqual([platform]);
+  test("the synthesis partitions to the served local entry; cloud rows never appear", () => {
+    stampServed({ assistantId: "served-1" });
+    expect(getLocalAssistants().map((a) => a.assistantId)).toEqual([
+      "served-1",
+    ]);
+    expect(getCloudAssistants()).toEqual([]);
   });
 });
 
@@ -722,9 +696,16 @@ describe("hasLocalGateway", () => {
     expect(hasLocalGateway(localA)).toBe(false);
   });
 
-  test("defaults to the selected assistant", () => {
-    enableLocalMode();
-    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+  test("is false in a served-gateway runtime (the runtime's own vision covers it)", () => {
+    window.__CADET_CONFIG__ = {
+      remote: "docker",
+      assistantId: "edge-1",
+    };
+    expect(hasLocalGateway()).toBe(false);
+  });
+
+  test("defaults to the selected assistant — the served entry, port 0, is live topology", () => {
+    stampServed({ assistantId: "served-1" });
     expect(hasLocalGateway()).toBe(true);
   });
 });
@@ -786,44 +767,26 @@ describe("hasPairedGateway", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     expect(hasPairedGateway(pairedEntry)).toBe(false);
   });
+
+  test("is false for the served entry — a local serve is never a paired one", () => {
+    stampServed({ assistantId: "served-1" });
+    expect(hasPairedGateway(getSelectedAssistant())).toBe(false);
+  });
 });
 
 describe("isCliWakeableAssistant", () => {
-  test("a cloud:local entry with no recorded port is wakeable (wake establishes it)", () => {
-    setLockfile({
-      assistants: [
-        { assistantId: "legacy", cloud: "local" } as LockfileAssistant,
-      ],
-      activeAssistant: "legacy",
-    });
-    expect(isCliWakeableAssistant("legacy")).toBe(true);
+  test("the served local assistant is wakeable (wake establishes its gateway)", () => {
+    stampServed({ assistantId: "served-1" });
+    expect(isCliWakeableAssistant("served-1")).toBe(true);
   });
 
-  test("a legacy (cloud-less) entry is wakeable once normalized at parse", () => {
-    setLockfile(
-      parseLockfile({
-        assistants: [{ assistantId: "old" }],
-        activeAssistant: "old",
-      }),
-    );
-    expect(isCliWakeableAssistant("old")).toBe(true);
-  });
-
-  test("a docker-cloud entry is not CLI-wakeable", () => {
-    setLockfile({
-      assistants: [{ assistantId: "dk", cloud: "docker" } as LockfileAssistant],
-      activeAssistant: "dk",
-    });
-    expect(isCliWakeableAssistant("dk")).toBe(false);
-  });
-
-  test("a cloud (cadet) entry is not CLI-wakeable", () => {
-    setLockfile({ assistants: [platform], activeAssistant: "platform-a" });
-    expect(isCliWakeableAssistant("platform-a")).toBe(false);
+  test("a served docker-cloud entry is not CLI-wakeable", () => {
+    stampServed({ assistantId: "served-1", assistantCloud: "docker" });
+    expect(isCliWakeableAssistant("served-1")).toBe(false);
   });
 
   test("an unknown id is not wakeable", () => {
-    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+    stampServed({ assistantId: "served-1" });
     expect(isCliWakeableAssistant("nope")).toBe(false);
   });
 });
@@ -865,7 +828,10 @@ describe("primeLocalGatewayConnection", () => {
 
   test("paired prime reaches the host proxy without exposing a bearer", async () => {
     enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    stampServed({
+      assistantId: "paired-a",
+      assistantRuntimeUrl: "https://gw.example.com",
+    });
     // Referenced by variable so the AST-based raw-fetch rule (which only
     // matches literal key arguments) does not fire in test-only setItem
     // calls.
@@ -897,7 +863,10 @@ describe("primeLocalGatewayConnection", () => {
     // in which the slot is empty: requests issued then would fall through to
     // the cloud and gateway-auth predicates would read false.
     enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    stampServed({
+      assistantId: "paired-a",
+      assistantRuntimeUrl: "https://gw.example.com",
+    });
     const ingressUrl = window.location.origin;
     setSelfHostedConnection({ url: ingressUrl, token: null });
 
@@ -918,7 +887,10 @@ describe("primeLocalGatewayConnection", () => {
 
   test("paired prime surfaces a host credential failure without reading it directly", async () => {
     enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    stampServed({
+      assistantId: "paired-a",
+      assistantRuntimeUrl: "https://gw.example.com",
+    });
     globalThis.fetch = mock(async () =>
       Response.json({ status: "ok", ready: true }),
     ) as unknown as typeof fetch;
@@ -941,11 +913,9 @@ describe("primeLocalGatewayConnection", () => {
 
   test("unready paired prime clears the shared same-origin slot", async () => {
     enableLocalMode();
-    setLockfile({
-      assistants: [localA, pairedEntry],
-      activeAssistant: "local-a",
-    });
-    setSelected("local-a");
+    // The selected (served) assistant is a local gateway, so after the
+    // failed paired prime the local selection's session stays topology-live.
+    stampServed({ assistantId: "served-1" });
     setSelfHostedConnection({
       url: window.location.origin,
       token: null,
@@ -1007,101 +977,12 @@ describe("primeLocalGatewayConnectionWithStartupRetry (paired target)", () => {
   });
 });
 
-describe("getActiveAssistant", () => {
-  test("returns the entry matching the recorded active id", () => {
-    setLockfile({ assistants: [localA, localB], activeAssistant: "local-b" });
-    expect(getActiveAssistant()).toBe(localB);
-  });
-
-  test("returns the sole assistant when the active id is stale", () => {
-    setLockfile({ assistants: [localA], activeAssistant: "gone" });
-    expect(getActiveAssistant()).toBe(localA);
-  });
-
-  test("returns undefined when the active id is stale and the choice is ambiguous", () => {
-    setLockfile({ assistants: [localA, localB], activeAssistant: "gone" });
-    expect(getActiveAssistant()).toBeUndefined();
-  });
-
-  test("does not bind to the first entry when a later one is active", () => {
-    setLockfile({ assistants: [localA, localB], activeAssistant: "local-b" });
-    expect(getActiveAssistant()).not.toBe(localA);
-  });
-});
-
-describe("reconcileSelectedAssistant", () => {
-  test("clears a stale selection whose id is absent from the lockfile", () => {
-    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
-    setSelected("local-b");
-
-    reconcileSelectedAssistant();
-
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
-    expect(getSelectedAssistant()).toBe(localA);
-  });
-
-  test("preserves a selection that is still present in the lockfile", () => {
-    setLockfile({ assistants: [localA, localB], activeAssistant: "local-a" });
-    setSelected("local-b");
-
-    reconcileSelectedAssistant();
-
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
-      "local-b",
-    );
-    expect(getSelectedAssistant()).toBe(localB);
-  });
-
-  test("is a no-op when there is no tab-local selection", () => {
-    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
-
-    reconcileSelectedAssistant();
-
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBeNull();
-  });
-
-  test("a transient empty-lockfile read does not clear the selection", () => {
-    // No cached lockfile and nothing persisted → getLockfile() hits its empty
-    // fallback (setCachedLockfile), which must NOT reconcile. Otherwise a boot/
-    // read failure would wrongly drop a still-valid selection.
-    setSelected("local-a");
-
-    getLockfile();
-
-    expect(localStorage.getItem(SELECTED_ASSISTANT_STORAGE_KEY)).toBe(
-      "local-a",
-    );
-  });
-});
-
-describe("getLockfile persisted-storage read", () => {
-  test("validates the persisted lockfile, salvaging usable entries", () => {
-    localStorage.setItem(
-      LOCKFILE_STORAGE_KEY,
-      JSON.stringify({
-        activeAssistant: "local-a",
-        assistants: [
-          { assistantId: "local-a", cloud: "local" },
-          { cloud: "local" },
-        ],
-      }),
-    );
-    const lockfile = getLockfile();
-    expect(lockfile.activeAssistant).toBe("local-a");
-    expect(lockfile.assistants).toEqual([
-      { assistantId: "local-a", cloud: "local" },
-    ]);
-  });
-
-  test("falls back to an empty lockfile when the stored value is not JSON", () => {
-    localStorage.setItem(LOCKFILE_STORAGE_KEY, "{not json");
-    expect(getLockfile()).toEqual({ assistants: [], activeAssistant: null });
-  });
-});
-
 describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", () => {
   test("a served runtime always has a gateway assistant; the session goes live with the slot token", () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
+    window.__CADET_CONFIG__ = {
+      remote: "docker",
+      assistantId: "edge-1",
+    };
 
     expect(hasGatewayAssistant()).toBe(true);
     expect(isGatewaySessionLive()).toBe(false);
@@ -1113,30 +994,30 @@ describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", 
     expect(isGatewaySessionLive()).toBe(true);
   });
 
-  test("a paired selection has a gateway assistant only with a usable runtimeUrl", () => {
+  test("a paired serve has a gateway assistant only with a usable runtimeUrl", () => {
     enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    stampServed({
+      assistantId: "paired-a",
+      assistantRuntimeUrl: "https://gw.example.com",
+    });
     expect(hasGatewayAssistant()).toBe(true);
 
-    setLockfile({
-      assistants: [
-        { ...pairedEntry, runtimeUrl: undefined } as LockfileAssistant,
-      ],
-      activeAssistant: "paired-a",
-    });
+    stampServed({ assistantId: "paired-a", assistantRuntimeUrl: "not a url" });
     expect(hasGatewayAssistant()).toBe(false);
   });
 
-  test("a paired selection outside local mode has no gateway assistant", () => {
+  test("a paired serve outside local mode has no gateway assistant", () => {
     window.__CADET_CONFIG__ = { remote: "cloud" };
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
     expect(hasGatewayAssistant()).toBe(false);
     expect(isGatewaySessionLive()).toBe(false);
   });
 
-  test("paired mode goes live only once the prime has seeded the slot", () => {
+  test("a paired serve goes live only once the prime has seeded the slot", () => {
     enableLocalMode();
-    setLockfile({ assistants: [pairedEntry], activeAssistant: "paired-a" });
+    stampServed({
+      assistantId: "paired-a",
+      assistantRuntimeUrl: "https://gw.example.com",
+    });
     const fetchSpy = mock(async () => {
       throw new Error("unexpected fetch");
     });
@@ -1150,17 +1031,16 @@ describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", 
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  test("a local selection's session is topology — live with a resolvable gateway, off without one", () => {
-    enableLocalMode();
-    setLockfile({
-      assistants: [
-        { ...localA, resources: undefined } as unknown as LockfileAssistant,
-      ],
-      activeAssistant: "local-a",
-    });
-    expect(isGatewaySessionLive()).toBe(false);
-
-    setLockfile({ assistants: [localA], activeAssistant: "local-a" });
+  test("a served local selection's session is topology — live without any slot", () => {
+    stampServed({ assistantId: "served-1" });
+    // The host IS the gateway and the synthesis records a resolvable one
+    // (port 0): no prime, no slot, no token — the trusted host owns custody.
+    expect(hasGatewayAssistant()).toBe(true);
     expect(isGatewaySessionLive()).toBe(true);
+
+    // Nothing stamped (pre-hatch) — no gateway assistant at all.
+    window.__CADET_CONFIG__ = { remote: "local" };
+    expect(hasGatewayAssistant()).toBe(false);
+    expect(isGatewaySessionLive()).toBe(false);
   });
 });

@@ -115,9 +115,18 @@ export function isServedGatewayRuntime(): boolean {
  * it. A host that stamps no assistant (Cadet Cloud, a pre-hatch desktop)
  * yields the empty lockfile, which is what the onboarding gates read.
  *
- * `resources.gatewayPort: 0` keeps `getLoopbackGatewayPort` non-null: the
- * serving host IS the gateway, so the local-gateway predicate stays open and
- * readiness remains a probe question, never a port question.
+ * The entry carries no `runtimeUrl`: the renderer holds no transport URL —
+ * the serving host routes the scoped data plane same-origin — and a usable
+ * off-machine `runtimeUrl` is exactly what `isRemoteGatewayEntry` reads as
+ * "paired", which a served local assistant must never classify as (the wake
+ * repair would refuse it).
+ *
+ * `resources.gatewayPort: 0` keeps `getLoopbackGatewayPort` non-null for a
+ * plain local serve: the serving host IS the gateway, so the local-gateway
+ * predicate stays open and readiness remains a probe question, never a port
+ * question. A paired serve (the host stamped its `runtimeUrl`) gets no such
+ * record — a paired gateway is not this machine's to claim, and an unusable
+ * stamped URL must refuse like the roster entries always did.
  */
 function getServedLockfile(): Lockfile {
   const config = readInjectedConfig();
@@ -125,15 +134,18 @@ function getServedLockfile(): Lockfile {
   if (isCadetCloudRemote() || !assistantId) {
     return { ...EMPTY_LOCKFILE };
   }
+  const runtimeUrl = nonEmptyString(config?.assistantRuntimeUrl);
   return {
     assistants: [
       {
         assistantId,
         name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
         cloud: config?.assistantCloud ?? "local",
-        runtimeUrl: window.location.origin,
+        runtimeUrl,
         hatchedAt: "1970-01-01T00:00:00.000Z",
-        resources: { gatewayPort: 0, daemonPort: 0 },
+        resources: runtimeUrl
+          ? undefined
+          : { gatewayPort: 0, daemonPort: 0 },
       },
     ],
     activeAssistant: assistantId,

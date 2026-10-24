@@ -25,7 +25,6 @@ import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import {
   getLockfile,
-  isLocalClient,
   isLocalAssistant,
   isCloudAssistant,
 } from "@/lib/local-mode";
@@ -444,14 +443,12 @@ function getEffectiveActiveLockfileAssistantId(
 // Subscriptions
 // ---------------------------------------------------------------------------
 
-// In local mode, the resolved list is the served synthesis: the host stamps
-// the one assistant this surface serves, so the list populates once — there
-// is no roster to stay subscribed to. A host that stamps no assistant
-// (a pre-hatch desktop) populates the empty list, which is exactly what the
+// In local mode, the resolved list is the served synthesis — the host stamps
+// the one assistant this surface serves, so there is no roster to stay
+// subscribed to. The one-shot populate runs in boot.tsx (the old lockfile
+// warm-up's slot), not at module load: a host that stamps no assistant (a
+// pre-hatch desktop) populates the empty list, which is exactly what the
 // onboarding gates read.
-if (isLocalClient()) {
-  useResolvedAssistantsStoreBase.getState().setFromLockfile(getLockfile());
-}
 
 const SelectionChangeSchema = z.object({
   key: z.literal(SELECTED_ASSISTANT_STORAGE_KEY),

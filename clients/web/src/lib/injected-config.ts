@@ -35,6 +35,13 @@ export const InjectedConfigSchema = z.object({
    * a stamp from a newer host can never invalidate the whole config.
    */
   assistantCloud: RemoteSchema.optional().catch(undefined),
+  /**
+   * The served assistant's runtime URL — stamped only when the host serves a
+   * PAIRED (connect-import) assistant, whose paired-ness derives from an
+   * off-machine `runtimeUrl`. Classification only: the data plane still
+   * rides the host's same-origin forward.
+   */
+  assistantRuntimeUrl: z.string().optional(),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),
 });

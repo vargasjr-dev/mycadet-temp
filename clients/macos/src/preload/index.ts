@@ -764,6 +764,7 @@ const cadetConfig = ipcRenderer.sendSync(
   assistantId?: string;
   assistantName?: string;
   assistantCloud?: string;
+  assistantRuntimeUrl?: string;
 } | null;
 if (cadetConfig) {
   contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);
