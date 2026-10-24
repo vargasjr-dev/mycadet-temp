@@ -242,7 +242,7 @@ function remoteWebIngressConfig(
  * fingerprint matches, so this must change whenever the generated index or
  * nginx template does.
  */
-export const EDGE_TEMPLATE_VERSION = 14;
+export const EDGE_TEMPLATE_VERSION = 15;
 
 /**
  * Stable fingerprint of the injected SPA config, its source bundles, and the
@@ -456,6 +456,11 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
     ? {
         id,
         ...(metadata.assistantName ? { name: metadata.assistantName } : {}),
+        // Each assistant carries its own hosting kind (the review follow-up
+        // on #543): the chooser labels rows individually, so the edge stamps
+        // the served assistant's lockfile cloud — the same value the served
+        // SPA config carries. Undefined drops out of the JSON body.
+        remote: edgeServedRemote(lockfileAssistantRemote(id)),
       }
     : undefined;
   const responses = [
