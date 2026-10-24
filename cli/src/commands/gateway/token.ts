@@ -14,7 +14,7 @@ import {
   refreshGuardianTokenResult,
   resetGuardianBootstrap,
 } from "../../lib/guardian-token.js";
-import { generateLocalSigningKey } from "../../lib/local.js";
+import { generateLocalSecret } from "../../lib/local.js";
 
 function printUsage(): void {
   console.log(`Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`);
@@ -45,7 +45,7 @@ async function repairGuardianCredential(
 ): Promise<boolean> {
   let bootstrapSecret = entry.guardianBootstrapSecret;
   if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSigningKey();
+    bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
     saveLockfileAssistant(entry);
   }

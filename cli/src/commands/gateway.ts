@@ -1,4 +1,5 @@
 import { gatewayToken } from "./gateway/token.js";
+import { key as gatewayKey } from "./gateway/key.js";
 import { cliCommand } from "../lib/cli-name.js";
 
 function printUsage(): void {
@@ -8,6 +9,7 @@ function printUsage(): void {
   console.log("");
   console.log("Subcommands:");
   console.log("  token    Manage gateway authentication tokens");
+  console.log("  key      Manage the gateway signing key");
 }
 
 export const gateway = Object.assign(
@@ -22,6 +24,11 @@ export const gateway = Object.assign(
 
   if (subcommand === "token") {
     await gatewayToken();
+    return;
+  }
+
+  if (subcommand === "key") {
+    await gatewayKey(args.slice(1));
     return;
   }
 

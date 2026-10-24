@@ -132,7 +132,6 @@ export interface DockerStatefulSetSpec {
 
 /** Secrets injected at container-start time (from hatch / upgrade opts). */
 export interface DockerRunSecrets {
-  signingKey?: string;
   bootstrapSecret?: string;
   cesServiceToken?: string;
 }
@@ -192,7 +191,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "GATEWAY_IPC_SOCKET_DIR",    value: "/run/gateway-ipc" },
         { kind: "static", name: "ASSISTANT_IPC_SOCKET_DIR",  value: "/run/assistant-ipc" },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
-        { kind: "secret", name: "ACTOR_TOKEN_SIGNING_KEY",   secret: "signingKey" },
         { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         // Provider API keys — forwarded from host if set
         ...Object.values(PROVIDER_ENV_VAR_NAMES).map(
@@ -224,7 +222,6 @@ export const DOCKER_STATEFUL_SET_SPEC: DockerStatefulSetSpec = {
         { kind: "static", name: "GATEWAY_PORT",              value: `${GATEWAY_INTERNAL_PORT}` },
         { kind: "static", name: "RUNTIME_HTTP_PORT",         value: `${ASSISTANT_INTERNAL_PORT}` },
         { kind: "secret", name: "CES_SERVICE_TOKEN",         secret: "cesServiceToken" },
-        { kind: "secret", name: "ACTOR_TOKEN_SIGNING_KEY",   secret: "signingKey" },
         { kind: "secret", name: "GUARDIAN_BOOTSTRAP_SECRET", secret: "bootstrapSecret" },
         { kind: "host",   name: "CADET_ENVIRONMENT" },
         { kind: "host",   name: "CADET_CLOUD_URL" },
@@ -410,7 +407,10 @@ export function buildServiceRunArgs(
             port.hostPort === "{{ gatewayPort }}"
               ? `${gatewayPort}`
               : port.hostPort === "{{ assistantPort }}"
-                ? `${assistantPort}`
+                ? // Loopback-only: the assistant HTTP API serves the gateway
+                  // (same pod) and host-local tooling. The gateway's edge is
+                  // the only ingress; the API never faces the LAN.
+                  `127.0.0.1:${assistantPort}`
                 : port.hostPort;
           if (hostSide !== undefined) {
             args.push("-p", `${hostSide}:${port.containerPort}`);

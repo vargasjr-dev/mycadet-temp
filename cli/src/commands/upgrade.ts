@@ -1,4 +1,3 @@
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
@@ -73,7 +72,7 @@ import {
 import { fetchCurrentVersion } from "../lib/http-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   ensureLocalRuntime,
   startCes,
   startGateway,
@@ -374,7 +373,6 @@ async function upgradeDocker(
   const {
     bootstrapSecret,
     cesServiceToken,
-    signingKey,
     extraAssistantEnv,
     extraGatewayEnv,
   } = await captureReplayState(res);
@@ -471,7 +469,6 @@ async function upgradeDocker(
   console.log("🚀 Starting upgraded containers...");
   await startContainers(
     {
-      signingKey,
       bootstrapSecret,
       cesServiceToken,
       extraAssistantEnv,
@@ -572,7 +569,6 @@ async function upgradeDocker(
 
         await startContainers(
           {
-            signingKey,
             bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
@@ -596,7 +592,6 @@ async function upgradeDocker(
             backupLabel: "pre-upgrade",
             res,
             containerOptions: {
-              signingKey,
               bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,
@@ -811,7 +806,6 @@ async function upgradeLocal(
   }
 
   const originalResources = { ...resources };
-  const signingKey = resolveExistingLocalSigningKey(resources);
 
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = `http://127.0.0.1:${resources.gatewayPort}`;
@@ -889,7 +883,7 @@ async function upgradeLocal(
   let bootstrapSecret = entry.guardianBootstrapSecret;
   let entryChanged = false;
   if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSigningKey();
+    bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
     entryChanged = true;
   }
@@ -933,8 +927,8 @@ async function upgradeLocal(
       // launches the CES sibling.
       await Promise.all([
         startCes(false, upgradedResources),
-        startLocalDaemon(false, upgradedResources, { signingKey }),
-        startGateway(false, upgradedResources, { signingKey, bootstrapSecret }),
+        startLocalDaemon(false, upgradedResources),
+        startGateway(false, upgradedResources, { bootstrapSecret }),
       ]);
     } finally {
       if (previousAppVersion === undefined) {
@@ -993,8 +987,8 @@ async function upgradeLocal(
         );
       await Promise.all([
         startCes(false, originalResources),
-        startLocalDaemon(false, originalResources, { signingKey }),
-        startGateway(false, originalResources, { signingKey, bootstrapSecret }),
+        startLocalDaemon(false, originalResources),
+        startGateway(false, originalResources, { bootstrapSecret }),
       ]);
       if (!(await waitForReady(adminUrl)))
         throw new Error(

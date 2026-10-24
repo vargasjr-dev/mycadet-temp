@@ -82,7 +82,7 @@ afterEach(async () => {
 });
 
 describe("root tar backup", () => {
-  test("initializes a fresh stopped instance with complete roots and the archived signing key", async () => {
+  test("initializes a fresh stopped instance with complete roots", async () => {
     const { root, entry, file, dir } = await fixture();
     await packRoot(root, file);
     const destination = join(dir, "fresh-instance");
@@ -91,8 +91,10 @@ describe("root tar backup", () => {
       ...entry,
       resources: { ...entry.resources!, instanceDir: destination },
     };
-    const key = await initializeRootArchive(fresh, file);
-    expect(key).toBe("07".repeat(32));
+    await initializeRootArchive(fresh, file);
+    expect(
+      await readFile(join(destination, "gateway-security", "actor-token-signing-key")),
+    ).toEqual(Buffer.from("07".repeat(32), "hex"));
     expect(
       await readFile(join(destination, "ces-security", "keys.enc"), "utf8"),
     ).toBe("opaque encrypted bytes");

@@ -112,7 +112,7 @@ mock.module("../lib/guardian-token.js", () => ({
   seedGuardianTokenFromSiblingEnv: seedGuardianTokenFromSiblingEnvMock,
 }));
 
-const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
+const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
   () => "generated-local-secret",
 );
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
@@ -134,7 +134,7 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/local.js", () => ({
   ...realLocal,
-  generateLocalSigningKey: generateLocalSigningKeyMock,
+  generateLocalSigningKey: generateLocalSecretMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
@@ -265,8 +265,8 @@ beforeEach(() => {
   resetGuardianBootstrapMock.mockResolvedValue(undefined);
   seedGuardianTokenFromSiblingEnvMock.mockReset();
   seedGuardianTokenFromSiblingEnvMock.mockReturnValue(false);
-  generateLocalSigningKeyMock.mockReset();
-  generateLocalSigningKeyMock.mockReturnValue("generated-local-secret");
+  generateLocalSecretMock.mockReset();
+  generateLocalSecretMock.mockReturnValue("generated-local-secret");
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
@@ -330,7 +330,7 @@ describe("cadet upgrade local", () => {
     expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
     expect(startLocalDaemonMock).not.toHaveBeenCalled();
     expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
+    expect(generateLocalSecretMock).not.toHaveBeenCalled();
     expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
     expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
   });

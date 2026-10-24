@@ -33,7 +33,7 @@ import { makeEntry } from "./helpers/lockfile-entry.js";
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
 const realLocal = {
-  generateLocalSigningKey: localModule.generateLocalSigningKey,
+  generateLocalSecret: localModule.generateLocalSecret,
   startLocalDaemon: localModule.startLocalDaemon,
   startGateway: localModule.startGateway,
   startCes: localModule.startCes,
@@ -365,8 +365,8 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock).toHaveBeenCalledTimes(1);
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
-      expect.objectContaining({ signingKey: "07".repeat(32) }),
-      { signingKey: "07".repeat(32), bootstrapSecret: "existing-bootstrap" },
+      expect.objectContaining({ instanceDir: expect.any(String) }),
+      { bootstrapSecret: "existing-bootstrap" },
     ]);
   });
 

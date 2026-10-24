@@ -35,18 +35,18 @@ describe("runWake", () => {
     expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "wake", "asst-42"]]);
   });
 
-  test("repairGuardian: true appends --repair-guardian to the CLI args", async () => {
+  test("repairGuardian: true chains the gateway's own token re-lease after the wake", async () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: true });
-    lastChild.emit("close", 0);
+    lastChild.emit("close", 0); // wake completes...
 
-    expect(await pending).toEqual({ ok: true });
+    await pending.then((result) => expect(result).toEqual({ ok: true }));
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", "cli", "wake", "asst-42", "--repair-guardian"],
+      ["run", "cli", "gateway", "token", "refresh", "asst-42"],
     ]);
   });
 
-  test("repairGuardian: false omits the flag", async () => {
+  test("repairGuardian: false ends at the wake", async () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: false });
     lastChild.emit("close", 0);
 

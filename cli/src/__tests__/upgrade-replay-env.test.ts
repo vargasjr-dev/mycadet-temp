@@ -93,7 +93,7 @@ describe("buildReplayEnv", () => {
           internalName: "gateway",
           network: "container",
           env: [
-            { kind: "secret", name: "FUTURE_SECRET", secret: "signingKey" },
+            { kind: "secret", name: "FUTURE_SECRET", secret: "bootstrapSecret" },
           ],
           volumeMounts: [],
         },
@@ -148,18 +148,19 @@ describe("buildReplayState", () => {
 
   test("plucks secrets from the captured envs", () => {
     const state = buildReplayState(
-      { CES_SERVICE_TOKEN: "ces-token", ACTOR_TOKEN_SIGNING_KEY: "sign-key" },
+      { CES_SERVICE_TOKEN: "ces-token" },
       { GUARDIAN_BOOTSTRAP_SECRET: "bootstrap" },
     );
     expect(state.bootstrapSecret).toBe("bootstrap");
     expect(state.cesServiceToken).toBe("ces-token");
-    expect(state.signingKey).toBe("sign-key");
+    // The signing key rides no env: the gateway owns it in its security
+    // root, and replacement containers adopt it from there.
+    expect("signingKey" in state).toBe(false);
   });
 
-  test("generates a service token but preserves file-backed signing identity when env is absent", () => {
+  test("generates a service token when the captured env has none", () => {
     const state = buildReplayState({}, {});
     expect(state.bootstrapSecret).toBeUndefined();
     expect(state.cesServiceToken).toMatch(/^[0-9a-f]{64}$/);
-    expect(state.signingKey).toBeUndefined();
   });
 });

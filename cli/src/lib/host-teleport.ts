@@ -475,7 +475,7 @@ export async function restoreHostTeleportTarget(
   };
   try {
     if (previous) {
-      await replaceContainers({ ...previous, signingKey: undefined });
+      await replaceContainers({ ...previous });
     }
     await restoreRootBackup(entry, archive, { resume: false });
     await startAndCheck(storageFor(entry));

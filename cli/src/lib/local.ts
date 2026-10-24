@@ -548,17 +548,11 @@ function resolveDaemonMainPath(assistantIndex: string): string {
 }
 
 /**
- * Generate a fresh signing key for a local hatch session.
- *
- * Both the daemon and gateway must use the same HMAC signing key so JWT
- * tokens minted by one can be verified by the other. The CLI generates
- * a key at hatch and passes it as `ACTOR_TOKEN_SIGNING_KEY` to both
- * processes — the daemon and gateway each persist it on their
- * own terms (the `.cadet/` directory layout is their concern, not the
- * CLI's). Lifecycle resumes resolve the existing identity rather than
- * generating a key.
+ * Generate a fresh random secret for local lifecycle use (e.g. the
+ * guardian bootstrap secret). Not a signing key — the gateway owns the
+ * signing key end-to-end; the CLI never touches it.
  */
-export function generateLocalSigningKey(): string {
+export function generateLocalSecret(): string {
   return randomBytes(32).toString("hex");
 }
 
@@ -566,7 +560,6 @@ type DaemonStartOptions = {
   foreground?: boolean;
   defaultWorkspaceConfigPath?: string;
   requireReady?: boolean;
-  signingKey?: string;
 };
 
 /**
@@ -612,9 +605,6 @@ function applyDaemonEnvOverrides(
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
     env.GATEWAY_PORT = String(resources.gatewayPort);
     delete env.QDRANT_URL;
-  }
-  if (options?.signingKey) {
-    env.ACTOR_TOKEN_SIGNING_KEY = options.signingKey;
   }
   if (options?.defaultWorkspaceConfigPath) {
     env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
@@ -1805,7 +1795,6 @@ export async function startGateway(
   watch: boolean = false,
   resources?: LocalAssistantResources,
   options?: {
-    signingKey?: string;
     bootstrapSecret?: string;
     requireReady?: boolean;
   },
@@ -1836,9 +1825,6 @@ export async function startGateway(
     // Pass gateway operational settings via env vars so the CLI does not
     // need direct access to the workspace config file.
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
-    ...(options?.signingKey
-      ? { ACTOR_TOKEN_SIGNING_KEY: options.signingKey }
-      : {}),
     ...(options?.bootstrapSecret
       ? { GUARDIAN_BOOTSTRAP_SECRET: options.bootstrapSecret }
       : {}),

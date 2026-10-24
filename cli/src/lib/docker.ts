@@ -813,7 +813,6 @@ export const SERVICE_START_ORDER: ServiceName[] = [
 export async function startContainers(
   opts: {
     createOnly?: boolean;
-    signingKey?: string;
     bootstrapSecret?: string;
     cesServiceToken?: string;
     extraAssistantEnv?: Record<string, string>;
@@ -1200,7 +1199,6 @@ function affectedServices(
  * rebuild the affected images and restart their containers.
  */
 function startFileWatcher(opts: {
-  signingKey?: string;
   bootstrapSecret?: string;
   cesServiceToken?: string;
   extraAssistantEnv?: Record<string, string>;
@@ -1225,7 +1223,6 @@ function startFileWatcher(opts: {
 
   const configs = serviceImageConfigs(repoRoot, imageTags);
   const runArgs = buildServiceRunArgs({
-    signingKey: opts.signingKey,
     bootstrapSecret: opts.bootstrapSecret,
     cesServiceToken: opts.cesServiceToken,
     extraAssistantEnv: opts.extraAssistantEnv,
@@ -1662,9 +1659,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     const cesServiceToken = randomBytes(32).toString("hex");
-    const signingKey = params.initialArchive
-      ? undefined
-      : randomBytes(32).toString("hex");
 
     // When launched by a remote hatch startup script, the env var
     // GUARDIAN_BOOTSTRAP_SECRET is already set with the laptop's secret.
@@ -1718,7 +1712,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     await startContainers(
       {
         createOnly: !!params.initialArchive,
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
@@ -1816,7 +1809,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       saveLockfileAssistant({ ...dockerEntry, watcherPid: process.pid });
 
       const stopWatcher = startFileWatcher({
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,

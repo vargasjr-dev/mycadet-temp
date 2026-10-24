@@ -148,8 +148,3 @@ export type {
   PairedForwardAuthorizationResult,
   PairedGuardianTokenProvider,
 } from "./gateway-proxy";
-
-export {
-  resolveExistingLocalSigningKey,
-  SigningKeyContinuityError,
-} from "./local-signing-key";
