@@ -82,7 +82,7 @@ describe("resolveNativePostAuthDestination", () => {
 
     expect(destination).toBe(
       `/account/consent?returnTo=${encodeURIComponent(
-        "/account/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
     );
   });
@@ -92,7 +92,7 @@ describe("resolveNativePostAuthDestination", () => {
 
     expect(destination).toBe(
       `/account/consent?returnTo=${encodeURIComponent(
-        "/account/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
     );
   });
@@ -351,7 +351,7 @@ describe("startAuthFlow attribution on native", () => {
       baseURL: "https://mycadet.ai",
       intent: "signup",
       postAuthDestination: `/account/consent?returnTo=${encodeURIComponent(
-        "/account/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
     });
   });
@@ -398,7 +398,7 @@ describe("startAuthFlow attribution on native", () => {
     expect(localStorage.getItem(INSTALL_REFERRER_KEY)).toBe("");
     expect(window.location.href).toBe(
       `/account/consent?returnTo=${encodeURIComponent(
-        "/account/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
     );
   });

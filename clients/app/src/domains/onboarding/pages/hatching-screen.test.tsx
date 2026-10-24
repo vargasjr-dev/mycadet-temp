@@ -1,8 +1,7 @@
 /**
  * Behavioral tests for the hatching screen's app-native port: the local arm
- * rides the shell bridge (hatch → lockfile → status probe → handoff), the
- * cloud arm rides the app's own hatch API, and the skip_research handoff
- * records the completion stamp itself.
+ * rides the shell bridge (hatch → lockfile → status probe → handoff), and the
+ * cloud arm rides the app's own hatch API.
  *
  * The screen keeps module-level hatch guards, so every test drives the flow to
  * a genuine completion (which releases them) to stay isolated. Self-contained
@@ -55,7 +54,6 @@ const statusMock = mock(async (_id: string) => {
 });
 
 const writeSelectionMock = mock((_id: string) => {});
-const markCompletionMock = mock((_id: string) => {});
 
 // --- Mocks --------------------------------------------------------------------
 
@@ -79,10 +77,11 @@ mock.module("@app/assistant/selected-assistant-storage", () => ({
   writeSelectedAssistantId: writeSelectionMock,
 }));
 
-const completionActual = await import("@app/assistant/completion-record");
-mock.module("@app/assistant/completion-record", () => ({
-  ...completionActual,
-  markAssistantCompletion: markCompletionMock,
+// Avatar seeding is fire-and-forget and hits the scoped surface; the suite
+// pins it as observed-no-op so no test leaks a network attempt.
+const seedHatchAvatarMock = mock((_id: string, _traits: unknown) => {});
+mock.module("@app/assistant/avatar-traits", () => ({
+  seedHatchAvatar: seedHatchAvatarMock,
 }));
 
 mock.module("@app/assistant/api", () => ({
@@ -101,7 +100,7 @@ describe("hatching screen", () => {
     readLockfileMock.mockClear();
     statusMock.mockClear();
     writeSelectionMock.mockClear();
-    markCompletionMock.mockClear();
+    seedHatchAvatarMock.mockClear();
     statusCallCount = 0;
     statusHealthyFromCall = 1;
     searchParams = new URLSearchParams();
@@ -139,30 +138,6 @@ describe("hatching screen", () => {
     );
   });
 
-  test("skip_research hands off to chat instead of the research funnel", async () => {
-    const env = import.meta.env as Record<string, string | undefined>;
-    const previousEnv = env.VITE_ENVIRONMENT;
-    env.VITE_ENVIRONMENT = "staging";
-    searchParams = new URLSearchParams("skip_research=1");
-
-    try {
-      render(<HatchingScreen />);
-
-      await waitFor(() => expect(navigateMock).toHaveBeenCalled(), {
-        timeout: 5000,
-      });
-      expect(markCompletionMock).toHaveBeenCalledWith("asst-1");
-      expect(navigateMock).toHaveBeenCalledWith(
-        `${routes.assistant}?onboarding=1`,
-        {
-          replace: true,
-        },
-      );
-    } finally {
-      env.VITE_ENVIRONMENT = previousEnv;
-    }
-  });
-
   test("the cloud hatch hands off to the research flow", async () => {
     render(<HatchingScreen />);
 
@@ -170,6 +145,12 @@ describe("hatching screen", () => {
       timeout: 5000,
     });
     expect(hatchAssistantMock).toHaveBeenCalled();
+    // The hatch avatar re-home: the freshly hatched assistant's id seeds the
+    // random traits on the scoped surface (fire-and-forget, never awaited).
+    expect(seedHatchAvatarMock).toHaveBeenCalledWith(
+      "asst-1",
+      expect.objectContaining({ bodyShape: expect.any(String) }),
+    );
     expect(navigateMock).toHaveBeenCalledWith(routes.onboarding.research, {
       replace: true,
     });

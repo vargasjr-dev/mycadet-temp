@@ -52,10 +52,10 @@ const RESEARCH_FUNNEL_URL =
 const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
 
 // A signup consents at the shell's screen carrying the post-consent funnel
-// destination as the returnTo (non-production builds skip research).
+// destination as the returnTo.
 const consentCarry = () =>
   `/account/consent?returnTo=${encodeURIComponent(
-    "/account/onboarding/hatching?skip_research=1",
+    "/assistant/onboarding/research",
   )}`;
 
 const ALLOW: NavigationDecision = { action: "allow" };
@@ -1305,9 +1305,8 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        // Non-production build: the post-consent destination skips research.
         to: `/account/consent?returnTo=${encodeURIComponent(
-          "/account/onboarding/hatching?skip_research=1",
+          "/assistant/onboarding/research",
         )}`,
       });
     });

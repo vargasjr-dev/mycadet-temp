@@ -1,10 +1,8 @@
 import type { CloudSessionStatus } from "@/stores/session-status";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import {
-  canSkipOnboardingResearch,
   isNewAssistantFunnel,
   onboardingDestinationAfterConsent,
-  withSkipResearch,
 } from "@/domains/onboarding/onboarding-destination";
 import { routes } from "@/utils/routes";
 
@@ -567,14 +565,9 @@ function resolvePostAuth(
   // A first-run signup consents at the shell's screen (the app bundle), then
   // rides returnTo into the same post-consent destination the privacy screen
   // used to hand off.
-  const skipResearch = canSkipOnboardingResearch();
-  const postConsentDestination = onboardingDestinationAfterConsent({
+  const signupNext = onboardingDestinationAfterConsent({
     isLocalHatch: false,
-    skipResearch,
   });
-  const signupNext = skipResearch
-    ? withSkipResearch(postConsentDestination)
-    : postConsentDestination;
   return {
     action: "redirect",
     to: `/account/consent?returnTo=${encodeURIComponent(signupNext)}`,

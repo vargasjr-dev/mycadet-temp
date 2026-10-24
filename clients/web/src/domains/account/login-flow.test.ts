@@ -41,10 +41,8 @@ describe("login flow routing", () => {
         authIntent: "signup",
       }),
     ).toEqual({
-      // Non-production build: the post-consent destination skips research, so
-      // the consent bounce carries it as the returnTo.
       destination: `/account/consent?returnTo=${encodeURIComponent(
-        "/account/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
       requiresFullPageNavigation: true,
     });

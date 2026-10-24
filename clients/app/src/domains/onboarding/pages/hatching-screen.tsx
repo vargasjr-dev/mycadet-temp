@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { hatchAssistant } from "@app/assistant/api";
-import { markAssistantCompletion } from "@app/assistant/completion-record";
+import { seedHatchAvatar } from "@app/assistant/avatar-traits";
 import {
   hatchLocalAssistantHost,
   readLockfileHost,
@@ -10,10 +10,7 @@ import {
 } from "@app/assistant/local-mode-host";
 import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-storage";
 import { AccountShell } from "@app/components/account/account-shell";
-import {
-  NEW_ASSISTANT_PARAM,
-  shouldSkipResearchAfterHatch,
-} from "@app/domains/onboarding/onboarding-destination";
+import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { ATTRIBUTED_PLUGIN_PARAM } from "@app/domains/onboarding/plugin-attribution";
 import { useTranslation } from "@app/i18n";
@@ -172,6 +169,15 @@ export function HatchingScreen() {
     const pollStartMs = Date.now();
 
     const handleHatchReady = (readyAssistantId?: string) => {
+      // Seed the random hatch avatar for the freshly hatched assistant — the
+      // D3b flagged gap, re-homed from web's seeding onto the app's scoped
+      // surface. Read-then-write (never over an existing sidecar), never
+      // awaited: the handoff below must not block on the server-side render,
+      // and the research face step overwrites the avatar anyway when the user
+      // picks one — this is the dock/tray stopgap during the research window.
+      if (readyAssistantId) {
+        void seedHatchAvatar(readyAssistantId, hatchTraits);
+      }
       setDisplayProgress(1);
       displayProgressRef.current = 1;
       segmentStartRef.current = 1;
@@ -186,17 +192,6 @@ export function HatchingScreen() {
         // brand-new one instead of reusing this resolved promise and avatar.
         releaseHatchGuards();
         void (async () => {
-          // Non-production skip-to-chat: the assistant is live, so drop into
-          // the workspace instead of the research/personality funnel. This
-          // bypasses the research route, so this screen records the completion
-          // itself.
-          if (shouldSkipResearchAfterHatch(searchParams)) {
-            if (readyAssistantId) {
-              markAssistantCompletion(readyAssistantId);
-            }
-            void navigate(`${routes.assistant}?onboarding=1`, SETUP_NAVIGATE);
-            return;
-          }
           // A local hatch feeds the research/personality flow. The assistant
           // is live, so the research route adopts it (its background hatch
           // resolves the existing local assistant instead of provisioning a
