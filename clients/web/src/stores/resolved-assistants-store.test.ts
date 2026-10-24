@@ -399,7 +399,6 @@ describe("upsertFromApi", () => {
     expect(entry.runtimeVersion).toBe("v0.8.13");
     expect(entry.isActiveLockfileAssistant).toBe(true);
   });
-
 });
 
 describe("setFromApi connectability", () => {

@@ -326,7 +326,9 @@ function cloudSessionMiddleware(): Connect.NextHandleFunction {
   };
 }
 
-function configMiddleware(buildConfigJson: () => string): Connect.NextHandleFunction {
+function configMiddleware(
+  buildConfigJson: () => string,
+): Connect.NextHandleFunction {
   return (req, res, next) => {
     if (req.url !== "/assistant/__config" && req.url !== "/__config") {
       return next();

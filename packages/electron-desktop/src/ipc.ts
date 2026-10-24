@@ -41,7 +41,10 @@ export const createIpcRegistrar = (
   };
 
   /** Register a synchronous handler that returns null for rejected senders. */
-  const handleSync = <R>(channel: string, fn: (...args: unknown[]) => R): void => {
+  const handleSync = <R>(
+    channel: string,
+    fn: (...args: unknown[]) => R,
+  ): void => {
     ipcMain.on(channel, (event, ...args: unknown[]) => {
       event.returnValue = isAllowedSender(event) ? fn(...args) : null;
     });

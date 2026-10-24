@@ -70,7 +70,10 @@ import { installImageContextMenu } from "@mycadet/electron-desktop/image-context
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 import { installLocalMode, resolveCliInvocation } from "./local-mode.client";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
-import { getWatchedLockfile, installLockfileWatcher } from "./lockfile-watcher.client";
+import {
+  getWatchedLockfile,
+  installLockfileWatcher,
+} from "./lockfile-watcher.client";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "./logger";
 import {

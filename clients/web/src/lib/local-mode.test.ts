@@ -540,14 +540,16 @@ describe("assistant pairing", () => {
     { reason: "invalid-address", retryable: false },
     { reason: "code-expired", retryable: false },
     { reason: "unreachable", retryable: true },
-  ])("a $reason failure classifies as retryable=$retryable", ({
-    reason,
-    retryable,
-  }) => {
-    expect(
-      isRetryablePairingFailure({ reason } as localModeHost.LocalPairingFailure),
-    ).toBe(retryable);
-  });
+  ])(
+    "a $reason failure classifies as retryable=$retryable",
+    ({ reason, retryable }) => {
+      expect(
+        isRetryablePairingFailure({
+          reason,
+        } as localModeHost.LocalPairingFailure),
+      ).toBe(retryable);
+    },
+  );
 
   test("a host too old to name a reason ends the attempt", () => {
     expect(
