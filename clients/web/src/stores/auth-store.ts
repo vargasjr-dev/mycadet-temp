@@ -41,36 +41,16 @@ import { resetNotificationIdentitySession } from "@/runtime/notification-avatar"
 import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
-  getLockfileAssistant,
   getCloudAssistants,
-  getLocalAssistants,
   isCadetCloudRemote,
   isServedGatewayRuntime,
   hasGatewayAssistant,
   isGatewaySessionLive,
   primeLocalGatewayConnection,
-  primeLocalGatewayConnectionWithRepair,
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
-import {
-  isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
-  type LockfileAssistant,
-} from "@mycadet/local-mode/contract";
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
-/**
- * Whether the entry's gateway lives on another machine (a connect import):
- * the paired-gateway transport's eligibility, derived from the addressing.
- */
-function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  return (
-    isLoopbackGatewayCloud(entry.cloud) &&
-    isUsableRuntimeUrl(entry.runtimeUrl) &&
-    !isLoopbackPublicUrl(entry.runtimeUrl)
-  );
-}
 import { listAssistants } from "@/assistant/api";
 import { deleteBiometricToken } from "@/runtime/native-biometric";
 import { unregisterLiveActivityPushToken } from "@/domains/chat/voice/live-voice/live-activity-push-registration";
@@ -130,7 +110,7 @@ function resolveUserId(user: RawSessionUser | null): string | null {
   return user?.id ?? user?.email ?? user?.username ?? null;
 }
 
-function toAuthUser(raw: RawSessionUser | null): AuthUser | null {
+export function toAuthUser(raw: RawSessionUser | null): AuthUser | null {
   if (!raw) {
     return null;
   }
@@ -157,9 +137,6 @@ interface AuthState {
 
 interface AuthActions {
   initSession: () => Promise<void>;
-  connectLocalAssistant: (assistantId: string) => Promise<void>;
-  connectPairedAssistant: (assistantId: string) => Promise<void>;
-  connectCloudAssistant: (assistantId: string) => Promise<void>;
   refreshSession: () => Promise<boolean>;
   /** App can supply cloud revocation while retaining shared native/assistant cleanup. */
   logout: (options?: {
@@ -452,7 +429,7 @@ function broadcastAuthChange(): void {
   broadcastChannel?.postMessage("auth-changed");
 }
 
- async function syncUserScopedState(nextUserId: string | null): Promise<void> {
+async function syncUserScopedState(nextUserId: string | null): Promise<void> {
   const consent = restoreConsentForUser(nextUserId);
   const store = useOnboardingStore.getState();
   store.setTosAccepted(consent.tos);
@@ -711,20 +688,6 @@ function probeCloudSessionIfReachable(
   }
 }
 
-/**
- * Shared tail of the interactive connect actions, run after the target's
- * gateway connection is primed: select the assistant and mark the session
- * logged in. The selection write re-keys the boot resolution query, which
- * refetches and republishes the active id.
- */
-async function establishLocalUserSession(
-  set: AuthSet,
-  assistantId: string,
-): Promise<void> {
-  await setSelectedAssistant(assistantId);
-  set(authenticatedLocalUser());
-}
-
 async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
   try {
     if (await refreshRemoteGatewaySession()) {
@@ -734,6 +697,33 @@ async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
     // A network failure says nothing about an already-valid in-memory token.
   }
   return getSelfHostedActorToken() !== null;
+}
+
+/**
+ * Session commit seams for the connect path (`@/assistant/connect-assistant`).
+ *
+ * The selection write re-keys the boot resolution query, which refetches and
+ * republishes the active id; the state patch marks the session the connect
+ * established. These exist so the connect orchestration can live in the
+ * assistant domain without reaching into the store's internals — and they
+ * re-home to the app bundle together with the session state itself.
+ */
+export async function commitLocalSession(assistantId: string): Promise<void> {
+  await setSelectedAssistant(assistantId);
+  useAuthStoreBase.setState(authenticatedLocalUser());
+}
+
+export async function commitCloudSession(
+  user: AuthUser | null,
+  assistantId: string,
+): Promise<void> {
+  await setSelectedAssistant(assistantId);
+  await syncUserScopedState(user?.id ?? null);
+  useAuthStoreBase.setState(authenticatedPlatformUser(user));
+}
+
+export function probeCloudSessionForConnect(): void {
+  probeCloudSessionIfReachable(useAuthStoreBase.setState);
 }
 
 const useAuthStoreBase = create<AuthStore>()((set, get) => ({
@@ -912,87 +902,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       clearUserSnapshot();
     }
     await endSession(set);
-  },
-
-  /**
-   * Connect to a specific local assistant from an interactive surface (the
-   * login picker / auto-connect). Primes its gateway connection, selects the
-   * assistant, and marks the session logged in.
-   *
-   * Priming runs BEFORE the selection write: the lifecycle's selection
-   * subscription republishes the connection synchronously on the write, so
-   * the token must already be minted for the new gateway — and a failed
-   * connect leaves the previous selection in place.
-   *
-   * Unlike {@link AuthActions.initSession}, which is the best-effort boot
-   * probe and swallows failures, this rethrows so the caller can surface the
-   * reason — including the typed `GuardianTokenError` from the host seam — and
-   * offer recovery instead of dead-ending. It primes through
-   * `primeLocalGatewayConnectionWithRepair`, which rides out a starting
-   * gateway and self-heals a stopped or mis-seeded assistant via `wake` before
-   * surfacing any error, matching the native client's re-pair-on-connect
-   * bootstrap. The boot probe deliberately stays on the startup-retry
-   * primitive so app launch never spawns assistant processes.
-   */
-  connectLocalAssistant: async (assistantId: string) => {
-    const target = getLocalAssistants().find(
-      (a) => a.assistantId === assistantId,
-    );
-    await primeLocalGatewayConnectionWithRepair(target);
-    await establishLocalUserSession(set, assistantId);
-    if (
-      isConfirmedCloudSession(
-        get().cloudSession,
-        get().cloudSessionRestoredOffline,
-      )
-    ) {
-      bootstrapLocalAssistantCloudIdentity(assistantId);
-    }
-    probeCloudSessionIfReachable(set);
-  },
-
-  /**
-   * Connect to a paired assistant: a remote machine's assistant imported via
-   * `cadet connect import`. Primes the host-authorized proxy connection,
-   * selects the assistant, and marks the session
-   * logged in, mirroring {@link AuthActions.connectLocalAssistant} with two
-   * deliberate differences: it primes through the plain
-   * `primeLocalGatewayConnection` because `wake` cannot start or repair an
-   * assistant on a remote machine, and it skips
-   * `bootstrapLocalAssistantCloudIdentity` because that registers a LOCAL
-   * assistant with the cloud while a paired entry is only a client-side
-   * pairing record.
-   */
-  connectPairedAssistant: async (assistantId: string) => {
-    const target = getLockfileAssistant(assistantId);
-    if (!target || !isRemoteGatewayEntry(target)) {
-      throw new Error("Not a paired assistant");
-    }
-    await primeLocalGatewayConnection(target);
-    await establishLocalUserSession(set, assistantId);
-    probeCloudSessionIfReachable(set);
-  },
-
-  connectCloudAssistant: async (assistantId: string) => {
-    const result = await getSession();
-    if (!result.ok || !result.data.user) {
-      throw new Error("Platform authentication required");
-    }
-    const user = toAuthUser(result.data.user);
-    // Hydrate the organizations to avoid race conditions from lazy fetch; a
-    // settled rejection fails the connect before the assistant selection and
-    // user-scoped sync below, so a caller that catches the error keeps its
-    // current selection and consent state rather than the rejected
-    // account's.
-    const orgOutcome = await useOrganizationStore
-      .getState()
-      .fetchOrganizations();
-    if (!orgOutcome.ok && orgOutcome.kind === "rejected") {
-      throw new Error("Platform authentication required");
-    }
-    await setSelectedAssistant(assistantId);
-    await syncUserScopedState(user?.id ?? null);
-    set(authenticatedPlatformUser(user));
   },
 
   refreshSession: async () => {

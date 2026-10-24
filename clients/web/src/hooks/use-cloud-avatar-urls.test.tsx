@@ -36,7 +36,6 @@ mock.module("@/hooks/use-is-org-ready", () => ({
   useIsOrgReady: () => orgReady,
 }));
 
-
 const listAssistants = mock(
   async (): Promise<AssistantApi.ListAssistantsResult> => ({
     ok: true,
@@ -201,11 +200,7 @@ describe("useCloudAvatarUrls", () => {
   test("one list call serves every consumer in a stale window", async () => {
     const wrapper = createWrapper();
     const { result } = renderHook(
-      () => [
-        useCloudAvatarUrls(),
-        useCloudAvatarUrls(),
-        useCloudAvatarUrls(),
-      ],
+      () => [useCloudAvatarUrls(), useCloudAvatarUrls(), useCloudAvatarUrls()],
       { wrapper },
     );
     await waitFor(() => {
@@ -304,8 +299,7 @@ describe("suppressPlatformAvatarUrl", () => {
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
     expect(
-      queryClient.getQueryState(cloudAvatarUrlsQueryKey(null))
-        ?.status,
+      queryClient.getQueryState(cloudAvatarUrlsQueryKey(null))?.status,
     ).toBe("success");
   });
 

@@ -1,7 +1,9 @@
 /**
- * The request-scoped QueryClient is keyed on the organization requests carry,
- * so a response fetched for one organization is never read as the answer for
- * another — and is not thrown away while that organization still holds.
+ * The request-scoped QueryClient is keyed on the active assistant — cloud
+ * data is assistant-scoped and the session resolves its organization through
+ * that selection — so a response fetched for one assistant is never read as
+ * the answer for another, and is not thrown away while that assistant still
+ * holds.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { QueryClient } from "@tanstack/react-query";
@@ -25,6 +27,8 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 const { AppProviders } = await import("@/components/providers");
 const { useAuthStore } = await import("@/stores/auth-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 const ORGANIZATION_ID = "org-abc";
 const STORAGE_KEY = "cadet_active_organization_id";
@@ -96,6 +100,7 @@ beforeEach(() => {
     status: "idle",
     error: null,
   });
+  useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-123" });
 });
 
 afterEach(() => {
@@ -103,22 +108,17 @@ afterEach(() => {
 });
 
 describe("AppProviders cache scope", () => {
-  test("preserves asset diagnostics while a reload restores the same user", async () => {
-    seedPersistedOrganization(ORGANIZATION_ID);
+  test("preserves asset diagnostics across a session blip and the same re-auth", async () => {
     renderProviders();
     await expect(
       observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
     const previousEvents = assetEvents();
     const previousUser = useAuthStore.getState().user;
-    cleanup();
 
-    useAuthStore.setState({ sessionStatus: "initializing", user: null });
-    renderProviders();
-    expect(assetEvents()).toEqual(previousEvents);
-    await expect(
-      observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
-    ).rejects.toThrow();
+    act(() => {
+      useAuthStore.setState({ sessionStatus: "initializing", user: null });
+    });
     expect(assetEvents()).toEqual(previousEvents);
 
     act(() => {
@@ -127,49 +127,35 @@ describe("AppProviders cache scope", () => {
         user: previousUser,
       });
     });
+    // The assistant scope never moved, so the diagnostics were neither
+    // cleared nor re-recorded: the failed query is deduped per scope until
+    // it recovers.
     expect(assetEvents()).toEqual(previousEvents);
+  });
+
+  test("keeps the diagnostics when the session settles with another user", async () => {
+    renderProviders();
     await expect(
       observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
-    expect(assetEvents()).toHaveLength(2);
+    const previousEvents = assetEvents();
+    const previousUser = useAuthStore.getState().user!;
+
+    act(() => {
+      useAuthStore.setState({
+        sessionStatus: "authenticated",
+        user: { ...previousUser, id: "user-456" },
+      });
+    });
+    // The user is no longer the request identity — the assistant is, and it
+    // did not move.
+    expect(assetEvents()).toEqual(previousEvents);
   });
 
-  test.each(["another user", "no session"] as const)(
-    "clears saved asset diagnostics when a reload settles with %s",
-    async (outcome) => {
-      seedPersistedOrganization(ORGANIZATION_ID);
-      renderProviders();
-      await expect(
-        observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
-      ).rejects.toThrow();
-      const previousEvents = assetEvents();
-      const previousUser = useAuthStore.getState().user!;
-      cleanup();
-
-      useAuthStore.setState({ sessionStatus: "initializing", user: null });
-      renderProviders();
-      expect(assetEvents()).toEqual(previousEvents);
-
-      act(() => {
-        useAuthStore.setState(
-          outcome === "another user"
-            ? {
-                sessionStatus: "authenticated",
-                user: { ...previousUser, id: "user-456" },
-              }
-            : { sessionStatus: "unauthenticated", user: null },
-        );
-      });
-      expect(assetEvents()).toHaveLength(0);
-    },
-  );
-
-  test("removes asset failure diagnostics when the request identity changes", async () => {
-    seedPersistedOrganization(ORGANIZATION_ID);
+  test("clears the diagnostics when the active assistant changes", async () => {
     renderProviders();
-    const previousClient = observedClient!;
     await expect(
-      previousClient.fetchQuery(ASSET_FAILURE_OPTIONS),
+      observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
     expect(
       getLifecycleDiagnosticsEvents().filter(
@@ -177,36 +163,29 @@ describe("AppProviders cache scope", () => {
       ),
     ).toHaveLength(1);
     act(() => {
-      useOrganizationStore.setState({
-        currentOrganizationId: "org-xyz",
-        persistedOrganizationId: "org-xyz",
-        status: "ready",
+      useResolvedAssistantsStore.setState({
+        activeAssistantId: "assistant-456",
       });
     });
     expect(assetEvents()).toHaveLength(0);
-    await expect(
-      previousClient.fetchQuery(ASSET_FAILURE_OPTIONS),
-    ).rejects.toThrow();
-    expect(assetEvents()).toHaveLength(0);
   });
 
-  test("drops a persisted org's responses when that org is revoked", () => {
-    // The id slice is null throughout: the persisted id is what the request
-    // header carries, so this response belongs to that organization.
-    seedPersistedOrganization(ORGANIZATION_ID);
+  test("drops a prior assistant's cached responses when the selection moves", () => {
     renderProviders();
     act(() => {
-      observedClient!.setQueryData(PROBE_KEY, "answer-for-org-abc");
+      observedClient!.setQueryData(PROBE_KEY, "answer-for-assistant-123");
     });
 
     act(() => {
-      useOrganizationStore.getState().clearOrganization();
+      useResolvedAssistantsStore.setState({
+        activeAssistantId: "assistant-456",
+      });
     });
 
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();
   });
 
-  test("keeps them when the org list confirms the persisted org", () => {
+  test("keeps them while the org list confirms the session around the same assistant", () => {
     seedPersistedOrganization(ORGANIZATION_ID);
     renderProviders();
     act(() => {
@@ -224,23 +203,5 @@ describe("AppProviders cache scope", () => {
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBe(
       "answer-for-org-abc",
     );
-  });
-
-  test("drops them when the org list resolves a different org", () => {
-    seedPersistedOrganization(ORGANIZATION_ID);
-    renderProviders();
-    act(() => {
-      observedClient!.setQueryData(PROBE_KEY, "answer-for-org-abc");
-    });
-
-    act(() => {
-      useOrganizationStore.setState({
-        currentOrganizationId: "org-xyz",
-        persistedOrganizationId: "org-xyz",
-        status: "ready",
-      });
-    });
-
-    expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();
   });
 });

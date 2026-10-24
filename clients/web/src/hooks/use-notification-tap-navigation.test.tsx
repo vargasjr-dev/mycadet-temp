@@ -86,6 +86,12 @@ const connectCloudAssistantMock = connectAssistantMock();
 const connectLocalAssistantMock = connectAssistantMock();
 const connectPairedAssistantMock = connectAssistantMock();
 
+mock.module("@/assistant/connect-assistant", () => ({
+  connectCloudAssistant: connectCloudAssistantMock,
+  connectLocalAssistant: connectLocalAssistantMock,
+  connectPairedAssistant: connectPairedAssistantMock,
+}));
+
 function expectNoAssistantSwitch() {
   expect(connectCloudAssistantMock).not.toHaveBeenCalled();
   expect(connectLocalAssistantMock).not.toHaveBeenCalled();
@@ -160,9 +166,6 @@ beforeEach(() => {
       firstName: "Example",
       lastName: "User",
     },
-    connectCloudAssistant: connectCloudAssistantMock,
-    connectLocalAssistant: connectLocalAssistantMock,
-    connectPairedAssistant: connectPairedAssistantMock,
   });
   useOrganizationStore.setState({
     currentOrganizationId: "org-1",
@@ -426,6 +429,7 @@ describe("useNotificationTapNavigation", () => {
 
   test("waits for the cloud organization owner before validating", async () => {
     const identity = platformIdentity(ASSISTANT_A);
+    useAuthStore.setState({ cloudSession: "present" });
     useOrganizationStore.setState({
       currentOrganizationId: null,
       persistedOrganizationId: null,

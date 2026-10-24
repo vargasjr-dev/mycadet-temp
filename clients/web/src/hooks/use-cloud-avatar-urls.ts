@@ -67,10 +67,7 @@ export function supersedeCloudAvatar(
 ): void {
   const store = useResolvedAssistantsStore.getState();
   store.clearAvatarUrl(assistantId);
-  suppressPlatformAvatarUrl(
-    queryClient,
-    resolveCloudAssistantId(assistantId),
-  );
+  suppressPlatformAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
 }
 
 /**
