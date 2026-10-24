@@ -27,6 +27,16 @@ export async function postCloud<T>(
   return requestCloud(path, schema, options, body);
 }
 
+/** PATCH through the browser/native host's cloud proxy. */
+export async function patchCloud<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  body: unknown,
+  options: { organizationId?: string; signal?: AbortSignal } = {},
+): Promise<CloudResult<T>> {
+  return requestCloud(path, schema, options, body, "PATCH");
+}
+
 /** Bodyless POST (e.g. the daemon's conversation archive route). A POST with
  * no body is still a distinct method from GET — the daemon 405s a GET archive. */
 export async function postCloudEmpty<T>(
@@ -51,7 +61,7 @@ async function requestCloud<T>(
   schema: z.ZodType<T>,
   options: { organizationId?: string; signal?: AbortSignal },
   body?: unknown,
-  method?: "DELETE" | "POST",
+  method?: "DELETE" | "POST" | "PATCH",
 ): Promise<CloudResult<T>> {
   try {
     const headers = new Headers({
@@ -71,7 +81,7 @@ async function requestCloud<T>(
       await addCloudMutationHeaders(headers);
     }
     const response = await fetch(path, {
-      method: body === undefined ? (method ?? "GET") : "POST",
+      method: method ?? (body === undefined ? "GET" : "POST"),
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       headers,
       credentials: "same-origin",

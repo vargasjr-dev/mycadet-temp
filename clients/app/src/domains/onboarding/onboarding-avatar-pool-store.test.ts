@@ -5,7 +5,7 @@ import {
   pickInitialAvatarIndex,
   useOnboardingAvatarPoolStore,
 } from "./onboarding-avatar-pool-store";
-import type { CharacterComponents } from "@web/types/avatar";
+import type { CharacterComponents } from "@app/types/avatar";
 
 const COMPONENTS = {} as CharacterComponents;
 

@@ -12,17 +12,16 @@ import { writeSelectedAssistantId } from "@app/assistant/selected-assistant-stor
 import { AccountShell } from "@app/components/account/account-shell";
 import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
-import { ATTRIBUTED_PLUGIN_PARAM } from "@app/domains/onboarding/plugin-attribution";
 import { useTranslation } from "@app/i18n";
 import { isLocalClient } from "@app/lib/runtime-mode";
 import { routes } from "@app/utils/routes";
 import { Button } from "@mycadet/design-library/components/button";
 import { ProgressBar } from "@mycadet/design-library/components/progress-bar";
 import { captureError } from "@mycadet/design-library/utils/capture-error";
-import type { CharacterTraits } from "@web/types/avatar";
-import { BUNDLED_COMPONENTS } from "@web/utils/avatar-bundled-components";
-import { randomCharacterTraits } from "@web/utils/avatar-random";
-import { composeSvg } from "@web/utils/avatar-svg-compositor";
+import type { CharacterTraits } from "@app/types/avatar";
+import { BUNDLED_COMPONENTS } from "@app/utils/avatar-bundled-components";
+import { randomCharacterTraits } from "@app/utils/avatar-random";
+import { composeSvg } from "@app/utils/avatar-svg-compositor";
 
 const COMPLETION_NAVIGATE_DELAY_MS = 800;
 
@@ -111,10 +110,6 @@ export function HatchingScreen() {
   const [searchParams] = useSearchParams();
   const hostingParam = searchParams.get("hosting");
   const failParam = searchParams.get("fail");
-  // Marketing plugin attribution, forwarded from the api-key step. The local
-  // hatch is an intermediate route on the way to research, so carry it through
-  // (see `plugin-attribution`) — otherwise a local/Docker onboarding drops it.
-  const pluginParam = searchParams.get(ATTRIBUTED_PLUGIN_PARAM);
   const useLocalHatch =
     isLocalClient() && hostingParam !== null && hostingParam !== "cadet-cloud";
   const [hatchTraits] = useState<CharacterTraits>(
@@ -205,9 +200,6 @@ export function HatchingScreen() {
             }
             if (readyAssistantId) {
               researchParams.set("assistant", readyAssistantId);
-            }
-            if (pluginParam) {
-              researchParams.set(ATTRIBUTED_PLUGIN_PARAM, pluginParam);
             }
             const researchQs = researchParams.toString();
             void navigate(

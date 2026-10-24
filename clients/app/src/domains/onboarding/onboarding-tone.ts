@@ -16,10 +16,10 @@
 import { useMemo } from "react";
 
 import { useOnboardingAvatarPoolStore } from "./onboarding-avatar-pool-store";
-import { toneForBg, type AvatarTone } from "@/utils/avatar-tone";
-import { useBundledAvatarComponents } from "@/utils/use-bundled-avatar-components";
+import { toneForBg, type AvatarTone } from "@app/utils/avatar-tone";
+import { useBundledAvatarComponents } from "@app/utils/use-bundled-avatar-components";
 
-export { darkenHex, toneForBg } from "@/utils/avatar-tone";
+export { darkenHex, toneForBg } from "@app/utils/avatar-tone";
 export type OnboardingTone = AvatarTone;
 
 /** Tone derived from the currently-chosen avatar's color. */

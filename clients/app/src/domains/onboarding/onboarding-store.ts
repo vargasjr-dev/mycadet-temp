@@ -14,7 +14,7 @@
 
 import { create } from "zustand";
 
-import { createSelectors } from "@web/utils/create-selectors";
+import { createSelectors } from "@app/utils/create-selectors";
 
 // ---------------------------------------------------------------------------
 // State + Actions

@@ -22,7 +22,15 @@
  * instead of breaking the step.
  */
 
-import { type CloudVoiceOption } from "@/lib/tts/use-cloud-voices";
+/** One cloud TTS voice the picker can offer. Wire shape of the cloud API's
+ * voices listing (the app twin of web's `lib/tts/use-cloud-voices`). */
+export interface CloudVoiceOption {
+  model: string;
+  label: string;
+  description: string;
+  sampleUrl: string;
+  source: string;
+}
 
 /** Preferred cloud voice per avatar, indexed by position in the cast. */
 export const AVATAR_VOICE_MODELS: readonly string[] = [

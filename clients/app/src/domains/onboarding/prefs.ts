@@ -14,7 +14,7 @@ import {
   getLocalSetting,
   removeLocalSetting,
   setLocalSetting,
-} from "@web/utils/local-settings";
+} from "@app/utils/local-settings";
 import { useOnboardingStore } from "./onboarding-store";
 
 // ---------------------------------------------------------------------------

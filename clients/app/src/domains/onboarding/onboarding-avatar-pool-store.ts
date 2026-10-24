@@ -17,8 +17,8 @@
 
 import { create } from "zustand";
 
-import { createSelectors } from "@web/utils/create-selectors";
-import type { CharacterComponents, CharacterTraits } from "@web/types/avatar";
+import { createSelectors } from "@app/utils/create-selectors";
+import type { CharacterComponents, CharacterTraits } from "@app/types/avatar";
 
 /** How many characters to scatter / cycle through. */
 export const AVATAR_POOL_SIZE = 12;

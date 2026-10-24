@@ -77,8 +77,6 @@ export default defineConfig(({ mode, command }) => {
           : []),
         { find: /^@design\//, replacement: DESIGN_SRC + "/" },
         { find: /^@app\//, replacement: APP_SRC + "/" },
-        { find: /^@web\//, replacement: WEB_SRC + "/" },
-        { find: /^@\//, replacement: WEB_SRC + "/" },
       ],
       dedupe: ["react", "react-dom"],
     },

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getCloud, postCloud, type CloudResult } from "@app/lib/cloud/request";
 import { resolveOrganization } from "@app/lib/cloud/organization";
 import { captureError } from "@mycadet/design-library/utils/capture-error";
-import { isCharacterTraits, type CharacterTraits } from "@web/types/avatar";
+import { isCharacterTraits, type CharacterTraits } from "@app/types/avatar";
 
 /**
  * The app twin of web's `assistant/avatar-api` character-traits reads and
@@ -14,7 +14,7 @@ import { isCharacterTraits, type CharacterTraits } from "@web/types/avatar";
  * never encodes a host or port. Character traits are a plain JSON sidecar in
  * the assistant's workspace, written back through the daemon's
  * render-from-traits route (which also re-renders the avatar PNG). The traits
- * type and guard stay web-canonical (`@web/types/avatar`) — the same source
+ * type and guard stay web-canonical (`@app/types/avatar`) — the same source
  * the hatching screen composes its random traits from.
  */
 

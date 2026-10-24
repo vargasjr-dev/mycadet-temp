@@ -6,7 +6,7 @@
     "url": "git+https://github.com/vargasjr-dev/mycadet-temp.git"
   },
   "type": "module",
-  "description": "Cadet account/client shell \u2014 portable package plus a standalone bundle for self-hosted edges",
+  "description": "Cadet account/client shell — portable package plus a standalone bundle for self-hosted edges",
   "license": "MIT",
   "files": [
     "dist/package",
@@ -28,6 +28,7 @@
     "@capacitor/browser": "8.0.3",
     "@capacitor/core": "8.3.4",
     "@mycadet/assistant-api": "workspace:*",
+    "@mycadet/avatar-catalog": "workspace:*",
     "@mycadet/avatar-manifest": "workspace:*",
     "@mycadet/design-library": "workspace:*",
     "@mycadet/environments": "workspace:*",
@@ -58,8 +59,8 @@
     "@capacitor/push-notifications": "8.0.3",
     "@capacitor/share": "8.0.1",
     "@capawesome/capacitor-file-picker": "8.0.4",
-    "capacitor-plugin-safe-area": "5.0.0",
     "@happy-dom/global-registrator": "20.10.2",
+    "@hey-api/openapi-ts": "0.97.1",
     "@mycadet/local-mode": "workspace:*",
     "@mycadet/shared": "workspace:*",
     "@tailwindcss/vite": "4.1.8",
@@ -68,6 +69,7 @@
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.1",
+    "capacitor-plugin-safe-area": "5.0.0",
     "tailwindcss": "4.1.8",
     "typescript": "5.9.3",
     "vite": "8.0.11"
@@ -80,6 +82,8 @@
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "test:ci": "bun scripts/run-tests.ts",
-    "typecheck": "bunx tsc --noEmit"
+    "typecheck": "bunx tsc --noEmit",
+    "openapi-ts": "bun run ../web/scripts/transform-daemon-spec.ts && openapi-ts",
+    "postinstall": "bun run openapi-ts"
   }
 }

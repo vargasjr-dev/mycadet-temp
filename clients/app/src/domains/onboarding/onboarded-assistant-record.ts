@@ -12,7 +12,7 @@
  * dead-hatch (null id) case themselves rather than routing through a wrapper.
  */
 
-import { createStorageAccessor } from "@web/utils/typed-storage";
+import { createStorageAccessor } from "@app/utils/typed-storage";
 
 /** assistantId -> ISO timestamp of the completion. */
 type OnboardedRecord = Record<string, string>;
@@ -71,4 +71,3 @@ export function forgetAssistantOnboarded(assistantId: string): void {
 
 /** Test seam: the underlying localStorage key. */
 export const ONBOARDED_ASSISTANTS_STORAGE_KEY = storage.key;
-

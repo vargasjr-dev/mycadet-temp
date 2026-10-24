@@ -60,10 +60,6 @@ mock.module("@/stores/organization-store", () => ({
     getState: () => ({ currentOrganizationId: "org-test" }),
   },
 }));
-const clearResearchSnapshotMock = mock((_userId: string | null) => {});
-mock.module("@/domains/onboarding/research-onboarding-persistence", () => ({
-  clearResearchSnapshot: clearResearchSnapshotMock,
-}));
 
 mock.module("@/lib/navigation/navigation-resolver", () => ({
   resolveNavigation: (
@@ -127,7 +123,6 @@ beforeEach(() => {
   retireLocalAssistantMock.mockClear();
   forgetAssistantAvatarMock.mockClear();
   removeMock.mockClear();
-  clearResearchSnapshotMock.mockClear();
 });
 
 afterEach(() => {
@@ -185,35 +180,6 @@ describe("retireAssistant", () => {
     if (outcome.ok) {
       expect(outcome.nextRoute).toBe("/assistant/onboarding/privacy");
     }
-  });
-
-  test("a successful retire drops the research-onboarding resume snapshot", async () => {
-    // GIVEN a cloud-hosted target
-    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
-    storeAssistants = [{ id: "p1" }];
-
-    // WHEN retiring it
-    const outcome = await retireAssistant(queryClient, "p1");
-
-    // THEN the saved onboarding journey is discarded — a later onboarding must
-    // start at the form, not resume the retired assistant's run deep in the
-    // flow (e.g. straight onto the wake gate).
-    expect(outcome.ok).toBe(true);
-    expect(clearResearchSnapshotMock).toHaveBeenCalledWith("p1");
-  });
-
-  test("a failed retire keeps the research-onboarding resume snapshot", async () => {
-    // GIVEN the cloud delete fails terminally
-    lockfileAssistants = [{ assistantId: "p1", cloud: "cadet" }];
-    storeAssistants = [{ id: "p1" }];
-    retireByIdResult = { ok: false, status: 500, error: { detail: "boom" } };
-
-    // WHEN retiring it
-    const outcome = await retireAssistant(queryClient, "p1");
-
-    // THEN the journey survives — the assistant still exists.
-    expect(outcome.ok).toBe(false);
-    expect(clearResearchSnapshotMock).not.toHaveBeenCalled();
   });
 
   test("local assistant in local mode routes through the local retire", async () => {

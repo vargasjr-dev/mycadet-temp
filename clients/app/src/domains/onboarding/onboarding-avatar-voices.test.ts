@@ -11,7 +11,8 @@ import {
   AVATAR_VOICE_MODELS,
   resolveAvatarVoice,
 } from "./onboarding-avatar-voices";
-import { type CloudVoiceOption } from "@/lib/tts/use-cloud-voices";
+
+import type { CloudVoiceOption } from "./onboarding-avatar-voices";
 
 function voice(model: string): CloudVoiceOption {
   return {
