@@ -17,7 +17,9 @@ import {
 import { generateLocalSecret } from "../../lib/local.js";
 
 function printUsage(): void {
-  console.log(`Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`);
+  console.log(
+    `Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`,
+  );
   console.log("");
   console.log("Manage gateway authentication tokens.");
   console.log("");

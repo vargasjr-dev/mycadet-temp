@@ -87,9 +87,9 @@ function buildDevBypassContext(): AuthContext {
  * value. The principal-type header must agree — the gateway sets both
  * from the same verified claims, and a disagreement means a mangled hop.
  */
-export function buildAuthContextFromForwardedIdentity(headers: Headers):
-  | { ok: true; context: AuthContext }
-  | { ok: false; reason: string } {
+export function buildAuthContextFromForwardedIdentity(
+  headers: Headers,
+): { ok: true; context: AuthContext } | { ok: false; reason: string } {
   const subject = headers.get(SUBJECT_HEADER)?.trim();
   const principalTypeHeader = headers.get(PRINCIPAL_TYPE_HEADER)?.trim();
 

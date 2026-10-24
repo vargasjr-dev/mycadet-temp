@@ -56,7 +56,10 @@ export type Remote = z.infer<typeof RemoteSchema>;
  * from the renderer-facing schema below; the CLI's extended type is the only
  * place they are modeled.
  */
-export const SENSITIVE_KEYS = ["bearerToken", "guardianBootstrapSecret"] as const;
+export const SENSITIVE_KEYS = [
+  "bearerToken",
+  "guardianBootstrapSecret",
+] as const;
 
 /**
  * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from

@@ -59,11 +59,10 @@ function runCli(
   timeoutMs: number,
 ): Promise<WakeResult> {
   return new Promise((resolve) => {
-    const child = spawn(
-      invocation.command,
-      [...invocation.baseArgs, ...args],
-      { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
-    );
+    const child = spawn(invocation.command, [...invocation.baseArgs, ...args], {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
 
     let stdout = "";
     let stderr = "";
@@ -102,7 +101,11 @@ function runCli(
     });
 
     child.on("error", (err) => {
-      finish({ ok: false, status: 500, error: `Failed to spawn CLI: ${err.message}` });
+      finish({
+        ok: false,
+        status: 500,
+        error: `Failed to spawn CLI: ${err.message}`,
+      });
     });
   });
 }

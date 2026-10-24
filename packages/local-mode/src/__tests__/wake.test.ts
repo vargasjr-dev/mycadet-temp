@@ -39,10 +39,7 @@ describe("runWake", () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: true });
     lastChild.emit("close", 0); // wake completes...
     await Promise.resolve(); // the chain spawns the re-lease
-    expect(spawnArgs[0]).toEqual([
-      "bun",
-      ["run", "cli", "wake", "asst-42"],
-    ]);
+    expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "wake", "asst-42"]]);
 
     lastChild.emit("close", 0); // the re-lease completes
     expect(await pending).toEqual({ ok: true });
@@ -62,7 +59,10 @@ describe("runWake", () => {
 
   test("a non-zero exit resolves to a failure carrying the CLI's output", async () => {
     const pending = runWake(invocation, "asst-42");
-    lastChild.stderr.emit("data", Buffer.from("no sibling environment to seed from"));
+    lastChild.stderr.emit(
+      "data",
+      Buffer.from("no sibling environment to seed from"),
+    );
     lastChild.emit("close", 1);
 
     expect(await pending).toEqual({

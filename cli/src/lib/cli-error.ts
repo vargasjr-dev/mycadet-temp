@@ -1,4 +1,3 @@
-
 /**
  * Structured CLI error reporting for upgrade/rollback commands.
  *

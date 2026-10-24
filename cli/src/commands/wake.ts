@@ -433,11 +433,7 @@ export async function wakeAssistant(
   // 180s host-wrapper SIGTERM (30s headroom kept), since earlier bounded
   // waits may already have consumed most of it. Fast path (gateway already
   // serving, no repair) stays ~1s.
-  if (
-    daemonUnready &&
-    !daemonMigrationsFailed &&
-    gatewayStarted
-  ) {
+  if (daemonUnready && !daemonMigrationsFailed && gatewayStarted) {
     const waitBudgetMs = Math.min(60_000, wakeStartedAt + 150_000 - Date.now());
     if (waitBudgetMs > 0) {
       const readiness = await waitForDaemonMigrationsReady(

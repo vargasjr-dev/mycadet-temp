@@ -5,9 +5,7 @@ import {
 } from "@mycadet/assistant-client";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 
-import {
-  validateEdgeToken,
-} from "../../auth/token-exchange.js";
+import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";

@@ -4,9 +4,7 @@ import {
   GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 
-import {
-  validateEdgeToken,
-} from "../../auth/token-exchange.js";
+import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import { parseSub } from "../../auth/subject.js";

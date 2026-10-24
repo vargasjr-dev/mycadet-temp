@@ -42,7 +42,11 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
 
   test("refuses a non-private origin with 403", async () => {
     const res = await fetch(`http://${baseUrl}/v1/desktop/stream`, {
-      headers: { ...upgradeHeaders, ...gatewayIdentityHeaders, Origin: "https://external.example.com" },
+      headers: {
+        ...upgradeHeaders,
+        ...gatewayIdentityHeaders,
+        Origin: "https://external.example.com",
+      },
     });
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error: { message: string } };

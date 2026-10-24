@@ -131,8 +131,9 @@ export async function readHostRuntimeVersion(
 ): Promise<string | undefined> {
   if (entry.cloud !== "docker") {
     return (
-      (entry.runtimeUrl ? await fetchCurrentVersion(entry.runtimeUrl) : undefined) ??
-      entry.resources?.runtimeVersion
+      (entry.runtimeUrl
+        ? await fetchCurrentVersion(entry.runtimeUrl)
+        : undefined) ?? entry.resources?.runtimeVersion
     );
   }
   try {

@@ -15,7 +15,10 @@ import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
-import { forwardedIdentityHeaders, GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
+import {
+  forwardedIdentityHeaders,
+  GATEWAY_SERVICE_IDENTITY,
+} from "@mycadet/assistant-client";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";

@@ -93,7 +93,11 @@ describe("buildReplayEnv", () => {
           internalName: "gateway",
           network: "container",
           env: [
-            { kind: "secret", name: "FUTURE_SECRET", secret: "bootstrapSecret" },
+            {
+              kind: "secret",
+              name: "FUTURE_SECRET",
+              secret: "bootstrapSecret",
+            },
           ],
           volumeMounts: [],
         },

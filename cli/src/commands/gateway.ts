@@ -14,28 +14,27 @@ function printUsage(): void {
 
 export const gateway = Object.assign(
   async function gateway(): Promise<void> {
-  const args = process.argv.slice(3);
-  const subcommand = args[0];
+    const args = process.argv.slice(3);
+    const subcommand = args[0];
 
-  if (subcommand === "--help" || subcommand === "-h" || !subcommand) {
+    if (subcommand === "--help" || subcommand === "-h" || !subcommand) {
+      printUsage();
+      process.exit(0);
+    }
+
+    if (subcommand === "token") {
+      await gatewayToken();
+      return;
+    }
+
+    if (subcommand === "key") {
+      await gatewayKey(args.slice(1));
+      return;
+    }
+
+    console.error(`Unknown subcommand: ${subcommand}`);
     printUsage();
-    process.exit(0);
-  }
-
-  if (subcommand === "token") {
-    await gatewayToken();
-    return;
-  }
-
-  if (subcommand === "key") {
-    await gatewayKey(args.slice(1));
-    return;
-  }
-
-  console.error(`Unknown subcommand: ${subcommand}`);
-  printUsage();
-  process.exit(1);
-},
+    process.exit(1);
+  },
   { description: "Gateway management commands" },
 );
-

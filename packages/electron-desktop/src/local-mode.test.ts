@@ -460,7 +460,6 @@ describe("lockfile IPC handlers", () => {
     expect(() => readLockfile()).toThrow();
   });
 
-
   test("renameLockfileAssistant persists the rename and refreshes the watcher", () => {
     seedLockfileAssistant(
       {

@@ -9,9 +9,7 @@ import { getLocalInstanceDir } from "../../lib/assistant-config.js";
 import { persistRootSigningKey } from "../../lib/root-signing-key.js";
 
 function printUsage(): void {
-  console.log(
-    `Usage: ${cliCommand()} gateway key reset [assistantId]`,
-  );
+  console.log(`Usage: ${cliCommand()} gateway key reset [assistantId]`);
   console.log("");
   console.log("Replace an assistant's gateway signing key.");
   console.log("");

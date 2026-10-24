@@ -26,11 +26,11 @@ bun run dev
 
 ## Configuration
 
-| Variable                  | Required | Default | Description                                                                                                                                                                                                                                                                         |
-| ------------------------- | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Variable                  | Required | Default | Description                                                                                                                                                                                                                                                                        |
+| ------------------------- | -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TELEGRAM_BOT_TOKEN`      | No       | —       | Bot token from @BotFather (Telegram disabled when unset). When not set as an env var, the gateway reads from the assistant's secure credential store: CES HTTP API first (when `CES_CREDENTIAL_URL` is configured), then the encrypted file store (`~/.cadet/protected/keys.enc`). |
-| `TELEGRAM_WEBHOOK_SECRET` | No       | —       | Secret for verifying webhook requests (Telegram disabled when unset). Same credential reader fallback behavior as `TELEGRAM_BOT_TOKEN`.                                                                                                                                             |
-| `GATEWAY_PORT`            | No       | `7830`  | Port for the gateway HTTP server                                                                                                                                                                                                                                                    |
+| `TELEGRAM_WEBHOOK_SECRET` | No       | —       | Secret for verifying webhook requests (Telegram disabled when unset). Same credential reader fallback behavior as `TELEGRAM_BOT_TOKEN`.                                                                                                                                            |
+| `GATEWAY_PORT`            | No       | `7830`  | Port for the gateway HTTP server                                                                                                                                                                                                                                                   |
 
 Most gateway behavior is now configured via hardcoded defaults or workspace config (`$CADET_WORKSPACE_DIR/config.json`) rather than environment variables. Channel operational settings (Telegram API base URL, timeouts, deliver auth bypass flags, runtime base URL, routing, proxy settings, attachment limits, shutdown drain) are managed via `workspace/config.json` through `ConfigFileCache`. See the channel-specific sections in `ARCHITECTURE.md` for details.
 
@@ -156,7 +156,7 @@ Control-plane routes are listed with their flat paths. Clients emit assistant-sc
 | `/v1/contacts/invites/:id`                            | DELETE          | Gateway-native invite revoke                                                                                                                  |
 | `/v1/contacts/invites/:id/call`                       | POST            | Gateway-native invite-call relay — validates the invite row, then delegates the provider call to the assistant                                |
 | `/v1/contacts/invites/redeem`                         | POST            | Gateway-native invite redemption (voice code and link token)                                                                                  |
-| `/v1/shared/invites/redeem`                           | POST            | Unauthenticated `cadet-shared` invite redemption for a contact principal and token pair |
+| `/v1/shared/invites/redeem`                           | POST            | Unauthenticated `cadet-shared` invite redemption for a contact principal and token pair                                                       |
 | `/v1/health`                                          | GET             | Authenticated runtime health proxy (`/v1/health` on runtime)                                                                                  |
 | `/healthz`                                            | GET             | Liveness probe                                                                                                                                |
 | `/readyz`                                             | GET             | Readiness probe                                                                                                                               |
@@ -367,7 +367,7 @@ See [`benchmarking/gateway/README.md`](../benchmarking/gateway/README.md) for lo
 | Inbound messages silently dropped | Routing only drops events with no conversation _and_ no actor id (`"No routable identity"` in the `routing` logger). Anything else resolves; if it still never reaches the assistant, check the channel's admission policy floor. |
 | Runtime errors                    | Is the assistant runtime reachable? Check runtime logs.                                                                                                                                                                           |
 | No reply from assistant           | Is the assistant runtime processing messages? Check that the runtime HTTP server is running.                                                                                                                                      |
-| 403 on channel inbound            | The runtime refused the forwarded request. Check the gateway's signing key (`GATEWAY_SECURITY_DIR/actor-token-signing-key`) — a replaced key invalidates existing credentials until clients re-pair.                               |
+| 403 on channel inbound            | The runtime refused the forwarded request. Check the gateway's signing key (`GATEWAY_SECURITY_DIR/actor-token-signing-key`) — a replaced key invalidates existing credentials until clients re-pair.                              |
 
 ### Guardian-Specific Troubleshooting
 

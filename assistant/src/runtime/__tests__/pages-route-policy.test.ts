@@ -58,7 +58,10 @@ describe("GET /pages/:appId enforces its route policy", () => {
     await server?.stop();
   });
 
-  function fetchPage(identity: Record<string, string>, appId = APP_ID): Promise<Response> {
+  function fetchPage(
+    identity: Record<string, string>,
+    appId = APP_ID,
+  ): Promise<Response> {
     return fetch(`http://127.0.0.1:${port}/pages/${appId}`, {
       headers: identity,
     });

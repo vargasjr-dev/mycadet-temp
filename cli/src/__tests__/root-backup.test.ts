@@ -93,7 +93,9 @@ describe("root tar backup", () => {
     };
     await initializeRootArchive(fresh, file);
     expect(
-      await readFile(join(destination, "gateway-security", "actor-token-signing-key")),
+      await readFile(
+        join(destination, "gateway-security", "actor-token-signing-key"),
+      ),
     ).toEqual(Buffer.from("07".repeat(32), "hex"));
     expect(
       await readFile(join(destination, "ces-security", "keys.enc"), "utf8"),

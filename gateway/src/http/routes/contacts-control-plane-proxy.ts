@@ -298,7 +298,6 @@ export async function createInviteNative(
 ): Promise<{ invite: Record<string, unknown>; rawToken?: string }> {
   const store = new ContactStore();
 
-
   // A redemption binds a new principal to the contact, and a contact carries
   // one principal, so a second use of the same invite could never succeed.
   if (
