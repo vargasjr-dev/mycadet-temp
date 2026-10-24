@@ -1,4 +1,4 @@
-import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
+import { readLockfile, resolveLockfilePaths } from "@mycadet/local-mode";
 
 /**
  * The local build's control-plane base, read from the lockfile alone: the
@@ -14,15 +14,12 @@ import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
  * touched: the lockfile is the single home for edge state.
  */
 export function resolveLocalServerUrl(): string | undefined {
-  const lockfile = getLockfileData(resolveLockfilePaths(process.env));
-  if (!lockfile.ok) {
-    return undefined;
-  }
-  const tunnelUrl = lockfile.data.tunnel?.publicUrl;
+  const lockfile = readLockfile(resolveLockfilePaths(process.env));
+  const tunnelUrl = lockfile.tunnel?.publicUrl;
   if (isUsableBaseUrl(tunnelUrl)) {
     return tunnelUrl;
   }
-  const port = lockfile.data.app?.port;
+  const port = lockfile.app?.port;
   if (typeof port === "number") {
     return `http://127.0.0.1:${port}`;
   }

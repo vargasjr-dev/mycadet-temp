@@ -65,9 +65,9 @@ mock.module("./session-token-store.client", () => ({
 let mockLockfileAssistants: Array<Record<string, unknown>> = [];
 mock.module("@mycadet/local-mode", () => ({
   resolveLockfilePaths: () => ["/fake/.cadet.lock.json"],
-  getLockfileData: () => ({
-    ok: true as const,
-    data: { assistants: mockLockfileAssistants, activeAssistant: null },
+  readLockfile: () => ({
+    assistants: mockLockfileAssistants,
+    activeAssistant: null,
   }),
 }));
 

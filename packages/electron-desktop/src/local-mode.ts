@@ -8,7 +8,7 @@ import {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
-  getLockfileData,
+  readLockfile,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
   replaceCloudAssistants,
@@ -417,15 +417,9 @@ export const installLocalMode = (): void => {
     hatch(remote || undefined),
   );
 
-  ipc("cadet:localMode:readLockfile", z.tuple([]), () => {
-    const result = getLockfileData(lockfilePaths);
-    if (result.ok) {
-      return result.data;
-    }
-    throw new Error(
-      result.error ?? `Failed to read lockfile (status ${result.status})`,
-    );
-  });
+  ipc("cadet:localMode:readLockfile", z.tuple([]), () =>
+    readLockfile(lockfilePaths),
+  );
 
   ipc(
     "cadet:localMode:saveLockfileAssistant",

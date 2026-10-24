@@ -1,6 +1,6 @@
 import {
   getGuardianAccessToken,
-  getLockfileData,
+  readLockfile,
   resolveConfigDir,
   resolveLockfilePaths,
   type CliInvocation,
@@ -21,12 +21,9 @@ export const createBundleHostProvider = (
   resolveInvocation: () => Promise<CliInvocation>,
 ): BundleHostProvider => ({
   resolveActiveGateway: (): ActiveBundleGateway | null => {
-    const result = getLockfileData(resolveLockfilePaths(process.env));
-    if (!result.ok) {
-      return null;
-    }
-
-    const { assistants, activeAssistant } = result.data;
+    const { assistants, activeAssistant } = readLockfile(
+      resolveLockfilePaths(process.env),
+    );
     if (!activeAssistant) {
       return null;
     }

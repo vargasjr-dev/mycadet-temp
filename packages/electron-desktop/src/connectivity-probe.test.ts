@@ -54,7 +54,11 @@ let mockLockfileData: { ok: boolean; data?: LockfileData } = {
   data: { assistants: [], activeAssistant: null },
 };
 mock.module("@mycadet/local-mode", () => ({
-  getLockfileData: () => mockLockfileData,
+  // readLockfile degrades a failed read to the empty registry.
+  readLockfile: () =>
+    mockLockfileData.ok
+      ? mockLockfileData.data!
+      : { assistants: [], activeAssistant: null },
 }));
 
 const { installConnectivityProbe } = await import("./connectivity-probe");

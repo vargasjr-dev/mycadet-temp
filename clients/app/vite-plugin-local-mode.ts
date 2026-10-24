@@ -11,7 +11,7 @@ import {
   headerHostIsLoopback,
   originIsAllowed,
   hasSameOriginCredentialProof,
-  getLockfileData,
+  readLockfile,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
@@ -65,11 +65,9 @@ function requestPathname(req: http.IncomingMessage): string {
 }
 
 function lockfileEntryFor(lockfilePaths: string[], assistantId: string) {
-  const result = getLockfileData(lockfilePaths);
-  if (!result.ok) {
-    return undefined;
-  }
-  return result.data.assistants.find((a) => a.assistantId === assistantId);
+  return readLockfile(lockfilePaths).assistants.find(
+    (a) => a.assistantId === assistantId,
+  );
 }
 
 /**
@@ -358,14 +356,8 @@ function lockfileMiddleware(
     }
 
     if (req.method === "GET") {
-      const result = getLockfileData(lockfilePaths);
-      if (result.ok) {
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(result.data));
-      } else {
-        res.statusCode = result.status;
-        res.end();
-      }
+      res.setHeader("Content-Type", "application/json");
+      res.end(JSON.stringify(readLockfile(lockfilePaths)));
     } else if (req.method === "POST") {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
