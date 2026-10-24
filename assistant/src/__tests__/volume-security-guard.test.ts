@@ -30,12 +30,8 @@ const ALLOWED_FILES = new Set([
   "assistant/src/security/secure-keys.ts",
   "assistant/src/security/credential-backend.ts",
   "assistant/src/security/ces-credential-client.ts",
-  // Token service owns the signing key lifecycle
-  "assistant/src/runtime/auth/token-service.ts",
   // CLI commands that run outside Docker (trust management)
   "assistant/src/cli/commands/trust.ts",
-  // Auth middleware documentation comment (not a file access)
-  "assistant/src/runtime/auth/middleware.ts",
   // Permission checker: classifies file_read of signing key as High risk
   "assistant/src/permissions/checker.ts",
 ]);

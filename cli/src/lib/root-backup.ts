@@ -8,7 +8,6 @@ import {
   lstat,
   mkdir,
   mkdtemp,
-  readFile,
   readdir,
   rename,
   rm,
@@ -622,25 +621,9 @@ export class DockerRootStorage implements RootStorage {
     await pruneTransient(target);
   }
   private async restoreMounts(source: string) {
-    const key = await readFile(
-      join(source, "gateway-security", "actor-token-signing-key"),
-    );
     const inspections = new Map<string, ContainerInspection>();
     for (const container of new Set(Object.values(this.containers)))
       inspections.set(container, await this.inspect(container));
-    // Container env is immutable. Refuse before changing any volume if it would
-    // override the restored identity. Teleport's provisioning step creates new
-    // containers against the restored roots instead.
-    for (const state of inspections.values()) {
-      const injected = state.Config.Env.find((value) =>
-        value.startsWith("ACTOR_TOKEN_SIGNING_KEY="),
-      )?.slice("ACTOR_TOKEN_SIGNING_KEY=".length);
-      if (injected && injected.toLowerCase() !== key.toString("hex")) {
-        throw new Error(
-          "Destination containers inject a different signing key. Recreate them without ACTOR_TOKEN_SIGNING_KEY before restoring this installation.",
-        );
-      }
-    }
     return STATE_ROOTS.map((root) => {
       const state = inspections.get(this.containers[root])!;
       const mount = state.Mounts.find(

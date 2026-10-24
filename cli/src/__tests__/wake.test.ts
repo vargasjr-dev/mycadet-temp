@@ -163,7 +163,7 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/local", () => ({
   ...realLocal,
-  generateLocalSigningKey: generateLocalSecretMock,
+  generateLocalSecret: generateLocalSecretMock,
   isAssistantWatchModeAvailable: isAssistantWatchModeAvailableMock,
   isGatewayWatchModeAvailable: isGatewayWatchModeAvailableMock,
   startLocalDaemon: startLocalDaemonMock,
@@ -1423,7 +1423,7 @@ describe("cadet wake — app server restore", () => {
       );
 
       try {
-        for (const flag of ["--foreground", "--repair-guardian"]) {
+        for (const flag of ["--foreground"]) {
           process.argv = ["bun", "cadet", "wake", "--all", flag];
           await expect(wake()).rejects.toThrow("process.exit:1");
         }
@@ -1432,9 +1432,7 @@ describe("cadet wake — app server restore", () => {
       }
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "--all cannot be combined with --foreground or --repair-guardian",
-        ),
+        expect.stringContaining("--all cannot be combined with --foreground"),
       );
     });
   });

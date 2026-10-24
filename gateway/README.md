@@ -264,7 +264,7 @@ The gateway acts as the single ingress point for all traffic. Dedicated gateway 
 
 ### Auth behavior
 
-By default, proxied requests must include a valid `Authorization: Bearer <jwt>` header with a JWT signed by the shared signing key. Setting `RUNTIME_PROXY_REQUIRE_AUTH=false` in the gateway process environment drops that requirement; workspace config is not consulted.
+By default, proxied requests must present a valid edge credential — a JWT (aud `cadet-gateway`) signed with the gateway's signing key. The gateway verifies it and forwards the verified identity to the runtime in `x-cadet-*` headers (the runtime verifies no tokens). Setting `RUNTIME_PROXY_REQUIRE_AUTH=false` in the gateway process environment drops that requirement; workspace config is not consulted.
 
 `OPTIONS` requests are always allowed without auth (CORS preflight). Telegram webhook requests use their own secret-based verification and are not affected by proxy auth.
 
@@ -367,7 +367,7 @@ See [`benchmarking/gateway/README.md`](../benchmarking/gateway/README.md) for lo
 | Inbound messages silently dropped | Routing only drops events with no conversation _and_ no actor id (`"No routable identity"` in the `routing` logger). Anything else resolves; if it still never reaches the assistant, check the channel's admission policy floor. |
 | Runtime errors                    | Is the assistant runtime reachable? Check runtime logs.                                                                                                                                                                           |
 | No reply from assistant           | Is the assistant runtime processing messages? Check that the runtime HTTP server is running.                                                                                                                                      |
-| 403 on channel inbound            | The runtime rejected the request because JWT authentication failed. Ensure the gateway and runtime share the same signing key (`~/.cadet/protected/actor-token-signing-key`).                                                    |
+| 403 on channel inbound            | The runtime refused the forwarded request. Check the gateway's signing key (`GATEWAY_SECURITY_DIR/actor-token-signing-key`) — a replaced key invalidates existing credentials until clients re-pair.                               |
 
 ### Guardian-Specific Troubleshooting
 

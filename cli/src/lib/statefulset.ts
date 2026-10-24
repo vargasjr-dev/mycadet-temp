@@ -319,6 +319,9 @@ export function getBuilderManagedEnvKeys(
     throw new Error(`docker-statefulset: unknown service "${service}"`);
 
   const always = new Set<string>(["PATH"]);
+  // Legacy containers carried the signing key as injected env. The gateway
+  // owns the key in its security root now — a captured key never replays.
+  always.add("ACTOR_TOKEN_SIGNING_KEY");
   const hostForwarded: Array<{ name: string; hostVar: string }> = [];
   for (const entry of container.env) {
     if (entry.kind === "host") {
