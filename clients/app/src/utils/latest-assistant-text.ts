@@ -1,4 +1,12 @@
-import type { ConversationMessage } from "@mycadet/assistant-api";
+/**
+ * The message shape onboarding's poll reads: the wire `contentBlocks`
+ * projection of an assistant conversation message (scoped to what
+ * `latestAssistantText` consumes — the assistant turn's text blocks).
+ */
+export interface ConversationMessage {
+  role: "assistant" | "user" | string;
+  contentBlocks?: Array<{ type: "text"; text: string } | { type: string }>;
+}
 
 /**
  * Latest assistant reply text from a messages list (joined text blocks).
