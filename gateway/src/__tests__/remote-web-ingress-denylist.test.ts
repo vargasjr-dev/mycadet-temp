@@ -36,14 +36,36 @@ function extractGatewayRouteObjects(): string[] {
   return routesSource.split(/\n    \},\n/);
 }
 
+const PROVIDER_VALIDATED_WEBHOOK_PREFIXES = ["/webhooks/"];
+
+// Unprotected but deliberately not denylisted: they are not part of the
+// /v1 API surface the remote-web edge proxies (the desktop's own credential
+// entry surface and OAuth client discovery), so the edge never forwards
+// them and blocking them at the ingress would only break local dials.
+const UNVERSIONED_PUBLIC_SURFACES = [
+  "/assistant/credentials/enter",
+  "/oauth/client-metadata.json",
+];
+
 function extractUnprotectedStaticV1Routes(): string[] {
   return extractGatewayRouteObjects()
     .flatMap((routeObject) => {
       const path = routeObject.match(/path:\s*"([^"]+)"/)?.[1];
-      if (!path?.startsWith("/v1/")) return [];
+      if (!path) return [];
+
+      // P7 made the /v1 prefix optional: route definitions read the
+      // unversioned shape and the matcher strips the prefix from either
+      // spelling. Canonicalize to the versioned spelling the denylist
+      // (and the schema) write.
+      const canonical = path.startsWith("/v1/")
+        ? path
+        : `/v1${path}`;
+      if (PROVIDER_VALIDATED_WEBHOOK_PREFIXES.some((p) => path.startsWith(p)))
+        return [];
+      if (UNVERSIONED_PUBLIC_SURFACES.includes(path)) return [];
 
       const auth = routeObject.match(/auth:\s*"([^"]+)"/)?.[1];
-      return auth === undefined || auth === "none" ? [path] : [];
+      return auth === undefined || auth === "none" ? [canonical] : [];
     })
     .sort();
 }
