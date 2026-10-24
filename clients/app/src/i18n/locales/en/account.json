@@ -137,7 +137,8 @@
     "connecting": "Connecting…",
     "continue": "Continue",
     "back": "Back",
-    "loginToUse": "Log in to use"
+    "loginToUse": "Log in to use",
+    "tryAgain": "Try again"
   },
   "addRemoteOriginDialog": {
     "title": "Add a Remote Assistant",
@@ -195,5 +196,20 @@
     "apiKeyPlaceholder": "Enter your API key",
     "noKeyPrompt": "Don't have it?",
     "getKeyLink": "Get an API key here"
+  },
+  "hatchingScreen": {
+    "apiKeyFailed": "Your API key didn't work",
+    "genericFailure": "Something went wrong",
+    "ready": "Your assistant is ready!",
+    "updateApiKey": "Update API key",
+    "waking": "Waking up…",
+    "wakingBody": "Hang tight, your assistant will have a few questions for you once it's up.",
+    "progressAriaLabel": "Assistant startup progress",
+    "phase": {
+      "initializing": "Getting things ready…",
+      "provisioning": "Setting up your assistant…",
+      "connecting": "Connecting to your assistant…",
+      "ready": "Ready"
+    }
   }
 }

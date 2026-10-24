@@ -137,7 +137,8 @@
     "connecting": "正在連線…",
     "continue": "繼續",
     "back": "返回",
-    "loginToUse": "登入以使用"
+    "loginToUse": "登入以使用",
+    "tryAgain": "再試一次"
   },
   "addRemoteOriginDialog": {
     "title": "新增遠端助理",
@@ -195,5 +196,20 @@
     "apiKeyPlaceholder": "輸入您的 API 金鑰",
     "noKeyPrompt": "沒有金鑰？",
     "getKeyLink": "在此取得 API 金鑰"
+  },
+  "hatchingScreen": {
+    "apiKeyFailed": "您的 API 金鑰無效",
+    "genericFailure": "發生了一些錯誤",
+    "ready": "您的助理已準備就緒！",
+    "updateApiKey": "更新 API 金鑰",
+    "waking": "正在喚醒…",
+    "wakingBody": "請稍候，您的助理啟動後會向您提出一些問題。",
+    "progressAriaLabel": "助理啟動進度",
+    "phase": {
+      "initializing": "正在準備中…",
+      "provisioning": "正在設定您的助理…",
+      "connecting": "正在連線至您的助理…",
+      "ready": "就緒"
+    }
   }
 }

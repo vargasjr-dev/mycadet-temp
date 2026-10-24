@@ -137,7 +137,8 @@
     "connecting": "Подключение…",
     "continue": "Продолжить",
     "back": "Назад",
-    "loginToUse": "Войти, чтобы пользоваться"
+    "loginToUse": "Войти, чтобы пользоваться",
+    "tryAgain": "Попробовать снова"
   },
   "addRemoteOriginDialog": {
     "title": "Добавить удалённого ассистента",
@@ -195,5 +196,20 @@
     "apiKeyPlaceholder": "API-ключ",
     "noKeyPrompt": "Нет ключа?",
     "getKeyLink": "Получить API-ключ"
+  },
+  "hatchingScreen": {
+    "apiKeyFailed": "API-ключ не сработал",
+    "genericFailure": "Что-то пошло не так",
+    "ready": "Ассистент готов!",
+    "updateApiKey": "Обновить API-ключ",
+    "waking": "Просыпается…",
+    "wakingBody": "Ожидание запуска ассистента: затем будет несколько вопросов.",
+    "progressAriaLabel": "Ход запуска ассистента",
+    "phase": {
+      "initializing": "Готовим всё…",
+      "provisioning": "Настраиваем ассистента…",
+      "connecting": "Подключаемся к ассистенту…",
+      "ready": "Готово"
+    }
   }
 }

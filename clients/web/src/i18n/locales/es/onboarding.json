@@ -12,22 +12,6 @@
     "downloadWindowsApp": "Descargar la app de Windows",
     "claim": "Reclamar"
   },
-  "hatchingScreen": {
-    "apiKeyFailed": "Tu clave de API no ha funcionado",
-    "genericFailure": "Algo ha salido mal",
-    "localFallbackPitch": "Empieza hoy con un asistente local",
-    "updateApiKey": "Actualizar la clave de API",
-    "ready": "¡Tu asistente está listo!",
-    "waking": "Despertando…",
-    "wakingBody": "Un momento, tu asistente te hará algunas preguntas en cuanto esté en marcha.",
-    "progressAriaLabel": "Progreso del arranque del asistente",
-    "phase": {
-      "initializing": "Preparándolo todo…",
-      "provisioning": "Configurando tu asistente…",
-      "connecting": "Conectando con tu asistente…",
-      "ready": "Listo"
-    }
-  },
   "addRemoteOriginDialog": {
     "title": "Añadir un asistente remoto",
     "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
@@ -174,5 +158,9 @@
     "providerSignup": "Todavía no hay ninguna cuenta de Cadet vinculada a ese inicio de sesión. Regístrate primero y luego inicia sesión.",
     "loginIncomplete": "Tu cuenta necesita un paso más para terminar de iniciar sesión. Inicia sesión en la web y vuelve a intentarlo.",
     "desktopUpdateRequired": "Esta versión de la aplicación de escritorio de Cadet no puede iniciar sesión. Actualiza la aplicación y vuelve a intentarlo."
+  },
+  "hatchingScreen": {
+    "genericFailure": "Algo ha salido mal",
+    "localFallbackPitch": "Empieza hoy con un asistente local"
   }
 }

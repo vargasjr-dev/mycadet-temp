@@ -310,7 +310,9 @@ function allowSetupRoutes(
   path: string,
   _pathnameWithSearch: string,
 ): NavigationDecision | null {
-  if (!isOnboardingPath(path)) {
+  // The funnel entries classify by set membership, not the web prefix below —
+  // hatching's app-owned path never matches it.
+  if (!isOnboardingPath(path) && !PROVISIONING_FUNNEL_PATHS.has(path)) {
     return null;
   }
 

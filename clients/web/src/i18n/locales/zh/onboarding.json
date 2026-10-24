@@ -12,22 +12,6 @@
     "downloadWindowsApp": "下载 Windows 应用",
     "claim": "认领"
   },
-  "hatchingScreen": {
-    "apiKeyFailed": "您的 API 密钥无效",
-    "genericFailure": "发生了一些错误",
-    "localFallbackPitch": "立即开始使用本地助手",
-    "updateApiKey": "更新 API 密钥",
-    "ready": "您的助手已准备就绪！",
-    "waking": "正在唤醒…",
-    "wakingBody": "请稍候，您的助手启动后会向您提出一些问题。",
-    "progressAriaLabel": "助手启动进度",
-    "phase": {
-      "initializing": "正在准备中…",
-      "provisioning": "正在设置您的助手…",
-      "connecting": "正在连接到您的助手…",
-      "ready": "就绪"
-    }
-  },
   "addRemoteOriginDialog": {
     "title": "添加远程助手",
     "body": "粘贴您的助手配对页面提供的 HTTPS 链接。",
@@ -174,5 +158,9 @@
     "providerSignup": "该登录尚未关联 Cadet 账户。请先注册，然后登录。",
     "loginIncomplete": "您的账户需要额外步骤才能完成登录。请在网页上登录，然后重试。",
     "desktopUpdateRequired": "此版本的 Cadet 桌面应用无法登录。请更新应用，然后重试。"
+  },
+  "hatchingScreen": {
+    "genericFailure": "发生了一些错误",
+    "localFallbackPitch": "立即开始使用本地助手"
   }
 }

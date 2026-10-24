@@ -4,7 +4,7 @@ export const routes = {
   assistant: "/assistant",
   checkout: "/assistant/checkout",
   onboarding: {
-    hatching: "/assistant/onboarding/hatching",
+    hatching: "/account/onboarding/hatching",
     privacy: "/assistant/onboarding/privacy",
     research: "/assistant/onboarding/research",
   },
@@ -14,9 +14,9 @@ export const routes = {
     root: "/account",
     consent: "/account/consent",
     // The pre-hatch onboarding front door, app-owned like the consent screens
-    // above. The remaining funnel steps (hatching, research) still render in
-    // the web bundle under /assistant/onboarding/* and are reached through
-    // the AssistantPage iframe mount.
+    // above. The remaining funnel step (research) still renders in the web
+    // bundle under /assistant/onboarding/* and is reached through the
+    // AssistantPage iframe mount.
     onboarding: {
       welcome: "/account/onboarding/welcome",
       start: "/account/onboarding/start",

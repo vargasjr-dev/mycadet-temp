@@ -108,6 +108,15 @@ export const accountRoute = {
               },
             },
             {
+              path: "onboarding/hatching",
+              lazy: {
+                Component: () =>
+                  import("@app/domains/onboarding/pages/hatching-screen").then(
+                    (m) => m.HatchingScreen,
+                  ),
+              },
+            },
+            {
               path: "provider/callback",
               lazy: {
                 Component: () =>

@@ -196,3 +196,22 @@ export async function readLockfileHost(): Promise<Lockfile> {
   }
   return parseLockfile(await readLockfile());
 }
+
+/**
+ * Provision a local assistant. The bridge runs the Cadet CLI in the shell's
+ * main process and returns the same `{ ok, assistantId }` contract the CLI's
+ * own hatch reports; callers reload the lockfile to discover the new
+ * assistant regardless.
+ */
+export async function hatchLocalAssistantHost(
+  remote?: string,
+): Promise<{ ok: boolean; assistantId?: string; error?: string }> {
+  const hatch = window.cadet?.localMode?.hatch;
+  if (!hatch) {
+    return {
+      ok: false,
+      error: "Hatching a local assistant is not supported by this app version",
+    };
+  }
+  return hatch(remote);
+}
