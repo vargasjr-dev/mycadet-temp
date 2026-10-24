@@ -376,7 +376,7 @@ afterAll(() => {
   mock.module("../lib/ingress-config.js", () => realIngressConfig);
   mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);
-  // TEMP-REMOVED
+  mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
 });
 
 describe("cadet wake", () => {
@@ -1642,6 +1642,14 @@ describe("cadet wake — app server restore", () => {
       assistantId: string,
       instanceDir: string,
     ): LockfileAssistant {
+      // The identity lives in the instance's key file (the resolve is
+      // key-file-only), so every --all fixture seeds one or the wake fails
+      // its continuity check and wakeAll's failure exit kills the runner.
+      mkdirSync(join(instanceDir, "gateway-security"), { recursive: true });
+      writeFileSync(
+        join(instanceDir, "gateway-security", "actor-token-signing-key"),
+        Buffer.from("ab".repeat(32), "hex"),
+      );
       return {
         assistantId,
         runtimeUrl: "http://127.0.0.1:7830",
