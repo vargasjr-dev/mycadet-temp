@@ -28,6 +28,7 @@
     "@capacitor/browser": "8.0.3",
     "@capacitor/core": "8.3.4",
     "@mycadet/avatar-manifest": "workspace:*",
+    "@mycadet/avatar-catalog": "workspace:*",
     "@mycadet/design-library": "workspace:*",
     "@mycadet/environments": "workspace:*",
     "@mycadet/ipc-contract": "workspace:*",
