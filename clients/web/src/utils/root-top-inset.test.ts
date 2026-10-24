@@ -5,12 +5,14 @@ import { routes } from "@/utils/routes";
 
 describe("shouldDeferRootTopInset", () => {
   test("suppresses onboarding funnel routes", () => {
-    for (const pathname of [
-      routes.onboarding.hatching,
-      `${routes.assistant}/onboarding`,
-    ]) {
-      expect(shouldDeferRootTopInset(pathname, "")).toBe(true);
-    }
+    // The hosting/api-key/hatching steps moved to the app bundle; the funnel
+    // surface web still renders is the /assistant/onboarding prefix.
+    expect(shouldDeferRootTopInset(`${routes.assistant}/onboarding`, "")).toBe(
+      true,
+    );
+    expect(
+      shouldDeferRootTopInset(`${routes.assistant}/onboarding/research`, ""),
+    ).toBe(true);
   });
 
   test("suppresses setup routes around onboarding", () => {

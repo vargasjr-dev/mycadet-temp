@@ -132,7 +132,7 @@ public class AppIconPluginTest {
         assertFalse(AppIconPlugin.supportsAlternateIcons(25));
         assertEquals("app icons need API 26", AppIconPlugin.setRefusal(25, GRUMPY_GREEN_ALIAS));
         assertEquals("app icons need API 26", AppIconPlugin.setRefusal(24, PRIMARY_ALIAS));
-        // The platform refusal outranks an unrecognized name.
+        // The cloud refusal outranks an unrecognized name.
         assertEquals("app icons need API 26", AppIconPlugin.setRefusal(25, null));
     }
 

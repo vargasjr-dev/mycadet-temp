@@ -317,7 +317,7 @@ public class VoiceLiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
     ///
     /// The sequence yields more than once: iOS may rotate a token mid-activity,
     /// and each value invalidates the last. Every one is forwarded, and the web
-    /// side re-registers — a rotation the platform never hears about leaves it
+    /// side re-registers — a rotation the cloud never hears about leaves it
     /// pushing at a token APNs has stopped honouring, which fails as
     /// `BadDeviceToken` and looks exactly like a session that ended.
     ///

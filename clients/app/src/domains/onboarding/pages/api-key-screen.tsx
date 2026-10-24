@@ -8,7 +8,6 @@ import {
   onboardingDestinationAfterConsent,
 } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
-import { ATTRIBUTED_PLUGIN_PARAM } from "@app/domains/onboarding/plugin-attribution";
 import {
   DEFAULT_ONBOARDING_PROVIDER,
   ONBOARDING_PROVIDERS,
@@ -99,12 +98,6 @@ export function ApiKeyScreen() {
     const params = new URLSearchParams({ [NEW_ASSISTANT_PARAM]: "1" });
     if (hosting) {
       params.set("hosting", hosting);
-    }
-    // Carry the marketing plugin attribution forward so the research runner can
-    // read it off the URL and pre-install that plugin (see `plugin-attribution`).
-    const pluginParam = searchParams.get(ATTRIBUTED_PLUGIN_PARAM);
-    if (pluginParam) {
-      params.set(ATTRIBUTED_PLUGIN_PARAM, pluginParam);
     }
     const qs = params.toString();
     // Consent settles at the shell's screen before this funnel runs, so the

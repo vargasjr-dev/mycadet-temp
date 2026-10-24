@@ -421,15 +421,11 @@ export interface CadetBridge {
     /** List the devices holding pairing tokens for a local assistant. */
     listDevices(assistantId: string): Promise<LocalListDevicesResult>;
     readLockfile(): Promise<Lockfile>;
-    saveLockfileAssistant(
-      assistant: Record<string, unknown>,
-      activeAssistant?: string,
-    ): Promise<LockfileWriteResult>;
     /**
-     * Rename an existing lockfile entry. Unlike `saveLockfileAssistant`'s
-     * upsert, the host refuses when the entry is missing or the on-disk
-     * file is unreadable, so a stale renderer cache can never re-create a
-     * retired assistant. Never touches the active assistant.
+     * Rename an existing lockfile entry. The host refuses when the entry is
+     * missing or the on-disk file is unreadable, so a stale renderer cache
+     * can never re-create a retired assistant. Never touches the active
+     * assistant.
      */
     renameLockfileAssistant(
       assistantId: string,

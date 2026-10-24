@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   renameSync,
@@ -19,12 +20,23 @@ export function persistRootSigningKey(root: string, key: string): void {
     throw new Error("Gateway security root must be a directory.");
   }
   const temporary = join(directory, `.signing-key-${randomUUID()}`);
+  const target = join(directory, "actor-token-signing-key");
   try {
     writeFileSync(temporary, Buffer.from(key, "hex"), {
       mode: 0o600,
       flag: "wx",
     });
-    renameSync(temporary, join(directory, "actor-token-signing-key"));
+    // A directory squatting the key path is corruption the repair replaces.
+    if (existsSync(target) && lstatSync(target).isDirectory()) {
+      rmSync(target, { recursive: true });
+    }
+    renameSync(temporary, target);
+    // The persisted key is the identity: a deprecated migration-source copy
+    // is stale the moment a replacement lands, and leaving it would read as
+    // a conflict on the next resolve.
+    rmSync(join(root, "workspace", "deprecated", "actor-token-signing-key"), {
+      force: true,
+    });
   } finally {
     rmSync(temporary, { force: true });
   }

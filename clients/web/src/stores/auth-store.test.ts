@@ -110,6 +110,22 @@ const bootstrapLocalAssistantCloudIdentityMock = mock(
   (_assistantId?: string) => {},
 );
 
+// The real predicate, applied against the contract helpers directly: the
+// paired-connect tests seed `cloud: "local"` + an off-machine runtimeUrl,
+// which is exactly what makes an entry a paired target.
+import {
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
+const isRemoteGatewayEntryMock = (entry: {
+  cloud: Parameters<typeof isLoopbackGatewayCloud>[0];
+  runtimeUrl?: string;
+}): boolean =>
+  isLoopbackGatewayCloud(entry.cloud) &&
+  isUsableRuntimeUrl(entry.runtimeUrl) &&
+  !isLoopbackPublicUrl(entry.runtimeUrl);
+
 mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => {
     getSessionCallCount++;
@@ -165,6 +181,7 @@ mock.module("@/lib/local-mode", () => ({
   getSelectedAssistant: () => mockSelectedAssistant,
   getLockfileAssistant: (id: string) =>
     mockLockfileAssistants.find((a) => a.assistantId === id),
+  isRemoteGatewayEntry: isRemoteGatewayEntryMock,
   primeLocalGatewayConnection: primeLocalGatewayConnectionMock,
   primeLocalGatewayConnectionWithStartupRetry:
     primeLocalGatewayConnectionWithStartupRetryMock,
@@ -313,6 +330,8 @@ const {
   setupAuthListeners,
   whenCloudSessionSettled,
 } = await import("@/stores/auth-store");
+const { connectCloudAssistant, connectLocalAssistant, connectPairedAssistant } =
+  await import("@/assistant/connect-assistant");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
@@ -1359,7 +1378,7 @@ describe("explicit logout supersedes an in-flight refresh", () => {
 
     // And the connect action commits one directly.
     await useAuthStore.getState().logout();
-    await useAuthStore.getState().connectCloudAssistant("assistant-1");
+    await connectCloudAssistant("assistant-1");
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().user?.id).toBe("user-2");
   });
@@ -1759,9 +1778,9 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
-    await expect(
-      useAuthStore.getState().connectCloudAssistant("assistant-1"),
-    ).rejects.toThrow("Platform authentication required");
+    await expect(connectCloudAssistant("assistant-1")).rejects.toThrow(
+      "Platform authentication required",
+    );
 
     expect(useAuthStore.getState().cloudSession).not.toBe("present");
     expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
@@ -1775,7 +1794,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockOrgFetchOutcome = { ok: false, kind: "unavailable" };
 
-    await useAuthStore.getState().connectCloudAssistant("assistant-1");
+    await connectCloudAssistant("assistant-1");
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
@@ -1851,7 +1870,7 @@ describe("connectLocalAssistant", () => {
       order.push(`select:${String(id)}`);
     });
 
-    await useAuthStore.getState().connectLocalAssistant("local-a");
+    await connectLocalAssistant("local-a");
 
     expect(order).toEqual(["prime", "select:local-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
@@ -1869,7 +1888,7 @@ describe("connectLocalAssistant", () => {
       cloudSessionRestoredOffline: false,
     });
 
-    await useAuthStore.getState().connectLocalAssistant("local-a");
+    await connectLocalAssistant("local-a");
 
     expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledWith(
       "local-a",
@@ -1880,9 +1899,9 @@ describe("connectLocalAssistant", () => {
     mockIsLocalClient = true;
     mockPrimeError = new Error("Guardian token not found");
 
-    await expect(
-      useAuthStore.getState().connectLocalAssistant("local-a"),
-    ).rejects.toThrow("Guardian token not found");
+    await expect(connectLocalAssistant("local-a")).rejects.toThrow(
+      "Guardian token not found",
+    );
 
     // A failed connect leaves the previous selection in place.
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -1910,7 +1929,7 @@ describe("connectPairedAssistant", () => {
       order.push(`select:${String(id)}`);
     });
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(order).toEqual(["prime", "select:paired-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
@@ -1927,7 +1946,7 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [pairedEntry];
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
@@ -1949,7 +1968,7 @@ describe("connectPairedAssistant", () => {
       cloudSessionRestoredOffline: false,
     });
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
   });
@@ -1958,9 +1977,9 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [{ assistantId: "local-a", cloud: "local" }];
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("local-a"),
-    ).rejects.toThrow("Not a paired assistant");
+    await expect(connectPairedAssistant("local-a")).rejects.toThrow(
+      "Not a paired assistant",
+    );
 
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -1971,9 +1990,9 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [pairedEntry];
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("missing"),
-    ).rejects.toThrow("Not a paired assistant");
+    await expect(connectPairedAssistant("missing")).rejects.toThrow(
+      "Not a paired assistant",
+    );
 
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
   });
@@ -1983,9 +2002,9 @@ describe("connectPairedAssistant", () => {
     mockLockfileAssistants = [pairedEntry];
     mockPrimeError = new Error("Guardian token not found");
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("paired-a"),
-    ).rejects.toThrow("Guardian token not found");
+    await expect(connectPairedAssistant("paired-a")).rejects.toThrow(
+      "Guardian token not found",
+    );
 
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).not.toBe("authenticated");

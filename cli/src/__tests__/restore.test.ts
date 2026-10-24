@@ -80,6 +80,7 @@ const retiredDir = join(testDir, "cadet", "retired");
 function writeArchiveFixtures(
   name: string,
   entry: LockfileAssistant,
+  key: string | null = "07".repeat(32),
 ): {
   archivePath: string;
   metadataPath: string;
@@ -96,6 +97,15 @@ function writeArchiveFixtures(
   writeFileSync(metadataPath, JSON.stringify(entry, null, 2) + "\n");
   // Create the staging dir that tar would have created
   mkdirSync(extractedPath, { recursive: true });
+  // The identity rides the archive's key file; null stages an archive
+  // without one.
+  if (key) {
+    mkdirSync(join(extractedPath, "gateway-security"), { recursive: true });
+    writeFileSync(
+      join(extractedPath, "gateway-security", "actor-token-signing-key"),
+      Buffer.from(key, "hex"),
+    );
+  }
 
   return { archivePath, metadataPath, extractedPath };
 }
@@ -183,10 +193,10 @@ describe("restore error cases", () => {
         assistantId: name,
         resources: { instanceDir },
       });
-      delete entry.resources!.signingKey;
       const { archivePath, metadataPath, extractedPath } = writeArchiveFixtures(
         name,
         entry,
+        failure === "missing" ? null : "07".repeat(32),
       );
       if (failure === "conflict") {
         for (const [dir, hex] of [
@@ -210,9 +220,14 @@ describe("restore error cases", () => {
       expect(existsSync(metadataPath)).toBe(true);
       expect(startLocalDaemonMock).not.toHaveBeenCalled();
       expect(startGatewayMock).not.toHaveBeenCalled();
-      // Restore the authoritative identity in the archive metadata and retry.
-      entry.resources!.signingKey = "ab".repeat(32);
-      writeFileSync(metadataPath, JSON.stringify(entry));
+      // Restore the authoritative identity in the archive's key files and retry.
+      for (const dir of ["gateway-security", "workspace/deprecated"]) {
+        mkdirSync(join(extractedPath, dir!), { recursive: true });
+        writeFileSync(
+          join(extractedPath, dir!, "actor-token-signing-key"),
+          Buffer.from("ab".repeat(32), "hex"),
+        );
+      }
       await restore();
       expect(existsSync(instanceDir)).toBe(true);
       expect(existsSync(archivePath)).toBe(false);
@@ -228,8 +243,7 @@ describe("restore error cases", () => {
       assistantId: name,
       resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
     });
-    delete entry.resources!.signingKey;
-    const { extractedPath } = writeArchiveFixtures(name, entry);
+    const { extractedPath } = writeArchiveFixtures(name, entry, null);
     const dir = join(extractedPath, "workspace", "deprecated");
     mkdirSync(dir, { recursive: true });
     writeFileSync(
@@ -255,8 +269,11 @@ describe("restore error cases", () => {
       assistantId: name,
       resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
     });
-    delete entry.resources!.signingKey;
-    const { archivePath, metadataPath } = writeArchiveFixtures(name, entry);
+    const { archivePath, metadataPath } = writeArchiveFixtures(
+      name,
+      entry,
+      null,
+    );
     process.argv = ["bun", "cadet", "restore", name];
     await expect(restore()).rejects.toThrow("signing key missing");
     expect(existsSync(archivePath)).toBe(true);
@@ -348,8 +365,8 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock).toHaveBeenCalledTimes(1);
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
-      expect.objectContaining({ signingKey: "ab".repeat(32) }),
-      { signingKey: "ab".repeat(32), bootstrapSecret: "existing-bootstrap" },
+      expect.objectContaining({ signingKey: "07".repeat(32) }),
+      { signingKey: "07".repeat(32), bootstrapSecret: "existing-bootstrap" },
     ]);
   });
 

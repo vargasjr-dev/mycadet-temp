@@ -68,7 +68,7 @@ struct VoiceSessionAttributes: ActivityAttributes {
         /// rendered against.
         ///
         /// Local pushes from this app always carry it. **A server-composed
-        /// push does not**, and lands here as `false`: the platform composes
+        /// push does not**, and lands here as `false`: the cloud composes
         /// content from what `live-activity-push-registration.ts` registered,
         /// which is the accent and the *mic* mute only. So the speaker button
         /// can show unmuted on an island being driven by APNs while the
@@ -99,7 +99,7 @@ struct VoiceSessionAttributes: ActivityAttributes {
         /// ``VoiceSessionControlIntent/requestId``.
         ///
         /// **A server-composed push does not carry it**, for the same reason
-        /// it does not carry ``outputMuted``: the platform composes content
+        /// it does not carry ``outputMuted``: the cloud composes content
         /// from what `live-activity-push-registration.ts` registered. So an
         /// island being driven by APNs states the wait in ``detail`` — the
         /// daemon words both, and that one *is* on the push path — and offers

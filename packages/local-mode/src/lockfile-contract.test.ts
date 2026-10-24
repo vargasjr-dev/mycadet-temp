@@ -230,7 +230,6 @@ describe("parseLockfile", () => {
             runtimeVersion: "v0.8.13",
             runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
             cesPort: 7780,
-            signingKey: "hunter2",
           },
         },
       ],
@@ -243,7 +242,6 @@ describe("parseLockfile", () => {
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
       cesPort: 7780,
-      signingKey: "hunter2",
     });
     const stripped = structuredClone(raw);
     stripSensitiveFields(stripped);
@@ -384,10 +382,6 @@ describe("taxonomy", () => {
   });
 
   test("SENSITIVE_KEYS lists the redacted secrets", () => {
-    expect(SENSITIVE_KEYS).toEqual([
-      "signingKey",
-      "bearerToken",
-      "guardianBootstrapSecret",
-    ]);
+    expect(SENSITIVE_KEYS).toEqual(["bearerToken", "guardianBootstrapSecret"]);
   });
 });

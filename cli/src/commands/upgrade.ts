@@ -812,10 +812,6 @@ async function upgradeLocal(
 
   const originalResources = { ...resources };
   const signingKey = resolveExistingLocalSigningKey(resources);
-  if (resources.signingKey !== signingKey) {
-    resources.signingKey = signingKey;
-    saveLockfileAssistant(entry);
-  }
 
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = `http://127.0.0.1:${resources.gatewayPort}`;

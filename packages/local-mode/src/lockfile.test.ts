@@ -9,7 +9,7 @@ import {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
-  upsertLockfileAssistant,
+  saveLockfileAssistant,
 } from "./lockfile";
 
 let dir: string;
@@ -126,9 +126,9 @@ describe("isPairedLockfileEntry", () => {
   });
 });
 
-describe("upsertLockfileAssistant", () => {
+describe("saveLockfileAssistant", () => {
   test("rejects an assistant with no id", () => {
-    const result = upsertLockfileAssistant(
+    const result = saveLockfileAssistant(
       [lockfilePath],
       { cloud: "local" },
       undefined,
@@ -156,7 +156,7 @@ describe("upsertLockfileAssistant", () => {
       ],
     });
 
-    const result = upsertLockfileAssistant(
+    const result = saveLockfileAssistant(
       [lockfilePath],
       { assistantId: "asst_new", cloud: "local", runtimeUrl: "http://new" },
       "asst_new",
@@ -194,7 +194,7 @@ describe("upsertLockfileAssistant", () => {
       ],
     });
 
-    upsertLockfileAssistant(
+    saveLockfileAssistant(
       [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
@@ -225,7 +225,7 @@ describe("upsertLockfileAssistant", () => {
     };
     writeOnDisk({ activeAssistant: "asst_1", assistants: [entry] });
 
-    const result = upsertLockfileAssistant(
+    const result = saveLockfileAssistant(
       [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
@@ -252,7 +252,7 @@ describe("upsertLockfileAssistant", () => {
       ],
     });
 
-    const result = upsertLockfileAssistant(
+    const result = saveLockfileAssistant(
       [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
@@ -519,7 +519,7 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = upsertLockfileAssistant(
+    const result = saveLockfileAssistant(
       [lockfilePath],
       { assistantId: "asst_2", cloud: "local" },
       undefined,

@@ -13,13 +13,11 @@
     "noEmit": true,
     "allowJs": false,
     "isolatedModules": true,
-    "types": ["bun"],
+    "types": ["bun", "vite/client"],
     "paths": {
       "@app/*": ["./src/*"],
-      "@web/*": ["../web/src/*"],
-      "@/*": ["../web/src/*"],
       "@design/*": ["../../packages/design-library/src/*"]
     }
   },
-  "include": ["src", "../web/src", "capacitor.config.base.ts"]
+  "include": ["src", "capacitor.config.base.ts"]
 }

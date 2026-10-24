@@ -8,7 +8,12 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -194,6 +199,12 @@ let exitSpy: ReturnType<typeof spyOn>;
 
 function makeLocalEntry(): LockfileAssistant {
   tempDir = mkdtempSync(join(tmpdir(), "cadet-upgrade-local-test-"));
+  // The identity lives in the instance's key file, not the lockfile.
+  mkdirSync(join(tempDir, "gateway-security"), { recursive: true });
+  writeFileSync(
+    join(tempDir, "gateway-security", "actor-token-signing-key"),
+    Buffer.from("ab".repeat(32), "hex"),
+  );
   return {
     assistantId: "local-assistant",
     runtimeUrl: "http://lan.local:7830",
@@ -203,7 +214,6 @@ function makeLocalEntry(): LockfileAssistant {
       daemonPort: 7821,
       gatewayPort: 7830,
       cesPort: 7822,
-      signingKey: "ab".repeat(32),
     },
     guardianBootstrapSecret: "existing-bootstrap-secret",
   };
@@ -314,8 +324,7 @@ afterAll(() => {
 
 describe("cadet upgrade local", () => {
   test("missing identity refuses without backup, installation, restart or repair", async () => {
-    const entry = findAssistantByNameMock("local-assistant")!;
-    delete entry.resources!.signingKey;
+    rmSync(join(tempDir, "gateway-security", "actor-token-signing-key"));
     await expect(upgrade()).rejects.toThrow("process.exit(1)");
     expect(createBackupMock).not.toHaveBeenCalled();
     expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();

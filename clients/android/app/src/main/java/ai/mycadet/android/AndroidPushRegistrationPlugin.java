@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 @CapacitorPlugin(name = "AndroidPushRegistration")
 public class AndroidPushRegistrationPlugin extends Plugin {
     /**
-     * Advertised on token registration. The platform sends data-only pushes
+     * Advertised on token registration. The cloud sends data-only pushes
      * only to tokens claiming this, so a build that cannot render them
      * natively must never claim it.
      */

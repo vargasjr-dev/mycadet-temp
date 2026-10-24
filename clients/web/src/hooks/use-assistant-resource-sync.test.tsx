@@ -1078,7 +1078,7 @@ describe("useAssistantResourceSync", () => {
   test("avatar_updated drops the cloud lookup entry without a refetch", async () => {
     const queryClient = freshQueryClient();
     queryClient.invalidateQueries = mock(() => Promise.resolve()) as never;
-    const key = cloudAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey(null);
     queryClient.setQueryData(
       key,
       new Map([
@@ -1117,7 +1117,7 @@ describe("useAssistantResourceSync", () => {
         },
       ],
     });
-    const key = cloudAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey(null);
     queryClient.setQueryData(
       key,
       new Map([["uuid-1", "https://cdn.example/a.png"]]),

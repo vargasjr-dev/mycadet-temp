@@ -6,7 +6,7 @@ import UserNotifications
 /// category must exist in `UNUserNotificationCenter` independently of JS.
 /// The identifier and action id stay aligned with
 /// `NOTIFICATION_INTENT_ACTION_TYPE_ID` in `clients/web/src/runtime/notifications.ts`
-/// and `APNS_CONVERSATION_CATEGORY` on the platform APNs sender.
+/// and `APNS_CONVERSATION_CATEGORY` on the cloud APNs sender.
 enum NotificationCategories {
     static let intentIdentifier = "notificationIntent"
     static let viewActionIdentifier = "view"

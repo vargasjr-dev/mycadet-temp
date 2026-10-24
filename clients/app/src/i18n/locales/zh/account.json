@@ -107,7 +107,9 @@
     "connectRemote": "连接远程助手",
     "pairedWithHost": "已配对 · {host}",
     "paired": "已配对",
-    "localAssistant": "在这台电脑上"
+    "localAssistant": "在这台电脑上",
+    "cloudHosted": "云端托管",
+    "selfHosted": "自托管"
   },
   "appShell": {
     "loading": "正在加载助手…",

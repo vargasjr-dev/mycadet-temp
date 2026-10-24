@@ -55,7 +55,9 @@ function createClient({ apiBaseUrl = "/", origin, signal }: AssistantRequest) {
       console.error(
         `Assistant request failed: ${response.status} ${response.headers.get("content-type") ?? ""} from ${requestUrl.href}`,
       );
-      throw new Error(`Assistant request failed: ${response.status}`);
+      throw new Error(
+        `Assistant request failed: ${response.status} from ${requestUrl.href}`,
+      );
     }
     const payload: unknown = await response.json().catch((error) => {
       console.error(

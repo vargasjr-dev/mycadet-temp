@@ -233,7 +233,7 @@ public final class NativePushRenderer {
             return;
         }
 
-        // The avatar can be absent: the platform omits the signed url on an
+        // The avatar can be absent: the cloud omits the signed url on an
         // oversized payload, and a download that times out inside the Firebase
         // callback window gives up. The conversation treatment does not depend
         // on it.

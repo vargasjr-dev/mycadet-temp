@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { describeError } from "./describe-error";
 import { AssistantListSchema, type AssistantList } from "./resolution-contract";
 import { listAssistantChoices } from "./resolve-assistant";
 
@@ -71,7 +72,9 @@ export function useAssistantChoices() {
         },
         (error) => {
           if (!controller.signal.aborted) {
-            console.error("Assistant list request failed:", error);
+            console.error(
+              `Assistant list request failed: ${describeError(error)} (origin ${origin})`,
+            );
             clearTimeout(timer);
             settle({ status: "error" });
           }

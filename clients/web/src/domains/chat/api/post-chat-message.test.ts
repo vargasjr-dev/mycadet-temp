@@ -31,7 +31,7 @@ describe("postChatMessage onboarding payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         // The heyapi client passes a Request object as `input`; read the body
         // by cloning and calling `.text()` so we can decode the JSON payload.
@@ -67,7 +67,7 @@ describe("postChatMessage onboarding payload", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -106,7 +106,7 @@ describe("postChatMessage onboarding payload", () => {
     expect(body.content).toBe("hello");
   });
 
-  test("includes normalized onboarding and seeds profile files concurrently with the message post", async () => {
+  test("includes normalized onboarding with the message post", async () => {
     await postChatMessage("asst-1", "K", "hello", {
       onboarding: {
         tools: ["github", "linear"],
@@ -117,9 +117,6 @@ describe("postChatMessage onboarding payload", () => {
         assistantName: "Vel",
       },
     });
-    // Profile seeding is fire-and-forget — flush the microtask queue so
-    // the concurrent writes settle before we assert.
-    await new Promise((r) => setTimeout(r, 0));
 
     const body = getRequestBody();
     expect(body.onboarding).toEqual({
@@ -130,21 +127,9 @@ describe("postChatMessage onboarding payload", () => {
       occupation: "Software Engineer",
       assistantName: "Vel",
     });
-
-    const writes = getWorkspaceWriteBodies();
-    expect(writes.map((write) => write.path).sort()).toEqual([
-      "users/default.md",
-      "users/guardian.md",
-    ]);
-    for (const write of writes) {
-      expect(write.content).toContain("## Onboarding Context");
-      expect(write.content).toContain("- **Preferred name:** Ada");
-      expect(write.content).toContain("- **Role:** Software Engineer");
-      expect(write.content).toContain(
-        "- **Common work:** builds code, apps, or tools; writes docs, emails, or content",
-      );
-      expect(write.content).toContain("- **Daily tools:** GitHub, Linear");
-    }
+    // Profile seeding died with the prechat upsert: the assistant
+    // self-onboards on hatch/wake, so the message post is the only write.
+    expect(getWorkspaceWriteBodies()).toEqual([]);
   });
 
   test("excludes userName when undefined (matches macOS `if let userName`)", async () => {
@@ -235,7 +220,7 @@ describe("postChatMessage wire-field bilingual cutover", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
@@ -254,7 +239,7 @@ describe("postChatMessage wire-field bilingual cutover", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -363,7 +348,7 @@ describe("postChatMessage server-minted conversation flow", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
@@ -378,7 +363,7 @@ describe("postChatMessage server-minted conversation flow", () => {
           headers: { "Content-Type": "application/json" },
         });
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -504,7 +489,7 @@ describe("postChatMessage clientTimezone payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
@@ -523,7 +508,7 @@ describe("postChatMessage clientTimezone payload", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -593,7 +578,7 @@ describe("postChatMessage scripted payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
@@ -612,7 +597,7 @@ describe("postChatMessage scripted payload", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {
@@ -678,7 +663,7 @@ describe("postChatMessage visibleAppId payload", () => {
     (globalThis as { document?: unknown }).document = {
       cookie: "csrftoken=test",
     };
-    globalThis.fetch = (mock(
+    globalThis.fetch = mock(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = input instanceof Request ? input.url : String(input);
         let bodyText: string | undefined;
@@ -697,7 +682,7 @@ describe("postChatMessage visibleAppId payload", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
       },
-    ) as unknown) as typeof fetch;
+    ) as unknown as typeof fetch;
   });
 
   afterEach(() => {

@@ -379,8 +379,7 @@ The preload script exposes a typed `window.cadet` API to the renderer:
   back to the window.
 - `localMode.*` — provisions and retires local assistants and reads/writes
   the lockfile that records them. `hatch(species)` and `retire(assistantId)`
-  drive the Cadet CLI as a subprocess; `readLockfile()`,
-  `saveLockfileAssistant(assistant, activeAssistant?)`, and
+  drive the Cadet CLI as a subprocess; `readLockfile()` and
   `replaceCloudAssistants(cloudAssistants)` read and write the lockfile
   on disk. Every method is a thin wrapper over [`@mycadet/local-mode`](../../packages/local-mode/),
   the shared host library that also backs the web app's dev-server middleware,

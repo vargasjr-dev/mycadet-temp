@@ -16,7 +16,7 @@ import { RemoteSchema } from "@mycadet/local-mode/contract";
  * cloud takeover proxies it). The native boot bundle is the one host with
  * no `/v1` router at its origin, so it resolves assistants against
  * `cloudUrl` directly. `hubUrl` is the cloud hub SPA the
- * pairing/settings pages link back to. The platform login base is
+ * pairing/settings pages link back to. The cloud login base is
  * deliberately absent: the loopback handoff reads it from the build's
  * environment seed (see startLoopbackAuth), keeping this config to the
  * origins a served bundle can't infer.

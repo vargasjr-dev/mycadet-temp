@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
-import { readRawLockfile, upsertLockfileAssistant } from "./lockfile";
+import { readRawLockfile, saveLockfileAssistant } from "./lockfile";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -306,7 +306,7 @@ export function pairAssistant(
     };
   }
 
-  const writeResult = upsertLockfileAssistant(
+  const writeResult = saveLockfileAssistant(
     lockfilePaths,
     {
       assistantId: localId,

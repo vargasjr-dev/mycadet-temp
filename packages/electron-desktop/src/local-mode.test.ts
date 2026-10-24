@@ -345,15 +345,20 @@ const readLockfile = (): Record<string, unknown> =>
     string,
     unknown
   >;
-const saveLockfileAssistant = (
-  assistant: unknown,
-  activeAssistant?: unknown,
-): WriteResult =>
-  handlers["cadet:localMode:saveLockfileAssistant"](
-    allowedEvent,
-    assistant,
-    activeAssistant,
-  ) as WriteResult;
+// Seeds the lockfile on disk directly — the renderer save surface is gone,
+// so tests stage state the way the disk actually holds it.
+const seedLockfileAssistant = (
+  entry: Record<string, unknown>,
+  activeAssistant?: string,
+): void => {
+  fs.writeFileSync(
+    lockfilePath,
+    JSON.stringify({
+      assistants: [entry],
+      activeAssistant: activeAssistant ?? null,
+    }),
+  );
+};
 const renameLockfileAssistant = (
   assistantId?: unknown,
   name?: unknown,
@@ -455,132 +460,9 @@ describe("lockfile IPC handlers", () => {
     expect(() => readLockfile()).toThrow();
   });
 
-  test("saveLockfileAssistant persists the assistant and makes it active", () => {
-    const result = saveLockfileAssistant(
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-        futureField: "renderer-only",
-      },
-      "asst-1",
-    );
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.lockfile.activeAssistant).toBe("asst-1");
-    expect(result.lockfile.assistants).toEqual([
-      {
-        assistantId: "asst-1",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-      },
-    ]);
-
-    const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
-      assistants: Array<Record<string, unknown>>;
-    };
-    expect(onDisk.assistants[0]).toEqual({
-      assistantId: "asst-1",
-      cloud: "local",
-      runtimeUrl: "http://127.0.0.1:1",
-    });
-  });
-
-  test("saveLockfileAssistant is a schema-canonical merge — unknown stored fields and secrets absent from the payload survive", () => {
-    const stored = {
-      assistantId: "asst-1",
-      cloud: "local",
-      runtimeUrl: "http://127.0.0.1:1",
-      resources: {
-        instanceDir: "/instances/example",
-        signingKey: "ab".repeat(32),
-      },
-      guardianBootstrapSecret: "host-bootstrap-secret",
-      futureField: "keep-me",
-    };
-    fs.writeFileSync(
-      lockfilePath,
-      JSON.stringify({ assistants: [stored], activeAssistant: null }),
-    );
-
-    const result = saveLockfileAssistant(
-      {
-        assistantId: "asst-1",
-        name: "Renamed Assistant",
-        cloud: "local",
-        runtimeUrl: "http://127.0.0.1:1",
-        resources: {
-          instanceDir: "/instances/example",
-          daemonPort: 7821,
-          gatewayPort: 7830,
-          signingKey: "cd".repeat(32),
-        },
-      },
-      "asst-1",
-    );
-
-    expect(result.ok).toBe(true);
-    // The schema is the only boundary: what the payload carried rides, and
-    // every secret it never carried (the guardian bootstrap secret) survives
-    // from the stored entry via the merge.
-    expect(JSON.parse(fs.readFileSync(lockfilePath, "utf-8"))).toEqual({
-      assistants: [
-        {
-          ...stored,
-          name: "Renamed Assistant",
-          resources: {
-            instanceDir: "/instances/example",
-            daemonPort: 7821,
-            gatewayPort: 7830,
-            signingKey: "cd".repeat(32),
-          },
-        },
-      ],
-      activeAssistant: "asst-1",
-    });
-  });
-
-  test("saveLockfileAssistant fails without mutating disk when the entry has no id", () => {
-    const result = saveLockfileAssistant({ cloud: "local" });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.error).toBe("Invalid assistant metadata");
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("saveLockfileAssistant cannot create or retarget a paired entry", () => {
-    expect(
-      saveLockfileAssistant({
-        assistantId: "paired-1",
-        cloud: "paired",
-        runtimeUrl: "https://h",
-      }).ok,
-    ).toBe(false);
-
-    writePairedLockfileAssistant("paired-1");
-    expect(
-      saveLockfileAssistant({
-        assistantId: "paired-1",
-        runtimeUrl: "https://attacker.example.com",
-      }).ok,
-    ).toBe(false);
-    expect(readLockfile().assistants).toEqual([
-      {
-        assistantId: "paired-1",
-        cloud: "paired",
-        runtimeUrl: "https://h",
-      },
-    ]);
-  });
 
   test("renameLockfileAssistant persists the rename and refreshes the watcher", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       {
         assistantId: "asst-1",
         cloud: "local",
@@ -645,7 +527,7 @@ describe("lockfile IPC handlers", () => {
   });
 
   test("stampLockfileAssistantOnboarded records the completion and refreshes", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       { assistantId: "asst-1", cloud: "local", name: "Credence" },
       "asst-1",
     );
@@ -679,7 +561,7 @@ describe("lockfile IPC handlers", () => {
   });
 
   test("stampLockfileAssistantOnboarded keeps the first stamp", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       {
         assistantId: "asst-1",
         cloud: "local",
@@ -724,7 +606,7 @@ describe("lockfile IPC handlers", () => {
   });
 
   test("replaceCloudAssistants swaps platform entries while preserving local ones", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       {
         assistantId: "local-1",
         cloud: "local",
@@ -732,8 +614,8 @@ describe("lockfile IPC handlers", () => {
       },
       "local-1",
     );
-    saveLockfileAssistant(
-      { assistantId: "old-platform", cloud: "cadet", runtimeUrl: "http://x" },
+    seedLockfileAssistant(
+      { assistantId: "old-platform", cloud: "cloud", runtimeUrl: "http://x" },
       "local-1",
     );
 
@@ -752,7 +634,7 @@ describe("lockfile IPC handlers", () => {
   });
 
   test("replaceCloudAssistants rejects a non-array argument without touching disk", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       {
         assistantId: "local-1",
         cloud: "local",
@@ -1016,7 +898,7 @@ describe("cadet:localMode:unpair handler", () => {
   });
 
   test("unpairs a local entry too — the gateway refuses what it must", () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       { assistantId: "local-1", cloud: "local" },
       "local-1",
     );
@@ -1211,7 +1093,7 @@ describe("cadet:localMode:pairing handlers", () => {
   });
 
   test("refuses to overwrite an existing non-paired assistant", async () => {
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       { assistantId: "local-1", cloud: "local" },
       "local-1",
     );
@@ -1278,7 +1160,7 @@ describe("cadet:localMode:wake handler", () => {
 describe("cadet:localMode:upgrade handler", () => {
   beforeEach(() => {
     fs.rmSync(lockfilePath, { force: true });
-    saveLockfileAssistant(
+    seedLockfileAssistant(
       {
         assistantId: "asst-active",
         cloud: "local",

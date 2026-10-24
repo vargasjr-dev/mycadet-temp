@@ -26,7 +26,6 @@ import {
   readRootProcesses,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
@@ -358,10 +357,22 @@ async function getLocalProcesses(
   // drift out of sync with what the assistant actually spawns.
   const tree = gatewayUrl ? await fetchGatewayPs(gatewayUrl, token) : null;
 
+  // When the gateway can't answer, report one honest row (the cloud arm's
+  // shape) — local processes ride the daemon's process-tree API, same as
+  // cloud processes ride the cloud api.
   const rows: TableRow[] =
     tree && tree.length > 0
       ? flattenProcessTree(tree)
-      : await detectLocalProcessesFallback(resources, cadetDir);
+      : [
+          {
+            name: "assistant",
+            type: ASSISTANT_TYPE,
+            status: withStatusEmoji(tree ? "not running" : "unreachable"),
+            info: tree
+              ? "the gateway reported no processes — is the daemon running?"
+              : "could not reach the gateway's process tree — is the assistant running?",
+          },
+        ];
 
   // The credential-executor is a CLI-spawned SIBLING (not a daemon child),
   // so the daemon's process tree can never report it — detect it here.
@@ -379,51 +390,6 @@ async function getLocalProcesses(
   });
 
   return rows;
-}
-
-// Fallback for when the gateway can't answer /v1/ps (assistant down, or a
-// gateway version that predates the route): probe each known process
-// directly.
-async function detectLocalProcessesFallback(
-  resources: LocalAssistantResources,
-  cadetDir: string,
-): Promise<TableRow[]> {
-  const assistantSpec: ProcessSpec = {
-    name: "assistant",
-    pgrepName: "cadet-daemon",
-    port: resources.daemonPort,
-    pidFile: getDaemonPidPath(resources),
-  };
-  const subSpecs: ProcessSpec[] = [
-    {
-      name: "├─ qdrant",
-      pgrepName: "qdrant",
-      port: 0,
-      pidFile: join(cadetDir, "workspace", "data", "qdrant", "qdrant.pid"),
-    },
-    {
-      name: "└─ embed-worker",
-      pgrepName: "embed-worker",
-      port: 0,
-      pidFile: join(cadetDir, "workspace", "embed-worker.pid"),
-    },
-  ];
-  const gatewaySpec: ProcessSpec = {
-    name: "gateway",
-    pgrepName: "cadet-gateway",
-    port: resources.gatewayPort,
-    pidFile: join(cadetDir, "gateway.pid"),
-  };
-
-  const allSpecs = [assistantSpec, ...subSpecs, gatewaySpec];
-  const results = await Promise.all(allSpecs.map(detectProcess));
-
-  return results.map((proc, i) => ({
-    name: allSpecs[i].name,
-    type: ASSISTANT_TYPE,
-    status: withStatusEmoji(proc.running ? "running" : "not running"),
-    info: proc.running ? formatDetectionInfo(proc) : "not detected",
-  }));
 }
 
 async function getDockerContainerState(

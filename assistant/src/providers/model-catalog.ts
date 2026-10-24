@@ -2926,7 +2926,7 @@ export const PROVIDER_CATALOG: ProviderCatalogEntry[] =
     // Derive supportsCloudAuth from PLATFORM_PROVIDER_META so the catalog
     // and the proxy routing table can never drift. Adding a provider to
     // PLATFORM_PROVIDER_META with `managed: true` automatically opts it into
-    // the Platform auth-type dropdown in the clients.
+    // the cloud auth-type dropdown in the clients.
     supportsCloudAuth: PLATFORM_PROVIDER_META[entry.id]?.managed === true,
   }));
 

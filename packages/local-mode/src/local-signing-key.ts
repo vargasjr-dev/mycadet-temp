@@ -3,10 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 
-const KeySchema = z.string().regex(/^[0-9a-f]{64}$/i);
 const ResourcesSchema = z.object({
   instanceDir: z.string().min(1),
-  signingKey: KeySchema.optional(),
 });
 
 export class SigningKeyContinuityError extends Error {
@@ -29,20 +27,19 @@ export function resolveExistingLocalSigningKey(
   if (!parsed.success) {
     throw new SigningKeyContinuityError("invalid");
   }
-  const { instanceDir, signingKey } = parsed.data;
-  // The host registry is authoritative after provisioning or migration.
-  // Legacy files can be stale after an explicit identity repair.
-  if (signingKey) {
-    return signingKey.toLowerCase();
-  }
+  const { instanceDir } = parsed.data;
+  // The key lives in the assistant's own storage (the gateway-security file
+  // the containers persist); the deprecated workspace file is a read-only
+  // migration source and can be stale after an explicit identity repair.
   const candidates: Buffer[] = [];
   const root = stateRoot ?? instanceDir;
-  // Read-only migration sources, scoped to this instance rather than the user's home.
-  const legacyPaths = [
+  // Both files live inside the assistant's own storage, scoped to this
+  // instance rather than the user's home.
+  const keyPaths = [
     join(root, "gateway-security", "actor-token-signing-key"),
     join(root, "workspace", "deprecated", "actor-token-signing-key"),
   ];
-  for (const keyPath of legacyPaths) {
+  for (const keyPath of keyPaths) {
     let raw: Buffer;
     try {
       raw = readFileSync(keyPath);

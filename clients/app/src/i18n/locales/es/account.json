@@ -107,7 +107,9 @@
     "connectRemote": "Conectar un asistente remoto",
     "pairedWithHost": "Emparejado · {host}",
     "paired": "Emparejado",
-    "localAssistant": "En este equipo"
+    "localAssistant": "En este equipo",
+    "cloudHosted": "En la nube",
+    "selfHosted": "Autoalojado"
   },
   "appShell": {
     "loading": "Cargando asistente…",
