@@ -58,7 +58,7 @@ export {
   LockfileAssistantSchema,
   parseLockfile,
 } from "./lockfile-contract";
-export { readRawLockfileStrict } from "./lockfile";
+export { readRawLockfile, readRawLockfileStrict } from "./lockfile";
 export type {
   Lockfile,
   LockfileAssistant,

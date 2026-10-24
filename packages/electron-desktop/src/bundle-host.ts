@@ -2,7 +2,6 @@ import {
   getGuardianAccessToken,
   readLockfile,
   resolveConfigDir,
-  resolveLockfilePaths,
   type CliInvocation,
 } from "@mycadet/local-mode";
 
@@ -21,9 +20,7 @@ export const createBundleHostProvider = (
   resolveInvocation: () => Promise<CliInvocation>,
 ): BundleHostProvider => ({
   resolveActiveGateway: (): ActiveBundleGateway | null => {
-    const { assistants, activeAssistant } = readLockfile(
-      resolveLockfilePaths(process.env),
-    );
+    const { assistants, activeAssistant } = readLockfile();
     if (!activeAssistant) {
       return null;
     }

@@ -64,10 +64,8 @@ function requestPathname(req: http.IncomingMessage): string {
   return (req.url ?? "").split("?")[0]!;
 }
 
-function lockfileEntryFor(lockfilePaths: string[], assistantId: string) {
-  return readLockfile(lockfilePaths).assistants.find(
-    (a) => a.assistantId === assistantId,
-  );
+function lockfileEntryFor(assistantId: string) {
+  return readLockfile().assistants.find((a) => a.assistantId === assistantId);
 }
 
 /**
@@ -82,7 +80,7 @@ function isHostManagedEntry(
   lockfilePaths: string[],
   assistantId: string,
 ): boolean {
-  const entry = lockfileEntryFor(lockfilePaths, assistantId);
+  const entry = lockfileEntryFor(assistantId);
   return (
     entry != null &&
     entry.cloud !== "cloud" &&
@@ -357,7 +355,7 @@ function lockfileMiddleware(
 
     if (req.method === "GET") {
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(readLockfile(lockfilePaths)));
+      res.end(JSON.stringify(readLockfile()));
     } else if (req.method === "POST") {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -579,7 +577,7 @@ function unpairMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (lockfileEntryFor(lockfilePaths, assistantId) == null) {
+    if (lockfileEntryFor(assistantId) == null) {
       // Not an entry on this machine — the id-keyed proxy resolves the rest
       // (the conductor's routes for a cloud id).
       return next();

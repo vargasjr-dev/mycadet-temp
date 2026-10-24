@@ -417,9 +417,7 @@ export const installLocalMode = (): void => {
     hatch(remote || undefined),
   );
 
-  ipc("cadet:localMode:readLockfile", z.tuple([]), () =>
-    readLockfile(lockfilePaths),
-  );
+  ipc("cadet:localMode:readLockfile", z.tuple([]), () => readLockfile());
 
   ipc(
     "cadet:localMode:saveLockfileAssistant",

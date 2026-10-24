@@ -10,6 +10,7 @@ import {
   type Lockfile,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
+import { resolveLockfilePaths } from "./config";
 import { z } from "zod";
 
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
@@ -18,12 +19,14 @@ import { stripSensitiveFields } from "./util";
 
 /**
  * The one lockfile read: the first existing candidate file parsed against the
- * contract, degrading to the empty registry when no file parses. Readers
- * take the resolved paths so every consumer of a lockfile answers the same
- * question about the same bytes.
+ * contract, degrading to the empty registry when no file parses. Takes no
+ * input — the paths resolve from the process's environment (the same
+ * `CADET_ENVIRONMENT` / persisted-default resolution every host and the CLI
+ * share), so every consumer of a lockfile answers the same question about the
+ * same bytes.
  */
-export function readLockfile(lockfilePaths: string[]): Lockfile {
-  for (const lockfilePath of lockfilePaths) {
+export function readLockfile(): Lockfile {
+  for (const lockfilePath of resolveLockfilePaths(process.env)) {
     if (!fs.existsSync(lockfilePath)) continue;
     try {
       const parsed = LockfileSchema.safeParse(

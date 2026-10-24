@@ -121,46 +121,53 @@ describe("local signing identity continuity", () => {
 
   describe("across desktop saves and wake cycles", () => {
     test("read/select/save and repeated key loads preserve a retained credential", () => {
-      const registry = join(instanceDir, "registry.json");
-      const payload = "synthetic-retained-credential";
-      const signature = createHmac("sha256", Buffer.from(key, "hex"))
-        .update(payload)
-        .digest("hex");
-      writeFileSync(
-        registry,
-        JSON.stringify({
-          assistants: [
-            {
-              assistantId: "example",
-              cloud: "local",
-              resources: {
-                instanceDir,
-                gatewayPort: 7830,
-                daemonPort: 7831,
-                signingKey: key,
+      // The zero-arg readLockfile() resolves its paths from the environment;
+      // point it at this test's temp registry for the read half of the cycle.
+      const registry = join(instanceDir, "lockfile.json");
+      process.env.CADET_LOCKFILE_DIR = instanceDir;
+      try {
+        const payload = "synthetic-retained-credential";
+        const signature = createHmac("sha256", Buffer.from(key, "hex"))
+          .update(payload)
+          .digest("hex");
+        writeFileSync(
+          registry,
+          JSON.stringify({
+            assistants: [
+              {
+                assistantId: "example",
+                cloud: "local",
+                resources: {
+                  instanceDir,
+                  gatewayPort: 7830,
+                  daemonPort: 7831,
+                  signingKey: key,
+                },
               },
-            },
-          ],
-        }),
-      );
-      for (let cycle = 0; cycle < 3; cycle++) {
-        const view = readLockfile([registry]);
-        expect(
-          upsertLockfileAssistant(
-            [registry],
-            { ...view.assistants[0]! },
-            "example",
-          ).ok,
-        ).toBe(true);
-        const stored = JSON.parse(readFileSync(registry, "utf8"));
-        const restored = resolveExistingLocalSigningKey(
-          stored.assistants[0].resources,
+            ],
+          }),
         );
-        expect(
-          createHmac("sha256", Buffer.from(restored, "hex"))
-            .update(payload)
-            .digest("hex"),
-        ).toBe(signature);
+        for (let cycle = 0; cycle < 3; cycle++) {
+          const view = readLockfile();
+          expect(
+            upsertLockfileAssistant(
+              [registry],
+              { ...view.assistants[0]! },
+              "example",
+            ).ok,
+          ).toBe(true);
+          const stored = JSON.parse(readFileSync(registry, "utf8"));
+          const restored = resolveExistingLocalSigningKey(
+            stored.assistants[0].resources,
+          );
+          expect(
+            createHmac("sha256", Buffer.from(restored, "hex"))
+              .update(payload)
+              .digest("hex"),
+          ).toBe(signature);
+        }
+      } finally {
+        delete process.env.CADET_LOCKFILE_DIR;
       }
     });
   });

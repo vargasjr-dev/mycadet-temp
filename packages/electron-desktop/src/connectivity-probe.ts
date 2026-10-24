@@ -35,8 +35,8 @@ type ProbeTarget =
   | { kind: "non-local" }
   | { kind: "unknown" };
 
-function resolveProbeTarget(lockfilePaths: string[]): ProbeTarget {
-  const { assistants, activeAssistant } = readLockfile(lockfilePaths);
+function resolveProbeTarget(): ProbeTarget {
+  const { assistants, activeAssistant } = readLockfile();
   if (!activeAssistant) {
     return { kind: "unknown" };
   }
@@ -59,13 +59,13 @@ function resolveProbeTarget(lockfilePaths: string[]): ProbeTarget {
   return { kind: "unknown" };
 }
 
-async function runProbeOnce(lockfilePaths: string[]): Promise<void> {
+async function runProbeOnce(): Promise<void> {
   if (probing) {
     return;
   }
   probing = true;
   try {
-    const target = resolveProbeTarget(lockfilePaths);
+    const target = resolveProbeTarget();
     if (target.kind === "unknown") {
       return;
     }
@@ -92,15 +92,12 @@ function hasVisibleWindow(): boolean {
   );
 }
 
-function startProbing(lockfilePaths: string[]): void {
+function startProbing(): void {
   if (probeTimer) {
     return;
   }
-  void runProbeOnce(lockfilePaths);
-  probeTimer = setInterval(
-    () => void runProbeOnce(lockfilePaths),
-    PROBE_INTERVAL_MS,
-  );
+  void runProbeOnce();
+  probeTimer = setInterval(() => void runProbeOnce(), PROBE_INTERVAL_MS);
 }
 
 function stopProbing(): void {
@@ -111,19 +108,17 @@ function stopProbing(): void {
   probeTimer = null;
 }
 
-export function installConnectivityProbe(
-  lockfilePaths: string[],
-): () => Promise<void> {
+export function installConnectivityProbe(): () => Promise<void> {
   // Returns the probe's promise so the manual-retry IPC handler can await
   // completion before reporting the post-probe state back to the renderer.
-  const runProbe = () => runProbeOnce(lockfilePaths);
+  const runProbe = () => runProbeOnce();
 
   powerMonitor.on("suspend", stopProbing);
-  powerMonitor.on("resume", () => startProbing(lockfilePaths));
+  powerMonitor.on("resume", () => startProbing());
 
   app.on("browser-window-focus", () => {
     if (!probeTimer) {
-      startProbing(lockfilePaths);
+      startProbing();
     }
   });
 
@@ -133,6 +128,6 @@ export function installConnectivityProbe(
     }
   });
 
-  startProbing(lockfilePaths);
+  startProbing();
   return runProbe;
 }

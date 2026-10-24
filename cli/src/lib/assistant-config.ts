@@ -4,10 +4,12 @@ import { dirname, join } from "path";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import {
-  readLockfile as readLockfileAtPaths,
+  readLockfile,
+  readRawLockfile,
   withLockfileLock,
 } from "@mycadet/local-mode";
 import {
+  parseLockfile,
   type AppProcessRecord,
   type LocalAssistantResources,
   type Lockfile,
@@ -70,10 +72,6 @@ export function getLocalInstanceDir(
 
 export function getDaemonPidPath(resources?: LocalAssistantResources): string {
   return join(getLocalInstanceDir(resources), "workspace", "cadet.pid");
-}
-
-function readLockfile(): Lockfile {
-  return readLockfileAtPaths(getLockfilePaths(getCurrentEnvironment()));
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
@@ -301,18 +299,6 @@ export function removeLockfileAssistant(assistantId: string): void {
 }
 
 /**
- * Read the first existing lockfile for an explicitly-provided environment.
- * This is the cross-env read path used by {@link loadAllAssistantsAcrossEnvs}
- * (the shared {@link readLockfile} resolves the *current* env): callers can
- * enumerate state from every env without flipping `process.env` or the
- * persisted default. Reads never write, so no env's lockfile is touched from
- * the current env's process.
- */
-function readLockfileForEnv(env: EnvironmentDefinition): Lockfile {
-  return readLockfileAtPaths(getLockfilePaths(env));
-}
-
-/**
  * Load assistant entries from every known environment's lockfile.
  *
  * Each {@link SEEDS} entry has its own on-host data layout (config dir,
@@ -332,7 +318,9 @@ export function loadAllAssistantsAcrossEnvs(
   const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
   const all: LockfileAssistant[] = [];
   for (const env of envList) {
-    all.push(...readLockfileForEnv(env).assistants);
+    all.push(
+      ...parseLockfile(readRawLockfile(getLockfilePaths(env))).assistants,
+    );
   }
   return all;
 }

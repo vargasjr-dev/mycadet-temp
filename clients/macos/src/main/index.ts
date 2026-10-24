@@ -437,8 +437,7 @@ app
     // bootstrap rather than briefly showing the default idle dot.
     installStatusIpc();
     installEscapeMonitor();
-    const lockfilePaths = resolveLockfilePaths(process.env);
-    const runProbe = installConnectivityProbe(lockfilePaths);
+    const runProbe = installConnectivityProbe();
     installConnectivityIpc(runProbe);
     // Start watching the lockfile before the tray installs so the assistant
     // switcher submenu has data on its first right-click.

@@ -70,7 +70,7 @@ const { installConnectivityProbe } = await import("./connectivity-probe");
 // installConnectivityProbe has a module-level guard (probeTimer) that prevents
 // double-starting. Call it once and use the returned runProbe to trigger
 // individual probe cycles with different lockfile states.
-const runProbe = installConnectivityProbe(["/mock/lockfile.json"]);
+const runProbe = installConnectivityProbe();
 
 beforeEach(() => {
   backendReachableCalls = [];
