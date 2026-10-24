@@ -1,0 +1,126 @@
+import { describe, expect, test } from "bun:test";
+
+import { healConflictedLocalPorts } from "../port-heal.js";
+import { makeEntry } from "../../__tests__/helpers/lockfile-entry.js";
+
+/** Every port free, no listener pids, no sibling claims. */
+const freeDeps = {
+  isPortFree: async () => true,
+  findListenerPid: () => undefined,
+  otherReservedPorts: () => [],
+};
+
+describe("healConflictedLocalPorts", () => {
+  test("a local entry with all ports free passes through untouched", async () => {
+    const entry = makeEntry();
+    expect(await healConflictedLocalPorts(entry, freeDeps)).toBe(null);
+    expect(entry.resources?.daemonPort).toBe(7801);
+    expect(entry.resources?.gatewayPort).toBe(7831);
+    expect(entry.resources?.cesPort).toBe(7790);
+  });
+
+  test("a foreign-held daemon port is reallocated from the env base", async () => {
+    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async (port) => port !== 9000 && port !== 7821,
+    });
+    // 9000 is held; the walk starts at the prod daemon base 7821 — but
+    // 7821 is "occupied" too — and lands on the first genuinely free port.
+    expect(result?.moves).toEqual([
+      { field: "daemonPort", from: 9000, to: 7822 },
+    ]);
+    expect(entry.resources?.daemonPort).toBe(7822);
+    expect(entry.resources?.gatewayPort).toBe(7831);
+  });
+
+  test("a port held by one of our own processes is never moved", async () => {
+    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async (port) => port !== 9000,
+      // an orphaned cadet daemon owns the recorded port
+      findListenerPid: (port) => (port === 9000 ? 4242 : undefined),
+      isOurProcess: (pid) => pid === 4242,
+    });
+    expect(result).toBe(null);
+    expect(entry.resources?.daemonPort).toBe(9000);
+  });
+
+  test("a held port with no discoverable listener is treated as foreign", async () => {
+    const entry = makeEntry({ resources: { daemonPort: 9000 } });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async (port) => port !== 9000,
+      findListenerPid: () => undefined, // lsof blind — move anyway
+    });
+    expect(result?.moves).toEqual([
+      { field: "daemonPort", from: 9000, to: 7821 },
+    ]);
+  });
+
+  test("a moved gateway port rewrites the runtime url to match", async () => {
+    const entry = makeEntry({ resources: { gatewayPort: 9001 } });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async (port) => port !== 9001,
+    });
+    expect(result?.moves).toEqual([
+      { field: "gatewayPort", from: 9001, to: 7830 },
+    ]);
+    expect(entry.resources?.gatewayPort).toBe(7830);
+    expect(entry.runtimeUrl).toBe("http://127.0.0.1:7830");
+  });
+
+  test("a portless runtime url survives the gateway move", async () => {
+    const entry = makeEntry({
+      runtimeUrl: "http://127.0.0.1/some/path",
+      resources: { gatewayPort: 9001 },
+    });
+    await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async (port) => port !== 9001,
+    });
+    expect(entry.runtimeUrl).toBe("http://127.0.0.1/some/path");
+  });
+
+  test("the walk skips sibling claims, the entry's own ports, and fresh allocations", async () => {
+    const entry = makeEntry({
+      resources: { daemonPort: 9000, gatewayPort: 9001 },
+    });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      // both recorded ports are held by a foreign process
+      isPortFree: async (port) => port !== 9000 && port !== 9001,
+      otherReservedPorts: () => [7821], // a sibling already claims the base
+    });
+    // daemon: 7821 claimed by a sibling → 7822. gateway: 7830 free but the
+    // just-allocated daemon port and the abandoned 9000/9001 are excluded
+    // where they matter — gateway walks from 7830 and lands there.
+    expect(result?.moves).toEqual([
+      { field: "daemonPort", from: 9000, to: 7822 },
+      { field: "gatewayPort", from: 9001, to: 7830 },
+    ]);
+  });
+
+  test("docker entries pass through untouched", async () => {
+    const entry = makeEntry({
+      cloud: "docker",
+      resources: { daemonPort: 9000 },
+    });
+    const result = await healConflictedLocalPorts(entry, {
+      ...freeDeps,
+      isPortFree: async () => false,
+    });
+    expect(result).toBe(null);
+    expect(entry.resources?.daemonPort).toBe(9000);
+  });
+
+  test("an entry without resources passes through untouched", async () => {
+    const entry = makeEntry();
+    // The contract always parses resources for a local entry; the guard
+    // exists for the same defensive reason wake's own does.
+    (entry as { resources?: unknown }).resources = undefined;
+    expect(await healConflictedLocalPorts(entry, freeDeps)).toBe(null);
+  });
+});

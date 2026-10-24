@@ -1207,7 +1207,7 @@ export async function startCes(
  * Uses `lsof` on macOS/Linux. Returns undefined if no listener is found
  * or the command fails.
  */
-function findPidListeningOnPort(port: number): number | undefined {
+export function findPidListeningOnPort(port: number): number | undefined {
   try {
     const output = execFileSync(
       "lsof",

@@ -20,6 +20,8 @@ import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
 } from "../lib/http-client.js";
+import { healConflictedLocalPorts } from "../lib/port-heal.js";
+import { yellow } from "../lib/color.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
@@ -229,6 +231,26 @@ export async function wakeAssistant(
     );
   }
   const resources = entry.resources;
+
+  // Port auto-heal: a recorded port something else holds (a still-running
+  // vellum assistant on the pre-de-clash ports, a stray listener) used to
+  // kill the daemon on EADDRINUSE — or worse, leave a foreign listener
+  // answering this wake's health probes. Move the entry off foreign-held
+  // ports before anything binds, and say so loudly. Ports held by our own
+  // processes are left for the orphan path to adopt. Local only: docker
+  // ports are published by existing containers and need a recreate, which
+  // the docker path below reports on its own.
+  const portHeal = await healConflictedLocalPorts(entry);
+  if (portHeal) {
+    saveLockfileAssistant(entry);
+    for (const move of portHeal.moves) {
+      console.warn(
+        yellow(
+          `⚠️  ${entry.assistantId}: ${move.field} ${move.from} is held by another process — moved to ${move.to}.`,
+        ),
+      );
+    }
+  }
 
   const pidFile = getDaemonPidPath(resources);
 
