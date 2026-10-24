@@ -1,10 +1,7 @@
 import { useNavigate } from "react-router";
 
 import { AccountShell } from "@app/components/account/account-shell";
-import {
-  NEW_ASSISTANT_PARAM,
-  withSkipResearch,
-} from "@app/domains/onboarding/onboarding-destination";
+import { NEW_ASSISTANT_PARAM } from "@app/domains/onboarding/onboarding-destination";
 import { SETUP_NAVIGATE } from "@app/domains/onboarding/onboarding-navigation";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
@@ -42,9 +39,7 @@ export function StartScreen() {
             fullWidth
             onClick={() =>
               void navigate(
-                withSkipResearch(
-                  `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
-                ),
+                `${routes.onboarding.research}?${NEW_ASSISTANT_PARAM}=1`,
                 SETUP_NAVIGATE,
               )
             }

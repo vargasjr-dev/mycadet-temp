@@ -12,22 +12,6 @@
     "downloadWindowsApp": "下載 Windows 應用程式",
     "claim": "認領"
   },
-  "hatchingScreen": {
-    "apiKeyFailed": "您的 API 金鑰無效",
-    "genericFailure": "發生了一些錯誤",
-    "localFallbackPitch": "立即開始使用本機助理",
-    "updateApiKey": "更新 API 金鑰",
-    "ready": "您的助理已準備就緒！",
-    "waking": "正在喚醒…",
-    "wakingBody": "請稍候，您的助理啟動後會向您提出一些問題。",
-    "progressAriaLabel": "助理啟動進度",
-    "phase": {
-      "initializing": "正在準備中…",
-      "provisioning": "正在設定您的助理…",
-      "connecting": "正在連線至您的助理…",
-      "ready": "就緒"
-    }
-  },
   "addRemoteOriginDialog": {
     "title": "新增遠端助理",
     "body": "貼上您的助理配對頁面提供的 HTTPS 連結。",
@@ -174,5 +158,9 @@
     "providerSignup": "該登入尚未連結 Cadet 帳號。請先註冊，然後登入。",
     "loginIncomplete": "您的帳號需要額外步驟才能完成登入。請在網頁上登入，然後再試一次。",
     "desktopUpdateRequired": "此版本的 Cadet 桌面應用程式無法登入。請更新應用程式，然後再試一次。"
+  },
+  "hatchingScreen": {
+    "genericFailure": "發生了一些錯誤",
+    "localFallbackPitch": "立即開始使用本機助理"
   }
 }

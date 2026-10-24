@@ -9,10 +9,8 @@ import {
 import { sanitizeReturnTo } from "@/utils/return-to";
 import { getSession } from "@/lib/auth/allauth-client";
 import {
-  canSkipOnboardingResearch,
   isNewAssistantFunnel,
   onboardingDestinationAfterConsent,
-  withSkipResearch,
 } from "@/domains/onboarding/onboarding-destination";
 import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { isLocalClient } from "@/lib/local-mode";
@@ -329,14 +327,9 @@ export function resolveNativePostAuthDestination(
   // Consent settles at the shell's screen (/account/consent), then the signup
   // rides returnTo into the same post-consent destination the privacy screen
   // used to hand off.
-  const skipResearch = canSkipOnboardingResearch();
-  const postConsentDestination = onboardingDestinationAfterConsent({
+  const signupNext = onboardingDestinationAfterConsent({
     isLocalHatch: false,
-    skipResearch,
   });
-  const signupNext = skipResearch
-    ? withSkipResearch(postConsentDestination)
-    : postConsentDestination;
   return `/account/consent?returnTo=${encodeURIComponent(signupNext)}`;
 }
 

@@ -509,7 +509,11 @@ export function RootLayout() {
       void navigate(routes.onboarding.research);
     },
     replayHatchFailure: () => {
-      void navigate(`${routes.onboarding.hatching}?preview=true&fail=1`);
+      const to = `${routes.onboarding.hatching}?preview=true&fail=1`;
+      if (hardNavigateIfCrossBundle(to)) {
+        return;
+      }
+      void navigate(to);
     },
   });
 

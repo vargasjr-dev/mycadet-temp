@@ -17,9 +17,8 @@ mock.module("@mycadet/design-library/components/button", () => ({
   }) => <button onClick={onClick}>{children}</button>,
 }));
 
-const { StartScreen } = await import(
-  "@app/domains/onboarding/pages/start-screen"
-);
+const { StartScreen } =
+  await import("@app/domains/onboarding/pages/start-screen");
 
 describe("StartScreen", () => {
   beforeEach(() => navigateMock.mockClear());
@@ -32,15 +31,13 @@ describe("StartScreen", () => {
   // The CTA creates an assistant, so it carries the new-assistant marker: this
   // screen is the Back target in platform mode, and without the marker a user
   // whose selected assistant is already onboarded is bounced to /assistant on
-  // the way back in. Non-production builds rewrite research to the hatch
-  // screen with the skip marker.
   test("the single CTA re-enters the funnel as a new-assistant walk", () => {
     render(<StartScreen />);
 
     fireEvent.click(screen.getByText("Create your assistant"));
 
     expect(navigateMock).toHaveBeenCalledWith(
-      "/assistant/onboarding/hatching?new_assistant=1&skip_research=1",
+      "/assistant/onboarding/research?new_assistant=1",
       { replace: true },
     );
   });

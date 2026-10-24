@@ -85,7 +85,7 @@ describe("useOnboardingWindowSize", () => {
       "/account/onboarding/hosting",
       "/account/onboarding/api-key",
       "/assistant/onboarding/privacy",
-      "/assistant/onboarding/hatching",
+      "/account/onboarding/hatching",
     ]) {
       setOnboardingWindowMock.mockClear();
       currentPath = step;
@@ -96,7 +96,7 @@ describe("useOnboardingWindowSize", () => {
   });
 
   test("re-applies when navigating from onboarding to the main app", () => {
-    currentPath = "/assistant/onboarding/hatching";
+    currentPath = "/account/onboarding/hatching";
     const { rerender } = renderHook(() => useOnboardingWindowSize());
     expect(setOnboardingWindowMock).toHaveBeenLastCalledWith(true);
 

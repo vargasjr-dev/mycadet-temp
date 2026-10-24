@@ -49,14 +49,13 @@ function redirectPath(decision: NavigationDecision): string | null {
 // forced to cadet-cloud so a local-mode client provisions on the cloud).
 const RESEARCH_FUNNEL_URL =
   "/assistant/onboarding/research?hosting=cadet-cloud";
-const HATCHING_FUNNEL_URL =
-  "/assistant/onboarding/hatching?hosting=cadet-cloud";
+const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
 
 // A signup consents at the shell's screen carrying the post-consent funnel
-// destination as the returnTo (non-production builds skip research).
+// destination as the returnTo.
 const consentCarry = () =>
   `/account/consent?returnTo=${encodeURIComponent(
-    "/assistant/onboarding/hatching?skip_research=1",
+    "/assistant/onboarding/research",
   )}`;
 
 const ALLOW: NavigationDecision = { action: "allow" };
@@ -187,9 +186,9 @@ describe("resolveNavigation", () => {
     // -- authenticated, onboarding routes ---------------------------------
 
     test("allows authenticated user on onboarding route regardless of assistant count", () => {
-      expect(guard(s({}), "/assistant/onboarding/hatching")).toEqual(ALLOW);
+      expect(guard(s({}), "/account/onboarding/hatching")).toEqual(ALLOW);
       expect(
-        guard(s({ hasAssistants: false }), "/assistant/onboarding/hatching"),
+        guard(s({ hasAssistants: false }), "/account/onboarding/hatching"),
       ).toEqual(ALLOW);
     });
 
@@ -212,19 +211,19 @@ describe("resolveNavigation", () => {
       expect(
         guard(
           s({ hasAssistants: false, tosAccepted: true, privacyConsent: true }),
-          "/assistant/onboarding/hatching?hosting=local",
+          "/account/onboarding/hatching?hosting=local",
         ),
       ).toEqual(ALLOW);
     });
 
     test("allows non-local user on onboarding screens regardless of assistant count", () => {
       expect(
-        guard(s({ isLocalClient: false }), "/assistant/onboarding/hatching"),
+        guard(s({ isLocalClient: false }), "/account/onboarding/hatching"),
       ).toEqual(ALLOW);
       expect(
         guard(
           s({ isLocalClient: false, hasAssistants: false }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -238,7 +237,7 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             hasConsentRecord: false,
           }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual({ action: "redirect", to: "/account/consent" });
     });
@@ -255,7 +254,7 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             hasConsentRecord: false,
           }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -264,7 +263,7 @@ describe("resolveNavigation", () => {
       expect(
         guard(
           s({ tosAccepted: true, privacyConsent: true }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -278,7 +277,7 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             hasConsentRecord: false,
           }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual({ action: "redirect", to: "/account/consent" });
     });
@@ -293,7 +292,7 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             hasConsentRecord: false,
           }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual({ action: "redirect", to: "/account/consent" });
     });
@@ -308,7 +307,7 @@ describe("resolveNavigation", () => {
             privacyConsent: false,
             hasConsentRecord: false,
           }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -317,7 +316,7 @@ describe("resolveNavigation", () => {
       expect(
         guard(
           s({ hasAssistants: false, tosAccepted: true, privacyConsent: true }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -591,7 +590,7 @@ describe("resolveNavigation", () => {
     test("redirects authenticated platform user without assistants to hatching", () => {
       expect(guard(s({ hasAssistants: false }))).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/hatching",
+        to: "/account/onboarding/hatching",
       });
     });
 
@@ -599,7 +598,7 @@ describe("resolveNavigation", () => {
       expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual(
         {
           action: "redirect",
-          to: "/assistant/onboarding/hatching",
+          to: "/account/onboarding/hatching",
         },
       );
     });
@@ -607,7 +606,7 @@ describe("resolveNavigation", () => {
     test("redirects a consented no-assistant cloud user to hatching", () => {
       expect(guard(s({ hasAssistants: false }))).toEqual({
         action: "redirect",
-        to: "/assistant/onboarding/hatching",
+        to: "/account/onboarding/hatching",
       });
     });
 
@@ -656,8 +655,8 @@ describe("resolveNavigation", () => {
     // `returnTo`.
     test("a hatching bounce keeps the bare consent screen", () => {
       for (const url of [
-        "/assistant/onboarding/hatching",
-        "/assistant/onboarding/hatching?hosting=cadet-cloud",
+        "/account/onboarding/hatching",
+        "/account/onboarding/hatching?hosting=cadet-cloud",
       ]) {
         expect(guard(s(UNCONSENTED), url)).toEqual({
           action: "redirect",
@@ -897,7 +896,7 @@ describe("resolveNavigation", () => {
       expect(
         intercept(
           s({ tosAccepted: false, privacyConsent: false }),
-          "/assistant/onboarding/hatching",
+          "/account/onboarding/hatching",
         ),
       ).toEqual(ALLOW);
     });
@@ -1306,9 +1305,8 @@ describe("resolveNavigation", () => {
         ),
       ).toEqual({
         action: "redirect",
-        // Non-production build: the post-consent destination skips research.
         to: `/account/consent?returnTo=${encodeURIComponent(
-          "/assistant/onboarding/hatching?skip_research=1",
+          "/assistant/onboarding/research",
         )}`,
       });
     });
