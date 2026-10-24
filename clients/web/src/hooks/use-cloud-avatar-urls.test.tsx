@@ -48,7 +48,6 @@ const actualApi = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({ ...actualApi, listAssistants }));
 
 const { useAuthStore } = await import("@/stores/auth-store");
-const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const {
@@ -217,21 +216,7 @@ describe("useCloudAvatarUrls", () => {
     expect(listAssistants).toHaveBeenCalledTimes(1);
   });
 
-  test("a different user gets a fresh list", async () => {
-    const wrapper = createWrapper();
-    const { result } = renderHook(() => useCloudAvatarUrls(), { wrapper });
-    await waitFor(() => {
-      expect(result.current.get("a")).toBe(WITH_AVATAR);
-    });
-
-    act(() => signIn("user-2"));
-
-    await waitFor(() => {
-      expect(listAssistants).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  test("an organization switch gets a fresh list", async () => {
+  test("a different assistant gets a fresh list", async () => {
     const wrapper = createWrapper();
     const { result } = renderHook(() => useCloudAvatarUrls(), { wrapper });
     await waitFor(() => {
@@ -239,13 +224,13 @@ describe("useCloudAvatarUrls", () => {
     });
 
     act(() =>
-      useOrganizationStore.setState({ currentOrganizationId: "org-2" }),
+      useResolvedAssistantsStore.setState({ activeAssistantId: "asst-2" }),
     );
 
     await waitFor(() => {
       expect(listAssistants).toHaveBeenCalledTimes(2);
     });
-    useOrganizationStore.setState({ currentOrganizationId: null });
+    useResolvedAssistantsStore.setState({ activeAssistantId: null });
   });
 
   test("never writes the resolved-assistants store", async () => {
@@ -319,7 +304,7 @@ describe("suppressPlatformAvatarUrl", () => {
     expect(result.current.has("a")).toBe(false);
     expect(listAssistants).toHaveBeenCalledTimes(1);
     expect(
-      queryClient.getQueryState(cloudAvatarUrlsQueryKey("user-1", null))
+      queryClient.getQueryState(cloudAvatarUrlsQueryKey(null))
         ?.status,
     ).toBe("success");
   });
@@ -375,7 +360,7 @@ describe("supersedeCloudAvatar", () => {
       ],
     });
     const queryClient = new QueryClient();
-    const key = cloudAvatarUrlsQueryKey("user-1", null);
+    const key = cloudAvatarUrlsQueryKey(null);
     queryClient.setQueryData(key, new Map([[PAIRED_UUID, WITH_AVATAR]]));
 
     supersedeCloudAvatar(queryClient, "paired-slug");

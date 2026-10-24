@@ -626,7 +626,7 @@ describe("useChooserRowAvatar", () => {
         queryClient
           .getQueryData<
             Map<string, string>
-          >(cloudAvatarUrlsQueryKey("user-1", "org-1"))
+          >(cloudAvatarUrlsQueryKey("active"))
           ?.has("uuid-other"),
       ).toBe(false);
       await waitFor(() => {
@@ -669,7 +669,7 @@ describe("useChooserRowAvatar", () => {
         queryClient
           .getQueryData<
             Map<string, string>
-          >(cloudAvatarUrlsQueryKey("user-1", "org-1"))
+          >(cloudAvatarUrlsQueryKey("active"))
           ?.has("other"),
       ).toBe(false);
       await waitFor(() => {
