@@ -199,9 +199,12 @@ export function getMediaStreamWebsocketHandlers() {
         "Opening upstream media-stream WS to runtime",
       );
 
+      // Bun's client takes a non-standard options object carrying the
+      // forwarded identity headers; the DOM types only know subprotocols,
+      // so the options ride past them untyped.
       const upstream = new WebSocket(upstreamUrl, {
         headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
-      } as unknown as string[]);
+      } as never);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

@@ -229,7 +229,7 @@ describe("RuntimeHttpServer live voice WebSocket shell", () => {
   function openLiveVoiceClient(): WebSocket {
     const ws = new WebSocket(`${wsBaseUrl}/v1/live-voice`, {
       headers: gatewayIdentityHeaders,
-    } as unknown as string[]);
+    } as never);
     clients.push(ws);
     return ws;
   }

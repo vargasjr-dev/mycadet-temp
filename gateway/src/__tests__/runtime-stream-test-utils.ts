@@ -129,6 +129,7 @@ export type FakeRuntime = {
 export function startFakeRuntime(banner?: string | Uint8Array): FakeRuntime {
   const received: Uint8Array[] = [];
   let upgradeUrl: URL | undefined;
+  let upgradeHeaders: Headers | undefined;
   let resolveConnected!: (ws: import("bun").ServerWebSocket<unknown>) => void;
   const connected = new Promise<import("bun").ServerWebSocket<unknown>>(
     (resolve) => {
@@ -139,6 +140,7 @@ export function startFakeRuntime(banner?: string | Uint8Array): FakeRuntime {
     port: 0,
     fetch(req, srv) {
       upgradeUrl = new URL(req.url);
+      upgradeHeaders = req.headers;
       if (srv.upgrade(req)) {
         return undefined as never;
       }
@@ -161,7 +163,13 @@ export function startFakeRuntime(banner?: string | Uint8Array): FakeRuntime {
       close() {},
     },
   });
-  return { server, received, connected, upgradeUrl: () => upgradeUrl };
+  return {
+    server,
+    received,
+    connected,
+    upgradeUrl: () => upgradeUrl,
+    upgradeHeaders: () => upgradeHeaders,
+  };
 }
 
 /** Poll until `predicate` holds, so tests need no fixed sleeps. */

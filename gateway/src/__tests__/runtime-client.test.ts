@@ -200,7 +200,8 @@ describe("forwardToRuntime", () => {
 
     const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
     const headers = calledInit.headers as Record<string, string>;
-    expect(headers["Authorization"]).toMatch(/^Bearer ey/);
+    expect(headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    expect(headers["x-cadet-principal-type"]).toBe("svc_gateway");
   });
 
   test("passes abort signal from createTimeoutController", async () => {
@@ -323,7 +324,8 @@ describe("forwardTwilioVoiceWebhook", () => {
     expect(sentBody.originalUrl).toBe(originalUrl);
 
     const headers = calledInit.headers as Record<string, string>;
-    expect(headers["Authorization"]).toMatch(/^Bearer ey/);
+    expect(headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    expect(headers["x-cadet-principal-type"]).toBe("svc_gateway");
   });
 });
 

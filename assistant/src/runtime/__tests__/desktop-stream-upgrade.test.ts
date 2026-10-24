@@ -68,7 +68,7 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
     // closed by the desktop-stream open handler rather than refused pre-upgrade.
     const ws = new WebSocket(`ws://${baseUrl}/v1/desktop/stream`, {
       headers: gatewayIdentityHeaders,
-    } as unknown as string[]);
+    } as never);
     const closed = await waitForClose(ws);
     expect(closed.code).toBe(4008);
     expect(closed.reason).toBe(
@@ -89,7 +89,7 @@ test("self-hosted containers cannot stream", async () => {
     const baseUrl = `127.0.0.1:${server.actualPort}`;
     const ws = new WebSocket(`ws://${baseUrl}/v1/desktop/stream`, {
       headers: gatewayIdentityHeaders,
-    } as unknown as string[]);
+    } as never);
     expect((await waitForClose(ws)).code).toBe(4008);
   } finally {
     await server.stop();
