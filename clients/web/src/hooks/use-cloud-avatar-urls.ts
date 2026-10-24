@@ -7,8 +7,7 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
-import { useRequestOrganizationId } from "@/stores/organization-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import {
   resolveCloudAssistantId,
   useResolvedAssistantsStore,
@@ -22,14 +21,12 @@ const EMPTY_AVATAR_URLS: CloudAvatarUrls = new Map();
 export const CLOUD_AVATAR_URLS_STALE_TIME_MS = 60_000;
 
 /**
- * Keyed by user and organization: a sign-out never serves another account's
- * thumbnails, and an org switch rescopes the list with the request header.
+ * Keyed by the active assistant: cloud data is assistant-scoped, the session
+ * resolves its organization through that selection, and a switch re-scopes
+ * the list with the request header.
  */
-export function cloudAvatarUrlsQueryKey(
-  userId: string | null,
-  organizationId: string | null,
-) {
-  return ["cloudAvatarUrls", userId, organizationId] as const;
+export function cloudAvatarUrlsQueryKey(assistantId: string | null) {
+  return ["cloudAvatarUrls", assistantId ?? "none"] as const;
 }
 
 const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
@@ -106,11 +103,10 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
   const hasCloudSession = useHasCloudSession();
-  const userId = useAuthStore.use.user()?.id ?? null;
   const isOrgReady = useIsOrgReady();
-  const organizationId = useRequestOrganizationId();
+  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const query = useQuery<CloudAvatarUrls>({
-    queryKey: cloudAvatarUrlsQueryKey(userId, organizationId),
+    queryKey: cloudAvatarUrlsQueryKey(activeAssistantId),
     queryFn: fetchCloudAvatarUrls,
     enabled: hasCloudSession && isOrgReady && !isCadetCloudRemote(),
     staleTime: CLOUD_AVATAR_URLS_STALE_TIME_MS,
