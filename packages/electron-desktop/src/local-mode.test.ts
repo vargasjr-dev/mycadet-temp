@@ -1120,6 +1120,8 @@ describe("cadet:localMode:wake handler", () => {
       ["run", path.join("/repo", "cli", "src", "index.ts"), "wake", "asst-1"],
     ]);
     lastChild.emit("close", 0);
+    await tick(); // the chain spawns the gateway's own re-lease
+    lastChild.emit("close", 0);
     expect(await pending).toEqual({ ok: true });
   });
 
