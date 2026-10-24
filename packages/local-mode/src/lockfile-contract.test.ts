@@ -229,7 +229,6 @@ describe("parseLockfile", () => {
             daemonPort: 7778,
             runtimeVersion: "v0.8.13",
             runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-            qdrantPort: 7779,
             cesPort: 7780,
             signingKey: "hunter2",
           },
@@ -243,7 +242,6 @@ describe("parseLockfile", () => {
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-      qdrantPort: 7779,
       cesPort: 7780,
       signingKey: "hunter2",
     });
@@ -255,7 +253,6 @@ describe("parseLockfile", () => {
       daemonPort: 7778,
       runtimeVersion: "v0.8.13",
       runtimeInstallDir: "/tmp/cadet/runtime/0.8.13",
-      qdrantPort: 7779,
       cesPort: 7780,
     });
   });

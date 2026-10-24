@@ -68,9 +68,9 @@ const fetchCloudAssistantsMock = spyOn(
   cloudClient,
   "fetchCloudAssistants",
 ).mockResolvedValue([]);
-const checkManagedHealthMock = spyOn(
+const checkCloudHealthMock = spyOn(
   healthCheck,
-  "checkManagedHealth",
+  "checkCloudHealth",
 ).mockResolvedValue({ status: "healthy", detail: null });
 
 // ---------------------------------------------------------------------------
@@ -118,8 +118,8 @@ afterEach(() => {
   });
   fetchCloudAssistantsMock.mockReset();
   fetchCloudAssistantsMock.mockResolvedValue([]);
-  checkManagedHealthMock.mockReset();
-  checkManagedHealthMock.mockResolvedValue({ status: "healthy", detail: null });
+  checkCloudHealthMock.mockReset();
+  checkCloudHealthMock.mockResolvedValue({ status: "healthy", detail: null });
   readRootProcessesMock.mockReturnValue({});
 });
 
@@ -131,7 +131,7 @@ afterAll(() => {
   readCloudTokenMock.mockRestore();
   fetchCurrentUserMock.mockRestore();
   fetchCloudAssistantsMock.mockRestore();
-  checkManagedHealthMock.mockRestore();
+  checkCloudHealthMock.mockRestore();
   rmSync(testDir, { recursive: true, force: true });
 });
 
@@ -238,7 +238,7 @@ describe("cadet ps — platform status line", () => {
       },
     ]);
     getActiveAssistantMock.mockReturnValue(null);
-    checkManagedHealthMock.mockImplementation(async () => ({
+    checkCloudHealthMock.mockImplementation(async () => ({
       status: "healthy",
       detail: null,
     }));
@@ -311,8 +311,8 @@ describe("cadet ps — platform status line", () => {
       },
     ]);
     getActiveAssistantMock.mockReturnValue("assistant-123");
-    checkManagedHealthMock.mockImplementation(async (_runtimeUrl, id) => ({
-      status: id === "assistant-123" ? "healthy" : "sleeping",
+    checkCloudHealthMock.mockImplementation(async (entry) => ({
+      status: entry.assistantId === "assistant-123" ? "healthy" : "sleeping",
       detail: null,
     }));
 
@@ -388,7 +388,7 @@ describe("cadet ps <built-in process name> details", () => {
         cloud: "cloud",
       },
     ]);
-    checkManagedHealthMock.mockImplementation(async () => ({
+    checkCloudHealthMock.mockImplementation(async () => ({
       status: "healthy",
       detail: null,
     }));

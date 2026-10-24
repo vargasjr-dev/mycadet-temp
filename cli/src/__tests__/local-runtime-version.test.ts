@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
-import type { LocalInstanceResources } from "../lib/assistant-config.js";
+import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { ensureLocalRuntime } from "../lib/local.js";
 
 // Only `instanceDir` is read, and only after the validation guard passes —
@@ -10,7 +10,9 @@ import { ensureLocalRuntime } from "../lib/local.js";
 // sufficient for the rejection cases.
 const resources = {
   instanceDir: "/tmp/cadet-nonexistent-instance",
-} as unknown as LocalInstanceResources;
+  daemonPort: 0,
+  gatewayPort: 0,
+} satisfies LocalAssistantResources;
 
 const VALID_VERSIONS = ["latest", "v1.2.3", "1.2.3", "0.6.0-staging.5"];
 const MALICIOUS_VERSIONS = [

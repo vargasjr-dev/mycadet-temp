@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import {
   getLockfileData,
   resolveExistingLocalSigningKey,
-  upsertRendererLockfileAssistant,
+  upsertLockfileAssistant,
 } from "@mycadet/local-mode";
 
 // wake, upgrade and recover resolve the existing signing identity through
@@ -119,97 +119,6 @@ describe("local signing identity continuity", () => {
     });
   });
 
-  describe("renderer saves preserve host identity", () => {
-    const lockfilePath = () => join(instanceDir, "lockfile.json");
-    function writeOnDisk(value: unknown): void {
-      writeFileSync(lockfilePath(), JSON.stringify(value, null, 2));
-    }
-    function readOnDisk(): Record<string, unknown> {
-      return JSON.parse(readFileSync(lockfilePath(), "utf-8")) as Record<
-        string,
-        unknown
-      >;
-    }
-
-    test("a renderer read/select/save preserves host resources and credentials", () => {
-      const entry = {
-        assistantId: "local-1",
-        cloud: "local",
-        name: "Example Assistant",
-        runtimeUrl: "http://127.0.0.1:7830",
-        guardianBootstrapSecret: "bootstrap-secret",
-        resources: {
-          instanceDir: "/example/instance",
-          gatewayPort: 7830,
-          daemonPort: 7831,
-          signingKey: key,
-          cesPort: 7832,
-          futureHostField: "keep",
-        },
-      };
-      writeOnDisk({ assistants: [entry], activeAssistant: null });
-      const read = getLockfileData([lockfilePath()]);
-      expect(read.ok).toBe(true);
-      if (!read.ok) {
-        throw new Error("fixture read failed");
-      }
-      const view = read.data.assistants[0]!;
-      expect(view.resources).not.toHaveProperty("signingKey");
-      const result = upsertRendererLockfileAssistant(
-        [lockfilePath()],
-        { ...view },
-        "local-1",
-      );
-      expect(result.ok).toBe(true);
-      expect(readOnDisk()).toEqual({
-        assistants: [entry],
-        activeAssistant: "local-1",
-      });
-    });
-
-    test("stale or forged renderer resources cannot replace host state", () => {
-      const entry = {
-        assistantId: "local-1",
-        cloud: "local",
-        guardianBootstrapSecret: "keep",
-        resources: {
-          instanceDir: "/example/current",
-          signingKey: key,
-          gatewayPort: 7830,
-          daemonPort: 7831,
-        },
-      };
-      writeOnDisk({ assistants: [entry], activeAssistant: null });
-      const result = upsertRendererLockfileAssistant(
-        [lockfilePath()],
-        {
-          assistantId: "local-1",
-          name: "Updated",
-          guardianBootstrapSecret: "replace",
-          resources: {
-            instanceDir: "/example/stale",
-            signingKey: other,
-          },
-        },
-        undefined,
-      );
-      expect(result.ok).toBe(true);
-      expect(readOnDisk().assistants).toEqual([{ ...entry, name: "Updated" }]);
-    });
-
-    test("a renderer save refuses an unreadable registry without replacing it", () => {
-      writeFileSync(lockfilePath(), "{ invalid");
-      expect(
-        upsertRendererLockfileAssistant(
-          [lockfilePath()],
-          { assistantId: "local-1" },
-          "local-1",
-        ),
-      ).toMatchObject({ ok: false, status: 409 });
-      expect(readFileSync(lockfilePath(), "utf-8")).toBe("{ invalid");
-    });
-  });
-
   describe("across desktop saves and wake cycles", () => {
     test("read/select/save and repeated key loads preserve a retained credential", () => {
       const registry = join(instanceDir, "registry.json");
@@ -240,7 +149,7 @@ describe("local signing identity continuity", () => {
           throw new Error("fixture read failed");
         }
         expect(
-          upsertRendererLockfileAssistant(
+          upsertLockfileAssistant(
             [registry],
             { ...view.data.assistants[0]! },
             "example",

@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 
 const { handleCreateRemoteWebPairingChallenge } =
   await import("../http/routes/remote-web-pairing-challenge.js");
@@ -11,10 +13,20 @@ const {
 } = await import("../remote-web/pairing-challenge-store.js");
 const { resetRemoteWebPairingVerificationRateLimiterForTests } =
   await import("../remote-web/pairing-verification-rate-limit-store.js");
+const { testWorkspaceDir } = await import("./test-preload.js");
 
 const CLIENT_IP = "203.0.113.10";
 const LOOPBACK_IP = "127.0.0.1";
 const PUBLIC_BASE_URL = "https://paired.example.com";
+
+// The challenge route self-sources the public URL from this gateway's own
+// workspace record (#519) — each test seeds exactly what it needs.
+function seedIngressPublicBaseUrl(url: string): void {
+  writeFileSync(
+    join(testWorkspaceDir, "config.json"),
+    JSON.stringify({ ingress: { publicBaseUrl: url } }),
+  );
+}
 
 function makeChallengeRequest(): Request {
   return new Request("http://localhost:7830/v1/remote-web/pairing-challenge", {
@@ -23,7 +35,7 @@ function makeChallengeRequest(): Request {
       host: "localhost:7830",
       "content-type": "application/json",
     },
-    body: JSON.stringify({ publicBaseUrl: PUBLIC_BASE_URL }),
+    body: JSON.stringify({}),
   });
 }
 
@@ -88,6 +100,7 @@ async function createChallenge(): Promise<{
   verificationUri: string;
   expiresAt: string;
 }> {
+  seedIngressPublicBaseUrl(PUBLIC_BASE_URL);
   const res = await handleCreateRemoteWebPairingChallenge(
     makeChallengeRequest(),
     LOOPBACK_IP,
@@ -103,6 +116,9 @@ async function createChallenge(): Promise<{
 beforeEach(() => {
   resetRemoteWebPairingChallengesForTests();
   resetRemoteWebPairingVerificationRateLimiterForTests();
+  // The loopback self-source reads the workspace record — clear it between
+  // tests so seeded state never leaks.
+  rmSync(join(testWorkspaceDir, "config.json"), { force: true });
 });
 
 describe("remote web pairing verification", () => {

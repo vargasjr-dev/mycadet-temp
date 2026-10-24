@@ -13,7 +13,6 @@ export const GATEWAY_PORT = process.env.GATEWAY_PORT
 /** Default ports used as scan start points for multi-instance allocation. */
 export const DEFAULT_DAEMON_PORT = 7821;
 export const DEFAULT_GATEWAY_PORT = 7830;
-export const DEFAULT_QDRANT_PORT = 6333;
 export const DEFAULT_CES_PORT = 8090;
 
 export const VALID_REMOTE_HOSTS = [

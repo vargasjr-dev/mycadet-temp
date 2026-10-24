@@ -35,7 +35,6 @@ test("CLI wake emits actionable structured identity error and exits 1 without mu
             daemonPort: 27821,
             gatewayPort: 27830,
             cesPort: 27822,
-            qdrantPort: 26333,
           },
         },
       ],

@@ -166,12 +166,12 @@ export const routes = {
     // the flow. Renders in the app bundle; this constant stays for the same
     // reason as `welcome`.
     start: r("/account/onboarding/start"),
-    // Hosting + api-key moved to the app bundle
-    // (`/account/onboarding/{hosting,api-key}`); the URL strings stay for
-    // the same reason as `welcome`/`start`.
+    // Hosting + api-key + hatching moved to the app bundle
+    // (`/account/onboarding/{hosting,api-key,hatching}`); the URL strings
+    // stay for the same reason as `welcome`/`start`.
     hosting: r("/account/onboarding/hosting"),
     apiKey: r("/account/onboarding/api-key"),
-    hatching: r("/assistant/onboarding/hatching"),
+    hatching: r("/account/onboarding/hatching"),
     // SPIKE — research-onboarding front door. Reachable on demand behind auth
     // alone (no flag; see routes.tsx).
     research: r("/assistant/onboarding/research"),

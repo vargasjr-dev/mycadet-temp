@@ -1,12 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { LockfileAssistantSchema } from "@mycadet/local-mode/contract";
-import type { LockfileAssistant } from "../assistant-config.js";
 import { resolveRuntimeUrl } from "../runtime-url.js";
-
-function makeEntry(overrides: Partial<LockfileAssistant>): LockfileAssistant {
-  return LockfileAssistantSchema.parse(overrides);
-}
+import { makeEntry } from "../../__tests__/helpers/lockfile-entry.js";
 
 describe("resolveRuntimeUrl", () => {
   test("local cloud uses gateway-loopback /v1/<subpath>", () => {

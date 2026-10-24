@@ -16,6 +16,7 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { use } from "../commands/use.js";
+import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-use-test-"));
 const originalArgv = [...process.argv];
@@ -24,18 +25,6 @@ const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
-
-function makeEntry(
-  assistantId: string,
-  extra: Partial<LockfileAssistant> = {},
-): LockfileAssistant {
-  return {
-    assistantId,
-    runtimeUrl: `http://localhost:${7800 + assistantId.length}`,
-    cloud: "local",
-    ...extra,
-  };
-}
 
 function writeLockfile(
   entries: LockfileAssistant[],
@@ -85,8 +74,8 @@ describe("cadet use", () => {
 
   test("sets active assistant by unique display name", async () => {
     writeLockfile([
-      makeEntry("assistant-1", { name: "Alice" }),
-      makeEntry("assistant-2", { name: "Bob" }),
+      makeEntry({ assistantId: "assistant-1", name: "Alice" }),
+      makeEntry({ assistantId: "assistant-2", name: "Bob" }),
     ]);
     process.argv = ["bun", "cadet", "use", "Alice"];
 
@@ -100,8 +89,8 @@ describe("cadet use", () => {
 
   test("sets active assistant by unquoted multi-word display name", async () => {
     writeLockfile([
-      makeEntry("assistant-1", { name: "Example Assistant" }),
-      makeEntry("assistant-2", { name: "Bob" }),
+      makeEntry({ assistantId: "assistant-1", name: "Example Assistant" }),
+      makeEntry({ assistantId: "assistant-2", name: "Bob" }),
     ]);
     process.argv = ["bun", "cadet", "use", "Example", "Assistant"];
 
@@ -114,7 +103,10 @@ describe("cadet use", () => {
   });
 
   test("prints active assistant with display name and id", async () => {
-    writeLockfile([makeEntry("assistant-1", { name: "Alice" })], "assistant-1");
+    writeLockfile(
+      [makeEntry({ assistantId: "assistant-1", name: "Alice" })],
+      "assistant-1",
+    );
 
     await use();
 
@@ -126,8 +118,8 @@ describe("cadet use", () => {
   test("rejects ambiguous display names without changing active assistant", async () => {
     writeLockfile(
       [
-        makeEntry("assistant-1", { name: "Alice" }),
-        makeEntry("assistant-2", { name: "Alice" }),
+        makeEntry({ assistantId: "assistant-1", name: "Alice" }),
+        makeEntry({ assistantId: "assistant-2", name: "Alice" }),
       ],
       "assistant-2",
     );

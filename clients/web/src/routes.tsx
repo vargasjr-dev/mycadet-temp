@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
 
 import { authMiddleware } from "@/lib/auth/auth-middleware";
-import { onboardingCompletedMiddleware } from "@/lib/onboarding-middleware";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
@@ -365,28 +364,6 @@ export const routeTree = [
                 ),
             },
           },
-          // Onboarding funnel — new-user setup flow (prechat → hatching). Consent
-          // happens at the app shell's /account/consent before any of this.
-          {
-            middleware: [onboardingCompletedMiddleware],
-            children: [
-              // Hosting + api-key moved to the app bundle
-              // (`/account/onboarding/{hosting,api-key}`).
-              // `onboarding/start` moved to the app bundle
-              // (`/account/onboarding/start`) — web's route is deleted and
-              // the app path is emitted by the resolver's welcome fork.
-              {
-                path: "onboarding/hatching",
-                lazy: {
-                  Component: () =>
-                    import("@/domains/onboarding/pages/hatching-screen").then(
-                      (m) => m.HatchingScreen,
-                    ),
-                },
-              },
-            ],
-          },
-
           // Settings and logs require a resolved assistant. The gate
           // defers child rendering until the lifecycle reaches active/
           // self_hosted, so route components can use useActiveAssistantId().

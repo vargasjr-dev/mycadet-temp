@@ -90,7 +90,6 @@ import {
   DEFAULT_CES_PORT,
   DEFAULT_DAEMON_PORT,
   DEFAULT_GATEWAY_PORT,
-  DEFAULT_QDRANT_PORT,
 } from "../lib/constants.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
@@ -110,7 +109,6 @@ function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
               instanceDir: testDir,
               daemonPort: DEFAULT_DAEMON_PORT,
               gatewayPort: DEFAULT_GATEWAY_PORT,
-              qdrantPort: DEFAULT_QDRANT_PORT,
               cesPort: DEFAULT_CES_PORT,
             },
             ...extraEntryFields,
@@ -221,7 +219,14 @@ describe("sleep command", () => {
   test("default sleep passes the non-escalating service stopper", async () => {
     process.argv = ["bun", "cadet", "sleep", "sleep-test"];
     await sleep();
-    expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(1, join(assistantRootDir, "workspace", "cadet.pid"), "assistant", undefined, 45_000, realProcess.stopProcessGracefully);
+    expect(stopProcessByPidFileMock).toHaveBeenNthCalledWith(
+      1,
+      join(assistantRootDir, "workspace", "cadet.pid"),
+      "assistant",
+      undefined,
+      45_000,
+      realProcess.stopProcessGracefully,
+    );
   });
 
   test("force stops the assistant even when an active call lease exists", async () => {
@@ -274,7 +279,6 @@ describe("sleep command", () => {
           instanceDir: testDir,
           daemonPort: 8501,
           gatewayPort: 9999,
-          qdrantPort: DEFAULT_QDRANT_PORT,
           cesPort: DEFAULT_CES_PORT,
         },
       });
@@ -405,7 +409,6 @@ describe("sleep command", () => {
                   instanceDir: join(testDir, "instance-1"),
                   daemonPort: DEFAULT_DAEMON_PORT,
                   gatewayPort: DEFAULT_GATEWAY_PORT,
-                  qdrantPort: DEFAULT_QDRANT_PORT,
                   cesPort: DEFAULT_CES_PORT,
                 },
               },
@@ -417,7 +420,6 @@ describe("sleep command", () => {
                   instanceDir: join(testDir, "instance-2"),
                   daemonPort: DEFAULT_DAEMON_PORT,
                   gatewayPort: DEFAULT_GATEWAY_PORT,
-                  qdrantPort: DEFAULT_QDRANT_PORT,
                   cesPort: DEFAULT_CES_PORT,
                 },
               },

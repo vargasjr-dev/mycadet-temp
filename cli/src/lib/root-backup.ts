@@ -20,13 +20,15 @@ import { dirname, join, posix, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
+import {
+  resolveExistingLocalSigningKey,
+  type LocalAssistantResources,
+} from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config.js";
 import {
   getDaemonPidPath,
-  isLocalInstanceResources,
   saveLockfileAssistant,
-  type LocalInstanceResources,
+  getLocalInstanceDir,
 } from "./assistant-config.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
@@ -268,12 +270,12 @@ export interface RootStorage {
 export class LocalRootStorage implements RootStorage {
   readonly root: string;
   initialRunning?: Set<string>;
-  private readonly resources: LocalInstanceResources;
+  private readonly resources: LocalAssistantResources;
   constructor(readonly entry: LockfileAssistant) {
-    if (!entry.resources || !isLocalInstanceResources(entry.resources))
+    if (!entry.resources)
       throw new Error("Local backup requires the instance's resource paths.");
     this.resources = entry.resources;
-    this.root = resolve(entry.resources.instanceDir);
+    this.root = resolve(getLocalInstanceDir(entry.resources));
   }
   async running(): Promise<boolean> {
     const running = new Set(
@@ -291,7 +293,11 @@ export class LocalRootStorage implements RootStorage {
       ["gateway", resources.gatewayPort],
       ["ces", resources.cesPort],
     ] as const) {
-      if (!running.has(service) && (await probePort(port))) {
+      if (
+        !running.has(service) &&
+        port !== undefined &&
+        (await probePort(port))
+      ) {
         throw new Error(
           `${service} port ${port} is occupied without a live PID file; stop that service before backup/restore.`,
         );
@@ -351,6 +357,7 @@ export class LocalRootStorage implements RootStorage {
     ] as const) {
       if (
         this.initialRunning?.has(service) &&
+        port !== undefined &&
         !(await waitForDaemonReady(port))
       )
         throw new Error(`${service} did not become healthy after restart.`);
@@ -809,9 +816,9 @@ async function captureBackup(
   output: string,
   ops: RootBackupOps,
 ): Promise<void> {
-  if (entry.cloud !== "docker" && isLocalInstanceResources(entry.resources)) {
+  if (entry.cloud !== "docker" && entry.resources) {
     for (const root of STATE_ROOTS) {
-      const path = resolve(entry.resources.instanceDir, root);
+      const path = resolve(getLocalInstanceDir(entry.resources), root);
       if (resolve(output) === path || resolve(output).startsWith(`${path}/`))
         throw new Error("Save backups outside the persistent service roots.");
     }
@@ -916,7 +923,7 @@ async function restoreBackup(
     replacing = true;
     try {
       await ops.storage.replace(source);
-      if (entry.cloud !== "docker" && isLocalInstanceResources(entry.resources)) {
+      if (entry.cloud !== "docker" && entry.resources) {
         entry.resources = { ...entry.resources, signingKey };
         ops.save(entry);
       }

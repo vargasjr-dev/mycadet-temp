@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   findAssistantByName,
-  type LocalInstanceResources,
+  getLocalInstanceDir,
   type LockfileAssistant,
   saveLockfileAssistant,
 } from "../lib/assistant-config.js";
@@ -21,8 +21,8 @@ import {
 } from "../lib/root-backup.js";
 
 let directory: string,
-  source: LockfileAssistant & { resources: LocalInstanceResources },
-  target: LockfileAssistant & { resources: LocalInstanceResources },
+  source: LockfileAssistant,
+  target: LockfileAssistant,
   ops: HostTeleportOps;
 let order: string[],
   running: Map<string, boolean>,
@@ -33,9 +33,7 @@ async function instance(
   name: string,
   cloud: "local" | "docker",
   byte: number,
-): Promise<
-  LockfileAssistant & { resources: LocalInstanceResources }
-> {
+): Promise<LockfileAssistant> {
   const root = join(directory, name);
   for (const state of STATE_ROOTS) {
     await mkdir(join(root, state), { recursive: true });
@@ -64,7 +62,6 @@ async function instance(
       daemonPort: 1,
       gatewayPort: 2,
       cesPort: 3,
-      qdrantPort: 4,
       signingKey: byte.toString(16).padStart(2, "0").repeat(32),
     },
   };
@@ -166,19 +163,19 @@ test("moves all four roots and encrypted key pairs using the exact stopped-sourc
   for (const state of STATE_ROOTS) {
     expect(
       await readFile(
-        join(target.resources!.instanceDir, state, "state"),
+        join(getLocalInstanceDir(target.resources), state, "state"),
         "utf8",
       ),
     ).toBe(`source:${state}`);
   }
   expect(
     await readFile(
-      join(target.resources!.instanceDir, "ces-security", "keys.enc"),
+      join(getLocalInstanceDir(target.resources), "ces-security", "keys.enc"),
     ),
   ).toEqual(Buffer.from([7, 0, 255]));
   expect(
     await readFile(
-      join(target.resources!.instanceDir, "ces-security", "store.key"),
+      join(getLocalInstanceDir(target.resources), "ces-security", "store.key"),
     ),
   ).toEqual(Buffer.alloc(32, 8));
   expect(findAssistantByName("target")!.resources!.signingKey).toBe(

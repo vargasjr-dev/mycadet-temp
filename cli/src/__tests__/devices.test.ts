@@ -188,7 +188,6 @@ describe("cadet devices", () => {
         instanceDir: testDir,
         gatewayPort,
         daemonPort: 8501,
-        qdrantPort: 9001,
         cesPort: 9002,
       },
     });

@@ -28,7 +28,6 @@ function writeLocalLockfile(overrides: Record<string, unknown> = {}): void {
       instanceDir,
       daemonPort: 30101,
       gatewayPort: 30102,
-      qdrantPort: 30103,
     },
     ...overrides,
   });
@@ -147,7 +146,6 @@ describe("getLocalAssistantStatus", () => {
         instanceDir,
         daemonPort: await unusedPort(),
         gatewayPort: 30102,
-        qdrantPort: 30103,
       },
     });
     writeAssistantPid(String(process.pid));
@@ -167,7 +165,6 @@ describe("getLocalAssistantStatus", () => {
         instanceDir,
         daemonPort: await unusedPort(),
         gatewayPort: 30102,
-        qdrantPort: 30103,
       },
     });
     const pidPath = writeAssistantPid(String(process.pid));
@@ -194,7 +191,6 @@ describe("getLocalAssistantStatus", () => {
           instanceDir,
           daemonPort,
           gatewayPort: await unusedPort(),
-          qdrantPort: 30103,
         },
       });
       writeAssistantPid(String(process.pid));

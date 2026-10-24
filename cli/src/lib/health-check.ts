@@ -16,65 +16,6 @@ export interface HealthCheckResult {
   version?: string;
 }
 
-export async function checkManagedHealth(
-  runtimeUrl: string,
-  assistantId: string,
-): Promise<HealthCheckResult> {
-  const { readCloudToken } = await import("./cloud-client.js");
-  const token = readCloudToken();
-  if (!token) {
-    return {
-      status: "error (auth)",
-      detail: "not logged in — run `cadet login`",
-    };
-  }
-
-  let headers: Record<string, string>;
-  try {
-    const { authHeaders } = await import("./cloud-client.js");
-    headers = await authHeaders(token, runtimeUrl);
-  } catch (err) {
-    return {
-      status: "error (auth)",
-      detail: err instanceof Error ? err.message : "org lookup failed",
-    };
-  }
-
-  try {
-    const url = `${runtimeUrl}/v1/assistants/${encodeURIComponent(assistantId)}/healthz/`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      HEALTH_CHECK_TIMEOUT_MS,
-    );
-
-    const response = await loopbackSafeFetch(url, {
-      signal: controller.signal,
-      headers,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { status: `error (${response.status})`, detail: null };
-    }
-
-    const data = HealthResponseSchema.catch({}).parse(await response.json());
-    const status = data.status || "unknown";
-    return {
-      status,
-      detail: status !== "healthy" ? (data.message ?? null) : null,
-      version: data.version,
-    };
-  } catch (error) {
-    const status =
-      error instanceof Error && error.name === "AbortError"
-        ? "timeout"
-        : "unreachable";
-    return { status, detail: null };
-  }
-}
-
 export interface ManagedProcessEntry {
   name: string;
   status: "running" | "not_running" | "unreachable";
@@ -120,50 +61,6 @@ export async function fetchGatewayPs(
 
     const data = (await response.json()) as ManagedPsResponse;
     return Array.isArray(data.processes) ? data.processes : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchManagedPs(
-  runtimeUrl: string,
-  assistantId: string,
-): Promise<ManagedPsResponse | null> {
-  const { readCloudToken, authHeaders } = await import("./cloud-client.js");
-  const token = readCloudToken();
-  if (!token) return null;
-
-  let headers: Record<string, string>;
-  try {
-    headers = await authHeaders(token, runtimeUrl);
-  } catch {
-    return null;
-  }
-
-  // Try the /ps endpoint first; fall back to legacy /connection-status
-  // for platform versions that haven't rolled it out yet.
-  try {
-    const psUrl = `${runtimeUrl}/v1/assistants/${encodeURIComponent(assistantId)}/ps/`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    const response = await loopbackSafeFetch(psUrl, {
-      signal: controller.signal,
-      headers,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (response.ok) {
-      return (await response.json()) as ManagedPsResponse;
-    }
-
-    // /ps not available — fall back to legacy connection-status
-    if (response.status === 404 || response.status === 405) {
-      return fetchLegacyConnectionStatus(runtimeUrl, assistantId, headers);
-    }
-
-    return null;
   } catch {
     return null;
   }
@@ -268,9 +165,51 @@ export async function checkHealth(
 export async function fetchCloudPs(
   entry: LockfileAssistant,
 ): Promise<ManagedPsResponse | null> {
-  return entry.runtimeUrl
-    ? fetchManagedPs(entry.runtimeUrl, entry.assistantId)
-    : null;
+  if (!entry.runtimeUrl) return null;
+  const runtimeUrl = entry.runtimeUrl;
+
+  const { readCloudToken, authHeaders } = await import("./cloud-client.js");
+  const token = readCloudToken();
+  if (!token) return null;
+
+  let headers: Record<string, string>;
+  try {
+    headers = await authHeaders(token, runtimeUrl);
+  } catch {
+    return null;
+  }
+
+  // Try the /ps endpoint first; fall back to legacy /connection-status
+  // for platform versions that haven't rolled it out yet.
+  try {
+    const psUrl = `${runtimeUrl}/v1/assistants/${encodeURIComponent(entry.assistantId)}/ps/`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    const response = await loopbackSafeFetch(psUrl, {
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (response.ok) {
+      return (await response.json()) as ManagedPsResponse;
+    }
+
+    // /ps not available — fall back to legacy connection-status
+    if (response.status === 404 || response.status === 405) {
+      return fetchLegacyConnectionStatus(
+        runtimeUrl,
+        entry.assistantId,
+        headers,
+      );
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -280,7 +219,62 @@ export async function fetchCloudPs(
 export async function checkCloudHealth(
   entry: LockfileAssistant,
 ): Promise<HealthCheckResult> {
-  return entry.runtimeUrl
-    ? checkManagedHealth(entry.runtimeUrl, entry.assistantId)
-    : { status: "unknown", detail: "no runtime URL" };
+  if (!entry.runtimeUrl) {
+    return { status: "unknown", detail: "no runtime URL" };
+  }
+  const runtimeUrl = entry.runtimeUrl;
+
+  const { readCloudToken } = await import("./cloud-client.js");
+  const token = readCloudToken();
+  if (!token) {
+    return {
+      status: "error (auth)",
+      detail: "not logged in — run `cadet login`",
+    };
+  }
+
+  let headers: Record<string, string>;
+  try {
+    const { authHeaders } = await import("./cloud-client.js");
+    headers = await authHeaders(token, runtimeUrl);
+  } catch (err) {
+    return {
+      status: "error (auth)",
+      detail: err instanceof Error ? err.message : "org lookup failed",
+    };
+  }
+
+  try {
+    const url = `${runtimeUrl}/v1/assistants/${encodeURIComponent(entry.assistantId)}/healthz/`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+      () => controller.abort(),
+      HEALTH_CHECK_TIMEOUT_MS,
+    );
+
+    const response = await loopbackSafeFetch(url, {
+      signal: controller.signal,
+      headers,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return { status: `error (${response.status})`, detail: null };
+    }
+
+    const data = HealthResponseSchema.catch({}).parse(await response.json());
+    const status = data.status || "unknown";
+    return {
+      status,
+      detail: status !== "healthy" ? (data.message ?? null) : null,
+      version: data.version,
+    };
+  } catch (error) {
+    const status =
+      error instanceof Error && error.name === "AbortError"
+        ? "timeout"
+        : "unreachable";
+    return { status, detail: null };
+  }
 }

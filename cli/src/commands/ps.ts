@@ -20,13 +20,13 @@ import {
   getActiveAssistant,
   getAssistantDisplayName,
   getDaemonPidPath,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
-  type LocalInstanceResources,
   lookupAssistantByIdentifier,
   readRootProcesses,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
@@ -343,12 +343,12 @@ async function getLocalProcesses(
   entry: LockfileAssistant,
 ): Promise<TableRow[]> {
   const resources = entry.resources;
-  if (!isLocalInstanceResources(resources)) {
+  if (!resources) {
     throw new Error(
       `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`,
     );
   }
-  const cadetDir = resources.instanceDir;
+  const cadetDir = getLocalInstanceDir(resources);
   const gatewayUrl = getGatewayUrl(entry);
   const token = loadGuardianToken(entry.assistantId)?.accessToken;
 
@@ -385,7 +385,7 @@ async function getLocalProcesses(
 // gateway version that predates the route): probe each known process
 // directly.
 async function detectLocalProcessesFallback(
-  resources: LocalInstanceResources,
+  resources: LocalAssistantResources,
   cadetDir: string,
 ): Promise<TableRow[]> {
   const assistantSpec: ProcessSpec = {
@@ -398,7 +398,7 @@ async function detectLocalProcessesFallback(
     {
       name: "├─ qdrant",
       pgrepName: "qdrant",
-      port: resources.qdrantPort,
+      port: 0,
       pidFile: join(cadetDir, "workspace", "data", "qdrant", "qdrant.pid"),
     },
     {
@@ -793,7 +793,7 @@ async function getAssistantListHealth(
   entry: LockfileAssistant,
 ): Promise<AssistantHealth> {
   const resources = entry.resources;
-  if (entry.cloud === "local" && isLocalInstanceResources(resources)) {
+  if (entry.cloud === "local" && resources) {
     // TODO(ATL-306): Remove readPidFile/getDaemonPidPath in favor of
     // fetching daemon PIDs via the health API (Gateway Security Migration).
     const pid = readPidFile(getDaemonPidPath(resources));

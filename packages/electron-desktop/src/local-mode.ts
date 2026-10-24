@@ -23,7 +23,9 @@ import {
   pairingPoll,
   pairingStart,
   unpairAssistant,
-  upsertRendererLockfileAssistant,
+  LockfileAssistantSchema,
+  readRawLockfileStrict,
+  upsertLockfileAssistant,
   type CliInvocation,
   type GuardianTokenOptions,
   type LockfileWriteResult,
@@ -429,9 +431,13 @@ export const installLocalMode = (): void => {
     "cadet:localMode:saveLockfileAssistant",
     z.tuple([assistantRecord, z.string().optional()]),
     ([assistant, activeAssistant]): LockfileWriteResult => {
-      const result = upsertRendererLockfileAssistant(
+      const parsed = LockfileAssistantSchema.safeParse(assistant);
+      if (!parsed.success) {
+        return { ok: false, error: "Invalid assistant metadata" };
+      }
+      const result = upsertLockfileAssistant(
         lockfilePaths,
-        assistant,
+        parsed.data,
         activeAssistant,
       );
       return result.ok
@@ -655,5 +661,4 @@ export const installLocalMode = (): void => {
       );
     },
   );
-
 };

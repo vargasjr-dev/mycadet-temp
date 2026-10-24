@@ -72,7 +72,6 @@ async function fixture() {
       daemonPort: 7821,
       gatewayPort: 7831,
       cesPort: 7790,
-      qdrantPort: 6334,
       signingKey: "07".repeat(32),
     },
   };

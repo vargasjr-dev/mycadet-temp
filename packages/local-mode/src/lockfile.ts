@@ -292,7 +292,34 @@ export function upsertLockfileAssistant(
       (a: Record<string, unknown>) => a?.assistantId === assistant.assistantId,
     );
     if (existingIdx >= 0) {
-      assistants[existingIdx] = { ...assistants[existingIdx], ...assistant };
+      const existing = assistants[existingIdx]!;
+      let incoming: Record<string, unknown> = assistant;
+      const storedResources = existing.resources;
+      const incomingResources = incoming.resources;
+      if (
+        incomingResources !== undefined &&
+        typeof storedResources === "object" &&
+        storedResources !== null &&
+        "signingKey" in storedResources &&
+        typeof storedResources.signingKey === "string" &&
+        !(
+          typeof incomingResources === "object" &&
+          incomingResources !== null &&
+          "signingKey" in incomingResources &&
+          incomingResources.signingKey !== undefined
+        )
+      ) {
+        // The signing key is host custody: a save whose resources ride
+        // without one (the renderer's stripped view) never unsets it.
+        incoming = {
+          ...incoming,
+          resources: {
+            ...incomingResources,
+            signingKey: storedResources.signingKey,
+          },
+        };
+      }
+      assistants[existingIdx] = { ...existing, ...incoming };
     } else {
       assistants.push(assistant);
     }
@@ -302,64 +329,6 @@ export function upsertLockfileAssistant(
     }
 
     return writeRawLockfile(lockfilePaths, lockfile);
-  });
-  return locked.ok ? locked.value : lockFailure(locked.error);
-}
-
-/**
- * Host-owned lockfile fields that never ride a renderer payload: the secrets,
- * resources, process bookkeeping, and the recorded topology. The strip is the
- * renderer boundary — the payload parses through `LockfileAssistantSchema`
- * directly, one schema with no second allowlist to drift.
- */
-const HOST_OWNED_FIELDS = [
-  "cloud",
-  "resources",
-  "bearerToken",
-  "watcherPid",
-  "guardianBootstrapSecret",
-  "containerInfo",
-  "mgmtSocket",
-  "conversationKey",
-] as const;
-
-/**
- * Apply a renderer-originated lockfile upsert. The stripped payload parses
- * through the lockfile schema directly, and the merge writes only keys the
- * payload carried — a parse materializes defaults and catches for omitted
- * keys (cloud's `catch` would read "local"), which would clobber host state
- * the renderer never sent.
- */
-export function upsertRendererLockfileAssistant(
-  lockfilePaths: string[],
-  assistant: Record<string, unknown>,
-  activeAssistant: string | undefined,
-): WriteResult {
-  if (!assistant || typeof assistant.assistantId !== "string") {
-    return { ok: false, status: 400, error: "Missing assistant.assistantId" };
-  }
-
-  const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
-    const read = readRawLockfileStrict(lockfilePaths);
-    if (!read.ok) {
-      return { ok: false, status: 409, error: read.error };
-    }
-
-    const payload = { ...assistant };
-    for (const field of HOST_OWNED_FIELDS) {
-      delete payload[field];
-    }
-    const parsed = LockfileAssistantSchema.safeParse(payload);
-    if (!parsed.success) {
-      return { ok: false, status: 400, error: "Invalid assistant metadata" };
-    }
-    const update: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(parsed.data)) {
-      if (key in payload) {
-        update[key] = value;
-      }
-    }
-    return upsertLockfileAssistant(lockfilePaths, update, activeAssistant);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

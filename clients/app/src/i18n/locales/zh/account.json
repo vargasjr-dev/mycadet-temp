@@ -137,7 +137,8 @@
     "connecting": "正在连接…",
     "continue": "继续",
     "back": "返回",
-    "loginToUse": "登录以使用"
+    "loginToUse": "登录以使用",
+    "tryAgain": "重试"
   },
   "addRemoteOriginDialog": {
     "title": "添加远程助手",
@@ -195,5 +196,20 @@
     "apiKeyPlaceholder": "输入您的 API 密钥",
     "noKeyPrompt": "没有密钥？",
     "getKeyLink": "在此处获取 API 密钥"
+  },
+  "hatchingScreen": {
+    "apiKeyFailed": "您的 API 密钥无效",
+    "genericFailure": "发生了一些错误",
+    "ready": "您的助手已准备就绪！",
+    "updateApiKey": "更新 API 密钥",
+    "waking": "正在唤醒…",
+    "wakingBody": "请稍候，您的助手启动后会向您提出一些问题。",
+    "progressAriaLabel": "助手启动进度",
+    "phase": {
+      "initializing": "正在准备中…",
+      "provisioning": "正在设置您的助手…",
+      "connecting": "正在连接到您的助手…",
+      "ready": "就绪"
+    }
   }
 }

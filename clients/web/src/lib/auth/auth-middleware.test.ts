@@ -233,7 +233,10 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     expect(window.location.href.endsWith(routes.onboarding.hosting)).toBe(true);
   });
 
-  test("routes to welcome once resolved with no platform session", async () => {
+  test("admits a resolved session with no platform session — the app bundle owns the welcome fork", async () => {
+    // The local front door (welcome) moved into the app bundle (#523): web
+    // never hosts it, so an authenticated local user whose cloud session is
+    // absent is admitted here and the shell steers the onboarding fork.
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,
@@ -247,7 +250,10 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
-  test("a probe that never settles routes to welcome instead of looping", async () => {
+  test("a probe that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
+    // Same #523 split: the guard deciding on a settled-absent session (rather
+    // than re-entering the wait) is the no-loop guarantee; where the user goes
+    // next is the app bundle's call, not web's redirect.
     useAuthStore.setState({
       sessionStatus: "authenticated",
       user: fakeUser,

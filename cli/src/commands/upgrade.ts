@@ -10,7 +10,7 @@ import {
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
-  isLocalInstanceResources,
+  getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   saveLockfileAssistant,
@@ -38,7 +38,7 @@ import {
   getCloudUrl,
   readCloudToken,
 } from "../lib/cloud-client";
-import { checkManagedHealth } from "../lib/health-check.js";
+import { checkCloudHealth } from "../lib/health-check.js";
 import {
   evaluateUpgradePoll,
   resolveUpgradeTarget,
@@ -793,7 +793,7 @@ async function upgradeLocal(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  if (!entry.resources || !isLocalInstanceResources(entry.resources)) {
+  if (!entry.resources) {
     const msg = `Local assistant '${entry.assistantId}' is missing resource configuration. Re-hatch to fix.`;
     console.error(msg);
     emitCliError("UNKNOWN", msg);
@@ -954,7 +954,10 @@ async function upgradeLocal(
     );
     console.log("✅ Local assistant processes started\n");
 
-    const workspaceDir = join(upgradedResources.instanceDir, "workspace");
+    const workspaceDir = join(
+      getLocalInstanceDir(upgradedResources),
+      "workspace",
+    );
     await restoreAppServerAndAutoTunnel(
       entry.assistantId,
       upgradedResources.gatewayPort,
@@ -1107,10 +1110,7 @@ async function waitForPlatformUpgrade(
       const finalVersion = observedVersion ?? pollTarget ?? "unknown";
       const healthDeadline = Date.now() + PLATFORM_HEALTH_CONFIRM_TIMEOUT_MS;
       while (Date.now() < healthDeadline) {
-        const health = await checkManagedHealth(
-          entry.runtimeUrl || getCloudUrl(),
-          entry.assistantId,
-        );
+        const health = await checkCloudHealth(entry);
         if (health.status === "healthy") {
           console.log(`✅ Upgraded to ${finalVersion} — assistant is healthy.`);
           return;
@@ -1165,7 +1165,7 @@ async function upgradeCloud(
   // downgrades before POSTing, and bail if an upgrade is already running.
   const [assistantDetail, health] = await Promise.all([
     fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
-    checkManagedHealth(gatewayUrl || getCloudUrl(), entry.assistantId),
+    checkCloudHealth(entry),
   ]);
   // Health probe first, DB-backed field as the sleeping-assistant fallback.
   const currentVersion =

@@ -12,22 +12,6 @@
     "downloadWindowsApp": "Download the Windows app",
     "claim": "Claim"
   },
-  "hatchingScreen": {
-    "apiKeyFailed": "Your API key didn't work",
-    "genericFailure": "Something went wrong",
-    "localFallbackPitch": "Get started today with a local assistant",
-    "updateApiKey": "Update API key",
-    "ready": "Your assistant is ready!",
-    "waking": "Waking up…",
-    "wakingBody": "Hang tight, your assistant will have a few questions for you once it's up.",
-    "progressAriaLabel": "Assistant startup progress",
-    "phase": {
-      "initializing": "Getting things ready…",
-      "provisioning": "Setting up your assistant…",
-      "connecting": "Connecting to your assistant…",
-      "ready": "Ready"
-    }
-  },
   "addRemoteOriginDialog": {
     "title": "Add a Remote Assistant",
     "body": "Paste the https link your assistant’s pairing page gave you.",
@@ -174,5 +158,9 @@
     "providerSignup": "No Cadet account is linked to that login yet. Sign up first, then sign in.",
     "loginIncomplete": "Your account needs another step to finish signing in. Please sign in on the web, then try again.",
     "desktopUpdateRequired": "This version of the Cadet desktop app can't sign in. Update the app, then try again."
+  },
+  "hatchingScreen": {
+    "genericFailure": "Something went wrong",
+    "localFallbackPitch": "Get started today with a local assistant"
   }
 }

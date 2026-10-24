@@ -41,10 +41,8 @@ describe("login flow routing", () => {
         authIntent: "signup",
       }),
     ).toEqual({
-      // Non-production build: the post-consent destination skips research, so
-      // the consent bounce carries it as the returnTo.
       destination: `/account/consent?returnTo=${encodeURIComponent(
-        "/assistant/onboarding/hatching?skip_research=1",
+        "/assistant/onboarding/research",
       )}`,
       requiresFullPageNavigation: true,
     });
@@ -154,9 +152,6 @@ describe("requiresCloudSession", () => {
     ["/assistant/conversations/abc"],
     // The usage page reads from the local daemon.
     [routes.settings.usage],
-    // A managed hatch a free user chose carries no purchase to lose.
-    [routes.onboarding.hatching],
-    [`${routes.onboarding.hatching}?hosting=cadet-cloud`],
   ])("%s works on a local gateway identity", (destination) => {
     expect(requiresCloudSession(destination)).toBe(false);
   });

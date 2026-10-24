@@ -22,9 +22,13 @@ import { homedir, tmpdir } from "node:os";
 import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
-import type { LocalInstanceResources, LockfileAssistant } from "../lib/assistant-config.js";
+import {
+  getLocalInstanceDir,
+  type LockfileAssistant,
+} from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
+import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
@@ -72,26 +76,6 @@ const originalXdgData = process.env.XDG_DATA_HOME;
 
 // Directories that getRetiredDir() will use when XDG_DATA_HOME is overridden
 const retiredDir = join(testDir, "cadet", "retired");
-
-function makeEntry(assistantId: string, instanceDir: string): LockfileAssistant & {
-    runtimeUrl: string;
-    resources: LocalInstanceResources;
-  } {
-  return {
-    assistantId,
-    runtimeUrl: "http://127.0.0.1:7831",
-    cloud: "local",
-    guardianBootstrapSecret: "existing-bootstrap",
-    resources: {
-      instanceDir,
-      daemonPort: 7801,
-      gatewayPort: 7831,
-      qdrantPort: 6334,
-      cesPort: 7790,
-      signingKey: "ab".repeat(32),
-    },
-  };
-}
 
 function writeArchiveFixtures(
   name: string,
@@ -195,7 +179,10 @@ describe("restore error cases", () => {
     test(`recovery ${failure} leaves destination and registry untouched and permits retry`, async () => {
       const name = `retry-${failure}`;
       const instanceDir = join(testDir, "cadet", "assistants", name);
-      const entry = makeEntry(name, instanceDir);
+      const entry = makeEntry({
+        assistantId: name,
+        resources: { instanceDir },
+      });
       delete entry.resources!.signingKey;
       const { archivePath, metadataPath, extractedPath } = writeArchiveFixtures(
         name,
@@ -236,7 +223,11 @@ describe("restore error cases", () => {
 
   test("recovers an archived legacy identity from staging", async () => {
     const name = "legacy-staged";
-    const entry = makeEntry(name, join(testDir, "cadet", "assistants", name));
+    const entry = makeEntry({
+      guardianBootstrapSecret: "existing-bootstrap",
+      assistantId: name,
+      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
+    });
     delete entry.resources!.signingKey;
     const { extractedPath } = writeArchiveFixtures(name, entry);
     const dir = join(extractedPath, "workspace", "deprecated");
@@ -252,12 +243,18 @@ describe("restore error cases", () => {
       expect.objectContaining({ signingKey: "cd".repeat(32) }),
       { signingKey: "cd".repeat(32), bootstrapSecret: "existing-bootstrap" },
     );
-    rmSync(entry.resources!.instanceDir, { recursive: true, force: true });
+    rmSync(getLocalInstanceDir(entry.resources), {
+      recursive: true,
+      force: true,
+    });
   });
 
   test("missing identity preserves the archive and starts no processes", async () => {
     const name = "missing-key";
-    const entry = makeEntry(name, join(testDir, "cadet", "assistants", name));
+    const entry = makeEntry({
+      assistantId: name,
+      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
+    });
     delete entry.resources!.signingKey;
     const { archivePath, metadataPath } = writeArchiveFixtures(name, entry);
     process.argv = ["bun", "cadet", "restore", name];
@@ -303,7 +300,7 @@ describe("restore error cases", () => {
   test("exits 1 when target .cadet/ already exists", async () => {
     const name = "already-exists";
     const instanceDir = join(testDir, name);
-    const entry = makeEntry(name, instanceDir);
+    const entry = makeEntry({ assistantId: name, resources: { instanceDir } });
     writeArchiveFixtures(name, entry);
     // Pre-create the collision path that recover checks
     mkdirSync(join(instanceDir, ".cadet"), { recursive: true });
@@ -317,7 +314,11 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
   test("extracts to retiredDir and renames staging dir to instanceDir directly", async () => {
     const name = "named-instance";
     const instanceDir = join(testDir, "custom-location", name);
-    const entry = makeEntry(name, instanceDir);
+    const entry = makeEntry({
+      assistantId: name,
+      guardianBootstrapSecret: "existing-bootstrap",
+      resources: { instanceDir },
+    });
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
     // Named instance: targetDir is instanceDir itself (not instanceDir/.cadet)
@@ -356,7 +357,7 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     const name = "deep-nested-instance";
     // Use a path whose parent directory does not yet exist
     const instanceDir = join(testDir, "new-parent", "deeper", name);
-    const entry = makeEntry(name, instanceDir);
+    const entry = makeEntry({ assistantId: name, resources: { instanceDir } });
     const { archivePath, extractedPath } = writeArchiveFixtures(name, entry);
 
     process.argv = ["bun", "cadet", "restore", name];

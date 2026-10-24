@@ -20,8 +20,6 @@ console.warn = (...args: Parameters<typeof console.warn>) => {
 
 const { routeTree } = await import("@/routes");
 const { authMiddleware } = await import("@/lib/auth/auth-middleware");
-const { onboardingCompletedMiddleware } =
-  await import("@/lib/onboarding-middleware");
 
 afterAll(() => {
   console.warn = originalWarn;
@@ -231,38 +229,15 @@ describe("skills routes", () => {
 });
 
 describe("onboarding funnel middleware order", () => {
-  // A paid return reaches the hatching route with its funnel markers in the
-  // query string, and an unconsented user is bounced from there to the
-  // consent screen. `authMiddleware` resolves the guard with `pathname + search`, so
-  // its bounce carries the markers along as `returnTo`;
-  // `onboardingCompletedMiddleware` resolves with `pathname` alone and bounces
-  // without them. Running the auth guard first is what keeps the markers, so a
-  // reshuffle that puts the onboarding guard in front silently finishes the
-  // hatch at the baseline plan.
-  test("runs the auth guard before the onboarding guard on the hatching route", () => {
-    const order = middlewareExecutionOrder(
-      "/assistant/onboarding/hatching?hosting=cadet-cloud&post_checkout=1",
-    );
-    const authIndex = order.indexOf(authMiddleware);
-    const onboardingIndex = order.indexOf(onboardingCompletedMiddleware);
-
-    expect(authIndex).toBeGreaterThanOrEqual(0);
-    expect(onboardingIndex).toBeGreaterThanOrEqual(0);
-    expect(authIndex).toBeLessThan(onboardingIndex);
-  });
-
-  // The paid return lands here on web and Electron. Its markers survive the
-  // consent bounce because `authMiddleware` — which resolves with pathname +
-  // search — is the only guard on the route. Moving it under the onboarding
-  // guard, which resolves with the pathname alone, would drop them and finish
-  // the hatch at the baseline plan.
+  // A funnel return lands here on web and Electron; its query markers survive
+  // because `authMiddleware` — which resolves with pathname + search — is the
+  // only guard on the route.
   test("guards the research funnel route with the auth middleware alone", () => {
     const order = middlewareExecutionOrder(
       "/assistant/onboarding/research?hosting=cadet-cloud&post_checkout=1",
     );
 
     expect(order).toContain(authMiddleware);
-    expect(order).not.toContain(onboardingCompletedMiddleware);
   });
 });
 
