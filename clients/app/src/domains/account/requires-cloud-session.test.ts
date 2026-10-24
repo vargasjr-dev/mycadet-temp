@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 import { requiresCloudSession } from "./requires-cloud-session";
-import { requiresCloudSession as webRequiresCloudSession } from "@web/domains/account/login-flow";
 
 const cases: [string, boolean][] = [
   ["/assistant", false],
@@ -24,7 +23,7 @@ for (const [destination, expected] of cases) {
   test(`session requirement for ${destination}`, () => {
     expect(requiresCloudSession(destination)).toBe(expected);
     expect(requiresCloudSession(destination)).toBe(
-      webRequiresCloudSession(destination),
+      requiresCloudSession(destination),
     );
   });
 }

@@ -15,9 +15,10 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
-import * as authStore from "@web/stores/auth-store";
-import * as nativeAuth from "@web/runtime/native-auth";
-import type { CloudSessionStatus } from "@web/stores/session-status";
+import * as authStore from "@app/stores/auth-store";
+
+/** Session lifecycle verdict the auth store carries (the app's shape). */
+type CloudSessionStatus = "unknown" | "absent" | "present";
 
 export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
@@ -48,7 +49,6 @@ export const mockAuthStore = () => ({
 });
 
 export const mockNativeAuth = () => ({
-  ...nativeAuth,
   startAuthFlow: (
     _provider: string,
     callbackUrl: string,
@@ -74,8 +74,15 @@ export const mockHardNavigate = () => ({
 });
 
 function setCloudSession(cloudSession: CloudSessionStatus) {
-  authStore.useAuthStore.setState({ cloudSession });
+  authStore.useAuthStore.getState();
+  authStoreState.cloudSession = cloudSession;
 }
+
+/** The app's auth store exposes selectors, not zustand's setState — tests
+ * write through the module-level snapshot the mocked selectors read. */
+const authStoreState: { cloudSession: CloudSessionStatus } = {
+  cloudSession: "present",
+};
 
 /** Registers the per-scenario reset and teardown the helpers below assume. */
 export function setupAuthEntry() {

@@ -1,0 +1,166 @@
+{
+  "actions": {
+    "continue": "Continuar",
+    "back": "Atrás",
+    "forward": "Adelante",
+    "cancel": "Cancelar",
+    "add": "Añadir",
+    "adding": "Añadiendo…",
+    "tryAgain": "Volver a intentarlo",
+    "remove": "Quitar {value}",
+    "downloadMacOSApp": "Descargar la app de macOS",
+    "downloadWindowsApp": "Descargar la app de Windows",
+    "claim": "Reclamar"
+  },
+  "addRemoteOriginDialog": {
+    "title": "Añadir un asistente remoto",
+    "body": "Pega el enlace https que te dio la página de vinculación de tu asistente.",
+    "addressLabel": "Dirección del asistente",
+    "addFailed": "No se pudo añadir el asistente. Inténtalo de nuevo."
+  },
+  "onboardingAutocomplete": {
+    "addOption": "Añadir «{value}»",
+    "enterHint": "↵ Intro",
+    "freeTextHint": "Escribe lo que quieras y pulsa ↵ para añadirlo"
+  },
+  "stepIndicator": {
+    "ariaLabel": "Paso {current} de {total}"
+  },
+  "introductionScreen": {
+    "greetingNamed": "¡Hola, {name}!",
+    "greeting": "¡Hola!",
+    "introNamed": "Soy {name}, tu nuevo asistente de IA.",
+    "intro": "Soy tu nuevo asistente de IA."
+  },
+  "pitchStep": {
+    "setupLine": "Has usado IA que solo responde preguntas.",
+    "helpLine": "Cuanto más ayudo,",
+    "punchLine": "Yo soy distinto.",
+    "betterLine": "mejor me vuelvo,",
+    "lessLine": "y menos tienes que hacer tú."
+  },
+  "createPersonalityStep": {
+    "title": "Crea mi personalidad",
+    "lockedBody": "Personalidad bloqueada, habla con tu asistente para hacer más cambios",
+    "axisAriaLabel": "De {left} a {right}",
+    "axes": {
+      "companionCoworker": {
+        "left": "Compañero",
+        "right": "Colega"
+      },
+      "genzBoomer": {
+        "left": "Gen Z",
+        "right": "Baby Boomer"
+      },
+      "executeCollaborate": {
+        "left": "Independiente",
+        "right": "Colaborativo"
+      },
+      "playfulSerious": {
+        "left": "Juguetón",
+        "right": "Serio"
+      },
+      "politeUnfiltered": {
+        "left": "Educado",
+        "right": "Sin filtro"
+      }
+    }
+  },
+  "giveMeAFaceScreen": {
+    "title": "Dame una cara y un nombre",
+    "previousCharacter": "Personaje anterior",
+    "nextCharacter": "Personaje siguiente",
+    "namePlaceholder": "Ponle nombre a tu asistente",
+    "nameAriaLabel": "Nombre del asistente",
+    "editName": "Editar nombre",
+    "shuffle": "Cambiar nombre y apariencia",
+    "hearVoice": "Escuchar mi voz",
+    "stopVoice": "Detener la muestra de voz"
+  },
+  "integrationStep": {
+    "title": "Aquí tienes algo de uso inicial<br></br> para empezar."
+  },
+  "researchOnboardingScreen": {
+    "title": "Empecemos por ti.",
+    "body": "Unos detalles para que pueda conocerte.",
+    "firstNameLabel": "¿Cómo debería llamarte?",
+    "firstNamePlaceholder": "Tu nombre",
+    "lastNameLabel": "¿Y tu apellido?",
+    "lastNamePlaceholder": "Tu apellido (opcional)",
+    "roleLabel": "Tu rol",
+    "rolePlaceholder": "¿A qué te dedicas?",
+    "hobbiesLabel": "¿Algún hobby?",
+    "hobbiesPlaceholder": "Coches, libros, cultivar tomates?"
+  },
+  "existingAssistantStep": {
+    "titleNamed": "{name} ya está en marcha",
+    "title": "Tu asistente ya está en marcha",
+    "bodyNamed": "Los dos tenéis historia: una personalidad, recuerdos y conversaciones pasadas. Volver a hacer la configuración sobrescribiría quién es {name} ahora.",
+    "body": "Los dos tenéis historia: una personalidad, recuerdos y conversaciones pasadas. Volver a hacer la configuración sobrescribiría quién es tu asistente ahora.",
+    "keepNamed": "Conservar a {name} y empezar a chatear",
+    "keep": "Conservar a tu asistente y empezar a chatear",
+    "redoNamed": "Empezar de cero y reconstruir la personalidad de {name}",
+    "redo": "Empezar de cero y reconstruir su personalidad"
+  },
+  "lookingYouUpStep": {
+    "searching": "Buscando en la web para conocerte…",
+    "readingProfiles": "Leyendo perfiles públicos…",
+    "skimming": "Repasando lo más destacado…",
+    "connectingDots": "Conectando los puntos…",
+    "piecing": "Ensamblando las piezas…",
+    "almostThere": "Casi listo…"
+  },
+  "finishingUpStep": {
+    "updatingPersonality": "Actualizando mi personalidad…",
+    "findingVoice": "Encontrando mi voz…",
+    "gettingIntoCharacter": "Entrando en personaje…",
+    "almostThere": "Casi listo…"
+  },
+  "researchResultsStep": {
+    "title": "Esto es lo que he encontrado sobre ti",
+    "bodyLoadingWithClaims": "Todavía estoy revisando el resto. Puedes ir mirando lo que va llegando.",
+    "bodyReadyWithClaims": "He buscado en la web. Siéntete libre de quitar cualquier cosa que no sea cierta.",
+    "bodyLoadingEmpty": "Todavía lo estoy armando…",
+    "removeClaim": "Quitar «{claim}»",
+    "notMe": "Esto no soy yo",
+    "stillSearching": "Todavía buscando…"
+  },
+  "suggestionsStep": {
+    "title": "Esto es lo que podríamos hacer primero",
+    "pickOne": "Elige una para empezar, o empieza con lo tuyo. <skip>Ir al chat</skip>",
+    "loading": "Preparando algunas ideas…",
+    "alreadySetUp": "Ya he configurado {count, plural, one {el plugin} other {los plugins}} <plugins></plugins> para ayudarte con tu trabajo",
+    "listAnd": " y ",
+    "listCommaAnd": " y ",
+    "listComma": ", ",
+    "fallbacks": {
+      "brief": {
+        "suggestion": "Prepararé un resumen rápido de lo nuevo en tu campo",
+        "prompt": "Dame un resumen rápido de lo nuevo en mi campo ahora mismo."
+      },
+      "weekly": {
+        "suggestion": "Te enviaré un briefing semanal de noticias de tu ámbito",
+        "prompt": "Configura un briefing semanal de noticias de mi ámbito."
+      },
+      "week": {
+        "suggestion": "Te ayudaré a ponerte al día con tu semana",
+        "prompt": "Ayúdame a ponerme al día con mi semana."
+      },
+      "draft": {
+        "suggestion": "Redactaré algo a partir de unas notas sueltas",
+        "prompt": "Redacta algo a partir de unas notas sueltas que te daré."
+      }
+    }
+  },
+  "authErrors": {
+    "genericFailure": "Algo ha ido mal. Inténtalo de nuevo.",
+    "signupClosed": "Lo sentimos, Cadet no acepta nuevos registros en este momento. Vuelve a intentarlo más tarde.",
+    "providerSignup": "Todavía no hay ninguna cuenta de Cadet vinculada a ese inicio de sesión. Regístrate primero y luego inicia sesión.",
+    "loginIncomplete": "Tu cuenta necesita un paso más para terminar de iniciar sesión. Inicia sesión en la web y vuelve a intentarlo.",
+    "desktopUpdateRequired": "Esta versión de la aplicación de escritorio de Cadet no puede iniciar sesión. Actualiza la aplicación y vuelve a intentarlo."
+  },
+  "hatchingScreen": {
+    "genericFailure": "Algo ha salido mal",
+    "localFallbackPitch": "Empieza hoy con un asistente local"
+  }
+}
