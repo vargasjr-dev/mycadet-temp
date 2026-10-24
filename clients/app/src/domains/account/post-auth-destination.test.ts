@@ -14,7 +14,7 @@ function resolve(
     returningUser,
   });
 }
-test("untrusted redirects fall back and provider import signups preserve the platform funnel", () => {
+test("untrusted redirects fall back and provider import signups preserve the cloud funnel", () => {
   expect(resolve("https://other.example.com").destination).toBe(
     routes.assistant,
   );

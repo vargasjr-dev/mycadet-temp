@@ -5,7 +5,7 @@ import { useCloudGate } from "@/hooks/use-cloud-gate";
 
 /**
  * The settings usage page: the active assistant's usage trends and per-call
- * breakdowns, plus the cloud-usage chart when the platform is reachable. A
+ * breakdowns, plus the cloud-usage chart when the cloud is reachable. A
  * plain page — no billing sub-tab. Billing management moved off web (the
  * cloud's account pages own it now; how users reach those from the client is
  * its own piece of work), so this page carries no billing machinery of its

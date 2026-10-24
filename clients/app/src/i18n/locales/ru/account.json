@@ -107,7 +107,9 @@
     "connectRemote": "Подключить удалённого ассистента",
     "pairedWithHost": "Сопряжено · {host}",
     "paired": "Сопряжено",
-    "localAssistant": "На этом компьютере"
+    "localAssistant": "На этом компьютере",
+    "cloudHosted": "Облачный",
+    "selfHosted": "Свой сервер"
   },
   "appShell": {
     "loading": "Загрузка ассистента…",

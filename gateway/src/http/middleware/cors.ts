@@ -12,8 +12,23 @@ const log = getLogger("cors");
  * which is cross-origin relative to the local gateway at
  * `http://127.0.0.1:{port}`. Without CORS headers, the browser blocks
  * `window.cadet.fetch` requests from the webview to the gateway.
+ *
+ * The Capacitor mobile shells are the same shape: iOS serves the bundled app
+ * from `capacitor://localhost` and Android from `https://localhost`
+ * (Capacitor's default `androidScheme`; `http://localhost` was the
+ * pre-Capacitor-5 default), which are cross-origin relative to every daemon
+ * they call through a tunnel. A browser never emits a custom-scheme Origin —
+ * only the shell itself produces `capacitor://localhost` — so treating the
+ * fixed shell origins as webview origins is the mobile equivalent of the
+ * loopback allowlist.
  */
 const WEBVIEW_ORIGIN_RE = /^https:\/\/[a-z0-9-]+\.cadet\.local$/;
+
+const SHELL_WEBVIEW_ORIGINS = new Set([
+  "capacitor://localhost",
+  "https://localhost",
+  "http://localhost",
+]);
 
 /**
  * Methods the webview bridge may use when calling custom route handlers.
@@ -143,7 +158,9 @@ export function withExtensionCorsHeaders(
 export function resolveWebviewOrigin(req: Request): string | null {
   const origin = req.headers.get("origin");
   if (!origin) return null;
-  if (!WEBVIEW_ORIGIN_RE.test(origin)) return null;
+  if (!WEBVIEW_ORIGIN_RE.test(origin) && !SHELL_WEBVIEW_ORIGINS.has(origin)) {
+    return null;
+  }
   return origin;
 }
 
@@ -151,11 +168,15 @@ export function resolveWebviewOrigin(req: Request): string | null {
  * Build the CORS response headers for a matched webview origin.
  *
  * The origin is reflected back (not `*`) so credentials-mode requests work
- * and the scope is limited to the app's own webview.
+ * and the scope is limited to the app's own webview. Allow-Credentials rides
+ * along for the same reason: the shells fetch with `credentials: "include"`,
+ * and a reflected (never wildcard) origin is the only setting under which
+ * that header is meaningful.
  */
 export function corsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": ALLOWED_METHODS,
     "Access-Control-Allow-Headers": ALLOWED_HEADERS,
     "Access-Control-Max-Age": "86400",

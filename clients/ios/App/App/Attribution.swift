@@ -1,6 +1,6 @@
 import Foundation
 
-/// Marketing attribution carried from the web layer into the platform's
+/// Marketing attribution carried from the web layer into the cloud's
 /// provider-token exchange.
 ///
 /// The native shell has no cookie jar the marketing site ever wrote to, so a
@@ -28,7 +28,7 @@ enum Attribution {
         "twclid",
     ]
 
-    /// The platform truncates per field independently; this only bounds what
+    /// The cloud truncates per field independently; this only bounds what
     /// we put on the wire.
     static let valueMaxLength = 512
 

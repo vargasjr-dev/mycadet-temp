@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { createHmac } from "node:crypto";
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -14,13 +13,13 @@ import { dirname, join } from "node:path";
 import {
   getLockfileData,
   resolveExistingLocalSigningKey,
-  upsertLockfileAssistant,
+  saveLockfileAssistant,
 } from "@mycadet/local-mode";
 
 // wake, upgrade and recover resolve the existing signing identity through
 // @mycadet/local-mode before touching any process. These tests exercise that
-// contract the way the CLI consumes it: host lockfile entries, legacy on-disk
-// key files, and a renderer save in between.
+// contract the way the CLI consumes it: the on-disk key files the assistant's
+// containers persist, and a lockfile save that must not disturb them.
 describe("local signing identity continuity", () => {
   let instanceDir: string;
   const key = "ab".repeat(32);
@@ -41,19 +40,8 @@ describe("local signing identity continuity", () => {
   });
 
   describe("resolveExistingLocalSigningKey", () => {
-    test("loads the persisted key without creating disk copies", () => {
-      expect(
-        resolveExistingLocalSigningKey({
-          instanceDir,
-          signingKey: key.toUpperCase(),
-        }),
-      ).toBe(key);
-      for (const file of legacyPaths()) {
-        expect(existsSync(file)).toBe(false);
-      }
-    });
     for (const index of [0, 1]) {
-      test(`recovers legacy source ${index} without rewriting it`, () => {
+      test(`recovers key file ${index} without rewriting it`, () => {
         put(legacyPaths()[index]!, key);
         expect(resolveExistingLocalSigningKey({ instanceDir })).toBe(key);
         expect(readFileSync(legacyPaths()[index]!)).toEqual(
@@ -61,44 +49,25 @@ describe("local signing identity continuity", () => {
         );
       });
     }
-    test("matching legacy sources converge", () => {
+    test("matching key files converge", () => {
       for (const file of legacyPaths()) {
         put(file, key);
       }
-      expect(
-        resolveExistingLocalSigningKey({ instanceDir, signingKey: key }),
-      ).toBe(key);
+      expect(resolveExistingLocalSigningKey({ instanceDir })).toBe(key);
     });
     test("missing state refuses to create an identity", () => {
       expect(() => resolveExistingLocalSigningKey({ instanceDir })).toThrow(
         "signing key missing",
       );
     });
-    test("malformed persisted state cannot fall back to a different source", () => {
-      put(legacyPaths()[1]!, key);
-      for (const invalid of ["", "short", null, 123, "z".repeat(64)]) {
-        expect(() =>
-          resolveExistingLocalSigningKey({ instanceDir, signingKey: invalid }),
-        ).toThrow("signing key invalid");
-      }
-    });
-    test("the host key remains authoritative over stale legacy copies after repair", () => {
-      put(legacyPaths()[1]!, other);
-      expect(
-        resolveExistingLocalSigningKey({ instanceDir, signingKey: key }),
-      ).toBe(key);
-      expect(readFileSync(legacyPaths()[1]!)).toEqual(
-        Buffer.from(other, "hex"),
-      );
-    });
-    test("conflicting legacy copies refuse even without a persisted key", () => {
+    test("conflicting key files refuse", () => {
       put(legacyPaths()[0]!, key);
       put(legacyPaths()[1]!, other);
       expect(() => resolveExistingLocalSigningKey({ instanceDir })).toThrow(
         "signing key conflict",
       );
     });
-    test("malformed or unreadable legacy storage is not absence", () => {
+    test("malformed or unreadable key storage is not absence", () => {
       put(legacyPaths()[0]!, "ab");
       expect(() => resolveExistingLocalSigningKey({ instanceDir })).toThrow(
         "signing key invalid",
@@ -120,12 +89,13 @@ describe("local signing identity continuity", () => {
   });
 
   describe("across desktop saves and wake cycles", () => {
-    test("read/select/save and repeated key loads preserve a retained credential", () => {
+    test("a lockfile save never disturbs the key file the identity resolves from", () => {
       const registry = join(instanceDir, "registry.json");
       const payload = "synthetic-retained-credential";
       const signature = createHmac("sha256", Buffer.from(key, "hex"))
         .update(payload)
         .digest("hex");
+      put(legacyPaths()[0]!, key);
       writeFileSync(
         registry,
         JSON.stringify({
@@ -137,7 +107,6 @@ describe("local signing identity continuity", () => {
                 instanceDir,
                 gatewayPort: 7830,
                 daemonPort: 7831,
-                signingKey: key,
               },
             },
           ],
@@ -149,7 +118,7 @@ describe("local signing identity continuity", () => {
           throw new Error("fixture read failed");
         }
         expect(
-          upsertLockfileAssistant(
+          saveLockfileAssistant(
             [registry],
             { ...view.data.assistants[0]! },
             "example",

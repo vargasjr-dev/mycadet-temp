@@ -1,7 +1,7 @@
 name: Publish Docs Image
 
 # Builds the docs-site image and publishes it to Docker Hub — the
-# open-source side stops there. The platform repo's github-handler receives
+# open-source side stops there. The cloud repo's github-handler receives
 # the workflow_run webhook for this workflow, finds the Docker Hub upload
 # for the run's head SHA, copies it into the project's Artifact Registry,
 # and rolls the docs-site Cloud Run service. Everything GCP-specific lives
@@ -22,7 +22,7 @@ jobs:
   push-docs-image:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # dev carries DOCKERHUB_ACCESS_TOKEN (piped from the platform's Secret
+    # dev carries DOCKERHUB_ACCESS_TOKEN (piped from the cloud's Secret
     # Manager); the docs image is environment-agnostic.
     environment: dev
     permissions:

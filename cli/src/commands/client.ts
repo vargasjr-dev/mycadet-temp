@@ -12,7 +12,7 @@ import {
   saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import { GATEWAY_PORT } from "../lib/constants";
+import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,
   refreshGuardianToken,
@@ -63,7 +63,9 @@ function collapseHomeForDisplay(dir: string): string {
 }
 
 /** The assistant's data root (from the lockfile), for the TUI details panel. */
-function readWorkspaceRoot(entry: LockfileAssistant | null): string | undefined {
+function readWorkspaceRoot(
+  entry: LockfileAssistant | null,
+): string | undefined {
   const instanceDir = entry?.resources?.instanceDir;
   return instanceDir ? collapseHomeForDisplay(instanceDir) : undefined;
 }
@@ -100,6 +102,7 @@ export function parseArgs(): ParsedArgs {
   }
 
   let entry: LockfileAssistant | null = null;
+  const hasExplicitUrl = flagArgs.includes("--url") || flagArgs.includes("-u");
   if (positionalName) {
     const result = lookupAssistantByIdentifier(positionalName);
     if (result.status !== "found") {
@@ -108,8 +111,6 @@ export function parseArgs(): ParsedArgs {
     }
     entry = result.entry;
   } else {
-    const hasExplicitUrl =
-      flagArgs.includes("--url") || flagArgs.includes("-u");
     const active = getActiveAssistant();
     if (active) {
       const result = lookupAssistantByIdentifier(active);
@@ -134,15 +135,20 @@ export function parseArgs(): ParsedArgs {
     }
   }
 
-  if (!entry) {
+  if (!entry && !hasExplicitUrl) {
     console.error("No assistant found. Hatch one first with 'cadet hatch'.");
     process.exit(1);
   }
 
-  let runtimeUrl = getGatewayUrl(entry);
-  let assistantId = entry.assistantId;
-  let assistantName: string | undefined = getAssistantDisplayName(entry);
-  const cloud = entry.cloud;
+  // An explicit --url with no lockfile entry is the ephemeral session (the
+  // handed-over --token authenticates it) — the overrides below supply the
+  // url and the "self" assistant id, so no entry is required.
+  let runtimeUrl = entry
+    ? getGatewayUrl(entry)
+    : `http://127.0.0.1:${GATEWAY_PORT}`;
+  let assistantId = entry?.assistantId ?? DAEMON_INTERNAL_ASSISTANT_ID;
+  let assistantName = entry ? getAssistantDisplayName(entry) : undefined;
+  const cloud = entry?.cloud;
   const workspaceRoot = readWorkspaceRoot(entry);
 
   // Ephemeral auth: a handed-over token (e.g. from `cadet pair`) used for this

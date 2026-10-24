@@ -3,7 +3,6 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  findAssistantByName,
   getLocalInstanceDir,
   type LockfileAssistant,
   saveLockfileAssistant,
@@ -62,7 +61,6 @@ async function instance(
       daemonPort: 1,
       gatewayPort: 2,
       cesPort: 3,
-      signingKey: byte.toString(16).padStart(2, "0").repeat(32),
     },
   };
 }
@@ -178,9 +176,6 @@ test("moves all four roots and encrypted key pairs using the exact stopped-sourc
       join(getLocalInstanceDir(target.resources), "ces-security", "store.key"),
     ),
   ).toEqual(Buffer.alloc(32, 8));
-  expect(findAssistantByName("target")!.resources!.signingKey).toBe(
-    "07".repeat(32),
-  );
   expect(order).toEqual([
     "sleep:source",
     "backup:source",

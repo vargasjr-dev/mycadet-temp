@@ -47,6 +47,7 @@ function setup(
     | { pathname: string; state: unknown } = "/account/select-assistant",
   useAccountRoute = false,
   respond?: (url: RequestInfo | URL) => Promise<Response>,
+  injectedConfig: Record<string, unknown> = host,
 ) {
   // The shell resolves assistants same-origin now, so the mounted iframe's
   // own document is fetched from the test origin; answer it quietly.
@@ -57,7 +58,7 @@ function setup(
   );
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
-    value: host,
+    value: injectedConfig,
   });
   const router = createMemoryRouter(
     [
@@ -94,7 +95,7 @@ afterEach(() => {
 });
 
 test("the account route lists names, defaulting unnamed assistants, then resolves only the selected iframe", async () => {
-  // The route's own auth machinery probes the platform session between API
+  // The route's own auth machinery probes the cloud session between API
   // calls (see the create-flow pin below) — seed by URL, not FIFO order.
   const router = setup(undefined, true, async (url) => {
     const target = String(url);
@@ -161,7 +162,10 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
   expect(withAvatar.textContent).toContain("O");
 });
 
-test("rows render the cloud-hosted subtitle with a relative creation date", async () => {
+test("rows on a cloud build render the cloud-hosted subtitle with a relative creation date", async () => {
+  // The build's stamp (`remote`) places the rows: a cloud build lists the
+  // cloud's assistants, whatever origin serves the bundle.
+  setup(undefined, false, undefined, { ...host, remote: "cloud" });
   request.mockResolvedValueOnce(
     Response.json({
       results: [
@@ -178,12 +182,24 @@ test("rows render the cloud-hosted subtitle with a relative creation date", asyn
       ],
     }),
   );
-  setup();
   const withDate = await screen.findByRole("radio", { name: /^One/ });
   expect(withDate.textContent).toContain("Cloud-hosted · Created 3d ago");
   const withoutDate = screen.getByRole("radio", { name: /^Two/ });
   expect(withoutDate.textContent).toContain("Cloud-hosted");
   expect(withoutDate.textContent).not.toContain("Created");
+});
+
+test("rows on a non-cloud remote render the self-hosted subtitle", async () => {
+  // `host` stamps no `remote`, so the schema defaults it to the local cadet:
+  // its list rows are the machine's own assistants, not the cloud's.
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [{ id: "assistant-1", name: "One" }],
+    }),
+  );
+  setup();
+  const row = await screen.findByRole("radio", { name: /^One/ });
+  expect(row.textContent).toContain("Self-hosted");
 });
 
 test("arrow keys move focus across cards without selecting", async () => {
@@ -282,7 +298,7 @@ test("an empty list offers creation and lands in the created assistant", async (
     request.mock.calls
       .map(([url]) => String(url))
       // The create flow rides the bundle's own auth machinery, which probes
-      // the platform session between API calls; pin the load-bearing chain.
+      // the cloud session between API calls; pin the load-bearing chain.
       .filter((url) => url.includes("/v1/") && !url.includes("/_allauth/")),
   ).toEqual([
     "http://localhost:3001/v1/assistants/?limit=100&offset=0",

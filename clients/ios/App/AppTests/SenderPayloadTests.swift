@@ -46,7 +46,7 @@ final class SenderPayloadTests: XCTestCase {
 
     /// An unterminated IPv6 literal is invalid in a way percent-encoding cannot
     /// rescue, so `URL(string:)` returns nil for it. A trimmed payload and a
-    /// URL the platform mangled both leave the push without an avatar, and the
+    /// URL the cloud mangled both leave the push without an avatar, and the
     /// two get their own reason tokens rather than sharing `no_url`.
     func testSeparatesAnUnparseableAvatarUrlFromAnAbsentOne() {
         let parsed = SenderPayload.parse(

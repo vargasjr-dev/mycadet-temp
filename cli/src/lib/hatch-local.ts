@@ -354,7 +354,7 @@ export async function hatchLocal(
         runtimeUrl,
         cloud: "local",
         hatchedAt: new Date().toISOString(),
-        resources: { ...resources, signingKey },
+        resources,
         guardianBootstrapSecret: bootstrapSecret,
       };
 

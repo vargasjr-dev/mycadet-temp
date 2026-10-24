@@ -113,7 +113,7 @@ public class PushDataMessageTest {
         assertEquals(AVATAR_HASH, sender.avatarHash);
     }
 
-    /** The platform drops the signed url first when the payload is oversized. */
+    /** The cloud drops the signed url first when the payload is oversized. */
     @Test
     public void keepsTheSenderWhenOnlyTheAvatarUrlIsMissing() {
         Map<String, String> data = senderData();

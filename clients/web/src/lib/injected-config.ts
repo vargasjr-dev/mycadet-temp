@@ -9,7 +9,7 @@ import { RemoteSchema } from "@mycadet/local-mode/contract";
  *
  * The URL fields are distinct origins in the topology, not synonyms:
  * `cloudUrl` is the cloud API base and `hubUrl` the cloud hub SPA the
- * pairing/settings pages link back to. The platform login base is
+ * pairing/settings pages link back to. The cloud login base is
  * deliberately absent: the loopback handoff reads it from the build's
  * environment seed (see startLoopbackAuth), keeping this config to the
  * origins a served bundle can't infer.

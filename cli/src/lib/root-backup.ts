@@ -899,10 +899,11 @@ async function restoreBackup(
   let restored = false;
   let running = false;
   let recoveryPath: string | undefined;
-  const oldResources = entry.resources;
   try {
-    // Read only gateway identity material; CES ciphertext is never interpreted.
-    const signingKey = resolveExistingLocalSigningKey({ instanceDir: source });
+    // Read only gateway identity material; CES ciphertext is never
+    // interpreted. The resolve refuses a missing or conflicting key before
+    // anything is touched.
+    resolveExistingLocalSigningKey({ instanceDir: source });
     await ops.storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
     running = await ops.storage.running();
@@ -923,16 +924,10 @@ async function restoreBackup(
     replacing = true;
     try {
       await ops.storage.replace(source);
-      if (entry.cloud !== "docker" && entry.resources) {
-        entry.resources = { ...entry.resources, signingKey };
-        ops.save(entry);
-      }
       restored = true;
     } catch (error) {
       try {
         await ops.storage.replace(snapshot);
-        entry.resources = oldResources;
-        ops.save(entry);
         replacing = false;
       } catch (rollbackError) {
         throw new AggregateError(

@@ -144,7 +144,7 @@ describe("assistant-config", () => {
     expect(result!.assistantId).toBe("beta");
   });
 
-  test("getAssistantDisplayName prefers the platform name", () => {
+  test("getAssistantDisplayName prefers the entry's name", () => {
     expect(
       getAssistantDisplayName(
         makeEntry("assistant-1", undefined, { name: "Alice" }),

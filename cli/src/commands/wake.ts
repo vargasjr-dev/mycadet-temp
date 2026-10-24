@@ -19,6 +19,7 @@ import {
   recreateDockerContainers,
   wakeContainers,
 } from "../lib/docker.js";
+import { persistRootSigningKey } from "../lib/root-signing-key.js";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -306,10 +307,9 @@ export async function wakeAssistant(
         );
       }
     }
-  }
-  if (replacingSigningKey || signingKey !== resources.signingKey) {
-    resources.signingKey = signingKey;
-    saveLockfileAssistant(entry);
+    // The key file is the identity's home: the replacement persists there so
+    // every later resolve — and the spawned processes' env — agrees with it.
+    persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
   }
 
   const pidFile = getDaemonPidPath(resources);

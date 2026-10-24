@@ -107,7 +107,9 @@
     "connectRemote": "Connect a remote assistant",
     "pairedWithHost": "Paired · {host}",
     "paired": "Paired",
-    "localAssistant": "On this computer"
+    "localAssistant": "On this computer",
+    "cloudHosted": "Cloud-hosted",
+    "selfHosted": "Self-hosted"
   },
   "appShell": {
     "loading": "Loading assistant…",

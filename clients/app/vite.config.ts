@@ -77,6 +77,17 @@ export default defineConfig(({ mode, command }) => {
           : []),
         { find: /^@design\//, replacement: DESIGN_SRC + "/" },
         { find: /^@app\//, replacement: APP_SRC + "/" },
+        // The compiled web sources import @mycadet/avatar-catalog (the
+        // bundled avatar SVG data); resolve it from the repo layout directly
+        // so the build never depends on which workspace member's node_modules
+        // a fresh CI install materialized.
+        {
+          find: "@mycadet/avatar-catalog",
+          replacement: path.resolve(
+            import.meta.dirname,
+            "../../packages/avatar-catalog/src/index.ts",
+          ),
+        },
       ],
       dedupe: ["react", "react-dom"],
     },
