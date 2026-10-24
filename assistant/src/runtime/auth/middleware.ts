@@ -1,38 +1,49 @@
 /**
- * JWT bearer auth middleware for the runtime HTTP server.
+ * Identity resolution for the runtime HTTP server.
  *
- * Extracts `Authorization: Bearer <token>`, verifies the JWT, and
- * builds an AuthContext from the claims.
+ * The daemon does not verify tokens. The gateway is the sole
+ * authentication point: it verifies edge credentials (actor JWTs, OAuth
+ * grants) and forwards the trusted identity upstream in `x-cadet-*`
+ * headers, re-derived from the verified claims — never passed through
+ * from the caller (see gateway/src/http/routes/runtime-proxy.ts and
+ * ipc-runtime-proxy.ts, which both strip caller-supplied values first).
  *
- * Accepts two JWT audiences:
- *   - `cadet-daemon` — primary audience, used by the gateway's runtime
- *     proxy after token exchange.
- *   - `cadet-gateway` — fallback audience, used by direct local clients
- *     (e.g., the macOS app's SettingsStore) that hold a guardian-issued
- *     JWT but call daemon endpoints directly without routing through the
- *     gateway's runtime proxy. Both daemon and gateway share the same
- *     HMAC signing key (~/.cadet/protected/actor-token-signing-key),
- *     so the signature is valid regardless of audience.
- *
- * Replaces both the legacy bearer shared-secret check and the
- * actor-token HMAC middleware with a single JWT verification path.
+ * The daemon's port is host-only — loopback-bound on the desktop,
+ * loopback-published in docker — so every dialer of the HTTP surface is
+ * the gateway or a process inside the host trust boundary. The gateway's
+ * edge is the only remote ingress; a request without forwarded identity
+ * is refused.
  *
  * When DISABLE_HTTP_AUTH is set (cloud-managed deployments), a request
- * carrying no bearer gets a synthetic AuthContext so downstream code always
- * has a typed context to consume. A request that carries one is verified
- * normally, and a bad token is refused rather than falling back.
+ * with no identity headers gets the dev-bypass actor context so
+ * downstream code always has a typed context to consume. A request that
+ * carries identity headers resolves to them normally.
  */
 
 import { isHttpAuthDisabled } from "../../config/env.js";
 import { getLogger } from "../../util/logger.js";
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../assistant-scope.js";
-import { extractBearerToken } from "../middleware/auth.js";
 import { buildAuthContext } from "./context.js";
+import { CURRENT_POLICY_EPOCH } from "./policy.js";
 import { resolveScopeProfile } from "./scopes.js";
-import { verifyToken } from "./token-service.js";
-import type { AuthContext } from "./types.js";
+import { parseSub } from "./subject.js";
+import type { AuthContext, TokenClaims } from "./types.js";
 
 const log = getLogger("auth-middleware");
+
+// ---------------------------------------------------------------------------
+// Forwarded identity headers
+//
+// The same vocabulary the gateway's IPC proxy uses, plus the scope
+// profile so route policies can enforce the verified grant downstream.
+// ---------------------------------------------------------------------------
+
+/** The subject header the gateway sets from the verified token's `sub`. */
+export const SUBJECT_HEADER = "x-cadet-subject";
+/** The principal-type header the gateway sets from the verified subject. */
+export const PRINCIPAL_TYPE_HEADER = "x-cadet-principal-type";
+/** The scope-profile header the gateway sets from the verified token. */
+export const SCOPE_PROFILE_HEADER = "x-cadet-scope-profile";
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -43,7 +54,7 @@ export type AuthenticateResult =
   | { ok: false; response: Response };
 
 // ---------------------------------------------------------------------------
-// Dev bypass synthetic context
+// Synthetic contexts
 // ---------------------------------------------------------------------------
 
 /**
@@ -64,94 +75,79 @@ function buildDevBypassContext(): AuthContext {
 }
 
 // ---------------------------------------------------------------------------
+// Forwarded-identity context
+// ---------------------------------------------------------------------------
+
+/**
+ * Build an AuthContext from the gateway-forwarded identity headers.
+ *
+ * The subject header is the source of truth: it is run through the same
+ * subject grammar the verified claims were minted against, so principal
+ * type, actor principal id, and conversation id all derive from one
+ * value. The principal-type header must agree — the gateway sets both
+ * from the same verified claims, and a disagreement means a mangled hop.
+ */
+export function buildAuthContextFromForwardedIdentity(headers: Headers):
+  | { ok: true; context: AuthContext }
+  | { ok: false; reason: string } {
+  const subject = headers.get(SUBJECT_HEADER)?.trim();
+  const principalTypeHeader = headers.get(PRINCIPAL_TYPE_HEADER)?.trim();
+
+  if (!subject) {
+    return { ok: false, reason: "no_forwarded_identity" };
+  }
+
+  const subResult = parseSub(subject);
+  if (!subResult.ok) {
+    return { ok: false, reason: subResult.reason };
+  }
+  if (principalTypeHeader && principalTypeHeader !== subResult.principalType) {
+    return {
+      ok: false,
+      reason: `forwarded_identity_mismatch: subject says ${subResult.principalType}, header says ${principalTypeHeader}`,
+    };
+  }
+
+  // The profile rides its own header. An unrecognized value resolves to
+  // no scopes — the fail-closed floor (the same contract the JWT claims
+  // had: claims come from JSON, profiles are resolved, never trusted).
+  // The gateway sets the header on every proxied request.
+  const scopeProfileHeader = headers.get(SCOPE_PROFILE_HEADER)?.trim() ?? "";
+  const claims: TokenClaims = {
+    iss: "cadet-auth",
+    aud: "cadet-daemon",
+    sub: subject,
+    scope_profile: scopeProfileHeader as TokenClaims["scope_profile"],
+    exp: 0,
+    policy_epoch: CURRENT_POLICY_EPOCH,
+    iat: 0,
+    jti: "",
+  };
+
+  return buildAuthContext(claims);
+}
+
+// ---------------------------------------------------------------------------
 // Main entry point
 // ---------------------------------------------------------------------------
 
 /**
- * Authenticate an incoming HTTP request via JWT bearer token.
+ * Resolve the caller identity of an incoming HTTP request.
  *
  * Returns an AuthContext on success, or an error Response on failure.
  * The caller should return the error Response directly to the client.
  */
 export function authenticateRequest(req: Request): AuthenticateResult {
-  const rawToken = extractBearerToken(req);
-  if (!rawToken) {
-    // Dev bypass covers only a request that supplied no Authorization header
-    // at all. A header that is present but unusable (empty or whitespace-only
-    // value, a non-bearer scheme, a malformed credential) is refused rather
-    // than handed the guardian context. `has` rather than `get`: an empty
-    // value reads back as "" and would otherwise pass as absent.
-    if (isHttpAuthDisabled() && !req.headers.has("authorization")) {
-      return { ok: true, context: buildDevBypassContext() };
-    }
-    log.warn(
-      { reason: "missing_token", path: new URL(req.url).pathname },
-      "Auth denied: missing Authorization header",
-    );
-    return {
-      ok: false,
-      response: Response.json(
-        {
-          error: {
-            code: "UNAUTHORIZED",
-            message: "Missing Authorization header",
-          },
-        },
-        { status: 401 },
-      ),
-    };
-  }
-
   const path = new URL(req.url).pathname;
-
-  // Verify the JWT — prefer cadet-daemon audience (gateway-proxied requests
-  // and daemon-minted tokens), but also accept cadet-gateway audience for
-  // direct local clients (macOS SettingsStore) that hold a guardian-issued JWT
-  // and call daemon endpoints without routing through the gateway runtime proxy.
-  let verifyResult = verifyToken(rawToken, "cadet-daemon");
-  if (
-    !verifyResult.ok &&
-    verifyResult.reason?.startsWith("audience_mismatch")
-  ) {
-    verifyResult = verifyToken(rawToken, "cadet-gateway");
-    // Normalize gateway-audience claims to daemon context so that
-    // buildAuthContext applies the same assistantId normalization
-    // (aud=cadet-daemon → assistantId='self') that gateway-exchanged
-    // tokens receive. Without this rewrite, the external assistant ID
-    // from the guardian-issued JWT would leak into daemon-internal
-    // scoping (storage keys, routing), violating the invariant
-    // documented in context.ts:30-33.
-    if (verifyResult.ok) {
-      verifyResult = {
-        ok: true,
-        claims: { ...verifyResult.claims, aud: "cadet-daemon" },
-      };
-    }
+  const forwarded = buildAuthContextFromForwardedIdentity(req.headers);
+  if (forwarded.ok) {
+    return forwarded;
   }
-  if (!verifyResult.ok) {
-    // Stale policy epoch gets a specific error code so clients can refresh
-    if (verifyResult.reason === "stale_policy_epoch") {
-      log.warn(
-        { reason: "stale_policy_epoch", path },
-        "Auth denied: stale policy epoch",
-      );
-      return {
-        ok: false,
-        response: Response.json(
-          {
-            error: {
-              code: "refresh_required",
-              message: "Token policy epoch is stale; refresh required",
-            },
-          },
-          { status: 401 },
-        ),
-      };
-    }
 
+  if (forwarded.reason !== "no_forwarded_identity") {
     log.warn(
-      { reason: verifyResult.reason, path },
-      "Auth denied: JWT verification failed",
+      { reason: forwarded.reason, path },
+      "Auth denied: forwarded identity rejected",
     );
     return {
       ok: false,
@@ -159,7 +155,7 @@ export function authenticateRequest(req: Request): AuthenticateResult {
         {
           error: {
             code: "UNAUTHORIZED",
-            message: `Invalid token: ${verifyResult.reason}`,
+            message: `Invalid identity: ${forwarded.reason}`,
           },
         },
         { status: 401 },
@@ -167,26 +163,27 @@ export function authenticateRequest(req: Request): AuthenticateResult {
     };
   }
 
-  // Build normalized AuthContext from verified claims
-  const contextResult = buildAuthContext(verifyResult.claims);
-  if (!contextResult.ok) {
-    log.warn(
-      { reason: contextResult.reason, path, sub: verifyResult.claims.sub },
-      "Auth denied: invalid JWT claims",
-    );
-    return {
-      ok: false,
-      response: Response.json(
-        {
-          error: {
-            code: "UNAUTHORIZED",
-            message: `Invalid token claims: ${contextResult.reason}`,
-          },
-        },
-        { status: 401 },
-      ),
-    };
+  // No forwarded identity: the daemon's port is host-only, so this is
+  // either a platform-managed deployment (auth disabled — dev-bypass
+  // context) or a request the gateway never touched (refused).
+  if (isHttpAuthDisabled()) {
+    return { ok: true, context: buildDevBypassContext() };
   }
 
-  return { ok: true, context: contextResult.context };
+  log.warn(
+    { reason: "missing_identity", path },
+    "Auth denied: no forwarded identity headers",
+  );
+  return {
+    ok: false,
+    response: Response.json(
+      {
+        error: {
+          code: "UNAUTHORIZED",
+          message: "Missing identity headers",
+        },
+      },
+      { status: 401 },
+    ),
+  };
 }

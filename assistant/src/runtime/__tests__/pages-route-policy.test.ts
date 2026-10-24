@@ -19,27 +19,21 @@ import { getAppDirPath } from "../../apps/app-store.js";
 const APP_ID = "app-under-test";
 
 const { setDbReady } = await import("../../daemon/daemon-readiness.js");
-const { CURRENT_POLICY_EPOCH } = await import("../auth/policy.js");
-const { mintToken } = await import("../auth/token-service.js");
 const { RuntimeHttpServer } = await import("../http-server.js");
 
-/** A desktop/web client token: `actor_client_v1` carries settings.read. */
-const ACTOR_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "actor:self:test-principal",
-  scope_profile: "actor_client_v1",
-  policy_epoch: CURRENT_POLICY_EPOCH,
-  ttlSeconds: 3600,
-});
+/** A desktop/web client identity: `actor_client_v1` carries settings.read. */
+const ACTOR_IDENTITY = {
+  "x-cadet-subject": "actor:self:test-principal",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "actor_client_v1",
+};
 
 /** The grant `assistant oauth proxy-url` hands to a third-party binary. */
-const PROXY_GRANT_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "local:self:oauth-proxy.stripe_link",
-  scope_profile: "oauth_proxy_v1",
-  policy_epoch: CURRENT_POLICY_EPOCH,
-  ttlSeconds: 3600,
-});
+const PROXY_GRANT_IDENTITY = {
+  "x-cadet-subject": "local:self:oauth-proxy.stripe_link",
+  "x-cadet-principal-type": "local",
+  "x-cadet-scope-profile": "oauth_proxy_v1",
+};
 
 describe("GET /pages/:appId enforces its route policy", () => {
   let server: InstanceType<typeof RuntimeHttpServer>;
@@ -64,14 +58,14 @@ describe("GET /pages/:appId enforces its route policy", () => {
     await server?.stop();
   });
 
-  function fetchPage(token: string, appId = APP_ID): Promise<Response> {
+  function fetchPage(identity: Record<string, string>, appId = APP_ID): Promise<Response> {
     return fetch(`http://127.0.0.1:${port}/pages/${appId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: identity,
     });
   }
 
   test("serves the page to a client holding settings.read", async () => {
-    const response = await fetchPage(ACTOR_JWT);
+    const response = await fetchPage(ACTOR_IDENTITY);
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe(
@@ -84,7 +78,7 @@ describe("GET /pages/:appId enforces its route policy", () => {
   });
 
   test("refuses an oauth_proxy_v1 grant", async () => {
-    const response = await fetchPage(PROXY_GRANT_JWT);
+    const response = await fetchPage(PROXY_GRANT_IDENTITY);
 
     expect(response.status).toBe(403);
     const body = (await response.json()) as { error: { code: string } };
@@ -98,7 +92,7 @@ describe("GET /pages/:appId enforces its route policy", () => {
   });
 
   test("an unknown app is a 404, not a 500", async () => {
-    const response = await fetchPage(ACTOR_JWT, "no-such-app");
+    const response = await fetchPage(ACTOR_IDENTITY, "no-such-app");
 
     expect(response.status).toBe(404);
   });
@@ -107,7 +101,7 @@ describe("GET /pages/:appId enforces its route policy", () => {
     // The router percent-decodes its path params, so the handler is asked to
     // resolve "../foo". Traversal is refused either way; the caller reads it
     // as an app that does not exist rather than a fault in the daemon.
-    const response = await fetchPage(ACTOR_JWT, "%2E%2E%2Ffoo");
+    const response = await fetchPage(ACTOR_IDENTITY, "%2E%2E%2Ffoo");
 
     expect(response.status).toBe(404);
     expect(await response.text()).not.toContain("..");

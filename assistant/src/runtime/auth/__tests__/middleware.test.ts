@@ -1,22 +1,15 @@
 /**
- * Tests for the JWT bearer auth middleware (authenticateRequest).
+ * Tests for the identity middleware (authenticateRequest).
  *
- * Covers:
- * - Missing Authorization header returns 401
- * - Invalid/expired JWT returns 401
- * - Stale policy epoch returns 401 with refresh_required code
- * - Valid JWT returns AuthContext
- * - Dev bypass returns synthetic AuthContext
+ * The daemon verifies no tokens — the gateway forwards the verified
+ * identity in `x-cadet-*` headers. Covers:
+ * - Missing identity headers returns 401 (auth enabled)
+ * - A mangled forwarded identity (bad subject, type mismatch) returns 401
+ * - Forwarded identity returns an AuthContext
+ * - Dev bypass returns the synthetic actor context
  */
 
-import { mkdtempSync, realpathSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
-
-const testDir = realpathSync(
-  mkdtempSync(join(tmpdir(), "auth-middleware-test-")),
-);
+import { describe, expect, mock, test } from "bun:test";
 
 // Track auth bypass state for tests
 let authDisabled = false;
@@ -28,49 +21,27 @@ mock.module("../../../config/env.js", () => ({
 
 import { DAEMON_INTERNAL_ASSISTANT_ID } from "../../assistant-scope.js";
 import { authenticateRequest } from "../middleware.js";
-import { CURRENT_POLICY_EPOCH } from "../policy.js";
-import { initAuthSigningKey, mintToken } from "../token-service.js";
-import type { ScopeProfile, TokenAudience } from "../types.js";
 
-const TEST_KEY = Buffer.from("test-signing-key-32-bytes-long!!");
-
-function mintValidToken(overrides?: {
-  aud?: TokenAudience;
-  sub?: string;
-  scope_profile?: ScopeProfile;
-  policy_epoch?: number;
-  exp?: number;
-  ttlSeconds?: number;
-}): string {
-  // When exp is provided explicitly, compute ttlSeconds from it.
-  // Otherwise use a default 300-second TTL.
-  let ttl = overrides?.ttlSeconds ?? 300;
-  if (overrides?.exp !== undefined) {
-    const now = Math.floor(Date.now() / 1000);
-    ttl = overrides.exp - now;
+function identityHeaders(overrides?: {
+  subject?: string;
+  principalType?: string;
+  scopeProfile?: string;
+}): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (overrides?.subject !== undefined) {
+    headers["x-cadet-subject"] = overrides.subject;
   }
-  return mintToken({
-    aud: overrides?.aud ?? "cadet-daemon",
-    sub: overrides?.sub ?? "actor:self:principal-test",
-    scope_profile: overrides?.scope_profile ?? "actor_client_v1",
-    policy_epoch: overrides?.policy_epoch ?? 1,
-    ttlSeconds: ttl,
-  });
+  if (overrides?.principalType !== undefined) {
+    headers["x-cadet-principal-type"] = overrides.principalType;
+  }
+  if (overrides?.scopeProfile !== undefined) {
+    headers["x-cadet-scope-profile"] = overrides.scopeProfile;
+  }
+  return headers;
 }
 
-beforeEach(() => {
-  initAuthSigningKey(TEST_KEY);
-  authDisabled = false;
-});
-
-afterAll(() => {
-  try {
-    rmSync(testDir, { recursive: true, force: true });
-  } catch {}
-});
-
 describe("authenticateRequest", () => {
-  test("returns 401 when Authorization header is missing", () => {
+  test("returns 401 when no identity headers are present", () => {
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
     });
@@ -82,10 +53,10 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("returns 401 when Authorization header has wrong scheme", () => {
+  test("ignores a bearer token — identity is header-forwarded only", () => {
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
-      headers: { Authorization: "Basic dXNlcjpwYXNz" },
+      headers: { Authorization: "Bearer whatever.relic.token" },
     });
 
     const result = authenticateRequest(req);
@@ -95,10 +66,10 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("returns 401 when JWT is invalid", () => {
+  test("returns 401 when the subject does not parse", () => {
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
-      headers: { Authorization: "Bearer invalid.token.here" },
+      headers: identityHeaders({ subject: "garbage" }),
     });
 
     const result = authenticateRequest(req);
@@ -108,13 +79,13 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("returns 401 when JWT has expired", () => {
-    const now = Math.floor(Date.now() / 1000);
-    const token = mintValidToken({ exp: now - 100 });
-
+  test("returns 401 when the type header disagrees with the subject", () => {
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: identityHeaders({
+        subject: "actor:self:principal-test",
+        principalType: "svc_gateway",
+      }),
     });
 
     const result = authenticateRequest(req);
@@ -124,12 +95,14 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("returns AuthContext for valid JWT", () => {
-    const token = mintValidToken();
-
+  test("returns AuthContext for a forwarded actor identity", () => {
     const req = new Request("http://localhost/v1/messages", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: identityHeaders({
+        subject: "actor:self:principal-test",
+        principalType: "actor",
+        scopeProfile: "actor_client_v1",
+      }),
     });
 
     const result = authenticateRequest(req);
@@ -145,15 +118,14 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("returns AuthContext for svc_gateway JWT", () => {
-    const token = mintValidToken({
-      sub: "svc:gateway:self",
-      scope_profile: "gateway_ingress_v1",
-    });
-
+  test("returns AuthContext for a forwarded gateway service identity", () => {
     const req = new Request("http://localhost/v1/channels/inbound", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: identityHeaders({
+        subject: "svc:gateway:self",
+        principalType: "svc_gateway",
+        scopeProfile: "gateway_ingress_v1",
+      }),
     });
 
     const result = authenticateRequest(req);
@@ -164,336 +136,62 @@ describe("authenticateRequest", () => {
     }
   });
 
-  test("dev bypass returns synthetic AuthContext without Authorization header", () => {
+  test("an unrecognized scope profile resolves to no scopes", () => {
+    const req = new Request("http://localhost/v1/messages", {
+      method: "POST",
+      headers: identityHeaders({
+        subject: "actor:self:principal-test",
+        principalType: "actor",
+        scopeProfile: "future_profile_v9",
+      }),
+    });
+
+    const result = authenticateRequest(req);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.context.scopes.size).toBe(0);
+    }
+  });
+
+  test("dev bypass returns the synthetic actor context without identity headers", () => {
     authDisabled = true;
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.principalType).toBe("actor");
-      expect(result.context.actorPrincipalId).toBe("dev-bypass");
-      expect(result.context.scopeProfile).toBe("actor_client_v1");
-      expect(result.context.scopes.has("chat.read")).toBe(true);
-    }
-  });
-
-  test("dev bypass context sets actorPrincipalId to 'dev-bypass' for explicit detection", () => {
-    // Regression: the "dev-bypass" actorPrincipalId used to cause trust
-    // resolution to classify the user as "unknown" because no guardian
-    // binding matches "dev-bypass". The route-level fix detects
-    // isHttpAuthDisabled() + actorPrincipalId === "dev-bypass" and resolves
-    // from the local guardian binding instead.
-    authDisabled = true;
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.actorPrincipalId).toBe("dev-bypass");
-    }
-  });
-
-  test("returns 401 with refresh_required when policy epoch is stale", async () => {
-    // Mint a token with a very old policy epoch. The token service checks
-    // isStaleEpoch which compares against CURRENT_POLICY_EPOCH.
-    const token = mintValidToken({ policy_epoch: 0 });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    // This test depends on whether CURRENT_POLICY_EPOCH > 0.
-    // If CURRENT_POLICY_EPOCH is 1 and the token has epoch 0, it should be stale.
-    // If CURRENT_POLICY_EPOCH is 0, then epoch 0 is not stale and the token is valid.
-    // We test the behavior regardless -- either it's valid or it reports stale_epoch.
-    if (!result.ok) {
-      const body = (await result.response.json()) as {
-        error: { code: string };
-      };
-      expect(body.error.code).toBe("refresh_required");
-      expect(result.response.status).toBe(401);
-    }
-    // If the current epoch is 0, the token is valid, which is also correct behavior
-  });
-
-  test("rejects token with wrong audience", () => {
-    // Mint a token with an unrecognized audience (neither cadet-daemon nor cadet-gateway)
-    const token = mintValidToken({ aud: "cadet-other" as TokenAudience });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.response.status).toBe(401);
-    }
-  });
-
-  test("rejects token with unparseable sub", () => {
-    const token = mintValidToken({ sub: "garbage" });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.response.status).toBe(401);
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// /v1/host-browser-result auth — exercises authenticateRequest with the
-// same request shape the chrome extension sends. Validates that standard
-// JWT auth applies after the capability-token system was removed.
-// ---------------------------------------------------------------------------
-
-describe("authenticateRequest for /v1/host-browser-result", () => {
-  test("accepts a valid daemon-audience JWT", async () => {
-    const token = mintValidToken({ sub: "actor:self:jwt-principal" });
-    const req = new Request("http://localhost/v1/host-browser-result", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = await authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.principalType).toBe("actor");
-      expect(result.context.actorPrincipalId).toBe("jwt-principal");
-      expect(result.context.scopes.has("approval.write")).toBe(true);
-    }
-  });
-
-  test("returns 401 when the Authorization header is missing entirely", async () => {
-    const req = new Request("http://localhost/v1/host-browser-result", {
-      method: "POST",
-    });
-
-    const result = await authenticateRequest(req);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.response.status).toBe(401);
-    }
-  });
-
-  test("malformed bearer returns 401", async () => {
-    // A bearer that is not a parseable JWT must return 401.
-    const req = new Request("http://localhost/v1/host-browser-result", {
-      method: "POST",
-      headers: { Authorization: "Bearer not-a-token.xxxxxxxxxxxxx" },
-    });
-
-    const result = await authenticateRequest(req);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.response.status).toBe(401);
-    }
-  });
-
-  test("dev bypass returns synthetic AuthContext without Authorization header", async () => {
-    authDisabled = true;
-
-    const req = new Request("http://localhost/v1/host-browser-result", {
-      method: "POST",
-    });
-
-    const result = await authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      // Same synthetic context shape as authenticateRequest's dev
-      // bypass — the tests share the same invariant because a single
-      // helper builds both.
-      expect(result.context.principalType).toBe("actor");
-      expect(result.context.actorPrincipalId).toBe("dev-bypass");
-    }
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Dev bypass covers only a request that supplied no Authorization header. A
-// bearer sent to a cloud pod (the gateway's exchange token, or a trusted
-// contact's) is verified on its own terms.
-// ---------------------------------------------------------------------------
-
-describe("authenticateRequest with auth disabled and a bearer present", () => {
-  beforeEach(() => {
-    authDisabled = true;
-  });
-
-  test("uses the token's claims rather than the dev-bypass context", () => {
-    const token = mintValidToken({ sub: "actor:self:contact-principal" });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.actorPrincipalId).toBe("contact-principal");
-      expect(result.context.policyEpoch).toBe(CURRENT_POLICY_EPOCH);
-    }
-  });
-
-  test("accepts the gateway's exchange token", () => {
-    const token = mintValidToken({
-      sub: "svc:gateway:self",
-      scope_profile: "gateway_service_v1",
-    });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.principalType).toBe("svc_gateway");
-    }
-  });
-
-  test("accepts a gateway-audience token through the fallback", () => {
-    const token = mintValidToken({
-      aud: "cadet-gateway",
-      sub: "actor:self:local-client",
-    });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.actorPrincipalId).toBe("local-client");
-      expect(result.context.assistantId).toBe(DAEMON_INTERNAL_ASSISTANT_ID);
-    }
-  });
-
-  test.each([
-    ["malformed", () => "not-a-token.xxxxxxxxxxxxx"],
-    [
-      "expired",
-      () => mintValidToken({ exp: Math.floor(Date.now() / 1000) - 100 }),
-    ],
-    [
-      "wrong-audience",
-      () => mintValidToken({ aud: "cadet-other" as TokenAudience }),
-    ],
-    ["unparseable-sub", () => mintValidToken({ sub: "garbage" })],
-  ])("refuses a %s token rather than falling back", (_label, build) => {
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${build()}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.response.status).toBe(401);
-    }
-  });
-
-  test("still returns the dev-bypass context when no bearer is sent", () => {
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.actorPrincipalId).toBe("dev-bypass");
-    }
-  });
-
-  test("verifies a lowercase bearer scheme rather than bypassing it", () => {
-    const token = mintValidToken({ sub: "actor:self:contact-principal" });
-
-    const req = new Request("http://localhost/v1/messages", {
-      method: "POST",
-      headers: { Authorization: `bearer ${token}` },
-    });
-
-    const result = authenticateRequest(req);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.context.actorPrincipalId).toBe("contact-principal");
-    }
-  });
-
-  test.each([
-    ["lowercase scheme with a bad token", "bearer not-a-jwt.xxxxxxxx"],
-    ["empty credential", "Bearer "],
-    ["non-bearer scheme", "Basic dXNlcjpwYXNz"],
-    ["an empty header value", ""],
-    ["a whitespace-only header value", "   "],
-  ])(
-    "refuses %s instead of granting the dev-bypass context",
-    (_label, header) => {
+    try {
       const req = new Request("http://localhost/v1/messages", {
         method: "POST",
-        headers: { Authorization: header },
       });
-
-      const result = authenticateRequest(req);
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.response.status).toBe(401);
-      }
-    },
-  );
-});
-
-// ---------------------------------------------------------------------------
-// oauth_proxy_v1 grants: the narrow bearer a third-party CLI presents to the
-// OAuth passthrough route. Accepted on either audience, and carrying nothing
-// but oauth.proxy.
-// ---------------------------------------------------------------------------
-
-describe("authenticateRequest for oauth_proxy_v1 grants", () => {
-  test.each(["cadet-daemon", "cadet-gateway"] as const)(
-    "accepts an %s-audience grant and grants only oauth.proxy",
-    (aud) => {
-      const token = mintValidToken({
-        aud,
-        sub: "local:self:oauth-proxy.stripe_link",
-        scope_profile: "oauth_proxy_v1",
-        policy_epoch: CURRENT_POLICY_EPOCH,
-        ttlSeconds: 60,
-      });
-
-      const req = new Request(
-        "http://localhost/v1/oauth/proxy/stripe_link/v1/accounts",
-        { method: "GET", headers: { Authorization: `Bearer ${token}` } },
-      );
 
       const result = authenticateRequest(req);
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.context.principalType).toBe("local");
-        expect(result.context.conversationId).toBe("oauth-proxy.stripe_link");
-        expect(result.context.scopes.has("oauth.proxy")).toBe(true);
-        expect(result.context.scopes.has("settings.write")).toBe(false);
+        expect(result.context.principalType).toBe("actor");
+        expect(result.context.actorPrincipalId).toBe("dev-bypass");
+        expect(result.context.scopeProfile).toBe("actor_client_v1");
+        expect(result.context.scopes.has("chat.read")).toBe(true);
       }
-    },
-  );
+    } finally {
+      authDisabled = false;
+    }
+  });
+
+  test("a forwarded identity resolves normally even when auth is bypassed", () => {
+    authDisabled = true;
+    try {
+      const req = new Request("http://localhost/v1/messages", {
+        method: "POST",
+        headers: identityHeaders({
+          subject: "actor:self:principal-test",
+          principalType: "actor",
+          scopeProfile: "actor_client_v1",
+        }),
+      });
+
+      const result = authenticateRequest(req);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.context.actorPrincipalId).toBe("principal-test");
+      }
+    } finally {
+      authDisabled = false;
+    }
+  });
 });

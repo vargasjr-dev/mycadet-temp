@@ -1,27 +1,22 @@
 /** Shared pieces for suites that open WebSockets against `RuntimeHttpServer`. */
 
-import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
-import { mintToken } from "../auth/token-service.js";
+/**
+ * Identity headers standing for the gateway's own service principal —
+ * what the gateway's WS dials assert now that the daemon resolves
+ * identity from forwarded headers instead of verifying tokens.
+ */
+export const gatewayIdentityHeaders: Record<string, string> = {
+  "x-cadet-subject": "svc:gateway:self",
+  "x-cadet-principal-type": "svc_gateway",
+  "x-cadet-scope-profile": "gateway_ingress_v1",
+};
 
-export function mintGatewayToken(): string {
-  return mintToken({
-    aud: "cadet-daemon",
-    sub: "svc:gateway:self",
-    scope_profile: "gateway_ingress_v1",
-    policy_epoch: CURRENT_POLICY_EPOCH,
-    ttlSeconds: 3600,
-  });
-}
-
-export function mintActorToken(): string {
-  return mintToken({
-    aud: "cadet-daemon",
-    sub: "actor:self:user-123",
-    scope_profile: "actor_client_v1",
-    policy_epoch: CURRENT_POLICY_EPOCH,
-    ttlSeconds: 3600,
-  });
-}
+/** Identity headers standing for a gateway-admitted guardian actor. */
+export const actorIdentityHeaders: Record<string, string> = {
+  "x-cadet-subject": "actor:self:user-123",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "actor_client_v1",
+};
 
 /** Headers of a WebSocket upgrade sent through plain `fetch`. */
 export const upgradeHeaders = {

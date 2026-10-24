@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
 import { RuntimeHttpServer } from "../http-server.js";
 import {
-  mintActorToken,
-  mintGatewayToken,
+  actorIdentityHeaders,
+  gatewayIdentityHeaders,
   requireHttpAuth,
   upgradeHeaders,
   waitForClose,
@@ -41,12 +41,9 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
   });
 
   test("refuses a non-private origin with 403", async () => {
-    const res = await fetch(
-      `http://${baseUrl}/v1/desktop/stream?token=${mintGatewayToken()}`,
-      {
-        headers: { ...upgradeHeaders, Origin: "https://external.example.com" },
-      },
-    );
+    const res = await fetch(`http://${baseUrl}/v1/desktop/stream`, {
+      headers: { ...upgradeHeaders, ...gatewayIdentityHeaders, Origin: "https://external.example.com" },
+    });
     expect(res.status).toBe(403);
     const body = (await res.json()) as { error: { message: string } };
     expect(body.error.message).toContain(
@@ -54,25 +51,24 @@ describe("RuntimeHttpServer /v1/desktop/stream upgrade", () => {
     );
   });
 
-  test("refuses a missing or non-gateway token with 401", async () => {
+  test("refuses a missing or non-gateway identity with 401", async () => {
     const missing = await fetch(`http://${baseUrl}/v1/desktop/stream`, {
       headers: upgradeHeaders,
     });
     expect(missing.status).toBe(401);
 
-    const actor = await fetch(
-      `http://${baseUrl}/v1/desktop/stream?token=${mintActorToken()}`,
-      { headers: upgradeHeaders },
-    );
+    const actor = await fetch(`http://${baseUrl}/v1/desktop/stream`, {
+      headers: { ...upgradeHeaders, ...actorIdentityHeaders },
+    });
     expect(actor.status).toBe(401);
   });
 
   test("upgrades a gateway request and reports the feature gate as close code 4008", async () => {
     // The test daemon is not containerized, so the socket opens and is then
     // closed by the desktop-stream open handler rather than refused pre-upgrade.
-    const ws = new WebSocket(
-      `ws://${baseUrl}/v1/desktop/stream?token=${encodeURIComponent(mintGatewayToken())}`,
-    );
+    const ws = new WebSocket(`ws://${baseUrl}/v1/desktop/stream`, {
+      headers: gatewayIdentityHeaders,
+    } as unknown as string[]);
     const closed = await waitForClose(ws);
     expect(closed.code).toBe(4008);
     expect(closed.reason).toBe(
@@ -91,9 +87,9 @@ test("self-hosted containers cannot stream", async () => {
     process.env.IS_CLOUD = "false";
     process.env.IS_CONTAINERIZED = "true";
     const baseUrl = `127.0.0.1:${server.actualPort}`;
-    const ws = new WebSocket(
-      `ws://${baseUrl}/v1/desktop/stream?token=${encodeURIComponent(mintGatewayToken())}`,
-    );
+    const ws = new WebSocket(`ws://${baseUrl}/v1/desktop/stream`, {
+      headers: gatewayIdentityHeaders,
+    } as unknown as string[]);
     expect((await waitForClose(ws)).code).toBe(4008);
   } finally {
     await server.stop();
