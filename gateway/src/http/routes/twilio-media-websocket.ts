@@ -1,9 +1,12 @@
-import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
+import {
+  buildWsUpstreamUrl,
+  forwardedIdentityHeaders,
+  GATEWAY_SERVICE_IDENTITY,
+} from "@mycadet/assistant-client";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 
 import {
   validateEdgeToken,
-  mintServiceToken,
 } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
@@ -189,7 +192,6 @@ export function getMediaStreamWebsocketHandlers() {
         buildWsUpstreamUrl({
           baseUrl: assistantRuntimeBaseUrl,
           path: "/v1/calls/media-stream",
-          serviceToken: mintServiceToken(),
           extraParams: { callSessionId },
         });
       log.info(
@@ -197,7 +199,9 @@ export function getMediaStreamWebsocketHandlers() {
         "Opening upstream media-stream WS to runtime",
       );
 
-      const upstream = new WebSocket(upstreamUrl);
+      const upstream = new WebSocket(upstreamUrl, {
+        headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+      } as unknown as string[]);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

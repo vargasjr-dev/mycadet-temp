@@ -26,11 +26,14 @@
 
 import type { Logger } from "pino";
 
-import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
+import {
+  buildWsUpstreamUrl,
+  forwardedIdentityHeaders,
+  GATEWAY_SERVICE_IDENTITY,
+} from "@mycadet/assistant-client";
 
 import {
   validateEdgeToken,
-  mintServiceToken,
 } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { parseSub } from "../../auth/subject.js";
@@ -207,7 +210,6 @@ export function createRuntimeAudioStreamHandlers<
         buildWsUpstreamUrl({
           baseUrl: ws.data.config.assistantRuntimeBaseUrl,
           path: upstreamPath,
-          serviceToken: mintServiceToken(),
           extraParams: upstreamParams(ws.data),
         });
 
@@ -216,7 +218,9 @@ export function createRuntimeAudioStreamHandlers<
         `Opening upstream ${label} WS to runtime`,
       );
 
-      const upstream = new WebSocket(upstreamUrl);
+      const upstream = new WebSocket(upstreamUrl, {
+        headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+      } as unknown as string[]);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

@@ -27,7 +27,10 @@ import { randomBytes } from "node:crypto";
 
 import { fetchCesLogExport } from "@mycadet/ces-client/http-log-export";
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
+import {
+  forwardedIdentityHeaders,
+  GATEWAY_SERVICE_IDENTITY,
+} from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import {
@@ -332,7 +335,7 @@ async function collectDaemonExport(
   const destDir = join(stagingDir, "daemon-exports");
   mkdirSync(destDir, { recursive: true });
 
-  const serviceToken = mintServiceToken();
+  const upstreamIdentity = forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY);
   const upstream = `${config.assistantRuntimeBaseUrl}/v1/export`;
 
   const controller = new AbortController();
@@ -351,7 +354,7 @@ async function collectDaemonExport(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceToken}`,
+        ...upstreamIdentity,
       },
       body: JSON.stringify(requestBody),
       signal: controller.signal,

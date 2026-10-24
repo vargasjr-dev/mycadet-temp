@@ -1,8 +1,11 @@
-import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
+import {
+  buildWsUpstreamUrl,
+  forwardedIdentityHeaders,
+  GATEWAY_SERVICE_IDENTITY,
+} from "@mycadet/assistant-client";
 
 import {
   validateEdgeToken,
-  mintServiceToken,
 } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
@@ -220,7 +223,6 @@ export function getLiveVoiceWebsocketHandlers() {
         buildWsUpstreamUrl({
           baseUrl: config.assistantRuntimeBaseUrl,
           path: "/v1/live-voice",
-          serviceToken: mintServiceToken(),
           // The guardian this socket was admitted for, so the daemon stamps
           // its turns with the identity the admission decision was made
           // against rather than resolving one of its own a moment later.
@@ -241,7 +243,9 @@ export function getLiveVoiceWebsocketHandlers() {
         "Opening upstream live voice WS to runtime",
       );
 
-      const upstream = new WebSocket(upstreamUrl);
+      const upstream = new WebSocket(upstreamUrl, {
+        headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+      } as unknown as string[]);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

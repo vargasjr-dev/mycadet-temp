@@ -8,7 +8,7 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
+import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -27,7 +27,7 @@ export function createMigrationRollbackProxyHandler(config: GatewayConfig) {
     const response = await proxyForwardToResponse(req, {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: "/v1/admin/rollback-migrations",
-      serviceToken: mintServiceToken(),
+      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: MIGRATION_ROLLBACK_TIMEOUT_MS,
       fetchImpl,
     });

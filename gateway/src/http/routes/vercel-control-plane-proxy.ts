@@ -8,7 +8,7 @@
 
 import { proxyForward } from "@mycadet/assistant-client";
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
+import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -26,7 +26,7 @@ export function createVercelControlPlaneProxyHandler(config: GatewayConfig) {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch,
-      serviceToken: mintServiceToken(),
+      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

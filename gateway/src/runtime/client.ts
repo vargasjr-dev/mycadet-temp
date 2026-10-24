@@ -1,6 +1,9 @@
 import {
   buildUpstreamUrl,
   createTimeoutController,
+  forwardedIdentityHeaders,
+  GATEWAY_INGRESS_IDENTITY,
+  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 import {
   normalizePublicBaseUrl,
@@ -11,11 +14,7 @@ import { normalizeHttpPublicBaseUrl } from "@mycadet/service-contracts/ingress";
 import type { RuntimeInboundPayload } from "@mycadet/gateway-client";
 import type { ChannelId } from "../channels/types.js";
 import type { ConfigFileCache } from "../config-file-cache.js";
-import {
-  mintIngressToken,
-  mintRelayToken,
-  mintServiceToken,
-} from "../auth/token-exchange.js";
+import { mintRelayToken } from "../auth/token-exchange.js";
 import type { GatewayConfig } from "../config.js";
 import { fetchImpl } from "../fetch.js";
 import { getLogger } from "../logger.js";
@@ -120,22 +119,33 @@ function cbOnFailure(): void {
 
 /**
  * Build headers for ingress requests (webhook-originated traffic).
- * Mints a short-lived ingress token per-request.
+ * Asserts the gateway's ingress identity in forwarded headers — the
+ * daemon resolves identity from these, not from tokens.
  */
 function ingressHeaders(
   extra?: Record<string, string>,
 ): Record<string, string> {
-  return { ...extra, Authorization: `Bearer ${mintIngressToken()}` };
+  return {
+    ...extra,
+    // Identity last: a caller- or payload-supplied identity header never
+    // survives the hop.
+    ...forwardedIdentityHeaders(GATEWAY_INGRESS_IDENTITY),
+  };
 }
 
 /**
  * Build headers for service requests (gateway-originated traffic).
- * Mints a short-lived service token per-request.
+ * Asserts the gateway's service identity in forwarded headers.
  */
 function serviceHeaders(
   extra?: Record<string, string>,
 ): Record<string, string> {
-  return { ...extra, Authorization: `Bearer ${mintServiceToken()}` };
+  return {
+    ...extra,
+    // Identity last: a caller- or payload-supplied identity header never
+    // survives the hop.
+    ...forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+  };
 }
 
 async function timedFetch(

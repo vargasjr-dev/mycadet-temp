@@ -14,6 +14,10 @@ export {
   createTimeoutController,
   isTimeoutError,
   isConnectionError,
+  forwardedIdentityHeaders,
+  GATEWAY_INGRESS_IDENTITY,
+  GATEWAY_SERVICE_IDENTITY,
+  type ForwardedIdentity,
 } from "./http-client.js";
 
 export {

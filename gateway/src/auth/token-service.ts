@@ -13,12 +13,13 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
 
 import { getLogger } from "../logger.js";
-import { getGatewaySecurityDir } from "../paths.js";
+import { getGatewaySecurityDir, getWorkspaceDir } from "../paths.js";
 
 import { isStaleEpoch } from "./policy.js";
 import type { ScopeProfile, TokenAudience, TokenClaims } from "./types.js";
@@ -41,7 +42,12 @@ export function getSigningKeyPath(): string {
  * Resolution order:
  *   1. ACTOR_TOKEN_SIGNING_KEY env var (hex-encoded, set by CLI for Docker)
  *   2. Load from disk (GATEWAY_SECURITY_DIR/actor-token-signing-key)
- *   3. Generate a new key and persist to disk (local mode)
+ *   3. Adopt the key the assistant's daemon era persisted under the
+ *      workspace's transitional directory — the one-time migration for
+ *      instances hatched before the gateway owned key custody. Consumed
+ *      on read: the adopted key is persisted gateway-side and the old
+ *      file removed.
+ *   4. Generate a new key and persist to disk (local mode)
  */
 export function loadOrCreateSigningKey(): Buffer {
   const envKey = process.env.ACTOR_TOKEN_SIGNING_KEY;
@@ -70,18 +76,67 @@ export function loadOrCreateSigningKey(): Buffer {
     }
   }
 
+  const adopted = adoptLegacySigningKey(keyPath);
+  if (adopted) {
+    return adopted;
+  }
+
   const newKey = randomBytes(32);
+  persistSigningKey(keyPath, newKey);
+
+  log.info("Auth signing key generated and persisted");
+  return newKey;
+}
+
+/** The assistant daemon era's transitional key path (under its workspace). */
+function legacySigningKeyPath(): string {
+  return join(getWorkspaceDir(), "deprecated", "actor-token-signing-key");
+}
+
+/**
+ * One-time adoption of the daemon-era key: a pre-custody instance holds
+ * its identity only in the workspace's transitional file. Copy it into
+ * gateway-security and consume the original, so the assistant container
+ * stops having the signing key — this process is the sole holder now.
+ * Returns undefined when there is nothing (or nothing valid) to adopt.
+ */
+function adoptLegacySigningKey(keyPath: string): Buffer | undefined {
+  const legacyPath = legacySigningKeyPath();
+  if (!existsSync(legacyPath)) {
+    return undefined;
+  }
+  try {
+    const raw = readFileSync(legacyPath);
+    if (raw.length !== 32) {
+      log.warn(
+        { legacyPath },
+        "Legacy signing key file has unexpected length, ignoring",
+      );
+      return undefined;
+    }
+    persistSigningKey(keyPath, raw);
+    rmSync(legacyPath, { force: true });
+    log.info(
+      { legacyPath },
+      "Adopted the daemon-era signing key into gateway security",
+    );
+    return raw;
+  } catch (err) {
+    log.warn({ err, legacyPath }, "Failed to adopt legacy signing key");
+    return undefined;
+  }
+}
+
+/** Atomic-write + chmod 0600 persistence into the gateway security dir. */
+function persistSigningKey(keyPath: string, key: Buffer): void {
   const dir = dirname(keyPath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
   const tmpPath = keyPath + ".tmp." + process.pid;
-  writeFileSync(tmpPath, newKey, { mode: 0o600 });
+  writeFileSync(tmpPath, key, { mode: 0o600 });
   renameSync(tmpPath, keyPath);
   chmodSync(keyPath, 0o600);
-
-  log.info("Auth signing key generated and persisted");
-  return newKey;
 }
 
 /**

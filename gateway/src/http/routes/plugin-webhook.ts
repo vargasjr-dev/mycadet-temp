@@ -53,7 +53,7 @@ import {
   admitInbound,
   type InboundAdmission,
 } from "../../handlers/handle-inbound.js";
-import { mintServiceToken } from "../../auth/token-exchange.js";
+import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import type { CredentialCache } from "../../credential-cache.js";
 import { credentialKey } from "../../credential-key.js";
@@ -171,7 +171,7 @@ async function forwardToPlugin(forward: PluginForward): Promise<Response> {
     // ignores a trailing slash, and the plugin serves the path it declared.
     path: pluginRouteUpstreamPath(plugin, routePath),
     search: search || undefined,
-    serviceToken: mintServiceToken(),
+    identity: GATEWAY_SERVICE_IDENTITY,
     timeoutMs: config.runtimeTimeoutMs,
     fetchImpl,
   });
@@ -248,7 +248,7 @@ async function notifyPluginAdmissionDenied(opts: {
         plugin,
         PLUGIN_ADMISSION_DENIED_NOTICE_PATH,
       ),
-      serviceToken: mintServiceToken(),
+      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: forward.config.runtimeTimeoutMs,
       fetchImpl: forward.fetchImpl,
     });
