@@ -155,23 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
-  "inferenceUsageChart": {
-    "empty": "No hay datos de uso para este período"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "Volver a todo el uso",
-    "chartMetricAria": "Métrica del gráfico",
-    "eventsLabel": "Eventos",
-    "llmDimensionAria": "Dimensión del gasto de LLM",
-    "llmSpend": "Gasto de LLM",
-    "loadError": "No se pudieron cargar los datos de uso.",
-    "metricEvents": "Eventos",
-    "metricSpend": "Gasto ($)",
-    "oauthSpend": "Gasto de OAuth",
-    "spendLabel": "Gasto",
-    "subtitle": "Resumen de tus hábitos de gasto.",
-    "title": "Uso de créditos"
-  },
   "biometricSettingsCard": {
     "description": "Cuando expire tu sesión, verifica con {label} en lugar de iniciar sesión de nuevo.",
     "descriptionWithPasscode": "Cuando expire tu sesión, verifica con {label} o el código de tu dispositivo en lugar de iniciar sesión de nuevo.",

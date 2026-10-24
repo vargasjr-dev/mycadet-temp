@@ -155,23 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
-  "inferenceUsageChart": {
-    "empty": "No usage data for this period"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "Back to all usage",
-    "chartMetricAria": "Chart metric",
-    "eventsLabel": "Events",
-    "llmDimensionAria": "LLM spend dimension",
-    "llmSpend": "LLM Spend",
-    "loadError": "Failed to load usage data.",
-    "metricEvents": "Events",
-    "metricSpend": "Spend ($)",
-    "oauthSpend": "OAuth Spend",
-    "spendLabel": "Spend",
-    "subtitle": "Overview of your spending habits.",
-    "title": "Credit Usage"
-  },
   "biometricSettingsCard": {
     "description": "When your session expires, verify with {label} instead of signing in again.",
     "descriptionWithPasscode": "When your session expires, verify with {label} or your device passcode instead of signing in again.",

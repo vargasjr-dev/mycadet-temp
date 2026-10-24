@@ -5,15 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
-import { useInboxPitchCopy } from "@/domains/assistant-inbox/hooks/use-inbox-pitch-copy";
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
-import { organizationsBillingSubscriptionRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
@@ -37,9 +33,6 @@ import { EmailCloudContent } from "@/domains/channels/components/email-cloud-con
 export function EmailChannelSection() {
   const { t } = useTranslation("channels");
   const assistantId = useActiveAssistantId();
-
-  // assistantHandle is cloud-only; used to pre-fill the email subdomain.
-  const isOrgReady = useIsOrgReady();
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
   const cloudGate = useCloudGate();
@@ -103,26 +96,6 @@ export function EmailChannelSection() {
   }, [byoCredentialQuery.error]);
 
   const byoConfigured = byoCredentialQuery.data?.hasSecret === true;
-
-  // -- Inbox pitch header ----------------------------------------------------
-  /* An org without managed email sees the inbox's pitch in the cloud
-     body, and this header carries the pitch's
-     title and line in place of the section's own, so the pitch is introduced
-     once rather than by a settings heading and then a card heading. The
-     subscription is the same cached query `EmailCloudContent` reads, and
-     only an explicit denial counts, as it does there. */
-  const assistantName = useAssistantIdentityStore.use.name();
-  const pitchCopy = useInboxPitchCopy(assistantName ?? "");
-  const { data: subscription } = useQuery({
-    ...organizationsBillingSubscriptionRetrieveOptions(),
-    enabled: isOrgReady && cloudGate === "full",
-  });
-  const showInboxPitch =
-    cloudGate === "full" &&
-    mode === "managed" &&
-    cloudAssistantId !== null &&
-    !!subscription?.entitlements &&
-    subscription.entitlements.cloud_email !== true;
 
   // -- Handlers --------------------------------------------------------------
   const handleModeChange = useCallback((next: ServiceMode) => {
@@ -254,10 +227,8 @@ export function EmailChannelSection() {
   return (
     <ServiceCard
       id="email"
-      title={showInboxPitch ? pitchCopy.title : t("emailChannelSection.title")}
-      subtitle={
-        showInboxPitch ? pitchCopy.subtitle : t("emailChannelSection.subtitle")
-      }
+      title={t("emailChannelSection.title")}
+      subtitle={t("emailChannelSection.subtitle")}
       mode={mode}
       onModeChange={handleModeChange}
     >

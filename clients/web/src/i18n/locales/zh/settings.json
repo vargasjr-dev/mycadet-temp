@@ -155,23 +155,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
   },
-  "inferenceUsageChart": {
-    "empty": "此期间无使用数据"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "返回所有使用情况",
-    "chartMetricAria": "图表指标",
-    "eventsLabel": "事件",
-    "llmDimensionAria": "LLM支出维度",
-    "llmSpend": "LLM支出",
-    "loadError": "加载使用数据失败。",
-    "metricEvents": "事件",
-    "metricSpend": "支出 ($)",
-    "oauthSpend": "OAuth支出",
-    "spendLabel": "支出",
-    "subtitle": "您的消费习惯概览。",
-    "title": "积分使用情况"
-  },
   "biometricSettingsCard": {
     "description": "当您的会话过期时，使用 {label} 进行验证，而无需再次登录。",
     "descriptionWithPasscode": "当您的会话过期时，使用 {label} 或您的设备密码进行验证，而无需再次登录。",

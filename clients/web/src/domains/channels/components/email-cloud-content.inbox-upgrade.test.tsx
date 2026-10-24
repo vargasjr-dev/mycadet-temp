@@ -7,12 +7,8 @@ import {
   assistantsDomainsListOptions,
   assistantsEmailAddressesListOptions,
   assistantsListQueryKey,
-  organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
-import type {
-  AssistantDomain,
-  SubscriptionResponse,
-} from "@/generated/api/types.gen";
+import type { AssistantDomain } from "@/generated/api/types.gen";
 
 const ASSISTANT_ID = "assistant-123";
 
@@ -30,12 +26,6 @@ mock.module("@mycadet/design-library/components/toast", () => ({
 
 const { EmailCloudContent } = await import("./email-cloud-content");
 
-const ENTITLED = {
-  plan_id: "base",
-  status: "active",
-  entitlements: { cloud_email: true, phone_number: false },
-} as unknown as SubscriptionResponse;
-
 function LocationProbe() {
   const location = useLocation();
   return <div data-testid="loc">{location.pathname}</div>;
@@ -46,10 +36,6 @@ function renderEntitled({ domain }: { domain: AssistantDomain | null }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
-  client.setQueryData(
-    organizationsBillingSubscriptionRetrieveOptions().queryKey,
-    ENTITLED,
-  );
   const path = { path: { assistant_id: ASSISTANT_ID } };
   client.setQueryData(assistantsDomainsListOptions(path).queryKey, {
     count: domain ? 1 : 0,

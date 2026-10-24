@@ -16,8 +16,6 @@ export interface IdentitySection {
   /** One playful line under the label — written in the assistant's voice. */
   description: string;
   to: string;
-  /** The section is on a plan the org is not on; the card says so with a lock. */
-  locked?: boolean;
 }
 
 type IdentitySectionKey =
@@ -86,12 +84,11 @@ function section(key: Exclude<IdentitySectionKey, "personality" | "email">) {
 
 export interface BuildIdentitySectionsOptions {
   /**
-   * Draw the Email card, after Channels. Absent where there is no inbox
-   * to open (the flag is off, or the assistant is not cloud-hosted):
-   * the one section that depends on the cloud, since the mail lives
-   * there. `locked` marks a plan without managed email.
+   * Draw the Email card, after Channels. Absent when the assistant is
+   * not cloud-hosted — the one section that depends on the cloud,
+   * since the mail lives there.
    */
-  email?: { locked: boolean };
+  email?: boolean;
 }
 
 /**
@@ -113,7 +110,6 @@ export function buildIdentitySections({
             ns: "intelligence",
           }),
           to: routes.assistantInbox,
-          locked: email.locked,
         },
       ]
     : [];
