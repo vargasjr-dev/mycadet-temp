@@ -118,6 +118,8 @@ export type FakeRuntime = {
   /** Resolves with the upstream socket once the pump has dialed in. */
   connected: Promise<import("bun").ServerWebSocket<unknown>>;
   upgradeUrl: () => URL | undefined;
+  /** The upgrade request's headers, as the pump dialed them. */
+  upgradeHeaders: () => Headers | undefined;
 };
 
 /**
