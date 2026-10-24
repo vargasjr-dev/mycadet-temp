@@ -178,7 +178,7 @@ const universalAuthRules = [
  * ships without the session token / CSRF headers.
  */
 const rawApiFetchMessage =
-  "Raw fetch to /v1 bypasses the generated client's auth interceptors (session token/CSRF) — use the generated SDK function; if the endpoint has no generated type, it's missing from cloud.yaml (tag it with PLATFORM_API_CLIENT_EXTENSION in the cloud repo).";
+  "Raw fetch to /v1 bypasses the generated client's auth interceptors (session token/CSRF) — use the generated SDK function; if the endpoint has no generated type, it's missing from cloud.yaml (tag it with CLOUD_API_CLIENT_EXTENSION in the cloud repo).";
 
 const rawApiFetchRules = [
   // fetch("/v1/...") — string-literal first argument.

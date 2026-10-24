@@ -2,7 +2,7 @@
  * Plugins the user should start with based on where they came from.
  *
  * When a logged-in user with no assistant clicks "Hatch an assistant with this
- * plugin" on a marketing plugin page, the marketing side (platform repo
+ * plugin" on a marketing plugin page, the marketing side (cloud repo
  * `web/src/app/(marketing)/plugins/[slug]/_components/plugin-install-in-assistant-button.tsx`)
  * routes them into onboarding with the plugin carried as a `?plugin=<name>`
  * query parameter. Onboarding folds this into the set it installs (see

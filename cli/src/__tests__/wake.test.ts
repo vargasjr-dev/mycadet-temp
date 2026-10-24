@@ -30,6 +30,7 @@ import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
+import * as rootSigningKey from "../lib/root-signing-key.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
@@ -40,6 +41,7 @@ const realLocal = { ...local };
 const realNgrok = { ...ngrok };
 const realProcessLib = { ...processLib };
 const realPortAllocator = { ...portAllocator };
+const realRootSigningKey = { ...rootSigningKey };
 
 const resolveTargetAssistantMock =
   mock<typeof assistantConfig.resolveTargetAssistant>();
@@ -131,6 +133,16 @@ const findOpenPortMock = mock<typeof portAllocator.findOpenPort>(
 mock.module("../lib/port-allocator.js", () => ({
   ...realPortAllocator,
   findOpenPort: findOpenPortMock,
+}));
+
+// Defaults to the real writer: repair tests assert the key file's contents.
+const persistRootSigningKeyMock = mock<
+  typeof rootSigningKey.persistRootSigningKey
+>(realRootSigningKey.persistRootSigningKey);
+
+mock.module("../lib/root-signing-key.js", () => ({
+  ...realRootSigningKey,
+  persistRootSigningKey: persistRootSigningKeyMock,
 }));
 
 const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
@@ -307,6 +319,10 @@ beforeEach(() => {
   startCesMock.mockResolvedValue(undefined);
   isProcessAliveMock.mockReset();
   isProcessAliveMock.mockReturnValue({ alive: false, pid: null });
+  persistRootSigningKeyMock.mockReset();
+  persistRootSigningKeyMock.mockImplementation(
+    realRootSigningKey.persistRootSigningKey,
+  );
   probeDaemonReadinessWithRetryMock.mockReset();
   probeDaemonReadinessWithRetryMock.mockResolvedValue("ready");
   waitForDaemonMigrationsReadyMock.mockReset();
@@ -360,6 +376,7 @@ afterAll(() => {
   mock.module("../lib/ingress-config.js", () => realIngressConfig);
   mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);
+  // TEMP-REMOVED
 });
 
 describe("cadet wake", () => {
@@ -630,10 +647,10 @@ describe("cadet wake", () => {
       "local-assistant",
       "--repair-guardian",
     ];
-    saveLockfileAssistantMock.mockImplementation(() => {
-      throw new Error("registry write failed");
+    persistRootSigningKeyMock.mockImplementation(() => {
+      throw new Error("key file write failed");
     });
-    await expect(wake()).rejects.toThrow("registry write failed");
+    await expect(wake()).rejects.toThrow("key file write failed");
     expect(startLocalDaemonMock).not.toHaveBeenCalled();
     expect(startGatewayMock).not.toHaveBeenCalled();
     expect(leaseGuardianTokenMock).not.toHaveBeenCalled();

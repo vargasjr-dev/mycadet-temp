@@ -307,8 +307,6 @@ export async function wakeAssistant(
         );
       }
     }
-  }
-  if (replacingSigningKey) {
     // The key file is the identity's home: the replacement persists there so
     // every later resolve — and the spawned processes' env — agrees with it.
     persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
