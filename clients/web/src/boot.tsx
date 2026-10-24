@@ -20,7 +20,7 @@ import { WindowDragRegion } from "@/components/window-drag-region";
 import { initI18n } from "@/i18n";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
-import { isLocalClient, loadLockfile } from "@/lib/local-mode";
+import { isLocalClient } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -79,14 +79,13 @@ async function boot(router: Router) {
   // boot route is announced.
   setupRemoteGatewayNavBridge();
   if (isLocalClient()) {
-    await loadLockfile();
     await useAuthStore.getState().initSession();
   } else {
     useAuthStore.getState().initSession();
   }
   setupAuthListeners();
-  // Local mode awaits the lockfile read and `initSession()` above, so this
-  // separates "session was the boot cost" from "the app tree was".
+  // Local mode awaits `initSession()` above, so this separates "session was
+  // the boot cost" from "the app tree was".
 
   const rootEl = document.getElementById("root");
   if (!rootEl) {

@@ -23,10 +23,18 @@ export const InjectedConfigSchema = z.object({
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */
   version: z.string().optional(),
-  /** Serving assistant's id (remote-web ingress configs only). */
+  /** Serving assistant's id, stamped by every host that fronts one assistant. */
   assistantId: z.string().optional(),
-  /** Serving assistant's display name (remote-web ingress configs only). */
+  /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
+  /**
+   * The serving assistant's cloud kind (the lockfile entry's `cloud` value),
+   * so the renderer can classify the served assistant (local vs a paired
+   * connect import) without reading the host's lockfile. Degrades to
+   * `undefined` (the plain on-machine spelling) when absent or unknown, so
+   * a stamp from a newer host can never invalidate the whole config.
+   */
+  assistantCloud: RemoteSchema.optional().catch(undefined),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),
 });

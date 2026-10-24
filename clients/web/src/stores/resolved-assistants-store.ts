@@ -10,15 +10,11 @@
  *     key — there is one selection, validated for whichever org is active.
  *
  * Population:
- *  - Local mode: assistant list auto-syncs with the lockfile store via
- *    subscription, so every hatch / sync / retire is reflected.
+ *  - Local mode: the list IS the served synthesis — the host stamps the one
+ *    assistant this surface serves, populated once at module load.
  *  - Platform mode: not populated by this bundle — the app bundle's
  *    assistant chooser owns the cloud assistant list.
  *
- * Do NOT confuse with `lockfile-store.ts`, which is the raw on-disk
- * lockfile cache used internally by `lib/local-mode.ts` for host IPC.
- *
- * @see lockfile-store.ts — raw lockfile cache (internal to local-mode)
  * @see lib/navigation/build-state.ts — derives `hasAssistants` from here
  */
 
@@ -28,6 +24,7 @@ import { z } from "zod";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import {
+  getLockfile,
   isLocalClient,
   isLocalAssistant,
   isCloudAssistant,
@@ -56,7 +53,6 @@ import {
   readSelectedAssistantId,
   writeSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
-import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile } from "@/runtime/local-mode-host";
 import type { Assistant } from "@/generated/api/types.gen";
 
@@ -409,11 +405,9 @@ function getLockfileFields(assistantId: string): {
   isPaired?: boolean;
   isActiveLockfileAssistant?: boolean;
 } {
-  const lockfile = useLockfileStore.getState().lockfile;
-  const entry = lockfile?.assistants.find((a) => a.assistantId === assistantId);
-  const activeLockfileAssistantId = lockfile
-    ? getEffectiveActiveLockfileAssistantId(lockfile)
-    : null;
+  const lockfile = getLockfile();
+  const entry = lockfile.assistants.find((a) => a.assistantId === assistantId);
+  const activeLockfileAssistantId = getEffectiveActiveLockfileAssistantId(lockfile);
   return {
     cloud: entry?.cloud,
     // The renderer-safe lockfile contract carries the org under its
@@ -450,16 +444,13 @@ function getEffectiveActiveLockfileAssistantId(
 // Subscriptions
 // ---------------------------------------------------------------------------
 
-// In local mode, keep the resolved list in sync with the lockfile. Only
-// committed lockfiles count: the empty placeholder written when nothing has
-// loaded (e.g. a failed host read at boot) must not mark the list hydrated
-// and reconcile away a still-valid selection.
+// In local mode, the resolved list is the served synthesis: the host stamps
+// the one assistant this surface serves, so the list populates once — there
+// is no roster to stay subscribed to. A host that stamps no assistant
+// (a pre-hatch desktop) populates the empty list, which is exactly what the
+// onboarding gates read.
 if (isLocalClient()) {
-  useLockfileStore.subscribe((state) => {
-    if (state.lockfile && state.committed) {
-      useResolvedAssistantsStoreBase.getState().setFromLockfile(state.lockfile);
-    }
-  });
+  useResolvedAssistantsStoreBase.getState().setFromLockfile(getLockfile());
 }
 
 const SelectionChangeSchema = z.object({

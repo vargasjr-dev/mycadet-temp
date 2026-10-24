@@ -10,7 +10,6 @@ import {
 
 import { readInjectedConfig } from "@/lib/injected-config";
 
-import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { isPublicBaseUrlRejection } from "@/utils/pairing-address";
 import {
   clearSelectedAssistantId,
@@ -23,14 +22,12 @@ import {
 } from "@/lib/self-hosted/connection";
 import { probeAssistantReadyzHost } from "@/runtime/local-mode-host";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useLockfileStore } from "@/stores/lockfile-store";
 import {
   GuardianTokenError,
   loadLockfileHost,
   pairingCancelHost,
   pairingPollHost,
   pairingStartHost,
-  parseLockfile,
   retireLocalAssistantHost,
   unpairAssistantHost,
   wakeLocalAssistantHost,
@@ -63,16 +60,7 @@ export type {
 // Cache
 // ---------------------------------------------------------------------------
 
-// The cache lives in the lockfile store so React consumers can subscribe to
-// changes; this module owns the transport and is the only writer.
-const getCachedLockfile = (): Lockfile | null =>
-  useLockfileStore.getState().lockfile;
-const setCachedLockfile = (data: Lockfile, committed = true): void =>
-  useLockfileStore.getState().setLockfile(data, committed);
-
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
-
-const LOCKFILE_STORAGE_KEY = "cadet:local:lockfile";
 
 export function isCadetCloudRemote(): boolean {
   return readInjectedConfig()?.remote === "cloud";
@@ -119,33 +107,38 @@ export function isServedGatewayRuntime(): boolean {
   return remote === "docker" || remote === "custom";
 }
 
-function getRemoteGatewayLockfile(): Lockfile {
+/**
+ * Web's lockfile view, synthesized from the served config: the hosting edge,
+ * the desktop preload, and the dev server each stamp the ONE assistant this
+ * surface serves (`assistantId`/`assistantName`/`assistantCloud`). The
+ * on-disk lockfile is the host's server config — the renderer never reads
+ * it. A host that stamps no assistant (Cadet Cloud, a pre-hatch desktop)
+ * yields the empty lockfile, which is what the onboarding gates read.
+ *
+ * `resources.gatewayPort: 0` keeps `getLoopbackGatewayPort` non-null: the
+ * serving host IS the gateway, so the local-gateway predicate stays open and
+ * readiness remains a probe question, never a port question.
+ */
+function getServedLockfile(): Lockfile {
+  const config = readInjectedConfig();
+  const assistantId = nonEmptyString(config?.assistantId);
+  if (isCadetCloudRemote() || !assistantId) {
+    return { ...EMPTY_LOCKFILE };
+  }
   return {
     assistants: [
       {
-        assistantId: "self",
-        name: getRemoteGatewayAssistantName() ?? "Local Assistant",
-        cloud: "local",
+        assistantId,
+        name: nonEmptyString(config?.assistantName) ?? "Local Assistant",
+        cloud: config?.assistantCloud ?? "local",
         runtimeUrl: window.location.origin,
         hatchedAt: "1970-01-01T00:00:00.000Z",
         resources: { gatewayPort: 0, daemonPort: 0 },
       },
     ],
-    activeAssistant: "self",
+    activeAssistant: assistantId,
   };
 }
-
-// Advance the in-memory cache and mirror the lockfile to persisted storage in
-// one step. The mirror lets the synchronous `getLockfile()` hydrate from
-// storage on a cold read before the host transport has responded.
-const commitLockfile = (data: Lockfile): void => {
-  setCachedLockfile(data);
-  setLocalSetting(LOCKFILE_STORAGE_KEY, JSON.stringify(data));
-  // Only reconcile against a lockfile from a successful host read/write — never
-  // the transient empty fallback in `getLockfile`, which would wrongly drop a
-  // valid selection on a boot/read failure.
-  reconcileSelectedAssistant();
-};
 
 // ---------------------------------------------------------------------------
 // Core helpers
@@ -159,72 +152,21 @@ export function isLocalClient(): boolean {
   return readInjectedConfig()?.remote !== "cloud";
 }
 
-export async function loadLockfile(): Promise<Lockfile> {
-  if (isServedGatewayRuntime()) {
-    const lockfile = getRemoteGatewayLockfile();
-    commitLockfile(lockfile);
-    return lockfile;
-  }
-
-  // A cloud-hosted cadet has no local-mode host: the bundle is served by
-  // Cadet Cloud, so a local lockfile fetch would land on its web app
-  // instead of a local daemon. Commit an empty lockfile without fetching —
-  // the assistant list comes from the cloud API, and stale persisted local
-  // entries must not leak into a cloud session.
-  if (isCadetCloudRemote()) {
-    const empty = { ...EMPTY_LOCKFILE };
-    setCachedLockfile(empty);
-    return empty;
-  }
-
-  try {
-    const data = await loadLockfileHost();
-    commitLockfile(data);
-    return data;
-  } catch {
-    // Host read failed — keep whatever we already have (the in-memory cache,
-    // then the persisted mirror) rather than clobbering it with an empty
-    // lockfile that subscribers would mistake for "no assistants".
-    return getLockfile();
-  }
-}
-
+/**
+ * Web's lockfile read. There is exactly one arm: the synthesis from the
+ * served config. The on-disk lockfile the host maintains is the host's
+ * server config — the hosts that need it (the desktop main process, the dev
+ * server) read it themselves and stamp the served assistant's identity into
+ * `__CADET_CONFIG__`; the renderer's view is always that one assistant.
+ */
 export function getLockfile(): Lockfile {
-  if (isServedGatewayRuntime()) {
-    const lockfile = getRemoteGatewayLockfile();
-    setCachedLockfile(lockfile);
-    return lockfile;
-  }
-
-  const cached = getCachedLockfile();
-  if (cached) {
-    return cached;
-  }
-
-  const stored = getLocalSetting(LOCKFILE_STORAGE_KEY, "");
-  if (stored) {
-    try {
-      const parsed = parseLockfile(JSON.parse(stored));
-      setCachedLockfile(parsed);
-      return parsed;
-    } catch {
-      // Unparseable JSON -- fall through to empty lockfile. (A structurally
-      // invalid lockfile does not throw: parseLockfile salvages what it can.)
-    }
-  }
-
-  // Not committed: this is a "nothing loaded yet" placeholder, not evidence
-  // that the assistants are gone — reconciling subscribers must ignore it.
-  const empty = { ...EMPTY_LOCKFILE };
-  setCachedLockfile(empty, false);
-  return empty;
+  return getServedLockfile();
 }
 
 /**
  * Drop the session state bound to the selected assistant: the raw selection
- * key (no store import here, that would cycle; the reactive slice reconciles
- * via `setFromLockfile` on the next lockfile commit/load) and the
- * self-hosted connection (whose token slot is the only bearer custody).
+ * key (the app shell's chooser memory) and the self-hosted connection (whose
+ * token slot is the only bearer custody).
  */
 function clearSelectedAssistantSession(): void {
   clearSelectedAssistantId();
@@ -234,19 +176,29 @@ function clearSelectedAssistantSession(): void {
 /**
  * Forget a paired assistant on this device: the host removes its lockfile
  * entry and deletes its stored guardian token, never touching the remote
- * assistant (pair again anytime with `cadet connect import`). When the
- * removed entry is the effective selection, the session residue (selection
- * key, gateway token, self-hosted connection) is cleared the same way a
- * local retire clears it, so the next connect starts clean.
+ * assistant (pair again anytime with `cadet connect import`). The entry
+ * being removed is never the served one — it lives only in the host's
+ * roster — so validation reads the host transport directly, and the raw
+ * selection key (owned by the app shell's chooser) is cleared when it named
+ * the removed assistant, the same way a local retire clears it.
  */
 export async function removePairedAssistantFromLockfile(
   assistantId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const entry = getLockfileAssistant(assistantId);
-  if (!entry) {
+  let rosterKnown = true;
+  try {
+    rosterKnown = (await loadLockfileHost()).assistants.some(
+      (a) => a.assistantId === assistantId,
+    );
+  } catch {
+    // An unreachable host must not block the removal attempt: the host
+    // validates the id itself and reports the same "not in the local list"
+    // outcome through its own error.
+  }
+  if (!rosterKnown) {
     return { ok: false, error: "This assistant isn't in the local list." };
   }
-  const wasSelected = getSelectedAssistant()?.assistantId === assistantId;
+  const wasSelected = readSelectedAssistantId() === assistantId;
   const result = await unpairAssistantHost(assistantId);
   if (!result.ok) {
     return { ok: false, error: result.error || "Failed to remove assistant." };
@@ -254,7 +206,6 @@ export async function removePairedAssistantFromLockfile(
   if (wasSelected) {
     clearSelectedAssistantSession();
   }
-  commitLockfile(result.lockfile);
   return { ok: true };
 }
 
@@ -297,9 +248,7 @@ export async function startAssistantPairing(
 }
 
 /**
- * One exchange attempt for a live pairing session. On `imported` the lockfile
- * is reloaded so subscribers (the resolved-assistants store) pick up the new
- * entry, the write counterpart of {@link removePairedAssistantFromLockfile}.
+ * One exchange attempt for a live pairing session.
  * `accessOnly` is true when the exchange yielded no refresh credential, so the
  * pairing's access expires and cannot renew itself.
  */
@@ -319,7 +268,6 @@ export async function pollAssistantPairing(
   if (!result.assistantId) {
     return { ok: false, error: PAIRING_FALLBACK_ERROR };
   }
-  await loadLockfile();
   return { ...result, accessOnly: result.accessOnly === true };
 }
 
@@ -343,8 +291,8 @@ export async function cancelAssistantPairing(handle: string): Promise<void> {
 
 /**
  * Retire a local assistant, then clear its selection, gateway token, and
- * self-hosted connection and reload the lockfile. On failure the local state
- * is left untouched and the error is returned for the caller to surface.
+ * self-hosted connection. On failure the local state is left untouched and
+ * the error is returned for the caller to surface.
  */
 export async function retireLocalAssistant(
   assistantId: string,
@@ -352,7 +300,6 @@ export async function retireLocalAssistant(
   const result = await retireLocalAssistantHost(assistantId);
   if (result.ok) {
     clearSelectedAssistantSession();
-    await loadLockfile();
   }
   return result;
 }
@@ -431,65 +378,23 @@ export function getActiveAssistant(): LockfileAssistant | undefined {
   return undefined;
 }
 
+/**
+ * The assistant this surface serves. The host resolved the selection when it
+ * stamped the config (the app shell's chooser writes the raw key and the
+ * host is the one that knows the roster), so the served entry IS the
+ * selection; there is no renderer-side resolution left.
+ */
 export function getSelectedAssistant(): LockfileAssistant | undefined {
-  const selectedId = readSelectedAssistantId();
-  if (selectedId) {
-    const found = getLockfile().assistants.find(
-      (a) => a.assistantId === selectedId,
-    );
-    if (found) {
-      return found;
-    }
-  }
   return getActiveAssistant();
 }
 
-/** The lockfile entry for a specific assistant id, if one exists. */
+/**
+ * The lockfile entry for a specific assistant id, if one exists.
+ */
 export function getLockfileAssistant(
   assistantId: string,
 ): LockfileAssistant | undefined {
   return getLockfile().assistants.find((a) => a.assistantId === assistantId);
-}
-
-/**
- * React subscription to one lockfile entry's `name`: `undefined` while the
- * lockfile hasn't hydrated or the id has no entry, `null` when the entry
- * exists but is unnamed. Distinguishing absence from an unnamed entry lets
- * effects depending on this value re-fire even when the appearing entry
- * carries no name.
- */
-export function useLockfileAssistantName(
-  assistantId: string | null,
-): string | null | undefined {
-  return useLockfileStore((s) => {
-    if (assistantId === null) {
-      return undefined;
-    }
-    const entry = s.lockfile?.assistants.find(
-      (a) => a.assistantId === assistantId,
-    );
-    return entry === undefined ? undefined : (entry.name ?? null);
-  });
-}
-
-/**
- * Reconcile the selection key against the lockfile registry: if the selected id
- * no longer names a lockfile entry, clear it so `getSelectedAssistant` falls
- * back to `getActiveAssistant`. The store's own reconcile (on `setFromLockfile`)
- * covers the reactive slice; this keeps the raw key honest on the synchronous
- * `commitLockfile` path, including the pre-React-mount gateway-auth boot.
- */
-export function reconcileSelectedAssistant(): void {
-  const selectedId = readSelectedAssistantId();
-  if (!selectedId) {
-    return;
-  }
-  const present = getLockfile().assistants.some(
-    (a) => a.assistantId === selectedId,
-  );
-  if (!present) {
-    clearSelectedAssistantId();
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -904,19 +809,13 @@ export async function primeLocalGatewayConnectionWithRepair(
     if (!repair.ok) {
       throw error;
     }
-    // Wake may have established resources the renderer hadn't recorded (a legacy
-    // entry's gateway port). Reload so the retry resolves the fresh gateway.
-    const lockfile = await loadLockfile();
-    const refreshed = lockfile.assistants.find(
-      (a) => a.assistantId === assistantId,
-    );
     // Wake restarts the assistant + gateway, so the retry races the gateway
     // coming back up. A single prime here fails while it is still starting and
     // the connect dead-ends to the recovery controls. Ride out that restart
     // window instead, so a persisted local assistant reconnects on its own.
-    await primeLocalGatewayWithStartupRideout(
-      refreshed ?? assistant,
-      isGatewayRestartTransient,
-    );
+    // The served entry is all the renderer ever knows (the host owns the
+    // roster): the wake's effect shows up in the host-routed probe, not in
+    // any renderer-visible field.
+    await primeLocalGatewayWithStartupRideout(assistant, isGatewayRestartTransient);
   }
 }

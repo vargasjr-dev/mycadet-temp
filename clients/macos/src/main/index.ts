@@ -17,6 +17,7 @@ import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protoco
 import {
   resolveLocalConfigFromEnv,
   resolveLockfilePaths,
+  type LockfileAssistant,
 } from "@mycadet/local-mode";
 
 import { getVersionInfo, installAbout, openAboutWindow } from "./about.client";
@@ -69,7 +70,7 @@ import { installImageContextMenu } from "@mycadet/electron-desktop/image-context
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 import { installLocalMode, resolveCliInvocation } from "./local-mode.client";
 import { installLoginItem, installLoginItemIpc } from "./login-item.client";
-import { installLockfileWatcher } from "./lockfile-watcher.client";
+import { getWatchedLockfile, installLockfileWatcher } from "./lockfile-watcher.client";
 import { installHostProxyBridge } from "./host-proxy-adapter";
 import log from "./logger";
 import {
@@ -306,11 +307,38 @@ const registerAppProtocol = (): void => {
 };
 
 const resolvedConfig = resolveLocalConfigFromEnv(process.env);
-handleSync("cadet:config:get", () => ({
-  cloudUrl: resolvedConfig.cloudUrl,
-  deviceId: getDeviceId(),
-  version: getVersionInfo().version,
-}));
+/**
+ * The one assistant this desktop serves the web surface: the web frame's
+ * selection (forwarded by the preload from the shared selection key the
+ * app shell's chooser writes), else the lockfile's active assistant, else
+ * the sole entry. The roster is the main process's business — the renderer
+ * only ever sees the stamped result.
+ */
+const resolveServedAssistant = (
+  selectedAssistantId?: unknown,
+): LockfileAssistant | undefined => {
+  const lockfile = getWatchedLockfile();
+  const byId = (id: unknown): LockfileAssistant | undefined =>
+    typeof id === "string" && id !== ""
+      ? lockfile.assistants.find((a) => a.assistantId === id)
+      : undefined;
+  return (
+    byId(selectedAssistantId) ??
+    byId(lockfile.activeAssistant) ??
+    (lockfile.assistants.length === 1 ? lockfile.assistants[0] : undefined)
+  );
+};
+handleSync("cadet:config:get", (selectedAssistantId?: unknown) => {
+  const served = resolveServedAssistant(selectedAssistantId);
+  return {
+    cloudUrl: resolvedConfig.cloudUrl,
+    deviceId: getDeviceId(),
+    version: getVersionInfo().version,
+    assistantId: served?.assistantId,
+    assistantName: served?.name,
+    assistantCloud: served?.cloud,
+  };
+});
 
 // ---------------------------------------------------------------------------
 // App lifecycle
