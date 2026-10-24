@@ -16,6 +16,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 
 import * as authStore from "@app/stores/auth-store";
+import { routes } from "@app/utils/routes";
 
 /** Session lifecycle verdict the auth store carries (the app's shape). */
 type CloudSessionStatus = "unknown" | "absent" | "present";
@@ -46,6 +47,12 @@ export const mockAuthStore = () => ({
   ...authStore,
   useIsAuthenticated: () => authEntry.authenticated,
   useIsSessionInitializing: () => authEntry.initializing,
+  // The app store reads an external snapshot owned by the cloud-session
+  // source; tests drive the cloud-session dimension through the snapshot
+  // below so the gate scenarios can settle it without the real probe.
+  useAuthStore: (
+    selector: (state: { cloudSession: CloudSessionStatus }) => unknown,
+  ) => selector({ cloudSession: authStoreState.cloudSession }),
 });
 
 export const mockNativeAuth = () => ({
@@ -74,7 +81,6 @@ export const mockHardNavigate = () => ({
 });
 
 function setCloudSession(cloudSession: CloudSessionStatus) {
-  authStore.useAuthStore.getState();
   authStoreState.cloudSession = cloudSession;
 }
 
@@ -161,27 +167,30 @@ export function describeAuthEntryContract(
     test("a cloud-dependent returnTo without a cloud session still signs in", () => {
       authEntry.authenticated = true;
       setCloudSession("absent");
-      const entry = entryUrl(route, CHECKOUT);
+      // /account is the cloud-only surface: a gateway identity can't reach it,
+      // so the absent cloud session falls through to the auth screen.
+      const entry = entryUrl(route, routes.account.root);
       renderEntry(entry);
 
       expect(currentLocation()).toBe(entry);
       expect(authScreen()).toBeTruthy();
     });
 
-    test("a self-hosted assistant with no platform session still signs in", () => {
+    test("a checkout returnTo no longer needs a platform session", () => {
+      // Checkout left the cloud-only list: an assistant identity reaches it,
+      // so the short-circuit lands there instead of bouncing to the auth sheet.
       authEntry.authenticated = true;
       setCloudSession("absent");
-      const entry = entryUrl(route, CHECKOUT);
-      renderEntry(entry);
+      renderEntry(entryUrl(route, CHECKOUT));
 
-      expect(currentLocation()).toBe(entry);
-      expect(authScreen()).toBeTruthy();
+      expect(currentLocation()).toBe(CHECKOUT);
+      expect(authScreen()).toBeNull();
     });
 
     test("a cloud-dependent returnTo waits out the cloud-session probe", () => {
       authEntry.authenticated = true;
       setCloudSession("unknown");
-      const entry = entryUrl(route, CHECKOUT);
+      const entry = entryUrl(route, routes.account.root);
       renderEntry(entry);
 
       expect(currentLocation()).toBe(entry);

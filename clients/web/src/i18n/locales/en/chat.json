@@ -989,37 +989,6 @@
     "save": "Save",
     "title": "Rename conversation"
   },
-  "researchActivityFeed": {
-    "defaultStatus": "Searching the web to get to know you.",
-    "heading": "Getting to know you…",
-    "reading": "Reading <title>{title}</title><domain> · {domain}</domain>",
-    "searchingFor": "Searching for <query>“{query}”</query>",
-    "warmingUp": "Warming up the search…"
-  },
-  "researchFactsCard": {
-    "editRemovalAria": "Edit removal",
-    "keepIt": "Keep it",
-    "removeAria": "Remove",
-    "sources": "Sources",
-    "whyRemove": "Why remove this?"
-  },
-  "researchMockPage": {
-    "heading": "Getting to know you…",
-    "mockNote": "(mock - the live flow shows the search activity feed here)",
-    "resultsTitle": "Here's what I know about you. You can remove any that aren't true:"
-  },
-  "researchResultsOverlay": {
-    "body": "Here's what I know about you. You can remove any that aren't true:",
-    "loading": "Getting to know you…"
-  },
-  "researchResultsView": {
-    "continue": "Continue",
-    "emptyBody": "I couldn't pull together a clean profile this time. We can get to know each other as we go.",
-    "emptyTitle": "Let's just dive in."
-  },
-  "researchSuggestions": {
-    "heading": "Here's how I could help to start:"
-  },
   "ruleEditorActions": {
     "saveFailed": "Failed to save trust rule. Please try again."
   },

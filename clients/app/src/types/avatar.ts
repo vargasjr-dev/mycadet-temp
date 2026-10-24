@@ -1,24 +1,51 @@
-import type {
-  AvatarCharactercomponentsGetResponses,
-  AvatarStateGetResponses,
-} from "@app/generated/daemon/types.gen";
-
 /**
- * Avatar domain types, derived from the daemon's generated OpenAPI response
- * shapes so the renderer never re-asserts a hand-maintained mirror of the
- * wire contract. The named aliases below are pure indexed-access views of
- * the generated `200` responses for `GET /avatar/state` and
- * `GET /avatar/character-components`; regenerating the client
- * (`bun run openapi-ts`) propagates any contract change here automatically.
- *
- * The runtime guards (`isCharacterTraits`, `isAvatarState`) live here because
- * generated types are compile-time only — code that validates an untrusted
- * payload (e.g. a legacy sidecar file or a cross-version daemon response)
- * still needs a runtime narrowing function.
+ * Avatar domain types — the daemon's avatar wire contract, hand-declared so
+ * the app bundle carries no generated SDK and no cross-package codegen
+ * (the scoped daemon surface is gone from the app; the chat bundle owns the
+ * generated client). The runtime guards (`isCharacterTraits`,
+ * `isAvatarState`) live here because these are compile-time types only —
+ * code that validates an untrusted payload (e.g. a legacy sidecar file or a
+ * cross-version daemon response) still needs a runtime narrowing function.
  */
 
-type AvatarStateResponse = AvatarStateGetResponses[200];
-type CharacterComponentsResponse = AvatarCharactercomponentsGetResponses[200];
+export type AvatarStateResponse = {
+  kind: "character" | "image" | "none";
+  traits: {
+    bodyShape: string;
+    eyeStyle: string;
+    color: string;
+  } | null;
+  source: "builder" | "upload" | "ai" | null;
+  image: {
+    updatedAt: string;
+    etag: string;
+  } | null;
+  accent: {
+    hex: string;
+    source: "palette" | "derived" | "custom";
+  } | null;
+};
+
+export type CharacterComponentsResponse = {
+  bodyShapes: Array<{
+    id: string;
+    viewBox: { width: number; height: number };
+    faceCenter: { x: number; y: number };
+    svgPath: string;
+  }>;
+  eyeStyles: Array<{
+    id: string;
+    sourceViewBox: { width: number; height: number };
+    eyeCenter: { x: number; y: number };
+    paths: Array<{ svgPath: string; color: string }>;
+  }>;
+  colors: Array<{ id: string; hex: string }>;
+  faceCenterOverrides: Array<{
+    bodyShape: string;
+    eyeStyle: string;
+    faceCenter: { x: number; y: number };
+  }>;
+};
 
 export type BodyShapeDefinition =
   CharacterComponentsResponse["bodyShapes"][number];

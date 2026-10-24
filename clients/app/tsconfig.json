@@ -13,7 +13,7 @@
     "noEmit": true,
     "allowJs": false,
     "isolatedModules": true,
-    "types": ["bun"],
+    "types": ["bun", "vite/client"],
     "paths": {
       "@app/*": ["./src/*"],
       "@design/*": ["../../packages/design-library/src/*"]

@@ -978,37 +978,6 @@
     "save": "保存",
     "title": "重命名对话"
   },
-  "researchActivityFeed": {
-    "defaultStatus": "正在搜索网页以了解您。",
-    "heading": "正在了解您…",
-    "reading": "正在阅读 <title>{title}</title><domain> · {domain}</domain>",
-    "searchingFor": "正在搜索 <query>“{query}”</query>",
-    "warmingUp": "正在预热搜索…"
-  },
-  "researchFactsCard": {
-    "editRemovalAria": "编辑移除",
-    "keepIt": "保留",
-    "removeAria": "移除",
-    "sources": "来源",
-    "whyRemove": "为何移除此项？"
-  },
-  "researchMockPage": {
-    "heading": "正在了解您…",
-    "mockNote": "（模拟 - 实时流程在此处显示搜索活动源）",
-    "resultsTitle": "这是我了解到的关于您的信息。您可以移除任何不真实的内容："
-  },
-  "researchResultsOverlay": {
-    "body": "这是我了解到的关于您的信息。您可以移除任何不真实的内容：",
-    "loading": "正在了解您…"
-  },
-  "researchResultsView": {
-    "continue": "继续",
-    "emptyBody": "这次我无法整理出清晰的个人资料。我们可以在后续交流中互相了解。",
-    "emptyTitle": "我们直接开始吧。"
-  },
-  "researchSuggestions": {
-    "heading": "以下是我可以如何帮助您开始："
-  },
   "ruleEditorActions": {
     "saveFailed": "保存信任规则失败。请重试。"
   },
