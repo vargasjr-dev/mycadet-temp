@@ -83,15 +83,7 @@ beforeEach(() => {
   removeLifecycleDiagnostics("asset_query_");
   useAuthStore.setState({
     sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "user-123",
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
+    cloudSession: "present",
   });
   useOrganizationStore.setState({
     organizations: [],
@@ -114,17 +106,20 @@ describe("AppProviders cache scope", () => {
       observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
     const previousEvents = assetEvents();
-    const previousUser = useAuthStore.getState().user;
+    const previousSession = useAuthStore.getState().cloudSession;
 
     act(() => {
-      useAuthStore.setState({ sessionStatus: "initializing", user: null });
+      useAuthStore.setState({
+        sessionStatus: "initializing",
+        cloudSession: "unknown",
+      });
     });
     expect(assetEvents()).toEqual(previousEvents);
 
     act(() => {
       useAuthStore.setState({
         sessionStatus: "authenticated",
-        user: previousUser,
+        cloudSession: previousSession,
       });
     });
     // The assistant scope never moved, so the diagnostics were neither
@@ -133,19 +128,18 @@ describe("AppProviders cache scope", () => {
     expect(assetEvents()).toEqual(previousEvents);
   });
 
-  test("keeps the diagnostics when the session settles with another user", async () => {
+  test("keeps the diagnostics when the session settles for another account", async () => {
     renderProviders();
     await expect(
       observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
     ).rejects.toThrow();
     const previousEvents = assetEvents();
-    const previousUser = useAuthStore.getState().user!;
 
     act(() => {
-      useAuthStore.setState({
-        sessionStatus: "authenticated",
-        user: { ...previousUser, id: "user-456" },
-      });
+      // A fresh platform session (cross-tab sign-in as another account) —
+      // still "present", and the assistant selection never moved.
+      useAuthStore.setState({ cloudSession: "unknown" });
+      useAuthStore.setState({ cloudSession: "present" });
     });
     // The user is no longer the request identity — the assistant is, and it
     // did not move.

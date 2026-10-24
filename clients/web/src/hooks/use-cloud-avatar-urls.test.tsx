@@ -52,7 +52,7 @@ const { useResolvedAssistantsStore } =
 const {
   cloudAvatarUrlsQueryKey,
   supersedeCloudAvatar,
-  suppressPlatformAvatarUrl,
+  suppressCloudAvatarUrl,
   useCloudAvatarUrls,
 } = await import("@/hooks/use-cloud-avatar-urls");
 const { AVATAR_SUPERSEDE_WINDOW_MS, resetAvatarSupersedeForTests } =
@@ -81,18 +81,9 @@ async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 
-function signIn(userId = "user-1"): void {
+function signIn(): void {
   useAuthStore.setState({
     cloudSession: "present",
-    user: {
-      kind: "platform",
-      id: userId,
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
   });
 }
 
@@ -135,7 +126,7 @@ describe("useCloudAvatarUrls", () => {
   test.each([
     [
       "no live platform session",
-      () => useAuthStore.setState({ cloudSession: "absent", user: null }),
+      () => useAuthStore.setState({ cloudSession: "absent" }),
     ],
     [
       "an unsettled platform session",
@@ -243,7 +234,7 @@ describe("useCloudAvatarUrls", () => {
   });
 });
 
-describe("suppressPlatformAvatarUrl", () => {
+describe("suppressCloudAvatarUrl", () => {
   function deferredList() {
     let resolveList!: (value: AssistantApi.ListAssistantsResult) => void;
     listAssistants.mockReturnValueOnce(
@@ -265,7 +256,7 @@ describe("suppressPlatformAvatarUrl", () => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
 
-    act(() => suppressPlatformAvatarUrl(queryClient, "a"));
+    act(() => suppressCloudAvatarUrl(queryClient, "a"));
 
     await waitFor(() => {
       expect(result.current.has("a")).toBe(false);
@@ -285,7 +276,7 @@ describe("suppressPlatformAvatarUrl", () => {
       expect(listAssistants).toHaveBeenCalledTimes(1);
     });
 
-    act(() => suppressPlatformAvatarUrl(queryClient, "a"));
+    act(() => suppressCloudAvatarUrl(queryClient, "a"));
     resolveList([
       apiAssistant("a", WITH_AVATAR),
       apiAssistant("sibling", "https://cdn.example/avatars/sibling.png"),
@@ -314,7 +305,7 @@ describe("suppressPlatformAvatarUrl", () => {
       expect(result.current.get("a")).toBe(WITH_AVATAR);
     });
 
-    act(() => suppressPlatformAvatarUrl(queryClient, "a"));
+    act(() => suppressCloudAvatarUrl(queryClient, "a"));
     await waitFor(() => {
       expect(result.current.has("a")).toBe(false);
     });

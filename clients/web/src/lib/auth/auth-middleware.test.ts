@@ -103,11 +103,10 @@ import { useSyncExternalStore } from "react";
 import { authMiddleware } from "./auth-middleware";
 import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { useAuthStore, type AuthUser } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 
 const initialAuthState = useAuthStore.getState();
-const fakeUser = { id: "user-123" } as AuthUser;
 
 const localAssistant: LockfileAssistant = {
   assistantId: "local-a",
@@ -209,7 +208,6 @@ describe("authMiddleware — local-mode onboarding fork", () => {
   test("waits for the cloud-session probe before choosing hosting vs welcome", async () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "unknown",
     });
 
@@ -239,7 +237,6 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // absent is admitted here and the shell steers the onboarding fork.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "absent",
     });
 
@@ -256,7 +253,6 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // next is the app bundle's call, not web's redirect.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "unknown",
     });
 
@@ -270,7 +266,6 @@ describe("authMiddleware — local-mode onboarding fork", () => {
   test("routes to hosting when a resolved platform session exists", async () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
 
@@ -302,7 +297,6 @@ describe("authMiddleware — app-access admit gate", () => {
     // though the cloud probe settled absent.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "absent",
     });
 
@@ -315,7 +309,6 @@ describe("authMiddleware — app-access admit gate", () => {
     // Start admitted as a local user.
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
     expect((await runMiddlewareOutcome(routes.identity)).admitted).toBe(true);
@@ -339,7 +332,6 @@ describe("authMiddleware — app-access admit gate", () => {
     mockGatewayTokenPresent = false;
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      user: null,
       cloudSession: "absent",
     });
 
@@ -359,7 +351,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     // Simulate consent/assistants fetches that hang: neither store ever
@@ -399,7 +390,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     // The boot state a cold deep link sees: nothing read back from the server
@@ -428,7 +418,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     consentPrefs.tos = false;
@@ -459,7 +448,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     consentPrefs.tos = false;
@@ -500,7 +488,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     consentPrefs.tos = false;
@@ -539,7 +526,6 @@ describe("authMiddleware — hydration timeout", () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: fakeUser,
       cloudSession: "present",
     });
     consentPrefs.tos = false;

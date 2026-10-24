@@ -246,15 +246,7 @@ beforeEach(() => {
   __resetForTesting();
   useAuthStore.setState({
     sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "account-1",
-      username: "user1",
-      email: "user@example.com",
-      isStaff: false,
-      firstName: "Example",
-      lastName: "User",
-    },
+    cloudSession: "present",
   });
   useOrganizationStore.setState({
     currentOrganizationId: "org-1",
@@ -421,7 +413,7 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useAuthStore.setState({ sessionStatus: "unauthenticated" });
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -442,15 +434,7 @@ describe("useNotificationIntentSync", () => {
       runtimeUrl: "https://b.example.com/assistant",
     };
     useAuthStore.setState({
-      user: {
-        kind: "local",
-        id: "gateway-local",
-        username: null,
-        email: null,
-        isStaff: false,
-        firstName: "",
-        lastName: "",
-      },
+      sessionStatus: "authenticated",
     });
     useOrganizationStore.setState({
       currentOrganizationId: null,
@@ -637,7 +621,7 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useAuthStore.setState({ sessionStatus: "unauthenticated" });
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

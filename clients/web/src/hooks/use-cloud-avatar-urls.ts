@@ -39,7 +39,7 @@ const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
  * keeps its siblings and lands without this id; nothing is cancelled. The
  * first refetch after the window restores it.
  */
-export function suppressPlatformAvatarUrl(
+export function suppressCloudAvatarUrl(
   queryClient: QueryClient,
   cloudAssistantId: string,
 ): void {
@@ -67,7 +67,7 @@ export function supersedeCloudAvatar(
 ): void {
   const store = useResolvedAssistantsStore.getState();
   store.clearAvatarUrl(assistantId);
-  suppressPlatformAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
+  suppressCloudAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
 }
 
 /**

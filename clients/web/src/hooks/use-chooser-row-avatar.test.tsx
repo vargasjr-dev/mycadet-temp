@@ -228,15 +228,6 @@ function createWrapper(
 function signInToPlatform(): void {
   useAuthStore.setState({
     cloudSession: "present",
-    user: {
-      kind: "platform",
-      id: "user-1",
-      username: null,
-      email: null,
-      isStaff: false,
-      firstName: "",
-      lastName: "",
-    },
   });
 }
 
@@ -705,7 +696,7 @@ describe("useChooserRowAvatar", () => {
     });
 
     test("a signed-out device keeps the glyph", async () => {
-      useAuthStore.setState({ cloudSession: "absent", user: null });
+      useAuthStore.setState({ cloudSession: "absent" });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
         { wrapper: createWrapper() },

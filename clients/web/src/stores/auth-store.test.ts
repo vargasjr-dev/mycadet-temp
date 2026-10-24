@@ -338,7 +338,6 @@ const { useResolvedAssistantsStore } =
 function resetAuthStore(): void {
   useAuthStore.setState({
     sessionStatus: "initializing",
-    user: null,
     cloudSession: "unknown",
   });
 }
@@ -346,15 +345,6 @@ function resetAuthStore(): void {
 function authenticatedLocalUserForTest() {
   return {
     sessionStatus: "authenticated" as const,
-    user: {
-      kind: "local" as const,
-      id: "gateway-local",
-      username: "local",
-      email: null,
-      isStaff: false,
-      firstName: "Local",
-      lastName: "User",
-    },
     cloudSession: "absent" as const,
   };
 }
@@ -367,6 +357,7 @@ beforeEach(() => {
   getSessionFailStatus = 401;
   getSessionGates = null;
   mockElectronSessionToken = null;
+  localStorage.removeItem("cadet:auth:sessionSnapshot");
   localStorage.removeItem("cadet:auth:userSnapshot");
   localStorage.removeItem("device:share_diagnostics");
   localStorage.removeItem("device:diagnostics_reporting");
@@ -450,7 +441,6 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -464,7 +454,6 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -508,7 +497,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -527,7 +515,6 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("present");
     expect(getSelfHostedIngressUrl()).toBe(
       "https://stale-from-earlier-session.test",
@@ -565,7 +552,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -582,7 +568,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -603,7 +588,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(getSessionCallCount).toBe(1); // probe ran — a success could still update the store
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated"); // local session not ended
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local"); // demoted to local user
     expect(useAuthStore.getState().cloudSession).toBe("absent"); // stale platform state cleared
   });
 
@@ -622,7 +606,6 @@ describe("auth store onboarding flag reconciliation", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -658,7 +641,6 @@ describe("auth store onboarding flag reconciliation", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 
   test("refreshSession leaves an unauthenticated session untouched in the gateway window", async () => {
@@ -670,7 +652,6 @@ describe("auth store onboarding flag reconciliation", () => {
     sessionUser = null;
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      user: null,
       cloudSession: "absent",
     });
 
@@ -692,7 +673,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(getSessionCallCount).toBe(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
     expect(useAuthStore.getState().cloudSession).toBe("present");
     // A live probe confirmed it — not a believed offline restore.
     expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(false);
@@ -728,7 +708,6 @@ describe("auth store onboarding flag reconciliation", () => {
     ).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
   });
 
   test("initSession settles unauthenticated when the startup-retry prime is exhausted", async () => {
@@ -744,7 +723,6 @@ describe("auth store onboarding flag reconciliation", () => {
       primeLocalGatewayConnectionWithStartupRetryMock,
     ).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 
   test("initSession restores legal consent from per-user device keys", async () => {
@@ -1133,7 +1111,6 @@ describe("iOS widget snapshot on session end", () => {
     await expect(rejected).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1187,7 +1164,6 @@ describe("iOS widget snapshot on session end", () => {
     await loggingOut;
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -1269,7 +1245,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
     const releaseOrg = holdOrgFetch();
@@ -1292,11 +1267,10 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     // corrected.
     expect(statuses).not.toContain("authenticated");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
     // The abandoned transition also carries `persistUserSnapshot`, which would
     // leave the departed account restorable on the next offline boot.
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("a refresh that starts midway through a logout is superseded too", async () => {
@@ -1307,7 +1281,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
     const releaseClear = holdWidgetSnapshotClear();
@@ -1327,7 +1300,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     await expect(refreshing).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 
   test("a refresh that completes with no logout still authenticates", async () => {
@@ -1338,7 +1310,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      user: null,
       cloudSession: "absent",
     });
     const releaseOrg = holdOrgFetch();
@@ -1349,7 +1320,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
 
     await expect(refreshing).resolves.toBe(true);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1362,7 +1332,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
 
@@ -1374,13 +1343,13 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-2", email: "user2@example.com" };
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
 
     // And the connect action commits one directly.
     await useAuthStore.getState().logout();
     await connectCloudAssistant("assistant-1");
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 });
 
@@ -1471,10 +1440,9 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    // A rejected session must not install a cloud user, persist a
-    // restorable snapshot, or bootstrap the cloud identity.
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    // A rejected session must not persist a restorable snapshot or bootstrap
+    // the cloud identity.
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
     expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
     // The evidence check short-circuits before the assistants call and sync.
     expect(listAssistantsMock).not.toHaveBeenCalled();
@@ -1486,8 +1454,8 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // the rejection: restoreOfflineSession would otherwise resurrect the
     // rejected account as "present" on a later offline boot.
     localStorage.setItem(
-      "cadet:auth:userSnapshot",
-      JSON.stringify({ id: "user-1", email: "user@example.com" }),
+      "cadet:auth:sessionSnapshot",
+      JSON.stringify({ accountId: "user-1" }),
     );
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
@@ -1495,7 +1463,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("an assistants-list session rejection settles the session absent", async () => {
@@ -1506,7 +1474,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
     expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
     // The org fetch succeeded, so the rejected account's org state must be
     // cleared here or its Cadet-Organization-Id keeps stamping requests.
@@ -1523,7 +1491,6 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // No evidence of rejection: the offline-restore contract (LUM-2412)
     // keeps the session present.
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
     expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalled();
   });
 
@@ -1535,7 +1502,6 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
   });
 
   test("a sync race timeout keeps the present settle", async () => {
@@ -1559,7 +1525,6 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     }
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
     // Wiring pin: past the timeout the strict sync gate is closed but the
     // same-session gate stays open (no newer probe), so a late org success
     // may still commit and un-strand readiness.
@@ -1647,9 +1612,9 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
     // No snapshot may be re-persisted for the rejected session.
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
@@ -1667,7 +1632,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
   test("refreshSession ends a half-dead session whose assistants are cloud-hosted", async () => {
@@ -1686,7 +1651,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("a resume refresh does not flip a probe-settled absent session back to present", async () => {
@@ -1703,8 +1668,8 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("a transport-failed sync on refresh keeps the cloud confirmation", async () => {
@@ -1715,8 +1680,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).not.toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).not.toBeNull();
   });
 
   test("a non-rejection org failure on refresh keeps the cloud confirmation", async () => {
@@ -1727,7 +1691,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
   });
 
   test("initSession with platform assistants routes a rejected session to login", async () => {
@@ -1735,17 +1698,16 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     localStorage.setItem(
-      "cadet:auth:userSnapshot",
-      JSON.stringify({ id: "user-1", email: "user@example.com" }),
+      "cadet:auth:sessionSnapshot",
+      JSON.stringify({ accountId: "user-1" }),
     );
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
     // Nor may the rejected account's user-scoped consent state be installed.
     expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
@@ -1770,7 +1732,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1783,7 +1744,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     );
 
     expect(useAuthStore.getState().cloudSession).not.toBe("present");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
     // A failed connect leaves no side effects behind: the caller keeps its
     // current selection and consent state, not the rejected account's.
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -1815,7 +1776,7 @@ describe("biometric session recovery", () => {
       "recovered-session-token",
     );
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("initSession skips biometric recovery on web", async () => {
@@ -1849,7 +1810,6 @@ describe("biometric session recovery", () => {
 
     expect(installSessionCookiesMock).toHaveBeenCalledWith("expired-token");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 });
 
@@ -1874,7 +1834,6 @@ describe("connectLocalAssistant", () => {
 
     expect(order).toEqual(["prime", "select:local-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     // No platform assistants — nothing to probe, so the status settles
     // directly to "absent" rather than staying "unknown".
     expect(useAuthStore.getState().cloudSession).toBe("absent");
@@ -1933,7 +1892,6 @@ describe("connectPairedAssistant", () => {
 
     expect(order).toEqual(["prime", "select:paired-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     // No platform assistants and no gateway auth in this arrangement, so the
     // cloud-session status settles directly to "absent".
     expect(useAuthStore.getState().cloudSession).toBe("absent");
@@ -2088,7 +2046,6 @@ describe("paired selection in the gateway-auth session paths", () => {
       primeLocalGatewayConnectionWithStartupRetryMock,
     ).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 });
 
@@ -2104,20 +2061,11 @@ describe("paired selection in the gateway-auth session paths", () => {
 // invalidates the snapshot so a revoked session can't be resurrected.
 // ---------------------------------------------------------------------------
 
-const SNAPSHOT_KEY = "cadet:auth:userSnapshot";
+const SNAPSHOT_KEY = "cadet:auth:sessionSnapshot";
+const LEGACY_SNAPSHOT_KEY = "cadet:auth:userSnapshot";
 
-function seedSnapshot(): void {
-  localStorage.setItem(
-    SNAPSHOT_KEY,
-    JSON.stringify({
-      id: "user-cached",
-      username: "cached",
-      email: "cached@example.com",
-      isStaff: false,
-      firstName: "Cached",
-      lastName: "User",
-    }),
-  );
+function seedSnapshot(accountId = "user-cached"): void {
+  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ accountId }));
 }
 
 describe("offline session restore (LUM-2412)", () => {
@@ -2129,16 +2077,12 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
-    // The legacy snapshot `seedSnapshot()` writes carries no `kind` field;
-    // the restore must default it to a cloud identity (only platform users
-    // are ever snapshotted), so old snapshots keep restoring correctly.
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
     // The snapshot only exists for a confirmed platform session, and no
     // probe runs offline to settle an "unknown" — so the restore settles
     // "present" (believed state); reconnect revalidation corrects it.
-    expect(useAuthStore.getState().cloudSession).toBe("present");
-    // ...but it is flagged as a believed restore, so telemetry stays fail-closed.
+    // ...and it is flagged as a believed restore, so telemetry stays
+    // fail-closed.
     expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(true);
   });
 
@@ -2150,7 +2094,7 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("rate-limited boot (429) is non-authoritative — restores from cache instead of logging out", async () => {
@@ -2161,7 +2105,6 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
     expect(localStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
   });
 
@@ -2217,10 +2160,7 @@ describe("offline session restore (LUM-2412)", () => {
 
     const raw = localStorage.getItem(SNAPSHOT_KEY);
     expect(raw).not.toBeNull();
-    expect(JSON.parse(raw!)).toMatchObject({
-      id: "user-9",
-      email: "nine@example.com",
-    });
+    expect(JSON.parse(raw!)).toMatchObject({ accountId: "user-9" });
   });
 
   test("local-mode platform-assistants boot also restores from cache on transport failure", async () => {
@@ -2233,7 +2173,7 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("refreshSession transport failure keeps the authenticated session (offline resume)", async () => {
@@ -2247,12 +2187,12 @@ describe("offline session restore (LUM-2412)", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-9");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("refreshSession transport failure while unauthenticated reports false without state churn", async () => {
     getSessionThrows = true;
-    useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+    useAuthStore.setState({ sessionStatus: "unauthenticated" });
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
@@ -2287,42 +2227,55 @@ describe("offline session restore (LUM-2412)", () => {
   });
 });
 
-// `kind` separates a real platform account from synthetic local gateway access.
-describe("identity kind (platform vs local gateway access)", () => {
-  test("a local gateway session is kind 'local' and not a cloud identity, but keeps its stable id", async () => {
+// The store carries no user — the session shape is the identity surface:
+// a platform account ⟺ `cloudSession: "present"` on an authenticated session,
+// local gateway access ⟺ authenticated with the cloud session absent.
+describe("session shape (platform vs local gateway access)", () => {
+  test("a local gateway session authenticates with no cloud session", async () => {
     mockIsLocalClient = true;
     mockCloudAssistants = [];
 
     await useAuthStore.getState().initSession();
 
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("local");
-    expect(user?.id).toBe("gateway-local");
-    // A local session stays authenticated — the discriminator does not change
-    // session semantics.
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    // The probe's settle timing here is asserted by the probe-resolution
+    // suite; this pins only that a local session authenticates without a
+    // cloud identity being installed (there is no user field to check).
   });
 
-  test("a cloud session is kind 'platform' and is a cloud identity", async () => {
+  test("a cloud session authenticates with the cloud session present", async () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
 
     await useAuthStore.getState().initSession();
 
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("platform");
-    expect(user?.id).toBe("user-1");
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
-  test("an offline-restored user is a cloud identity (legacy snapshot defaults to platform)", async () => {
-    // `seedSnapshot()` writes a legacy snapshot with no `kind` field.
+  test("a legacy (pre-reshape) snapshot still restores the offline session", async () => {
+    // The pre-reshape key carried the full user object; the account id
+    // migrates out of it so an upgrade never loses the offline restore.
     getSessionThrows = true;
     mockElectronSessionToken = "tok-1";
-    seedSnapshot();
+    localStorage.setItem(
+      LEGACY_SNAPSHOT_KEY,
+      JSON.stringify({
+        id: "user-cached",
+        username: "cached",
+        email: "cached@example.com",
+        isStaff: false,
+        firstName: "Cached",
+        lastName: "User",
+      }),
+    );
 
     await useAuthStore.getState().initSession();
 
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("platform");
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
+    // Migrated to the session shape, legacy key dropped.
+    expect(localStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
+    expect(localStorage.getItem(LEGACY_SNAPSHOT_KEY)).toBeNull();
   });
 });
 

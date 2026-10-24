@@ -326,11 +326,13 @@ export function setupOrganizationStore(): () => void {
 
   // 1. Auth transitions — platform session triggers org fetch. Orgs are a
   //    platform concept; skip the fetch when there's no platform session
-  //    (e.g. self-hosted/local mode with gateway-only auth).
+  //    (e.g. self-hosted/local mode with gateway-only auth). A switch between
+  //    two live sessions (cross-tab sign-in) has no session edge here; the
+  //    auth store's `syncOrganizationState` catches that case by account id.
   const unsubAuth = useAuthStore.subscribe((state, prevState) => {
     const hasSession = hasLiveCloudSession(state.cloudSession);
     const hadSession = hasLiveCloudSession(prevState.cloudSession);
-    if (hasSession && (!hadSession || state.user?.id !== prevState.user?.id)) {
+    if (hasSession && !hadSession) {
       useOrganizationStore.getState().fetchOrganizations();
     }
   });

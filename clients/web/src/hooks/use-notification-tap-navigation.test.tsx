@@ -157,15 +157,7 @@ beforeEach(() => {
   window.history.pushState(null, "", "/");
   useAuthStore.setState({
     sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "account-1",
-      username: "user1",
-      email: "user@example.com",
-      isStaff: false,
-      firstName: "Example",
-      lastName: "User",
-    },
+    cloudSession: "present",
   });
   useOrganizationStore.setState({
     currentOrganizationId: "org-1",
