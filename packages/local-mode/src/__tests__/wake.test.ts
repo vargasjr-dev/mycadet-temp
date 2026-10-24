@@ -38,9 +38,15 @@ describe("runWake", () => {
   test("repairGuardian: true chains the gateway's own token re-lease after the wake", async () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: true });
     lastChild.emit("close", 0); // wake completes...
-
-    await pending.then((result) => expect(result).toEqual({ ok: true }));
+    await Promise.resolve(); // the chain spawns the re-lease
     expect(spawnArgs[0]).toEqual([
+      "bun",
+      ["run", "cli", "wake", "asst-42"],
+    ]);
+
+    lastChild.emit("close", 0); // the re-lease completes
+    expect(await pending).toEqual({ ok: true });
+    expect(spawnArgs[1]).toEqual([
       "bun",
       ["run", "cli", "gateway", "token", "refresh", "asst-42"],
     ]);

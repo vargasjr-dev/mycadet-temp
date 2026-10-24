@@ -476,10 +476,10 @@ describe("getMediaStreamWebsocketHandlers", () => {
       globalThis.WebSocket as unknown as ReturnType<typeof mock>
     ).mock.calls[0] as unknown[];
     const url = ctorCall[0] as string;
-    // The URL includes a service JWT token parameter for runtime auth
-    expect(url).toStartWith(
-      "ws://runtime:8000/v1/calls/media-stream?callSessionId=s%26id%3D1&token=",
-    );
+    // Identity rides the dial's headers, not the URL.
+    expect(url).toStartWith("ws://runtime:8000/v1/calls/media-stream?callSessionId=s%26id%3D1");
+    const options = ctorCall[1] as { headers: Record<string, string> };
+    expect(options.headers["x-cadet-subject"]).toBe("svc:gateway:self");
   });
 
   // --- message buffering before upstream open --------------------------------
