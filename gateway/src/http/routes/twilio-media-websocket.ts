@@ -196,9 +196,13 @@ export function getMediaStreamWebsocketHandlers() {
         "Opening upstream media-stream WS to runtime",
       );
 
+      // The DOM lib's WebSocket declaration shadows Bun's here — it only
+      // knows the subprotocols overload, so the headers-init rides past it
+      // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
+      // tests lean on DOM-typed fetch, ~300 errors.)
       const upstream = new WebSocket(upstreamUrl, {
         headers: forwardedIdentityHeaders(),
-      });
+      } as never);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {
