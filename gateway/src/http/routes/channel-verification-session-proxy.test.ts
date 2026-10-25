@@ -7,11 +7,6 @@ let capturedFetchHeaders: Headers | undefined;
 let capturedFetchUrl: string | undefined;
 let fetchResponse = new Response(JSON.stringify({ ok: true }), { status: 200 });
 
-// Mock mintServiceToken before importing the module under test
-mock.module("../../auth/token-exchange.js", () => ({
-  mintServiceToken: () => "test-service-token",
-}));
-
 mock.module("../../fetch.js", () => ({
   fetchImpl: async (url: string | URL | Request, init?: RequestInit) => {
     capturedFetchUrl = String(url);
@@ -94,7 +89,7 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
     expect(capturedFetchHeaders!.has("x-forwarded-for")).toBe(false);
   });
 
-  it("injects service token as Bearer authorization", async () => {
+  it("asserts the gateway service identity in x-cadet-* headers", async () => {
     const config = makeConfig();
     const handler = createChannelVerificationSessionProxyHandler(config);
 
@@ -107,8 +102,14 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
     await handler.handleCreateVerificationSession(req);
 
     expect(capturedFetchHeaders).toBeDefined();
-    expect(capturedFetchHeaders!.get("authorization")).toBe(
-      "Bearer test-service-token",
+    // The daemon verifies no tokens — the proxy asserts the gateway's
+    // service identity in x-cadet-* headers, never a bearer.
+    expect(capturedFetchHeaders!.get("authorization")).toBeNull();
+    expect(capturedFetchHeaders!.get("x-cadet-subject")).toBe(
+      "svc:gateway:self",
+    );
+    expect(capturedFetchHeaders!.get("x-cadet-scope-profile")).toBe(
+      "gateway_service_v1",
     );
   });
 
@@ -171,9 +172,11 @@ describe("channel-verification-session-proxy x-forwarded-for handling", () => {
 
     expect(capturedFetchHeaders).toBeDefined();
     expect(capturedFetchHeaders!.has("host")).toBe(false);
-    // authorization should be the service token, not the edge token
-    expect(capturedFetchHeaders!.get("authorization")).toBe(
-      "Bearer test-service-token",
+    // Neither the caller's edge token nor any bearer survives the hop;
+    // the gateway's service identity rides in x-cadet-* headers.
+    expect(capturedFetchHeaders!.get("authorization")).toBeNull();
+    expect(capturedFetchHeaders!.get("x-cadet-subject")).toBe(
+      "svc:gateway:self",
     );
   });
 });
