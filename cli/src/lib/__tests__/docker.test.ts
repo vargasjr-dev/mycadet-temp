@@ -88,16 +88,13 @@ describe("buildServiceRunArgs — assistant", () => {
     expect(args).toContain(`CADET_ASSISTANT_NAME=${instanceName}`);
   });
 
-  test("publishes the assistant HTTP port on all host interfaces so sibling bot containers can reach the daemon via host.docker.internal on both Docker Desktop and Linux", () => {
+  test("publishes the assistant HTTP port loopback-only — the same-pod gateway and host-local tooling are the only callers", () => {
     const args = buildAssistantArgs({ assistantPort: 18000 });
     // The port mapping is expressed as two adjacent args: "-p" then the spec.
-    // Bound to all interfaces (no `127.0.0.1:` prefix) because on vanilla
-    // Linux Docker, host.docker.internal:host-gateway resolves to the Docker
-    // bridge gateway IP — packets arrive at the bridge interface, not
-    // loopback, so a 127.0.0.1 DNAT rule would not match.
-    // The host-side port is dynamically allocated (not fixed at 7821) so
-    // concurrent instances on the same host don't collide.
-    const portSpec = `18000:${ASSISTANT_INTERNAL_PORT}`;
+    // Bound to `127.0.0.1:` — the assistant HTTP API serves the gateway (same
+    // pod) and host-local tooling; the gateway's edge is the only ingress, so
+    // the API never faces the LAN.
+    const portSpec = `127.0.0.1:18000:${ASSISTANT_INTERNAL_PORT}`;
     const portIndex = args.indexOf(portSpec);
     expect(portIndex).toBeGreaterThan(0);
     expect(args[portIndex - 1]).toBe("-p");

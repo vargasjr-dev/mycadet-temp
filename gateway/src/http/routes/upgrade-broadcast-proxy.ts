@@ -8,7 +8,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -24,7 +23,6 @@ export function createUpgradeBroadcastProxyHandler(config: GatewayConfig) {
     const response = await proxyForwardToResponse(req, {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: "/v1/admin/upgrade-broadcast",
-      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

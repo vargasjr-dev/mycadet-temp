@@ -15,7 +15,6 @@ import {
   mkdirSync,
   mkdtempSync,
   rmSync,
-  readFileSync,
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -23,7 +22,6 @@ import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
 import {
-  getLocalInstanceDir,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";

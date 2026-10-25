@@ -16,7 +16,7 @@
 
 import {
   proxyForwardToResponse,
-  GATEWAY_SERVICE_IDENTITY,
+
 } from "@mycadet/assistant-client";
 
 import { mintUiPageToken } from "../../auth/token-exchange.js";
@@ -33,7 +33,6 @@ export function createBrainGraphProxyHandler(config: GatewayConfig) {
     const response = await proxyForwardToResponse(req, {
       baseUrl: config.assistantRuntimeBaseUrl,
       path,
-      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

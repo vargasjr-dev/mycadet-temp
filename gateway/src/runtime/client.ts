@@ -4,6 +4,7 @@ import {
   forwardedIdentityHeaders,
   GATEWAY_INGRESS_IDENTITY,
   GATEWAY_SERVICE_IDENTITY,
+  type ForwardedIdentity,
 } from "@mycadet/assistant-client";
 import {
   normalizePublicBaseUrl,
@@ -118,33 +119,20 @@ function cbOnFailure(): void {
 // ── Transport helpers ────────────────────────────────────────────────
 
 /**
- * Build headers for ingress requests (webhook-originated traffic).
- * Asserts the gateway's ingress identity in forwarded headers — the
- * daemon resolves identity from these, not from tokens.
+ * Build headers for an upstream request. Asserts the given identity in
+ * forwarded headers — the daemon resolves identity from these, not from
+ * tokens. Webhook-ingress dials pass `GATEWAY_INGRESS_IDENTITY`; the
+ * gateway's own service dials pass `GATEWAY_SERVICE_IDENTITY`.
  */
-function ingressHeaders(
+function forwardedHeaders(
+  identity: ForwardedIdentity,
   extra?: Record<string, string>,
 ): Record<string, string> {
   return {
     ...extra,
     // Identity last: a caller- or payload-supplied identity header never
     // survives the hop.
-    ...forwardedIdentityHeaders(GATEWAY_INGRESS_IDENTITY),
-  };
-}
-
-/**
- * Build headers for service requests (gateway-originated traffic).
- * Asserts the gateway's service identity in forwarded headers.
- */
-function serviceHeaders(
-  extra?: Record<string, string>,
-): Record<string, string> {
-  return {
-    ...extra,
-    // Identity last: a caller- or payload-supplied identity header never
-    // survives the hop.
-    ...forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+    ...forwardedIdentityHeaders(identity),
   };
 }
 
@@ -255,7 +243,7 @@ export async function forwardToRuntime(
         url,
         {
           method: "POST",
-          headers: ingressHeaders(extraHeaders),
+          headers: forwardedHeaders(GATEWAY_INGRESS_IDENTITY, extraHeaders),
           body: JSON.stringify(payload),
         },
         config.runtimeTimeoutMs,
@@ -324,7 +312,7 @@ export async function resetConversation(
       url,
       {
         method: "DELETE",
-        headers: serviceHeaders({ "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
         body: JSON.stringify({
           sourceChannel,
           conversationExternalId,
@@ -548,7 +536,7 @@ export async function forwardTwilioVoiceWebhook(
       url,
       {
         method: "POST",
-        headers: serviceHeaders({ "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
         body: JSON.stringify({ params, originalUrl }),
       },
       config.runtimeTimeoutMs,
@@ -613,7 +601,7 @@ export async function forwardTwilioStatusWebhook(
       url,
       {
         method: "POST",
-        headers: serviceHeaders({ "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
         body: JSON.stringify({ params }),
       },
       config.runtimeTimeoutMs,
@@ -658,7 +646,7 @@ export async function uploadAttachment(
       url,
       {
         method: "POST",
-        headers: serviceHeaders({ "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
         body: JSON.stringify(input),
       },
       config.runtimeTimeoutMs,
@@ -718,7 +706,7 @@ export async function forwardOAuthCallback(
       url,
       {
         method: "POST",
-        headers: serviceHeaders({ "Content-Type": "application/json" }),
+        headers: forwardedHeaders(GATEWAY_SERVICE_IDENTITY, { "Content-Type": "application/json" }),
         body: JSON.stringify({ state, code, error }),
       },
       config.runtimeTimeoutMs,

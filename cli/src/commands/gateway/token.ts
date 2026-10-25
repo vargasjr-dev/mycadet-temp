@@ -36,10 +36,9 @@ function printUsage(): void {
 
 /**
  * Re-provision the guardian credential in place via the gateway's bootstrap
- * reset — the same machinery `cadet wake --repair-guardian` runs, minus the
- * wake. NEVER points at `cadet hatch`: hatching creates a different assistant.
- * A fresh lease revokes other devices' paired tokens; callers say so on
- * stderr. Returns true on success (the newly leased token is persisted).
+ * reset. NEVER points at `cadet hatch`: hatching creates a different
+ * assistant. A fresh lease revokes other devices' paired tokens; callers say
+ * so on stderr. Returns true on success (the newly leased token is persisted).
  */
 async function repairGuardianCredential(
   entry: LockfileAssistant,
@@ -125,7 +124,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`cadet wake ${entry.assistantId} --repair-guardian\` to recover access.`,
+        `Run \`cadet gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);

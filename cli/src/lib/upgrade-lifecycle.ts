@@ -238,7 +238,7 @@ interface ReplayState {
  * already-captured assistant/gateway envs. GUARDIAN_BOOTSTRAP_SECRET is only
  * set on the gateway; CES_SERVICE_TOKEN can be generated for older instances.
  * The signing key rides no env — the gateway owns it in its security root
- * and replacement containers adopt it from there. CADET_DEVICE_ID is
+ * CADET_DEVICE_ID is
  * backfilled on the gateway from the host, and the assistant inherits the
  * gateway's value (captured values win) so the pair always matches.
  */

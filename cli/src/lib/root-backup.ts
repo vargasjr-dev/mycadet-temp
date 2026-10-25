@@ -620,7 +620,7 @@ export class DockerRootStorage implements RootStorage {
     // docker cp may retain sockets in its tar stream; remove only process artifacts.
     await pruneTransient(target);
   }
-  private async restoreMounts(source: string) {
+  private async restoreMounts(_source: string) {
     const inspections = new Map<string, ContainerInspection>();
     for (const container of new Set(Object.values(this.containers)))
       inspections.set(container, await this.inspect(container));

@@ -5,7 +5,6 @@ import { readFileSync } from "node:fs";
 
 import { resolveConfigDir } from "@mycadet/local-mode";
 
-import { emitCliError } from "./lib/cli-error.js";
 import { stampedVersion } from "@mycadet/shared/version";
 
 import cliPkg from "../package.json";

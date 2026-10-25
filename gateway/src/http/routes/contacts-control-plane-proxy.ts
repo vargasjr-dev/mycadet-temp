@@ -21,7 +21,6 @@ import {
 } from "@mycadet/gateway-client";
 import { eq } from "drizzle-orm";
 
-import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { parseContactAutoApproveThreshold } from "../../db/contact-auto-approve-threshold.js";
 import { getGatewayDb } from "../../db/connection.js";
@@ -1453,7 +1452,6 @@ export function createContactsControlPlaneProxyHandler(config: GatewayConfig) {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch,
-      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

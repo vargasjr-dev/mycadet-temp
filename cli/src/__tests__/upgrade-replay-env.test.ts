@@ -21,7 +21,6 @@ describe("buildReplayEnv", () => {
     const captured = {
       GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
-      ACTOR_TOKEN_SIGNING_KEY: "s3",
       PATH: "/usr/bin",
       GATEWAY_PORT: "18080",
       CADET_TELEMETRY: "1",
@@ -61,7 +60,6 @@ describe("buildReplayEnv", () => {
       GATEWAY_INTERNAL_URL: "http://localhost:8080",
       GUARDIAN_BOOTSTRAP_SECRET: "s1",
       CES_SERVICE_TOKEN: "s2",
-      ACTOR_TOKEN_SIGNING_KEY: "s3",
       PATH: "/usr/bin",
       MY_CUSTOM_FLAG: "yes",
       ANTHROPIC_API_KEY: "sk-captured",

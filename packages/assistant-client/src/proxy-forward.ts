@@ -13,8 +13,8 @@
 import {
   buildUpstreamUrl,
   createTimeoutController,
+  GATEWAY_SERVICE_IDENTITY,
   isTimeoutError,
-  type ForwardedIdentity,
   prepareUpstreamHeaders,
   stripHopByHop,
 } from "./http-client.js";
@@ -30,8 +30,6 @@ export type ProxyForwardOptions = {
   path: string;
   /** Query string to append, including the leading `?` (e.g. `?foo=bar`). */
   search?: string;
-  /** The identity the dial asserts upstream. */
-  identity: ForwardedIdentity;
   /** Timeout in milliseconds for the upstream request. */
   timeoutMs: number;
   /**
@@ -78,9 +76,11 @@ export async function proxyForward(
 ): Promise<ProxyForwardResult> {
   const upstream = buildUpstreamUrl(opts.baseUrl, opts.path, opts.search);
 
+  // Every proxy route asserts the gateway's service identity — the constant
+  // lives here so no call site repeats it.
   const reqHeaders = prepareUpstreamHeaders(
     new Headers(req.headers),
-    opts.identity,
+    GATEWAY_SERVICE_IDENTITY,
   );
 
   // Buffer the body to get an accurate Content-Length

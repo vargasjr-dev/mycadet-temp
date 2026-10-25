@@ -10,7 +10,6 @@
 
 import {
   forwardedIdentityHeaders,
-  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
@@ -59,7 +58,7 @@ async function fetchAssistantPs(
 
     const response = await fetchImpl(url, {
       signal: controller.signal,
-      headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+      headers: forwardedIdentityHeaders(),
     });
 
     clearTimeout(timeoutId);

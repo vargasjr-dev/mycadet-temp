@@ -1,7 +1,6 @@
 import {
   buildWsUpstreamUrl,
   forwardedIdentityHeaders,
-  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 
 import { validateEdgeToken } from "../../auth/token-exchange.js";
@@ -241,12 +240,9 @@ export function getLiveVoiceWebsocketHandlers() {
         "Opening upstream live voice WS to runtime",
       );
 
-      // Bun's client takes a non-standard options object carrying the
-      // forwarded identity headers; the DOM types only know subprotocols,
-      // so the options ride past them untyped.
       const upstream = new WebSocket(upstreamUrl, {
-        headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
-      } as never);
+        headers: forwardedIdentityHeaders(),
+      });
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

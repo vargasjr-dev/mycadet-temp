@@ -17,7 +17,6 @@ import {
 } from "./auth/token-service.js";
 import {
   forwardedIdentityHeaders,
-  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
@@ -1993,7 +1992,7 @@ async function main() {
           `${config.assistantRuntimeBaseUrl}/v1/health`,
           {
             signal: AbortSignal.timeout(3000),
-            headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
+            headers: forwardedIdentityHeaders(),
           },
         );
         if (upstream.ok) {

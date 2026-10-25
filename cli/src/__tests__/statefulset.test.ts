@@ -11,7 +11,6 @@ import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
 
 const SECRET_KEYS = [
   "CES_SERVICE_TOKEN",
-  "ACTOR_TOKEN_SIGNING_KEY",
   "GUARDIAN_BOOTSTRAP_SECRET",
 ];
 

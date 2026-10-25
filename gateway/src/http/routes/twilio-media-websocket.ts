@@ -1,7 +1,6 @@
 import {
   buildWsUpstreamUrl,
   forwardedIdentityHeaders,
-  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 
@@ -197,12 +196,9 @@ export function getMediaStreamWebsocketHandlers() {
         "Opening upstream media-stream WS to runtime",
       );
 
-      // Bun's client takes a non-standard options object carrying the
-      // forwarded identity headers; the DOM types only know subprotocols,
-      // so the options ride past them untyped.
       const upstream = new WebSocket(upstreamUrl, {
-        headers: forwardedIdentityHeaders(GATEWAY_SERVICE_IDENTITY),
-      } as never);
+        headers: forwardedIdentityHeaders(),
+      });
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

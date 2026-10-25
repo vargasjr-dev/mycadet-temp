@@ -9,10 +9,8 @@ import {
   test,
 } from "bun:test";
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   rmSync,
   writeFileSync,
 } from "node:fs";

@@ -112,10 +112,12 @@ export const GATEWAY_INGRESS_IDENTITY: ForwardedIdentity = {
 };
 
 /**
- * The `x-cadet-*` headers a forwarded identity travels in.
+ * The `x-cadet-*` headers a forwarded identity travels in. Defaults to the
+ * gateway's service identity — the common case for runtime dials; pass an
+ * explicit identity for the rare ingress assertion.
  */
 export function forwardedIdentityHeaders(
-  identity: ForwardedIdentity,
+  identity: ForwardedIdentity = GATEWAY_SERVICE_IDENTITY,
 ): Record<string, string> {
   return {
     "x-cadet-subject": identity.subject,

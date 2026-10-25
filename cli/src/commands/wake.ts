@@ -15,17 +15,11 @@ import {
   recreateDockerContainers,
   wakeContainers,
 } from "../lib/docker.js";
-import {
-  GuardianLeasePermanentError,
-  leaseGuardianToken,
-  resetGuardianBootstrap,
-  seedGuardianTokenFromSiblingEnv,
-} from "../lib/guardian-token.js";
+import { seedGuardianTokenFromSiblingEnv } from "../lib/guardian-token.js";
 import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
 } from "../lib/http-client.js";
-import { findOpenPort } from "../lib/port-allocator.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
@@ -68,11 +62,6 @@ export const wake = Object.assign(
       );
       console.log(
         "  --foreground   Run assistant in foreground with logs printed to terminal",
-      );
-      console.log(
-        "  (Authentication repair moved: `cadet gateway token refresh` re-leases\n" +
-          "   a spent guardian credential; `cadet gateway key reset` replaces an\n" +
-          "   unrecoverable gateway signing key — clients must re-pair after.)",
       );
       process.exit(0);
     }
