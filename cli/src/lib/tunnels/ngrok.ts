@@ -36,7 +36,6 @@ import type {
   TunnelProvider,
   ProviderMeta,
   ProviderTunnelResult,
-  TunnelStartOptions,
 } from "../tunnel.js";
 import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
@@ -1278,7 +1277,7 @@ export const NGROK_PROVIDER: TunnelProvider = {
    * records; it saves the URL and notifies the gateway itself, so the spawn
    * returns nothing to await here.
    */
-  start: async ({ port, workspaceDir, assistantId }: TunnelStartOptions) => {
+  start: async ({ port, workspaceDir, assistantId }) => {
     await maybeStartNgrokTunnel(port, workspaceDir, assistantId);
     return null;
   },

@@ -177,15 +177,21 @@ export interface TunnelProvider {
   stop(opts: ProviderStopOptions): Promise<boolean>;
   /**
    * Establish the provider's tunnel at the app server's port, resolving the
-   * established URL — or null when its own gates declined. Absent on a
+   * established URL — or null when its own gates declined. Rides the same
+   * options shape as run: the restore points the same port/workspace/
+   * assistant at the provider, run-only dials (domain, preserveIngressUrl)
+   * simply go unread. Returns the bare URL rather than a ProviderTunnelResult
+   * because a restore-start hands the lifecycle back to the detached agent
+   * instead of owning it — there is no in-process exit to await. Absent on a
    * provider whose runs are foreground-only: the restore ensures nothing.
    */
-  start?(opts: TunnelStartOptions): Promise<string | null>;
+  start?(opts: ProviderTunnelOptions): Promise<string | null>;
 }
 
 // The entries read the provider modules' bindings at call time (the #489
-// getter lesson): wake/upgrade tests re-mock the provider modules after
-// this module evaluates, and captured objects would bypass the re-mocks.
+// getter lesson): cli/src/__tests__/tunnel.test.ts mock.module's the tunnels
+// modules AFTER this module evaluates, and a directly-captured object would
+// bypass the re-mock — the getter re-reads the live binding per dispatch.
 const providers: Record<TunnelProviderName, TunnelProvider> = {
   get ngrok() {
     return NGROK_PROVIDER;
@@ -695,19 +701,6 @@ export async function restoreAppServerAndAutoTunnel(
     );
   }
 }
-
-/** The app-server-facing start contract each provider's restore piece takes. */
-export interface TunnelStartOptions {
-  port: number;
-  workspaceDir: string;
-  assistantId?: string;
-}
-
-/**
- * A provider's restore-path start piece: establish its tunnel at the app
- * server's port, resolving the established URL — or null when its own gates
- * declined.
- */
 
 /**
  * Ensure the tunnel the lockfile expects is started at the app server.
