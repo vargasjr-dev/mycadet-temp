@@ -155,27 +155,6 @@ async function runMiddlewareOutcome(
   }
 }
 
-async function runMiddleware(pathname: string): Promise<Response> {
-  const args = {
-    request: new Request(`http://localhost${pathname}`),
-    context: { set: () => {}, get: () => null },
-  } as unknown as Parameters<typeof authMiddleware>[0];
-  const next = (async () => new Response()) as Parameters<
-    typeof authMiddleware
-  >[1];
-  // The middleware signals an unauthenticated/onboarding redirect by *throwing*
-  // a Response, so surface that as the resolved value for assertions.
-  try {
-    await authMiddleware(args, next);
-  } catch (thrown) {
-    if (thrown instanceof Response) {
-      return thrown;
-    }
-    throw thrown;
-  }
-  throw new Error("expected a redirect to be thrown");
-}
-
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
