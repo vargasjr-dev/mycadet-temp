@@ -8,6 +8,7 @@ import {
   LockfileSchema,
   parseLockfile,
   type Lockfile,
+  type LockfileAssistant,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
 import { resolveLockfilePaths } from "./config";
@@ -307,9 +308,21 @@ function patchLockfileAssistantIfPresent(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
+/**
+ * The one assistant save, shared by every process that registers or updates
+ * an entry (the CLI's registry writes, the host-side pairing flow). A patch
+ * rather than a whole entry: pairing passes a partial (the merge keeps
+ * on-disk fields it doesn't name, and an explicit `undefined` clears one),
+ * while CLI callers pass complete entries. The runtime guard rejects an
+ * id-less patch for callers that bypass the type.
+ */
+export type LockfileAssistantPatch = {
+  [K in keyof LockfileAssistant]?: LockfileAssistant[K] | undefined;
+};
+
 export function saveLockfileAssistant(
   lockfilePaths: string[],
-  assistant: Record<string, unknown>,
+  assistant: LockfileAssistantPatch,
   activeAssistant: string | undefined,
 ): WriteResult {
   if (!assistant || typeof assistant.assistantId !== "string") {

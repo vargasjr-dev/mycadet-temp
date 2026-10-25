@@ -9,6 +9,7 @@ import {
   readLockfile,
   readRawLockfile,
   resolveConfigHomes,
+  saveLockfileAssistant as saveAssistantEntry,
   withLockfileLock,
 } from "@mycadet/local-mode";
 import {
@@ -204,14 +205,6 @@ export function clearAppProcessRecord(expectedPid?: number): void {
 
 export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
-}
-
-function writeAssistants(entries: LockfileAssistant[]): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    data.assistants = entries;
-    writeLockfileUnlocked(data);
-  });
 }
 
 export function loadLatestAssistant(): LockfileAssistant | null {
@@ -448,13 +441,17 @@ export function extractHostFromEntry(entry: LockfileAssistant): string {
 }
 
 export function saveLockfileAssistant(entry: LockfileAssistant): void {
-  withCliLockfileLock(() => {
-    const entries = loadAllAssistants().filter(
-      (e) => e.assistantId !== entry.assistantId,
-    );
-    entries.unshift(entry);
-    writeAssistants(entries);
-  });
+  // The package's save is the one assistant write (the host-side pairing
+  // flow shares it): same advisory lock, merge-upsert semantics. Complete
+  // CLI entries merge to the same result a replace would produce, and the
+  // registry keeps no ordering contract (loadLatestAssistant sorts by
+  // hatchedAt; targeting goes by active/id).
+  const result = saveAssistantEntry(
+    [getLockfilePath(getCurrentEnvironment())],
+    entry,
+    undefined,
+  );
+  if (!result.ok) throw new Error(result.error ?? "lockfile write failed");
 }
 
 /**
