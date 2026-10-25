@@ -35,7 +35,7 @@ import type { TranscriptItem } from "@/domains/chat/transcript/types";
 import type { UIContext } from "@/domains/chat/turn-selectors";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 
-import { peekPendingPreChatContext } from "@/domains/onboarding/prechat";
+import { peekPendingPreChatContext } from "@/domains/chat/prechat";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";

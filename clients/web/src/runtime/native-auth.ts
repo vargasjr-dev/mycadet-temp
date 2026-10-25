@@ -11,7 +11,7 @@ import { getSession } from "@/lib/auth/allauth-client";
 import {
   isNewAssistantFunnel,
   onboardingDestinationAfterConsent,
-} from "@/domains/onboarding/onboarding-destination";
+} from "@/lib/navigation/onboarding-destination";
 import { startLoopbackAuth } from "@/lib/auth/loopback-auth";
 import { isLocalClient } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";

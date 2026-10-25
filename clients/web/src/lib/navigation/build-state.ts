@@ -9,7 +9,7 @@ import {
 import {
   isSelectedAssistantOnboarded,
   userHasOnboardedAssistant,
-} from "@/domains/onboarding/onboarded-assistant";
+} from "@/assistant/onboarded-assistant";
 import { readSelectedAssistantId } from "@/assistant/selected-assistant-storage";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { NavigationState } from "./navigation-resolver";

@@ -13,7 +13,7 @@ import {
 } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
-import { forgetAssistantOnboarded } from "@/domains/onboarding/onboarded-assistant-record";
+import { forgetAssistantOnboarded } from "@/assistant/onboarded-assistant-record";
 import { removeLocalSetting } from "@/utils/local-settings";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { routes } from "@/utils/routes";

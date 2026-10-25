@@ -27,7 +27,7 @@ import { useConversationStore } from "@/stores/conversation-store";
 import {
   peekPendingPreChatContext,
   type PreChatOnboardingContext,
-} from "@/domains/onboarding/prechat";
+} from "@/domains/chat/prechat";
 import { createDraftConversationId } from "@/domains/chat/utils/conversation-selection";
 import { routes } from "@/utils/routes";
 

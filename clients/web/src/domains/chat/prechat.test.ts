@@ -7,7 +7,7 @@ import {
   preChatOnboardingProfileFields,
   type PreChatOnboardingContext,
   setPendingPreChatContext,
-} from "@/domains/onboarding/prechat";
+} from "@/domains/chat/prechat";
 
 describe("buildPreChatInitialMessage", () => {
   test("uses both names when available", () => {

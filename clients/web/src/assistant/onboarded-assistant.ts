@@ -19,7 +19,7 @@
  * made one week-old assistant bounce every new-assistant walk (#41656).
  */
 
-import { readOnboardedAt } from "@/domains/onboarding/onboarded-assistant-record";
+import { readOnboardedAt } from "@/assistant/onboarded-assistant-record";
 
 /** Legacy proxy window, used only when the stamp is absent. */
 export const ONBOARDED_HATCH_AGE_MS = 7 * 24 * 60 * 60 * 1000;

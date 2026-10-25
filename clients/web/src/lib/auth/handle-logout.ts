@@ -1,4 +1,3 @@
-import { getOnboardingEntrypoint } from "@/domains/onboarding/gate";
 import { stopWatch } from "@/domains/chat/watch/watch-controller";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
 import {
@@ -32,7 +31,7 @@ export async function handleLogout(): Promise<void> {
     // The local entrypoint (/account/onboarding/welcome) renders in the app
     // bundle: a cross-bundle target that must destroy this JS context, like
     // the hosted branch's hard navigation does.
-    hardNavigate(getOnboardingEntrypoint());
+    hardNavigate(routes.welcome);
   } else {
     await useAuthStore.getState().logout();
     // Clear the published assistant name before the hard navigation. The hard

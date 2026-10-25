@@ -69,7 +69,7 @@ import { useWorkflowStore } from "@/domains/chat/workflow-store";
 import {
   consumePendingPreChatContext,
   type PreChatOnboardingContext,
-} from "@/domains/onboarding/prechat";
+} from "@/domains/chat/prechat";
 
 import type { ChatError } from "@/domains/chat/types";
 

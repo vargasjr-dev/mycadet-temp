@@ -3,7 +3,7 @@ import { sanitizeReturnTo } from "@/utils/return-to";
 import {
   isNewAssistantFunnel,
   onboardingDestinationAfterConsent,
-} from "@/domains/onboarding/onboarding-destination";
+} from "@/lib/navigation/onboarding-destination";
 import { routes } from "@/utils/routes";
 
 // ---------------------------------------------------------------------------

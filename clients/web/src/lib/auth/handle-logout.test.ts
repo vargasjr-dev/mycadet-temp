@@ -59,10 +59,6 @@ mock.module("@/runtime/menu", () => ({
   setMenuCloudSession: async () => undefined,
 }));
 
-mock.module("@/domains/onboarding/gate", () => ({
-  getOnboardingEntrypoint: () => "/onboarding",
-}));
-
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: {
     getState: () => ({ logout: logoutMock }),

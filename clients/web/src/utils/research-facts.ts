@@ -5,17 +5,17 @@
  * SPIKE — research-onboarding flow.
  *
  * The assistant replies with ONLY a JSON object `{ claims, suggestions }` where
- * each claim is `{ claim, confidence, sources }` (see the prompt in
- * `@/domains/onboarding/research-prompt.ts`). Because both the focused-overlay
+ * each claim is `{ claim, confidence, sources }`. Because both the
+ * focused-overlay
  * and the in-flow research steps render elements as they arrive, the parser is
  * incremental: it pulls every *complete* `{...}` object (and every complete
  * quoted suggestion string) out of the (possibly unterminated) arrays so an
  * element surfaces the moment it closes, mid-stream — no waiting for the full
  * payload.
  *
- * Lives at top-level `utils/` (not in `domains/chat/` or `domains/onboarding/`)
- * because BOTH domains consume it — the chat-owned focused overlay and the
- * onboarding-owned in-flow steps — and cross-domain imports are import-banned.
+ * Lives at top-level `utils/` because both the chat-owned focused overlay and
+ * the onboarding-owned in-flow steps consume it, and cross-domain imports are
+ * import-banned.
  * The chat-domain `research-facts.ts` re-exports everything here (plus its
  * `DisplayMessage`-bound helpers) so existing importers are unaffected.
  */

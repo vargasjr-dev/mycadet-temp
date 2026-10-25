@@ -29,7 +29,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchAssistantIdentity } from "@/assistant/identity";
-import { consumePendingAssistantName } from "@/domains/onboarding/prechat";
+import { consumePendingAssistantName } from "@/domains/chat/prechat";
 import { identityGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { AssistantResolutionState } from "@/assistant/types";

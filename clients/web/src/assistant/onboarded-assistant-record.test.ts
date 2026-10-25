@@ -5,7 +5,7 @@ import {
   forgetAssistantOnboarded,
   markAssistantOnboarded,
   readOnboardedAt,
-} from "@/domains/onboarding/onboarded-assistant-record";
+} from "@/assistant/onboarded-assistant-record";
 
 describe("onboarded-assistant-record", () => {
   beforeEach(() => {

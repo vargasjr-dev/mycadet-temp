@@ -57,12 +57,12 @@ const { resolveNativePostAuthDestination, startAuthFlow, startNativeLogin } =
 const { nativeAuthErrorDetail } =
   await import("@/domains/account/native-auth-error");
 const { ONBOARDED_HATCH_AGE_MS } =
-  await import("@/domains/onboarding/onboarded-assistant");
+  await import("@/assistant/onboarded-assistant");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const { routes } = await import("@/utils/routes");
 const { NEW_ASSISTANT_PARAM } =
-  await import("@/domains/onboarding/onboarding-destination");
+  await import("@/lib/navigation/onboarding-destination");
 
 describe("resolveNativePostAuthDestination", () => {
   beforeEach(() => {

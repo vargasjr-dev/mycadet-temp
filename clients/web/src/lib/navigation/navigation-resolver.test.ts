@@ -1,5 +1,5 @@
 import { beforeEach, describe, test, expect } from "bun:test";
-import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination";
+import { NEW_ASSISTANT_PARAM } from "@/lib/navigation/onboarding-destination";
 import {
   resolveNavigation,
   type NavigationState,
