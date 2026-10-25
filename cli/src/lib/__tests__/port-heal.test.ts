@@ -120,7 +120,7 @@ describe("healConflictedLocalPorts", () => {
     const entry = makeEntry();
     // The contract always parses resources for a local entry; the guard
     // exists for the same defensive reason wake's own does.
-    (entry as { resources?: unknown }).resources = undefined;
+    entry.resources = undefined;
     expect(await healConflictedLocalPorts(entry, freeDeps)).toBe(null);
   });
 });
