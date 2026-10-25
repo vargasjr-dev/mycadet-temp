@@ -26,7 +26,6 @@ import {
   commitCloudSession,
   commitLocalSession,
   probeCloudSessionForConnect,
-  resolveAccountId,
   useAuthStore,
 } from "@/stores/auth-store";
 import { isConfirmedCloudSession } from "@/stores/session-status";
@@ -92,15 +91,13 @@ export async function connectCloudAssistant(
   if (!result.ok || !result.data.user) {
     throw new Error("Platform authentication required");
   }
-  const accountId = resolveAccountId(result.data.user);
   // Hydrate the organizations to avoid race conditions from lazy fetch; a
   // settled rejection fails the connect before the assistant selection and
-  // user-scoped sync below, so a caller that catches the error keeps its
-  // current selection and consent state rather than the rejected
-  // account's.
+  // session commit below, so a caller that catches the error keeps its
+  // current selection.
   const orgOutcome = await useOrganizationStore.getState().fetchOrganizations();
   if (!orgOutcome.ok && orgOutcome.kind === "rejected") {
     throw new Error("Platform authentication required");
   }
-  await commitCloudSession(accountId, assistantId);
+  await commitCloudSession(assistantId);
 }

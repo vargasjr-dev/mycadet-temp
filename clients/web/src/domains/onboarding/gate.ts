@@ -16,5 +16,5 @@ export function resolveOnboardingRedirect({
 }
 
 export function getOnboardingEntrypoint(): string {
-  return isLocalClient() ? routes.welcome : "/account/consent";
+  return isLocalClient() ? routes.welcome : routes.onboarding.research;
 }

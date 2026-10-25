@@ -29,20 +29,6 @@ mock.module("@/lib/local-mode", () => ({
 let mockGatewayTokenPresent = false;
 let mockGatewayAuthMode = false;
 
-// Consent prefs are read by buildNavigationState; pinned current by default so
-// the consent gate doesn't interfere with the session-admission assertions
-// below. `consentPrefs` lets a case drive the boot defaults instead.
-const consentPrefs = {
-  tos: true,
-  privacy: true,
-};
-const prefsActual = await import("@/domains/onboarding/prefs");
-mock.module("@/domains/onboarding/prefs", () => ({
-  ...prefsActual,
-  readTosAccepted: () => consentPrefs.tos,
-  readPrivacyConsent: () => consentPrefs.privacy,
-}));
-
 // Clamp whenStoreState timeouts so hydration-timeout paths are testable
 // without real 5s waits; untimed waits and predicate semantics are the real
 // implementation's. Bind the real function BEFORE registering the mock —
@@ -101,7 +87,6 @@ import type { AssistantResolutionState } from "@/assistant/types";
 import { useSyncExternalStore } from "react";
 
 import { authMiddleware } from "./auth-middleware";
-import { useOnboardingStore } from "@/domains/onboarding/onboarding-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
@@ -114,21 +99,6 @@ const localAssistant: LockfileAssistant = {
   resources: { gatewayPort: 51234, daemonPort: 51235 },
 };
 
-// The cloud hardcodes the non-native Stripe `success_url` to this path, and
-// the pricing funnel has a brand-new user pay before an assistant exists.
-// Billing lives under `ActiveAssistantGate`, so admitting the return strands
-// the (paying) user on "Connecting to your assistant…" forever.
-
-// the assistant. Every client lands on the headless research onboarding, which
-// runs the purchased-provisioning wait behind the form.
-const researchFunnelEntry = `${routes.onboarding.research}?hosting=cadet-cloud`;
-
-/**
- * A checkout return on a local-mode client whose lockfile already holds a
- * self-hosted assistant. `hasAssistants()` is true, so the cold-boot probe wait
- * does not apply, yet the funnel decision still hangs on the probe.
- */
-/** Poll until `predicate` holds, giving router-driven work room to settle. */
 /**
  * Run the middleware and report whether it admitted (called `next`) or threw a
  * redirect Response — so admit-path assertions don't have to special-case the
@@ -160,8 +130,6 @@ const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 beforeEach(() => {
   isLocalClientMock.mockImplementation(() => true);
   hasAssistantsMock.mockImplementation(() => false);
-  consentPrefs.tos = true;
-  consentPrefs.privacy = true;
   mockSelectedAssistant = undefined;
   mockGatewayTokenPresent = false;
   mockGatewayAuthMode = false;
@@ -325,210 +293,42 @@ describe("authMiddleware — app-access admit gate", () => {
   });
 });
 
-describe("authMiddleware — hydration timeout", () => {
-  test("a hung hydration degrades to a decision instead of re-entering the wait", async () => {
+describe("authMiddleware — assistant hydration", () => {
+  test("a stalled assistant list settles once and reaches shell hatching", async () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
       cloudSession: "present",
     });
-    // Simulate consent/assistants fetches that hang: neither store ever
-    // reports hydration, so both waits run out their (clamped) timeouts.
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    const priorAssistantsHydrated =
-      useResolvedAssistantsStore.getState().assistantsHydrated;
-    useOnboardingStore.setState({ consentHydrated: false });
+    const previous = useResolvedAssistantsStore.getState().assistantsHydrated;
     useResolvedAssistantsStore.setState({
       assistants: [],
       assistantsHydrated: false,
     });
-
     try {
-      // Must settle (the consent prefs are pinned current above, so with the
-      // hydration flags forced after the timeout, requireAssistant lands on
-      // the consented no-assistant branch) — pre-guard this recursed into the
-      // identical wait forever. Hatching is app-owned (#532), so the ride is
-      // a full-page navigation and the middleware admits into it.
       const outcome = await runMiddlewareOutcome(routes.identity);
       expect(outcome.admitted).toBe(true);
-      expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(
-        true,
-      );
+      expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(true);
     } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-      useResolvedAssistantsStore.setState({
-        assistantsHydrated: priorAssistantsHydrated,
-      });
+      useResolvedAssistantsStore.setState({ assistantsHydrated: previous });
     }
   });
 
-  // The research entry waits for consent to hydrate. Forcing the hydration flag
-  // after the timeout leaves the consent flags at their boot `false`, so the
-  // funnel's own gate would read a consented user as un-onboarded and evict
-  // them into privacy — losing a paid return's markers, restarting a free
-  // user's onboarding. It admits instead. The assistants list is hydrated here,
-  // so the fail-open rests on the consent wait alone.
-  test("admits a research funnel entry whose consent hydration hung", async () => {
+  test("research proceeds without waiting for web consent or assistant hydration", async () => {
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({
       sessionStatus: "authenticated",
       cloudSession: "present",
     });
-    // The boot state a cold deep link sees: nothing read back from the server
-    // yet, and the fetch that would never reports.
-    consentPrefs.tos = false;
-    consentPrefs.privacy = false;
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    useOnboardingStore.setState({ consentHydrated: false });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: true,
-    });
-
-    try {
-      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
-      expect(outcome.admitted).toBe(true);
-    } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-    }
-  });
-
-  // Fail-open is scoped to the unhydrated read: consent that actually hydrated
-  // on an unconsented user still bounces, carrying the funnel URL so the paid
-  // markers survive the privacy screen.
-  test("bounces the same entry once consent hydrates unconsented", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    consentPrefs.tos = false;
-    consentPrefs.privacy = false;
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    useOnboardingStore.setState({ consentHydrated: true });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: true,
-    });
-
-    try {
-      // The bounce targets the app bundle's consent screen — a full-page
-      // navigation, so the middleware admits and the page URL carries it.
-      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
-      expect(outcome.admitted).toBe(true);
-      expect(window.location.href.endsWith("/account/consent")).toBe(true);
-    } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-    }
-  });
-
-  // The fail-open belongs to the consent wait alone. Consent that hydrates on
-  // time reports a settled "not consented" whatever the assistants list is
-  // doing, so a stalled list must not launder an unconsented user past the gate
-  // and into a hatch they would be charged for.
-  test("bounces an unconsented research entry when only the assistants list stalls", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    consentPrefs.tos = false;
-    consentPrefs.privacy = false;
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    const priorAssistantsHydrated =
-      useResolvedAssistantsStore.getState().assistantsHydrated;
-    useOnboardingStore.setState({ consentHydrated: false });
     useResolvedAssistantsStore.setState({
       assistants: [],
       assistantsHydrated: false,
     });
-
-    try {
-      const pending = runMiddlewareOutcome(researchFunnelEntry);
-      // Consent lands well inside its (clamped) wait; the assistants fetch
-      // never reports, so only that second wait runs out.
-      setTimeout(() => {
-        useOnboardingStore.setState({ consentHydrated: true });
-      }, 10);
-
-      const outcome = await pending;
-      expect(outcome.admitted).toBe(true);
-      expect(window.location.href.endsWith("/account/consent")).toBe(true);
-    } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-      useResolvedAssistantsStore.setState({
-        assistantsHydrated: priorAssistantsHydrated,
-      });
-    }
-  });
-
-  // The consent wait runs first, so a fetch that reports just after it — while
-  // the assistants wait is still running — leaves a settled "not consented" by
-  // the time the guard recurses. Carrying the expired stall forward would fail
-  // the gate open on a hydration that has since landed.
-  test("bounces an unconsented research entry when consent lands during the assistants wait", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    consentPrefs.tos = false;
-    consentPrefs.privacy = false;
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    const priorAssistantsHydrated =
-      useResolvedAssistantsStore.getState().assistantsHydrated;
-    useOnboardingStore.setState({ consentHydrated: false });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: false,
-    });
-
-    try {
-      const pending = runMiddlewareOutcome(researchFunnelEntry);
-      // Past the (clamped) consent wait but inside the assistants one, which
-      // never reports.
-      setTimeout(() => {
-        useOnboardingStore.setState({ consentHydrated: true });
-      }, WAIT_TIMEOUT_CLAMP_MS + 30);
-
-      const outcome = await pending;
-      expect(outcome.admitted).toBe(true);
-      expect(window.location.href.endsWith("/account/consent")).toBe(true);
-    } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-      useResolvedAssistantsStore.setState({
-        assistantsHydrated: priorAssistantsHydrated,
-      });
-    }
-  });
-
-  // Both fetches hang, so the consent wait times out on its own account and the
-  // entry falls back to its unconditional admission.
-  test("admits the research entry when both hydration waits stall", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    consentPrefs.tos = false;
-    consentPrefs.privacy = false;
-    const priorConsentHydrated = useOnboardingStore.getState().consentHydrated;
-    const priorAssistantsHydrated =
-      useResolvedAssistantsStore.getState().assistantsHydrated;
-    useOnboardingStore.setState({ consentHydrated: false });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: false,
-    });
-
-    try {
-      const outcome = await runMiddlewareOutcome(researchFunnelEntry);
-      expect(outcome.admitted).toBe(true);
-    } finally {
-      useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
-      useResolvedAssistantsStore.setState({
-        assistantsHydrated: priorAssistantsHydrated,
-      });
-    }
+    const href = window.location.href;
+    const outcome = await runMiddlewareOutcome(
+      `${routes.onboarding.research}?hosting=cadet-cloud`,
+    );
+    expect(outcome.admitted).toBe(true);
+    expect(window.location.href).toBe(href);
   });
 });

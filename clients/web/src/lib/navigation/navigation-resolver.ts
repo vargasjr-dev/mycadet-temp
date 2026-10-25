@@ -19,31 +19,6 @@ export interface NavigationState {
   sessionSettled: boolean;
   isAuthenticated: boolean;
   cloudSession: CloudSessionStatus;
-  tosAccepted: boolean;
-  privacyConsent: boolean;
-  /**
-   * Whether the consent flags above reflect a completed session sync (or an
-   * explicit acceptance). They boot `false`, so acting on them before
-   * hydration would misread an established user as un-onboarded.
-   */
-  consentHydrated: boolean;
-  /**
-   * Whether the cloud has any consent record for this user (a first consent
-   * or later). Both acceptance flags above boot `false` and stay `false` for
-   * a never-consented user AND for an established user whose accepted
-   * versions went stale — this flag is the discriminator between the two,
-   * which is what decides a first-consent funnel versus a re-review.
-   */
-  hasConsentRecord: boolean;
-
-  /**
-   * Whether `consentHydrated` above was forced by the auth middleware after its
-   * hydration wait timed out. The consent flags then still read their boot
-   * `false`, so a gate that treats them as a settled "not consented" would
-   * evict a consented user. Absent on every other caller — only the middleware
-   * can know its own wait ran out.
-   */
-  consentHydrationTimedOut?: boolean;
   /** Whether the resolved assistants list reflects at least one authoritative load. */
   assistantsHydrated: boolean;
   /**
@@ -98,10 +73,6 @@ export type NavigationDecision =
 // Shared predicates & helpers
 // ---------------------------------------------------------------------------
 
-function hasCompletedOnboarding(state: NavigationState): boolean {
-  return state.tosAccepted && state.privacyConsent;
-}
-
 const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
 
 function isOnboardingPath(pathname: string): boolean {
@@ -111,10 +82,8 @@ function isOnboardingPath(pathname: string): boolean {
   );
 }
 
-// The cloud arm targets the app bundle's consent screen — a cross-bundle
-// literal (house pattern): it lives outside web's route table on purpose.
 function onboardingEntrypoint(isLocalClient: boolean): string {
-  return isLocalClient ? routes.welcome : "/account/consent";
+  return isLocalClient ? routes.welcome : routes.onboarding.research;
 }
 
 function extractPathname(destination: string): string {
@@ -173,7 +142,6 @@ export function resolveNavigation(
 //   5. Mode boundary      — is this path valid for the user's mode?
 //   6. Setup exemptions   — onboarding paths are always reachable
 //   7. Assistant required  — user needs at least one assistant
-//   8. Consent required   — platform users must accept TOS
 
 type RouteGuardStep = (
   state: NavigationState,
@@ -188,7 +156,6 @@ const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
   requireAuth,
   allowSetupRoutes,
   requireAssistant,
-  requireConsent,
 ];
 
 function resolveRouteGuard(
@@ -270,7 +237,7 @@ function requireRemoteGatewayPairing(
  * choose from, so the visit funnels to hosting.
  *
  * Deciding either way is what keeps the local chooser short-circuiting ahead of
- * the assistant and consent gates: it is itself an onboarding surface,
+ * the assistant gate: it is itself an onboarding surface,
  * reachable before there is a cloud session to gate on.
  */
 function requireAuth(
@@ -304,7 +271,7 @@ function requireAuth(
 }
 
 function allowSetupRoutes(
-  state: NavigationState,
+  _state: NavigationState,
   path: string,
   _pathnameWithSearch: string,
 ): NavigationDecision | null {
@@ -314,71 +281,17 @@ function allowSetupRoutes(
     return null;
   }
 
-  return enforceFunnelConsent(state, path);
+  return { action: "allow" };
 }
 
-/**
- * Consent for the two provisioning funnel entries, which `requireConsent` never
- * reaches — every onboarding path is allowed before it runs. It decides every
- * onboarding path outright: anything that is not a funnel entry is plainly
- * allowed.
- *
- * The hatching entry keeps exactly the gate it has always had — reached from
- * in-app navigation, it decides on the flags in hand and leaves stale-toggle
- * review to the screen's own `hatch-gate`. The research entry also waits for
- * the flags to hydrate on a cold deep link.
- */
+// These entries own provisioning; consent is enforced by the app shell.
 const PROVISIONING_FUNNEL_PATHS: ReadonlySet<string> = new Set([
   routes.onboarding.hatching,
   routes.onboarding.research,
 ]);
 
-function enforceFunnelConsent(
-  state: NavigationState,
-  path: string,
-): NavigationDecision {
-  if (!PROVISIONING_FUNNEL_PATHS.has(path)) {
-    return { action: "allow" };
-  }
-
-  if (path === routes.onboarding.research) {
-    // The consent flags are still at their boot defaults on a cold deep link,
-    // and bouncing on them would send an already-consented user to privacy.
-    // Local mode is excluded for the same reason as in `requireConsent`: its
-    // consent either hydrates synchronously during session init or never does,
-    // so waiting would hang navigation.
-    if (!state.isLocalClient && !state.consentHydrated) {
-      return { action: "wait" };
-    }
-    // A hydration that never landed leaves those boot defaults behind a forced
-    // `consentHydrated`, so the gates below would read a consented user as
-    // un-onboarded and restart their funnel. Fail open to the entry's
-    // unconditional contract instead; a hydrated read still gates.
-    if (state.consentHydrationTimedOut) {
-      return { action: "allow" };
-    }
-  }
-
-  // First consent only: a user with no consent record at all. A
-  // record-holder whose acceptance went stale is handled by the hatching
-  // screen's own hatch-gate. Gated on the cloud session — consent is a
-  // cloud-account concern, so a local-only client (no session to consent
-  // against) proceeds ungated.
-  if (
-    state.cloudSession === "present" &&
-    !state.hasConsentRecord &&
-    !hasCompletedOnboarding(state)
-  ) {
-    return { action: "redirect", to: "/account/consent" };
-  }
-
-  return { action: "allow" };
-}
-
 function requireAssistant(
   state: NavigationState,
-  path: string,
-  pathnameWithSearch: string,
 ): NavigationDecision | null {
   if (state.hasAssistants) {
     return null;
@@ -394,56 +307,11 @@ function requireAssistant(
     return { action: "redirect", to: routes.welcome };
   }
 
-  // Platform boot populates the assistants list and the consent flags
-  // asynchronously; both boot empty/false. Deciding before they hydrate would
-  // read an established user as brand-new and funnel them into onboarding.
-  // (Local mode is excluded above — its list is lockfile-driven.)
-  if (!state.assistantsHydrated || !state.consentHydrated) {
+  // The assistant list starts empty while platform boot loads it.
+  if (!state.assistantsHydrated) {
     return { action: "wait" };
   }
-
-  if (!hasCompletedOnboarding(state)) {
-    // First consent and a stale acceptance both settle at the shell's consent
-    // screen (the app bundle), returnTo preserved for the ride back — the
-    // screen frames itself first-consent vs re-review off the record.
-    const returnTo = encodeURIComponent(pathnameWithSearch);
-    return {
-      action: "redirect",
-      to: `/account/consent?returnTo=${returnTo}`,
-    };
-  }
-  // A consented user with no assistant goes to the standard hatching screen.
   return { action: "redirect", to: routes.onboarding.hatching };
-}
-
-function requireConsent(
-  state: NavigationState,
-  _path: string,
-  pathnameWithSearch: string,
-): NavigationDecision | null {
-  // Consent is a cloud-account concern: only enforce it when there is a
-  // live platform session to consent against. A disabled platform or an
-  // absent/unknown session has no server consent record to gate on. Note this
-  // is NOT gated on isLocalClient — a local-mode client with a cloud session
-  // still re-reviews stale terms.
-  if (state.cloudSession !== "present" || hasCompletedOnboarding(state)) {
-    return null;
-  }
-
-  // The flags boot false and hydrate asynchronously — a redirect decided
-  // before hydration would bounce a fully consented user to review-terms.
-  // Local mode decides immediately: its cloud-session paths that enforce
-  // consent hydrate synchronously during session init, and the gateway-probe
-  // path never hydrates, so waiting there would hang navigation.
-  if (!state.consentHydrated && !state.isLocalClient) {
-    return { action: "wait" };
-  }
-
-  const returnTo = encodeURIComponent(pathnameWithSearch);
-  return {
-    action: "redirect",
-    to: `/account/consent?returnTo=${returnTo}`,
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -454,14 +322,10 @@ function resolveOnboardingIntercept(
   state: NavigationState,
   intendedDestination: string,
 ): NavigationDecision {
-  if (state.isLocalClient && state.hasAssistants) {
+  if (state.hasAssistants) {
     return { action: "allow" };
   }
-  if (
-    hasCompletedOnboarding(state) ||
-    state.hasConsentRecord ||
-    state.userHasOnboardedAssistant
-  ) {
+  if (state.userHasOnboardedAssistant) {
     return { action: "allow" };
   }
 
@@ -489,12 +353,6 @@ function resolveHatchGate(state: NavigationState): NavigationDecision {
   }
   if (!state.isAuthenticated && !state.isLocalClient) {
     return { action: "redirect", to: routes.remotePair };
-  }
-  if (state.cloudSession === "present" && !hasCompletedOnboarding(state)) {
-    // First consent and a stale acceptance both settle at the shell's consent
-    // screen. Local-only clients have no session to consent against, so they
-    // are not gated here.
-    return { action: "redirect", to: "/account/consent" };
   }
   return { action: "allow" };
 }

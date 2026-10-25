@@ -69,16 +69,6 @@ const primeLocalGatewayConnectionWithRepairMock = mock(async () => {
   }
 });
 const refreshRemoteGatewaySessionMock = mock(async () => false);
-const restoreConsentForUserMock = mock(
-  (_userId: string | null): { tos: boolean; privacy: boolean } => ({
-    tos: false,
-    privacy: false,
-  }),
-);
-const persistConsentForUserMock = mock(
-  (_userId: string | null, _tos: boolean, _privacy: boolean) => {},
-);
-
 const clearOrganizationMock = mock(() => {});
 const logoutMock = mock(async () => {});
 const deleteBiometricTokenMock = mock(async () => {});
@@ -227,29 +217,6 @@ mock.module("@/runtime/native-biometric", () => ({
 
 const clearUserScopedStorageMock = mock(() => {});
 
-mock.module("@/lib/consent/consent-persistence", () => ({
-  restoreConsentForUser: restoreConsentForUserMock,
-  persistConsentForUser: persistConsentForUserMock,
-  TOS_CONSENT_VERSION: "2026-06-08",
-  PRIVACY_CONSENT_VERSION: "2026-06-08",
-}));
-
-const setTosAcceptedMock = mock((_value: boolean) => {});
-const setPrivacyConsentMock = mock((_value: boolean) => {});
-const setHasConsentRecordMock = mock((_value: boolean) => {});
-const setConsentHydratedMock = mock((_value: boolean) => {});
-
-mock.module("@/domains/onboarding/onboarding-store", () => ({
-  useOnboardingStore: {
-    getState: () => ({
-      setTosAccepted: setTosAcceptedMock,
-      setPrivacyConsent: setPrivacyConsentMock,
-      setHasConsentRecord: setHasConsentRecordMock,
-      setConsentHydrated: setConsentHydratedMock,
-    }),
-  },
-}));
-
 mock.module("@/lib/auth/session-cleanup", () => ({
   clearUserScopedStorage: clearUserScopedStorageMock,
 }));
@@ -358,7 +325,6 @@ beforeEach(() => {
   getSessionGates = null;
   mockElectronSessionToken = null;
   localStorage.removeItem("cadet:auth:sessionSnapshot");
-  localStorage.removeItem("cadet:auth:userSnapshot");
   localStorage.removeItem("device:share_diagnostics");
   localStorage.removeItem("device:diagnostics_reporting");
   mockIsGatewayAuth = false;
@@ -378,12 +344,6 @@ beforeEach(() => {
   primeLocalGatewayConnectionWithStartupRetryMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
   refreshRemoteGatewaySessionMock.mockClear();
-  restoreConsentForUserMock.mockClear();
-  persistConsentForUserMock.mockClear();
-  setTosAcceptedMock.mockClear();
-  setPrivacyConsentMock.mockClear();
-  setHasConsentRecordMock.mockClear();
-  setConsentHydratedMock.mockClear();
   clearOrganizationMock.mockClear();
   clearUserScopedStorageMock.mockClear();
   clearWidgetSnapshotMock.mockClear();
@@ -725,44 +685,23 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
-  test("initSession restores legal consent from per-user device keys", async () => {
+  test("cloud connect and refresh fetch organizations without storing a user", async () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
-    restoreConsentForUserMock.mockReturnValueOnce({
-      tos: true,
-      privacy: true,
-    });
 
-    await useAuthStore.getState().initSession();
+    await connectCloudAssistant("assistant-1");
 
-    expect(restoreConsentForUserMock).toHaveBeenCalledWith("user-1");
-    expect(setTosAcceptedMock).toHaveBeenCalledWith(true);
-    expect(setPrivacyConsentMock).toHaveBeenCalledWith(true);
-    // Both device acks present = a prior consent record.
-    expect(setHasConsentRecordMock).toHaveBeenCalledWith(true);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-  });
+    expect(fetchOrganizationsMock).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).not.toHaveProperty("user");
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBe("true");
 
-  test("initSession with no device consent record reads as never-consented", async () => {
-    sessionUser = { id: "user-2", email: "user@example.com" };
+    fetchOrganizationsMock.mockClear();
+    sessionUser = { id: "user-2", email: "other@example.com" };
+    await useAuthStore.getState().refreshSession();
 
-    await useAuthStore.getState().initSession();
-
-    expect(setTosAcceptedMock).toHaveBeenCalledWith(false);
-    expect(setPrivacyConsentMock).toHaveBeenCalledWith(false);
-    expect(setHasConsentRecordMock).toHaveBeenCalledWith(false);
-  });
-
-  test("syncUserScopedState marks consent hydrated on every settle path", async () => {
-    // Authenticated platform user.
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    await useAuthStore.getState().initSession();
-    expect(setConsentHydratedMock).toHaveBeenCalledWith(true);
-
-    // Signed-out path (settled unauthenticated).
-    setConsentHydratedMock.mockClear();
-    sessionUser = null;
-    await useAuthStore.getState().initSession();
-    expect(setConsentHydratedMock).toHaveBeenCalledWith(true);
+    // A live-session account switch has no auth-state edge; the probe itself
+    // refreshes the organization selection instead of tracking an account id.
+    expect(fetchOrganizationsMock).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBe("true");
   });
 
   test("refreshSession reconciles the lockfile mirror in local mode", async () => {
@@ -1455,7 +1394,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // rejected account as "present" on a later offline boot.
     localStorage.setItem(
       "cadet:auth:sessionSnapshot",
-      JSON.stringify({ accountId: "user-1" }),
+      "true",
     );
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
@@ -1615,8 +1554,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().cloudSession).toBe("absent");
     // No snapshot may be re-persisted for the rejected session.
     expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
-    // Nor may the rejected account's user-scoped consent state be installed.
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
 
   test("refreshSession settles absent on an assistants-list rejection", async () => {
@@ -1708,8 +1645,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
     expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
-    // Nor may the rejected account's user-scoped consent state be installed.
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
 
   test("initSession with platform assistants routes an assistants-list rejection to login", async () => {
@@ -1746,9 +1681,8 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     expect(useAuthStore.getState().cloudSession).not.toBe("present");
     expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
     // A failed connect leaves no side effects behind: the caller keeps its
-    // current selection and consent state, not the rejected account's.
+    // current selection, not the rejected account's.
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
   });
 
   test("connectCloudAssistant tolerates a non-rejection org failure", async () => {
@@ -2062,10 +1996,9 @@ describe("paired selection in the gateway-auth session paths", () => {
 // ---------------------------------------------------------------------------
 
 const SNAPSHOT_KEY = "cadet:auth:sessionSnapshot";
-const LEGACY_SNAPSHOT_KEY = "cadet:auth:userSnapshot";
 
-function seedSnapshot(accountId = "user-cached"): void {
-  localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({ accountId }));
+function seedSnapshot(): void {
+  localStorage.setItem(SNAPSHOT_KEY, "true");
 }
 
 describe("offline session restore (LUM-2412)", () => {
@@ -2160,7 +2093,7 @@ describe("offline session restore (LUM-2412)", () => {
 
     const raw = localStorage.getItem(SNAPSHOT_KEY);
     expect(raw).not.toBeNull();
-    expect(JSON.parse(raw!)).toMatchObject({ accountId: "user-9" });
+    expect(raw).toBe("true");
   });
 
   test("local-mode platform-assistants boot also restores from cache on transport failure", async () => {
@@ -2252,31 +2185,7 @@ describe("session shape (platform vs local gateway access)", () => {
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
-  test("a legacy (pre-reshape) snapshot still restores the offline session", async () => {
-    // The pre-reshape key carried the full user object; the account id
-    // migrates out of it so an upgrade never loses the offline restore.
-    getSessionThrows = true;
-    mockElectronSessionToken = "tok-1";
-    localStorage.setItem(
-      LEGACY_SNAPSHOT_KEY,
-      JSON.stringify({
-        id: "user-cached",
-        username: "cached",
-        email: "cached@example.com",
-        isStaff: false,
-        firstName: "Cached",
-        lastName: "User",
-      }),
-    );
 
-    await useAuthStore.getState().initSession();
-
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().cloudSession).toBe("present");
-    // Migrated to the session shape, legacy key dropped.
-    expect(localStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
-    expect(localStorage.getItem(LEGACY_SNAPSHOT_KEY)).toBeNull();
-  });
 });
 
 test("explicit cloud-account logout revokes cloud and biometric credentials even in gateway mode", async () => {

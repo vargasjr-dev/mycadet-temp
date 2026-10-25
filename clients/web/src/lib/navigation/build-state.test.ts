@@ -14,16 +14,6 @@ mock.module("@/lib/local-mode", () => ({
   isGatewaySessionLive: () => false,
 }));
 
-// Consent prefs read storage; pin them so the access decision is isolated.
-mock.module("@/domains/onboarding/prefs", () => ({
-  readTosAccepted: () => true,
-  readPrivacyConsent: () => true,
-  readHasConsentRecord: () => true,
-  readAnalyticsConsentCurrent: () => true,
-  readDiagnosticsConsentCurrent: () => true,
-  readConsentHydrated: () => true,
-}));
-
 const { buildNavigationState } = await import("./build-state");
 const { useAuthStore } = await import("@/stores/auth-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
