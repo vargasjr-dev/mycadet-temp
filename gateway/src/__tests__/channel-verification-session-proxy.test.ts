@@ -132,7 +132,13 @@ describe("channel verification session proxy", () => {
     expect(capturedBody).toBe(
       '{"channel":"phone","destination":"+15551234567"}',
     );
-    expect(capturedHeaders?.get("authorization")).toMatch(/^Bearer ey/);
+    // The daemon verifies no tokens — the gateway asserts its service
+    // identity in x-cadet-* headers, never a bearer.
+    expect(capturedHeaders?.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(capturedHeaders?.get("x-cadet-scope-profile")).toBe(
+      "gateway_service_v1",
+    );
+    expect(capturedHeaders?.get("authorization")).toBeNull();
     expect(capturedHeaders?.has("host")).toBe(false);
   });
 

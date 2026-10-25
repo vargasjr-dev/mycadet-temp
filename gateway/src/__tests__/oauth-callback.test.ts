@@ -85,7 +85,11 @@ describe("OAuth callback handler", () => {
     expect(sentBody.error).toBeUndefined();
 
     const headers = calledInit.headers as Record<string, string>;
-    expect(headers["Authorization"]).toMatch(/^Bearer ey/);
+    // The daemon verifies no tokens — the gateway asserts its service
+    // identity in x-cadet-* headers, never a bearer.
+    expect(headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    expect(headers["x-cadet-scope-profile"]).toBe("gateway_service_v1");
+    expect(headers["Authorization"]).toBeUndefined();
   });
 
   test("missing state parameter returns 400 error page", async () => {
@@ -311,6 +315,10 @@ describe("OAuth callback handler", () => {
 
     const calledInit = (fetchMock.mock.calls[0] as unknown[])[1] as RequestInit;
     const headers = calledInit.headers as Record<string, string>;
-    expect(headers["Authorization"]).toMatch(/^Bearer ey/);
+    // The daemon verifies no tokens — the gateway asserts its service
+    // identity in x-cadet-* headers, never a bearer.
+    expect(headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    expect(headers["x-cadet-scope-profile"]).toBe("gateway_service_v1");
+    expect(headers["Authorization"]).toBeUndefined();
   });
 });
