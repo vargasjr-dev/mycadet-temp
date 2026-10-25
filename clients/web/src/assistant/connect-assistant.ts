@@ -14,7 +14,6 @@
  * instead of dead-ending.
  */
 import { getSession } from "@/lib/auth/allauth-client";
-import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import {
   getLocalAssistants,
   getLockfileAssistant,
@@ -26,9 +25,7 @@ import {
   commitCloudSession,
   commitLocalSession,
   probeCloudSessionForConnect,
-  useAuthStore,
 } from "@/stores/auth-store";
-import { isConfirmedCloudSession } from "@/stores/session-status";
 import { useOrganizationStore } from "@/stores/organization-store";
 
 /**
@@ -54,10 +51,7 @@ export async function connectLocalAssistant(
   );
   await primeLocalGatewayConnectionWithRepair(target);
   await commitLocalSession(assistantId);
-  const { cloudSession, cloudSessionRestoredOffline } = useAuthStore.getState();
-  if (isConfirmedCloudSession(cloudSession, cloudSessionRestoredOffline)) {
-    bootstrapLocalAssistantCloudIdentity(assistantId);
-  }
+  // The probe bootstraps cloud identity only after validating a live session.
   probeCloudSessionForConnect();
 }
 
@@ -65,12 +59,10 @@ export async function connectLocalAssistant(
  * Connect to a paired assistant: a remote machine's assistant imported via
  * `cadet connect import`. Primes the host-authorized proxy connection,
  * selects the assistant, and marks the session logged in, mirroring
- * {@link connectLocalAssistant} with two deliberate differences: it primes
- * through the plain `primeLocalGatewayConnection` because `wake` cannot
- * start or repair an assistant on a remote machine, and it skips
- * `bootstrapLocalAssistantCloudIdentity` because that registers a LOCAL
- * assistant with the cloud while a paired entry is only a client-side
- * pairing record.
+ * {@link connectLocalAssistant}. It uses the plain gateway prime because
+ * `wake` cannot start or repair an assistant on a remote machine. The
+ * follow-up cloud probe bootstraps identity only for a local assistant,
+ * leaving paired entries as client-side pairing records.
  */
 export async function connectPairedAssistant(
   assistantId: string,

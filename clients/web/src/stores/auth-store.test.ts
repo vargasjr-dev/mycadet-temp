@@ -634,8 +634,6 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(getSessionCallCount).toBe(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    // A live probe confirmed it — not a believed offline restore.
-    expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(false);
   });
 
   test("successful local platform probe bootstraps the selected local assistant identity", async () => {
@@ -1773,19 +1771,34 @@ describe("connectLocalAssistant", () => {
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("bootstraps a newly connected local assistant when already signed into the cloud", async () => {
+  test("waits for the new cloud probe before bootstrapping a connected local assistant", async () => {
     mockIsLocalClient = true;
-    mockCloudAssistants = [];
-    useAuthStore.setState({
-      cloudSession: "present",
-      cloudSessionRestoredOffline: false,
-    });
+    mockIsGatewayAuth = true;
+    sessionUser = { id: "user-1" };
+    useAuthStore.setState({ cloudSession: "present" });
+    getSessionGates = [];
 
     await connectLocalAssistant("local-a");
 
-    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledWith(
-      "local-a",
-    );
+    // A cached present session is insufficient: the fresh probe must confirm it.
+    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
+    expect(getSessionGates).toHaveLength(1);
+    getSessionGates[0]!();
+    await whenCloudSessionSettled();
+
+    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not bootstrap from cached cloud state when the fresh probe rejects it", async () => {
+    mockIsLocalClient = true;
+    mockIsGatewayAuth = true;
+    sessionUser = null;
+    useAuthStore.setState({ cloudSession: "present" });
+
+    await connectLocalAssistant("local-a");
+    await whenCloudSessionSettled();
+
+    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
   });
 
   test("rethrows the prime failure without selecting or marking the session logged in", async () => {
@@ -1857,7 +1870,6 @@ describe("connectPairedAssistant", () => {
     mockLockfileAssistants = [pairedEntry];
     useAuthStore.setState({
       cloudSession: "present",
-      cloudSessionRestoredOffline: false,
     });
 
     await connectPairedAssistant("paired-a");
@@ -2014,9 +2026,6 @@ describe("offline session restore (LUM-2412)", () => {
     // The snapshot only exists for a confirmed platform session, and no
     // probe runs offline to settle an "unknown" — so the restore settles
     // "present" (believed state); reconnect revalidation corrects it.
-    // ...and it is flagged as a believed restore, so telemetry stays
-    // fail-closed.
-    expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(true);
   });
 
   test("transport-failed boot (proxy 502) with token + snapshot settles authenticated from cache", async () => {

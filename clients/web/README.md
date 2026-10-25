@@ -3,18 +3,6 @@
 Vite + [React Router v7](https://reactrouter.com/) SPA for the
 Cadet assistant web app (chat, settings, library, docs).
 
-## Session and consent ownership
-
-Web stores session status, not account identity. Its offline restore marker
-contains only `true` and requires a host session credential; confirmed
-rejections clear it. Legacy user snapshots are not migrated.
-
-Legal consent is owned by `clients/app`. Web does not restore consent
-acknowledgments, keep consent flags, or wait for consent hydration during
-navigation. The shell handles acceptance and re-review. Organization state
-remains transitional: connect and session reconciliation fetch the organization
-list directly, which resolves the active organization without tracking a user ID.
-
 ## Stack
 
 - [Vite](https://vite.dev/) for the production build.

@@ -21,7 +21,6 @@ import {
   isSettledSessionRejection,
   hasLiveCloudSession,
   isCloudSessionSettled,
-  isConfirmedCloudSession,
   type CloudSessionStatus,
   type SessionStatus,
 } from "@/stores/session-status";
@@ -82,10 +81,6 @@ import {
 interface AuthState {
   sessionStatus: SessionStatus;
   cloudSession: CloudSessionStatus;
-  // True while `cloudSession: "present"` is a believed offline restore
-  // (LUM-2412) rather than a session a live probe confirmed. Telemetry gates on
-  // a confirmed-live session, so it must not treat the restored state as live.
-  cloudSessionRestoredOffline: boolean;
 }
 
 interface AuthActions {
@@ -215,8 +210,6 @@ const authenticatedPlatformSession = (): Partial<AuthState> => {
   return enteringAuthenticatedSession({
     sessionStatus: "authenticated",
     cloudSession: "present",
-    // Confirmed by a live probe; `restoreOfflineSession` overrides this to true.
-    cloudSessionRestoredOffline: false,
   });
 };
 
@@ -344,10 +337,7 @@ async function restoreOfflineSession(set: AuthSet): Promise<boolean> {
   if (!readSessionSnapshot()) {
     return false;
   }
-  set({
-    ...authenticatedPlatformSession(),
-    cloudSessionRestoredOffline: true,
-  });
+  set(authenticatedPlatformSession());
   return true;
 }
 
@@ -512,7 +502,6 @@ function probeCloudSession(
           set({
             ...demotion,
             cloudSession: "absent",
-            cloudSessionRestoredOffline: false,
           });
           return;
         }
@@ -524,7 +513,6 @@ function probeCloudSession(
         }
         set({
           cloudSession: "present",
-          cloudSessionRestoredOffline: false,
         });
         bootstrapLocalAssistantCloudIdentity();
       } else if (options.clearOnFailure) {
@@ -637,7 +625,6 @@ export function probeCloudSessionForConnect(): void {
 const useAuthStoreBase = create<AuthStore>()((set, get) => ({
   sessionStatus: "initializing",
   cloudSession: "unknown",
-  cloudSessionRestoredOffline: false,
 
   // Deliberately not guarded by `logoutGeneration`, unlike `refreshSession`.
   // Its two callers can't overlap a logout: the boot path runs before any
@@ -1073,17 +1060,6 @@ export const useHasCloudSession = (): boolean =>
  */
 export const useIsCloudSessionSettled = (): boolean =>
   isCloudSessionSettled(useAuthStore.use.cloudSession());
-
-/**
- * A platform session a live probe confirmed — excludes the believed offline
- * restore (LUM-2412). Telemetry consent gates on this, not the routing-oriented
- * {@link useHasCloudSession}, so it never enables offline.
- */
-export const useHasConfirmedCloudSession = (): boolean =>
-  isConfirmedCloudSession(
-    useAuthStore.use.cloudSession(),
-    useAuthStore.use.cloudSessionRestoredOffline(),
-  );
 
 /**
  * Subscribe to app-resume signals on the layout-scoped event bus and to
