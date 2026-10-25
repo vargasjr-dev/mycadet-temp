@@ -11,8 +11,8 @@ import { resolve } from "node:path";
 
 import { getRuntimeHttpHost, getRuntimeHttpPort } from "../config/env.js";
 import { getIsContainerized } from "../config/env-registry.js";
-import { DaemonError } from "../util/errors.js";
 import { ensureBun } from "../util/bun-runtime.js";
+import { DaemonError } from "../util/errors.js";
 import {
   ensureDataDir,
   getDaemonStartupLockPath,

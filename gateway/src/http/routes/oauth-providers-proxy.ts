@@ -7,7 +7,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { GATEWAY_SERVICE_IDENTITY } from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -25,7 +24,6 @@ export function createOAuthProvidersProxyHandler(config: GatewayConfig) {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch || undefined,
-      identity: GATEWAY_SERVICE_IDENTITY,
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

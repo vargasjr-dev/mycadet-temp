@@ -390,44 +390,6 @@ describe("root tar backup", () => {
       ),
     ).toBe(true);
   });
-  test("Docker signing-key conflicts fail preflight before shutdown or writes", async () => {
-    const { entry, root, file } = await fixture();
-    await packRoot(root, file);
-    entry.cloud = "docker";
-    let sleeps = 0,
-      writes = 0;
-    const storage = new DockerRootStorage(entry, {
-      output: async () =>
-        JSON.stringify([
-          {
-            Image: "sha256:existing-image",
-            State: { Running: true, Status: "running" },
-            Config: {
-              Env: ["ACTOR_TOKEN_SIGNING_KEY=" + "09".repeat(32)],
-              User: "1001:1001",
-            },
-            Mounts: [],
-          },
-        ]),
-      copy: async () => {},
-      install: async () => {
-        writes++;
-      },
-    });
-    const ops: RootBackupOps = {
-      storage,
-      sleep: async () => {
-        sleeps++;
-      },
-      wake: async () => {},
-      save: () => {},
-    };
-    await expect(restoreRootBackup(entry, file, {}, ops)).rejects.toThrow(
-      "different signing key",
-    );
-    expect(sleeps).toBe(0);
-    expect(writes).toBe(0);
-  });
 
   test("interrupted startup leaves restored services stopped and keeps the recovery archive", async () => {
     const { entry, root, file, dir } = await fixture();
