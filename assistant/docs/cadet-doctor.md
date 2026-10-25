@@ -91,7 +91,7 @@ Sharing feedback is separate from approving a Doctor operation. A guardian can c
 
 ## API reference
 
-The cloud API exposes Doctor under the assistant-scoped routes below. Requests use the same authentication options as the surrounding platform API.
+The cloud API exposes Doctor under the assistant-scoped routes below. Requests use the same authentication options as the surrounding cloud API.
 
 | Operation        | Route                                                                           | Purpose                                                    |
 | ---------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -182,7 +182,7 @@ A failed tool result is shown in the transcript with its technical output. Docto
 
 ## Source map
 
-The implementation currently lives in the web client and platform API contract:
+The implementation currently lives in the web client and cloud API contract:
 
 - `clients/web/src/domains/settings/pages/debug-page.tsx` exposes the Doctor tab.
 - `clients/web/src/domains/settings/components/panels/doctor-panel.tsx` owns session creation, messaging, history, cleanup, and the panel UI.
@@ -190,6 +190,6 @@ The implementation currently lives in the web client and platform API contract:
 - `clients/web/src/domains/settings/components/panels/doctor-event-schema.ts` defines the validated event contract.
 - `clients/web/src/domains/settings/components/panels/doctor-event-handlers.ts` maps events into visible session entries.
 - `clients/web/src/domains/settings/components/panels/doctor-history.ts` maps persisted messages and serializes copied transcripts.
-- `clients/web/openapi-schemas/platform.yaml` defines the assistant-scoped Doctor routes and persisted session schemas.
+- `clients/web/openapi-schemas/cloud.yaml` defines the assistant-scoped Doctor routes and persisted session schemas.
 
-The Cadet Assistant runtime does not provide a local Doctor CLI command. Doctor is a web and platform capability, not a command run inside a self-hosted assistant.
+The Cadet Assistant runtime does not provide a local Doctor CLI command. Doctor is a web and cloud capability, not a command run inside a self-hosted assistant.

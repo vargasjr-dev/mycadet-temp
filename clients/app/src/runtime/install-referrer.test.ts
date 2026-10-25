@@ -9,7 +9,7 @@ mock.module("@capacitor/core", () => ({
 }));
 
 const { clearUserScopedStorage } =
-  await import("@web/lib/auth/session-cleanup");
+  await import("@app/lib/auth/session-cleanup");
 const { captureInstallReferrer, markInstallReferrerSpent } =
   await import("./install-referrer");
 

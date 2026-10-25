@@ -10,12 +10,15 @@ import type { CliInvocation } from "./util";
 // a slow-but-succeeding wake gets killed and misreported as a timeout.
 const WAKE_TIMEOUT_MS = 180_000;
 
+/** The re-lease runs after the wake, inside the same safety-net window. */
+const REPAIR_TIMEOUT_MS = 60_000;
+
 export type WakeResult =
   | { ok: true }
   | { ok: false; status: number; error: string };
 
 export interface WakeOptions {
-  /** Pass --repair-guardian to re-provision a missing/expired guardian token. Revokes the assistant's other device-bound tokens, so callers must gate this behind explicit user confirmation. */
+  /** Re-provision the guardian credential after the wake (the gateway's bootstrap reset + re-lease, the same machinery `cadet gateway token refresh` runs). Revokes the assistant's other device-bound tokens, so callers must gate this behind explicit user confirmation. */
   repairGuardian?: boolean;
 }
 
@@ -34,17 +37,32 @@ export function runWake(
   assistantId: string,
   options?: WakeOptions,
 ): Promise<WakeResult> {
+  return runCli(invocation, ["wake", assistantId], WAKE_TIMEOUT_MS).then(
+    (woken) => {
+      if (!woken.ok || !options?.repairGuardian) {
+        return woken;
+      }
+      // The credential repair is the gateway's own machinery now: the
+      // gateway is up after the wake, so the re-lease runs against it.
+      return runCli(
+        invocation,
+        ["gateway", "token", "refresh", assistantId],
+        REPAIR_TIMEOUT_MS,
+      );
+    },
+  );
+}
+
+function runCli(
+  invocation: CliInvocation,
+  args: string[],
+  timeoutMs: number,
+): Promise<WakeResult> {
   return new Promise((resolve) => {
-    const child = spawn(
-      invocation.command,
-      [
-        ...invocation.baseArgs,
-        "wake",
-        assistantId,
-        ...(options?.repairGuardian ? ["--repair-guardian"] : []),
-      ],
-      { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
-    );
+    const child = spawn(invocation.command, [...invocation.baseArgs, ...args], {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
 
     let stdout = "";
     let stderr = "";
@@ -62,9 +80,9 @@ export function runWake(
       finish({
         ok: false,
         status: 500,
-        error: `Wake timed out after ${WAKE_TIMEOUT_MS / 1000} seconds`,
+        error: `CLI invocation timed out after ${timeoutMs / 1000} seconds`,
       });
-    }, WAKE_TIMEOUT_MS);
+    }, timeoutMs);
 
     child.stdout.on("data", (data: Buffer) => {
       stdout += data.toString();
@@ -83,7 +101,11 @@ export function runWake(
     });
 
     child.on("error", (err) => {
-      finish({ ok: false, status: 500, error: `Failed to spawn CLI: ${err.message}` });
+      finish({
+        ok: false,
+        status: 500,
+        error: `Failed to spawn CLI: ${err.message}`,
+      });
     });
   });
 }

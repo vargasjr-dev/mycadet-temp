@@ -10,7 +10,6 @@ import {
 } from "fs";
 import { basename, dirname, join } from "path";
 
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import {
   findAssistantByName,
   getLocalInstanceDir,
@@ -18,7 +17,7 @@ import {
 } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   startCes,
   startLocalDaemon,
   startGateway,
@@ -506,13 +505,8 @@ async function recoverFromArchive(name: string): Promise<void> {
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
   await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
-  // Validate the staged identity before occupying the destination or updating
-  // the registry. A failed validation leaves the archive available for retry.
-  const signingKey = resolveExistingLocalSigningKey(resources, extractedPath);
   const bootstrapSecret =
-    entry.guardianBootstrapSecret ?? generateLocalSigningKey();
-  const updatedResources = { ...resources, signingKey };
-  entry.resources = updatedResources;
+    entry.guardianBootstrapSecret ?? generateLocalSecret();
   entry.guardianBootstrapSecret = bootstrapSecret;
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
@@ -522,9 +516,9 @@ async function recoverFromArchive(name: string): Promise<void> {
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([
-    startCes(false, updatedResources),
-    startLocalDaemon(false, updatedResources, { signingKey }),
-    startGateway(false, updatedResources, { signingKey, bootstrapSecret }),
+    startCes(false, resources),
+    startLocalDaemon(false, resources),
+    startGateway(false, resources, { bootstrapSecret }),
   ]);
 
   unlinkSync(archivePath);

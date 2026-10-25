@@ -35,10 +35,6 @@ import { initializeProviders } from "../providers/registry.js";
 import { startRouteHost } from "../routes/control.js";
 import { floorSeqAbove } from "../runtime/assistant-stream-state.js";
 import {
-  initAuthSigningKey,
-  resolveSigningKey,
-} from "../runtime/auth/token-service.js";
-import {
   startRuntimeHttpServer,
   startRuntimeHttpServerBackgroundSweeps,
 } from "../runtime/http-server.js";
@@ -139,11 +135,6 @@ export async function runDaemon(): Promise<void> {
   // a live turn. Recorded before any turn can start so every live flag is at or
   // after it.
   recordDaemonBootTime(startupStartedAt);
-
-  // Load (or generate + persist) the auth signing key so tokens survive
-  // daemon restarts.
-  const signingKey = resolveSigningKey();
-  initAuthSigningKey(signingKey);
 
   setDbMigrating();
 

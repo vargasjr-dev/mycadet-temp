@@ -141,23 +141,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
   },
-  "inferenceUsageChart": {
-    "empty": "Нет данных об использовании за этот период"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "Ко всему использованию",
-    "chartMetricAria": "Метрика графика",
-    "eventsLabel": "События",
-    "llmDimensionAria": "Измерение расходов LLM",
-    "llmSpend": "Расход LLM",
-    "loadError": "Не удалось загрузить данные об использовании.",
-    "metricEvents": "События",
-    "metricSpend": "Расход ($)",
-    "oauthSpend": "Расход OAuth",
-    "spendLabel": "Расход",
-    "subtitle": "Обзор расходов.",
-    "title": "Расход кредитов"
-  },
   "biometricSettingsCard": {
     "description": "Когда сессия истечёт, подтверди вход через {label}, а не заново.",
     "descriptionWithPasscode": "Когда сессия истечёт, подтверди вход через {label} или код устройства, а не заново.",

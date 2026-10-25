@@ -978,37 +978,6 @@
     "save": "儲存",
     "title": "重新命名對話"
   },
-  "researchActivityFeed": {
-    "defaultStatus": "正在搜尋網路以了解您。",
-    "heading": "正在了解您…",
-    "reading": "正在閱讀 <title>{title}</title><domain> · {domain}</domain>",
-    "searchingFor": "正在搜尋 <query>「{query}」</query>",
-    "warmingUp": "正在暖機搜尋…"
-  },
-  "researchFactsCard": {
-    "editRemovalAria": "編輯移除",
-    "keepIt": "保留",
-    "removeAria": "移除",
-    "sources": "來源",
-    "whyRemove": "為何移除此項？"
-  },
-  "researchMockPage": {
-    "heading": "正在了解您…",
-    "mockNote": "（模擬 - 即時流程會在此處顯示搜尋活動摘要）",
-    "resultsTitle": "這是關於您的資訊。您可以移除任何不真實的內容："
-  },
-  "researchResultsOverlay": {
-    "body": "這是關於您的資訊。您可以移除任何不真實的內容：",
-    "loading": "正在了解您…"
-  },
-  "researchResultsView": {
-    "continue": "繼續",
-    "emptyBody": "這次我無法整理出清晰的個人資料。我們可以在後續交流中互相了解。",
-    "emptyTitle": "我們直接開始吧。"
-  },
-  "researchSuggestions": {
-    "heading": "以下是我可以如何協助您開始："
-  },
   "ruleEditorActions": {
     "saveFailed": "儲存信任規則失敗。請再試一次。"
   },

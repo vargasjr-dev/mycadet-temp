@@ -1,10 +1,10 @@
-import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
+import {
+  buildWsUpstreamUrl,
+  forwardedIdentityHeaders,
+} from "@mycadet/assistant-client";
 import { TWILIO_MEDIA_STREAM_WEBHOOK_PATH } from "@mycadet/service-contracts/twilio-ingress";
 
-import {
-  validateEdgeToken,
-  mintServiceToken,
-} from "../../auth/token-exchange.js";
+import { validateEdgeToken } from "../../auth/token-exchange.js";
 import type { ScopeProfile } from "../../auth/types.js";
 import type { GatewayConfig } from "../../config.js";
 import { getLogger } from "../../logger.js";
@@ -189,7 +189,6 @@ export function getMediaStreamWebsocketHandlers() {
         buildWsUpstreamUrl({
           baseUrl: assistantRuntimeBaseUrl,
           path: "/v1/calls/media-stream",
-          serviceToken: mintServiceToken(),
           extraParams: { callSessionId },
         });
       log.info(
@@ -197,7 +196,13 @@ export function getMediaStreamWebsocketHandlers() {
         "Opening upstream media-stream WS to runtime",
       );
 
-      const upstream = new WebSocket(upstreamUrl);
+      // The DOM lib's WebSocket declaration shadows Bun's here — it only
+      // knows the subprotocols overload, so the headers-init rides past it
+      // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
+      // tests lean on DOM-typed fetch, ~300 errors.)
+      const upstream = new WebSocket(upstreamUrl, {
+        headers: forwardedIdentityHeaders(),
+      } as never);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

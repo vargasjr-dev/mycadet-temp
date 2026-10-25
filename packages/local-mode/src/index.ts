@@ -45,7 +45,7 @@ export {
   readLockfile,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  upsertLockfileAssistant,
+  saveLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -149,7 +149,3 @@ export type {
   PairedGuardianTokenProvider,
 } from "./gateway-proxy";
 
-export {
-  resolveExistingLocalSigningKey,
-  SigningKeyContinuityError,
-} from "./local-signing-key";

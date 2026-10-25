@@ -93,8 +93,8 @@ mock.module("../live-voice-credential-preflight.js", () => ({
 }));
 
 import {
-  mintActorToken,
-  mintGatewayToken,
+  actorIdentityHeaders,
+  gatewayIdentityHeaders,
   requireHttpAuth,
   upgradeHeaders,
   waitForClose,
@@ -226,35 +226,32 @@ describe("RuntimeHttpServer live voice WebSocket shell", () => {
     restoreAuthEnv();
   });
 
-  function openLiveVoiceClient(token = mintGatewayToken()): WebSocket {
-    const ws = new WebSocket(
-      `${wsBaseUrl}/v1/live-voice?token=${encodeURIComponent(token)}`,
-    );
+  function openLiveVoiceClient(): WebSocket {
+    const ws = new WebSocket(`${wsBaseUrl}/v1/live-voice`, {
+      headers: gatewayIdentityHeaders,
+    } as never);
     clients.push(ws);
     return ws;
   }
 
   test("rejects unauthorized upgrades before creating a WebSocket", async () => {
-    const missingToken = await fetch(`${baseUrl}/v1/live-voice`, {
+    const missingIdentity = await fetch(`${baseUrl}/v1/live-voice`, {
       headers: upgradeHeaders,
     });
-    expect(missingToken.status).toBe(401);
+    expect(missingIdentity.status).toBe(401);
 
-    const actorToken = await fetch(
-      `${baseUrl}/v1/live-voice?token=${mintActorToken()}`,
-      { headers: upgradeHeaders },
-    );
-    expect(actorToken.status).toBe(401);
+    const actorIdentity = await fetch(`${baseUrl}/v1/live-voice`, {
+      headers: { ...upgradeHeaders, ...actorIdentityHeaders },
+    });
+    expect(actorIdentity.status).toBe(401);
 
-    const externalOrigin = await fetch(
-      `${baseUrl}/v1/live-voice?token=${mintGatewayToken()}`,
-      {
-        headers: {
-          ...upgradeHeaders,
-          Origin: "https://external.example.com",
-        },
+    const externalOrigin = await fetch(`${baseUrl}/v1/live-voice`, {
+      headers: {
+        ...upgradeHeaders,
+        ...gatewayIdentityHeaders,
+        Origin: "https://external.example.com",
       },
-    );
+    });
     expect(externalOrigin.status).toBe(403);
   });
 

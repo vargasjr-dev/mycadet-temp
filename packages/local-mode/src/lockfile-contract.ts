@@ -57,7 +57,6 @@ export type Remote = z.infer<typeof RemoteSchema>;
  * place they are modeled.
  */
 export const SENSITIVE_KEYS = [
-  "signingKey",
   "bearerToken",
   "guardianBootstrapSecret",
 ] as const;
@@ -190,11 +189,10 @@ export function getLoopbackGatewayPort(entry: {
 
 /**
  * Per-instance resources for a local assistant: the renderer-facing ports,
- * the instance directory, and the local runtime install metadata, plus the
- * host-only ports and the persisted signing key the CLI read-modify-writes.
- * Strict: every field the CLI round-trips is modeled, so nothing is dropped
- * by the parse. The secrets are stripped from renderer reads by
- * {@link stripSensitiveFields} before the parse ever sees them.
+ * the instance directory, the local runtime install metadata, and the
+ * host-only ports. Strict: every field the CLI round-trips is modeled, so
+ * nothing is dropped by the parse. The secrets are stripped from renderer
+ * reads by {@link stripSensitiveFields} before the parse ever sees them.
  */
 export const LocalAssistantResourcesSchema = z.object({
   instanceDir: z.string().optional(),
@@ -204,8 +202,6 @@ export const LocalAssistantResourcesSchema = z.object({
   cesPort: z.number().optional(),
   runtimeVersion: z.string().optional(),
   runtimeInstallDir: z.string().optional(),
-  /** Persisted HMAC signing key (hex); survives daemon/gateway restarts so client actor tokens remain valid across wake cycles. */
-  signingKey: z.string().optional(),
 });
 export type LocalAssistantResources = z.infer<
   typeof LocalAssistantResourcesSchema

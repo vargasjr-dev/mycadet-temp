@@ -58,9 +58,10 @@ import {
   stopTelegramWebhookHealthSweep,
 } from "../telegram/webhook-health.js";
 import { getLogger } from "../util/logger.js";
-import { authenticateRequest } from "./auth/middleware.js";
-import { parseSub } from "./auth/subject.js";
-import { verifyToken } from "./auth/token-service.js";
+import {
+  authenticateRequest,
+  buildAuthContextFromForwardedIdentity,
+} from "./auth/middleware.js";
 import { sweepFailedEvents } from "./channel-retry-sweep.js";
 import type { HostCaptureTarget } from "./host-observe.js";
 import { httpError, type HttpErrorCode } from "./http-errors.js";
@@ -210,7 +211,7 @@ interface LiveVoiceWebSocketData {
    * admitted nobody, which the session reads as a turn with no actor.
    *
    * Trusted because it arrives on this dial, which only the gateway can make
-   * (see {@link verifyGatewayServiceToken}), and never from a client header.
+   * (see {@link requireForwardedIdentity}), and never from a client header.
    */
   guardianPrincipalId?: string;
 }
@@ -993,24 +994,21 @@ export class RuntimeHttpServer {
     return routerResponse ?? httpError("NOT_FOUND", "Not found", 404);
   }
 
-  private verifyGatewayServiceToken(req: Request): Response | null {
+  /**
+   * Gate for the gateway-proxied WebSocket upgrades. The daemon verifies no
+   * tokens; the gateway authenticates the client at its edge and dials
+   * upstream asserting its own service identity in `x-cadet-*` headers
+   * (re-derived from verified claims, never passed through). The private-
+   * network peer/origin checks in `upgradeRuntimeStream` plus this identity
+   * requirement are what keep the dial gateway-only.
+   */
+  private requireForwardedIdentity(req: Request): Response | null {
     if (isHttpAuthDisabled()) {
       return null;
     }
 
-    const wsUrl = new URL(req.url);
-    const token = wsUrl.searchParams.get("token");
-    if (!token) {
-      return httpError("UNAUTHORIZED", "Unauthorized", 401);
-    }
-
-    const jwtResult = verifyToken(token, "cadet-daemon");
-    if (!jwtResult.ok) {
-      return httpError("UNAUTHORIZED", "Unauthorized", 401);
-    }
-
-    const subResult = parseSub(jwtResult.claims.sub);
-    if (!subResult.ok || subResult.principalType !== "svc_gateway") {
+    const forwarded = buildAuthContextFromForwardedIdentity(req.headers);
+    if (!forwarded.ok || forwarded.context.principalType !== "svc_gateway") {
       return httpError("UNAUTHORIZED", "Unauthorized", 401);
     }
 
@@ -1038,7 +1036,7 @@ export class RuntimeHttpServer {
         403,
       );
     }
-    const tokenError = this.verifyGatewayServiceToken(req);
+    const tokenError = this.requireForwardedIdentity(req);
     if (tokenError) {
       return tokenError;
     }

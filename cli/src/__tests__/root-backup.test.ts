@@ -72,7 +72,6 @@ async function fixture() {
       daemonPort: 7821,
       gatewayPort: 7831,
       cesPort: 7790,
-      signingKey: "07".repeat(32),
     },
   };
   return { dir, root, entry, file: join(dir, "backup.tar.gz") };
@@ -83,7 +82,7 @@ afterEach(async () => {
 });
 
 describe("root tar backup", () => {
-  test("initializes a fresh stopped instance with complete roots and the archived signing key", async () => {
+  test("initializes a fresh stopped instance with complete roots", async () => {
     const { root, entry, file, dir } = await fixture();
     await packRoot(root, file);
     const destination = join(dir, "fresh-instance");
@@ -92,8 +91,12 @@ describe("root tar backup", () => {
       ...entry,
       resources: { ...entry.resources!, instanceDir: destination },
     };
-    const key = await initializeRootArchive(fresh, file);
-    expect(key).toBe("07".repeat(32));
+    await initializeRootArchive(fresh, file);
+    expect(
+      await readFile(
+        join(destination, "gateway-security", "actor-token-signing-key"),
+      ),
+    ).toEqual(Buffer.from("07".repeat(32), "hex"));
     expect(
       await readFile(join(destination, "ces-security", "keys.enc"), "utf8"),
     ).toBe("opaque encrypted bytes");
@@ -386,44 +389,6 @@ describe("root tar backup", () => {
         args.includes("type=volume,src=remote-ces-data,dst=/restore"),
       ),
     ).toBe(true);
-  });
-  test("Docker signing-key conflicts fail preflight before shutdown or writes", async () => {
-    const { entry, root, file } = await fixture();
-    await packRoot(root, file);
-    entry.cloud = "docker";
-    let sleeps = 0,
-      writes = 0;
-    const storage = new DockerRootStorage(entry, {
-      output: async () =>
-        JSON.stringify([
-          {
-            Image: "sha256:existing-image",
-            State: { Running: true, Status: "running" },
-            Config: {
-              Env: ["ACTOR_TOKEN_SIGNING_KEY=" + "09".repeat(32)],
-              User: "1001:1001",
-            },
-            Mounts: [],
-          },
-        ]),
-      copy: async () => {},
-      install: async () => {
-        writes++;
-      },
-    });
-    const ops: RootBackupOps = {
-      storage,
-      sleep: async () => {
-        sleeps++;
-      },
-      wake: async () => {},
-      save: () => {},
-    };
-    await expect(restoreRootBackup(entry, file, {}, ops)).rejects.toThrow(
-      "different signing key",
-    );
-    expect(sleeps).toBe(0);
-    expect(writes).toBe(0);
   });
 
   test("interrupted startup leaves restored services stopped and keeps the recovery archive", async () => {

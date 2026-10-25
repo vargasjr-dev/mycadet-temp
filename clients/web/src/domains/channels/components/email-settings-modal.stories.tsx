@@ -13,7 +13,6 @@ import {
   assistantsDomainsVerificationStatusRetrieveOptions,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesStatusRetrieveOptions,
-  organizationsBillingSubscriptionRetrieveOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { assistantChannelAdmissionPolicyListQueryKey } from "@/generated/gateway/@tanstack/react-query.gen";
 import { withQueryCache } from "@/lib/story-query-cache";
@@ -33,19 +32,6 @@ const TRUST_FLOORS_VERSION = "0.10.0";
 
 const withEmailQueryCache = withQueryCache((client) => {
   const path = { assistant_id: ASSISTANT_ID };
-  client.setQueryData(
-    organizationsBillingSubscriptionRetrieveOptions().queryKey,
-    {
-      plan_id: "pro",
-      status: "active",
-      renewal_date: null,
-      current_period_start: null,
-      current_period_end: null,
-      cancel_at_period_end: false,
-      cancel_at: null,
-      entitlements: { cloud_email: true, phone_number: false },
-    },
-  );
   client.setQueryData(assistantsDomainsListOptions({ path }).queryKey, {
     count: 1,
     next: null,

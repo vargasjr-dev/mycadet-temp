@@ -980,37 +980,6 @@
     "save": "Guardar",
     "title": "Renombrar conversación"
   },
-  "researchActivityFeed": {
-    "defaultStatus": "Buscando en la web para conocerte.",
-    "heading": "Conociéndote…",
-    "reading": "Leyendo <title>{title}</title><domain> · {domain}</domain>",
-    "searchingFor": "Buscando <query>“{query}”</query>",
-    "warmingUp": "Preparando la búsqueda…"
-  },
-  "researchFactsCard": {
-    "editRemovalAria": "Editar eliminación",
-    "keepIt": "Conservarlo",
-    "removeAria": "Eliminar",
-    "sources": "Fuentes",
-    "whyRemove": "¿Por qué eliminar esto?"
-  },
-  "researchMockPage": {
-    "heading": "Conociéndote…",
-    "mockNote": "(mock: el flujo en vivo muestra aquí el feed de actividad de búsqueda)",
-    "resultsTitle": "Esto es lo que sé de ti. Puedes quitar lo que no sea cierto:"
-  },
-  "researchResultsOverlay": {
-    "body": "Esto es lo que sé de ti. Puedes quitar lo que no sea cierto:",
-    "loading": "Conociéndote…"
-  },
-  "researchResultsView": {
-    "continue": "Continuar",
-    "emptyBody": "Esta vez no pude armar un perfil limpio. Podemos conocernos sobre la marcha.",
-    "emptyTitle": "Empecemos de una vez."
-  },
-  "researchSuggestions": {
-    "heading": "Así podría ayudarte para empezar:"
-  },
   "ruleEditorActions": {
     "saveFailed": "No se pudo guardar la regla de confianza. Inténtalo de nuevo."
   },

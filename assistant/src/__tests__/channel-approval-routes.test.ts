@@ -70,7 +70,6 @@ import { initializeDb } from "../persistence/db-init.js";
 import * as deliveryChannels from "../persistence/delivery-channels.js";
 import { resetTestTables } from "../persistence/raw-query.js";
 import { conversations } from "../persistence/schema/index.js";
-import { initAuthSigningKey } from "../runtime/auth/token-service.js";
 import * as gatewayClient from "../runtime/gateway-client.js";
 import * as pendingInteractions from "../runtime/pending-interactions.js";
 import { _setTestPollMaxWait } from "../runtime/routes/channel-route-shared.js";
@@ -84,7 +83,6 @@ import { resetGatewayAclStore } from "./helpers/gateway-acl-store.js";
 import { bridgeState } from "./helpers/gateway-guardian-requests-store-bridge.js";
 
 await initializeDb();
-initAuthSigningKey(Buffer.from("test-signing-key-at-least-32-bytes-long"));
 
 afterAll(() => {
   resetDbForTesting();

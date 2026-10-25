@@ -126,7 +126,7 @@ function splitOnce(s: string, sep: string): [string, string] {
 
 /**
  * Catalog fixture rows served to the mocked cloud catalog — the source under
- * test. Former bundled-catalog entries, now exercised through the platform
+ * test. Former bundled-catalog entries, now exercised through the cloud
  * fetch path.
  */
 const CATALOG_FIXTURES: MarketplaceEntry[] = [

@@ -14,19 +14,15 @@ import { getDb } from "../persistence/db-connection.js";
 import { initializeDb } from "../persistence/db-init.js";
 import { buildAssistantEvent } from "../runtime/assistant-event.js";
 import { assistantEventHub } from "../runtime/assistant-event-hub.js";
-import { mintToken } from "../runtime/auth/token-service.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 
 await initializeDb();
 
-const TEST_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "actor:self:test",
-  scope_profile: "actor_client_v1",
-  policy_epoch: 1,
-  ttlSeconds: 3600,
-});
-const AUTH_HEADERS = { Authorization: `Bearer ${TEST_JWT}` };
+const AUTH_HEADERS = {
+  "x-cadet-subject": "actor:self:test",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "actor_client_v1",
+};
 
 describe("SSE assistant-events endpoint", () => {
   let server: RuntimeHttpServer;

@@ -15,7 +15,10 @@ import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
-import { validateEdgeToken, mintServiceToken } from "./auth/token-exchange.js";
+import {
+  forwardedIdentityHeaders,
+} from "@mycadet/assistant-client";
+import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
@@ -1989,7 +1992,7 @@ async function main() {
           `${config.assistantRuntimeBaseUrl}/v1/health`,
           {
             signal: AbortSignal.timeout(3000),
-            headers: { authorization: `Bearer ${mintServiceToken()}` },
+            headers: forwardedIdentityHeaders(),
           },
         );
         if (upstream.ok) {

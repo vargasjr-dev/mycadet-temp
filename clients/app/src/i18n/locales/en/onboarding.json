@@ -1,0 +1,166 @@
+{
+  "actions": {
+    "continue": "Continue",
+    "back": "Back",
+    "forward": "Forward",
+    "cancel": "Cancel",
+    "add": "Add",
+    "adding": "Adding…",
+    "tryAgain": "Try again",
+    "remove": "Remove {value}",
+    "downloadMacOSApp": "Download the macOS app",
+    "downloadWindowsApp": "Download the Windows app",
+    "claim": "Claim"
+  },
+  "addRemoteOriginDialog": {
+    "title": "Add a Remote Assistant",
+    "body": "Paste the https link your assistant’s pairing page gave you.",
+    "addressLabel": "Assistant address",
+    "addFailed": "Failed to add the assistant. Please try again."
+  },
+  "onboardingAutocomplete": {
+    "addOption": "Add “{value}”",
+    "enterHint": "↵ Enter",
+    "freeTextHint": "Type anything and press ↵ to add your own"
+  },
+  "stepIndicator": {
+    "ariaLabel": "Step {current} of {total}"
+  },
+  "introductionScreen": {
+    "greetingNamed": "Hey, {name}!",
+    "greeting": "Hey!",
+    "introNamed": "I’m {name}, your new AI assistant.",
+    "intro": "I’m your new AI assistant."
+  },
+  "pitchStep": {
+    "setupLine": "You’ve used AI that just answers questions.",
+    "helpLine": "The more I help,",
+    "punchLine": "I’m different.",
+    "betterLine": "the better I get,",
+    "lessLine": "and the less you have to do."
+  },
+  "createPersonalityStep": {
+    "title": "Create my personality",
+    "lockedBody": "Personality locked, chat with your assistant to make any more updates",
+    "axisAriaLabel": "{left} to {right}",
+    "axes": {
+      "companionCoworker": {
+        "left": "Companion",
+        "right": "Coworker"
+      },
+      "genzBoomer": {
+        "left": "Gen Z",
+        "right": "Baby Boomer"
+      },
+      "executeCollaborate": {
+        "left": "Independent",
+        "right": "Collaborative"
+      },
+      "playfulSerious": {
+        "left": "Playful",
+        "right": "Serious"
+      },
+      "politeUnfiltered": {
+        "left": "Polite",
+        "right": "Unfiltered"
+      }
+    }
+  },
+  "giveMeAFaceScreen": {
+    "title": "Give me a face and a name",
+    "previousCharacter": "Previous character",
+    "nextCharacter": "Next character",
+    "namePlaceholder": "Name your assistant",
+    "nameAriaLabel": "Assistant name",
+    "editName": "Edit name",
+    "shuffle": "Shuffle name and appearance",
+    "hearVoice": "Hear my voice",
+    "stopVoice": "Stop the voice sample"
+  },
+  "integrationStep": {
+    "title": "Here's some initial usage<br></br> to get started."
+  },
+  "researchOnboardingScreen": {
+    "title": "Let's start with you.",
+    "body": "A few details so I can get to know you.",
+    "firstNameLabel": "What should I call you?",
+    "firstNamePlaceholder": "Your name",
+    "lastNameLabel": "And your last name?",
+    "lastNamePlaceholder": "Your last name (optional)",
+    "roleLabel": "Your role",
+    "rolePlaceholder": "What do you do for work?",
+    "hobbiesLabel": "Any hobbies?",
+    "hobbiesPlaceholder": "Cars, books, growing tomatoes?"
+  },
+  "existingAssistantStep": {
+    "titleNamed": "{name} is already up and running",
+    "title": "Your assistant is already up and running",
+    "bodyNamed": "You two have history: a personality, memories, and past conversations. Running setup again would overwrite who {name} is now.",
+    "body": "You two have history: a personality, memories, and past conversations. Running setup again would overwrite who your assistant is now.",
+    "keepNamed": "Keep {name} and start chatting",
+    "keep": "Keep your assistant and start chatting",
+    "redoNamed": "Start over and rebuild {name}'s personality",
+    "redo": "Start over and rebuild its personality"
+  },
+  "lookingYouUpStep": {
+    "searching": "Searching the web to get to know you…",
+    "readingProfiles": "Reading public profiles…",
+    "skimming": "Skimming the highlights…",
+    "connectingDots": "Connecting the dots…",
+    "piecing": "Piecing it together…",
+    "almostThere": "Almost there…"
+  },
+  "finishingUpStep": {
+    "updatingPersonality": "Updating my personality…",
+    "findingVoice": "Finding my voice…",
+    "gettingIntoCharacter": "Getting into character…",
+    "almostThere": "Almost there…"
+  },
+  "researchResultsStep": {
+    "title": "This is what I found about you",
+    "bodyLoadingWithClaims": "Still checking the rest. You can review these as they come in.",
+    "bodyReadyWithClaims": "I searched the web. Feel free to remove anything that isn’t true.",
+    "bodyLoadingEmpty": "Still putting this together…",
+    "removeClaim": "Remove \"{claim}\"",
+    "notMe": "This is not me",
+    "stillSearching": "Still searching…"
+  },
+  "suggestionsStep": {
+    "title": "Here’s what we could do first",
+    "pickOne": "Pick one to jump in, or start your own thing. <skip>Skip to Chat</skip>",
+    "loading": "Putting together a few ideas…",
+    "alreadySetUp": "Already set up the <plugins></plugins> {count, plural, one {plugin} other {plugins}} to help with your work",
+    "listAnd": " and ",
+    "listCommaAnd": ", and ",
+    "listComma": ", ",
+    "fallbacks": {
+      "brief": {
+        "suggestion": "I'll pull together a quick brief on what's new in your field",
+        "prompt": "Give me a quick brief on what's new in my field right now."
+      },
+      "weekly": {
+        "suggestion": "I'll send a weekly briefing on news in your space",
+        "prompt": "Set up a weekly briefing on news in my space."
+      },
+      "week": {
+        "suggestion": "I'll help you get on top of your week",
+        "prompt": "Help me get on top of my week."
+      },
+      "draft": {
+        "suggestion": "I'll draft something from a few rough notes",
+        "prompt": "Draft something from a few rough notes I'll give you."
+      }
+    }
+  },
+  "authErrors": {
+    "genericFailure": "Something went wrong. Please try again.",
+    "signupClosed": "Sorry, Cadet is not accepting new signups at this time. Feel free to try again later.",
+    "providerSignup": "No Cadet account is linked to that login yet. Sign up first, then sign in.",
+    "loginIncomplete": "Your account needs another step to finish signing in. Please sign in on the web, then try again.",
+    "desktopUpdateRequired": "This version of the Cadet desktop app can't sign in. Update the app, then try again."
+  },
+  "hatchingScreen": {
+    "genericFailure": "Something went wrong",
+    "localFallbackPitch": "Get started today with a local assistant"
+  }
+}

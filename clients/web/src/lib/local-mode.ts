@@ -499,7 +499,7 @@ export function reconcileSelectedAssistant(): void {
  * Whether the entry's gateway lives on another machine (a connect import):
  * a loopback-gateway cloud whose `runtimeUrl` points off this machine.
  */
-function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
   return (
     isLoopbackGatewayCloud(entry.cloud) &&
     isUsableRuntimeUrl(entry.runtimeUrl) &&

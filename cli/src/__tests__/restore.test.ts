@@ -15,7 +15,6 @@ import {
   mkdirSync,
   mkdtempSync,
   rmSync,
-  readFileSync,
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -23,7 +22,6 @@ import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
 import {
-  getLocalInstanceDir,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
@@ -33,7 +31,7 @@ import { makeEntry } from "./helpers/lockfile-entry.js";
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
 const realLocal = {
-  generateLocalSigningKey: localModule.generateLocalSigningKey,
+  generateLocalSecret: localModule.generateLocalSecret,
   startLocalDaemon: localModule.startLocalDaemon,
   startGateway: localModule.startGateway,
   startCes: localModule.startCes,
@@ -80,6 +78,7 @@ const retiredDir = join(testDir, "cadet", "retired");
 function writeArchiveFixtures(
   name: string,
   entry: LockfileAssistant,
+  key: string | null = "07".repeat(32),
 ): {
   archivePath: string;
   metadataPath: string;
@@ -96,6 +95,15 @@ function writeArchiveFixtures(
   writeFileSync(metadataPath, JSON.stringify(entry, null, 2) + "\n");
   // Create the staging dir that tar would have created
   mkdirSync(extractedPath, { recursive: true });
+  // The identity rides the archive's key file; null stages an archive
+  // without one.
+  if (key) {
+    mkdirSync(join(extractedPath, "gateway-security"), { recursive: true });
+    writeFileSync(
+      join(extractedPath, "gateway-security", "actor-token-signing-key"),
+      Buffer.from(key, "hex"),
+    );
+  }
 
   return { archivePath, metadataPath, extractedPath };
 }
@@ -175,96 +183,6 @@ describe("restore --help", () => {
 });
 
 describe("restore error cases", () => {
-  for (const failure of ["missing", "conflict"] as const) {
-    test(`recovery ${failure} leaves destination and registry untouched and permits retry`, async () => {
-      const name = `retry-${failure}`;
-      const instanceDir = join(testDir, "cadet", "assistants", name);
-      const entry = makeEntry({
-        assistantId: name,
-        resources: { instanceDir },
-      });
-      delete entry.resources!.signingKey;
-      const { archivePath, metadataPath, extractedPath } = writeArchiveFixtures(
-        name,
-        entry,
-      );
-      if (failure === "conflict") {
-        for (const [dir, hex] of [
-          ["gateway-security", "ab"],
-          ["workspace/deprecated", "cd"],
-        ]) {
-          mkdirSync(join(extractedPath, dir!), { recursive: true });
-          writeFileSync(
-            join(extractedPath, dir!, "actor-token-signing-key"),
-            Buffer.from(hex!.repeat(32), "hex"),
-          );
-        }
-      }
-      const registry = resolveLockfilePaths(process.env)[0]!;
-      const before = readFileSync(registry, "utf8");
-      process.argv = ["bun", "cadet", "restore", name];
-      await expect(restore()).rejects.toThrow(`signing key ${failure}`);
-      expect(existsSync(instanceDir)).toBe(false);
-      expect(readFileSync(registry, "utf8")).toBe(before);
-      expect(existsSync(archivePath)).toBe(true);
-      expect(existsSync(metadataPath)).toBe(true);
-      expect(startLocalDaemonMock).not.toHaveBeenCalled();
-      expect(startGatewayMock).not.toHaveBeenCalled();
-      // Restore the authoritative identity in the archive metadata and retry.
-      entry.resources!.signingKey = "ab".repeat(32);
-      writeFileSync(metadataPath, JSON.stringify(entry));
-      await restore();
-      expect(existsSync(instanceDir)).toBe(true);
-      expect(existsSync(archivePath)).toBe(false);
-      expect(startGatewayMock).toHaveBeenCalledTimes(1);
-      rmSync(instanceDir, { recursive: true, force: true });
-    });
-  }
-
-  test("recovers an archived legacy identity from staging", async () => {
-    const name = "legacy-staged";
-    const entry = makeEntry({
-      guardianBootstrapSecret: "existing-bootstrap",
-      assistantId: name,
-      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
-    });
-    delete entry.resources!.signingKey;
-    const { extractedPath } = writeArchiveFixtures(name, entry);
-    const dir = join(extractedPath, "workspace", "deprecated");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, "actor-token-signing-key"),
-      Buffer.from("cd".repeat(32), "hex"),
-    );
-    process.argv = ["bun", "cadet", "restore", name];
-    await restore();
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({ signingKey: "cd".repeat(32) }),
-      { signingKey: "cd".repeat(32), bootstrapSecret: "existing-bootstrap" },
-    );
-    rmSync(getLocalInstanceDir(entry.resources), {
-      recursive: true,
-      force: true,
-    });
-  });
-
-  test("missing identity preserves the archive and starts no processes", async () => {
-    const name = "missing-key";
-    const entry = makeEntry({
-      assistantId: name,
-      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
-    });
-    delete entry.resources!.signingKey;
-    const { archivePath, metadataPath } = writeArchiveFixtures(name, entry);
-    process.argv = ["bun", "cadet", "restore", name];
-    await expect(restore()).rejects.toThrow("signing key missing");
-    expect(existsSync(archivePath)).toBe(true);
-    expect(existsSync(metadataPath)).toBe(true);
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-  });
-
   test("exits 1 when no name is given", async () => {
     process.argv = ["bun", "cadet", "restore"];
     await expect(restore()).rejects.toThrow("process.exit(1)");
@@ -348,8 +266,8 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock).toHaveBeenCalledTimes(1);
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
-      expect.objectContaining({ signingKey: "ab".repeat(32) }),
-      { signingKey: "ab".repeat(32), bootstrapSecret: "existing-bootstrap" },
+      expect.objectContaining({ instanceDir: expect.any(String) }),
+      { bootstrapSecret: "existing-bootstrap" },
     ]);
   });
 

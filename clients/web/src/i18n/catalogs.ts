@@ -41,11 +41,11 @@ import enHome from "@/i18n/locales/en/home.json";
 import enLibrary from "@/i18n/locales/en/library.json";
 import enLogs from "@/i18n/locales/en/logs.json";
 import enIntelligence from "@/i18n/locales/en/intelligence.json";
-import enOnboarding from "@/i18n/locales/en/onboarding.json";
 import enRemoteWeb from "@/i18n/locales/en/remote-web.json";
 import enTerminal from "@/i18n/locales/en/terminal.json";
 import enWorkspace from "@/i18n/locales/en/workspace.json";
 import enChat from "@/i18n/locales/en/chat.json";
+import enOnboarding from "@/i18n/locales/en/onboarding.json";
 import enCommon from "@/i18n/locales/en/common.json";
 import enSchedules from "@/i18n/locales/en/schedules.json";
 import enSettings from "@/i18n/locales/en/settings.json";
@@ -82,8 +82,8 @@ export const FALLBACK_CATALOGS: LocaleCatalogs = {
   library: enLibrary,
   home: enHome,
   contacts: enContacts,
-  onboarding: enOnboarding,
   intelligence: enIntelligence,
+  onboarding: enOnboarding,
   "assistant-inbox": enAssistantInbox,
 };
 
@@ -107,9 +107,9 @@ const CATALOG_LOADERS: Record<
     library: () => import("@/i18n/locales/es/library.json"),
     home: () => import("@/i18n/locales/es/home.json"),
     contacts: () => import("@/i18n/locales/es/contacts.json"),
-    onboarding: () => import("@/i18n/locales/es/onboarding.json"),
     intelligence: () => import("@/i18n/locales/es/intelligence.json"),
     "assistant-inbox": () => import("@/i18n/locales/es/assistant-inbox.json"),
+    onboarding: () => import("@/i18n/locales/es/onboarding.json"),
   },
   ru: {
     common: () => import("@/i18n/locales/ru/common.json"),
@@ -126,9 +126,9 @@ const CATALOG_LOADERS: Record<
     library: () => import("@/i18n/locales/ru/library.json"),
     home: () => import("@/i18n/locales/ru/home.json"),
     contacts: () => import("@/i18n/locales/ru/contacts.json"),
-    onboarding: () => import("@/i18n/locales/ru/onboarding.json"),
     intelligence: () => import("@/i18n/locales/ru/intelligence.json"),
     "assistant-inbox": () => import("@/i18n/locales/ru/assistant-inbox.json"),
+    onboarding: () => import("@/i18n/locales/ru/onboarding.json"),
   },
   zh: {
     common: () => import("@/i18n/locales/zh/common.json"),
@@ -145,9 +145,9 @@ const CATALOG_LOADERS: Record<
     library: () => import("@/i18n/locales/zh/library.json"),
     home: () => import("@/i18n/locales/zh/home.json"),
     contacts: () => import("@/i18n/locales/zh/contacts.json"),
-    onboarding: () => import("@/i18n/locales/zh/onboarding.json"),
     intelligence: () => import("@/i18n/locales/zh/intelligence.json"),
     "assistant-inbox": () => import("@/i18n/locales/zh/assistant-inbox.json"),
+    onboarding: () => import("@/i18n/locales/zh/onboarding.json"),
   },
   "zh-TW": {
     common: () => import("@/i18n/locales/zh-TW/common.json"),
@@ -164,10 +164,10 @@ const CATALOG_LOADERS: Record<
     library: () => import("@/i18n/locales/zh-TW/library.json"),
     home: () => import("@/i18n/locales/zh-TW/home.json"),
     contacts: () => import("@/i18n/locales/zh-TW/contacts.json"),
-    onboarding: () => import("@/i18n/locales/zh-TW/onboarding.json"),
     intelligence: () => import("@/i18n/locales/zh-TW/intelligence.json"),
     "assistant-inbox": () =>
       import("@/i18n/locales/zh-TW/assistant-inbox.json"),
+    onboarding: () => import("@/i18n/locales/zh-TW/onboarding.json"),
   },
 };
 

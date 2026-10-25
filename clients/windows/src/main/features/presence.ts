@@ -44,3 +44,4 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
 };
 
 export default presence;
+

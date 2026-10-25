@@ -99,7 +99,7 @@ describe("getDesktopStreamWebsocketHandlers", () => {
     runtime?.server.stop(true);
   });
 
-  test("dials the runtime's /v1/desktop/stream with a service token and nothing else", async () => {
+  test("dials the runtime's /v1/desktop/stream with forwarded identity and no token param", async () => {
     runtime = startFakeRuntime();
     const handlers = getDesktopStreamWebsocketHandlers();
     const ws = makeViewerWs(runtime);
@@ -109,7 +109,11 @@ describe("getDesktopStreamWebsocketHandlers", () => {
 
     const url = runtime.upgradeUrl()!;
     expect(url.pathname).toBe("/v1/desktop/stream");
-    expect([...url.searchParams.keys()]).toEqual(["token"]);
+    expect(url.searchParams.size).toBe(0);
+    // Identity rides the upgrade request's headers, not the URL.
+    const dialHeaders = runtime.upgradeHeaders()!;
+    expect(dialHeaders.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(dialHeaders.get("x-cadet-principal-type")).toBe("svc_gateway");
   });
 
   test("delivers the runtime's bytes downstream byte-identical", async () => {

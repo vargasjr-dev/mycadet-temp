@@ -14,6 +14,7 @@ import {
   createTimeoutController,
   isTimeoutError,
   stripHopByHop,
+  GATEWAY_SERVICE_IDENTITY,
 } from "@mycadet/assistant-client";
 
 // ---------------------------------------------------------------------------
@@ -81,18 +82,26 @@ describe("HTTP proxy upstream URL construction via assistant-client", () => {
 // ---------------------------------------------------------------------------
 
 describe("HTTP proxy header preparation via assistant-client", () => {
-  test("prepareUpstreamHeaders injects service token and strips edge auth", () => {
+  test("prepareUpstreamHeaders injects forwarded identity and strips edge auth", () => {
     const source = new Headers({
       authorization: "Bearer edge-token-from-client",
       host: "gateway.example.com",
       "content-type": "application/json",
       connection: "keep-alive",
+      // A caller-supplied identity header must never survive the hop.
+      "x-cadet-subject": "actor:self:spoofed",
+      "x-cadet-principal-type": "actor",
+      "x-cadet-scope-profile": "actor_client_v1",
     });
 
-    const prepared = prepareUpstreamHeaders(source, "service-token-xyz");
+    const prepared = prepareUpstreamHeaders(source, GATEWAY_SERVICE_IDENTITY);
 
-    // Service token replaces edge token
-    expect(prepared.get("authorization")).toBe("Bearer service-token-xyz");
+    // No bearer — identity is forwarded in headers
+    expect(prepared.has("authorization")).toBe(false);
+    // The identity is the gateway's, not the caller's
+    expect(prepared.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(prepared.get("x-cadet-principal-type")).toBe("svc_gateway");
+    expect(prepared.get("x-cadet-scope-profile")).toBe("gateway_service_v1");
     // Host removed (upstream uses its own)
     expect(prepared.has("host")).toBe(false);
     // Hop-by-hop stripped
@@ -107,7 +116,7 @@ describe("HTTP proxy header preparation via assistant-client", () => {
       "x-forwarded-for": "spoofed-value",
     });
 
-    const prepared = prepareUpstreamHeaders(source, "svc-tok");
+    const prepared = prepareUpstreamHeaders(source, GATEWAY_SERVICE_IDENTITY);
     // prepareUpstreamHeaders does not strip x-forwarded-for — the route does
     prepared.set("x-forwarded-for", "192.168.1.100");
 
@@ -164,13 +173,12 @@ describe("WS upstream URL construction via assistant-client", () => {
     const result = buildWsUpstreamUrl({
       baseUrl,
       path: "/v1/calls/media-stream",
-      serviceToken: "svc-jwt-token",
       extraParams: { callSessionId: "media-session-456" },
     });
 
     const url = new URL(result.url);
     expect(url.pathname).toBe("/v1/calls/media-stream");
-    expect(url.searchParams.get("token")).toBe("svc-jwt-token");
+    expect(url.searchParams.has("token")).toBe(false);
     expect(url.searchParams.get("callSessionId")).toBe("media-session-456");
   });
 
@@ -178,7 +186,6 @@ describe("WS upstream URL construction via assistant-client", () => {
     const result = buildWsUpstreamUrl({
       baseUrl,
       path: "/v1/stt/stream",
-      serviceToken: "svc-jwt-token",
       extraParams: {
         mimeType: "audio/webm;codecs=opus",
         provider: "deepgram",
@@ -188,7 +195,7 @@ describe("WS upstream URL construction via assistant-client", () => {
 
     const url = new URL(result.url);
     expect(url.pathname).toBe("/v1/stt/stream");
-    expect(url.searchParams.get("token")).toBe("svc-jwt-token");
+    expect(url.searchParams.has("token")).toBe(false);
     expect(url.searchParams.get("mimeType")).toBe("audio/webm;codecs=opus");
     expect(url.searchParams.get("provider")).toBe("deepgram");
     expect(url.searchParams.get("sampleRate")).toBe("16000");
@@ -198,7 +205,6 @@ describe("WS upstream URL construction via assistant-client", () => {
     const result = buildWsUpstreamUrl({
       baseUrl,
       path: "/v1/stt/stream",
-      serviceToken: "svc-jwt-token",
       extraParams: {
         mimeType: "audio/webm",
       },
@@ -216,7 +222,7 @@ describe("WS upstream URL construction via assistant-client", () => {
 // ---------------------------------------------------------------------------
 
 describe("WS upstream log-safe URL", () => {
-  test("all WS routes produce log-safe URLs with redacted token", () => {
+  test("WS URLs carry no secret material to redact", () => {
     const routes: Array<{
       path: string;
       params: Record<string, string>;
@@ -229,14 +235,13 @@ describe("WS upstream log-safe URL", () => {
       const result = buildWsUpstreamUrl({
         baseUrl: "http://localhost:7821",
         path: route.path,
-        serviceToken: "secret-token-should-not-appear",
         extraParams: route.params,
       });
 
-      expect(result.logSafeUrl).not.toContain("secret-token-should-not-appear");
-      expect(result.logSafeUrl).toContain("redacted");
+      // Identity rides headers on the dial, not the URL — the log-safe
+      // URL IS the URL.
+      expect(result.logSafeUrl).toBe(result.url);
 
-      // But non-token params are preserved in log-safe URL
       for (const [key, value] of Object.entries(route.params)) {
         expect(result.logSafeUrl).toContain(key);
         expect(result.logSafeUrl).toContain(encodeURIComponent(value));

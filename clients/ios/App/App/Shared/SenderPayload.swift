@@ -1,10 +1,10 @@
 import Foundation
 
 /// The assistant identity a push carries, read from the top-level `sender`
-/// object the platform attaches beside `aps`.
+/// object the cloud attaches beside `aps`.
 ///
 /// Shape: `{ "id", "name", "avatar_url", "avatar_hash" }`. `avatar_url` is the
-/// first field the platform drops when a payload exceeds the APNs size limit,
+/// first field the cloud drops when a payload exceeds the APNs size limit,
 /// so it is optional: the hash alone still hits a warm avatar cache. A push
 /// without a complete `sender` (feature flag off, older platform) parses to
 /// `nil` and the notification is delivered untouched.

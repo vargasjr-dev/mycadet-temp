@@ -193,7 +193,7 @@ const MAX_GATEWAY_PORT = 65535;
  * loopback — a connect import's remote gateway) resolves to it directly;
  * otherwise a loopback-gateway cloud (`local`, `docker`) resolves to its
  * recorded loopback port via {@link getLoopbackGatewayPort}. Everything
- * else — the platform cloud — is left out, and an absent id is a proxy
+ * else — the cloud — is left out, and an absent id is a proxy
  * rejection.
  *
  * Pure, so a host holding an in-memory lockfile snapshot (e.g. the Electron

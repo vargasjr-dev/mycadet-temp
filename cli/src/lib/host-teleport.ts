@@ -131,8 +131,9 @@ export async function readHostRuntimeVersion(
 ): Promise<string | undefined> {
   if (entry.cloud !== "docker") {
     return (
-      (entry.runtimeUrl ? await fetchCurrentVersion(entry.runtimeUrl) : undefined) ??
-      entry.resources?.runtimeVersion
+      (entry.runtimeUrl
+        ? await fetchCurrentVersion(entry.runtimeUrl)
+        : undefined) ?? entry.resources?.runtimeVersion
     );
   }
   try {
@@ -475,7 +476,7 @@ export async function restoreHostTeleportTarget(
   };
   try {
     if (previous) {
-      await replaceContainers({ ...previous, signingKey: undefined });
+      await replaceContainers({ ...previous });
     }
     await restoreRootBackup(entry, archive, { resume: false });
     await startAndCheck(storageFor(entry));

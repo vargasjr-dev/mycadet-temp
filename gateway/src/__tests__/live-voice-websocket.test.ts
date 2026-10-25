@@ -554,7 +554,7 @@ describe("getLiveVoiceWebsocketHandlers", () => {
     globalThis.WebSocket = OriginalWebSocket;
   });
 
-  test("open targets the runtime live voice websocket with a service token", async () => {
+  test("open targets the runtime live voice websocket with forwarded identity", async () => {
     const ws = makeLiveVoiceWs(
       makeConfig({ assistantRuntimeBaseUrl: "http://runtime.internal:7821" }),
     );
@@ -562,12 +562,15 @@ describe("getLiveVoiceWebsocketHandlers", () => {
     handlers.open(ws as never);
 
     const MockWS = globalThis.WebSocket as unknown as ReturnType<typeof mock>;
-    const calledUrl = (MockWS.mock.calls[0] as unknown[])[0] as string;
-    const parsed = new URL(calledUrl);
+    const call = MockWS.mock.calls[0] as unknown[];
+    const parsed = new URL(call[0] as string);
     expect(parsed.protocol).toBe("ws:");
     expect(parsed.host).toBe("runtime.internal:7821");
     expect(parsed.pathname).toBe("/v1/live-voice");
-    expect(parsed.searchParams.get("token")).toMatch(/^ey/);
+    expect(parsed.searchParams.has("token")).toBe(false);
+    const options = call[1] as { headers: Record<string, string> };
+    expect(options.headers["x-cadet-subject"]).toBe("svc:gateway:self");
+    expect(options.headers["x-cadet-principal-type"]).toBe("svc_gateway");
   });
 
   test("buffers downstream text and binary messages before upstream opens", async () => {

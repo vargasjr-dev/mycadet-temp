@@ -1,5 +1,10 @@
 import { useEffect } from "react";
 
+import {
+  connectCloudAssistant,
+  connectLocalAssistant,
+  connectPairedAssistant,
+} from "@/assistant/connect-assistant";
 import { useAssistantResolution } from "@/assistant/queries";
 import type { AssistantResolutionState } from "@/assistant/types";
 
@@ -55,7 +60,12 @@ function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   if (!assistant || !assistant.isCloudHosted) {
     return true;
   }
-  if (auth.user?.kind !== "platform" || !auth.user.id) {
+  // A cloud row's organization only hydrates under a live cloud session.
+  // A platform commit always lands `cloudSession: "present"` alongside the
+  // user, so an authenticated session without "present" here is a local
+  // session (or a settled-absent cloud) — no org is coming either way, and
+  // the connect path below re-validates the platform session itself.
+  if (auth.cloudSession !== "present") {
     return true;
   }
   const organization = useOrganizationStore.getState();
@@ -242,11 +252,6 @@ export function useNotificationTapNavigation(): void {
         return;
       }
       try {
-        const {
-          connectPairedAssistant,
-          connectLocalAssistant,
-          connectCloudAssistant,
-        } = useAuthStore.getState();
         if (assistant.isPaired) {
           await connectPairedAssistant(assistant.id);
         } else if (assistant.isLocal && isLocalClient()) {

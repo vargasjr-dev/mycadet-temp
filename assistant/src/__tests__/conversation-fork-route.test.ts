@@ -15,30 +15,22 @@ function routePolicy(endpoint: string, method?: string) {
   );
   return route?.policy ?? null;
 }
-import { mintToken } from "../runtime/auth/token-service.js";
 import { RuntimeHttpServer } from "../runtime/http-server.js";
 import { resetDbForTesting } from "./db-test-helpers.js";
 
 await initializeDb();
 
-const CHAT_WRITE_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "actor:self:fork-route-test",
-  scope_profile: "actor_client_v1",
-  policy_epoch: 1,
-  ttlSeconds: 3600,
-});
+const AUTH_HEADERS = {
+  "x-cadet-subject": "actor:self:fork-route-test",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "actor_client_v1",
+};
 
-const READ_ONLY_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "actor:self:fork-route-read-only",
-  scope_profile: "ui_page_v1",
-  policy_epoch: 1,
-  ttlSeconds: 3600,
-});
-
-const AUTH_HEADERS = { Authorization: `Bearer ${CHAT_WRITE_JWT}` };
-const READ_ONLY_HEADERS = { Authorization: `Bearer ${READ_ONLY_JWT}` };
+const READ_ONLY_HEADERS = {
+  "x-cadet-subject": "actor:self:fork-route-read-only",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "ui_page_v1",
+};
 
 type ConversationSummary = {
   id: string;

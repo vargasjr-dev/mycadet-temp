@@ -3,12 +3,8 @@
 import { join } from "path";
 import { readFileSync } from "node:fs";
 
-import {
-  resolveConfigDir,
-  SigningKeyContinuityError,
-} from "@mycadet/local-mode";
+import { resolveConfigDir } from "@mycadet/local-mode";
 
-import { emitCliError } from "./lib/cli-error.js";
 import { stampedVersion } from "@mycadet/shared/version";
 
 import cliPkg from "../package.json";
@@ -252,9 +248,6 @@ async function main() {
   try {
     await command();
   } catch (error) {
-    if (error instanceof SigningKeyContinuityError) {
-      emitCliError("AUTH_IDENTITY_UNAVAILABLE", error.message, error.code);
-    }
     console.error(
       red(`Error: ${error instanceof Error ? error.message : error}`),
     );

@@ -8,10 +8,6 @@ test("forwards the complete local-mode namespace through IPC", async () => {
 
   await bridge.hatch("remote");
   await bridge.readLockfile();
-  await bridge.saveLockfileAssistant(
-    { assistantId: "assistant-1" },
-    "assistant-1",
-  );
   await bridge.replaceCloudAssistants([], "org-1");
   await bridge.retire("assistant-1");
   await bridge.sleep("assistant-1");
@@ -25,7 +21,7 @@ test("forwards the complete local-mode namespace through IPC", async () => {
   await bridge.listDevices("assistant-1");
   await bridge.revokeDevice("assistant-1", "hash-1");
 
-  expect(invoke).toHaveBeenCalledTimes(15);
+  expect(invoke).toHaveBeenCalledTimes(14);
   expect(invoke).toHaveBeenCalledWith("cadet:localMode:wake", "assistant-1", {
     repairGuardian: true,
   });

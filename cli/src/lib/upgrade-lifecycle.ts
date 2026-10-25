@@ -229,7 +229,6 @@ export function buildReplayEnv(
 interface ReplayState {
   bootstrapSecret: string | undefined;
   cesServiceToken: string;
-  signingKey?: string;
   extraAssistantEnv: Record<string, string>;
   extraGatewayEnv: Record<string, string>;
 }
@@ -238,8 +237,8 @@ interface ReplayState {
  * Derive the secrets and replay env for replacement containers from
  * already-captured assistant/gateway envs. GUARDIAN_BOOTSTRAP_SECRET is only
  * set on the gateway; CES_SERVICE_TOKEN can be generated for older instances.
- * An absent signing-key override stays absent so replacements use the persisted
- * gateway root rather than rotate its identity. CADET_DEVICE_ID is
+ * The signing key rides no env — the gateway owns it in its security root
+ * CADET_DEVICE_ID is
  * backfilled on the gateway from the host, and the assistant inherits the
  * gateway's value (captured values win) so the pair always matches.
  */
@@ -257,9 +256,6 @@ export function buildReplayState(
     bootstrapSecret: gatewayEnv["GUARDIAN_BOOTSTRAP_SECRET"],
     cesServiceToken:
       capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
-    signingKey:
-      gatewayEnv["ACTOR_TOKEN_SIGNING_KEY"] ||
-      capturedEnv["ACTOR_TOKEN_SIGNING_KEY"],
     extraAssistantEnv,
     extraGatewayEnv,
   };
@@ -695,7 +691,6 @@ export async function performDockerRollback(
   const {
     bootstrapSecret,
     cesServiceToken,
-    signingKey,
     extraAssistantEnv,
     extraGatewayEnv,
   } = await captureReplayState(res);
@@ -774,7 +769,6 @@ export async function performDockerRollback(
     console.log("Creating stopped containers with the target version...");
     await startContainers(
       {
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
@@ -886,7 +880,6 @@ export async function performDockerRollback(
 
         await startContainers(
           {
-            signingKey,
             bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
@@ -910,7 +903,6 @@ export async function performDockerRollback(
             backupLabel: "pre-rollback",
             res,
             containerOptions: {
-              signingKey,
               bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,

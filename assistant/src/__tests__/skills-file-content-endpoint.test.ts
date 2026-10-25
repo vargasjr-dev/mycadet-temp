@@ -40,7 +40,7 @@ import { setConfig } from "./helpers/set-config.js";
 import { mockHttp } from "./requests-mock.js";
 
 // Real env: the real getCloudBaseUrl() reads config.cloud.baseUrl — point it
-// at a host mockHttp matches by path substring, so the platform-facing
+// at a host mockHttp matches by path substring, so the cloud-facing
 // provider fetches flow through the real env → URL → fetch chain.
 setConfig("cloud", { baseUrl: "https://test-cloud.mycadet.ai" });
 
@@ -114,7 +114,7 @@ function seedWorkspaceSkill(
   return dir;
 }
 
-// A catalog listing the given skills — served for the platform catalog fetch
+// A catalog listing the given skills — served for the cloud catalog fetch
 // that warms the real cache (`getCatalog()` mirrors the list path running
 // first, exactly how production warms it before a content read).
 function catalogBody(ids: string[]): { skills: unknown[] } {
@@ -225,7 +225,7 @@ describe("getSkillFileContent — installed skill", () => {
 // ---------------------------------------------------------------------------
 
 describe("getSkillFileContent — uninstalled skill (provider chain)", () => {
-  test("cadet provider returns the platform content payload", async () => {
+  test("cadet provider returns the cloud content payload", async () => {
     const http = mockHttp();
     http.on("GET", "/v1/skills/", {
       status: 200,

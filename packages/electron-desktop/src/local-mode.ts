@@ -9,6 +9,7 @@ import {
   stampLockfileAssistantOnboardedIfPresent,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
   readLockfile,
+  stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
   replaceCloudAssistants,
@@ -23,9 +24,7 @@ import {
   pairingPoll,
   pairingStart,
   unpairAssistant,
-  LockfileAssistantSchema,
   readRawLockfileStrict,
-  upsertLockfileAssistant,
   type CliInvocation,
   type GuardianTokenOptions,
   type LockfileWriteResult,
@@ -417,28 +416,13 @@ export const installLocalMode = (): void => {
     hatch(remote || undefined),
   );
 
-  ipc("cadet:localMode:readLockfile", z.tuple([]), () => readLockfile());
+  ipc("cadet:localMode:readLockfile", z.tuple([]), () => {
+    const lockfile = readLockfile();
+    stripSensitiveFields(lockfile);
+    return lockfile;
+  });
 
-  ipc(
-    "cadet:localMode:saveLockfileAssistant",
-    z.tuple([assistantRecord, z.string().optional()]),
-    ([assistant, activeAssistant]): LockfileWriteResult => {
-      const parsed = LockfileAssistantSchema.safeParse(assistant);
-      if (!parsed.success) {
-        return { ok: false, error: "Invalid assistant metadata" };
-      }
-      const result = upsertLockfileAssistant(
-        lockfilePaths,
-        parsed.data,
-        activeAssistant,
-      );
-      return result.ok
-        ? { ok: true, lockfile: result.lockfile }
-        : { ok: false, error: result.error };
-    },
-  );
-
-  // Rename-if-present: refuses missing entries and unreadable files instead
+// Rename-if-present: refuses missing entries and unreadable files instead
   // of upserting, so a stale renderer cache never re-creates an entry. Both
   // args stay optional on the wire, keeping the never-reject contract.
   ipc(
@@ -654,3 +638,4 @@ export const installLocalMode = (): void => {
     },
   );
 };
+

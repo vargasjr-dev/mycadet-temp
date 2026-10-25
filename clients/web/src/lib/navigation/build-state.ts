@@ -7,12 +7,6 @@ import {
   isServedGatewayRuntime,
 } from "@/lib/local-mode";
 import {
-  readHasConsentRecord,
-  readTosAccepted,
-  readPrivacyConsent,
-  readConsentHydrated,
-} from "@/domains/onboarding/prefs";
-import {
   isSelectedAssistantOnboarded,
   userHasOnboardedAssistant,
 } from "@/domains/onboarding/onboarded-assistant";
@@ -46,10 +40,6 @@ export function buildNavigationState(
     // Reading the one source keeps this from drifting from `useIsAuthenticated()`.
     isAuthenticated: isAuthenticated(sessionStatus),
     cloudSession,
-    tosAccepted: readTosAccepted(),
-    hasConsentRecord: readHasConsentRecord(),
-    privacyConsent: readPrivacyConsent(),
-    consentHydrated: readConsentHydrated(),
     assistantsHydrated,
     userHasOnboardedAssistant: userHasOnboardedAssistant(assistants),
     selectedAssistantOnboarded: isSelectedAssistantOnboarded(

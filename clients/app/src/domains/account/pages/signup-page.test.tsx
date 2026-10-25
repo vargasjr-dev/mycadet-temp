@@ -21,7 +21,6 @@ import {
 } from "@app/domains/account/pages/auth-entry-contract-test-helpers";
 
 mock.module("@app/stores/auth-store", mockAuthStore);
-mock.module("@web/runtime/native-auth", mockNativeAuth);
 mock.module("@app/runtime/native-login", mockNativeAuth);
 mock.module("@app/runtime/native-platform", mockNativeAuth);
 mock.module("@app/lib/auth/auth-flow", mockNativeAuth);

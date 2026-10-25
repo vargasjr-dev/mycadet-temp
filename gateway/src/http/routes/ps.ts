@@ -8,7 +8,9 @@
  * the gateway's own entry.
  */
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
+import {
+  forwardedIdentityHeaders,
+} from "@mycadet/assistant-client";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -56,9 +58,7 @@ async function fetchAssistantPs(
 
     const response = await fetchImpl(url, {
       signal: controller.signal,
-      headers: {
-        Authorization: `Bearer ${mintServiceToken()}`,
-      },
+      headers: forwardedIdentityHeaders(),
     });
 
     clearTimeout(timeoutId);

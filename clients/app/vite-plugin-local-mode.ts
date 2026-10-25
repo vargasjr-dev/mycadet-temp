@@ -12,13 +12,11 @@ import {
   originIsAllowed,
   hasSameOriginCredentialProof,
   readLockfile,
+  stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
-  LockfileAssistantSchema,
-  readRawLockfileStrict,
-  upsertLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -355,7 +353,9 @@ function lockfileMiddleware(
 
     if (req.method === "GET") {
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(readLockfile()));
+      const lockfile = readLockfile();
+      stripSensitiveFields(lockfile);
+      res.end(JSON.stringify(lockfile));
     } else if (req.method === "POST") {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -395,23 +395,7 @@ function lockfileMiddleware(
             onboarded.onboardedAt as string,
           );
         } else {
-          const strictRead = readRawLockfileStrict(lockfilePaths);
-          if (!strictRead.ok) {
-            result = { ok: false, status: 409, error: strictRead.error };
-          } else {
-            const parsed = LockfileAssistantSchema.safeParse(body.assistant);
-            result = parsed.success
-              ? upsertLockfileAssistant(
-                  lockfilePaths,
-                  parsed.data,
-                  body.activeAssistant as string | undefined,
-                )
-              : {
-                  ok: false,
-                  status: 400,
-                  error: "Invalid assistant metadata",
-                };
-          }
+          result = { ok: false, status: 400, error: "Unknown lockfile mutation" };
         }
         res.statusCode = result.ok ? 200 : result.status;
         res.setHeader("Content-Type", "application/json");
@@ -1304,3 +1288,4 @@ function pipeGatewayProxyWithBearerRetry(
   };
   send(injectedBearer, false);
 }
+

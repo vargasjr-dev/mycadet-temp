@@ -261,6 +261,42 @@ describe("buildIngressNginxConfig", () => {
     }
   });
 
+  test("allowlists the Capacitor shells' own webview origins", () => {
+    // The mobile shells fetch from `capacitor://localhost` (iOS) and
+    // `https://localhost` (Android) — origins no web page can forge, so the
+    // edge answers them without per-deployment config. nginx omits an
+    // add_header whose value is empty, so an unmapped origin would strip
+    // Access-Control-Allow-Origin from the assistant-metadata responses and
+    // Safari would block the 200 it got.
+    for (const origin of [
+      "capacitor://localhost",
+      "https://localhost",
+      "http://localhost",
+    ]) {
+      expect(remoteConf).toContain(`${origin}" "${origin}";`);
+    }
+  });
+
+  test("still validates the configurable app origins", () => {
+    // The shells' origins are fixed platform values; everything configured
+    // per deployment keeps the HTTPS-or-loopback constraint.
+    expect(() =>
+      buildIngressNginxConfig({
+        gatewayPort: 7830,
+        listenPort: 7840,
+        remoteWebIngress: {
+          webDistDir: "/tmp/cadet web/dist",
+          appDistDir: "/tmp/cadet app/dist/standalone",
+          config: {
+            remote: "docker",
+            apiBaseUrl: "/v1",
+            appAllowedOrigins: ["javascript://alert(1)"],
+          },
+        },
+      }),
+    ).toThrow("App origins must be HTTPS origins or loopback HTTP origins.");
+  });
+
   test("blocks local-only bootstrap helpers before the catch-all proxy", () => {
     const catchAll = conf.indexOf("location / {");
     expect(catchAll).toBeGreaterThan(-1);

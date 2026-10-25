@@ -14,7 +14,7 @@ import { AccountHeading } from "@app/components/account/account-form";
 import { ChooserAvatarChip } from "@app/components/account/chooser-avatar-chip";
 import { ChooserCard } from "@app/components/account/chooser-card";
 import { handleRadioCardArrowNav } from "@app/components/account/radio-card-nav";
-import { isCadetDomain } from "@app/utils/domains";
+import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
   isLocalModeHostAvailable,
@@ -45,10 +45,13 @@ import { formatRelativeDate } from "@app/utils/format-date";
 
 /**
  * The chooser's rows come from the origin's own list endpoint, so the hosting
- * label follows that origin's family: a mycadet.ai host lists the cloud's
- * assistants, and any other origin is the user's own host serving its
- * self-hosted ones. Web's other branches (paired, local lockfile entries)
- * arrive with their own transports (chooser roadmap steps 4-5).
+ * label follows the build's injected `remote` field — where the cadet comes
+ * from (the values `cadet hatch --remote` records): the cloud's rows on a
+ * cloud build, the machine's own rows on every other remote. The serving
+ * origin can't answer this for the mobile shells: the capacitor bundle's
+ * origin is the webview's (`capacitor://localhost`), not the assistant's.
+ * Web's other branches (paired, local lockfile entries) arrive with their own
+ * transports (chooser roadmap steps 4-5).
  */
 function assistantSubtitle(
   hostingLabel: string,
@@ -101,9 +104,11 @@ function DashedActionButton({
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
-  // The list endpoint answers from the origin serving this bundle: the
-  // cloud's rows on a mycadet.ai host, the machine's own rows on its daemon.
-  const hosted = isCadetDomain(window.location.hostname);
+  // The build's stamp (`remote`) says where the cadet comes from: the cloud
+  // build lists the cloud's assistants, every other remote its own host's.
+  // The serving origin can't answer this for the mobile shells — the
+  // capacitor bundle's origin is the webview's, not the assistant's.
+  const hosted = readInjectedConfig()?.remote === "cloud";
   const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
     id: string;

@@ -21,7 +21,6 @@ import {
 } from "@mycadet/gateway-client";
 import { eq } from "drizzle-orm";
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";
 import { parseContactAutoApproveThreshold } from "../../db/contact-auto-approve-threshold.js";
 import { getGatewayDb } from "../../db/connection.js";
@@ -297,7 +296,6 @@ export async function createInviteNative(
   input: CreateInviteInput,
 ): Promise<{ invite: Record<string, unknown>; rawToken?: string }> {
   const store = new ContactStore();
-
 
   // A redemption binds a new principal to the contact, and a contact carries
   // one principal, so a second use of the same invite could never succeed.
@@ -1454,7 +1452,6 @@ export function createContactsControlPlaneProxyHandler(config: GatewayConfig) {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch,
-      serviceToken: mintServiceToken(),
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

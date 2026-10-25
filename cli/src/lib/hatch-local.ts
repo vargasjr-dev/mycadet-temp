@@ -1,4 +1,3 @@
-import { persistRootSigningKey } from "./root-signing-key.js";
 import {
   existsSync,
   lstatSync,
@@ -26,7 +25,7 @@ import type { LockfileAssistant } from "./assistant-config.js";
 import { green, yellow } from "./color.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   setStartupLogging,
   startCes,
   startLocalDaemon,
@@ -297,21 +296,22 @@ export async function hatchLocal(
       const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
 
       reporter.progress(3, 6, "Starting assistant...");
-      const signingKey = params.initialArchive
-        ? await (
-            await import("./root-backup.js")
-          ).initializeRootArchive(
-            {
-              assistantId: instanceName,
-              cloud: "local",
-              runtimeUrl: "",
-              resources,
-            },
-            params.initialArchive,
-          )
-        : generateLocalSigningKey();
-      persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
-      const bootstrapSecret = generateLocalSigningKey();
+      if (params.initialArchive) {
+        // Restores the archived state roots — gateway-security included, so
+        // the gateway boots with the archived signing identity.
+        await (
+          await import("./root-backup.js")
+        ).initializeRootArchive(
+          {
+            assistantId: instanceName,
+            cloud: "local",
+            runtimeUrl: "",
+            resources,
+          },
+          params.initialArchive,
+        );
+      }
+      const bootstrapSecret = generateLocalSecret();
       let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       try {
         // Launch the CES sibling alongside the daemon, in parallel — matching the
@@ -323,7 +323,6 @@ export async function hatchLocal(
           startLocalDaemon(watch, resources, {
             defaultWorkspaceConfigPath,
             requireReady: true,
-            signingKey,
           }),
         ]);
         const startupFailure = startupResults.find(
@@ -336,7 +335,6 @@ export async function hatchLocal(
 
         reporter.progress(4, 6, "Starting gateway...");
         runtimeUrl = await startGateway(watch, resources, {
-          signingKey,
           bootstrapSecret,
           requireReady: true,
         });
@@ -354,7 +352,7 @@ export async function hatchLocal(
         runtimeUrl,
         cloud: "local",
         hatchedAt: new Date().toISOString(),
-        resources: { ...resources, signingKey },
+        resources,
         guardianBootstrapSecret: bootstrapSecret,
       };
 

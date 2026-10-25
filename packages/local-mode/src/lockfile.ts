@@ -307,7 +307,7 @@ function patchLockfileAssistantIfPresent(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
-export function upsertLockfileAssistant(
+export function saveLockfileAssistant(
   lockfilePaths: string[],
   assistant: Record<string, unknown>,
   activeAssistant: string | undefined,
@@ -325,34 +325,10 @@ export function upsertLockfileAssistant(
       (a: Record<string, unknown>) => a?.assistantId === assistant.assistantId,
     );
     if (existingIdx >= 0) {
-      const existing = assistants[existingIdx]!;
-      let incoming: Record<string, unknown> = assistant;
-      const storedResources = existing.resources;
-      const incomingResources = incoming.resources;
-      if (
-        incomingResources !== undefined &&
-        typeof storedResources === "object" &&
-        storedResources !== null &&
-        "signingKey" in storedResources &&
-        typeof storedResources.signingKey === "string" &&
-        !(
-          typeof incomingResources === "object" &&
-          incomingResources !== null &&
-          "signingKey" in incomingResources &&
-          incomingResources.signingKey !== undefined
-        )
-      ) {
-        // The signing key is host custody: a save whose resources ride
-        // without one (the renderer's stripped view) never unsets it.
-        incoming = {
-          ...incoming,
-          resources: {
-            ...incomingResources,
-            signingKey: storedResources.signingKey,
-          },
-        };
-      }
-      assistants[existingIdx] = { ...existing, ...incoming };
+      assistants[existingIdx] = {
+        ...assistants[existingIdx]!,
+        ...assistant,
+      };
     } else {
       assistants.push(assistant);
     }
@@ -451,3 +427,4 @@ export function replaceCloudAssistants(
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
+

@@ -309,7 +309,7 @@ public class NativeAuthPlugin extends Plugin {
                         sessionBody
                     );
                 } catch (HttpException e) {
-                    // A non-200 here is the platform refusing the sign-in —
+                    // A non-200 here is the cloud refusing the sign-in —
                     // signups closed, an unlinked provider account, a step this
                     // shell cannot run. Carry its cause across so the login
                     // screen can say which, and name the status in the message
@@ -397,7 +397,7 @@ public class NativeAuthPlugin extends Plugin {
      *
      * <p>Attribution rides the query string rather than the JSON body because
      * allauth headless posts {@code application/json}, which leaves Django's
-     * {@code request.POST} empty; the platform reads these off
+     * {@code request.POST} empty; the cloud reads these off
      * {@code request.GET} even for a POST.
      */
     private URL buildPlatformURL(Uri baseURL, String path, String encodedQuery) throws IOException {

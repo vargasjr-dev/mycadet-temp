@@ -527,3 +527,4 @@ export function getLockfilePlatformBaseUrl(): string | undefined {
   if (typeof url === "string" && url.trim()) return url.trim();
   return undefined;
 }
+

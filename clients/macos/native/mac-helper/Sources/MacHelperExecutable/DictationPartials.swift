@@ -23,7 +23,7 @@ enum DictationPartialsError: LocalizedError {
 ///
 /// This is the universal live-transcript source for the dictation overlay:
 /// it needs no network topology at all, so it works for platform-managed
-/// assistants whose runtime traffic rides the platform proxy (where the
+/// assistants whose runtime traffic rides the cloud proxy (where the
 /// renderer has no gateway WebSocket to stream against). When daemon
 /// streaming STT *is* reachable, the renderer prefers those partials and
 /// never starts this session.
