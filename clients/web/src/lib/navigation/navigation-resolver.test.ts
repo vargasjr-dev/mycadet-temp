@@ -1,6 +1,10 @@
 import { beforeEach, describe, test, expect } from "bun:test";
 import { NEW_ASSISTANT_PARAM } from "@/domains/onboarding/onboarding-destination";
-import { resolveNavigation, type NavigationState, type NavigationDecision } from "./navigation-resolver";
+import {
+  resolveNavigation,
+  type NavigationState,
+  type NavigationDecision,
+} from "./navigation-resolver";
 
 const base: NavigationState = {
   isLocalClient: false,
@@ -15,7 +19,10 @@ const base: NavigationState = {
   userHasOnboardedAssistant: false,
   selectedAssistantOnboarded: false,
 };
-const s = (overrides: Partial<NavigationState>): NavigationState => ({ ...base, ...overrides });
+const s = (overrides: Partial<NavigationState>): NavigationState => ({
+  ...base,
+  ...overrides,
+});
 const ALLOW: NavigationDecision = { action: "allow" };
 const WAIT: NavigationDecision = { action: "wait" };
 const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
@@ -32,58 +39,105 @@ describe("resolveNavigation", () => {
     });
 
     test("pairs an unauthenticated browser and preserves its destination", () => {
-      expect(guard(s({ isAuthenticated: false }), "/assistant/identity?tab=1")).toEqual({
+      expect(
+        guard(s({ isAuthenticated: false }), "/assistant/identity?tab=1"),
+      ).toEqual({
         action: "redirect",
         to: "/assistant/pair?returnTo=%2Fassistant%2Fidentity%3Ftab%3D1",
       });
     });
 
     test("remote pairing is required even when the auth store reports authenticated", () => {
-      expect(guard(s({
-        isRemoteGateway: true,
-        isLocalClient: true,
-        remoteGatewayPublicPathPrefix: "/assistant-123",
-      }), "/assistant-123/assistant/conversations/self?tab=latest")).toEqual({
+      expect(
+        guard(
+          s({
+            isRemoteGateway: true,
+            isLocalClient: true,
+            remoteGatewayPublicPathPrefix: "/assistant-123",
+          }),
+          "/assistant-123/assistant/conversations/self?tab=latest",
+        ),
+      ).toEqual({
         action: "redirect",
         to: "/assistant/pair?returnTo=%2Fassistant%2Fconversations%2Fself%3Ftab%3Dlatest",
       });
     });
 
     test("a live gateway session admits before the auth store catches up", () => {
-      expect(guard(s({
-        isRemoteGateway: true,
-        isLocalClient: true,
-        isGatewaySessionLive: true,
-        isAuthenticated: false,
-      }))).toEqual(ALLOW);
+      expect(
+        guard(
+          s({
+            isRemoteGateway: true,
+            isLocalClient: true,
+            isGatewaySessionLive: true,
+            isAuthenticated: false,
+          }),
+        ),
+      ).toEqual(ALLOW);
     });
 
     test("local clients without a session choose welcome or their existing assistant", () => {
-      expect(guard(s({ isLocalClient: true, isAuthenticated: false, hasAssistants: false }))).toEqual({
-        action: "redirect", to: "/account/onboarding/welcome",
+      expect(
+        guard(
+          s({
+            isLocalClient: true,
+            isAuthenticated: false,
+            hasAssistants: false,
+          }),
+        ),
+      ).toEqual({
+        action: "redirect",
+        to: "/account/onboarding/welcome",
       });
-      expect(guard(s({ isLocalClient: true, isAuthenticated: false }))).toEqual({
-        action: "redirect", to: "/assistant",
-      });
+      expect(guard(s({ isLocalClient: true, isAuthenticated: false }))).toEqual(
+        {
+          action: "redirect",
+          to: "/assistant",
+        },
+      );
     });
 
     test("empty local clients wait for the platform probe before choosing hosting", () => {
-      expect(guard(s({ isLocalClient: true, hasAssistants: false, cloudSession: "unknown" }))).toEqual({
-        action: "wait", waitFor: "cloud-session",
+      expect(
+        guard(
+          s({
+            isLocalClient: true,
+            hasAssistants: false,
+            cloudSession: "unknown",
+          }),
+        ),
+      ).toEqual({
+        action: "wait",
+        waitFor: "cloud-session",
       });
       expect(guard(s({ isLocalClient: true, hasAssistants: false }))).toEqual({
-        action: "redirect", to: "/account/onboarding/hosting",
+        action: "redirect",
+        to: "/account/onboarding/hosting",
       });
-      expect(guard(s({ isLocalClient: true, hasAssistants: false, cloudSession: "absent" }))).toEqual({
-        action: "redirect", to: "/account/onboarding/welcome",
+      expect(
+        guard(
+          s({
+            isLocalClient: true,
+            hasAssistants: false,
+            cloudSession: "absent",
+          }),
+        ),
+      ).toEqual({
+        action: "redirect",
+        to: "/account/onboarding/welcome",
       });
     });
 
     test("platform clients wait for assistants, then route an empty list to shell hatching", () => {
-      expect(guard(s({ hasAssistants: false, assistantsHydrated: false }))).toEqual(WAIT);
-      expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual({
-        action: "redirect", to: "/account/onboarding/hatching",
-      });
+      expect(
+        guard(s({ hasAssistants: false, assistantsHydrated: false })),
+      ).toEqual(WAIT);
+      expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual(
+        {
+          action: "redirect",
+          to: "/account/onboarding/hatching",
+        },
+      );
     });
 
     test("authenticated users with assistants are admitted", () => {
@@ -97,59 +151,42 @@ describe("resolveNavigation", () => {
         HATCHING_FUNNEL_URL,
       ]) {
         for (const isLocalClient of [false, true]) {
-          expect(guard(s({
-            isLocalClient,
-            hasAssistants: false,
-            assistantsHydrated: false,
-          }), pathname)).toEqual(ALLOW);
+          expect(
+            guard(
+              s({
+                isLocalClient,
+                hasAssistants: false,
+                assistantsHydrated: false,
+              }),
+              pathname,
+            ),
+          ).toEqual(ALLOW);
         }
       }
     });
   });
 
-  describe("onboarding-intercept", () => {
-    const intercept = (state: NavigationState, intendedDestination: string) =>
-      resolveNavigation(state, { kind: "onboarding-intercept", intendedDestination });
-
-    test("an existing assistant admits without account consent state", () => {
-      expect(intercept(base, "/assistant")).toEqual(ALLOW);
-    });
-
-    test("empty clients choose their onboarding entry", () => {
-      expect(intercept(s({ hasAssistants: false }), "/assistant")).toEqual({
-        action: "redirect", to: "/assistant/onboarding/research",
-      });
-      expect(intercept(s({ hasAssistants: false, isLocalClient: true }), "/assistant")).toEqual({
-        action: "redirect", to: "/account/onboarding/welcome",
-      });
-    });
-
-    test("non-assistant destinations and onboarding destinations remain reachable", () => {
-      for (const destination of ["/account/login", "/assistant/onboarding/research", "https://mycadet.ai/account"]) {
-        expect(intercept(s({ hasAssistants: false }), destination)).toEqual(ALLOW);
-      }
-    });
-
-    test("absolute assistant destinations use the same empty-client fork", () => {
-      for (const destination of ["https://mycadet.ai/assistant", "//mycadet.ai/assistant"]) {
-        expect(intercept(s({ hasAssistants: false }), destination)).toEqual({
-          action: "redirect", to: "/assistant/onboarding/research",
-        });
-      }
-    });
-  });
-
   describe("hatch-gate", () => {
-    const hatch = (state: NavigationState) => resolveNavigation(state, { kind: "hatch-gate" });
+    const hatch = (state: NavigationState) =>
+      resolveNavigation(state, { kind: "hatch-gate" });
     test("waits for the session and pairs unauthenticated platform users", () => {
       expect(hatch(s({ sessionSettled: false }))).toEqual(WAIT);
       expect(hatch(s({ isAuthenticated: false }))).toEqual({
-        action: "redirect", to: "/assistant/pair",
+        action: "redirect",
+        to: "/assistant/pair",
       });
     });
     test("allows authenticated and local sessions without web consent state", () => {
       expect(hatch(base)).toEqual(ALLOW);
-      expect(hatch(s({ isLocalClient: true, isAuthenticated: false, cloudSession: "absent" }))).toEqual(ALLOW);
+      expect(
+        hatch(
+          s({
+            isLocalClient: true,
+            isAuthenticated: false,
+            cloudSession: "absent",
+          }),
+        ),
+      ).toEqual(ALLOW);
     });
   });
 

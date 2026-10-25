@@ -41,7 +41,6 @@ export interface NavigationState {
 
 export type NavigationQuery =
   | { kind: "route-guard"; pathname: string }
-  | { kind: "onboarding-intercept"; intendedDestination: string }
   | { kind: "hatch-gate" }
   | {
       kind: "post-auth";
@@ -82,10 +81,6 @@ function isOnboardingPath(pathname: string): boolean {
   );
 }
 
-function onboardingEntrypoint(isLocalClient: boolean): string {
-  return isLocalClient ? routes.welcome : routes.onboarding.research;
-}
-
 function extractPathname(destination: string): string {
   if (
     destination.startsWith("http://") ||
@@ -112,8 +107,6 @@ export function resolveNavigation(
   switch (query.kind) {
     case "route-guard":
       return resolveRouteGuard(state, query.pathname);
-    case "onboarding-intercept":
-      return resolveOnboardingIntercept(state, query.intendedDestination);
     case "hatch-gate":
       return resolveHatchGate(state);
     case "post-auth":
@@ -290,9 +283,7 @@ const PROVISIONING_FUNNEL_PATHS: ReadonlySet<string> = new Set([
   routes.onboarding.research,
 ]);
 
-function requireAssistant(
-  state: NavigationState,
-): NavigationDecision | null {
+function requireAssistant(state: NavigationState): NavigationDecision | null {
   if (state.hasAssistants) {
     return null;
   }
@@ -312,35 +303,6 @@ function requireAssistant(
     return { action: "wait" };
   }
   return { action: "redirect", to: routes.onboarding.hatching };
-}
-
-// ---------------------------------------------------------------------------
-// onboarding-intercept
-// ---------------------------------------------------------------------------
-
-function resolveOnboardingIntercept(
-  state: NavigationState,
-  intendedDestination: string,
-): NavigationDecision {
-  if (state.hasAssistants) {
-    return { action: "allow" };
-  }
-  if (state.userHasOnboardedAssistant) {
-    return { action: "allow" };
-  }
-
-  const path = extractPathname(intendedDestination);
-  if (!path.startsWith(routes.assistant)) {
-    return { action: "allow" };
-  }
-  if (path.startsWith(`${routes.assistant}/onboarding`)) {
-    return { action: "allow" };
-  }
-
-  return {
-    action: "redirect",
-    to: onboardingEntrypoint(state.isLocalClient),
-  };
 }
 
 // ---------------------------------------------------------------------------
