@@ -368,10 +368,13 @@ describe("authMiddleware — hydration timeout", () => {
       // Must settle (the consent prefs are pinned current above, so with the
       // hydration flags forced after the timeout, requireAssistant lands on
       // the consented no-assistant branch) — pre-guard this recursed into the
-      // identical wait forever.
-      const res = await runMiddleware(routes.identity);
-      expect(res.status).toBe(302);
-      expect(res.headers.get("Location")).toBe(routes.onboarding.hatching);
+      // identical wait forever. Hatching is app-owned (#532), so the ride is
+      // a full-page navigation and the middleware admits into it.
+      const outcome = await runMiddlewareOutcome(routes.identity);
+      expect(outcome.admitted).toBe(true);
+      expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(
+        true,
+      );
     } finally {
       useOnboardingStore.setState({ consentHydrated: priorConsentHydrated });
       useResolvedAssistantsStore.setState({
