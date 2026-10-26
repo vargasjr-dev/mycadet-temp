@@ -11,11 +11,16 @@
  */
 
 import {
-  appendFileSync,
+  closeSync,
   existsSync,
+  fstatSync,
+  ftruncateSync,
   mkdirSync,
+  openSync,
+  readSync,
   rmSync,
   writeFileSync,
+  writeSync,
 } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 
@@ -127,16 +132,23 @@ export function updateMetaFile(conv: {
 
 interface ContentBlock {
   type: string;
+  id?: string;
   text?: string;
   name?: string;
   input?: unknown;
   content?: unknown;
+  tool_use_id?: string;
+  is_error?: boolean;
 }
 
 interface FlattenedContent {
   content: string;
-  toolCalls: Array<{ name: string; input: unknown }>;
-  toolResults: Array<{ content: unknown }>;
+  toolCalls: Array<{ id?: string; name: string; input: unknown }>;
+  toolResults: Array<{
+    toolUseId?: string;
+    isError?: boolean;
+    content: unknown;
+  }>;
 }
 
 /**
@@ -180,11 +192,19 @@ export function flattenContentBlocks(
         break;
       case "tool_use":
         if (typeof block.name === "string") {
-          result.toolCalls.push({ name: block.name, input: block.input });
+          result.toolCalls.push({
+            id: block.id,
+            name: block.name,
+            input: block.input,
+          });
         }
         break;
       case "tool_result":
-        result.toolResults.push({ content: block.content });
+        result.toolResults.push({
+          toolUseId: block.tool_use_id,
+          ...(block.is_error ? { isError: true } : {}),
+          content: block.content,
+        });
         break;
       // Skip "image" and "file" blocks — represented via attachments
     }
@@ -263,6 +283,66 @@ function writeAttachmentFile(
 // Message sync
 // ---------------------------------------------------------------------------
 
+const MESSAGE_LINE_TAIL_BYTES = 1024 * 1024;
+
+/**
+ * Append a record to messages.jsonl — or, when the file's last line is a
+ * re-sync of the same message (same `messageId`), replace that line in place.
+ *
+ * The runtime syncs a message more than once: tool-result rows are synced on
+ * arrival and re-synced with the full batch at the turn/loop boundary, and the
+ * turn's last assistant row is synced at finalize and again at settle. An
+ * append-only view stacked duplicate lines for those rows; upsert keeps the
+ * file 1-1 with the runtime — one line per DB row, latest content wins.
+ */
+function appendOrReplaceMessageLine(
+  messagesPath: string,
+  record: Record<string, unknown>,
+): void {
+  const line = JSON.stringify(record) + "\n";
+  if (!existsSync(messagesPath)) {
+    writeFileSync(messagesPath, line);
+    return;
+  }
+  const fd = openSync(messagesPath, "r+");
+  try {
+    const size = fstatSync(fd).size;
+    if (size > 0) {
+      const tailLen = Math.min(size, MESSAGE_LINE_TAIL_BYTES);
+      const tail = Buffer.alloc(tailLen);
+      readSync(fd, tail, 0, tailLen, size - tailLen);
+      const tailText = tail.toString("utf8");
+      // Only match the last COMPLETE line; a torn final line falls through
+      // to a plain append via the JSON.parse guard below.
+      const withoutTrailingNewline = tailText.endsWith("\n")
+        ? tailText.slice(0, -1)
+        : tailText;
+      const lastNewline = withoutTrailingNewline.lastIndexOf("\n");
+      const lastLine = withoutTrailingNewline.slice(lastNewline + 1);
+      let parsed: { messageId?: unknown } | undefined;
+      try {
+        parsed = JSON.parse(lastLine) as { messageId?: unknown };
+      } catch {
+        parsed = undefined;
+      }
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        parsed.messageId != null &&
+        parsed.messageId === record.messageId
+      ) {
+        const lineStart = size - (withoutTrailingNewline.length - lastNewline);
+        ftruncateSync(fd, lineStart);
+        writeSync(fd, line, lineStart);
+        return;
+      }
+    }
+    writeSync(fd, line, size);
+  } finally {
+    closeSync(fd);
+  }
+}
+
 /**
  * Read a message and its attachments from DB, flatten content, and append
  * a JSONL line to `messages.jsonl` in the conversation's disk-view directory.
@@ -305,8 +385,11 @@ export function syncMessageToDisk(
       }
     }
 
-    // Build JSONL record
+    // Build JSONL record. `messageId` keys every line to its DB row so a
+    // re-synced message upserts (replaces its line) instead of appending a
+    // duplicate, and disk records join cleanly against llm_request_logs.
     const record: Record<string, unknown> = {
+      messageId: message.id,
       role: message.role,
       ts: new Date(message.createdAt).toISOString(),
     };
@@ -331,10 +414,7 @@ export function syncMessageToDisk(
       }
     }
 
-    appendFileSync(
-      join(dirPath, "messages.jsonl"),
-      JSON.stringify(record) + "\n",
-    );
+    appendOrReplaceMessageLine(join(dirPath, "messages.jsonl"), record);
   } catch (err) {
     log.warn(
       { err, conversationId, messageId },
