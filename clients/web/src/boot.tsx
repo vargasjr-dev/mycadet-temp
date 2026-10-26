@@ -11,11 +11,7 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 
 import { AppProviders } from "@/components/providers";
-import {
-  STARTUP_FAILURE_MESSAGE,
-  STARTUP_FAILURE_TITLE,
-  StartupFailure,
-} from "@/components/startup-failure";
+import { StartupFailure } from "@/components/startup-failure";
 import { WindowDragRegion } from "@/components/window-drag-region";
 import { initI18n } from "@/i18n";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
@@ -128,28 +124,20 @@ function showBootFailure(error: unknown): void {
   }
   void markNativeLaunchScreenReady("system");
 
+  // Render the styled `StartupFailure` through React rather than a hand-rolled
+  // DOM alert: boot failed before the app's own `createRoot` ran, so `#root`
+  // is still empty and a fresh root here is safe. The boolean guards a
+  // double-fire (two awaited stages can both reject).
   try {
-    const root = document.getElementById("root");
-    if (!root) {
+    const rootEl = document.getElementById("root");
+    if (!rootEl || bootFailureRendered) {
       return;
     }
-    const container = document.createElement("main");
-    container.setAttribute("role", "alert");
-    container.style.cssText =
-      "min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif";
-    const content = document.createElement("div");
-    const heading = document.createElement("h1");
-    heading.textContent = STARTUP_FAILURE_TITLE;
-    const message = document.createElement("p");
-    message.textContent = STARTUP_FAILURE_MESSAGE;
-    const reload = document.createElement("button");
-    reload.type = "button";
-    reload.textContent = "Reload app";
-    reload.addEventListener("click", () => window.location.reload());
-    content.append(heading, message, reload);
-    container.append(content);
-    root.replaceChildren(container);
+    bootFailureRendered = true;
+    createRoot(rootEl).render(<StartupFailure />);
   } catch (renderError) {
     console.error("Unable to show the startup error", renderError);
   }
 }
+
+let bootFailureRendered = false;
