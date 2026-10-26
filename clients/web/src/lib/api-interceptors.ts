@@ -35,7 +35,7 @@ import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
-  getSelectedAssistant,
+  getActiveAssistant,
   isLocalClient,
   isCadetCloudRemote,
   isServedGatewayRuntime,
@@ -589,14 +589,14 @@ async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
     url: getSelfHostedIngressUrl(),
     token: getSelfHostedActorToken(),
   };
-  const recoveringFor = getSelectedAssistant()?.assistantId ?? null;
+  const recoveringFor = getActiveAssistant()?.assistantId ?? null;
   try {
     await primeLocalGatewayConnectionWithRepair();
     recordLifecycleDiagnostic("gw_401_recovery", { outcome: "recovered" });
     return true;
   } catch (err) {
     const stillRecoveringForSelection =
-      (getSelectedAssistant()?.assistantId ?? null) === recoveringFor;
+      (getActiveAssistant()?.assistantId ?? null) === recoveringFor;
     if (
       getSelfHostedIngressUrl() === null &&
       previous.url !== null &&

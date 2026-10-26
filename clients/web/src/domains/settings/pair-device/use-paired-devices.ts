@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { getSelectedAssistant } from "@/lib/local-mode";
+import { getActiveAssistant } from "@/lib/local-mode";
 import {
   listPairedDevicesHost,
   revokePairedDeviceHost,
@@ -96,7 +96,7 @@ export function usePairedDevices({
   }, []);
 
   const refresh = useCallback(
-    (assistantId = getSelectedAssistant()?.assistantId) => {
+    (assistantId = getActiveAssistant()?.assistantId) => {
       if (!assistantId) {
         return;
       }
@@ -121,7 +121,7 @@ export function usePairedDevices({
   const selectedAssistantId =
     useResolvedAssistantsStore.use.selectedAssistantId();
   const assistantId =
-    selectedAssistantId ?? getSelectedAssistant()?.assistantId;
+    selectedAssistantId ?? getActiveAssistant()?.assistantId;
 
   useEffect(() => {
     // A selection switch invalidates any open confirm dialog.

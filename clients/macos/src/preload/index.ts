@@ -741,15 +741,6 @@ const bridge: CadetBridge = {
 
 contextBridge.exposeInMainWorld("cadet", bridge);
 
-const cadetConfig = ipcRenderer.sendSync("cadet:config:get") as {
-  cloudUrl: string;
-  deviceId: string | null;
-  version?: string;
-} | null;
-if (cadetConfig) {
-  contextBridge.exposeInMainWorld("__CADET_CONFIG__", cadetConfig);
-}
-
 const flagOverrides: Record<string, boolean | string> = {};
 for (const [key, value] of Object.entries(process.env)) {
   if (!key.startsWith("CADET_FLAG_") || value === undefined) continue;

@@ -32,7 +32,7 @@ import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
 import { assertHasResponse, toErrorObject } from "@/utils/api-errors";
 import {
   getLockfileAssistant,
-  getSelectedAssistant,
+  getActiveAssistant,
   isGatewaySessionLive,
 } from "@/lib/local-mode";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
@@ -158,7 +158,7 @@ export async function getAssistant(
     // can't answer for it.
     const lockfileAssistant = assistantId
       ? getLockfileAssistant(assistantId)
-      : getSelectedAssistant();
+      : getActiveAssistant();
     if (lockfileAssistant) {
       return {
         ok: true,

@@ -81,7 +81,9 @@ test("a long run of envelopes reaches React as one commit and never trips the ne
   // under CI's 2-core contention a 20ms budget can expire before the first
   // commit lands, which would pollute the batched-commit count below.
   for (let deadline = Date.now() + 10_000; rendered() !== "0:0"; ) {
-    if (Date.now() > deadline) {throw new Error("View never mounted");}
+    if (Date.now() > deadline) {
+      throw new Error("View never mounted");
+    }
     await sleep(25);
   }
 
@@ -97,7 +99,9 @@ test("a long run of envelopes reaches React as one commit and never trips the ne
   }
   // Same headroom for the final commit + its effect follow-up.
   for (let deadline = Date.now() + 10_000; rendered() !== "300:300"; ) {
-    if (Date.now() > deadline) {break;}
+    if (Date.now() > deadline) {
+      break;
+    }
     await sleep(25);
   }
 

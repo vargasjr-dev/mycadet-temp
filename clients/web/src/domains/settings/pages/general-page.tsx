@@ -29,7 +29,7 @@ import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import {
   getRemoteAssistantDisplayName,
   getRemoteGatewayHubUrl,
-  getSelectedAssistant,
+  getActiveAssistant,
   isLocalAssistant,
   isLocalClient,
   isCadetCloudRemote,
@@ -69,7 +69,7 @@ export function GeneralPage() {
     setPreferencesOpen(true);
   }, [searchParams, setSearchParams]);
 
-  const selected = getSelectedAssistant();
+  const selected = getActiveAssistant();
   const hasSelectedLocalAssistant =
     isLocalClient() && !!assistant && !!selected && isLocalAssistant(selected);
   const canUpgradeLocally = hasSelectedLocalAssistant && !!isCadetCloudRemote();

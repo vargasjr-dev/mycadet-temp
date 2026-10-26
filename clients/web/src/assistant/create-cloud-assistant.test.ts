@@ -32,8 +32,7 @@ mock.module("@/assistant/api", () => ({
 mock.module("@/assistant/selection", () => ({
   setSelectedAssistant: setSelectedAssistantMock,
 }));
-mock.module("@/lib/local-mode", () => ({
-}));
+mock.module("@/lib/local-mode", () => ({}));
 mock.module("@/stores/organization-store", () => ({
   useOrganizationStore: {
     getState: () => ({ currentOrganizationId: "org-test" }),

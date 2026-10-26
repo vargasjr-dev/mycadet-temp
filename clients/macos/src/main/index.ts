@@ -16,6 +16,8 @@ import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window"
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   resolveLocalConfigFromEnv,
+  readLockfile,
+  servedConfigFromLockfile,
 } from "@mycadet/local-mode";
 
 import { getVersionInfo, installAbout, openAboutWindow } from "./about.client";
@@ -29,7 +31,7 @@ import { APP_HOST, APP_PROTOCOL } from "./app-config";
 import { resolveAllowedOrigin } from "./app-origin";
 import { writeCliLocator } from "./cli-installer";
 import { provisionCliForWrapper } from "./cli-path-installer";
-import { handle, handleSync, on } from "./ipc";
+import { handle, on } from "./ipc";
 import { hasPendingDeepLinks, installDeepLinks } from "./deep-links.client";
 import { handleBundleFile, installMacBundleWorkflow } from "./bundles";
 import {
@@ -266,8 +268,27 @@ const registerAppProtocol = (): void => {
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
   const { cloudUrl } = resolveLocalConfigFromEnv();
+  const configJson = JSON.stringify({
+    cloudUrl,
+    deviceId: getDeviceId() ?? undefined,
+    version: getVersionInfo().version,
+    ...servedConfigFromLockfile(readLockfile()),
+  }).replace(/</g, "\\u003c");
 
   protocol.handle(APP_PROTOCOL, async (request) => {
+    const url = new URL(request.url);
+    if (url.host !== APP_HOST) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    if (
+      url.pathname === "/assistant/__config" ||
+      url.pathname === "/__config"
+    ) {
+      return new Response(configJson, {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
     // (mirrors the Vite dev-server proxy).
     const proxied = await forwardGatewayRequest(request, net.fetch);
@@ -298,18 +319,25 @@ const registerAppProtocol = (): void => {
       return new Response("Forbidden", { status: 403 });
     }
     if (asset.kind === "fetch") {
-      return net.fetch(pathToFileURL(asset.path).toString());
+      const response = await net.fetch(pathToFileURL(asset.path).toString());
+      if (asset.path !== appIndexHtml && asset.path !== webIndexHtml) {
+        return response;
+      }
+      const html = await response.text();
+      const headers = new Headers(response.headers);
+      headers.delete("content-length");
+      headers.set("content-type", "text/html; charset=utf-8");
+      return new Response(
+        html.replace(
+          "</head>",
+          `<script>window.__CADET_CONFIG__=${configJson}</script></head>`,
+        ),
+        { status: response.status, headers },
+      );
     }
     return new Response("Not Found", { status: 404 });
   });
 };
-
-const resolvedConfig = resolveLocalConfigFromEnv();
-handleSync("cadet:config:get", () => ({
-  cloudUrl: resolvedConfig.cloudUrl,
-  deviceId: getDeviceId(),
-  version: getVersionInfo().version,
-}));
 
 // ---------------------------------------------------------------------------
 // App lifecycle
@@ -518,4 +546,3 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
-

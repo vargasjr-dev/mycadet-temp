@@ -1,5 +1,5 @@
 /**
- * @mycadet/local-mode — shared host library for serving the local-assistant
+ * @mycadet/local-mode - shared host library for serving the local-assistant
  * surface (lockfile reads, guardian-token issuance, gateway proxying, and the
  * hatch/retire/wake lifecycle ops) over a loopback HTTP boundary. Consumed by the
  * CLI `client` server and the web app's dev-server middleware so the local
@@ -55,6 +55,7 @@ export {
   isActiveAssistant,
   isPairedLockfileEntry,
 } from "./lockfile";
+export { servedConfigFromLockfile } from "./served-config";
 export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";

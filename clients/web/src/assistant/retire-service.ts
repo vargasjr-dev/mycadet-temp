@@ -6,7 +6,7 @@ import {
 } from "@/assistant/api";
 import { forgetAssistantAvatar } from "@/hooks/use-chooser-row-avatar";
 import {
-  getLockfile,
+  getServedLockfile,
   isLocalAssistant,
   isLocalClient,
   retireLocalAssistant,
@@ -67,7 +67,7 @@ export async function retireAssistant(
   options: RetireAssistantOptions = {},
 ): Promise<RetireOutcome> {
   try {
-    const target = getLockfile().assistants.find(
+    const target = getServedLockfile().assistants.find(
       (a) => a.assistantId === assistantId,
     );
     const useLocal = isLocalClient() && !!target && isLocalAssistant(target);

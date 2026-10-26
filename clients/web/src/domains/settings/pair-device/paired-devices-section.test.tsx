@@ -46,7 +46,7 @@ mock.module(
 mock.module(
   "@/lib/local-mode",
   (): Partial<typeof import("@/lib/local-mode")> => ({
-    getSelectedAssistant: () => ({
+    getActiveAssistant: () => ({
       assistantId: selectedAssistantId,
       cloud: "local",
     }),

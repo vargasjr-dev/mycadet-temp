@@ -29,7 +29,7 @@ import type {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { t } from "@/i18n";
-import { hasLocalGateway, getSelectedAssistant } from "@/lib/local-mode";
+import { hasLocalGateway, getActiveAssistant } from "@/lib/local-mode";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { isCancellationError } from "@mycadet/design-library/utils/is-cancellation-error";
 
@@ -105,7 +105,7 @@ export function resolvePairDeviceTarget(): PairDeviceTarget | null {
   if (typeof window === "undefined") {
     return null;
   }
-  const assistant = getSelectedAssistant();
+  const assistant = getActiveAssistant();
   if (!assistant || !hasLocalGateway(assistant)) {
     return null;
   }

@@ -60,7 +60,6 @@ mock.module("@/lib/cloud-runtime-url", () => ({
 }));
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeAssistant,
-  getSelectedAssistant: () => activeAssistant,
   isLocalAssistant: (assistant: { cloud?: string }) =>
     assistant?.cloud === "local",
   isLocalClient: () => isLocalClientValue,

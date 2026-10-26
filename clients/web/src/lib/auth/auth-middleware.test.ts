@@ -7,14 +7,13 @@ const hasAssistantsMock = mock(() => false);
 let mockSelectedAssistant: LockfileAssistant | undefined;
 
 // Spread the real module so the resolvers the route fork pulls in
-// (`getSelectedAssistant`/`isLocalAssistant`/…) stay available; override only
+// (`getActiveAssistant`/`isLocalAssistant`/…) stay available; override only
 // the hosting-mode flags and the selected-assistant resolver per case.
 const localModeActual = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: isLocalClientMock,
   hasAssistants: hasAssistantsMock,
-  getSelectedAssistant: () => mockSelectedAssistant,
   getActiveAssistant: () => mockSelectedAssistant,
   isLocalAssistant: (a: {
     cloud?: string;

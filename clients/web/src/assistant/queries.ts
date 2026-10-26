@@ -38,7 +38,7 @@ import {
   getLocalAssistants,
   isGatewaySessionLive,
   isServedGatewayRuntime,
-  getSelectedAssistant,
+  getActiveAssistant,
   hasLocalGateway,
   expectsPairedGateway,
 } from "@/lib/local-mode";
@@ -139,7 +139,7 @@ export function applyGatewayAuthBoot(): void {
   if (isServedGatewayRuntime()) {
     ingressUrl = getRemoteGatewayIngressUrl();
   } else {
-    const assistant = getSelectedAssistant();
+    const assistant = getActiveAssistant();
     // The unscoped gateway proxies died with the same-origin fold: a local
     // gateway entry or a paired entry both ride the scoped plane, and the
     // paired arm additionally holds no renderer token.

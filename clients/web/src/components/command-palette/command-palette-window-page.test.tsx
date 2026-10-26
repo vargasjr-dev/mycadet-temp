@@ -67,11 +67,11 @@ mock.module("@/lib/local-mode", () => ({
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   isGatewaySessionLive: () => false,
-  getSelectedAssistant: () => localSelectedRef.value,
   getActiveAssistant: () =>
-    resolvedRef.activeAssistantId
+    localSelectedRef.value ??
+    (resolvedRef.activeAssistantId
       ? { assistantId: resolvedRef.activeAssistantId }
-      : undefined,
+      : undefined),
   setActiveLockfileAssistant: async () => undefined,
 }));
 

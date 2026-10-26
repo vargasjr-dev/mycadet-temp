@@ -41,7 +41,7 @@ mock.module("@/assistant/api", () => ({
 
 const retireLocalAssistantMock = mock(async (_id: string) => retireLocalResult);
 mock.module("@/lib/local-mode", () => ({
-  getLockfile: () => ({
+  getServedLockfile: () => ({
     assistants: lockfileAssistants,
     activeAssistant: null,
   }),

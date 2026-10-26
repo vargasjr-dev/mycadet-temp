@@ -18,7 +18,6 @@ import {
   markAvatarSuperseded,
   resetAvatarSupersedeForTests,
 } from "@/lib/avatar-supersede";
-import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
 // A platform entry is identified by `cloud === "cloud"` and carries a
@@ -61,7 +60,6 @@ const pairedAssistant: LockfileAssistant = {
 
 beforeEach(() => {
   localStorage.removeItem(SELECTED_ASSISTANT_STORAGE_KEY);
-  useLockfileStore.setState({ lockfile: null, committed: false });
   useResolvedAssistantsStore.setState({
     assistants: [],
     selectedAssistantId: null,
@@ -221,11 +219,8 @@ describe("setFromLockfile", () => {
 });
 
 describe("upsertFromApi", () => {
-  it("hydrates lockfile fields when replacing the list from the API", () => {
-    useLockfileStore.getState().setLockfile({
-      assistants: [localAssistant],
-      activeAssistant: "asst-local",
-    });
+  it("hydrates no lockfile fields when replacing the list from the API (the stamp carries none)", () => {
+    window.__CADET_CONFIG__ = { remote: "local", assistantId: "asst-local" };
 
     useResolvedAssistantsStore.getState().setFromApi([
       {
@@ -241,11 +236,13 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-local");
+    // The stamp carries only identity + kind; the deep lockfile fields
+    // (org, onboardedAt, runtimeVersion) are the host's business now.
     expect(entry.cloud).toBe("local");
-    expect(entry.runtimeVersion).toBe("v0.8.13");
     expect(entry.currentReleaseVersion).toBe("0.9.0");
     expect(entry.isActiveLockfileAssistant).toBe(true);
     expect(entry.organizationId).toBeUndefined();
+    expect(entry.runtimeVersion).toBeUndefined();
     expect(entry.isPaired).toBe(false);
   });
 
@@ -326,17 +323,45 @@ describe("upsertFromApi", () => {
     expect(entry.isActiveLockfileAssistant).toBe(true);
   });
 
-  it("seeds lockfile fields from the cache when inserting a new entry", () => {
-    // A lifecycle refresh can land before the lockfile subscription has seeded
-    // the resolved list; the insert must still pick up the fields the lockfile knows.
-    useLockfileStore.getState().setLockfile({
-      assistants: [cloudAssistant, localAssistant],
-      activeAssistant: "asst-local",
+  it("preserves a lockfile-seeded organizationId on refresh (API has no org)", () => {
+    useResolvedAssistantsStore.getState().setFromLockfile({
+      assistants: [cloudAssistant],
+      activeAssistant: null,
+    });
+
+    // A lifecycle refresh upserts the API-shaped payload, which carries no org.
+    useResolvedAssistantsStore.getState().upsertFromApi({
+      id: "asst-platform",
+      name: "Platform (refreshed)",
+      created: "2026-01-01T00:00:00Z",
+      is_local: false,
+      current_release_version: "0.10.0",
+    } as Parameters<
+      ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
+    >[0]);
+
+    const entry = useResolvedAssistantsStore.getState().assistants[0];
+    expect(entry.id).toBe("asst-platform");
+    expect(entry.name).toBe("Platform (refreshed)");
+    expect(entry.organizationId).toBe("org-1");
+    expect(entry.currentReleaseVersion).toBe("0.10.0");
+  });
+
+  it("preserves paired classification and runtimeUrl on refresh", () => {
+    useResolvedAssistantsStore.getState().setFromLockfile({
+      assistants: [
+        {
+          assistantId: "paired-desk",
+          cloud: "local",
+          runtimeUrl: "https://desk.example.com",
+        },
+      ],
+      activeAssistant: null,
     });
 
     useResolvedAssistantsStore.getState().upsertFromApi({
-      id: "asst-platform",
-      name: "Platform",
+      id: "paired-desk",
+      name: "Desk (refreshed)",
       created: "2026-01-01T00:00:00Z",
       is_local: false,
     } as Parameters<
@@ -344,25 +369,35 @@ describe("upsertFromApi", () => {
     >[0]);
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
-    expect(entry.id).toBe("asst-platform");
-    expect(entry.cloud).toBe("cloud");
-    expect(entry.organizationId).toBe("org-1");
-    expect(entry.isActiveLockfileAssistant).toBe(false);
+    expect(entry.isPaired).toBe(true);
+    expect(entry.runtimeUrl).toBe("https://desk.example.com");
+    expect(entry.cloud).toBe("local");
+    // The API's is_local claim must not reclassify a paired entry.
+    expect(entry.isLocal).toBe(false);
+    expect(entry.isCloudHosted).toBe(false);
+  });
+
+  it("preserves a lockfile-seeded runtimeVersion on refresh", () => {
+    useResolvedAssistantsStore.getState().setFromLockfile({
+      assistants: [localAssistant],
+      activeAssistant: "asst-local",
+    });
 
     useResolvedAssistantsStore.getState().upsertFromApi({
       id: "asst-local",
-      name: "Local",
+      name: "Local (refreshed)",
       created: "2026-01-01T00:00:00Z",
       is_local: true,
     } as Parameters<
       ReturnType<typeof useResolvedAssistantsStore.getState>["upsertFromApi"]
     >[0]);
 
-    const localEntry = useResolvedAssistantsStore.getState().assistants[1];
-    expect(localEntry.id).toBe("asst-local");
-    expect(localEntry.cloud).toBe("local");
-    expect(localEntry.runtimeVersion).toBe("v0.8.13");
-    expect(localEntry.isActiveLockfileAssistant).toBe(true);
+    const entry = useResolvedAssistantsStore.getState().assistants[0];
+    expect(entry.id).toBe("asst-local");
+    expect(entry.name).toBe("Local (refreshed)");
+    expect(entry.cloud).toBe("local");
+    expect(entry.runtimeVersion).toBe("v0.8.13");
+    expect(entry.isActiveLockfileAssistant).toBe(true);
   });
 });
 
@@ -493,11 +528,8 @@ describe("setFromApi connectability", () => {
     expect(entry.ingressUrl).toBe("https://mac.example.com");
   });
 
-  it("keeps an ingress-less local registration the lockfile knows", () => {
-    useLockfileStore.getState().setLockfile({
-      assistants: [localAssistant],
-      activeAssistant: "asst-local",
-    });
+  it("keeps an ingress-less local registration the stamp knows", () => {
+    window.__CADET_CONFIG__ = { remote: "local", assistantId: "asst-local" };
 
     useResolvedAssistantsStore
       .getState()

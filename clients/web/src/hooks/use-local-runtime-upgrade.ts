@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { connectLocalAssistant } from "@/assistant/connect-assistant";
-import { loadLockfile } from "@/lib/local-mode";
+
 import { upgradeLocalAssistantHost } from "@/runtime/local-mode-host";
 
 interface UseLocalRuntimeUpgradeOptions {
@@ -35,7 +35,6 @@ export function useLocalRuntimeUpgrade({
         throw new Error("No local assistant is active.");
       }
       const result = await mutation.mutateAsync();
-      await loadLockfile();
       await connectLocalAssistant(assistantId);
       return result;
     },
