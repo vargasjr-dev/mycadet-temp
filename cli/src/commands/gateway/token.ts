@@ -127,7 +127,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`cadet gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
+        `Run \`${cliCommand()} wake --repair-guardian\` (or \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again) after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);
