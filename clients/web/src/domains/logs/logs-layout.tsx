@@ -1,29 +1,28 @@
 import { useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
 
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { routes } from "@/utils/routes";
 import { LOGS_SIDEBAR } from "@/domains/logs/navigation";
 import { SidebarShell } from "@/components/sidebar-shell";
 import { SidebarTree } from "@/components/sidebar-tree";
 
 export function LogsLayout() {
-  const systemEventsGate = useCloudGate({ cloudHostedOnly: true });
-  const emailsGate = useCloudGate();
+  // Managed email and cloud system events have no meaning against a
+  // self-hosted assistant; the tabs hide there and render otherwise.
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
   const { pathname } = useLocation();
 
   const filteredItems = useMemo(
     () =>
-      LOGS_SIDEBAR.filter((item) => {
-        if (item.id === "system-events" && systemEventsGate === "gated") {
-          return false;
-        }
-        if (item.id === "emails" && emailsGate === "gated") {
-          return false;
-        }
-        return true;
-      }),
-    [systemEventsGate, emailsGate],
+      LOGS_SIDEBAR.filter(
+        (item) =>
+          !(
+            isSelfHosted &&
+            (item.id === "system-events" || item.id === "emails")
+          ),
+      ),
+    [isSelfHosted],
   );
 
   const pageTitle = useMemo(() => {

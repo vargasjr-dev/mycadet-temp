@@ -5,10 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ExternalAnchor } from "@/components/external-anchor";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { credentialsInspectPost } from "@/generated/daemon/sdk.gen";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import {
+  useActiveAssistantIsCloudHosted,
+  useActiveAssistantIsSelfHosted,
+  useActiveAssistantLifecycleIsLoading,
+} from "@/assistant/hosting";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useEnvironmentStore } from "@/stores/environment-store";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
@@ -35,10 +38,12 @@ export function EmailChannelSection() {
   const assistantId = useActiveAssistantId();
 
   const emailRootDomain = useEnvironmentStore.use.emailRootDomain();
-  const cloudGate = useCloudGate();
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
+  const isResolving = useActiveAssistantLifecycleIsLoading();
 
   const [mode, setMode] = useState<ServiceMode>(() => {
-    if (cloudGate === "gated") {
+    if (isSelfHosted) {
       return "your-own";
     }
     return parseServiceMode(
@@ -61,10 +66,7 @@ export function EmailChannelSection() {
   const {
     cloudAssistantId: resolvedCloudAssistantId,
     error: cloudAssistantIdError,
-  } = useCloudAssistantId(
-    assistantId,
-    cloudGate === "full" && mode === "managed",
-  );
+  } = useCloudAssistantId(assistantId, isCloudHosted && mode === "managed");
   const cloudAssistantId =
     resolvedCloudAssistantId ?? (cloudAssistantIdError ? assistantId : null);
 
@@ -79,7 +81,7 @@ export function EmailChannelSection() {
       });
       return data;
     },
-    enabled: mode === "your-own" || cloudGate === "gated",
+    enabled: mode === "your-own" || isSelfHosted,
     staleTime: 60_000,
     retry: shouldRetryDaemonError,
     meta: { errorContext: "byo_email_credential_check" },
@@ -212,7 +214,7 @@ export function EmailChannelSection() {
     </div>
   );
 
-  if (cloudGate === "gated") {
+  if (isSelfHosted) {
     return (
       <ByoServiceCard
         id="email"
@@ -234,10 +236,11 @@ export function EmailChannelSection() {
     >
       {mode === "managed" ? (
         <div className="space-y-4">
-          {cloudGate === "disabled" ? (
-            <CloudLoginNotice>
-              {t("emailChannelSection.platformLoginNotice")}
-            </CloudLoginNotice>
+          {isResolving ? (
+            <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("emailChannelSection.connecting")}
+            </div>
           ) : cloudAssistantId === null ? (
             <div className="flex items-center gap-2 text-body-small-default text-[var(--content-tertiary)]">
               <Loader2 className="h-4 w-4 animate-spin" />

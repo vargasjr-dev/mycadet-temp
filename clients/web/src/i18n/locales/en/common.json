@@ -486,10 +486,6 @@
   "onboardingBackButton": {
     "back": "Back"
   },
-  "platformLoginNotice": {
-    "cancel": "Cancel",
-    "logIn": "Log In"
-  },
   "profileCard": {
     "assistantHandleIdleEmpty": "Your assistant doesn't have a handle yet - claim one to make it mentionable.",
     "assistantHandleLabel": "Assistant handle",
@@ -746,7 +742,6 @@
     "stepConnect": "Connect",
     "stepCreate": "Create bot"
   },
-  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "Accent fill",
     "activeBorder": "Active border",

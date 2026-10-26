@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 let cloudHosted = true;
-let cloudGate: "full" | "disabled" = "full";
+
 let exportFails = false;
 const calls: string[] = [];
 let toastErrors: string[] = [];
@@ -12,9 +12,8 @@ mock.module("@/assistant/api", () => ({
   restoreAssistantBackup: async () => ({ ok: true, status: 200, data: {} }),
 }));
 
-mock.module("@/hooks/use-cloud-gate", () => ({
+mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsCloudHosted: () => cloudHosted,
-  useCloudGate: () => cloudGate,
 }));
 
 mock.module("@/domains/settings/teleport/cloud-export", () => ({
@@ -87,7 +86,6 @@ async function confirmExport() {
 describe("AssistantBackups export", () => {
   beforeEach(() => {
     cloudHosted = true;
-    cloudGate = "full";
     exportFails = false;
     calls.length = 0;
     toastErrors = [];
@@ -144,14 +142,6 @@ describe("AssistantBackups export", () => {
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  test("without a cloud session there is no Export button", async () => {
-    cloudGate = "disabled";
-    render(<AssistantBackups assistantId="ast-1" />);
-
-    await screen.findByRole("button", { name: "Create Backup" });
-    expect(screen.queryByRole("button", { name: "Export" })).toBeNull();
-  });
-
   test("switching assistants closes an open confirmation without exporting", async () => {
     const { rerender } = render(<AssistantBackups assistantId="ast-1" />);
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
@@ -163,16 +153,16 @@ describe("AssistantBackups export", () => {
     expect(calls).toEqual([]);
   });
 
-  test("losing the cloud session closes an open confirmation", async () => {
+  test("losing cloud hosting closes an open confirmation", async () => {
     const { rerender } = render(<AssistantBackups assistantId="ast-1" />);
     fireEvent.click(await screen.findByRole("button", { name: "Export" }));
     await screen.findByRole("dialog");
 
-    cloudGate = "disabled";
+    cloudHosted = false;
     rerender(<AssistantBackups assistantId="ast-1" />);
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
-    cloudGate = "full";
+    cloudHosted = true;
     rerender(<AssistantBackups assistantId="ast-1" />);
     await screen.findByRole("button", { name: "Export" });
     expect(screen.queryByRole("dialog")).toBeNull();

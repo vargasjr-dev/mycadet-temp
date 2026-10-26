@@ -66,7 +66,6 @@ mock.module("../db/webhook-ingress-route-store.js", () => ({
   onWebhookIngressRoutesChanged: () => () => {},
 }));
 
-
 const { TUNNEL_STATIC_ALLOWED_PATHS, buildTunnelAllowedPathsHeaderValue } =
   await import("./allowed-paths.js");
 const { TunnelClient, createTunnelClient, enablePublicIngress } =
@@ -466,9 +465,11 @@ describe("TunnelClient", () => {
     expect(readConfig()).toEqual({
       ingress: {
         enabled: false,
+        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
       },
     });
-    expect(invalidations.count).toBe(1);
+    expect(invalidations.count).toBe(0);
     await client.stop();
   });
 
@@ -1053,12 +1054,12 @@ describe("TunnelClient", () => {
     expect(invalidations.count).toBe(2);
   });
 
-  test("clears stale Tunnel-managed Twilio public URL on startup before connecting", async () => {
+  test("keeps a recorded Tunnel-managed public URL across startup — the publisher owns it", async () => {
     const sockets: FakeWebSocket[] = [];
     const invalidations = { count: 0 };
     writeConfig({
       ingress: {
-        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrl: "https://host-tunnel.example.test",
         publicBaseUrlManagedBy: "tunnel",
       },
     });
@@ -1072,17 +1073,20 @@ describe("TunnelClient", () => {
 
     expect(sockets).toHaveLength(1);
     expect(readConfig()).toEqual({
-      ingress: {},
+      ingress: {
+        publicBaseUrl: "https://host-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
+      },
     });
-    expect(invalidations.count).toBe(1);
+    expect(invalidations.count).toBe(0);
     await client.stop();
   });
 
-  test("disabled Tunnel cleanup clears stale managed URL and preserves manual Twilio URL", async () => {
+  test("a recorded public URL survives a Tunnel-less boot — manual or managed alike", async () => {
     const invalidations = { count: 0 };
     writeConfig({
       ingress: {
-        publicBaseUrl: "https://stale-tunnel.example.test",
+        publicBaseUrl: "https://host-tunnel.example.test",
         publicBaseUrlManagedBy: "tunnel",
       },
     });
@@ -1096,9 +1100,12 @@ describe("TunnelClient", () => {
     await flushPromises();
 
     expect(readConfig()).toEqual({
-      ingress: {},
+      ingress: {
+        publicBaseUrl: "https://host-tunnel.example.test",
+        publicBaseUrlManagedBy: "tunnel",
+      },
     });
-    expect(invalidations.count).toBe(1);
+    expect(invalidations.count).toBe(0);
 
     writeConfig({
       ingress: {
@@ -1119,7 +1126,7 @@ describe("TunnelClient", () => {
         publicBaseUrl: "https://manual.example.test",
       },
     });
-    expect(invalidations.count).toBe(1);
+    expect(invalidations.count).toBe(0);
   });
 
   test("keeps HTTP and WebSocket bridges usable after malformed tunnel messages", async () => {

@@ -241,7 +241,7 @@ const sessionEnded = (): Partial<AuthState> => ({
  * still in flight. Writing `"absent"` there would settle
  * {@link isCloudSessionSettled} on a value the probe is about to replace,
  * and consumers that gate on the settle (the billing tab rewrite,
- * `useCloudGate`) would act on it. The snapshot drop is unconditional.
+ * hosting-driven UI) would act on it. The snapshot drop is unconditional.
  */
 async function endSession(
   set: AuthSet,

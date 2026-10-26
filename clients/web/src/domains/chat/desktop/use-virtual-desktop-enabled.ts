@@ -1,4 +1,4 @@
-import { useActiveAssistantIsCloudHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 
 export function useVirtualDesktopEnabled(): boolean {
   return useActiveAssistantIsCloudHosted();

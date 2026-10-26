@@ -14,8 +14,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react";
 
 let selfHosted = false;
 
-mock.module("@/hooks/use-cloud-gate", () => ({
-  useCloudGate: () => "full",
+mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsSelfHosted: () => selfHosted,
 }));
 

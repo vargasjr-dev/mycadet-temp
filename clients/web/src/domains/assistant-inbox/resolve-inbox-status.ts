@@ -1,4 +1,4 @@
-import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
+import type { AssistantHosting } from "@/assistant/hosting";
 
 /**
  * What the Assistant Inbox shows for this assistant.
@@ -12,8 +12,8 @@ import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
 export type InboxStatus = "unavailable" | "loading" | "setup" | "ready";
 
 export interface InboxStatusInputs {
-  /** The pending-aware gate: `pending` is not yet an answer. */
-  gate: CloudGateStateWithPending;
+  /** The active assistant's hosting: `resolving` is not yet an answer. */
+  hosting: AssistantHosting;
   /** The cloud assistant id resolved, or `null` while it has not. */
   cloudAssistantId: string | null;
   /** `undefined` until the address list has been read once. */
@@ -27,15 +27,15 @@ export interface InboxStatusInputs {
 
 /**
  * Pure so the decision can be tested without the hooks that feed it. A
- * pending platform gate is `loading`, never `unavailable`: on a cold load
- * the session has not answered yet, and reading "no session" into that
- * would bounce a signed-in user.
+ * resolving hosting read is `loading`, never `unavailable`: on a cold load
+ * the assistant resolution has not answered yet, and reading "no hosted
+ * assistant" into that would bounce a user whose resolution is on its way.
  */
 export function resolveInboxStatus(inputs: InboxStatusInputs): InboxStatus {
-  if (inputs.gate === "pending") {
+  if (inputs.hosting === "resolving") {
     return "loading";
   }
-  if (inputs.gate !== "full") {
+  if (inputs.hosting !== "cloud") {
     return "unavailable";
   }
   if (!inputs.cloudAssistantId || inputs.addressCount === undefined) {

@@ -1,12 +1,11 @@
 import { Navigate } from "react-router";
 
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { SystemEventsTab } from "@/domains/logs/components/system-events-tab";
 import {
   useActiveAssistantIsCloudHosted,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+  useActiveAssistantIsSelfHosted,
+} from "@/assistant/hosting";
 import { routes } from "@/utils/routes";
 import { Notice } from "@mycadet/design-library/components/notice";
 
@@ -14,20 +13,12 @@ import { useTranslation } from "@/i18n";
 
 export function SystemEventsPage() {
   const { t } = useTranslation("logs");
-  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const assistantId = useActiveAssistantId();
 
-  if (cloudGate === "gated") {
+  if (isSelfHosted) {
     return <Navigate replace to={routes.logs.root} />;
-  }
-
-  if (cloudGate === "disabled") {
-    return (
-      <CloudLoginNotice>
-        {t("systemEventsPage.platformLoginNotice")}
-      </CloudLoginNotice>
-    );
   }
 
   if (!isCloudHosted) {

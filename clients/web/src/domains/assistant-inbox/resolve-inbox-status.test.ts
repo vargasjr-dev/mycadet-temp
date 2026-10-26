@@ -6,20 +6,24 @@ import {
 } from "./resolve-inbox-status";
 
 const BASE: InboxStatusInputs = {
-  gate: "full",
+  hosting: "cloud",
   cloudAssistantId: "asst-platform",
   addressCount: 1,
   domainsSettled: true,
 };
 
 describe("resolveInboxStatus", () => {
-  test("loads while the cloud gate is still pending", () => {
-    expect(resolveInboxStatus({ ...BASE, gate: "pending" })).toBe("loading");
+  test("loads while hosting is still resolving", () => {
+    expect(resolveInboxStatus({ ...BASE, hosting: "resolving" })).toBe(
+      "loading",
+    );
   });
 
   test("is unavailable off the cloud, whatever else is known", () => {
-    expect(resolveInboxStatus({ ...BASE, gate: "gated" })).toBe("unavailable");
-    expect(resolveInboxStatus({ ...BASE, gate: "disabled" })).toBe(
+    expect(resolveInboxStatus({ ...BASE, hosting: "self_hosted" })).toBe(
+      "unavailable",
+    );
+    expect(resolveInboxStatus({ ...BASE, hosting: "unavailable" })).toBe(
       "unavailable",
     );
   });

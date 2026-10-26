@@ -2,12 +2,12 @@ import { Terminal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getAssistant } from "@/assistant/api";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { TerminalPanel } from "@/components/terminal-panel";
 import {
+  useActiveAssistantIsCloudHosted,
+  useActiveAssistantIsSelfHosted,
   useActiveAssistantLifecycleIsLoading,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+} from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@mycadet/design-library";
@@ -17,17 +17,13 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
-  // The terminal session is a cloud-routed exec channel — `cloudHostedOnly`
-  // flips "gated" when the active assistant is self-hosted, even on a
-  // platform-mode app where the standard gate would still resolve to "full".
-  const cloudGate = useCloudGate({ cloudHostedOnly: true });
-  // Settings routes are NOT mounted under `<ActiveAssistantGate>`, so the
-  // gate intentionally returns "full" during the lifecycle `loading`
-  // window on a deep-link / hard refresh. Pair with the lifecycle-loading
-  // signal so we hold in the loading branch during the race; once the
-  // lifecycle resolves to `self_hosted` the gate flips to `gated` and we
-  // early-return null, structurally blocking TerminalPanel from mounting
-  // a cloud-routed exec connection against a self-hosted target.
+  // The terminal session is a cloud-routed exec channel — it has no meaning
+  // against a self-hosted assistant. Settings routes are NOT mounted under
+  // `<ActiveAssistantGate>`, so hosting may still be resolving on a
+  // deep-link / hard refresh; hold in the loading branch during that race,
+  // and once the lifecycle resolves to `self_hosted` early-return null,
+  // structurally blocking TerminalPanel from mounting a cloud-routed exec
+  // connection against a self-hosted target.
   const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,14 +76,17 @@ export function AssistantTerminalPanel() {
   // `showLoading` branch below covers the lifecycle-loading race window.
   // When disabled we render the panel chrome plus a Notice without
   // firing the fetch.
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
+
   useEffect(() => {
-    if (cloudGate !== "full") {
+    if (!isCloudHosted) {
       return;
     }
     void fetchAssistant();
-  }, [fetchAssistant, cloudGate]);
+  }, [fetchAssistant, isCloudHosted]);
 
-  if (cloudGate === "gated") {
+  if (isSelfHosted) {
     return null;
   }
 
@@ -97,7 +96,7 @@ export function AssistantTerminalPanel() {
   // "No assistant found" empty state — gating those on `!isCloudHosted`
   // would stick the panel on the spinner forever because `fetchAssistant`
   // never clears `loading` for an assistant that doesn't exist.
-  const isResolving = cloudGate === "full" && isLifecycleLoading;
+  const isResolving = isLifecycleLoading;
   const showLoading = loading || isResolving;
 
   return (
@@ -126,11 +125,7 @@ export function AssistantTerminalPanel() {
         )}
       </div>
 
-      {cloudGate === "disabled" ? (
-        <CloudLoginNotice>
-          {t("assistantTerminalPanel.loginNotice")}
-        </CloudLoginNotice>
-      ) : showLoading ? (
+      {showLoading ? (
         <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />
           {t("assistantTerminalPanel.loading")}

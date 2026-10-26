@@ -42,7 +42,7 @@ import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useDiskPressureMonitor } from "@/assistant/use-disk-pressure-monitor";
 import { getDiskPressureChatBlockReason } from "@/assistant/disk-pressure";
 import { useResourcePressureMonitor } from "@/assistant/use-resource-pressure-monitor";
-import { useActiveAssistantIsCloudHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useComposerStore } from "@/domains/chat/composer-store";
 
 import { useConversationLoader } from "@/domains/chat/hooks/use-conversation-loader";

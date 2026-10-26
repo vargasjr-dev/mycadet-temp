@@ -1,5 +1,5 @@
 import { MODELS_BY_PROVIDER } from "@/assistant/llm-model-catalog";
-import { useActiveAssistantIsSelfHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 
 import {
   CHATGPT_CONNECTION_PROVIDER,

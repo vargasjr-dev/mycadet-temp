@@ -75,7 +75,7 @@ export interface IntegrationTileProps {
    * self-hosted assistant, where the choice between the provider's server,
    * Cadet's hosted sign-in, and your own OAuth app is a real one the user is
    * expected to make, so a caller reads it from
-   * `useActiveAssistantIsSelfHosted()` (`@/hooks/use-cloud-gate`). With one
+   * `useActiveAssistantIsSelfHosted()` (`@/assistant/hosting`). With one
    * method there is nothing to choose, so the button stays plain whatever
    * this says.
    */

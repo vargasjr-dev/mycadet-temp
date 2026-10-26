@@ -85,7 +85,7 @@ import { useIsNativePlatform } from "@/runtime/native-auth";
 import { isNativeIOS, useIsNativeAndroid } from "@/runtime/platform-detection";
 import { isPointerCoarse, usePointerCoarse } from "@/utils/pointer";
 import { routes } from "@/utils/routes";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { Button, cn, Notice, Popover } from "@mycadet/design-library";
 
@@ -692,7 +692,7 @@ export function ChatComposer({
 
   // The Doctor is cloud-hosted only, so `/doctor` is not offered when the
   // active assistant is self-hosted (the Doctor tab doesn't exist there).
-  const doctorGated = useCloudGate({ cloudHostedOnly: true }) === "gated";
+  const doctorGated = useActiveAssistantIsSelfHosted();
   const searchSlashCommands = useCallback(
     (filter: string) => {
       const commands = filteredCommands(filter);

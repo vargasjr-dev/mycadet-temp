@@ -29,7 +29,7 @@ import {
   parseDoctorCommand,
 } from "@/domains/chat/components/chat-composer/slash-command-catalog";
 import { useDoctorHandoffStore } from "@/stores/doctor-handoff-store";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { saveContextWindowUsage } from "@/domains/chat/utils/context-window-storage";
 import type { ContextWindowUsage } from "@/domains/chat/components/context-window-indicator";
 
@@ -197,7 +197,7 @@ export function useSendMessage({
   // The Doctor is cloud-hosted only; when the active assistant is
   // self-hosted the Doctor tab doesn't exist, so `/doctor` must fall through
   // to a normal send rather than navigating to a doomed, empty tab.
-  const doctorGate = useCloudGate({ cloudHostedOnly: true });
+  const doctorSelfHosted = useActiveAssistantIsSelfHosted();
   const addOptimisticSend = useChatSessionStore.use.addOptimisticSend();
   const setOptimisticSends = useChatSessionStore.use.setOptimisticSends();
   const setError = useChatSessionStore.use.setError();
@@ -785,7 +785,7 @@ export function useSendMessage({
         // The Doctor is cloud-hosted only. On a self-hosted assistant its
         // tab doesn't exist, so the command is disabled: clear the input and
         // surface a notice rather than sending "/doctor …" as a normal turn.
-        if (doctorGate === "gated") {
+        if (doctorSelfHosted) {
           useComposerStore.getState().setInput("");
           toast.info(t("chat:useSendMessage.doctorUnavailable"));
           return;
@@ -1183,7 +1183,7 @@ export function useSendMessage({
     [
       activeConversationId,
       assistantId,
-      doctorGate,
+      doctorSelfHosted,
       navigate,
       diskPressureChatBlockReason,
       uiContextRef,

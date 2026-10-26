@@ -149,7 +149,6 @@
     "apiKeyConfigured": "{providerName} API 金鑰已設定。若要重新設定，請執行 <code>{setupSkill}</code> 技能。",
     "connecting": "正在連線至 Cadet 平台…",
     "openProvider": "開啟 {providerName}",
-    "platformLoginNotice": "登入 Cadet 平台以管理電子郵件設定。",
     "providerLabel": "供應商",
     "saveSuccessToast": "電子郵件設定已儲存。",
     "setupInstructions": "透過助理 CLI 設定 {providerName}：要求助理執行 <code>{setupSkill}</code> 技能。它會引導您儲存 API 金鑰、偵測網域，以及 (選用) 設定傳入 Webhook。",
