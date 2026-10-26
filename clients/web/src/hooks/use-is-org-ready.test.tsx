@@ -17,6 +17,11 @@ mock.module("@/stores/auth-store", () => ({
   useHasCloudSession: () => hasCloudSessionMock,
 }));
 
+mock.module("@/lib/auth/session-shape", () => ({
+  useHasCloudSession: () => hasCloudSessionMock,
+  getCloudSession: () => (hasCloudSessionMock ? "present" : "absent"),
+}));
+
 const { useIsOrgReady, useOrgHeaderReadiness } =
   await import("./use-is-org-ready");
 const { useOrganizationStore } = await import("@/stores/organization-store");

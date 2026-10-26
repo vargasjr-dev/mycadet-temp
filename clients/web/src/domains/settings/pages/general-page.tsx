@@ -41,7 +41,7 @@ import {
 } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
-import { useIsAuthenticated } from "@/stores/auth-store";
+import { useIsAuthenticated } from "@/lib/auth/session-shape";
 import { useTranslation } from "@/i18n";
 import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { openExternalUrl } from "@/runtime/browser";

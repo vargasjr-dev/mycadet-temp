@@ -27,7 +27,7 @@ import {
   useSupportsLlmContextSummaryView,
 } from "@/lib/backwards-compat/llm-context-summary-view";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsSessionInitializing } from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/lib/auth/session-shape";
 import { routes } from "@/utils/routes";
 import { t, useTranslation } from "@/i18n";
 import type {

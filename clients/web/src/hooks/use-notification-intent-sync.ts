@@ -50,7 +50,7 @@ import {
   sendNotificationIntentAck,
   shouldSuppressFocusedNotificationDelivery,
 } from "@/runtime/notifications";
-import { useAuthStore } from "@/stores/auth-store";
+import { useSessionStatus } from "@/lib/auth/session-shape";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -68,7 +68,7 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const sessionStatus = useSessionStatus();
   const requestOrganizationId = useRequestOrganizationId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const assistant = assistants.find(

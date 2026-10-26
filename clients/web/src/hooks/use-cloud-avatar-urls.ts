@@ -7,7 +7,7 @@ import {
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/lib/auth/session-shape";
 import {
   resolveCloudAssistantId,
   useResolvedAssistantsStore,

@@ -8,7 +8,7 @@ import { useAssistantResolution } from "@/assistant/queries";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/lib/auth/session-shape";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 /**

@@ -8,7 +8,7 @@ import { handleLogout } from "@/lib/auth/handle-logout";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { isBrowserNotificationHost } from "@/runtime/notifications";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { useHasCloudSession } from "@/lib/auth/session-shape";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTitleBarStore } from "@/stores/title-bar-store";
 import { routes } from "@/utils/routes";

@@ -30,7 +30,7 @@ import { ProfileQuickAddProvider } from "@/components/profile-quick-add-provider
 import { useNativeLaunchScreenReady } from "@/hooks/use-native-launch-screen-ready";
 import { installAssetQueryDiagnostics } from "@/lib/asset-query-diagnostics";
 import { installQueryPressureProbe } from "@/lib/commit-pressure";
-import { useIsSessionInitializing } from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/lib/auth/session-shape";
 import { useRequestScopeKey } from "@/stores/request-scope";
 import { queryRetryDelay, shouldRetryQuery } from "@/utils/query-retry";
 

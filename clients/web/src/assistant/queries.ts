@@ -31,7 +31,7 @@ import {
 } from "@/assistant/selection";
 import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { isAuthenticated } from "@/stores/session-status";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { useHasCloudSession, useSessionStatus } from "@/lib/auth/session-shape";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getSelfHostedActorToken,
@@ -246,7 +246,7 @@ export interface AssistantResolutionResult {
  * firing them.
  */
 function useShouldQueryServer(): boolean {
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const sessionStatus = useSessionStatus();
   const hasCloudSession = useHasCloudSession();
   const isOrgReady = useIsOrgReady();
   return (

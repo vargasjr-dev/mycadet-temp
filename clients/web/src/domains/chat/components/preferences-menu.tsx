@@ -25,7 +25,7 @@ import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsAuthenticated } from "@/stores/auth-store";
+import { useIsAuthenticated } from "@/lib/auth/session-shape";
 import { routes } from "@/utils/routes";
 
 import { SIDEBAR_PILL_GAP_CLASSES } from "@/components/sidebar-nav-geometry";

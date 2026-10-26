@@ -30,10 +30,10 @@ import {
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
 import {
-  useAuthStore,
-  useIsSessionInitializing,
   useHasCloudSession,
-} from "@/stores/auth-store";
+  useIsSessionInitializing,
+  useSessionStatus,
+} from "@/lib/auth/session-shape";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -137,7 +137,7 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const sessionStatus = useSessionStatus();
   const isSessionInitializing = useIsSessionInitializing();
   const hasCloudSession = useHasCloudSession();
   // Publish cloud-session state to the Electron app menu from this

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAssistantResolution } from "@/assistant/queries";
 import { useTurnStore } from "@/domains/chat/turn-store";
 import { setAssistantStatus } from "@/runtime/status";
-import { useAuthStore } from "@/stores/auth-store";
+import { useSessionStatus } from "@/lib/auth/session-shape";
 import { useSSEConnectedStore } from "@/stores/sse-connected-store";
 import { deriveAssistantStatus } from "@/utils/assistant-status";
 
@@ -24,7 +24,7 @@ import { deriveAssistantStatus } from "@/utils/assistant-status";
  */
 export function useElectronStatusSync(): void {
   const { state } = useAssistantResolution();
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const sessionStatus = useSessionStatus();
   const isSSEConnected = useSSEConnectedStore.use.isConnected();
   const turnPhase = useTurnStore.use.phase();
 

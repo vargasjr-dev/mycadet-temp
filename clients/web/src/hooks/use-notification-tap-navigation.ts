@@ -21,7 +21,11 @@ import {
 } from "@/runtime/notification-avatar";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
-import { useAuthStore } from "@/stores/auth-store";
+import {
+  getCloudSession,
+  getSessionStatus,
+  subscribeSessionShape,
+} from "@/lib/auth/session-shape";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
@@ -43,13 +47,13 @@ function wakeActivationWaiters() {
 }
 
 function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus === "unauthenticated") {
+  const sessionStatus = getSessionStatus();
+  if (sessionStatus === "unauthenticated") {
     return true;
   }
   const assistantsState = useResolvedAssistantsStore.getState();
   if (
-    auth.sessionStatus !== "authenticated" ||
+    sessionStatus !== "authenticated" ||
     !assistantsState.assistantsHydrated
   ) {
     return false;
@@ -65,7 +69,7 @@ function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
   // user, so an authenticated session without "present" here is a local
   // session (or a settled-absent cloud) — no org is coming either way, and
   // the connect path below re-validates the platform session itself.
-  if (auth.cloudSession !== "present") {
+  if (getCloudSession() !== "present") {
     return true;
   }
   const organization = useOrganizationStore.getState();
@@ -95,7 +99,7 @@ function waitForTapResolutionReadiness(
       unsubscribeAssistants();
       resolve();
     };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfReady);
+    unsubscribeAuth = subscribeSessionShape(settleIfReady);
     unsubscribeOrganization = useOrganizationStore.subscribe(settleIfReady);
     unsubscribeAssistants = useResolvedAssistantsStore.subscribe(settleIfReady);
     settleIfReady();
@@ -107,7 +111,7 @@ function waitForActiveTapAssistant(
   assistantId: string,
 ): Promise<boolean> {
   const readOutcome = (): boolean | null => {
-    if (useAuthStore.getState().sessionStatus !== "authenticated") {
+    if (getSessionStatus() !== "authenticated") {
       return false;
     }
     if (!resolveCurrentTapAssistant(payload)) {
@@ -152,7 +156,7 @@ function waitForActiveTapAssistant(
       }
       finish(outcome);
     };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfComplete);
+    unsubscribeAuth = subscribeSessionShape(settleIfComplete);
     unsubscribeOrganization = useOrganizationStore.subscribe(settleIfComplete);
     unsubscribeAssistants =
       useResolvedAssistantsStore.subscribe(settleIfComplete);
@@ -171,8 +175,7 @@ function resolveCurrentTapAssistant(
   if (!identity) {
     return null;
   }
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus !== "authenticated") {
+  if (getSessionStatus() !== "authenticated") {
     return null;
   }
   const assistant = useResolvedAssistantsStore

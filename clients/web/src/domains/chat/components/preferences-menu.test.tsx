@@ -71,8 +71,12 @@ const authStoreStub = Object.assign(() => null, {
 }) as unknown as typeof authStoreModule.useAuthStore;
 stubModule("@/stores/auth-store", authStoreModule, {
   useAuthStore: authStoreStub,
-  useIsAuthenticated: () => authRef.isAuthenticated,
 });
+stubModule(
+  "@/lib/auth/session-shape",
+  await import("@/lib/auth/session-shape"),
+  { useIsAuthenticated: () => authRef.isAuthenticated },
+);
 
 // Capture navigate() targets so the menu's destinations can be asserted
 // without a live Router.

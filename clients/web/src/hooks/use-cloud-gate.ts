@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import {
   useHasCloudSession,
   useIsCloudSessionSettled,
-} from "@/stores/auth-store";
+} from "@/lib/auth/session-shape";
 import { useAssistantResolution } from "@/assistant/queries";
 
 /**

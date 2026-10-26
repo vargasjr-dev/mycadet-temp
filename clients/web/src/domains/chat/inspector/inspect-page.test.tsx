@@ -136,6 +136,9 @@ mock.module("@/stores/auth-store", () => ({
       user: () => authUserStub,
     },
   },
+}));
+
+mock.module("@/lib/auth/session-shape", () => ({
   useIsSessionInitializing: () => sessionInitializingStub,
 }));
 

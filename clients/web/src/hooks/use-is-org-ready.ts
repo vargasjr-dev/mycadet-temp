@@ -1,4 +1,4 @@
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
+import { getCloudSession, useHasCloudSession } from "@/lib/auth/session-shape";
 import {
   getActiveOrganizationIdForRequests,
   useOrganizationStore,
@@ -67,7 +67,7 @@ export function getOrgHeaderReadiness(): OrgHeaderReadiness {
   return resolveOrgHeaderReadiness(
     getActiveOrganizationIdForRequests(),
     useOrganizationStore.getState().status,
-    hasLiveCloudSession(useAuthStore.getState().cloudSession),
+    hasLiveCloudSession(getCloudSession()),
   );
 }
 

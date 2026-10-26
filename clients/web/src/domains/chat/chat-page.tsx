@@ -17,7 +17,7 @@ import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
-import { useIsSessionInitializing } from "@/stores/auth-store";
+import { useIsSessionInitializing } from "@/lib/auth/session-shape";
 import { Button } from "@mycadet/design-library";
 
 import { ActiveChatView } from "@/domains/chat/active-chat-view";
