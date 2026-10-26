@@ -17,6 +17,7 @@
 // Call `qrcodeTerminal.generate` as a method — the library reads its default
 // error-correction level off `this`, so a destructured import renders nothing.
 import qrcodeTerminal from "qrcode-terminal";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
   buildRemoteWebPairingUrl,
@@ -35,7 +36,6 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { gatewayCliInvocation } from "../lib/local.js";

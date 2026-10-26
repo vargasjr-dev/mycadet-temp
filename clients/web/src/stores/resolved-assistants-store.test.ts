@@ -54,8 +54,9 @@ const otherLocalAssistant: LockfileAssistant = {
 const pairedAssistant: LockfileAssistant = {
   assistantId: "paired-desk",
   name: "Desk",
-  cloud: "local",
-  runtimeUrl: "https://desk.example.com",
+  cloud: "custom",
+  ipAddress: "desk.example.com",
+  port: 443,
 };
 
 beforeEach(() => {
@@ -197,11 +198,10 @@ describe("setFromLockfile", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("paired-desk");
     expect(entry.isPaired).toBe(true);
-    // The paired entry's cloud reads "local", so it is local-kind by origin;
-    // the paired transport is what isPaired marks.
-    expect(entry.isLocal).toBe(true);
+    // A custom remote is neither a loopback topology nor cloud-managed.
+    expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(false);
-    expect(entry.runtimeUrl).toBe("https://desk.example.com");
+    expect(entry.runtimeUrl).toBe("http://desk.example.com:443");
   });
 
   it("treats a sole local entry as active when the lockfile active pointer is stale", () => {
@@ -272,13 +272,7 @@ describe("upsertFromApi", () => {
 
   it("preserves paired classification and runtimeUrl on refresh", () => {
     useResolvedAssistantsStore.getState().setFromLockfile({
-      assistants: [
-        {
-          assistantId: "paired-desk",
-          cloud: "local",
-          runtimeUrl: "https://desk.example.com",
-        },
-      ],
+      assistants: [pairedAssistant],
       activeAssistant: null,
     });
 
@@ -293,8 +287,8 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.isPaired).toBe(true);
-    expect(entry.runtimeUrl).toBe("https://desk.example.com");
-    expect(entry.cloud).toBe("local");
+    expect(entry.runtimeUrl).toBe("http://desk.example.com:443");
+    expect(entry.cloud).toBe("custom");
     // The API's is_local claim must not reclassify a paired entry.
     expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(false);
@@ -349,13 +343,7 @@ describe("upsertFromApi", () => {
 
   it("preserves paired classification and runtimeUrl on refresh", () => {
     useResolvedAssistantsStore.getState().setFromLockfile({
-      assistants: [
-        {
-          assistantId: "paired-desk",
-          cloud: "local",
-          runtimeUrl: "https://desk.example.com",
-        },
-      ],
+      assistants: [pairedAssistant],
       activeAssistant: null,
     });
 
@@ -370,8 +358,8 @@ describe("upsertFromApi", () => {
 
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.isPaired).toBe(true);
-    expect(entry.runtimeUrl).toBe("https://desk.example.com");
-    expect(entry.cloud).toBe("local");
+    expect(entry.runtimeUrl).toBe("http://desk.example.com:443");
+    expect(entry.cloud).toBe("custom");
     // The API's is_local claim must not reclassify a paired entry.
     expect(entry.isLocal).toBe(false);
     expect(entry.isCloudHosted).toBe(false);

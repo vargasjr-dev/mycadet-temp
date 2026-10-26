@@ -1,6 +1,6 @@
 import { resolveAssistant } from "../lib/assistant-config.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import {
   leaseGuardianToken,
   loadGuardianToken,

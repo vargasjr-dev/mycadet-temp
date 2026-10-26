@@ -1,4 +1,5 @@
 import { getNginxIngressPort } from "../lib/nginx-ingress.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getIngressPaths, readIngressState } from "../lib/nginx-ingress.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
@@ -26,7 +27,6 @@ import {
   readRootProcesses,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";

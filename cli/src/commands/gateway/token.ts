@@ -1,6 +1,6 @@
 import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../../lib/cli-name.js";
-import { getGatewayUrl } from "../../lib/runtime-url.js";
 
 import {
   type LockfileAssistant,

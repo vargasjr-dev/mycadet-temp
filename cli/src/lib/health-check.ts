@@ -1,5 +1,5 @@
 import { loopbackSafeFetch } from "./loopback-fetch.js";
-import { getGatewayUrl } from "./runtime-url.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { z } from "zod";
 

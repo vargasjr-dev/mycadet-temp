@@ -18,8 +18,8 @@
  */
 
 import { isCloudHome } from "./cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveAssistant } from "./assistant-config.js";
-import { getGatewayUrl } from "./runtime-url.js";
 import {
   loadGuardianToken,
   refreshGuardianToken,

@@ -204,7 +204,7 @@ export async function hatchLocal(
   // prompts sit back-to-back), consumed after the guardian token leases.
   let precollectedApiKey: string | undefined;
 
-  const { resources, runtimeUrl, loopbackUrl, bootstrapSecret } =
+  const { resources, runtimeUrl, loopbackUrl, localEntry } =
     await withLocalHatchLock(async () => {
       reporter.progress(1, 6, "Allocating resources...");
 
@@ -359,24 +359,17 @@ export async function hatchLocal(
       saveLockfileAssistant(localEntry);
       setActiveAssistant(instanceName);
 
-      return { resources, runtimeUrl, loopbackUrl, bootstrapSecret };
+      return { resources, runtimeUrl, loopbackUrl, localEntry };
     });
 
   // Lease a guardian token so the desktop app can import it on first launch
-  // instead of hitting /v1/guardian/init itself. Use loopback to satisfy
-  // the daemon's local-only check — the mDNS runtimeUrl resolves to a LAN
-  // IP which the daemon rejects as non-loopback.
+  // instead of hitting /v1/guardian/init itself.
   reporter.progress(6, 6, "Securing connection...");
   const maxLeaseAttempts = 3;
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
-      const tokenData = await leaseGuardianToken({
-        assistantId: instanceName,
-        cloud: "local",
-        guardianBootstrapSecret: bootstrapSecret,
-        resources,
-      });
+      const tokenData = await leaseGuardianToken(localEntry);
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {

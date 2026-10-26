@@ -18,11 +18,8 @@ import {
   refreshGuardianToken,
   guardianTokenDueForRenewal,
 } from "../lib/guardian-token";
-import {
-  getGatewayUrl,
-  normalizeRuntimeUrl,
-  trustedRefreshUrl,
-} from "../lib/runtime-url";
+import { normalizeRuntimeUrl, trustedRefreshUrl } from "../lib/runtime-url";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   CLI_INTERFACE_ID,
   getClientRegistrationHeaders,

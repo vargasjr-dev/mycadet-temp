@@ -10,6 +10,7 @@
  */
 
 import { z } from "zod";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { createHash } from "node:crypto";
 import { hostname } from "node:os";
 
@@ -38,7 +39,6 @@ import { GATEWAY_INTERNAL_PORT } from "../lib/environments/paths.js";
 import { execOutput } from "../lib/step-runner.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 
 const dockerGatewayResponseSchema = z.object({
   status: z.number().int().min(200).max(599),

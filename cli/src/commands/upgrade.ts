@@ -1,4 +1,5 @@
 import { cliCommand } from "../lib/cli-name.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
 import { join } from "path";
@@ -71,7 +72,6 @@ import {
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "../lib/http-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import {
   generateLocalSecret,
   ensureLocalRuntime,
@@ -1142,8 +1142,6 @@ async function upgradeCloud(
 
   // Target the same platform as the detail/health/POST calls — the entry's
   // platform may differ from the active lockfile default.
-  // Releases are the global catalog — what's live across the platform —
-  // so this ignores the entry's topology entirely.
   const releases = await fetchReleases();
 
   const resolution = resolveUpgradeTarget({

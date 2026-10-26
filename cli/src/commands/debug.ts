@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import {
@@ -15,7 +16,6 @@ import {
   getCloudUrl,
   readCloudToken,
 } from "../lib/cloud-client.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 
 // Renew a cached guardian token that is about to lapse instead of starting
 // a long export on it.

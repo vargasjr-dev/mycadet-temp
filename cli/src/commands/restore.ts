@@ -1,4 +1,5 @@
 import { isCloudHome } from "../lib/cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import {
   existsSync,
@@ -33,7 +34,6 @@ import {
   cloudPollJobStatus,
 } from "../lib/cloud-client.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 
 function printUsage(): void {
   console.log(

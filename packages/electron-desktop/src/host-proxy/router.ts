@@ -895,6 +895,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
     const port = isMachineLocalEntry
       ? assistant.resources?.gatewayPort
       : undefined;
+    const gatewayUrl = getGatewayUrl(assistant);
     const isCloud =
       isCloudHome(assistant.cloud) &&
       isUsableRuntimeUrl(getGatewayUrl(assistant)) &&

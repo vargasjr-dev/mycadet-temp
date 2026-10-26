@@ -1,6 +1,6 @@
 import { isCloudHome } from "../lib/cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 

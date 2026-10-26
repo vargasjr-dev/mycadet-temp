@@ -1,7 +1,6 @@
 import {
   getGatewayUrl,
   getLoopbackGatewayPort,
-  isCloudHome,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
@@ -374,23 +373,16 @@ export function getLockfileAssistant(
 // Gateway predicates
 // ---------------------------------------------------------------------------
 /**
- * Whether the entry's gateway lives on another machine: a custom remote
- * (its address is inherently off-machine), or a loopback-gateway entry
- * whose recorded url points off this machine — the legacy pairing marker.
+ * Whether the entry's gateway lives on another machine: a custom remote.
+ * Its recorded host and port are inherently off-machine — a loopback
+ * topology's gateway is always on this machine.
  */
 export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  if (isCloudHome(entry.cloud)) {
+  if (entry.cloud !== "custom") {
     return false;
   }
-  if (entry.cloud === "custom") {
-    const gatewayUrl = getGatewayUrl(entry);
-    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
-  }
-  return (
-    isLoopbackGatewayCloud(entry.cloud) &&
-    isUsableRuntimeUrl(entry.runtimeUrl) &&
-    !isLoopbackPublicUrl(entry.runtimeUrl)
-  );
+  const gatewayUrl = getGatewayUrl(entry);
+  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
 }
 
 function expectsLocalGateway(
@@ -447,11 +439,7 @@ export function expectsPairedGateway(assistant: LockfileAssistant): boolean {
 export function hasPairedGateway(
   assistant: LockfileAssistant | undefined,
 ): boolean {
-  return (
-    !!assistant &&
-    expectsPairedGateway(assistant) &&
-    isUsableRuntimeUrl(getGatewayUrl(assistant))
-  );
+  return !!assistant && expectsPairedGateway(assistant);
 }
 
 /**

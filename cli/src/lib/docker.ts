@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   chmodSync,
   existsSync,
@@ -1740,7 +1741,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           detached: waitDetached,
           instanceName,
           logFd,
-          gatewayUrl,
           containersUpAt,
         });
 
@@ -1855,7 +1855,6 @@ async function waitForGatewayAndLease(opts: {
   detached: boolean;
   instanceName: string;
   logFd: number | "ignore";
-  gatewayUrl: string;
   containersUpAt: number;
 }): Promise<{
   ready: boolean;
@@ -1870,9 +1869,9 @@ async function waitForGatewayAndLease(opts: {
     detached,
     instanceName,
     logFd,
-    gatewayUrl,
     containersUpAt,
   } = opts;
+  const gatewayUrl = getGatewayUrl(entry);
 
   const log = (msg: string): void => {
     console.log(msg);

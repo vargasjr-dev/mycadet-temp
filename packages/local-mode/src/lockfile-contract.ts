@@ -24,7 +24,11 @@
  */
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
+import { SEEDS } from "@mycadet/environments";
 import { z } from "zod";
+
+import { resolveEnvironmentName } from "./environment";
+import { readLockfile } from "./lockfile";
 
 /**
  * Known deployment topologies of a Cadet:
@@ -188,18 +192,34 @@ export function getLoopbackGatewayPort(entry: {
 }
 
 /**
- * The default gateway port — the documented port a freshly hatched
- * assistant's gateway listens on.
+ * The gateway port a freshly hatched assistant's gateway listens on, with
+ * the `GATEWAY_PORT` env override the CLI tooling honors.
  */
-export const DEFAULT_GATEWAY_PORT = 7830;
+export const GATEWAY_PORT = process.env.GATEWAY_PORT
+  ? Number(process.env.GATEWAY_PORT)
+  : 7830;
+
+/**
+ * The cloud URL stack: the lockfile's platform base url (what the active
+ * assistant was last hatched/waked against), else the `CADET_CLOUD_URL`
+ * override, else the resolved environment's cloud url.
+ */
+function getCloudUrl(): string {
+  const lockfileUrl = readLockfile().cloudBaseUrl;
+  return (
+    (typeof lockfileUrl === "string" && lockfileUrl.trim()) ||
+    process.env.CADET_CLOUD_URL?.trim() ||
+    SEEDS[resolveEnvironmentName()]?.cloudUrl ||
+    SEEDS.production!.cloudUrl
+  );
+}
 
 /**
  * The URL to dial an entry's gateway on, derived from the entry's canonical
  * fields — the one seam every consumer addresses a gateway through:
  *
  * - `custom` remotes: their recorded host and port.
- * - cloud-managed: the recorded platform URL, else the caller-supplied
- *   `cloudUrl` fallback (the environment's own resolution).
+ * - cloud-managed: the recorded platform URL, else the cloud URL stack.
  * - loopback topologies (`local`, `docker`, `apple-container`): the
  *   recorded loopback gateway port, else the default gateway port.
  *
@@ -207,24 +227,19 @@ export const DEFAULT_GATEWAY_PORT = 7830;
  * whose canonical fields predate this resolver; it is scheduled to die
  * once every consumer reads through here.
  */
-export function getGatewayUrl(
-  entry: Pick<
-    LockfileAssistant,
-    "cloud" | "ipAddress" | "port" | "runtimeUrl" | "resources"
-  >,
-  opts?: { cloudUrl?: string },
-): string {
+export function getGatewayUrl(entry: LockfileAssistant): string {
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
     return `http://${entry.ipAddress}:${entry.port}`;
   }
   if (isCloudHome(entry.cloud)) {
-    return (entry.runtimeUrl || opts?.cloudUrl || "").replace(/\/+$/, "");
+    return (entry.runtimeUrl || getCloudUrl()).replace(/\/+$/, "");
   }
   const port = getLoopbackGatewayPort(entry);
   if (port) return `http://127.0.0.1:${port}`;
-  return (
-    entry.runtimeUrl || `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}`
-  ).replace(/\/+$/, "");
+  return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(
+    /\/+$/,
+    "",
+  );
 }
 
 /**

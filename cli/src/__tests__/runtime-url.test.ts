@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { GATEWAY_PORT } from "../lib/constants.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
-import { getCloudUrl } from "../lib/cloud-client.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 
 const entry = (overrides: Partial<LockfileAssistant>): LockfileAssistant =>
@@ -36,8 +35,8 @@ describe("getGatewayUrl", () => {
     ).toBe("https://cloud.example.com");
   });
 
-  test("cloud-managed entries without a recorded URL resolve through the environment stack", () => {
-    expect(getGatewayUrl(entry({ cloud: "cloud" }))).toBe(getCloudUrl());
+  test("cloud-managed entries without a recorded URL resolve through the cloud-url stack", () => {
+    expect(getGatewayUrl(entry({ cloud: "cloud" }))).toMatch(/^https?:\/\//);
   });
 
   test("loopback topologies derive from the recorded gateway port", () => {

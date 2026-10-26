@@ -13,6 +13,7 @@ import {
   type Lockfile,
   type LockfileAssistant,
   type TunnelProcessRecord,
+  getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
 export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
@@ -24,7 +25,6 @@ import {
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
 import { probePort } from "./port-probe.js";
-import { getGatewayUrl } from "./runtime-url.js";
 
 /**
  * Per-instance resource paths and ports. Each local assistant instance gets

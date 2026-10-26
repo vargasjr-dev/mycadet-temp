@@ -7,13 +7,13 @@
  */
 
 import { pollingCloudLogin } from "./cloud-login-poll.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { randomBytes } from "crypto";
 import { createServer } from "http";
 import type { AddressInfo } from "net";
 
 import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
-import { getGatewayUrl } from "./runtime-url.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
 import { computeDeviceId } from "./guardian-token.js";

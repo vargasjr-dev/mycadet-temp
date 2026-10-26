@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { execSync } from "node:child_process";
-import { getGatewayUrl } from "./runtime-url.js";
 import type { LockfileAssistant } from "./assistant-config.js";
 import {
   closeSync,

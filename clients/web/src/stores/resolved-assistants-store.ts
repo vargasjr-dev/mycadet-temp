@@ -30,31 +30,21 @@ import {
 } from "@/lib/local-mode";
 import {
   getGatewayUrl,
-  isCloudHome,
   isUsableRuntimeUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 /**
- * Whether the entry's gateway lives on another machine: a custom remote
- * (its address is inherently off-machine), or a loopback-gateway entry
- * whose recorded url points off this machine — the legacy pairing marker.
+ * Whether the entry's gateway lives on another machine: a custom remote.
  * Mirrors the lib predicate so the store and the lib cannot drift.
  */
 function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  if (isCloudHome(entry.cloud)) {
+  if (entry.cloud !== "custom") {
     return false;
   }
-  if (entry.cloud === "custom") {
-    const gatewayUrl = getGatewayUrl(entry);
-    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
-  }
-  return (
-    isLoopbackGatewayCloud(entry.cloud) &&
-    isUsableRuntimeUrl(entry.runtimeUrl) &&
-    !isLoopbackPublicUrl(entry.runtimeUrl)
-  );
+  const gatewayUrl = getGatewayUrl(entry);
+  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
 }
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
@@ -219,7 +209,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         isLocal: isLocalAssistant(a),
         isCloudHosted: isCloudAssistant(a),
         isPaired: isRemoteGatewayEntry(a),
-        runtimeUrl: a.runtimeUrl,
+        runtimeUrl: isRemoteGatewayEntry(a) ? getGatewayUrl(a) : a.runtimeUrl,
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
       }));
@@ -425,7 +415,10 @@ function getLockfileFields(assistantId: string): {
     organizationId: entry?.cloudOrganizationId,
     onboardedAt: entry?.onboardedAt,
     runtimeVersion: entry?.resources?.runtimeVersion,
-    runtimeUrl: entry?.runtimeUrl,
+    runtimeUrl:
+      entry && isRemoteGatewayEntry(entry)
+        ? getGatewayUrl(entry)
+        : entry?.runtimeUrl,
     cloudAssistantId: entry?.cloudAssistantId,
     isPaired: entry ? isRemoteGatewayEntry(entry) : undefined,
     isActiveLockfileAssistant: lockfile

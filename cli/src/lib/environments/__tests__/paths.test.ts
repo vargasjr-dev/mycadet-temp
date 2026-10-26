@@ -26,26 +26,14 @@ afterAll(() => {
 
 // Imports that depend on the mocked `os` module must come after the
 // mock.module() calls above.
-const {
-  getDefaultPortsFor,
-  getInputHistoryPath,
-  getSharedStateDir,
-} = await import("../paths.js");
+const { getDefaultPorts, getInputHistoryPath, getSharedStateDir } =
+  await import("../paths.js");
 const {
   resolveAssistantsDir,
   resolveConfigDir,
   resolveEnvironmentName,
   resolveLockfilePath,
 } = await import("@mycadet/local-mode");
-type EnvironmentDefinition =
-  import("@mycadet/environments").EnvironmentDefinition;
-
-const dev: EnvironmentDefinition = {
-  name: "dev",
-  cloudUrl: "https://dev-cloud.mycadet.ai",
-  webUrl: "https://dev.mycadet.ai",
-};
-
 const XDG_ENV_VARS = [
   "XDG_DATA_HOME",
   "XDG_CONFIG_HOME",
@@ -197,12 +185,8 @@ describe("path helpers", () => {
 
   describe("getDefaultPorts", () => {
     test("returns production defaults for production", () => {
-      const prod: EnvironmentDefinition = {
-        name: "production",
-        cloudUrl: "https://cloud.mycadet.ai",
-        webUrl: "https://mycadet.ai",
-      };
-      expect(getDefaultPortsFor(prod)).toEqual({
+      process.env.CADET_ENVIRONMENT = "production";
+      expect(getDefaultPorts()).toEqual({
         daemon: 7821,
         gateway: 7830,
         qdrant: 6333,
@@ -212,13 +196,10 @@ describe("path helpers", () => {
       });
     });
 
-    test("merges env.portsOverride on top of defaults", () => {
-      const customized: EnvironmentDefinition = {
-        ...dev,
-        portsOverride: { daemon: 7831 },
-      };
-      expect(getDefaultPortsFor(customized).daemon).toBe(7831);
-      expect(getDefaultPortsFor(customized).gateway).toBe(7830);
+    test("merges the environment's portsOverride on top of defaults", () => {
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getDefaultPorts().daemon).toBe(18000);
+      expect(getDefaultPorts().gateway).toBe(18100);
     });
   });
 });

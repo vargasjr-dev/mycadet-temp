@@ -2,8 +2,7 @@ import { isCloudHome } from "./cloud-values.js";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./lan-ip.js";
-import { getGatewayUrl as getSharedGatewayUrl } from "@mycadet/local-mode/contract";
-import { getCloudUrl } from "./cloud-client.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config.js";
 
 /**
@@ -104,14 +103,4 @@ export function trustedRefreshUrl(
     return trusted;
   }
   return null;
-}
-
-/**
- * The URL to dial an entry's gateway on, derived from the entry's canonical
- * fields — the one seam every consumer addresses a gateway through. Delegates
- * to the shared contract derivation, supplying this CLI's cloud-URL stack as
- * the fallback for cloud-managed entries.
- */
-export function getGatewayUrl(entry: LockfileAssistant): string {
-  return getSharedGatewayUrl(entry, { cloudUrl: getCloudUrl() });
 }

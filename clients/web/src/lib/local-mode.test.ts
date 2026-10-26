@@ -140,8 +140,9 @@ const platform: LockfileAssistant = {
 
 const pairedEntry: LockfileAssistant = {
   assistantId: "paired-a",
-  cloud: "local",
-  runtimeUrl: "https://gw.example.com",
+  cloud: "custom",
+  ipAddress: "gw.example.com",
+  port: 443,
 } as LockfileAssistant;
 
 describe("served config synthesis", () => {
@@ -708,38 +709,13 @@ describe("hasPairedGateway", () => {
     expect(hasPairedGateway(pairedEntry)).toBe(true);
   });
 
-  test("accepts runtimeUrls with trailing slashes or path prefixes", () => {
-    enableLocalMode();
-    for (const runtimeUrl of [
-      "https://gw.example.com///",
-      "https://gw.example.com/assistant/",
-    ]) {
-      const paired = { ...pairedEntry, runtimeUrl } as LockfileAssistant;
-      expect(hasPairedGateway(paired)).toBe(true);
-    }
-  });
-
-  test("is false for a non-http(s) runtimeUrl", () => {
-    enableLocalMode();
-    const paired = {
-      ...pairedEntry,
-      runtimeUrl: "ftp://x",
-    } as LockfileAssistant;
-    expect(hasPairedGateway(paired)).toBe(false);
-  });
-
-  test("is false for a missing or malformed runtimeUrl", () => {
+  test("is false for a loopback entry with no remote address", () => {
     enableLocalMode();
     const missing = {
       assistantId: "p",
       cloud: "local",
     } as LockfileAssistant;
-    const malformed = {
-      ...pairedEntry,
-      runtimeUrl: "not a url",
-    } as LockfileAssistant;
     expect(hasPairedGateway(missing)).toBe(false);
-    expect(hasPairedGateway(malformed)).toBe(false);
   });
 
   test("is false for non-paired entries", () => {

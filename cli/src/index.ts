@@ -40,7 +40,7 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
-import { getGatewayUrl } from "./lib/runtime-url.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 

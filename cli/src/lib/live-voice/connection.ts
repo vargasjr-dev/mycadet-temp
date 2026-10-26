@@ -26,6 +26,7 @@
  */
 
 import { isCloudHome } from "../cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   formatAssistantLookupError,
   getAssistantDisplayName,
@@ -33,7 +34,6 @@ import {
   resolveTargetAssistant,
   type LockfileAssistant,
 } from "../assistant-config.js";
-import { getGatewayUrl } from "../runtime-url.js";
 import { readCloudToken } from "../cloud-client.js";
 import {
   guardianTokenDueForRenewal,

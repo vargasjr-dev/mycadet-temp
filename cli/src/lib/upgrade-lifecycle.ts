@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
-import { getGatewayUrl } from "./runtime-url.js";
 
 import type { LockfileAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";

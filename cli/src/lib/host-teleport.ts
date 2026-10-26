@@ -1,4 +1,5 @@
 import { rm } from "node:fs/promises";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -8,7 +9,6 @@ import {
   setActiveAssistant,
 } from "./assistant-config.js";
 import { createBackup, pruneOldBackups } from "./backup-ops.js";
-import { getGatewayUrl } from "./runtime-url.js";
 import {
   dockerResourceNames,
   hatchDocker,
