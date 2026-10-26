@@ -79,14 +79,6 @@
     "typeScheduled": "По расписанию",
     "cliOnly": "Для локальных установок и Docker используйте cadet backup и cadet restore в терминале."
   },
-  "assistantPicker": {
-    "active": "Активный",
-    "subtitle": "Выбор ассистента, активного для этого аккаунта.",
-    "switch": "Переключить",
-    "switchedToast": "Активный ассистент переключён.",
-    "title": "Сменить ассистента",
-    "unnamed": "Без имени"
-  },
   "assistantStatusPanel": {
     "assistantId": "ID ассистента",
     "cpuUsage": "Загрузка CPU",

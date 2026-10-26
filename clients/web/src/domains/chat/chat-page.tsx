@@ -17,7 +17,6 @@ import { assistantStateCanServeChat } from "@/assistant/lifecycle";
 import { useAssistantResolution } from "@/assistant/queries";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useConversationListQuery } from "@/hooks/conversation-queries";
-import { useIsSessionInitializing } from "@/stores/auth-store";
 import { Button } from "@mycadet/design-library";
 
 import { ActiveChatView } from "@/domains/chat/active-chat-view";
@@ -28,7 +27,6 @@ import { useTranslation } from "@/i18n";
 
 export function ChatPage() {
   const { t } = useTranslation("chat");
-  const isSessionInitializing = useIsSessionInitializing();
   const { state: assistantState, refetch: refetchAssistantResolution } =
     useAssistantResolution();
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
@@ -40,13 +38,11 @@ export function ChatPage() {
     useConversationListQuery(assistantId, shouldRenderChat);
 
   // -------------------------------------------------------------------------
-  // Loading guards — auth / assistant lifecycle not yet resolved
+  // Loading guards — assistant lifecycle not yet resolved. Auth is the app
+  // shell's concern: it does not route here until the session is settled.
   // -------------------------------------------------------------------------
-  const connectingReason = isSessionInitializing
-    ? "auth_loading"
-    : assistantState.kind === "loading"
-      ? "assistant_loading"
-      : null;
+  const connectingReason =
+    assistantState.kind === "loading" ? "assistant_loading" : null;
 
   // Watchdog: connecting has no natural failure surface, so a wedged auth
   // init or lifecycle probe would spin forever. Escalate to a retry screen

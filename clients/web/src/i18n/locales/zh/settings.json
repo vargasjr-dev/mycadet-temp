@@ -93,14 +93,6 @@
     "typeScheduled": "计划",
     "cliOnly": "对于本地或 Docker 安装，请在终端中使用 cadet backup 和 cadet restore。"
   },
-  "assistantPicker": {
-    "active": "活跃",
-    "subtitle": "选择此账户的活跃助手。",
-    "switch": "切换",
-    "switchedToast": "已切换活跃助手。",
-    "title": "切换助手",
-    "unnamed": "未命名"
-  },
   "assistantStatusPanel": {
     "assistantId": "助手 ID",
     "cpuUsage": "CPU 使用率",
@@ -1475,8 +1467,6 @@
     "usage": "用量",
     "community": "社区",
     "debug": "调试",
-    "logout": "退出登录",
-    "login": "登录",
     "title": "设置"
   },
   "debugPage": {

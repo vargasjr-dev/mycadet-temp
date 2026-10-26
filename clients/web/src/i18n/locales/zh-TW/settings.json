@@ -93,14 +93,6 @@
     "typeScheduled": "排程",
     "cliOnly": "對於本機或 Docker 安裝，請在終端機中使用 cadet backup 和 cadet restore。"
   },
-  "assistantPicker": {
-    "active": "啟用中",
-    "subtitle": "選擇此帳號的啟用中助理。",
-    "switch": "切換",
-    "switchedToast": "已切換啟用中助理。",
-    "title": "切換助理",
-    "unnamed": "未命名"
-  },
   "assistantStatusPanel": {
     "assistantId": "助理 ID",
     "cpuUsage": "CPU 使用率",
@@ -1475,8 +1467,6 @@
     "usage": "用量",
     "community": "社群",
     "debug": "偵錯",
-    "logout": "登出",
-    "login": "登入",
     "title": "設定"
   },
   "debugPage": {

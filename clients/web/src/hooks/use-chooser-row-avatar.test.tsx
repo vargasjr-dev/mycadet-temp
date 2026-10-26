@@ -695,15 +695,16 @@ describe("useChooserRowAvatar", () => {
       expect(listAssistants).not.toHaveBeenCalled();
     });
 
-    test("a signed-out device keeps the glyph", async () => {
+    test("a signed-out device still resolves the lookup", async () => {
       useAuthStore.setState({ cloudSession: "absent" });
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
         { wrapper: createWrapper() },
       );
-      await settle();
-      expect(result.current.imageUrl).not.toBe(LOOKUP_URL);
-      expect(listAssistants).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(result.current.imageUrl).toBe(LOOKUP_URL);
+      });
+      expect(listAssistants).toHaveBeenCalled();
     });
 
     test("the connected row prefers its live read over the lookup", async () => {

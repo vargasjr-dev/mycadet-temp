@@ -30,7 +30,6 @@ import { ProfileQuickAddProvider } from "@/components/profile-quick-add-provider
 import { useNativeLaunchScreenReady } from "@/hooks/use-native-launch-screen-ready";
 import { installAssetQueryDiagnostics } from "@/lib/asset-query-diagnostics";
 import { installQueryPressureProbe } from "@/lib/commit-pressure";
-import { useIsSessionInitializing } from "@/stores/auth-store";
 import { useRequestScopeKey } from "@/stores/request-scope";
 import { queryRetryDelay, shouldRetryQuery } from "@/utils/query-retry";
 
@@ -64,7 +63,6 @@ function RequestScopedQueryClientProvider({
   scopeKey: string;
 }) {
   const [queryClient] = useState(() => createQueryClient());
-  const isSessionInitializing = useIsSessionInitializing();
   // Query notifications re-render through `useSyncExternalStore`, so they are
   // part of the same commit traffic as the chat route's timer-driven updates.
   // Only this client is probed: it is the one the conversation route's queries
@@ -72,11 +70,8 @@ function RequestScopedQueryClientProvider({
   // low-frequency reads.
   useEffect(() => installQueryPressureProbe(queryClient), [queryClient]);
   useEffect(() => {
-    if (isSessionInitializing) {
-      return;
-    }
     return installAssetQueryDiagnostics(queryClient, scopeKey);
-  }, [isSessionInitializing, queryClient, scopeKey]);
+  }, [queryClient, scopeKey]);
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );

@@ -31,11 +31,6 @@ mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => cloudRemote,
 }));
 
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
-
 const listAssistants = mock(
   async (): Promise<AssistantApi.ListAssistantsResult> => ({
     ok: true,
@@ -89,7 +84,6 @@ function signIn(): void {
 
 beforeEach(() => {
   cloudRemote = false;
-  orgReady = true;
   resetAvatarSupersedeForTests();
   signIn();
   listAssistants.mockResolvedValue({
@@ -123,25 +117,25 @@ describe("useCloudAvatarUrls", () => {
     expect(listAssistants).toHaveBeenCalledTimes(1);
   });
 
-  test.each([
-    [
-      "no live platform session",
-      () => useAuthStore.setState({ cloudSession: "absent" }),
-    ],
-    [
-      "an unsettled platform session",
-      () => useAuthStore.setState({ cloudSession: "unknown" }),
-    ],
-    ["pure cloud mode", () => (cloudRemote = true)],
-    ["an unready org header", () => (orgReady = false)],
-  ])("stays idle with %s", async (_l, arrange) => {
-    arrange();
+  test("stays idle in pure cloud mode", async () => {
+    cloudRemote = true;
     const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });
     await settle();
     expect(result.current.size).toBe(0);
     expect(listAssistants).not.toHaveBeenCalled();
+  });
+
+  test("fetches regardless of the platform session", async () => {
+    useAuthStore.setState({ cloudSession: "absent" });
+    const { result } = renderHook(() => useCloudAvatarUrls(), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(listAssistants).toHaveBeenCalled();
+    });
+    expect(result.current.size).toBe(1);
   });
 
   test("a rejected list resolves to an empty map", async () => {

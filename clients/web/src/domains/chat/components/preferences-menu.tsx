@@ -25,7 +25,6 @@ import { useTouchMobile } from "@/hooks/use-touch-mobile";
 import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { prefetchRoute } from "@/lib/prefetch-route";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsAuthenticated } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 
 import { SIDEBAR_PILL_GAP_CLASSES } from "@/components/sidebar-nav-geometry";
@@ -61,7 +60,6 @@ export function PreferencesMenu({
      it. The `pill` variant ignores it, and only renders on the overlay, where
      it reads false regardless. */
   const collapsed = useSideMenuCollapsed();
-  const isAuthenticated = useIsAuthenticated();
   const isTouchMobile = useTouchMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -81,10 +79,6 @@ export function PreferencesMenu({
     prefetchShareFeedbackModal();
     prefetchRoute(routes.settings.root);
   }, [isOpen]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   const closeMenu = () => setIsOpen(false);
 
