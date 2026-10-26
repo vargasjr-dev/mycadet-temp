@@ -16,7 +16,7 @@ import {
   getDaemonPidPath,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
-import { getLockfilePath } from "../lib/environments/paths.js";
+import { resolveLockfilePaths } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
@@ -79,7 +79,7 @@ const instanceDir = join(testDir, "test-instance");
 
 function writeLockfile(entries: LockfileAssistant[]): void {
   writeFileSync(
-    getLockfilePath(),
+    resolveLockfilePaths()[0]!,
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }

@@ -11,13 +11,11 @@ import {
 } from "fs";
 import { join } from "path";
 
-import { getLogDir } from "./environments/paths.js";
+import { resolveLogDir } from "@mycadet/local-mode";
 
 
 /** Regex matching pino-pretty's short time prefix, e.g. `[12:07:37.467] `. */
 const PINO_TIME_RE = /^\[\d{2}:\d{2}:\d{2}\.\d{3}\]\s*/;
-
-export { getLogDir };
 
 /** Open (or create) a log file in append mode, returning the file descriptor.
  *  Creates the parent directory if it doesn't exist. Returns "ignore" if the
@@ -25,7 +23,7 @@ export { getLogDir };
  *  so that callers can fall back to discarding output instead of aborting. */
 export function openLogFile(name: string): number | "ignore" {
   try {
-    const dir = getLogDir();
+    const dir = resolveLogDir();
     mkdirSync(dir, { recursive: true });
     return openSync(join(dir, name), "a");
   } catch {
@@ -36,7 +34,7 @@ export function openLogFile(name: string): number | "ignore" {
 /** Truncate (or create) a log file so each session starts fresh. */
 export function resetLogFile(name: string): void {
   try {
-    const dir = getLogDir();
+    const dir = resolveLogDir();
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, name), "");
   } catch {
@@ -52,7 +50,7 @@ export function resetLogFile(name: string): void {
 export function archiveLogFile(name: string, destDir: string): void {
   try {
     if (!existsSync(destDir)) return;
-    const srcPath = join(getLogDir(), name);
+    const srcPath = join(resolveLogDir(), name);
     if (!existsSync(srcPath) || statSync(srcPath).size === 0) return;
 
     const ts = new Date().toISOString().replace(/[:.]/g, "-");

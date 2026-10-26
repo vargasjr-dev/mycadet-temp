@@ -3,7 +3,8 @@ import { closeSync } from "node:fs";
 import { join } from "node:path";
 
 import { isCompiledCli } from "./local.js";
-import { getLogDir, openLogFile, resetLogFile } from "./xdg-log.js";
+import { resolveLogDir } from "@mycadet/local-mode";
+import { openLogFile, resetLogFile } from "./xdg-log.js";
 
 export interface RelaunchDetachedOptions {
   /** argv for the re-invoked CLI command, e.g. ["tunnel", "--provider", "cloudflare"]. */
@@ -57,7 +58,7 @@ export async function relaunchDetached(
   }
   child.unref();
 
-  const logPath = join(getLogDir(), opts.logFile);
+  const logPath = join(resolveLogDir(), opts.logFile);
 
   let exitCode: number | null | undefined;
   child.on("error", () => {

@@ -11,7 +11,7 @@ import {
 import { DEFAULT_TUNNEL_PROVIDER, toLocalTunnelTarget } from "../lib/tunnel.js";
 import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
-import { getLogDir } from "../lib/xdg-log.js";
+import { resolveLogDir } from "@mycadet/local-mode";
 
 import {
   extractHostFromEntry,
@@ -711,7 +711,7 @@ export async function printRootProcessDetail(
       detailLine("Reserved domain:", loadNgrokDomain());
     }
     detailLine("Started:", tunnel.startedAt);
-    detailLine("Log:", join(getLogDir(), "tunnel.log"));
+    detailLine("Log:", join(resolveLogDir(), "tunnel.log"));
     return true;
   }
 

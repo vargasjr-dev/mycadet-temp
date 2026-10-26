@@ -18,7 +18,7 @@ import {
 
 const authHeadersSpy = spyOn(cloudClient, "authHeaders").mockResolvedValue({
   "Content-Type": "application/json",
-  "X-Session-Token": "platform-token",
+  "X-Session-Token": "test-cloud-token",
   "Cadet-Organization-Id": "org-1",
 });
 const invalidateOrgIdCacheSpy = spyOn(
@@ -88,12 +88,12 @@ describe("listPlatformBackups", () => {
       }),
     );
 
-    const result = await listPlatformBackups(ENTRY, "platform-token");
+    const result = await listPlatformBackups(ENTRY, "test-cloud-token");
 
     expect(result).toEqual(["2026-09-15T11:00:00Z", "2026-09-15T10:00:00Z"]);
     expect(fetchCalls[0]).toEqual({ url: BACKUPS_URL, method: "GET" });
     expect(authHeadersSpy).toHaveBeenCalledWith(
-      "platform-token",
+      "test-cloud-token",
       "https://cloud.mycadet.ai",
     );
   });
@@ -102,12 +102,12 @@ describe("listPlatformBackups", () => {
     responses.push(() => new Response("unauthorized", { status: 401 }));
     responses.push(json({ backups: [] }));
 
-    const result = await listPlatformBackups(ENTRY, "platform-token");
+    const result = await listPlatformBackups(ENTRY, "test-cloud-token");
 
     expect(result).toEqual([]);
     expect(fetchCalls).toHaveLength(2);
     expect(invalidateOrgIdCacheSpy).toHaveBeenCalledWith(
-      "platform-token",
+      "test-cloud-token",
       "https://cloud.mycadet.ai",
     );
   });
@@ -115,7 +115,7 @@ describe("listPlatformBackups", () => {
   test("throws on a persistent error", async () => {
     responses.push(() => new Response("Bad gateway", { status: 502 }));
 
-    await expect(listPlatformBackups(ENTRY, "platform-token")).rejects.toThrow(
+    await expect(listPlatformBackups(ENTRY, "test-cloud-token")).rejects.toThrow(
       "Cadet Cloud backup list failed (502): Bad gateway",
     );
   });
@@ -125,7 +125,7 @@ describe("createPlatformBackup", () => {
   test("returns immediately when the POST reports the snapshot ready", async () => {
     responses.push(json({ snapshot_name: "snap-1", ready_to_use: true }, 201));
 
-    await createPlatformBackup(ENTRY, "platform-token", FAST_POLL);
+    await createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL);
 
     expect(fetchCalls).toEqual([{ url: BACKUPS_URL, method: "POST" }]);
   });
@@ -144,7 +144,7 @@ describe("createPlatformBackup", () => {
       }),
     );
 
-    await createPlatformBackup(ENTRY, "platform-token", FAST_POLL);
+    await createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL);
 
     expect(fetchCalls.map((call) => call.method)).toEqual([
       "POST",
@@ -162,7 +162,7 @@ describe("createPlatformBackup", () => {
       json({ backups: [{ snapshot_name: "snap-1", ready_to_use: true }] }),
     );
 
-    await createPlatformBackup(ENTRY, "platform-token", FAST_POLL);
+    await createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL);
 
     expect(fetchCalls).toHaveLength(3);
   });
@@ -177,7 +177,7 @@ describe("createPlatformBackup", () => {
     }
 
     await expect(
-      createPlatformBackup(ENTRY, "platform-token", {
+      createPlatformBackup(ENTRY, "test-cloud-token", {
         pollIntervalMs: 1,
         timeoutMs: 30,
       }),
@@ -190,7 +190,7 @@ describe("createPlatformBackup", () => {
     );
 
     await expect(
-      createPlatformBackup(ENTRY, "platform-token", FAST_POLL),
+      createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL),
     ).rejects.toThrow("Cadet Cloud backup create failed (502)");
     expect(fetchCalls).toHaveLength(1);
   });
@@ -199,7 +199,7 @@ describe("createPlatformBackup", () => {
     responses.push(json({}, 201));
 
     await expect(
-      createPlatformBackup(ENTRY, "platform-token", FAST_POLL),
+      createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL),
     ).rejects.toThrow("no snapshot name");
   });
 
@@ -208,7 +208,7 @@ describe("createPlatformBackup", () => {
     responses.push(() => new Response("Bad gateway", { status: 502 }));
 
     await expect(
-      createPlatformBackup(ENTRY, "platform-token", FAST_POLL),
+      createPlatformBackup(ENTRY, "test-cloud-token", FAST_POLL),
     ).rejects.toThrow("Cadet Cloud backup list failed (502)");
   });
 });

@@ -4,6 +4,7 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
+  stampedVersion,
 } from "@mycadet/shared/version";
 
 import { joinLocalPath, resolveConfigHomes } from "./paths";
@@ -14,18 +15,12 @@ import { joinLocalPath, resolveConfigHomes } from "./paths";
 // as @mycadet/cli.
 import { version as packageVersion } from "../package.json";
 
-// Hosts that bundle local-mode without the CLI — the Electron main, the OS
-// clients, the Vite dev middleware — inject the channel version here at
-// BUILD time (their display version is `resolveVersion()`, so a checkout
-// build injects its `-local.` stamp and the bundled resolver classifies the
-// same environment the app advertises). Left undefined, the version comes
-// from this package.json alone: the pipeline stamp on installed copies, the
-// plain checkout 0.0.1 (which pins nothing) when bun-running the source.
-// Never derived from git state at RUNTIME: an installed CLI running inside
-// a user's git repo must not mistake the user's HEAD for a build channel.
-const ownVersion: string =
+// Hosts bundling local-mode without the CLI inject their channel version at
+// build time; unset, a source checkout stamps `-local.` and installed copies
+// keep the pipeline stamp.
+const ownVersion = (): string =>
   (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
-  packageVersion;
+  stampedVersion(packageVersion, new Date(), import.meta.path);
 
 const PRODUCTION_ENVIRONMENT_NAME = "production";
 
@@ -109,7 +104,7 @@ export function environmentFromVersion(version: string): string | undefined {
 export function resolveEnvironmentName(): string {
   return (
     process.env.CADET_ENVIRONMENT?.trim() ||
-    environmentFromVersion(ownVersion) ||
+    environmentFromVersion(ownVersion()) ||
     readDefaultEnvironment() ||
     PRODUCTION_ENVIRONMENT_NAME
   );

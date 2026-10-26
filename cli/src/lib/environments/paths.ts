@@ -2,14 +2,6 @@ import { homedir } from "node:os";
 import { join } from "path";
 
 import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
-import {
-  resolveAssistantsDir,
-  resolveConfigDir,
-  resolveConfigDirPaths,
-  resolveDataDir,
-  resolveLockfilePaths,
-  resolveLogDir,
-} from "@mycadet/local-mode";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
   daemon: 7821,
@@ -19,41 +11,6 @@ const DEFAULT_PORTS: Readonly<PortMap> = {
   outboundProxy: 8080,
   tcp: 8765,
 };
-
-/**
- * Config directory for the current environment.
- * Production preserves the existing `~/.config/cadet/` location;
- * non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/`.
- */
-export function getConfigDir(): string {
-  return resolveConfigDir();
-}
-
-export function getConfigDirs(): string[] {
-  return resolveConfigDirPaths();
-}
-
-export function getLockfilePaths(): string[] {
-  return resolveLockfilePaths();
-}
-
-/**
- * Canonical lockfile path for writes — always the config-dir
- * `lockfile.json`.
- */
-export function getLockfilePath(): string {
-  return getLockfilePaths()[0]!;
-}
-
-/**
- * Multi-instance root directory for the current environment. Production uses
- * `~/.local/share/cadet/assistants/` — the convention already in
- * `cli/src/lib/assistant-config.ts`. Non-production environments use
- * `~/.local/share/cadet-<env>/assistants/`.
- */
-export function getMultiInstanceDir(): string {
-  return resolveAssistantsDir();
-}
 
 /**
  * Default port set for an environment.
@@ -66,19 +23,6 @@ export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
     ...DEFAULT_PORTS,
     ...(env.portsOverride ?? {}),
   };
-}
-
-/**
- * Runtime state directory for the current environment (upgrade logs, etc.).
- * Production uses `~/.local/share/cadet/`; non-production environments
- * use `~/.local/share/cadet-<env>/`.
- */
-export function getStateDir(): string {
-  return resolveDataDir();
-}
-
-export function getLogDir(): string {
-  return resolveLogDir();
 }
 
 /**

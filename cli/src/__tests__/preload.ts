@@ -17,6 +17,12 @@ const testDir = realpathSync(
 );
 process.env.CADET_WORKSPACE_DIR = testDir;
 
+// Tests run from a source checkout, whose `-local.` stamp would pin the
+// ambient environment to `local`. Pretend to be an installed production
+// copy instead; tests that want another environment set CADET_ENVIRONMENT.
+(globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+  "0.0.0";
+
 afterAll(() => {
   delete process.env.CADET_WORKSPACE_DIR;
   try {

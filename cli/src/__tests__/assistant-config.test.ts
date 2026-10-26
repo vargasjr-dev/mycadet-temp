@@ -317,7 +317,7 @@ describe("env-scoped lockfile and migration", () => {
     // The env package's xdgConfigHome() reads process.env.XDG_CONFIG_HOME
     // fresh on every call, so redirecting via that env var works without
     // mocking `os`. We temporarily unset CADET_LOCKFILE_DIR so the env
-    // package falls through to getConfigDir(env).
+    // package falls through to the ambient resolver.
     const prevEnv = process.env.CADET_ENVIRONMENT;
     const prevXdgConfig = process.env.XDG_CONFIG_HOME;
     const prevLockDir = process.env.CADET_LOCKFILE_DIR;

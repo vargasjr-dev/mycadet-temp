@@ -13,12 +13,10 @@ import { dirname, join } from "path";
 
 import { uninstall } from "../commands/uninstall.js";
 import {
-  getConfigDirs,
   getInputHistoryPath,
-  getLogDir,
   getSharedStateDir,
-  getStateDir,
 } from "../lib/environments/paths.js";
+import { resolveConfigDirPaths, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.
@@ -209,7 +207,7 @@ describe("cadet uninstall", () => {
           ],
         }) + "\n",
       );
-      mkdirSync(getConfigDirs()[0]!, {
+      mkdirSync(resolveConfigDirPaths()[0]!, {
         recursive: true,
       });
 
@@ -239,14 +237,14 @@ describe("cadet uninstall", () => {
 
       // Pre-create every target the command should delete, using the SAME
       // path helpers so the test stays honest about what they resolve to.
-      const stateDir = getStateDir();
+      const stateDir = resolveDataDir();
       mkdirSync(join(stateDir, "assistants", "some-assistant"), {
         recursive: true,
       });
       mkdirSync(join(stateDir, "retired"), { recursive: true });
-      const configDir = getConfigDirs()[0]!;
+      const configDir = resolveConfigDirPaths()[0]!;
       mkdirSync(configDir, { recursive: true });
-      const logDir = getLogDir();
+      const logDir = resolveLogDir();
       mkdirSync(logDir, { recursive: true });
       const historyPath = getInputHistoryPath();
       mkdirSync(dirname(historyPath), { recursive: true });
@@ -283,7 +281,7 @@ describe("cadet uninstall", () => {
   test("--yes lists and removes the Cadet executable itself", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const configDir = getConfigDirs()[0]!;
+      const configDir = resolveConfigDirPaths()[0]!;
       mkdirSync(configDir, { recursive: true });
 
       // A compiled-binary install: process.execPath IS the install, so the

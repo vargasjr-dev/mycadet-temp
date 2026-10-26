@@ -28,7 +28,7 @@ import { createHostCuExecutor } from "./executors/host-cu-executor";
 import {
   getWatchedLockfile,
   onLockfileChange,
-} from "./lockfile-watcher.client";
+} from "@mycadet/electron-desktop/lockfile-watcher";
 import log from "./logger";
 import { installPresenceMonitor } from "./presence";
 import { getSessionToken } from "./session-token-store.client";

@@ -86,7 +86,6 @@ import {
 import {
   leaseGuardianToken,
   resetGuardianBootstrap,
-  seedGuardianTokenFromSiblingEnv,
 } from "../lib/guardian-token.js";
 
 interface UpgradeArgs {
@@ -759,10 +758,6 @@ async function ensureGuardianTokenAfterLocalUpgrade(
   gatewayPort: number,
   bootstrapSecret?: string,
 ): Promise<void> {
-  if (seedGuardianTokenFromSiblingEnv(entry.assistantId)) {
-    console.log("   Seeded guardian token from sibling environment.");
-  }
-
   const loopbackUrl = `http://127.0.0.1:${gatewayPort}`;
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

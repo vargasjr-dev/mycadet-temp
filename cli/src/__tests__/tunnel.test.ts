@@ -31,7 +31,7 @@ import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
-import { getLogDir } from "../lib/xdg-log.js";
+import { resolveLogDir } from "@mycadet/local-mode";
 import { saveIngressUrl } from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
 import {
@@ -1643,7 +1643,7 @@ describe("tunnel background mode", () => {
   );
 
   function detachedLogPath(): string {
-    return join(getLogDir(), "tunnel.log");
+    return join(resolveLogDir(), "tunnel.log");
   }
 
   beforeAll(() => {

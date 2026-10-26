@@ -29,7 +29,7 @@ const resolveTargetMock = spyOn(
   throw new Error("process.exit:1");
 });
 const readCloudTokenMock = spyOn(cloudClient, "readCloudToken").mockReturnValue(
-  "platform-token",
+  "test-cloud-token",
 );
 const loadGuardianTokenSpy = spyOn(
   guardianToken,
@@ -93,7 +93,7 @@ beforeEach(() => {
   resolveTargetMock.mockReturnValue(LOCAL_ENTRY);
   leaseGuardianTokenSpy.mockClear();
   readCloudTokenMock.mockReset();
-  readCloudTokenMock.mockReturnValue("platform-token");
+  readCloudTokenMock.mockReturnValue("test-cloud-token");
 });
 
 afterEach(() => {

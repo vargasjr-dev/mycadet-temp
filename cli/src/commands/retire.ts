@@ -19,7 +19,7 @@ import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
-import { getConfigDir } from "../lib/environments/paths.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { printInstanceDetails } from "../lib/instance-details.js";
 import {
   authHeaders,
@@ -375,7 +375,7 @@ async function retireInner(): Promise<void> {
   // retired assistant's name.
   if (loadAllAssistants().length === 0) {
     const dockLabelFile = join(
-      getConfigDir(),
+      resolveConfigDir(),
       "dock-display-name",
     );
     if (existsSync(dockLabelFile)) {

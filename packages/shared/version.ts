@@ -37,7 +37,9 @@ function utcStamp(date: Date): string {
 }
 
 function isSourceCheckout(entryPath: string): boolean {
-  return entryPath.endsWith(".ts");
+  // Installed copies ship as .ts inside node_modules — they must never stamp
+  // from ambient git state (a user's repo HEAD is not our build channel).
+  return entryPath.endsWith(".ts") && !entryPath.includes("node_modules");
 }
 
 /**

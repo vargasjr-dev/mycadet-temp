@@ -6,7 +6,6 @@ import {
   getDaemonPidPath,
   getLocalInstanceDir,
   loadAllAssistants,
-  loadAllAssistantsAcrossEnvs,
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { stopIngressNginx } from "./nginx-ingress.js";
@@ -148,7 +147,7 @@ export async function retireLocal(
   // daemon processes that may have been started without writing a PID.
   if (!daemonStopped) {
     const otherAssistantPids = getKnownPidsFromAssistants(
-      [...loadAllAssistantsAcrossEnvs(), ...loadAllAssistants()].filter(
+      loadAllAssistants().filter(
         (other) =>
           other.assistantId !== name ||
           other.resources?.instanceDir !== resources.instanceDir,

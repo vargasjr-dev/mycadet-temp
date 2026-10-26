@@ -635,9 +635,6 @@ export async function retireDocker(name: string): Promise<void> {
 
   // Future: consider stopping Colima VM when no Docker instances remain.
   // Considerations:
-  // - Use loadAllAssistantsAcrossEnvs() instead of loadAllAssistants() to
-  //   avoid stopping Colima while another CADET_ENVIRONMENT still has a
-  //   running Docker instance.
   // - Track whether Cadet started Colima (vs. the user already had it
   //   running for non-Cadet workloads) \u2014 e.g. via a dedicated Colima
   //   profile (`colima start --profile cadet`) or a sentinel file.

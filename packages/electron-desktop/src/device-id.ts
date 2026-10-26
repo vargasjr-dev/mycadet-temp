@@ -37,8 +37,6 @@ export function getDeviceId(): string {
     return cached;
   }
 
-  // The env-scoped XDG config dir from @mycadet/local-mode, shared with the
-  // CLI and daemon.
   const dir = resolveConfigDir();
   const filePath = join(dir, "device.json");
 

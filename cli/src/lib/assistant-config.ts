@@ -2,13 +2,9 @@ import { randomBytes } from "crypto";
 import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
-import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import {
-  environmentDirectoryName,
-  joinLocalPath,
   readLockfile,
   readRawLockfile,
-  resolveConfigHomes,
   withLockfileLock,
 } from "@mycadet/local-mode";
 import {
@@ -22,13 +18,12 @@ import {
 
 export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 
-import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
-  getDefaultPorts,
-  getLockfilePath,
-  getMultiInstanceDir,
-  getStateDir,
-} from "./environments/paths.js";
+  resolveAssistantsDir,
+  resolveDataDir,
+  resolveLockfilePaths,
+} from "@mycadet/local-mode";
+import { getDefaultPorts } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { probePort } from "./port-probe.js";
 
@@ -69,7 +64,7 @@ export type RootProcessKind = keyof RootProcessRecords;
 export function getLocalInstanceDir(
   resources?: LocalAssistantResources,
 ): string {
-  return resources?.instanceDir ?? getStateDir();
+  return resources?.instanceDir ?? resolveDataDir();
 }
 
 export function getDaemonPidPath(resources?: LocalAssistantResources): string {
@@ -77,7 +72,7 @@ export function getDaemonPidPath(resources?: LocalAssistantResources): string {
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
-  const lockfilePath = getLockfilePath();
+  const lockfilePath = resolveLockfilePaths()[0]!;
   mkdirSync(dirname(lockfilePath), { recursive: true });
   const tmpPath = `${lockfilePath}.${randomBytes(4).toString("hex")}.tmp`;
   try {
@@ -101,7 +96,7 @@ function writeLockfileUnlocked(data: Lockfile): void {
  */
 function withCliLockfileLock<T>(fn: () => T): T {
   const locked = withLockfileLock(
-    [getLockfilePath()],
+    [resolveLockfilePaths()[0]!],
     fn,
   );
   if (!locked.ok) throw new Error(locked.error);
@@ -277,7 +272,7 @@ export function formatAssistantLookupError(
     return `Multiple assistants match '${identifier}': ${matches}. Use the assistant ID to disambiguate.`;
   }
 
-  return `No assistant found with name or ID '${identifier}'.${crossEnvironmentAssistantHint() ?? ""}`;
+  return `No assistant found with name or ID '${identifier}'.`;
 }
 
 export function removeLockfileAssistant(assistantId: string): void {
@@ -298,57 +293,6 @@ export function removeLockfileAssistant(assistantId: string): void {
     }
     writeLockfileUnlocked(data);
   });
-}
-
-/**
- * Per-env lockfile paths for enumerating OTHER environments' lockfiles —
- * the ambient resolvers read the current environment, so a caller walking
- * every seed composes each env's paths from the exported naming primitives.
- * `lockfileDirOverride` on the definition (the curated-test-list seam, and
- * `CADET_LOCKFILE_DIR` lifted by resolve.ts) still wins, matching the
- * ambient resolver's override handling.
- */
-function lockfilePathsForEnv(env: EnvironmentDefinition): string[] {
-  const lockfileDir =
-    env.lockfileDirOverride ?? process.env.CADET_LOCKFILE_DIR?.trim();
-  if (lockfileDir) {
-    return [joinLocalPath(lockfileDir, "lockfile.json")];
-  }
-  const configDirs = resolveConfigHomes().map((home) =>
-    joinLocalPath(home, environmentDirectoryName(env.name)),
-  );
-  const canonical = joinLocalPath(configDirs[0]!, "lockfile.json");
-  if (env.name === "production" || process.platform !== "win32") {
-    return [canonical];
-  }
-  return [canonical, joinLocalPath(configDirs.at(-1)!, "lockfile.json")];
-}
-
-/**
- * Load assistant entries from every known environment's lockfile.
- *
- * Each {@link SEEDS} entry has its own on-host data layout (config dir,
- * lockfile path, data dir). A running assistant from `dev` is invisible to
- * `loadAllAssistants()` when the current env is `local`, but its host
- * processes (daemon/gateway/qdrant) still show up in `ps ax`. The orphan
- * detector and `cadet clean` need the union of all envs' entries to avoid
- * misclassifying — or worse, killing — another env's running services.
- *
- * Optional `envs` override is provided for testability so call sites can
- * inject a curated env list with `lockfileDirOverride` set, without having
- * to manipulate the global SEEDS table or process.env.
- */
-export function loadAllAssistantsAcrossEnvs(
-  envs?: EnvironmentDefinition[],
-): LockfileAssistant[] {
-  const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
-  const all: LockfileAssistant[] = [];
-  for (const env of envList) {
-    all.push(
-      ...parseLockfile(readRawLockfile(lockfilePathsForEnv(env))).assistants,
-    );
-  }
-  return all;
 }
 
 export function getActiveAssistant(): string | null {
@@ -422,7 +366,7 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
 
     if (all.length === 0) {
       console.error(
-        `No assistant found. Run 'cadet hatch' first.${crossEnvironmentAssistantHint() ?? ""}`,
+        `No assistant found. Run 'cadet hatch' first.`,
       );
     } else {
       console.error(
@@ -504,7 +448,7 @@ async function findAvailablePort(
 export async function allocateLocalResources(
   instanceName: string,
 ): Promise<LocalAssistantResources> {
-  const instanceDir = join(getMultiInstanceDir(), instanceName);
+  const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
   // Collect ports already assigned to other local instances in the lockfile.

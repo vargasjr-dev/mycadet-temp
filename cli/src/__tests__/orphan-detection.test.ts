@@ -15,7 +15,7 @@ import {
   getKnownPidsFromAssistants,
 } from "../lib/orphan-detection.js";
 import {
-  loadAllAssistantsAcrossEnvs,
+  loadAllAssistants,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 
@@ -139,22 +139,17 @@ describe("getKnownPidsFromAssistants", () => {
   });
 });
 
-describe("loadAllAssistantsAcrossEnvs", () => {
-  function makeEnv(name: string, lockfileDir: string): EnvironmentDefinition {
-    return {
-      name,
-      cloudUrl: "https://example.invalid",
-      webUrl: "https://example.invalid",
-      lockfileDirOverride: lockfileDir,
-    };
+describe("loadAllAssistants", () => {
+  // The loader reads the ambient lockfile; steer it at a temp dir per case.
+  function steerLockfile(lockfileDir: string): void {
+    process.env.CADET_LOCKFILE_DIR = lockfileDir;
   }
 
-  test("aggregates entries from every provided environment's lockfile", () => {
-    const envADir = mkdtempSync(join(testDir, "envA-"));
-    const envBDir = mkdtempSync(join(testDir, "envB-"));
+  test("parses the ambient lockfile's entries", () => {
+    const envDir = mkdtempSync(join(testDir, "envA-"));
 
     writeFileSync(
-      join(envADir, "lockfile.json"),
+      join(envDir, "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -162,13 +157,6 @@ describe("loadAllAssistantsAcrossEnvs", () => {
             runtimeUrl: "http://localhost:7821",
             cloud: "local",
           },
-        ],
-      }),
-    );
-    writeFileSync(
-      join(envBDir, "lockfile.json"),
-      JSON.stringify({
-        assistants: [
           {
             assistantId: "beta",
             runtimeUrl: "http://localhost:18100",
@@ -178,25 +166,23 @@ describe("loadAllAssistantsAcrossEnvs", () => {
         ],
       }),
     );
-
-    const all = loadAllAssistantsAcrossEnvs([
-      makeEnv("envA", envADir),
-      makeEnv("envB", envBDir),
-    ]);
+    steerLockfile(envDir);
+    const all = loadAllAssistants();
     const ids = all.map((e) => e.assistantId).sort();
     expect(ids).toEqual(["alpha", "beta"]);
   });
-
-  test("returns empty list when no envs have lockfiles", () => {
+  test("returns empty list when the lockfile is missing", () => {
     const envDir = mkdtempSync(join(testDir, "empty-"));
-    const all = loadAllAssistantsAcrossEnvs([makeEnv("missing", envDir)]);
+    steerLockfile(envDir);
+    const all = loadAllAssistants();
     expect(all).toEqual([]);
   });
 
   test("skips malformed JSON without throwing", () => {
     const envDir = mkdtempSync(join(testDir, "malformed-"));
     writeFileSync(join(envDir, "lockfile.json"), "{not json");
-    const all = loadAllAssistantsAcrossEnvs([makeEnv("bad", envDir)]);
+    steerLockfile(envDir);
+    const all = loadAllAssistants();
     expect(all).toEqual([]);
   });
 
@@ -216,7 +202,8 @@ describe("loadAllAssistantsAcrossEnvs", () => {
         ],
       }),
     );
-    const all = loadAllAssistantsAcrossEnvs([makeEnv("partial", envDir)]);
+    steerLockfile(envDir);
+    const all = loadAllAssistants();
     expect(all.map((e) => e.assistantId)).toEqual(["no-url", "good"]);
   });
 
@@ -251,7 +238,8 @@ describe("loadAllAssistantsAcrossEnvs", () => {
       }),
     );
 
-    const devEntries = loadAllAssistantsAcrossEnvs([makeEnv("dev", devDir)]);
+    steerLockfile(devDir);
+    const devEntries = loadAllAssistants();
     expect(devEntries).toHaveLength(1);
 
     const knownPids = getKnownPidsFromAssistants(devEntries);

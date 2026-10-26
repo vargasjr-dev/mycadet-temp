@@ -14,12 +14,12 @@ import { randomUUID } from "crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
-import { getConfigDir } from "./environments/paths.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 
 let cached: string | undefined;
 
 function resolveDeviceIdPaths(): { dir: string; file: string } {
-  const dir = getConfigDir();
+  const dir = resolveConfigDir();
   return { dir, file: join(dir, "device.json") };
 }
 

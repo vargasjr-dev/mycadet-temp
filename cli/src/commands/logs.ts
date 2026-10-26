@@ -11,7 +11,7 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
-import { getLogDir } from "../lib/xdg-log";
+import { resolveLogDir } from "@mycadet/local-mode";
 import { execOutput } from "../lib/step-runner";
 
 // ── Arg parsing ─────────────────────────────────────────────────
@@ -172,7 +172,7 @@ async function showLocalLogs(
   entry: LockfileAssistant,
   opts: LogsArgs,
 ): Promise<void> {
-  const logDir = getLogDir();
+  const logDir = resolveLogDir();
   const logFile = join(logDir, "hatch.log");
 
   if (!existsSync(logFile)) {

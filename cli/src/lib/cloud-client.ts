@@ -14,7 +14,7 @@ import { join, dirname } from "path";
 import { cliCommand } from "./cli-name.js";
 
 import { getLockfilePlatformBaseUrl } from "./assistant-config.js";
-import { getConfigDir, getConfigDirs } from "./environments/paths.js";
+import { resolveConfigDir, resolveConfigDirPaths } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
@@ -28,12 +28,7 @@ const InProgressResponseSchema = z.object({
 });
 
 function getCloudTokenPath(): string {
-  return join(getConfigDir(), "cloud-token");
-}
-
-/** The pre-rename token filename, read as a fallback for existing installs. */
-function getLegacyCloudTokenPath(): string {
-  return join(getConfigDir(), "platform-token");
+  return join(resolveConfigDir(), "cloud-token");
 }
 
 /**
@@ -74,13 +69,11 @@ export function getWebUrl(): string {
 }
 
 export function readCloudToken(): string | null {
-  for (const dir of getConfigDirs()) {
-    for (const name of ["cloud-token", "platform-token"]) {
-      try {
-        return readFileSync(join(dir, name), "utf-8").trim();
-      } catch {
-        // Try the next compatible location, then the legacy name.
-      }
+  for (const dir of resolveConfigDirPaths()) {
+    try {
+      return readFileSync(join(dir, "cloud-token"), "utf-8").trim();
+    } catch {
+      // Try the next compatible location.
     }
   }
   return null;
@@ -97,7 +90,7 @@ export function saveCloudToken(token: string): void {
 }
 
 export function clearCloudToken(): void {
-  for (const path of [getCloudTokenPath(), getLegacyCloudTokenPath()]) {
+  for (const path of [getCloudTokenPath()]) {
     try {
       unlinkSync(path);
     } catch {

@@ -4,7 +4,7 @@ import { join } from "path";
 import {
   getDaemonPidPath,
   getLocalInstanceDir,
-  loadAllAssistantsAcrossEnvs,
+  loadAllAssistants,
   type LockfileAssistant,
 } from "./assistant-config.js";
 import { execOutput } from "./step-runner";
@@ -148,7 +148,7 @@ export interface DetectOrphansOptions {
   /**
    * Set of PIDs to treat as known and exclude from the orphan list. When
    * omitted, defaults to the union of every env's recorded assistant PIDs
-   * via {@link loadAllAssistantsAcrossEnvs} +
+   * via {@link loadAllAssistants} +
    * {@link getKnownPidsFromAssistants}. Tests can inject an explicit set to
    * avoid touching the real on-host lockfiles.
    */
@@ -189,7 +189,7 @@ export async function detectOrphanedProcesses(
   // another env's healthy services as orphans.
   const knownPids =
     options.excludePids ??
-    getKnownPidsFromAssistants(loadAllAssistantsAcrossEnvs());
+    getKnownPidsFromAssistants(loadAllAssistants());
 
   // Process table scan — discover orphaned processes by scanning the OS
   // process table rather than reading PID files from the workspace.

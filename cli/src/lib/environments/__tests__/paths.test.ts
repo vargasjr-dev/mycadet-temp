@@ -3,7 +3,7 @@ import { join } from "path";
 
 const TEST_HOME = "/test/home";
 
-// Mock homedir() so the helpers return predictable paths regardless of who
+// Mock homedir() so the resolvers return predictable paths regardless of who
 // is running the test. `os.homedir()` is read once per process on Bun/Node
 // and does not reflect later $HOME changes, so setting process.env.HOME at
 // test time does not work — module mocking is the recommended pattern.
@@ -27,18 +27,18 @@ afterAll(() => {
 // Imports that depend on the mocked `os` module must come after the
 // mock.module() calls above.
 const {
-  getConfigDir,
-  getConfigDirs,
   getDefaultPorts,
   getInputHistoryPath,
-  getLockfilePath,
-  getLockfilePaths,
-  getMultiInstanceDir,
   getSharedStateDir,
 } = await import("../paths.js");
-const { resolveConfigDir, resolveEnvironmentName } = await import(
-  "@mycadet/local-mode"
-);
+const {
+  resolveAssistantsDir,
+  resolveConfigDir,
+  resolveConfigDirPaths,
+  resolveDataDir,
+  resolveEnvironmentName,
+  resolveLockfilePaths,
+} = await import("@mycadet/local-mode");
 type EnvironmentDefinition =
   import("@mycadet/environments").EnvironmentDefinition;
 
@@ -79,14 +79,7 @@ describe("path helpers", () => {
     }
   });
 
-  describe("getConfigDir", () => {
-    test("agrees with local-mode's ambient resolver", () => {
-      // The helpers are thin aliases now; the property that matters is that
-      // the CLI's own resolver and the shared path layer name the same dir.
-      process.env.CADET_ENVIRONMENT = "dev";
-      expect(getConfigDir()).toBe(resolveConfigDir());
-    });
-
+  describe("resolveConfigDir", () => {
     test("Windows keeps XDG config as a legacy read location", () => {
       const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
       try {
@@ -97,7 +90,7 @@ describe("path helpers", () => {
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
         process.env.CADET_ENVIRONMENT = "dev";
-        expect(getConfigDirs()).toEqual([
+        expect(resolveConfigDirPaths()).toEqual([
           "C:\\AppData\\cadet-dev",
           "D:\\Legacy\\cadet-dev",
         ]);
@@ -107,57 +100,57 @@ describe("path helpers", () => {
     });
 
     test("production returns ~/.config/cadet/", () => {
-      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet"));
+      process.env.CADET_ENVIRONMENT = "production";
+      expect(resolveConfigDir()).toBe(join(TEST_HOME, ".config", "cadet"));
     });
 
     test("dev returns ~/.config/cadet-dev/", () => {
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
+      expect(resolveConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
     });
 
     test("respects XDG_CONFIG_HOME", () => {
       process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_CONFIG_HOME = "/custom/config";
-      expect(getConfigDir()).toBe("/custom/config/cadet-dev");
+      expect(resolveConfigDir()).toBe("/custom/config/cadet-dev");
       process.env.CADET_ENVIRONMENT = "production";
-      expect(getConfigDir()).toBe("/custom/config/cadet");
+      expect(resolveConfigDir()).toBe("/custom/config/cadet");
     });
 
     test("dev resolves even against a stale persisted default", () => {
       // The regression behind #562: a released -dev. install must not read
       // production's dirs just because an old CLI persisted a default.
+      process.env.CADET_ENVIRONMENT = "production";
       expect(resolveEnvironmentName()).toBe("production");
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
+      expect(resolveConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
     });
   });
 
-  describe("getLockfilePath", () => {
+  describe("resolveLockfilePaths", () => {
     test("production returns the config-dir lockfile.json", () => {
       process.env.CADET_ENVIRONMENT = "production";
-      expect(getLockfilePath()).toBe(
+      expect(resolveLockfilePaths()[0]!).toBe(
         join(TEST_HOME, ".config", "cadet", "lockfile.json"),
       );
     });
 
     test("dev returns ~/.config/cadet-dev/lockfile.json", () => {
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(getLockfilePath()).toBe(
+      expect(resolveLockfilePaths()[0]!).toBe(
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       );
     });
 
     test("CADET_LOCKFILE_DIR overrides the config dir", () => {
       process.env.CADET_LOCKFILE_DIR = "/tmp/lock";
-      expect(getLockfilePath()).toBe("/tmp/lock/lockfile.json");
-      expect(getLockfilePaths()).toEqual(["/tmp/lock/lockfile.json"]);
+      expect(resolveLockfilePaths()[0]!).toBe("/tmp/lock/lockfile.json");
+      expect(resolveLockfilePaths()).toEqual(["/tmp/lock/lockfile.json"]);
     });
-  });
 
-  describe("getLockfilePaths", () => {
     test("returns a single canonical path outside Windows", () => {
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(getLockfilePaths()).toEqual([
+      expect(resolveLockfilePaths()).toEqual([
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       ]);
     });
@@ -172,7 +165,7 @@ describe("path helpers", () => {
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
         process.env.CADET_ENVIRONMENT = "dev";
-        expect(getLockfilePaths()).toEqual([
+        expect(resolveLockfilePaths()).toEqual([
           "C:\\AppData\\cadet-dev\\lockfile.json",
           "D:\\Legacy\\cadet-dev\\lockfile.json",
         ]);
@@ -191,7 +184,7 @@ describe("path helpers", () => {
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
         process.env.CADET_ENVIRONMENT = "production";
-        expect(getLockfilePaths()).toEqual([
+        expect(resolveLockfilePaths()).toEqual([
           "C:\\AppData\\cadet\\lockfile.json",
         ]);
       } finally {
@@ -200,10 +193,10 @@ describe("path helpers", () => {
     });
   });
 
-  describe("getMultiInstanceDir", () => {
+  describe("resolveAssistantsDir", () => {
     test("dev uses ~/.local/share/cadet-dev/assistants/", () => {
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(getMultiInstanceDir()).toBe(
+      expect(resolveAssistantsDir()).toBe(
         join(TEST_HOME, ".local", "share", "cadet-dev", "assistants"),
       );
     });
@@ -211,7 +204,7 @@ describe("path helpers", () => {
     test("respects XDG_DATA_HOME", () => {
       process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = "/custom/data";
-      expect(getMultiInstanceDir()).toBe(
+      expect(resolveAssistantsDir()).toBe(
         "/custom/data/cadet-dev/assistants",
       );
     });

@@ -26,7 +26,7 @@ import {
   loadRawConfig,
   saveIngressUrl,
 } from "../ingress-config.js";
-import { getConfigDir } from "../environments/paths.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -339,7 +339,7 @@ type NgrokTunnelDef = z.infer<typeof NgrokTunnelDefSchema>;
  * longer records one.
  */
 export function ngrokConfigPath(): string {
-  return join(getConfigDir(), "tunnels", "ngrok.yaml");
+  return join(resolveConfigDir(), "tunnels", "ngrok.yaml");
 }
 
 function readNgrokConfigFile(): NgrokConfigFile {
@@ -407,7 +407,7 @@ type NgrokAgentConfigFile = z.infer<typeof NgrokAgentConfigFileSchema>;
  */
 export function ngrokAgentConfigPath(): string {
   return join(
-    getConfigDir(),
+    resolveConfigDir(),
     "tunnels",
     "ngrok-agent.yaml",
   );

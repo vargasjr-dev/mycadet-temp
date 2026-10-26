@@ -15,7 +15,6 @@ import {
   recreateDockerContainers,
   wakeContainers,
 } from "../lib/docker.js";
-import { seedGuardianTokenFromSiblingEnv } from "../lib/guardian-token.js";
 import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
@@ -462,10 +461,6 @@ export async function wakeAssistant(
   // app built under a different CADET_ENVIRONMENT can't find a bearer and
   // cascades into 401 → auth-rate-limit → 429. A sibling env copy is cheap
   // and strictly additive.
-  if (seedGuardianTokenFromSiblingEnv(entry.assistantId)) {
-    console.log("   Seeded guardian token from sibling environment.");
-  }
-
   // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.

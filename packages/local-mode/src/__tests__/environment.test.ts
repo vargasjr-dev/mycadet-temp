@@ -126,20 +126,42 @@ describe("resolveEnvironmentName", () => {
     expect(resolveEnvironmentName()).toBe("staging");
   });
 
-  test("falls back to the persisted default when the env var is unset", () => {
-    // In this workspace the package version is the plain checkout 0.0.1,
-    // which pins nothing — the persisted default decides.
+  test("falls back to the persisted default when the version pins nothing", () => {
+    // Simulate an installed stable copy: no define, plain version — the
+    // persisted default decides.
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+      "0.0.1";
     persistDefault("dev");
     expect(resolveEnvironmentName()).toBe("dev");
   });
 
+  test("a source checkout's -local stamp pins the local environment", () => {
+    // This file runs from the workspace: the resolver's module path is a
+    // git checkout, so the version stamps `-local.` — stronger than any
+    // persisted default. Drop any define a prior test injected.
+    const g = globalThis as { __CADET_OWN_VERSION__?: string };
+    const saved = g.__CADET_OWN_VERSION__;
+    delete g.__CADET_OWN_VERSION__;
+    try {
+      persistDefault("dev");
+      expect(resolveEnvironmentName()).toBe("local");
+    } finally {
+      if (saved !== undefined) g.__CADET_OWN_VERSION__ = saved;
+    }
+  });
+
   test("falls back to production when nothing pins an environment", () => {
+    // Stable installed copy: plain version, no persisted default.
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+      "0.0.1";
     expect(resolveEnvironmentName()).toBe("production");
   });
 });
 
 describe("path resolvers honor the persisted default", () => {
   test("resolveLockfilePaths points at the persisted environment", () => {
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+      "0.0.1";
     persistDefault("dev");
     expect(resolveLockfilePaths()).toEqual([
       path.join(configHome, "cadet-dev", "lockfile.json"),
@@ -147,6 +169,8 @@ describe("path resolvers honor the persisted default", () => {
   });
 
   test("resolveConfigDir points at the persisted environment", () => {
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+      "0.0.1";
     persistDefault("dev");
     expect(resolveConfigDir()).toBe(path.join(configHome, "cadet-dev"));
   });

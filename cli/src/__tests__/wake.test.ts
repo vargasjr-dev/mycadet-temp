@@ -45,9 +45,6 @@ const resolveTargetAssistantMock =
 const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
-const loadAllAssistantsAcrossEnvsMock = mock<
-  typeof assistantConfig.loadAllAssistantsAcrossEnvs
->(() => []);
 const saveLockfileAssistantMock = mock<
   typeof assistantConfig.saveLockfileAssistant
 >(() => {});
@@ -59,7 +56,6 @@ mock.module("../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
   resolveTargetAssistant: resolveTargetAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  loadAllAssistantsAcrossEnvs: loadAllAssistantsAcrossEnvsMock,
   saveLockfileAssistant: saveLockfileAssistantMock,
   getDaemonPidPath: getDaemonPidPathMock,
 }));
@@ -79,9 +75,6 @@ mock.module("../lib/docker.js", () => ({
   recreateDockerContainers: recreateDockerContainersMock,
 }));
 
-const seedGuardianTokenFromSiblingEnvMock = mock<
-  typeof guardianToken.seedGuardianTokenFromSiblingEnv
->(() => false);
 // Default: a token exists, so the re-provision recovery path is skipped. Tests
 // that exercise recovery override loadGuardianToken to return null.
 const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(() =>
@@ -96,7 +89,6 @@ const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
 
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
-  seedGuardianTokenFromSiblingEnv: seedGuardianTokenFromSiblingEnvMock,
   loadGuardianToken: loadGuardianTokenMock,
   resetGuardianBootstrap: resetGuardianBootstrapMock,
   leaseGuardianToken: leaseGuardianTokenMock,
@@ -274,8 +266,6 @@ beforeEach(() => {
   resolveTargetAssistantMock.mockReturnValue(localEntry);
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([]);
-  loadAllAssistantsAcrossEnvsMock.mockReset();
-  loadAllAssistantsAcrossEnvsMock.mockReturnValue([]);
   saveLockfileAssistantMock.mockReset();
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
@@ -317,8 +307,6 @@ beforeEach(() => {
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   waitForDaemonMigrationsReadyMock.mockResolvedValue("ready");
-  seedGuardianTokenFromSiblingEnvMock.mockReset();
-  seedGuardianTokenFromSiblingEnvMock.mockReturnValue(false);
   loadGuardianTokenMock.mockReset();
   loadGuardianTokenMock.mockReturnValue(
     makeGuardianTokenData({ accessToken: "existing" }),
@@ -1006,40 +994,6 @@ describe("cadet wake — app server restore", () => {
         workspaceDir: defaultWorkspace,
         gatewayPort: 7930,
       });
-    } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
-    }
-  });
-
-  test("a docker wake respects an ingress claim from another environment", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      runtimeUrl: "http://localhost:7930",
-      cloud: "docker",
-    });
-    loadAllAssistantsAcrossEnvsMock.mockReturnValue([
-      {
-        assistantId: "docker-2",
-        runtimeUrl: "http://localhost:8030",
-        cloud: "docker",
-      },
-    ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
-    isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
-
-    try {
-      await wake();
-
-      expect(ensureAppServerMock).not.toHaveBeenCalled();
     } finally {
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;

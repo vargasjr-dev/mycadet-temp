@@ -20,7 +20,7 @@ import {
   getCliBinPath,
 } from "./cli-installer";
 import { handle } from "./ipc";
-import { refreshLockfileNow } from "./lockfile-watcher.client";
+import { refreshLockfileNow } from "@mycadet/electron-desktop/lockfile-watcher";
 import { getSessionToken } from "./session-token-store.client";
 
 export const resolveCliInvocation = async (): Promise<CliInvocation> => {

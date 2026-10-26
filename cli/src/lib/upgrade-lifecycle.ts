@@ -23,7 +23,7 @@ import {
   sleepContainers,
   wakeContainers,
 } from "./docker.js";
-import { getStateDir } from "./environments/paths.js";
+import { resolveDataDir } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
@@ -48,7 +48,7 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 /** XDG-compliant directory for upgrade failure logs, scoped to the current environment. */
 function getUpgradeLogsDir(): string {
-  return join(getStateDir(), "upgrade-logs");
+  return join(resolveDataDir(), "upgrade-logs");
 }
 
 /**
