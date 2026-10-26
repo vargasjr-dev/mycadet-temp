@@ -20,7 +20,6 @@ import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-
 
 import { extractFlag } from "../../lib/arg-utils.js";
 import { getLockfilePaths } from "../../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../../lib/environments/resolve.js";
 import { STALE_CLI_UPDATE_HINT } from "../../lib/stale-cli-hint.js";
 
 function printUsage(): void {
@@ -167,7 +166,7 @@ export async function connectImport(): Promise<void> {
     process.exit(1);
   }
 
-  const lockfilePaths = getLockfilePaths(getCurrentEnvironment());
+  const lockfilePaths = getLockfilePaths();
   const configDir = resolveConfigDir();
 
   // Refuse a colliding --name BEFORE anything is exchanged. The device code is

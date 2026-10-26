@@ -17,9 +17,12 @@ import { dirname, join } from "path";
 
 import { SEEDS } from "@mycadet/environments";
 import {
+  environmentDirectoryName,
   guardianTokenPath,
   isConfidentialRefreshUrl,
+  joinLocalPath,
   resolveConfigDir,
+  resolveConfigHomes,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
@@ -79,7 +82,7 @@ function getGuardianTokenPath(assistantId: string): string {
 }
 
 function getPersistedDeviceIdPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "device-id");
+  return join(getConfigDir(), "device-id");
 }
 
 function hashWithSalt(input: string): string {
@@ -174,7 +177,7 @@ export function computeDeviceId(): string {
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
-  for (const dir of getConfigDirs(getCurrentEnvironment())) {
+  for (const dir of getConfigDirs()) {
     try {
       const raw = readFileSync(guardianTokenPath(dir, assistantId), "utf-8");
       return JSON.parse(raw) as GuardianTokenData;
@@ -717,8 +720,9 @@ export function seedGuardianTokenFromSiblingEnv(assistantId: string): boolean {
   const candidates: { path: string; mtimeMs: number }[] = [];
   for (const env of Object.values(SEEDS)) {
     if (env.name === currentEnvName) continue;
-    const sibling = join(
-      getConfigDir(env),
+    const sibling = joinLocalPath(
+      resolveConfigHomes()[0]!,
+      environmentDirectoryName(env.name),
       "assistants",
       assistantId,
       "guardian-token.json",

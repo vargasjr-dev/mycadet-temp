@@ -17,7 +17,6 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getLockfilePath } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
@@ -80,7 +79,7 @@ const instanceDir = join(testDir, "test-instance");
 
 function writeLockfile(entries: LockfileAssistant[]): void {
   writeFileSync(
-    getLockfilePath(getCurrentEnvironment()),
+    getLockfilePath(),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }

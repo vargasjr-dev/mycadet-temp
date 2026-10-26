@@ -22,15 +22,6 @@ import { resolveConfigDir, resolveEnvironmentName } from "@mycadet/local-mode";
 let cached: string | undefined;
 
 /**
- * Resolve the directory containing device.json: the env-scoped XDG config
- * directory from @mycadet/local-mode (`$XDG_CONFIG_HOME/cadet[-<env>]`),
- * shared with the CLI and daemon.
- */
-function resolveDeviceDir(): string {
-  return resolveConfigDir();
-}
-
-/**
  * Get the stable device ID for this machine.
  *
  * Resolution order:
@@ -46,7 +37,9 @@ export function getDeviceId(): string {
     return cached;
   }
 
-  const dir = resolveDeviceDir();
+  // The env-scoped XDG config dir from @mycadet/local-mode, shared with the
+  // CLI and daemon.
+  const dir = resolveConfigDir();
   const filePath = join(dir, "device.json");
 
   // Try to read an existing device.json, keeping the parsed object for

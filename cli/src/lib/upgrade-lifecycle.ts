@@ -24,7 +24,6 @@ import {
   wakeContainers,
 } from "./docker.js";
 import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
@@ -49,7 +48,7 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 /** XDG-compliant directory for upgrade failure logs, scoped to the current environment. */
 function getUpgradeLogsDir(): string {
-  return join(getStateDir(getCurrentEnvironment()), "upgrade-logs");
+  return join(getStateDir(), "upgrade-logs");
 }
 
 /**

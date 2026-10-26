@@ -1,5 +1,6 @@
 import fs from "node:fs";
 
+import { resolveLockfilePaths } from "@mycadet/local-mode";
 import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 /**
@@ -25,7 +26,6 @@ const DEBOUNCE_MS = 100;
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
 let lockfileCandidates: string[] = [];
-let resolveCandidates: () => readonly string[] = () => [];
 let cachedLockfile: Lockfile = EMPTY_LOCKFILE;
 let lastMtimeMs = 0;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -35,12 +35,6 @@ const listeners = new Set<LockfileChangeListener>();
 const isAccessDenied = (error: unknown): boolean => {
   const code = (error as NodeJS.ErrnoException).code;
   return code === "EACCES" || code === "EPERM";
-};
-
-export const configureLockfileWatcher = (
-  resolver: () => readonly string[],
-): void => {
-  resolveCandidates = resolver;
 };
 
 /**
@@ -186,7 +180,7 @@ export const installLockfileWatcher = (): (() => void) => {
   // Poll only the canonical (first) path: write helpers always target
   // candidates[0], so watching a legacy candidate would miss updates once
   // the canonical file is created.
-  lockfileCandidates = [...resolveCandidates()];
+  lockfileCandidates = [...resolveLockfilePaths()];
 
   // Initial read — synchronous so the tray menu has data from frame one.
   // readAndParse falls back to legacy candidates when the canonical file
@@ -232,5 +226,4 @@ export const __resetForTesting = (): void => {
   cachedLockfile = EMPTY_LOCKFILE;
   lastMtimeMs = 0;
   lockfileCandidates = [];
-  resolveCandidates = () => [];
 };

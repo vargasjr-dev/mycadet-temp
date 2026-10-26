@@ -2,7 +2,6 @@ import { mkdirSync } from "fs";
 import { join, posix, win32 } from "path";
 
 import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 
 function isPathInside(
   parent: string,
@@ -19,7 +18,7 @@ function isPathInside(
 }
 
 export function getRetiredDir(): string {
-  const dir = join(getStateDir(getCurrentEnvironment()), "retired");
+  const dir = join(getStateDir(), "retired");
   mkdirSync(dir, { recursive: true });
   return dir;
 }

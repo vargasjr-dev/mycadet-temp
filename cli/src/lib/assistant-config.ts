@@ -4,8 +4,11 @@ import { dirname, join } from "path";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import {
+  environmentDirectoryName,
+  joinLocalPath,
   readLockfile,
   readRawLockfile,
+  resolveConfigHomes,
   withLockfileLock,
 } from "@mycadet/local-mode";
 import {
@@ -23,7 +26,6 @@ import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
   getDefaultPorts,
   getLockfilePath,
-  getLockfilePaths,
   getMultiInstanceDir,
   getStateDir,
 } from "./environments/paths.js";
@@ -67,7 +69,7 @@ export type RootProcessKind = keyof RootProcessRecords;
 export function getLocalInstanceDir(
   resources?: LocalAssistantResources,
 ): string {
-  return resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
+  return resources?.instanceDir ?? getStateDir();
 }
 
 export function getDaemonPidPath(resources?: LocalAssistantResources): string {
@@ -75,7 +77,7 @@ export function getDaemonPidPath(resources?: LocalAssistantResources): string {
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
-  const lockfilePath = getLockfilePath(getCurrentEnvironment());
+  const lockfilePath = getLockfilePath();
   mkdirSync(dirname(lockfilePath), { recursive: true });
   const tmpPath = `${lockfilePath}.${randomBytes(4).toString("hex")}.tmp`;
   try {
@@ -99,7 +101,7 @@ function writeLockfileUnlocked(data: Lockfile): void {
  */
 function withCliLockfileLock<T>(fn: () => T): T {
   const locked = withLockfileLock(
-    [getLockfilePath(getCurrentEnvironment())],
+    [getLockfilePath()],
     fn,
   );
   if (!locked.ok) throw new Error(locked.error);
@@ -299,6 +301,30 @@ export function removeLockfileAssistant(assistantId: string): void {
 }
 
 /**
+ * Per-env lockfile paths for enumerating OTHER environments' lockfiles —
+ * the ambient resolvers read the current environment, so a caller walking
+ * every seed composes each env's paths from the exported naming primitives.
+ * `lockfileDirOverride` on the definition (the curated-test-list seam, and
+ * `CADET_LOCKFILE_DIR` lifted by resolve.ts) still wins, matching the
+ * ambient resolver's override handling.
+ */
+function lockfilePathsForEnv(env: EnvironmentDefinition): string[] {
+  const lockfileDir =
+    env.lockfileDirOverride ?? process.env.CADET_LOCKFILE_DIR?.trim();
+  if (lockfileDir) {
+    return [joinLocalPath(lockfileDir, "lockfile.json")];
+  }
+  const configDirs = resolveConfigHomes().map((home) =>
+    joinLocalPath(home, environmentDirectoryName(env.name)),
+  );
+  const canonical = joinLocalPath(configDirs[0]!, "lockfile.json");
+  if (env.name === "production" || process.platform !== "win32") {
+    return [canonical];
+  }
+  return [canonical, joinLocalPath(configDirs.at(-1)!, "lockfile.json")];
+}
+
+/**
  * Load assistant entries from every known environment's lockfile.
  *
  * Each {@link SEEDS} entry has its own on-host data layout (config dir,
@@ -319,7 +345,7 @@ export function loadAllAssistantsAcrossEnvs(
   const all: LockfileAssistant[] = [];
   for (const env of envList) {
     all.push(
-      ...parseLockfile(readRawLockfile(getLockfilePaths(env))).assistants,
+      ...parseLockfile(readRawLockfile(lockfilePathsForEnv(env))).assistants,
     );
   }
   return all;
@@ -478,8 +504,7 @@ async function findAvailablePort(
 export async function allocateLocalResources(
   instanceName: string,
 ): Promise<LocalAssistantResources> {
-  const env = getCurrentEnvironment();
-  const instanceDir = join(getMultiInstanceDir(env), instanceName);
+  const instanceDir = join(getMultiInstanceDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
   // Collect ports already assigned to other local instances in the lockfile.
@@ -495,7 +520,7 @@ export async function allocateLocalResources(
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
-  const basePorts = getDefaultPorts(env);
+  const basePorts = getDefaultPorts(getCurrentEnvironment());
   const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
   const gatewayPort = await findAvailablePort(basePorts.gateway, [
     ...reservedPorts,

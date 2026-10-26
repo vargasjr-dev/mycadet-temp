@@ -15,12 +15,11 @@ import { mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 import { getConfigDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 
 let cached: string | undefined;
 
 function resolveDeviceIdPaths(): { dir: string; file: string } {
-  const dir = getConfigDir(getCurrentEnvironment());
+  const dir = getConfigDir();
   return { dir, file: join(dir, "device.json") };
 }
 

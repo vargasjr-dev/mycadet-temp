@@ -808,27 +808,13 @@ jobs:
             rm -rf node_modules
             bun install --filter="./cli"
           fi
-      # bun pm pack bundles the workspace deps listed in bundledDependencies
-      # and rewrites workspace:* to concrete versions; npm pack does neither
-      # for symlinked workspace deps.
-      - name: Strip bundled deps from the manifest
-        run: bun scripts/strip-bundled-deps.mjs cli
-      - name: Stamp bundled deps with the release version
-        run: |
-          VERSION="${{ needs.extract-version.outputs.version }}"
-          for name in $(node -e "console.log(require('./cli/package.json').bundleDependencies.join('\\n'))"); do
-            dir="packages/${name#@mycadet/}"
-            if [ -f "$dir/package.json" ]; then
-              jq --arg v "$VERSION" '.version = $v' "$dir/package.json" > "$dir/package.json.tmp" && mv "$dir/package.json.tmp" "$dir/package.json"
-            fi
-          done
+      # Stamps the release version into the bundled manifests (so the
+      # installed local-mode classifies the production channel), strips the
+      # workspace deps from the CLI manifest, packs, and rewrites the
+      # bundled deps to file: specifiers. The CLI manifest's own version is
+      # left alone so the desync guard below stays meaningful.
       - name: Pack tarball
-        run: |
-          cd cli
-          mkdir -p /tmp/npm-dist
-          bun pm pack --destination /tmp/npm-dist
-          mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
-          bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
+        run: bun scripts/pack-npm-cli.ts --deps-version "${{ needs.extract-version.outputs.version }}" --out /tmp/npm-dist
       - name: Publish package
         run: |
           PKG_NAME=$(node -p "require('./cli/package.json').name")

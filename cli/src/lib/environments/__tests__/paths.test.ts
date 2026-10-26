@@ -1,12 +1,4 @@
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  mock,
-  test,
-} from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { join } from "path";
 
 const TEST_HOME = "/test/home";
@@ -14,8 +6,7 @@ const TEST_HOME = "/test/home";
 // Mock homedir() so the helpers return predictable paths regardless of who
 // is running the test. `os.homedir()` is read once per process on Bun/Node
 // and does not reflect later $HOME changes, so setting process.env.HOME at
-// test time does not work — module mocking is the recommended pattern (see
-// cli/src/__tests__/multi-local.test.ts).
+// test time does not work — module mocking is the recommended pattern.
 const realOs = await import("node:os");
 mock.module("node:os", () => ({
   ...realOs,
@@ -45,14 +36,11 @@ const {
   getMultiInstanceDir,
   getSharedStateDir,
 } = await import("../paths.js");
+const { resolveConfigDir, resolveEnvironmentName } = await import(
+  "@mycadet/local-mode"
+);
 type EnvironmentDefinition =
   import("@mycadet/environments").EnvironmentDefinition;
-
-const prod: EnvironmentDefinition = {
-  name: "production",
-  cloudUrl: "https://cloud.mycadet.ai",
-  webUrl: "https://mycadet.ai",
-};
 
 const dev: EnvironmentDefinition = {
   name: "dev",
@@ -65,6 +53,9 @@ const XDG_ENV_VARS = [
   "XDG_CONFIG_HOME",
   "XDG_STATE_HOME",
   "APPDATA",
+  "LOCALAPPDATA",
+  "CADET_ENVIRONMENT",
+  "CADET_LOCKFILE_DIR",
 ] as const;
 
 describe("path helpers", () => {
@@ -89,6 +80,13 @@ describe("path helpers", () => {
   });
 
   describe("getConfigDir", () => {
+    test("agrees with local-mode's ambient resolver", () => {
+      // The helpers are thin aliases now; the property that matters is that
+      // the CLI's own resolver and the shared path layer name the same dir.
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getConfigDir()).toBe(resolveConfigDir());
+    });
+
     test("Windows keeps XDG config as a legacy read location", () => {
       const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
       try {
@@ -98,7 +96,8 @@ describe("path helpers", () => {
         });
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
-        expect(getConfigDirs(dev)).toEqual([
+        process.env.CADET_ENVIRONMENT = "dev";
+        expect(getConfigDirs()).toEqual([
           "C:\\AppData\\cadet-dev",
           "D:\\Legacy\\cadet-dev",
         ]);
@@ -108,124 +107,111 @@ describe("path helpers", () => {
     });
 
     test("production returns ~/.config/cadet/", () => {
-      expect(getConfigDir(prod)).toBe(join(TEST_HOME, ".config", "cadet"));
+      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet"));
     });
 
     test("dev returns ~/.config/cadet-dev/", () => {
-      expect(getConfigDir(dev)).toBe(join(TEST_HOME, ".config", "cadet-dev"));
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
     });
 
-    test("respects XDG_CONFIG_HOME for non-prod envs", () => {
+    test("respects XDG_CONFIG_HOME", () => {
+      process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_CONFIG_HOME = "/custom/config";
-      expect(getConfigDir(dev)).toBe("/custom/config/cadet-dev");
+      expect(getConfigDir()).toBe("/custom/config/cadet-dev");
+      process.env.CADET_ENVIRONMENT = "production";
+      expect(getConfigDir()).toBe("/custom/config/cadet");
     });
 
-    test("respects XDG_CONFIG_HOME for production too", () => {
-      // Production's XDG config dir already follows XDG conventions, so the
-      // standard XDG override applies.
-      process.env.XDG_CONFIG_HOME = "/custom/config";
-      expect(getConfigDir(prod)).toBe("/custom/config/cadet");
-    });
-
-    test("respects env.configDirOverride", () => {
-      const env: EnvironmentDefinition = {
-        ...dev,
-        configDirOverride: "/tmp/cfg",
-      };
-      expect(getConfigDir(env)).toBe("/tmp/cfg");
+    test("dev resolves even against a stale persisted default", () => {
+      // The regression behind #562: a released -dev. install must not read
+      // production's dirs just because an old CLI persisted a default.
+      expect(resolveEnvironmentName()).toBe("production");
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getConfigDir()).toBe(join(TEST_HOME, ".config", "cadet-dev"));
     });
   });
 
   describe("getLockfilePath", () => {
     test("production returns the config-dir lockfile.json", () => {
-      expect(getLockfilePath(prod)).toBe(
+      process.env.CADET_ENVIRONMENT = "production";
+      expect(getLockfilePath()).toBe(
         join(TEST_HOME, ".config", "cadet", "lockfile.json"),
       );
     });
 
     test("dev returns ~/.config/cadet-dev/lockfile.json", () => {
-      expect(getLockfilePath(dev)).toBe(
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getLockfilePath()).toBe(
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       );
     });
 
-    test("non-prod respects configDirOverride", () => {
-      const env: EnvironmentDefinition = {
-        ...dev,
-        configDirOverride: "/tmp/cfg",
-      };
-      expect(getLockfilePath(env)).toBe("/tmp/cfg/lockfile.json");
-    });
-
-    test("production respects lockfileDirOverride", () => {
-      const env: EnvironmentDefinition = {
-        ...prod,
-        lockfileDirOverride: "/tmp/lock",
-      };
-      expect(getLockfilePath(env)).toBe("/tmp/lock/lockfile.json");
-    });
-
-    test("non-prod respects lockfileDirOverride (overrides configDir)", () => {
-      const env: EnvironmentDefinition = {
-        ...dev,
-        configDirOverride: "/tmp/cfg",
-        lockfileDirOverride: "/tmp/lock",
-      };
-      expect(getLockfilePath(env)).toBe("/tmp/lock/lockfile.json");
+    test("CADET_LOCKFILE_DIR overrides the config dir", () => {
+      process.env.CADET_LOCKFILE_DIR = "/tmp/lock";
+      expect(getLockfilePath()).toBe("/tmp/lock/lockfile.json");
+      expect(getLockfilePaths()).toEqual(["/tmp/lock/lockfile.json"]);
     });
   });
 
   describe("getLockfilePaths", () => {
-    test("production returns a single canonical path", () => {
-      expect(getLockfilePaths(prod)).toEqual([
-        join(TEST_HOME, ".config", "cadet", "lockfile.json"),
-      ]);
-    });
-
-    test("non-prod returns a single canonical path", () => {
-      expect(getLockfilePaths(dev)).toEqual([
+    test("returns a single canonical path outside Windows", () => {
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getLockfilePaths()).toEqual([
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       ]);
     });
 
-    test("production with lockfileDirOverride applies to the canonical path", () => {
-      const env: EnvironmentDefinition = {
-        ...prod,
-        lockfileDirOverride: "/tmp/lock",
-      };
-      expect(getLockfilePaths(env)).toEqual(["/tmp/lock/lockfile.json"]);
+    test("Windows non-prod keeps the XDG legacy read", () => {
+      const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+      try {
+        Object.defineProperty(process, "platform", {
+          ...descriptor,
+          value: "win32",
+        });
+        process.env.APPDATA = "C:\\AppData";
+        process.env.XDG_CONFIG_HOME = "D:\\Legacy";
+        process.env.CADET_ENVIRONMENT = "dev";
+        expect(getLockfilePaths()).toEqual([
+          "C:\\AppData\\cadet-dev\\lockfile.json",
+          "D:\\Legacy\\cadet-dev\\lockfile.json",
+        ]);
+      } finally {
+        Object.defineProperty(process, "platform", descriptor);
+      }
     });
 
-    test("non-prod with lockfileDirOverride overrides the config dir", () => {
-      const env: EnvironmentDefinition = {
-        ...dev,
-        lockfileDirOverride: "/tmp/lock",
-      };
-      expect(getLockfilePaths(env)).toEqual(["/tmp/lock/lockfile.json"]);
-    });
-
-    test("getLockfilePath returns the first entry from getLockfilePaths", () => {
-      expect(getLockfilePath(prod)).toBe(getLockfilePaths(prod)[0]);
-      expect(getLockfilePath(dev)).toBe(getLockfilePaths(dev)[0]);
+    test("Windows production reads only the canonical path", () => {
+      const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
+      try {
+        Object.defineProperty(process, "platform", {
+          ...descriptor,
+          value: "win32",
+        });
+        process.env.APPDATA = "C:\\AppData";
+        process.env.XDG_CONFIG_HOME = "D:\\Legacy";
+        process.env.CADET_ENVIRONMENT = "production";
+        expect(getLockfilePaths()).toEqual([
+          "C:\\AppData\\cadet\\lockfile.json",
+        ]);
+      } finally {
+        Object.defineProperty(process, "platform", descriptor);
+      }
     });
   });
 
   describe("getMultiInstanceDir", () => {
-    test("production returns ~/.local/share/cadet/assistants", () => {
-      expect(getMultiInstanceDir(prod)).toBe(
-        join(TEST_HOME, ".local", "share", "cadet", "assistants"),
-      );
-    });
-
-    test("dev returns ~/.local/share/cadet-dev/assistants", () => {
-      expect(getMultiInstanceDir(dev)).toBe(
+    test("dev uses ~/.local/share/cadet-dev/assistants/", () => {
+      process.env.CADET_ENVIRONMENT = "dev";
+      expect(getMultiInstanceDir()).toBe(
         join(TEST_HOME, ".local", "share", "cadet-dev", "assistants"),
       );
     });
 
     test("respects XDG_DATA_HOME", () => {
+      process.env.CADET_ENVIRONMENT = "dev";
       process.env.XDG_DATA_HOME = "/custom/data";
-      expect(getMultiInstanceDir(dev)).toBe(
+      expect(getMultiInstanceDir()).toBe(
         "/custom/data/cadet-dev/assistants",
       );
     });
@@ -233,6 +219,10 @@ describe("path helpers", () => {
 
   describe("getSharedStateDir", () => {
     test("is not environment-scoped: ~/.local/state/cadet for every env", () => {
+      expect(getSharedStateDir()).toBe(
+        join(TEST_HOME, ".local", "state", "cadet"),
+      );
+      process.env.CADET_ENVIRONMENT = "production";
       expect(getSharedStateDir()).toBe(
         join(TEST_HOME, ".local", "state", "cadet"),
       );
@@ -245,45 +235,35 @@ describe("path helpers", () => {
 
     test("holds the shared terminal input history file", () => {
       expect(getInputHistoryPath()).toBe(
-        join(getSharedStateDir(), "input-history"),
+        join(TEST_HOME, ".local", "state", "cadet", "input-history"),
       );
     });
   });
 
   describe("getDefaultPorts", () => {
     test("returns production defaults for production", () => {
-      const ports = getDefaultPorts(prod);
-      expect(ports.daemon).toBe(7821);
-      expect(ports.gateway).toBe(7830);
-      expect(ports.qdrant).toBe(6333);
-      expect(ports.ces).toBe(8090);
-      expect(ports.outboundProxy).toBe(8080);
-      expect(ports.tcp).toBe(8765);
-    });
-
-    test("returns base defaults for a bare env with no portsOverride", () => {
-      // Bare env literal (no portsOverride) falls through to DEFAULT_PORTS.
-      // Real non-prod seeds populate portsOverride — see seeds.test cases.
-      expect(getDefaultPorts(dev)).toEqual(getDefaultPorts(prod));
+      const prod: EnvironmentDefinition = {
+        name: "production",
+        cloudUrl: "https://cloud.mycadet.ai",
+        webUrl: "https://mycadet.ai",
+      };
+      expect(getDefaultPorts(prod)).toEqual({
+        daemon: 7821,
+        gateway: 7830,
+        qdrant: 6333,
+        ces: 8090,
+        outboundProxy: 8080,
+        tcp: 8765,
+      });
     });
 
     test("merges env.portsOverride on top of defaults", () => {
-      const env: EnvironmentDefinition = {
+      const customized: EnvironmentDefinition = {
         ...dev,
-        portsOverride: { daemon: 9999, gateway: 9998 },
+        portsOverride: { daemon: 7831 },
       };
-      const ports = getDefaultPorts(env);
-      expect(ports.daemon).toBe(9999);
-      expect(ports.gateway).toBe(9998);
-      expect(ports.qdrant).toBe(6333);
-      expect(ports.ces).toBe(8090);
-    });
-
-    test("returns a fresh object — mutations do not affect future calls", () => {
-      const first = getDefaultPorts(prod);
-      first.daemon = 1;
-      const second = getDefaultPorts(prod);
-      expect(second.daemon).toBe(7821);
+      expect(getDefaultPorts(customized).daemon).toBe(7831);
+      expect(getDefaultPorts(customized).gateway).toBe(7830);
     });
   });
 });

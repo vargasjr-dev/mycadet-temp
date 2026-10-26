@@ -36,7 +36,7 @@ import { isValidReleaseVersion } from "@mycadet/local-mode";
  * flows) land here instead of the retired `~/.cadet` root.
  */
 function defaultCadetRoot(): string {
-  return getStateDir(getCurrentEnvironment());
+  return getStateDir();
 }
 
 /**
@@ -56,7 +56,6 @@ import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
 import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import {
   type DaemonReadiness,
   httpHealthCheck,

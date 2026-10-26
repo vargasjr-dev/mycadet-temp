@@ -11,7 +11,6 @@ import { randomUUID } from "crypto";
 import { join } from "path";
 
 import { getConfigDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 
 export const CLI_INTERFACE_ID = "cli";
 export const WEB_INTERFACE_ID = "web";
@@ -27,7 +26,7 @@ let cached: string | null = null;
 export function getClientId(): string {
   if (cached) return cached;
 
-  const idFile = join(getConfigDir(getCurrentEnvironment()), "client-id");
+  const idFile = join(getConfigDir(), "client-id");
 
   try {
     if (existsSync(idFile)) {
@@ -43,7 +42,7 @@ export function getClientId(): string {
 
   const id = randomUUID();
   try {
-    mkdirSync(getConfigDir(getCurrentEnvironment()), { recursive: true });
+    mkdirSync(getConfigDir(), { recursive: true });
     writeFileSync(idFile, id, "utf-8");
   } catch {
     /* best-effort persist — transient id still works for this session */

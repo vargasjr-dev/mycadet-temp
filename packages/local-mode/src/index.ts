@@ -27,7 +27,7 @@ export {
   resolveLockfilePaths,
   resolveConfigDir,
   resolveConfigDirPaths,
-  resolveRuntimeDir,
+  resolveDataDir,
   resolveLogDir,
   resolveAssistantsDir,
   resolveInstanceDir,

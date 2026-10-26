@@ -20,7 +20,6 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { getConfigDir } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { printInstanceDetails } from "../lib/instance-details.js";
 import {
   authHeaders,
@@ -376,7 +375,7 @@ async function retireInner(): Promise<void> {
   // retired assistant's name.
   if (loadAllAssistants().length === 0) {
     const dockLabelFile = join(
-      getConfigDir(getCurrentEnvironment()),
+      getConfigDir(),
       "dock-display-name",
     );
     if (existsSync(dockLabelFile)) {

@@ -28,12 +28,12 @@ const InProgressResponseSchema = z.object({
 });
 
 function getCloudTokenPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "cloud-token");
+  return join(getConfigDir(), "cloud-token");
 }
 
 /** The pre-rename token filename, read as a fallback for existing installs. */
 function getLegacyCloudTokenPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "platform-token");
+  return join(getConfigDir(), "platform-token");
 }
 
 /**
@@ -74,7 +74,7 @@ export function getWebUrl(): string {
 }
 
 export function readCloudToken(): string | null {
-  for (const dir of getConfigDirs(getCurrentEnvironment())) {
+  for (const dir of getConfigDirs()) {
     for (const name of ["cloud-token", "platform-token"]) {
       try {
         return readFileSync(join(dir, name), "utf-8").trim();

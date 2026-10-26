@@ -19,7 +19,6 @@ import {
   getSharedStateDir,
   getStateDir,
 } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.
@@ -210,7 +209,7 @@ describe("cadet uninstall", () => {
           ],
         }) + "\n",
       );
-      mkdirSync(getConfigDirs(getCurrentEnvironment())[0]!, {
+      mkdirSync(getConfigDirs()[0]!, {
         recursive: true,
       });
 
@@ -237,18 +236,17 @@ describe("cadet uninstall", () => {
   test("--yes deletes the environment's XDG locations and leaves the source checkout alone", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const env = getCurrentEnvironment();
 
       // Pre-create every target the command should delete, using the SAME
       // path helpers so the test stays honest about what they resolve to.
-      const stateDir = getStateDir(env);
+      const stateDir = getStateDir();
       mkdirSync(join(stateDir, "assistants", "some-assistant"), {
         recursive: true,
       });
       mkdirSync(join(stateDir, "retired"), { recursive: true });
-      const configDir = getConfigDirs(env)[0]!;
+      const configDir = getConfigDirs()[0]!;
       mkdirSync(configDir, { recursive: true });
-      const logDir = getLogDir(env);
+      const logDir = getLogDir();
       mkdirSync(logDir, { recursive: true });
       const historyPath = getInputHistoryPath();
       mkdirSync(dirname(historyPath), { recursive: true });
@@ -285,7 +283,7 @@ describe("cadet uninstall", () => {
   test("--yes lists and removes the Cadet executable itself", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const configDir = getConfigDirs(getCurrentEnvironment())[0]!;
+      const configDir = getConfigDirs()[0]!;
       mkdirSync(configDir, { recursive: true });
 
       // A compiled-binary install: process.execPath IS the install, so the

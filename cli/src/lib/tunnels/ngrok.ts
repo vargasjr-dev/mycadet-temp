@@ -27,7 +27,6 @@ import {
   saveIngressUrl,
 } from "../ingress-config.js";
 import { getConfigDir } from "../environments/paths.js";
-import { getCurrentEnvironment } from "../environments/resolve.js";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -340,7 +339,7 @@ type NgrokTunnelDef = z.infer<typeof NgrokTunnelDefSchema>;
  * longer records one.
  */
 export function ngrokConfigPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "tunnels", "ngrok.yaml");
+  return join(getConfigDir(), "tunnels", "ngrok.yaml");
 }
 
 function readNgrokConfigFile(): NgrokConfigFile {
@@ -408,7 +407,7 @@ type NgrokAgentConfigFile = z.infer<typeof NgrokAgentConfigFileSchema>;
  */
 export function ngrokAgentConfigPath(): string {
   return join(
-    getConfigDir(getCurrentEnvironment()),
+    getConfigDir(),
     "tunnels",
     "ngrok-agent.yaml",
   );

@@ -4,11 +4,10 @@ import { join } from "path";
 import { findAssistantByName } from "./assistant-config.js";
 import { createRootBackup, restoreRootBackup } from "./root-backup.js";
 import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 
 /** Default backup directory following XDG convention */
 export function getBackupsDir(): string {
-  return join(getStateDir(getCurrentEnvironment()), "backups");
+  return join(getStateDir(), "backups");
 }
 
 /** Human-readable file size */

@@ -16,7 +16,7 @@ import {
   resolveInstanceDir,
   resolveLockfilePaths,
   resolveLogDir,
-  resolveRuntimeDir,
+  resolveDataDir,
 } from "../config";
 
 let configHome: string;
@@ -179,7 +179,7 @@ describe("Windows path resolution", () => {
     const paths = [
       [defaultEnvironmentFilePath(), "AppData\\Roaming\\cadet\\environment"],
       [resolveConfigDir(), "AppData\\Roaming\\cadet-dev"],
-      [resolveRuntimeDir(), "AppData\\Local\\cadet-dev"],
+      [resolveDataDir(), "AppData\\Local\\cadet-dev"],
       [resolveLogDir(), "AppData\\Local\\cadet-dev\\logs"],
       [
         resolveInstanceDir("assistant-123"),

@@ -14,6 +14,19 @@ import { joinLocalPath, resolveConfigHomes } from "./paths";
 // as @mycadet/cli.
 import { version as packageVersion } from "../package.json";
 
+// Hosts that bundle local-mode without the CLI — the Electron main, the OS
+// clients, the Vite dev middleware — inject the channel version here at
+// BUILD time (their display version is `resolveVersion()`, so a checkout
+// build injects its `-local.` stamp and the bundled resolver classifies the
+// same environment the app advertises). Left undefined, the version comes
+// from this package.json alone: the pipeline stamp on installed copies, the
+// plain checkout 0.0.1 (which pins nothing) when bun-running the source.
+// Never derived from git state at RUNTIME: an installed CLI running inside
+// a user's git repo must not mistake the user's HEAD for a build channel.
+const ownVersion: string =
+  (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
+  packageVersion;
+
 const PRODUCTION_ENVIRONMENT_NAME = "production";
 
 /**
@@ -76,9 +89,11 @@ export function environmentFromVersion(version: string): string | undefined {
  * Resolution order:
  *   1. `CADET_ENVIRONMENT` (explicit override, also inherited by the
  *      hatch/retire child processes the CLI spawns)
- *   2. the release channel stamped into this package's own version —
- *      a released `-dev.` install resolves `dev` even on a machine that
- *      never wrote a persisted default
+ *   2. the release channel this package's own version carries — the
+ *      pipeline stamp on installed copies, the build-time `-local.` stamp
+ *      injected by hosts that bundle this package. A released `-dev.`
+ *      install resolves `dev` even on a machine that never wrote a
+ *      persisted default
  *   3. the persisted default written by pre-version-tied CLIs
  *      (old files are still honored)
  *   4. `production`
@@ -88,13 +103,13 @@ export function environmentFromVersion(version: string): string | undefined {
  * pipeline, not by whatever default an older CLI happened to leave behind.
  * Reading the package's own version (rather than climbing to the CLI's) is
  * what keeps hosts that bundle local-mode without the CLI — the Electron
- * main, the OS clients — safe: their builds inline the workspace 0.0.1,
- * which pins nothing.
+ * main, the OS clients — safe: their builds inject the channel version at
+ * build time, and nothing consults git state at runtime.
  */
 export function resolveEnvironmentName(): string {
   return (
     process.env.CADET_ENVIRONMENT?.trim() ||
-    environmentFromVersion(packageVersion) ||
+    environmentFromVersion(ownVersion) ||
     readDefaultEnvironment() ||
     PRODUCTION_ENVIRONMENT_NAME
   );

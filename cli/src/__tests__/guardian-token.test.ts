@@ -667,7 +667,7 @@ describe("guardianTokenDueForRenewal", () => {
 });
 
 // Drift guard between the guardian-token WRITE path (CLI: getGuardianTokenPath
-// → getConfigDir(getCurrentEnvironment())) and the READ path used by every
+// → getConfigDir()) and the READ path used by every
 // host-seam reader (getGuardianAccessToken → resolveConfigDir(env) from
 // @mycadet/local-mode). A divergence here writes a freshly leased token where
 // the connect can't read it, bricking local-assistant connect. saveGuardianToken
@@ -697,7 +697,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
   // The CLI's own resolver and the shared @mycadet/local-mode resolver must
   // agree on the config dir for every environment source.
   const expectResolversAgree = () => {
-    expect(getConfigDir(getCurrentEnvironment())).toBe(
+    expect(getConfigDir()).toBe(
       resolveConfigDir(),
     );
   };

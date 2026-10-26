@@ -5,6 +5,7 @@ import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import { SHARED_DESKTOP_INLINE_DEPS } from "../../packages/electron-desktop/src/inline-deps";
 
 import { resolveShortBuildCommitSha } from "./scripts/build-metadata";
+import { resolveVersion } from "../../packages/shared/version";
 
 // Reference: https://electron-vite.org/config/
 //
@@ -33,6 +34,10 @@ const BUILD_DEFINES = {
   __CADET_ENVIRONMENT__: JSON.stringify(
     process.env.CADET_ENVIRONMENT || "local",
   ),
+  // The channel version the bundled @mycadet/local-mode resolver classifies —
+  // resolveVersion() stamps checkouts `-local.`, so a local build's bundled
+  // resolver agrees with the baked __CADET_ENVIRONMENT__ above.
+  __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
       process.env.CADET_ENABLE_CHROME_DEVTOOLS === "1",

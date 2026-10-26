@@ -64,15 +64,11 @@ export function resolveConfigDirPaths(): string[] {
   );
 }
 
-function resolveDataDir(): string {
+export function resolveDataDir(): string {
   return joinLocalPath(
     resolveDataHome(),
     environmentDirectoryName(resolveEnvironmentName()),
   );
-}
-
-export function resolveRuntimeDir(): string {
-  return resolveDataDir();
 }
 
 export function resolveLogDir(): string {

@@ -8,7 +8,6 @@ import type {
 import { installConnectivityProbe } from "@mycadet/electron-desktop/connectivity-probe";
 import { installIdentityIpc } from "@mycadet/electron-desktop/identity";
 import {
-  configureLockfileWatcher,
   installLockfileWatcher,
 } from "@mycadet/electron-desktop/lockfile-watcher";
 import { installPowerEvents } from "@mycadet/electron-desktop/power-events";
@@ -17,7 +16,6 @@ import {
   installConnectivityIpc,
   installStatusIpc,
 } from "@mycadet/electron-desktop/status";
-import { resolveLockfilePaths } from "@mycadet/local-mode";
 
 import { handle, on } from "../ipc.client";
 import log from "../logger";
@@ -33,7 +31,6 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
     installStatusIpc();
     const retryProbe = installConnectivityProbe();
     installConnectivityIpc(retryProbe);
-    configureLockfileWatcher(() => resolveLockfilePaths());
     const stopLockfileWatcher = installLockfileWatcher();
     app.once("before-quit", stopLockfileWatcher);
     installLinuxTray();

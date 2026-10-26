@@ -184,18 +184,18 @@ function selfDelete(): void {
   }
 }
 
-function collectDeleteTargets(env = getCurrentEnvironment()): DeleteTarget[] {
+function collectDeleteTargets(): DeleteTarget[] {
   const targets: DeleteTarget[] = [
     {
-      path: getStateDir(env),
+      path: getStateDir(),
       description:
         "assistant state, retired archives, and the assistants it holds",
     },
-    ...getConfigDirs(env).map((dir) => ({
+    ...getConfigDirs().map((dir) => ({
       path: dir,
       description: "config and lockfile",
     })),
-    { path: getLogDir(env), description: "logs" },
+    { path: getLogDir(), description: "logs" },
     // Not environment-scoped: deleting it affects every cadet CLI on the
     // machine — called out in the prompt, not hidden.
     {
@@ -238,7 +238,7 @@ export const uninstall = Object.assign(
     const env = getCurrentEnvironment();
     const envLabel = env.name ?? "production";
     const existing = loadAllAssistants();
-    const targets = collectDeleteTargets(env);
+    const targets = collectDeleteTargets();
     const selfTarget = resolveSelfDeleteTarget();
 
     console.log(

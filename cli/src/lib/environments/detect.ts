@@ -1,8 +1,12 @@
 import { readdirSync } from "fs";
 
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
+import {
+  environmentDirectoryName,
+  joinLocalPath,
+  resolveDataHome,
+} from "@mycadet/local-mode";
 
-import { getMultiInstanceDir } from "./paths.js";
 import { getCurrentEnvironment } from "./resolve.js";
 
 /**
@@ -11,7 +15,7 @@ import { getCurrentEnvironment } from "./resolve.js";
  * subdirectory.
  *
  * Each environment has its own on-host data layout — see
- * {@link getMultiInstanceDir}. A user who hatched via a dev/staging desktop
+ * {@link multiInstanceDirFor}. A user who hatched via a dev/staging desktop
  * app but runs the production npm CLI (or vice versa) targets a different
  * layout than the app did, so the assistant the app created is invisible to
  * this CLI. This cheap filesystem scan surfaces that split so callers can
@@ -21,6 +25,14 @@ import { getCurrentEnvironment } from "./resolve.js";
  * discoverable assistants, so it is skipped. Returns an empty array on any
  * error.
  */
+function multiInstanceDirFor(envName: string): string {
+  return joinLocalPath(
+    resolveDataHome(),
+    environmentDirectoryName(envName),
+    "assistants",
+  );
+}
+
 export function detectOtherEnvironmentAssistants(
   currentEnv: EnvironmentDefinition,
 ): string[] {
@@ -30,7 +42,7 @@ export function detectOtherEnvironmentAssistants(
       continue;
     }
     try {
-      const hasAssistant = readdirSync(getMultiInstanceDir(env), {
+      const hasAssistant = readdirSync(multiInstanceDirFor(env.name), {
         withFileTypes: true,
       }).some((dirent) => dirent.isDirectory());
       if (hasAssistant) {

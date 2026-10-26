@@ -3,10 +3,12 @@ import { join } from "path";
 
 import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
 import {
-  environmentDirectoryName,
-  joinLocalPath,
-  resolveConfigHomes,
-  resolveDataHome,
+  resolveAssistantsDir,
+  resolveConfigDir,
+  resolveConfigDirPaths,
+  resolveDataDir,
+  resolveLockfilePaths,
+  resolveLogDir,
 } from "@mycadet/local-mode";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
@@ -19,58 +21,38 @@ const DEFAULT_PORTS: Readonly<PortMap> = {
 };
 
 /**
- * Config directory for an environment.
+ * Config directory for the current environment.
  * Production preserves the existing `~/.config/cadet/` location;
  * non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/`.
  */
-export function getConfigDir(env: EnvironmentDefinition): string {
-  return getConfigDirs(env)[0]!;
+export function getConfigDir(): string {
+  return resolveConfigDir();
 }
 
-export function getConfigDirs(env: EnvironmentDefinition): string[] {
-  if (env.configDirOverride) {
-    return [env.configDirOverride];
-  }
-  return resolveConfigHomes().map((home) =>
-    joinLocalPath(home, environmentDirectoryName(env.name)),
-  );
+export function getConfigDirs(): string[] {
+  return resolveConfigDirPaths();
 }
 
-export function getLockfilePaths(env: EnvironmentDefinition): string[] {
-  const lockfileDir =
-    env.lockfileDirOverride ?? process.env.CADET_LOCKFILE_DIR?.trim();
-  if (lockfileDir) {
-    return [joinLocalPath(lockfileDir, "lockfile.json")];
-  }
-  const configDirs = getConfigDirs(env);
-  const canonical = joinLocalPath(configDirs[0]!, "lockfile.json");
-  if (env.name === "production" || process.platform !== "win32") {
-    return [canonical];
-  }
-  // Windows keeps the pre-AppData XDG location as a legacy read fallback.
-  return [canonical, joinLocalPath(configDirs.at(-1)!, "lockfile.json")];
+export function getLockfilePaths(): string[] {
+  return resolveLockfilePaths();
 }
 
 /**
  * Canonical lockfile path for writes — always the config-dir
  * `lockfile.json`.
  */
-export function getLockfilePath(env: EnvironmentDefinition): string {
-  return getLockfilePaths(env)[0]!;
+export function getLockfilePath(): string {
+  return getLockfilePaths()[0]!;
 }
 
 /**
- * Multi-instance root directory for an environment. Production uses
+ * Multi-instance root directory for the current environment. Production uses
  * `~/.local/share/cadet/assistants/` — the convention already in
  * `cli/src/lib/assistant-config.ts`. Non-production environments use
  * `~/.local/share/cadet-<env>/assistants/`.
  */
-export function getMultiInstanceDir(env: EnvironmentDefinition): string {
-  return joinLocalPath(
-    resolveDataHome(),
-    environmentDirectoryName(env.name),
-    "assistants",
-  );
+export function getMultiInstanceDir(): string {
+  return resolveAssistantsDir();
 }
 
 /**
@@ -87,18 +69,16 @@ export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
 }
 
 /**
- * Runtime state directory for an environment (upgrade logs, etc.).
+ * Runtime state directory for the current environment (upgrade logs, etc.).
  * Production uses `~/.local/share/cadet/`; non-production environments
  * use `~/.local/share/cadet-<env>/`.
  */
-export function getStateDir(env: EnvironmentDefinition): string {
-  return joinLocalPath(resolveDataHome(), environmentDirectoryName(env.name));
+export function getStateDir(): string {
+  return resolveDataDir();
 }
 
-export function getLogDir(env: EnvironmentDefinition): string {
-  const root =
-    process.platform === "win32" ? getStateDir(env) : getConfigDirs(env)[0]!;
-  return joinLocalPath(root, "logs");
+export function getLogDir(): string {
+  return resolveLogDir();
 }
 
 /**
@@ -133,7 +113,5 @@ export const ASSISTANT_INTERNAL_PORT = DEFAULT_PORTS.daemon;
 export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
 
 function xdgStateHome(): string {
-  return (
-    process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state")
-  );
+  return process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state");
 }
