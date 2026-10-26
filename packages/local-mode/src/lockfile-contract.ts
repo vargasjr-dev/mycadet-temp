@@ -188,6 +188,46 @@ export function getLoopbackGatewayPort(entry: {
 }
 
 /**
+ * The default gateway port — the documented port a freshly hatched
+ * assistant's gateway listens on.
+ */
+export const DEFAULT_GATEWAY_PORT = 7830;
+
+/**
+ * The URL to dial an entry's gateway on, derived from the entry's canonical
+ * fields — the one seam every consumer addresses a gateway through:
+ *
+ * - `custom` remotes: their recorded host and port.
+ * - cloud-managed: the recorded platform URL, else the caller-supplied
+ *   `cloudUrl` fallback (the environment's own resolution).
+ * - loopback topologies (`local`, `docker`, `apple-container`): the
+ *   recorded loopback gateway port, else the default gateway port.
+ *
+ * The recorded `runtimeUrl` only survives as a last resort for entries
+ * whose canonical fields predate this resolver; it is scheduled to die
+ * once every consumer reads through here.
+ */
+export function getGatewayUrl(
+  entry: Pick<
+    LockfileAssistant,
+    "cloud" | "ipAddress" | "port" | "runtimeUrl" | "resources"
+  >,
+  opts?: { cloudUrl?: string },
+): string {
+  if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
+    return `http://${entry.ipAddress}:${entry.port}`;
+  }
+  if (isCloudHome(entry.cloud)) {
+    return (entry.runtimeUrl || opts?.cloudUrl || "").replace(/\/+$/, "");
+  }
+  const port = getLoopbackGatewayPort(entry);
+  if (port) return `http://127.0.0.1:${port}`;
+  return (
+    entry.runtimeUrl || `http://127.0.0.1:${DEFAULT_GATEWAY_PORT}`
+  ).replace(/\/+$/, "");
+}
+
+/**
  * Per-instance resources for a local assistant: the renderer-facing ports,
  * the instance directory, the local runtime install metadata, and the
  * host-only ports. Strict: every field the CLI round-trips is modeled, so

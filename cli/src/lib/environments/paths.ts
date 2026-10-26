@@ -1,7 +1,11 @@
 import { homedir } from "node:os";
 import { join } from "path";
 
-import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
+import { getCurrentEnvironment } from "./resolve.js";
+import type {
+  EnvironmentDefinition,
+  PortMap,
+} from "@mycadet/environments";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
   daemon: 7821,
@@ -18,7 +22,15 @@ const DEFAULT_PORTS: Readonly<PortMap> = {
  * to avoid collisions in multi-env / multi-instance setups.
  * Longer term, consider allocating ports dynamically at hatch/wake time.
  */
-export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
+export function getDefaultPorts(): PortMap {
+  return getDefaultPortsFor(getCurrentEnvironment());
+}
+
+/**
+ * Port map for an explicit environment definition — the seam the seed
+ * tests pin each environment's block against.
+ */
+export function getDefaultPortsFor(env: EnvironmentDefinition): PortMap {
   return {
     ...DEFAULT_PORTS,
     ...(env.portsOverride ?? {}),

@@ -12,6 +12,8 @@
  */
 
 import {
+  getGatewayUrl,
+  isCloudHome,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   type Lockfile,
@@ -881,26 +883,28 @@ function handleLockfileChange(lockfile: Lockfile): void {
   for (const assistant of lockfile.assistants) {
     // Cloud wins over resources: a merge can leave a stale gatewayPort on a
     // non-loopback entry, and such an entry must never be classified as a
-    // loopback connection. A connect import's cloud reads "local" too (its
-    // on-disk entry stores none), so the off-machine `runtimeUrl` is what
-    // excludes it — not the cloud value alone.
+    // loopback connection. The recorded off-machine url is the legacy
+    // pairing marker — a pre-custom entry's protocol fingerprint — so the
+    // classifier reads it directly rather than deriving (deriving prefers
+    // the recorded port, which is exactly the stale artifact).
+    const recordedOffMachine =
+      isUsableRuntimeUrl(assistant.runtimeUrl) &&
+      !isLoopbackPublicUrl(assistant.runtimeUrl);
     const isMachineLocalEntry =
-      isLoopbackGatewayCloud(assistant.cloud) &&
-      !(
-        isUsableRuntimeUrl(assistant.runtimeUrl) &&
-        !isLoopbackPublicUrl(assistant.runtimeUrl)
-      );
+      isLoopbackGatewayCloud(assistant.cloud) && !recordedOffMachine;
     const port = isMachineLocalEntry
       ? assistant.resources?.gatewayPort
       : undefined;
     const isCloud =
-      assistant.cloud === "cloud" && assistant.runtimeUrl && hasSessionToken;
+      isCloudHome(assistant.cloud) &&
+      isUsableRuntimeUrl(getGatewayUrl(assistant)) &&
+      hasSessionToken;
     if (!port && !isCloud) continue;
 
     activeIds.add(assistant.assistantId);
     const fp = port
       ? localFingerprint(port)
-      : cloudFingerprint(assistant.runtimeUrl!, assistant.cloudOrganizationId);
+      : cloudFingerprint(gatewayUrl, assistant.cloudOrganizationId);
 
     const existing = connections.get(assistant.assistantId);
     const pending = pendingConnects.get(assistant.assistantId);
@@ -921,7 +925,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
       } else {
         connectCloudAssistant(
           assistant.assistantId,
-          assistant.runtimeUrl!,
+          gatewayUrl,
           assistant.cloudOrganizationId,
         );
       }

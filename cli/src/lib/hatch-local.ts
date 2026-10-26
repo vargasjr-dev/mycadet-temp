@@ -371,11 +371,12 @@ export async function hatchLocal(
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
-      const tokenData = await leaseGuardianToken(
-        loopbackUrl,
-        instanceName,
-        bootstrapSecret,
-      );
+      const tokenData = await leaseGuardianToken({
+        assistantId: instanceName,
+        cloud: "local",
+        guardianBootstrapSecret: bootstrapSecret,
+        resources,
+      });
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {

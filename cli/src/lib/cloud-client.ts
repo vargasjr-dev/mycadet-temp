@@ -1234,7 +1234,7 @@ export async function cloudRequestSignedUrl(
  * Poll the unified job-status endpoint on the cloud. Calls
  * `GET /v1/migrations/jobs/{jobId}/` and parses into {@link UnifiedJobStatus}.
  */
-export async function platformPollJobStatus(
+export async function cloudPollJobStatus(
   jobId: string,
   token: string,
   cloudUrl?: string,

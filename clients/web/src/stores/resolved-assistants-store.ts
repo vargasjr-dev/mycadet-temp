@@ -29,17 +29,27 @@ import {
   isCloudAssistant,
 } from "@/lib/local-mode";
 import {
-  isLoopbackGatewayCloud,
+  getGatewayUrl,
+  isCloudHome,
   isUsableRuntimeUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 /**
- * Whether the entry's gateway lives on another machine (a connect import):
- * the paired transport's eligibility, derived from the addressing.
+ * Whether the entry's gateway lives on another machine: a custom remote
+ * (its address is inherently off-machine), or a loopback-gateway entry
+ * whose recorded url points off this machine — the legacy pairing marker.
+ * Mirrors the lib predicate so the store and the lib cannot drift.
  */
 function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  if (isCloudHome(entry.cloud)) {
+    return false;
+  }
+  if (entry.cloud === "custom") {
+    const gatewayUrl = getGatewayUrl(entry);
+    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
+  }
   return (
     isLoopbackGatewayCloud(entry.cloud) &&
     isUsableRuntimeUrl(entry.runtimeUrl) &&

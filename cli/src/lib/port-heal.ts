@@ -1,6 +1,5 @@
 import { findOpenPort } from "./port-allocator.js";
 import { getDefaultPorts } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { findPidListeningOnPort } from "./local.js";
 import { isCadetProcess } from "./process.js";
 import { loadAllAssistants } from "./assistant-config.js";
@@ -135,7 +134,7 @@ export async function healConflictedLocalPorts(
     if (recorded !== undefined) reserved.add(recorded);
   }
 
-  const basePorts = getDefaultPorts(getCurrentEnvironment());
+  const basePorts = getDefaultPorts();
   const moves: PortHealMove[] = [];
   for (const field of HEALED_PORT_FIELDS) {
     const recorded = resources[field];

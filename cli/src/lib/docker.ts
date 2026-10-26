@@ -26,7 +26,6 @@ import {
   getDefaultPorts,
 } from "./environments/paths.js";
 import { green, yellow } from "./color.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { leaseGuardianToken } from "./guardian-token";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { isCadetProcess, stopProcess } from "./process";
@@ -976,7 +975,7 @@ export async function recreateDockerContainers(
 
   const gatewayPort =
     getLoopbackGatewayPort(entry) ??
-    getDefaultPorts(getCurrentEnvironment()).gateway;
+    getDefaultPorts().gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(
@@ -1398,9 +1397,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       }
       gatewayPort = params.gatewayPort;
     } else {
-      const preferredGatewayPort = getDefaultPorts(
-        getCurrentEnvironment(),
-      ).gateway;
+      const preferredGatewayPort = getDefaultPorts().gateway;
       gatewayPort = await findOpenPort(preferredGatewayPort);
       if (gatewayPort !== preferredGatewayPort) {
         log(
@@ -1420,9 +1417,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     if (params.netnsContainer) {
       assistantPort = ASSISTANT_INTERNAL_PORT;
     } else {
-      const preferredAssistantPort = getDefaultPorts(
-        getCurrentEnvironment(),
-      ).daemon;
+      const preferredAssistantPort = getDefaultPorts().daemon;
       assistantPort = await findOpenPort(preferredAssistantPort, {
         exclude: [gatewayPort],
       });
@@ -1740,12 +1735,12 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           notReadyReason: undefined,
         }
       : await waitForGatewayAndLease({
-          bootstrapSecret: ownSecret,
+          entry: dockerEntry,
           containerName: res.assistantContainer,
           detached: waitDetached,
           instanceName,
           logFd,
-          runtimeUrl: gatewayUrl,
+          gatewayUrl,
           containersUpAt,
         });
 
@@ -1855,12 +1850,12 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
  * lease a guardian token.
  */
 async function waitForGatewayAndLease(opts: {
-  bootstrapSecret: string;
+  entry: LockfileAssistant;
   containerName: string;
   detached: boolean;
   instanceName: string;
   logFd: number | "ignore";
-  runtimeUrl: string;
+  gatewayUrl: string;
   containersUpAt: number;
 }): Promise<{
   ready: boolean;
@@ -1870,12 +1865,12 @@ async function waitForGatewayAndLease(opts: {
   notReadyReason?: "migrations_failed";
 }> {
   const {
-    bootstrapSecret,
+    entry,
     containerName,
     detached,
     instanceName,
     logFd,
-    runtimeUrl,
+    gatewayUrl,
     containersUpAt,
   } = opts;
 
@@ -1895,11 +1890,7 @@ async function waitForGatewayAndLease(opts: {
     let guardianAccessToken: string | undefined;
     while (Date.now() < leaseDeadline) {
       try {
-        const tokenData = await leaseGuardianToken(
-          runtimeUrl,
-          instanceName,
-          bootstrapSecret,
-        );
+        const tokenData = await leaseGuardianToken(entry);
         guardianAccessToken = tokenData.accessToken;
         break;
       } catch {
@@ -1922,7 +1913,7 @@ async function waitForGatewayAndLease(opts: {
     printInstanceDetails(
       {
         name: instanceName,
-        runtime: runtimeUrl,
+        runtime: gatewayUrl,
         container: containerName,
       },
       log,
@@ -1932,11 +1923,11 @@ async function waitForGatewayAndLease(opts: {
   }
 
   log(`  Container: ${containerName}`);
-  log(`  Runtime: ${runtimeUrl}`);
+  log(`  Runtime: ${gatewayUrl}`);
   log("");
   log("Waiting for assistant to become ready...");
 
-  const readyUrl = `${runtimeUrl}/readyz`;
+  const readyUrl = `${gatewayUrl}/readyz`;
   const start = containersUpAt;
   let ready = false;
   let migrationsFailed = false;
@@ -2014,11 +2005,7 @@ async function waitForGatewayAndLease(opts: {
 
   while (Date.now() < leaseDeadline) {
     try {
-      const tokenData = await leaseGuardianToken(
-        runtimeUrl,
-        instanceName,
-        bootstrapSecret,
-      );
+      const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
       leaseSuccess = true;
       break;
@@ -2044,7 +2031,7 @@ async function waitForGatewayAndLease(opts: {
   log("");
   log(green(`\u2705 Docker containers are up and running!`, process.stdout));
   log(`   Name: ${instanceName}`);
-  log(`   Runtime: ${runtimeUrl}`);
+  log(`   Runtime: ${gatewayUrl}`);
   log("");
   return { ready: true, guardianAccessToken };
 }

@@ -152,10 +152,7 @@ async function retireCustom(entry: LockfileAssistant): Promise<void> {
   console.log(`\u2705 Custom instance retired.`);
 }
 
-async function retireCadet(
-  assistantId: string,
-  runtimeUrl?: string,
-): Promise<void> {
+async function retireCloud(entry: LockfileAssistant): Promise<void> {
   console.log("\u{1F5D1}\ufe0f  Retiring Cadet Cloud-hosted instance...\n");
 
   const token = readPlatformRetireToken();
@@ -167,9 +164,9 @@ async function retireCadet(
   }
 
   try {
-    await deleteCloudAssistant(assistantId, {
+    await deleteCloudAssistant(entry.assistantId, {
       token,
-      cloudUrl: runtimeUrl,
+      cloudUrl: getGatewayUrl(entry),
       label: "Platform retire",
       successMessage: "\u2705 Platform-hosted instance retired.",
       alreadyGoneMessage:
@@ -363,9 +360,9 @@ async function retireInner(): Promise<void> {
   } else if (cloud === "custom") {
     await retireCustom(entry);
   } else if (isCloudHome(cloud)) {
-    await retireCadet(assistantId, getGatewayUrl(entry));
+    await retireCloud(entry);
   } else {
-    console.error(`Error: Unknown cloud type '${cloud}'.`);
+    console.error(`Error: Unknown remote type '${cloud}'.`);
     process.exit(1);
   }
 

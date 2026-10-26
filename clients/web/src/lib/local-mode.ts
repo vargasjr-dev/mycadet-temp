@@ -1,5 +1,7 @@
 import {
+  getGatewayUrl,
   getLoopbackGatewayPort,
+  isCloudHome,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
@@ -372,10 +374,18 @@ export function getLockfileAssistant(
 // Gateway predicates
 // ---------------------------------------------------------------------------
 /**
- * Whether the entry's gateway lives on another machine (a connect import):
- * a loopback-gateway cloud whose `runtimeUrl` points off this machine.
+ * Whether the entry's gateway lives on another machine: a custom remote
+ * (its address is inherently off-machine), or a loopback-gateway entry
+ * whose recorded url points off this machine — the legacy pairing marker.
  */
 export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  if (isCloudHome(entry.cloud)) {
+    return false;
+  }
+  if (entry.cloud === "custom") {
+    const gatewayUrl = getGatewayUrl(entry);
+    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
+  }
   return (
     isLoopbackGatewayCloud(entry.cloud) &&
     isUsableRuntimeUrl(entry.runtimeUrl) &&
@@ -428,10 +438,11 @@ export function expectsPairedGateway(assistant: LockfileAssistant): boolean {
 
 /**
  * Whether the entry is a paired assistant this runtime reaches through the
- * host's forward: paired in local (non-remote-gateway) mode with a recorded
- * absolute http(s) `runtimeUrl` for the host to resolve. The renderer never
- * fetches the remote origin itself — the serving host forwards and injects
- * the guardian bearer; the scoped data plane is plain same-origin `/v1`.
+ * host's forward: paired in local (non-remote-gateway) mode with a derived
+ * absolute http(s) gateway address for the host to resolve. The renderer
+ * never fetches the remote origin itself — the serving host forwards and
+ * injects the guardian bearer; the scoped data plane is plain same-origin
+ * `/v1`.
  */
 export function hasPairedGateway(
   assistant: LockfileAssistant | undefined,
@@ -439,7 +450,7 @@ export function hasPairedGateway(
   return (
     !!assistant &&
     expectsPairedGateway(assistant) &&
-    isUsableRuntimeUrl(assistant.runtimeUrl)
+    isUsableRuntimeUrl(getGatewayUrl(assistant))
   );
 }
 

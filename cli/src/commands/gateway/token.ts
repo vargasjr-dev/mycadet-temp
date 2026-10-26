@@ -55,7 +55,7 @@ async function repairGuardianCredential(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await resetGuardianBootstrap(gatewayUrl, bootstrapSecret);
-      await leaseGuardianToken(gatewayUrl, entry.assistantId, bootstrapSecret);
+      await leaseGuardianToken(entry);
       return true;
     } catch (err) {
       if (err instanceof GuardianLeasePermanentError) return false;

@@ -431,9 +431,10 @@ describe("cadet upgrade local", () => {
       "existing-bootstrap-secret",
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "local-assistant",
-      "existing-bootstrap-secret",
+      expect.objectContaining({
+        assistantId: "local-assistant",
+        guardianBootstrapSecret: "existing-bootstrap-secret",
+      }),
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: 7830,

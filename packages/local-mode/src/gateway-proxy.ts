@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
+  getGatewayUrl,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
@@ -213,8 +214,9 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!assistantId) {
       continue;
     }
-    if (isUsableRuntimeUrl(runtimeUrl) && !isLoopbackPublicUrl(runtimeUrl)) {
-      targets.set(assistantId, { kind: "remote", runtimeUrl });
+    const gatewayUrl = getGatewayUrl({ cloud, resources, runtimeUrl });
+    if (isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
+      targets.set(assistantId, { kind: "remote", runtimeUrl: gatewayUrl });
       continue;
     }
     if (!isLoopbackGatewayCloud(cloud)) {

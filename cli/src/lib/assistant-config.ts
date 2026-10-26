@@ -23,7 +23,6 @@ import {
   resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { probePort } from "./port-probe.js";
 import { getGatewayUrl } from "./runtime-url.js";
 
@@ -443,7 +442,7 @@ export async function allocateLocalResources(
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
-  const basePorts = getDefaultPorts(getCurrentEnvironment());
+  const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
   const gatewayPort = await findAvailablePort(basePorts.gateway, [
     ...reservedPorts,

@@ -759,7 +759,7 @@ async function ensureGuardianTokenAfterLocalUpgrade(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
-      await leaseGuardianToken(loopbackUrl, entry.assistantId, bootstrapSecret);
+      await leaseGuardianToken(entry);
       console.log("   Re-provisioned guardian token.");
       return;
     } catch (err) {
@@ -1142,9 +1142,9 @@ async function upgradeCloud(
 
   // Target the same platform as the detail/health/POST calls — the entry's
   // platform may differ from the active lockfile default.
-  const releases = await fetchReleases({
-    cloudUrl: getGatewayUrl(entry),
-  });
+  // Releases are the global catalog — what's live across the platform —
+  // so this ignores the entry's topology entirely.
+  const releases = await fetchReleases();
 
   const resolution = resolveUpgradeTarget({
     explicitVersion: version,

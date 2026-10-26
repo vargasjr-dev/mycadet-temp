@@ -58,13 +58,6 @@ describe("fetchReleases", () => {
     expect(url).toContain("limit=100");
   });
 
-  test("uses the cloudUrl override over the resolved default", async () => {
-    const fetchMock = mockFetchJson([RELEASE]);
-    await fetchReleases({ cloudUrl: "https://other-platform.test" });
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("https://other-platform.test/v1/releases/");
-  });
-
   test("returns null on non-OK response", async () => {
     mockFetchJson({ detail: "nope" }, 500);
     expect(await fetchReleases()).toBeNull();

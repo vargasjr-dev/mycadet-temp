@@ -1,5 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
+import { getGatewayUrl } from "./runtime-url.js";
+import type { LockfileAssistant } from "./assistant-config.js";
 import {
   closeSync,
   existsSync,
@@ -578,10 +580,13 @@ function describeJsonType(value: unknown): string {
 }
 
 export async function leaseGuardianToken(
-  gatewayUrl: string,
-  assistantId: string,
-  bootstrapSecret?: string,
+  entry: LockfileAssistant,
 ): Promise<GuardianTokenData> {
+  // The gateway address derives from the entry's topology; assistantId and
+  // the bootstrap secret ride the entry too.
+  const gatewayUrl = getGatewayUrl(entry);
+  const assistantId = entry.assistantId;
+  const bootstrapSecret = entry.guardianBootstrapSecret;
   // The gateway 503s every non-probe route ({status: "starting"}) while its
   // post-assistant-ready backfills run — exactly the window that burned the
   // caller's lease-retry budget. Poll /readyz (body-aware: it is the probe

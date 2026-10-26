@@ -27,7 +27,7 @@ afterAll(() => {
 // Imports that depend on the mocked `os` module must come after the
 // mock.module() calls above.
 const {
-  getDefaultPorts,
+  getDefaultPortsFor,
   getInputHistoryPath,
   getSharedStateDir,
 } = await import("../paths.js");
@@ -202,7 +202,7 @@ describe("path helpers", () => {
         cloudUrl: "https://cloud.mycadet.ai",
         webUrl: "https://mycadet.ai",
       };
-      expect(getDefaultPorts(prod)).toEqual({
+      expect(getDefaultPortsFor(prod)).toEqual({
         daemon: 7821,
         gateway: 7830,
         qdrant: 6333,
@@ -217,8 +217,8 @@ describe("path helpers", () => {
         ...dev,
         portsOverride: { daemon: 7831 },
       };
-      expect(getDefaultPorts(customized).daemon).toBe(7831);
-      expect(getDefaultPorts(customized).gateway).toBe(7830);
+      expect(getDefaultPortsFor(customized).daemon).toBe(7831);
+      expect(getDefaultPortsFor(customized).gateway).toBe(7830);
     });
   });
 });

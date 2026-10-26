@@ -151,13 +151,7 @@ async function daemonAccessToken(
     }
   }
   try {
-    return (
-      await leaseGuardianToken(
-        getGatewayUrl(entry),
-        entry.assistantId,
-        entry.guardianBootstrapSecret,
-      )
-    ).accessToken;
+    return (await leaseGuardianToken(entry)).accessToken;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {
