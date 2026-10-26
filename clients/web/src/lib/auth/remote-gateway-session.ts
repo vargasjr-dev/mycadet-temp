@@ -15,8 +15,6 @@ export {
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;
-const GUARDIAN_PS_PROBE_PATH = "/v1/ps";
-
 /**
  * Credential fields {@link activateRemoteGatewaySession} consumes. Broader than
  * the pairing-token approved response because the same activation path also
@@ -77,29 +75,6 @@ export function remoteGatewayPublicBaseUrl(): string {
   return `${window.location.origin}${remoteGatewayPublicPathPrefix()}`;
 }
 
-/**
- * Probe the served-gateway session WITHOUT rotating anything: an
- * authenticated, effect-free GET answered from the `cadet_web_access`
- * HttpOnly cookie. The browser holds no credential in JS, so there is
- * nothing to refresh — the cookie either authenticates (200) or it does
- * not (401 → pairing).
- */
-export async function hasRemoteGatewaySession(
-  location = window.location,
-): Promise<boolean> {
-  try {
-    const response = await fetch(remoteGatewayApiPath(GUARDIAN_PS_PROBE_PATH, location), {
-      method: "GET",
-      credentials: "include",
-      headers: { Accept: "application/json" },
-    });
-    return response.ok;
-  } catch {
-    // A network failure says nothing about the cookie's validity.
-    return false;
-  }
-}
-
 function isApprovedPayload(
   value: unknown,
 ): value is RemoteWebPairingTokenApprovedResponse {
@@ -131,10 +106,7 @@ function isChallengePayload(
 export function activateRemoteGatewaySession(
   session: RemoteGatewaySessionCredentials,
 ): void {
-  // Cookie custody: the browser holds NO credential in JS. The gateway
-  // minted the access + refresh HttpOnly cookies on the pairing response —
-  // every edge request authenticates from the cookie, so the connection
-  // slot carries only the URL.
+  // Cookie custody: the pairing response minted the HttpOnly cookies; JS holds nothing.
   void session;
   setSelfHostedConnection({
     url: `${window.location.origin}${remoteGatewayPublicPathPrefix()}`,

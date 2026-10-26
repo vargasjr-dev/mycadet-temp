@@ -1410,28 +1410,42 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
   test("remote-gateway mode boots into pairing on a 401 — no in-page recovery", async () => {
     /**
      * The served browser holds no credential in JS: the session lives in
-     * HttpOnly cookies the gateway minted at pairing, and the web client
-     * never refreshes (a refresh rotates the token family — the mechanism
-     * that torched multi-context sessions). A 401 is therefore terminal
-     * for the page lifecycle: reload into the pairing flow, no replay.
+     * HttpOnly cookies the gateway minted at pairing. A 401 is therefore
+     * terminal for the page lifecycle: navigate into the pairing flow, no
+     * replay.
      */
 
     // GIVEN remote-gateway mode
     isCadetCloudRemoteMock.mockImplementation(() => false);
     isServedGatewayRuntimeMock.mockImplementation(() => true);
+    const assign = mock((_url: string) => {});
+    const originalAssign = window.location.assign;
+    Object.defineProperty(window.location, "assign", {
+      configurable: true,
+      value: assign,
+    });
 
-    // WHEN a gateway GET's 401 reaches the interceptor
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      gatewayGet(),
-    );
+    try {
+      // WHEN a gateway GET's 401 reaches the interceptor
+      const response = gatewayResponse(401);
+      const result = await localGatewayAuthRecoveryInterceptor(
+        response,
+        gatewayGet(),
+      );
 
-    // THEN the page reloads and the 401 flows back without a replay
-    expect(reloadCalls).toBe(1);
-    expect(replayedRequests).toHaveLength(0);
-    expect(result).toBe(response);
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
+      // THEN the browser navigates to the pair page, returnTo preserved,
+      // and the 401 flows back without a replay
+      expect(assign).toHaveBeenCalledTimes(1);
+      expect(assign.mock.calls[0][0]).toBe("/assistant/pair?returnTo=%2F");
+      expect(replayedRequests).toHaveLength(0);
+      expect(result).toBe(response);
+      expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
+    } finally {
+      Object.defineProperty(window.location, "assign", {
+        configurable: true,
+        value: originalAssign,
+      });
+    }
   });
 
   test("replays a bodyless request with the re-primed bearer", async () => {

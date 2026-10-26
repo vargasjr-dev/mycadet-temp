@@ -959,19 +959,15 @@ describe("primeLocalGatewayConnectionWithStartupRetry (paired target)", () => {
 });
 
 describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", () => {
-  test("a served runtime always has a gateway assistant; the session goes live with the slot token", () => {
+  test("a served runtime's session is always live — the cookie is the edge's business", () => {
     window.__CADET_CONFIG__ = {
       remote: "docker",
       assistantId: "edge-1",
     };
 
     expect(hasGatewayAssistant()).toBe(true);
-    expect(isGatewaySessionLive()).toBe(false);
-
-    // The pairing exchange plants the device credential in the connection
-    // slot — the single bearer custody.
-    setSelfHostedConnection({ url: window.location.origin, token: "tok" });
-
+    // Cookie custody: the browser holds no credential in JS, so there is
+    // nothing to read — the edge arbitrates the session per request.
     expect(isGatewaySessionLive()).toBe(true);
   });
 

@@ -53,6 +53,7 @@ import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
+import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
 import {
   hasLiveCloudSession,
@@ -484,10 +485,8 @@ const gatewayRequestInterceptor = createInterceptor({
  * gateway through the host-routed readyz route (waking a stopped local
  * assistant when the probe failure is repairable) and re-seeds the
  * self-hosted connection slot the request interceptor reads. Remote-gateway
- * (paired browser) sessions hold no refreshable credential in JS — the
- * session lives in HttpOnly cookies the gateway minted at pairing — so a
- * 401 there is terminal for the page lifecycle: boot into the pairing
- * flow.
+ * (paired browser) sessions hold no refreshable credential in JS, so a 401
+ * there navigates into the pairing flow.
  * Neither path clears anything first: the slot's token is null in this mode
  * — bearer custody lives in the trusted host, whose forward already forces
  * one re-mint and retry of its own before a 401 can reach this interceptor
@@ -545,10 +544,8 @@ const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
 const GW_401_COOLDOWN_MS = 600_000;
 const GW_401_MAX_ATTEMPTS = 3;
 
-// In-memory latch for the remote-gateway reload: once the reload fires,
-// all subsequent 401s in the same page lifecycle are no-ops. Resets
-// naturally on reload.
-let gw401ReloadFired = false;
+// In-memory latch: once the pair redirect fires, later 401s in this lifecycle are no-ops.
+let gw401RecoveryFired = false;
 
 // Single-flight slot: a burst of concurrent 401s (a resume refetch, say)
 // funds one in-place recovery; every caller awaits the same attempt and
@@ -558,20 +555,25 @@ let gw401RecoveryInFlight: Promise<boolean> | null = null;
 
 /** @internal Exposed for test teardown only. */
 export function resetGw401RecoveryState(): void {
-  gw401ReloadFired = false;
+  gw401RecoveryFired = false;
   gw401RecoveryInFlight = null;
 }
 
+function remoteGatewayPairUrl(): string {
+  const prefix = remoteGatewayPublicPathPrefix();
+  const pathnameWithSearch = `${window.location.pathname}${window.location.search}`;
+  const returnTo =
+    prefix && pathnameWithSearch.startsWith(prefix)
+      ? pathnameWithSearch.slice(prefix.length)
+      : pathnameWithSearch;
+  return `${prefix}${routes.remotePair}?returnTo=${encodeURIComponent(returnTo)}`;
+}
+
 async function recoverRemoteGatewaySessionInPlace(): Promise<boolean> {
-  // The served browser holds no refreshable credential in JS — the session
-  // lives in HttpOnly cookies the gateway minted at pairing, and the web
-  // client never refreshes (a refresh rotates the token family, which is
-  // what torched multi-context sessions before). A 401 here means the
-  // cookie no longer authenticates: nothing in the renderer can revive
-  // this session, so boot into the pairing flow.
-  recordLifecycleDiagnostic("gw_401_recovery", { outcome: "reload" });
-  gw401ReloadFired = true;
-  window.location.reload();
+  // A 401 means the cookie no longer authenticates — route the device into the pairing flow.
+  recordLifecycleDiagnostic("gw_401_recovery", { outcome: "pair-redirect" });
+  gw401RecoveryFired = true;
+  window.location.assign(remoteGatewayPairUrl());
   return false;
 }
 
@@ -700,9 +702,9 @@ export async function localGatewayAuthRecoveryInterceptor(
   if (response.status !== 401) {
     return response;
   }
-  if (gw401ReloadFired) {
-    // The remote-gateway reload has fired this page lifecycle; every 401
-    // until the reload lands is a no-op.
+  if (gw401RecoveryFired) {
+    // The remote-gateway pair redirect has fired this page lifecycle; every 401
+    // until the navigation lands is a no-op.
     return response;
   }
 

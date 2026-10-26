@@ -16,7 +16,6 @@ import {
   readSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
 import {
-  getSelfHostedActorToken,
   getSelfHostedIngressUrl,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
@@ -462,8 +461,8 @@ export function hasGatewayAssistant(): boolean {
 }
 
 /**
- * Whether the gateway session is live: on a served runtime the paired
- * browser's device credential (the connection slot's token); on a local
+ * Whether the gateway session is live: on a served runtime always yes (the
+ * cookie is the session and the edge arbitrates it per request); on a local
  * client the trusted host owns bearer custody, so topology decides.
  */
 export function isGatewaySessionLive(): boolean {
@@ -480,7 +479,7 @@ export function isGatewaySessionLive(): boolean {
     // presence: the trusted host owns bearer custody in this mode.
     return hasLocalGateway(selectedAssistant);
   }
-  return getSelfHostedActorToken() !== null;
+  return true;
 }
 
 /**

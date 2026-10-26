@@ -34,7 +34,6 @@ import {
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { clearWidgetSnapshot } from "@/runtime/widget-snapshot";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
-import { hasRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
   isCadetCloudRemote,
@@ -536,13 +535,6 @@ function probeCloudSessionIfReachable(
   }
 }
 
-async function hasRemoteGatewaySessionAfterProbe(): Promise<boolean> {
-  // The web client never refreshes — the session lives in HttpOnly cookies
-  // the gateway minted at pairing, and the probe is an effect-free
-  // authenticated GET. A network failure settles "no session" here (the
-  // boot's own error handling surfaces connectivity separately).
-  return hasRemoteGatewaySession();
-}
 
 /**
  * Session commit seams for the connect path (`@/assistant/connect-assistant`).
@@ -596,32 +588,12 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       await endSession(set, { keepCloudSession: true });
       return;
     }
-    // Gateway-token JWT scheme — refresh what we hold, else prime below.
-    if (await hasRemoteGatewaySessionAfterProbe()) {
-      set({ ...authenticatedLocalUser(), cloudSession: "absent" });
-      // A local client may also hold a cloud session (logged in through
-      // the cloud login flow) — keep probing for it; it settles async. A
-      // served-gateway browser shares no platform cookie space, so it never
-      // probes.
-      if (isLocalClient() && !isServedGatewayRuntime()) {
-        probeCloudSessionIfReachable(set);
-      }
-      return;
-    }
-
+    // Served gateway: the cookie is the session and the edge arbitrates it per request.
     if (isServedGatewayRuntime()) {
-      // A served-gateway browser's whole session restore is the boot ping
-      // above. The local prime (daemon guardian mint + the startup
-      // ride-out budget) is desktop machinery: on a remote browser it
-      // burns its 90s retry budget against the edge before failing,
-      // stalling the route guard on /assistant/ the whole time. Settle
-      // unauthenticated immediately so the guard can route an unpaired
-      // device to the pair page.
-      await endSession(set, { keepCloudSession: true });
-      set({ cloudSession: "absent" });
+      set({ ...authenticatedLocalUser(), cloudSession: "absent" });
       return;
     }
-
+    // Local client: restore or prime the gateway connection below.
     if (hasGatewayAssistant()) {
       try {
         // Ride out the gateway's startup window: on reboot the gateway (a
@@ -739,23 +711,11 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       await endSession(set);
       return false;
     }
-    if (await hasRemoteGatewaySessionAfterProbe()) {
-      if (supersededByLogout()) {
-        return abandon();
-      }
+    // Served gateway: the cookie is the session and the edge arbitrates it per request.
+    if (isServedGatewayRuntime()) {
       set({ ...authenticatedLocalUser(), cloudSession: "absent" });
-      if (isLocalClient() && !isServedGatewayRuntime()) {
-        probeCloudSessionIfReachable(set, { clearOnFailure: true });
-      }
       return true;
     }
-
-    if (isServedGatewayRuntime()) {
-      await endSession(set);
-      set({ cloudSession: "absent" });
-      return false;
-    }
-
     if (isGatewaySessionLive()) {
       try {
         // Both selection kinds collapse into the prime: it probes the

@@ -5,7 +5,6 @@ import {
   createRemoteWebPairingChallenge,
   exchangeRemoteWebPairingToken,
   parseRemoteWebPairingParams,
-  hasRemoteGatewaySession,
   remoteGatewayApiPath,
   remoteGatewayPublicPathPrefix,
   RemoteWebPairingError,
@@ -215,40 +214,4 @@ describe("remote gateway token exchange", () => {
     expect(localStorage.getItem("cadet:gw:token")).toBeNull();
   });
 
-  test("the session probe is an effect-free authenticated GET, never a rotation", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
-    globalThis.fetch = mock(async (input, init) => {
-      calls.push({ input, init });
-      return Response.json({ processes: [] });
-    }) as unknown as typeof fetch;
-
-    await expect(hasRemoteGatewaySession()).resolves.toBe(true);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0].input).toBe("/assistant-123/v1/ps");
-    expect(calls[0].init?.method).toBe("GET");
-    expect(calls[0].init?.credentials).toBe("include");
-  });
-
-  test("a rejected cookie settles the probe false", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    globalThis.fetch = mock(async () =>
-      new Response(null, { status: 401 }),
-    ) as unknown as typeof fetch;
-
-    await expect(hasRemoteGatewaySession()).resolves.toBe(false);
-  });
-
-  test("a network failure settles the probe false without throwing", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    globalThis.fetch = mock(async () => {
-      throw new TypeError("Failed to fetch");
-    }) as unknown as typeof fetch;
-
-    await expect(hasRemoteGatewaySession()).resolves.toBe(false);
-  });
 });

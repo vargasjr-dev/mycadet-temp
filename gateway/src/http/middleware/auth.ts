@@ -626,15 +626,8 @@ function isSingleRouteGrant(claims: TokenClaims): boolean {
 }
 
 /**
- * Extract the raw token from a Bearer Authorization header, or null.
- *
- * A bearer-less request falls back to the browser access cookie
- * (`cadet_web_access`): the served web UI holds no credential in JS — its
- * token lives in an HttpOnly cookie set at pairing, so every edge request
- * authenticates through this same pipeline (signature, revocation, guardian
- * binding) with the cookie standing in for the header. A malformed cookie
- * fails validation exactly like a malformed bearer, recording the same auth
- * failure.
+ * Extract the raw token from a Bearer Authorization header, falling back to the
+ * browser access cookie (`cadet_web_access`); null when neither is present.
  */
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.get("authorization");
