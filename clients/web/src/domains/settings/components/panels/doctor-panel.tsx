@@ -674,9 +674,7 @@ export function DoctorPanel() {
 
         <div className="flex items-center gap-2">
           <DoctorSessionMenu
-            onShareFeedback={() => {
-              handleOpenFeedback();
-            }}
+            onShareFeedback={handleOpenFeedback}
             onCopySession={entries.length > 0 ? handleCopySession : undefined}
           />
           {isSessionActive && (

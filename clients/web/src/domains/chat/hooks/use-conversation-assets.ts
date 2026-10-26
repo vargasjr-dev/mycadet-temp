@@ -18,7 +18,6 @@ import {
   type ConversationAttachmentEntry,
   useConversationAttachments,
 } from "@/domains/chat/hooks/use-conversation-attachments";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import type { AppSummary } from "@/types/app-types";
 import type { DisplayAttachment } from "@/types/attachment-types";
 import type { DocumentSummary } from "@/types/document-types";
@@ -126,17 +125,15 @@ export function useConversationAssets({
   refreshKey,
 }: ConversationAssetsTarget): ConversationAssets {
   const queryClient = useQueryClient();
-  // A request sent before the org header can be produced, or through a daemon
-  // restart, fails for a reason the conversation has nothing to do with. The
-  // gate and the retries keep both out of the settled failures below, whether
-  // the restart answers a status or refuses the connection.
-  const isOrgReady = useIsOrgReady();
+  // A request sent through a daemon restart fails for a reason the
+  // conversation has nothing to do with. The retries keep it out of the
+  // settled failures below, whether the restart answers a status or refuses
+  // the connection.
   const appsQuery = useQuery({
     ...appsGetOptions({
       path: { assistant_id: assistantId },
       query: { conversationId },
     }),
-    enabled: isOrgReady,
     retry: shouldRetryDaemonOrNetworkError,
     select: (data) => data.apps,
   });
@@ -145,7 +142,6 @@ export function useConversationAssets({
       path: { assistant_id: assistantId },
       query: { conversationId },
     }),
-    enabled: isOrgReady,
     retry: shouldRetryDaemonOrNetworkError,
     select: (data) => data.documents,
   });

@@ -12,7 +12,6 @@ import {
 import { configPatch, credentialsSetPost } from "@/generated/daemon/sdk.gen";
 import { useDraftOverride } from "@/hooks/use-draft-override";
 import { useTranslation } from "@/i18n";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { isNativeDictationSupported } from "@/runtime/native-dictation-partials";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
@@ -116,7 +115,6 @@ export function SttProviderForm({
 }: SttProviderFormProps = {}) {
   const activeAssistantId = useActiveAssistantId();
   const assistantId = assistantIdProp ?? activeAssistantId;
-  const isOrgReady = useIsOrgReady();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   const providers = useMemo(
@@ -138,7 +136,6 @@ export function SttProviderForm({
   // — including daemon providers the static dropdown can't represent.
   const { data: daemonConfig } = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 30_000,
   });
   // `services.stt` falls under the ConfigGetResponse index signature

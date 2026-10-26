@@ -12,7 +12,6 @@ import {
   useConfigPatchMutation,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantCapabilityQuery } from "@/hooks/use-assistant-capability";
-import { getOrgHeaderReadiness, useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
@@ -37,7 +36,6 @@ export function useChatsSettings({
 }: UseChatsSettingsOptions): UseChatsSettingsResult {
   const capability = useAssistantCapabilityQuery("chatsSettings");
   const supported = capability.data === true;
-  const orgReady = useIsOrgReady();
   const queryClient = useQueryClient();
   const mounted = useRef(false);
   const saving = useRef(false);
@@ -47,7 +45,7 @@ export function useChatsSettings({
     mounted.current && getActiveOrganizationIdForRequests() === organizationId;
   const query = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: open && supported && orgReady,
+    enabled: open && supported,
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -87,9 +85,7 @@ export function useChatsSettings({
     }
   }, [query.isFetchedAfterMount, query.isSuccess, validSettings]);
   let state: ChatsSettingsLoadState;
-  if (!orgReady) {
-    state = { status: "loading" };
-  } else if (!supported && capability.isPending) {
+  if (!supported && capability.isPending) {
     state = { status: "loading" };
   } else if (!supported && capability.isError) {
     state = { status: "error" };
@@ -119,7 +115,6 @@ export function useChatsSettings({
         !open ||
         !supported ||
         state.status !== "ready" ||
-        getOrgHeaderReadiness() !== "ready" ||
         saving.current
       ) {
         return;
@@ -137,7 +132,7 @@ export function useChatsSettings({
       }
     },
     retryLoad: () => {
-      if (ownsSession() && orgReady) {
+      if (ownsSession()) {
         if (capability.isError || !supported) {
           void capability.refetch();
         }

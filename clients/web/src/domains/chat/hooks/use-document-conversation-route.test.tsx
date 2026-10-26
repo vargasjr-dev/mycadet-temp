@@ -79,10 +79,6 @@ const resolveConversation = mock(
     response: new Response(null, { status: 200 }),
   }),
 );
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useOrgHeaderReadiness: () => "ready",
-  useIsOrgReady: () => true,
-}));
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: mock(() => {}),
 }));

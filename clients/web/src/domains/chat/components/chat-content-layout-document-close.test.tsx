@@ -26,7 +26,6 @@ import {
 } from "react-router";
 
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import type * as OrgReadiness from "@/hooks/use-is-org-ready";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -46,13 +45,6 @@ const documentData = {
   updatedAt: 1,
 };
 const load = mock(async () => ({ data: documentData }));
-let readiness: ReturnType<typeof OrgReadiness.useOrgHeaderReadiness> = "ready";
-mock.module(
-  "@/hooks/use-is-org-ready",
-  (): Partial<typeof OrgReadiness> => ({
-    useOrgHeaderReadiness: () => readiness,
-  }),
-);
 mock.module("./chat-route-content", () => ({
   ChatMainPanel: () => {
     const location = useLocation();
@@ -116,7 +108,6 @@ function renderLayout(url: string, previousEntries: string[] = []) {
 }
 
 beforeEach(() => {
-  readiness = "ready";
   viewport.set({ narrow: false, coarsePointer: false });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
   useConversationStore.setState({ activeConversationId: "conv-1" });
@@ -156,16 +147,9 @@ describe("desktop document drawer dismissal", () => {
   test.each([
     "ready",
     "loading",
-    "resolving organization",
-    "unavailable organization",
   ])(
     "browser Back clears the %s document before another conversation mounts",
     async (phase) => {
-      if (phase === "resolving organization") {
-        readiness = "resolving";
-      } else if (phase === "unavailable organization") {
-        readiness = "unavailable";
-      }
       let finishLoad: (() => void) | undefined;
       if (phase === "loading") {
         load.mockImplementationOnce(
@@ -198,7 +182,7 @@ describe("desktop document drawer dismissal", () => {
       );
       expect(Boolean(screen.queryByTestId("editor"))).toBe(false);
       expect(useViewerStore.getState().mainView).toBe("chat");
-      expect(load).toHaveBeenCalledTimes(readiness === "ready" ? 1 : 0);
+      expect(load).toHaveBeenCalledTimes(1);
       page.unmount();
       page.queryClient.clear();
     },

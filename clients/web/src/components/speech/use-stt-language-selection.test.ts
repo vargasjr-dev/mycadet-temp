@@ -26,9 +26,6 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   Toaster: () => null,
   ToastContent: () => null,
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
-}));
 
 const ASSISTANT_ID = "asst-test";
 

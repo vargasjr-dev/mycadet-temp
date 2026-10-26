@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -39,7 +38,6 @@ export function useDocumentConversationRoute() {
   const location = useLocation();
   const { pathname, search, state: navigationState } = location;
   const navigate = useNavigate();
-  const readiness = useOrgHeaderReadiness();
   const isMobile = useIsMobile();
   const { surfaceId, showingDocument, returnTo } =
     getDocumentConversationRoute(search);
@@ -140,17 +138,6 @@ export function useDocumentConversationRoute() {
     const target: DocumentTarget = { source: "document", surfaceId };
     ownedTargetRef.current = target;
     useViewerStore.setState({ activeDocumentTarget: target });
-    if (readiness === "resolving") {
-      return;
-    }
-    if (readiness === "unavailable") {
-      setStatus({
-        owner,
-        kind: "error",
-        message: t("documentConversation.unavailable"),
-      });
-      return;
-    }
     const scope = documentRequestScope(assistantId);
     scopeRef.current = scope;
     useViewerStore.getState().openDocument();
@@ -196,7 +183,6 @@ export function useDocumentConversationRoute() {
     assistantId,
     conversationId,
     surfaceId,
-    readiness,
     owner,
     navigate,
     returnTo,

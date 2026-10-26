@@ -32,9 +32,6 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   Toaster: () => null,
   ToastContent: () => null,
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => false,
-}));
 
 // Controllable daemon config; `initialData` makes it available synchronously
 // like a warm cache.

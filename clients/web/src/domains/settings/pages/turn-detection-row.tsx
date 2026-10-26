@@ -24,7 +24,6 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { configPatch } from "@/generated/daemon/sdk.gen";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { toast } from "@mycadet/design-library/components/toast";
 import { Toggle } from "@mycadet/design-library/components/toggle";
@@ -70,20 +69,17 @@ interface SttShape {
 export function TurnDetectionRow() {
   const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
-  const isOrgReady = useIsOrgReady();
   const assistantId = useActiveAssistantId();
   const [saving, setSaving] = useState(false);
 
   const { data: daemonConfig } = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 30_000,
   });
   const stt = daemonConfig?.services?.stt as SttShape | undefined;
 
   const { data: catalog } = useQuery({
     ...sttProvidersGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 5 * 60_000,
   });
 

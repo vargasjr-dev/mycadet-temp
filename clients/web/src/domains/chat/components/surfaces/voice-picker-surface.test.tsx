@@ -37,15 +37,9 @@ import {
 import { MemoryRouter } from "react-router";
 
 import type { Surface } from "@/domains/chat/types/types";
-import type { OrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 
 const ASSISTANT_ID = "asst_1";
 
-let orgReadiness: OrgHeaderReadiness = "ready";
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReadiness === "ready",
-  useOrgHeaderReadiness: () => orgReadiness,
-}));
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
@@ -183,7 +177,6 @@ function pickZeus() {
 }
 
 beforeEach(() => {
-  orgReadiness = "ready";
   configPending = false;
   configPatchCalls.length = 0;
   onActionCalls.length = 0;

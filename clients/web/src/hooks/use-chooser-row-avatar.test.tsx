@@ -53,11 +53,6 @@ mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => selfHostedIngressUrl,
 }));
 
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
-
 type HostAvatarResult = LocalReadAssistantAvatarResult;
 let hostAvailable = false;
 const readAssistantAvatarHost = mock(
@@ -252,7 +247,6 @@ beforeEach(() => {
   cloudRemote = true;
   servedGatewayRuntime = false;
   selfHostedIngressUrl = null;
-  orgReady = true;
   hostAvailable = false;
   signInToPlatform();
   useOrganizationStore.setState({
@@ -788,25 +782,6 @@ describe("useChooserRowAvatar", () => {
       await settle();
       expect(listAssistants).toHaveBeenCalledTimes(1);
     });
-  });
-
-  test("waits for org readiness before the first cloud-proxy fetch", async () => {
-    orgReady = false;
-    const { result, rerender } = renderHook(
-      () => useChooserRowAvatar(cloudRow("other")),
-      { wrapper: createWrapper() },
-    );
-    await settle();
-    expect(result.current).toMatchObject({ traits: null, imageUrl: null });
-    expect(sdkCallCount()).toBe(0);
-
-    orgReady = true;
-    rerender();
-    await waitFor(() => {
-      expect(result.current.traits).toEqual(traits);
-    });
-    expect(fetchAvatarState).toHaveBeenCalledWith("other");
-    expect(fetchAvatarState).toHaveBeenCalledTimes(1);
   });
 
   test("connected row delegates to useAssistantAvatar even when the gate is closed", async () => {

@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { debugDatabaseGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { DebugDatabaseGetResponse } from "@/generated/daemon/types.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { useSupportsDebugDatabase } from "@/lib/backwards-compat/use-supports-debug-database";
 import { ApiError } from "@/utils/api-errors";
@@ -45,12 +44,11 @@ const STATUS_KEY = {
 export function DatabaseDebugPanel() {
   const { t } = useTranslation("settings");
   const assistantId = useActiveAssistantId();
-  const orgReady = useIsOrgReady();
   const supports = useSupportsDebugDatabase();
 
   const query = useQuery({
     ...debugDatabaseGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: orgReady && supports,
+    enabled: supports,
   });
 
   const unsupported = !supports || isUnsupportedError(query.error);

@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { secretsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { SecretsGetResponse } from "@/generated/daemon/types.gen";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 
 // ---------------------------------------------------------------------------
 // Credential-entry parser (transforms secrets list into service/field pairs)
@@ -62,11 +61,9 @@ export function useProviderCredentialsList({
   assistantId,
   enabled = true,
 }: UseProviderCredentialsListOptions) {
-  const isOrgReady = useIsOrgReady();
-
   const query = useQuery({
     ...secretsGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: !!assistantId && enabled && isOrgReady,
+    enabled: !!assistantId && enabled,
     select: (data) => parseCredentialEntries(data.secrets),
     retry: shouldRetryDaemonError,
     staleTime: 30_000,

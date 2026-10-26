@@ -399,25 +399,6 @@ describe("useConversationAssets status", () => {
     expect(result.current.status).toBe("error");
   });
 
-  // The gate, not the client: an ungated query with nothing cached fetches on
-  // mount, and a request sent before the org header can be produced comes back
-  // a 400 the panel would then have to report as this conversation's failure.
-  test("holds both queries idle while the org header is unresolved", () => {
-    const client = makeChatInfoQueryClient();
-
-    const { result } = renderAssets({ client });
-
-    for (const queryKey of [
-      appsGetQueryKey(QUERY_ARGS),
-      documentsGetQueryKey(QUERY_ARGS),
-    ]) {
-      const query = client.getQueryCache().find({ queryKey })!;
-      expect(query.state.fetchStatus).toBe("idle");
-      expect(query.state.status).toBe("pending");
-    }
-    expect(result.current.status).toBe("pending");
-  });
-
   test("is error when a source settled on a 500 with nothing cached", () => {
     const client = seededQueries();
     client.removeQueries({ queryKey: documentsGetQueryKey(QUERY_ARGS) });

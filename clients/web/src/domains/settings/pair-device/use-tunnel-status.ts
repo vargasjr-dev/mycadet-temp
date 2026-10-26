@@ -4,7 +4,6 @@ import { useCallback } from "react";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { integrationsIngressStatusGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { IntegrationsIngressStatusGetResponse } from "@/generated/daemon/types.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useSupportsIngressStatus } from "@/lib/backwards-compat/ingress-status-gate";
 
 import type { TunnelStatusView } from "./tunnel-status-row";
@@ -41,8 +40,7 @@ export interface TunnelStatusController {
 export function useTunnelStatus(enabled: boolean): TunnelStatusController {
   const assistantId = useActiveAssistantId();
   const supportsIngressStatus = useSupportsIngressStatus(assistantId);
-  const isOrgReady = useIsOrgReady();
-  const canProbe = enabled && supportsIngressStatus && isOrgReady;
+  const canProbe = enabled && supportsIngressStatus;
 
   const { data, isFetching, refetch } = useQuery({
     ...integrationsIngressStatusGetOptions({

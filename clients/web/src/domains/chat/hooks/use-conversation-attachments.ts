@@ -45,7 +45,6 @@ import {
   retryConversationAssetQuery,
   type ConversationAssetSourceState,
 } from "@/lib/conversation-asset-sources";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useSupportsAttachmentList } from "@/lib/backwards-compat/use-supports-attachment-list";
 import type {
   ConversationAttachmentSummary,
@@ -192,10 +191,6 @@ export function useConversationAttachments(target: {
   const { assistantId, conversationId, refreshKey } = target;
   const queryClient = useQueryClient();
   const supportsList = useSupportsAttachmentList();
-  // The same gate the panel's other daemon reads wait on: a request sent
-  // before the org header can be produced fails for a reason the conversation
-  // has nothing to do with.
-  const isOrgReady = useIsOrgReady();
 
   // A 404 is the gate's blind spot: a build carrying the gated version but cut
   // before the route landed. Remembered per target so the fallback holds for
@@ -213,8 +208,7 @@ export function useConversationAttachments(target: {
     [assistantId, conversationId],
   );
 
-  const listsRequested =
-    supportsList && isOrgReady && routeMissingFor !== targetKey;
+  const listsRequested = supportsList && routeMissingFor !== targetKey;
   const filesQuery = useInfiniteQuery({
     ...attachmentsGetInfiniteOptions(filesArgs),
     initialPageParam: 0,
@@ -239,7 +233,7 @@ export function useConversationAttachments(target: {
   }, [routeMissing, targetKey]);
   const listsActive =
     supportsList && !routeMissing && routeMissingFor !== targetKey;
-  const listsEnabled = listsActive && isOrgReady;
+  const listsEnabled = listsActive;
 
   const fetchNextFiles = filesQuery.fetchNextPage;
   const fetchNextFrames = framesQuery.fetchNextPage;

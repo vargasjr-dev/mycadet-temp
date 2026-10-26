@@ -197,7 +197,7 @@ export function useSendMessage({
   // The Doctor is cloud-hosted only; when the active assistant is
   // self-hosted the Doctor tab doesn't exist, so `/doctor` must fall through
   // to a normal send rather than navigating to a doomed, empty tab.
-  const doctorSelfHosted = useActiveAssistantIsSelfHosted();
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
   const addOptimisticSend = useChatSessionStore.use.addOptimisticSend();
   const setOptimisticSends = useChatSessionStore.use.setOptimisticSends();
   const setError = useChatSessionStore.use.setError();
@@ -785,7 +785,7 @@ export function useSendMessage({
         // The Doctor is cloud-hosted only. On a self-hosted assistant its
         // tab doesn't exist, so the command is disabled: clear the input and
         // surface a notice rather than sending "/doctor …" as a normal turn.
-        if (doctorSelfHosted) {
+        if (isSelfHosted) {
           useComposerStore.getState().setInput("");
           toast.info(t("chat:useSendMessage.doctorUnavailable"));
           return;
@@ -1183,7 +1183,7 @@ export function useSendMessage({
     [
       activeConversationId,
       assistantId,
-      doctorSelfHosted,
+      isSelfHosted,
       navigate,
       diskPressureChatBlockReason,
       uiContextRef,

@@ -41,7 +41,6 @@ import { shouldSuppressGenericChatErrorNotice } from "@/domains/chat/utils/error
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationListQuery } from "@/hooks/conversation-queries";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useResumeGrace } from "@/hooks/use-resume-grace";
 import { groupsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { resolveLandingConversation } from "@/domains/chat/utils/landing-conversation";
@@ -299,11 +298,6 @@ export function useConversationLoader({
   // lives in the banner-consumer effect above.
   // -------------------------------------------------------------------------
   const lastAppliedUrlConversationIdRef = useRef<string | null>(null);
-  /* The same gate every daemon query honors: org header available and the
-     pod serving. A waking pod 503s every request, so the landing lookups
-     wait for the gate rather than spend their retries against it; the
-     effect re-runs when the gate opens. */
-  const canQueryDaemon = useIsOrgReady();
   useEffect(() => {
     if (assistantStateKind !== "active") {
       return;
@@ -390,13 +384,6 @@ export function useConversationLoader({
       apply(preselectedId);
       return;
     }
-    if (!canQueryDaemon) {
-      /* Nothing to decide yet; the deps re-run this once the daemon is
-         reachable, and with no URL key applied the fallback is reached
-         again rather than frozen behind an explicit one. */
-      return;
-    }
-
     let stale = false;
     void resolveLandingConversation(
       queryClient,
@@ -445,7 +432,6 @@ export function useConversationLoader({
   }, [
     assistantId,
     assistantStateKind,
-    canQueryDaemon,
     urlConversationId,
     searchParams,
     navigate,

@@ -25,7 +25,6 @@ import {
 
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { liveViewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import type * as OrgReadiness from "@/hooks/use-is-org-ready";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import { useConversationStore } from "@/stores/conversation-store";
@@ -43,12 +42,6 @@ import { useOpenDocumentFromChat } from "@/domains/chat/hooks/use-open-app-from-
 import { useDocumentConversationRoute } from "@/domains/chat/hooks/use-document-conversation-route";
 import { DocumentChatContent } from "@/domains/chat/components/document-chat-content";
 
-mock.module(
-  "@/hooks/use-is-org-ready",
-  (): Partial<typeof OrgReadiness> => ({
-    useOrgHeaderReadiness: () => "ready",
-  }),
-);
 mock.module(
   "@/domains/library/library-view",
   (): Partial<typeof Library> => ({

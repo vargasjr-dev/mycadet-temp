@@ -29,7 +29,6 @@ import {
   useGatedSelectedAssistantId,
   resolveSelectedAssistantId,
 } from "@/assistant/selection";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { isAuthenticated } from "@/stores/session-status";
 import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -248,12 +247,10 @@ export interface AssistantResolutionResult {
 function useShouldQueryServer(): boolean {
   const sessionStatus = useAuthStore.use.sessionStatus();
   const hasCloudSession = useHasCloudSession();
-  const isOrgReady = useIsOrgReady();
   return (
     isAuthenticated(sessionStatus) &&
     !isGatewaySessionLive() &&
-    (hasCloudSession || !isLocalClient()) &&
-    isOrgReady
+    (hasCloudSession || !isLocalClient())
   );
 }
 

@@ -12,7 +12,6 @@ import { DetailCard } from "@/components/detail-card";
 import { NotFound } from "@/components/not-found";
 import { useCredentialsDeletePostMutation } from "@/generated/daemon/@tanstack/react-query.gen";
 import { credentialsListPost } from "@/generated/daemon/sdk.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -22,8 +21,7 @@ import { Button } from "@mycadet/design-library/components/button";
 import { ConfirmDialog } from "@mycadet/design-library/components/confirm-dialog";
 import { Input } from "@mycadet/design-library/components/input";
 import { Modal } from "@mycadet/design-library/components/modal";
-import {
-} from "@mycadet/design-library/components/segment-control";
+import {} from "@mycadet/design-library/components/segment-control";
 import { toast } from "@mycadet/design-library/components/toast";
 
 import {
@@ -87,7 +85,6 @@ function CredentialsPageInner() {
   const { t } = useTranslation("settings");
   const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
-  const isOrgReady = useIsOrgReady();
 
   const listQueryKey = credentialsListQueryKey(assistantId);
   const listQuery = useQuery({
@@ -102,7 +99,6 @@ function CredentialsPageInner() {
         credentials: data.credentials as StoredCredential[],
       };
     },
-    enabled: isOrgReady,
     retry: shouldRetryDaemonError,
   });
 
@@ -274,7 +270,6 @@ function CredentialsPageInner() {
   // it only earns its place once the list is long enough to get unwieldy.
   const showSearch = credentials.length > SEARCH_VISIBILITY_THRESHOLD;
 
-
   return (
     <div className="space-y-4">
       <DetailCard
@@ -295,74 +290,74 @@ function CredentialsPageInner() {
         }
       >
         <div className="space-y-4">
-            {hasCredentials ? (
-              <div className="space-y-3">
-                {showSearch ? (
-                  <Input
-                    type="text"
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    placeholder={t("credentialsPage.searchPlaceholder")}
-                    aria-label={t("credentialsPage.searchAriaLabel")}
-                    leftIcon={<Search className="h-3.5 w-3.5" aria-hidden />}
-                    fullWidth
-                  />
-                ) : null}
-                {filteredCredentials.length === 0 ? (
-                  <p className="px-1 py-2 text-body-medium-lighter text-[var(--content-tertiary)]">
-                    {t("credentialsPage.noMatch", { query: searchText.trim() })}
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {filteredCredentials.map((credential) => {
-                      const name = `${credential.service}:${credential.field}`;
-                      return (
-                        <CredentialRow
-                          key={credential.credentialId ?? name}
-                          credential={credential}
-                          assistantId={assistantId}
-                          generatingLink={generatingLinkName === name}
-                          deleting={deletingName === name}
-                          onGenerateLink={() =>
-                            void handleGenerateLink(credential)
-                          }
-                          onDelete={() => setPendingDeletion(credential)}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-base)]">
-                  <KeyRound
-                    className="h-6 w-6 text-[var(--content-disabled)] dark:text-[var(--content-default)]"
-                    aria-hidden
-                  />
-                </div>
-                <h3 className="mt-4 text-title-small text-[var(--content-default)]">
-                  {t("credentialsPage.emptyTitle")}
-                </h3>
-                <p className="mt-1 text-body-medium-lighter text-[var(--content-tertiary)]">
-                  {t("credentialsPage.emptySubtitle")}
+          {hasCredentials ? (
+            <div className="space-y-3">
+              {showSearch ? (
+                <Input
+                  type="text"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder={t("credentialsPage.searchPlaceholder")}
+                  aria-label={t("credentialsPage.searchAriaLabel")}
+                  leftIcon={<Search className="h-3.5 w-3.5" aria-hidden />}
+                  fullWidth
+                />
+              ) : null}
+              {filteredCredentials.length === 0 ? (
+                <p className="px-1 py-2 text-body-medium-lighter text-[var(--content-tertiary)]">
+                  {t("credentialsPage.noMatch", { query: searchText.trim() })}
                 </p>
+              ) : (
+                <div className="space-y-2">
+                  {filteredCredentials.map((credential) => {
+                    const name = `${credential.service}:${credential.field}`;
+                    return (
+                      <CredentialRow
+                        key={credential.credentialId ?? name}
+                        credential={credential}
+                        assistantId={assistantId}
+                        generatingLink={generatingLinkName === name}
+                        deleting={deletingName === name}
+                        onGenerateLink={() =>
+                          void handleGenerateLink(credential)
+                        }
+                        onDelete={() => setPendingDeletion(credential)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-base)]">
+                <KeyRound
+                  className="h-6 w-6 text-[var(--content-disabled)] dark:text-[var(--content-default)]"
+                  aria-hidden
+                />
               </div>
-            )}
+              <h3 className="mt-4 text-title-small text-[var(--content-default)]">
+                {t("credentialsPage.emptyTitle")}
+              </h3>
+              <p className="mt-1 text-body-medium-lighter text-[var(--content-tertiary)]">
+                {t("credentialsPage.emptySubtitle")}
+              </p>
+            </div>
+          )}
 
-            {hasCredentials ? null : (
-              <Button
-                type="button"
-                variant="outlined"
-                size="compact"
-                onClick={() => setIsShowingAddForm(true)}
-                className="w-full border-dashed"
-                leftIcon={<Plus aria-hidden />}
-              >
-                {t("credentialsPage.addCredentialButton")}
-              </Button>
-            )}
-          </div>
+          {hasCredentials ? null : (
+            <Button
+              type="button"
+              variant="outlined"
+              size="compact"
+              onClick={() => setIsShowingAddForm(true)}
+              className="w-full border-dashed"
+              leftIcon={<Plus aria-hidden />}
+            >
+              {t("credentialsPage.addCredentialButton")}
+            </Button>
+          )}
+        </div>
       </DetailCard>
 
       <ConfirmDialog

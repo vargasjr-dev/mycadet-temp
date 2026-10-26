@@ -196,13 +196,12 @@ interface EmailsTabProps {
 
 export function EmailsTab({ assistantId, isCloudHosted }: EmailsTabProps) {
   const { t } = useTranslation("logs");
-  const gateEnabled = isCloudHosted;
 
   const addressesQuery = useQuery({
     ...assistantsEmailAddressesListOptions({
       path: { assistant_id: assistantId },
     }),
-    enabled: gateEnabled,
+    enabled: isCloudHosted,
   });
   const address = addressesQuery.data?.results?.[0];
 
@@ -210,7 +209,7 @@ export function EmailsTab({ assistantId, isCloudHosted }: EmailsTabProps) {
     ...assistantsEmailAddressesStatusRetrieveOptions({
       path: { assistant_id: assistantId, id: address?.id ?? "" },
     }),
-    enabled: gateEnabled && !!address?.id,
+    enabled: isCloudHosted && !!address?.id,
   });
 
   const emailsQuery = useQuery({
@@ -218,7 +217,7 @@ export function EmailsTab({ assistantId, isCloudHosted }: EmailsTabProps) {
       path: { assistant_id: assistantId },
       query: { limit: 10 },
     }),
-    enabled: gateEnabled,
+    enabled: isCloudHosted,
   });
 
   const usage: EmailAddressUsage | undefined = statusQuery.data?.usage;

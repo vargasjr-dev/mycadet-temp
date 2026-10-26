@@ -15,7 +15,6 @@ import type {
 let supported: boolean | undefined = true;
 let capabilityError = false;
 const retryCapability = mock(() => {});
-let orgReady = true;
 let organizationId = "org-1";
 let loadFailure = false;
 let saveFailure = false;
@@ -57,10 +56,6 @@ mock.module("@/hooks/use-assistant-capability", () => ({
     refetch: retryCapability,
   }),
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-  getOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
-}));
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
@@ -90,7 +85,6 @@ beforeEach(() => {
   supported = true;
   capabilityError = false;
   retryCapability.mockClear();
-  orgReady = true;
   organizationId = "org-1";
   loadFailure = false;
   saveFailure = false;
@@ -219,18 +213,6 @@ test("one retry refreshes settings and a failed background capability check", as
   act(() => hook.result.current.retryLoad());
   await waitFor(() => expect(hook.result.current.state.status).toBe("ready"));
   expect(retryCapability).toHaveBeenCalledTimes(1);
-});
-test("waits for organization readiness and blocks writes while it changes", async () => {
-  orgReady = false;
-  const hook = mount();
-  expect(hook.result.current.state.status).toBe("loading");
-  expect(getConfig).not.toHaveBeenCalled();
-  orgReady = true;
-  hook.rerender({ open: true });
-  await waitFor(() => expect(hook.result.current.state.status).toBe("ready"));
-  orgReady = false;
-  await act(() => hook.result.current.save(changes));
-  expect(patchConfig).not.toHaveBeenCalled();
 });
 test("load failures can retry without exposing editable defaults", async () => {
   loadFailure = true;

@@ -21,7 +21,6 @@ mock.module("@/hooks/use-assistant-capability", () => ({
     isError: capabilityError,
   }),
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({ useIsOrgReady: () => true }));
 mock.module("@/lib/backwards-compat/complete-profile-snapshots", () => ({
   useSupportsCompleteProfileSnapshots: () => true,
 }));

@@ -27,7 +27,6 @@ import {
   sttProvidersGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { configPatch } from "@/generated/daemon/sdk.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
@@ -111,12 +110,10 @@ export function sttRoleOverrideEntries(
 export function SttRoleOverrides({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const queryClient = useQueryClient();
-  const isOrgReady = useIsOrgReady();
   const [clearing, setClearing] = useState<string | null>(null);
 
   const { data: daemonConfig } = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 30_000,
   });
   // `services.stt` falls under the ConfigGetResponse index signature
@@ -129,7 +126,7 @@ export function SttRoleOverrides({ assistantId }: { assistantId: string }) {
   // providers), so the family is rendered from the role's own pair.
   const { data: catalog } = useQuery({
     ...sttProvidersGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady && entries.length > 0,
+    enabled: entries.length > 0,
     staleTime: 5 * 60_000,
   });
 

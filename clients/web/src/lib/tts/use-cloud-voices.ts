@@ -14,7 +14,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { managedSpeechTtsVoicesRetrieveOptions } from "@/generated/api/@tanstack/react-query.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 
 /**
  * A cloud voice as offered to the UI. `source` is a plain `string` so
@@ -70,10 +69,9 @@ function toResult(
 export function useUnscopedCloudVoices(
   options: { enabled?: boolean } = {},
 ): UseCloudVoices {
-  const isOrgReady = useIsOrgReady();
   const { data, isLoading } = useQuery({
     ...managedSpeechTtsVoicesRetrieveOptions(),
-    enabled: isOrgReady && (options.enabled ?? true),
+    enabled: options.enabled ?? true,
     staleTime: 60_000,
     retry: false,
   });

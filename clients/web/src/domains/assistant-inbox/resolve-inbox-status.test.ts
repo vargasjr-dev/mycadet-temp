@@ -6,28 +6,12 @@ import {
 } from "./resolve-inbox-status";
 
 const BASE: InboxStatusInputs = {
-  hosting: "cloud",
   cloudAssistantId: "asst-platform",
   addressCount: 1,
   domainsSettled: true,
 };
 
 describe("resolveInboxStatus", () => {
-  test("loads while hosting is still resolving", () => {
-    expect(resolveInboxStatus({ ...BASE, hosting: "resolving" })).toBe(
-      "loading",
-    );
-  });
-
-  test("is unavailable off the cloud, whatever else is known", () => {
-    expect(resolveInboxStatus({ ...BASE, hosting: "self_hosted" })).toBe(
-      "unavailable",
-    );
-    expect(resolveInboxStatus({ ...BASE, hosting: "unavailable" })).toBe(
-      "unavailable",
-    );
-  });
-
   test("loads until the cloud id and the address list are in", () => {
     expect(resolveInboxStatus({ ...BASE, cloudAssistantId: null })).toBe(
       "loading",

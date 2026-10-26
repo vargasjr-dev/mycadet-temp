@@ -32,11 +32,6 @@ import {
 
 const ASSISTANT_ID = "asst_1";
 
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-  useOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
-}));
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
@@ -136,7 +131,6 @@ function renderList(assistantId: string | null = ASSISTANT_ID) {
 }
 
 beforeEach(() => {
-  orgReady = true;
   configPatchCalls.length = 0;
   patchGate = null;
   daemonConfigData = { services: { tts: { provider: "cadet" } } };

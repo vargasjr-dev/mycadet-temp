@@ -20,13 +20,11 @@ import {
 import { useEffect, useRef } from "react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
-import { create } from "zustand";
 
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useDocumentEditorSync } from "@/hooks/use-document-editor-sync";
 import { publish } from "@/lib/event-bus";
-import type * as Readiness from "@/hooks/use-is-org-ready";
 import { liveViewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -44,9 +42,6 @@ import { useOpenDocumentFromChat } from "../hooks/use-open-app-from-chat";
 import { useComposerSubmit } from "../hooks/use-composer-submit";
 import { useComposerStore } from "../composer-store";
 
-const useReadiness = create<{ value: Readiness.OrgHeaderReadiness }>(() => ({
-  value: "ready",
-}));
 const downloadDocumentPdf = mock(
   async (
     _assistantId: string,
@@ -59,12 +54,6 @@ mock.module(
   (): Partial<typeof Surfaces> => ({ downloadDocumentPdf }),
 );
 
-mock.module(
-  "@/hooks/use-is-org-ready",
-  (): Partial<typeof Readiness> => ({
-    useOrgHeaderReadiness: () => useReadiness((state) => state.value),
-  }),
-);
 mock.module(
   "@/lib/error-reporting/capture-error",
   (): Partial<typeof ErrorCapture> => ({
@@ -289,7 +278,6 @@ beforeEach(() => {
     attachments: [],
   });
   downloadDocumentPdf.mockClear();
-  useReadiness.setState({ value: "ready" });
   saved = { ...original };
   linked = true;
   pendingConversationRead = undefined;
@@ -591,46 +579,7 @@ describe("document viewport handoff", () => {
     expect(saved.content).toBe("Latest first document body");
   });
 
-  test.each(["unavailable", "resolving"] as const)(
-    "desktop document readiness=%s exposes the error and close action",
-    async (initialReadiness) => {
-      useReadiness.setState({ value: initialReadiness });
-      renderLayout(false);
-      if (initialReadiness === "resolving") {
-        await screen.findByRole("button", { name: "Close document" });
-        expect(load).not.toHaveBeenCalled();
-        act(() => useReadiness.setState({ value: "unavailable" }));
-      }
-      expect(await screen.findByRole("alert")).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
-      expect(useViewerStore.getState().mainView).toBe("document");
-      expect(load).not.toHaveBeenCalled();
-      fireEvent.click(screen.getByRole("button", { name: "Close document" }));
-      expect(screen.getByTestId("url").textContent).toBe(
-        "/assistant/conversations/conv-1",
-      );
-      expect(useViewerStore.getState().mainView).toBe("chat");
-      await waitFor(() =>
-        expect(Boolean(screen.queryByRole("alert"))).toBe(false),
-      );
-    },
-  );
 
-  test("desktop readiness recovery retains the drawer and loads the document", async () => {
-    useReadiness.setState({ value: "unavailable" });
-    renderLayout(false);
-    await screen.findByRole("alert");
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(load).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toBeTruthy();
-    act(() => useReadiness.setState({ value: "ready" }));
-    expect(
-      await screen.findByRole("textbox", { name: "Document body" }),
-    ).toBeTruthy();
-    expect(useViewerStore.getState().mainView).toBe("document");
-    expect(load).toHaveBeenCalledTimes(1);
-    expect(Boolean(screen.queryByRole("alert"))).toBe(false);
-  });
 
   test("replacing a desktop document flushes edits without closing the new panel", async () => {
     renderLayout(false);

@@ -37,11 +37,8 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
 
 mock.module("@/assistant/hosting", () => ({
   ...cloudGate,
+  useActiveAssistantIsCloudHosted: () => true,
   useAssistantHosting: () => "cloud",
-}));
-
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
 }));
 
 mock.module("@/hooks/use-cloud-assistant-id", () => ({

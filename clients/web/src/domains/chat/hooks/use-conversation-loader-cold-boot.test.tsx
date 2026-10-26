@@ -51,12 +51,6 @@ import type { Conversation } from "@/types/conversation-types";
 
 const ASSISTANT_ID = "asst-1";
 
-/* The daemon gate the list queries honor; the landing lookups share it. */
-let orgIsReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgIsReady,
-}));
-
 /* The drained foreground list never resolves in these tests; the gate is
    the real one, composed over the two stubs above. */
 const realQueries = await import("@/hooks/conversation-queries");
@@ -248,7 +242,6 @@ beforeEach(() => {
   pinnedExtras = [];
   failNextRequests = 0;
   daemonFiltersForeground = true;
-  orgIsReady = true;
   navigateMock.mockClear();
   useConversationStore.setState({
     activeConversationId: null,

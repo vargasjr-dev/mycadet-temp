@@ -25,7 +25,6 @@ import {
   configGetOptions,
   ttsProvidersGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import {
   useUnscopedCloudVoices,
   type CloudVoiceOption,
@@ -78,8 +77,7 @@ export interface UseCloudVoiceSelection {
 export function useCloudVoiceSelection(
   assistantId: string | null,
 ): UseCloudVoiceSelection {
-  const orgReadiness = useOrgHeaderReadiness();
-  const enabled = orgReadiness === "ready" && !!assistantId;
+  const enabled = !!assistantId;
 
   const { data: providerCatalog, isLoading: catalogLoading } = useQuery({
     ...ttsProvidersGetOptions({ path: { assistant_id: assistantId ?? "" } }),
@@ -127,15 +125,9 @@ export function useCloudVoiceSelection(
   const isByok = enabled && !!daemonConfig && !isCloud;
   // "Nothing is in flight, and nothing is waiting to start." Each `isLoading`
   // is false for a query that is disabled or has failed, so the states that
-  // never produce a picker (no assistant, an org that resolved to nothing, an
-  // old daemon, a catalog that failed or came back empty) settle rather than
-  // read as perpetually loading. `"resolving"` is the one wait not expressed as
-  // a query: it disables all three, and they'd otherwise look settled.
-  const settled =
-    orgReadiness !== "resolving" &&
-    !catalogLoading &&
-    !configLoading &&
-    !voicesLoading;
+  // never produce a picker (no assistant, an old daemon, a catalog that
+  // failed or came back empty) settle rather than read as perpetually loading.
+  const settled = !catalogLoading && !configLoading && !voicesLoading;
 
   const configuredModel =
     daemonTts?.providers?.cadet?.model ??

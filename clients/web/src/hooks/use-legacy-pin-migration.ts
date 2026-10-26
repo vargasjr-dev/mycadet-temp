@@ -21,7 +21,6 @@ import {
   appsGetOptions,
   appsGetQueryKey,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useSupportsDaemonAppPins } from "@/lib/backwards-compat/daemon-app-pins";
 import {
   loadPinnedApps,
@@ -82,17 +81,11 @@ export function useLegacyPinMigration(
 ): void {
   const queryClient = useQueryClient();
   const daemonOwnsPins = useSupportsDaemonAppPins();
-  /* Platform-mode daemon requests carry `Cadet-Organization-Id` from the org
-     store, which hydrates after auth. This hook mounts at the root, so without
-     the gate its first request goes out headerless and is rejected, and nothing
-     about org hydration would re-run it. */
-  const isOrgReady = useIsOrgReady();
   const path = useMemo(
     () => ({ assistant_id: assistantId ?? "" }),
     [assistantId],
   );
-  const enabled =
-    Boolean(assistantId) && isAssistantActive && daemonOwnsPins && isOrgReady;
+  const enabled = Boolean(assistantId) && isAssistantActive && daemonOwnsPins;
 
   const { data: apps } = useQuery({
     ...appsGetOptions({ path }),

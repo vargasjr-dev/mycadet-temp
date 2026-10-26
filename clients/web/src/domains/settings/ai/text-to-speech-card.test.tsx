@@ -29,13 +29,8 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   Toaster: () => null,
   ToastContent: () => null,
 }));
-let orgReady = false;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-  useOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
-}));
 // Controllable daemon config the config-get query resolves to. `initialData`
-// makes it available even though the query is `enabled: isOrgReady` (false),
+// makes it available even though the query is disabled,
 // mirroring how the real query would already be cached. Default `{ services: {} }`
 // leaves the daemon with no tts provider, so the happy-path tests still PATCH it.
 let daemonConfigData: { services: Record<string, unknown> } = { services: {} };
@@ -162,7 +157,6 @@ describe("TextToSpeechCard — daemon provisioning on Save", () => {
     credentialsSetCalls.length = 0;
     configPatchCalls.length = 0;
     daemonConfigData = { services: {} };
-    orgReady = false;
     ttsCatalogData = undefined;
     managedVoicesData = undefined;
   });
@@ -252,7 +246,6 @@ describe("TextToSpeechCard — Cadet provider", () => {
     credentialsSetCalls.length = 0;
     configPatchCalls.length = 0;
     daemonConfigData = { services: {} };
-    orgReady = false;
     ttsCatalogData = undefined;
     managedVoicesData = undefined;
   });
@@ -327,7 +320,6 @@ describe("TextToSpeechCard — Cadet provider", () => {
     // Daemon advertises voice selection and the cloud serves the catalog;
     // the dropdown must offer the fetched voices (not the static fallback)
     // and decorate the cloud's default.
-    orgReady = true;
     daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
@@ -402,7 +394,6 @@ describe("TextToSpeechCard — Cadet provider", () => {
   });
 
   test("the per-row preview is hidden for voices without a hosted sample", () => {
-    orgReady = true;
     daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
@@ -443,7 +434,6 @@ describe("TextToSpeechCard — Cadet provider", () => {
   test("a successful empty catalog hides the voice picker instead of falling back", () => {
     // An empty catalog is authoritative ("nothing offered right now") — the
     // static fallback must not resurface voices the cloud would reject.
-    orgReady = true;
     daemonConfigData = { services: { tts: { provider: "cadet" } } };
     ttsCatalogData = {
       providers: [
@@ -470,7 +460,6 @@ describe("TextToSpeechCard — Cadet provider", () => {
     // A daemon serving the pre-cadet catalog omits the cloud option; the
     // card must still offer it, or a legacy managed config has no selectable
     // representation and managed TTS becomes unreachable from this UI.
-    orgReady = true;
     ttsCatalogData = {
       providers: [
         {

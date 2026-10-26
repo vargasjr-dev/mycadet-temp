@@ -24,7 +24,6 @@ import {
   configGetOptions,
   sttProvidersGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
   MULTI_DEFAULT_DAEMON_PROVIDERS,
   STT_LANGUAGE_DEFAULT_CODE,
@@ -110,8 +109,7 @@ export interface UseSttLanguageSelection {
 export function useSttLanguageSelection(
   assistantId: string | null,
 ): UseSttLanguageSelection {
-  const isOrgReady = useIsOrgReady();
-  const enabled = isOrgReady && !!assistantId;
+  const enabled = !!assistantId;
 
   const { data: providerCatalog } = useQuery({
     ...sttProvidersGetOptions({ path: { assistant_id: assistantId ?? "" } }),

@@ -51,10 +51,6 @@ mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
 
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
-}));
-
 const {
   probe: probeMock,
   respondWith: probeAnswers,
