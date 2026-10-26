@@ -5,12 +5,11 @@ import {
   deriveAssistantStatus,
 } from "@/utils/assistant-status";
 
-// A fully-working baseline (active, authenticated, connected, idle turn) that
-// each test perturbs one signal at a time, so every assertion isolates the
-// single input it cares about.
+// A fully-working baseline (active, connected, idle turn) that each test
+// perturbs one signal at a time, so every assertion isolates the single
+// input it cares about.
 const working: AssistantStatusInputs = {
   lifecycleKind: "active",
-  sessionStatus: "authenticated",
   isSSEConnected: true,
   turnPhase: "idle",
 };
@@ -20,29 +19,38 @@ describe("deriveAssistantStatus", () => {
     expect(deriveAssistantStatus(working)).toBe("idle");
   });
 
-  test("authFailed outranks every other signal", () => {
-    // Even mid-error, mid-turn, disconnected — an unauthenticated session is
-    // the most fundamental failure, so it wins.
+  test("authFailed when the resolution was rejected by platform auth", () => {
+    // The assistant's own resolution failing with 401/403 IS the auth
+    // failure — there is no separate session question. It outranks every
+    // other signal: even mid-turn, disconnected.
     expect(
       deriveAssistantStatus({
         lifecycleKind: "error",
-        sessionStatus: "unauthenticated",
+        lifecycleErrorStatus: 401,
         isSSEConnected: false,
         turnPhase: "thinking",
       }),
     ).toBe("authFailed");
+    expect(
+      deriveAssistantStatus({
+        ...working,
+        lifecycleKind: "error",
+        lifecycleErrorStatus: 403,
+      }),
+    ).toBe("authFailed");
   });
 
-  test("error when the lifecycle terminally failed (and auth is fine)", () => {
+  test("error when the lifecycle terminally failed on a non-auth status", () => {
+    expect(
+      deriveAssistantStatus({
+        ...working,
+        lifecycleKind: "error",
+        lifecycleErrorStatus: 500,
+      }),
+    ).toBe("error");
     expect(deriveAssistantStatus({ ...working, lifecycleKind: "error" })).toBe(
       "error",
     );
-  });
-
-  test("disconnected while the session is still initializing", () => {
-    expect(
-      deriveAssistantStatus({ ...working, sessionStatus: "initializing" }),
-    ).toBe("disconnected");
   });
 
   test("disconnected for every non-active lifecycle phase", () => {

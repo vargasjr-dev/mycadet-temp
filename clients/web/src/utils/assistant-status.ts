@@ -1,13 +1,16 @@
 import type { AssistantResolutionState } from "@/assistant/types";
 import type { AssistantStatus } from "@/runtime/is-electron";
-import type { SessionStatus } from "@/stores/session-status";
 import type { TurnPhase } from "@/domains/chat/turn-store";
 
 export interface AssistantStatusInputs {
   /** Resolution kind the assistant's boot resolve landed on. */
   lifecycleKind: AssistantResolutionState["kind"];
-  /** Platform-session auth state (`useAuthStore`). */
-  sessionStatus: SessionStatus;
+  /**
+   * HTTP status the resolution failed with, when the boot resolve got a
+   * server answer (`lifecycleKind === "error"` only). The platform's auth
+   * rejection IS the auth fact — there is no separate session question.
+   */
+  lifecycleErrorStatus?: number;
   /** Whether the always-on SSE event stream is currently connected. */
   isSSEConnected: boolean;
   /** Phase of the active chat turn (`useTurnStore`). */
@@ -31,26 +34,25 @@ export interface AssistantStatusInputs {
  */
 export function deriveAssistantStatus({
   lifecycleKind,
-  sessionStatus,
+  lifecycleErrorStatus,
   isSSEConnected,
   turnPhase,
 }: AssistantStatusInputs): AssistantStatus {
-  // Auth is the outermost gate: without an authenticated session the renderer
-  // can't reach the assistant on the user's behalf at all.
-  if (sessionStatus === "unauthenticated") {
-    return "authFailed";
-  }
-
   // A terminal lifecycle error outranks connection state — the assistant
-  // itself failed to come up.
+  // itself failed to come up. When the assistant's own resolution was
+  // rejected by the platform's auth (401/403), that IS the auth failure:
+  // there is no separate session question to ask.
   if (lifecycleKind === "error") {
+    if (lifecycleErrorStatus === 401 || lifecycleErrorStatus === 403) {
+      return "authFailed";
+    }
     return "error";
   }
 
-  // Session still settling, or the assistant hasn't reached `active` yet
-  // (loading / initializing / hosted-but-not-connected):
-  // there's no live data plane, so the honest state is disconnected.
-  if (sessionStatus === "initializing" || lifecycleKind !== "active") {
+  // The assistant hasn't reached `active` yet (loading / initializing /
+  // hosted-but-not-connected): there's no live data plane, so the honest
+  // state is disconnected.
+  if (lifecycleKind !== "active") {
     return "disconnected";
   }
 

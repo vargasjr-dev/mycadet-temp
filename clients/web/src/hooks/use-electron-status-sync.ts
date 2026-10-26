@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useAssistantResolution } from "@/assistant/queries";
 import { useTurnStore } from "@/domains/chat/turn-store";
 import { setAssistantStatus } from "@/runtime/status";
-import { useAuthStore } from "@/stores/auth-store";
 import { useSSEConnectedStore } from "@/stores/sse-connected-store";
 import { deriveAssistantStatus } from "@/utils/assistant-status";
 
@@ -23,8 +22,8 @@ import { deriveAssistantStatus } from "@/utils/assistant-status";
  * every authenticated route, not only while chat is on screen.
  */
 export function useElectronStatusSync(): void {
-  const { state } = useAssistantResolution();
-  const sessionStatus = useAuthStore.use.sessionStatus();
+  const { state, result } = useAssistantResolution();
+  const lifecycleErrorStatus = result?.ok ? undefined : result?.status;
   const isSSEConnected = useSSEConnectedStore.use.isConnected();
   const turnPhase = useTurnStore.use.phase();
 
@@ -32,10 +31,10 @@ export function useElectronStatusSync(): void {
     setAssistantStatus(
       deriveAssistantStatus({
         lifecycleKind: state.kind,
-        sessionStatus,
+        lifecycleErrorStatus,
         isSSEConnected,
         turnPhase,
       }),
     );
-  }, [state.kind, sessionStatus, isSSEConnected, turnPhase]);
+  }, [state.kind, lifecycleErrorStatus, isSSEConnected, turnPhase]);
 }

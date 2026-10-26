@@ -63,7 +63,11 @@ describe("resolveAssistantLifecycleState — transport-shaped failures (LUM-2402
         status: 500,
         error: { detail: "Internal server error" },
       }),
-    ).toEqual({ kind: "error", message: "Internal server error" });
+    ).toEqual({
+      kind: "error",
+      message: "Internal server error",
+      status: 500,
+    });
   });
 
   test("404 still resolves to auto_hatch, not a transport error", () => {

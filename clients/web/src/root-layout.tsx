@@ -183,9 +183,6 @@ export function RootLayout() {
   const activeConversationId = useConversationStore.use.activeConversationId();
   const assistantStateKind = bootState.kind;
   const isAssistantActive = assistantStateKind === "active";
-  // The resolution's `active` already implies boot settled — the assistant
-  // could not resolve otherwise.
-  const companionReady = isAssistantActive;
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -307,7 +304,7 @@ export function RootLayout() {
     },
   );
   useElectronStatusSync();
-  useElectronIdentitySync(companionReady);
+  useElectronIdentitySync(isAssistantActive);
 
   // Size the Electron main window to the onboarding layout (440×630
   // default) while on an onboarding step, and back to the main-app size
@@ -635,10 +632,10 @@ export function RootLayout() {
       <TimezoneSync />
       <GlobalPushToTalkBridge
         assistantId={assistantId}
-        enabled={companionReady}
+        enabled={isAssistantActive}
       />
 
-      <CompanionTourEntry avatar={avatar} ready={companionReady} />
+      <CompanionTourEntry avatar={avatar} ready={isAssistantActive} />
 
       {/* The app dimmed while the companion introduces itself over this
           window. Inert off Electron and on the shells with no surface. */}
