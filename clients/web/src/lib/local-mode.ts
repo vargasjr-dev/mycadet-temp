@@ -2,6 +2,7 @@ import {
   getGatewayUrl,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
+  isRemoteGatewayEntry,
   isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
 import {
@@ -61,6 +62,8 @@ export type {
 // ---------------------------------------------------------------------------
 
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
+
+export { isRemoteGatewayEntry } from "@mycadet/local-mode/contract";
 
 export function isCadetCloudRemote(): boolean {
   return readInjectedConfig()?.remote === "cloud";
@@ -365,24 +368,14 @@ export function getActiveAssistant(): LockfileAssistant | undefined {
 export function getLockfileAssistant(
   assistantId: string,
 ): LockfileAssistant | undefined {
-  return getServedLockfile().assistants.find((a) => a.assistantId === assistantId);
+  return getServedLockfile().assistants.find(
+    (a) => a.assistantId === assistantId,
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Gateway predicates
 // ---------------------------------------------------------------------------
-/**
- * Whether the entry's gateway lives on another machine: a custom remote.
- * Its recorded host and port are inherently off-machine — a loopback
- * topology's gateway is always on this machine.
- */
-export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  if (entry.cloud !== "custom") {
-    return false;
-  }
-  const gatewayUrl = getGatewayUrl(entry);
-  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
-}
 
 function expectsLocalGateway(
   assistant: LockfileAssistant | undefined,
@@ -413,9 +406,8 @@ export function hasLocalGateway(
 
 /**
  * Whether this runtime should reach `assistant` at a remote paired gateway: a
- * loopback-gateway entry whose `runtimeUrl` points off this machine, in local
- * (non-remote-gateway) mode.
- * Whether the entry records a usable `runtimeUrl` is a separate question
+ * custom-remote entry, in local (non-remote-gateway) mode.
+ * Whether the entry's derived address is usable is a separate question
  * answered by `hasPairedGateway`. Deliberately not a type predicate: its
  * false branch must not narrow `assistant` (a local entry also lands there).
  */

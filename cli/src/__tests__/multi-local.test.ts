@@ -57,7 +57,6 @@ const makeEntry = (
   extra?: Partial<LockfileAssistant>,
 ): LockfileAssistant => ({
   assistantId: id,
-  runtimeUrl: `http://localhost:${DEFAULT_DAEMON_PORT}`,
   // The LockfileAssistant field is `cloud` — the rename happens only here,
   // where the type forces it.
   cloud: remote,
@@ -319,7 +318,6 @@ describe("multi-local", () => {
       writeLockfile({
         assistants: [
           makeEntry("my-remote", "custom", {
-            runtimeUrl: "http://10.0.0.1:7821",
           }),
         ],
         activeAssistant: "my-remote",
@@ -331,7 +329,6 @@ describe("multi-local", () => {
 
     test("remote entries don't get resources applied", () => {
       const remoteEntry = makeEntry("cloud-box", "custom", {
-        runtimeUrl: "http://10.0.0.2:7821",
       });
       writeLockfile({ assistants: [remoteEntry] });
       // Save and reload to verify resources are not injected

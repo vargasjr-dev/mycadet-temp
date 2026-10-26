@@ -19,23 +19,15 @@ describe("getGatewayUrl", () => {
     ).toBe("http://203.0.113.7:7830");
   });
 
-  test("custom remotes with no recorded address fall back to the legacy runtimeUrl", () => {
+  test("custom remotes dial their recorded host and port", () => {
     expect(
       getGatewayUrl(
-        entry({ cloud: "custom", runtimeUrl: "http://203.0.113.7:9000/" }),
+        entry({ cloud: "custom", ipAddress: "203.0.113.7", port: 9000 }),
       ),
     ).toBe("http://203.0.113.7:9000");
   });
 
-  test("cloud-managed entries dial the URL they were hatched under", () => {
-    expect(
-      getGatewayUrl(
-        entry({ cloud: "cloud", runtimeUrl: "https://cloud.example.com/" }),
-      ),
-    ).toBe("https://cloud.example.com");
-  });
-
-  test("cloud-managed entries without a recorded URL resolve through the cloud-url stack", () => {
+  test("cloud-managed entries resolve through the cloud-url stack", () => {
     expect(getGatewayUrl(entry({ cloud: "cloud" }))).toMatch(/^https?:\/\//);
   });
 
@@ -48,14 +40,6 @@ describe("getGatewayUrl", () => {
         }),
       ),
     ).toBe("http://127.0.0.1:7900");
-  });
-
-  test("loopback topologies whose port lives only in a legacy loopback runtimeUrl still resolve", () => {
-    expect(
-      getGatewayUrl(
-        entry({ cloud: "docker", runtimeUrl: "http://127.0.0.1:7842" }),
-      ),
-    ).toBe("http://127.0.0.1:7842");
   });
 
   test("an entry with nothing derives the default gateway port", () => {

@@ -55,7 +55,6 @@ async function instance(
   return {
     assistantId: name,
     cloud,
-    runtimeUrl: "http://127.0.0.1:7830",
     resources: {
       instanceDir: root,
       daemonPort: 1,

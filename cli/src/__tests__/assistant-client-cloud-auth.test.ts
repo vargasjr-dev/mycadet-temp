@@ -33,7 +33,6 @@ function seedCloud(token?: string): void {
   saveLockfileAssistant({
     assistantId: ASSISTANT_ID,
     name: "Credence",
-    runtimeUrl: PLATFORM_URL,
     cloud: "cloud",
   });
   if (token) {

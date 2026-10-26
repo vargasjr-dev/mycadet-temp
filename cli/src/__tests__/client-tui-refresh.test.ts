@@ -28,7 +28,6 @@ function seedEntry(): void {
   saveLockfileAssistant({
     assistantId: "px",
     name: "Paired",
-    runtimeUrl: RUNTIME,
     cloud: "local",
   });
 }

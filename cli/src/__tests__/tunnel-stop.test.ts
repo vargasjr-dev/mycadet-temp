@@ -41,7 +41,6 @@ beforeEach(() => {
     assistantId: "fixture",
     name: "fixture",
     cloud: "local",
-    runtimeUrl: "http://127.0.0.1:7830",
     resources: {
       instanceDir: join(root, "instance"),
       gatewayPort: 7830,

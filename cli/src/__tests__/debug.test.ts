@@ -55,8 +55,8 @@ const { debug } = await import("../commands/debug.js");
 const LOCAL_ENTRY = {
   name: "mine",
   assistantId: "local-asst-1",
-  runtimeUrl: "http://127.0.0.1:7821",
   cloud: "local",
+  resources: { gatewayPort: 7821, daemonPort: 7821 },
   hatchedAt: new Date().toISOString(),
   cloudAssistantId: "11111111-2222-3333-4444-555555555555",
   cloudBaseUrl: "https://cloud.mycadet.ai",

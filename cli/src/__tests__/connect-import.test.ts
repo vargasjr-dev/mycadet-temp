@@ -204,7 +204,8 @@ describe("connect import", () => {
 
     const entry = findAssistantByName("link-box");
     expect(entry).not.toBeNull();
-    expect(entry!.runtimeUrl).toBe(HOST);
+    expect(entry!.cloud).toBe("custom");
+    expect(entry!.ipAddress).toBe(new URL(HOST).hostname);
     const token = loadGuardianToken("link-box");
     expect(token?.accessToken).toBe("acc-tok");
     expect(token?.refreshToken).toBe("refresh-tok");
@@ -382,7 +383,9 @@ describe("connect import", () => {
     expect(output).toContain("deprecated");
     expect(output).toContain("cadet pair");
     expect(output).toContain("Imported paired assistant 'legacy-box'");
-    expect(findAssistantByName("legacy-box")!.runtimeUrl).toBe(HOST);
+    expect(findAssistantByName("legacy-box")!.ipAddress).toBe(
+      new URL(HOST).hostname,
+    );
     expect(loadGuardianToken("legacy-box")?.accessToken).toBe("bundle-tok");
   });
 
@@ -586,7 +589,6 @@ describe("connect import", () => {
     saveLockfileAssistant({
       assistantId: "desk",
       name: "Desk",
-      runtimeUrl: "http://127.0.0.1:7830",
       cloud: "local",
     });
     process.argv = [
@@ -608,6 +610,6 @@ describe("connect import", () => {
     // host records no orphaned device and the link stays usable.
     expect(calls).toHaveLength(0);
     const entry = findAssistantByName("desk");
-    expect(entry!.runtimeUrl).toBe("http://127.0.0.1:7830");
+    expect(entry!.cloud).toBe("local");
   });
 });

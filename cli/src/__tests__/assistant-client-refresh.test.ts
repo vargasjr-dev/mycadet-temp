@@ -24,7 +24,6 @@ import { AssistantClient } from "../lib/assistant-client.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 
-const RUNTIME = "https://gw.example.com";
 const FUTURE = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60_000).toISOString();
 
@@ -38,7 +37,6 @@ function seedPaired(refreshToken: string, opts?: { due?: boolean }): void {
   saveLockfileAssistant({
     assistantId: "px",
     name: "Paired",
-    runtimeUrl: RUNTIME,
     cloud: "local",
   });
   saveGuardianToken("px", {

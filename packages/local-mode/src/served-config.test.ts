@@ -62,7 +62,6 @@ describe("servedConfigFromLockfile", () => {
         {
           assistantId: "paired",
           cloud: "local",
-          runtimeUrl: "https://gateway.example.com",
           bearerToken: "example-host-token",
         },
       ],
@@ -70,8 +69,7 @@ describe("servedConfigFromLockfile", () => {
     });
     expect(config.assistantId).toBe("paired");
     expect(config.remote).toBe("local");
-    // The stamp carries public identity only - no runtime URL, no secrets.
+    // The stamp carries public identity only - no address, no secrets.
     expect(JSON.stringify(config)).not.toContain("example-host-token");
-    expect(JSON.stringify(config)).not.toContain("gateway.example.com");
   });
 });

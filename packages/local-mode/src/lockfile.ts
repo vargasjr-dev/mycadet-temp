@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
+  isRemoteGatewayEntry,
   LockfileAssistantSchema,
   LockfileSchema,
   parseLockfile,
@@ -14,7 +13,6 @@ import { isCloudHome } from "./lockfile-contract";
 import { resolveLockfilePath } from "./config";
 import { z } from "zod";
 
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { withLockfileLock } from "./lockfile-lock";
 import { stripSensitiveFields } from "./util";
 
@@ -97,12 +95,7 @@ export function isPairedLockfileEntry(
     if (!parsed.success) {
       return false;
     }
-    const { cloud, runtimeUrl } = parsed.data;
-    return (
-      isLoopbackGatewayCloud(cloud) &&
-      isUsableRuntimeUrl(runtimeUrl) &&
-      !isLoopbackPublicUrl(runtimeUrl)
-    );
+    return isRemoteGatewayEntry(parsed.data);
   });
 }
 
@@ -119,9 +112,7 @@ function lockFailure(error: string): WriteResult {
  * Read the first parseable lockfile as raw JSON (unknown fields intact) for a
  * read-modify-write cycle; an unreadable file yields an empty lockfile.
  */
-export function readRawLockfile(
-  lockfilePath: string,
-): Record<string, unknown> {
+export function readRawLockfile(lockfilePath: string): Record<string, unknown> {
   try {
     return JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as Record<
       string,

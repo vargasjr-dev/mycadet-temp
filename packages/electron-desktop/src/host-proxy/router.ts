@@ -18,7 +18,6 @@ import {
   isUsableRuntimeUrl,
   type Lockfile,
 } from "@mycadet/local-mode/contract";
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { HostProxySseClient, type HostProxySseMessage } from "./sse";
 import { HostProxyPoster, type PresenceState } from "./poster";
@@ -881,24 +880,18 @@ function handleLockfileChange(lockfile: Lockfile): void {
   const hasSessionToken = requireRuntime().getSessionToken() !== null;
 
   for (const assistant of lockfile.assistants) {
-    // Cloud wins over resources: a merge can leave a stale gatewayPort on a
-    // non-loopback entry, and such an entry must never be classified as a
-    // loopback connection. The recorded off-machine url is the legacy
-    // pairing marker — a pre-custom entry's protocol fingerprint — so the
-    // classifier reads it directly rather than deriving (deriving prefers
-    // the recorded port, which is exactly the stale artifact).
-    const recordedOffMachine =
-      isUsableRuntimeUrl(assistant.runtimeUrl) &&
-      !isLoopbackPublicUrl(assistant.runtimeUrl);
-    const isMachineLocalEntry =
-      isLoopbackGatewayCloud(assistant.cloud) && !recordedOffMachine;
+    // Loopback topologies connect at their recorded port; custom remotes
+    // connect paired; clouds need a platform session. The merge-staleness
+    // the old recorded-url check guarded against is gone with the recorded
+    // url itself — the port is the only loopback record there is.
+    const isMachineLocalEntry = isLoopbackGatewayCloud(assistant.cloud);
     const port = isMachineLocalEntry
       ? assistant.resources?.gatewayPort
       : undefined;
     const gatewayUrl = getGatewayUrl(assistant);
     const isCloud =
       isCloudHome(assistant.cloud) &&
-      isUsableRuntimeUrl(getGatewayUrl(assistant)) &&
+      isUsableRuntimeUrl(gatewayUrl) &&
       hasSessionToken;
     if (!port && !isCloud) continue;
 

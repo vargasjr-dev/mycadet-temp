@@ -132,7 +132,6 @@ export async function syncCloudAssistants(
       saveLockfileAssistant({
         assistantId: pa.id,
         ...nameFields,
-        runtimeUrl: getCloudUrl(),
         cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       });

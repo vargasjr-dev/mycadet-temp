@@ -219,9 +219,17 @@ describe("pairAssistant", () => {
     expect(entry).toEqual({
       assistantId: DEFAULT_PAIRED_ID,
       name: "paired (10.0.0.5:7830)",
-      runtimeUrl: "http://10.0.0.5:7830",
+      cloud: "custom",
+      ipAddress: "10.0.0.5",
+      port: 7830,
     });
-    expect(Object.keys(entry)).toEqual(["assistantId", "name", "runtimeUrl"]);
+    expect(Object.keys(entry)).toEqual([
+      "assistantId",
+      "name",
+      "cloud",
+      "ipAddress",
+      "port",
+    ]);
     // Importing never reassigns the active assistant.
     expect(onDisk.activeAssistant ?? null).toBeNull();
 
@@ -503,9 +511,15 @@ describe("pairAssistant", () => {
         Record<string, unknown>
       >;
       expect(assistants).toHaveLength(2);
-      expect(assistants.map((a) => a.runtimeUrl)).toEqual([
-        "https://gw.example.com/assistant-1",
-        "https://gw.example.com/assistant-2",
+      expect(assistants.map((a) => a.assistantId)).toEqual([
+        "paired-gw-example-com-assistant-1",
+        "paired-gw-example-com-assistant-2",
+      ]);
+      expect(
+        assistants.map((a) => [a.ipAddress, a.port]),
+      ).toEqual([
+        ["gw.example.com", 443],
+        ["gw.example.com", 443],
       ]);
       expect(readGuardianToken(first.assistantId).accessToken).toBe("t1");
       expect(readGuardianToken(second.assistantId).accessToken).toBe("t2");
@@ -553,7 +567,8 @@ describe("pairAssistant", () => {
         {
           assistantId: "desk",
           cloud: "local",
-          runtimeUrl: "http://127.0.0.1:7830",
+          ipAddress: "127.0.0.1",
+          port: 7830,
         },
       ],
       activeAssistant: "desk",
@@ -575,7 +590,8 @@ describe("pairAssistant", () => {
       {
         assistantId: "desk",
         cloud: "local",
-        runtimeUrl: "http://127.0.0.1:7830",
+        ipAddress: "127.0.0.1",
+        port: 7830,
       },
     ]);
     expect(fs.existsSync(guardianTokenPath(configDir, "desk"))).toBe(false);
@@ -606,7 +622,8 @@ describe("pairAssistant", () => {
       Record<string, unknown>
     >;
     expect(assistants).toHaveLength(1);
-    expect(assistants[0]!.runtimeUrl).toBe("http://10.0.0.5:7830");
+    expect(assistants[0]!.ipAddress).toBe("10.0.0.5");
+    expect(assistants[0]!.port).toBe(7830);
     expect(readGuardianToken("desk").accessToken).toBe("t1");
   }),
     test("deletes the just-written token when the lockfile write fails", () => {
@@ -651,7 +668,8 @@ describe("checkPairedAssistantName", () => {
         {
           assistantId: "desk",
           cloud: "local",
-          runtimeUrl: "http://127.0.0.1:7830",
+          ipAddress: "127.0.0.1",
+          port: 7830,
         },
       ],
       activeAssistant: "desk",
@@ -1019,8 +1037,9 @@ describe("pairingPoll", () => {
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
     expect(entry).toMatchObject({
-      // The pair-page path is stripped back to the public base.
-      runtimeUrl: "https://gw.example.com",
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
     });
     const token = readGuardianToken(entry.assistantId as string);
     expect(token.accessToken).toBe("acc-tok");
@@ -1148,7 +1167,8 @@ describe("pairingPoll", () => {
         {
           assistantId: "desk",
           cloud: "local",
-          runtimeUrl: "http://127.0.0.1:7830",
+          ipAddress: "127.0.0.1",
+          port: 7830,
         },
       ],
       activeAssistant: "desk",
@@ -1632,7 +1652,11 @@ describe("pairingCancel", () => {
     const entry = (
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
-    expect(entry).toMatchObject({ runtimeUrl: "https://gw.example.com" });
+    expect(entry).toMatchObject({
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
+    });
     expect(readGuardianToken(entry.assistantId as string).accessToken).toBe(
       "acc-tok",
     );
@@ -1713,7 +1737,9 @@ describe("connectImport", () => {
     )[0]!;
     expect(entry).toMatchObject({
       assistantId: "desk-box",
-      runtimeUrl: "https://gw.example.com",
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
     });
   });
 
@@ -1812,7 +1838,8 @@ describe("connectImport", () => {
         {
           assistantId: "desk",
           cloud: "local",
-          runtimeUrl: "http://127.0.0.1:7830",
+          ipAddress: "127.0.0.1",
+          port: 7830,
         },
       ],
       activeAssistant: "desk",

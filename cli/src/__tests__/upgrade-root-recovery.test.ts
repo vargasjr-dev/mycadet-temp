@@ -1,3 +1,4 @@
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { afterAll, beforeEach, expect, spyOn, test } from "bun:test";
 import * as backups from "../lib/backup-ops.js";
 import * as docker from "../lib/docker.js";
@@ -83,7 +84,7 @@ afterAll(() => {
 test("failed-state recovery restores tar roots while stopped before restarting old services", async () => {
   expect(
     await lifecycle.attemptFailedStateRestore({
-      runtimeUrl: "http://127.0.0.1:1",
+      runtimeUrl: "http://127.0.0.1:7830",
       assistantId: "recovery",
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
@@ -110,7 +111,7 @@ test("failed root restore does not restart a partial installation", async () => 
   restore.mockResolvedValue(false);
   expect(
     await lifecycle.attemptFailedStateRestore({
-      runtimeUrl: "http://127.0.0.1:1",
+      runtimeUrl: "http://127.0.0.1:7830",
       assistantId: "recovery",
       backupPath: "pre-upgrade.tar.gz",
       backupLabel: "pre-upgrade",
@@ -135,7 +136,6 @@ test("versioned restore installs roots into stopped target containers before fir
   const entry: config.LockfileAssistant = {
     assistantId: "recovery",
     cloud: "docker",
-    runtimeUrl: "http://127.0.0.1:1",
   };
   capture.mockImplementation(async () => {
     events.push("capture-safety");
@@ -169,7 +169,7 @@ test("versioned restore installs roots into stopped target containers before fir
       backupPath: "/tmp/source.tar.gz",
     });
     expect(restore).toHaveBeenCalledWith(
-      entry.runtimeUrl,
+      getGatewayUrl(entry),
       entry.assistantId,
       "/tmp/source.tar.gz",
       { resume: false },

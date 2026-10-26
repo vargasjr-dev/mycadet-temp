@@ -199,17 +199,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parsePortFromUrl(url: unknown): number | undefined {
-  if (typeof url !== "string") return undefined;
-  try {
-    const parsed = new URL(url);
-    const port = Number(parsed.port);
-    return Number.isInteger(port) && port > 0 ? port : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function defaultPorts(): { daemon: number; gateway: number } {
   const envName = resolveEnvironmentName();
   const seed = SEEDS[envName] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME];
@@ -290,8 +279,7 @@ export function resolveLockfileInstanceDir(
     return {
       ok: true,
       instanceDir:
-        lockfileInstanceDir(entry, rawEntry) ??
-        resolveInstanceDir(assistantId),
+        lockfileInstanceDir(entry, rawEntry) ?? resolveInstanceDir(assistantId),
     };
   } catch {
     return { ok: true };
@@ -316,7 +304,6 @@ function resolveStatusResources(
       ports.daemon,
     gatewayPort:
       firstNumber(entry.resources?.gatewayPort, rawResources?.gatewayPort) ??
-      parsePortFromUrl(rawEntry?.runtimeUrl ?? entry.runtimeUrl) ??
       ports.gateway,
   };
 }

@@ -201,7 +201,6 @@ describe("restore error cases", () => {
     writeFileSync(join(retiredDir, `${name}.tar.gz`), "");
     const entry: Partial<LockfileAssistant> = {
       assistantId: name,
-      runtimeUrl: "http://127.0.0.1:7831",
       cloud: "local",
       // resources intentionally omitted
     };

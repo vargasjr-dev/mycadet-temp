@@ -18,7 +18,6 @@ import { mockCommands } from "./commands-mock.js";
 const entry: LockfileAssistant = {
   assistantId: "destination",
   cloud: "docker",
-  runtimeUrl: "http://localhost:7830",
   containerInfo: {
     assistantImage: "image-assistant",
     gatewayImage: "image-gateway",

@@ -28,7 +28,6 @@ function seedEntry(kind: "paired" | "local"): void {
   saveLockfileAssistant({
     assistantId: "px",
     name: kind === "paired" ? "Paired" : "Local",
-    runtimeUrl: kind === "paired" ? RUNTIME : "http://127.0.0.1:7830",
     cloud: "local",
   });
 }

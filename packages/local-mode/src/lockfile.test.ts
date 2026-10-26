@@ -55,7 +55,7 @@ describe("getLockfileData", () => {
     writeOnDisk({
       activeAssistant: "asst_ok",
       assistants: [
-        { assistantId: "asst_ok", cloud: "local", runtimeUrl: "http://a" },
+        { assistantId: "asst_ok", cloud: "local" },
         { cloud: "local", runtimeUrl: "http://b" }, // missing assistantId
       ],
     });
@@ -64,12 +64,12 @@ describe("getLockfileData", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.assistants).toEqual([
-        { assistantId: "asst_ok", cloud: "local", runtimeUrl: "http://a" },
+        { assistantId: "asst_ok", cloud: "local" },
       ]);
     }
   });
 
-  test("salvages a legacy entry that predates cloud/runtimeUrl", () => {
+  test("salvages a legacy entry that predates cloud", () => {
     // An entry written by an older CLI: no `cloud`, and the runtime URL stored
     // under the legacy `localUrl` key rather than `runtimeUrl`. Only the
     // identity is guaranteed, so the entry must still be returned (the modeled
@@ -102,17 +102,17 @@ describe("getLockfileData", () => {
 });
 
 // Hosts consult this so an expired pairing gets re-pair guidance instead of
-// hatch/wake; this pins the derivation — a remote runtimeUrl on a
-// loopback-cloud entry, never a stored flag.
+// hatch/wake; this pins the derivation — a custom remote's addressing,
+// never a stored flag.
 describe("isPairedLockfileEntry", () => {
-  test("classifies remote-runtimeUrl entries as paired", () => {
+  test("classifies custom-remote entries as paired", () => {
     writeOnDisk({
       assistants: [
-        { assistantId: "paired-1", runtimeUrl: "https://h.example.com" },
         {
-          assistantId: "paired-marker",
-          cloud: "local",
-          runtimeUrl: "https://other.example.com",
+          assistantId: "paired-1",
+          cloud: "custom",
+          ipAddress: "h.example.com",
+          port: 443,
         },
         { assistantId: "local-1", cloud: "local" },
       ],
@@ -120,7 +120,6 @@ describe("isPairedLockfileEntry", () => {
     });
 
     expect(isPairedLockfileEntry(lockfilePath, "paired-1")).toBe(true);
-    expect(isPairedLockfileEntry(lockfilePath, "paired-marker")).toBe(true);
     expect(isPairedLockfileEntry(lockfilePath, "local-1")).toBe(false);
     expect(isPairedLockfileEntry(lockfilePath, "missing")).toBe(false);
   });
@@ -149,14 +148,13 @@ describe("saveLockfileAssistant", () => {
         {
           assistantId: "asst_old",
           cloud: "cloud",
-          runtimeUrl: "http://old",
           futureField: "keep-me",
         },
       ],
     });
 
     saveLockfileAssistant(
-      { assistantId: "asst_new", cloud: "local", runtimeUrl: "http://new" },
+      { assistantId: "asst_new", cloud: "local" },
       "asst_new",
     );
 
@@ -171,9 +169,7 @@ describe("saveLockfileAssistant", () => {
   test("merges fields into an existing entry", () => {
     writeOnDisk({
       activeAssistant: null,
-      assistants: [
-        { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
-      ],
+      assistants: [{ assistantId: "asst_1", cloud: "local" }],
     });
 
     saveLockfileAssistant(
@@ -188,7 +184,6 @@ describe("saveLockfileAssistant", () => {
     expect(assistants[0]).toMatchObject({
       assistantId: "asst_1",
       cloud: "local",
-      runtimeUrl: "http://a",
       name: "Renamed",
     });
   });
@@ -197,7 +192,6 @@ describe("saveLockfileAssistant", () => {
     const entry = {
       assistantId: "asst_1",
       cloud: "local",
-      runtimeUrl: "http://a",
       name: "Old Name",
       resources: { gatewayPort: 7830, daemonPort: 7831, dataDir: "/tmp/x" },
       signingKey: "sk-on-disk-secret",
@@ -222,9 +216,8 @@ describe("saveLockfileAssistant", () => {
         {
           assistantId: "asst_active",
           cloud: "local",
-          runtimeUrl: "http://active",
         },
-        { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
+        { assistantId: "asst_1", cloud: "local" },
       ],
     });
 
@@ -319,7 +312,6 @@ describe("renameLockfileAssistantIfPresent", () => {
   const entry = {
     assistantId: "asst_1",
     cloud: "local",
-    runtimeUrl: "http://a",
     name: "Old Name",
     resources: { gatewayPort: 7830, daemonPort: 7831, dataDir: "/tmp/x" },
     signingKey: "sk-on-disk-secret",
@@ -454,7 +446,6 @@ describe("lockfile writers under lock contention", () => {
   const entry = {
     assistantId: "asst_1",
     cloud: "local",
-    runtimeUrl: "http://a",
     name: "Old Name",
   };
 
@@ -498,10 +489,9 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = replaceCloudAssistants(
-      lockfilePath,
-      [{ assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://p" }],
-    );
+    const result = replaceCloudAssistants(lockfilePath, [
+      { assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://p" },
+    ]);
 
     expect(result).toMatchObject({ ok: false, status: 423 });
     expect(fs.readFileSync(lockfilePath, "utf-8")).toBe(before);
@@ -531,16 +521,12 @@ describe("replaceCloudAssistants", () => {
     });
 
     expect(
-      replaceCloudAssistants(
-        lockfilePath,
-        [
-          {
-            assistantId: "asst_local",
-            paired: true,
-            runtimeUrl: "https://attacker.example.com",
-          },
-        ],
-      ),
+      replaceCloudAssistants(lockfilePath, [
+        {
+          assistantId: "asst_local",
+          paired: true,
+        },
+      ]),
     ).toMatchObject({ ok: false, status: 403 });
     expect(readOnDisk()).toEqual({
       activeAssistant: "asst_local",
@@ -560,23 +546,20 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_p",
           cloud: "cloud",
-          runtimeUrl: "http://old",
           onboardedAt: "2026-08-01T00:00:00.000Z",
         },
       ],
     });
 
-    const result = replaceCloudAssistants(
-      lockfilePath,
-      [{ assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://new" }],
-    );
+    const result = replaceCloudAssistants(lockfilePath, [
+      { assistantId: "asst_p", cloud: "cloud" },
+    ]);
 
     expect(result.ok).toBe(true);
     expect(readOnDisk().assistants).toEqual([
       {
         assistantId: "asst_p",
         cloud: "cloud",
-        runtimeUrl: "http://new",
         onboardedAt: "2026-08-01T00:00:00.000Z",
       },
     ]);
@@ -594,16 +577,13 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(
-      lockfilePath,
-      [
-        {
-          assistantId: "asst_p",
-          cloud: "cloud",
-          onboardedAt: "2026-08-31T00:00:00.000Z",
-        },
-      ],
-    );
+    replaceCloudAssistants(lockfilePath, [
+      {
+        assistantId: "asst_p",
+        cloud: "cloud",
+        onboardedAt: "2026-08-31T00:00:00.000Z",
+      },
+    ]);
 
     expect(
       (readOnDisk().assistants as Array<Record<string, unknown>>)[0]
@@ -623,10 +603,9 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(
-      lockfilePath,
-      [{ assistantId: "asst_b", cloud: "cloud" }],
-    );
+    replaceCloudAssistants(lockfilePath, [
+      { assistantId: "asst_b", cloud: "cloud" },
+    ]);
 
     expect(readOnDisk().assistants).toEqual([
       { assistantId: "asst_b", cloud: "cloud" },
@@ -642,21 +621,16 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_old_platform",
           cloud: "cloud",
-          runtimeUrl: "http://op",
         },
       ],
     });
 
-    const result = replaceCloudAssistants(
-      lockfilePath,
-      [
-        {
-          assistantId: "asst_new_platform",
-          cloud: "cloud",
-          runtimeUrl: "http://np",
-        },
-      ],
-    );
+    const result = replaceCloudAssistants(lockfilePath, [
+      {
+        assistantId: "asst_new_platform",
+        cloud: "cloud",
+      },
+    ]);
 
     expect(result.ok).toBe(true);
 
@@ -676,13 +650,11 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_a",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b_old",
           cloud: "cloud",
           organizationId: "org_b",
-          runtimeUrl: "http://bo",
         },
       ],
     });
@@ -694,7 +666,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_b_new",
           cloud: "cloud",
           organizationId: "org_b",
-          runtimeUrl: "http://bn",
         },
       ],
       "org_b",
@@ -712,7 +683,7 @@ describe("replaceCloudAssistants", () => {
       activeAssistant: null,
       assistants: [
         // Legacy platform entry with no organizationId, same id as the sync.
-        { assistantId: "asst_dup", cloud: "cloud", runtimeUrl: "http://old" },
+        { assistantId: "asst_dup", cloud: "cloud" },
       ],
     });
 
@@ -723,7 +694,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_dup",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://new",
         },
       ],
       "org_a",
@@ -736,7 +706,6 @@ describe("replaceCloudAssistants", () => {
     expect(assistants[0]).toMatchObject({
       assistantId: "asst_dup",
       organizationId: "org_a",
-      runtimeUrl: "http://new",
     });
   });
 
@@ -748,27 +717,21 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_a",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://a",
         },
         {
           assistantId: "asst_org_b",
           cloud: "cloud",
           organizationId: "org_b",
-          runtimeUrl: "http://b",
         },
       ],
     });
 
-    replaceCloudAssistants(
-      lockfilePath,
-      [
-        {
-          assistantId: "asst_new",
-          cloud: "cloud",
-          runtimeUrl: "http://np",
-        },
-      ],
-    );
+    replaceCloudAssistants(lockfilePath, [
+      {
+        assistantId: "asst_new",
+        cloud: "cloud",
+      },
+    ]);
 
     const ids = (readOnDisk().assistants as Array<Record<string, unknown>>).map(
       (a) => a.assistantId,
@@ -785,7 +748,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_a",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://a",
         },
       ],
     });
@@ -797,7 +759,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_a_new",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://an",
         },
       ],
       "org_a",
@@ -817,7 +778,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_b_old",
           cloud: "cloud",
           organizationId: "org_b",
-          runtimeUrl: "http://bo",
         },
       ],
     });
@@ -829,7 +789,6 @@ describe("replaceCloudAssistants", () => {
           assistantId: "asst_org_a",
           cloud: "cloud",
           organizationId: "org_a",
-          runtimeUrl: "http://a",
         },
       ],
       "org_a",
@@ -846,21 +805,16 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_old_platform",
           cloud: "cloud",
-          runtimeUrl: "http://op",
         },
       ],
     });
 
-    replaceCloudAssistants(
-      lockfilePath,
-      [
-        {
-          assistantId: "asst_new_platform",
-          cloud: "cloud",
-          runtimeUrl: "http://np",
-        },
-      ],
-    );
+    replaceCloudAssistants(lockfilePath, [
+      {
+        assistantId: "asst_new_platform",
+        cloud: "cloud",
+      },
+    ]);
 
     expect(readOnDisk().activeAssistant).toBeNull();
   });

@@ -21,7 +21,6 @@ describe("parseLockfile", () => {
           assistantId: "asst_1",
           name: "Alice",
           cloud: "cloud",
-          runtimeUrl: "http://127.0.0.1:7777",
           hatchedAt: "2026-01-01T00:00:00.000Z",
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
@@ -44,9 +43,7 @@ describe("parseLockfile", () => {
   test("keeps entries missing only optional fields", () => {
     const raw = {
       activeAssistant: null,
-      assistants: [
-        { assistantId: "asst_1", cloud: "cloud", runtimeUrl: "https://x" },
-      ],
+      assistants: [{ assistantId: "asst_1", cloud: "cloud" }],
     };
 
     const parsed = parseLockfile(raw);
@@ -54,7 +51,6 @@ describe("parseLockfile", () => {
     expect(parsed.assistants[0]).toEqual({
       assistantId: "asst_1",
       cloud: "cloud",
-      runtimeUrl: "https://x",
     });
   });
 
@@ -71,7 +67,7 @@ describe("parseLockfile", () => {
     ]);
   });
 
-  test("salvages an entry whose cloud and runtimeUrl are absent", () => {
+  test("salvages an entry whose cloud is absent", () => {
     // Older CLI builds predate the `cloud` field and persisted the runtime URL
     // under a different key (`localUrl`), so a real on-disk entry can lack both
     // modeled fields. It must still be returned, normalized to `local`.
@@ -93,7 +89,7 @@ describe("parseLockfile", () => {
     const raw = {
       activeAssistant: "asst_ok",
       assistants: [
-        { assistantId: "asst_ok", cloud: "local", runtimeUrl: "http://a" },
+        { assistantId: "asst_ok", cloud: "local" },
         { cloud: "local", runtimeUrl: "http://b" }, // missing assistantId
         { assistantId: 42, cloud: "local", runtimeUrl: "http://c" }, // wrong type
         "not-an-object",
@@ -102,7 +98,7 @@ describe("parseLockfile", () => {
 
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_ok", cloud: "local", runtimeUrl: "http://a" },
+      { assistantId: "asst_ok", cloud: "local" },
     ]);
     expect(parsed.activeAssistant).toBe("asst_ok");
   });
@@ -115,7 +111,6 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           cloud: "local",
-          runtimeUrl: "http://a",
           futureField: { nested: true }, // unknown entry field
         },
       ],
@@ -128,7 +123,7 @@ describe("parseLockfile", () => {
     // merges raw JSON; see lockfile.test.ts).
     const parsed = parseLockfile(raw);
     expect(parsed.assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
+      { assistantId: "asst_1", cloud: "local" },
     ]);
     expect(parsed.activeAssistant).toBe("asst_1");
     expect(parsed.schemaVersion).toBe(99);
@@ -160,20 +155,20 @@ describe("parseLockfile", () => {
     // catch absorbs any malformed value as "local".
     const raw = {
       assistants: [
-        { assistantId: "asst_1", cloud: 7, runtimeUrl: "http://a" }, // cloud not a string
-        { assistantId: "asst_2", cloud: "local", runtimeUrl: 7 }, // runtimeUrl not a string
+        { assistantId: "asst_1", cloud: 7 }, // cloud not a string
+        { assistantId: "asst_2", cloud: "local", port: "nope" }, // mistyped modeled field
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "asst_1", cloud: "local", runtimeUrl: "http://a" },
+      { assistantId: "asst_1", cloud: "local" },
     ]);
   });
 
   test("drops an entry only when its assistantId is missing or mistyped", () => {
     const raw = {
       assistants: [
-        { cloud: "local", runtimeUrl: "http://a" }, // no assistantId
+        { cloud: "local" }, // no assistantId
         { assistantId: 42, cloud: "local" }, // assistantId not a string
       ],
       activeAssistant: null,
@@ -187,7 +182,6 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           cloud: "local",
-          runtimeUrl: "http://a",
           resources: { gatewayPort: "7777", daemonPort: 7778 },
         },
       ],
@@ -202,7 +196,6 @@ describe("parseLockfile", () => {
         {
           assistantId: "asst_1",
           cloud: "local",
-          runtimeUrl: "http://a",
           resources: {
             gatewayPort: 7777,
             daemonPort: 7778,
@@ -268,15 +261,15 @@ describe("parseLockfile", () => {
     // reading — a cloudless or unknown cloud parses as "local".
     const raw = {
       assistants: [
-        { assistantId: "gcp_1", project: "my-proj", runtimeUrl: "https://a" },
-        { assistantId: "ssh_1", sshUser: "deploy", runtimeUrl: "https://b" },
+        { assistantId: "gcp_1", project: "my-proj" },
+        { assistantId: "ssh_1", sshUser: "deploy" },
         { assistantId: "legacy_1", cloud: "paired" },
       ],
       activeAssistant: null,
     };
     expect(parseLockfile(raw).assistants).toEqual([
-      { assistantId: "gcp_1", cloud: "local", runtimeUrl: "https://a" },
-      { assistantId: "ssh_1", cloud: "local", runtimeUrl: "https://b" },
+      { assistantId: "gcp_1", cloud: "local" },
+      { assistantId: "ssh_1", cloud: "local" },
       { assistantId: "legacy_1", cloud: "local" },
     ]);
   });
@@ -357,19 +350,29 @@ describe("LockfileSchema defaults", () => {
 });
 
 describe("pairedHostLabel", () => {
-  test("names the remote host from a parseable runtimeUrl", () => {
-    expect(pairedHostLabel("https://tunnel.example.com")).toBe(
-      "Paired · tunnel.example.com",
-    );
-    expect(pairedHostLabel("https://remote-host.example:8443")).toBe(
-      "Paired · remote-host.example",
-    );
+  test("names the remote host of a custom remote", () => {
+    expect(
+      pairedHostLabel({
+        assistantId: "a",
+        cloud: "custom",
+        ipAddress: "tunnel.example.com",
+        port: 443,
+      }),
+    ).toBe("Paired · tunnel.example.com");
+    expect(
+      pairedHostLabel({
+        assistantId: "a",
+        cloud: "custom",
+        ipAddress: "remote-host.example",
+        port: 8443,
+      }),
+    ).toBe("Paired · remote-host.example");
   });
 
-  test("falls back to plain Paired for a missing or unparseable runtimeUrl", () => {
-    expect(pairedHostLabel(undefined)).toBe("Paired");
-    expect(pairedHostLabel("")).toBe("Paired");
-    expect(pairedHostLabel("not a url")).toBe("Paired");
+  test("falls back to plain Paired for a loopback entry", () => {
+    expect(pairedHostLabel({ assistantId: "a", cloud: "local" })).toBe(
+      "Paired",
+    );
   });
 });
 

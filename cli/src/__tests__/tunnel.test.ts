@@ -129,7 +129,6 @@ function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
   tempDirs.push(instanceDir);
   return {
     assistantId,
-    runtimeUrl: "http://127.0.0.1:7830",
     cloud: "local",
     resources: {
       instanceDir,
@@ -143,17 +142,16 @@ function makeLocalEntry(assistantId = "assistant-1"): LockfileAssistant {
 function makeCloudEntry(assistantId = "cloud-1"): LockfileAssistant {
   return {
     assistantId,
-    runtimeUrl: `https://runtime.example.com/${assistantId}`,
     cloud: "cloud",
   };
 }
 
-/** A `hatch --remote docker` entry: local container gateway, no `resources`. */
+/** A `hatch --remote docker` entry: local container gateway at its recorded port. */
 function makeDockerEntry(assistantId = "docker-1"): LockfileAssistant {
   return {
     assistantId,
-    runtimeUrl: "http://localhost:7930",
     cloud: "docker",
+    resources: { gatewayPort: 7930, daemonPort: 7821 },
   };
 }
 
@@ -161,8 +159,8 @@ function makeDockerEntry(assistantId = "docker-1"): LockfileAssistant {
 function makeAppleContainerEntry(assistantId = "apple-1"): LockfileAssistant {
   return {
     assistantId,
-    runtimeUrl: "http://localhost:8030",
     cloud: "apple-container",
+    resources: { gatewayPort: 8030, daemonPort: 7821 },
   };
 }
 
@@ -338,7 +336,6 @@ describe("app server targeting", () => {
 
   test("targets the edge port returned by ensureAppServer for ngrok", async () => {
     const entry = makeLocalEntry();
-    entry.runtimeUrl = "https://stale-tunnel.ngrok-free.dev";
     writeLockfile(entry);
     process.argv = [
       "bun",
@@ -434,10 +431,20 @@ describe("app server targeting", () => {
     });
   });
 
-  test("a docker assistant set active tunnels via its runtimeUrl gateway port", async () => {
+  test("a docker assistant set active tunnels on its recorded gateway port", async () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
-    writeLockfile([local, makeDockerEntry()], "docker-1");
+    writeLockfile(
+      [
+        local,
+        {
+          assistantId: "docker-1",
+          cloud: "docker",
+          resources: { gatewayPort: 7930, daemonPort: 7821 },
+        },
+      ],
+      "docker-1",
+    );
     process.argv = [
       "bun",
       "cadet",

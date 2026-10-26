@@ -219,7 +219,7 @@ export function checkPairedAssistantName(
 
 /**
  * Register a pairing on this machine: persist the guardian token and upsert a
- * paired lockfile entry (its remote `runtimeUrl` is what marks it paired),
+ * paired lockfile entry (its custom addressing is what marks it paired),
  * the write counterpart of `unpairAssistant`.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
@@ -245,7 +245,7 @@ export function pairAssistant(
   }
 
   // A paired entry is remote by definition (`cadet pair` refuses to advertise
-  // loopback URLs), and a loopback runtimeUrl in the lockfile would otherwise
+  // loopback URLs), and a loopback gateway address in the lockfile would otherwise
   // read as a local gateway to loopback-port consumers. Refuse it outright so
   // a crafted address cannot point a pairing at this machine's own services.
   if (isLoopbackPublicUrl(credentials.gatewayUrl)) {
@@ -306,6 +306,7 @@ export function pairAssistant(
     };
   }
 
+  const gateway = new URL(credentials.gatewayUrl);
   try {
     saveLockfileAssistant(
       {
@@ -314,9 +315,14 @@ export function pairAssistant(
         // only in their path prefix, and a display name that dropped it would
         // make them indistinguishable in a chooser.
         name: name ?? `paired (${label})`,
-        runtimeUrl: credentials.gatewayUrl,
-        // No pairing flag is stored: paired-ness derives from this remote
-        // runtimeUrl, so lifecycle/status readers recognize the remote
+        // The bundle's gateway address, recorded as the canonical custom
+        // encoding — the one shape every reader derives from.
+        cloud: "custom",
+        ipAddress: gateway.hostname,
+        port:
+          Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
+        // No pairing flag is stored: paired-ness derives from the custom
+        // addressing, so lifecycle/status readers recognize the remote
         // pairing without one. The cloud id the web resolver cached for an
         // earlier target is dropped; the upsert merge would otherwise keep it
         // and the resolver would never re-probe.
@@ -1152,7 +1158,7 @@ type DecodedBundle =
 /**
  * Decode and validate a base64 pairing bundle. Total and non-throwing:
  * malformed input yields a typed failure. `gatewayUrl` is persisted as
- * `runtimeUrl` and used to build fetch URLs, so it must be an absolute http(s)
+ * the entry's address and used to build fetch URLs, so it must be an absolute http(s)
  * URL rather than letting an invalid string through (which would crash
  * `new URL(...)` or break later client calls).
  */

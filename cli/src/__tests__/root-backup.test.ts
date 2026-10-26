@@ -66,7 +66,6 @@ async function fixture() {
   const entry: LockfileAssistant = {
     assistantId: "test",
     cloud: "local",
-    runtimeUrl: "http://127.0.0.1:7831",
     resources: {
       instanceDir: root,
       daemonPort: 7821,

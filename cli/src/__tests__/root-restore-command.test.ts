@@ -1,3 +1,4 @@
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -84,7 +85,6 @@ for (const topology of ["local", "docker"] as const) {
     const entry: config.LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
-      runtimeUrl: "http://127.0.0.1:1",
     };
     lookup.mockReturnValue(entry);
     process.argv = ["bun", "cadet", "restore", "test", "--from", file];
@@ -100,7 +100,6 @@ test("cloud restore uploads tar and calls the cloud API using the assistant's cl
   const entry: config.LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
-    runtimeUrl: "https://cloud.mycadet.ai",
   };
   lookup.mockReturnValue(entry);
   process.argv = ["bun", "cadet", "restore", "cloud-test", "--from", file];
@@ -112,13 +111,13 @@ test("cloud restore uploads tar and calls the cloud API using the assistant's cl
       contentLength: expect.any(Number),
     }),
     "session-token",
-    entry.runtimeUrl,
+    getGatewayUrl(entry),
   );
   expect(upload).toHaveBeenCalled();
   expect(importCloud).toHaveBeenCalledWith(
     "root-archive",
     "session-token",
-    entry.runtimeUrl,
+    getGatewayUrl(entry),
   );
   expect(hostRestore).not.toHaveBeenCalled();
   expect(guardianRead).not.toHaveBeenCalled();

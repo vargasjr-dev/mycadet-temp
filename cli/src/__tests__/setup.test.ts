@@ -182,7 +182,6 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "http://runtime.example",
       cloud: "local",
       resources: {
         instanceDir: testDir,
@@ -216,7 +215,6 @@ describe("setup command", () => {
     process.env.OPENAI_API_KEY = "test-openai-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "http://127.0.0.1:3000",
       cloud: "local",
       resources: {
         instanceDir: testDir,
@@ -243,7 +241,6 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "http://runtime.example",
       cloud: "local",
       resources: {
         instanceDir: testDir,
@@ -276,8 +273,8 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "http://localhost:7831",
       cloud: "docker",
+      resources: { gatewayPort: 7831, daemonPort: 7821 },
       guardianBootstrapSecret: "test-bootstrap-secret",
     });
     installFetchStub({
@@ -302,9 +299,9 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
       cloud: "cloud",
+      cloudBaseUrl: "https://assistant.example",
     });
 
     await setup();
@@ -321,7 +318,6 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
       cloud: "cloud",
     });
@@ -350,7 +346,6 @@ describe("setup command", () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
     writeLockfile({
       assistantId: "assistant-123",
-      runtimeUrl: "https://assistant.example",
       bearerToken: "entry-token",
       cloud: "cloud",
     });

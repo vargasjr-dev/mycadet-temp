@@ -71,16 +71,15 @@ describe("healConflictedLocalPorts", () => {
     expect(entry.resources?.gatewayPort).toBe(7830);
   });
 
-  test("a portless runtime url survives the gateway move", async () => {
+  test("a healed move leaves no other address record to touch", async () => {
     const entry = makeEntry({
-      runtimeUrl: "http://127.0.0.1/some/path",
       resources: { gatewayPort: 9001 },
     });
     await healConflictedLocalPorts(entry, {
       ...freeDeps,
       isPortFree: async (port) => port !== 9001,
     });
-    expect(entry.runtimeUrl).toBe("http://127.0.0.1/some/path");
+    expect(entry.resources?.gatewayPort).toBe(7830);
   });
 
   test("the walk skips sibling claims, the entry's own ports, and fresh allocations", async () => {

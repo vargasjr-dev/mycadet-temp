@@ -105,7 +105,6 @@ describe("cadet devices", () => {
     saveLockfileAssistant({
       assistantId: "docker-fixture",
       cloud: "docker",
-      runtimeUrl: "https://tunnel.example",
     });
     const calls: string[][] = [];
     const docker = spyOn(stepRunner, "execOutput").mockImplementation(
@@ -147,7 +146,6 @@ describe("cadet devices", () => {
     saveLockfileAssistant({
       assistantId: "docker-invalid",
       cloud: "docker",
-      runtimeUrl: "https://tunnel.example",
     });
     const docker = spyOn(stepRunner, "execOutput").mockResolvedValue(
       '{"status":"200","body":{}}',
@@ -177,7 +175,6 @@ describe("cadet devices", () => {
     saveLockfileAssistant({
       assistantId: id,
       name: id,
-      runtimeUrl: "http://127.0.0.1:7830",
       cloud: "local",
       resources: {
         instanceDir: testDir,
@@ -424,8 +421,9 @@ describe("cadet devices", () => {
     saveLockfileAssistant({
       assistantId: "paired-box",
       name: "Paired Box",
-      runtimeUrl: "http://10.0.0.9:7830",
-      cloud: "local",
+      cloud: "custom",
+      ipAddress: "paired.example.com",
+      port: 443,
     });
 
     process.argv = ["bun", "cadet", "devices", "paired-box"];

@@ -61,7 +61,6 @@ for (const topology of ["local", "docker"] as const) {
     const entry: config.LockfileAssistant = {
       assistantId: "test",
       cloud: topology,
-      runtimeUrl: "http://127.0.0.1:1",
     };
     lookup.mockReturnValue(entry);
     process.argv = ["bun", "cadet", "backup", "test"];
@@ -80,7 +79,6 @@ test("cloud backup calls the cloud backup API with session authentication", asyn
   const entry: config.LockfileAssistant = {
     assistantId: "cloud-test",
     cloud: "cloud",
-    runtimeUrl: "https://cloud.mycadet.ai",
   };
   lookup.mockReturnValue(entry);
   process.argv = ["bun", "cadet", "backup", "cloud-test"];
@@ -94,7 +92,6 @@ test("rejects legacy output names before capture", async () => {
   lookup.mockReturnValue({
     assistantId: "test",
     cloud: "local",
-    runtimeUrl: "http://127.0.0.1:1",
   });
   process.argv = [
     "bun",
@@ -112,7 +109,6 @@ test("cloud backup requires cloud login and rejects host output paths", async ()
   lookup.mockReturnValue({
     assistantId: "test",
     cloud: "cloud",
-    runtimeUrl: "https://cloud.mycadet.ai",
   });
   process.argv = [
     "bun",

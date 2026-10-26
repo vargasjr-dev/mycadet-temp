@@ -48,11 +48,10 @@ function writeLockfile(data: unknown): void {
 
 const makeEntry = (
   id: string,
-  runtimeUrl = "http://localhost:7821",
+  _runtimeUrl = "http://localhost:7821",
   extra?: Partial<LockfileAssistant>,
 ): LockfileAssistant => ({
   assistantId: id,
-  runtimeUrl,
   cloud: "local",
   ...extra,
 });
@@ -323,7 +322,6 @@ describe("env-scoped lockfile and migration", () => {
       // WHEN we save an assistant entry (which triggers writeLockfile)
       saveLockfileAssistant({
         assistantId: "dev-env-bot",
-        runtimeUrl: "http://localhost:7830",
         cloud: "local",
       });
 
@@ -368,7 +366,6 @@ describe("env-scoped lockfile and migration", () => {
 
       saveLockfileAssistant({
         assistantId: "prod-bot",
-        runtimeUrl: "http://localhost:7830",
         cloud: "local",
       });
 

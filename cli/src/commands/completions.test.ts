@@ -41,7 +41,6 @@ describe("completeCadet", () => {
     saveLockfileAssistant({
       assistantId: id,
       cloud: "docker",
-      runtimeUrl: "http://localhost:7830",
       hatchedAt: new Date().toISOString(),
     });
   }

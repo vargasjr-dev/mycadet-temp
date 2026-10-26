@@ -8,6 +8,7 @@ import {
   appendFileSync,
   readFileSync,
 } from "fs";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { homedir } from "os";
 import { join } from "path";
 
@@ -177,7 +178,6 @@ export interface HatchLocalParams {
 
 export interface HatchLocalResult {
   assistantId: string;
-  runtimeUrl: string;
   /**
    * Guardian access token leased during hatch, when the lease succeeded. The
    * full token pair is persisted to disk regardless; this is surfaced so an
@@ -204,163 +204,159 @@ export async function hatchLocal(
   // prompts sit back-to-back), consumed after the guardian token leases.
   let precollectedApiKey: string | undefined;
 
-  const { resources, runtimeUrl, loopbackUrl, localEntry } =
-    await withLocalHatchLock(async () => {
-      reporter.progress(1, 6, "Allocating resources...");
+  const { entry } = await withLocalHatchLock(async () => {
+    reporter.progress(1, 6, "Allocating resources...");
 
-      const existing = findAssistantByName(instanceName);
-      if (existing && (!existing.cloud || existing.cloud === "local")) {
-        throw new Error(
-          `An assistant named "${instanceName}" is already hatched.\n` +
-            `Run \`cadet wake\` to restart it, or \`cadet retire ${instanceName}\` to remove it first.`,
-        );
-      }
-
-      const resources = await allocateLocalResources(instanceName);
-
-      const logsDir = join(
-        getLocalInstanceDir(resources),
-        "workspace",
-        "data",
-        "logs",
+    const existing = findAssistantByName(instanceName);
+    if (existing && (!existing.cloud || existing.cloud === "local")) {
+      throw new Error(
+        `An assistant named "${instanceName}" is already hatched.\n` +
+          `Run \`cadet wake\` to restart it, or \`cadet retire ${instanceName}\` to remove it first.`,
       );
-      archiveLogFile("hatch.log", logsDir);
-      resetLogFile("hatch.log");
+    }
 
-      reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
-      reporter.log("");
+    const resources = await allocateLocalResources(instanceName);
 
-      const apiKeyCheck = checkProviderApiKey();
-      let pickedProvider = false;
-      if (
-        shouldPromptForHatchProvider({
-          configValues,
-          setupProviderCredentials,
-          hasProviderApiKey: apiKeyCheck.hasKey,
-          stdinIsTTY: process.stdin.isTTY,
-        })
-      ) {
-        const picked = await promptProviderChoice();
-        if (picked) {
-          provider = picked;
-          pickedProvider = true;
-          // Collect the key immediately, while the choice is fresh — the
-          // startup logs are quiet now, so nothing separates the two prompts.
-          precollectedApiKey = await collectProviderApiKey(picked);
+    const logsDir = join(
+      getLocalInstanceDir(resources),
+      "workspace",
+      "data",
+      "logs",
+    );
+    archiveLogFile("hatch.log", logsDir);
+    resetLogFile("hatch.log");
 
-          // Picking Cadet Cloud should feel like signing in, not like a
-          // mystery later — open the browser login right here. Skipped for
-          // the desktop app (it runs its own login UI) and non-TTY runs.
-          if (
-            picked === "cadet" &&
-            !process.env.CADET_DESKTOP_APP &&
-            process.stdin.isTTY &&
-            !readCloudToken()
-          ) {
-            reporter.log("");
-            reporter.log(
-              "Cadet Cloud selected — opening your browser to log in...",
+    reporter.log(`🥚 Hatching local assistant: ${instanceName}`);
+    reporter.log("");
+
+    const apiKeyCheck = checkProviderApiKey();
+    let pickedProvider = false;
+    if (
+      shouldPromptForHatchProvider({
+        configValues,
+        setupProviderCredentials,
+        hasProviderApiKey: apiKeyCheck.hasKey,
+        stdinIsTTY: process.stdin.isTTY,
+      })
+    ) {
+      const picked = await promptProviderChoice();
+      if (picked) {
+        provider = picked;
+        pickedProvider = true;
+        // Collect the key immediately, while the choice is fresh — the
+        // startup logs are quiet now, so nothing separates the two prompts.
+        precollectedApiKey = await collectProviderApiKey(picked);
+
+        // Picking Cadet Cloud should feel like signing in, not like a
+        // mystery later — open the browser login right here. Skipped for
+        // the desktop app (it runs its own login UI) and non-TTY runs.
+        if (
+          picked === "cadet" &&
+          !process.env.CADET_DESKTOP_APP &&
+          process.stdin.isTTY &&
+          !readCloudToken()
+        ) {
+          reporter.log("");
+          reporter.log(
+            "Cadet Cloud selected — opening your browser to log in...",
+          );
+          try {
+            await ensureCloudLoginInteractive();
+            reporter.log("✅ Logged in to Cadet Cloud");
+          } catch (error) {
+            reporter.warn(
+              `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
             );
-            try {
-              await ensureCloudLoginInteractive();
-              reporter.log("✅ Logged in to Cadet Cloud");
-            } catch (error) {
-              reporter.warn(
-                `⚠️  Cadet Cloud login failed: ${describeLoginError(error)}`,
-              );
-              reporter.warn("   You can retry later with `cadet login`.");
-            }
+            reporter.warn("   You can retry later with `cadet login`.");
           }
         }
       }
+    }
 
-      if (
-        !apiKeyCheck.hasKey &&
-        !pickedProvider &&
-        !process.env.CADET_DESKTOP_APP
-      ) {
-        reporter.warn(
-          "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
-        );
-        reporter.warn("  To fix, export your key before running cadet hatch:");
-        reporter.warn("  export ANTHROPIC_API_KEY=<your-key>");
-        reporter.warn("");
-      }
+    if (
+      !apiKeyCheck.hasKey &&
+      !pickedProvider &&
+      !process.env.CADET_DESKTOP_APP
+    ) {
+      reporter.warn(
+        "Warning: No LLM provider API key is configured. The assistant will fail when you try to send a message.",
+      );
+      reporter.warn("  To fix, export your key before running cadet hatch:");
+      reporter.warn("  export ANTHROPIC_API_KEY=<your-key>");
+      reporter.warn("");
+    }
 
-      if (!process.env.APP_VERSION) {
-        process.env.APP_VERSION = cliPkg.version;
-      }
+    if (!process.env.APP_VERSION) {
+      process.env.APP_VERSION = cliPkg.version;
+    }
 
-      reporter.progress(2, 6, "Setting up local assistant...");
-      const hatchConfigValues = buildHatchConfigValues(configValues, provider);
-      const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
+    reporter.progress(2, 6, "Setting up local assistant...");
+    const hatchConfigValues = buildHatchConfigValues(configValues, provider);
+    const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
 
-      reporter.progress(3, 6, "Starting assistant...");
-      if (params.initialArchive) {
-        // Restores the archived state roots — gateway-security included, so
-        // the gateway boots with the archived signing identity.
-        await (
-          await import("./root-backup.js")
-        ).initializeRootArchive(
-          {
-            assistantId: instanceName,
-            cloud: "local",
-            runtimeUrl: "",
-            resources,
-          },
-          params.initialArchive,
-        );
-      }
-      const bootstrapSecret = generateLocalSecret();
-      let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
-      try {
-        // Launch the CES sibling alongside the daemon, in parallel — matching the
-        // Docker topology. The assistant does not spawn its own CES, so a freshly
-        // hatched instance would otherwise come up with CES unavailable.
-        // startCes always launches the CES sibling.
-        const startupResults = await Promise.allSettled([
-          startCes(watch, resources),
-          startLocalDaemon(watch, resources, {
-            defaultWorkspaceConfigPath,
-            requireReady: true,
-          }),
-        ]);
-        const startupFailure = startupResults.find(
-          (result): result is PromiseRejectedResult =>
-            result.status === "rejected",
-        );
-        if (startupFailure) {
-          throw startupFailure.reason;
-        }
-
-        reporter.progress(4, 6, "Starting gateway...");
-        runtimeUrl = await startGateway(watch, resources, {
-          bootstrapSecret,
+    reporter.progress(3, 6, "Starting assistant...");
+    if (params.initialArchive) {
+      // Restores the archived state roots — gateway-security included, so
+      // the gateway boots with the archived signing identity.
+      await (
+        await import("./root-backup.js")
+      ).initializeRootArchive(
+        {
+          assistantId: instanceName,
+          cloud: "local",
+          resources,
+        },
+        params.initialArchive,
+      );
+    }
+    const bootstrapSecret = generateLocalSecret();
+    try {
+      // Launch the CES sibling alongside the daemon, in parallel — matching the
+      // Docker topology. The assistant does not spawn its own CES, so a freshly
+      // hatched instance would otherwise come up with CES unavailable.
+      // startCes always launches the CES sibling.
+      const startupResults = await Promise.allSettled([
+        startCes(watch, resources),
+        startLocalDaemon(watch, resources, {
+          defaultWorkspaceConfigPath,
           requireReady: true,
-        });
-      } catch (error) {
-        reporter.error(
-          `\n❌ Local assistant startup failed — stopping partial processes.`,
-        );
-        await stopLocalProcesses(resources);
-        throw error;
+        }),
+      ]);
+      const startupFailure = startupResults.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
+      );
+      if (startupFailure) {
+        throw startupFailure.reason;
       }
 
-      const loopbackUrl = `http://127.0.0.1:${resources.gatewayPort}`;
-      const localEntry: LockfileAssistant = {
-        assistantId: instanceName,
-        cloud: "local",
-        hatchedAt: new Date().toISOString(),
-        resources,
-        guardianBootstrapSecret: bootstrapSecret,
-      };
+      reporter.progress(4, 6, "Starting gateway...");
+      await startGateway(watch, resources, {
+        bootstrapSecret,
+        requireReady: true,
+      });
+    } catch (error) {
+      reporter.error(
+        `\n❌ Local assistant startup failed — stopping partial processes.`,
+      );
+      await stopLocalProcesses(resources);
+      throw error;
+    }
 
-      reporter.progress(5, 6, "Saving configuration...");
-      saveLockfileAssistant(localEntry);
-      setActiveAssistant(instanceName);
+    const entry: LockfileAssistant = {
+      assistantId: instanceName,
+      cloud: "local",
+      hatchedAt: new Date().toISOString(),
+      resources,
+      guardianBootstrapSecret: bootstrapSecret,
+    };
 
-      return { resources, runtimeUrl, loopbackUrl, localEntry };
-    });
+    reporter.progress(5, 6, "Saving configuration...");
+    saveLockfileAssistant(entry);
+    setActiveAssistant(instanceName);
+
+    return { entry };
+  });
 
   // Lease a guardian token so the desktop app can import it on first launch
   // instead of hitting /v1/guardian/init itself.
@@ -369,7 +365,7 @@ export async function hatchLocal(
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
-      const tokenData = await leaseGuardianToken(localEntry);
+      const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {
@@ -409,7 +405,7 @@ export async function hatchLocal(
     );
   } else if (provider !== undefined) {
     await configureHatchProviderApiKey({
-      gatewayUrl: loopbackUrl,
+      gatewayUrl: getGatewayUrl(entry),
       provider,
       bearerToken: guardianAccessToken,
       env: process.env,
@@ -439,8 +435,8 @@ export async function hatchLocal(
   printInstanceDetails(
     {
       name: instanceName,
-      runtime: runtimeUrl,
-      root: resources.instanceDir,
+      runtime: getGatewayUrl(entry),
+      root: entry.resources!.instanceDir,
     },
     (message) => reporter.log(message),
   );
@@ -448,7 +444,6 @@ export async function hatchLocal(
 
   const result: HatchLocalResult = {
     assistantId: instanceName,
-    runtimeUrl,
     guardianAccessToken,
   };
 

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
+  GATEWAY_PORT,
   getGatewayUrl,
   getLoopbackGatewayPort,
   isCloudHome,
@@ -228,7 +229,7 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
       continue;
     }
-    const port = getLoopbackGatewayPort(parsed.data);
+    const port = getLoopbackGatewayPort(parsed.data) ?? GATEWAY_PORT;
     if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
       targets.set(assistantId, { kind: "loopback", port });
     }

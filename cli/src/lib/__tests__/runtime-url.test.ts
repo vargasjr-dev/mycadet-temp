@@ -29,7 +29,6 @@ describe("resolveRuntimeUrl", () => {
   test("cloud home uses wildcard-proxy /v1/assistants/<id>/<subpath>", () => {
     const entry = makeEntry({
       cloud: "cloud",
-      runtimeUrl: "https://cloud.mycadet.ai",
       assistantId: "11111111-2222-3333-4444-555555555555",
     });
     expect(resolveRuntimeUrl(entry, "identity")).toBe(

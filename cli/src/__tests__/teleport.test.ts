@@ -7,7 +7,6 @@ const entry: assistants.LockfileAssistant = {
   assistantId: "source-1",
   name: "source",
   cloud: "local",
-  runtimeUrl: "http://127.0.0.1:7821",
   hatchedAt: "2026-01-01T00:00:00Z",
 };
 const find = spyOn(assistants, "findAssistantByName");

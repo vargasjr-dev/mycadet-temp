@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { GATEWAY_PORT } from "../lockfile-contract";
 import {
   authorizePairedForwardHeaders,
   gatewayTargetsFromLockfile,
@@ -192,26 +193,27 @@ describe("resolveGatewayProxyTarget", () => {
 });
 
 describe("gatewayTargetsFromLockfile", () => {
-  test("resolves a paired entry with a usable runtimeUrl to a remote target", () => {
+  test("resolves a paired entry's custom addressing to a remote target", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
           {
             assistantId: "abc-123",
-            paired: true,
-            runtimeUrl: "https://gw.example.com",
+            cloud: "custom",
+            ipAddress: "gw.example.com",
+            port: 443,
           },
         ],
       }),
-    ).toEqual(targets({ "abc-123": remote("https://gw.example.com") })());
+    ).toEqual(targets({ "abc-123": remote("http://gw.example.com:443") })());
   });
 
-  test("omits a paired entry whose runtimeUrl is unusable", () => {
+  test("omits loopback entries with no recorded port beyond the default's loopback form", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
-          { assistantId: "abc-123", paired: true, runtimeUrl: "not a url" },
-          { assistantId: "def-456", paired: true },
+          { assistantId: "abc-123", cloud: "custom" },
+          { assistantId: "def-456", cloud: "cloud" },
         ],
       }),
     ).toEqual(new Map());
@@ -231,42 +233,12 @@ describe("gatewayTargetsFromLockfile", () => {
     ).toEqual(targets({ "abc-123": loopback(8080) })());
   });
 
-  test("resolves a docker entry's loopback runtimeUrl (no resources block)", () => {
+  test("a docker entry without a recorded port derives the default gateway port", () => {
     expect(
       gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "docker",
-            runtimeUrl: "http://127.0.0.1:9000",
-          },
-        ],
+        assistants: [{ assistantId: "abc-123", cloud: "docker" }],
       }),
-    ).toEqual(new Map([["abc-123", loopback(9000)]]));
-  });
-
-  test("resolves a loopback-cloud entry whose runtimeUrl is remote as paired", () => {
-    // Paired-ness derives from the addressing (no stored flag): a
-    // loopback-gateway cloud whose runtimeUrl points off-machine is a
-    // connect import, so it targets that remote runtimeUrl.
-    expect(
-      gatewayTargetsFromLockfile({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            runtimeUrl: "https://elsewhere.example.com",
-          },
-        ],
-      }),
-    ).toEqual(
-      new Map([
-        [
-          "abc-123",
-          { kind: "remote", runtimeUrl: "https://elsewhere.example.com" },
-        ],
-      ]),
-    );
+    ).toEqual(new Map([["abc-123", loopback(GATEWAY_PORT)]]));
   });
 
   test("omits ports outside the 1024-65535 proxy range", () => {
@@ -281,7 +253,7 @@ describe("gatewayTargetsFromLockfile", () => {
           {
             assistantId: "def-456",
             cloud: "docker",
-            runtimeUrl: "http://127.0.0.1:70000",
+            resources: { gatewayPort: 70000 },
           },
         ],
       }),
@@ -293,31 +265,29 @@ describe("gatewayTargetsFromLockfile", () => {
       gatewayTargetsFromLockfile({
         assistants: [
           { assistantId: "a", cloud: "cloud" },
-          { assistantId: "b", cloud: "apple-container" },
-          // A retired spelling parses as "local": loopback-gated, and with no
-          // loopback port it is omitted.
-          { assistantId: "d", cloud: "gcp" },
+          // A retired spelling parses as "local": loopback-gated, so it
+          // derives the default loopback port rather than being omitted.
+          { assistantId: "b", cloud: "gcp" },
         ],
       }),
-    ).toEqual(new Map());
+    ).toEqual(new Map([["b", { kind: "loopback", port: GATEWAY_PORT }]]));
   });
 
-  test("a custom entry's off-machine runtimeUrl is targetable by addressing", () => {
-    // Targeting keys on the addressing alone: an entry whose runtimeUrl
-    // points off this machine resolves as remote, whatever its cloud says.
+  test("a custom entry's recorded addressing is targetable", () => {
     expect(
       gatewayTargetsFromLockfile({
         assistants: [
           {
             assistantId: "c",
             cloud: "custom",
-            runtimeUrl: "https://gw.example.com",
+            ipAddress: "gw.example.com",
+            port: 7831,
           },
         ],
       }),
     ).toEqual(
       new Map([
-        ["c", { kind: "remote", runtimeUrl: "https://gw.example.com" }],
+        ["c", { kind: "remote", runtimeUrl: "http://gw.example.com:7831" }],
       ]),
     );
   });
@@ -356,8 +326,9 @@ describe("readGatewayTargets", () => {
           },
           {
             assistantId: "def-456",
-            paired: true,
-            runtimeUrl: "https://gw.example.com",
+            cloud: "custom",
+            ipAddress: "gw.example.com",
+            port: 443,
           },
         ],
       }),
@@ -365,7 +336,7 @@ describe("readGatewayTargets", () => {
     expect(readGatewayTargets(lockfile)).toEqual(
       targets({
         "abc-123": loopback(8080),
-        "def-456": remote("https://gw.example.com"),
+        "def-456": remote("http://gw.example.com:443"),
       })(),
     );
     fs.rmSync(dir, { recursive: true, force: true });

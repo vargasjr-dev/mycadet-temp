@@ -92,7 +92,6 @@ afterAll(() => {
 
 const LOCAL_ENTRY: LockfileAssistant = {
   assistantId: "assistant-1",
-  runtimeUrl: "http://127.0.0.1:7830",
   cloud: "local",
 };
 

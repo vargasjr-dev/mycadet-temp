@@ -221,13 +221,11 @@ describe("cadet ps — platform status line", () => {
       {
         assistantId: "assistant-123",
         name: "Alice",
-        runtimeUrl: "https://platform.example",
         cloud: "cloud",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
-        runtimeUrl: "https://platform.example/b",
         cloud: "cloud",
       },
     ]);
@@ -274,7 +272,6 @@ describe("cadet ps — platform status line", () => {
       {
         assistantId: "assistant-123",
         name: "Alice",
-        runtimeUrl: "https://platform.example",
         cloud: "cloud",
       },
     ]);
@@ -285,7 +282,9 @@ describe("cadet ps — platform status line", () => {
     const output = stdout.join("\n");
     expect(output).toContain("* Alice");
     expect(output).toContain("remote: cloud");
-    expect(output).toContain("https://platform.example");
+    // The row shows the DERIVED cloud url — the cloud-url stack's answer in
+    // this environment, not a per-entry record.
+    expect(output).toContain("https://cloud.mycadet.ai");
     expect(output).not.toContain("* assistant-123");
   });
 
@@ -294,13 +293,11 @@ describe("cadet ps — platform status line", () => {
       {
         assistantId: "assistant-123",
         name: "Alice",
-        runtimeUrl: "https://platform.example/a",
         cloud: "cloud",
       },
       {
         assistantId: "assistant-456",
         name: "Bob",
-        runtimeUrl: "https://platform.example/b",
         cloud: "cloud",
       },
     ]);
@@ -378,7 +375,6 @@ describe("cadet ps <built-in process name> details", () => {
       {
         assistantId: "assistant-123",
         name: "nginx",
-        runtimeUrl: "https://platform.example",
         cloud: "cloud",
       },
     ]);

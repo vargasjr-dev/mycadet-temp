@@ -138,16 +138,12 @@ export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
 
 /**
  * User-facing hosting label for a paired entry: "Paired · <hostname>" when
- * `runtimeUrl` names the remote host, plain "Paired" otherwise. Shared by the
+ * the entry is a custom remote, plain "Paired" otherwise. Shared by the
  * macOS tray switcher and the web chooser so their renderings cannot drift.
  */
-export function pairedHostLabel(runtimeUrl: string | undefined): string {
-  if (runtimeUrl) {
-    try {
-      return `Paired · ${new URL(runtimeUrl).hostname}`;
-    } catch {
-      // Unparseable runtimeUrl: plain "Paired".
-    }
+export function pairedHostLabel(entry: LockfileAssistant): string {
+  if (isRemoteGatewayEntry(entry)) {
+    return `Paired · ${new URL(getGatewayUrl(entry)).hostname}`;
   }
   return "Paired";
 }
@@ -164,31 +160,13 @@ export function isLoopbackGatewayCloud(cloud: Remote): boolean {
 
 /**
  * The loopback gateway port recorded for an assistant entry:
- * `resources.gatewayPort` when present, else the port of a loopback
- * `runtimeUrl` (how docker hatch records its published gateway). A
- * non-loopback `runtimeUrl` yields nothing.
+ * `resources.gatewayPort`. Entries without one derive the default gateway
+ * port through {@link getGatewayUrl}.
  */
 export function getLoopbackGatewayPort(entry: {
   resources?: { gatewayPort?: number };
-  runtimeUrl?: string;
 }): number | undefined {
-  const recorded = entry.resources?.gatewayPort;
-  if (recorded != null) {
-    return recorded;
-  }
-  if (!entry.runtimeUrl) {
-    return undefined;
-  }
-  try {
-    const url = new URL(entry.runtimeUrl);
-    if (url.hostname !== "localhost" && url.hostname !== "127.0.0.1") {
-      return undefined;
-    }
-    const port = Number(url.port);
-    return Number.isInteger(port) && port > 0 ? port : undefined;
-  } catch {
-    return undefined;
-  }
+  return entry.resources?.gatewayPort;
 }
 
 /**
@@ -219,27 +197,32 @@ function getCloudUrl(): string {
  * fields — the one seam every consumer addresses a gateway through:
  *
  * - `custom` remotes: their recorded host and port.
- * - cloud-managed: the recorded platform URL, else the cloud URL stack.
+ * - cloud-managed: the cloud URL stack.
  * - loopback topologies (`local`, `docker`, `apple-container`): the
  *   recorded loopback gateway port, else the default gateway port.
- *
- * The recorded `runtimeUrl` only survives as a last resort for entries
- * whose canonical fields predate this resolver; it is scheduled to die
- * once every consumer reads through here.
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
     return `http://${entry.ipAddress}:${entry.port}`;
   }
   if (isCloudHome(entry.cloud)) {
-    return (entry.runtimeUrl || getCloudUrl()).replace(/\/+$/, "");
+    return getCloudUrl().replace(/\/+$/, "");
   }
   const port = getLoopbackGatewayPort(entry);
-  if (port) return `http://127.0.0.1:${port}`;
-  return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(
-    /\/+$/,
-    "",
-  );
+  return `http://127.0.0.1:${port ?? GATEWAY_PORT}`;
+}
+
+/**
+ * Whether the entry's gateway lives on another machine: a custom remote.
+ * Its recorded host and port are inherently off-machine — a loopback
+ * topology's gateway is always on this machine.
+ */
+export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
+  if (entry.cloud !== "custom") {
+    return false;
+  }
+  const gatewayUrl = getGatewayUrl(entry);
+  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
 }
 
 /**
@@ -297,7 +280,6 @@ export const LockfileAssistantSchema = z.object({
   ipAddress: z.string().optional(),
   /** Gateway port on a custom remote (cloud "custom"). */
   port: z.number().optional(),
-  runtimeUrl: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that

@@ -206,7 +206,6 @@ describe("served config synthesis", () => {
     stampServed({ assistantId: "served-1" });
 
     const entry = getServedLockfile().assistants[0];
-    expect(entry?.runtimeUrl).toBeUndefined();
     expect(entry?.resources?.gatewayPort).toBe(0);
   });
 
@@ -620,14 +619,14 @@ describe("hasLocalGateway", () => {
     expect(hasLocalGateway(portless)).toBe(false);
   });
 
-  test("is true for a docker assistant's loopback runtimeUrl", () => {
+  test("is true for a docker assistant's recorded loopback port", () => {
     // Docker entries record the published gateway as a loopback runtimeUrl and
     // carry no `resources` block.
     enableLocalMode();
     const docker = {
       assistantId: "dk",
       cloud: "docker",
-      runtimeUrl: "http://localhost:7930",
+      resources: { gatewayPort: 7930 },
     } as LockfileAssistant;
     expect(hasLocalGateway(docker)).toBe(true);
   });
@@ -637,33 +636,22 @@ describe("hasLocalGateway", () => {
     const docker = {
       assistantId: "dk",
       cloud: "docker",
-      runtimeUrl: "http://127.0.0.1:7931",
+      resources: { gatewayPort: 7931 },
     } as LockfileAssistant;
     expect(hasLocalGateway(docker)).toBe(true);
   });
 
-  test("prefers a recorded resources.gatewayPort over the runtimeUrl port", () => {
+  test("is true for a recorded resources.gatewayPort", () => {
     enableLocalMode();
     const entry = {
       assistantId: "x",
       cloud: "local",
-      runtimeUrl: "http://localhost:9999",
       resources: { gatewayPort: 7830 },
     } as LockfileAssistant;
     expect(hasLocalGateway(entry)).toBe(true);
   });
 
-  test("is false for a non-loopback runtimeUrl", () => {
-    enableLocalMode();
-    const docker = {
-      assistantId: "dk",
-      cloud: "docker",
-      runtimeUrl: "http://assistant.example.com:7930",
-    } as LockfileAssistant;
-    expect(hasLocalGateway(docker)).toBe(false);
-  });
-
-  test("is false for a docker assistant with no runtimeUrl or port", () => {
+  test("is false for a docker assistant with no recorded port", () => {
     enableLocalMode();
     const bare = { assistantId: "dk", cloud: "docker" } as LockfileAssistant;
     expect(hasLocalGateway(bare)).toBe(false);
@@ -678,8 +666,9 @@ describe("hasLocalGateway", () => {
     enableLocalMode();
     const paired = {
       assistantId: "p",
-      cloud: "local",
-      runtimeUrl: "https://p.example.com",
+      cloud: "custom",
+      ipAddress: "p.example.com",
+      port: 443,
     } as LockfileAssistant;
     expect(hasLocalGateway(paired)).toBe(false);
   });
