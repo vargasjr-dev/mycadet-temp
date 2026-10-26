@@ -7,15 +7,48 @@
  * being silently duplicated.
  */
 
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
+// The real chain (probe → mirror → fact) is exercised below, so only the
+// network call and the gateway-mode flag are mocked — registered before the
+// first queries import so the module binds to them.
+const apiActual = await import("@/assistant/api");
+type AssistantResult = Awaited<ReturnType<typeof apiActual.getAssistant>>;
+const getAssistantMock = mock<(id?: string) => Promise<AssistantResult>>(() =>
+  Promise.reject(new Error("unmocked")),
+);
+mock.module("@/assistant/api", () => ({
+  ...apiActual,
+  getAssistant: (id?: string) => getAssistantMock(id),
+}));
+
+const localModeActual = await import("@/lib/local-mode");
+let mockGatewaySessionLive = false;
+mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
+  isGatewaySessionLive: () => mockGatewaySessionLive,
+}));
+
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+
+const {
   ASSISTANT_QUERY_KEY,
   assistantQueryKey,
   pollIntervalFor,
   POLL_INTERVAL_MS,
-} from "@/assistant/queries";
+  bootResolutionFact,
+  probeBootResolution,
+} = await import("@/assistant/queries");
 import type { Assistant, GetAssistantResult } from "@/assistant/api";
+
+beforeEach(() => {
+  mockGatewaySessionLive = false;
+  getAssistantMock.mockClear();
+  useResolvedAssistantsStore.setState({
+    assistants: [],
+    activeAssistantId: null,
+  });
+});
 
 describe("assistantQueryKey", () => {
   test("returns the base key by reference when nothing is selected (off-path is byte-identical)", () => {
@@ -98,5 +131,96 @@ describe("useAssistantQuery polling cadence", () => {
       error: { message: "Server error" },
     };
     expect(pollIntervalFor(errored)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The boot resolution's imperative face — the route guard's session facts
+// ---------------------------------------------------------------------------
+//
+// The route guard reads the boot resolution instead of the session store:
+// the resolution presents the same credential a session probe would and
+// 401s when it is gone, so it is the one source the served boot has. These
+// pins drive the real chain — `probeBootResolution` (the middleware's await)
+// writes the mirror, `bootResolutionFact` (build-state's read) answers.
+describe("bootResolutionFact / probeBootResolution", () => {
+  test("pending boot answers unsettled and unadmitted", () => {
+    // Runs before any probe: the mirror is file-fresh "loading" and has no
+    // production reset — the pending fact is only observable there.
+    const fact = bootResolutionFact();
+    expect(fact.settled).toBe(false);
+    expect(fact.authenticated).toBe(false);
+  });
+
+  test("a live session is settled and admitted, and projects into the roster", async () => {
+    getAssistantMock.mockImplementation(() =>
+      Promise.resolve(okResult("active")),
+    );
+    await probeBootResolution();
+
+    const fact = bootResolutionFact();
+    expect(fact.settled).toBe(true);
+    expect(fact.authenticated).toBe(true);
+    // The projection is the load-bearing half: the guard's next read
+    // (`hasAssistants`) sees the roster the boot effect would have built.
+    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(1);
+    expect(useResolvedAssistantsStore.getState().activeAssistantId).toBe(
+      "asst-1",
+    );
+  });
+
+  test("a settled rejection (401) is the only out", async () => {
+    getAssistantMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        status: 401,
+        error: {},
+      } as GetAssistantResult),
+    );
+    await probeBootResolution();
+
+    expect(bootResolutionFact().authenticated).toBe(false);
+  });
+
+  test("a 404 (signed in, nothing to resolve) is admitted — it funnels to onboarding, not pair", async () => {
+    getAssistantMock.mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        status: 404,
+        error: {},
+      } as GetAssistantResult),
+    );
+    await probeBootResolution();
+
+    const fact = bootResolutionFact();
+    expect(fact.settled).toBe(true);
+    expect(fact.authenticated).toBe(true);
+    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(0);
+  });
+
+  test("a transport failure is non-authoritative — admitted (LUM-2412)", async () => {
+    // A fetch that never got an HTTP answer says nothing about the session;
+    // the guard admits and the app's own surfaces speak for the session.
+    getAssistantMock.mockImplementation(() =>
+      Promise.reject(new TypeError("fetch failed")),
+    );
+    await probeBootResolution();
+
+    const fact = bootResolutionFact();
+    expect(fact.settled).toBe(true);
+    expect(fact.authenticated).toBe(true);
+  });
+
+  test("gateway-auth mode is settled and admitted with no fetch", () => {
+    // The gateway issued the session itself — nothing to probe.
+    mockGatewaySessionLive = true;
+
+    const fact = bootResolutionFact();
+    expect(fact.settled).toBe(true);
+    expect(fact.authenticated).toBe(true);
+
+    return probeBootResolution().then(() => {
+      expect(getAssistantMock).not.toHaveBeenCalled();
+    });
   });
 });

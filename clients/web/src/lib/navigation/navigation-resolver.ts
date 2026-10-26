@@ -19,8 +19,6 @@ export interface NavigationState {
   sessionSettled: boolean;
   isAuthenticated: boolean;
   cloudSession: CloudSessionStatus;
-  /** Whether the resolved assistants list reflects at least one authoritative load. */
-  assistantsHydrated: boolean;
   /**
    * Whether the user owns ANY assistant past first-run onboarding, i.e. is a
    * returning user. The right question for post-auth and the onboarding
@@ -298,10 +296,12 @@ function requireAssistant(state: NavigationState): NavigationDecision | null {
     return { action: "redirect", to: routes.welcome };
   }
 
-  // The assistant list starts empty while platform boot loads it.
-  if (!state.assistantsHydrated) {
-    return { action: "wait" };
-  }
+  // Off the local arm the middleware has already awaited the boot resolution
+  // (every "wait" decision passes through that probe), so the roster is as
+  // resolved as it is going to get: a signed-in account with nothing to
+  // resolve funnels to onboarding, and a settled rejection already
+  // redirected to pair at `requireAuth`. Waiting here would loop — the
+  // hydration flag this used to wait on has no writer off the local arm.
   return { action: "redirect", to: routes.onboarding.hatching };
 }
 

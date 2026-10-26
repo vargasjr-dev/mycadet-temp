@@ -5,13 +5,22 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 // branches on.
 let mockIsLocalClient = true;
 let mockIsCloudRemote = false;
+let mockGatewaySessionLive = false;
 
 const localModeActual = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: () => mockIsLocalClient,
   isCadetCloudRemote: () => mockIsCloudRemote,
-  isGatewaySessionLive: () => false,
+  isGatewaySessionLive: () => mockGatewaySessionLive,
+}));
+
+// The guard's session questions are answered by the boot resolution via
+// `bootResolutionFact` — mocked at that boundary here; the fact's own
+// mapping is pinned in queries.test.ts through the real chain.
+let mockBootFact = { settled: true, authenticated: true };
+mock.module("@/assistant/queries", () => ({
+  bootResolutionFact: () => mockBootFact,
 }));
 
 const { buildNavigationState } = await import("./build-state");
@@ -27,6 +36,7 @@ const initialAuthState = useAuthStore.getState();
 beforeEach(() => {
   mockIsLocalClient = true;
   mockIsCloudRemote = false;
+  mockGatewaySessionLive = false;
   useAuthStore.setState(initialAuthState, true);
   useOrganizationStore.setState({
     currentOrganizationId: null,
@@ -38,65 +48,42 @@ beforeEach(() => {
     activeAssistantId: null,
   });
   clearSelectedAssistantId();
+  mockBootFact = { settled: true, authenticated: true };
 });
 
 afterEach(() => {
   useAuthStore.setState(initialAuthState, true);
 });
 
-describe("buildNavigationState — isAuthenticated mirrors sessionStatus", () => {
-  // `isAuthenticated` is decided entirely by `sessionStatus`: the local gateway
-  // is the sole session authority (#35152), so a reachable local user is already
-  // `"authenticated"`. The "a cloud 401 does not evict a local user" guarantee
-  // is asserted at the store layer — see auth-store.test.ts, "refreshSession
-  // keeps the local gateway session but clears stale platform state on a settled
-  // 401".
+describe("buildNavigationState — the session answers come from the boot resolution", () => {
+  test("a settled, live boot resolution is admitted", () => {
+    mockBootFact = { settled: true, authenticated: true };
 
-  test("an authenticated session is admitted", () => {
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    expect(buildNavigationState().isAuthenticated).toBe(true);
+    const state = buildNavigationState();
+    expect(state.sessionSettled).toBe(true);
+    expect(state.isAuthenticated).toBe(true);
   });
 
-  test("a local-only user (authenticated via the gateway, no platform session) is admitted", () => {
-    // The realistic post-probe state for a local desktop user: the gateway
-    // authenticated the session and the cloud probe settled absent.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "absent",
-    });
+  test("a settled rejection is not admitted", () => {
+    mockBootFact = { settled: true, authenticated: false };
 
-    expect(buildNavigationState().isAuthenticated).toBe(true);
+    const state = buildNavigationState();
+    expect(state.sessionSettled).toBe(true);
+    expect(state.isAuthenticated).toBe(false);
   });
 
-  test("an unauthenticated session is not admitted", () => {
-    useAuthStore.setState({
-      sessionStatus: "unauthenticated",
-      cloudSession: "absent",
-    });
+  test("an unsettled boot resolution is neither settled nor admitted", () => {
+    mockBootFact = { settled: false, authenticated: false };
 
-    expect(buildNavigationState().isAuthenticated).toBe(false);
-  });
-
-  test("an initializing session is not yet admitted", () => {
-    useAuthStore.setState({
-      sessionStatus: "initializing",
-      cloudSession: "unknown",
-    });
-
-    expect(buildNavigationState().isAuthenticated).toBe(false);
+    const state = buildNavigationState();
+    expect(state.sessionSettled).toBe(false);
+    expect(state.isAuthenticated).toBe(false);
   });
 
   test("cloudSession is surfaced verbatim for the onboarding fork", () => {
     // The route fork's onboarding wait keys off cloudSession === 'unknown';
     // surfacing isAuthenticated must not disturb that field.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "unknown",
-    });
+    useAuthStore.setState({ cloudSession: "unknown" });
 
     expect(buildNavigationState().cloudSession).toBe("unknown");
   });

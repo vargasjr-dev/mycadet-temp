@@ -25,6 +25,11 @@ mock.module("@/assistant/queries", () => ({
       refetchCalls += 1;
     },
   }),
+  // The route guard (build-state) reads the boot resolution imperatively;
+  // this surface's tests never route through a pending boot, so the fact
+  // is a settled live session.
+  bootResolutionFact: () => ({ settled: true, authenticated: true }),
+  probeBootResolution: () => Promise.resolve(),
 }));
 
 const { ActiveAssistantGate } = await import("./active-assistant-gate");

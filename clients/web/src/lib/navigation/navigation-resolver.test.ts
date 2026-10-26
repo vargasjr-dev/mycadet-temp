@@ -15,7 +15,6 @@ const base: NavigationState = {
   sessionSettled: true,
   isAuthenticated: true,
   cloudSession: "present",
-  assistantsHydrated: true,
   userHasOnboardedAssistant: false,
   selectedAssistantOnboarded: false,
 };
@@ -128,10 +127,7 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("platform clients wait for assistants, then route an empty list to shell hatching", () => {
-      expect(
-        guard(s({ hasAssistants: false, assistantsHydrated: false })),
-      ).toEqual(WAIT);
+    test("platform clients route an empty roster to shell hatching — the middleware awaited the boot resolution first", () => {
       expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual(
         {
           action: "redirect",
@@ -156,7 +152,6 @@ describe("resolveNavigation", () => {
               s({
                 isLocalClient,
                 hasAssistants: false,
-                assistantsHydrated: false,
               }),
               pathname,
             ),

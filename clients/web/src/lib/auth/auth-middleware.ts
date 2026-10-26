@@ -1,17 +1,15 @@
 import { redirect, type MiddlewareFunction } from "react-router";
 
 import { useAuthStore } from "@/stores/auth-store";
-import { isAuthenticated, isSessionSettled } from "@/stores/session-status";
 import { isLocalClient, hasAssistants } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { buildNavigationState } from "@/lib/navigation/build-state";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+import { probeBootResolution } from "@/assistant/queries";
 import { whenStoreState } from "@/utils/when-store-state";
 
 const PLATFORM_SESSION_PROBE_TIMEOUT_MS = 5_000;
-const STATE_HYDRATION_TIMEOUT_MS = 5_000;
 
 /** Whether a late probe result already has a guard re-run waiting on it. */
 let probeRevalidationPending = false;
@@ -56,14 +54,10 @@ function revalidateWhenPlatformProbeSettles(): void {
 
 /** Waits that ran out on an earlier pass; each stays forced from then on. */
 interface TimedOutWaits {
-  assistantsHydration: boolean;
   platformProbe: boolean;
 }
 
-const NO_TIMED_OUT_WAITS: TimedOutWaits = {
-  assistantsHydration: false,
-  platformProbe: false,
-};
+const NO_TIMED_OUT_WAITS: TimedOutWaits = { platformProbe: false };
 
 export const authMiddleware: MiddlewareFunction = (args, next) =>
   resolveWithGuard(args, next, NO_TIMED_OUT_WAITS);
@@ -79,14 +73,13 @@ const resolveWithGuard = async (
   // on whatever state exists instead of returning another "wait" — a fetch that
   // hangs (never reaching any settle path) must degrade to a decision, not loop
   // navigation in timeout-sized chunks. A platform probe that outran its wait
-  // degrades the same way, to `"absent"`: every step that reads the probe
-  // treats an unsettled session as "no decision yet" and a settled-absent one
-  // as "no platform account", so forcing it can only turn a non-decision into
-  // that documented fallback. A result that lands after the timeout re-runs the
+  // degrades to `"absent"`: every step that reads the probe treats an
+  // unsettled session as "no decision yet" and a settled-absent one as "no
+  // platform account", so forcing it can only turn a non-decision into that
+  // documented fallback. A result that lands after the timeout re-runs the
   // guard (see `revalidateWhenPlatformProbeSettles`), so a slow-but-successful
   // probe still reaches its cloud-session destination.
   const state = buildNavigationState({
-    ...(timedOut.assistantsHydration ? { assistantsHydrated: true } : {}),
     ...(timedOut.platformProbe ? { cloudSession: "absent" as const } : {}),
   });
 
@@ -96,9 +89,16 @@ const resolveWithGuard = async (
   });
 
   if (decision.action === "wait") {
-    await whenStoreState(useAuthStore, (s) =>
-      isSessionSettled(s.sessionStatus),
-    );
+    // The boot resolution is the settle fact behind every session question
+    // the resolver asks. One probe replaces the former session-probe wait
+    // and the assistant-list hydration wait — the hydration flag that wait
+    // awaited has no writer off the local arm, so off the local arm it was
+    // a clock; the projection this probe performs is what it was
+    // simulating. The probe settles in one fetch (a transport failure
+    // records as non-authoritative, LUM-2412): a settled rejection
+    // redirects at `requireAuth`, and everything else leaves the resolver a
+    // decided world instead of a looping one.
+    await probeBootResolution();
     // Two local-mode cases hang on the cloud probe: the cold boot with an
     // empty lockfile, and any step that names the signal on its wait — a
     // checkout return whose org already has a self-hosted assistant reaches
@@ -118,29 +118,10 @@ const resolveWithGuard = async (
         revalidateWhenPlatformProbeSettles();
       }
     }
-    // Platform users wait for the assistant list to load before choosing
-    // onboarding. Consent belongs to the app shell and has no web hydration.
-    let assistantsStillPending = false;
-    if (
-      !isLocalClient() &&
-      isAuthenticated(useAuthStore.getState().sessionStatus)
-    ) {
-      if (!timedOut.assistantsHydration) {
-        await whenStoreState(
-          useResolvedAssistantsStore,
-          (s) => s.assistantsHydrated,
-          { timeoutMs: STATE_HYDRATION_TIMEOUT_MS },
-        );
-        assistantsStillPending =
-          !useResolvedAssistantsStore.getState().assistantsHydrated;
-      }
-    }
     return resolveWithGuard(
       { request, context } as Parameters<MiddlewareFunction>[0],
       next,
       {
-        assistantsHydration:
-          timedOut.assistantsHydration || assistantsStillPending,
         platformProbe: timedOut.platformProbe || platformProbeStillUnknown,
       },
     );

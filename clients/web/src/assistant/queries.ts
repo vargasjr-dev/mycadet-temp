@@ -43,6 +43,7 @@ import {
   expectsPairedGateway,
 } from "@/lib/local-mode";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
+import { isSettledSessionRejection } from "@/stores/session-status";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
 
@@ -280,6 +281,87 @@ export function useAssistantResolution(): AssistantResolutionResult {
   };
 }
 
+// ---------------------------------------------------------------------------
+// The boot resolution's imperative face — non-React readers
+// ---------------------------------------------------------------------------
+
+/**
+ * Last boot resolution seen by the shared read above, or by
+ * {@link probeBootResolution}. Initialized mid-boot: until either runs, the
+ * honest answer is that the boot hasn't answered yet.
+ */
+let lastResolution: AssistantResolutionState = { kind: "loading" };
+
+/** The boot resolution's answer to the route guard's two session questions. */
+export interface BootResolutionFact {
+  /** The boot answered (even if it answered with a transport failure). */
+  settled: boolean;
+  /**
+   * Not a settled session rejection. A transport failure (LUM-2412) and a
+   * 404 for a signed-in account with nothing to resolve are
+   * non-authoritative — they say nothing about the session and never end
+   * it. Gateway-auth mode is always true: the gateway issued the session
+   * itself.
+   */
+  authenticated: boolean;
+}
+
+/**
+ * The session questions the route guard asks, answered from the boot
+ * resolution. The resolution carries the same credential a session probe
+ * would present and 401s when it is gone, so asking it directly is not a
+ * second source — it is the one source the served boot actually has.
+ * Gateway-auth mode short-circuits: the gateway resolved the assistant
+ * locally, so the boot is settled and the session is live with no fetch.
+ */
+export function bootResolutionFact(): BootResolutionFact {
+  if (isGatewaySessionLive()) {
+    return { settled: true, authenticated: true };
+  }
+  const state = lastResolution;
+  if (state.kind === "loading") {
+    return { settled: false, authenticated: false };
+  }
+  if (state.kind === "error") {
+    return {
+      settled: true,
+      authenticated: !isSettledSessionRejection({
+        ok: false,
+        status: state.status,
+      }),
+    };
+  }
+  return { settled: true, authenticated: true };
+}
+
+/**
+ * The boot resolution's probe for imperative callers that must block on it —
+ * the route guard's wait step. One `getAssistant` fetch, the same call the
+ * boot query runs: the mirror records the answer for the caller's next
+ * {@link bootResolutionFact} read, and a successful result projects into the
+ * roster exactly as the boot effect's would. Gateway-auth mode resolves
+ * locally with no fetch.
+ */
+export async function probeBootResolution(): Promise<void> {
+  if (isGatewaySessionLive()) {
+    return;
+  }
+  const selectedCloudAssistantId = resolveSelectedCloudAssistantId() ?? null;
+  const result = await getAssistant(selectedCloudAssistantId ?? undefined).then(
+    (r) => r,
+    // A thrown fetch is a transport failure (the request never got an HTTP
+    // answer) — recorded as such, not as a session answer.
+    () => undefined,
+  );
+  lastResolution =
+    result === undefined
+      ? { kind: "error", transient: true, message: TRANSPORT_ERROR_MESSAGE }
+      : resolveAssistantLifecycleState(result);
+  if (result?.ok) {
+    projectAssistantResult(result);
+  }
+}
+
 /**
  * The boot resolution: the shared read plus the projection effects. Mounted
  * once per running surface (the app root, and standalone windows like the
@@ -289,6 +371,14 @@ export function useAssistantResolution(): AssistantResolutionResult {
 export function useAssistantBootResolution(): AssistantResolutionResult {
   const resolution = useAssistantResolution();
   const selectedId = resolution.selectedCloudAssistantId;
+
+  // Last-value mirror for the imperative readers (`bootResolutionFact`).
+  // Written from this once-per-surface mount — the same place the
+  // projection effects run — so non-React callers read the answer the UI
+  // does without a second probe or a store copy of it.
+  useEffect(() => {
+    lastResolution = resolution.state;
+  }, [resolution.state]);
 
   // Gateway-auth mode: prime the connection slots + active id from local
   // state. Re-runs when the selection changes so a newly connected assistant
