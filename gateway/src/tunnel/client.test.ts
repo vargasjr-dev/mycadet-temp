@@ -462,9 +462,6 @@ describe("TunnelClient", () => {
 
     expect(sockets).toHaveLength(0);
     expect(reconnectDelays).toEqual([10]);
-    // The recorded URL survives: it belongs to its publisher (possibly a
-    // host-side CLI tunnel), and an explicit opt-out only gates this
-    // client's own connect — it does not revoke someone else's address.
     expect(readConfig()).toEqual({
       ingress: {
         enabled: false,
@@ -1074,10 +1071,6 @@ describe("TunnelClient", () => {
     client.start();
     await flushPromises();
 
-    // The recorded URL may be a host-side CLI tunnel's address (via
-    // /v1/ingress/domains) that this process cannot see or judge stale —
-    // startup must not wipe it. This client's own connect republishes over
-    // it with fresh truth.
     expect(sockets).toHaveLength(1);
     expect(readConfig()).toEqual({
       ingress: {
@@ -1098,9 +1091,6 @@ describe("TunnelClient", () => {
       },
     });
 
-    // No TUNNEL_BASE_URL: this gateway will never publish its own URL, but
-    // the recorded one may be a host-side CLI tunnel's — not ours to judge
-    // stale, so it survives.
     expect(
       createTunnelClient(makeConfig(), {
         credentials: makeCredentials({}),

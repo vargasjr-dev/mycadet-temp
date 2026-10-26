@@ -5,16 +5,12 @@
  *   gateway the public URL its tunnel published; the gateway writes
  *   `ingress.publicBaseUrl` + `publicBaseUrlManagedBy: "tunnel"` in its own
  *   config via the same machinery its own tunnel uses, so both publishers
- *   record through one path and the most recent publisher owns the slot.
- *   Write-only: reads keep flowing through the config the gateway already
- *   serves. Lifecycle stays with the publisher: the CLI clears on its own
- *   tunnel teardown, and the gateway's own client only ever clears a URL it
- *   published this run — neither wipes the recorded URL on up start, since
- *   the gateway cannot see a tunnel configured outside it and so cannot
- *   judge the address stale. While we ship one bundle the gateway still
- *   hosts the ngrok-related logic; once the bundle splits, the gateway
- *   manages its own tunnel (mycadet.ai vs <assistant>.mycadet.bot) and this
- *   route is what the CLI-side publishers migrate onto.
+ *   record through one path and the gateway's existing loss handling clears
+ *   it uniformly. Write-only: reads keep flowing through the config the
+ *   gateway already serves. While we ship one bundle the gateway still hosts
+ *   the ngrok-related logic; once the bundle splits, the gateway manages its
+ *   own tunnel (mycadet.ai vs <assistant>.mycadet.bot) and this route is what
+ *   the CLI-side publishers migrate onto.
  */
 
 import { z } from "zod";

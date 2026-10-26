@@ -238,7 +238,7 @@ export class TunnelClient {
         this.handleConfigInvalidated();
       },
     );
-    this.startAsync().catch((err) => {
+    this.connect().catch((err) => {
       this.connecting = false;
       log.error({ err }, "Failed to start Tunnel client");
       this.scheduleReconnect();
@@ -268,18 +268,6 @@ export class TunnelClient {
     if (ws) {
       closeWebSocket(ws, 1000, "gateway shutdown");
     }
-  }
-
-  private async startAsync(): Promise<void> {
-    // The recorded public URL is left alone here on purpose: it may be a
-    // host-side CLI tunnel's address (recorded via /v1/ingress/domains),
-    // which this process cannot see or re-derive — the gateway has no
-    // context to judge it stale. This client's own connect republishes
-    // below, overwriting whatever is recorded with fresh truth, and a URL
-    // this client published in a previous life is only ever cleared by the
-    // expected-publication guards (clearPublishedPublicBaseUrl), which run
-    // while the publication is still known.
-    await this.connect();
   }
 
   /**
@@ -807,10 +795,6 @@ export function createTunnelClient(
         "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
       );
     }
-    // No clear on purpose: a recorded URL may belong to a host-side CLI
-    // tunnel (via /v1/ingress/domains) that outlives this process, and this
-    // unconfigured-Tunnel state says nothing about that publisher. The URL
-    // belongs to whoever recorded it; teardown is the publisher's job.
     return undefined;
   }
   return new TunnelClient({
