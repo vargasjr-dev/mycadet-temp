@@ -13,6 +13,10 @@ import {
 import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import {
+  INGRESS_LAST_TUNNEL_KEY,
+  parseTunnelRecord,
+} from "@mycadet/service-contracts/ingress";
 
 import {
   getDefaultWorkspaceDir,
@@ -175,17 +179,6 @@ export interface ProviderStopOptions {
 export interface TunnelProvider {
   run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
   stop(opts: ProviderStopOptions): Promise<boolean>;
-  /**
-   * Establish the provider's tunnel at the app server's port, resolving the
-   * established URL — or null when its own gates declined. Rides the same
-   * options shape as run: the restore points the same port/workspace/
-   * assistant at the provider, run-only dials (domain, preserveIngressUrl)
-   * simply go unread. Returns the bare URL rather than a ProviderTunnelResult
-   * because a restore-start hands the lifecycle back to the detached agent
-   * instead of owning it — there is no in-process exit to await. Absent on a
-   * provider whose runs are foreground-only: the restore ensures nothing.
-   */
-  start?(opts: ProviderTunnelOptions): Promise<string | null>;
 }
 
 // The entries read the provider modules' bindings at call time (the #489
@@ -723,11 +716,40 @@ async function ensureTunnel(
   if (!expected?.provider) {
     return null;
   }
-  return (
-    (await providers[expected.provider]?.start?.({
+  // The workspace's `lastTunnel` record names the tunnel whose URL the app
+  // server fronts. The restore re-establishes the recorded provider only
+  // when that record agrees: a pairing-only tailscale run deliberately
+  // leaves `lastTunnel` on the older public provider, and re-running the
+  // tailnet's save then would repoint the webhook callback base that run
+  // did not repoint. No record (a rebuilt workspace config) carries no
+  // intent to contradict, so the restore proceeds.
+  try {
+    const ingress = loadRawConfig(workspaceDir).ingress as
+      | Record<string, unknown>
+      | undefined;
+    const lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
+    if (lastTunnel && lastTunnel.provider !== expected.provider) {
+      return null;
+    }
+  } catch {
+    // Unreadable config carries no contradicting record either.
+  }
+  try {
+    const result = await providers[expected.provider]?.run({
       port: targetPort,
       workspaceDir,
       assistantId,
-    })) ?? null
-  );
+    });
+    if (!result) return null;
+    // The run owns nothing in this process — the agent is detached — but an
+    // unhandled rejection from a settling exit promise must not crash the
+    // host (wake/upgrade) either.
+    result.waitForExit.catch(() => {});
+    return result.publicUrl;
+  } catch (err) {
+    console.warn(
+      `   Could not ensure the ${expected.provider} tunnel: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return null;
+  }
 }

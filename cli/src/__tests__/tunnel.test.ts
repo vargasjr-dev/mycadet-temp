@@ -77,20 +77,12 @@ mock.module("../lib/tunnels/ngrok", () => ({
 const runTailscaleTunnelMock = mock<typeof tailscaleTunnel.runTailscaleTunnel>(
   async () => fakeTunnelResult("https://test-machine.tailnet.ts.net"),
 );
-const startTailnetServeMock = mock<
-  (opts: {
-    port: number;
-    workspaceDir: string;
-    assistantId?: string;
-  }) => Promise<string | null>
->(async () => null);
 mock.module("../lib/tunnels/tailscale.js", () => ({
   ...realTailscaleTunnel,
   runTailscaleTunnel: runTailscaleTunnelMock,
   TAILSCALE_PROVIDER: {
     ...realTailscaleTunnel.TAILSCALE_PROVIDER,
     run: runTailscaleTunnelMock,
-    start: startTailnetServeMock,
   },
 }));
 
@@ -1300,7 +1292,7 @@ describe("ngrok --domain spawn args", () => {
           workspaceDir: ws,
           domain: "foo.ngrok.app",
         }),
-      ).rejects.toThrow("exit:1");
+      ).rejects.toThrow("does not match the requested domain 'foo.ngrok.app'");
     } finally {
       errSpy.mockRestore();
       exitSpy.mockRestore();
@@ -1354,36 +1346,16 @@ describe("ngrok --domain spawn args", () => {
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
-  test("maybeStartNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
-    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+  test("runNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
+    const ws = makeWorkspace({});
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
-    const warnings: string[] = [];
-    const warnSpy = spyOn(console, "warn").mockImplementation(
-      (...a: unknown[]) => {
-        warnings.push(a.join(" "));
-      },
-    );
+    await expect(
+      realNgrok.runNgrokTunnel({ port: 7830, workspaceDir: ws }),
+    ).rejects.toThrow("does not match");
 
-    let child: unknown;
-    try {
-      child = await realNgrok.maybeStartNgrokTunnel(7830, ws);
-    } finally {
-      warnSpy.mockRestore();
-    }
-
-    expect(child).toBeNull();
     expect(spawnMock).not.toHaveBeenCalled();
-    const combined = warnings.join("\n");
-    expect(combined).toContain("https://other.ngrok-free.app");
-    expect(combined).toContain(
-      "does not match the reserved domain 'foo.ngrok.app'",
-    );
-    expect(combined).toContain(
-      "cadet tunnel start --provider ngrok --domain foo.ngrok.app",
-    );
-
     const config = IngressTestConfigSchema.parse(
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
@@ -1393,15 +1365,19 @@ describe("ngrok --domain spawn args", () => {
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
-  test("an adopted automatic tunnel records the assistant it fronts", async () => {
-    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+  test("an adopted tunnel records the assistant it fronts", async () => {
+    const ws = makeWorkspace({});
     mockTunnelListFetch("https://adopted.ngrok.app", "localhost:7830");
 
-    const child = await withLockfileFor("adopt-assistant", () =>
-      realNgrok.maybeStartNgrokTunnel(7830, ws, "adopt-assistant"),
+    await withLockfileFor("adopt-assistant", () =>
+      realNgrok.runNgrokTunnel({
+        port: 7830,
+        workspaceDir: ws,
+        assistantId: "adopt-assistant",
+      }),
     );
 
-    expect(child).toBeNull();
+    expect(spawnMock).not.toHaveBeenCalled();
     expect(readIngress(ws)).toMatchObject({
       publicBaseUrl: "https://adopted.ngrok.app",
       assistantId: "adopt-assistant",
@@ -1412,8 +1388,8 @@ describe("ngrok --domain spawn args", () => {
     });
   });
 
-  test("a spawned automatic tunnel records the assistant it fronts", async () => {
-    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
+  test("a spawned tunnel records the assistant it fronts", async () => {
+    const ws = makeWorkspace({});
     mockNgrokApiFetch([
       null,
       {
@@ -1426,11 +1402,20 @@ describe("ngrok --domain spawn args", () => {
       },
     ]);
 
-    const child = await withLockfileFor("spawn-assistant", () =>
-      realNgrok.maybeStartNgrokTunnel(7830, ws, "spawn-assistant"),
+    const run = withLockfileFor("spawn-assistant", () =>
+      realNgrok.runNgrokTunnel({
+        port: 7830,
+        workspaceDir: ws,
+        assistantId: "spawn-assistant",
+      }),
     );
+    const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
+    try {
+      await run;
+    } finally {
+      clearInterval(pump);
+    }
 
-    expect(child).not.toBeNull();
     expect(readIngress(ws)).toMatchObject({
       publicBaseUrl: "https://spawned.ngrok.app",
       assistantId: "spawn-assistant",
@@ -1439,58 +1424,6 @@ describe("ngrok --domain spawn args", () => {
         publicBaseUrl: "https://spawned.ngrok.app",
       },
     });
-  });
-
-  test("maybeStartNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
-    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
-    // Discovery sees the first agent on the default inspection port, serving
-    // some other tunnel; after the second agent spawns, its own API reports
-    // the new tunnel for the requested port.
-    mockNgrokApiFetch([
-      {
-        tunnels: [
-          {
-            public_url: "https://stale.ngrok-free.app",
-            config: { addr: "localhost:7830" },
-          },
-        ],
-      },
-      {
-        tunnels: [
-          {
-            public_url: "https://second.ngrok-free.app",
-            config: { addr: "localhost:18080" },
-          },
-        ],
-      },
-    ]);
-
-    const child = await withLockfileFor("second-agent", () =>
-      realNgrok.maybeStartNgrokTunnel(18080, ws, "second-agent"),
-    );
-
-    // Concurrent agents are supported: the second agent spawned instead of
-    // the old skip-and-warn.
-    expect(child).not.toBeNull();
-    expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [, args] = spawnMock.mock.calls[0];
-    expect(args).toEqual([
-      "http",
-      "127.0.0.1:18080",
-      "--log=stdout",
-      `--config=${defaultNgrokConfigPath}`,
-      `--config=${realNgrok.ngrokAgentConfigPath()}`,
-    ]);
-    expect(readIngress(ws)).toMatchObject({
-      publicBaseUrl: "https://second.ngrok-free.app",
-      assistantId: "second-agent",
-    });
-    // The second agent's inspection address is recorded so the next run can
-    // rediscover it for adoption.
-    const agentConfig = parse(
-      readFileSync(realNgrok.ngrokAgentConfigPath(), "utf-8"),
-    );
-    expect(agentConfig.web_addr).toBe("127.0.0.1:4041");
   });
 
   test("runNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
@@ -1541,43 +1474,6 @@ describe("ngrok --domain spawn args", () => {
       JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
     );
     expect(config.ingress?.publicBaseUrl).toBe("https://second.ngrok-free.app");
-  });
-
-  test("maybeStartNgrokTunnel passes the saved domain to the spawn args", async () => {
-    const ws = makeWorkspace({ telegram: { botUsername: "example_bot" } });
-    realNgrok.saveNgrokDomain("foo.ngrok.app");
-    mockNgrokApiFetch([
-      null,
-      {
-        tunnels: [
-          unrelatedPortTunnel,
-          {
-            public_url: "https://foo.ngrok.app",
-            config: { addr: "localhost:7830" },
-          },
-        ],
-      },
-    ]);
-
-    const child = await realNgrok.maybeStartNgrokTunnel(7830, ws);
-
-    expect(child).not.toBeNull();
-    expect(spawnMock).toHaveBeenCalledTimes(1);
-    const [cmd, args] = spawnMock.mock.calls[0];
-    expect(cmd).toBe("ngrok");
-    // Plain `ngrok http` so the user's default config — where their
-    // authtoken lives — is what the agent loads.
-    expect(args).toEqual([
-      "http",
-      "127.0.0.1:7830",
-      "--log=stdout",
-      "--domain=foo.ngrok.app",
-    ]);
-
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
   });
 
   test("runNgrokTunnel without --domain reuses the saved domain and does not delete it", async () => {
@@ -1806,7 +1702,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       TAILSCALE_PROVIDER: {
         ...realTailscaleTunnel.TAILSCALE_PROVIDER,
         run: runTailscaleTunnelMock,
-        start: startTailnetServeMock,
       },
     }));
     mock.module("../lib/nginx-ingress.js", () => ({
@@ -1825,15 +1720,19 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       port: EDGE_PORT,
       started: true,
     }));
-    startTailnetServeMock.mockReset();
-    startTailnetServeMock.mockImplementation(async (opts) => {
+    runTailscaleTunnelMock.mockReset();
+    runTailscaleTunnelMock.mockImplementation(async (opts) => {
+      const runOpts = opts as {
+        workspaceDir: string;
+        assistantId?: string;
+      };
       saveIngressUrl(
-        opts.workspaceDir,
+        runOpts.workspaceDir,
         TAILNET_URL,
-        opts.assistantId,
+        runOpts.assistantId,
         "tailscale",
       );
-      return TAILNET_URL;
+      return { publicUrl: TAILNET_URL, waitForExit: Promise.resolve() };
     });
     isIngressRunningMock.mockReset();
     isIngressRunningMock.mockImplementation(() => false);
@@ -1864,6 +1763,13 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     for (const dir of tempDirs.splice(0)) {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  // The suite re-mocked the provider + edge modules in beforeAll; restore
+  // the real ones or the mocks leak into whichever file Bun runs next.
+  afterAll(() => {
+    mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
+    mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
   });
 
   function seedRecordedTailnetWake(): string {
@@ -1906,7 +1812,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     });
     // Step 2: the tunnel re-established at the app server's port, never the
     // gateway's fallback port.
-    expect(startTailnetServeMock).toHaveBeenCalledWith({
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       workspaceDir,
       assistantId: "assistant-1",
@@ -1965,7 +1871,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(startTailnetServeMock).not.toHaveBeenCalled();
+    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
@@ -1983,11 +1889,11 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(startTailnetServeMock).not.toHaveBeenCalled();
+    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
-  test("a provider with no start piece ensures nothing", async () => {
+  test("a cloudflare run failure is non-fatal for the restore", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     stampRootProcess("tunnel", {
@@ -2012,7 +1918,81 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     );
 
     expect(ensureAppServerMock).toHaveBeenCalled();
-    expect(startTailnetServeMock).not.toHaveBeenCalled();
+    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
+  });
+
+  test("a pairing-only tailnet run leaves lastTunnel on the webhook provider, so the restore re-establishes nothing", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    stampRootProcess("tunnel", {
+      pid: 4321,
+      provider: "tailscale",
+      startedAt: new Date().toISOString(),
+    });
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: {
+        enabled: true,
+        publicBaseUrl: "https://x.ngrok.app",
+        lastTunnel: {
+          provider: "ngrok",
+          publicBaseUrl: "https://x.ngrok.app",
+        },
+      },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    // The pairing run did not repoint the webhook callback base; the restore
+    // must not repoint it either.
+    expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
+    expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
+  });
+
+  test("a workspace whose config never recorded a tunnel still re-establishes the recorded one", async () => {
+    const entry = makeLocalEntry();
+    writeLockfile(entry);
+    stampRootProcess("tunnel", {
+      pid: 4321,
+      provider: "tailscale",
+      startedAt: new Date().toISOString(),
+    });
+    stampRootProcess("app", {
+      pid: 4321,
+      port: EDGE_PORT,
+      assistantId: entry.assistantId,
+      startedAt: new Date().toISOString(),
+    });
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+      ingress: { enabled: true },
+    });
+
+    await restoreFlow.restoreAppServerAndAutoTunnel(
+      entry.assistantId,
+      7830,
+      workspaceDir,
+    );
+
+    // No lastTunnel record contradicts the root record, so the recorded
+    // tailnet tunnel is re-established and the URL is saved again.
+    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      workspaceDir,
+      assistantId: entry.assistantId,
+    });
+    expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
+      TAILNET_URL,
+      entry.assistantId,
+    );
   });
 });

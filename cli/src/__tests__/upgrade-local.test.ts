@@ -162,13 +162,20 @@ mock.module("../lib/loopback-fetch.js", () => ({
   loopbackSafeFetch: loopbackSafeFetchMock,
 }));
 
-const maybeStartNgrokTunnelMock = mock<typeof ngrok.maybeStartNgrokTunnel>(
-  async () => null,
-);
+const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
+  return {
+    publicUrl: "https://tunnel.example.com",
+    waitForExit: Promise.resolve(),
+  } as never;
+});
 
 mock.module("../lib/tunnels/ngrok.js", () => ({
   ...realNgrok,
-  maybeStartNgrokTunnel: maybeStartNgrokTunnelMock,
+  runNgrokTunnel: runNgrokTunnelMock,
+  NGROK_PROVIDER: {
+    ...realNgrok.NGROK_PROVIDER,
+    run: runNgrokTunnelMock,
+  },
 }));
 
 const broadcastUpgradeEventMock = mock<
@@ -296,8 +303,14 @@ beforeEach(() => {
       },
     }),
   } as Response);
-  maybeStartNgrokTunnelMock.mockReset();
-  maybeStartNgrokTunnelMock.mockResolvedValue(null);
+  runNgrokTunnelMock.mockReset();
+  runNgrokTunnelMock.mockImplementation(
+    async () =>
+      ({
+        publicUrl: "https://tunnel.example.com",
+        waitForExit: Promise.resolve(),
+      }) as never,
+  );
   broadcastUpgradeEventMock.mockReset();
   broadcastUpgradeEventMock.mockResolvedValue(undefined);
   commitWorkspaceViaGatewayMock.mockReset();
@@ -431,11 +444,11 @@ describe("cadet upgrade local", () => {
       "local-assistant",
       "existing-bootstrap-secret",
     );
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      join(tempDir, "workspace"),
-      "local-assistant",
-    );
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: 7830,
+      workspaceDir: join(tempDir, "workspace"),
+      assistantId: "local-assistant",
+    });
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
     expect(commitWorkspaceViaGatewayMock).toHaveBeenCalledWith(
       "http://127.0.0.1:7830",
