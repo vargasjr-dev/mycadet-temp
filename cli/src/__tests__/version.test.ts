@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { execSync } from "node:child_process";
 
 import { stampedVersion } from "@mycadet/shared/version";
-import { environmentFromVersion } from "../lib/environments/resolve.js";
+import {
+  environmentFromVersion,
+  getCurrentEnvironment,
+} from "../lib/environments/resolve.js";
 import { isLocalVersion, parseVersion } from "../lib/version-compat.js";
 
 describe("stampedVersion", () => {
@@ -57,5 +60,41 @@ describe("stampedVersion", () => {
       .slice(0, 12);
     const sha = execSync("git rev-parse --short=7 HEAD").toString().trim();
     expect(stampedVersion("0.13.0")).toBe(`0.13.0-local.${stamp}.${sha}`);
+  });
+
+  test("installed .ts entries (node_modules) keep the plain package version", () => {
+    // A global install ships the same .ts entries a checkout does, but it is
+    // a released artifact: stamping it appended `-local.` to a `-dev.`
+    // version (the channel lie behind `v0.13.0-dev.…-local.…` displays) and
+    // leaked whatever upward `.git` the walk found into the version.
+    expect(
+      stampedVersion(
+        "0.13.0-dev.202610252248.6747732",
+        new Date(),
+        "/home/dev/.bun/install/global/node_modules/@mycadet/shared/version.ts",
+      ),
+    ).toBe("0.13.0-dev.202610252248.6747732");
+  });
+});
+
+describe("version-derived environment propagation", () => {
+  test("getCurrentEnvironment propagates the version-derived environment for child processes", () => {
+    // The incident this pins: a released `-dev.` CLI never set
+    // CADET_ENVIRONMENT before commands resolved lockfile paths, so
+    // local-mode's production fallback answered instead — pair minted
+    // against another environment's lockfile (a retired assistant's dead
+    // container) while up/tunnel, which DO call getCurrentEnvironment
+    // first, wrote the right one. The propagation at the entry point is
+    // what makes every downstream path resolution agree with the version.
+    const prior = process.env.CADET_ENVIRONMENT;
+    process.env.CADET_ENVIRONMENT = undefined;
+    try {
+      const env = getCurrentEnvironment();
+      // Coerced: Bun's expect overloads choke on the `string | undefined`
+      // env-index type here.
+      expect(process.env.CADET_ENVIRONMENT ?? "(unset)").toBe(env.name);
+    } finally {
+      process.env.CADET_ENVIRONMENT = prior;
+    }
   });
 });

@@ -37,6 +37,13 @@ function utcStamp(date: Date): string {
 }
 
 function isSourceCheckout(entryPath: string): boolean {
+  // An npm/bun global install ships the same `.ts` entries a repo checkout
+  // does — but it is a released artifact, not a checkout: stamping it (a)
+  // lied about the channel, appending `-local.` to a `-dev.` version, and
+  // (b) leaked whatever repo the upward `.git` walk happened to find (a
+  // dotfiles repo, a parent project) into the displayed version. Only a
+  // path that never traversed node_modules is a checkout.
+  if (/[\\/]node_modules[\\/]/.test(entryPath)) return false;
   return entryPath.endsWith(".ts");
 }
 

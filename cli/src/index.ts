@@ -7,6 +7,8 @@ import { resolveConfigDir } from "@mycadet/local-mode";
 
 import { stampedVersion } from "@mycadet/shared/version";
 
+import { getCurrentEnvironment } from "./lib/environments/resolve.js";
+
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
 import { app } from "./commands/app";
@@ -192,6 +194,18 @@ async function main() {
   // Load $XDG_CONFIG_HOME/cadet/.env before any command runs so
   // provider API keys and other config are available to hatch, exec, etc.
   loadConfigDotenv();
+
+  // Resolve the environment ONCE at the entry point. This both propagates
+  // CADET_ENVIRONMENT (version-derived, e.g. `dev` for a `-dev.` install)
+  // into process.env and — critically — does it BEFORE any command resolves
+  // lockfile paths. local-mode's resolveEnvironmentName falls back to
+  // production when CADET_ENVIRONMENT is unset and no persisted default
+  // exists, so a command that read a lockfile before this point (pair's
+  // mint path did) targeted ~/.config/cadet/lockfile.json — another
+  // environment's stale state — while the rest of the binary (up, tunnel)
+  // resolved dev and wrote ~/.config/cadet-dev/lockfile.json. One resolver,
+  // resolved once, for every consumer downstream.
+  getCurrentEnvironment();
 
   const args = process.argv.slice(2);
 

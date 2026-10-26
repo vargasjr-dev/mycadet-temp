@@ -26,6 +26,7 @@ import {
 } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { extractFlag } from "../lib/arg-utils.js";
+import { cliCommand } from "../lib/cli-name.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import {
   formatAssistantLookupError,
@@ -228,7 +229,17 @@ async function mintPairingChallengeOrExit(
       `Error: could not mint a pairing challenge on the gateway ` +
         `(${err instanceof Error ? err.message : String(err)}).`,
     );
-    console.error("Is the assistant running? Try `cadet wake`.");
+    // Name the resolution inputs so a stale/duplicate state is
+    // self-diagnosing: which lockfile the entry came from, which
+    // environment that is, and which assistant it pointed at. A wrong
+    // environment here (e.g. production fallback reading another env's
+    // retired assistant) is indistinguishable from a dead assistant
+    // without these.
+    console.error(
+      `Resolved assistant '${entry.assistantId}' via the ` +
+        `${getCurrentEnvironment().name} environment. ` +
+        `Is the assistant running? Try \`${cliCommand()} wake\`.`,
+    );
     process.exit(1);
   }
 
