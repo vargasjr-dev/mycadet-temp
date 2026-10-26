@@ -379,10 +379,7 @@ export async function runTailscaleTunnel(
   const deps = realTailscaleDeps();
 
   console.log("Setting up tailscale serve...");
-  const { publicUrl, port, workspaceDir } = await startTailscaleServe(
-    opts,
-    deps,
-  );
+  const { publicUrl, port } = await startTailscaleServe(opts, deps);
 
   console.log("");
   console.log(`Tunnel established: ${publicUrl}`);
