@@ -15,9 +15,7 @@ import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
-import {
-  forwardedIdentityHeaders,
-} from "@mycadet/assistant-client";
+import { forwardedIdentityHeaders } from "@mycadet/assistant-client";
 import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
@@ -246,11 +244,7 @@ import { initGatewayDb } from "./db/connection.js";
 import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import {
-  clearManagedPublicBaseUrl,
-  createTunnelClient,
-  enablePublicIngress,
-} from "./tunnel/client.js";
+import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
 import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
 
@@ -2801,19 +2795,22 @@ async function main() {
 
   const twilioStartupCredentials =
     await readTwilioCredentialsForTunnelStartup();
-  if (tunnelClient) {
-    await clearManagedPublicBaseUrl(configFileCache).catch((err) => {
-      log.error({ err }, "Failed to clear stale Tunnel public URL");
-    });
-  }
+  // A recorded `ingress.publicBaseUrl` is deliberately NOT cleared at startup:
+  // it may be a host-side CLI tunnel's address (recorded via
+  // /v1/ingress/domains) that this process cannot see, re-derive, or judge
+  // stale — wiping it here used to strand pairing and webhook flows until the
+  // user re-ran `cadet tunnel`. This gateway's own tunnel republishes over
+  // whatever is recorded the moment it connects (which re-runs reconciliation),
+  // and only clears what it can prove it published (see the tunnel client's
+  // expected-publication guards).
   maybeStartTunnelForTwilio("startup", twilioStartupCredentials);
   // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
   // up at startup for every assistant (not just for Twilio).
   startTunnelForLiveVoice("startup");
 
   // The credential watcher callback handles credential-backed startup side
-  // effects during the initial poll. Stale Tunnel-owned ingress is already
-  // cleared before those side effects can register external callbacks.
+  // effects during the initial poll. They read whatever ingress URL is
+  // recorded — a publisher-owned field that outlives this process.
   await credentialWatcher.start();
 
   const configFileWatcher = new ConfigFileWatcher((event) => {

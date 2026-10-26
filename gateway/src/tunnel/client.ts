@@ -271,7 +271,14 @@ export class TunnelClient {
   }
 
   private async startAsync(): Promise<void> {
-    await clearManagedPublicBaseUrl(this.options.configFile);
+    // The recorded public URL is left alone here on purpose: it may be a
+    // host-side CLI tunnel's address (recorded via /v1/ingress/domains),
+    // which this process cannot see or re-derive — the gateway has no
+    // context to judge it stale. This client's own connect republishes
+    // below, overwriting whatever is recorded with fresh truth, and a URL
+    // this client published in a previous life is only ever cleared by the
+    // expected-publication guards (clearPublishedPublicBaseUrl), which run
+    // while the publication is still known.
     await this.connect();
   }
 
@@ -800,9 +807,10 @@ export function createTunnelClient(
         "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
       );
     }
-    void clearManagedPublicBaseUrl(deps.configFile).catch((err) => {
-      log.error({ err }, "Failed to clear disabled Tunnel public URL");
-    });
+    // No clear on purpose: a recorded URL may belong to a host-side CLI
+    // tunnel (via /v1/ingress/domains) that outlives this process, and this
+    // unconfigured-Tunnel state says nothing about that publisher. The URL
+    // belongs to whoever recorded it; teardown is the publisher's job.
     return undefined;
   }
   return new TunnelClient({
