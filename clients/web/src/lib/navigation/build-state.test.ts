@@ -15,14 +15,6 @@ mock.module("@/lib/local-mode", () => ({
   isGatewaySessionLive: () => mockGatewaySessionLive,
 }));
 
-// The guard's session questions are answered by the boot resolution via
-// `bootResolutionFact` — mocked at that boundary here; the fact's own
-// mapping is pinned in queries.test.ts through the real chain.
-let mockBootFact = { settled: true, authenticated: true };
-mock.module("@/assistant/queries", () => ({
-  bootResolutionFact: () => mockBootFact,
-}));
-
 const { buildNavigationState } = await import("./build-state");
 const { useAuthStore } = await import("@/stores/auth-store");
 const { useOrganizationStore } = await import("@/stores/organization-store");
@@ -48,41 +40,16 @@ beforeEach(() => {
     activeAssistantId: null,
   });
   clearSelectedAssistantId();
-  mockBootFact = { settled: true, authenticated: true };
 });
 
 afterEach(() => {
   useAuthStore.setState(initialAuthState, true);
 });
 
-describe("buildNavigationState — the session answers come from the boot resolution", () => {
-  test("a settled, live boot resolution is admitted", () => {
-    mockBootFact = { settled: true, authenticated: true };
-
-    const state = buildNavigationState();
-    expect(state.sessionSettled).toBe(true);
-    expect(state.isAuthenticated).toBe(true);
-  });
-
-  test("a settled rejection is not admitted", () => {
-    mockBootFact = { settled: true, authenticated: false };
-
-    const state = buildNavigationState();
-    expect(state.sessionSettled).toBe(true);
-    expect(state.isAuthenticated).toBe(false);
-  });
-
-  test("an unsettled boot resolution is neither settled nor admitted", () => {
-    mockBootFact = { settled: false, authenticated: false };
-
-    const state = buildNavigationState();
-    expect(state.sessionSettled).toBe(false);
-    expect(state.isAuthenticated).toBe(false);
-  });
-
+describe("buildNavigationState — the onboarding fork's inputs", () => {
   test("cloudSession is surfaced verbatim for the onboarding fork", () => {
     // The route fork's onboarding wait keys off cloudSession === 'unknown';
-    // surfacing isAuthenticated must not disturb that field.
+    // the field is surfaced verbatim from the store.
     useAuthStore.setState({ cloudSession: "unknown" });
 
     expect(buildNavigationState().cloudSession).toBe("unknown");

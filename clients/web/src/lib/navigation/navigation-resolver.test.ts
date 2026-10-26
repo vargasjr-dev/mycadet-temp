@@ -12,8 +12,6 @@ const base: NavigationState = {
   remoteGatewayPublicPathPrefix: "",
   isGatewaySessionLive: false,
   hasAssistants: true,
-  sessionSettled: true,
-  isAuthenticated: true,
   cloudSession: "present",
   userHasOnboardedAssistant: false,
   selectedAssistantOnboarded: false,
@@ -23,7 +21,6 @@ const s = (overrides: Partial<NavigationState>): NavigationState => ({
   ...overrides,
 });
 const ALLOW: NavigationDecision = { action: "allow" };
-const WAIT: NavigationDecision = { action: "wait" };
 const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
 const consentCarry = () =>
   `/account/consent?returnTo=${encodeURIComponent("/assistant/onboarding/research")}`;
@@ -33,13 +30,14 @@ describe("resolveNavigation", () => {
     const guard = (state: NavigationState, pathname = "/assistant") =>
       resolveNavigation(state, { kind: "route-guard", pathname });
 
-    test("waits for session initialization", () => {
-      expect(guard(s({ sessionSettled: false }))).toEqual(WAIT);
-    });
-
-    test("pairs an unauthenticated browser and preserves its destination", () => {
+    test("a browser without the gateway credential pairs, destination preserved", () => {
+      // The pair decision reads the connection slot's credential, not the
+      // auth store — the serving shell never loads this bundle logged out.
       expect(
-        guard(s({ isAuthenticated: false }), "/assistant/identity?tab=1"),
+        guard(
+          s({ isRemoteGateway: true, isGatewaySessionLive: false }),
+          "/assistant/identity?tab=1",
+        ),
       ).toEqual({
         action: "redirect",
         to: "/assistant/pair?returnTo=%2Fassistant%2Fidentity%3Ftab%3D1",
@@ -62,38 +60,16 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("a live gateway session admits before the auth store catches up", () => {
+    test("a live gateway session admits ahead of the pairing requirement", () => {
       expect(
         guard(
           s({
             isRemoteGateway: true,
             isLocalClient: true,
             isGatewaySessionLive: true,
-            isAuthenticated: false,
           }),
         ),
       ).toEqual(ALLOW);
-    });
-
-    test("local clients without a session choose welcome or their existing assistant", () => {
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            isAuthenticated: false,
-            hasAssistants: false,
-          }),
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/welcome",
-      });
-      expect(guard(s({ isLocalClient: true, isAuthenticated: false }))).toEqual(
-        {
-          action: "redirect",
-          to: "/assistant",
-        },
-      );
     });
 
     test("empty local clients wait for the platform probe before choosing hosting", () => {
@@ -136,7 +112,7 @@ describe("resolveNavigation", () => {
       );
     });
 
-    test("authenticated users with assistants are admitted", () => {
+    test("users with assistants are admitted", () => {
       expect(guard(base)).toEqual(ALLOW);
       expect(guard(s({ isLocalClient: true }))).toEqual(ALLOW);
     });
@@ -161,33 +137,6 @@ describe("resolveNavigation", () => {
     });
   });
 
-  describe("hatch-gate", () => {
-    const hatch = (state: NavigationState) =>
-      resolveNavigation(state, { kind: "hatch-gate" });
-    test("waits for the session and pairs unauthenticated platform users", () => {
-      expect(hatch(s({ sessionSettled: false }))).toEqual(WAIT);
-      expect(hatch(s({ isAuthenticated: false }))).toEqual({
-        action: "redirect",
-        to: "/assistant/pair",
-      });
-    });
-    test("allows authenticated and local sessions without web consent state", () => {
-      expect(hatch(base)).toEqual(ALLOW);
-      expect(
-        hatch(
-          s({
-            isLocalClient: true,
-            isAuthenticated: false,
-            cloudSession: "absent",
-          }),
-        ),
-      ).toEqual(ALLOW);
-    });
-  });
-
-  // -----------------------------------------------------------------------
-  // post-retire
-  // -----------------------------------------------------------------------
   describe("post-retire", () => {
     const postRetire = (state: NavigationState) =>
       resolveNavigation(state, { kind: "post-retire" });

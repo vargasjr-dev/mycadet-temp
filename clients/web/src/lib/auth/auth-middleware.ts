@@ -1,7 +1,11 @@
 import { redirect, type MiddlewareFunction } from "react-router";
 
 import { useAuthStore } from "@/stores/auth-store";
-import { isLocalClient, hasAssistants } from "@/lib/local-mode";
+import {
+  isGatewaySessionLive,
+  isLocalClient,
+  hasAssistants,
+} from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { buildNavigationState } from "@/lib/navigation/build-state";
@@ -79,6 +83,15 @@ const resolveWithGuard = async (
   // documented fallback. A result that lands after the timeout re-runs the
   // guard (see `revalidateWhenPlatformProbeSettles`), so a slow-but-successful
   // probe still reaches its cloud-session destination.
+  // Off the local arm the served world IS the boot resolution: the guard
+  // awaits its probe before deciding so the roster (`hasAssistants`) is the
+  // projected real answer rather than a cold empty store. The local arm
+  // skips it — the roster is stamped synchronously at boot, and its
+  // cloud-session fork waits below. Gateway-auth mode resolves locally.
+  if (!isLocalClient() && !isGatewaySessionLive()) {
+    await probeBootResolution();
+  }
+
   const state = buildNavigationState({
     ...(timedOut.platformProbe ? { cloudSession: "absent" as const } : {}),
   });
@@ -89,16 +102,10 @@ const resolveWithGuard = async (
   });
 
   if (decision.action === "wait") {
-    // The boot resolution is the settle fact behind every session question
-    // the resolver asks. One probe replaces the former session-probe wait
-    // and the assistant-list hydration wait — the hydration flag that wait
-    // awaited has no writer off the local arm, so off the local arm it was
-    // a clock; the projection this probe performs is what it was
-    // simulating. The probe settles in one fetch (a transport failure
-    // records as non-authoritative, LUM-2412): a settled rejection
-    // redirects at `requireAuth`, and everything else leaves the resolver a
-    // decided world instead of a looping one.
-    await probeBootResolution();
+    // The local arm's cloud-session fork needs the resolution's own
+    // projection attempted before the store wait below — one fetch, whose
+    // ok result projects into the roster. (The served arm already awaited
+    // it above; gateway-auth mode resolves with no fetch.)
     // Two local-mode cases hang on the cloud probe: the cold boot with an
     // empty lockfile, and any step that names the signal on its wait — a
     // checkout return whose org already has a self-hosted assistant reaches

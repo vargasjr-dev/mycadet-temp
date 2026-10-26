@@ -70,17 +70,10 @@ function setResolutionState(next: AssistantResolutionState) {
   }
 }
 
-// The guard reads the boot resolution imperatively: `bootResolutionFact`
-// (sync) and `probeBootResolution` (the wait's await). The probe's default
-// lands a settled, live session — what a healthy boot fetch means.
-let mockBootFact: { settled: boolean; authenticated: boolean } = {
-  settled: true,
-  authenticated: true,
-};
-let probeAuthed = true;
-const probeBootResolutionMock = mock(async () => {
-  mockBootFact = { settled: true, authenticated: probeAuthed };
-});
+// The guard awaits the boot resolution's probe for the roster projection —
+// the middleware's only import from queries. The default probe projects
+// nothing (an empty roster stays empty).
+const probeBootResolutionMock = mock(async () => {});
 mock.module("@/assistant/queries", () => ({
   useAssistantResolution: () => ({
     state: useSyncExternalStore(
@@ -91,7 +84,6 @@ mock.module("@/assistant/queries", () => ({
       () => resolutionState,
     ),
   }),
-  bootResolutionFact: () => mockBootFact,
   probeBootResolution: () => probeBootResolutionMock(),
 }));
 
@@ -153,12 +145,8 @@ beforeEach(() => {
     activeAssistantId: null,
   });
   setResolutionState({ kind: "error", message: "no assistant" });
-  mockBootFact = { settled: true, authenticated: true };
-  probeAuthed = true;
   probeBootResolutionMock.mockClear();
-  probeBootResolutionMock.mockImplementation(async () => {
-    mockBootFact = { settled: true, authenticated: probeAuthed };
-  });
+  probeBootResolutionMock.mockImplementation(async () => {});
 });
 
 afterEach(async () => {
@@ -261,70 +249,27 @@ describe("authMiddleware — app-access admit gate", () => {
     expect((await runMiddlewareOutcome(routes.identity)).admitted).toBe(true);
 
     // Platform getSession() returns 401 mid-session: cloudSession flips to
-    // absent, but the boot resolution's answer is unchanged — the gateway
-    // issued the session itself (#35152 — asserted in auth-store.test.ts).
-    // So the user is not evicted.
+    // absent, but the guard has no session input left to react to — the
+    // resolution's reconnecting UI owns session death, not the guard.
     useAuthStore.setState({ cloudSession: "absent" });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
-  });
-
-  test("still redirects a logged-out platform user with no reachable assistant to login", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    hasAssistantsMock.mockImplementation(() => false);
-    mockSelectedAssistant = undefined;
-    mockGatewayTokenPresent = false;
-    // The boot resolution answered with a settled rejection — the only
-    // authoritative "out".
-    mockBootFact = { settled: true, authenticated: false };
-    useAuthStore.setState({ cloudSession: "absent" });
-
-    const outcome = await runMiddlewareOutcome("/assistant/identity");
-    expect(outcome.admitted).toBe(false);
-    if (!outcome.admitted) {
-      expect(outcome.response.status).toBe(302);
-      expect(outcome.response.headers.get("Location")).toBe(
-        `${routes.remotePair}?returnTo=${encodeURIComponent("/assistant/identity")}`,
-      );
-    }
-  });
-});
-
-describe("authMiddleware — boot-resolution settle", () => {
-  // The guard's settle fact is the boot resolution. Off the local arm there
-  // is no roster stamp, so the empty-roster funnel is decided on the
-  // resolution's answer the middleware awaited — not on a hydration flag
-  // (it had no writer off the local arm; its wait was a clock).
-
-  test("a platform user with an empty roster reaches shell hatching once", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "present" });
-    useResolvedAssistantsStore.setState({ assistants: [] });
-
-    const outcome = await runMiddlewareOutcome(routes.identity);
-    expect(outcome.admitted).toBe(true);
-    expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(
-      true,
-    );
   });
 
   test("the guard holds its decision until the boot resolution reports", async () => {
-    // Cold boot, resolution fetch in flight: the middleware must not decide
-    // (a premature hatching bounce would strand a signed-in user), then
-    // decides exactly once on the reported answer.
+    // Cold boot, roster fetch in flight: the served arm's pre-decision
+    // await must not decide (a premature hatching bounce would strand a
+    // served user), then decides exactly once on the projected roster —
+    // empty, so hatching.
     isLocalClientMock.mockImplementation(() => false);
     useAuthStore.setState({ cloudSession: "present" });
     useResolvedAssistantsStore.setState({ assistants: [] });
-    mockBootFact = { settled: false, authenticated: false };
     let releaseProbe: (() => void) | null = null;
     probeBootResolutionMock.mockImplementation(
       () =>
         new Promise<void>((resolve) => {
-          releaseProbe = () => {
-            mockBootFact = { settled: true, authenticated: true };
-            resolve();
-          };
+          releaseProbe = () => resolve();
         }),
     );
 
@@ -343,23 +288,6 @@ describe("authMiddleware — boot-resolution settle", () => {
       true,
     );
     expect(probeBootResolutionMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("a logged-out platform boot is redirected to pair without a roster wait", async () => {
-    // A settled rejection is the only authoritative "out": the probe's
-    // answer routes to pair directly, no clock in between.
-    isLocalClientMock.mockImplementation(() => false);
-    hasAssistantsMock.mockImplementation(() => false);
-    mockBootFact = { settled: true, authenticated: false };
-    useAuthStore.setState({ cloudSession: "absent" });
-
-    const outcome = await runMiddlewareOutcome(routes.identity);
-    expect(outcome.admitted).toBe(false);
-    if (!outcome.admitted) {
-      expect(outcome.response.headers.get("Location")).toBe(
-        `${routes.remotePair}?returnTo=${encodeURIComponent(routes.identity)}`,
-      );
-    }
   });
 
   test("research proceeds without waiting for web consent or assistant hydration", async () => {
