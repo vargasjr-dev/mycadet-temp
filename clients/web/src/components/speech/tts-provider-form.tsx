@@ -507,7 +507,6 @@ export function TtsProviderForm({
                (grouped, per-row preview, provider badge). Controlled so the
                pick stays a draft until Save, matching the rest of this form. */
             <VoicePickerField
-              assistantId={assistantId}
               value={draftCloudVoice}
               onChange={setDraftCloudVoice}
             />

@@ -6,10 +6,10 @@ import {
   assistantsDomainsListQueryKey,
   assistantsEmailAddressesListOptions,
   assistantsEmailAddressesListQueryKey,
-  assistantsListOptions,
 } from "@/generated/api/@tanstack/react-query.gen";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useEnvironmentStore } from "@/stores/environment-store";
 
 import { resolveInboxStatus, type InboxStatus } from "../resolve-inbox-status";
@@ -41,11 +41,12 @@ export interface AssistantInboxState {
 
 /**
  * Everything the inbox needs to know to pick a state, read from the caches
- * that own it: the active assistant's hosting, the cloud's assistant
- * listing (for the handle and name), and the assistant's address and
- * domain lists. Managed email lives on the cloud API, whose assistant
- * routes key on the cloud UUID, so the local id is resolved to that
- * first; the reads that need it wait on it.
+ * that own it: the active assistant's hosting, the boot resolution (for
+ * the handle and name — the inbox IS the active assistant's inbox, so
+ * there is nothing to scan a platform listing for), and the assistant's
+ * address and domain lists. Managed email lives on the cloud API, whose
+ * assistant routes key on the cloud UUID, so the local id is resolved to
+ * that first; the reads that need it wait on it.
  */
 export function useAssistantInboxState(
   assistantId: string | null,
@@ -58,14 +59,11 @@ export function useAssistantInboxState(
 
   const { cloudAssistantId } = useCloudAssistantId(assistantId, onPlatform);
 
-  const assistantsQuery = useQuery({
-    ...assistantsListOptions(),
-    enabled: onPlatform,
-  });
-  const listed =
-    assistantsQuery.data?.results?.find(
-      (candidate) => candidate.id === cloudAssistantId,
-    ) ?? assistantsQuery.data?.results?.[0];
+  // The boot resolution IS the cloud's record of this assistant — its
+  // name, handle, and creation instant come from there, not from a
+  // platform listing scan.
+  const { result: resolution } = useAssistantResolution();
+  const listed = resolution?.ok ? resolution.data : null;
 
   const addressPath = { path: { assistant_id: cloudAssistantId ?? "" } };
   const readsEnabled = onPlatform && !!cloudAssistantId;

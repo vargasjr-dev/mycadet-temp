@@ -348,7 +348,6 @@ export function useNativeWidgetSnapshotSync(
   // gates they run under, the caller's assistant gate and the daemon
   // preconditions the query hooks apply for themselves. What tells a heartbeat
   // that resolved data is still being kept current rather than merely cached.
-  const inputsAreLive = isAssistantActive;
 
   // The active assistant's avatar, off the same query and through the same
   // resolvers `RootLayout` publishes from, so the widget can never draw a
@@ -597,7 +596,7 @@ export function useNativeWidgetSnapshotSync(
     if (
       !isWidgetSnapshotSyncAvailable() ||
       !snapshotResolved ||
-      !inputsAreLive
+      !isAssistantActive
     ) {
       return;
     }
@@ -619,7 +618,7 @@ export function useNativeWidgetSnapshotSync(
   }, [
     assistantId,
     snapshotResolved,
-    inputsAreLive,
+    isAssistantActive,
     avatarSource,
     avatarAccentHex,
     sendSnapshot,

@@ -77,12 +77,15 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { useSttLanguageSelection } =
   await import("@/components/speech/use-stt-language-selection");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 function renderSelection() {
+  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return renderHook(() => useSttLanguageSelection(ASSISTANT_ID), {
+  return renderHook(() => useSttLanguageSelection(), {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children),
   });

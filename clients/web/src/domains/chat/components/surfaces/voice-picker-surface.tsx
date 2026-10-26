@@ -39,18 +39,16 @@ interface VoicePickerSurfaceProps {
     actionId: string,
     data?: Record<string, unknown>,
   ) => void | Promise<void>;
-  assistantId: string | null;
 }
 
 export function VoicePickerSurface({
   surface,
   onAction,
-  assistantId,
 }: VoicePickerSurfaceProps) {
   const { t } = useTranslation("chat");
   // Only the three flags that pick the state. `VoiceList` runs the same hook for
   // the data it renders; both calls share one set of React Query subscriptions.
-  const { available, isByok, settled } = useCloudVoiceSelection(assistantId);
+  const { available, isByok, settled } = useCloudVoiceSelection();
 
   if (!settled) {
     return null;
@@ -65,7 +63,6 @@ export function VoicePickerSurface({
               each owns a Done or Start button that has to wait out an in-flight
               write; this card has no button, so there is nothing to gate. */}
           <VoiceList
-            assistantId={assistantId}
             filterBySource
             // Capped on the listbox rather than the wrapper, which also holds
             // the provider dropdown: capping the wrapper scrolls the dropdown
@@ -82,9 +79,7 @@ export function VoicePickerSurface({
       ) : (
         // Managed, but with nothing to choose from: an old daemon, or a catalog
         // that failed or is empty. The BYO note would be a lie here.
-        <p className={NOTE_CLASS}>
-          {t("voicePickerSurface.unavailable")}
-        </p>
+        <p className={NOTE_CLASS}>{t("voicePickerSurface.unavailable")}</p>
       )}
     </SurfaceContainer>
   );

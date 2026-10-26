@@ -28,7 +28,6 @@ import { useState } from "react";
 import { Button } from "@mycadet/design-library/components/button";
 
 import { DetailCard } from "@/components/detail-card";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { SttLanguagePickerModal } from "@/components/speech/stt-language-picker-modal";
 import { useSttLanguageSelection } from "@/components/speech/use-stt-language-selection";
 import { sttLanguageLabelForCode } from "@/lib/stt/language-catalog";
@@ -36,14 +35,13 @@ import { useTranslation } from "@/i18n";
 
 export function ListeningLanguageCard() {
   const { t } = useTranslation("settings");
-  const assistantId = useActiveAssistantId();
   const {
     available,
     currentCode,
     configuredProviderId,
     selectLanguage,
     selecting,
-  } = useSttLanguageSelection(assistantId);
+  } = useSttLanguageSelection();
   const [pickerOpen, setPickerOpen] = useState(false);
 
   if (!available) {

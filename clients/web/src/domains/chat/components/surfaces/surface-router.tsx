@@ -168,13 +168,7 @@ function SurfaceRouterInner({
     // composer indefinitely, and in the second would collapse the card into a
     // "Done" chip on the first pick.
     case "voice_picker":
-      return (
-        <VoicePickerSurface
-          surface={surface}
-          onAction={onAction}
-          assistantId={assistantId ?? null}
-        />
-      );
+      return <VoicePickerSurface surface={surface} onAction={onAction} />;
 
     case "work_result":
       return <WorkResultSurface surface={surface} onAction={onAction} />;

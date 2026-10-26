@@ -173,7 +173,7 @@ export function SttProviderForm({
     configuredProviderId: languageProviderId,
     selectLanguage,
     selecting: languageSelecting,
-  } = useSttLanguageSelection(assistantId);
+  } = useSttLanguageSelection();
   // The language catalog is ~50 entries, so the control is a trigger row
   // opening the shared search-first picker modal; a pick hot-applies through
   // the hook above, independent of this form's Save.

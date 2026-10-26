@@ -29,8 +29,6 @@ import {
   useGatedSelectedAssistantId,
   resolveSelectedAssistantId,
 } from "@/assistant/selection";
-import { isAuthenticated } from "@/stores/session-status";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getSelfHostedActorToken,
@@ -39,7 +37,6 @@ import {
 import {
   getLocalAssistants,
   isGatewaySessionLive,
-  isLocalClient,
   isServedGatewayRuntime,
   getSelectedAssistant,
   hasLocalGateway,
@@ -238,34 +235,17 @@ export interface AssistantResolutionResult {
 }
 
 /**
- * Whether to resolve the server-side assistant at all. Gateway-auth
- * mode and "local mode without platform session" short-circuit to local
- * states without ever calling /assistant/. Platform API calls require the
- * Cadet-Organization-Id header; wait for the org store to resolve before
- * firing them.
- */
-function useShouldQueryServer(): boolean {
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const hasCloudSession = useHasCloudSession();
-  return (
-    isAuthenticated(sessionStatus) &&
-    !isGatewaySessionLive() &&
-    (hasCloudSession || !isLocalClient())
-  );
-}
-
-/**
  * The read-only view of the boot resolution. Shared cache — every consumer
- * sees the same answer without issuing its own fetch.
+ * sees the same answer without issuing its own fetch. The resolution runs
+ * unconditionally: the web bundle is served for exactly one assistant, and
+ * by the time it loads that assistant is resolved.
  */
 export function useAssistantResolution(): AssistantResolutionResult {
-  const shouldQueryServer = useShouldQueryServer();
   const selectedCloudAssistantId = useSelectedCloudAssistantId();
 
   const query = useQuery<GetAssistantResult>({
     queryKey: assistantQueryKey(selectedCloudAssistantId),
     queryFn: () => getAssistant(selectedCloudAssistantId ?? undefined),
-    enabled: shouldQueryServer,
     retry: false,
     refetchInterval: (q) => pollIntervalFor(q.state.data),
     refetchOnWindowFocus: false,
@@ -277,7 +257,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
     if (isGatewaySessionLive()) {
       return { kind: "active", isLocal: true };
     }
-    if (!shouldQueryServer || query.isPending) {
+    if (query.isPending) {
       return { kind: "loading" };
     }
     if (query.isError) {
@@ -290,7 +270,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
       };
     }
     return resolveAssistantLifecycleState(query.data);
-  }, [query.isPending, query.isError, query.data, shouldQueryServer]);
+  }, [query.isPending, query.isError, query.data]);
 
   return {
     state,

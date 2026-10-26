@@ -6,7 +6,6 @@ import { TerminalPanel } from "@/components/terminal-panel";
 import {
   useActiveAssistantIsCloudHosted,
   useActiveAssistantIsSelfHosted,
-  useActiveAssistantLifecycleIsLoading,
 } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -18,13 +17,10 @@ type TerminalService = "assistant" | "gateway" | "credential-executor";
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
   // The terminal session is a cloud-routed exec channel — it has no meaning
-  // against a self-hosted assistant. Settings routes are NOT mounted under
-  // `<ActiveAssistantGate>`, so hosting may still be resolving on a
-  // deep-link / hard refresh; hold in the loading branch during that race,
-  // and once the lifecycle resolves to `self_hosted` early-return null,
-  // structurally blocking TerminalPanel from mounting a cloud-routed exec
-  // connection against a self-hosted target.
-  const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
+  // against a self-hosted assistant. Once the lifecycle resolves to
+  // `self_hosted` early-return null, structurally blocking TerminalPanel
+  // from mounting a cloud-routed exec connection against a self-hosted
+  // target.
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [service, setService] = useState<TerminalService>("assistant");
@@ -73,9 +69,8 @@ export function AssistantTerminalPanel() {
   // Trap-5 concern — lives inside `<TerminalPanel>` and is structurally
   // blocked from mounting in two ways: the gate flips to `"gated"` and
   // returns null when the lifecycle resolves to self-hosted, and the
-  // `showLoading` branch below covers the lifecycle-loading race window.
-  // When disabled we render the panel chrome plus a Notice without
-  // firing the fetch.
+  // `showLoading` branch covers the fetch in flight. When disabled we
+  // render the panel chrome plus a Notice without firing the fetch.
   const isSelfHosted = useActiveAssistantIsSelfHosted();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
 
@@ -90,15 +85,7 @@ export function AssistantTerminalPanel() {
     return null;
   }
 
-  // Treat ONLY the genuine lifecycle-loading window as still-resolving.
-  // Already-resolved non-hosted kinds (`retired`, `error`) must
-  // fall through to the existing
-  // "No assistant found" empty state — gating those on `!isCloudHosted`
-  // would stick the panel on the spinner forever because `fetchAssistant`
-  // never clears `loading` for an assistant that doesn't exist.
-  const isResolving = isLifecycleLoading;
-  const showLoading = loading || isResolving;
-
+  const showLoading = loading;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex shrink-0 items-center justify-between gap-3">

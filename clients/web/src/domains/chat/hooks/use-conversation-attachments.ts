@@ -233,7 +233,6 @@ export function useConversationAttachments(target: {
   }, [routeMissing, targetKey]);
   const listsActive =
     supportsList && !routeMissing && routeMissingFor !== targetKey;
-  const listsEnabled = listsActive;
 
   const fetchNextFiles = filesQuery.fetchNextPage;
   const fetchNextFrames = framesQuery.fetchNextPage;
@@ -349,17 +348,17 @@ export function useConversationAttachments(target: {
       return;
     }
     listedTranscriptIds.current = transcriptIds;
-    if (listsEnabled) {
+    if (listsActive) {
       invalidateLists();
     }
-  }, [transcriptIds, listsEnabled, invalidateLists]);
+  }, [transcriptIds, listsActive, invalidateLists]);
 
   useEffect(() => {
-    if (refreshKey === undefined || !listsEnabled) {
+    if (refreshKey === undefined || !listsActive) {
       return;
     }
     invalidateLists();
-  }, [refreshKey, listsEnabled, invalidateLists]);
+  }, [refreshKey, listsActive, invalidateLists]);
 
   const transcriptReady = ownsTranscript && (hasSnapshot || !isLoadingHistory);
 

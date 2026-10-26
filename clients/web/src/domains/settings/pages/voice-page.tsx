@@ -25,7 +25,6 @@ import { TurnDetectionRow } from "@/domains/settings/pages/turn-detection-row";
 import { VoiceKeyCard } from "@/domains/settings/pages/voice-key-card";
 import { VoicePickerCard } from "@/domains/settings/pages/voice-picker-card";
 
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { isElectron } from "@/runtime/is-electron";
 
 import { supportsModifierHold } from "@/runtime/hotkey";
@@ -143,7 +142,7 @@ export function VoiceSections() {
  */
 function SpeechServicesBanner() {
   const { t } = useTranslation("settings");
-  const { available } = useCloudVoiceSelection(useActiveAssistantId());
+  const { available } = useCloudVoiceSelection();
 
   if (!available) {
     return null;

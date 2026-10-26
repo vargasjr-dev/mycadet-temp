@@ -31,6 +31,7 @@ import {
 } from "@/lib/tts/use-cloud-voices";
 
 import { useSerializedConfigSelection } from "@/components/speech/use-serialized-config-selection";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 // Module-level so `select` identity only tracks real state (see
 // `useSerializedConfigSelection`).
@@ -75,18 +76,25 @@ export interface UseCloudVoiceSelection {
 }
 
 export function useCloudVoiceSelection(
-  assistantId: string | null,
+  options: { enabled?: boolean } = {},
 ): UseCloudVoiceSelection {
-  const enabled = !!assistantId;
+  // The id is the shell's, not a per-call argument. Read raw rather than
+  // through `useActiveAssistantId()`: the call bar mounts this hook in the
+  // root layout, where welcome and onboarding have no assistant yet — the
+  // `enabled` option keeps those pre-assistant mounts fetch-free.
+  const shellAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const enabled = (options.enabled ?? true) && shellAssistantId != null;
 
   const { data: providerCatalog, isLoading: catalogLoading } = useQuery({
-    ...ttsProvidersGetOptions({ path: { assistant_id: assistantId ?? "" } }),
+    ...ttsProvidersGetOptions({
+      path: { assistant_id: shellAssistantId ?? "" },
+    }),
     enabled,
     staleTime: Infinity,
     retry: false,
   });
   const { data: daemonConfig, isLoading: configLoading } = useQuery({
-    ...configGetOptions({ path: { assistant_id: assistantId ?? "" } }),
+    ...configGetOptions({ path: { assistant_id: shellAssistantId ?? "" } }),
     enabled,
     staleTime: 30_000,
   });
@@ -140,7 +148,7 @@ export function useCloudVoiceSelection(
     selecting,
     select: selectModel,
   } = useSerializedConfigSelection({
-    assistantId,
+    assistantId: shellAssistantId,
     configuredValue: configuredModel,
     buildPatchBody: buildVoicePatchBody,
     failureMessage: "Couldn't change the voice just now. Try again.",

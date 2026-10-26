@@ -102,6 +102,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { VoicePickerSurface } =
   await import("@/domains/chat/components/surfaces/voice-picker-surface");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 const SURFACE: Surface = {
   surfaceId: "surface-voice-1",
@@ -123,7 +125,12 @@ beforeAll(() => {
 
 const onActionCalls: unknown[][] = [];
 
-function renderSurface(assistantId: string | null = ASSISTANT_ID) {
+function renderSurface({
+  noAssistant = false,
+}: { noAssistant?: boolean } = {}) {
+  useResolvedAssistantsStore.setState({
+    activeAssistantId: noAssistant ? null : ASSISTANT_ID,
+  });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -135,7 +142,6 @@ function renderSurface(assistantId: string | null = ASSISTANT_ID) {
           onAction={(...args) => {
             onActionCalls.push(args);
           }}
-          assistantId={assistantId}
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -295,7 +301,7 @@ describe("VoicePickerSurface", () => {
   });
 
   test("no assistant gets a pointer, not an empty card", () => {
-    renderSurface(null);
+    renderSurface({ noAssistant: true });
 
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(screen.getByText(/available for this assistant/)).toBeTruthy();

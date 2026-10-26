@@ -30,7 +30,6 @@ import {
   groupVoicesByAccent,
   voiceTraitsLabel,
 } from "@/lib/tts/cloud-voice-catalog";
-import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getPreferredInputDeviceId,
   listVoiceInputDevices,
@@ -112,14 +111,13 @@ export function useCompanionPickers(): void {
 
   // Read raw rather than through `useActiveAssistantId`: this runs in the
   // root layout, where welcome and onboarding have no assistant yet.
-  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const inCall = useLiveVoiceStore((state) =>
     isLiveVoiceSessionActive(state.state),
   );
   // Handed an assistant only during a call, which is when the call bar asks
   // whether there are voices to offer. Off the call its queries stay off.
   const { available, voices, currentModel, defaultModel, selectModel } =
-    useCloudVoiceSelection(inCall ? activeAssistantId : null);
+    useCloudVoiceSelection({ enabled: inCall });
 
   // Whether the voice chevron has anything to open: an assistant on its own
   // speech provider, or a daemon without voice selection, has no catalog.

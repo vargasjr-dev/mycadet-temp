@@ -144,7 +144,7 @@ export function VoiceFirstRunCard({
     configuredProviderId,
     selectLanguage,
     selecting: languageSelecting,
-  } = useSttLanguageSelection(assistantId);
+  } = useSttLanguageSelection();
   // The actual suggestion is provider-scoped: null when the configured
   // provider's option set does not offer the locale's language (a Tamil
   // locale under xai), so the row never renders a suggestion the picker
@@ -342,7 +342,6 @@ export function VoiceFirstRunCard({
 
         {view === "settings" && (
           <VoiceSettingsView
-            assistantId={assistantId}
             onStart={onStart}
             onBack={backToIntro}
             startBlocked={languageSelecting}
@@ -399,7 +398,6 @@ export function VoiceFirstRunCard({
  * pull the React Query graph into every first-run render).
  */
 function VoiceSettingsView({
-  assistantId,
   onStart,
   onBack,
   startBlocked = false,
@@ -407,7 +405,6 @@ function VoiceSettingsView({
   languageAvailable,
   onOpenLanguage,
 }: {
-  assistantId: string | null;
   onStart: () => void;
   onBack: () => void;
   /** Current listening language, already labelled for its provider. */
@@ -430,7 +427,7 @@ function VoiceSettingsView({
   // assistants also get the credits subtitle; BYO ones see no catalog (the footer
   // note is their path), so the Cadet-credits line wouldn't apply.
   const { available, currentModel, selectModel, selecting } =
-    useCloudVoiceSelection(assistantId);
+    useCloudVoiceSelection();
 
   return (
     <>
@@ -478,7 +475,6 @@ function VoiceSettingsView({
             dropdown scopes the list; it hides itself for assistants on a
             bring-your-own provider, leaving the footer note as their path. */}
         <VoiceList
-          assistantId={assistantId}
           filterBySource
           value={currentModel}
           onChange={selectModel}

@@ -141,7 +141,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     refetchInterval: (query) =>
       resizePollInterval(query.state.data, resizeWatch, Date.now()),
   });
-  const healthzLoading = healthzQueryLoading;
 
   const healthzPolling = resizeWatch !== null;
 
@@ -213,7 +212,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     assistant,
     assistantLoading,
     healthz,
-    healthzLoading,
+    healthzLoading: healthzQueryLoading,
     healthzFetching,
     healthzPolling,
     refetch,
