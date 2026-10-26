@@ -286,17 +286,4 @@ describe("resolveLockfileInstanceDir", () => {
     });
   });
 
-  test("empty authoritative lockfile never falls through to a legacy file", () => {
-    const legacyPath = path.join(tempDir, "legacy.json");
-    writeFileSync(lockfilePath, "");
-    writeFileSync(
-      legacyPath,
-      JSON.stringify({
-        assistants: [{ assistantId: "local-1", baseDataDir: instanceDir }],
-      }),
-    );
-    expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
-      ok: true,
-    });
-  });
 });

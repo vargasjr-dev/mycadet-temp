@@ -1,8 +1,5 @@
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 import { ownVersion } from "@mycadet/local-mode";
-
-// Direct import — bun embeds this at compile time so it works in compiled binaries.
-import cliPkg from "../../../package.json";
 import {
   isDevVersion,
   isLocalVersion,

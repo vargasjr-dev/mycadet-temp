@@ -4,7 +4,7 @@ import {
   loopbackGatewayBearer,
   readGatewayTargets,
   resolveGatewayProxyTarget,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   sanitizePairedForwardHeaders,
   type GatewayEntryTarget,
   type GuardianTokenLease,
@@ -173,7 +173,7 @@ const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
   const watched = getWatchedLockfileSnapshot();
   return watched
     ? gatewayTargetsFromLockfile(watched)
-    : readGatewayTargets(resolveLockfilePaths());
+    : readGatewayTargets(resolveLockfilePath());
 };
 
 export const forwardGatewayRequest = async (

@@ -268,16 +268,13 @@ function readLockfileAssistantEntries(candidate: string): LockfileEntriesRead {
  * survive in a stale fallback file's target map.
  */
 export function readGatewayTargets(
-  lockfilePaths: string[],
+  lockfilePath: string,
 ): Map<string, GatewayEntryTarget> {
-  for (const candidate of lockfilePaths) {
-    const read = readLockfileAssistantEntries(candidate);
-    if (read.kind !== "ok") {
-      continue;
-    }
-    return gatewayTargetsFromLockfile({ assistants: read.assistants });
+  const read = readLockfileAssistantEntries(lockfilePath);
+  if (read.kind !== "ok") {
+    return new Map<string, GatewayEntryTarget>();
   }
-  return new Map<string, GatewayEntryTarget>();
+  return gatewayTargetsFromLockfile({ assistants: read.assistants });
 }
 
 /**

@@ -120,7 +120,7 @@ beforeAll(() => {
     paths: {
       configDir,
       environment: "production",
-      lockfilePaths: [lockfilePath],
+      lockfilePath,
     },
     refreshLockfile: refreshLockfileNowMock,
     session: { getToken: () => mockSessionToken },

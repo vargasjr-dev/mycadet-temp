@@ -16,7 +16,6 @@ import { installQuickInput } from "@mycadet/electron-desktop/quick-input-window"
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
 import {
   resolveLocalConfigFromEnv,
-  resolveLockfilePaths,
 } from "@mycadet/local-mode";
 
 import { getVersionInfo, installAbout, openAboutWindow } from "./about.client";

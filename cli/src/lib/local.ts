@@ -30,16 +30,6 @@ import {
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
 /**
- * Bare-metal fallback root for machine-scoped Cadet state: the XDG data
- * home (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
- * production). Spawn paths without an instance entry (watch mode, repair
- * flows) land here instead of the retired `~/.cadet` root.
- */
-function defaultCadetRoot(): string {
-  return resolveDataDir();
-}
-
-/**
  * cwd for every service spawn — the XDG data home
  * (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet`). The spawner
  * picks where services run so their `process.cwd()`-fallback state dirs
@@ -47,7 +37,11 @@ function defaultCadetRoot(): string {
  * containerized deployments set explicit env vars instead.
  */
 function spawnStateRoot(): string {
-  const root = defaultCadetRoot();
+  // Bare-metal fallback root for machine-scoped Cadet state: the XDG data
+  // home (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
+  // production). Spawn paths without an instance entry (watch mode, repair
+  // flows) land here instead of the retired `~/.cadet` root.
+  const root = resolveDataDir();
   mkdirSync(root, { recursive: true });
   return root;
 }
@@ -345,7 +339,7 @@ function applyIpcSocketDirOverride(
   env: Record<string, string | undefined>,
 ): void {
   const workspaceDir =
-    env.CADET_WORKSPACE_DIR || join(defaultCadetRoot(), "workspace");
+    env.CADET_WORKSPACE_DIR || join(resolveDataDir(), "workspace");
   const override = computeIpcSocketDirOverride(workspaceDir);
   if (!override) return;
 
@@ -576,7 +570,7 @@ function resolveCesBootstrapSocketDir(
     return join(getLocalInstanceDir(resources), "ces-data");
   }
   const dataDir =
-    env?.CES_DATA_DIR?.trim() || join(defaultCadetRoot(), "ces-data");
+    env?.CES_DATA_DIR?.trim() || join(resolveDataDir(), "ces-data");
   return dataDir;
 }
 
@@ -1105,7 +1099,7 @@ export async function startCes(
 ): Promise<void> {
   const cadetDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1121,13 +1115,13 @@ export async function startCes(
 
   const securityDir = resources
     ? join(getLocalInstanceDir(resources), "ces-security")
-    : join(defaultCadetRoot(), "ces-security");
+    : join(resolveDataDir(), "ces-security");
   const dataDir = resources
     ? join(getLocalInstanceDir(resources), "ces-data")
-    : join(defaultCadetRoot(), "ces-data");
+    : join(resolveDataDir(), "ces-data");
   const workspaceDir = resources
     ? join(getLocalInstanceDir(resources), "workspace")
-    : join(defaultCadetRoot(), "workspace");
+    : join(resolveDataDir(), "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
   mkdirSync(dataDir, { recursive: true });
@@ -1806,7 +1800,7 @@ export async function startGateway(
   // attempt spawns yet another process that fails with EADDRINUSE.
   const gwPidDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1913,7 +1907,7 @@ export async function startGateway(
   if (gateway.pid) {
     const gwPidDir = resources
       ? getLocalInstanceDir(resources)
-      : defaultCadetRoot();
+      : resolveDataDir();
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 
@@ -1951,7 +1945,7 @@ export async function stopLocalProcesses(
 ): Promise<void> {
   const cadetDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const daemonPidFile = getDaemonPidPath(resources);
   await stopProcessByPidFile(
     daemonPidFile,

@@ -12,7 +12,7 @@ import {
   resolveConfigDir,
   resolveDevCliInvocation,
   resolveEnvironmentName,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   type CliInvocation,
 } from "@mycadet/local-mode";
 
@@ -53,7 +53,7 @@ export const installWindowsLocalModeProviders = (
   registry.provide(LOCAL_MODE_PATHS, {
     configDir: resolveConfigDir(),
     environment: resolveEnvironmentName(),
-    lockfilePaths: resolveLockfilePaths(),
+    lockfilePath: resolveLockfilePath(),
   });
   registry.provide(LOCAL_MODE_SESSION, { getToken: getSessionToken });
 };

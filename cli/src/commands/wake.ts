@@ -455,12 +455,6 @@ export async function wakeAssistant(
     }
   }
 
-  // Self-heal the guardian token when the current environment's config dir
-  // is missing it. Hatch cross-writes the lockfile across env dirs but the
-  // guardian token is only persisted under the hatch-time env, so a desktop
-  // app built under a different CADET_ENVIRONMENT can't find a bearer and
-  // cascades into 401 → auth-rate-limit → 429. A sibling env copy is cheap
-  // and strictly additive.
   // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.

@@ -200,7 +200,7 @@ const sleep = (ms: number): Promise<void> =>
 describe("pairAssistant", () => {
   test("writes the lockfile entry and guardian token with the exact CLI shapes and modes", () => {
     console.log("PROBE", resolveEnvironmentName(), resolveLockfilePath(), lockfilePath);
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ token: jwtWithExp, deviceId: "dev-aaa" }),
     });
 
@@ -261,7 +261,7 @@ describe("pairAssistant", () => {
 
   test("falls back to now+24h expiry for a non-JWT access token", () => {
     const before = Date.now();
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ token: "opaque-token", deviceId: "dev-exp" }),
     });
     expect(result.ok).toBe(true);
@@ -277,7 +277,7 @@ describe("pairAssistant", () => {
   });
 
   test("persists the refresh credential and reports accessOnly: false", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({
         gatewayUrl: "https://gw.example.com",
         deviceId: "dev-refresh",
@@ -299,7 +299,7 @@ describe("pairAssistant", () => {
   });
 
   test("preserves a numeric (epoch-ms) refreshTokenExpiresAt", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({
         gatewayUrl: "https://gw.example.com",
         deviceId: "dev-num",
@@ -330,7 +330,7 @@ describe("pairAssistant", () => {
       "http://[0:0:0:0:0:ffff:127.0.0.1]:7830",
       "http://[::ffff:0.0.0.0]:7830",
     ]) {
-      const result = pairAssistant([lockfilePath], configDir, {
+      const result = pairAssistant(lockfilePath, configDir, {
         credentials: credentials({ gatewayUrl, deviceId: "dev-loop" }),
       });
 
@@ -350,7 +350,7 @@ describe("pairAssistant", () => {
     // Private-network literals are refused before a pairing is ever minted, so
     // advice to retry with a LAN address would send the user into a guaranteed
     // second failure.
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: "http://localhost:7830" }),
     });
 
@@ -366,7 +366,7 @@ describe("pairAssistant", () => {
     // refreshGuardianToken refuses to send the refresh token over plaintext
     // LAN URLs, so the pairing can never renew; report it access-only so the
     // expiry warning shows.
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({
         gatewayUrl: "http://10.0.0.5:7830",
         deviceId: "dev-lan",
@@ -383,7 +383,7 @@ describe("pairAssistant", () => {
   });
 
   test("a name is slugified into the id while the entry keeps the raw name", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials(),
       name: "Desk Box",
     });
@@ -400,7 +400,7 @@ describe("pairAssistant", () => {
   });
 
   test("a name with no alphanumerics is refused with a 400", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials(),
       name: "!!!",
     });
@@ -414,7 +414,7 @@ describe("pairAssistant", () => {
   });
 
   test("the derived id is path-safe whatever the deviceId carries", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ deviceId: "-/../../tmp/x" }),
     });
 
@@ -431,7 +431,7 @@ describe("pairAssistant", () => {
   });
 
   test("a gatewayUrl with no host falls back to a random path-safe id", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: "mailto:ops@example.com" }),
     });
 
@@ -443,7 +443,7 @@ describe("pairAssistant", () => {
   });
 
   (test("re-pairing the same gateway is refused with the entry and token untouched", () => {
-    const first = pairAssistant([lockfilePath], configDir, {
+    const first = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ deviceId: "dev-one", token: "t1" }),
     });
     expect(first.ok).toBe(true);
@@ -452,7 +452,7 @@ describe("pairAssistant", () => {
     }
     expect(first.updated).toBe(false);
 
-    const second = pairAssistant([lockfilePath], configDir, {
+    const second = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ deviceId: "dev-two", token: "t2" }),
     });
 
@@ -471,14 +471,14 @@ describe("pairAssistant", () => {
       // host alone would read the second nameless import as a re-pair of the
       // first: it would take over the entry, overwrite the guardian token, and
       // leave the user unable to reach the first assistant at all.
-      const first = pairAssistant([lockfilePath], configDir, {
+      const first = pairAssistant(lockfilePath, configDir, {
         credentials: credentials({
           gatewayUrl: "https://gw.example.com/assistant-1",
           deviceId: "dev-one",
           token: "t1",
         }),
       });
-      const second = pairAssistant([lockfilePath], configDir, {
+      const second = pairAssistant(lockfilePath, configDir, {
         credentials: credentials({
           gatewayUrl: "https://gw.example.com/assistant-2",
           deviceId: "dev-two",
@@ -519,10 +519,10 @@ describe("pairAssistant", () => {
     }));
 
   (test("a trailing slash names the same deployment as no path at all", () => {
-    const bare = pairAssistant([lockfilePath], configDir, {
+    const bare = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: "https://gw.example.com" }),
     });
-    const slashed = pairAssistant([lockfilePath], configDir, {
+    const slashed = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: "https://gw.example.com/" }),
     });
 
@@ -535,7 +535,7 @@ describe("pairAssistant", () => {
     expect(slashed.assistantId).toBe(bare.assistantId);
   }),
     test("a --name still wins over the gateway-derived default", () => {
-      const result = pairAssistant([lockfilePath], configDir, {
+      const result = pairAssistant(lockfilePath, configDir, {
         credentials: credentials(),
         name: "Desk",
       });
@@ -559,7 +559,7 @@ describe("pairAssistant", () => {
       activeAssistant: "desk",
     });
 
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials(),
       name: "desk",
     });
@@ -582,13 +582,13 @@ describe("pairAssistant", () => {
   });
 
   (test("re-importing under the same name is refused with the old address intact", () => {
-    const first = pairAssistant([lockfilePath], configDir, {
+    const first = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ deviceId: "dev-re", token: "t1" }),
       name: "desk",
     });
     expect(first.ok).toBe(true);
 
-    const second = pairAssistant([lockfilePath], configDir, {
+    const second = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({
         deviceId: "dev-re",
         token: "t2",
@@ -620,7 +620,7 @@ describe("pairAssistant", () => {
       const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
 
       const result = pairAssistant(
-        [path.join(notADir, "lockfile.json")],
+        path.join(notADir, "lockfile.json"),
         configDir,
         { credentials: credentials() },
       );
@@ -632,7 +632,7 @@ describe("pairAssistant", () => {
     }));
 
   test("an unparseable gatewayUrl is refused, not thrown", () => {
-    const result = pairAssistant([lockfilePath], configDir, {
+    const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: "not a url" }),
     });
 
@@ -658,12 +658,12 @@ describe("checkPairedAssistantName", () => {
     });
 
     // Same derivation as the real check: the raw name is slugified first.
-    const refusal = checkPairedAssistantName([lockfilePath], "Desk");
+    const refusal = checkPairedAssistantName(lockfilePath, "Desk");
     expect(refusal).not.toBeNull();
     expect(refusal!.status).toBe(409);
     expect(refusal!.assistantId).toBe("desk");
 
-    const real = pairAssistant([lockfilePath], configDir, {
+    const real = pairAssistant(lockfilePath, configDir, {
       credentials: credentials(),
       name: "Desk",
     });
@@ -676,20 +676,20 @@ describe("checkPairedAssistantName", () => {
   });
 
   test("a name with no alphanumerics is refused with a 400", () => {
-    const refusal = checkPairedAssistantName([lockfilePath], "///");
+    const refusal = checkPairedAssistantName(lockfilePath, "///");
     expect(refusal?.status).toBe(400);
   });
 
   test("a free name passes and an existing entry refuses", () => {
-    expect(checkPairedAssistantName([lockfilePath], "fresh")).toBeNull();
+    expect(checkPairedAssistantName(lockfilePath, "fresh")).toBeNull();
 
-    const imported = pairAssistant([lockfilePath], configDir, {
+    const imported = pairAssistant(lockfilePath, configDir, {
       credentials: credentials(),
       name: "fresh",
     });
     expect(imported.ok).toBe(true);
     // An id already held by an assistant is refused rather than clobbered.
-    expect(checkPairedAssistantName([lockfilePath], "fresh")).not.toBeNull();
+    expect(checkPairedAssistantName(lockfilePath, "fresh")).not.toBeNull();
   });
 });
 
@@ -971,7 +971,7 @@ describe("loopback refusals agree across the pairing path", () => {
     expect(started.reason).toBe("invalid-address");
     expect(started.rejection).toBe("loopback");
 
-    const imported = pairAssistant([lockfilePath], configDir, {
+    const imported = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ gatewayUrl: address }),
     });
     expect(imported.ok).toBe(false);
@@ -998,7 +998,7 @@ describe("pairingPoll", () => {
     respond = () => json(200, approvedBody());
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, { handle });
+    const result = await pairingPoll(lockfilePath, configDir, { handle });
 
     expect(result).toEqual({
       ok: true,
@@ -1037,7 +1037,7 @@ describe("pairingPoll", () => {
       });
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, {
+    const result = await pairingPoll(lockfilePath, configDir, {
       handle,
       name: "Desk Box",
     });
@@ -1056,7 +1056,7 @@ describe("pairingPoll", () => {
     respond = () => json(202, pendingBody());
     const handle = await startFromLink();
 
-    const pending = await pairingPoll([lockfilePath], configDir, { handle });
+    const pending = await pairingPoll(lockfilePath, configDir, { handle });
     expect(pending).toEqual({
       ok: true,
       status: "pending",
@@ -1066,7 +1066,7 @@ describe("pairingPoll", () => {
     expect(fs.existsSync(lockfilePath)).toBe(false);
 
     respond = () => json(200, approvedBody());
-    const imported = await pairingPoll([lockfilePath], configDir, { handle });
+    const imported = await pairingPoll(lockfilePath, configDir, { handle });
     expect(imported.ok).toBe(true);
     if (!imported.ok) {
       return;
@@ -1093,7 +1093,7 @@ describe("pairingPoll", () => {
           expiresAt: new Date(Date.now() + 365 * 86_400_000).toISOString(),
         }),
       );
-    const extended = await pairingPoll([lockfilePath], configDir, {
+    const extended = await pairingPoll(lockfilePath, configDir, {
       handle: started.handle,
     });
     expect(extended.ok).toBe(true);
@@ -1105,7 +1105,7 @@ describe("pairingPoll", () => {
     // Shortening is the gateway's to do: the code may be revoked early.
     const sooner = new Date(Date.now() + 30_000).toISOString();
     respond = () => json(202, pendingBody({ expiresAt: sooner }));
-    const shortened = await pairingPoll([lockfilePath], configDir, {
+    const shortened = await pairingPoll(lockfilePath, configDir, {
       handle: started.handle,
     });
     expect(shortened.ok).toBe(true);
@@ -1132,7 +1132,7 @@ describe("pairingPoll", () => {
         );
       const handle = await startFromLink();
 
-      const pending = await pairingPoll([lockfilePath], configDir, { handle });
+      const pending = await pairingPoll(lockfilePath, configDir, { handle });
 
       expect(pending.ok).toBe(true);
       if (!pending.ok || pending.status !== "pending") {
@@ -1156,7 +1156,7 @@ describe("pairingPoll", () => {
     respond = () => json(200, approvedBody());
     const handle = await startFromLink();
 
-    const refused = await pairingPoll([lockfilePath], configDir, {
+    const refused = await pairingPoll(lockfilePath, configDir, {
       handle,
       name: "desk",
     });
@@ -1175,7 +1175,7 @@ describe("pairingPoll", () => {
     expect(fetchCalls).toHaveLength(0);
 
     // The very same session completes once the caller picks a free name.
-    const imported = await pairingPoll([lockfilePath], configDir, {
+    const imported = await pairingPoll(lockfilePath, configDir, {
       handle,
       name: "spare",
     });
@@ -1189,7 +1189,7 @@ describe("pairingPoll", () => {
 
   (test("re-pairing the same assistant with no name is refused", async () => {
     respond = () => json(200, approvedBody({ accessToken: "acc-1" }));
-    const first = await pairingPoll([lockfilePath], configDir, {
+    const first = await pairingPoll(lockfilePath, configDir, {
       handle: await startFromLink(),
     });
     expect(first.ok).toBe(true);
@@ -1198,7 +1198,7 @@ describe("pairingPoll", () => {
     }
 
     respond = () => json(200, approvedBody({ accessToken: "acc-2" }));
-    const second = await pairingPoll([lockfilePath], configDir, {
+    const second = await pairingPoll(lockfilePath, configDir, {
       handle: await startFromLink(),
     });
 
@@ -1215,14 +1215,14 @@ describe("pairingPoll", () => {
       respond = () => json(202, pendingBody());
 
       const cliHandle = await startFromLink();
-      await pairingPoll([lockfilePath], configDir, {
+      await pairingPoll(lockfilePath, configDir, {
         handle: cliHandle,
         platform: "cli",
       });
       expect(fetchCalls[0]!.body.platform).toBe("cli");
 
       const unknownHandle = await startFromLink();
-      await pairingPoll([lockfilePath], configDir, {
+      await pairingPoll(lockfilePath, configDir, {
         handle: unknownHandle,
         platform: "toaster",
       });
@@ -1243,7 +1243,7 @@ describe("pairingPoll", () => {
       return;
     }
 
-    const result = await pairingPoll([lockfilePath], configDir, {
+    const result = await pairingPoll(lockfilePath, configDir, {
       handle: started.handle,
     });
 
@@ -1262,7 +1262,7 @@ describe("pairingPoll", () => {
       json(401, { error: { code: "INVALID_OR_EXPIRED_DEVICE_CODE" } });
     const handle = await startFromLink();
 
-    const denied = await pairingPoll([lockfilePath], configDir, { handle });
+    const denied = await pairingPoll(lockfilePath, configDir, { handle });
     expect(denied.ok).toBe(false);
     if (denied.ok) {
       return;
@@ -1270,7 +1270,7 @@ describe("pairingPoll", () => {
     expect(denied.reason).toBe("expired");
 
     // The session is gone, so a further poll cannot replay the spent code.
-    const again = await pairingPoll([lockfilePath], configDir, { handle });
+    const again = await pairingPoll(lockfilePath, configDir, { handle });
     expect(again.ok).toBe(false);
     if (again.ok) {
       return;
@@ -1285,7 +1285,7 @@ describe("pairingPoll", () => {
     };
     const handle = await startFromLink();
 
-    const failed = await pairingPoll([lockfilePath], configDir, { handle });
+    const failed = await pairingPoll(lockfilePath, configDir, { handle });
     expect(failed.ok).toBe(false);
     if (failed.ok) {
       return;
@@ -1293,7 +1293,7 @@ describe("pairingPoll", () => {
     expect(failed.reason).toBe("unreachable");
 
     respond = () => json(200, approvedBody());
-    const imported = await pairingPoll([lockfilePath], configDir, { handle });
+    const imported = await pairingPoll(lockfilePath, configDir, { handle });
     expect(imported.ok).toBe(true);
   });
 
@@ -1301,7 +1301,7 @@ describe("pairingPoll", () => {
     respond = () => json(503, { error: { code: "GUARDIAN_REPAIR_REQUIRED" } });
     const handle = await startFromLink();
 
-    const refused = await pairingPoll([lockfilePath], configDir, { handle });
+    const refused = await pairingPoll(lockfilePath, configDir, { handle });
 
     expect(refused.ok).toBe(false);
     if (refused.ok) {
@@ -1317,7 +1317,7 @@ describe("pairingPoll", () => {
     // The same session exchanges the still-live code once the gateway is
     // repaired; the user never has to mint and approve another one.
     respond = () => json(200, approvedBody());
-    const imported = await pairingPoll([lockfilePath], configDir, { handle });
+    const imported = await pairingPoll(lockfilePath, configDir, { handle });
     expect(imported.ok).toBe(true);
     if (!imported.ok) {
       return;
@@ -1330,7 +1330,7 @@ describe("pairingPoll", () => {
     respond = () => json(200, { status: "approved" });
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, { handle });
+    const result = await pairingPoll(lockfilePath, configDir, { handle });
 
     expect(result.ok).toBe(false);
     if (result.ok) {
@@ -1362,7 +1362,7 @@ describe("pairingPoll", () => {
       respond = () => json(200, approvedBody(overrides));
       const handle = await startFromLink();
 
-      const result = await pairingPoll([lockfilePath], configDir, { handle });
+      const result = await pairingPoll(lockfilePath, configDir, { handle });
 
       expect(result.ok).toBe(false);
       if (result.ok) {
@@ -1389,7 +1389,7 @@ describe("pairingPoll", () => {
       });
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, {
+    const result = await pairingPoll(lockfilePath, configDir, {
       handle,
       name: "Old Gateway",
     });
@@ -1414,7 +1414,7 @@ describe("pairingPoll", () => {
       json(200, approvedBody({ refreshTokenExpiresAt: expiresAtMs }));
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, {
+    const result = await pairingPoll(lockfilePath, configDir, {
       handle,
       name: "Numeric Expiry",
     });
@@ -1438,7 +1438,7 @@ describe("pairingPoll", () => {
     const handle = await startFromLink();
 
     const result = await pairingPoll(
-      [path.join(notADir, "lockfile.json")],
+      path.join(notADir, "lockfile.json"),
       configDir,
       { handle },
     );
@@ -1451,7 +1451,7 @@ describe("pairingPoll", () => {
     expect(pairingSessionSurvives(result.reason)).toBe(false);
     // The exchange did go out, so the code is spent and the session is gone.
     expect(fetchCalls).toHaveLength(1);
-    const again = await pairingPoll([lockfilePath], configDir, { handle });
+    const again = await pairingPoll(lockfilePath, configDir, { handle });
     expect(again.ok).toBe(false);
     if (again.ok) {
       return;
@@ -1463,7 +1463,7 @@ describe("pairingPoll", () => {
     respond = () => redirectTo("http://169.254.169.254/latest/meta-data/");
     const handle = await startFromLink();
 
-    const redirected = await pairingPoll([lockfilePath], configDir, { handle });
+    const redirected = await pairingPoll(lockfilePath, configDir, { handle });
 
     expect(redirected.ok).toBe(false);
     if (redirected.ok) {
@@ -1477,7 +1477,7 @@ describe("pairingPoll", () => {
     expect(fetchCalls[0]!.redirect).toBe("error");
 
     respond = () => json(200, approvedBody());
-    const retried = await pairingPoll([lockfilePath], configDir, { handle });
+    const retried = await pairingPoll(lockfilePath, configDir, { handle });
     expect(retried.ok).toBe(true);
   });
 
@@ -1489,7 +1489,7 @@ describe("pairingPoll", () => {
       });
     const handle = await startFromLink();
 
-    const result = await pairingPoll([lockfilePath], configDir, { handle });
+    const result = await pairingPoll(lockfilePath, configDir, { handle });
 
     expect(result.ok).toBe(false);
     if (result.ok) {
@@ -1504,7 +1504,7 @@ describe("pairingPoll", () => {
 
   test("an unknown handle is refused without a request", async () => {
     for (const handle of ["nope", "", undefined, 42]) {
-      const result = await pairingPoll([lockfilePath], configDir, { handle });
+      const result = await pairingPoll(lockfilePath, configDir, { handle });
       expect(result.ok).toBe(false);
       if (result.ok) {
         continue;
@@ -1530,7 +1530,7 @@ describe("pairingCancel", () => {
     // A second cancel is a no-op, and the handle is dead.
     expect(pairingCancel(started.handle)).toBe(false);
 
-    const result = await pairingPoll([lockfilePath], configDir, {
+    const result = await pairingPoll(lockfilePath, configDir, {
       handle: started.handle,
     });
     expect(result.ok).toBe(false);
@@ -1570,7 +1570,7 @@ describe("pairingCancel", () => {
   test("a cancel while the exchange is in flight persists nothing", async () => {
     const approve = heldApproval();
     const handle = await startLinkSession();
-    const polled = pairingPoll([lockfilePath], configDir, { handle });
+    const polled = pairingPoll(lockfilePath, configDir, { handle });
     await requestsInFlight(1);
 
     expect(pairingCancel(handle)).toBe(true);
@@ -1597,7 +1597,7 @@ describe("pairingCancel", () => {
         });
       });
     const handle = await startLinkSession();
-    const polled = pairingPoll([lockfilePath], configDir, { handle });
+    const polled = pairingPoll(lockfilePath, configDir, { handle });
     await requestsInFlight(1);
 
     expect(pairingCancel(handle)).toBe(true);
@@ -1618,7 +1618,7 @@ describe("pairingCancel", () => {
   test("an exchange nobody cancels still imports", async () => {
     const approve = heldApproval();
     const handle = await startLinkSession();
-    const polled = pairingPoll([lockfilePath], configDir, { handle });
+    const polled = pairingPoll(lockfilePath, configDir, { handle });
     await requestsInFlight(1);
 
     approve();
@@ -1666,7 +1666,7 @@ describe("pairingCancel", () => {
       return;
     }
 
-    const polled = pairingPoll([lockfilePath], configDir, {
+    const polled = pairingPoll(lockfilePath, configDir, {
       handle: started.handle,
     });
     await requestsInFlight(2);
@@ -1692,7 +1692,7 @@ describe("pairingCancel", () => {
 
 describe("connectImport", () => {
   test("registers a valid bundle and returns the wire-shaped success", () => {
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: ` ${encodeBundle({
         gatewayUrl: "https://gw.example.com",
         token: "tok",
@@ -1729,7 +1729,7 @@ describe("connectImport", () => {
       ],
     });
 
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: encodeBundle({
         gatewayUrl: "https://gw.example.com",
         token: "tok-1",
@@ -1751,7 +1751,7 @@ describe("connectImport", () => {
   test("a missing, empty, or non-string bundle is a 400", () => {
     for (const value of [undefined, "", 42]) {
       expect(
-        connectImport([lockfilePath], configDir, { bundle: value }),
+        connectImport(lockfilePath, configDir, { bundle: value }),
       ).toEqual({
         ok: false,
         status: 400,
@@ -1763,7 +1763,7 @@ describe("connectImport", () => {
 
   test("an oversized bundle is refused before decoding", () => {
     expect(
-      connectImport([lockfilePath], configDir, {
+      connectImport(lockfilePath, configDir, {
         bundle: "a".repeat(64 * 1024 + 1),
       }),
     ).toEqual({
@@ -1775,7 +1775,7 @@ describe("connectImport", () => {
   });
 
   test("a loopback gatewayUrl keeps pairAssistant's 422 and refusal copy", () => {
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: encodeBundle({
         gatewayUrl: "http://127.0.0.1:5432",
         token: "tok",
@@ -1793,7 +1793,7 @@ describe("connectImport", () => {
   });
 
   test("a malformed bundle maps the decode error to a 400", () => {
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: "not-base64-json!!!",
     });
 
@@ -1818,7 +1818,7 @@ describe("connectImport", () => {
       activeAssistant: "desk",
     });
 
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: encodeBundle({
         gatewayUrl: "https://gw.example.com",
         token: "tok",
@@ -1835,7 +1835,7 @@ describe("connectImport", () => {
   });
 
   test("a non-string name is ignored rather than slugified", () => {
-    const result = connectImport([lockfilePath], configDir, {
+    const result = connectImport(lockfilePath, configDir, {
       bundle: encodeBundle({
         gatewayUrl: "https://gw.example.com",
         token: "tok",

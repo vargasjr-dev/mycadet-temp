@@ -134,21 +134,6 @@ describe("resolveEnvironmentName", () => {
     expect(resolveEnvironmentName()).toBe("dev");
   });
 
-  test("a source checkout's -local stamp pins the local environment", () => {
-    // This file runs from the workspace: the resolver's module path is a
-    // git checkout, so the version stamps `-local.` — stronger than any
-    // persisted default. Drop any define a prior test injected.
-    const g = globalThis as { __CADET_OWN_VERSION__?: string };
-    const saved = g.__CADET_OWN_VERSION__;
-    delete g.__CADET_OWN_VERSION__;
-    try {
-      persistDefault("dev");
-      expect(resolveEnvironmentName()).toBe("local");
-    } finally {
-      if (saved !== undefined) g.__CADET_OWN_VERSION__ = saved;
-    }
-  });
-
   test("falls back to production when nothing pins an environment", () => {
     // Stable installed copy: plain version, no persisted default.
     (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =

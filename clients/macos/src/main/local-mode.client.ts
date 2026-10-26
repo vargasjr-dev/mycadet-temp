@@ -10,7 +10,7 @@ import {
 import {
   resolveConfigDir,
   resolveEnvironmentName,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   type CliInvocation,
 } from "@mycadet/local-mode";
 
@@ -45,7 +45,7 @@ configureLocalMode({
   paths: {
     configDir: resolveConfigDir(),
     environment: resolveEnvironmentName(),
-    lockfilePaths: resolveLockfilePaths(),
+    lockfilePath: resolveLockfilePath(),
   },
   refreshLockfile: refreshLockfileNow,
   session: { getToken: getSessionToken },
