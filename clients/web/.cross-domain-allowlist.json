@@ -2,18 +2,6 @@
   "src/domains/assistant-inbox/assistant-inbox.stories.tsx": [
     "chat"
   ],
-  "src/domains/chat/active-chat-view.tsx": [
-    "onboarding"
-  ],
-  "src/domains/chat/api/messages.ts": [
-    "onboarding"
-  ],
-  "src/domains/chat/hooks/use-onboarding-orchestrator.ts": [
-    "onboarding"
-  ],
-  "src/domains/chat/hooks/use-send-message.ts": [
-    "onboarding"
-  ],
   "src/domains/schedules/components/schedule-detail-panel.tsx": [
     "settings"
   ],
