@@ -469,7 +469,7 @@ function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "docker") {
     return `docker container ${dockerResourceNames(entry.assistantId).assistantContainer}`;
   }
-  return entry.runtimeUrl ?? "unknown — no runtime URL recorded";
+  return getGatewayUrl(entry);
 }
 
 async function getAssistantProcessRows(
@@ -520,16 +520,14 @@ async function getAssistantProcessRows(
           : "management socket not found",
       },
     ];
-    if (entry.runtimeUrl) {
-      const token = loadGuardianToken(entry.assistantId)?.accessToken;
-      const health = await checkHealth(entry.runtimeUrl, token);
-      rows.push({
-        name: "gateway",
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(health.status),
-        info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
-      });
-    }
+    const token = loadGuardianToken(entry.assistantId)?.accessToken;
+    const health = await checkHealth(getGatewayUrl(entry), token);
+    rows.push({
+      name: "gateway",
+      type: ASSISTANT_TYPE,
+      status: withStatusEmoji(health.status),
+      info: getGatewayUrl(entry) + (health.detail ? ` | ${health.detail}` : ""),
+    });
     return rows;
   }
 
@@ -782,11 +780,9 @@ async function getAssistantListHealth(
 
   if (entry.cloud === "apple-container") {
     // Apple containers are managed by the macOS app. Probe the gateway
-    // (runtimeUrl is always written to the lockfile during hatch).
+    // (the macOS app records its loopback port on the entry).
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return entry.runtimeUrl
-      ? checkHealth(entry.runtimeUrl, token)
-      : { status: "unknown", detail: "no runtime URL" };
+    return checkHealth(getGatewayUrl(entry), token);
   }
 
   if (isCloudHome(entry.cloud)) {
@@ -803,7 +799,7 @@ function formatAssistantListRow(
   health: AssistantHealth,
 ): TableRow {
   const infoParts: string[] = [];
-  if (entry.runtimeUrl) infoParts.push(entry.runtimeUrl);
+  infoParts.push(getGatewayUrl(entry));
   if (entry.cloud) infoParts.push(`remote: ${entry.cloud}`);
   if (health.detail) infoParts.push(health.detail);
 

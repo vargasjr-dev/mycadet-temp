@@ -25,6 +25,7 @@ import {
 import { getDefaultPorts } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { probePort } from "./port-probe.js";
+import { getGatewayUrl } from "./runtime-url.js";
 
 /**
  * Per-instance resource paths and ports. Each local assistant instance gets
@@ -366,16 +367,16 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
 }
 
 /**
- * Extract the ssh host for a remote-managed entry: the hostname of the
- * entry's recorded runtime URL. One seam so the runtimeUrl death (a later
+ * Extract the remote host for an entry: the hostname of the gateway
+ * address the entry derives. One seam so the runtimeUrl death (a later
  * PR) rewires a single site instead of every ssh flow.
  */
 export function extractHostFromEntry(entry: LockfileAssistant): string {
-  if (!entry.runtimeUrl) return "";
+  const gatewayUrl = getGatewayUrl(entry);
   try {
-    return new URL(entry.runtimeUrl).hostname;
+    return new URL(gatewayUrl).hostname;
   } catch {
-    return entry.runtimeUrl.replace(/^https?:\/\//, "").split(":")[0];
+    return gatewayUrl.replace(/^https?:\/\//, "").split(":")[0];
   }
 }
 

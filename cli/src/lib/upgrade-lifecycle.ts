@@ -5,6 +5,7 @@ import { join } from "path";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
+import { getGatewayUrl } from "./runtime-url.js";
 
 import type { LockfileAssistant } from "./assistant-config.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
@@ -576,12 +577,7 @@ export async function performDockerRollback(
   entry: LockfileAssistant,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const { targetVersion, backupPath } = options;
 
   if (!targetVersion) {
@@ -694,7 +690,7 @@ export async function performDockerRollback(
     extraGatewayEnv,
   } = await captureReplayState(res);
 
-  // Parse gateway port from entry's runtimeUrl
+  // Derive the gateway port from the entry's canonical fields
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
     const parsed = new URL(gatewayUrl);

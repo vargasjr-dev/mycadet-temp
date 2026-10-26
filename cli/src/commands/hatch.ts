@@ -11,7 +11,6 @@ import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
 import { hatchLocal } from "../lib/hatch-local";
 import {
-  getCloudUrl,
   hatchAssistant,
   readCloudToken,
 } from "../lib/cloud-client";
@@ -287,11 +286,8 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const { assistant: result } = await hatchAssistant(token);
 
-  const cloudUrl = getCloudUrl();
-
   saveLockfileAssistant({
     assistantId: result.id,
-    runtimeUrl: cloudUrl,
     cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });

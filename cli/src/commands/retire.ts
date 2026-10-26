@@ -363,7 +363,7 @@ async function retireInner(): Promise<void> {
   } else if (cloud === "custom") {
     await retireCustom(entry);
   } else if (isCloudHome(cloud)) {
-    await retireCadet(assistantId, entry.runtimeUrl);
+    await retireCadet(assistantId, getGatewayUrl(entry));
   } else {
     console.error(`Error: Unknown cloud type '${cloud}'.`);
     process.exit(1);

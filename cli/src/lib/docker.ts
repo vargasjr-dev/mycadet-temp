@@ -15,6 +15,7 @@ import cliPkg from "../../package.json";
 
 import { findAssistantByName, setActiveAssistant } from "./assistant-config";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
@@ -313,7 +314,7 @@ export interface HatchDockerParams {
    */
   netnsContainer?: string;
   /**
-   * Explicit host port to record as the gateway's `runtimeUrl` instead of
+   * Explicit host port to record as the entry's gatewayPort instead of
    * auto-allocating a free port. Required alongside `netnsContainer`, where
    * the namespace owner — not hatch — owns port allocation and publishing.
    */
@@ -974,7 +975,7 @@ export async function recreateDockerContainers(
   }
 
   const gatewayPort =
-    parseGatewayPort(entry.runtimeUrl ?? "") ??
+    getLoopbackGatewayPort(entry) ??
     getDefaultPorts(getCurrentEnvironment()).gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
@@ -996,26 +997,19 @@ export async function recreateDockerContainers(
     log,
   );
 
-  // Persist what the recreation decided (the gateway port in the runtime
-  // url, the assistant port when it defaulted) so plain `docker start`
-  // wakes work and clients reach the right endpoints.
+  // Persist what the recreation decided (the gateway port, the assistant
+  // port when it defaulted) so plain `docker start` wakes work and clients
+  // reach the right endpoints.
   saveLockfileAssistant({
     ...entry,
-    runtimeUrl: `http://localhost:${gatewayPort}`,
+    resources: {
+      ...entry.resources,
+      gatewayPort,
+      daemonPort: entry.resources?.daemonPort ?? assistantPort,
+    },
     containerInfo: { ...info, assistantPort },
   });
 
-}
-
-/** The port of the CLI's own runtime url form (`http://localhost:7830`). */
-function parseGatewayPort(runtimeUrl: string): number | null {
-  try {
-    const port = new URL(runtimeUrl).port;
-    const parsed = parseInt(port, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -1687,10 +1681,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const extraGatewayEnv = {
       CADET_DEVICE_ID: hostDeviceId,
     };
-    const runtimeUrl = `http://localhost:${gatewayPort}`;
+    const gatewayUrl = `http://localhost:${gatewayPort}`;
     const dockerEntry: LockfileAssistant = {
       assistantId: instanceName,
-      runtimeUrl,
+      resources: { gatewayPort, daemonPort: assistantPort },
       cloud: "docker",
       hatchedAt: new Date().toISOString(),
       guardianBootstrapSecret: ownSecret,
@@ -1751,7 +1745,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           detached: waitDetached,
           instanceName,
           logFd,
-          runtimeUrl,
+          runtimeUrl: gatewayUrl,
           containersUpAt,
         });
 
@@ -1789,7 +1783,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         provider !== undefined
       ) {
         await configureHatchProviderApiKey({
-          gatewayUrl: runtimeUrl,
+          gatewayUrl,
           provider,
           bearerToken: guardianAccessToken,
           env: process.env,

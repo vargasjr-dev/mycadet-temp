@@ -349,7 +349,6 @@ export async function hatchLocal(
       const loopbackUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       const localEntry: LockfileAssistant = {
         assistantId: instanceName,
-        runtimeUrl,
         cloud: "local",
         hatchedAt: new Date().toISOString(),
         resources,

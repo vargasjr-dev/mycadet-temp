@@ -33,6 +33,7 @@ import {
   platformPollJobStatus,
 } from "../lib/cloud-client.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 
 function printUsage(): void {
   console.log(
@@ -171,7 +172,7 @@ async function restorePlatform(
       contentLength: bundleData.length,
     },
     token,
-    entry.runtimeUrl,
+    getGatewayUrl(entry),
   );
   console.log("Uploading bundle...");
   await platformUploadToSignedUrl(uploadUrl, new Uint8Array(bundleData));
@@ -185,7 +186,7 @@ async function restorePlatform(
       preflightResult = await platformImportPreflightFromGcs(
         bundleKey,
         token,
-        entry.runtimeUrl,
+        getGatewayUrl(entry),
       );
     } catch (err) {
       if (err instanceof Error && err.name === "TimeoutError") {
@@ -298,7 +299,7 @@ async function restorePlatform(
     importResult = await platformImportBundleFromGcs(
       bundleKey,
       token,
-      entry.runtimeUrl,
+      getGatewayUrl(entry),
     );
   } catch (err) {
     if (err instanceof Error && err.name === "TimeoutError") {
@@ -364,7 +365,7 @@ async function restorePlatform(
 
       let status: Awaited<ReturnType<typeof platformPollJobStatus>>;
       try {
-        status = await platformPollJobStatus(jobId, token, entry.runtimeUrl);
+        status = await platformPollJobStatus(jobId, token, getGatewayUrl(entry));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("not found")) {

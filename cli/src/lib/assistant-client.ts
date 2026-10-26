@@ -42,7 +42,6 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  */
 type AuthMode = "guardian" | "session" | "platform";
 
-const stripTrailingSlashes = (url: string): string => url.replace(/\/+$/, "");
 
 export interface AssistantClientOpts {
   assistantId?: string;
@@ -102,12 +101,7 @@ export class AssistantClient {
 
     this._assistantId = entry.assistantId;
     const cloudManaged = !opts?.sessionToken && isCloudHome(entry.cloud);
-    const cloudHost = entry.runtimeUrl
-      ? stripTrailingSlashes(entry.runtimeUrl)
-      : undefined;
-
-    this.runtimeUrl =
-      cloudManaged && cloudHost ? cloudHost : getGatewayUrl(entry);
+    this.runtimeUrl = getGatewayUrl(entry);
 
     if (opts?.sessionToken) {
       // Caller supplied the credential: X-Session-Token + Cadet-Organization-Id.

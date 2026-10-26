@@ -27,6 +27,11 @@ describe("parseLockfile", () => {
           cloudBaseUrl: "https://platform.example.com",
           cloudOrganizationId: "org_1",
           resources: { gatewayPort: 7777, daemonPort: 7778 },
+        },
+        {
+          assistantId: "asst_2",
+          name: "Bob",
+          cloud: "custom",
           ipAddress: "203.0.113.9",
           port: 7831,
         },

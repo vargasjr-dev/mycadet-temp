@@ -59,7 +59,7 @@ describe("healConflictedLocalPorts", () => {
     ]);
   });
 
-  test("a moved gateway port rewrites the runtime url to match", async () => {
+  test("a moved gateway port updates the recorded port — the url is no longer mirrored", async () => {
     const entry = makeEntry({ resources: { gatewayPort: 9001 } });
     const result = await healConflictedLocalPorts(entry, {
       ...freeDeps,
@@ -69,7 +69,6 @@ describe("healConflictedLocalPorts", () => {
       { field: "gatewayPort", from: 9001, to: 7830 },
     ]);
     expect(entry.resources?.gatewayPort).toBe(7830);
-    expect(entry.runtimeUrl).toBe("http://127.0.0.1:7830");
   });
 
   test("a portless runtime url survives the gateway move", async () => {

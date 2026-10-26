@@ -13,6 +13,7 @@ import type { AddressInfo } from "net";
 
 import { isCloudHome } from "./cloud-values.js";
 import { resolveAssistant } from "./assistant-config.js";
+import { getGatewayUrl } from "./runtime-url.js";
 import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
 import { computeDeviceId } from "./guardian-token.js";
@@ -355,13 +356,7 @@ export async function registerLocalAssistantWithPlatform(
   // Skip managed ("cadet") assistants — they are handled by the cloud.
   if (!entry || isCloudHome(entry.cloud)) return;
 
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    log(
-      `Assistant '${entry.assistantId}' has no recorded gateway URL; skipping credential injection.`,
-    );
-    return;
-  }
+  const gatewayUrl = getGatewayUrl(entry);
 
   const orgId = await fetchOrganizationId(token);
   const clientInstallationId = computeDeviceId();

@@ -71,6 +71,7 @@ import {
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "../lib/http-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
+import { getGatewayUrl } from "../lib/runtime-url.js";
 import {
   generateLocalSecret,
   ensureLocalRuntime,
@@ -264,12 +265,7 @@ async function upgradeDocker(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
@@ -417,7 +413,8 @@ async function upgradeDocker(
   }
   console.log("✅ Docker images pulled\n");
 
-  // Parse gateway port from entry's runtimeUrl, fall back to default
+  // Derive the gateway port from the entry's canonical fields, fall back
+  // to default.
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
     const parsed = new URL(gatewayUrl);
@@ -791,14 +788,6 @@ async function upgradeLocal(
 
   const resources = entry.resources;
 
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    const msg = `Local assistant '${entry.assistantId}' is missing its gateway URL. Re-hatch to fix.`;
-    console.error(msg);
-    emitCliError("UNKNOWN", msg);
-    process.exit(1);
-  }
-
   const originalResources = { ...resources };
 
   const targetVersion = await targetVersionFromCli(version);
@@ -1056,6 +1045,7 @@ async function waitForPlatformUpgrade(
   pollTarget: string | null,
   initialVersion: string | null,
 ): Promise<void> {
+  const gatewayUrl = getGatewayUrl(entry);
   const timeoutMs = platformUpgradeTimeoutMs();
   const start = Date.now();
   let sawInProgress = false;
@@ -1074,10 +1064,10 @@ async function waitForPlatformUpgrade(
     // The in-progress lock is only needed when we don't know the target
     // version (server resolved "latest" without reporting it).
     const [detail, inProgress] = await Promise.all([
-      fetchAssistantDetail(token, entry.assistantId, entry.runtimeUrl),
+      fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
       pollTarget
         ? Promise.resolve(null)
-        : fetchUpgradeInProgress(token, entry.assistantId, entry.runtimeUrl),
+        : fetchUpgradeInProgress(token, entry.assistantId, gatewayUrl),
     ]);
     if (detail) observedVersion = detail.currentReleaseVersion;
     if (inProgress === true) sawInProgress = true;
@@ -1125,12 +1115,7 @@ async function upgradeCloud(
   version: string | null,
   wait: boolean,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Cloud assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   console.log(
     `🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`,
   );
@@ -1158,7 +1143,7 @@ async function upgradeCloud(
   // Target the same platform as the detail/health/POST calls — the entry's
   // platform may differ from the active lockfile default.
   const releases = await fetchReleases({
-    cloudUrl: entry.runtimeUrl,
+    cloudUrl: getGatewayUrl(entry),
   });
 
   const resolution = resolveUpgradeTarget({
@@ -1311,12 +1296,7 @@ async function upgradePrepare(
   entry: LockfileAssistant,
   version: string | null,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const targetVersion = version ?? "unknown";
   const currentVersion = "unknown";
 
@@ -1390,12 +1370,7 @@ async function upgradeFinalize(
     process.exit(1);
   }
 
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const fromVersion = version;
   const currentVersion = cliPkg.version ? `v${cliPkg.version}` : "unknown";
 
@@ -1546,13 +1521,11 @@ export const upgrade = Object.assign(
       // Best-effort: notify connected clients that the upgrade failed.
       // A `starting` event may have been sent inside upgradeDocker/upgradeCloud
       // before the error was thrown, so we must close with `complete`.
-      if (entry.runtimeUrl) {
-        await broadcastUpgradeEvent(
-          entry.runtimeUrl,
-          entry.assistantId,
-          buildCompleteEvent("unknown", false),
-        );
-      }
+      await broadcastUpgradeEvent(
+        getGatewayUrl(entry),
+        entry.assistantId,
+        buildCompleteEvent("unknown", false),
+      );
       emitCliError(categorizeUpgradeError(err), "Upgrade failed", detail);
       process.exit(1);
     }

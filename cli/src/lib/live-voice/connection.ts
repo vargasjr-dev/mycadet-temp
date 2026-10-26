@@ -34,7 +34,7 @@ import {
   type LockfileAssistant,
 } from "../assistant-config.js";
 import { getGatewayUrl } from "../runtime-url.js";
-import { getCloudUrl, readCloudToken } from "../cloud-client.js";
+import { readCloudToken } from "../cloud-client.js";
 import {
   guardianTokenDueForRenewal,
   loadGuardianToken,
@@ -148,10 +148,9 @@ async function resolveCloudConnection(
     );
   }
 
-  // `runtimeUrl` is the cloud this entry was hatched against, which is the
-  // one that can mint for it. `getCloudUrl()` is the fallback for an entry
-  // written before that field was recorded.
-  const cloudUrl = (entry.runtimeUrl || getCloudUrl()).replace(/\/+$/, "");
+  // The cloud this entry belongs to derives from its topology — the one
+  // that can mint for it.
+  const cloudUrl = getGatewayUrl(entry);
 
   let token: string;
   try {
