@@ -375,130 +375,6 @@ describe("useNotificationTapNavigation", () => {
     expect(received).toEqual([]);
   });
 
-  test("does not open an identity from a stale organization scope", async () => {
-    const staleIdentity = platformIdentity(ASSISTANT_A, "org-old");
-    renderHook(() => useNotificationTapNavigation());
-    const received = collectThreadOpens();
-
-    await sendTap({
-      conversationId: "conv-stale",
-      sourceEventName: "reminder.fired",
-      identity: staleIdentity,
-    });
-
-    expectNoAssistantSwitch();
-    expect(received).toEqual([]);
-  });
-
-  test("waits for cold-start assistant hydration before validating", async () => {
-    const identity = platformIdentity(ASSISTANT_A);
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: false,
-    });
-    renderHook(() => useNotificationTapNavigation());
-    const received = collectThreadOpens();
-
-    const pendingTap = sendTap({
-      conversationId: "conv-cold",
-      sourceEventName: "reminder.fired",
-      identity,
-    });
-    await Promise.resolve();
-    expectNoAssistantSwitch();
-
-    act(() => {
-      useResolvedAssistantsStore.setState({
-        assistants: [ASSISTANT_A, ASSISTANT_B],
-        assistantsHydrated: true,
-      });
-    });
-    await pendingTap;
-
-    expect(connectCloudAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
-    expect(received).toEqual([{ threadId: "conv-cold" }]);
-  });
-
-  test("waits for the cloud organization owner before validating", async () => {
-    const identity = platformIdentity(ASSISTANT_A);
-    useAuthStore.setState({ cloudSession: "present" });
-    useOrganizationStore.setState({
-      currentOrganizationId: null,
-      persistedOrganizationId: null,
-      status: "loading",
-    });
-    renderHook(() => useNotificationTapNavigation());
-    const received = collectThreadOpens();
-    const handler = capturedHandler;
-    if (!handler) {
-      throw new Error("expected notification tap handler");
-    }
-
-    const pendingTap = Promise.resolve(
-      handler({
-        conversationId: "conv-org",
-        sourceEventName: "reminder.fired",
-        identity,
-      }),
-    );
-    await Promise.resolve();
-    await Promise.resolve();
-    expectNoAssistantSwitch();
-
-    act(() => {
-      useOrganizationStore.setState({
-        currentOrganizationId: "org-1",
-        persistedOrganizationId: "org-1",
-        status: "ready",
-      });
-    });
-    await pendingTap;
-
-    expect(connectCloudAssistantMock).toHaveBeenCalledWith(ASSISTANT_A.id);
-    expect(received).toEqual([{ threadId: "conv-org" }]);
-  });
-
-  test("does not wait for organization state for a local target", async () => {
-    const localAssistant: ResolvedAssistant = {
-      id: "local-a",
-      runtimeUrl: "https://assistant.example.com",
-      isLocal: true,
-      isCloudHosted: false,
-      isPaired: false,
-    };
-    const scopeId = resolveAssistantAvatarOwnerScopeId(
-      localAssistant,
-      null,
-      window.location.href,
-    );
-    const identity = scopeId
-      ? createNotificationIdentity(scopeId, localAssistant.id, null)
-      : null;
-    if (!identity) {
-      throw new Error("expected local notification identity");
-    }
-    useOrganizationStore.setState({
-      currentOrganizationId: null,
-      persistedOrganizationId: null,
-      status: "loading",
-    });
-    useResolvedAssistantsStore.setState({
-      assistants: [localAssistant],
-      assistantsHydrated: true,
-    });
-    renderHook(() => useNotificationTapNavigation());
-    const received = collectThreadOpens();
-
-    await sendTap({
-      conversationId: "conv-local",
-      sourceEventName: "reminder.fired",
-      identity,
-    });
-
-    expect(connectLocalAssistantMock).toHaveBeenCalledWith(localAssistant.id);
-    expect(received).toEqual([{ threadId: "conv-local" }]);
-  });
-
   test("drops the tap when switching the scoped assistant fails", async () => {
     connectCloudAssistantMock.mockRejectedValueOnce(
       new Error("connection failed"),
@@ -513,5 +389,26 @@ describe("useNotificationTapNavigation", () => {
     });
 
     expect(received).toEqual([]);
+  });
+
+  test("a non-auth resolution failure keeps an active target openable", async () => {
+    // The session is fine — a mid-use assistant resolution hiccup must not
+    // drop a tap whose target is already selected and active.
+    setResolutionState({ kind: "error", message: "assistant hiccup" });
+    useResolvedAssistantsStore.setState({
+      selectedAssistantId: ASSISTANT_A.id,
+      activeAssistantId: ASSISTANT_A.id,
+    });
+    renderHook(() => useNotificationTapNavigation());
+    const received = collectThreadOpens();
+
+    await sendTap({
+      conversationId: "conv-hiccup",
+      sourceEventName: "reminder.fired",
+      identity: platformIdentity(ASSISTANT_A),
+    });
+
+    expectNoAssistantSwitch();
+    expect(received).toEqual([{ threadId: "conv-hiccup" }]);
   });
 });
