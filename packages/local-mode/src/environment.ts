@@ -15,9 +15,8 @@ import { joinLocalPath, resolveConfigHomes } from "./paths";
 // as @mycadet/cli.
 import { version as packageVersion } from "../package.json";
 
-// Hosts bundling local-mode without the CLI inject their channel version at
-// build time; unset, a source checkout stamps `-local.` and installed copies
-// keep the pipeline stamp.
+// Hosts bundling local-mode without the CLI inject the channel version at
+// build time; unset, a source checkout stamps `-local.`, installs keep the pipeline stamp.
 const ownVersion = (): string =>
   (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
   stampedVersion(packageVersion, new Date(), import.meta.path);

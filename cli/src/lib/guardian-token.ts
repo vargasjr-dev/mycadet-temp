@@ -1,7 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
 import {
-  chmodSync,
   closeSync,
   existsSync,
   mkdirSync,
@@ -24,7 +23,6 @@ import {
   type GuardianTokenData,
 } from "@mycadet/local-mode";
 
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
 

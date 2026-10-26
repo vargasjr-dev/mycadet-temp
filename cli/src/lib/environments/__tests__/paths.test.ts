@@ -35,7 +35,6 @@ const {
   resolveAssistantsDir,
   resolveConfigDir,
   resolveConfigDirPaths,
-  resolveDataDir,
   resolveEnvironmentName,
   resolveLockfilePaths,
 } = await import("@mycadet/local-mode");

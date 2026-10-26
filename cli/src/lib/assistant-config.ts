@@ -2,13 +2,8 @@ import { randomBytes } from "crypto";
 import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
+import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
 import {
-  readLockfile,
-  readRawLockfile,
-  withLockfileLock,
-} from "@mycadet/local-mode";
-import {
-  parseLockfile,
   type AppProcessRecord,
   type LocalAssistantResources,
   type Lockfile,

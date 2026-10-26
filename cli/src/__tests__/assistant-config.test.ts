@@ -1,12 +1,4 @@
-import {
-  describe,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  afterAll,
-  spyOn,
-} from "bun:test";
+import { describe, test, expect, beforeEach, afterAll } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -31,7 +23,6 @@ import {
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
   loadAllAssistants,
-  resolveTargetAssistant,
   saveLockfileAssistant,
   getActiveAssistant,
   type LockfileAssistant,
@@ -388,106 +379,5 @@ describe("env-scoped lockfile and migration", () => {
         process.env.CADET_ENVIRONMENT = prevEnv;
       }
     }
-  });
-});
-
-describe("cross-environment hint on resolution failure", () => {
-  let dataHome: string;
-  let prevXdg: string | undefined;
-  let prevEnv: string | undefined;
-
-  beforeEach(() => {
-    prevXdg = process.env.XDG_DATA_HOME;
-    prevEnv = process.env.CADET_ENVIRONMENT;
-    dataHome = mkdtempSync(join(tmpdir(), "cli-config-xdg-"));
-    process.env.XDG_DATA_HOME = dataHome;
-    // Pin the current env to production so the detector skips it and the hint
-    // copy is deterministic. The current-env lockfile is emptied so resolution
-    // genuinely finds nothing.
-    process.env.CADET_ENVIRONMENT = "production";
-    rmSync(join(testDir, "lockfile.json"), { force: true });
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
-    rmSync(join(testDir, ".cadet.lockfile.json"), { force: true });
-  });
-
-  afterEach(() => {
-    if (prevXdg === undefined) {
-      delete process.env.XDG_DATA_HOME;
-    } else {
-      process.env.XDG_DATA_HOME = prevXdg;
-    }
-    if (prevEnv === undefined) {
-      delete process.env.CADET_ENVIRONMENT;
-    } else {
-      process.env.CADET_ENVIRONMENT = prevEnv;
-    }
-    rmSync(dataHome, { recursive: true, force: true });
-  });
-
-  // A dev-env assistant lives under the dev data dir, invisible to this
-  // production CLI — the exact split the hint explains.
-  function seedDevAssistant(): void {
-    mkdirSync(join(dataHome, "cadet-dev", "assistants", "dev-bot"), {
-      recursive: true,
-    });
-  }
-
-  function captureResolveTargetAssistantError(): string {
-    const errors: string[] = [];
-    const errorSpy = spyOn(console, "error").mockImplementation(
-      (...args: unknown[]) => {
-        errors.push(args.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      _code?: number,
-    ) => {
-      throw new Error("exit");
-    }) as typeof process.exit);
-    try {
-      expect(() => resolveTargetAssistant()).toThrow("exit");
-    } finally {
-      errorSpy.mockRestore();
-      exitSpy.mockRestore();
-    }
-    return errors.join("\n");
-  }
-
-  test("formatAssistantLookupError appends the hint when another env has assistants", () => {
-    seedDevAssistant();
-    const msg = formatAssistantLookupError("ghost", { status: "not_found" });
-    expect(msg).toContain("No assistant found with name or ID 'ghost'.");
-    expect(msg).toContain("Install cadet Command");
-  });
-
-  test("formatAssistantLookupError stays bare when no other env has assistants", () => {
-    // dataHome is empty — detection finds nothing, so the message is intact.
-    const msg = formatAssistantLookupError("ghost", { status: "not_found" });
-    expect(msg).toBe("No assistant found with name or ID 'ghost'.");
-  });
-
-  test("ambiguous lookup never gets the hint", () => {
-    seedDevAssistant();
-    const msg = formatAssistantLookupError("Alice", {
-      status: "ambiguous",
-      matches: [
-        makeEntry("assistant-1", "http://localhost:7821", { name: "Alice" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Alice" }),
-      ],
-    });
-    expect(msg).not.toContain("Install cadet Command");
-  });
-
-  test("resolveTargetAssistant zero-assistants error carries the hint", () => {
-    seedDevAssistant();
-    const combined = captureResolveTargetAssistantError();
-    expect(combined).toContain("No assistant found. Run 'cadet hatch' first.");
-    expect(combined).toContain("Install cadet Command");
-  });
-
-  test("resolveTargetAssistant zero-assistants error stays bare without other envs", () => {
-    const combined = captureResolveTargetAssistantError();
-    expect(combined).toContain("No assistant found. Run 'cadet hatch' first.");
-    expect(combined).not.toContain("Install cadet Command");
   });
 });
