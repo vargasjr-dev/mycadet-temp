@@ -721,13 +721,13 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     }
     // Gateway machinery, not a session question — the web bundle holds no
     // gateway session. A selection with a resolvable gateway re-verifies
-    // through the prime; everything else re-verifies the platform session.
+    // through the prime (the prime rebuilds a dead slot); everything else
+    // re-verifies the platform session.
     const selectedAssistant = getActiveAssistant();
     if (
       selectedAssistant &&
-      (hasPairedGateway(selectedAssistant)
-        ? getSelfHostedIngressUrl() != null
-        : hasLocalGateway(selectedAssistant))
+      (hasPairedGateway(selectedAssistant) ||
+        hasLocalGateway(selectedAssistant))
     ) {
       try {
         // Both selection kinds collapse into the prime: it probes the

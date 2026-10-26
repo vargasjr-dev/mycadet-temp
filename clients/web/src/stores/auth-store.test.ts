@@ -1213,6 +1213,7 @@ describe("platform session probe resolution", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
@@ -1242,6 +1243,7 @@ describe("platform session probe resolution", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
