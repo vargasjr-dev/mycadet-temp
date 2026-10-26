@@ -203,7 +203,14 @@ function getCloudUrl(): string {
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
-    return `http://${entry.ipAddress}:${entry.port}`;
+    // The recorded origin, reproduced: TLS as recorded (a 443 port implies
+    // it for entries written before the flag), with default ports elided
+    // the way a URL prints them.
+    const secure = entry.tls === true || entry.port === 443;
+    const elided = secure ? entry.port === 443 : entry.port === 80;
+    return `${secure ? "https" : "http"}://${entry.ipAddress}${
+      elided ? "" : `:${entry.port}`
+    }`;
   }
   if (isCloudHome(entry.cloud)) {
     return getCloudUrl().replace(/\/+$/, "");
@@ -280,6 +287,12 @@ export const LockfileAssistantSchema = z.object({
   ipAddress: z.string().optional(),
   /** Gateway port on a custom remote (cloud "custom"). */
   port: z.number().optional(),
+  /**
+   * Whether the custom remote's gateway speaks TLS. Absent is plaintext (and
+   * a 443 port implies it either way), so the recorded {ipAddress, port, tls}
+   * triple reproduces the paired origin exactly.
+   */
+  tls: z.boolean().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that

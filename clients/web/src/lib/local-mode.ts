@@ -1,14 +1,9 @@
 import {
-  getGatewayUrl,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
   isRemoteGatewayEntry,
-  isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
-import {
-  isLoopbackPublicUrl,
-  isRetryablePairingReason,
-} from "@mycadet/service-contracts/remote-web-pairing";
+import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { readInjectedConfig } from "@/lib/injected-config";
 

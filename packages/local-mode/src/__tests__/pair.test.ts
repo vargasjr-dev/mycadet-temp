@@ -8,6 +8,7 @@ import { pairingSessionSurvives } from "@mycadet/service-contracts/remote-web-pa
 import { guardianTokenPath } from "../config";
 import { resolveEnvironmentName } from "../environment";
 import { resolveLockfilePath } from "../config";
+import { createLockfileAssistant } from "../lockfile";
 import {
   checkPairedAssistantName,
   connectImport,
@@ -199,7 +200,12 @@ const sleep = (ms: number): Promise<void> =>
 
 describe("pairAssistant", () => {
   test("writes the lockfile entry and guardian token with the exact CLI shapes and modes", () => {
-    console.log("PROBE", resolveEnvironmentName(), resolveLockfilePath(), lockfilePath);
+    console.log(
+      "PROBE",
+      resolveEnvironmentName(),
+      resolveLockfilePath(),
+      lockfilePath,
+    );
     const result = pairAssistant(lockfilePath, configDir, {
       credentials: credentials({ token: jwtWithExp, deviceId: "dev-aaa" }),
     });
@@ -265,6 +271,29 @@ describe("pairAssistant", () => {
 
     expect(fs.statSync(tokenPath).mode & 0o777).toBe(0o600);
     expect(fs.statSync(path.dirname(tokenPath)).mode & 0o777).toBe(0o700);
+  });
+
+  test("a pairing's entry write is create-only: an existing entry is never merged into", () => {
+    // Even an id claimed between the pre-check and the write is refused
+    // rather than merged into, so the act of pairing cannot change an
+    // existing assistant's remote setting.
+    writeLockfile({
+      assistants: [
+        { assistantId: "taken", name: "Mine", cloud: "local", port: 7821 },
+      ],
+    });
+    expect(
+      createLockfileAssistant({
+        assistantId: "taken",
+        name: "paired (10.0.0.5:7830)",
+        cloud: "custom",
+        ipAddress: "10.0.0.5",
+        port: 7830,
+      }),
+    ).toBe(false);
+    expect(readLockfileFromDisk().assistants).toEqual([
+      { assistantId: "taken", name: "Mine", cloud: "local", port: 7821 },
+    ]);
   });
 
   test("falls back to now+24h expiry for a non-JWT access token", () => {
@@ -515,9 +544,7 @@ describe("pairAssistant", () => {
         "paired-gw-example-com-assistant-1",
         "paired-gw-example-com-assistant-2",
       ]);
-      expect(
-        assistants.map((a) => [a.ipAddress, a.port]),
-      ).toEqual([
+      expect(assistants.map((a) => [a.ipAddress, a.port])).toEqual([
         ["gw.example.com", 443],
         ["gw.example.com", 443],
       ]);
@@ -1776,13 +1803,13 @@ describe("connectImport", () => {
 
   test("a missing, empty, or non-string bundle is a 400", () => {
     for (const value of [undefined, "", 42]) {
-      expect(
-        connectImport(lockfilePath, configDir, { bundle: value }),
-      ).toEqual({
-        ok: false,
-        status: 400,
-        error: "Missing pairing bundle",
-      });
+      expect(connectImport(lockfilePath, configDir, { bundle: value })).toEqual(
+        {
+          ok: false,
+          status: 400,
+          error: "Missing pairing bundle",
+        },
+      );
     }
     expect(fs.existsSync(lockfilePath)).toBe(false);
   });

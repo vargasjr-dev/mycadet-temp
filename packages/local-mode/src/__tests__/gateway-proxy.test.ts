@@ -205,7 +205,7 @@ describe("gatewayTargetsFromLockfile", () => {
           },
         ],
       }),
-    ).toEqual(targets({ "abc-123": remote("http://gw.example.com:443") })());
+    ).toEqual(targets({ "abc-123": remote("https://gw.example.com") })());
   });
 
   test("omits loopback entries with no recorded port beyond the default's loopback form", () => {
@@ -336,7 +336,7 @@ describe("readGatewayTargets", () => {
     expect(readGatewayTargets(lockfile)).toEqual(
       targets({
         "abc-123": loopback(8080),
-        "def-456": remote("http://gw.example.com:443"),
+        "def-456": remote("https://gw.example.com"),
       })(),
     );
     fs.rmSync(dir, { recursive: true, force: true });

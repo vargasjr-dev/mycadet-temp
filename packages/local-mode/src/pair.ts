@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
-import { readRawLockfile, saveLockfileAssistant } from "./lockfile";
+import { createLockfileAssistant, readRawLockfile } from "./lockfile";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -218,9 +218,12 @@ export function checkPairedAssistantName(
 }
 
 /**
- * Register a pairing on this machine: persist the guardian token and upsert a
- * paired lockfile entry (its custom addressing is what marks it paired),
- * the write counterpart of `unpairAssistant`.
+ * Register a pairing on this machine: persist the guardian token and create
+ * a paired lockfile entry (its custom addressing is what marks it paired),
+ * the write counterpart of `unpairAssistant`. The write is create-only — the
+ * act of pairing never updates an existing entry, so it cannot change an
+ * assistant's remote setting; an id claimed between the pre-check and the
+ * write is refused, not merged into.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -307,33 +310,10 @@ export function pairAssistant(
   }
 
   const gateway = new URL(credentials.gatewayUrl);
-  try {
-    saveLockfileAssistant(
-      {
-        assistantId: localId,
-        // The label, not the bare host: two assistants behind one host differ
-        // only in their path prefix, and a display name that dropped it would
-        // make them indistinguishable in a chooser.
-        name: name ?? `paired (${label})`,
-        // The bundle's gateway address, recorded as the canonical custom
-        // encoding — the one shape every reader derives from.
-        cloud: "custom",
-        ipAddress: gateway.hostname,
-        port:
-          Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
-        // No pairing flag is stored: paired-ness derives from the custom
-        // addressing, so lifecycle/status readers recognize the remote
-        // pairing without one. The cloud id the web resolver cached for an
-        // earlier target is dropped; the upsert merge would otherwise keep it
-        // and the resolver would never re-probe.
-        cloudAssistantId: undefined,
-      },
-      undefined,
-    );
-  } catch (error) {
-    // The entry was not registered, so undo the token write (best-effort;
-    // the write failure itself is what gets reported): restore the prior
-    // token of a re-import, or delete the freshly written one.
+  // The entry was not registered, so undo the token write (best-effort; the
+  // reported failure covers the outcome): restore the prior token of a
+  // re-import, or delete the freshly written one.
+  const rollbackToken = () => {
     try {
       if (priorToken !== null) {
         fs.writeFileSync(tokenPath, priorToken, { mode: 0o600 });
@@ -344,6 +324,36 @@ export function pairAssistant(
     } catch {
       // Rollback failed; the reported write error already covers the outcome.
     }
+  };
+  try {
+    // Create-only: the act of pairing never updates an existing entry, so it
+    // cannot change an assistant's remote setting. An id claimed between the
+    // pre-check above and this write is refused — not merged into.
+    const created = createLockfileAssistant({
+      assistantId: localId,
+      // The label, not the bare host: two assistants behind one host differ
+      // only in their path prefix, and a display name that dropped it would
+      // make them indistinguishable in a chooser.
+      name: name ?? `paired (${label})`,
+      // The bundle's gateway address, recorded as the canonical custom
+      // encoding — the one shape every reader derives from. Seeded once,
+      // on the fresh entry.
+      cloud: "custom",
+      ipAddress: gateway.hostname,
+      port: Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
+      tls: gateway.protocol === "https:" ? true : undefined,
+    });
+    if (!created) {
+      rollbackToken();
+      return {
+        ok: false,
+        status: 409,
+        error: `An assistant named '${localId}' already exists`,
+        assistantId: localId,
+      };
+    }
+  } catch (error) {
+    rollbackToken();
     return {
       ok: false,
       status: 500,

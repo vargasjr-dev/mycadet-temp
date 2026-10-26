@@ -48,7 +48,6 @@ function writeLockfile(data: unknown): void {
 
 const makeEntry = (
   id: string,
-  _runtimeUrl = "http://localhost:7821",
   extra?: Partial<LockfileAssistant>,
 ): LockfileAssistant => ({
   assistantId: id,
@@ -60,7 +59,12 @@ describe("assistant-config", () => {
   beforeEach(() => {
     // Reset every environment's lockfile between tests — loadAllAssistants
     // reads the union, so a stale non-prod entry would leak into counts.
-    for (const envDir of ["cadet", "cadet-dev", "cadet-local", "cadet-staging"]) {
+    for (const envDir of [
+      "cadet",
+      "cadet-dev",
+      "cadet-local",
+      "cadet-staging",
+    ]) {
       rmSync(join(testDir, envDir, "lockfile.json"), { force: true });
     }
   });
@@ -102,7 +106,9 @@ describe("assistant-config", () => {
     saveLockfileAssistant(makeEntry("locked-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
-    expect(existsSync(join(testDir, "cadet", "lockfile.json.lock"))).toBe(false);
+    expect(existsSync(join(testDir, "cadet", "lockfile.json.lock"))).toBe(
+      false,
+    );
   });
 
   test("saveLockfileAssistant breaks a stale lock and still lands the write", () => {
@@ -142,9 +148,7 @@ describe("assistant-config", () => {
 
   test("getAssistantDisplayName prefers the entry's name", () => {
     expect(
-      getAssistantDisplayName(
-        makeEntry("assistant-1", undefined, { name: "Alice" }),
-      ),
+      getAssistantDisplayName(makeEntry("assistant-1", { name: "Alice" })),
     ).toBe("Alice");
     expect(getAssistantDisplayName(makeEntry("assistant-3"))).toBe(
       "assistant-3",
@@ -154,8 +158,8 @@ describe("assistant-config", () => {
   test("findAssistantByName only resolves assistant IDs", () => {
     writeLockfile({
       assistants: [
-        makeEntry("assistant-1", "http://localhost:7821", { name: "Alice" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Bob" }),
+        makeEntry("assistant-1", { name: "Alice" }),
+        makeEntry("assistant-2", { name: "Bob" }),
       ],
     });
 
@@ -166,8 +170,8 @@ describe("assistant-config", () => {
   test("lookupAssistantByIdentifier resolves a unique display name", () => {
     writeLockfile({
       assistants: [
-        makeEntry("assistant-1", "http://localhost:7821", { name: "Alice" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Bob" }),
+        makeEntry("assistant-1", { name: "Alice" }),
+        makeEntry("assistant-2", { name: "Bob" }),
       ],
     });
 
@@ -181,8 +185,8 @@ describe("assistant-config", () => {
   test("assistant ID lookup wins over a display name match", () => {
     writeLockfile({
       assistants: [
-        makeEntry("Alice", "http://localhost:7821", { name: "Primary" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Alice" }),
+        makeEntry("Alice", { name: "Primary" }),
+        makeEntry("assistant-2", { name: "Alice" }),
       ],
     });
 
@@ -196,8 +200,8 @@ describe("assistant-config", () => {
   test("ambiguous display name lookup is explicit", () => {
     writeLockfile({
       assistants: [
-        makeEntry("assistant-1", "http://localhost:7821", { name: "Alice" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Alice" }),
+        makeEntry("assistant-1", { name: "Alice" }),
+        makeEntry("assistant-2", { name: "Alice" }),
       ],
     });
 
@@ -264,13 +268,13 @@ describe("assistant-config", () => {
   test("loadLatestAssistant returns most recently hatched entry", () => {
     writeLockfile({
       assistants: [
-        makeEntry("old", "http://localhost:7821", {
+        makeEntry("old", {
           hatchedAt: "2024-01-01T00:00:00Z",
         }),
-        makeEntry("new", "http://localhost:7822", {
+        makeEntry("new", {
           hatchedAt: "2025-06-15T00:00:00Z",
         }),
-        makeEntry("mid", "http://localhost:7823", {
+        makeEntry("mid", {
           hatchedAt: "2024-06-15T00:00:00Z",
         }),
       ],
@@ -284,7 +288,7 @@ describe("assistant-config", () => {
     writeLockfile({
       assistants: [
         makeEntry("no-date"),
-        makeEntry("with-date", "http://localhost:7822", {
+        makeEntry("with-date", {
           hatchedAt: "2025-01-01T00:00:00Z",
         }),
       ],

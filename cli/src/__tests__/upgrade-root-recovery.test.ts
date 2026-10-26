@@ -93,7 +93,7 @@ test("failed-state recovery restores tar roots while stopped before restarting o
     }),
   ).toEqual({ restored: true, ready: true });
   expect(restore).toHaveBeenCalledWith(
-    "http://127.0.0.1:1",
+    "http://127.0.0.1:7830",
     "recovery",
     "pre-upgrade.tar.gz",
     { resume: false },

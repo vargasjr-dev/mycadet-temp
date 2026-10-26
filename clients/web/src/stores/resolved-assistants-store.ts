@@ -31,9 +31,7 @@ import {
 import {
   getGatewayUrl,
   isRemoteGatewayEntry,
-  type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,

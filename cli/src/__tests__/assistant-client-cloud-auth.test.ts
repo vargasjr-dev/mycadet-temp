@@ -18,6 +18,7 @@ import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "client-cloud-auth-test-"));
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
+const ORIGINAL_CLOUD_URL = process.env.CADET_CLOUD_URL;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { AssistantClient } from "../lib/assistant-client.js";
@@ -75,12 +76,20 @@ function orgResponse(): Response {
 describe("AssistantClient cloud-managed auth", () => {
   beforeEach(() => {
     process.env.XDG_CONFIG_HOME = testDir;
+    // The cloud address derives from the cloud URL stack; pin its env layer
+    // so the suite stays hermetic (the tests expect PLATFORM_URL dials).
+    process.env.CADET_CLOUD_URL = PLATFORM_URL;
     // Tests share testDir, so a token saved by an earlier one must not leak.
     clearCloudToken();
   });
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
+    if (ORIGINAL_CLOUD_URL === undefined) {
+      delete process.env.CADET_CLOUD_URL;
+    } else {
+      process.env.CADET_CLOUD_URL = ORIGINAL_CLOUD_URL;
+    }
     if (ORIGINAL_CONFIG_HOME === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {
@@ -158,7 +167,7 @@ describe("AssistantClient cloud-managed auth", () => {
     expect(calls).toHaveLength(0);
   });
 
-  test("dials the entry's recorded cloud host", async () => {
+  test("dials the derived cloud host", async () => {
     seedCloud("sess-tok-5");
     stubFetch((url) =>
       isOrgFetch(url) ? orgResponse() : new Response("", { status: 200 }),

@@ -57,13 +57,17 @@ function guardianTokenFixture(
   };
 }
 
-function writeLockfile(entry: LockfileAssistant): void {
+function writeLockfile(
+  entry: LockfileAssistant,
+  root: Record<string, unknown> = {},
+): void {
   const lockfileDir = join(process.env.XDG_CONFIG_HOME!, "cadet");
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
     join(lockfileDir, "lockfile.json"),
     JSON.stringify(
       {
+        ...root,
         assistants: [entry],
         activeAssistant: entry.assistantId,
       },
@@ -297,12 +301,16 @@ describe("setup command", () => {
 
   test("falls back to runtime URL and lockfile bearer token", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    writeLockfile({
-      assistantId: "assistant-123",
-      bearerToken: "entry-token",
-      cloud: "cloud",
-      cloudBaseUrl: "https://assistant.example",
-    });
+    writeLockfile(
+      {
+        assistantId: "assistant-123",
+        bearerToken: "entry-token",
+        cloud: "cloud",
+      },
+      // The platform base lives at the lockfile root — the cloud address
+      // derives from it.
+      { cloudBaseUrl: "https://assistant.example" },
+    );
 
     await setup();
 
@@ -316,11 +324,16 @@ describe("setup command", () => {
 
   test("falls back to the lockfile bearer token when guardian token is expired", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    writeLockfile({
-      assistantId: "assistant-123",
-      bearerToken: "entry-token",
-      cloud: "cloud",
-    });
+    writeLockfile(
+      {
+        assistantId: "assistant-123",
+        bearerToken: "entry-token",
+        cloud: "cloud",
+      },
+      // The platform base lives at the lockfile root — the cloud address
+      // derives from it.
+      { cloudBaseUrl: "https://assistant.example" },
+    );
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({
@@ -344,11 +357,16 @@ describe("setup command", () => {
 
   test("uses a refreshed guardian token before lockfile fallback", async () => {
     process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
-    writeLockfile({
-      assistantId: "assistant-123",
-      bearerToken: "entry-token",
-      cloud: "cloud",
-    });
+    writeLockfile(
+      {
+        assistantId: "assistant-123",
+        bearerToken: "entry-token",
+        cloud: "cloud",
+      },
+      // The platform base lives at the lockfile root — the cloud address
+      // derives from it.
+      { cloudBaseUrl: "https://assistant.example" },
+    );
     saveGuardianToken(
       "assistant-123",
       guardianTokenFixture({

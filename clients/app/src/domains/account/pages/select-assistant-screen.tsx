@@ -24,10 +24,10 @@ import {
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
 import {
+  getGatewayUrl,
   isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
+  isRemoteGatewayEntry,
 } from "@mycadet/local-mode/contract";
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
@@ -430,9 +430,7 @@ export function SelectAssistantScreen() {
         {lockfileEntries.map((entry, index) => {
           // A connect import: its gateway lives on another machine, reached
           // through the paired-gateway path.
-          const paired =
-            isUsableRuntimeUrl(entry.runtimeUrl) &&
-            !isLoopbackPublicUrl(entry.runtimeUrl);
+          const paired = isRemoteGatewayEntry(entry);
           const label = entry.name ?? entry.assistantId;
           return (
             <ChooserCard
@@ -443,11 +441,9 @@ export function SelectAssistantScreen() {
               title={label}
               subtitle={
                 paired
-                  ? entry.runtimeUrl
-                    ? t("selectAssistantScreen.pairedWithHost", {
-                        host: new URL(entry.runtimeUrl).hostname,
-                      })
-                    : t("selectAssistantScreen.paired")
+                  ? t("selectAssistantScreen.pairedWithHost", {
+                      host: new URL(getGatewayUrl(entry)).hostname,
+                    })
                   : t("selectAssistantScreen.localAssistant")
               }
               removeMenu={
