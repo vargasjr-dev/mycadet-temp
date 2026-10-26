@@ -238,6 +238,10 @@ export const LockfileAssistantSchema = z.object({
   name: z.string().optional(),
   /** Deployment topology; absent or unknown on-disk values parse as "local". */
   cloud: RemoteSchema.catch("local"),
+  /** Host address of a custom remote's gateway (cloud "custom"). */
+  ipAddress: z.string().optional(),
+  /** Gateway port on a custom remote (cloud "custom"). */
+  port: z.number().optional(),
   runtimeUrl: z.string().optional(),
   hatchedAt: z.string().optional(),
   /**

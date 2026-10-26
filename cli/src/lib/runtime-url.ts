@@ -3,6 +3,7 @@ import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./lan-ip.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import { getCloudUrl } from "./cloud-client.js";
 import { GATEWAY_PORT } from "./constants.js";
 import type { LockfileAssistant } from "./assistant-config.js";
 
@@ -105,8 +106,27 @@ export function trustedRefreshUrl(
   return null;
 }
 
-/** The URL to dial an entry's gateway on: its loopback gateway port, else its recorded runtimeUrl, else the default gateway port. */
+/**
+ * The URL to dial an entry's gateway on, derived from the entry's canonical
+ * fields — the one seam every consumer addresses a gateway through:
+ *
+ * - `custom` remotes: their recorded host and port.
+ * - cloud-managed: the cloud URL the entry was hatched under (falling back
+ *   to the environment's own resolution).
+ * - loopback topologies (`local`, `docker`, `apple-container`): the
+ *   recorded loopback gateway port, else the default gateway port.
+ *
+ * The recorded `runtimeUrl` only survives as a last resort for entries
+ * whose canonical fields predate this resolver; it is scheduled to die
+ * once every consumer reads through here.
+ */
 export function getGatewayUrl(entry: LockfileAssistant): string {
+  if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
+    return `http://${entry.ipAddress}:${entry.port}`;
+  }
+  if (isCloudHome(entry.cloud)) {
+    return (entry.runtimeUrl || getCloudUrl()).replace(/\/+$/, "");
+  }
   const port = getLoopbackGatewayPort(entry);
   if (port) return `http://127.0.0.1:${port}`;
   return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(
