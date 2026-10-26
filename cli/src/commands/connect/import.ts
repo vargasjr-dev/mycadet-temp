@@ -168,7 +168,7 @@ export async function connectImport(): Promise<void> {
   }
 
   const lockfilePaths = getLockfilePaths(getCurrentEnvironment());
-  const configDir = resolveConfigDir(process.env);
+  const configDir = resolveConfigDir();
 
   // Refuse a colliding --name BEFORE anything is exchanged. The device code is
   // one-time and the gateway records a device the moment it is spent, so

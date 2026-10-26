@@ -11,7 +11,7 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
-} from "../lib/version-compat.js";
+} from "@mycadet/shared/version";
 
 import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 

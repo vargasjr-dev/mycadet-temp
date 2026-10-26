@@ -93,14 +93,6 @@ export function stripVersionPrefix(version: string): string {
   return version.replace(/^[vV]/, "");
 }
 
-// The channel matchers live in @mycadet/shared/version so every package —
-// including local-mode's environment resolver, which cannot depend on the
-// CLI — classifies released versions identically.
-export {
-  isDevVersion,
-  isStagingVersion,
-  isLocalVersion,
-} from "@mycadet/shared/version";
 
 /**
  * Check whether two version strings refer to the same version.

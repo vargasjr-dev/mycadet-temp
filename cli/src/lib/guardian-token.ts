@@ -75,7 +75,7 @@ function getGuardianTokenPath(assistantId: string): string {
   // written where it's read. Must stay in lockstep with `getConfigDir(
   // getCurrentEnvironment())`; the parity test in guardian-token.test.ts guards
   // against drift.
-  return guardianTokenPath(resolveConfigDir(process.env), assistantId);
+  return guardianTokenPath(resolveConfigDir(), assistantId);
 }
 
 function getPersistedDeviceIdPath(): string {
@@ -191,7 +191,7 @@ export function saveGuardianToken(
 ): void {
   // Delegates to the shared @mycadet/local-mode writer (0700 dir, 0600 file)
   // with the same env-resolved config dir the path resolver above uses.
-  writeGuardianToken(resolveConfigDir(process.env), assistantId, data);
+  writeGuardianToken(resolveConfigDir(), assistantId, data);
 }
 
 /** Abort the refresh POST if the gateway is slow/unreachable (it's now on the

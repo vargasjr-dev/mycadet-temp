@@ -27,7 +27,7 @@ let cached: string | undefined;
  * shared with the CLI and daemon.
  */
 function resolveDeviceDir(): string {
-  return resolveConfigDir(process.env);
+  return resolveConfigDir();
 }
 
 /**

@@ -43,7 +43,7 @@ export const installHostProxyBridge = (
   });
   const runtime: HostProxyRuntime = {
     acquireGuardianToken: async (assistantId) => {
-      const configDir = resolveConfigDir(process.env);
+      const configDir = resolveConfigDir();
       let invocation: CliInvocation;
       try {
         invocation = await resolveCliInvocation();
@@ -60,7 +60,6 @@ export const installHostProxyBridge = (
         configDir,
         invocation,
         true,
-        { CADET_ENVIRONMENT: resolveEnvironmentName() },
       );
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {

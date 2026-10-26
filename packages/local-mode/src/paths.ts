@@ -1,55 +1,68 @@
-import os from "node:os";
+import { homedir } from "node:os";
 import path from "node:path";
-export interface LocalPathOptions {
-  platform?: NodeJS.Platform;
-  homeDir?: string;
-  /**
-   * Pin the environment the paths name, bypassing the ambient resolver.
-   * Callers enumerating a SPECIFIC environment's directories (the CLI's
-   * cross-environment detection, tests) pass the env's name here; everyone
-   * else omits it and the ambient resolution decides.
-   */
-  environmentName?: string;
-  configDirOverride?: string;
-  lockfileDirOverride?: string;
-}
-const isWindows = (options: LocalPathOptions) => (options.platform ?? process.platform) === "win32";
-const paths = (options: LocalPathOptions) =>
-  isWindows(options) ? path.win32 : path.posix;
-const home = (options: LocalPathOptions) => options.homeDir ?? os.homedir();
-export function resolveConfigHome(env: Record<string, string | undefined>, options: LocalPathOptions = {}): string {
-  if (isWindows(options)) {
-    return env.APPDATA?.trim() || paths(options).join(home(options), "AppData", "Roaming");
+
+const PRODUCTION_ENVIRONMENT_NAME = "production";
+
+const isWindows = () => process.platform === "win32";
+const paths = () => (isWindows() ? path.win32 : path.posix);
+
+export function resolveConfigHome(): string {
+  if (isWindows()) {
+    return (
+      process.env.APPDATA?.trim() ||
+      paths().join(homedir(), "AppData", "Roaming")
+    );
   }
-  return env.XDG_CONFIG_HOME?.trim() || paths(options).join(home(options), ".config");
+  return process.env.XDG_CONFIG_HOME?.trim() || paths().join(homedir(), ".config");
 }
-export function resolveConfigHomes(env: Record<string, string | undefined>, options: LocalPathOptions = {}): string[] {
-  const canonical = resolveConfigHome(env, options);
-  if (!isWindows(options)) {
+
+export function resolveConfigHomes(): string[] {
+  const canonical = resolveConfigHome();
+  if (!isWindows()) {
     return [canonical];
   }
   const legacy =
-    env.XDG_CONFIG_HOME?.trim() || paths(options).join(home(options), ".config");
+    process.env.XDG_CONFIG_HOME?.trim() || paths().join(homedir(), ".config");
   return canonical === legacy ? [canonical] : [canonical, legacy];
 }
-export function resolveDataHome(env: Record<string, string | undefined>, options: LocalPathOptions = {}): string {
-  if (isWindows(options)) {
-    return env.LOCALAPPDATA?.trim() || paths(options).join(home(options), "AppData", "Local");
+
+export function resolveDataHome(): string {
+  if (isWindows()) {
+    return (
+      process.env.LOCALAPPDATA?.trim() ||
+      paths().join(homedir(), "AppData", "Local")
+    );
   }
-  return env.XDG_DATA_HOME?.trim() || paths(options).join(home(options), ".local", "share");
+  return process.env.XDG_DATA_HOME?.trim() || paths().join(homedir(), ".local", "share");
 }
-export const joinLocalPath = (options: LocalPathOptions, ...segments: string[]) =>
-  paths(options).join(...segments);
-export function assertSafePathSegment(value: string, label: string, options: LocalPathOptions = {}): void {
+
+export const joinLocalPath = (...segments: string[]) => paths().join(...segments);
+
+export function assertSafePathSegment(value: string, label: string): void {
   const unsafe =
     !value ||
     /[/\\\0]/.test(value) ||
     /^\.{1,2}$/.test(value) ||
-    (isWindows(options) &&
+    (isWindows() &&
       (/[<>:"|?*\u0000-\u001f]/.test(value) ||
         /[. ]$/.test(value) ||
         /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(value)));
   if (unsafe) {
     throw new Error(`Invalid ${label}: ${value}`);
   }
+}
+
+/**
+ * The directory name an environment's state lives under: `cadet` for
+ * production (the legacy location other environments must not collide with),
+ * `cadet-<env>` otherwise. Exported so hosts that enumerate a SPECIFIC
+ * environment's directories — the CLI's cross-environment detection — can
+ * compose them from {@link resolveConfigHomes} and {@link resolveDataHome}
+ * without an options bag threading through the ambient resolvers.
+ */
+export function environmentDirectoryName(cadetEnv: string): string {
+  assertSafePathSegment(cadetEnv, "environment name");
+  return cadetEnv === PRODUCTION_ENVIRONMENT_NAME
+    ? "cadet"
+    : `cadet-${cadetEnv}`;
 }

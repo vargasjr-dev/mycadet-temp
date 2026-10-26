@@ -33,6 +33,9 @@ export default defineConfig(({ mode, command }) => {
       env[key] = value;
     }
   }
+  // .env values must be visible to the local-mode resolvers, which read
+  // `process.env` directly (they no longer take an env map).
+  Object.assign(process.env, loadEnv(mode, import.meta.dirname, ""));
   Object.assign(env, loadEnv(mode, import.meta.dirname, ""));
   const platform = env.API_PROXY_TARGET || "http://localhost:8000";
   return {

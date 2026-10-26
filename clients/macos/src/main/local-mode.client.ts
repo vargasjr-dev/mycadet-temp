@@ -43,9 +43,9 @@ configureLocalMode({
   cli: { resolveInvocation: resolveCliInvocation },
   handle,
   paths: {
-    configDir: resolveConfigDir(process.env),
+    configDir: resolveConfigDir(),
     environment: resolveEnvironmentName(),
-    lockfilePaths: resolveLockfilePaths(process.env),
+    lockfilePaths: resolveLockfilePaths(),
   },
   refreshLockfile: refreshLockfileNow,
   session: { getToken: getSessionToken },

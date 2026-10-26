@@ -1149,6 +1149,15 @@ jobs:
       - name: Rename the cli bin for the dev channel
         run: |
           jq '.bin = { "cadet-dev": .bin.cadet }' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
+      - name: Stamp bundled deps with the release version
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+          for name in $(node -e "console.log(require('./cli/package.json').bundleDependencies.join('\\n'))"); do
+            dir="packages/${name#@mycadet/}"
+            if [ -f "$dir/package.json" ]; then
+              jq --arg v "$VERSION" '.version = $v' "$dir/package.json" > "$dir/package.json.tmp" && mv "$dir/package.json.tmp" "$dir/package.json"
+            fi
+          done
       - name: Pack tarball
         run: |
           cd cli

@@ -26,7 +26,7 @@ import { stripSensitiveFields } from "./util";
  * same bytes.
  */
 export function readLockfile(): Lockfile {
-  for (const lockfilePath of resolveLockfilePaths(process.env)) {
+  for (const lockfilePath of resolveLockfilePaths()) {
     if (!fs.existsSync(lockfilePath)) continue;
     try {
       const parsed = LockfileSchema.safeParse(

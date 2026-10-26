@@ -227,7 +227,7 @@ describe("getLocalAssistantStatus", () => {
 describe("resolveLockfileInstanceDir", () => {
   test("reads the instance dir from the parsed entry", () => {
     writeLocalLockfile();
-    expect(resolveLockfileInstanceDir([lockfilePath], "local-1", {})).toEqual({
+    expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
       ok: true,
       instanceDir,
     });
@@ -235,7 +235,7 @@ describe("resolveLockfileInstanceDir", () => {
 
   test("honors legacy top-level baseDataDir", () => {
     writeLockfile({ assistantId: "local-1", baseDataDir: instanceDir });
-    expect(resolveLockfileInstanceDir([lockfilePath], "local-1", {})).toEqual({
+    expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
       ok: true,
       instanceDir,
     });
@@ -244,25 +244,32 @@ describe("resolveLockfileInstanceDir", () => {
   test("falls back to the default instance dir for an entry without one", () => {
     writeLockfile({ assistantId: "local-1", cloud: "local" });
     const dataHome = path.join(tempDir, "data-home");
-    expect(
-      resolveLockfileInstanceDir([lockfilePath], "local-1", {
-        CADET_ENVIRONMENT: "production",
-        XDG_DATA_HOME: dataHome,
-      }),
-    ).toEqual({
-      ok: true,
-      instanceDir: path.join(dataHome, "cadet", "assistants", "local-1"),
-    });
+    // The resolvers read process.env directly; steer them for this test.
+    process.env.CADET_ENVIRONMENT = "production";
+    process.env.XDG_DATA_HOME = dataHome;
+    try {
+      expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
+        ok: true,
+        instanceDir: path.join(dataHome, "cadet", "assistants", "local-1"),
+      });
+    } finally {
+      Reflect.deleteProperty(process.env, "CADET_ENVIRONMENT");
+      Reflect.deleteProperty(process.env, "XDG_DATA_HOME");
+    }
   });
 
   test("has no instance dir for a missing entry", () => {
     writeLocalLockfile();
-    expect(
-      resolveLockfileInstanceDir([lockfilePath], "local-2", {
-        CADET_ENVIRONMENT: "production",
-        XDG_DATA_HOME: tempDir,
-      }),
-    ).toEqual({ ok: true });
+    process.env.CADET_ENVIRONMENT = "production";
+    process.env.XDG_DATA_HOME = tempDir;
+    try {
+      expect(resolveLockfileInstanceDir([lockfilePath], "local-2")).toEqual({
+        ok: true,
+      });
+    } finally {
+      Reflect.deleteProperty(process.env, "CADET_ENVIRONMENT");
+      Reflect.deleteProperty(process.env, "XDG_DATA_HOME");
+    }
   });
 
   test("fails when the authoritative lockfile is unreadable", () => {
@@ -275,7 +282,7 @@ describe("resolveLockfileInstanceDir", () => {
       }),
     );
     expect(
-      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1", {}),
+      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1"),
     ).toEqual({ ok: false });
   });
 
@@ -289,7 +296,7 @@ describe("resolveLockfileInstanceDir", () => {
       }),
     );
     expect(
-      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1", {}),
+      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1"),
     ).toEqual({ ok: true });
   });
 });

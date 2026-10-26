@@ -41,7 +41,7 @@ export const createBundleHostProvider = (
       const invocation = await resolveInvocation();
       const result = await getGuardianAccessToken(
         assistantId,
-        resolveConfigDir(process.env),
+        resolveConfigDir(),
         invocation,
         true,
       );

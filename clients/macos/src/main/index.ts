@@ -266,7 +266,7 @@ const registerAppProtocol = (): void => {
   const appIndexHtml = path.join(appDistRoot, "index.html");
   const webDistRoot = resolveWebDistRoot();
   const webIndexHtml = path.join(webDistRoot, "index.html");
-  const { cloudUrl } = resolveLocalConfigFromEnv(process.env);
+  const { cloudUrl } = resolveLocalConfigFromEnv();
 
   protocol.handle(APP_PROTOCOL, async (request) => {
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
@@ -305,7 +305,7 @@ const registerAppProtocol = (): void => {
   });
 };
 
-const resolvedConfig = resolveLocalConfigFromEnv(process.env);
+const resolvedConfig = resolveLocalConfigFromEnv();
 handleSync("cadet:config:get", () => ({
   cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),

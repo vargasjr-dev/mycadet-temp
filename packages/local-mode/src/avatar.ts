@@ -129,9 +129,8 @@ function readAvatarImage(
 export function readLockfileAssistantAvatar(
   lockfilePaths: string[],
   assistantId: string,
-  env: Record<string, string | undefined>,
 ): LockfileAssistantAvatarResult {
-  const resolved = resolveLockfileInstanceDir(lockfilePaths, assistantId, env);
+  const resolved = resolveLockfileInstanceDir(lockfilePaths, assistantId);
   if (!resolved.ok) {
     return { ok: false, error: "lockfile unreadable" };
   }

@@ -122,7 +122,7 @@ beforeEach(() => {
   // Write an empty lockfile so saveLockfileAssistant has a dir to write to
   mkdirSync(testDir, { recursive: true });
   writeFileSync(
-    resolveLockfilePaths(process.env)[0]!,
+    resolveLockfilePaths()[0]!,
     JSON.stringify({ assistants: [] }) + "\n",
   );
 

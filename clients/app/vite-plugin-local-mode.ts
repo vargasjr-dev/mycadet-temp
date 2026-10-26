@@ -113,7 +113,7 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
 }
 
 export function localModePlugin(env: Record<string, string>): Plugin {
-  const config = resolveLocalConfigFromEnv(env);
+  const config = resolveLocalConfigFromEnv();
   const baseDir = path.resolve(import.meta.dirname, "..", "..");
 
   // The `/assistant/__config` document, also injected into the index. No
@@ -1043,7 +1043,7 @@ function avatarMiddleware(
     res.setHeader("Content-Type", "application/json");
     res.end(
       JSON.stringify(
-        readLockfileAssistantAvatar(lockfilePaths, assistantId, env),
+        readLockfileAssistantAvatar(lockfilePaths, assistantId),
       ),
     );
   };

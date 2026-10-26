@@ -1,14 +1,12 @@
-import os from "node:os";
-
 import { SEEDS } from "@mycadet/environments";
 
 import { resolveEnvironmentName } from "./environment";
 import {
   assertSafePathSegment,
+  environmentDirectoryName,
   joinLocalPath,
   resolveConfigHomes,
   resolveDataHome,
-  type LocalPathOptions,
 } from "./paths";
 
 const PRODUCTION_ENVIRONMENT_NAME = "production";
@@ -20,131 +18,76 @@ export interface LocalEndpointConfig {
 }
 
 /**
- * Resolve config from environment variables. Accepts any environment-shaped
- * map, including `process.env` (whose values are `string | undefined`) and the
- * Vite plugin's `loadEnv` result.
+ * Resolve the local endpoint config from the process environment.
  */
-export function resolveLocalConfigFromEnv(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): LocalEndpointConfig {
-  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
+export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
+  const cadetEnv = resolveEnvironmentName();
   const seed = SEEDS[cadetEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
 
   return {
-    lockfilePaths: resolveLockfilePaths(env, options),
-    configDir: resolveConfigDir(env, options),
-    cloudUrl: env.CADET_CLOUD_URL || seed.cloudUrl,
+    lockfilePaths: resolveLockfilePaths(),
+    configDir: resolveConfigDir(),
+    cloudUrl: process.env.CADET_CLOUD_URL || seed.cloudUrl,
   };
 }
 
-export function resolveLockfilePaths(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string[] {
-  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
-  const lockfileDir = Object.hasOwn(options, "lockfileDirOverride")
-    ? options.lockfileDirOverride
-    : env.CADET_LOCKFILE_DIR?.trim();
+export function resolveLockfilePaths(): string[] {
+  const lockfileDir = process.env.CADET_LOCKFILE_DIR?.trim();
 
-  if ((options.platform ?? process.platform) === "win32") {
-    const canonicalDir = lockfileDir ?? resolveConfigDir(env, options);
-    const canonical = joinLocalPath(options, canonicalDir, "lockfile.json");
-    if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
+  if (process.platform === "win32") {
+    const canonicalDir = lockfileDir ?? resolveConfigDir();
+    const canonical = joinLocalPath(canonicalDir, "lockfile.json");
+    if (resolveEnvironmentName() === PRODUCTION_ENVIRONMENT_NAME) {
       return [canonical];
     }
     return [
       canonical,
       joinLocalPath(
-        options,
-        lockfileDir ?? resolveConfigDirPaths(env, options).at(-1)!,
+        lockfileDir ?? resolveConfigDirPaths().at(-1)!,
         "lockfile.json",
       ),
     ];
   }
 
-  const dir = lockfileDir ?? resolveConfigDir(env, options);
-  return [joinLocalPath(options, dir, "lockfile.json")];
+  const dir = lockfileDir ?? resolveConfigDir();
+  return [joinLocalPath(dir, "lockfile.json")];
 }
 
-export function resolveConfigDir(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string {
-  return resolveConfigDirPaths(env, options)[0]!;
+export function resolveConfigDir(): string {
+  return resolveConfigDirPaths()[0]!;
 }
 
-export function resolveConfigDirPaths(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string[] {
-  if (options.configDirOverride) {
-    return [options.configDirOverride];
-  }
-  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
-  return resolveConfigHomes(env, options).map((home) =>
-    joinLocalPath(options, home, environmentDirectoryName(cadetEnv, options)),
+export function resolveConfigDirPaths(): string[] {
+  const cadetEnv = resolveEnvironmentName();
+  return resolveConfigHomes().map((home) =>
+    joinLocalPath(home, environmentDirectoryName(cadetEnv)),
   );
 }
 
-function environmentDirectoryName(
-  cadetEnv: string,
-  options: LocalPathOptions,
-): string {
-  assertSafePathSegment(cadetEnv, "environment name", options);
-  return cadetEnv === PRODUCTION_ENVIRONMENT_NAME
-    ? "cadet"
-    : `cadet-${cadetEnv}`;
-}
-
-function resolveDataDir(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions,
-): string {
-  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
+function resolveDataDir(): string {
   return joinLocalPath(
-    options,
-    resolveDataHome(env, options),
-    environmentDirectoryName(cadetEnv, options),
+    resolveDataHome(),
+    environmentDirectoryName(resolveEnvironmentName()),
   );
 }
 
-export function resolveRuntimeDir(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string {
-  return resolveDataDir(env, options);
+export function resolveRuntimeDir(): string {
+  return resolveDataDir();
 }
 
-export function resolveLogDir(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string {
+export function resolveLogDir(): string {
   const root =
-    (options.platform ?? process.platform) === "win32"
-      ? resolveDataDir(env, options)
-      : resolveConfigDir(env, options);
-  return joinLocalPath(options, root, "logs");
+    process.platform === "win32" ? resolveDataDir() : resolveConfigDir();
+  return joinLocalPath(root, "logs");
 }
 
-export function resolveAssistantsDir(
-  env: Record<string, string | undefined>,
-  options: LocalPathOptions = {},
-): string {
-  return joinLocalPath(options, resolveDataDir(env, options), "assistants");
+export function resolveAssistantsDir(): string {
+  return joinLocalPath(resolveDataDir(), "assistants");
 }
 
-export function resolveInstanceDir(
-  env: Record<string, string | undefined>,
-  assistantId: string,
-  options: LocalPathOptions = {},
-): string {
-  assertSafePathSegment(assistantId, "assistant ID", options);
-  return joinLocalPath(
-    options,
-    resolveAssistantsDir(env, options),
-    assistantId,
-  );
+export function resolveInstanceDir(assistantId: string): string {
+  assertSafePathSegment(assistantId, "assistant ID");
+  return joinLocalPath(resolveAssistantsDir(), assistantId);
 }
 
 /**
@@ -156,11 +99,9 @@ export function resolveInstanceDir(
 export function guardianTokenPath(
   configDir: string,
   assistantId: string,
-  options: LocalPathOptions = {},
 ): string {
-  assertSafePathSegment(assistantId, "assistant ID", options);
+  assertSafePathSegment(assistantId, "assistant ID");
   return joinLocalPath(
-    options,
     configDir,
     "assistants",
     assistantId,

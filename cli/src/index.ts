@@ -129,7 +129,7 @@ function applyNoColorFlags(argv: string[]): void {
  * Values may be quoted with single or double quotes.
  */
 function loadConfigDotenv(): void {
-  const configDir = resolveConfigDir(process.env);
+  const configDir = resolveConfigDir();
   const envPath = join(configDir, ".env");
 
   let content: string;

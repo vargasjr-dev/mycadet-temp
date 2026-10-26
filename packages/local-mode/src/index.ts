@@ -34,13 +34,19 @@ export {
   guardianTokenPath,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
-export type { LocalPathOptions } from "./paths";
 export {
   defaultEnvironmentFilePath,
   defaultEnvironmentFilePaths,
   readDefaultEnvironment,
   resolveEnvironmentName,
 } from "./environment";
+export {
+  assertSafePathSegment,
+  environmentDirectoryName,
+  joinLocalPath,
+  resolveConfigHomes,
+  resolveDataHome,
+} from "./paths";
 export {
   readLockfile,
   renameLockfileAssistantIfPresent,

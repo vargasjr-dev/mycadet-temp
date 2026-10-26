@@ -2,7 +2,11 @@ import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
-import { isDevVersion, isLocalVersion, isStagingVersion } from "../version-compat.js";
+import {
+  isDevVersion,
+  isLocalVersion,
+  isStagingVersion,
+} from "@mycadet/shared/version";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
 

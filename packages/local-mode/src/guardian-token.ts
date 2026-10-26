@@ -180,7 +180,6 @@ export function getGuardianAccessToken(
   configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
-  env?: Record<string, string>,
   options?: GuardianTokenOptions,
 ): Promise<TokenResult> {
   if (!isLoopback) {
@@ -189,10 +188,7 @@ export function getGuardianAccessToken(
 
   let tokenPaths: string[];
   try {
-    const configDirs = [
-      configDir,
-      ...resolveConfigDirPaths({ ...process.env, ...env }),
-    ];
+    const configDirs = [configDir, ...resolveConfigDirPaths()];
     tokenPaths = [...new Set(configDirs)].map((dir) =>
       guardianTokenPath(dir, assistantId),
     );
@@ -287,7 +283,7 @@ export function getGuardianAccessToken(
   if (existingRefresh) {
     return existingRefresh;
   }
-  const refresh = refreshToken(assistantId, invocation, env).finally(() => {
+  const refresh = refreshToken(assistantId, invocation).finally(() => {
     if (guardianTokenRefreshes.get(resolvedTokenPath) === refresh) {
       guardianTokenRefreshes.delete(resolvedTokenPath);
     }
@@ -303,22 +299,16 @@ export function getPairedGuardianAccessToken(
   configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
-  env?: Record<string, string>,
 ): Promise<TokenResult> {
-  return getGuardianAccessToken(
-    assistantId,
-    configDir,
-    invocation,
-    isLoopback,
-    env,
-    { paired: true, pairedGatewayUrl },
-  );
+  return getGuardianAccessToken(assistantId, configDir, invocation, isLoopback, {
+    paired: true,
+    pairedGatewayUrl,
+  });
 }
 
 function refreshToken(
   assistantId: string,
   invocation: CliInvocation,
-  env?: Record<string, string>,
 ): Promise<TokenResult> {
   return new Promise((resolve) => {
     const child = spawn(
@@ -327,7 +317,7 @@ function refreshToken(
       {
         stdio: ["ignore", "pipe", "pipe"],
         windowsHide: true,
-        env: { ...process.env, ...env },
+        env: { ...process.env },
       },
     );
 

@@ -289,14 +289,7 @@ async function getHostGuardianAccessToken(
   } catch (err) {
     return { ok: false, status: 500, error: (err as Error).message };
   }
-  return getGuardianAccessToken(
-    assistantId,
-    configDir,
-    invocation,
-    true,
-    { CADET_ENVIRONMENT: requireRuntime().paths.environment },
-    options,
-  );
+  return getGuardianAccessToken(assistantId, configDir, invocation, true, options);
 }
 
 /** Read a paired guardian bearer for the trusted main-process proxy. */
@@ -320,7 +313,6 @@ export async function getPairedGuardianAccessToken(
     requireRuntime().paths.configDir,
     invocation,
     true,
-    { CADET_ENVIRONMENT: requireRuntime().paths.environment },
   );
 }
 
@@ -630,11 +622,7 @@ export const installLocalMode = (): void => {
       if (!assistantId) {
         return { ok: false, error: "Missing assistantId" };
       }
-      return readLockfileAssistantAvatar(
-        lockfilePaths,
-        assistantId,
-        process.env,
-      );
+      return readLockfileAssistantAvatar(lockfilePaths, assistantId);
     },
   );
 };

@@ -1,14 +1,12 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 import { join } from "path";
 
 import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
 import {
-  resolveAssistantsDir,
-  resolveConfigDirPaths,
-  resolveLockfilePaths,
-  resolveLogDir,
-  resolveRuntimeDir,
-  type LocalPathOptions,
+  environmentDirectoryName,
+  joinLocalPath,
+  resolveConfigHomes,
+  resolveDataHome,
 } from "@mycadet/local-mode";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
@@ -30,11 +28,27 @@ export function getConfigDir(env: EnvironmentDefinition): string {
 }
 
 export function getConfigDirs(env: EnvironmentDefinition): string[] {
-  return resolveConfigDirPaths(process.env, localPathOptions(env));
+  if (env.configDirOverride) {
+    return [env.configDirOverride];
+  }
+  return resolveConfigHomes().map((home) =>
+    joinLocalPath(home, environmentDirectoryName(env.name)),
+  );
 }
 
 export function getLockfilePaths(env: EnvironmentDefinition): string[] {
-  return resolveLockfilePaths(process.env, localPathOptions(env));
+  const lockfileDir =
+    env.lockfileDirOverride ?? process.env.CADET_LOCKFILE_DIR?.trim();
+  if (lockfileDir) {
+    return [joinLocalPath(lockfileDir, "lockfile.json")];
+  }
+  const configDirs = getConfigDirs(env);
+  const canonical = joinLocalPath(configDirs[0]!, "lockfile.json");
+  if (env.name === "production" || process.platform !== "win32") {
+    return [canonical];
+  }
+  // Windows keeps the pre-AppData XDG location as a legacy read fallback.
+  return [canonical, joinLocalPath(configDirs.at(-1)!, "lockfile.json")];
 }
 
 /**
@@ -52,7 +66,11 @@ export function getLockfilePath(env: EnvironmentDefinition): string {
  * `~/.local/share/cadet-<env>/assistants/`.
  */
 export function getMultiInstanceDir(env: EnvironmentDefinition): string {
-  return resolveAssistantsDir(process.env, localPathOptions(env));
+  return joinLocalPath(
+    resolveDataHome(),
+    environmentDirectoryName(env.name),
+    "assistants",
+  );
 }
 
 /**
@@ -74,11 +92,13 @@ export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
  * use `~/.local/share/cadet-<env>/`.
  */
 export function getStateDir(env: EnvironmentDefinition): string {
-  return resolveRuntimeDir(process.env, localPathOptions(env));
+  return joinLocalPath(resolveDataHome(), environmentDirectoryName(env.name));
 }
 
 export function getLogDir(env: EnvironmentDefinition): string {
-  return resolveLogDir(process.env, localPathOptions(env));
+  const root =
+    process.platform === "win32" ? getStateDir(env) : getConfigDirs(env)[0]!;
+  return joinLocalPath(root, "logs");
 }
 
 /**
@@ -116,13 +136,4 @@ function xdgStateHome(): string {
   return (
     process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state")
   );
-}
-
-function localPathOptions(env: EnvironmentDefinition): LocalPathOptions {
-  return {
-    homeDir: homedir(),
-    environmentName: env.name,
-    configDirOverride: env.configDirOverride,
-    lockfileDirOverride: env.lockfileDirOverride,
-  };
 }

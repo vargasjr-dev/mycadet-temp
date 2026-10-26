@@ -174,7 +174,7 @@ const registerAppProtocol = (): void => {
 };
 
 // Synchronous config snapshot exposed to the renderer as `window.__CADET_CONFIG__`.
-const resolvedConfig = resolveLocalConfigFromEnv(process.env);
+const resolvedConfig = resolveLocalConfigFromEnv();
 handleSync("cadet:config:get", () => ({
   cloudUrl: resolvedConfig.cloudUrl,
   deviceId: getDeviceId(),

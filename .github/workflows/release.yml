@@ -813,6 +813,15 @@ jobs:
       # for symlinked workspace deps.
       - name: Strip bundled deps from the manifest
         run: bun scripts/strip-bundled-deps.mjs cli
+      - name: Stamp bundled deps with the release version
+        run: |
+          VERSION="${{ needs.extract-version.outputs.version }}"
+          for name in $(node -e "console.log(require('./cli/package.json').bundleDependencies.join('\\n'))"); do
+            dir="packages/${name#@mycadet/}"
+            if [ -f "$dir/package.json" ]; then
+              jq --arg v "$VERSION" '.version = $v' "$dir/package.json" > "$dir/package.json.tmp" && mv "$dir/package.json.tmp" "$dir/package.json"
+            fi
+          done
       - name: Pack tarball
         run: |
           cd cli

@@ -33,7 +33,7 @@ const presence: CapabilityModule<DesktopCapabilityRegistry> = {
     installStatusIpc();
     const retryProbe = installConnectivityProbe();
     installConnectivityIpc(retryProbe);
-    configureLockfileWatcher(() => resolveLockfilePaths(process.env));
+    configureLockfileWatcher(() => resolveLockfilePaths());
     const stopLockfileWatcher = installLockfileWatcher();
     app.once("before-quit", stopLockfileWatcher);
     installLinuxTray();

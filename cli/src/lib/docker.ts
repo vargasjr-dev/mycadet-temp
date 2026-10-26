@@ -39,7 +39,7 @@ import {
   loadImageViaHost,
 } from "./host-image-loader.js";
 import { resolveOwnImageRefs } from "./cloud-releases.js";
-import { isDevVersion } from "./version-compat.js";
+import { isDevVersion } from "@mycadet/shared/version";
 import {
   collectProviderApiKey,
   configureHatchProviderApiKey,

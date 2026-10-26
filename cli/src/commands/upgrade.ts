@@ -63,9 +63,9 @@ import {
   UPGRADE_PROGRESS,
   waitForReady,
 } from "../lib/upgrade-lifecycle.js";
+import { isLocalVersion } from "@mycadet/shared/version";
 import {
   compareVersions,
-  isLocalVersion,
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";

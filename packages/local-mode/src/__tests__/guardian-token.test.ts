@@ -95,7 +95,6 @@ describe("getGuardianAccessToken", () => {
       configDir,
       invocation,
       true,
-      undefined,
       {
         paired: true,
         pairedGatewayUrl: "https://gateway.example.com",
@@ -122,7 +121,6 @@ describe("getGuardianAccessToken", () => {
       configDir,
       invocation,
       true,
-      undefined,
       { paired: false },
     );
 
@@ -153,7 +151,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://attacker.example.com",
@@ -170,7 +167,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://gateway.example.com",
@@ -188,7 +184,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://gateway.example.com",

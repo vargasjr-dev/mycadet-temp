@@ -698,7 +698,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
   // agree on the config dir for every environment source.
   const expectResolversAgree = () => {
     expect(getConfigDir(getCurrentEnvironment())).toBe(
-      resolveConfigDir(process.env),
+      resolveConfigDir(),
     );
   };
 
@@ -706,7 +706,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("prod"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -715,7 +715,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("dev"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -724,7 +724,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("local"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -734,7 +734,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expect(getCurrentEnvironment().name).toBe("production");
     saveGuardianToken("alpha", makeTokenData("prod"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 });

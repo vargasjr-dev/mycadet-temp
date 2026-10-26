@@ -173,7 +173,7 @@ const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
   const watched = getWatchedLockfileSnapshot();
   return watched
     ? gatewayTargetsFromLockfile(watched)
-    : readGatewayTargets(resolveLockfilePaths(process.env));
+    : readGatewayTargets(resolveLockfilePaths());
 };
 
 export const forwardGatewayRequest = async (
