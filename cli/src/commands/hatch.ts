@@ -3,10 +3,8 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
-import {
-  saveLockfileAssistant,
-  setActiveAssistant,
-} from "../lib/assistant-config";
+import { setActiveAssistant } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
@@ -291,12 +289,15 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const cloudUrl = getCloudUrl();
 
-  saveLockfileAssistant({
+  const saveResult = saveLockfileAssistant({
     assistantId: result.id,
     runtimeUrl: cloudUrl,
     cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });
+  if (!saveResult.ok) {
+    throw new Error(saveResult.error ?? "lockfile write failed");
+  }
   setActiveAssistant(result.id);
 
   console.log(

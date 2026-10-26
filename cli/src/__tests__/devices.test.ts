@@ -28,7 +28,7 @@ import { createHash } from "node:crypto";
 
 import * as stepRunner from "../lib/step-runner.js";
 import { devices } from "../commands/devices.js";
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { computeDeviceId } from "../lib/guardian-token.js";
 
 interface FetchCall {

@@ -143,101 +143,104 @@ async function resolveSetupBearerToken(
 
 export const setup = Object.assign(
   async function setup(): Promise<void> {
-  const args = process.argv.slice(3);
+    const args = process.argv.slice(3);
 
-  if (args.includes("--help") || args.includes("-h")) {
-    console.log(`Usage: ${cliCommand()} setup [--provider <provider>]`);
-    console.log("");
-    console.log("Configure a provider API key on the active assistant.");
-    console.log("");
-    console.log("Options:");
-    console.log("  --provider <provider>  Provider to configure. Defaults to Cadet Cloud");
-    console.log("");
-    console.log("Behavior:");
-    console.log(
-      "  - Checks the active assistant for an existing provider key.",
-    );
-    console.log("  - Uses the matching environment variable when it is set.");
-    console.log("  - Otherwise prompts securely without echoing the key.");
-    console.log("");
-    console.log("Examples:");
-    console.log(`  ${cliCommand()} setup`);
-    console.log(`  ANTHROPIC_API_KEY=... ${cliCommand()} setup`);
-    console.log(`  ${cliCommand()} setup --provider openai`);
-    process.exit(0);
-  }
-
-  let parsed: { provider?: string };
-  try {
-    parsed = parseSetupArgs(args);
-  } catch (error) {
-    console.error(error instanceof Error ? `Error: ${error.message}` : error);
-    process.exit(1);
-  }
-
-  const entry = resolveAssistant();
-  if (!entry) {
-    console.error("Error: No active assistant found. Run `cadet hatch` first.");
-    process.exit(1);
-  }
-
-  const gatewayUrl = getGatewayUrl(entry);
-  const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
-
-  // Respect the assistant's configured default provider (e.g. Cadet Cloud
-  // chosen at hatch) unless the caller named one explicitly — the runtime's
-  // keyless cloud connection should not be greeted by an API-key prompt.
-  let provider = parsed.provider;
-  if (!provider) {
-    const resolved = await resolveDefaultProvider(gatewayUrl, bearerToken);
-    provider = resolved.provider;
-    if (resolved.warning) {
-      console.error(yellow(resolved.warning));
-    }
-  }
-
-  console.log("Cadet Setup");
-  console.log("============\n");
-
-  try {
-    const result = await ensureProviderApiKey({
-      gatewayUrl,
-      provider,
-      bearerToken,
-      env: process.env,
-    });
-
-    if (result.status === "already_configured") {
+    if (args.includes("--help") || args.includes("-h")) {
+      console.log(`Usage: ${cliCommand()} setup [--provider <provider>]`);
+      console.log("");
+      console.log("Configure a provider API key on the active assistant.");
+      console.log("");
+      console.log("Options:");
       console.log(
-        `${formatProviderName(result.provider)} API key is already configured.`,
+        "  --provider <provider>  Provider to configure. Defaults to Cadet Cloud",
       );
-      return;
+      console.log("");
+      console.log("Behavior:");
+      console.log(
+        "  - Checks the active assistant for an existing provider key.",
+      );
+      console.log("  - Uses the matching environment variable when it is set.");
+      console.log("  - Otherwise prompts securely without echoing the key.");
+      console.log("");
+      console.log("Examples:");
+      console.log(`  ${cliCommand()} setup`);
+      console.log(`  ANTHROPIC_API_KEY=... ${cliCommand()} setup`);
+      console.log(`  ${cliCommand()} setup --provider openai`);
+      process.exit(0);
     }
 
-    if (result.status === "configured") {
-      const providerName = formatProviderName(result.provider);
-      const source = result.source === "env" ? " from the environment" : "";
-      console.log(`\n${providerName} API key saved to assistant${source}.`);
-      console.log("Setup complete.");
-      return;
+    let parsed: { provider?: string };
+    try {
+      parsed = parseSetupArgs(args);
+    } catch (error) {
+      console.error(error instanceof Error ? `Error: ${error.message}` : error);
+      process.exit(1);
     }
 
-    if (result.status === "skipped") {
-      console.log(result.message);
-      return;
+    const entry = resolveAssistant();
+    if (!entry) {
+      console.error(
+        "Error: No active assistant found. Run `cadet hatch` first.",
+      );
+      process.exit(1);
     }
 
-    console.error(`Error: ${result.message}`);
-    process.exit(1);
-  } catch (error) {
-    console.error(
-      error instanceof Error
-        ? `Error: ${error.message}`
-        : "Error: Setup failed.",
-    );
-    process.exit(1);
-  }
-},
+    const gatewayUrl = getGatewayUrl(entry);
+    const bearerToken = await resolveSetupBearerToken(entry, gatewayUrl);
+
+    // Respect the assistant's configured default provider (e.g. Cadet Cloud
+    // chosen at hatch) unless the caller named one explicitly — the runtime's
+    // keyless cloud connection should not be greeted by an API-key prompt.
+    let provider = parsed.provider;
+    if (!provider) {
+      const resolved = await resolveDefaultProvider(gatewayUrl, bearerToken);
+      provider = resolved.provider;
+      if (resolved.warning) {
+        console.error(yellow(resolved.warning));
+      }
+    }
+
+    console.log("Cadet Setup");
+    console.log("============\n");
+
+    try {
+      const result = await ensureProviderApiKey({
+        gatewayUrl,
+        provider,
+        bearerToken,
+        env: process.env,
+      });
+
+      if (result.status === "already_configured") {
+        console.log(
+          `${formatProviderName(result.provider)} API key is already configured.`,
+        );
+        return;
+      }
+
+      if (result.status === "configured") {
+        const providerName = formatProviderName(result.provider);
+        const source = result.source === "env" ? " from the environment" : "";
+        console.log(`\n${providerName} API key saved to assistant${source}.`);
+        console.log("Setup complete.");
+        return;
+      }
+
+      if (result.status === "skipped") {
+        console.log(result.message);
+        return;
+      }
+
+      console.error(`Error: ${result.message}`);
+      process.exit(1);
+    } catch (error) {
+      console.error(
+        error instanceof Error
+          ? `Error: ${error.message}`
+          : "Error: Setup failed.",
+      );
+      process.exit(1);
+    }
+  },
   { description: "Configure API keys interactively" },
 );
-

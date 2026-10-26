@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { completeCadet } from "./completions.js";
 
 const COMMAND_NAMES = [

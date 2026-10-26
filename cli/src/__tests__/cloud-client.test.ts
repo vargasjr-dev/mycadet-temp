@@ -93,10 +93,7 @@ describe("cloud-client token path is env-scoped", () => {
       readFileSync(join(tempHome, "cadet", "cloud-token"), "utf-8").trim(),
     ).toBe("prod-token");
     expect(
-      readFileSync(
-        join(tempHome, "cadet-dev", "cloud-token"),
-        "utf-8",
-      ).trim(),
+      readFileSync(join(tempHome, "cadet-dev", "cloud-token"), "utf-8").trim(),
     ).toBe("dev-token");
   });
 
@@ -111,9 +108,7 @@ describe("cloud-client token path is env-scoped", () => {
 
     // Clear dev
     clearCloudToken();
-    expect(existsSync(join(tempHome, "cadet-dev", "cloud-token"))).toBe(
-      false,
-    );
+    expect(existsSync(join(tempHome, "cadet-dev", "cloud-token"))).toBe(false);
 
     // Prod still there
     expect(existsSync(join(tempHome, "cadet", "cloud-token"))).toBe(true);

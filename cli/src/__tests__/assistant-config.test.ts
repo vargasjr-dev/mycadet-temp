@@ -32,10 +32,10 @@ import {
   removeLockfileAssistant,
   loadAllAssistants,
   resolveTargetAssistant,
-  saveLockfileAssistant,
   getActiveAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
@@ -43,10 +43,7 @@ afterAll(() => {
 });
 
 function writeLockfile(data: unknown): void {
-  writeFileSync(
-    join(testDir, "lockfile.json"),
-    JSON.stringify(data, null, 2),
-  );
+  writeFileSync(join(testDir, "lockfile.json"), JSON.stringify(data, null, 2));
 }
 
 const makeEntry = (
@@ -125,9 +122,11 @@ describe("assistant-config", () => {
     mkdirSync(lockDir);
     try {
       const start = Date.now();
-      expect(() => saveLockfileAssistant(makeEntry("contended-1"))).toThrow(
-        /Timed out acquiring lockfile lock/,
-      );
+      const result = saveLockfileAssistant(makeEntry("contended-1"));
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toMatch(/Timed out acquiring lockfile lock/);
+      }
       expect(Date.now() - start).toBeLessThan(2_000);
       expect(loadAllAssistants()).toEqual([]);
     } finally {
@@ -379,7 +378,9 @@ describe("env-scoped lockfile and migration", () => {
         cloud: "local",
       });
 
-      const raw = JSON.parse(readFileSync(join(testDir, "lockfile.json"), "utf-8"));
+      const raw = JSON.parse(
+        readFileSync(join(testDir, "lockfile.json"), "utf-8"),
+      );
       expect(raw.assistants).toHaveLength(1);
       expect(raw.assistants[0].assistantId).toBe("prod-bot");
       expect(existsSync(join(testDir, ".cadet.lock.json"))).toBe(false);

@@ -15,7 +15,7 @@ const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
-import { saveLockfileAssistant } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { saveGuardianToken } from "../lib/guardian-token";
 
 const RUNTIME = "https://gw.example.com";

@@ -342,7 +342,9 @@ export async function stopProcess(
   let waitForGracefulExit = true;
   if (hostPlatform === "win32") {
     if (gracefulOnly) {
-      throw new Error("Graceful-only shutdown is not supported for Windows local services.");
+      throw new Error(
+        "Graceful-only shutdown is not supported for Windows local services.",
+      );
     }
     try {
       runTaskkill(["/PID", String(pid), "/T"], timeoutMs);
@@ -422,8 +424,20 @@ export async function stopProcess(
 }
 
 /** Stop a service without escalation. Failure preserves PID tracking and aborts capture/replacement. */
-export async function stopProcessGracefully(pid: number, label: string, timeoutMs = DAEMON_STOP_TIMEOUT_MS): Promise<boolean> {
-  const stopped = await stopProcess(pid, label, timeoutMs, undefined, undefined, undefined, true);
+export async function stopProcessGracefully(
+  pid: number,
+  label: string,
+  timeoutMs = DAEMON_STOP_TIMEOUT_MS,
+): Promise<boolean> {
+  const stopped = await stopProcess(
+    pid,
+    label,
+    timeoutMs,
+    undefined,
+    undefined,
+    undefined,
+    true,
+  );
   if (!stopped) throw new Error(`${label} did not stop gracefully.`);
   return stopped;
 }

@@ -57,12 +57,7 @@ describe("readLockfileAssistantAvatar", () => {
     process.env.XDG_DATA_HOME = path.join(tempDir, "data-home");
     lockfilePath = path.join(tempDir, "lockfile.json");
     instanceDir = path.join(tempDir, "instance");
-    avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     writeLockfileEntry({ instanceDir, gatewayPort: 1, daemonPort: 2 });
   });
 

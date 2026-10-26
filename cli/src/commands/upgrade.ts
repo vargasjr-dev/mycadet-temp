@@ -12,9 +12,9 @@ import {
   getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   captureImageRefs,
   GATEWAY_INTERNAL_PORT,
@@ -496,7 +496,10 @@ async function upgradeDocker(
         assistantPort,
       },
     };
-    saveLockfileAssistant(updatedEntry);
+    const saveResult = saveLockfileAssistant(updatedEntry);
+    if (!saveResult.ok) {
+      throw new Error(saveResult.error ?? "lockfile write failed");
+    }
     // Refresh the host-served web bundle before clients reload on completion.
     await restoreContainerAppServer(updatedEntry);
 
@@ -661,7 +664,10 @@ async function upgradeDocker(
               assistantPort,
             },
           };
-          saveLockfileAssistant(rolledBackEntry);
+          const saveResult1 = saveLockfileAssistant(rolledBackEntry);
+          if (!saveResult1.ok) {
+            throw new Error(saveResult1.error ?? "lockfile write failed");
+          }
 
           // Notify clients that the upgrade failed and rolled back.
           await broadcastUpgradeEvent(
@@ -889,7 +895,10 @@ async function upgradeLocal(
   }
 
   if (entryChanged) {
-    saveLockfileAssistant(entry);
+    const saveResult2 = saveLockfileAssistant(entry);
+    if (!saveResult2.ok) {
+      throw new Error(saveResult2.error ?? "lockfile write failed");
+    }
   }
 
   await broadcastUpgradeEvent(
@@ -910,7 +919,10 @@ async function upgradeLocal(
     runtimeInstallDir: runtimeInstall.installDir,
   };
   entry.resources = upgradedResources;
-  saveLockfileAssistant(entry);
+  const saveResult3 = saveLockfileAssistant(entry);
+  if (!saveResult3.ok) {
+    throw new Error(saveResult3.error ?? "lockfile write failed");
+  }
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   try {
@@ -972,7 +984,10 @@ async function upgradeLocal(
     );
     await stopLocalProcesses(upgradedResources);
     entry.resources = originalResources;
-    saveLockfileAssistant(entry);
+    const saveResult4 = saveLockfileAssistant(entry);
+    if (!saveResult4.ok) {
+      throw new Error(saveResult4.error ?? "lockfile write failed");
+    }
     if (backupPath) {
       const restored = await restoreBackup(
         adminUrl,

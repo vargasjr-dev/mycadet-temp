@@ -42,7 +42,10 @@ import {
   type RuntimeMessage,
   type StatusLine,
 } from "../lib/default-main-screen-formatting.js";
-export { formatTimestamp, type RuntimeMessage } from "../lib/default-main-screen-formatting.js";
+export {
+  formatTimestamp,
+  type RuntimeMessage,
+} from "../lib/default-main-screen-formatting.js";
 import type { ConversationMessageToolCall } from "@mycadet/assistant-api";
 import { statusEmoji, withStatusEmoji } from "../lib/status-emoji";
 import {
@@ -283,7 +286,11 @@ async function runtimeRequest<T>(
 interface MetaSlashResponse {
   kind: "clean" | "info";
   text: string;
-  contextUsage?: { tokens: number; maxTokens: number | null; fillRatio: number | null };
+  contextUsage?: {
+    tokens: number;
+    maxTokens: number | null;
+    fillRatio: number | null;
+  };
 }
 
 /**
@@ -665,18 +672,21 @@ interface MessageDisplayProps {
   assistantName?: string;
 }
 
-function MessageDisplay({ msg, assistantName }: MessageDisplayProps): ReactElement {
+function MessageDisplay({
+  msg,
+  assistantName,
+}: MessageDisplayProps): ReactElement {
   const time = formatTimestamp(msg.timestamp);
-  const defaultLabel = msg.role === "user"
-    ? "You:"
-    : assistantName?.trim()
-      ? `${assistantName.trim()}:`
-      : "Assistant:";
+  const defaultLabel =
+    msg.role === "user"
+      ? "You:"
+      : assistantName?.trim()
+        ? `${assistantName.trim()}:`
+        : "Assistant:";
   const label = msg.label ?? defaultLabel;
   const labelColor = msg.role === "user" ? "green" : "cyan";
   const parts = buildMessageParts(msg);
-  const head =
-    parts[0] && parts[0].kind === "text" ? parts[0] : undefined;
+  const head = parts[0] && parts[0].kind === "text" ? parts[0] : undefined;
   const rest = head ? parts.slice(1) : parts;
 
   return (
@@ -920,7 +930,11 @@ function DefaultMainScreen({
             if (!item) return <Text key={i}> </Text>;
             if (item.style === "title") {
               return (
-                <Text key={i} bold color={caps.isDumb ? undefined : accentColor}>
+                <Text
+                  key={i}
+                  bold
+                  color={caps.isDumb ? undefined : accentColor}
+                >
                   {item.text}
                 </Text>
               );
@@ -1248,9 +1262,9 @@ function ChatApp({
   const [healthStatus, setHealthStatus] = useState<string | undefined>(
     undefined,
   );
-  const [liveAssistantName, setLiveAssistantName] = useState<string | undefined>(
-    assistantName,
-  );
+  const [liveAssistantName, setLiveAssistantName] = useState<
+    string | undefined
+  >(assistantName);
   const [connectionState, setConnectionState] =
     useState<ConnectionState>("connecting");
   const [connectionError, setConnectionError] = useState<string | undefined>(
@@ -1631,7 +1645,9 @@ function ChatApp({
               case "tool_result": {
                 // Match by id first (robust for parallel/same-name calls),
                 // fall back to name + missing result for backwards compat.
-                const isTarget = (p: StreamingPart): p is {
+                const isTarget = (
+                  p: StreamingPart,
+                ): p is {
                   kind: "tool";
                   toolCall: ConversationMessageToolCall;
                 } =>
@@ -1906,7 +1922,8 @@ function ChatApp({
             const lines = printed.split("\n");
             h.addStatus(
               lines.length > 40
-                ? lines.slice(0, 40).join("\n") + `\n... (${lines.length - 40} more lines)`
+                ? lines.slice(0, 40).join("\n") +
+                    `\n... (${lines.length - 40} more lines)`
                 : printed,
             );
           } else {
@@ -1917,7 +1934,9 @@ function ChatApp({
               spaceIndex === -1 ? argString : argString.slice(0, spaceIndex)
             ).trim();
             const rawValue =
-              spaceIndex === -1 ? undefined : argString.slice(spaceIndex + 1).trim();
+              spaceIndex === -1
+                ? undefined
+                : argString.slice(spaceIndex + 1).trim();
 
             if (rawValue === undefined) {
               const config = await fetchRuntimeConfig(runtimeUrl, auth);

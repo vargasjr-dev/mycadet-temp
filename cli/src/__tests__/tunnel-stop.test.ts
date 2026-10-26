@@ -18,9 +18,9 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import { tunnel } from "../commands/tunnel.js";
 import {
   readRootProcesses,
-  saveLockfileAssistant,
   stampRootProcess,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 const originalArgv = process.argv;
 const originalLock = process.env.CADET_LOCKFILE_DIR;

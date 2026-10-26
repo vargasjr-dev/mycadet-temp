@@ -22,7 +22,7 @@ const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { AssistantClient } from "../lib/assistant-client.js";
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 
 const RUNTIME = "https://gw.example.com";

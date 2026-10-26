@@ -13,11 +13,8 @@ import { dirname, join, resolve } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import {
-  findAssistantByName,
-  saveLockfileAssistant,
-  setActiveAssistant,
-} from "./assistant-config";
+import { findAssistantByName, setActiveAssistant } from "./assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
@@ -1005,11 +1002,14 @@ export async function recreateDockerContainers(
   // Persist what the recreation decided (the gateway port in the runtime
   // url, the assistant port when it defaulted) so plain `docker start`
   // wakes work and clients reach the right endpoints.
-  saveLockfileAssistant({
+  const saveResult = saveLockfileAssistant({
     ...entry,
     runtimeUrl: `http://localhost:${gatewayPort}`,
     containerInfo: { ...info, assistantPort },
   });
+  if (!saveResult.ok) {
+    throw new Error(saveResult.error ?? "lockfile write failed");
+  }
 }
 
 /** The port of the CLI's own runtime url form (`http://localhost:7830`). */
@@ -1707,7 +1707,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       },
     };
     if (params.initialArchive) {
-      saveLockfileAssistant(dockerEntry);
+      const saveResult1 = saveLockfileAssistant(dockerEntry);
+      if (!saveResult1.ok) {
+        throw new Error(saveResult1.error ?? "lockfile write failed");
+      }
     }
     await startContainers(
       {
@@ -1729,7 +1732,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const containersUpAt = Date.now();
 
     emitProgress(5, 6, "Saving configuration...");
-    saveLockfileAssistant(dockerEntry);
+    const saveResult2 = saveLockfileAssistant(dockerEntry);
+    if (!saveResult2.ok) {
+      throw new Error(saveResult2.error ?? "lockfile write failed");
+    }
     setActiveAssistant(instanceName);
 
     if (params.initialArchive) {
@@ -1806,7 +1812,13 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (watch && repoRoot) {
-      saveLockfileAssistant({ ...dockerEntry, watcherPid: process.pid });
+      const saveResult3 = saveLockfileAssistant({
+        ...dockerEntry,
+        watcherPid: process.pid,
+      });
+      if (!saveResult3.ok) {
+        throw new Error(saveResult3.error ?? "lockfile write failed");
+      }
 
       const stopWatcher = startFileWatcher({
         bootstrapSecret,
@@ -1828,7 +1840,13 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log("\n🛑 Shutting down...");
           stopWatcher();
           await stopContainers(res);
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          const saveResult4 = saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
+          if (!saveResult4.ok) {
+            throw new Error(saveResult4.error ?? "lockfile write failed");
+          }
           log("✅ Docker instance stopped.");
           resolve();
         };
@@ -1841,7 +1859,13 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         // file watchers and let the process terminate.
         process.on("SIGTERM", () => {
           stopWatcher();
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          const saveResult5 = saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
+          if (!saveResult5.ok) {
+            throw new Error(saveResult5.error ?? "lockfile write failed");
+          }
           resolve();
         });
       });

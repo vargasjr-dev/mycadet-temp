@@ -6,8 +6,8 @@ import {
   getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   dockerResourceNames,
@@ -321,7 +321,10 @@ export async function wakeAssistant(
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    saveLockfileAssistant(entry);
+    const saveResult = saveLockfileAssistant(entry);
+    if (!saveResult.ok) {
+      throw new Error(saveResult.error ?? "lockfile write failed");
+    }
     bootstrapSecretBackfilled = true;
   }
 

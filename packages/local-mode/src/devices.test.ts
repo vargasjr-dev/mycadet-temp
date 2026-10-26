@@ -7,9 +7,15 @@ import {
 } from "./__tests__/helpers/child-process-mock";
 
 let lastChild: FakeChild;
-const spawnArgs: Array<[string, string[], { stdio?: unknown; windowsHide?: boolean }]> = [];
+const spawnArgs: Array<
+  [string, string[], { stdio?: unknown; windowsHide?: boolean }]
+> = [];
 const spawnMock = mock(
-  (command: string, args: string[], options: { stdio?: unknown; windowsHide?: boolean }) => {
+  (
+    command: string,
+    args: string[],
+    options: { stdio?: unknown; windowsHide?: boolean },
+  ) => {
     spawnArgs.push([command, args, options]);
     lastChild = new FakeChild();
     return lastChild;
@@ -246,7 +252,9 @@ describe("runDevicesList", () => {
     const result = await pending;
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toStartWith("CLI returned unparseable devices output");
+      expect(result.error).toStartWith(
+        "CLI returned unparseable devices output",
+      );
     }
   });
 
@@ -284,7 +292,16 @@ describe("runDevicesRevoke", () => {
     expect(await pending).toEqual({ ok: true });
     expect(spawnArgs[0]).toEqual([
       "bun",
-      ["run", "cli", "devices", "revoke", "hash-a", "asst-42", "--yes", "--json"],
+      [
+        "run",
+        "cli",
+        "devices",
+        "revoke",
+        "hash-a",
+        "asst-42",
+        "--yes",
+        "--json",
+      ],
       { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
     ]);
   });

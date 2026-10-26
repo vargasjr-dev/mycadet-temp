@@ -3,6 +3,7 @@ import * as backups from "../lib/backup-ops.js";
 import * as docker from "../lib/docker.js";
 import * as lifecycle from "../lib/upgrade-lifecycle.js";
 import * as config from "../lib/assistant-config.js";
+import * as localMode from "@mycadet/local-mode";
 import { mockCommands } from "./commands-mock.js";
 import * as loopback from "../lib/loopback-fetch.js";
 
@@ -10,7 +11,7 @@ const capture = spyOn(backups, "createBackup");
 const images = spyOn(docker, "captureImageRefs");
 const pull = spyOn(docker, "pullImage");
 const wake = spyOn(docker, "wakeContainers");
-const save = spyOn(config, "saveLockfileAssistant");
+const save = spyOn(localMode, "saveLockfileAssistant");
 const restore = spyOn(backups, "restoreBackup");
 const sleep = spyOn(docker, "sleepContainers");
 const stop = spyOn(docker, "stopContainers");
@@ -36,7 +37,10 @@ beforeEach(() => {
   pull.mockReset();
   wake.mockReset();
   save.mockReset();
-  save.mockImplementation(() => {});
+  save.mockImplementation(() => ({
+    ok: true,
+    lockfile: { assistants: [], activeAssistant: null },
+  }));
   restore.mockReset();
   sleep.mockReset();
   stop.mockReset();

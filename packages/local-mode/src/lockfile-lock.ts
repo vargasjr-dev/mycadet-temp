@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 export type LockfileLockResult<T> =
-  { ok: true; value: T } | { ok: false; error: string };
+  | { ok: true; value: T }
+  | { ok: false; error: string };
 
 /** Minimum age before a lock is even considered for breaking; the owner pid
  *  check is what decides, so a live-but-slow holder is never stolen from. */

@@ -66,8 +66,7 @@ export function tunnelHostForCloudUrl(cloudUrl: string): string {
   }
   try {
     return (
-      tunnelHostForCloudHost(new URL(cloudUrl).host) ??
-      DEFAULT_TUNNEL_HOST
+      tunnelHostForCloudHost(new URL(cloudUrl).host) ?? DEFAULT_TUNNEL_HOST
     );
   } catch {
     return DEFAULT_TUNNEL_HOST;

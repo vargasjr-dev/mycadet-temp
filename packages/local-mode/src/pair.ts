@@ -307,7 +307,6 @@ export function pairAssistant(
   }
 
   const writeResult = saveLockfileAssistant(
-    lockfilePaths,
     {
       assistantId: localId,
       // The label, not the bare host: two assistants behind one host differ

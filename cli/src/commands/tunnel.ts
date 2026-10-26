@@ -26,8 +26,7 @@ import {
   stopTunnelProcess,
   summarizeStartupFailure,
 } from "../lib/tunnel.js";
-import {
-} from "../lib/tunnels/ngrok.js";
+import {} from "../lib/tunnels/ngrok.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
 

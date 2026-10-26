@@ -16,9 +16,7 @@ describe("assistantBackupFilenamePattern", () => {
   test("does not match an assistant whose id extends this one", () => {
     const pattern = assistantBackupFilenamePattern("alpha");
     expect(pattern.test(`alpha-prod-pre-upgrade-${STAMP}.tar.gz`)).toBe(false);
-    expect(pattern.test(`alpha-prod-pre-teleport-${STAMP}.tar.gz`)).toBe(
-      false,
-    );
+    expect(pattern.test(`alpha-prod-pre-teleport-${STAMP}.tar.gz`)).toBe(false);
   });
 
   test("does not match a shorter id's backups from a longer id", () => {

@@ -18,6 +18,7 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import * as assistantConfig from "../lib/assistant-config.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as guardianToken from "../lib/guardian-token.js";
@@ -27,6 +28,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
 
 const realAssistantConfig = { ...assistantConfig };
+const realLocalMode = { ...localModeModule };
 const realBackupOps = { ...backupOps };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
@@ -45,8 +47,13 @@ const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
-  typeof assistantConfig.saveLockfileAssistant
->(() => {});
+  typeof localModeModule.saveLockfileAssistant
+>(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
+
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
+}));
 
 mock.module("../lib/assistant-config", () => ({
   ...realAssistantConfig,
@@ -54,7 +61,6 @@ mock.module("../lib/assistant-config", () => ({
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  saveLockfileAssistant: saveLockfileAssistantMock,
 }));
 
 const createBackupMock = mock<typeof backupOps.createBackup>(
@@ -248,6 +254,10 @@ beforeEach(() => {
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([entry]);
   saveLockfileAssistantMock.mockReset();
+  saveLockfileAssistantMock.mockImplementation(() => ({
+    ok: true,
+    lockfile: { assistants: [], activeAssistant: null },
+  }));
   createBackupMock.mockReset();
   createBackupMock.mockResolvedValue("/tmp/local-pre-upgrade.tar.gz");
   pruneOldBackupsMock.mockReset();
@@ -308,6 +318,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config", () => realAssistantConfig);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);

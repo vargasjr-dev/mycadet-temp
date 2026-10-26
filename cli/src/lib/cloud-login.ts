@@ -12,10 +12,8 @@ import { createServer } from "http";
 import type { AddressInfo } from "net";
 
 import { isCloudHome } from "./cloud-values.js";
-import {
-  resolveAssistant,
-  saveLockfileAssistant,
-} from "./assistant-config.js";
+import { resolveAssistant } from "./assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { resolveAssistantApiKeyForInjection } from "./assistant-api-key-resolution.js";
 import { computeDeviceId } from "./guardian-token.js";
 import { openBrowser } from "./open-browser.js";
@@ -288,11 +286,7 @@ export async function workosPkceLogin(cloudUrl: string): Promise<string> {
       code,
       verifier,
     });
-    return await exchangeAccessTokenForSession(
-      cloudUrl,
-      clientId,
-      accessToken,
-    );
+    return await exchangeAccessTokenForSession(cloudUrl, clientId, accessToken);
   } finally {
     clearTimeout(timeout);
   }
@@ -363,7 +357,9 @@ export async function registerLocalAssistantWithPlatform(
 
   const gatewayUrl = entry.runtimeUrl;
   if (!gatewayUrl) {
-    log(`Assistant '${entry.assistantId}' has no recorded gateway URL; skipping credential injection.`);
+    log(
+      `Assistant '${entry.assistantId}' has no recorded gateway URL; skipping credential injection.`,
+    );
     return;
   }
 
@@ -371,7 +367,10 @@ export async function registerLocalAssistantWithPlatform(
   const clientInstallationId = computeDeviceId();
   const [assistantVersion, ingressUrl] = await Promise.all([
     fetchCurrentVersion(gatewayUrl),
-    fetchAssistantIngressUrl(gatewayUrl, options.bearerToken ?? entry.bearerToken),
+    fetchAssistantIngressUrl(
+      gatewayUrl,
+      options.bearerToken ?? entry.bearerToken,
+    ),
   ]);
   const cloudUrl = getCloudUrl();
   const registration = await ensureSelfHostedLocalRegistration(
@@ -384,12 +383,15 @@ export async function registerLocalAssistantWithPlatform(
     cloudUrl,
     ingressUrl,
   );
-  saveLockfileAssistant({
+  const saveResult = saveLockfileAssistant({
     ...entry,
     cloudAssistantId: registration.assistant.id,
     cloudBaseUrl: cloudUrl,
     cloudOrganizationId: orgId,
   });
+  if (!saveResult.ok) {
+    throw new Error(saveResult.error ?? "lockfile write failed");
+  }
   log(
     `Registered assistant: ${registration.assistant.name} (${registration.assistant.id})`,
   );

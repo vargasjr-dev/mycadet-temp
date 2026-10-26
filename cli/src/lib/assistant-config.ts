@@ -9,7 +9,7 @@ import {
   readLockfile,
   readRawLockfile,
   resolveConfigHomes,
-  saveLockfileAssistant as saveAssistantEntry,
+  saveLockfileAssistant,
   withLockfileLock,
 } from "@mycadet/local-mode";
 import {
@@ -440,20 +440,6 @@ export function extractHostFromEntry(entry: LockfileAssistant): string {
   }
 }
 
-export function saveLockfileAssistant(entry: LockfileAssistant): void {
-  // The package's save is the one assistant write (the host-side pairing
-  // flow shares it): same advisory lock, merge-upsert semantics. Complete
-  // CLI entries merge to the same result a replace would produce, and the
-  // registry keeps no ordering contract (loadLatestAssistant sorts by
-  // hatchedAt; targeting goes by active/id).
-  const result = saveAssistantEntry(
-    [getLockfilePath(getCurrentEnvironment())],
-    entry,
-    undefined,
-  );
-  if (!result.ok) throw new Error(result.error ?? "lockfile write failed");
-}
-
 /**
  * The client-minted uuid this CLI addresses the assistant's chat
  * conversation by (web's temp-client-id pattern: clients/web
@@ -464,7 +450,10 @@ export function saveLockfileAssistant(entry: LockfileAssistant): void {
 export function resolveConversationKey(entry: LockfileAssistant): string {
   if (entry.conversationKey) return entry.conversationKey;
   const minted = crypto.randomUUID();
-  saveLockfileAssistant({ ...entry, conversationKey: minted });
+  const result = saveLockfileAssistant({ ...entry, conversationKey: minted });
+  if (!result.ok) {
+    throw new Error(result.error ?? "lockfile write failed");
+  }
   return minted;
 }
 
@@ -549,4 +538,3 @@ export function getLockfilePlatformBaseUrl(): string | undefined {
   if (typeof url === "string" && url.trim()) return url.trim();
   return undefined;
 }
-

@@ -136,7 +136,10 @@ export function pipeToLogFile(
 }
 
 /** Runtime output belongs to the instance, alongside its service state. */
-export function openRuntimeLogFile(instanceDir: string, service: "assistant" | "gateway"): number | "ignore" {
+export function openRuntimeLogFile(
+  instanceDir: string,
+  service: "assistant" | "gateway",
+): number | "ignore" {
   try {
     const dir = join(instanceDir, "logs");
     mkdirSync(dir, { recursive: true });

@@ -14,11 +14,11 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   allocateLocalResources,
   findAssistantByName,
   getLocalInstanceDir,
-  saveLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -357,7 +357,12 @@ export async function hatchLocal(
       };
 
       reporter.progress(5, 6, "Saving configuration...");
-      saveLockfileAssistant(localEntry);
+      const saveResult = saveLockfileAssistant(localEntry);
+      if (!saveResult.ok) {
+        throw new Error(
+          saveResult.error ?? "Failed to save the assistant lockfile entry.",
+        );
+      }
       setActiveAssistant(instanceName);
 
       return { resources, runtimeUrl, loopbackUrl, bootstrapSecret };

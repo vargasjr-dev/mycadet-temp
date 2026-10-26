@@ -21,9 +21,7 @@ import { homedir, tmpdir } from "node:os";
 import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
-import {
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { type LockfileAssistant } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";

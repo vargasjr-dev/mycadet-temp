@@ -88,17 +88,19 @@ function stubPairingGateway(
   calls: Array<[string, RequestInit | undefined]>,
   baseUrl = PUBLIC_URL,
 ): void {
-  globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
-    calls.push([url, init]);
-    if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
-      return challengeResponse(baseUrl);
-    }
-    if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
-      return approvalResponse(baseUrl);
-    }
-    return new Response("not found", { status: 404 });
-  });
+  globalThis.fetch = withPreconnect(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push([url, init]);
+      if (url === `${LOCAL_URL}/v1/remote-web/pairing-challenge`) {
+        return challengeResponse(baseUrl);
+      }
+      if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
+        return approvalResponse(baseUrl);
+      }
+      return new Response("not found", { status: 404 });
+    },
+  );
 }
 
 const INSTANCE_DIR = join(testDir, "instance");
@@ -531,21 +533,23 @@ describe("pair command", () => {
 
     const calls: Array<[string, RequestInit | undefined]> = [];
     const origFetch = globalThis.fetch;
-    globalThis.fetch = withPreconnect(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input);
-      calls.push([url, init]);
-      if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
-        return new Response(
-          JSON.stringify({
-            status: "approved",
-            verificationUri: "https://abc123.ngrok.app/assistant/pair",
-            expiresAt: "2026-06-04T00:10:00.000Z",
-          }),
-          { status: 200, headers: { "content-type": "application/json" } },
-        );
-      }
-      return new Response("not found", { status: 404 });
-    });
+    globalThis.fetch = withPreconnect(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        calls.push([url, init]);
+        if (url === `${LOCAL_URL}/v1/remote-web/pairing-verification`) {
+          return new Response(
+            JSON.stringify({
+              status: "approved",
+              verificationUri: "https://abc123.ngrok.app/assistant/pair",
+              expiresAt: "2026-06-04T00:10:00.000Z",
+            }),
+            { status: 200, headers: { "content-type": "application/json" } },
+          );
+        }
+        return new Response("not found", { status: 404 });
+      },
+    );
 
     const logs: string[] = [];
     const logSpy = spyOn(console, "log").mockImplementation(
@@ -583,11 +587,7 @@ describe("pair command", () => {
 
   test("buildAppConnectUrl composes and encodes the connect link", () => {
     expect(
-      buildAppConnectUrl(
-        "cadet",
-        "https://pair.example.ts.net",
-        "device-code",
-      ),
+      buildAppConnectUrl("cadet", "https://pair.example.ts.net", "device-code"),
     ).toBe(
       "cadet://connect?url=https%3A%2F%2Fpair.example.ts.net&code=device-code",
     );
@@ -870,9 +870,7 @@ describe("pair command", () => {
     // Custom entries mint over the gateway's loopback HTTP route; the
     // gateway self-sources the advertised URL from its own workspace.
     expect(
-      calls.some(([url]) =>
-        url.endsWith("/v1/remote-web/pairing-challenge"),
-      ),
+      calls.some(([url]) => url.endsWith("/v1/remote-web/pairing-challenge")),
     ).toBe(true);
     expect(
       calls.some(([url]) =>

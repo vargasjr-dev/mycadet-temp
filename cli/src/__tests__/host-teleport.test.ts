@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   getLocalInstanceDir,
   type LockfileAssistant,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
   TeleportRecoveryError,

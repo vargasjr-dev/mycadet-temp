@@ -27,9 +27,9 @@ import {
   setActiveAssistant,
   getActiveAssistant,
   removeLockfileAssistant,
-  saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DEFAULT_DAEMON_PORT, DEFAULT_GATEWAY_PORT } from "../lib/constants.js";
 import { mockOsHomedir } from "./helpers/os-mock.js";
 

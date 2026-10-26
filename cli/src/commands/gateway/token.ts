@@ -5,8 +5,8 @@ import { getGatewayUrl } from "../../lib/runtime-url.js";
 import {
   type LockfileAssistant,
   resolveTargetAssistant,
-  saveLockfileAssistant,
 } from "../../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -48,7 +48,10 @@ async function repairGuardianCredential(
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    saveLockfileAssistant(entry);
+    const saveResult = saveLockfileAssistant(entry);
+    if (!saveResult.ok) {
+      throw new Error(saveResult.error ?? "lockfile write failed");
+    }
   }
 
   const maxAttempts = 3;

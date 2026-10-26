@@ -18,13 +18,12 @@ import { dirname, join, posix, resolve } from "node:path";
 import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
-import type { LocalAssistantResources } from "@mycadet/local-mode";
-import type { LockfileAssistant } from "./assistant-config.js";
 import {
-  getDaemonPidPath,
   saveLockfileAssistant,
-  getLocalInstanceDir,
-} from "./assistant-config.js";
+  type LocalAssistantResources,
+} from "@mycadet/local-mode";
+import type { LockfileAssistant } from "./assistant-config.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";

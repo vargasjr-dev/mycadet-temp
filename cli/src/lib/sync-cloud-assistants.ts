@@ -17,8 +17,8 @@ import { isCloudHome } from "./cloud-values.js";
 import {
   loadAllAssistants,
   removeLockfileAssistant,
-  saveLockfileAssistant,
 } from "./assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   fetchCurrentUser,
   fetchCloudAssistants,
@@ -129,20 +129,26 @@ export async function syncCloudAssistants(
     const nameFields = assistantName ? { name: assistantName } : {};
     if (!existing) {
       log?.(`Adding ${pa.name || pa.id} to lockfile`);
-      saveLockfileAssistant({
+      const saveResult = saveLockfileAssistant({
         assistantId: pa.id,
         ...nameFields,
         runtimeUrl: getCloudUrl(),
         cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       });
+      if (!saveResult.ok) {
+        throw new Error(saveResult.error ?? "lockfile write failed");
+      }
       added++;
     } else if (assistantName && existing.name !== assistantName) {
       log?.(`Updating ${pa.id} name to ${assistantName}`);
-      saveLockfileAssistant({
+      const saveResult1 = saveLockfileAssistant({
         ...existing,
         name: assistantName,
       });
+      if (!saveResult1.ok) {
+        throw new Error(saveResult1.error ?? "lockfile write failed");
+      }
       updated++;
     }
   }

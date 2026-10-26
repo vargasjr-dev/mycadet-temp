@@ -32,7 +32,11 @@ const containers = {
   gateway: names.gatewayContainer,
   "credential-executor": names.cesContainer,
 };
-const services: Array<keyof typeof containers> = ["assistant", "gateway", "credential-executor"];
+const services: Array<keyof typeof containers> = [
+  "assistant",
+  "gateway",
+  "credential-executor",
+];
 const rootContainer = {
   workspace: names.assistantContainer,
   "gateway-security": names.gatewayContainer,
@@ -105,10 +109,7 @@ beforeEach(async () => {
   await packRoot(join(directory, "source"), archive);
   await packRoot(join(directory, "original"), recovery);
   states = new Map(
-    services.map((service) => [
-      containers[service],
-      inspection(service),
-    ]),
+    services.map((service) => [containers[service], inspection(service)]),
   );
   failReadiness = false;
   failEveryWrite = false;
@@ -152,7 +153,9 @@ beforeEach(async () => {
     (args) => args[0] === "create",
     ({ args }) => {
       const container = args[args.indexOf("--name") + 1]!;
-      const service = services.find((service) => containers[service] === container)!;
+      const service = services.find(
+        (service) => containers[service] === container,
+      )!;
       const state = inspection(service);
       state.Config.Env = args.flatMap((value, index) =>
         value === "-e" ? [args[index + 1]!] : [],
@@ -187,10 +190,7 @@ beforeEach(async () => {
     (args) => args[0] === "cp",
     async ({ args }) => {
       const root = STATE_ROOTS.find((root) => args[1]!.includes(`:/${root}/`))!;
-      expect(
-        states.get(rootContainer[root])!.State
-          .Running,
-      ).toBe(false);
+      expect(states.get(rootContainer[root])!.State.Running).toBe(false);
       await cp(join(directory, "volumes", root), args[2]!, { recursive: true });
       return {};
     },

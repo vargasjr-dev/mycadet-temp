@@ -18,9 +18,13 @@ let lockfilePath: string;
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "lockfile-test-"));
   lockfilePath = path.join(dir, "lockfile.json");
+  // The save resolves its paths from the environment; tests point it at the
+  // per-test tmp dir.
+  process.env.CADET_LOCKFILE_DIR = dir;
 });
 
 afterEach(() => {
+  delete process.env.CADET_LOCKFILE_DIR;
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -128,11 +132,7 @@ describe("isPairedLockfileEntry", () => {
 
 describe("saveLockfileAssistant", () => {
   test("rejects an assistant with no id", () => {
-    const result = saveLockfileAssistant(
-      [lockfilePath],
-      { cloud: "local" },
-      undefined,
-    );
+    const result = saveLockfileAssistant({ cloud: "local" }, undefined);
     expect(result).toEqual({
       ok: false,
       status: 400,
@@ -157,7 +157,6 @@ describe("saveLockfileAssistant", () => {
     });
 
     const result = saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_new", cloud: "local", runtimeUrl: "http://new" },
       "asst_new",
     );
@@ -195,7 +194,6 @@ describe("saveLockfileAssistant", () => {
     });
 
     saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
     );
@@ -226,7 +224,6 @@ describe("saveLockfileAssistant", () => {
     writeOnDisk({ activeAssistant: "asst_1", assistants: [entry] });
 
     const result = saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
     );
@@ -253,7 +250,6 @@ describe("saveLockfileAssistant", () => {
     });
 
     const result = saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
     );
@@ -520,7 +516,6 @@ describe("lockfile writers under lock contention", () => {
     holdLock();
 
     const result = saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_2", cloud: "local" },
       undefined,
     );
