@@ -1,10 +1,5 @@
 import { useAuthStore } from "@/stores/auth-store";
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import {
-  hasGatewayAssistant,
-  isLocalClient,
-  isServedGatewayRuntime,
-} from "@/lib/local-mode";
+import { isLocalClient } from "@/lib/local-mode";
 import {
   isSelectedAssistantOnboarded,
   userHasOnboardedAssistant,
@@ -21,17 +16,8 @@ export function buildNavigationState(
   // The persisted key rather than the store slice: this runs inside route
   // middleware, before the store has necessarily reconciled a selection.
   const selectedAssistantId = readSelectedAssistantId();
-  const isRemoteGateway = isServedGatewayRuntime();
   return {
     isLocalClient: isLocalClient(),
-    isRemoteGateway,
-    remoteGatewayPublicPathPrefix: isRemoteGateway
-      ? remoteGatewayPublicPathPrefix()
-      : "",
-    // Whether this client's data plane is a gateway (served browser, or a
-    // local selection with a resolvable gateway) — machinery topology, not a
-    // session question: the web bundle holds no gateway session.
-    hasGatewayAssistant: hasGatewayAssistant(),
     hasAssistants: assistants.length > 0,
     cloudSession,
     userHasOnboardedAssistant: userHasOnboardedAssistant(assistants),

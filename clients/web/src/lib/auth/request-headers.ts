@@ -21,7 +21,7 @@
  * hand-attaches these headers — the central interceptor handles both
  * modes. This whole file is deleted once that lands.
  */
-import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
+import { getCsrfToken } from "@/lib/auth/csrf";
 import { getSelfHostedActorToken } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
@@ -80,7 +80,6 @@ export async function buildCadetMutatingHeaders(
   if (isElectron()) {
     return headers;
   }
-  await ensureCsrfCookie();
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     headers["X-CSRFToken"] = csrfToken;

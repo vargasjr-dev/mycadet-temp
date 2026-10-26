@@ -21,12 +21,10 @@ mock.module("@/lib/local-mode", () => ({
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
   isCadetCloudRemote: () => false,
   getSelfHostedActorToken: () => (mockGatewayTokenPresent ? "gw-token" : null),
-  hasGatewayAssistant: () => mockGatewayAuthMode,
 }));
 
 // Drive the gateway session off a flag (the slot's token is the credential).
 let mockGatewayTokenPresent = false;
-let mockGatewayAuthMode = false;
 
 // Clamp whenStoreState timeouts so hydration-timeout paths are testable
 // without real 5s waits; untimed waits and predicate semantics are the real
@@ -107,7 +105,6 @@ beforeEach(() => {
   hasAssistantsMock.mockImplementation(() => false);
   mockSelectedAssistant = undefined;
   mockGatewayTokenPresent = false;
-  mockGatewayAuthMode = false;
   revalidateMock.mockClear();
   liveRouter = null;
   useAuthStore.setState(initialAuthState, true);

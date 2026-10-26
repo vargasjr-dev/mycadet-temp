@@ -30,7 +30,7 @@ import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
+import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
@@ -446,7 +446,6 @@ function createInterceptor({
     // Clients authenticating via session cookie need to pass CSRF checks.
     // Electron authenticates via a session token header.
     if (!isElectron() && MUTATING_METHODS.has(request.method)) {
-      await ensureCsrfCookie();
       const csrfToken = getCsrfToken();
       if (csrfToken) {
         newRequest.headers.set("X-CSRFToken", csrfToken);
@@ -596,15 +595,16 @@ async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
 }
 
 function recoverGatewaySessionInPlace(): Promise<boolean> {
-  gw401RecoveryInFlight ??= (
+  gw401RecoveryInFlight ??=
     // The web bundle manages no gateway session: a served 401 has nothing
     // to recover in-place, so it flows to the error path.
-    isServedGatewayRuntime()
-      ? Promise.resolve(false)
-      : recoverLocalGatewaySessionInPlace()
-  ).finally(() => {
-    gw401RecoveryInFlight = null;
-  });
+    (
+      isServedGatewayRuntime()
+        ? Promise.resolve(false)
+        : recoverLocalGatewaySessionInPlace()
+    ).finally(() => {
+      gw401RecoveryInFlight = null;
+    });
   return gw401RecoveryInFlight;
 }
 

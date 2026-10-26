@@ -12,7 +12,7 @@
  * client agree.
  */
 
-import { getActiveAssistant, hasGatewayAssistant } from "@/lib/local-mode";
+import { getActiveAssistant, isServedGatewayRuntime } from "@/lib/local-mode";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   assistantsValidForOrg,
@@ -79,7 +79,11 @@ export function useGatedSelectedAssistantId(): string | null {
   useResolvedAssistantsStore.use.selectedAssistantId();
   useResolvedAssistantsStore.use.assistants();
   useResolvedAssistantsStore.use.assistantsHydrated();
-  return !hasGatewayAssistant() && organizationId
+  // The org-scoped selection is a platform-plane question: on the served
+  // gateway there is nothing to select (one assistant, the shell's). A
+  // local selection never survives the cloud-id filter downstream
+  // (toCloudAssistantId), so no local-plane check is needed here.
+  return !isServedGatewayRuntime() && organizationId
     ? resolveSelectedAssistantId(organizationId)
     : null;
 }

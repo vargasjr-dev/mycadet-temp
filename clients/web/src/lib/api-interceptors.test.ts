@@ -133,7 +133,6 @@ import {
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
 import { subscribe } from "@/lib/event-bus";
-import { hasGatewayAssistant } from "@/lib/local-mode";
 import { ApiError } from "@/utils/api-errors";
 import {
   getSelfHostedActorToken,
@@ -1344,19 +1343,16 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     // prime that inspects the connection mid-flight
     localGatewayUrlImpl = () => "http://127.0.0.1:9090";
     let ingressDuringPrime: string | null | undefined;
-    let gatewayAuthDuringPrime: boolean | undefined;
     primeGatewayWithRepairImpl = async () => {
       ingressDuringPrime = getSelfHostedIngressUrl();
-      gatewayAuthDuringPrime = hasGatewayAssistant();
       setSelfHostedConnection({ url: GATEWAY_URL, token: null });
     };
 
     // WHEN a 401 triggers recovery
     await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
 
-    // THEN the slot was still primed and the gateway data plane held throughout
+    // THEN the slot was still primed throughout
     expect(ingressDuringPrime).toBe(GATEWAY_URL);
-    expect(gatewayAuthDuringPrime).toBe(true);
   });
 
   test("replays a request whose bearer the slot has already moved past, without recovering", async () => {

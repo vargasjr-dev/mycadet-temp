@@ -365,7 +365,9 @@ export function getActiveAssistant(): LockfileAssistant | undefined {
 export function getLockfileAssistant(
   assistantId: string,
 ): LockfileAssistant | undefined {
-  return getServedLockfile().assistants.find((a) => a.assistantId === assistantId);
+  return getServedLockfile().assistants.find(
+    (a) => a.assistantId === assistantId,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -439,24 +441,6 @@ export function hasPairedGateway(
   assistant: LockfileAssistant | undefined,
 ): boolean {
   return !!assistant && expectsPairedGateway(assistant);
-}
-
-/**
- * Whether this client's data plane is a gateway: the served-gateway browser,
- * or a local client whose selected assistant carries a local or paired
- * gateway. The session vision's device side — such clients authenticate by
- * device (the trusted host's injected bearer, or the pairing slot's token),
- * never by user session.
- */
-export function hasGatewayAssistant(): boolean {
-  if (isServedGatewayRuntime()) {
-    return true;
-  }
-  if (!isLocalClient()) {
-    return false;
-  }
-  const assistant = getActiveAssistant();
-  return hasLocalGateway(assistant) || hasPairedGateway(assistant);
 }
 
 /**
