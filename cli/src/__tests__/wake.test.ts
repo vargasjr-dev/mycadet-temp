@@ -592,12 +592,12 @@ describe("cadet wake — app server restore", () => {
     process.argv = ["bun", "cadet", "wake", "local-assistant"];
     // The restore gate reads the root lockfile; keep it off the real one.
     lockfileDir = mkdtempSync(join(tmpdir(), "cadet-wake-lockfile-"));
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    process.env.XDG_CONFIG_HOME = lockfileDir;
   });
 
   afterEach(() => {
     rmSync(lockfileDir, { recursive: true, force: true });
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   });
 
   // The restore flow stamps the `app` entry when it establishes the edge,

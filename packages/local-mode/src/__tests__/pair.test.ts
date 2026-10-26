@@ -34,11 +34,11 @@ const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-pair-"));
-  lockfilePath = path.join(tmpDir, "lockfile.json");
+  // The save resolves its paths from the environment: XDG config home plus
+  // the production environment dir (the same file the threaded reads hit).
+  lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   configDir = path.join(tmpDir, "config");
-  // The save resolves its paths from the environment; tests point it at the
-  // per-test tmp dir (the same file the threaded reads hit).
-  process.env.CADET_LOCKFILE_DIR = tmpDir;
+  process.env.XDG_CONFIG_HOME = tmpDir;
   fetchCalls = [];
   respond = () => new Response(null, { status: 500 });
   globalThis.fetch = (async (
@@ -67,12 +67,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   globalThis.fetch = realFetch;
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
 const writeLockfile = (data: Record<string, unknown>): void => {
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
   fs.writeFileSync(lockfilePath, JSON.stringify(data));
 };
 
@@ -612,7 +613,7 @@ describe("pairAssistant", () => {
       // environment, so point it at the unwritable parent too.
       const notADir = path.join(tmpDir, "not-a-dir");
       fs.writeFileSync(notADir, "");
-      process.env.CADET_LOCKFILE_DIR = notADir;
+      process.env.XDG_CONFIG_HOME = notADir;
       const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
 
       const result = pairAssistant(
@@ -1429,7 +1430,7 @@ describe("pairingPoll", () => {
     // the environment, so point it at the unwritable parent too.
     const notADir = path.join(tmpDir, "not-a-dir");
     fs.writeFileSync(notADir, "");
-    process.env.CADET_LOCKFILE_DIR = notADir;
+    process.env.XDG_CONFIG_HOME = notADir;
     respond = () => json(200, approvedBody());
     const handle = await startFromLink();
 

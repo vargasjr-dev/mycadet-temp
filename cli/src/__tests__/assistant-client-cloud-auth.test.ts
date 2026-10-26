@@ -17,7 +17,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "client-cloud-auth-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
@@ -76,7 +75,6 @@ function orgResponse(): Response {
 
 describe("AssistantClient cloud-managed auth", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     // Tests share testDir, so a token saved by an earlier one must not leak.
     clearCloudToken();
@@ -84,11 +82,6 @@ describe("AssistantClient cloud-managed auth", () => {
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
-    if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
-    } else {
-      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
-    }
     if (ORIGINAL_CONFIG_HOME === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {

@@ -12,11 +12,11 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Create a temp directory and set CADET_LOCKFILE_DIR so the real
+// Create a temp directory and set XDG_CONFIG_HOME so the real
 // assistant-config module reads/writes the lockfile here instead of ~/.
 const testDir = mkdtempSync(join(tmpdir(), "sleep-command-test-"));
 const assistantRootDir = testDir;
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 const stopProcessByPidFileMock = mock(async () => true);
 const isProcessAliveMock = mock(
@@ -96,8 +96,9 @@ import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 // Write a lockfile entry so the real resolveTargetAssistant() finds our test
 // assistant without needing to mock the entire assistant-config module.
 function writeLockfile(extraEntryFields: Record<string, unknown> = {}): void {
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(testDir, "lockfile.json"),
+    join(testDir, "cadet", "lockfile.json"),
     JSON.stringify(
       {
         assistants: [
@@ -163,7 +164,7 @@ describe("sleep command", () => {
     // Reset per-test state: drop the lockfile and any lease file left behind.
     // assistantRootDir IS testDir now (state is flattened into the instance
     // dir), so wipe files rather than the directory itself.
-    rmSync(join(testDir, "lockfile.json"), { force: true });
+    rmSync(join(testDir, "cadet", "lockfile.json"), { force: true });
     rmSync(join(assistantRootDir, "active-call-leases.json"), { force: true });
     writeLockfile();
   });
@@ -171,7 +172,7 @@ describe("sleep command", () => {
   afterAll(() => {
     process.argv = originalArgv;
     rmSync(testDir, { recursive: true, force: true });
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   });
 
   test("refuses normal sleep while an active call lease exists", async () => {
@@ -397,7 +398,7 @@ describe("sleep command", () => {
   describe("--all", () => {
     function writeMultiAssistantLockfile(): void {
       writeFileSync(
-        join(testDir, "lockfile.json"),
+        join(testDir, "cadet", "lockfile.json"),
         JSON.stringify(
           {
             assistants: [
@@ -493,7 +494,7 @@ describe("sleep command", () => {
     });
 
     test("exits 1 when there is nothing to stop", async () => {
-      rmSync(join(testDir, "lockfile.json"), { force: true });
+      rmSync(join(testDir, "cadet", "lockfile.json"), { force: true });
       process.argv = ["bun", "cadet", "sleep", "--all"];
 
       const consoleError = spyOn(console, "error").mockImplementation(() => {});

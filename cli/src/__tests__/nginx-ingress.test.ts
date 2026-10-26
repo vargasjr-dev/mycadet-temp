@@ -1748,7 +1748,7 @@ describe("ensureAppServer", () => {
   const ASSISTANT_ID = "assistant-1";
   const REQUESTED_PORT = 7846;
   const originalIngressPort = process.env.CADET_NGINX_INGRESS_PORT;
-  const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+  const originalConfigHome = process.env.XDG_CONFIG_HOME;
   let lockfileDir: string;
 
   pinProductionEnvironment();
@@ -1758,7 +1758,7 @@ describe("ensureAppServer", () => {
     // Isolated lockfile dir so the assistant-name lookup never reads a real
     // machine lockfile.
     lockfileDir = makeWorkspace();
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    process.env.XDG_CONFIG_HOME = lockfileDir;
   });
 
   afterEach(() => {
@@ -1767,10 +1767,10 @@ describe("ensureAppServer", () => {
     } else {
       process.env.CADET_NGINX_INGRESS_PORT = originalIngressPort;
     }
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
     } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
     }
   });
 
@@ -1779,8 +1779,9 @@ describe("ensureAppServer", () => {
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
+    mkdirSync(join(lockfileDir, "cadet"), { recursive: true });
     writeFileSync(
-      join(lockfileDir, "lockfile.json"),
+      join(lockfileDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -1862,9 +1863,10 @@ describe("ensureAppServer", () => {
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const writeLockfile = (name: string) =>
-      writeFileSync(
-        join(lockfileDir, "lockfile.json"),
+    const writeLockfile = (name: string) => {
+      mkdirSync(join(lockfileDir, "cadet"), { recursive: true });
+      return writeFileSync(
+        join(lockfileDir, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [
             {
@@ -1878,6 +1880,7 @@ describe("ensureAppServer", () => {
           activeAssistant: ASSISTANT_ID,
         }),
       );
+    };
     writeLockfile("Homelab");
 
     const first = await ensureAppServer({

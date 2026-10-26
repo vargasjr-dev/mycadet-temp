@@ -18,11 +18,11 @@ const testDir = realpathSync(
 process.env.CADET_WORKSPACE_DIR = testDir;
 // The lockfile writes resolve from the environment (the package's one save);
 // point them at the same temp workspace so no test touches production state.
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 afterAll(() => {
   delete process.env.CADET_WORKSPACE_DIR;
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   try {
     rmSync(testDir, { recursive: true, force: true });
   } catch {

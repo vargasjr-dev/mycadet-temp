@@ -510,11 +510,7 @@ async function recoverFromArchive(name: string): Promise<void> {
   entry.guardianBootstrapSecret = bootstrapSecret;
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
-  const saveResult = saveLockfileAssistant(entry);
-  if (!saveResult.ok) {
-    throw new Error(saveResult.error ?? "lockfile write failed");
-  }
-
+  saveLockfileAssistant(entry);
   // Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.

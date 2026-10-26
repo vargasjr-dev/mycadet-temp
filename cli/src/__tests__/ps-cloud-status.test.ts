@@ -16,7 +16,7 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-ps-platform-status-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 // ---------------------------------------------------------------------------
 // Mocks — set up before importing the command under test. All spies are

@@ -357,12 +357,7 @@ export async function hatchLocal(
       };
 
       reporter.progress(5, 6, "Saving configuration...");
-      const saveResult = saveLockfileAssistant(localEntry);
-      if (!saveResult.ok) {
-        throw new Error(
-          saveResult.error ?? "Failed to save the assistant lockfile entry.",
-        );
-      }
+      saveLockfileAssistant(localEntry);
       setActiveAssistant(instanceName);
 
       return { resources, runtimeUrl, loopbackUrl, bootstrapSecret };

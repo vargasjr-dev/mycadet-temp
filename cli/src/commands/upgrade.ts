@@ -496,10 +496,7 @@ async function upgradeDocker(
         assistantPort,
       },
     };
-    const saveResult = saveLockfileAssistant(updatedEntry);
-    if (!saveResult.ok) {
-      throw new Error(saveResult.error ?? "lockfile write failed");
-    }
+    saveLockfileAssistant(updatedEntry);
     // Refresh the host-served web bundle before clients reload on completion.
     await restoreContainerAppServer(updatedEntry);
 
@@ -664,11 +661,7 @@ async function upgradeDocker(
               assistantPort,
             },
           };
-          const saveResult1 = saveLockfileAssistant(rolledBackEntry);
-          if (!saveResult1.ok) {
-            throw new Error(saveResult1.error ?? "lockfile write failed");
-          }
-
+          saveLockfileAssistant(rolledBackEntry);
           // Notify clients that the upgrade failed and rolled back.
           await broadcastUpgradeEvent(
             gatewayUrl,
@@ -895,10 +888,7 @@ async function upgradeLocal(
   }
 
   if (entryChanged) {
-    const saveResult2 = saveLockfileAssistant(entry);
-    if (!saveResult2.ok) {
-      throw new Error(saveResult2.error ?? "lockfile write failed");
-    }
+    saveLockfileAssistant(entry);
   }
 
   await broadcastUpgradeEvent(
@@ -919,10 +909,7 @@ async function upgradeLocal(
     runtimeInstallDir: runtimeInstall.installDir,
   };
   entry.resources = upgradedResources;
-  const saveResult3 = saveLockfileAssistant(entry);
-  if (!saveResult3.ok) {
-    throw new Error(saveResult3.error ?? "lockfile write failed");
-  }
+  saveLockfileAssistant(entry);
   console.log(`   Runtime installed: ${runtimeInstall.installDir}\n`);
 
   try {
@@ -984,10 +971,7 @@ async function upgradeLocal(
     );
     await stopLocalProcesses(upgradedResources);
     entry.resources = originalResources;
-    const saveResult4 = saveLockfileAssistant(entry);
-    if (!saveResult4.ok) {
-      throw new Error(saveResult4.error ?? "lockfile write failed");
-    }
+    saveLockfileAssistant(entry);
     if (backupPath) {
       const restored = await restoreBackup(
         adminUrl,

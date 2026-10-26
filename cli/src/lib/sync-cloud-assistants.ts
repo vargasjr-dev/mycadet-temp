@@ -129,26 +129,20 @@ export async function syncCloudAssistants(
     const nameFields = assistantName ? { name: assistantName } : {};
     if (!existing) {
       log?.(`Adding ${pa.name || pa.id} to lockfile`);
-      const saveResult = saveLockfileAssistant({
+      saveLockfileAssistant({
         assistantId: pa.id,
         ...nameFields,
         runtimeUrl: getCloudUrl(),
         cloud: "cloud",
         hatchedAt: new Date().toISOString(),
       });
-      if (!saveResult.ok) {
-        throw new Error(saveResult.error ?? "lockfile write failed");
-      }
       added++;
     } else if (assistantName && existing.name !== assistantName) {
       log?.(`Updating ${pa.id} name to ${assistantName}`);
-      const saveResult1 = saveLockfileAssistant({
+      saveLockfileAssistant({
         ...existing,
         name: assistantName,
       });
-      if (!saveResult1.ok) {
-        throw new Error(saveResult1.error ?? "lockfile write failed");
-      }
       updated++;
     }
   }

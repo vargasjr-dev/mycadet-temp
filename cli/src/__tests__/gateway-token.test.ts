@@ -7,8 +7,7 @@
  *
  * Self-heal: a spent credential (401 — expired/revoked refresh token) or a
  * missing token file (404) triggers an in-place re-provision via the
- * gateway's bootstrap reset — the same machinery `cadet wake
- * --repair-guardian` runs. It must NEVER suggest `cadet hatch`: hatching
+ * gateway's bootstrap reset. It must NEVER suggest `cadet hatch`: hatching
  * creates a different assistant.
  */
 import {
@@ -31,7 +30,6 @@ import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 import { withPreconnect } from "./helpers/http.js";
 
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ENVIRONMENT = process.env.CADET_ENVIRONMENT;
 const ORIGINAL_ARGV = [...process.argv];
@@ -119,7 +117,6 @@ const FRESH_LEASE = {
 describe("gateway token command", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "gateway-token-test-"));
-    process.env.CADET_LOCKFILE_DIR = tempHome;
     process.env.XDG_CONFIG_HOME = tempHome;
     delete process.env.CADET_ENVIRONMENT;
   });
@@ -127,9 +124,6 @@ describe("gateway token command", () => {
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = REAL_FETCH;
-    if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
     if (ORIGINAL_ENVIRONMENT === undefined)
@@ -238,7 +232,7 @@ describe("gateway token command", () => {
 
     expect(exited).toBe(true);
     expect(errors).toContain("Guardian token could not be re-provisioned.");
-    expect(errors).toContain("--repair-guardian");
+    expect(errors).toContain("gateway token refresh");
     expect(errors).toContain("CADET_REFRESH_ERROR=");
     expect(`${logs}\n${errors}`).not.toContain("hatch");
   });

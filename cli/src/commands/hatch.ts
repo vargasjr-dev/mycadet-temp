@@ -289,15 +289,12 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const cloudUrl = getCloudUrl();
 
-  const saveResult = saveLockfileAssistant({
+  saveLockfileAssistant({
     assistantId: result.id,
     runtimeUrl: cloudUrl,
     cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });
-  if (!saveResult.ok) {
-    throw new Error(saveResult.error ?? "lockfile write failed");
-  }
   setActiveAssistant(result.id);
 
   console.log(

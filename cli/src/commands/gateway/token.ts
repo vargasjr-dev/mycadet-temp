@@ -48,10 +48,7 @@ async function repairGuardianCredential(
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    const saveResult = saveLockfileAssistant(entry);
-    if (!saveResult.ok) {
-      throw new Error(saveResult.error ?? "lockfile write failed");
-    }
+    saveLockfileAssistant(entry);
   }
 
   const maxAttempts = 3;
@@ -127,7 +124,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`${cliCommand()} wake --repair-guardian\` (or \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again) after restoring gateway connectivity.`,
+        `Run \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);

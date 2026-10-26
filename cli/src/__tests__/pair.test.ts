@@ -8,15 +8,15 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// Real assistant-config reads the lockfile from CADET_LOCKFILE_DIR. Pin the
+// Real assistant-config reads the lockfile from XDG_CONFIG_HOME. Pin the
 // environment too: the lockfile filename is environment-dependent, and a dev
 // machine's persisted default environment would otherwise redirect the lookup.
 const testDir = mkdtempSync(join(tmpdir(), "pair-command-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 const originalEnvironment = process.env.CADET_ENVIRONMENT;
 process.env.CADET_ENVIRONMENT = "production";
 
@@ -106,8 +106,9 @@ function stubPairingGateway(
 const INSTANCE_DIR = join(testDir, "instance");
 
 function writeLockfile(): void {
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(testDir, "lockfile.json"),
+    join(testDir, "cadet", "lockfile.json"),
     JSON.stringify({
       assistants: [
         {
@@ -144,7 +145,7 @@ describe("pair command", () => {
 
   afterAll(() => {
     rmSync(testDir, { recursive: true, force: true });
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
     if (originalEnvironment === undefined) {
       delete process.env.CADET_ENVIRONMENT;
     } else {
@@ -335,7 +336,7 @@ describe("pair command", () => {
   test("resolves an unquoted multi-word display name", async () => {
     // Assistant whose display name has a space; passed as separate argv tokens.
     writeFileSync(
-      join(testDir, "lockfile.json"),
+      join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -416,7 +417,7 @@ describe("pair command", () => {
 
   test("rejects an unknown --flag even alongside a multi-word positional name", async () => {
     writeFileSync(
-      join(testDir, "lockfile.json"),
+      join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -469,7 +470,7 @@ describe("pair command", () => {
 
   test("advertises the saved ingress url even when the runtime url is loopback", async () => {
     writeFileSync(
-      join(testDir, "lockfile.json"),
+      join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -517,7 +518,7 @@ describe("pair command", () => {
 
   test("--web-approve approves a browser pairing code over loopback", async () => {
     writeFileSync(
-      join(testDir, "lockfile.json"),
+      join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {
@@ -828,7 +829,7 @@ describe("pair command", () => {
 
   test("a custom (ssh-managed) assistant pairs through the gateway's own advertised URL", async () => {
     writeFileSync(
-      join(testDir, "lockfile.json"),
+      join(testDir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [
           {

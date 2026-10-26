@@ -16,11 +16,11 @@ beforeEach(() => {
   configDir = path.join(tmpDir, "config");
   // The save resolves its paths from the environment; tests point it at the
   // per-test tmp dir.
-  process.env.CADET_LOCKFILE_DIR = tmpDir;
+  process.env.XDG_CONFIG_HOME = tmpDir;
 });
 
 afterEach(() => {
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
@@ -155,7 +155,7 @@ describe("unpairAssistant", () => {
         JSON.stringify({ accessToken: "tok" }),
       );
     } finally {
-      process.env.CADET_LOCKFILE_DIR = tmpDir;
+      process.env.XDG_CONFIG_HOME = tmpDir;
     }
   });
 

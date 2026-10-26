@@ -808,13 +808,7 @@ export async function performDockerRollback(
         assistantPort,
       },
     };
-    const saveResult = saveLockfileAssistant(updatedEntry);
-    if (!saveResult.ok) {
-      throw new Error(
-        saveResult.error ?? "Failed to save the upgraded assistant entry.",
-      );
-    }
-
+    saveLockfileAssistant(updatedEntry);
     // Notify clients that the rollback succeeded
     await broadcastUpgradeEvent(
       gatewayUrl,
@@ -967,14 +961,7 @@ export async function performDockerRollback(
               assistantPort,
             },
           };
-          const revertSave = saveLockfileAssistant(revertedEntry);
-          if (!revertSave.ok) {
-            throw new Error(
-              revertSave.error ??
-                "Failed to save the reverted assistant entry.",
-            );
-          }
-
+          saveLockfileAssistant(revertedEntry);
           await broadcastUpgradeEvent(
             gatewayUrl,
             entry.assistantId,

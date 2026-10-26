@@ -32,25 +32,19 @@ export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
 }
 
 export function resolveLockfilePaths(): string[] {
-  const lockfileDir = process.env.CADET_LOCKFILE_DIR?.trim();
-
+  const cadetEnv = resolveEnvironmentName();
   if (process.platform === "win32") {
-    const canonicalDir = lockfileDir ?? resolveConfigDir();
-    const canonical = joinLocalPath(canonicalDir, "lockfile.json");
-    if (resolveEnvironmentName() === PRODUCTION_ENVIRONMENT_NAME) {
+    const canonical = joinLocalPath(resolveConfigDir(), "lockfile.json");
+    if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
       return [canonical];
     }
     return [
       canonical,
-      joinLocalPath(
-        lockfileDir ?? resolveConfigDirPaths().at(-1)!,
-        "lockfile.json",
-      ),
+      joinLocalPath(resolveConfigDirPaths().at(-1)!, "lockfile.json"),
     ];
   }
 
-  const dir = lockfileDir ?? resolveConfigDir();
-  return [joinLocalPath(dir, "lockfile.json")];
+  return [joinLocalPath(resolveConfigDir(), "lockfile.json")];
 }
 
 export function resolveConfigDir(): string {

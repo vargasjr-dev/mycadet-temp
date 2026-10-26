@@ -297,13 +297,11 @@ export function removeLockfileAssistant(assistantId: string): void {
  * Per-env lockfile paths for enumerating OTHER environments' lockfiles —
  * the ambient resolvers read the current environment, so a caller walking
  * every seed composes each env's paths from the exported naming primitives.
- * `lockfileDirOverride` on the definition (the curated-test-list seam, and
- * `CADET_LOCKFILE_DIR` lifted by resolve.ts) still wins, matching the
- * ambient resolver's override handling.
+ * `lockfileDirOverride` on the definition (the curated-test-list seam)
+ * still wins, matching the ambient resolver's handling.
  */
 function lockfilePathsForEnv(env: EnvironmentDefinition): string[] {
-  const lockfileDir =
-    env.lockfileDirOverride ?? process.env.CADET_LOCKFILE_DIR?.trim();
+  const lockfileDir = env.lockfileDirOverride;
   if (lockfileDir) {
     return [joinLocalPath(lockfileDir, "lockfile.json")];
   }
@@ -450,10 +448,7 @@ export function extractHostFromEntry(entry: LockfileAssistant): string {
 export function resolveConversationKey(entry: LockfileAssistant): string {
   if (entry.conversationKey) return entry.conversationKey;
   const minted = crypto.randomUUID();
-  const result = saveLockfileAssistant({ ...entry, conversationKey: minted });
-  if (!result.ok) {
-    throw new Error(result.error ?? "lockfile write failed");
-  }
+  saveLockfileAssistant({ ...entry, conversationKey: minted });
   return minted;
 }
 

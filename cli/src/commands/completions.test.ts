@@ -23,17 +23,17 @@ const COMMAND_NAMES = [
 
 describe("completeCadet", () => {
   let lockfileDir: string;
-  let prevLockfileDir: string | undefined;
+  let prevConfigHome: string | undefined;
 
   beforeEach(() => {
     lockfileDir = mkdtempSync(join(tmpdir(), "cadet-completions-"));
-    prevLockfileDir = process.env.CADET_LOCKFILE_DIR;
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    prevConfigHome = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = lockfileDir;
   });
 
   afterEach(() => {
-    if (prevLockfileDir === undefined) delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = prevLockfileDir;
+    if (prevConfigHome === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = prevConfigHome;
     rmSync(lockfileDir, { recursive: true, force: true });
   });
 

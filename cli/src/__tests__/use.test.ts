@@ -21,7 +21,7 @@ import { makeEntry } from "./helpers/lockfile-entry.js";
 const testDir = mkdtempSync(join(tmpdir(), "cli-use-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 
 let consoleLogSpy: ReturnType<typeof spyOn>;
 let consoleErrorSpy: ReturnType<typeof spyOn>;
@@ -30,9 +30,9 @@ function writeLockfile(
   entries: LockfileAssistant[],
   activeAssistant?: string,
 ): void {
-  mkdirSync(testDir, { recursive: true });
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(testDir, "lockfile.json"),
+    join(testDir, "cadet", "lockfile.json"),
     JSON.stringify(
       {
         assistants: entries,
@@ -46,8 +46,8 @@ function writeLockfile(
 
 describe("cadet use", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
-    rmSync(join(testDir, "lockfile.json"), { force: true });
+    process.env.XDG_CONFIG_HOME = testDir;
+    rmSync(join(testDir, "cadet", "lockfile.json"), { force: true });
     process.argv = ["bun", "cadet", "use"];
     process.exit = ((code?: number) => {
       throw new Error(`process.exit:${code}`);
@@ -64,10 +64,10 @@ describe("cadet use", () => {
   });
 
   afterAll(() => {
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
     } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
     }
     rmSync(testDir, { recursive: true, force: true });
   });

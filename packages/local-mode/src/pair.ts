@@ -306,24 +306,25 @@ export function pairAssistant(
     };
   }
 
-  const writeResult = saveLockfileAssistant(
-    {
-      assistantId: localId,
-      // The label, not the bare host: two assistants behind one host differ
-      // only in their path prefix, and a display name that dropped it would
-      // make them indistinguishable in a chooser.
-      name: name ?? `paired (${label})`,
-      runtimeUrl: credentials.gatewayUrl,
-      // No pairing flag is stored: paired-ness derives from this remote
-      // runtimeUrl, so lifecycle/status readers recognize the remote
-      // pairing without one. The cloud id the web resolver cached for an
-      // earlier target is dropped; the upsert merge would otherwise keep it
-      // and the resolver would never re-probe.
-      cloudAssistantId: undefined,
-    },
-    undefined,
-  );
-  if (!writeResult.ok) {
+  try {
+    saveLockfileAssistant(
+      {
+        assistantId: localId,
+        // The label, not the bare host: two assistants behind one host differ
+        // only in their path prefix, and a display name that dropped it would
+        // make them indistinguishable in a chooser.
+        name: name ?? `paired (${label})`,
+        runtimeUrl: credentials.gatewayUrl,
+        // No pairing flag is stored: paired-ness derives from this remote
+        // runtimeUrl, so lifecycle/status readers recognize the remote
+        // pairing without one. The cloud id the web resolver cached for an
+        // earlier target is dropped; the upsert merge would otherwise keep it
+        // and the resolver would never re-probe.
+        cloudAssistantId: undefined,
+      },
+      undefined,
+    );
+  } catch (error) {
     // The entry was not registered, so undo the token write (best-effort;
     // the write failure itself is what gets reported): restore the prior
     // token of a re-import, or delete the freshly written one.
@@ -337,7 +338,13 @@ export function pairAssistant(
     } catch {
       // Rollback failed; the reported write error already covers the outcome.
     }
-    return writeResult;
+    return {
+      ok: false,
+      status: 500,
+      error: `Failed to write the lockfile entry: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
   }
 
   return {

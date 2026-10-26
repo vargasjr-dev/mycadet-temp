@@ -321,10 +321,7 @@ export async function wakeAssistant(
   if (!bootstrapSecret) {
     bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
-    const saveResult = saveLockfileAssistant(entry);
-    if (!saveResult.ok) {
-      throw new Error(saveResult.error ?? "lockfile write failed");
-    }
+    saveLockfileAssistant(entry);
     bootstrapSecretBackfilled = true;
   }
 

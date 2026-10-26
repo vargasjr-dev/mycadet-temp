@@ -383,15 +383,12 @@ export async function registerLocalAssistantWithPlatform(
     cloudUrl,
     ingressUrl,
   );
-  const saveResult = saveLockfileAssistant({
+  saveLockfileAssistant({
     ...entry,
     cloudAssistantId: registration.assistant.id,
     cloudBaseUrl: cloudUrl,
     cloudOrganizationId: orgId,
   });
-  if (!saveResult.ok) {
-    throw new Error(saveResult.error ?? "lockfile write failed");
-  }
   log(
     `Registered assistant: ${registration.assistant.name} (${registration.assistant.id})`,
   );

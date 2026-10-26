@@ -18,7 +18,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "connect-import-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
@@ -144,7 +143,6 @@ describe("connect import", () => {
   let sleepSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     waits = [];
     // The command turns the poll cadence straight into a `Bun.sleep`. Freeze
@@ -167,11 +165,6 @@ describe("connect import", () => {
     setSystemTime();
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = originalFetch;
-    if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
-    } else {
-      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
-    }
     if (ORIGINAL_CONFIG_HOME === undefined) {
       delete process.env.XDG_CONFIG_HOME;
     } else {

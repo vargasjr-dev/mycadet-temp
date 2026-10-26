@@ -55,7 +55,6 @@ const XDG_ENV_VARS = [
   "APPDATA",
   "LOCALAPPDATA",
   "CADET_ENVIRONMENT",
-  "CADET_LOCKFILE_DIR",
 ] as const;
 
 describe("path helpers", () => {
@@ -145,12 +144,6 @@ describe("path helpers", () => {
       expect(getLockfilePath()).toBe(
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       );
-    });
-
-    test("CADET_LOCKFILE_DIR overrides the config dir", () => {
-      process.env.CADET_LOCKFILE_DIR = "/tmp/lock";
-      expect(getLockfilePath()).toBe("/tmp/lock/lockfile.json");
-      expect(getLockfilePaths()).toEqual(["/tmp/lock/lockfile.json"]);
     });
   });
 

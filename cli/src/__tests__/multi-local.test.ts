@@ -7,7 +7,7 @@ import { join } from "node:path";
 // Create a temp directory that acts as a fake home, so allocateLocalResources()
 // never touches the real ~/.cadet directory.
 const testDir = mkdtempSync(join(tmpdir(), "cli-multi-local-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 // Mock homedir() to return testDir — this isolates allocateLocalResources()
 // which uses homedir() directly for instance directory creation.
@@ -35,16 +35,19 @@ import { mockOsHomedir } from "./helpers/os-mock.js";
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
 });
 
 function writeLockfile(data: unknown): void {
-  writeFileSync(join(testDir, "lockfile.json"), JSON.stringify(data, null, 2));
+  writeFileSync(
+    join(testDir, "cadet", "lockfile.json"),
+    JSON.stringify(data, null, 2),
+  );
 }
 
 function readLockfileRaw(): Record<string, unknown> {
   return JSON.parse(
-    readFileSync(join(testDir, "lockfile.json"), "utf-8"),
+    readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8"),
   ) as Record<string, unknown>;
 }
 
@@ -63,7 +66,7 @@ const makeEntry = (
 
 function resetLockfile(): void {
   try {
-    rmSync(join(testDir, "lockfile.json"));
+    rmSync(join(testDir, "cadet", "lockfile.json"));
   } catch {
     // file may not exist
   }

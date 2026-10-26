@@ -8,7 +8,7 @@ import type { EnvironmentDefinition } from "@mycadet/environments";
 // Point lockfile operations at a temp directory before importing anything that
 // would otherwise resolve real on-host paths.
 const testDir = mkdtempSync(join(tmpdir(), "cli-orphan-detection-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import {
   detectOrphanedProcesses,
@@ -21,7 +21,7 @@ import {
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
 });
 
 function makeLocalEntry(

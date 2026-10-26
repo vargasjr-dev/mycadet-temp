@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -117,26 +118,21 @@ describe("cloud-client token path is env-scoped", () => {
 
 describe("getCloudUrl resolution order", () => {
   let tempLockDir: string;
-  let savedLockDir: string | undefined;
+  let savedConfigHome: string | undefined;
   let savedEnv: string | undefined;
   let savedCloudUrl: string | undefined;
 
   beforeEach(() => {
-    savedLockDir = process.env.CADET_LOCKFILE_DIR;
     savedEnv = process.env.CADET_ENVIRONMENT;
     savedCloudUrl = process.env.CADET_CLOUD_URL;
+    savedConfigHome = process.env.XDG_CONFIG_HOME;
     tempLockDir = mkdtempSync(join(tmpdir(), "cli-cloud-url-test-"));
-    process.env.CADET_LOCKFILE_DIR = tempLockDir;
+    process.env.XDG_CONFIG_HOME = tempLockDir;
     delete process.env.CADET_ENVIRONMENT;
     delete process.env.CADET_CLOUD_URL;
   });
 
   afterEach(() => {
-    if (savedLockDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
-    } else {
-      process.env.CADET_LOCKFILE_DIR = savedLockDir;
-    }
     if (savedEnv === undefined) {
       delete process.env.CADET_ENVIRONMENT;
     } else {
@@ -147,13 +143,19 @@ describe("getCloudUrl resolution order", () => {
     } else {
       process.env.CADET_CLOUD_URL = savedCloudUrl;
     }
+    if (savedConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = savedConfigHome;
+    }
     rmSync(tempLockDir, { recursive: true, force: true });
   });
 
   function writeLockfile(data: Record<string, unknown>): void {
     // CADET_ENVIRONMENT is unset → production env → config-dir lockfile.json.
+    mkdirSync(join(tempLockDir, "cadet"), { recursive: true });
     writeFileSync(
-      join(tempLockDir, "lockfile.json"),
+      join(tempLockDir, "cadet", "lockfile.json"),
       JSON.stringify(data, null, 2),
     );
   }

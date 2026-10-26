@@ -67,7 +67,7 @@ import { restore } from "../commands/restore.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-recover-test-"));
 const originalArgv = [...process.argv];
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 const originalXdgData = process.env.XDG_DATA_HOME;
 
 // Directories that getRetiredDir() will use when XDG_DATA_HOME is overridden
@@ -115,10 +115,10 @@ beforeEach(() => {
   homeSpy = spyOn(osModule, "homedir").mockReturnValue(join(testDir, "home"));
   mkdirSync(homedir(), { recursive: true });
   // Route lockfile and retired archives to the temp directory
-  process.env.CADET_LOCKFILE_DIR = testDir;
+  process.env.XDG_CONFIG_HOME = testDir;
   process.env.XDG_DATA_HOME = testDir;
   // Write an empty lockfile so saveLockfileAssistant has a dir to write to
-  mkdirSync(testDir, { recursive: true });
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
     resolveLockfilePaths()[0]!,
     JSON.stringify({ assistants: [] }) + "\n",
@@ -139,7 +139,7 @@ beforeEach(() => {
 afterEach(() => {
   homeSpy.mockRestore();
   process.argv = [...originalArgv];
-  process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+  process.env.XDG_CONFIG_HOME = originalConfigHome;
   process.env.XDG_DATA_HOME = originalXdgData;
   consoleLogSpy.mockRestore();
   consoleErrorSpy.mockRestore();
@@ -154,10 +154,10 @@ afterEach(() => {
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
   process.argv = [...originalArgv];
-  if (originalLockfileDir !== undefined) {
-    process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+  if (originalConfigHome !== undefined) {
+    process.env.XDG_CONFIG_HOME = originalConfigHome;
   } else {
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   }
   if (originalXdgData !== undefined) {
     process.env.XDG_DATA_HOME = originalXdgData;
