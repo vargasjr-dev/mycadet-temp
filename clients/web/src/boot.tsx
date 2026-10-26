@@ -22,7 +22,6 @@ import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
-import { setupOrganizationStore } from "@/stores/organization-store";
 import { createBrowserRouter } from "react-router";
 
 type Router = ReturnType<typeof createBrowserRouter>;
@@ -69,8 +68,6 @@ async function boot(router: Router) {
   } catch (error) {
     captureError(error, { context: "restore_pending_native_login" });
   }
-
-  setupOrganizationStore();
   // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
   // boot route is announced.

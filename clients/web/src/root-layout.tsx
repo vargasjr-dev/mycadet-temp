@@ -7,7 +7,6 @@ import { useAppTheme } from "@/hooks/use-app-theme";
 import { useDownloadFeedback } from "@/hooks/use-download-feedback";
 import { useEventBusInit } from "@/hooks/use-event-bus-init";
 import { useOpenUrlDirectives } from "@/hooks/use-open-url-directives";
-import { useGuardianRepairRoute } from "@/hooks/use-guardian-repair-route";
 import { useGlobalDeepLinkConsumer } from "@/hooks/use-global-deep-link-consumer";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-open";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
@@ -140,7 +139,6 @@ export function RootLayout() {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
   const { state: bootState } = useAssistantBootResolution();
-  useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
   // from any route — including setMainView("chat") calls made while the chat
