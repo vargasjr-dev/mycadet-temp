@@ -23,7 +23,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { parse } from "yaml";
 import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";

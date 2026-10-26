@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
-} from "@mycadet/service-contracts/ingress";
-import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
+import { stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
   TunnelProvider,

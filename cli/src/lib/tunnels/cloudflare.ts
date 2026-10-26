@@ -20,7 +20,6 @@ import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
 import {
-  clearIngressUrl,
   getDefaultWorkspaceDir,
   loadRawConfig,
   saveIngressUrl,

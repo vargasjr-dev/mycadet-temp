@@ -18,7 +18,6 @@ import {
   shouldClearIngressUrl,
   startTailscaleServe,
   stopTailscaleServe,
-  TAILSCALE_PROVIDER,
   type TailscaleCommandResult,
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";

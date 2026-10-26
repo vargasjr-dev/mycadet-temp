@@ -37,7 +37,6 @@ import type {
   ProviderMeta,
   ProviderTunnelResult,
 } from "../tunnel.js";
-import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
 const NGROK_DEFAULT_API_ADDR = "127.0.0.1:4040";
 const NGROK_API_URL = `http://${NGROK_DEFAULT_API_ADDR}/api/tunnels`;
@@ -822,23 +821,6 @@ export function hasWebhookIntegrationsConfigured(
   }
 }
 
-/**
- * Check whether a non-ngrok ingress URL is already configured (e.g. custom
- * domain or cloud deployment), meaning ngrok is not needed.
- */
-function hasNonNgrokIngressUrl(workspaceDir: string): boolean {
-  try {
-    const config = loadRawConfig(workspaceDir);
-    const parsed = IngressConfigSchema.safeParse(config.ingress);
-    const publicBaseUrl = parsed.success
-      ? parsed.data.publicBaseUrl
-      : undefined;
-    if (!publicBaseUrl) return false;
-    return !publicBaseUrl.includes("ngrok");
-  } catch {
-    return false;
-  }
-}
 
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
