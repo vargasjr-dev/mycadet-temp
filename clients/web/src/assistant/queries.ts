@@ -36,7 +36,7 @@ import {
 } from "@/lib/self-hosted/connection";
 import {
   getLocalAssistants,
-  isGatewaySessionLive,
+  hasGatewayAssistant,
   isServedGatewayRuntime,
   getActiveAssistant,
   hasLocalGateway,
@@ -205,7 +205,7 @@ export async function recheckAssistant(
   queryClient: QueryClient,
   assistantIdOverride?: string,
 ): Promise<GetAssistantResult | undefined> {
-  if (isGatewaySessionLive()) {
+  if (hasGatewayAssistant()) {
     applyGatewayAuthBoot();
     return queryClient.getQueryData(assistantQueryKey(null));
   }
@@ -254,7 +254,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
   const state = useMemo<AssistantResolutionState>(() => {
     // Gateway-auth mode resolves the assistant locally — the gateway issues
     // the session token directly and there is nothing to fetch.
-    if (isGatewaySessionLive()) {
+    if (hasGatewayAssistant()) {
       return { kind: "active", isLocal: true };
     }
     if (query.isPending) {
@@ -294,7 +294,7 @@ export function useAssistantBootResolution(): AssistantResolutionResult {
   // state. Re-runs when the selection changes so a newly connected assistant
   // takes over.
   useEffect(() => {
-    if (!isGatewaySessionLive()) {
+    if (!hasGatewayAssistant()) {
       return;
     }
     applyGatewayAuthBoot();

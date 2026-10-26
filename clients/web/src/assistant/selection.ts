@@ -12,7 +12,7 @@
  * client agree.
  */
 
-import { getActiveAssistant, isGatewaySessionLive } from "@/lib/local-mode";
+import { getActiveAssistant, hasGatewayAssistant } from "@/lib/local-mode";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   assistantsValidForOrg,
@@ -79,7 +79,7 @@ export function useGatedSelectedAssistantId(): string | null {
   useResolvedAssistantsStore.use.selectedAssistantId();
   useResolvedAssistantsStore.use.assistants();
   useResolvedAssistantsStore.use.assistantsHydrated();
-  return !isGatewaySessionLive() && organizationId
+  return !hasGatewayAssistant() && organizationId
     ? resolveSelectedAssistantId(organizationId)
     : null;
 }

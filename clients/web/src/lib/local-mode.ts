@@ -460,28 +460,6 @@ export function hasGatewayAssistant(): boolean {
 }
 
 /**
- * Whether the gateway session is live: on a served runtime always yes (the
- * cookie is the session and the edge arbitrates it per request); on a local
- * client the trusted host owns bearer custody, so topology decides.
- */
-export function isGatewaySessionLive(): boolean {
-  if (!hasGatewayAssistant()) {
-    return false;
-  }
-  if (!isServedGatewayRuntime()) {
-    const selectedAssistant = getActiveAssistant();
-    if (hasPairedGateway(selectedAssistant)) {
-      // The paired prime seeds the shared same-origin data-plane slot.
-      return getSelfHostedIngressUrl() != null;
-    }
-    // The local signal is topology — a resolvable gateway — not token
-    // presence: the trusted host owns bearer custody in this mode.
-    return hasLocalGateway(selectedAssistant);
-  }
-  return true;
-}
-
-/**
  * Whether a readyz body reports ready: the gateway answers `status: "ok"`
  * with no `ready: false`.
  */

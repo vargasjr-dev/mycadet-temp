@@ -53,7 +53,6 @@ import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 import { hardNavigate } from "@/lib/auth/hard-navigate";
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
 import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
 import {
   hasLiveCloudSession,
@@ -484,15 +483,15 @@ const gatewayRequestInterceptor = createInterceptor({
  * {@link primeLocalGatewayConnectionWithRepair}, which re-probes the
  * gateway through the host-routed readyz route (waking a stopped local
  * assistant when the probe failure is repairable) and re-seeds the
- * self-hosted connection slot the request interceptor reads. Remote-gateway
- * (paired browser) sessions hold no refreshable credential in JS, so a 401
- * there navigates into the pairing flow.
- * Neither path clears anything first: the slot's token is null in this mode
+ * self-hosted connection slot the request interceptor reads. Served
+ * runtimes have nothing to recover in-place — the web bundle manages no
+ * gateway session — so their 401 flows to the error path.
+ * Recovery clears nothing first: the slot's token is null in this mode
  * — bearer custody lives in the trusted host, whose forward already forces
  * one re-mint and retry of its own before a 401 can reach this interceptor
- * at all — so predicates such as `isGatewaySessionLive()` (topology-based
- * here) hold steady across the recovery. A session refresh or lifecycle
- * pass that fires mid-recovery therefore keeps taking the gateway branch.
+ * at all — so the topology facts hold steady across the recovery. A session
+ * refresh or lifecycle pass that fires mid-recovery therefore keeps taking
+ * the gateway branch.
  *
  * Requests whose body is still readable are then replayed against the
  * recovered session: a 401 means the gateway never executed the request,
@@ -544,9 +543,6 @@ const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
 const GW_401_COOLDOWN_MS = 600_000;
 const GW_401_MAX_ATTEMPTS = 3;
 
-// In-memory latch: once the pair redirect fires, later 401s in this lifecycle are no-ops.
-let gw401RecoveryFired = false;
-
 // Single-flight slot: a burst of concurrent 401s (a resume refetch, say)
 // funds one in-place recovery; every caller awaits the same attempt and
 // then makes its own replay decision. Nulled when the attempt settles so
@@ -555,26 +551,7 @@ let gw401RecoveryInFlight: Promise<boolean> | null = null;
 
 /** @internal Exposed for test teardown only. */
 export function resetGw401RecoveryState(): void {
-  gw401RecoveryFired = false;
   gw401RecoveryInFlight = null;
-}
-
-function remoteGatewayPairUrl(): string {
-  const prefix = remoteGatewayPublicPathPrefix();
-  const pathnameWithSearch = `${window.location.pathname}${window.location.search}`;
-  const returnTo =
-    prefix && pathnameWithSearch.startsWith(prefix)
-      ? pathnameWithSearch.slice(prefix.length)
-      : pathnameWithSearch;
-  return `${prefix}${routes.remotePair}?returnTo=${encodeURIComponent(returnTo)}`;
-}
-
-async function recoverRemoteGatewaySessionInPlace(): Promise<boolean> {
-  // A 401 means the cookie no longer authenticates — route the device into the pairing flow.
-  recordLifecycleDiagnostic("gw_401_recovery", { outcome: "pair-redirect" });
-  gw401RecoveryFired = true;
-  window.location.assign(remoteGatewayPairUrl());
-  return false;
 }
 
 async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
@@ -620,8 +597,10 @@ async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
 
 function recoverGatewaySessionInPlace(): Promise<boolean> {
   gw401RecoveryInFlight ??= (
+    // The web bundle manages no gateway session: a served 401 has nothing
+    // to recover in-place, so it flows to the error path.
     isServedGatewayRuntime()
-      ? recoverRemoteGatewaySessionInPlace()
+      ? Promise.resolve(false)
       : recoverLocalGatewaySessionInPlace()
   ).finally(() => {
     gw401RecoveryInFlight = null;
@@ -700,11 +679,6 @@ export async function localGatewayAuthRecoveryInterceptor(
   }
 
   if (response.status !== 401) {
-    return response;
-  }
-  if (gw401RecoveryFired) {
-    // The remote-gateway pair redirect has fired this page lifecycle; every 401
-    // until the navigation lands is a no-op.
     return response;
   }
 

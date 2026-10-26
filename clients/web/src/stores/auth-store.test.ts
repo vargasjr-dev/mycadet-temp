@@ -163,8 +163,10 @@ mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => mockIsCadetCloudRemote,
   isServedGatewayRuntime: () => mockIsServedGatewayRuntime,
   hasGatewayAssistant: () => mockIsGatewayAuth,
-  isGatewaySessionLive: () =>
-    getSelfHostedActorToken() !== null || mockPairedSelection(),
+  hasPairedGateway: (a: { assistantId: string } | undefined) =>
+    !!a && mockPairedSelection(),
+  hasLocalGateway: (a: { assistantId: string } | undefined) =>
+    !!a && mockIsGatewayAuth && !mockPairedSelection(),
   getCloudAssistants: () => mockCloudAssistants,
   getLocalAssistants: () => [],
   getActiveAssistant: () => mockSelectedAssistant,
@@ -1045,6 +1047,13 @@ describe("iOS widget snapshot on session end", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    // The re-auth is a gateway session: give the refresh a paired selection
+    // whose resolvable gateway re-verifies through the prime.
+    mockSelectedAssistant = {
+      assistantId: "paired-1",
+      cloud: "local",
+      runtimeUrl: "https://gw.example.com",
+    };
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     releaseClear();

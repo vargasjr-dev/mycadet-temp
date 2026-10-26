@@ -21,7 +21,7 @@ mock.module("@/lib/local-mode", () => ({
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
   isCadetCloudRemote: () => false,
   getSelfHostedActorToken: () => (mockGatewayTokenPresent ? "gw-token" : null),
-  isGatewaySessionLive: () => mockGatewayAuthMode,
+  hasGatewayAssistant: () => mockGatewayAuthMode,
 }));
 
 // Drive the gateway session off a flag (the slot's token is the credential).

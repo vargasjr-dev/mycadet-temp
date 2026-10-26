@@ -7,7 +7,7 @@
  * wasn't forged.
  */
 import { getAllauthByClientV1AuthSession } from "@/generated/auth/sdk.gen";
-import { isGatewaySessionLive } from "@/lib/local-mode";
+import { isCadetCloudRemote } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 
 const CSRF_COOKIE_NAME = import.meta.env.PROD
@@ -44,7 +44,8 @@ export async function ensureCsrfCookie(): Promise<void> {
   if (isElectron()) {
     return;
   }
-  if (isGatewaySessionLive()) {
+  // CSRF is a cloud concern only: gateway-session requests need no token.
+  if (!isCadetCloudRemote()) {
     return;
   }
 

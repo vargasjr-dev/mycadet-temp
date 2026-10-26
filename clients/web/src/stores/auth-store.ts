@@ -39,10 +39,13 @@ import {
   isCadetCloudRemote,
   isServedGatewayRuntime,
   hasGatewayAssistant,
-  isGatewaySessionLive,
+  hasLocalGateway,
+  hasPairedGateway,
+  getActiveAssistant,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
+import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 
 import { listAssistants } from "@/assistant/api";
@@ -716,7 +719,16 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       set({ ...authenticatedLocalUser(), cloudSession: "absent" });
       return true;
     }
-    if (isGatewaySessionLive()) {
+    // Gateway machinery, not a session question — the web bundle holds no
+    // gateway session. A selection with a resolvable gateway re-verifies
+    // through the prime; everything else re-verifies the platform session.
+    const selectedAssistant = getActiveAssistant();
+    if (
+      selectedAssistant &&
+      (hasPairedGateway(selectedAssistant)
+        ? getSelfHostedIngressUrl() != null
+        : hasLocalGateway(selectedAssistant))
+    ) {
       try {
         // Both selection kinds collapse into the prime: it probes the
         // gateway through the host-routed readyz route and seeds the
@@ -825,7 +837,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // that resumes partway through would otherwise re-persist the departing
     // user's snapshot on its way to an authenticated write.
     logoutGeneration += 1;
-    if (isGatewaySessionLive() && !options?.cloudAccount) {
+    if (getSelfHostedIngressUrl() != null && !options?.cloudAccount) {
       // Clear lifecycle state BEFORE `sessionStatus` leaves `authenticated`
       // so the assistant sync hooks don't observe a stale assistant id in
       // their first re-render, and BEFORE the selection clear so the
@@ -872,7 +884,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
         await clearLocalCloudSession();
       }
       void deleteBiometricToken();
-      if (options?.cloudAccount && isGatewaySessionLive()) {
+      if (options?.cloudAccount && getSelfHostedIngressUrl() != null) {
         setSelfHostedConnection(null);
       }
       clearOrganization();

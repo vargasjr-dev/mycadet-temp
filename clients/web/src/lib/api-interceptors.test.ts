@@ -133,7 +133,7 @@ import {
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
 import { subscribe } from "@/lib/event-bus";
-import { isGatewaySessionLive } from "@/lib/local-mode";
+import { hasGatewayAssistant } from "@/lib/local-mode";
 import { ApiError } from "@/utils/api-errors";
 import {
   getSelfHostedActorToken,
@@ -1330,33 +1330,33 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(result).toBe(response);
   });
 
-  test("the connection stays primed and the session predicate reads true across the recovery", async () => {
+  test("the connection stays primed across the recovery", async () => {
     /**
      * A recovery must not unprime the slot while the prime is in flight:
-     * `isGatewaySessionLive()` reads it, and a session refresh or a lifecycle
-     * pass landing in that window would take the cloud branch and could
+     * the request interceptor reads it, and a request landing in that
+     * window would route nowhere (or fall through to the cloud) and could
      * log a local-gateway user out. The renderer holds no bearer in this
      * mode — the trusted host mints and injects — so the slot's null token
      * is steady state, not a logged-out signal.
      */
 
-    // GIVEN a local selection (the topology the predicate reads) and a
+    // GIVEN a local selection (the topology the data plane reads) and a
     // prime that inspects the connection mid-flight
     localGatewayUrlImpl = () => "http://127.0.0.1:9090";
     let ingressDuringPrime: string | null | undefined;
-    let authModeDuringPrime: boolean | undefined;
+    let gatewayAuthDuringPrime: boolean | undefined;
     primeGatewayWithRepairImpl = async () => {
       ingressDuringPrime = getSelfHostedIngressUrl();
-      authModeDuringPrime = isGatewaySessionLive();
+      gatewayAuthDuringPrime = hasGatewayAssistant();
       setSelfHostedConnection({ url: GATEWAY_URL, token: null });
     };
 
     // WHEN a 401 triggers recovery
     await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
 
-    // THEN the slot was still primed and the predicate read true throughout
+    // THEN the slot was still primed and the gateway data plane held throughout
     expect(ingressDuringPrime).toBe(GATEWAY_URL);
-    expect(authModeDuringPrime).toBe(true);
+    expect(gatewayAuthDuringPrime).toBe(true);
   });
 
   test("replays a request whose bearer the slot has already moved past, without recovering", async () => {
@@ -1407,12 +1407,11 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
   });
 
-  test("remote-gateway mode boots into pairing on a 401 — no in-page recovery", async () => {
+  test("served-gateway 401s manage no session — the 401 flows to the error path", async () => {
     /**
-     * The served browser holds no credential in JS: the session lives in
-     * HttpOnly cookies the gateway minted at pairing. A 401 is therefore
-     * terminal for the page lifecycle: navigate into the pairing flow, no
-     * replay.
+     * The web bundle holds no gateway session management: a served 401 has
+     * nothing to recover in-place, so no navigation, no replay, no prime —
+     * the 401 flows back to the caller's error path.
      */
 
     // GIVEN remote-gateway mode
@@ -1433,10 +1432,8 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
         gatewayGet(),
       );
 
-      // THEN the browser navigates to the pair page, returnTo preserved,
-      // and the 401 flows back without a replay
-      expect(assign).toHaveBeenCalledTimes(1);
-      expect(assign.mock.calls[0][0]).toBe("/assistant/pair?returnTo=%2F");
+      // THEN the page never navigates or replays: the 401 is returned as-is
+      expect(assign).not.toHaveBeenCalled();
       expect(replayedRequests).toHaveLength(0);
       expect(result).toBe(response);
       expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();

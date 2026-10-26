@@ -12,9 +12,6 @@ import { routes } from "@/utils/routes";
 
 export interface NavigationState {
   isLocalClient: boolean;
-  isRemoteGateway: boolean;
-  remoteGatewayPublicPathPrefix: string;
-  isGatewaySessionLive: boolean;
   hasAssistants: boolean;
   cloudSession: CloudSessionStatus;
   /**
@@ -136,8 +133,6 @@ type RouteGuardStep = (
 ) => NavigationDecision | null;
 
 const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
-  requireRemoteGatewayPairing,
-  allowGatewayAuth,
   allowSetupRoutes,
   requireAssistant,
 ];
@@ -157,58 +152,6 @@ function resolveRouteGuard(
     }
   }
   return { action: "allow" };
-}
-
-/**
- * A gateway session answers for itself, so it skips the rest of the pipeline.
- */
-function allowGatewayAuth(state: NavigationState): NavigationDecision | null {
-  if (!state.isGatewaySessionLive) {
-    return null;
-  }
-  return { action: "allow" };
-}
-
-function stripRemoteGatewayPublicPathPrefix(
-  state: NavigationState,
-  pathnameWithSearch: string,
-): string {
-  const prefix = state.remoteGatewayPublicPathPrefix;
-  if (!state.isRemoteGateway || !prefix) {
-    return pathnameWithSearch;
-  }
-  if (pathnameWithSearch === prefix) {
-    return routes.assistant;
-  }
-  if (pathnameWithSearch.startsWith(`${prefix}/`)) {
-    return pathnameWithSearch.slice(prefix.length);
-  }
-  return pathnameWithSearch;
-}
-
-/**
- * The connection slot's device credential decides, not the auth store: the
- * pairing page's boot settles the store unauthenticated on the public pair
- * route before the approved exchange lands, and the credential the exchange
- * establishes is the same signal `isGatewaySessionLive` reads next.
- */
-function requireRemoteGatewayPairing(
-  state: NavigationState,
-  _path: string,
-  pathnameWithSearch: string,
-): NavigationDecision | null {
-  if (!state.isRemoteGateway || state.isGatewaySessionLive) {
-    return null;
-  }
-
-  const returnTo = stripRemoteGatewayPublicPathPrefix(
-    state,
-    pathnameWithSearch,
-  );
-  return {
-    action: "redirect",
-    to: `${routes.remotePair}?returnTo=${encodeURIComponent(returnTo)}`,
-  };
 }
 
 function allowSetupRoutes(

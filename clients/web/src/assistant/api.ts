@@ -33,7 +33,6 @@ import { assertHasResponse, toErrorObject } from "@/utils/api-errors";
 import {
   getLockfileAssistant,
   getActiveAssistant,
-  isGatewaySessionLive,
 } from "@/lib/local-mode";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 
@@ -151,28 +150,27 @@ export async function hatchAssistant(
 export async function getAssistant(
   assistantId?: string,
 ): Promise<GetAssistantResult> {
-  if (isGatewaySessionLive()) {
-    // An explicit id names the assistant the caller wants — resolve that exact
-    // lockfile entry rather than whatever the selection currently points at,
-    // so a stale selection (e.g. left over from a previous local assistant)
-    // can't answer for it.
-    const lockfileAssistant = assistantId
-      ? getLockfileAssistant(assistantId)
-      : getActiveAssistant();
-    if (lockfileAssistant) {
-      return {
-        ok: true,
-        status: 200,
-        data: {
-          id: lockfileAssistant.assistantId,
-          handle: lockfileAssistant.assistantId,
-          name: lockfileAssistant.name ?? lockfileAssistant.assistantId,
-          status: "active",
-          is_local: true,
-          created: lockfileAssistant.hatchedAt ?? "",
-        } as Assistant,
-      };
-    }
+  // The resolved roster answers first; a roster-miss falls through to the
+  // platform resolution below. An explicit id names the assistant the caller
+  // wants — resolve that exact lockfile entry rather than whatever the
+  // selection currently points at, so a stale selection (e.g. left over from
+  // a previous local assistant) can't answer for it.
+  const lockfileAssistant = assistantId
+    ? getLockfileAssistant(assistantId)
+    : getActiveAssistant();
+  if (lockfileAssistant) {
+    return {
+      ok: true,
+      status: 200,
+      data: {
+        id: lockfileAssistant.assistantId,
+        handle: lockfileAssistant.assistantId,
+        name: lockfileAssistant.name ?? lockfileAssistant.assistantId,
+        status: "active",
+        is_local: true,
+        created: lockfileAssistant.hatchedAt ?? "",
+      } as Assistant,
+    };
   }
   if (assistantId) {
     const { data, error, response } = await assistantsRetrieve({

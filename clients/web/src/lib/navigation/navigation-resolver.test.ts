@@ -8,9 +8,6 @@ import {
 
 const base: NavigationState = {
   isLocalClient: false,
-  isRemoteGateway: false,
-  remoteGatewayPublicPathPrefix: "",
-  isGatewaySessionLive: false,
   hasAssistants: true,
   cloudSession: "present",
   userHasOnboardedAssistant: false,
@@ -29,48 +26,6 @@ describe("resolveNavigation", () => {
   describe("route-guard", () => {
     const guard = (state: NavigationState, pathname = "/assistant") =>
       resolveNavigation(state, { kind: "route-guard", pathname });
-
-    test("a browser without the gateway credential pairs, destination preserved", () => {
-      // The pair decision reads the connection slot's credential, not the
-      // auth store — the serving shell never loads this bundle logged out.
-      expect(
-        guard(
-          s({ isRemoteGateway: true, isGatewaySessionLive: false }),
-          "/assistant/identity?tab=1",
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/pair?returnTo=%2Fassistant%2Fidentity%3Ftab%3D1",
-      });
-    });
-
-    test("remote pairing is required even when the auth store reports authenticated", () => {
-      expect(
-        guard(
-          s({
-            isRemoteGateway: true,
-            isLocalClient: true,
-            remoteGatewayPublicPathPrefix: "/assistant-123",
-          }),
-          "/assistant-123/assistant/conversations/self?tab=latest",
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/assistant/pair?returnTo=%2Fassistant%2Fconversations%2Fself%3Ftab%3Dlatest",
-      });
-    });
-
-    test("a live gateway session admits ahead of the pairing requirement", () => {
-      expect(
-        guard(
-          s({
-            isRemoteGateway: true,
-            isLocalClient: true,
-            isGatewaySessionLive: true,
-          }),
-        ),
-      ).toEqual(ALLOW);
-    });
 
     test("empty local clients wait for the platform probe before choosing hosting", () => {
       expect(
