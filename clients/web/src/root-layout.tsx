@@ -29,11 +29,7 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import {
-  useAuthStore,
-  useIsSessionInitializing,
-  useHasCloudSession,
-} from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -137,8 +133,6 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const isSessionInitializing = useIsSessionInitializing();
   const hasCloudSession = useHasCloudSession();
   // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
@@ -175,20 +169,23 @@ export function RootLayout() {
     (typeof globalThis.location === "undefined"
       ? null
       : globalThis.location.href);
-  const notificationScopeId =
-    sessionStatus === "authenticated" && activeAssistant
-      ? resolveAssistantAvatarOwnerScopeId(
-          activeAssistant,
-          requestOrganizationId,
-          connectionFallback,
-        )
-      : null;
+  // The scope is keyed on the resolved assistant — a resolved assistant is
+  // the whole fact; there is no separate session question to ask first.
+  const notificationScopeId = activeAssistant
+    ? resolveAssistantAvatarOwnerScopeId(
+        activeAssistant,
+        requestOrganizationId,
+        connectionFallback,
+      )
+    : null;
   const notificationCloudAssistantId =
     resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
   const assistantStateKind = bootState.kind;
   const isAssistantActive = assistantStateKind === "active";
-  const companionReady = isAssistantActive && !isSessionInitializing;
+  // The resolution's `active` already implies boot settled — the assistant
+  // could not resolve otherwise.
+  const companionReady = isAssistantActive;
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -237,10 +234,14 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    if (sessionStatus === "authenticated" && !assistantsHydrated) {
+    // Keyed on the boot resolution, not a session flag: retain the previous
+    // owners while the resolution is still loading, drop them when it fails
+    // (there is nothing to key scopes on), and map the resolved assistants
+    // otherwise.
+    if (assistantStateKind === "loading") {
       return null;
     }
-    if (sessionStatus !== "authenticated") {
+    if (assistantStateKind === "error" || !assistantsHydrated) {
       return [];
     }
     return assistants
@@ -259,9 +260,9 @@ export function RootLayout() {
     assistantId,
     assistants,
     assistantsHydrated,
+    assistantStateKind,
     connectionFallback,
     requestOrganizationId,
-    sessionStatus,
   ]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {

@@ -50,7 +50,6 @@ import {
   sendNotificationIntentAck,
   shouldSuppressFocusedNotificationDelivery,
 } from "@/runtime/notifications";
-import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -68,7 +67,6 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
   const requestOrganizationId = useRequestOrganizationId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const assistant = assistants.find(
@@ -79,14 +77,15 @@ export function useNotificationIntentSync(assistantId: string | null): void {
     (typeof globalThis.location === "undefined"
       ? null
       : globalThis.location.href);
-  const scopeId =
-    sessionStatus === "authenticated"
-      ? resolveAssistantAvatarOwnerScopeId(
-          assistant,
-          requestOrganizationId,
-          connectionFallback,
-        )
-      : null;
+  // Keyed on the resolved assistant — a resolved assistant is the whole
+  // fact; there is no separate session question to ask first.
+  const scopeId = assistant
+    ? resolveAssistantAvatarOwnerScopeId(
+        assistant,
+        requestOrganizationId,
+        connectionFallback,
+      )
+    : null;
   const cloudAssistantId = resolveAssistantNotificationCloudId(assistant);
   const notificationIdentity = useMemo(
     () =>

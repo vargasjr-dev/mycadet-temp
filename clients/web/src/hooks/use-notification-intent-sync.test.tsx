@@ -413,7 +413,11 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated" });
+      useResolvedAssistantsStore.setState({
+        assistants: [],
+        activeAssistantId: null,
+        selectedAssistantId: null,
+      });
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -621,7 +625,11 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated" });
+      useResolvedAssistantsStore.setState({
+        assistants: [],
+        activeAssistantId: null,
+        selectedAssistantId: null,
+      });
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();
