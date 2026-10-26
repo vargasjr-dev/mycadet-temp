@@ -18,7 +18,6 @@ import type {
 } from "@mycadet/local-mode/contract";
 import type {
   AppVersionInfo,
-  AssistantStatus,
   BundleScanData,
   CompanionAnnotationPhase,
   CompanionAnnotationStroke,
@@ -98,7 +97,6 @@ import type {
 
 export type {
   AppVersionInfo,
-  AssistantStatus,
   BundleScanData,
   CompanionGrowth,
   CompanionContext,
@@ -226,9 +224,6 @@ declare global {
       permissions?: CadetBridge["permissions"];
       commands: {
         on(callback: (command: CadetCommand) => void): () => void;
-      };
-      status?: {
-        setConnection(status: AssistantStatus): void;
       };
       identity?: {
         setName(name: string): void;
@@ -468,7 +463,5 @@ declare global {
  * use `isNativePlatform` from `@/runtime/native-auth.js` instead.
  */
 export function isElectron(): boolean {
-  return (
-    typeof window !== "undefined" && window.cadet?.platform === "electron"
-  );
+  return typeof window !== "undefined" && window.cadet?.platform === "electron";
 }

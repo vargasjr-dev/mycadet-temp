@@ -74,7 +74,6 @@ import { useElectronIconSync } from "@/hooks/use-electron-icon-sync";
 import { useIslandAvatarSource } from "@/hooks/use-island-avatar-source";
 import { useNotificationAvatarSync } from "@/hooks/use-notification-avatar-sync";
 import { useElectronIdentitySync } from "@/hooks/use-electron-identity-sync";
-import { useElectronStatusSync } from "@/hooks/use-electron-status-sync";
 import { subscribeAndroidBackButtonSource } from "@/runtime/event-sources/android-back-button";
 import { isElectron } from "@/runtime/is-electron";
 import { isNativeMobile } from "@/runtime/platform-detection";
@@ -277,8 +276,8 @@ export function RootLayout() {
     avatar.traits,
   );
 
-  // Feed the same avatar to the Electron Dock + menu-bar icons, and publish
-  // the live connection status to the menu-bar dot. Both no-op off Electron.
+  // Feed the same avatar to the Electron Dock + menu-bar icons. No-ops off
+  // Electron.
   useElectronIconSync(
     avatar.customImageUrl,
     avatar.components,
@@ -303,7 +302,6 @@ export function RootLayout() {
       avatarReady: avatar.isSuccess,
     },
   );
-  useElectronStatusSync();
   useElectronIdentitySync(isAssistantActive);
 
   // Size the Electron main window to the onboarding layout (440×630

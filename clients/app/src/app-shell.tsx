@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useAssistantRequest } from "./assistant/use-assistant-request";
 import { AppI18nProvider } from "./i18n/provider";
 import { useTranslation } from "./i18n/react";
+import { useElectronStatusSync } from "./hooks/use-electron-status-sync";
 import { AssistantFrame } from "./shell/assistant-frame";
 import { routes } from "./utils/routes";
 
@@ -83,6 +84,12 @@ function AssistantShell({
     origin,
     assistantId,
   });
+  // The tray's status logic lives with the resolution: the shell resolves the
+  // assistant itself, and the web assistant iframe only mounts once that
+  // resolution came back ready — the web bundle carries no status notion. The
+  // dot reads the shell's own resolution; the unmount cleanup publishes
+  // `disconnected` when the router swaps to a chooser route.
+  useElectronStatusSync(state);
   // Picking is the account chooser's job — an assistant-agnostic account
   // flow at a constant path on every surface. Without an id to act on (the
   // list resolved with nothing chosen, no assistants at all, or no
