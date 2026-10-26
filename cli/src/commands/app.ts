@@ -1,17 +1,12 @@
-import { loadAllAssistants } from "../lib/assistant-config";
-import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import {
   ensureAppServer,
+  getIngressPaths,
   isIngressRunning,
   readIngressState,
   stopIngressNginx,
   type AppServer,
 } from "../lib/nginx-ingress.js";
-import {
-  ensureNginxForEdge,
-  resolveLocalTunnelTarget,
-  toLocalTunnelTarget,
-} from "../lib/tunnel.js";
+import { ensureNginxForEdge } from "../lib/tunnel.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
 
@@ -38,15 +33,11 @@ function printAppHelp(): void {
 async function startAppEdge(): Promise<void> {
   await ensureNginxForEdge();
 
-  const { entry, gatewayPort, workspaceDir } = resolveLocalTunnelTarget();
-
   let edge: AppServer;
   try {
-    edge = await ensureAppServer({
-      assistantId: entry.assistantId,
-      workspaceDir,
-      gatewayPort,
-    });
+    // The edge resolves the assistant it fronts (and the gateway to proxy)
+    // from the lockfile itself — no per-assistant threading here.
+    edge = await ensureAppServer();
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
@@ -58,43 +49,22 @@ async function startAppEdge(): Promise<void> {
   console.log(`Stop with: ${cliCommand()} app stop`);
 }
 
-/**
- * Workspaces that could hold a running edge: every locally reachable
- * assistant's own, then the default one container assistants share. Usually
- * exactly one is live.
- */
-function candidateEdgeWorkspaces(): string[] {
-  const workspaces: string[] = [];
-  for (const entry of loadAllAssistants()) {
-    const target = toLocalTunnelTarget(entry);
-    if (target && !workspaces.includes(target.workspaceDir)) {
-      workspaces.push(target.workspaceDir);
-    }
-  }
-  if (!workspaces.includes(getDefaultWorkspaceDir())) {
-    workspaces.push(getDefaultWorkspaceDir());
-  }
-  return workspaces;
-}
-
 /** `cadet app stop`: take the nginx edge down. */
 async function stopAppEdge(): Promise<void> {
-  let stoppedAny = false;
-  for (const workspaceDir of candidateEdgeWorkspaces()) {
-    if (!isIngressRunning(workspaceDir)) continue;
-    const port = readIngressState(workspaceDir)?.listenPort;
-    if (await stopIngressNginx(workspaceDir)) {
-      stoppedAny = true;
-      console.log(`Stopped the app edge on 127.0.0.1:${port ?? "?"}.`);
-    } else {
-      console.error(
-        `Error: could not stop the app edge on 127.0.0.1:${port ?? "?"}. Check the nginx log: ${workspaceDir}/data/logs/nginx-ingress.log`,
-      );
-      process.exit(1);
-    }
-  }
-  if (!stoppedAny) {
+  // One machine-level edge: its conf/pid/state live under the XDG data dir,
+  // not any assistant workspace, so there is exactly one candidate.
+  if (!isIngressRunning()) {
     console.log("No app edge is running.");
+    return;
+  }
+  const port = readIngressState()?.listenPort;
+  if (await stopIngressNginx()) {
+    console.log(`Stopped the app edge on 127.0.0.1:${port ?? "?"}.`);
+  } else {
+    console.error(
+      `Error: could not stop the app edge on 127.0.0.1:${port ?? "?"}. Check the nginx log: ${getIngressPaths().logPath}`,
+    );
+    process.exit(1);
   }
 }
 

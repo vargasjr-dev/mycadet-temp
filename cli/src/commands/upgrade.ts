@@ -2,7 +2,6 @@ import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
-import { join } from "path";
 
 import cliPkg from "../../package.json";
 
@@ -10,7 +9,6 @@ import {
   findAssistantByName,
   formatAssistantLookupError,
   getActiveAssistant,
-  getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
   saveLockfileAssistant,
@@ -950,15 +948,7 @@ async function upgradeLocal(
     );
     console.log("✅ Local assistant processes started\n");
 
-    const workspaceDir = join(
-      getLocalInstanceDir(upgradedResources),
-      "workspace",
-    );
-    await restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      upgradedResources.gatewayPort,
-      workspaceDir,
-    );
+    await restoreAppServerAndAutoTunnel(entry);
 
     console.log("Waiting for assistant to become ready...");
     const ready = await waitForReady(adminUrl);

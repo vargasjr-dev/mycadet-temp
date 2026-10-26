@@ -365,11 +365,7 @@ describe("app server targeting", () => {
       getLocalInstanceDir(entry.resources),
       "workspace",
     );
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "assistant-1",
-      workspaceDir,
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
@@ -431,11 +427,7 @@ describe("app server targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'assistant-1' instead.",
     );
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "assistant-1",
-      workspaceDir,
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
@@ -459,11 +451,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "docker-1",
-      workspaceDir,
-      gatewayPort: 7930,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "docker-1",
@@ -487,11 +475,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "docker-1",
-      workspaceDir,
-      gatewayPort: 7930,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "docker-1",
@@ -616,11 +600,7 @@ describe("app server targeting", () => {
 
     await runTunnelCapturingLogs();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "apple-1",
-      workspaceDir,
-      gatewayPort: 8030,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "apple-1",
@@ -648,11 +628,7 @@ describe("app server targeting", () => {
       "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
         "Tunneling the local assistant 'apple-1' instead.",
     );
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "apple-1",
-      workspaceDir,
-      gatewayPort: 8030,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "apple-1",
@@ -1871,7 +1847,10 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     }
   });
 
-  function seedRecordedTailnetWake(): string {
+  function seedRecordedTailnetWake(): {
+    entry: LockfileAssistant;
+    workspaceDir: string;
+  } {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     stampRootProcess("tunnel", {
@@ -1885,30 +1864,23 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    return writeEntryWorkspaceConfig(entry, {
+    const workspaceDir = writeEntryWorkspaceConfig(entry, {
       ingress: {
         enabled: true,
         lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
       },
     });
+    return { entry, workspaceDir };
   }
 
   test("a recorded tailnet tunnel re-establishes the serve at the app server's port and saves the url to each assistant", async () => {
-    const workspaceDir = seedRecordedTailnetWake();
+    const { entry, workspaceDir } = seedRecordedTailnetWake();
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      "assistant-1",
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     // Step 1: the edge started even though the gateway had cleared the url —
     // the lockfile's app entry is why the workspace still wants it.
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "assistant-1",
-      workspaceDir,
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     // Step 2: the tunnel re-established at the app server's port, never the
     // gateway's fallback port.
     expect(startTailnetServeMock).toHaveBeenCalledWith({
@@ -1929,18 +1901,14 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   });
 
   test("the fresh url re-ensures the edge so the served config carries it the same wake", async () => {
-    const workspaceDir = seedRecordedTailnetWake();
+    const { entry } = seedRecordedTailnetWake();
     isIngressRunningMock.mockImplementation(() => true);
     readIngressStateMock.mockImplementation(() => ({
       listenPort: EDGE_PORT,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
     }));
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      "assistant-1",
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     expect(ensureAppServerMock).toHaveBeenCalledTimes(2);
   });
@@ -1956,18 +1924,14 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    writeEntryWorkspaceConfig(entry, {
       ingress: {
         enabled: true,
         lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
       },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(startTailnetServeMock).not.toHaveBeenCalled();
@@ -1977,15 +1941,11 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   test("a workspace with no recorded app server wants no edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    writeEntryWorkspaceConfig(entry, {
       ingress: { enabled: true },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(startTailnetServeMock).not.toHaveBeenCalled();
@@ -2006,15 +1966,11 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    writeEntryWorkspaceConfig(entry, {
       ingress: { enabled: true },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(startTailnetServeMock).not.toHaveBeenCalled();

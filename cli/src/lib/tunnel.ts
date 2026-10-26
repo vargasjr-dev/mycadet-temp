@@ -4,6 +4,7 @@ import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
   getAssistantDisplayName,
+  getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
@@ -21,6 +22,7 @@ import {
 } from "./ingress-config.js";
 import {
   ensureAppServer,
+  getNginxIngressPort,
   getNginxVersion,
   isPidAlive,
   isIngressRunning,
@@ -28,6 +30,7 @@ import {
   type AppServer,
 } from "./nginx-ingress.js";
 import { waitForDaemonReady } from "./http-client.js";
+import { getGatewayUrl } from "./runtime-url.js";
 import {
   confirmStopAnswer,
   isNgrokEndpointOnlineError,
@@ -370,16 +373,15 @@ async function refreshEdgeWithEstablishedUrl(
   }
   if (!savedUrl) return;
   if (savedUrl.replace(/\/+$/, "") !== publicUrl.replace(/\/+$/, "")) return;
-  const state = isIngressRunning(opts.workspaceDir)
-    ? readIngressState(opts.workspaceDir)
-    : null;
-  if (state?.gatewayPort === undefined) return;
+  // Only re-ensure an edge that already fronts this assistant's gateway: the
+  // app server resolves the assistant it fronts itself (the lockfile's active
+  // entry), so an edge pointing elsewhere is left alone rather than
+  // repointed from a refresh.
+  const state = isIngressRunning() ? readIngressState() : null;
+  if (state?.gatewayUrl === undefined) return;
+  if (state.gatewayUrl !== getGatewayUrl(resolveTargetAssistant())) return;
   try {
-    await ensureAppServer({
-      assistantId: opts.assistantId,
-      workspaceDir: opts.workspaceDir,
-      gatewayPort: state.gatewayPort,
-    });
+    await ensureAppServer();
   } catch {
     // The running edge stays in front of the tunnel; the fresh config lands
     // via the next invocation's fingerprint drift instead.
@@ -511,19 +513,14 @@ function tunnelRestartCommand(workspaceDir: string): string {
 }
 
 /**
- * Listen port of an SPA edge still serving in front of `gatewayPort`, or null
- * when nothing verifiably fronts that gateway (an unrecorded upstream port is
+ * Listen port of an SPA edge still serving in front of `gatewayUrl`, or null
+ * when nothing verifiably fronts that gateway (an unrecorded upstream is
  * unverified, see `IngressState`).
  */
-function survivingAppServerPort(
-  workspaceDir: string,
-  gatewayPort: number,
-): number | null {
+function survivingAppServerPort(gatewayUrl: string): number | null {
   try {
-    const recorded = isIngressRunning(workspaceDir)
-      ? readIngressState(workspaceDir)
-      : null;
-    return recorded?.gatewayPort === gatewayPort ? recorded.listenPort : null;
+    const recorded = isIngressRunning() ? readIngressState() : null;
+    return recorded?.gatewayUrl === gatewayUrl ? recorded.listenPort : null;
   } catch {
     return null;
   }
@@ -533,12 +530,12 @@ function survivingAppServerPort(
  * Bring the nginx edge back up after a wake or local upgrade. The edge is
  * wanted when the root lockfile records one — the `app` entry the restore
  * flow stamps when it establishes the edge. `ensureAppServer` owns the reuse
- * decision, so a running edge is adopted only while its mode, gateway port,
- * and injected SPA config fingerprint all match what this restore asks for; an
- * edge that drifted in any of those respects (a renamed assistant, a changed
- * hub URL, an older edge template) is restarted rather than adopted, which is
- * what keeps a wake from serving a config the current CLI would never
- * generate.
+ * decision (and resolves the assistant it fronts from the lockfile), so a
+ * running edge is adopted only while its gateway upstream and injected SPA
+ * config fingerprint match what this restore asks for; an edge that drifted
+ * in either respect (a renamed assistant, a changed hub URL) is restarted
+ * rather than adopted, which is what keeps a wake from serving a config the
+ * current CLI would never generate.
  *
  * Several of those failures leave the old edge serving (the web-dist preflight
  * bails before it is stopped; a drifted edge whose stop fails is reported as
@@ -550,9 +547,7 @@ function survivingAppServerPort(
  * wanted and when none survives a failed rebuild.
  */
 export async function restoreAppServer(
-  assistantId: string,
-  gatewayPort: number,
-  workspaceDir: string,
+  entry: LockfileAssistant,
   /** Whether the caller tunnels the gateway port directly when the edge fails,
    *  which is what keeps webhook delivery alive without an edge. */
   gatewayFallback = true,
@@ -562,14 +557,10 @@ export async function restoreAppServer(
   }
   let edge: AppServer;
   try {
-    edge = await ensureAppServer({
-      assistantId,
-      workspaceDir,
-      gatewayPort,
-    });
+    edge = await ensureAppServer();
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    const survivingPort = survivingAppServerPort(workspaceDir, gatewayPort);
+    const survivingPort = survivingAppServerPort(getGatewayUrl(entry));
     const impact =
       survivingPort !== null
         ? `The app server already running on 127.0.0.1:${survivingPort} stays in front of the gateway, serving an outdated config.`
@@ -577,7 +568,7 @@ export async function restoreAppServer(
           ? "Webhooks still work, but the web app is not being served."
           : "The web app and webhook delivery are unavailable until it is rebuilt.";
     console.warn(
-      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand(workspaceDir)}\` to rebuild the app server.`,
+      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand(getDefaultWorkspaceDir())}\` to rebuild the app server.`,
     );
     return survivingPort;
   }
@@ -651,11 +642,7 @@ export async function restoreContainerAppServer(
     );
     return;
   }
-  await restoreAppServerAndAutoTunnel(
-    entry.assistantId,
-    gatewayPort,
-    workspaceDir,
-  );
+  await restoreAppServerAndAutoTunnel(entry);
 }
 
 /**
@@ -668,29 +655,34 @@ export async function restoreContainerAppServer(
  * 3. save the tunnel's ingress url to each assistant.
  */
 export async function restoreAppServerAndAutoTunnel(
-  assistantId: string,
-  gatewayPort: number,
-  workspaceDir: string,
+  entry: LockfileAssistant,
 ): Promise<void> {
+  const gatewayPort = getLoopbackGatewayPort(entry);
+  // The entry names the workspace whose config carries the tunnel contract
+  // (publicBaseUrl, lastTunnel) the daemon reads: container assistants share
+  // the default workspace, local instances their own.
+  const workspaceDir = isLocalContainerEntry(entry)
+    ? getDefaultWorkspaceDir()
+    : join(getLocalInstanceDir(entry.resources), "workspace");
   // 1. Ensure the app server is started.
-  const edgePort = await restoreAppServer(
-    assistantId,
-    gatewayPort,
-    workspaceDir,
-  );
+  const edgePort = await restoreAppServer(entry);
   // 2. Ensure the tunnel is started at it: lockfile.json records which
   //    tunnel we expect connected to the app server, so only that provider's
   //    own start piece runs — pointed at the app server's port.
   const publicUrl = await ensureTunnel(
-    edgePort ?? gatewayPort,
+    edgePort ?? gatewayPort ?? getNginxIngressPort(),
     workspaceDir,
-    assistantId,
+    entry.assistantId,
   );
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
     await refreshEdgeWithEstablishedUrl(
-      { port: edgePort ?? gatewayPort, workspaceDir, assistantId },
+      {
+        port: edgePort ?? gatewayPort ?? getNginxIngressPort(),
+        workspaceDir,
+        assistantId: entry.assistantId,
+      },
       publicUrl,
     );
   }

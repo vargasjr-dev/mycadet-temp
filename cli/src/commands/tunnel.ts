@@ -26,8 +26,7 @@ import {
   stopTunnelProcess,
   summarizeStartupFailure,
 } from "../lib/tunnel.js";
-import {
-} from "../lib/tunnels/ngrok.js";
+import {} from "../lib/tunnels/ngrok.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
 
@@ -429,7 +428,7 @@ export const tunnel = Object.assign(
       throw cadetTunnelComingSoonError(provider);
     }
 
-    const { entry, gatewayPort, workspaceDir } = resolveLocalTunnelTarget();
+    const { entry, workspaceDir } = resolveLocalTunnelTarget();
 
     const preserveIngressUrl =
       provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
@@ -443,11 +442,9 @@ export const tunnel = Object.assign(
 
     let edge: AppServer;
     try {
-      edge = await ensureAppServer({
-        assistantId: entry.assistantId,
-        workspaceDir,
-        gatewayPort,
-      });
+      // The edge resolves the assistant it fronts (and the gateway to proxy)
+      // from the lockfile itself — no per-assistant threading here.
+      edge = await ensureAppServer();
     } catch (err) {
       console.error(
         `Error: ${err instanceof Error ? err.message : String(err)}`,

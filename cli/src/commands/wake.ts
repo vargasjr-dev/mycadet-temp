@@ -580,12 +580,7 @@ export async function wakeAssistant(
   // Restore the nginx edge and point the auto-tunnel at it. The spawned agent
   // records itself in the root lockfile under `tunnel`. Non-fatal: a down
   // edge is a degraded remote-web/webhook path, not a broken assistant.
-  const workspaceDir = join(getLocalInstanceDir(resources), "workspace");
-  await restoreAppServerAndAutoTunnel(
-    entry.assistantId,
-    resources.gatewayPort,
-    workspaceDir,
-  );
+  await restoreAppServerAndAutoTunnel(entry);
 
   if (daemonMigrationsFailed) {
     console.log(

@@ -2003,5 +2003,5 @@ export async function stopLocalProcesses(
 
   // Stop the nginx ingress if one is fronting this gateway (it guards against
   // PID reuse itself).
-  await stopIngressNginx(join(cadetDir, "workspace"));
+  await stopIngressNginx();
 }

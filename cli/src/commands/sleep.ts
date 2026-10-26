@@ -381,7 +381,7 @@ export async function sleepAssistant(
 
   // Stop the nginx ingress if one is fronting this gateway — otherwise it
   // keeps running against a dead upstream and serves 502s.
-  const ingressStopped = await stopIngressNginx(join(cadetDir, "workspace"));
+  const ingressStopped = await stopIngressNginx();
   if (ingressStopped) {
     console.log("nginx ingress stopped.");
   }

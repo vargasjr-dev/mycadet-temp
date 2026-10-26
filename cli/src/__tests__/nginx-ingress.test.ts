@@ -23,10 +23,9 @@ import {
   test,
 } from "bun:test";
 
-import { z } from "zod";
-
 import * as httpClient from "../lib/http-client.js";
 import * as versionModule from "@mycadet/shared/version";
+import * as assistantConfigModule from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 
 const realChildProcess = { ...childProcess };
@@ -86,6 +85,19 @@ mock.module("@mycadet/shared/version", () => ({
   stampedVersion: stampedVersionMock,
 }));
 
+// The edge resolves the assistant it fronts itself (see ensureAppServer), so
+// the resolution seam is mocked per test while the rest of assistant-config
+// (name lookups, process records) stays real.
+const realAssistantConfig = { ...assistantConfigModule };
+const resolveTargetAssistantMock = mock(
+  assistantConfigModule.resolveTargetAssistant,
+);
+
+mock.module("../lib/assistant-config.js", () => ({
+  ...realAssistantConfig,
+  resolveTargetAssistant: resolveTargetAssistantMock,
+}));
+
 // Restore the real modules once this file finishes so the mocks do not leak
 // into sibling test files in the same `bun test` run.
 afterAll(() => {
@@ -93,17 +105,19 @@ afterAll(() => {
   mock.module("node:fs", () => realFs);
   mock.module("../lib/http-client.js", () => realHttpClient);
   mock.module("@mycadet/shared/version", () => realVersionModule);
+  mock.module("../lib/assistant-config.js", () => realAssistantConfig);
 });
 
 import {
   buildIngressNginxConfig,
+  getIngressPaths,
   hasIpv6Loopback,
   buildRemoteWebIndexHtml,
   MAX_PRESERVED_MODULE_PRELOADS,
   ensureAppServer,
-  EDGE_TEMPLATE_VERSION,
   findAppDistDir,
   findWebDistDir,
+  readIngressState,
   startRemoteWebIngress,
   stopContainerAppServer,
   stopIngressNginx,
@@ -111,6 +125,8 @@ import {
 
 const originalKill = process.kill;
 const workspaces: string[] = [];
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
+const originalDataHome = process.env.XDG_DATA_HOME;
 
 /**
  * Registry-backed process.kill mock: registered fake PIDs answer liveness
@@ -158,26 +174,27 @@ afterEach(() => {
   for (const dir of workspaces.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
+  if (originalWorkspaceDir === undefined) {
+    delete process.env.CADET_WORKSPACE_DIR;
+  } else {
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
+  }
+  if (originalDataHome === undefined) {
+    delete process.env.XDG_DATA_HOME;
+  } else {
+    process.env.XDG_DATA_HOME = originalDataHome;
+  }
 });
 
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "cadet-ingress-test-"));
   workspaces.push(dir);
+  // The edge reads the tunnel contract (publicBaseUrl) from the default
+  // workspace and keeps its own state under the XDG data dir — pin both so
+  // every test is hermetic.
+  process.env.CADET_WORKSPACE_DIR = dir;
+  process.env.XDG_DATA_HOME = dir;
   return dir;
-}
-
-const IngressTestConfigSchema = z.object({
-  ingress: z
-    .object({
-      nginx: z.record(z.string(), z.unknown()).optional(),
-    })
-    .optional(),
-});
-
-function readConfig(workspaceDir: string) {
-  return IngressTestConfigSchema.parse(
-    JSON.parse(readFileSync(join(workspaceDir, "config.json"), "utf-8")),
-  );
 }
 
 /** Seed the workspace's saved tunnel URL (ingress.publicBaseUrl). */
@@ -189,9 +206,12 @@ function writeWorkspaceIngressUrl(workspaceDir: string, url: string): void {
 }
 
 describe("buildIngressNginxConfig", () => {
-  const conf = buildIngressNginxConfig({ gatewayPort: 7830, listenPort: 7840 });
+  const conf = buildIngressNginxConfig({
+    gatewayUrl: "http://127.0.0.1:7830",
+    listenPort: 7840,
+  });
   const remoteConf = buildIngressNginxConfig({
-    gatewayPort: 7830,
+    gatewayUrl: "http://127.0.0.1:7830",
     listenPort: 7840,
     remoteWebIngress: {
       webDistDir: "/tmp/cadet web/dist",
@@ -217,7 +237,7 @@ describe("buildIngressNginxConfig", () => {
     // IPv4-only bind refuses whichever share of a burst resolves that way.
     // Emitting it unconditionally would make nginx exit on an IPv6-less host.
     const withIpv6 = buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       ipv6Loopback: true,
     });
@@ -282,7 +302,7 @@ describe("buildIngressNginxConfig", () => {
     // per deployment keeps the HTTPS-or-loopback constraint.
     expect(() =>
       buildIngressNginxConfig({
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         remoteWebIngress: {
           webDistDir: "/tmp/cadet web/dist",
@@ -392,7 +412,7 @@ describe("buildIngressNginxConfig", () => {
 
   test("stamps assistantName, assistantId and hubUrl into the served config when provided", () => {
     const named = buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
         webDistDir: "/tmp/cadet web/dist",
@@ -650,35 +670,35 @@ describe("buildRemoteWebIndexHtml", () => {
 });
 
 describe("nginx ingress process state", () => {
-  function writeIngressState(workspaceDir: string, listenPort: number): void {
+  function writeIngressState(listenPort: number): void {
+    mkdirSync(getIngressPaths().dir, { recursive: true });
     writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify({ ingress: { nginx: { listenPort } } }) + "\n",
+      join(getIngressPaths().dir, "state.json"),
+      JSON.stringify({ listenPort }) + "\n",
     );
   }
 
-  function writePidFile(workspaceDir: string, pid: number): void {
-    const dir = join(workspaceDir, "data", "ingress");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "nginx.pid"), `${pid}\n`);
+  function writePidFile(pid: number): void {
+    mkdirSync(getIngressPaths().dir, { recursive: true });
+    writeFileSync(getIngressPaths().pidPath, `${pid}\n`);
   }
 
-  function pidPath(workspaceDir: string): string {
-    return join(workspaceDir, "data", "ingress", "nginx.pid");
+  function pidPath(): string {
+    return getIngressPaths().pidPath;
   }
 
-  function nginxCommand(workspaceDir: string): string {
-    const dir = join(workspaceDir, "data", "ingress");
-    return `nginx: master process nginx -p ${dir} -c ${join(dir, "nginx.conf")} -g daemon off;`;
+  function nginxCommand(): string {
+    const dir = getIngressPaths().dir;
+    return `nginx: master process nginx -p ${dir} -c ${getIngressPaths().confPath} -g daemon off;`;
   }
 
   test("clears ingress state after nginx is confirmed stopped", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     const pid = 123_456;
     let alive = true;
-    writeIngressState(ws, 7841);
-    writePidFile(ws, pid);
-    execFileSyncMock.mockReturnValue(nginxCommand(ws));
+    writeIngressState(7841);
+    writePidFile(pid);
+    execFileSyncMock.mockReturnValue(nginxCommand());
     process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) {
@@ -692,41 +712,37 @@ describe("nginx ingress process state", () => {
       return true;
     });
 
-    await expect(stopIngressNginx(ws)).resolves.toBe(true);
+    await expect(stopIngressNginx()).resolves.toBe(true);
 
-    const config = readConfig(ws);
-    expect(config.ingress?.nginx).toBeUndefined();
-    expect(existsSync(pidPath(ws))).toBe(false);
+    expect(readIngressState()).toBeNull();
+    expect(existsSync(pidPath())).toBe(false);
   });
 
   test("keeps ingress state when nginx kill fails", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     const pid = 123_457;
-    writeIngressState(ws, 7841);
-    writePidFile(ws, pid);
-    execFileSyncMock.mockReturnValue(nginxCommand(ws));
+    writeIngressState(7841);
+    writePidFile(pid);
+    execFileSyncMock.mockReturnValue(nginxCommand());
     process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) return true;
       throw new Error("operation not permitted");
     });
 
-    await expect(stopIngressNginx(ws)).resolves.toBe(false);
+    await expect(stopIngressNginx()).resolves.toBe(false);
 
-    const config = readConfig(ws);
-    expect(config.ingress?.nginx).toEqual({
-      listenPort: 7841,
-    });
-    expect(existsSync(pidPath(ws))).toBe(true);
+    expect(readIngressState()).toEqual({ listenPort: 7841 });
+    expect(existsSync(pidPath())).toBe(true);
   });
 
   test("clears ingress state when nginx exits before SIGTERM", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     const pid = 123_458;
     let aliveChecks = 0;
-    writeIngressState(ws, 7841);
-    writePidFile(ws, pid);
-    execFileSyncMock.mockReturnValue(nginxCommand(ws));
+    writeIngressState(7841);
+    writePidFile(pid);
+    execFileSyncMock.mockReturnValue(nginxCommand());
     process.kill = mock((targetPid: number, signal?: string | number): true => {
       if (targetPid !== pid) return originalKill(targetPid, signal);
       if (signal === 0) {
@@ -737,18 +753,17 @@ describe("nginx ingress process state", () => {
       throw new Error("no such process");
     });
 
-    await expect(stopIngressNginx(ws)).resolves.toBe(true);
+    await expect(stopIngressNginx()).resolves.toBe(true);
 
-    const config = readConfig(ws);
-    expect(config.ingress?.nginx).toBeUndefined();
-    expect(existsSync(pidPath(ws))).toBe(false);
+    expect(readIngressState()).toBeNull();
+    expect(existsSync(pidPath())).toBe(false);
   });
 
   test("does not kill another nginx instance when clearing stale state", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     const pid = 123_459;
-    writeIngressState(ws, 7841);
-    writePidFile(ws, pid);
+    writeIngressState(7841);
+    writePidFile(pid);
     execFileSyncMock.mockReturnValue(
       "nginx: master process nginx -p /tmp/other-ingress -c /tmp/other-ingress/nginx.conf",
     );
@@ -758,11 +773,10 @@ describe("nginx ingress process state", () => {
       throw new Error("should not kill another nginx instance");
     });
 
-    await expect(stopIngressNginx(ws)).resolves.toBe(false);
+    await expect(stopIngressNginx()).resolves.toBe(false);
 
-    const config = readConfig(ws);
-    expect(config.ingress?.nginx).toBeUndefined();
-    expect(existsSync(pidPath(ws))).toBe(false);
+    expect(readIngressState()).toBeNull();
+    expect(existsSync(pidPath())).toBe(false);
   });
 });
 
@@ -782,8 +796,8 @@ function fakeAppDistDir(): string {
   return dist;
 }
 
-function ingressConfPath(workspaceDir: string): string {
-  return join(workspaceDir, "data", "ingress", "nginx.conf");
+function ingressConfPath(): string {
+  return getIngressPaths().confPath;
 }
 
 function mockNginxInstalled(): void {
@@ -895,37 +909,28 @@ function mockWebDistPresent(): void {
   }) as typeof readFileSync);
 }
 
-/** Record a running edge: ingress state, live pidfile, matching ps output. */
-function mockRunningEdge(
-  ws: string,
-  opts: {
-    listenPort: number;
-    gatewayPort?: number;
-    remoteWebConfigHash?: string;
-  },
-): number {
+/** Record a running edge: XDG state, live pidfile, matching ps output. */
+function mockRunningEdge(opts: {
+  listenPort: number;
+  gatewayUrl?: string;
+  remoteWebConfigHash?: string;
+}): number {
   const pid = 123_460;
+  mkdirSync(getIngressPaths().dir, { recursive: true });
   writeFileSync(
-    join(ws, "config.json"),
+    join(getIngressPaths().dir, "state.json"),
     JSON.stringify({
-      ingress: {
-        nginx: {
-          listenPort: opts.listenPort,
-          ...(opts.gatewayPort === undefined
-            ? {}
-            : { gatewayPort: opts.gatewayPort }),
-          ...(opts.remoteWebConfigHash === undefined
-            ? {}
-            : { remoteWebConfigHash: opts.remoteWebConfigHash }),
-        },
-      },
+      listenPort: opts.listenPort,
+      ...(opts.gatewayUrl === undefined ? {} : { gatewayUrl: opts.gatewayUrl }),
+      ...(opts.remoteWebConfigHash === undefined
+        ? {}
+        : { remoteWebConfigHash: opts.remoteWebConfigHash }),
     }) + "\n",
   );
-  const dir = join(ws, "data", "ingress");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "nginx.pid"), `${pid}\n`);
+  writeFileSync(getIngressPaths().pidPath, `${pid}\n`);
+  const dir = getIngressPaths().dir;
   execFileSyncMock.mockReturnValue(
-    `nginx: master process nginx -p ${dir} -c ${join(dir, "nginx.conf")} -g daemon off;`,
+    `nginx: master process nginx -p ${dir} -c ${getIngressPaths().confPath} -g daemon off;`,
   );
   return pid;
 }
@@ -987,18 +992,17 @@ describe("startRemoteWebIngress", () => {
   pinProductionEnvironment();
 
   test("the metadata route serves the CLI's own version stamp, always ready", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantId: "assistant-1",
     });
     expect(result.status).toBe("started");
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf8");
     const detail = conf
       .split('location = "/v1/assistants/assistant-1/" {')[1]
       ?.split("\n    }")[0];
@@ -1010,14 +1014,13 @@ describe("startRemoteWebIngress", () => {
   });
 
   test("serves the SPA config unchanged", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1029,17 +1032,17 @@ describe("startRemoteWebIngress", () => {
       throw new Error("expected a web dist dir in SPA mode");
     }
 
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
       buildIngressNginxConfig({
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
-          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
+          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
@@ -1049,16 +1052,16 @@ describe("startRemoteWebIngress", () => {
     expect(conf).toContain("location ^~ /webhooks/ {");
     expect(conf).toContain("location = /readyz {");
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).toContain('"remote":"custom"');
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
     // No assistant name was provided, so the served config omits the label.
     expect(indexHtml).not.toContain("assistantName");
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
   });
@@ -1068,13 +1071,13 @@ describe("startRemoteWebIngress", () => {
     // (wake) writes nginx.conf from the current template rather than reuse
     // that leftover, so a prior file without /readyz cannot keep pairing
     // broken after boot.
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    mkdirSync(join(ws, "data", "ingress"), { recursive: true });
+    mkdirSync(getIngressPaths().dir, { recursive: true });
     writeFileSync(
-      ingressConfPath(ws),
+      ingressConfPath(),
       [
         "location = /healthz {",
         "  proxy_pass http://127.0.0.1:7830;",
@@ -1086,13 +1089,12 @@ describe("startRemoteWebIngress", () => {
     );
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result.status).toBe("started");
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location = /readyz {");
     const readyzStart = conf.indexOf("location = /readyz {");
     const readyzBlock = conf.slice(
@@ -1103,39 +1105,37 @@ describe("startRemoteWebIngress", () => {
   });
 
   test("stamps the assistant label into the served config when provided", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantName: "My Homelab",
     });
 
     expect(result.status).toBe("started");
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).toContain('"assistantName":"My Homelab"');
     expect(indexHtml).toContain(`"hubUrl":"${PRODUCTION_HUB_URL}"`);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain('\\"assistantName\\":\\"My Homelab\\"');
   });
 
   test("requires the web dist", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistMissing();
 
     const onStarting = mock(() => {});
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       onStarting,
     });
@@ -1143,11 +1143,11 @@ describe("startRemoteWebIngress", () => {
     expect(result).toEqual({ status: "web-dist-missing" });
     expect(onStarting).not.toHaveBeenCalled();
     expect(spawnMock).not.toHaveBeenCalled();
-    expect(realFs.existsSync(ingressConfPath(ws))).toBe(false);
+    expect(realFs.existsSync(ingressConfPath())).toBe(false);
   });
 
   test("builds the missing web bundle from the source checkout and starts", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     // No built bundle anywhere, but the source checkout IS present, so the
     // edge auto-builds it through the spawn boundary (mocked here).
@@ -1176,8 +1176,7 @@ describe("startRemoteWebIngress", () => {
     }) as unknown as typeof childProcess.spawn);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1199,7 +1198,7 @@ describe("startRemoteWebIngress", () => {
   });
 
   test("reports a failed source build with the manual recipe", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     // Bundle missing, source checkout present: the edge auto-builds, and
     // the build spawn fails.
@@ -1218,79 +1217,75 @@ describe("startRemoteWebIngress", () => {
 
     await expect(
       startRemoteWebIngress({
-        workspaceDir: ws,
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
       }),
     ).rejects.toThrow("cd clients/web && bun run build");
   });
 
   test("already-running carries the recorded listen port over the requested one", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7999,
     });
 
     expect(result).toEqual({
       status: "already-running",
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
     });
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
   test("a failed restart reports the recorded gateway port", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
     });
     mockUnkillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result).toEqual({
       status: "already-running",
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
     });
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
   test("restarts the edge when its recorded gateway port drifts from the request", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1300,41 +1295,40 @@ describe("startRemoteWebIngress", () => {
     const { webDistDir } = result;
     expect(edge.killed()).toBe(true);
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
       buildIngressNginxConfig({
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
-          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
+          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
       }),
     );
     expect(conf).toContain("proxy_pass http://127.0.0.1:7830;");
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
   });
 
   test("restarts an edge whose state predates the recorded gateway port", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, { listenPort: 7845 });
+    const pid = mockRunningEdge({ listenPort: 7845 });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
       listenPort: 7845,
     });
 
@@ -1344,43 +1338,42 @@ describe("startRemoteWebIngress", () => {
     const { webDistDir } = result;
     expect(edge.killed()).toBe(true);
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    expect(realFs.readFileSync(ingressConfPath(ws), "utf-8")).toBe(
+    expect(realFs.readFileSync(ingressConfPath(), "utf-8")).toBe(
       buildIngressNginxConfig({
-        gatewayPort: 7900,
+        gatewayUrl: "http://127.0.0.1:7900",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
-          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
+          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
       }),
     );
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash(),
     });
   });
 
   test("short-circuits when the running SPA edge already serves the requested config", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "My Homelab" }),
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantName: "My Homelab",
     });
@@ -1388,7 +1381,7 @@ describe("startRemoteWebIngress", () => {
     expect(result).toEqual({
       status: "already-running",
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
     });
     expect(edge.killed()).toBe(false);
     expect(spawnMock).not.toHaveBeenCalled();
@@ -1396,13 +1389,13 @@ describe("startRemoteWebIngress", () => {
 
   for (const drift of ["indexHtml", "webDistDir"] as const) {
     test(`restarts a detached edge when the web bundle ${drift} changes`, async () => {
-      const ws = makeWorkspace();
+      makeWorkspace();
       mockNginxInstalled();
       mockNginxSpawn();
       mockWebDistPresent();
-      const pid = mockRunningEdge(ws, {
+      const pid = mockRunningEdge({
         listenPort: 7845,
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         remoteWebConfigHash: appConfigHash({
           ...(drift === "indexHtml"
             ? {
@@ -1414,17 +1407,14 @@ describe("startRemoteWebIngress", () => {
       });
       const edge = mockKillableNginx(pid);
       const result = await startRemoteWebIngress({
-        workspaceDir: ws,
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
       });
       expect(result).toMatchObject({ status: "started", listenPort: 7845 });
       expect(edge.killed()).toBe(true);
-      expect(readConfig(ws).ingress?.nginx?.remoteWebConfigHash).toBe(
-        appConfigHash(),
-      );
+      expect(readIngressState()?.remoteWebConfigHash).toBe(appConfigHash());
       expect(
         realFs.readFileSync(
-          join(ws, "data", "ingress", "assistant-index.html"),
+          join(getIngressPaths().dir, "assistant-index.html"),
           "utf-8",
         ),
       ).not.toContain("old.js");
@@ -1432,20 +1422,19 @@ describe("startRemoteWebIngress", () => {
   }
 
   test("restarts the edge when the injected SPA config drifts from the recorded one", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantName: "New Name",
     });
@@ -1454,101 +1443,56 @@ describe("startRemoteWebIngress", () => {
     expect(edge.killed()).toBe(true);
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).toContain('"assistantName":"New Name"');
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "New Name" }),
     });
   });
 
-  test("restarts an SPA edge recorded against an older template version", async () => {
-    const ws = makeWorkspace();
-    mockNginxInstalled();
-    mockNginxSpawn();
-    mockWebDistPresent();
-    // Same injected config, earlier template: the detached edge serves an
-    // index this build renders differently, so identity must not match.
-    const priorTemplateHash = createHash("sha256")
-      .update(
-        JSON.stringify({
-          template: 1,
-          config: {
-            remote: "custom",
-            apiBaseUrl: "/v1",
-            hubUrl: PRODUCTION_HUB_URL,
-          },
-        }),
-      )
-      .digest("hex");
-    const pid = mockRunningEdge(ws, {
-      listenPort: 7845,
-      gatewayPort: 7830,
-      remoteWebConfigHash: priorTemplateHash,
-    });
-    const edge = mockKillableNginx(pid);
-
-    const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
-      listenPort: 7845,
-    });
-
-    expect(result.status).toBe("started");
-    expect(edge.killed()).toBe(true);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
-    expect(conf).toContain("location = /readyz {");
-    expect(readConfig(ws).ingress?.nginx).toEqual({
-      listenPort: 7845,
-      gatewayPort: 7830,
-      remoteWebConfigHash: appConfigHash(),
-    });
-  });
-
   test("restarts an SPA edge whose state predates the config fingerprint", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
     });
     const edge = mockKillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result.status).toBe("started");
     expect(edge.killed()).toBe(true);
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
   });
 
   test("a config-drifted edge that survives the restart attempt reports it as stale", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantName: "Old Name" }),
     });
     mockUnkillableNginx(pid);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantName: "New Name",
     });
@@ -1556,20 +1500,20 @@ describe("startRemoteWebIngress", () => {
     expect(result).toEqual({
       status: "already-running",
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       staleRemoteWebConfig: true,
     });
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
   test("starts a fresh edge when the old one exits during the stop", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "outdated-hash",
     });
     // Alive for the initial running check, dead by the time the stop helper
@@ -1582,8 +1526,7 @@ describe("startRemoteWebIngress", () => {
     });
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1592,25 +1535,25 @@ describe("startRemoteWebIngress", () => {
     }
     const { webDistDir } = result;
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
       buildIngressNginxConfig({
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
         remoteWebIngress: {
           webDistDir,
           appDistDir: fakeAppDistDir(),
-          indexHtmlPath: join(ws, "data", "ingress", "assistant-index.html"),
-          appIndexHtmlPath: join(ws, "data", "ingress", "app-index.html"),
+          indexHtmlPath: join(getIngressPaths().dir, "assistant-index.html"),
+          appIndexHtmlPath: join(getIngressPaths().dir, "app-index.html"),
           hubUrl: PRODUCTION_HUB_URL,
           version: "1.2.3",
         },
       }),
     );
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash(),
     });
   });
@@ -1619,63 +1562,58 @@ describe("startRemoteWebIngress", () => {
     // Another assistant's edge on the same listen port answers the readiness
     // probe while this workspace's nginx dies on the bind, so a healthy probe
     // alone must not count as started.
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => true);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result).toEqual({
       status: "port-conflict",
       listenPort: 7845,
-      logPath: join(ws, "data", "logs", "nginx-ingress.log"),
+      logPath: getIngressPaths().logPath,
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const ingress = readConfig(ws).ingress;
-    expect(ingress?.nginx).toBeUndefined();
+    expect(readIngressState()).toBeNull();
   });
 
   test("a child that outlives the probe but never owns the port is a port conflict", async () => {
     // The healthy-squatter race: another workspace's edge answers the probe in
     // milliseconds, while our master is still failing its bind. The child being
     // alive right after the probe must not count as started.
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawnExitsAfterProbe();
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => true);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result).toEqual({
       status: "port-conflict",
       listenPort: 7845,
-      logPath: join(ws, "data", "logs", "nginx-ingress.log"),
+      logPath: getIngressPaths().logPath,
     });
     expect(spawnMock).toHaveBeenCalledTimes(1);
-    const ingress = readConfig(ws).ingress;
-    expect(ingress?.nginx).toBeUndefined();
+    expect(readIngressState()).toBeNull();
   });
 
   test("started requires the pid file to name the live spawned master", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1685,11 +1623,9 @@ describe("startRemoteWebIngress", () => {
       webDistDir: expect.any(String),
       version: NGINX_VERSION,
     });
-    expect(
-      realFs
-        .readFileSync(join(ws, "data", "ingress", "nginx.pid"), "utf-8")
-        .trim(),
-    ).toBe(String(SPAWNED_NGINX_PID));
+    expect(realFs.readFileSync(getIngressPaths().pidPath, "utf-8").trim()).toBe(
+      String(SPAWNED_NGINX_PID),
+    );
     // Ownership confirmed on the first settle iteration: exactly one ps
     // lookup, for the spawned master's pid, with no polling delay.
     expect(execFileSyncMock).toHaveBeenCalledTimes(1);
@@ -1699,15 +1635,14 @@ describe("startRemoteWebIngress", () => {
   });
 
   test("a spawn that exits with a failed probe is also a port conflict", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => false);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1715,7 +1650,7 @@ describe("startRemoteWebIngress", () => {
   });
 
   test("a child still retrying its bind at the settle deadline is killed before rollback", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockWebDistPresent();
     const kills: string[] = [];
@@ -1734,8 +1669,7 @@ describe("startRemoteWebIngress", () => {
     }) as unknown as typeof childProcess.spawn);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
@@ -1754,6 +1688,9 @@ describe("ensureAppServer", () => {
   pinProductionEnvironment();
 
   beforeEach(() => {
+    resolveTargetAssistantMock.mockReturnValue({
+      assistantId: ASSISTANT_ID,
+    } as never);
     process.env.CADET_NGINX_INGRESS_PORT = String(REQUESTED_PORT);
     // Isolated lockfile dir so the assistant-name lookup never reads a real
     // machine lockfile.
@@ -1775,7 +1712,7 @@ describe("ensureAppServer", () => {
   });
 
   test("threads the lockfile display name and assistant id into the served SPA config", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1795,14 +1732,10 @@ describe("ensureAppServer", () => {
       }),
     );
 
-    await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    await ensureAppServer();
 
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).toContain('"assistantName":"Homelab"');
@@ -1811,19 +1744,15 @@ describe("ensureAppServer", () => {
   });
 
   test("omits the assistant label when the lockfile has no matching entry", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
-    await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    await ensureAppServer();
 
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).not.toContain("assistantName");
@@ -1832,22 +1761,18 @@ describe("ensureAppServer", () => {
   });
 
   test("reuses a running edge that already serves the requested config", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
     const edge = mockKillableNginx(pid);
 
-    const result = await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const result = await ensureAppServer();
 
     expect(result).toEqual({
       port: 7845,
@@ -1858,7 +1783,7 @@ describe("ensureAppServer", () => {
   });
 
   test("restarts the edge when the lockfile display name changes", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1880,26 +1805,18 @@ describe("ensureAppServer", () => {
       );
     writeLockfile("Homelab");
 
-    const first = await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const first = await ensureAppServer();
     expect(first.started).toBe(true);
 
     // Same port and mode, renamed assistant: the edge must restart so the
     // served index carries the new label instead of reporting already-running.
     writeLockfile("Renamed");
-    const second = await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const second = await ensureAppServer();
 
     expect(second.started).toBe(true);
     expect(spawnMock).toHaveBeenCalledTimes(2);
     const indexHtml = realFs.readFileSync(
-      join(ws, "data", "ingress", "assistant-index.html"),
+      join(getIngressPaths().dir, "assistant-index.html"),
       "utf-8",
     );
     expect(indexHtml).toContain('"assistantName":"Renamed"');
@@ -1907,13 +1824,13 @@ describe("ensureAppServer", () => {
   });
 
   test("a config-drifted edge that survives the restart attempt throws", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: REQUESTED_PORT,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({
         assistantName: "Stale Name",
         assistantId: ASSISTANT_ID,
@@ -1921,11 +1838,7 @@ describe("ensureAppServer", () => {
     });
     mockUnkillableNginx(pid);
 
-    const promise = ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const promise = ensureAppServer();
 
     await expect(promise).rejects.toThrow(
       "still serving an outdated remote web config",
@@ -1935,85 +1848,73 @@ describe("ensureAppServer", () => {
   });
 
   test("a port-drifted edge that survives the restart attempt throws", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
     mockUnkillableNginx(pid);
 
-    const promise = ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const promise = ensureAppServer();
 
     await expect(promise).rejects.toThrow(
-      "still proxying gateway port 7900 and could not be restarted against port 7830",
+      "still proxying http://127.0.0.1:7900 and could not be restarted against http://127.0.0.1:7830",
     );
     await expect(promise).rejects.toThrow("even with SIGKILL");
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
   test("restarts a port-drifted edge against the requested gateway port", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    const pid = mockRunningEdge(ws, {
+    const pid = mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7900,
+      gatewayUrl: "http://127.0.0.1:7900",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
     const edge = mockKillableNginx(pid);
 
-    const result = await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const result = await ensureAppServer();
 
     expect(result).toEqual({
       port: REQUESTED_PORT,
       started: true,
     });
     expect(edge.killed()).toBe(true);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
   });
 
   test("starts the SPA edge", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
-    const result = await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const result = await ensureAppServer();
 
     expect(result).toEqual({
       port: REQUESTED_PORT,
       started: true,
     });
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
     expect(conf).toContain("location ^~ /webhooks/ {");
-    expect(readConfig(ws).ingress?.nginx).toEqual({
+    expect(readIngressState()).toEqual({
       listenPort: REQUESTED_PORT,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: ASSISTANT_ID }),
     });
   });
 
   test("forwards onStarting so callers can print progress", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2025,12 +1926,7 @@ describe("ensureAppServer", () => {
       }) => {},
     );
 
-    await ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-      onStarting,
-    });
+    await ensureAppServer({ onStarting });
 
     expect(onStarting).toHaveBeenCalledTimes(1);
     const info = onStarting.mock.calls[0][0];
@@ -2040,35 +1936,28 @@ describe("ensureAppServer", () => {
   });
 
   test("an entry without an assistant id still gets the SPA edge", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
+    resolveTargetAssistantMock.mockReturnValue({} as never);
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
-    const result = await ensureAppServer({
-      assistantId: undefined,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const result = await ensureAppServer();
 
     expect(result).toEqual({
       port: REQUESTED_PORT,
       started: true,
     });
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location ^~ /assistant/ {");
     expect(conf).not.toContain("assistantId");
   });
 
   test("missing nginx throws with install instructions", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxMissing();
 
-    const promise = ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const promise = ensureAppServer();
 
     await expect(promise).rejects.toThrow(
       "See https://nginx.org/en/docs/install.html for how to install",
@@ -2078,56 +1967,38 @@ describe("ensureAppServer", () => {
   });
 
   test("missing web dist throws build guidance", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockWebDistMissing();
 
-    await expect(
-      ensureAppServer({
-        assistantId: ASSISTANT_ID,
-        workspaceDir: ws,
-        gatewayPort: 7830,
-      }),
-    ).rejects.toThrow("@mycadet/web");
+    await expect(ensureAppServer()).rejects.toThrow("@mycadet/web");
   });
 
   test("an unreachable edge throws with the log path", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => false);
 
-    await expect(
-      ensureAppServer({
-        assistantId: ASSISTANT_ID,
-        workspaceDir: ws,
-        gatewayPort: 7830,
-      }),
-    ).rejects.toThrow(join(ws, "data", "logs", "nginx-ingress.log"));
+    await expect(ensureAppServer()).rejects.toThrow(getIngressPaths().logPath);
   });
 
   test("a port conflict throws naming the port and the override mechanism", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawnExitsOnStartup();
     mockWebDistPresent();
     waitForDaemonReadyMock.mockImplementation(async () => true);
 
-    const promise = ensureAppServer({
-      assistantId: ASSISTANT_ID,
-      workspaceDir: ws,
-      gatewayPort: 7830,
-    });
+    const promise = ensureAppServer();
 
     await expect(promise).rejects.toThrow(
       `already in use (for example by another assistant's app server)`,
     );
     await expect(promise).rejects.toThrow(`127.0.0.1:${REQUESTED_PORT}`);
     await expect(promise).rejects.toThrow("CADET_NGINX_INGRESS_PORT");
-    await expect(promise).rejects.toThrow(
-      join(ws, "data", "logs", "nginx-ingress.log"),
-    );
+    await expect(promise).rejects.toThrow(getIngressPaths().logPath);
   });
 });
 
@@ -2152,9 +2023,11 @@ describe("stopContainerAppServer", () => {
   }
 
   test("stops the default-workspace edge fronting this assistant", async () => {
-    const ws = makeWorkspace();
-    process.env.CADET_WORKSPACE_DIR = ws;
-    const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
+    makeWorkspace();
+    const pid = mockRunningEdge({
+      listenPort: 7840,
+      gatewayUrl: "http://127.0.0.1:7930",
+    });
     const { killed } = mockKillableNginx(pid);
 
     expect(await stopContainerAppServer(containerEntry(7930))).toBe(true);
@@ -2162,9 +2035,11 @@ describe("stopContainerAppServer", () => {
   });
 
   test("leaves an edge fronting a different container assistant alone", async () => {
-    const ws = makeWorkspace();
-    process.env.CADET_WORKSPACE_DIR = ws;
-    const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
+    makeWorkspace();
+    const pid = mockRunningEdge({
+      listenPort: 7840,
+      gatewayUrl: "http://127.0.0.1:7930",
+    });
     const { killed } = mockKillableNginx(pid);
 
     expect(await stopContainerAppServer(containerEntry(8030))).toBe(false);
@@ -2172,19 +2047,20 @@ describe("stopContainerAppServer", () => {
   });
 
   test("leaves an unattributable edge alone", async () => {
-    const ws = makeWorkspace();
-    process.env.CADET_WORKSPACE_DIR = ws;
-    const pid = mockRunningEdge(ws, { listenPort: 7840 });
+    makeWorkspace();
+    const pid = mockRunningEdge({ listenPort: 7840 });
     const { killed } = mockKillableNginx(pid);
 
     expect(await stopContainerAppServer(containerEntry(7930))).toBe(false);
     expect(killed()).toBe(false);
   });
 
-  test("is a no-op when the entry carries no explicit gateway port", async () => {
-    const ws = makeWorkspace();
-    process.env.CADET_WORKSPACE_DIR = ws;
-    const pid = mockRunningEdge(ws, { listenPort: 7840, gatewayPort: 7930 });
+  test("is a no-op when the edge fronts a different upstream", async () => {
+    makeWorkspace();
+    const pid = mockRunningEdge({
+      listenPort: 7840,
+      gatewayUrl: "http://127.0.0.1:7930",
+    });
     const { killed } = mockKillableNginx(pid);
 
     expect(
@@ -2198,8 +2074,7 @@ describe("stopContainerAppServer", () => {
   });
 
   test("is a no-op when no edge is running", async () => {
-    const ws = makeWorkspace();
-    process.env.CADET_WORKSPACE_DIR = ws;
+    makeWorkspace();
 
     expect(await stopContainerAppServer(containerEntry(7930))).toBe(false);
   });
@@ -2208,7 +2083,7 @@ describe("stopContainerAppServer", () => {
 describe("assistant metadata API", () => {
   function config(id = "assistant-1") {
     return buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
         webDistDir: "/tmp/web",
@@ -2272,7 +2147,7 @@ describe("assistant metadata API", () => {
   });
   test("unknown identity yields an empty list without inventing an assistant ID", () => {
     const conf = buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: { webDistDir: "/tmp/web", appDistDir: "/tmp/app-dist" },
     });
@@ -2280,7 +2155,7 @@ describe("assistant metadata API", () => {
   });
   test("a known assistant without a UI bundle returns 409 on both detail paths", () => {
     const conf = buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
         webDistDir: "/tmp/web",
@@ -2304,7 +2179,7 @@ describe("assistant metadata API", () => {
   test("invalid browser origins fail before nginx starts", () => {
     expect(() =>
       buildIngressNginxConfig({
-        gatewayPort: 7830,
+        gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         remoteWebIngress: {
           webDistDir: "/tmp/web",
@@ -2329,7 +2204,6 @@ function appConfigHash(
   return createHash("sha256")
     .update(
       JSON.stringify({
-        template: EDGE_TEMPLATE_VERSION,
         config: {
           remote: "custom",
           assistantName: opts.assistantName,
@@ -2353,7 +2227,7 @@ describe("the app shell edge", () => {
 
   function appConf() {
     return buildIngressNginxConfig({
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
         webDistDir: "/tmp/cadet web/dist",
@@ -2445,36 +2319,35 @@ describe("the app shell edge", () => {
   });
 
   test("starts, injects both documents, and records the edge fingerprint", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
-    const ingressDir = join(ws, "data", "ingress");
+    const ingressDir = getIngressPaths().dir;
     const appIndex = realFs.readFileSync(
       join(ingressDir, "app-index.html"),
       "utf-8",
     );
     expect(appIndex).toContain("__CADET_CONFIG__");
     expect(appIndex).toContain(`"assistantId":"assistant-1"`);
-    const conf = realFs.readFileSync(ingressConfPath(ws), "utf-8");
+    const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toContain("location = /__cadet-app-index.html {");
     expect(conf).toContain('\\"url\\":\\"web/assistant/\\"');
     // The served shell document must be the edge's INJECTED copy (which
     // carries the served config), never the raw dist index — that one only
     // carries the build-time vite stamp.
     expect(conf).toContain(`alias "${join(ingressDir, "app-index.html")}"`);
-    expect(readConfig(ws).ingress?.nginx).toMatchObject({
+    expect(readIngressState()).toMatchObject({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
     });
   });
@@ -2487,15 +2360,14 @@ describe("the app shell edge", () => {
     writeWorkspaceIngressUrl(ws, "https://camping.ngrok-free.dev");
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
     const appIndex = realFs.readFileSync(
-      join(ws, "data", "ingress", "app-index.html"),
+      join(getIngressPaths().dir, "app-index.html"),
       "utf-8",
     );
     // Tunnel clients can only reach the origin they came in on, so the
@@ -2503,7 +2375,7 @@ describe("the app shell edge", () => {
     // loopback gateway seed.
     expect(appIndex).toContain(`"cloudUrl":"https://camping.ngrok-free.dev"`);
     // The URL rides the fingerprint: a changed tunnel URL rotates the edge.
-    expect(readConfig(ws).ingress?.nginx).toMatchObject({
+    expect(readIngressState()).toMatchObject({
       remoteWebConfigHash: appConfigHash({
         assistantId: "assistant-1",
         cloudUrl: "https://camping.ngrok-free.dev",
@@ -2512,21 +2384,20 @@ describe("the app shell edge", () => {
   });
 
   test("omits cloudUrl when no tunnel URL is on record", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantId: "assistant-1",
     });
 
     expect(result.status).toBe("started");
     const appIndex = realFs.readFileSync(
-      join(ws, "data", "ingress", "app-index.html"),
+      join(getIngressPaths().dir, "app-index.html"),
       "utf-8",
     );
     // Omitted — the shell's same-origin fallbacks own it until a tunnel
@@ -2535,7 +2406,7 @@ describe("the app shell edge", () => {
   });
 
   test("fails fast when the app bundle is not built", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2552,30 +2423,28 @@ describe("the app shell edge", () => {
     });
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
     });
 
     expect(result).toEqual({ status: "app-dist-missing" });
-    expect(realFs.existsSync(ingressConfPath(ws))).toBe(false);
+    expect(realFs.existsSync(ingressConfPath())).toBe(false);
   });
 
   test("reuses an already-running edge", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    mockRunningEdge(ws, {
+    mockRunningEdge({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: appConfigHash({ assistantId: "assistant-1" }),
     });
     const edge = mockKillableNginx(123_460);
 
     const result = await startRemoteWebIngress({
-      workspaceDir: ws,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7845,
       assistantId: "assistant-1",
     });

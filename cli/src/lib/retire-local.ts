@@ -142,7 +142,7 @@ export async function retireLocal(
 
   // Stop the nginx ingress if one is fronting this gateway — it would
   // otherwise be orphaned when the instance directory is archived.
-  await stopIngressNginx(join(cadetDir, "workspace"));
+  await stopIngressNginx();
 
   // If the PID file didn't track a running daemon, scan for orphaned
   // daemon processes that may have been started without writing a PID.
