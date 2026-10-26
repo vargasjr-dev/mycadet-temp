@@ -49,7 +49,7 @@ describe("unpairAssistant", () => {
     });
     const tokenPath = seedGuardianToken("paired-1");
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -77,7 +77,7 @@ describe("unpairAssistant", () => {
       activeAssistant: "paired-1",
     });
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -97,7 +97,7 @@ describe("unpairAssistant", () => {
       activeAssistant: "paired-1",
     });
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -116,7 +116,7 @@ describe("unpairAssistant", () => {
     const tokenPath = guardianTokenPath(configDir, "paired-1");
     fs.mkdirSync(path.join(tokenPath, "oops"), { recursive: true });
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(false);
     if (result.ok) {
@@ -144,7 +144,7 @@ describe("unpairAssistant", () => {
     fs.writeFileSync(notADir, "");
     try {
       const result = unpairAssistant(
-        [path.join(notADir, "lockfile.json")],
+        path.join(notADir, "lockfile.json"),
         configDir,
         "paired-1",
       );
@@ -166,7 +166,7 @@ describe("unpairAssistant", () => {
     });
     const tokenPath = seedGuardianToken("local-1");
 
-    const result = unpairAssistant([lockfilePath], configDir, "local-1");
+    const result = unpairAssistant(lockfilePath, configDir, "local-1");
 
     expect(result.ok).toBe(true);
     expect(fs.existsSync(tokenPath)).toBe(false);
@@ -182,7 +182,7 @@ describe("unpairAssistant", () => {
       activeAssistant: "local-1",
     });
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -197,7 +197,7 @@ describe("unpairAssistant", () => {
       activeAssistant: null,
     });
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
   });
@@ -208,7 +208,7 @@ describe("unpairAssistant", () => {
       activeAssistant: "paired-1",
     });
 
-    const result = unpairAssistant([lockfilePath], configDir, "nope");
+    const result = unpairAssistant(lockfilePath, configDir, "nope");
 
     expect(result).toEqual({
       ok: false,
@@ -226,7 +226,7 @@ describe("unpairAssistant", () => {
     const tokenPath = seedGuardianToken("paired-1");
     fs.mkdirSync(`${lockfilePath}.lock`);
     try {
-      const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+      const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
       expect(result).toMatchObject({ ok: false, status: 423 });
       expect(fs.existsSync(tokenPath)).toBe(true);
@@ -245,7 +245,7 @@ describe("unpairAssistant", () => {
     });
     seedGuardianToken("paired-1");
 
-    const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+    const result = unpairAssistant(lockfilePath, configDir, "paired-1");
 
     expect(result.ok).toBe(true);
     expect(fs.existsSync(`${lockfilePath}.lock`)).toBe(false);

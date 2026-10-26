@@ -16,7 +16,7 @@ describe("readLockfileAssistantAvatar", () => {
   let avatarDir: string;
 
   const read = (assistantId = "asst-1") =>
-    readLockfileAssistantAvatar([lockfilePath], assistantId);
+    readLockfileAssistantAvatar(lockfilePath, assistantId);
 
   const writeLockfileEntry = (
     resources?: Record<string, unknown>,

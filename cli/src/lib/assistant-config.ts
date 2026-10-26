@@ -20,7 +20,7 @@ export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 import {
   resolveAssistantsDir,
   resolveDataDir,
-  resolveLockfilePaths,
+  resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { getDefaultPorts } from "./environments/paths.js";
 import { getCurrentEnvironment } from "./environments/resolve.js";
@@ -71,7 +71,7 @@ export function getDaemonPidPath(resources?: LocalAssistantResources): string {
 }
 
 function writeLockfileUnlocked(data: Lockfile): void {
-  const lockfilePath = resolveLockfilePaths()[0]!;
+  const lockfilePath = resolveLockfilePath();
   mkdirSync(dirname(lockfilePath), { recursive: true });
   const tmpPath = `${lockfilePath}.${randomBytes(4).toString("hex")}.tmp`;
   try {
@@ -94,10 +94,7 @@ function writeLockfileUnlocked(data: Lockfile): void {
  * contract of the write path.
  */
 function withCliLockfileLock<T>(fn: () => T): T {
-  const locked = withLockfileLock(
-    [resolveLockfilePaths()[0]!],
-    fn,
-  );
+  const locked = withLockfileLock(resolveLockfilePath(), fn);
   if (!locked.ok) throw new Error(locked.error);
   return locked.value;
 }

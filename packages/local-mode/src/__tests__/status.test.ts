@@ -87,14 +87,14 @@ afterEach(() => {
 
 describe("getLocalAssistantStatus", () => {
   test("returns a structured error for unsafe assistant IDs", async () => {
-    const result = await getLocalAssistantStatus([lockfilePath], "../other");
+    const result = await getLocalAssistantStatus(lockfilePath, "../other");
     expect(result.ok).toBe(false);
     expect(result.ok ? 200 : result.status).toBe(400);
   });
   test("returns sleeping when the assistant PID file is absent", async () => {
     writeLocalLockfile();
 
-    expect(await getLocalAssistantStatus([lockfilePath], "local-1")).toEqual({
+    expect(await getLocalAssistantStatus(lockfilePath, "local-1")).toEqual({
       ok: true,
       state: "sleeping",
     });
@@ -108,7 +108,7 @@ describe("getLocalAssistantStatus", () => {
     });
 
     expect(
-      await getLocalAssistantStatus([lockfilePath], "legacy-local"),
+      await getLocalAssistantStatus(lockfilePath, "legacy-local"),
     ).toEqual({
       ok: true,
       state: "sleeping",
@@ -119,7 +119,7 @@ describe("getLocalAssistantStatus", () => {
     writeLocalLockfile();
     writeAssistantPid("999999999");
 
-    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    const result = await getLocalAssistantStatus(lockfilePath, "local-1");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -131,7 +131,7 @@ describe("getLocalAssistantStatus", () => {
     writeLocalLockfile();
     writeAssistantPid("not-a-pid");
 
-    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    const result = await getLocalAssistantStatus(lockfilePath, "local-1");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -150,7 +150,7 @@ describe("getLocalAssistantStatus", () => {
     });
     writeAssistantPid(String(process.pid));
 
-    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    const result = await getLocalAssistantStatus(lockfilePath, "local-1");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -170,7 +170,7 @@ describe("getLocalAssistantStatus", () => {
     const pidPath = writeAssistantPid(String(process.pid));
     markStale(pidPath);
 
-    const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+    const result = await getLocalAssistantStatus(lockfilePath, "local-1");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -195,7 +195,7 @@ describe("getLocalAssistantStatus", () => {
       });
       writeAssistantPid(String(process.pid));
 
-      const result = await getLocalAssistantStatus([lockfilePath], "local-1");
+      const result = await getLocalAssistantStatus(lockfilePath, "local-1");
 
       expect(result.ok).toBe(true);
       if (result.ok) {
@@ -214,7 +214,7 @@ describe("getLocalAssistantStatus", () => {
       runtimeUrl: "https://example.com",
     });
 
-    expect(await getLocalAssistantStatus([lockfilePath], "platform-1")).toEqual(
+    expect(await getLocalAssistantStatus(lockfilePath, "platform-1")).toEqual(
       {
         ok: false,
         status: 404,
@@ -227,7 +227,7 @@ describe("getLocalAssistantStatus", () => {
 describe("resolveLockfileInstanceDir", () => {
   test("reads the instance dir from the parsed entry", () => {
     writeLocalLockfile();
-    expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
+    expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
       ok: true,
       instanceDir,
     });
@@ -235,7 +235,7 @@ describe("resolveLockfileInstanceDir", () => {
 
   test("honors legacy top-level baseDataDir", () => {
     writeLockfile({ assistantId: "local-1", baseDataDir: instanceDir });
-    expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
+    expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
       ok: true,
       instanceDir,
     });
@@ -248,7 +248,7 @@ describe("resolveLockfileInstanceDir", () => {
     process.env.CADET_ENVIRONMENT = "production";
     process.env.XDG_DATA_HOME = dataHome;
     try {
-      expect(resolveLockfileInstanceDir([lockfilePath], "local-1")).toEqual({
+      expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
         ok: true,
         instanceDir: path.join(dataHome, "cadet", "assistants", "local-1"),
       });
@@ -263,7 +263,7 @@ describe("resolveLockfileInstanceDir", () => {
     process.env.CADET_ENVIRONMENT = "production";
     process.env.XDG_DATA_HOME = tempDir;
     try {
-      expect(resolveLockfileInstanceDir([lockfilePath], "local-2")).toEqual({
+      expect(resolveLockfileInstanceDir(lockfilePath, "local-2")).toEqual({
         ok: true,
       });
     } finally {
@@ -281,9 +281,9 @@ describe("resolveLockfileInstanceDir", () => {
         assistants: [{ assistantId: "local-1", baseDataDir: instanceDir }],
       }),
     );
-    expect(
-      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1"),
-    ).toEqual({ ok: false });
+    expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
+      ok: false,
+    });
   });
 
   test("empty authoritative lockfile never falls through to a legacy file", () => {
@@ -295,8 +295,8 @@ describe("resolveLockfileInstanceDir", () => {
         assistants: [{ assistantId: "local-1", baseDataDir: instanceDir }],
       }),
     );
-    expect(
-      resolveLockfileInstanceDir([lockfilePath, legacyPath], "local-1"),
-    ).toEqual({ ok: true });
+    expect(resolveLockfileInstanceDir(lockfilePath, "local-1")).toEqual({
+      ok: true,
+    });
   });
 });

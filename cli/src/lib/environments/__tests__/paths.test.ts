@@ -34,9 +34,8 @@ const {
 const {
   resolveAssistantsDir,
   resolveConfigDir,
-  resolveConfigDirPaths,
   resolveEnvironmentName,
-  resolveLockfilePaths,
+  resolveLockfilePath,
 } = await import("@mycadet/local-mode");
 type EnvironmentDefinition =
   import("@mycadet/environments").EnvironmentDefinition;
@@ -88,10 +87,7 @@ describe("path helpers", () => {
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
         process.env.CADET_ENVIRONMENT = "dev";
-        expect(resolveConfigDirPaths()).toEqual([
-          "C:\\AppData\\cadet-dev",
-          "D:\\Legacy\\cadet-dev",
-        ]);
+        expect(resolveConfigDir()).toBe("C:\\AppData\\cadet-dev");
       } finally {
         Object.defineProperty(process, "platform", descriptor);
       }
@@ -125,29 +121,22 @@ describe("path helpers", () => {
     });
   });
 
-  describe("resolveLockfilePaths", () => {
+  describe("resolveLockfilePath", () => {
     test("production returns the config-dir lockfile.json", () => {
       process.env.CADET_ENVIRONMENT = "production";
-      expect(resolveLockfilePaths()[0]!).toBe(
+      expect(resolveLockfilePath()).toBe(
         join(TEST_HOME, ".config", "cadet", "lockfile.json"),
       );
     });
 
     test("dev returns ~/.config/cadet-dev/lockfile.json", () => {
       process.env.CADET_ENVIRONMENT = "dev";
-      expect(resolveLockfilePaths()[0]!).toBe(
+      expect(resolveLockfilePath()).toBe(
         join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
       );
     });
 
-    test("returns a single canonical path outside Windows", () => {
-      process.env.CADET_ENVIRONMENT = "dev";
-      expect(resolveLockfilePaths()).toEqual([
-        join(TEST_HOME, ".config", "cadet-dev", "lockfile.json"),
-      ]);
-    });
-
-    test("Windows non-prod keeps the XDG legacy read", () => {
+    test("Windows reads the AppData config dir only", () => {
       const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
       try {
         Object.defineProperty(process, "platform", {
@@ -157,28 +146,9 @@ describe("path helpers", () => {
         process.env.APPDATA = "C:\\AppData";
         process.env.XDG_CONFIG_HOME = "D:\\Legacy";
         process.env.CADET_ENVIRONMENT = "dev";
-        expect(resolveLockfilePaths()).toEqual([
+        expect(resolveLockfilePath()).toBe(
           "C:\\AppData\\cadet-dev\\lockfile.json",
-          "D:\\Legacy\\cadet-dev\\lockfile.json",
-        ]);
-      } finally {
-        Object.defineProperty(process, "platform", descriptor);
-      }
-    });
-
-    test("Windows production reads only the canonical path", () => {
-      const descriptor = Object.getOwnPropertyDescriptor(process, "platform")!;
-      try {
-        Object.defineProperty(process, "platform", {
-          ...descriptor,
-          value: "win32",
-        });
-        process.env.APPDATA = "C:\\AppData";
-        process.env.XDG_CONFIG_HOME = "D:\\Legacy";
-        process.env.CADET_ENVIRONMENT = "production";
-        expect(resolveLockfilePaths()).toEqual([
-          "C:\\AppData\\cadet\\lockfile.json",
-        ]);
+        );
       } finally {
         Object.defineProperty(process, "platform", descriptor);
       }

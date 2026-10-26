@@ -16,16 +16,6 @@ export function resolveConfigHome(): string {
   return process.env.XDG_CONFIG_HOME?.trim() || paths().join(homedir(), ".config");
 }
 
-export function resolveConfigHomes(): string[] {
-  const canonical = resolveConfigHome();
-  if (!isWindows()) {
-    return [canonical];
-  }
-  const legacy =
-    process.env.XDG_CONFIG_HOME?.trim() || paths().join(homedir(), ".config");
-  return canonical === legacy ? [canonical] : [canonical, legacy];
-}
-
 export function resolveDataHome(): string {
   if (isWindows()) {
     return (

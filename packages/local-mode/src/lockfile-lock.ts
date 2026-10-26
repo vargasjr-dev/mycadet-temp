@@ -79,7 +79,7 @@ function releaseLock(lockDir: string): void {
 
 /**
  * Run `fn` under a cross-process advisory lock keyed to the lockfile write
- * path (`lockfilePaths[0]`). The lock is a `${writePath}.lock` directory:
+ * path. The lock is a `${writePath}.lock` directory:
  * mkdir has O_EXCL semantics on every platform, so exactly one process wins.
  * The winner records its pid in an `owner` file; a contender breaks the lock
  * only when the recorded owner process is gone (or never recorded ownership),
@@ -90,13 +90,10 @@ function releaseLock(lockDir: string): void {
  * `finally`.
  */
 export function withLockfileLock<T>(
-  lockfilePaths: string[],
+  lockfilePath: string,
   fn: () => T,
 ): LockfileLockResult<T> {
-  const writePath = lockfilePaths[0];
-  if (!writePath) {
-    return { ok: false, error: "No lockfile path to lock" };
-  }
+  const writePath = lockfilePath;
   const lockDir = `${writePath}.lock`;
 
   if (heldLocks.has(lockDir)) {

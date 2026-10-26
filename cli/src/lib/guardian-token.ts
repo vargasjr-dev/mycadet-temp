@@ -18,7 +18,6 @@ import {
   guardianTokenPath,
   isConfidentialRefreshUrl,
   resolveConfigDir,
-  resolveConfigDirPaths,
   saveGuardianToken as writeGuardianToken,
   type GuardianTokenData,
 } from "@mycadet/local-mode";
@@ -169,15 +168,12 @@ export function computeDeviceId(): string {
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
-  for (const dir of resolveConfigDirPaths()) {
-    try {
-      const raw = readFileSync(guardianTokenPath(dir, assistantId), "utf-8");
-      return JSON.parse(raw) as GuardianTokenData;
-    } catch {
-      // Try the next compatible location.
-    }
+  try {
+    const raw = readFileSync(guardianTokenPath(resolveConfigDir(), assistantId), "utf-8");
+    return JSON.parse(raw) as GuardianTokenData;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function saveGuardianToken(

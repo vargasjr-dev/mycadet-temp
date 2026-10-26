@@ -16,7 +16,7 @@ import {
   getInputHistoryPath,
   getSharedStateDir,
 } from "../lib/environments/paths.js";
-import { resolveConfigDirPaths, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.
@@ -205,7 +205,7 @@ describe("cadet uninstall", () => {
           ],
         }) + "\n",
       );
-      mkdirSync(resolveConfigDirPaths()[0]!, {
+      mkdirSync(resolveConfigDir(), {
         recursive: true,
       });
 
@@ -240,7 +240,7 @@ describe("cadet uninstall", () => {
         recursive: true,
       });
       mkdirSync(join(stateDir, "retired"), { recursive: true });
-      const configDir = resolveConfigDirPaths()[0]!;
+      const configDir = resolveConfigDir();
       mkdirSync(configDir, { recursive: true });
       const logDir = resolveLogDir();
       mkdirSync(logDir, { recursive: true });
@@ -279,7 +279,7 @@ describe("cadet uninstall", () => {
   test("--yes lists and removes the Cadet executable itself", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const configDir = resolveConfigDirPaths()[0]!;
+      const configDir = resolveConfigDir();
       mkdirSync(configDir, { recursive: true });
 
       // A compiled-binary install: process.execPath IS the install, so the

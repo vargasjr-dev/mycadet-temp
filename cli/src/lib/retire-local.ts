@@ -8,8 +8,8 @@ import {
   loadAllAssistants,
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
+import { readPidFile } from "./process-utils.js";
 import { stopIngressNginx } from "./nginx-ingress.js";
-import { getKnownPidsFromAssistants } from "./orphan-detection.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   stopOrphanedDaemonProcesses,
@@ -86,6 +86,38 @@ export function getRetireArchiveCommand(
   };
 }
 
+/** The PIDs recorded for every OTHER local assistant — the daemon-process
+ * scan must never kill a sibling assistant's live services. */
+function otherAssistantPidSet(
+  entries: LockfileAssistant[],
+  name: string,
+  instanceDir: string,
+): Set<string> {
+  const pids = new Set<string>();
+  for (const entry of entries) {
+    if (entry.assistantId === name && entry.resources?.instanceDir === instanceDir) {
+      continue;
+    }
+    if (entry.cloud === "local" && entry.resources) {
+      const stateDir = getLocalInstanceDir(entry.resources);
+      const candidates = [
+        getDaemonPidPath(entry.resources),
+        join(stateDir, "gateway.pid"),
+        join(stateDir, "workspace", "data", "qdrant", "qdrant.pid"),
+        join(stateDir, "workspace", "embed-worker.pid"),
+      ];
+      for (const file of candidates) {
+        const pid = readPidFile(file);
+        if (pid) pids.add(pid);
+      }
+    }
+    if (typeof entry.watcherPid === "number") {
+      pids.add(String(entry.watcherPid));
+    }
+  }
+  return pids;
+}
+
 export async function retireLocal(
   name: string,
   entry: LockfileAssistant,
@@ -146,12 +178,10 @@ export async function retireLocal(
   // If the PID file didn't track a running daemon, scan for orphaned
   // daemon processes that may have been started without writing a PID.
   if (!daemonStopped) {
-    const otherAssistantPids = getKnownPidsFromAssistants(
-      loadAllAssistants().filter(
-        (other) =>
-          other.assistantId !== name ||
-          other.resources?.instanceDir !== resources.instanceDir,
-      ),
+    const otherAssistantPids = otherAssistantPidSet(
+      loadAllAssistants(),
+      name,
+      resources.instanceDir ?? "",
     );
     await stopOrphanedDaemonProcesses(otherAssistantPids);
   }

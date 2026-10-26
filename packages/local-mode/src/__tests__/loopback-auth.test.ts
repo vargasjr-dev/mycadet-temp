@@ -113,7 +113,7 @@ describe("isActiveAssistant", () => {
         activeAssistant: "active",
       }),
     );
-    expect(isActiveAssistant([lockfilePath], "active")).toBe(true);
+    expect(isActiveAssistant(lockfilePath, "active")).toBe(true);
   });
 
   test("returns true for the sole assistant when activeAssistant is empty", () => {
@@ -126,7 +126,7 @@ describe("isActiveAssistant", () => {
         activeAssistant: null,
       }),
     );
-    expect(isActiveAssistant([lockfilePath], "only")).toBe(true);
+    expect(isActiveAssistant(lockfilePath, "only")).toBe(true);
   });
 
   test("returns true for the sole assistant when activeAssistant is stale", () => {
@@ -139,7 +139,7 @@ describe("isActiveAssistant", () => {
         activeAssistant: "missing",
       }),
     );
-    expect(isActiveAssistant([lockfilePath], "only")).toBe(true);
+    expect(isActiveAssistant(lockfilePath, "only")).toBe(true);
   });
 
   test("returns false for a non-active assistant", () => {
@@ -152,11 +152,11 @@ describe("isActiveAssistant", () => {
         activeAssistant: "active",
       }),
     );
-    expect(isActiveAssistant([lockfilePath], "inactive")).toBe(false);
+    expect(isActiveAssistant(lockfilePath, "inactive")).toBe(false);
   });
 
   test("returns false when lockfile does not exist", () => {
-    expect(isActiveAssistant(["/nonexistent/lockfile.json"], "any")).toBe(
+    expect(isActiveAssistant("/nonexistent/lockfile.json", "any")).toBe(
       false,
     );
   });

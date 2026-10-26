@@ -51,7 +51,7 @@ const WEBSITE = "https://mycadet.ai";
 // Injected by `electron.vite.config.ts` at build time.
 declare const __CADET_BUILD_SHA__: string;
 declare const __CADET_ENVIRONMENT__: string;
-declare const __CADET_VERSION_DISPLAY__: string;
+declare const __CADET_OWN_VERSION__: string;
 
 const CADET_ENV: string =
   typeof __CADET_ENVIRONMENT__ === "string"
@@ -63,13 +63,13 @@ const APP_NAME =
     ? "Cadet"
     : `Cadet ${CADET_ENV.charAt(0).toUpperCase() + CADET_ENV.slice(1)}`;
 
-// Local (dev) builds bake this shell's display version — the stamped form of
-// its own package.json version (`<base>-local.<stamp>.<sha>`, see
-// @mycadet/shared/version) — so the About panel names the build kind
-// and the checkout it came from. Release builds bake the plain version.
+// Builds bake the channel version (`__CADET_OWN_VERSION__`, the same define
+// the bundled local-mode resolver reads) so the About panel names the build
+// kind and the checkout it came from. Unset (tests), the shell's own
+// package version stands in.
 const VERSION: string =
-  typeof __CADET_VERSION_DISPLAY__ === "string" && __CADET_VERSION_DISPLAY__
-    ? __CADET_VERSION_DISPLAY__
+  typeof __CADET_OWN_VERSION__ === "string" && __CADET_OWN_VERSION__
+    ? __CADET_OWN_VERSION__
     : app.getVersion();
 
 const COMMIT_SHA: string =

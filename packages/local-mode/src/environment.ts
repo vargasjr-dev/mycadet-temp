@@ -4,10 +4,9 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
-  stampedVersion,
 } from "@mycadet/shared/version";
 
-import { joinLocalPath, resolveConfigHomes } from "./paths";
+import { joinLocalPath, resolveConfigHome } from "./paths";
 
 // The package's own version. Workspace checkouts read 0.0.1; the release
 // pipeline stamps every bundled package with the release version when it
@@ -15,11 +14,17 @@ import { joinLocalPath, resolveConfigHomes } from "./paths";
 // as @mycadet/cli.
 import { version as packageVersion } from "../package.json";
 
-// Hosts bundling local-mode without the CLI inject the channel version at
-// build time; unset, a source checkout stamps `-local.`, installs keep the pipeline stamp.
-const ownVersion = (): string =>
-  (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
-  stampedVersion(packageVersion, new Date(), import.meta.path);
+/** The one reader of the version contract. Hosts bundling local-mode without
+ * the CLI inject `__CADET_OWN_VERSION__` at build time; unset, the package's
+ * own version decides. Never derived from git state at runtime: an installed
+ * CLI running inside a user's git repo must not mistake the user's HEAD for a
+ * build channel. */
+export function ownVersion(): string {
+  return (
+    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
+    packageVersion
+  );
+}
 
 const PRODUCTION_ENVIRONMENT_NAME = "production";
 
@@ -30,14 +35,8 @@ const PRODUCTION_ENVIRONMENT_NAME = "production";
  * known. Uses AppData on Windows and the XDG config home on macOS and
  * Linux.
  */
-export function defaultEnvironmentFilePaths(): string[] {
-  return resolveConfigHomes().map((home) =>
-    joinLocalPath(home, "cadet", "environment"),
-  );
-}
-
 export function defaultEnvironmentFilePath(): string {
-  return defaultEnvironmentFilePaths()[0]!;
+  return joinLocalPath(resolveConfigHome(), "cadet", "environment");
 }
 
 /**
@@ -45,18 +44,15 @@ export function defaultEnvironmentFilePath(): string {
  * has been set (no file, empty file, or unreadable).
  */
 export function readDefaultEnvironment(): string | undefined {
-  for (const filePath of defaultEnvironmentFilePaths()) {
-    try {
-      if (!existsSync(filePath)) {
-        continue;
-      }
-      const content = readFileSync(filePath, "utf-8").trim();
-      if (content.length > 0) {
-        return content;
-      }
-    } catch {
-      // Try the next compatible location.
+  const filePath = defaultEnvironmentFilePath();
+  try {
+    if (!existsSync(filePath)) {
+      return undefined;
     }
+    const content = readFileSync(filePath, "utf-8").trim();
+    return content.length > 0 ? content : undefined;
+  } catch {
+    // Unreadable file — no default.
   }
   return undefined;
 }

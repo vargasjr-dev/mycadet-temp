@@ -5,7 +5,6 @@ import path from "node:path";
 
 import {
   defaultEnvironmentFilePath,
-  defaultEnvironmentFilePaths,
   environmentFromVersion,
   readDefaultEnvironment,
   resolveEnvironmentName,
@@ -14,7 +13,7 @@ import {
   guardianTokenPath,
   resolveConfigDir,
   resolveInstanceDir,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   resolveLogDir,
   resolveDataDir,
 } from "../config";
@@ -159,13 +158,13 @@ describe("resolveEnvironmentName", () => {
 });
 
 describe("path resolvers honor the persisted default", () => {
-  test("resolveLockfilePaths points at the persisted environment", () => {
+  test("resolveLockfilePath points at the persisted environment", () => {
     (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
       "0.0.1";
     persistDefault("dev");
-    expect(resolveLockfilePaths()).toEqual([
+    expect(resolveLockfilePath()).toBe(
       path.join(configHome, "cadet-dev", "lockfile.json"),
-    ]);
+    );
   });
 
   test("resolveConfigDir points at the persisted environment", () => {
@@ -178,9 +177,9 @@ describe("path resolvers honor the persisted default", () => {
   test("CADET_ENVIRONMENT still wins for path resolution", () => {
     persistDefault("dev");
     process.env.CADET_ENVIRONMENT = "production";
-    expect(resolveLockfilePaths()).toEqual([
+    expect(resolveLockfilePath()).toBe(
       path.join(configHome, "cadet", "lockfile.json"),
-    ]);
+    );
   });
 });
 
@@ -199,7 +198,7 @@ describe("Windows path resolution", () => {
     Object.defineProperty(process, "platform", { value: realPlatform });
   });
 
-  test("uses AppData with XDG read compatibility", () => {
+  test("uses AppData", () => {
     const paths = [
       [defaultEnvironmentFilePath(), "AppData\\Roaming\\cadet\\environment"],
       [resolveConfigDir(), "AppData\\Roaming\\cadet-dev"],
@@ -213,21 +212,19 @@ describe("Windows path resolution", () => {
     for (const [actual, suffix] of paths) {
       expect(actual).toBe(`C:\\Users\\Example\\${suffix}`);
     }
-    expect(resolveLockfilePaths()).toEqual([
+    expect(resolveLockfilePath()).toBe(
       "C:\\Users\\Example\\AppData\\Roaming\\cadet-dev\\lockfile.json",
-      "D:\\LegacyConfig\\cadet-dev\\lockfile.json",
-    ]);
+    );
   });
 
   test("falls back to conventional AppData directories", () => {
     process.env.CADET_ENVIRONMENT = "production";
-    expect(resolveLockfilePaths()).toEqual([
+    expect(resolveLockfilePath()).toBe(
       "C:\\Users\\Example\\AppData\\Roaming\\cadet\\lockfile.json",
-    ]);
-    expect(defaultEnvironmentFilePaths()).toEqual([
+    );
+    expect(defaultEnvironmentFilePath()).toBe(
       "C:\\Users\\Example\\AppData\\Roaming\\cadet\\environment",
-      "D:\\LegacyConfig\\cadet\\environment",
-    ]);
+    );
   });
 
   test("rejects unsafe path segments", () => {

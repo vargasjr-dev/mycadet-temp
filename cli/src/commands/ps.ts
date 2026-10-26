@@ -42,11 +42,10 @@ import { dockerResourceNames } from "../lib/docker";
 import { existsSync } from "fs";
 import {
   classifyProcess,
-  detectOrphanedProcesses,
   isPidAlive,
   parseRemotePs,
   readPidFile,
-} from "../lib/orphan-detection";
+} from "../lib/process-utils";
 import { pgrepExact } from "../lib/pgrep";
 import { probePort } from "../lib/port-probe";
 import { withStatusEmoji } from "../lib/status-emoji";
@@ -849,22 +848,6 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
   if (assistants.length === 0) {
     console.log("No assistants found.");
-
-    const orphans = await detectOrphanedProcesses();
-    if (orphans.length > 0) {
-      console.log("\nOrphaned processes detected:\n");
-      const rows: TableRow[] = orphans.map((o) => ({
-        name: o.name,
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji("running"),
-        info: `PID ${o.pid} (from ${o.source})`,
-      }));
-      printTable(rows);
-      console.log(
-        `\nHint: Run \`cadet clean\` to clean up orphaned processes.`,
-      );
-    }
-
     return;
   }
 

@@ -15,7 +15,7 @@ import {
 } from "../lib/confirm-action.js";
 import { retireDocker } from "../lib/docker.js";
 import { getSharedStateDir } from "../lib/environments/paths.js";
-import { resolveConfigDirPaths, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
+import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { stopProcessByPidFile } from "../lib/process";
 
@@ -187,10 +187,10 @@ function collectDeleteTargets(): DeleteTarget[] {
       description:
         "assistant state, retired archives, and the assistants it holds",
     },
-    ...resolveConfigDirPaths().map((dir) => ({
-      path: dir,
+    {
+      path: resolveConfigDir(),
       description: "config and lockfile",
-    })),
+    },
     { path: resolveLogDir(), description: "logs" },
     // Not environment-scoped: deleting it affects every cadet CLI on the
     // machine — called out in the prompt, not hidden.

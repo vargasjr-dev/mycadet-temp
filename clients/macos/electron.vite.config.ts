@@ -79,7 +79,6 @@ const BUILD_DEFINES = {
     process.env.CADET_ENVIRONMENT || "local",
   ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
-  __CADET_VERSION_DISPLAY__: JSON.stringify(resolveVersion()),
   __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(

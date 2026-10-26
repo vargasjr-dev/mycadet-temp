@@ -25,7 +25,6 @@ process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as healthCheck from "../lib/health-check.js";
-import * as orphanDetection from "../lib/orphan-detection.js";
 import * as cloudClient from "../lib/cloud-client.js";
 
 const loadAllAssistantsMock = spyOn(
@@ -40,10 +39,6 @@ const getActiveAssistantMock = spyOn(
   assistantConfig,
   "getActiveAssistant",
 ).mockReturnValue(null);
-const detectOrphanedProcessesMock = spyOn(
-  orphanDetection,
-  "detectOrphanedProcesses",
-).mockResolvedValue([]);
 const getCloudUrlMock = spyOn(cloudClient, "getCloudUrl").mockReturnValue(
   "http://platform.test",
 );
@@ -126,7 +121,6 @@ afterEach(() => {
 afterAll(() => {
   loadAllAssistantsMock.mockRestore();
   getActiveAssistantMock.mockRestore();
-  detectOrphanedProcessesMock.mockRestore();
   getCloudUrlMock.mockRestore();
   readCloudTokenMock.mockRestore();
   fetchCurrentUserMock.mockRestore();

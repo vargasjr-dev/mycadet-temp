@@ -15,11 +15,11 @@ import {
   pairingPoll,
   pairingStart,
   resolveConfigDir,
+  resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { extractFlag } from "../../lib/arg-utils.js";
-import { resolveLockfilePaths } from "@mycadet/local-mode";
 import { STALE_CLI_UPDATE_HINT } from "../../lib/stale-cli-hint.js";
 
 function printUsage(): void {
@@ -105,12 +105,12 @@ function reportImported(result: {
  * already has instead of a bundle error.
  */
 function importLegacyPairingBundle(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   address: string,
   name: string | undefined,
 ): boolean {
-  const result = importLegacyBundle(lockfilePaths, configDir, {
+  const result = importLegacyBundle(lockfilePath, configDir, {
     bundle: address,
     name,
   });
@@ -166,7 +166,6 @@ export async function connectImport(): Promise<void> {
     process.exit(1);
   }
 
-  const lockfilePaths = resolveLockfilePaths();
   const configDir = resolveConfigDir();
 
   // Refuse a colliding --name BEFORE anything is exchanged. The device code is
@@ -176,7 +175,10 @@ export async function connectImport(): Promise<void> {
   // reservation: another process can still claim the id in between, which the
   // real check inside the import path catches.
   if (nameFlag) {
-    const conflict = checkPairedAssistantName(lockfilePaths, nameFlag);
+    const conflict = checkPairedAssistantName(
+      resolveLockfilePath(),
+      nameFlag,
+    );
     if (conflict) {
       console.error(formatImportFailure(conflict.status, conflict.error));
       process.exit(1);
@@ -189,7 +191,7 @@ export async function connectImport(): Promise<void> {
     // deprecated bundle decoder; only an unusable address falls through to it.
     if (
       started.reason === "invalid-address" &&
-      importLegacyPairingBundle(lockfilePaths, configDir, address, nameFlag)
+      importLegacyPairingBundle(resolveLockfilePath(), configDir, address, nameFlag)
     ) {
       return;
     }
@@ -231,7 +233,7 @@ export async function connectImport(): Promise<void> {
     let consecutiveFailures = 0;
 
     for (;;) {
-      const result = await pairingPoll(lockfilePaths, configDir, {
+      const result = await pairingPoll(resolveLockfilePath(), configDir, {
         handle: started.handle,
         name: nameFlag,
         platform: "cli",

@@ -134,10 +134,10 @@ function derivePairedAssistantId(name?: string, gatewayUrl?: string): string {
 
 /** The raw lockfile entry already holding `localId`, if any. */
 function findRawAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   localId: string,
 ): Record<string, unknown> | undefined {
-  const rawAssistants = readRawLockfile(lockfilePaths).assistants;
+  const rawAssistants = readRawLockfile(lockfilePath).assistants;
   return (
     Array.isArray(rawAssistants)
       ? (rawAssistants as Array<Record<string, unknown>>)
@@ -191,12 +191,12 @@ interface PairedDestination {
  * still what guarantees the id.
  */
 function resolvePairedDestination(
-  lockfilePaths: string[],
+  lockfilePath: string,
   name: string | undefined,
   gatewayUrl?: string,
 ): PairedDestination {
   const localId = derivePairedAssistantId(name, gatewayUrl);
-  const existing = findRawAssistant(lockfilePaths, localId);
+  const existing = findRawAssistant(lockfilePath, localId);
   return {
     localId,
     existing,
@@ -211,10 +211,10 @@ function resolvePairedDestination(
  * local write then fails.
  */
 export function checkPairedAssistantName(
-  lockfilePaths: string[],
+  lockfilePath: string,
   name: string,
 ): PairRefusal | null {
-  return resolvePairedDestination(lockfilePaths, name).refusal;
+  return resolvePairedDestination(lockfilePath, name).refusal;
 }
 
 /**
@@ -229,7 +229,7 @@ export function checkPairedAssistantName(
  * token (validated by signature/audience) is what authorizes requests.
  */
 export function pairAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { credentials, name }: PairOptions,
 ): PairResult {
@@ -259,7 +259,7 @@ export function pairAssistant(
   }
 
   const { localId, existing, refusal } = resolvePairedDestination(
-    lockfilePaths,
+    lockfilePath,
     name,
     credentials.gatewayUrl,
   );
@@ -968,7 +968,7 @@ export interface PairingPollOptions {
  * never leaves credentials for an assistant the user declined to pair.
  */
 export async function pairingPoll(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { handle, name, platform }: PairingPollOptions,
 ): Promise<PairingPollResult> {
@@ -993,7 +993,7 @@ export async function pairingPoll(
   // the caller that, distinguishing it from the post-exchange `import`
   // refusal, which does spend the code.
   const { refusal } = resolvePairedDestination(
-    lockfilePaths,
+    lockfilePath,
     localName,
     session.publicBaseUrl,
   );
@@ -1081,7 +1081,7 @@ export async function pairingPoll(
     return unusableGatewayCredentials();
   }
 
-  const result = pairAssistant(lockfilePaths, configDir, {
+  const result = pairAssistant(lockfilePath, configDir, {
     credentials: {
       gatewayUrl: session.publicBaseUrl,
       token: approved.accessToken,
@@ -1222,7 +1222,7 @@ export type ConnectImportResult =
  * so bundle limits, error strings, and the result shape are defined once.
  */
 export function connectImport(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { bundle, name }: ConnectImportOptions,
 ): ConnectImportResult {
@@ -1236,7 +1236,7 @@ export function connectImport(
   if (!decoded.ok) {
     return { ok: false, status: 400, error: decoded.error };
   }
-  const result = pairAssistant(lockfilePaths, configDir, {
+  const result = pairAssistant(lockfilePath, configDir, {
     credentials: decoded.credentials,
     name: typeof name === "string" && name ? name : undefined,
   });

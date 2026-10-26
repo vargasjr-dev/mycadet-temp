@@ -1,4 +1,5 @@
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
+import { ownVersion } from "@mycadet/local-mode";
 
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../../package.json";
@@ -6,7 +7,6 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
-  stampedVersion,
 } from "@mycadet/shared/version";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
@@ -22,16 +22,6 @@ export function getSeed(name: string): EnvironmentDefinition | undefined {
   const seed = SEEDS[name];
   if (!seed) return undefined;
   return { ...seed };
-}
-
-// Same contract as local-mode's resolver: a host may inject the channel
-// version; unset, a source checkout stamps `-local.` and installed copies
-// keep the pipeline stamp.
-function cliOwnVersion(): string {
-  return (
-    (globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ ??
-    stampedVersion(cliPkg.version ?? "", new Date(), import.meta.path)
-  );
 }
 
 /**
@@ -130,7 +120,7 @@ export function resolveEnvironmentSource(override?: string): {
     return { name: envVar, source: "env" };
   }
   return {
-    name: environmentFromVersion(cliOwnVersion()),
+    name: environmentFromVersion(ownVersion()),
     source: "version",
   };
 }

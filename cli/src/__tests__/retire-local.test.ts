@@ -16,7 +16,7 @@ import {
   getDaemonPidPath,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
-import { resolveLockfilePaths } from "@mycadet/local-mode";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
@@ -78,9 +78,9 @@ import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 const instanceDir = join(testDir, "test-instance");
 
 function writeLockfile(entries: LockfileAssistant[]): void {
-  mkdirSync(dirname(resolveLockfilePaths()[0]!), { recursive: true });
+  mkdirSync(dirname(resolveLockfilePath()), { recursive: true });
   writeFileSync(
-    resolveLockfilePaths()[0]!,
+    resolveLockfilePath(),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }

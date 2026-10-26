@@ -14,7 +14,7 @@ import { join, dirname } from "path";
 import { cliCommand } from "./cli-name.js";
 
 import { getLockfilePlatformBaseUrl } from "./assistant-config.js";
-import { resolveConfigDir, resolveConfigDirPaths } from "@mycadet/local-mode";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
@@ -69,14 +69,11 @@ export function getWebUrl(): string {
 }
 
 export function readCloudToken(): string | null {
-  for (const dir of resolveConfigDirPaths()) {
-    try {
-      return readFileSync(join(dir, "cloud-token"), "utf-8").trim();
-    } catch {
-      // Try the next compatible location.
-    }
+  try {
+    return readFileSync(getCloudTokenPath(), "utf-8").trim();
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function saveCloudToken(token: string): void {
@@ -90,12 +87,10 @@ export function saveCloudToken(token: string): void {
 }
 
 export function clearCloudToken(): void {
-  for (const path of [getCloudTokenPath()]) {
-    try {
-      unlinkSync(path);
-    } catch {
-      // already doesn't exist
-    }
+  try {
+    unlinkSync(getCloudTokenPath());
+  } catch {
+    // already doesn't exist
   }
 }
 

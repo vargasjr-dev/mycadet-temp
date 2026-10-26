@@ -5,14 +5,14 @@ import {
   assertSafePathSegment,
   environmentDirectoryName,
   joinLocalPath,
-  resolveConfigHomes,
+  resolveConfigHome,
   resolveDataHome,
 } from "./paths";
 
 const PRODUCTION_ENVIRONMENT_NAME = "production";
 
 export interface LocalEndpointConfig {
-  lockfilePaths: string[];
+  lockfilePath: string;
   configDir: string;
   cloudUrl: string;
 }
@@ -25,37 +25,18 @@ export function resolveLocalConfigFromEnv(): LocalEndpointConfig {
   const seed = SEEDS[cadetEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
 
   return {
-    lockfilePaths: resolveLockfilePaths(),
+    lockfilePath: resolveLockfilePath(),
     configDir: resolveConfigDir(),
     cloudUrl: process.env.CADET_CLOUD_URL || seed.cloudUrl,
   };
 }
 
-export function resolveLockfilePaths(): string[] {
-  const cadetEnv = resolveEnvironmentName();
-  if (process.platform === "win32") {
-    const canonical = joinLocalPath(resolveConfigDir(), "lockfile.json");
-    if (cadetEnv === PRODUCTION_ENVIRONMENT_NAME) {
-      return [canonical];
-    }
-    return [
-      canonical,
-      joinLocalPath(resolveConfigDirPaths().at(-1)!, "lockfile.json"),
-    ];
-  }
-
-  return [joinLocalPath(resolveConfigDir(), "lockfile.json")];
+export function resolveLockfilePath(): string {
+  return joinLocalPath(resolveConfigDir(), "lockfile.json");
 }
 
 export function resolveConfigDir(): string {
-  return resolveConfigDirPaths()[0]!;
-}
-
-export function resolveConfigDirPaths(): string[] {
-  const cadetEnv = resolveEnvironmentName();
-  return resolveConfigHomes().map((home) =>
-    joinLocalPath(home, environmentDirectoryName(cadetEnv)),
-  );
+  return joinLocalPath(resolveConfigHome(), environmentDirectoryName(resolveEnvironmentName()));
 }
 
 export function resolveDataDir(): string {

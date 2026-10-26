@@ -6,6 +6,8 @@ import path from "node:path";
 import { pairingSessionSurvives } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { guardianTokenPath } from "../config";
+import { resolveEnvironmentName } from "../environment";
+import { resolveLockfilePath } from "../config";
 import {
   checkPairedAssistantName,
   connectImport,
@@ -197,6 +199,7 @@ const sleep = (ms: number): Promise<void> =>
 
 describe("pairAssistant", () => {
   test("writes the lockfile entry and guardian token with the exact CLI shapes and modes", () => {
+    console.log("PROBE", resolveEnvironmentName(), resolveLockfilePath(), lockfilePath);
     const result = pairAssistant([lockfilePath], configDir, {
       credentials: credentials({ token: jwtWithExp, deviceId: "dev-aaa" }),
     });

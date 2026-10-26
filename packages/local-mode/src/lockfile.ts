@@ -11,7 +11,7 @@ import {
   type LockfileAssistant,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
-import { resolveLockfilePaths } from "./config";
+import { resolveLockfilePath } from "./config";
 import { z } from "zod";
 
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
@@ -27,18 +27,17 @@ import { stripSensitiveFields } from "./util";
  * same bytes.
  */
 export function readLockfile(): Lockfile {
-  for (const lockfilePath of resolveLockfilePaths()) {
-    if (!fs.existsSync(lockfilePath)) continue;
-    try {
-      const parsed = LockfileSchema.safeParse(
-        JSON.parse(fs.readFileSync(lockfilePath, "utf-8")),
-      );
-      if (parsed.success) {
-        return parsed.data;
-      }
-    } catch {
-      // Malformed lockfile; try next
+  const lockfilePath = resolveLockfilePath();
+  if (!fs.existsSync(lockfilePath)) return LockfileSchema.parse({});
+  try {
+    const parsed = LockfileSchema.safeParse(
+      JSON.parse(fs.readFileSync(lockfilePath, "utf-8")),
+    );
+    if (parsed.success) {
+      return parsed.data;
     }
+  } catch {
+    // Malformed lockfile degrades to the empty registry.
   }
   return LockfileSchema.parse({});
 }
@@ -54,22 +53,16 @@ export type LockfileResult =
  * this stays package-internal (never re-exported from the index) — everything
  * else reads through {@link readLockfile}.
  */
-export function getLockfileData(lockfilePaths: string[]): LockfileResult {
-  let raw: string | undefined;
-  for (const candidate of lockfilePaths) {
-    try {
-      raw = fs.readFileSync(candidate, "utf-8");
-      break;
-    } catch (err: unknown) {
-      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
-        return { ok: false, status: 500 };
-      }
+export function getLockfileData(lockfilePath: string): LockfileResult {
+  let raw: string;
+  try {
+    raw = fs.readFileSync(lockfilePath, "utf-8");
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      const empty = { assistants: [], activeAssistant: null };
+      return { ok: true, data: empty, raw: empty };
     }
-  }
-
-  if (!raw) {
-    const empty = { assistants: [], activeAssistant: null };
-    return { ok: true, data: empty, raw: empty };
+    return { ok: false, status: 500 };
   }
 
   let data: Record<string, unknown>;
@@ -89,10 +82,10 @@ export function getLockfileData(lockfilePaths: string[]): LockfileResult {
  * hatch/wake.
  */
 export function isPairedLockfileEntry(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
 ): boolean {
-  const lockfile = readRawLockfile(lockfilePaths);
+  const lockfile = readRawLockfile(lockfilePath);
   const assistants = Array.isArray(lockfile.assistants)
     ? (lockfile.assistants as Array<Record<string, unknown>>)
     : [];
@@ -127,19 +120,16 @@ function lockFailure(error: string): WriteResult {
  * read-modify-write cycle; an unreadable file yields an empty lockfile.
  */
 export function readRawLockfile(
-  lockfilePaths: string[],
+  lockfilePath: string,
 ): Record<string, unknown> {
-  for (const candidate of lockfilePaths) {
-    try {
-      return JSON.parse(fs.readFileSync(candidate, "utf-8")) as Record<
-        string,
-        unknown
-      >;
-    } catch {
-      // continue
-    }
+  try {
+    return JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    return { assistants: [], activeAssistant: null };
   }
-  return { assistants: [], activeAssistant: null };
 }
 
 export type RawLockfileReadResult =
@@ -153,33 +143,30 @@ export type RawLockfileReadResult =
  * replace a registry they could not actually read.
  */
 export function readRawLockfileStrict(
-  lockfilePaths: string[],
+  lockfilePath: string,
 ): RawLockfileReadResult {
-  for (const candidate of lockfilePaths) {
-    let raw: string;
-    try {
-      raw = fs.readFileSync(candidate, "utf-8");
-    } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === "ENOENT") continue;
-      return { ok: false, error: `Failed to read lockfile: ${err}` };
+  let raw: string;
+  try {
+    raw = fs.readFileSync(lockfilePath, "utf-8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      return { ok: true, lockfile: { assistants: [], activeAssistant: null } };
     }
-    if (raw.trim() === "") continue;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (err) {
-      return { ok: false, error: `Failed to parse lockfile: ${err}` };
-    }
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      Array.isArray(parsed)
-    ) {
-      return { ok: false, error: "Lockfile is not a JSON object" };
-    }
-    return { ok: true, lockfile: parsed as Record<string, unknown> };
+    return { ok: false, error: `Failed to read lockfile: ${err}` };
   }
-  return { ok: true, lockfile: { assistants: [], activeAssistant: null } };
+  if (raw.trim() === "") {
+    return { ok: true, lockfile: { assistants: [], activeAssistant: null } };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return { ok: false, error: `Failed to parse lockfile: ${err}` };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, error: "Lockfile is not a JSON object" };
+  }
+  return { ok: true, lockfile: parsed as Record<string, unknown> };
 }
 
 /** The validated, sensitive-field-stripped wire view of a raw lockfile. */
@@ -197,10 +184,10 @@ function toWireLockfile(lockfile: Record<string, unknown>): Lockfile {
  * validated, sensitive-field-stripped view of what was written.
  */
 export function writeRawLockfile(
-  lockfilePaths: string[],
+  lockfilePath: string,
   lockfile: Record<string, unknown>,
 ): WriteResult {
-  const writePath = lockfilePaths[0]!;
+  const writePath = lockfilePath;
   try {
     const dir = path.dirname(writePath);
     fs.mkdirSync(dir, { recursive: true });
@@ -229,14 +216,14 @@ export function writeRawLockfile(
  * refuses (423) without writing.
  */
 export function renameLockfileAssistantIfPresent(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
   name: string,
 ): WriteResult {
   if (typeof name !== "string" || name === "") {
     return { ok: false, status: 400, error: "Missing name" };
   }
-  return patchLockfileAssistantIfPresent(lockfilePaths, assistantId, { name });
+  return patchLockfileAssistantIfPresent(lockfilePath, assistantId, { name });
 }
 
 /**
@@ -246,7 +233,7 @@ export function renameLockfileAssistantIfPresent(
  * move it.
  */
 export function stampLockfileAssistantOnboardedIfPresent(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
   onboardedAt: string,
 ): WriteResult {
@@ -254,7 +241,7 @@ export function stampLockfileAssistantOnboardedIfPresent(
     return { ok: false, status: 400, error: "Missing onboardedAt" };
   }
   return patchLockfileAssistantIfPresent(
-    lockfilePaths,
+    lockfilePath,
     assistantId,
     { onboardedAt },
     (entry) =>
@@ -268,7 +255,7 @@ export function stampLockfileAssistantOnboardedIfPresent(
  * a successful no-op for a field whose current value should win.
  */
 function patchLockfileAssistantIfPresent(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
   patch: Record<string, unknown>,
   skip?: (entry: Record<string, unknown>) => boolean,
@@ -277,8 +264,8 @@ function patchLockfileAssistantIfPresent(
     return { ok: false, status: 400, error: "Missing assistantId" };
   }
 
-  const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
-    const read = readRawLockfileStrict(lockfilePaths);
+  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
+    const read = readRawLockfileStrict(lockfilePath);
     if (!read.ok) {
       return { ok: false, status: 409, error: read.error };
     }
@@ -303,7 +290,7 @@ function patchLockfileAssistantIfPresent(
     }
     assistants[idx] = { ...entry, ...patch };
     lockfile.assistants = assistants;
-    return writeRawLockfile(lockfilePaths, lockfile);
+    return writeRawLockfile(lockfilePath, lockfile);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
@@ -319,10 +306,10 @@ export function saveLockfileAssistant(
   if (!assistant || typeof assistant.assistantId !== "string") {
     throw new Error("Missing assistant.assistantId");
   }
-  const lockfilePaths = resolveLockfilePaths();
+  const lockfilePath = resolveLockfilePath();
 
-  const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
-    const lockfile = readRawLockfile(lockfilePaths);
+  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
+    const lockfile = readRawLockfile(lockfilePath);
     const assistants = Array.isArray(lockfile.assistants)
       ? lockfile.assistants
       : [];
@@ -342,7 +329,7 @@ export function saveLockfileAssistant(
       lockfile.activeAssistant = activeAssistant;
     }
 
-    return writeRawLockfile(lockfilePaths, lockfile);
+    return writeRawLockfile(lockfilePath, lockfile);
   });
   if (!locked.ok) {
     throw new Error(locked.error);
@@ -350,29 +337,26 @@ export function saveLockfileAssistant(
 }
 
 export function isActiveAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
 ): boolean {
-  for (const candidate of lockfilePaths) {
-    try {
-      const data = JSON.parse(fs.readFileSync(candidate, "utf-8")) as Record<
-        string,
-        unknown
-      >;
-      if (data.activeAssistant === assistantId) return true;
-      const assistants = data.assistants;
-      if (!Array.isArray(assistants) || assistants.length !== 1) return false;
-      const [onlyAssistant] = assistants as Array<Record<string, unknown>>;
-      return onlyAssistant?.assistantId === assistantId;
-    } catch {
-      continue;
-    }
+  try {
+    const data = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as Record<
+      string,
+      unknown
+    >;
+    if (data.activeAssistant === assistantId) return true;
+    const assistants = data.assistants;
+    if (!Array.isArray(assistants) || assistants.length !== 1) return false;
+    const [onlyAssistant] = assistants as Array<Record<string, unknown>>;
+    return onlyAssistant?.assistantId === assistantId;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 export function replaceCloudAssistants(
-  lockfilePaths: string[],
+  lockfilePath: string,
   cloudAssistants: Array<Record<string, unknown>>,
   organizationId?: string,
 ): WriteResult {
@@ -391,8 +375,8 @@ export function replaceCloudAssistants(
     };
   }
 
-  const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
-    const lockfile = readRawLockfile(lockfilePaths);
+  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
+    const lockfile = readRawLockfile(lockfilePath);
     const existing = Array.isArray(lockfile.assistants)
       ? lockfile.assistants
       : [];
@@ -430,7 +414,7 @@ export function replaceCloudAssistants(
       if (!stillExists) lockfile.activeAssistant = null;
     }
 
-    return writeRawLockfile(lockfilePaths, lockfile);
+    return writeRawLockfile(lockfilePath, lockfile);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

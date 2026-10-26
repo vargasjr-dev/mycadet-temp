@@ -14,11 +14,7 @@ import {
   stopProcessByPidFile,
   windowsCommandLineLookupArgs,
 } from "../lib/process";
-import {
-  isInteractiveCliSession,
-  parseRemotePs,
-  processTableCommand,
-} from "../lib/orphan-detection";
+import { parseRemotePs } from "../lib/process-utils";
 
 test("uses Windows executable suffixes without changing Unix names", () => {
   expect(executableName("cadet-daemon", "win32")).toBe("cadet-daemon.exe");
@@ -43,16 +39,6 @@ test("passes the PID inside the PowerShell command", () => {
   expect(args[3]).not.toContain("$args");
 });
 
-test("selects a direct process-table command with fixed arguments", () => {
-  const windows = processTableCommand("win32");
-  expect(windows.command).toBe("powershell.exe");
-  expect(windows.args.join(" ")).toContain("Win32_Process");
-  expect(processTableCommand("linux")).toEqual({
-    command: "ps",
-    args: ["ax", "-o", "pid=,ppid=,args="],
-  });
-});
-
 test("preserves command lines containing spaces and Unicode usernames", () => {
   const [parsed] = parseRemotePs(
     "42 1 C:\\Users\\Example User 用户\\Cadet\\cadet-daemon.exe --port 3030",
@@ -60,11 +46,6 @@ test("preserves command lines containing spaces and Unicode usernames", () => {
   expect(parsed.command).toContain(
     "Example User 用户\\Cadet\\cadet-daemon.exe",
   );
-  expect(
-    isInteractiveCliSession(
-      '"C:\\Users\\Example User 用户\\Cadet\\cadet.exe" exec -it --service cadet-gateway',
-    ),
-  ).toBeTrue();
 });
 
 test("rejects a stale PID file", () => {

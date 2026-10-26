@@ -1,4 +1,4 @@
-import { resolveLockfilePaths } from "@mycadet/local-mode";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import {
   afterAll,
   afterEach,
@@ -120,7 +120,7 @@ beforeEach(() => {
   // Write an empty lockfile so saveLockfileAssistant has a dir to write to
   mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    resolveLockfilePaths()[0]!,
+    resolveLockfilePath(),
     JSON.stringify({ assistants: [] }) + "\n",
   );
 

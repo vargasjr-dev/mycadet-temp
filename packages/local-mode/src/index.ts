@@ -24,9 +24,8 @@ export {
 } from "./lifecycle-budgets";
 export {
   resolveLocalConfigFromEnv,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   resolveConfigDir,
-  resolveConfigDirPaths,
   resolveDataDir,
   resolveLogDir,
   resolveAssistantsDir,
@@ -36,7 +35,7 @@ export {
 export type { LocalEndpointConfig } from "./config";
 export {
   defaultEnvironmentFilePath,
-  defaultEnvironmentFilePaths,
+  ownVersion,
   readDefaultEnvironment,
   resolveEnvironmentName,
 } from "./environment";
@@ -44,7 +43,7 @@ export {
   assertSafePathSegment,
   environmentDirectoryName,
   joinLocalPath,
-  resolveConfigHomes,
+  resolveConfigHome,
   resolveDataHome,
 } from "./paths";
 export {
