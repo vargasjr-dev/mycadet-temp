@@ -262,17 +262,11 @@ export async function loadLockfileHost(): Promise<Lockfile> {
   // every reader (`getActiveAssistant`). Validate before trusting: a payload
   // without an `assistants` array is a host mismatch, raised so `loadLockfile`'s
   // catch keeps the cached and persisted state instead.
-  const raw: unknown = await res.json();
-  if (
-    !raw ||
-    typeof raw !== "object" ||
-    !Array.isArray((raw as { assistants?: unknown }).assistants)
-  ) {
-    throw new Error(
-      "lockfile fetch returned a non-lockfile payload — this host does not serve the local-mode contract",
-    );
-  }
-  return parseLockfile(raw);
+  // The schema is the lockfile's single parser (`parseLockfile`): it is total
+  // by design, so a foreign same-origin payload (an auth envelope, an API
+  // list — any 200 that isn't the local host's contract) coerces to an empty
+  // lockfile instead of crashing readers with `assistants: undefined`.
+  return parseLockfile(await res.json());
 }
 
 /**

@@ -16,9 +16,14 @@ export const STARTUP_FAILURE_MESSAGE =
  * `boot`'s pre-render catch. Visual language matches the assistant
  * resolution error (`ActiveAssistantError`): icon, honest copy, retry —
  * the same failure, one step earlier in the boot.
+ *
+ * `error` is the thrown value that sank the boot, when one exists: its
+ * message renders under the generic copy so the screen carries signal for
+ * support instead of a dead end.
  */
-export function StartupFailure() {
+export function StartupFailure({ error }: { error?: unknown }) {
   const { t } = useTranslation();
+  const detail = error instanceof Error ? error.message : undefined;
 
   useEffect(() => {
     void markNativeLaunchScreenReady("system");
@@ -37,6 +42,11 @@ export function StartupFailure() {
         <p className="text-body-medium-lighter text-[var(--content-secondary)]">
           {STARTUP_FAILURE_MESSAGE}
         </p>
+        {detail ? (
+          <p className="max-w-md font-mono text-xs break-words text-[var(--content-tertiary)]">
+            {detail}
+          </p>
+        ) : null}
         <Button variant="ghost" onClick={() => window.location.reload()}>
           {t("startupFailure.reloadApp")}
         </Button>

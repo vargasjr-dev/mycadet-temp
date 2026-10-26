@@ -134,7 +134,7 @@ function showBootFailure(error: unknown): void {
       return;
     }
     bootFailureRendered = true;
-    createRoot(rootEl).render(<StartupFailure />);
+    createRoot(rootEl).render(<StartupFailure error={error} />);
   } catch (renderError) {
     console.error("Unable to show the startup error", renderError);
   }
