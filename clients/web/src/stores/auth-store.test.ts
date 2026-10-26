@@ -68,7 +68,7 @@ const primeLocalGatewayConnectionWithRepairMock = mock(async () => {
     throw mockPrimeError;
   }
 });
-const refreshRemoteGatewaySessionMock = mock(async () => false);
+const hasRemoteGatewaySessionMock = mock(async () => false);
 const clearOrganizationMock = mock(() => {});
 const logoutMock = mock(async () => {});
 const deleteBiometricTokenMock = mock(async () => {});
@@ -181,7 +181,7 @@ mock.module("@/lib/local-mode", () => ({
 }));
 
 mock.module("@/lib/auth/remote-gateway-session", () => ({
-  refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
+  hasRemoteGatewaySession: hasRemoteGatewaySessionMock,
   remoteGatewayPublicPathPrefix: () => "",
 }));
 
@@ -337,7 +337,7 @@ beforeEach(() => {
   primeLocalGatewayConnectionMock.mockClear();
   primeLocalGatewayConnectionWithStartupRetryMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
-  refreshRemoteGatewaySessionMock.mockClear();
+  hasRemoteGatewaySessionMock.mockClear();
   clearOrganizationMock.mockClear();
   clearUserScopedStorageMock.mockClear();
   clearWidgetSnapshotMock.mockClear();
@@ -365,10 +365,10 @@ afterEach(() => {
 describe("auth store onboarding flag reconciliation", () => {
   for (const refreshSucceeds of [true, false]) {
     for (const localBuild of [true, false]) {
-      test(`served browser init and resume skip cloud auth (refresh=${refreshSucceeds}, local build=${localBuild})`, async () => {
+      test(`served browser init and resume skip cloud auth (probe=${refreshSucceeds}, local build=${localBuild})`, async () => {
         mockIsServedGatewayRuntime = true;
         mockIsLocalClient = localBuild;
-        refreshRemoteGatewaySessionMock.mockImplementation(
+        hasRemoteGatewaySessionMock.mockImplementation(
           async () => refreshSucceeds,
         );
         await useAuthStore.getState().initSession();
@@ -381,30 +381,30 @@ describe("auth store onboarding flag reconciliation", () => {
         expect(useAuthStore.getState().sessionStatus).toBe(
           refreshSucceeds ? "authenticated" : "unauthenticated",
         );
-        refreshRemoteGatewaySessionMock.mockImplementation(async () => false);
+        hasRemoteGatewaySessionMock.mockImplementation(async () => false);
       });
     }
   }
 
-  test("initSession treats remote-gateway mode as an authenticated local session", async () => {
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
+  test("initSession treats remote-gateway mode as an authenticated local session (cookie probe)", async () => {
+    hasRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
 
     await useAuthStore.getState().initSession();
 
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("refreshSession keeps remote-gateway mode authenticated without minting a local token", async () => {
+  test("refreshSession keeps remote-gateway mode authenticated via the cookie probe", async () => {
     mockIsGatewayAuth = true;
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
+    hasRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
@@ -419,7 +419,7 @@ describe("auth store onboarding flag reconciliation", () => {
 
       // The pair page's session comes from the pairing flow itself: no
       // guardian-refresh ping, no local prime, no cloud probe.
-      expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+      expect(hasRemoteGatewaySessionMock).not.toHaveBeenCalled();
       expect(
         primeLocalGatewayConnectionWithStartupRetryMock,
       ).not.toHaveBeenCalled();
@@ -435,8 +435,8 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await useAuthStore.getState().initSession();
 
-    // The boot ping still runs (it is the paired-device restore path)...
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    // The boot probe still runs (it is the paired-device restore path)...
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     // ...but the desktop prime machinery (its 90s startup ride-out) never
     // does, so the route guard can route an unpaired device to the pair
     // page immediately.
@@ -446,10 +446,10 @@ describe("auth store onboarding flag reconciliation", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
-  test("initSession leaves remote-gateway mode unauthenticated when cookie refresh fails and no token exists", async () => {
+  test("initSession leaves remote-gateway mode unauthenticated when the cookie probe fails", async () => {
     await useAuthStore.getState().initSession();
 
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
@@ -465,7 +465,7 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await useAuthStore.getState().initSession();
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+    expect(hasRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
@@ -483,7 +483,7 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+    expect(hasRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
@@ -495,33 +495,17 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+    expect(hasRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
-  test("refreshSession ends remote-gateway sessions when refresh fails and no token exists", async () => {
+  test("refreshSession ends remote-gateway sessions when the cookie probe fails", async () => {
     useAuthStore.setState({ ...authenticatedLocalUserForTest() });
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
-
-  test("refreshSession keeps remote-gateway sessions when refresh throws but a token is still valid", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => {
-      throw new TypeError("Failed to fetch");
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
-
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -1930,8 +1914,8 @@ describe("paired selection in the gateway-auth session paths", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    // The gateway-JWT rotation covers the refresh.
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    // The gateway-JWT rotation covers the refresh — the cookie probe runs.
+    expect(hasRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
 

@@ -253,7 +253,9 @@ describe("remote web pairing token exchange", () => {
     expect(body.deviceId).toBeUndefined();
 
     const cookies = setCookies(res);
-    expect(cookies).toHaveLength(1);
+    expect(cookies).toHaveLength(2);
+    expect(cookies.some((c) => c.startsWith("cadet_web_access="))).toBe(true);
+    expect(cookies.some((c) => c.startsWith("cadet_web_refresh="))).toBe(true);
     for (const cookie of cookies) {
       expect(cookie).toContain("HttpOnly");
       expect(cookie).toContain("Secure");
@@ -539,7 +541,7 @@ describe("remote web pairing token exchange", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(setCookies(res)).toHaveLength(1);
+    expect(setCookies(res)).toHaveLength(2);
     expect(activeTokens()).toHaveLength(1);
     expect(activeRefreshTokens()).toHaveLength(1);
 
@@ -604,7 +606,7 @@ describe("remote web pairing token exchange", () => {
     );
 
     expect(retry.status).toBe(200);
-    expect(setCookies(retry)).toHaveLength(1);
+    expect(setCookies(retry)).toHaveLength(2);
     expect(activeTokens()).toHaveLength(1);
     expect(activeRefreshTokens()).toHaveLength(1);
   });

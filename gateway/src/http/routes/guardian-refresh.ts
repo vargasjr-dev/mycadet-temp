@@ -42,6 +42,8 @@ function browserRefreshResponse(
 ): Response {
   const headers = new Headers({ "Cache-Control": "no-store" });
   for (const cookie of buildRemoteWebBrowserAuthCookies({
+    accessToken: result.accessToken,
+    accessTokenExpiresAtMs: result.accessTokenExpiresAt,
     refreshToken: result.refreshToken,
     refreshTokenExpiresAtMs: result.refreshTokenExpiresAt,
   })) {

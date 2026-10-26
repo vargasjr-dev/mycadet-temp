@@ -34,7 +34,7 @@ import {
 import { getElectronSessionToken } from "@/runtime/session-token";
 import { clearWidgetSnapshot } from "@/runtime/widget-snapshot";
 import { resetNotificationIdentitySession } from "@/runtime/notification-avatar";
-import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
+import { hasRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import {
   isLocalClient,
   isCadetCloudRemote,
@@ -56,7 +56,6 @@ import {
 } from "@/stores/organization-store";
 import { clearUserScopedStorage } from "@/lib/auth/session-cleanup";
 import {
-  getSelfHostedActorToken,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -537,15 +536,12 @@ function probeCloudSessionIfReachable(
   }
 }
 
-async function hasRemoteGatewaySessionAfterRefresh(): Promise<boolean> {
-  try {
-    if (await refreshRemoteGatewaySession()) {
-      return true;
-    }
-  } catch {
-    // A network failure says nothing about an already-valid in-memory token.
-  }
-  return getSelfHostedActorToken() !== null;
+async function hasRemoteGatewaySessionAfterProbe(): Promise<boolean> {
+  // The web client never refreshes — the session lives in HttpOnly cookies
+  // the gateway minted at pairing, and the probe is an effect-free
+  // authenticated GET. A network failure settles "no session" here (the
+  // boot's own error handling surfaces connectivity separately).
+  return hasRemoteGatewaySession();
 }
 
 /**
@@ -601,7 +597,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       return;
     }
     // Gateway-token JWT scheme — refresh what we hold, else prime below.
-    if (await hasRemoteGatewaySessionAfterRefresh()) {
+    if (await hasRemoteGatewaySessionAfterProbe()) {
       set({ ...authenticatedLocalUser(), cloudSession: "absent" });
       // A local client may also hold a cloud session (logged in through
       // the cloud login flow) — keep probing for it; it settles async. A
@@ -743,7 +739,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       await endSession(set);
       return false;
     }
-    if (await hasRemoteGatewaySessionAfterRefresh()) {
+    if (await hasRemoteGatewaySessionAfterProbe()) {
       if (supersededByLogout()) {
         return abandon();
       }

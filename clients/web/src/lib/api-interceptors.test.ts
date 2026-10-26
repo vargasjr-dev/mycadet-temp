@@ -26,7 +26,6 @@ import {
 import type * as LocalMode from "@/lib/local-mode";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
-import type * as RemoteGatewaySession from "@/lib/auth/remote-gateway-session";
 
 const isLocalClientMock = mock(() => false);
 const isCadetCloudRemoteMock = mock(() => false);
@@ -117,19 +116,6 @@ mock.module("@/lib/diagnostics", () => ({
     lifecycleDiagnosticCalls.push([kind, details]);
   },
 }));
-
-// Paired-browser refresh, stubbed so remote-gateway recovery is driven
-// without a live pairing cookie; a test flips it to model a rejected refresh.
-let refreshRemoteGatewaySessionImpl: () => Promise<boolean> = async () => true;
-const refreshRemoteGatewaySessionMock = mock((_opts?: { force?: boolean }) =>
-  refreshRemoteGatewaySessionImpl(),
-);
-mock.module(
-  "@/lib/auth/remote-gateway-session",
-  (): Partial<typeof RemoteGatewaySession> => ({
-    refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
-  }),
-);
 
 import { client as cloudClient } from "@/generated/api/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
@@ -1280,8 +1266,6 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     clearGatewayTokenStorage();
     resetGw401RecoveryState();
     primeGatewayWithRepairMock.mockClear();
-    refreshRemoteGatewaySessionMock.mockClear();
-    refreshRemoteGatewaySessionImpl = async () => true;
     captureErrorMock.mockClear();
     // Model the real prime: a fresh token lands in the connection slot.
     primeGatewayWithRepairImpl = async () => {
@@ -1423,35 +1407,30 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
   });
 
-  test("remote-gateway mode refreshes the paired session in place", async () => {
+  test("remote-gateway mode boots into pairing on a 401 — no in-page recovery", async () => {
     /**
-     * A paired browser session has a refresh cookie; a rejected access
-     * token is exchanged for a new one without leaving the page.
+     * The served browser holds no credential in JS: the session lives in
+     * HttpOnly cookies the gateway minted at pairing, and the web client
+     * never refreshes (a refresh rotates the token family — the mechanism
+     * that torched multi-context sessions). A 401 is therefore terminal
+     * for the page lifecycle: reload into the pairing flow, no replay.
      */
 
-    // GIVEN remote-gateway mode and a refresh that lands a new token
+    // GIVEN remote-gateway mode
     isCadetCloudRemoteMock.mockImplementation(() => false);
     isServedGatewayRuntimeMock.mockImplementation(() => true);
-    refreshRemoteGatewaySessionImpl = async () => {
-      setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
-      return true;
-    };
 
     // WHEN a gateway GET's 401 reaches the interceptor
+    const response = gatewayResponse(401);
     const result = await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
+      response,
       gatewayGet(),
     );
 
-    // THEN the refresh was forced and the request replayed on the new token
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledWith({
-      force: true,
-    });
-    expect(replayedRequests[0].headers.get("Authorization")).toBe(
-      "Bearer fresh-tok",
-    );
-    expect(result.status).toBe(200);
-    expect(reloadCalls).toBe(0);
+    // THEN the page reloads and the 401 flows back without a replay
+    expect(reloadCalls).toBe(1);
+    expect(replayedRequests).toHaveLength(0);
+    expect(result).toBe(response);
     expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
   });
 
@@ -1741,32 +1720,6 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
     // THEN the old assistant's ingress is NOT put back
     expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
-  });
-
-  test("remote-gateway mode reloads only when the refresh cookie is rejected too", async () => {
-    /**
-     * A paired session whose refresh is refused cannot be revived from the
-     * renderer, so it boots into the pairing flow. This is the one reload
-     * left, and it is budgeted like every other attempt.
-     */
-
-    // GIVEN the gateway-token scheme and a rejected refresh
-    isCadetCloudRemoteMock.mockImplementation(() => false);
-    isServedGatewayRuntimeMock.mockImplementation(() => true);
-    refreshRemoteGatewaySessionImpl = async () => false;
-
-    // WHEN the gateway rejects with 401
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      gatewayGet(),
-    );
-
-    // THEN the page reloads and the 401 flows back without a replay
-    expect(reloadCalls).toBe(1);
-    expect(replayedRequests).toHaveLength(0);
-    expect(result).toBe(response);
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
   });
 
   test("does not recover on non-401 status codes", async () => {

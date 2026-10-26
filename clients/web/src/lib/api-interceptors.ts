@@ -31,7 +31,6 @@ import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
 import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
-import { refreshRemoteGatewaySession } from "@/lib/auth/remote-gateway-session";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
@@ -485,8 +484,10 @@ const gatewayRequestInterceptor = createInterceptor({
  * gateway through the host-routed readyz route (waking a stopped local
  * assistant when the probe failure is repairable) and re-seeds the
  * self-hosted connection slot the request interceptor reads. Remote-gateway
- * (paired browser) sessions run {@link refreshRemoteGatewaySession} with
- * `force`, which exchanges the refresh cookie for a new access token.
+ * (paired browser) sessions hold no refreshable credential in JS — the
+ * session lives in HttpOnly cookies the gateway minted at pairing — so a
+ * 401 there is terminal for the page lifecycle: boot into the pairing
+ * flow.
  * Neither path clears anything first: the slot's token is null in this mode
  * — bearer custody lives in the trusted host, whose forward already forces
  * one re-mint and retry of its own before a 401 can reach this interceptor
@@ -562,12 +563,11 @@ export function resetGw401RecoveryState(): void {
 }
 
 async function recoverRemoteGatewaySessionInPlace(): Promise<boolean> {
-  const refreshed = await refreshRemoteGatewaySession({ force: true });
-  if (refreshed) {
-    recordLifecycleDiagnostic("gw_401_recovery", { outcome: "recovered" });
-    return true;
-  }
-  // The refresh cookie is rejected too: nothing in the renderer can revive
+  // The served browser holds no refreshable credential in JS — the session
+  // lives in HttpOnly cookies the gateway minted at pairing, and the web
+  // client never refreshes (a refresh rotates the token family, which is
+  // what torched multi-context sessions before). A 401 here means the
+  // cookie no longer authenticates: nothing in the renderer can revive
   // this session, so boot into the pairing flow.
   recordLifecycleDiagnostic("gw_401_recovery", { outcome: "reload" });
   gw401ReloadFired = true;
