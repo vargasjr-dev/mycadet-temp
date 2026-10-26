@@ -44,7 +44,7 @@ configureLocalMode({
   handle,
   paths: {
     configDir: resolveConfigDir(process.env),
-    environment: resolveEnvironmentName(process.env),
+    environment: resolveEnvironmentName(),
     lockfilePaths: resolveLockfilePaths(process.env),
   },
   refreshLockfile: refreshLockfileNow,

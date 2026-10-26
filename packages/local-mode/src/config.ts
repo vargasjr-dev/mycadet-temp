@@ -28,7 +28,7 @@ export function resolveLocalConfigFromEnv(
   env: Record<string, string | undefined>,
   options: LocalPathOptions = {},
 ): LocalEndpointConfig {
-  const cadetEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
   const seed = SEEDS[cadetEnv] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME]!;
 
   return {
@@ -42,7 +42,7 @@ export function resolveLockfilePaths(
   env: Record<string, string | undefined>,
   options: LocalPathOptions = {},
 ): string[] {
-  const cadetEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
   const lockfileDir = Object.hasOwn(options, "lockfileDirOverride")
     ? options.lockfileDirOverride
     : env.CADET_LOCKFILE_DIR?.trim();
@@ -81,7 +81,7 @@ export function resolveConfigDirPaths(
   if (options.configDirOverride) {
     return [options.configDirOverride];
   }
-  const cadetEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
   return resolveConfigHomes(env, options).map((home) =>
     joinLocalPath(options, home, environmentDirectoryName(cadetEnv, options)),
   );
@@ -101,7 +101,7 @@ function resolveDataDir(
   env: Record<string, string | undefined>,
   options: LocalPathOptions,
 ): string {
-  const cadetEnv = resolveEnvironmentName(env, options);
+  const cadetEnv = options.environmentName ?? resolveEnvironmentName();
   return joinLocalPath(
     options,
     resolveDataHome(env, options),

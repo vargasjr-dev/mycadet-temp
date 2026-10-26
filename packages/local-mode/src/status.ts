@@ -210,11 +210,8 @@ function parsePortFromUrl(url: unknown): number | undefined {
   }
 }
 
-function defaultPorts(env: Record<string, string | undefined>): {
-  daemon: number;
-  gateway: number;
-} {
-  const envName = resolveEnvironmentName(env);
+function defaultPorts(): { daemon: number; gateway: number } {
+  const envName = resolveEnvironmentName();
   const seed = SEEDS[envName] ?? SEEDS[PRODUCTION_ENVIRONMENT_NAME];
   return {
     daemon: seed?.portsOverride?.daemon ?? DEFAULT_PORTS.daemon,
@@ -310,7 +307,7 @@ function resolveStatusResources(
   const rawResources = isRecord(rawEntry?.resources)
     ? rawEntry.resources
     : undefined;
-  const ports = defaultPorts(env);
+  const ports = defaultPorts();
   const instanceDir =
     lockfileInstanceDir(entry, rawEntry) ??
     resolveInstanceDir(env, entry.assistantId);

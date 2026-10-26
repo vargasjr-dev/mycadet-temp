@@ -46,7 +46,7 @@ export const installLinuxLocalModeProviders = (
   registry.provide(LOCAL_MODE_CLI, { resolveInvocation: resolveCliInvocation });
   registry.provide(LOCAL_MODE_PATHS, {
     configDir: resolveConfigDir(process.env),
-    environment: resolveEnvironmentName(process.env),
+    environment: resolveEnvironmentName(),
     lockfilePaths: resolveLockfilePaths(process.env),
   });
   registry.provide(LOCAL_MODE_SESSION, { getToken: getSessionToken });

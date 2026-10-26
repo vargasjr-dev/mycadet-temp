@@ -50,7 +50,7 @@ const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "native-auth",
   install: () => {
     const authScheme = resolveAuthCallbackScheme(
-      resolveEnvironmentName(process.env),
+      resolveEnvironmentName(),
     );
     setSessionTokenLogger(log);
     configureNativeAuth({

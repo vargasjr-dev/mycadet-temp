@@ -93,28 +93,14 @@ export function stripVersionPrefix(version: string): string {
   return version.replace(/^[vV]/, "");
 }
 
-/**
- * Whether a version string denotes a dev build from the dev-release
- * pipeline, e.g. `0.12.6-dev.202610081023.3a27b77`.
- */
-export function isDevVersion(version: string): boolean {
-  return /-dev\./i.test(version);
-}
-
-/**
- * Whether a version string denotes a staging build, e.g. `0.6.0-staging.3`.
- */
-export function isStagingVersion(version: string): boolean {
-  return /-staging\./i.test(version);
-}
-
-/**
- * Whether a version string denotes a local build, e.g. `0.12.6-local.42`.
- * Local builds are never published.
- */
-export function isLocalVersion(version: string): boolean {
-  return /-local\./i.test(version);
-}
+// The channel matchers live in @mycadet/shared/version so every package —
+// including local-mode's environment resolver, which cannot depend on the
+// CLI — classifies released versions identically.
+export {
+  isDevVersion,
+  isStagingVersion,
+  isLocalVersion,
+} from "@mycadet/shared/version";
 
 /**
  * Check whether two version strings refer to the same version.

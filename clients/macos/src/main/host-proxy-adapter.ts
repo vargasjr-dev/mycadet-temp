@@ -60,7 +60,7 @@ export const installHostProxyBridge = (
         configDir,
         invocation,
         true,
-        { CADET_ENVIRONMENT: resolveEnvironmentName(process.env) },
+        { CADET_ENVIRONMENT: resolveEnvironmentName() },
       );
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {

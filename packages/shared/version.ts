@@ -118,3 +118,26 @@ export function resolveVersion(packageRoot: string = process.cwd()): string {
   if ((process.env.CADET_ENVIRONMENT || "local") !== "local") return base;
   return stampedVersion(base, new Date(), moduleEntryPath());
 }
+
+/**
+ * Whether a version string denotes a dev build from the dev-release
+ * pipeline, e.g. `0.12.6-dev.202610081023.3a27b77`.
+ */
+export function isDevVersion(version: string): boolean {
+  return /-dev\./i.test(version);
+}
+
+/**
+ * Whether a version string denotes a staging build, e.g. `0.6.0-staging.3`.
+ */
+export function isStagingVersion(version: string): boolean {
+  return /-staging\./i.test(version);
+}
+
+/**
+ * Whether a version string denotes a local build, e.g. `0.12.6-local.42`.
+ * Local builds are never published.
+ */
+export function isLocalVersion(version: string): boolean {
+  return /-local\./i.test(version);
+}

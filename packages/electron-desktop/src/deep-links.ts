@@ -108,7 +108,7 @@ export function resolveAcceptedSchemes(env: string): string[] {
 // gateway and would not survive being rebuilt into a pairing URL.
 const DEVICE_CODE_RE = /^[^\s\u0000-\u001f\u007f]{1,256}$/;
 
-const currentEnv = resolveEnvironmentName(process.env);
+const currentEnv = resolveEnvironmentName();
 const REGISTERED_SCHEMES = resolveRegisteredSchemes(currentEnv);
 const ACCEPTED_SCHEMES = resolveAcceptedSchemes(currentEnv);
 

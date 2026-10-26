@@ -30,7 +30,7 @@ const deepLinksFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "deep-links",
   install: (capabilities) => {
     const schemes = resolveRegisteredSchemes(
-      resolveEnvironmentName(process.env),
+      resolveEnvironmentName(),
     );
     capabilities.provide(DEEP_LINK_PROTOCOL_REGISTRATION, { schemes });
     capabilities.provide(STARTUP_REGISTRATION, {

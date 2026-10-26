@@ -3,6 +3,12 @@ import path from "node:path";
 export interface LocalPathOptions {
   platform?: NodeJS.Platform;
   homeDir?: string;
+  /**
+   * Pin the environment the paths name, bypassing the ambient resolver.
+   * Callers enumerating a SPECIFIC environment's directories (the CLI's
+   * cross-environment detection, tests) pass the env's name here; everyone
+   * else omits it and the ambient resolution decides.
+   */
   environmentName?: string;
   configDirOverride?: string;
   lockfileDirOverride?: string;
