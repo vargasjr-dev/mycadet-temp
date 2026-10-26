@@ -22,9 +22,7 @@ import {
   ShareFeedbackModalLazy,
 } from "@/components/share-feedback-modal-lazy";
 import { useTouchMobile } from "@/hooks/use-touch-mobile";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { prefetchRoute } from "@/lib/prefetch-route";
-import { isElectron } from "@/runtime/is-electron";
 import { routes } from "@/utils/routes";
 
 import { SIDEBAR_PILL_GAP_CLASSES } from "@/components/sidebar-nav-geometry";
@@ -218,19 +216,16 @@ function PreferencesMenuContent({
 }: PreferencesMenuContentProps) {
   const { t } = useTranslation("chat");
   const navigate = useNavigate();
-  const cloudGate = useCloudGate();
   return (
     <>
-      {(cloudGate === "full" || isElectron()) && (
-        <PanelItem
-          icon={MessageSquareText}
-          label={t("preferencesMenu.shareFeedback")}
-          onSelect={() => {
-            onClose();
-            onShareFeedback();
-          }}
-        />
-      )}
+      <PanelItem
+        icon={MessageSquareText}
+        label={t("preferencesMenu.shareFeedback")}
+        onSelect={() => {
+          onClose();
+          onShareFeedback();
+        }}
+      />
 
       <PanelItem
         icon={SettingsIcon}

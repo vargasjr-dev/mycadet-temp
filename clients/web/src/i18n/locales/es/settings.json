@@ -117,7 +117,6 @@
   "assistantTerminalPanel": {
     "loadErrorToast": "No se pudo cargar la información del asistente",
     "loading": "Cargando terminal...",
-    "loginNotice": "Inicia sesión en la plataforma Cadet para abrir una sesión de terminal.",
     "noAssistant": "No se encontró ningún asistente. Crea un asistente para usar la terminal.",
     "subtitle": "Sesión de shell interactiva en la máquina de tu asistente",
     "targetContainer": "Contenedor de destino",
@@ -323,7 +322,6 @@
     "backups": "Copias de seguridad",
     "loadFailedToast": "No se pudo cargar la información del asistente",
     "loading": "Cargando información del asistente...",
-    "loginNotice": "Inicia sesión en la plataforma Cadet para administrar las copias de seguridad.",
     "noAssistant": "No se encontró ningún asistente. Crea un asistente para acceder a los controles de depuración.",
     "restartDescription": "Reinicia la máquina del asistente. Estará brevemente no disponible durante el reinicio.",
     "restartTitle": "Reiniciar asistente",
@@ -390,9 +388,6 @@
   },
   "generalPage": {
     "chooseAssistant": "Elegir asistente",
-    "computeResourcesLoginNotice": "Inicia sesión en la plataforma Cadet para administrar los recursos de cómputo.",
-    "computeResourcesSubtitle": "Supervisa el uso de recursos y administra el perfil de cómputo de tu asistente.",
-    "computeResourcesTitle": "Cómputo y recursos",
     "current": "Actual",
     "customize": "Personalizar",
     "preferencesSubtitle": "Personaliza cómo se ve y se comporta Cadet en este dispositivo.",
@@ -400,7 +395,6 @@
     "switchAssistantSubtitle": "Elige a qué asistente está conectado este dispositivo.",
     "switchAssistantTitle": "Cambiar asistente",
     "updateWindow": "Ventana de actualización",
-    "updatesLoginNotice": "Inicia sesión en la plataforma Cadet para administrar las actualizaciones de software.",
     "versionSubtitle": "Administra la versión de software de tu asistente y las actualizaciones.",
     "versionTitle": "Versión"
   },

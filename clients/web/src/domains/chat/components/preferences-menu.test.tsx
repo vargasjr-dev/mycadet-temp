@@ -51,11 +51,6 @@ stubModule(
   },
 );
 
-stubModule("@/hooks/use-cloud-gate", await import("@/hooks/use-cloud-gate"), {
-  useCloudGate: () => "full",
-  useActiveAssistantIsCloudHosted: () => true,
-});
-
 // Capture navigate() targets so the menu's destinations can be asserted
 // without a live Router.
 let navigateArgs: unknown[] = [];

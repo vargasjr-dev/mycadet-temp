@@ -10,7 +10,7 @@ import { DebugControlsPanel } from "@/domains/settings/components/panels/debug-c
 import { DoctorPanel } from "@/domains/settings/components/panels/doctor-panel";
 import { ToneLabPanel } from "@/domains/settings/components/tone-lab/tone-lab-panel";
 import { resolveDebugTabParam } from "@/domains/settings/pages/debug-page.helpers";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { navigateToConversation } from "@/utils/conversation-navigation";
 import { Tabs } from "@mycadet/design-library/components/tabs";
@@ -61,20 +61,15 @@ export function DebugPage() {
   // variant. The standard gate still resolves to "full" on a cloud-mode app
   // pointed at a self-hosted assistant, leaving the tabs visible and letting the
   // user land on a doomed terminal/doctor connection.
-  const cloudGate = useCloudGate({ cloudHostedOnly: true });
+  const isSelfHosted = useActiveAssistantIsSelfHosted();
 
   const tabs = useMemo(
     () =>
-      ALL_TABS.filter((tab) => {
-        if (tab.id === "terminal" && cloudGate === "gated") {
-          return false;
-        }
-        if (tab.id === "doctor" && cloudGate === "gated") {
-          return false;
-        }
-        return true;
-      }),
-    [cloudGate],
+      ALL_TABS.filter(
+        (tab) =>
+          !(isSelfHosted && (tab.id === "terminal" || tab.id === "doctor")),
+      ),
+    [isSelfHosted],
   );
 
   // A gated deep-link (e.g. ?tab=doctor on a self-hosted assistant) has no

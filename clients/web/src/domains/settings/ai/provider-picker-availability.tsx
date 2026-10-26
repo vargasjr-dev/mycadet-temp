@@ -5,7 +5,7 @@ import {
   isProviderSelectableForAssistant,
   parseEntryPickerValue,
 } from "@/domains/settings/ai/provider-availability";
-import { useActiveAssistantIsSelfHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 
 /**

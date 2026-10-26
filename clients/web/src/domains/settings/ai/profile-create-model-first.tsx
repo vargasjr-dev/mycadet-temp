@@ -32,7 +32,7 @@ import { entryPickerValue } from "@/domains/settings/ai/provider-availability";
 import { PickerMeta } from "@/domains/settings/ai/provider-picker-availability";
 import { ProviderCreateForm } from "@/domains/settings/ai/provider-create-form";
 import type { ProfileEditor } from "@/domains/settings/ai/use-profile-editor";
-import { useActiveAssistantIsSelfHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
 import { useTranslation, type TFunction } from "@/i18n";
 
 /**

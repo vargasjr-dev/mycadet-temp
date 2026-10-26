@@ -9,8 +9,6 @@
  */
 import { useState } from "react";
 
-import { PlatformLoginButton } from "@/components/cloud-login-button";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import {
   LocalCloudCredentialRecoveryError,
@@ -53,7 +51,6 @@ export function RestoreCloudCredentialButton({
   onRestored,
 }: RestoreCloudCredentialButtonProps) {
   const { t } = useTranslation("chat");
-  const cloudGate = useCloudGate();
   const [isRestoring, setIsRestoring] = useState(false);
 
   const restore = async () => {
@@ -79,19 +76,10 @@ export function RestoreCloudCredentialButton({
     }
   };
 
-  // The repair rotates the credential through the cloud, which needs a
-  // platform session. Without one it would fail after the press, so the slot
-  // asks for the sign-in first, the documented "disabled" treatment. The
-  // surface offering this button already excludes the cloud-disabled
-  // configuration, so "gated" is unreachable here and renders nothing rather
-  // than a repair that cannot run.
-  if (cloudGate === "gated") {
-    return null;
-  }
-  if (cloudGate === "disabled") {
-    return <PlatformLoginButton variant="outlined" size="compact" />;
-  }
-
+  // The repair rotates the credential through the cloud. Web no longer
+  // gates the affordance on session state: the repair runs and surfaces a
+  // cloud failure through its own error toasts when the credential source
+  // is unreachable.
   return (
     <Button
       variant="outlined"

@@ -2,17 +2,14 @@ import { HardDrive, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type Assistant, getAssistant } from "@/assistant/api";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { AssistantBackups } from "@/domains/settings/components/assistant-backups";
 import { RestartAssistant } from "@/domains/settings/components/restart-assistant";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugControlsPanel() {
   const { t } = useTranslation("settings");
-  const cloudGate = useCloudGate();
 
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [loading, setLoading] = useState(true);
@@ -83,22 +80,15 @@ export function DebugControlsPanel() {
             </div>
           </div>
 
-          {cloudGate === "disabled" && (
-            <CloudLoginNotice>
-              {t("debugControlsPanel.loginNotice")}
-            </CloudLoginNotice>
-          )}
-          {cloudGate !== "disabled" && (
-            <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
-              <div className="mb-3 flex items-center gap-2">
-                <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />
-                <h3 className="text-body-medium-default text-[var(--content-default)]">
-                  {t("debugControlsPanel.backups")}
-                </h3>
-              </div>
-              <AssistantBackups assistantId={assistant.id} />
+          <div className="rounded-lg border border-[var(--border-base)] px-4 py-3 dark:border-[var(--border-base)]">
+            <div className="mb-3 flex items-center gap-2">
+              <HardDrive className="h-4 w-4 text-[var(--content-secondary)]" />
+              <h3 className="text-body-medium-default text-[var(--content-default)]">
+                {t("debugControlsPanel.backups")}
+              </h3>
             </div>
-          )}
+            <AssistantBackups assistantId={assistant.id} />
+          </div>
         </div>
       ) : (
         <p className="text-body-medium-lighter text-[var(--content-tertiary)]">

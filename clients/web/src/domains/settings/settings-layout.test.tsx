@@ -36,10 +36,6 @@ mock.module("@/stores/resolved-assistants-store", () => {
   return { useResolvedAssistantsStore: store };
 });
 
-mock.module("@/hooks/use-cloud-gate", () => ({
-  useCloudGate: () => "full",
-}));
-
 mock.module("@/runtime/notifications", () => ({
   isBrowserNotificationHost: () => browserHost,
 }));

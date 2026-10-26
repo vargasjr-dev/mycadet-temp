@@ -8,7 +8,6 @@ import {
   DiskPressureBanner,
   type DiskPressureBannerMode,
 } from "@/components/disk-pressure-banner";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
@@ -25,10 +24,7 @@ import { UpdateWindowModal } from "@/domains/settings/components/update-window-m
 import { TeleportCard } from "@/domains/settings/teleport/teleport-card";
 import { Button } from "@mycadet/design-library/components/button";
 
-import {
-  useActiveAssistantIsCloudHosted,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { remoteGatewayPublicBaseUrl } from "@/lib/auth/remote-gateway-session";
 import {
   getRemoteAssistantDisplayName,
@@ -40,7 +36,6 @@ import {
 } from "@/lib/local-mode";
 import { isElectron } from "@/runtime/is-electron";
 import { useIsNativeMobile } from "@/runtime/platform-detection";
-import { useIsAuthenticated } from "@/stores/auth-store";
 import { useTranslation } from "@/i18n";
 import { cloudAccountBillingUrl } from "@/lib/cloud-runtime-url";
 import { openExternalUrl } from "@/runtime/browser";
@@ -50,15 +45,12 @@ export function GeneralPage() {
   const { t } = useTranslation("settings");
   const { assistant, healthz, healthzLoading, refetch } =
     useAssistantWithHealthz();
-  const isAuthenticated = useIsAuthenticated();
   const isNativeMobile = useIsNativeMobile();
   const navigate = useNavigate();
-  const cloudGate = useCloudGate();
-  const infraGate = useCloudGate({ cloudHostedOnly: true });
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const diskPressure = useDiskPressureMonitor({
     assistantId: assistant?.id ?? null,
-    enabled: infraGate === "full" && isCloudHosted,
+    enabled: isCloudHosted,
   });
   const [updateWindowOpen, setUpdateWindowOpen] = useState(false);
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -87,8 +79,7 @@ export function GeneralPage() {
   // avoid dropping both the version display and the only unlock affordance
   // (e.g. logged out of the cloud, or a self-hosted/remote-gateway runtime
   // that can't upgrade locally).
-  const showsUpgradePanel =
-    (infraGate === "full" || canUpgradeLocally) && !!assistant;
+  const showsUpgradePanel = (isCloudHosted || canUpgradeLocally) && !!assistant;
 
   useEffect(() => {
     if (!assistant || window.location.hash !== "#storage-resources") {
@@ -141,17 +132,14 @@ export function GeneralPage() {
             void navigate(`${routes.workspace}?sort=size`)
           }
           onUpgradeStorage={
-            infraGate === "full"
+            isCloudHosted
               ? () => void openExternalUrl(cloudAccountBillingUrl())
               : null
           }
         />
       )}
 
-      <ProfileCard
-        assistant={assistant}
-        showHandles={isAuthenticated && cloudGate === "full"}
-      >
+      <ProfileCard assistant={assistant} showHandles={isCloudHosted}>
         <TimezoneSection />
         <ThisDeviceSection />
       </ProfileCard>
@@ -160,7 +148,7 @@ export function GeneralPage() {
         title={t("generalPage.versionTitle")}
         subtitle={t("generalPage.versionSubtitle")}
         accessory={
-          infraGate === "full" && assistant ? (
+          isCloudHosted && assistant ? (
             <Button
               variant="outlined"
               onClick={() => setUpdateWindowOpen(true)}
@@ -171,7 +159,7 @@ export function GeneralPage() {
         }
       >
         <div className="flex flex-col gap-4">
-          {infraGate === "full" && assistant && (
+          {isCloudHosted && assistant && (
             <>
               <AssistantUpgrades
                 assistantId={assistant.id}
@@ -207,31 +195,14 @@ export function GeneralPage() {
               )}
             </div>
           )}
-          {infraGate === "disabled" && !canUpgradeLocally && (
-            <CloudLoginNotice>
-              {t("generalPage.updatesLoginNotice")}
-            </CloudLoginNotice>
-          )}
         </div>
       </DetailCard>
-      {infraGate === "full" && assistant && (
+      {isCloudHosted && assistant && (
         <UpdateWindowModal
           assistantId={assistant.id}
           open={updateWindowOpen}
           onClose={() => setUpdateWindowOpen(false)}
         />
-      )}
-
-      {infraGate === "disabled" && (
-        <DetailCard
-          id="storage-resources"
-          title={t("generalPage.computeResourcesTitle")}
-          subtitle={t("generalPage.computeResourcesSubtitle")}
-        >
-          <CloudLoginNotice>
-            {t("generalPage.computeResourcesLoginNotice")}
-          </CloudLoginNotice>
-        </DetailCard>
       )}
 
       <DetailCard

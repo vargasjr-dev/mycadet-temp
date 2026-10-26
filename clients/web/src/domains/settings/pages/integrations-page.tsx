@@ -26,10 +26,7 @@ import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
-import {
-  useActiveAssistantIsCloudHosted,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -129,7 +126,6 @@ function IntegrationsPanelInner({
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const cloudGate = useCloudGate();
   const isCloudHosted = useActiveAssistantIsCloudHosted();
   const [assistant, setAssistant] = useState<Assistant | null>(null);
   const [assistantLoading, setAssistantLoading] = useState(true);
@@ -162,8 +158,8 @@ function IntegrationsPanelInner({
     };
   }, [mcpAssistantId]);
 
-  // The same login CloudLoginNotice offers, returning to this page with
-  // its query intact so a deep-linked provider survives the round trip.
+  // Returns to this page with its query intact so a deep-linked provider
+  // survives the round trip.
   const { login } = useOnboardingLogin(
     `${location.pathname}${location.search}${location.hash}`,
   );
@@ -204,7 +200,7 @@ function IntegrationsPanelInner({
     cloudAssistantId,
     isLoading: cloudAssistantIdLoading,
     error: cloudAssistantIdError,
-  } = useCloudAssistantId(assistant?.id, cloudGate === "full");
+  } = useCloudAssistantId(assistant?.id, isCloudHosted);
   const providers = useQuery({
     ...oauthProvidersGetOptions({
       path: { assistant_id: assistant?.id ?? "" },
@@ -216,7 +212,7 @@ function IntegrationsPanelInner({
     ...assistantsOauthConnectionsListOptions({
       path: { assistant_id: cloudAssistantId ?? "" },
     }),
-    enabled: Boolean(cloudAssistantId) && cloudGate === "full",
+    enabled: Boolean(cloudAssistantId) && isCloudHosted,
   });
 
   useEffect(() => {
@@ -253,7 +249,7 @@ function IntegrationsPanelInner({
   const oauthReady =
     !oauthUnavailable &&
     Boolean(providers.data) &&
-    (cloudGate !== "full" || Boolean(connections.data));
+    (!isCloudHosted || Boolean(connections.data));
   const allItems = useMemo(
     () =>
       buildIntegrationItems(
@@ -352,9 +348,7 @@ function IntegrationsPanelInner({
   // predate the tiles only knew about the MCP machine.
   const authBusy = mcp.auth.isBusy;
   const oauthDisabled =
-    assistantLoading ||
-    !assistant ||
-    (cloudGate === "full" && !cloudAssistantId);
+    assistantLoading || !assistant || (isCloudHosted && !cloudAssistantId);
   // The attempt is drawn inside the tile, or in the connect modal over it,
   // only while that surface is on screen. A search that filters the owning
   // integration out leaves the page-level notice as the one place with a

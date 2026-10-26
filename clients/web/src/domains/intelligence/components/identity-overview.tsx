@@ -48,7 +48,7 @@ import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useElementSize } from "@/hooks/use-element-size";
 import { useTranslation } from "@/i18n";
 import { useEmailPinned } from "@/hooks/use-email-pinned";
-import { useCloudGateWithPending } from "@/hooks/use-cloud-gate";
+import { useAssistantHosting } from "@/assistant/hosting";
 import { useSupportsPluginsSurface } from "@/lib/backwards-compat/plugins-surface";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import type { CharacterComponents, CharacterTraits } from "@/types/avatar";
@@ -284,8 +284,7 @@ export function IdentityOverview({ assistantId }: IdentityOverviewProps) {
 
   /* The Email card is the way into the Assistant Inbox, which exists only
      on the cloud. */
-  const cloudGate = useCloudGateWithPending({ cloudHostedOnly: true });
-  const showsEmail = cloudGate === "full";
+  const showsEmail = useAssistantHosting() === "cloud";
   const emailPin = useEmailPinned(assistantId);
   const sections = buildIdentitySections({ email: showsEmail });
   const emailTrailing = (

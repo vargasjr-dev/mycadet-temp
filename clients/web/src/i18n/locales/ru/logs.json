@@ -1,5 +1,8 @@
 {
-  "errorRetryRow": { "retrying": "Повтор…", "retry": "Повторить" },
+  "errorRetryRow": {
+    "retrying": "Повтор…",
+    "retry": "Повторить"
+  },
   "emailsTab": {
     "inbound": "Входящие",
     "outbound": "Исходящие",
@@ -29,11 +32,7 @@
     "loadingOlder": "Загрузка более старых событий...",
     "loadOlder": "Загрузить более старые события"
   },
-  "emailsPage": {
-    "platformLoginNotice": "Вход на платформу Cadet для просмотра писем."
-  },
   "systemEventsPage": {
-    "platformLoginNotice": "Вход на платформу Cadet для просмотра системных событий.",
     "notAvailable": "Системные события недоступны для текущего ассистента."
   }
 }
