@@ -24,7 +24,7 @@ import { join } from "node:path";
 // work without one. Env mutation is scoped to each test and restored after, so
 // it can't leak into other test files in the same Bun run.
 const testDir = mkdtempSync(join(tmpdir(), "client-token-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
+const ORIGINAL_XDG_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 
 import { parseArgs } from "../commands/client.js";
@@ -34,15 +34,15 @@ const REMOTE_URL = "http://192.0.2.50:7830";
 
 describe("client --token (ephemeral)", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
+    process.env.XDG_CONFIG_HOME = testDir;
   });
 
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
-    if (ORIGINAL_LOCKFILE_DIR === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
+    if (ORIGINAL_XDG_CONFIG_HOME === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
     } else {
-      process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
+      process.env.XDG_CONFIG_HOME = ORIGINAL_XDG_CONFIG_HOME;
     }
   });
 

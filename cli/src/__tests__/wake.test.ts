@@ -8,16 +8,12 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import * as assistantConfig from "../lib/assistant-config.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -32,6 +28,7 @@ import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };
+const realLocalMode = { ...localModeModule };
 const realDocker = { ...docker };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
@@ -46,11 +43,16 @@ const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
-  typeof assistantConfig.saveLockfileAssistant
->(() => {});
+  typeof localModeModule.saveLockfileAssistant
+>(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
   (resources) => join(resources?.instanceDir ?? "missing", "daemon.pid"),
 );
+
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
+}));
 
 mock.module("../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
@@ -267,6 +269,10 @@ beforeEach(() => {
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([]);
   saveLockfileAssistantMock.mockReset();
+  saveLockfileAssistantMock.mockImplementation(() => ({
+    ok: true,
+    lockfile: { assistants: [], activeAssistant: null },
+  }));
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
     join(resources?.instanceDir ?? "missing", "daemon.pid"),
@@ -341,6 +347,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/docker.js", () => realDocker);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
@@ -574,12 +581,12 @@ describe("cadet wake — app server restore", () => {
     process.argv = ["bun", "cadet", "wake", "local-assistant"];
     // The restore gate reads the root lockfile; keep it off the real one.
     lockfileDir = mkdtempSync(join(tmpdir(), "cadet-wake-lockfile-"));
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    process.env.XDG_CONFIG_HOME = lockfileDir;
   });
 
   afterEach(() => {
     rmSync(lockfileDir, { recursive: true, force: true });
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   });
 
   // The restore flow stamps the `app` entry when it establishes the edge,

@@ -125,15 +125,13 @@ describe("startCes", () => {
     // which in bun's own bin dir is an unrelated globally-installed package
     // bin. The entry is absolute because the spawn cwd is the XDG state root.
     expect(lastSpawnCall!.cmd[0]).toBe(process.execPath);
-    expect(
-      lastSpawnCall!.cmd.some((arg) => arg.endsWith("src/main.ts")),
-    ).toBe(true);
+    expect(lastSpawnCall!.cmd.some((arg) => arg.endsWith("src/main.ts"))).toBe(
+      true,
+    );
 
     // Verify env vars
     const env = lastSpawnCall!.options.env!;
-    expect(env["CES_BOOTSTRAP_SOCKET_DIR"]).toBe(
-      join(tempDir, "ces-data"),
-    );
+    expect(env["CES_BOOTSTRAP_SOCKET_DIR"]).toBe(join(tempDir, "ces-data"));
     expect(env["CREDENTIAL_SECURITY_DIR"]).toBeDefined();
     expect(env["CADET_WORKSPACE_DIR"]).toBeDefined();
 

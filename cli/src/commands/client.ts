@@ -9,9 +9,9 @@ import {
   lookupAssistantByIdentifier,
   resolveAssistant,
   resolveConversationKey,
-  saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { DAEMON_INTERNAL_ASSISTANT_ID, GATEWAY_PORT } from "../lib/constants";
 import {
   loadGuardianToken,

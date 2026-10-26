@@ -48,11 +48,11 @@ const lockfileDirs: string[] = [];
 
 beforeEach(() => {
   lockfileDirs.push(mkdtempSync(join(tmpdir(), "web-dist-lockfile-")));
-  process.env.CADET_LOCKFILE_DIR = lockfileDirs.at(-1);
+  process.env.XDG_CONFIG_HOME = lockfileDirs.at(-1);
 });
 
 afterEach(() => {
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   spawnMock.mockReset();
   spawnMock.mockImplementation(realChildProcess.spawn);
   fixtureHeadSha = null;
@@ -203,7 +203,7 @@ describe("resolveEdgeClientDists", () => {
     expect(readAppBuiltSha()).toBe(fixtureHeadSha);
     const rawLockfile = JSON.parse(
       readFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         "utf-8",
       ),
     );

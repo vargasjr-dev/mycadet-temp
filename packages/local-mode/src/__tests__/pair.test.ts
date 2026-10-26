@@ -34,8 +34,11 @@ const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-pair-"));
-  lockfilePath = path.join(tmpDir, "lockfile.json");
+  // The save resolves its paths from the environment: XDG config home plus
+  // the production environment dir (the same file the threaded reads hit).
+  lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   configDir = path.join(tmpDir, "config");
+  process.env.XDG_CONFIG_HOME = tmpDir;
   fetchCalls = [];
   respond = () => new Response(null, { status: 500 });
   globalThis.fetch = (async (
@@ -64,11 +67,13 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete process.env.XDG_CONFIG_HOME;
   globalThis.fetch = realFetch;
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
 const writeLockfile = (data: Record<string, unknown>): void => {
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
   fs.writeFileSync(lockfilePath, JSON.stringify(data));
 };
 
@@ -604,9 +609,11 @@ describe("pairAssistant", () => {
     test("deletes the just-written token when the lockfile write fails", () => {
       // A lockfile path whose parent is a regular file makes the write fail
       // deterministically (unlike chmod, which root ignores) after the token
-      // has already been written.
+      // has already been written. The save resolves its paths from the
+      // environment, so point it at the unwritable parent too.
       const notADir = path.join(tmpDir, "not-a-dir");
       fs.writeFileSync(notADir, "");
+      process.env.XDG_CONFIG_HOME = notADir;
       const tokenPath = guardianTokenPath(configDir, DEFAULT_PAIRED_ID);
 
       const result = pairAssistant(
@@ -1419,9 +1426,11 @@ describe("pairingPoll", () => {
     // A lockfile path whose parent is a regular file makes the write fail
     // after the code has already been spent. That is the `import` reason: the
     // session is gone and a retry needs a fresh code, which is exactly what
-    // the pre-check reason does NOT mean.
+    // the pre-check reason does NOT mean. The save resolves its paths from
+    // the environment, so point it at the unwritable parent too.
     const notADir = path.join(tmpDir, "not-a-dir");
     fs.writeFileSync(notADir, "");
+    process.env.XDG_CONFIG_HOME = notADir;
     respond = () => json(200, approvedBody());
     const handle = await startFromLink();
 

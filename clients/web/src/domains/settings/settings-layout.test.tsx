@@ -24,7 +24,6 @@ mock.module("@/lib/backwards-compat/use-supports-bookmarks", () => ({
   useSupportsBookmarks: () => supportsBookmarks,
 }));
 
-
 mock.module("@/lib/backwards-compat/use-supports-credentials-settings", () => ({
   useSupportsCredentialsSettings: () => supportsCredentials,
 }));
@@ -39,18 +38,6 @@ mock.module("@/stores/resolved-assistants-store", () => {
 
 mock.module("@/hooks/use-cloud-gate", () => ({
   useCloudGate: () => "full",
-}));
-
-mock.module("@/hooks/use-onboarding-login", () => ({
-  useOnboardingLogin: () => ({ login: () => {} }),
-}));
-
-mock.module("@/lib/auth/handle-logout", () => ({
-  handleLogout: () => {},
-}));
-
-mock.module("@/stores/auth-store", () => ({
-  useHasCloudSession: () => false,
 }));
 
 mock.module("@/runtime/notifications", () => ({

@@ -102,9 +102,7 @@ export function selectWorkosClientId(
   return entry?.client_id ?? null;
 }
 
-export async function fetchWorkosClientId(
-  cloudUrl: string,
-): Promise<string> {
+export async function fetchWorkosClientId(cloudUrl: string): Promise<string> {
   const url = `${new URL(cloudUrl).origin}/_allauth/app/v1/config`;
   const response = await loopbackSafeFetch(url);
   if (!response.ok) {

@@ -65,7 +65,6 @@ let authUserStub: AuthUserStub | null = {
   email: "dev@mycadet.ai",
   isStaff: false,
 };
-let sessionInitializingStub = false;
 let internalActionsFlagStub = true;
 let flagsHydratedStub = true;
 
@@ -136,7 +135,6 @@ mock.module("@/stores/auth-store", () => ({
       user: () => authUserStub,
     },
   },
-  useIsSessionInitializing: () => sessionInitializingStub,
 }));
 
 // Mocked rather than driven via `setState`: zustand v5 serves
@@ -206,7 +204,6 @@ beforeEach(() => {
   searchParamsMap = new Map();
   assistantStub = { assistantId: "asst-1" };
   authUserStub = { email: "dev@mycadet.ai", isStaff: false };
-  sessionInitializingStub = false;
   // Hydrated, flag-on baseline: most tests exercise the allowed branch;
   // gating tests flip the flag keys off to reach the denial branch.
   internalActionsFlagStub = true;

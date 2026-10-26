@@ -535,11 +535,7 @@ describe("cloudRequestSignedUrl", () => {
     globalThis.fetch = fetchMock;
 
     await expect(
-      cloudRequestSignedUrl(
-        { operation: "upload" },
-        VAK_TOKEN,
-        PLATFORM_URL,
-      ),
+      cloudRequestSignedUrl({ operation: "upload" }, VAK_TOKEN, PLATFORM_URL),
     ).rejects.toThrow(/temporarily down/);
   });
 });

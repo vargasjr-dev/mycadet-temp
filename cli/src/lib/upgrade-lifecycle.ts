@@ -7,7 +7,7 @@ import { join } from "path";
 import cliPkg from "../../package.json";
 
 import type { LockfileAssistant } from "./assistant-config.js";
-import { saveLockfileAssistant } from "./assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
@@ -809,7 +809,6 @@ export async function performDockerRollback(
       },
     };
     saveLockfileAssistant(updatedEntry);
-
     // Notify clients that the rollback succeeded
     await broadcastUpgradeEvent(
       gatewayUrl,
@@ -963,7 +962,6 @@ export async function performDockerRollback(
             },
           };
           saveLockfileAssistant(revertedEntry);
-
           await broadcastUpgradeEvent(
             gatewayUrl,
             entry.assistantId,

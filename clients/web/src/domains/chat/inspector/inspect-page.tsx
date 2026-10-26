@@ -27,7 +27,6 @@ import {
   useSupportsLlmContextSummaryView,
 } from "@/lib/backwards-compat/llm-context-summary-view";
 import { isElectron } from "@/runtime/is-electron";
-import { useIsSessionInitializing } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
 import { t, useTranslation } from "@/i18n";
 import type {
@@ -80,21 +79,12 @@ import { SkillsTab } from "./components/tabs/skills-tab";
  */
 export function InspectPage(): ReactNode {
   const { t: tChat } = useTranslation("chat");
-  const authLoading = useIsSessionInitializing();
   // React Router's :conversationId segment is the source of truth; the
   // route definition guarantees it's present, but useParams still types
   // it as optional so we narrow defensively.
   const { conversationId } = useParams<{ conversationId: string }>();
   const [searchParams] = useSearchParams();
   const messageId = searchParams.get("messageId");
-
-  if (authLoading) {
-    return (
-      <CenteredMessage tone="muted">
-        {tChat("inspectPage.loading")}
-      </CenteredMessage>
-    );
-  }
 
   if (!conversationId) {
     // Defensive only — React Router would render NotFound before reaching

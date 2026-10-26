@@ -3,7 +3,6 @@ import { cleanup, render } from "@testing-library/react";
 
 const authRef = {
   sessionStatus: "authenticated" as const,
-  isSessionInitializing: false,
   hasCloudSession: true,
 };
 const resolvedRef = {
@@ -84,7 +83,6 @@ mock.module("@/stores/auth-store", () => {
   return {
     useAuthStore,
     useHasCloudSession: () => authRef.hasCloudSession,
-    useIsSessionInitializing: () => authRef.isSessionInitializing,
   };
 });
 
@@ -161,7 +159,6 @@ const { CommandPaletteWindowPage } =
 
 beforeEach(() => {
   authRef.sessionStatus = "authenticated";
-  authRef.isSessionInitializing = false;
   authRef.hasCloudSession = true;
   resolvedRef.assistants = [
     {

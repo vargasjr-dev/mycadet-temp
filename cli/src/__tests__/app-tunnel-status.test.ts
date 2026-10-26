@@ -6,7 +6,7 @@ import { join } from "node:path";
 // Temp dir for lockfile isolation — the detail views resolve assistant labels
 // through the lockfile, which must stay empty here.
 const testDir = mkdtempSync(join(tmpdir(), "cli-app-tunnel-status-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import { app } from "../commands/app.js";

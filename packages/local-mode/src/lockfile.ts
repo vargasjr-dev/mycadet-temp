@@ -8,6 +8,7 @@ import {
   LockfileSchema,
   parseLockfile,
   type Lockfile,
+  type LockfileAssistant,
 } from "./lockfile-contract";
 import { isCloudHome } from "./lockfile-contract";
 import { resolveLockfilePaths } from "./config";
@@ -307,14 +308,18 @@ function patchLockfileAssistantIfPresent(
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
 
+export type LockfileAssistantPatch = {
+  [K in keyof LockfileAssistant]?: LockfileAssistant[K] | undefined;
+};
+
 export function saveLockfileAssistant(
-  lockfilePaths: string[],
-  assistant: Record<string, unknown>,
-  activeAssistant: string | undefined,
-): WriteResult {
+  assistant: LockfileAssistantPatch,
+  activeAssistant?: string,
+): void {
   if (!assistant || typeof assistant.assistantId !== "string") {
-    return { ok: false, status: 400, error: "Missing assistant.assistantId" };
+    throw new Error("Missing assistant.assistantId");
   }
+  const lockfilePaths = resolveLockfilePaths();
 
   const locked = withLockfileLock(lockfilePaths, (): WriteResult => {
     const lockfile = readRawLockfile(lockfilePaths);
@@ -339,7 +344,9 @@ export function saveLockfileAssistant(
 
     return writeRawLockfile(lockfilePaths, lockfile);
   });
-  return locked.ok ? locked.value : lockFailure(locked.error);
+  if (!locked.ok) {
+    throw new Error(locked.error);
+  }
 }
 
 export function isActiveAssistant(
@@ -427,4 +434,3 @@ export function replaceCloudAssistants(
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
-

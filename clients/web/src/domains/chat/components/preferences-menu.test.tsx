@@ -56,24 +56,6 @@ stubModule("@/hooks/use-cloud-gate", await import("@/hooks/use-cloud-gate"), {
   useActiveAssistantIsCloudHosted: () => true,
 });
 
-const authRef: {
-  isAuthenticated: boolean;
-} = {
-  isAuthenticated: true,
-};
-
-const authStoreModule = await import("@/stores/auth-store");
-// The menu reads two selectors and `getState()`; the rest of the zustand
-// surface has no consumer here, so the stub asserts the store's type rather
-// than reproducing it.
-const authStoreStub = Object.assign(() => null, {
-  getState: () => authRef,
-}) as unknown as typeof authStoreModule.useAuthStore;
-stubModule("@/stores/auth-store", authStoreModule, {
-  useAuthStore: authStoreStub,
-  useIsAuthenticated: () => authRef.isAuthenticated,
-});
-
 // Capture navigate() targets so the menu's destinations can be asserted
 // without a live Router.
 let navigateArgs: unknown[] = [];
@@ -135,7 +117,6 @@ beforeEach(() => {
   useAssistantIdentityStore.getState().clearIdentity();
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
   isTouchMobileRef.value = false;
-  authRef.isAuthenticated = true;
   feedbackRef.prefetches = 0;
   prefetchedPaths.length = 0;
 });
@@ -145,12 +126,6 @@ afterEach(() => {
 });
 
 describe("PreferencesMenu", () => {
-  test("renders nothing when not logged in", () => {
-    authRef.isAuthenticated = false;
-    const html = renderToStaticMarkup(createElement(PreferencesMenu));
-    expect(html).toBe("");
-  });
-
   test("labels the trigger 'Preferences'", () => {
     const html = renderToStaticMarkup(createElement(PreferencesMenu));
     expect(html).toContain("Preferences");

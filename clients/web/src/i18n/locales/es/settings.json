@@ -93,14 +93,6 @@
     "typeScheduled": "Programada",
     "cliOnly": "Usa cadet backup y cadet restore en una terminal para instalaciones locales o Docker."
   },
-  "assistantPicker": {
-    "active": "Activo",
-    "subtitle": "Elige qué asistente está activo para esta cuenta.",
-    "switch": "Cambiar",
-    "switchedToast": "Asistente activo cambiado.",
-    "title": "Cambiar de asistente",
-    "unnamed": "Sin nombre"
-  },
   "assistantStatusPanel": {
     "assistantId": "ID del asistente",
     "cpuUsage": "Uso de CPU",

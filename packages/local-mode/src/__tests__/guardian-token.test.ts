@@ -66,7 +66,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -87,7 +90,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -113,7 +119,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -219,7 +228,10 @@ describe("parseGuardianRefreshCliFailure", () => {
     expect(
       parseGuardianRefreshCliFailure(
         "",
-        formatGuardianRefreshCliFailure(503, "Assistant gateway is unreachable"),
+        formatGuardianRefreshCliFailure(
+          503,
+          "Assistant gateway is unreachable",
+        ),
       ),
     ).toEqual({
       ok: false,

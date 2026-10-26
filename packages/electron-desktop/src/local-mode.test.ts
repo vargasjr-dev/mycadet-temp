@@ -92,12 +92,10 @@ const resolveInvocation = async () => {
 // dir. Set before importing the module under test because `installLocalMode`
 // captures the resolved paths once at registration time.
 const previousEnvironment = process.env.CADET_ENVIRONMENT;
-const previousLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const previousConfigHome = process.env.XDG_CONFIG_HOME;
 const lockfileDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-lockfile-"));
 const configHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-config-"));
 process.env.CADET_ENVIRONMENT = "production";
-process.env.CADET_LOCKFILE_DIR = lockfileDir;
 process.env.XDG_CONFIG_HOME = configHomeDir;
 const lockfilePath = path.join(lockfileDir, ".cadet.lock.json");
 
@@ -135,12 +133,6 @@ afterAll(() => {
     delete process.env.CADET_ENVIRONMENT;
   } else {
     process.env.CADET_ENVIRONMENT = previousEnvironment;
-  }
-
-  if (previousLockfileDir === undefined) {
-    delete process.env.CADET_LOCKFILE_DIR;
-  } else {
-    process.env.CADET_LOCKFILE_DIR = previousLockfileDir;
   }
 
   if (previousConfigHome === undefined) {

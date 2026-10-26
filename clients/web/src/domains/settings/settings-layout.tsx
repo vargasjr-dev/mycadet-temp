@@ -1,20 +1,16 @@
-import { LogIn, LogOut } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
 
 import { useTranslation } from "@/i18n";
-import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
-import { handleLogout } from "@/lib/auth/handle-logout";
 import { useSupportsCredentialsSettings } from "@/lib/backwards-compat/use-supports-credentials-settings";
 import { isBrowserNotificationHost } from "@/runtime/notifications";
 import { useIsNativeAndroid } from "@/runtime/platform-detection";
-import { useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useTitleBarStore } from "@/stores/title-bar-store";
 import { routes } from "@/utils/routes";
 import { SETTINGS_SIDEBAR } from "@/utils/settings-navigation";
 import { SidebarShell } from "@/components/sidebar-shell";
-import { SidebarTree, type SidebarItem } from "@/components/sidebar-tree";
+import { SidebarTree } from "@/components/sidebar-tree";
 
 /**
  * React Router layout route for `/assistant/settings/*`.
@@ -47,9 +43,6 @@ export function SettingsLayout() {
   // daemon and works for every assistant. Billing management moved off web
   // (the cloud's account pages own it), so the label is just "Usage".
   const { pathname } = useLocation();
-  // Show Log Out when a cloud session exists, Log In otherwise.
-  const hasCloudSession = useHasCloudSession();
-  const { login } = useOnboardingLogin();
 
   const getSidebarLabel = useCallback(
     (id: string, defaultLabel: string) => {
@@ -100,27 +93,6 @@ export function SettingsLayout() {
     [notificationSettingsAvailable, supportsCredentials, getSidebarLabel],
   );
 
-  const bottomItems = useMemo<SidebarItem[]>(() => {
-    const items: SidebarItem[] = [];
-    // The auth action is pinned to the very bottom of the nav.
-    items.push(
-      hasCloudSession
-        ? {
-            id: "logout",
-            label: t("sidebar.logout", "Log Out"),
-            icon: LogOut,
-            onSelect: () => void handleLogout(),
-          }
-        : {
-            id: "login",
-            label: t("sidebar.login", "Log In"),
-            icon: LogIn,
-            onSelect: () => void login(),
-          },
-    );
-    return items;
-  }, [hasCloudSession, login, t]);
-
   const pageTitle = useMemo(() => {
     if (pathname === routes.settings.root) {
       return t("sidebar.title", "Settings");
@@ -138,11 +110,7 @@ export function SettingsLayout() {
     <SidebarShell
       backHref={routes.assistant}
       sidebar={
-        <SidebarTree
-          items={filteredItems}
-          bottomItems={bottomItems}
-          indexPath={routes.settings.root}
-        />
+        <SidebarTree items={filteredItems} indexPath={routes.settings.root} />
       }
       title={pageTitle}
       // The settings root's index child is the General page, which a narrow

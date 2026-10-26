@@ -17,14 +17,20 @@ let lockfilePath: string;
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "lockfile-test-"));
-  lockfilePath = path.join(dir, "lockfile.json");
+  // The save resolves its paths from the environment: XDG config home plus
+  // the production environment dir.
+  lockfilePath = path.join(dir, "cadet", "lockfile.json");
+  process.env.XDG_CONFIG_HOME = dir;
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
 });
 
 afterEach(() => {
+  delete process.env.XDG_CONFIG_HOME;
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
 function writeOnDisk(value: unknown): void {
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
   fs.writeFileSync(lockfilePath, JSON.stringify(value, null, 2));
 }
 
@@ -128,16 +134,9 @@ describe("isPairedLockfileEntry", () => {
 
 describe("saveLockfileAssistant", () => {
   test("rejects an assistant with no id", () => {
-    const result = saveLockfileAssistant(
-      [lockfilePath],
-      { cloud: "local" },
-      undefined,
+    expect(() => saveLockfileAssistant({ cloud: "local" }, undefined)).toThrow(
+      "Missing assistant.assistantId",
     );
-    expect(result).toEqual({
-      ok: false,
-      status: 400,
-      error: "Missing assistant.assistantId",
-    });
   });
 
   test("preserves unknown on-disk fields written by a newer client", () => {
@@ -156,34 +155,17 @@ describe("saveLockfileAssistant", () => {
       ],
     });
 
-    const result = saveLockfileAssistant(
-      [lockfilePath],
+    saveLockfileAssistant(
       { assistantId: "asst_new", cloud: "local", runtimeUrl: "http://new" },
       "asst_new",
     );
 
-    expect(result.ok).toBe(true);
-
     const onDisk = readOnDisk();
     expect(onDisk.schemaVersion).toBe(99);
+    expect(onDisk.activeAssistant).toBe("asst_new");
     const assistants = onDisk.assistants as Array<Record<string, unknown>>;
     const old = assistants.find((a) => a.assistantId === "asst_old");
     expect(old?.futureField).toBe("keep-me");
-
-    // The returned wire value is the parsed shape — strict over the modeled
-    // fields, so the unknown field drops from it even though the file keeps
-    // it.
-    if (result.ok) {
-      expect(result.lockfile.activeAssistant).toBe("asst_new");
-      const wireOld = result.lockfile.assistants.find(
-        (a) => a.assistantId === "asst_old",
-      );
-      expect(wireOld).toEqual({
-        assistantId: "asst_old",
-        cloud: "cloud",
-        runtimeUrl: "http://old",
-      });
-    }
   });
 
   test("merges fields into an existing entry", () => {
@@ -195,7 +177,6 @@ describe("saveLockfileAssistant", () => {
     });
 
     saveLockfileAssistant(
-      [lockfilePath],
       { assistantId: "asst_1", name: "Renamed" },
       undefined,
     );
@@ -225,13 +206,8 @@ describe("saveLockfileAssistant", () => {
     };
     writeOnDisk({ activeAssistant: "asst_1", assistants: [entry] });
 
-    const result = saveLockfileAssistant(
-      [lockfilePath],
-      { assistantId: "asst_1", name: "Renamed" },
-      undefined,
-    );
+    saveLockfileAssistant({ assistantId: "asst_1", name: "Renamed" });
 
-    expect(result.ok).toBe(true);
     const assistants = readOnDisk().assistants as Array<
       Record<string, unknown>
     >;
@@ -252,17 +228,9 @@ describe("saveLockfileAssistant", () => {
       ],
     });
 
-    const result = saveLockfileAssistant(
-      [lockfilePath],
-      { assistantId: "asst_1", name: "Renamed" },
-      undefined,
-    );
+    saveLockfileAssistant({ assistantId: "asst_1", name: "Renamed" });
 
-    expect(result.ok).toBe(true);
     expect(readOnDisk().activeAssistant).toBe("asst_active");
-    if (result.ok) {
-      expect(result.lockfile.activeAssistant).toBe("asst_active");
-    }
   });
 });
 
@@ -519,13 +487,9 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = saveLockfileAssistant(
-      [lockfilePath],
-      { assistantId: "asst_2", cloud: "local" },
-      undefined,
-    );
-
-    expect(result).toMatchObject({ ok: false, status: 423 });
+    expect(() =>
+      saveLockfileAssistant({ assistantId: "asst_2", cloud: "local" }),
+    ).toThrow();
     expect(fs.readFileSync(lockfilePath, "utf-8")).toBe(before);
   });
 

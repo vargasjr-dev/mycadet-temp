@@ -44,8 +44,7 @@ function redirectXdg(): string {
   process.env.XDG_CONFIG_HOME = join(root, "config");
   process.env.XDG_STATE_HOME = join(root, "state");
   process.env.CADET_ENVIRONMENT = "production";
-  process.env.CADET_LOCKFILE_DIR = join(root, "lockdir");
-  mkdirSync(process.env.CADET_LOCKFILE_DIR, { recursive: true });
+  mkdirSync(join(root, "config", "cadet"), { recursive: true });
   return root;
 }
 
@@ -54,7 +53,6 @@ const RESTORED_ENV_KEYS = [
   "XDG_CONFIG_HOME",
   "XDG_STATE_HOME",
   "CADET_ENVIRONMENT",
-  "CADET_LOCKFILE_DIR",
 ] as const;
 
 function withRestoredEnv(run: () => Promise<void>): Promise<void> {
@@ -103,7 +101,7 @@ describe("cadet uninstall", () => {
       // says so up front (v0.0.10 run feedback: the hard refusal just
       // blocked the uninstall; the fs sweep deletes the archives anyway).
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [makeEntry({ assistantId: "test-assistant" })],
         }) + "\n",
@@ -162,7 +160,7 @@ describe("cadet uninstall", () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [
             {
@@ -197,7 +195,7 @@ describe("cadet uninstall", () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [
             {

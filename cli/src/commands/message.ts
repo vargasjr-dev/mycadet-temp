@@ -125,75 +125,79 @@ function exitWithUsage(error: string): never {
 
 export const message = Object.assign(
   async function message(): Promise<void> {
-  const rawArgs = process.argv.slice(3);
+    const rawArgs = process.argv.slice(3);
 
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    return;
-  }
+    if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
+      printUsage();
+      return;
+    }
 
-  const parsed = parseMessageArgs(rawArgs);
-  if (!parsed.ok) {
-    exitWithUsage(parsed.error);
-  }
+    const parsed = parseMessageArgs(rawArgs);
+    if (!parsed.ok) {
+      exitWithUsage(parsed.error);
+    }
 
-  const { assistantId, conversationKey, jsonOutput, filePath, inlineMessage } =
-    parsed.value;
+    const {
+      assistantId,
+      conversationKey,
+      jsonOutput,
+      filePath,
+      inlineMessage,
+    } = parsed.value;
 
-  let messageContent: string;
-  if (filePath !== undefined) {
-    try {
-      messageContent = readFileSync(filePath === "-" ? 0 : filePath, "utf-8");
-    } catch (error) {
-      const reason = error instanceof Error ? error.message : String(error);
+    let messageContent: string;
+    if (filePath !== undefined) {
+      try {
+        messageContent = readFileSync(filePath === "-" ? 0 : filePath, "utf-8");
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(
+          `Error: could not read message file "${filePath}": ${reason}`,
+        );
+        process.exit(1);
+      }
+      if (messageContent.length === 0) {
+        exitWithUsage(`message file "${filePath}" is empty.`);
+      }
+    } else {
+      messageContent = inlineMessage ?? "";
+    }
+
+    const client = new AssistantClient({ assistantId });
+
+    const payload: Record<string, string> = {
+      content: messageContent,
+      sourceChannel: "cadet",
+      interface: "cli",
+    };
+    if (conversationKey) {
+      payload.conversationKey = conversationKey;
+    }
+
+    const response = await client.post("/messages/", payload);
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
       console.error(
-        `Error: could not read message file "${filePath}": ${reason}`,
+        `Error: HTTP ${response.status}: ${body || response.statusText}`,
       );
       process.exit(1);
     }
-    if (messageContent.length === 0) {
-      exitWithUsage(`message file "${filePath}" is empty.`);
-    }
-  } else {
-    messageContent = inlineMessage ?? "";
-  }
 
-  const client = new AssistantClient({ assistantId });
+    const result = (await response.json()) as {
+      accepted: boolean;
+      messageId: string;
+    };
 
-  const payload: Record<string, string> = {
-    content: messageContent,
-    sourceChannel: "cadet",
-    interface: "cli",
-  };
-  if (conversationKey) {
-    payload.conversationKey = conversationKey;
-  }
-
-  const response = await client.post("/messages/", payload);
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    console.error(
-      `Error: HTTP ${response.status}: ${body || response.statusText}`,
-    );
-    process.exit(1);
-  }
-
-  const result = (await response.json()) as {
-    accepted: boolean;
-    messageId: string;
-  };
-
-  if (jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
-  } else {
-    if (result.accepted) {
-      console.log(`Message accepted (id: ${result.messageId})`);
+    if (jsonOutput) {
+      console.log(JSON.stringify(result, null, 2));
     } else {
-      console.log(`Message rejected (id: ${result.messageId})`);
+      if (result.accepted) {
+        console.log(`Message accepted (id: ${result.messageId})`);
+      } else {
+        console.log(`Message rejected (id: ${result.messageId})`);
+      }
     }
-  }
-},
+  },
   { description: "Send a message to a running assistant" },
 );
-

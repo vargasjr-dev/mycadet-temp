@@ -93,14 +93,6 @@
     "typeScheduled": "Scheduled",
     "cliOnly": "Use cadet backup and cadet restore in a terminal for local or Docker installations."
   },
-  "assistantPicker": {
-    "active": "Active",
-    "subtitle": "Choose which assistant is active for this account.",
-    "switch": "Switch",
-    "switchedToast": "Switched active assistant.",
-    "title": "Switch Assistant",
-    "unnamed": "Unnamed"
-  },
   "assistantStatusPanel": {
     "assistantId": "Assistant ID",
     "cpuUsage": "CPU Usage",
@@ -1568,8 +1560,6 @@
     "usage": "Usage",
     "community": "Community",
     "debug": "Debug",
-    "logout": "Log Out",
-    "login": "Log In",
     "title": "Settings"
   },
   "debugPage": {

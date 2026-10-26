@@ -10,11 +10,10 @@ import { join } from "node:path";
 
 const ORIGINAL_XDG = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ENV = process.env.CADET_ENVIRONMENT;
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { resolveFreshBearerToken } from "../commands/client.js";
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { saveGuardianToken } from "../lib/guardian-token.js";
 
 const RUNTIME = "https://gw.example.com";
@@ -80,9 +79,7 @@ describe("resolveFreshBearerToken", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "client-tui-refresh-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Isolate the lockfile too — saveLockfileAssistant writes the prod lockfile
-    // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set.
-    process.env.CADET_LOCKFILE_DIR = tempHome;
+    // saveLockfileAssistant resolves the lockfile from the XDG config home.
     delete process.env.CADET_ENVIRONMENT; // prod config dir
   });
 
@@ -90,9 +87,6 @@ describe("resolveFreshBearerToken", () => {
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_XDG === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_XDG;
-    if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_ENV === undefined) delete process.env.CADET_ENVIRONMENT;
     else process.env.CADET_ENVIRONMENT = ORIGINAL_ENV;
     rmSync(tempHome, { recursive: true, force: true });

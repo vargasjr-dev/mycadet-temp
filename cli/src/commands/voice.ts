@@ -68,62 +68,61 @@ EXAMPLES:
 
 export const voice = Object.assign(
   async function voice(): Promise<void> {
-  const args = process.argv.slice(3);
-  if (args.includes("--help") || args.includes("-h")) {
-    printUsage();
-    return;
-  }
+    const args = process.argv.slice(3);
+    if (args.includes("--help") || args.includes("-h")) {
+      printUsage();
+      return;
+    }
 
-  // Strips `--conversation <id>` from argv, rejecting a `-`-prefixed value:
-  // the daemon accepts any non-empty conversation id, so a swallowed option
-  // would open a conversation named after the flag it ate.
-  const conversationId = extractValueFlag(args, "conversation");
-  // One turn, then exit. Extracted before the assistant target is parsed so a
-  // multi-word message is never mistaken for a display name.
-  const sayText = extractValueFlag(args, "say");
-  const assistantArg = parseAssistantTargetArg(args);
-  const audioEnabled = !args.includes("--no-audio");
+    // Strips `--conversation <id>` from argv, rejecting a `-`-prefixed value:
+    // the daemon accepts any non-empty conversation id, so a swallowed option
+    // would open a conversation named after the flag it ate.
+    const conversationId = extractValueFlag(args, "conversation");
+    // One turn, then exit. Extracted before the assistant target is parsed so a
+    // multi-word message is never mistaken for a display name.
+    const sayText = extractValueFlag(args, "say");
+    const assistantArg = parseAssistantTargetArg(args);
+    const audioEnabled = !args.includes("--no-audio");
 
-  if (sayText !== undefined && sayText.trim().length === 0) {
-    console.error("Error: --say needs a message.");
-    process.exit(1);
-  }
-  if (sayText !== undefined && sayText.length > MAX_TEXT_TURN_CHARS) {
-    console.error(
-      `Error: --say is ${sayText.length} characters, limit is ${MAX_TEXT_TURN_CHARS}.`,
-    );
-    process.exit(1);
-  }
-
-  let connection;
-  try {
-    connection = await resolveLiveVoiceConnection(assistantArg);
-  } catch (err) {
-    if (err instanceof LiveVoiceConnectionError) {
-      console.error(`Error: ${err.message}`);
+    if (sayText !== undefined && sayText.trim().length === 0) {
+      console.error("Error: --say needs a message.");
       process.exit(1);
     }
-    throw err;
-  }
+    if (sayText !== undefined && sayText.length > MAX_TEXT_TURN_CHARS) {
+      console.error(
+        `Error: --say is ${sayText.length} characters, limit is ${MAX_TEXT_TURN_CHARS}.`,
+      );
+      process.exit(1);
+    }
 
-  const player = audioEnabled ? new PcmPlayer() : null;
-  const client = new CliLiveVoiceClient({
-    url: connection.url,
-    token: connection.token,
-    tokenTransport: connection.tokenTransport,
-    ...(conversationId ? { conversationId } : {}),
-  });
+    let connection;
+    try {
+      connection = await resolveLiveVoiceConnection(assistantArg);
+    } catch (err) {
+      if (err instanceof LiveVoiceConnectionError) {
+        console.error(`Error: ${err.message}`);
+        process.exit(1);
+      }
+      throw err;
+    }
 
-  await runSession({
-    client,
-    player,
-    reference: connection.reference,
-    ...(sayText !== undefined ? { sayText } : {}),
-  });
-},
+    const player = audioEnabled ? new PcmPlayer() : null;
+    const client = new CliLiveVoiceClient({
+      url: connection.url,
+      token: connection.token,
+      tokenTransport: connection.tokenTransport,
+      ...(conversationId ? { conversationId } : {}),
+    });
+
+    await runSession({
+      client,
+      player,
+      reference: connection.reference,
+      ...(sayText !== undefined ? { sayText } : {}),
+    });
+  },
   { description: "Type to an assistant and hear it answer out loud" },
 );
-
 
 /** Exported for tests. Not part of the command's public surface. */
 export interface SessionDeps {

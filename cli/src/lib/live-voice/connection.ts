@@ -151,10 +151,7 @@ async function resolveCloudConnection(
   // `runtimeUrl` is the cloud this entry was hatched against, which is the
   // one that can mint for it. `getCloudUrl()` is the fallback for an entry
   // written before that field was recorded.
-  const cloudUrl = (entry.runtimeUrl || getCloudUrl()).replace(
-    /\/+$/,
-    "",
-  );
+  const cloudUrl = (entry.runtimeUrl || getCloudUrl()).replace(/\/+$/, "");
 
   let token: string;
   try {

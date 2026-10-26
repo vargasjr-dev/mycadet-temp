@@ -14,9 +14,13 @@ beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-unpair-"));
   lockfilePath = path.join(tmpDir, "lockfile.json");
   configDir = path.join(tmpDir, "config");
+  // The save resolves its paths from the environment; tests point it at the
+  // per-test tmp dir.
+  process.env.XDG_CONFIG_HOME = tmpDir;
 });
 
 afterEach(() => {
+  delete process.env.XDG_CONFIG_HOME;
   fs.rmSync(tmpDir, { recursive: true, force: true });
 });
 
@@ -133,11 +137,17 @@ describe("unpairAssistant", () => {
       activeAssistant: null,
     });
     const tokenPath = seedGuardianToken("paired-1");
-    // A read-only lockfile directory makes the tmp-file write fail after the
-    // token has already been deleted.
-    fs.chmodSync(tmpDir, 0o500);
+    // A lockfile path whose parent is a regular file makes the tmp-file
+    // write fail after the token has already been deleted (deterministic
+    // even for root, which ignores directory permissions).
+    const notADir = path.join(tmpDir, "not-a-dir");
+    fs.writeFileSync(notADir, "");
     try {
-      const result = unpairAssistant([lockfilePath], configDir, "paired-1");
+      const result = unpairAssistant(
+        [path.join(notADir, "lockfile.json")],
+        configDir,
+        "paired-1",
+      );
 
       expect(result.ok).toBe(false);
       expect(fs.existsSync(tokenPath)).toBe(true);
@@ -145,7 +155,7 @@ describe("unpairAssistant", () => {
         JSON.stringify({ accessToken: "tok" }),
       );
     } finally {
-      fs.chmodSync(tmpDir, 0o700);
+      process.env.XDG_CONFIG_HOME = tmpDir;
     }
   });
 

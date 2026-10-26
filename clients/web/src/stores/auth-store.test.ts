@@ -288,15 +288,8 @@ mock.module("@/assistant/api", () => ({
   listAssistants: listAssistantsMock,
 }));
 
-const {
-  useAuthStore,
-  subscribeCloudAccountLogout,
-  beginCloudAccountOAuth,
-  isCloudAccountOAuthInFlight,
-  primeCloudAccountSessionToken,
-  setupAuthListeners,
-  whenCloudSessionSettled,
-} = await import("@/stores/auth-store");
+const { useAuthStore, whenCloudSessionSettled } =
+  await import("@/stores/auth-store");
 const { connectCloudAssistant, connectLocalAssistant, connectPairedAssistant } =
   await import("@/assistant/connect-assistant");
 const { useResolvedAssistantsStore } =
@@ -1390,10 +1383,7 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // A snapshot persisted by an earlier confirmed session must not survive
     // the rejection: restoreOfflineSession would otherwise resurrect the
     // rejected account as "present" on a later offline boot.
-    localStorage.setItem(
-      "cadet:auth:sessionSnapshot",
-      "true",
-    );
+    localStorage.setItem("cadet:auth:sessionSnapshot", "true");
     mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
 
     await useAuthStore.getState().initSession();
@@ -2193,8 +2183,6 @@ describe("session shape (platform vs local gateway access)", () => {
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
-
-
 });
 
 test("explicit cloud-account logout revokes cloud and biometric credentials even in gateway mode", async () => {
@@ -2219,62 +2207,4 @@ test("default gateway logout retains gateway-only behavior", async () => {
   });
   await useAuthStore.getState().logout();
   expect(logoutMock).not.toHaveBeenCalled();
-});
-
-test("cloud logout scopes notify account sources until cleanup finishes; gateway logout does not", async () => {
-  const finish = mock(() => {});
-  const started = mock(() => finish);
-  const unsubscribe = subscribeCloudAccountLogout(started);
-  try {
-    mockIsGatewayAuth = true;
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
-    await useAuthStore.getState().logout();
-    expect(started).not.toHaveBeenCalled();
-    await useAuthStore.getState().logout({
-      cloudAccount: {
-        revokeSession: async () => {
-          expect(started).toHaveBeenCalledTimes(1);
-          expect(finish).not.toHaveBeenCalled();
-        },
-      },
-    });
-    expect(finish).toHaveBeenCalledTimes(1);
-  } finally {
-    unsubscribe();
-  }
-});
-
-test("account OAuth scopes suspend web resume probes until every exchange finishes", async () => {
-  const { publish } = await import("@/lib/event-bus");
-  const originalRefresh = useAuthStore.getState().refreshSession;
-  const refresh = mock(async () => true);
-  useAuthStore.setState({ refreshSession: refresh });
-  const stop = setupAuthListeners();
-  const first = beginCloudAccountOAuth();
-  const second = beginCloudAccountOAuth();
-  try {
-    expect(isCloudAccountOAuthInFlight()).toBe(true);
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).not.toHaveBeenCalled();
-    first();
-    first();
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).not.toHaveBeenCalled();
-    second();
-    expect(isCloudAccountOAuthInFlight()).toBe(false);
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).toHaveBeenCalledTimes(1);
-  } finally {
-    first();
-    second();
-    stop();
-    useAuthStore.setState({ refreshSession: originalRefresh });
-  }
-});
-test("account OAuth primes the web token cache before web reconciliation", () => {
-  primeCloudAccountSessionToken("new-session-token");
-  expect(mockElectronSessionToken).toBe("new-session-token");
 });

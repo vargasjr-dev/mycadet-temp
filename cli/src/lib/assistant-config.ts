@@ -2,7 +2,11 @@ import { randomBytes } from "crypto";
 import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
-import { readLockfile, withLockfileLock } from "@mycadet/local-mode";
+import {
+  readLockfile,
+  saveLockfileAssistant,
+  withLockfileLock,
+} from "@mycadet/local-mode";
 import {
   type AppProcessRecord,
   type LocalAssistantResources,
@@ -196,14 +200,6 @@ export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
 }
 
-function writeAssistants(entries: LockfileAssistant[]): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    data.assistants = entries;
-    writeLockfileUnlocked(data);
-  });
-}
-
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
@@ -386,16 +382,6 @@ export function extractHostFromEntry(entry: LockfileAssistant): string {
   }
 }
 
-export function saveLockfileAssistant(entry: LockfileAssistant): void {
-  withCliLockfileLock(() => {
-    const entries = loadAllAssistants().filter(
-      (e) => e.assistantId !== entry.assistantId,
-    );
-    entries.unshift(entry);
-    writeAssistants(entries);
-  });
-}
-
 /**
  * The client-minted uuid this CLI addresses the assistant's chat
  * conversation by (web's temp-client-id pattern: clients/web
@@ -491,4 +477,3 @@ export function getLockfilePlatformBaseUrl(): string | undefined {
   if (typeof url === "string" && url.trim()) return url.trim();
   return undefined;
 }
-

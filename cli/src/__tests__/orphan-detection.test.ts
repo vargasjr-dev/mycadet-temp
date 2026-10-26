@@ -6,7 +6,7 @@ import { join } from "node:path";
 // Point lockfile operations at a temp directory before importing anything that
 // would otherwise resolve real on-host paths.
 const testDir = mkdtempSync(join(tmpdir(), "cli-orphan-detection-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import {
   detectOrphanedProcesses,
@@ -19,7 +19,7 @@ import {
 
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
 });
 
 function makeLocalEntry(
@@ -138,13 +138,15 @@ describe("getKnownPidsFromAssistants", () => {
 });
 
 describe("loadAllAssistants", () => {
-  // The loader reads the ambient lockfile; steer it at a temp dir per case.
-  function steerLockfile(lockfileDir: string): void {
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+  // The loader reads the ambient lockfile; steer it at a temp config home
+  // per case (the per-env subdirectory is the ambient layout).
+  function steerLockfile(configHome: string): void {
+    process.env.XDG_CONFIG_HOME = configHome;
   }
 
   test("parses the ambient lockfile's entries", () => {
-    const envDir = mkdtempSync(join(testDir, "envA-"));
+    const envDir = join(mkdtempSync(join(testDir, "envA-")), "cadet");
+    mkdirSync(envDir, { recursive: true });
 
     writeFileSync(
       join(envDir, "lockfile.json"),
@@ -170,14 +172,16 @@ describe("loadAllAssistants", () => {
     expect(ids).toEqual(["alpha", "beta"]);
   });
   test("returns empty list when the lockfile is missing", () => {
-    const envDir = mkdtempSync(join(testDir, "empty-"));
+    const envDir = join(mkdtempSync(join(testDir, "empty-")), "cadet");
+    mkdirSync(envDir, { recursive: true });
     steerLockfile(envDir);
     const all = loadAllAssistants();
     expect(all).toEqual([]);
   });
 
   test("skips malformed JSON without throwing", () => {
-    const envDir = mkdtempSync(join(testDir, "malformed-"));
+    const envDir = join(mkdtempSync(join(testDir, "malformed-")), "cadet");
+    mkdirSync(envDir, { recursive: true });
     writeFileSync(join(envDir, "lockfile.json"), "{not json");
     steerLockfile(envDir);
     const all = loadAllAssistants();
@@ -185,7 +189,8 @@ describe("loadAllAssistants", () => {
   });
 
   test("keeps schema-valid entries; the schema drops id-less rows", () => {
-    const envDir = mkdtempSync(join(testDir, "partial-"));
+    const envDir = join(mkdtempSync(join(testDir, "partial-")), "cadet");
+    mkdirSync(envDir, { recursive: true });
     writeFileSync(
       join(envDir, "lockfile.json"),
       JSON.stringify({
@@ -209,7 +214,8 @@ describe("loadAllAssistants", () => {
     // Simulate Vargas's reported bug: `local` env has no assistants, but a
     // `dev` env assistant is running with a recorded daemon PID. The orphan
     // filter must treat that PID as known.
-    const devDir = mkdtempSync(join(testDir, "dev-"));
+    const devDir = join(mkdtempSync(join(testDir, "dev-")), "cadet");
+    mkdirSync(devDir, { recursive: true });
     const instanceDir = join(devDir, "instances", "quiet-finch");
     makeLocalEntry("quiet-finch", instanceDir, {
       daemon: "19067",

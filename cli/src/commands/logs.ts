@@ -44,9 +44,7 @@ function printHelp(): void {
     "  --since <time>        Show logs since timestamp or relative, e.g. 10m or 2h",
   );
   console.log("  --until <time>        Show logs until timestamp or relative");
-  console.log(
-    "  -s, --service <name>  Filter to a specific service",
-  );
+  console.log("  -s, --service <name>  Filter to a specific service");
   console.log("  -h, --help            Show this help");
 }
 
@@ -485,55 +483,54 @@ async function showCustomLogs(
 
 export const logs = Object.assign(
   async function logs(): Promise<void> {
-  const opts = parseArgs();
+    const opts = parseArgs();
 
-  const entry = resolveAssistant(opts.name);
+    const entry = resolveAssistant(opts.name);
 
-  if (!entry) {
-    if (opts.name) {
-      console.error(`No assistant found with name '${opts.name}'.`);
-    } else {
-      console.error("No assistant found. Run `cadet hatch` first.");
+    if (!entry) {
+      if (opts.name) {
+        console.error(`No assistant found with name '${opts.name}'.`);
+      } else {
+        console.error("No assistant found. Run `cadet hatch` first.");
+      }
+      process.exit(1);
     }
-    process.exit(1);
-  }
 
-  const cloud = entry.cloud;
+    const cloud = entry.cloud;
 
-  switch (cloud) {
-    case "local":
-      await showLocalLogs(entry, opts);
-      break;
+    switch (cloud) {
+      case "local":
+        await showLocalLogs(entry, opts);
+        break;
 
-    case "docker":
-      await showDockerLogs(entry, opts);
-      break;
+      case "docker":
+        await showDockerLogs(entry, opts);
+        break;
 
-    case "custom":
-      await showCustomLogs(entry, opts);
-      break;
+      case "custom":
+        await showCustomLogs(entry, opts);
+        break;
 
-    case "cloud":
-      console.error(
-        "Logs for Cadet Cloud instances are not yet supported.\n" +
-          "View logs in the Cadet Cloud dashboard.",
-      );
-      process.exit(1);
-      break;
+      case "cloud":
+        console.error(
+          "Logs for Cadet Cloud instances are not yet supported.\n" +
+            "View logs in the Cadet Cloud dashboard.",
+        );
+        process.exit(1);
+        break;
 
-    case "apple-container":
-      console.error(
-        "Logs for Apple Container instances are not yet supported.\n" +
-          `Use 'cadet ssh ${entry.assistantId}' to access the container directly.`,
-      );
-      process.exit(1);
-      break;
+      case "apple-container":
+        console.error(
+          "Logs for Apple Container instances are not yet supported.\n" +
+            `Use 'cadet ssh ${entry.assistantId}' to access the container directly.`,
+        );
+        process.exit(1);
+        break;
 
-    default:
-      console.error(`Unsupported topology '${cloud}' for log viewing.`);
-      process.exit(1);
-  }
-},
+      default:
+        console.error(`Unsupported topology '${cloud}' for log viewing.`);
+        process.exit(1);
+    }
+  },
   { description: "View logs from an assistant instance" },
 );
-

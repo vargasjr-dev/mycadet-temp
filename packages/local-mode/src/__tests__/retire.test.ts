@@ -5,13 +5,21 @@ import { FakeChild, mockChildProcessSpawn } from "./helpers/child-process-mock";
 
 let lastChild: FakeChild;
 const spawnArgs: Array<
-  [string, string[], { env?: NodeJS.ProcessEnv; stdio?: unknown; windowsHide?: boolean }]
+  [
+    string,
+    string[],
+    { env?: NodeJS.ProcessEnv; stdio?: unknown; windowsHide?: boolean },
+  ]
 > = [];
 const spawnMock = mock(
   (
     command: string,
     args: string[],
-    options: { env?: NodeJS.ProcessEnv; stdio?: unknown; windowsHide?: boolean },
+    options: {
+      env?: NodeJS.ProcessEnv;
+      stdio?: unknown;
+      windowsHide?: boolean;
+    },
   ) => {
     spawnArgs.push([command, args, options]);
     lastChild = new FakeChild();

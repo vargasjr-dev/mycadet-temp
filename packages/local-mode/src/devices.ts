@@ -28,12 +28,9 @@ export type DevicesListResult =
   | { ok: true; devices: DeviceRecord[] }
   | { ok: false; error: string };
 
-export type DevicesRevokeResult =
-  { ok: true } | { ok: false; error: string };
+export type DevicesRevokeResult = { ok: true } | { ok: false; error: string };
 
-type CliRunResult =
-  | { ok: true; stdout: string }
-  | { ok: false; error: string };
+type CliRunResult = { ok: true; stdout: string } | { ok: false; error: string };
 
 // The CLI prints an identity preamble before acting, so a failure transcript
 // is multi-line; surface only the final "Error:" line when one exists.
@@ -54,11 +51,10 @@ function runDevicesCli(
   args: string[],
 ): Promise<CliRunResult> {
   return new Promise((resolve) => {
-    const child = spawn(
-      invocation.command,
-      [...invocation.baseArgs, ...args],
-      { stdio: ["ignore", "pipe", "pipe"], windowsHide: true },
-    );
+    const child = spawn(invocation.command, [...invocation.baseArgs, ...args], {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    });
 
     let stdout = "";
     let stderr = "";

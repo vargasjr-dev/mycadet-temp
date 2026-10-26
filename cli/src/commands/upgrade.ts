@@ -12,9 +12,9 @@ import {
   getLocalInstanceDir,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   captureImageRefs,
   GATEWAY_INTERNAL_PORT,
@@ -661,7 +661,6 @@ async function upgradeDocker(
             },
           };
           saveLockfileAssistant(rolledBackEntry);
-
           // Notify clients that the upgrade failed and rolled back.
           await broadcastUpgradeEvent(
             gatewayUrl,

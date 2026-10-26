@@ -17,8 +17,6 @@ export const WEB_INTERFACE_ID = "web";
 
 let cached: string | null = null;
 
-
-
 /**
  * Returns a stable UUID identifying this CLI installation.
  * Generated once and persisted to `~/.config/cadet/client-id`.

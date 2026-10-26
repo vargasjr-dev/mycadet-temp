@@ -11,7 +11,6 @@ import {
 import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { ProfileCard } from "@/components/profile-card";
 import { AppIconRow } from "@/domains/settings/components/app-icon-row";
-import { AssistantPicker } from "@/domains/settings/components/assistant-picker";
 import { useAssistantWithHealthz } from "@/domains/settings/components/assistant-status-panel";
 import {
   AssistantUpgrades,
@@ -53,16 +52,6 @@ export function GeneralPage() {
     useAssistantWithHealthz();
   const isAuthenticated = useIsAuthenticated();
   const isNativeMobile = useIsNativeMobile();
-  // The card supersedes the in-page picker so the two never render together.
-  //
-  // Deliberately wider than `useGatedSelectedAssistantId` in
-  // `assistant/selection.ts`: that gate closes under `isGatewaySessionLive()`,
-  // which is exactly where this card hands off to the hub chooser.
-  const showAssistantSwitcherCard =
-    isLocalClient() ||
-    isAuthenticated ||
-    !isCadetCloudRemote() ||
-    isNativeMobile;
   const navigate = useNavigate();
   const cloudGate = useCloudGate();
   const infraGate = useCloudGate({ cloudHostedOnly: true });
@@ -269,19 +258,15 @@ export function GeneralPage() {
 
       <PairDeviceCard />
 
-      {!showAssistantSwitcherCard && <AssistantPicker />}
-
-      {showAssistantSwitcherCard && (
-        <DetailCard
-          title={t("generalPage.switchAssistantTitle")}
-          subtitle={t("generalPage.switchAssistantSubtitle")}
-          accessory={
-            <Button variant="outlined" onClick={openAssistantChooser}>
-              {t("generalPage.chooseAssistant")}
-            </Button>
-          }
-        />
-      )}
+      <DetailCard
+        title={t("generalPage.switchAssistantTitle")}
+        subtitle={t("generalPage.switchAssistantSubtitle")}
+        accessory={
+          <Button variant="outlined" onClick={openAssistantChooser}>
+            {t("generalPage.chooseAssistant")}
+          </Button>
+        }
+      />
 
       {isElectron() && <TeleportCard />}
     </div>

@@ -119,7 +119,7 @@ function writePreservedConfig(workspaceDir: string, webhookBase: string): void {
   );
 }
 
-const restoreEnv = snapshotEnv(["CADET_LOCKFILE_DIR"]);
+const restoreEnv = snapshotEnv(["XDG_CONFIG_HOME"]);
 
 afterEach(() => {
   restoreEnv();

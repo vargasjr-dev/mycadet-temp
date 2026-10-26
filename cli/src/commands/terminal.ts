@@ -16,7 +16,10 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { spawn } from "child_process";
 
-import { extractHostFromEntry, resolveAssistant } from "../lib/assistant-config";
+import {
+  extractHostFromEntry,
+  resolveAssistant,
+} from "../lib/assistant-config";
 import { dockerResourceNames } from "../lib/docker";
 import { getCloudUrl, readCloudToken } from "../lib/cloud-client";
 import { sshAppleContainer } from "../lib/ssh-apple-container";
@@ -59,7 +62,9 @@ function printHelp(): void {
   console.log(
     "assistants shell in via docker exec, GCP assistants via gcloud, custom",
   );
-  console.log("hosts via ssh, and apple-container assistants via their management socket.");
+  console.log(
+    "hosts via ssh, and apple-container assistants via their management socket.",
+  );
   console.log("");
   console.log("Subcommands:");
   console.log("  (none)              Interactive shell");
@@ -201,141 +206,143 @@ async function listTmuxSessions(
 
 export const terminal = Object.assign(
   async function terminal(): Promise<void> {
-  const args = process.argv.slice(3);
+    const args = process.argv.slice(3);
 
-  if (args.includes("--help") || args.includes("-h")) {
-    printHelp();
-    process.exit(0);
-  }
+    if (args.includes("--help") || args.includes("-h")) {
+      printHelp();
+      process.exit(0);
+    }
 
-  // Parse arguments
-  //
-  // Accepted forms:
-  //   cadet terminal [--assistant <name>]
-  //   cadet terminal list [--assistant <name>]
-  //   cadet terminal attach <session> [--assistant <name>]
-  let subcommand: string | undefined;
-  let assistantName: string | undefined;
-  let tmuxSessionName: string | undefined;
+    // Parse arguments
+    //
+    // Accepted forms:
+    //   cadet terminal [--assistant <name>]
+    //   cadet terminal list [--assistant <name>]
+    //   cadet terminal attach <session> [--assistant <name>]
+    let subcommand: string | undefined;
+    let assistantName: string | undefined;
+    let tmuxSessionName: string | undefined;
 
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--assistant" && args[i + 1]) {
-      assistantName = args[++i];
-    } else if (args[i].startsWith("-")) {
-      // Skip unknown flags
-      continue;
-    } else if (!subcommand) {
-      // First positional — subcommand or assistant name
-      if (args[i] === "list" || args[i] === "attach") {
-        subcommand = args[i];
-      } else {
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === "--assistant" && args[i + 1]) {
+        assistantName = args[++i];
+      } else if (args[i].startsWith("-")) {
+        // Skip unknown flags
+        continue;
+      } else if (!subcommand) {
+        // First positional — subcommand or assistant name
+        if (args[i] === "list" || args[i] === "attach") {
+          subcommand = args[i];
+        } else {
+          assistantName = args[i];
+        }
+      } else if (subcommand === "attach" && !tmuxSessionName) {
+        // Second positional after "attach" — tmux session name
+        tmuxSessionName = args[i];
+      } else if (!assistantName) {
+        // Trailing positional after subcommand args — assistant name
         assistantName = args[i];
       }
-    } else if (subcommand === "attach" && !tmuxSessionName) {
-      // Second positional after "attach" — tmux session name
-      tmuxSessionName = args[i];
-    } else if (!assistantName) {
-      // Trailing positional after subcommand args — assistant name
-      assistantName = args[i];
     }
-  }
 
-  // tmux subcommands are managed-cloud features
-  if (subcommand === "list") {
-    await listTmuxSessions(resolveManagedAssistant(assistantName));
-    return;
-  }
+    // tmux subcommands are managed-cloud features
+    if (subcommand === "list") {
+      await listTmuxSessions(resolveManagedAssistant(assistantName));
+      return;
+    }
 
-  if (subcommand === "attach") {
-    if (!tmuxSessionName) {
-      console.error(`Usage: ${cliCommand()} terminal attach <session-name>`);
+    if (subcommand === "attach") {
+      if (!tmuxSessionName) {
+        console.error(`Usage: ${cliCommand()} terminal attach <session-name>`);
+        console.error(
+          "\nUse 'cadet terminal list' to see available tmux sessions.",
+        );
+        process.exit(1);
+      }
+      // Shell-escape the session name to handle spaces/metacharacters
+      const escaped = tmuxSessionName.replace(/'/g, "'\\''");
+      await interactiveSession(
+        resolveManagedAssistant(assistantName),
+        `tmux attach -t '${escaped}'`,
+      );
+      return;
+    }
+
+    // Default: interactive shell, dispatched by the assistant's cloud type.
+    const entry = resolveAssistant(assistantName);
+
+    if (!entry) {
+      if (assistantName) {
+        console.error(
+          `No assistant instance found with name '${assistantName}'.`,
+        );
+      } else {
+        console.error("No assistant instance found. Run `cadet hatch` first.");
+      }
+      process.exit(1);
+    }
+
+    const cloud = entry.cloud;
+
+    if (cloud === "local") {
       console.error(
-        "\nUse 'cadet terminal list' to see available tmux sessions.",
+        "Cannot open a terminal into a local assistant. Local assistants run directly on this machine.\n" +
+          `Use 'cadet ps ${entry.assistantId}' to check its processes instead.`,
       );
       process.exit(1);
     }
-    // Shell-escape the session name to handle spaces/metacharacters
-    const escaped = tmuxSessionName.replace(/'/g, "'\\''");
-    await interactiveSession(
-      resolveManagedAssistant(assistantName),
-      `tmux attach -t '${escaped}'`,
-    );
-    return;
-  }
 
-  // Default: interactive shell, dispatched by the assistant's cloud type.
-  const entry = resolveAssistant(assistantName);
-
-  if (!entry) {
-    if (assistantName) {
-      console.error(`No assistant instance found with name '${assistantName}'.`);
-    } else {
-      console.error("No assistant instance found. Run `cadet hatch` first.");
+    // Apple container: connect to the management socket for an interactive shell.
+    if (cloud === "apple-container") {
+      await sshAppleContainer(entry);
+      return;
     }
-    process.exit(1);
-  }
 
-  const cloud = entry.cloud;
+    if (cloud === "docker") {
+      const res = dockerResourceNames(entry.assistantId);
+      console.log(`🔗 Connecting to ${entry.assistantId} via docker exec...\n`);
 
-  if (cloud === "local") {
-    console.error(
-      "Cannot open a terminal into a local assistant. Local assistants run directly on this machine.\n" +
-        `Use 'cadet ps ${entry.assistantId}' to check its processes instead.`,
-    );
-    process.exit(1);
-  }
-
-  // Apple container: connect to the management socket for an interactive shell.
-  if (cloud === "apple-container") {
-    await sshAppleContainer(entry);
-    return;
-  }
-
-  if (cloud === "docker") {
-    const res = dockerResourceNames(entry.assistantId);
-    console.log(`🔗 Connecting to ${entry.assistantId} via docker exec...\n`);
-
-    const child = spawn(
-      "docker",
-      ["exec", "-it", res.assistantContainer, "/bin/sh"],
-      { stdio: "inherit", windowsHide: true },
-    );
-    await waitForExit(child);
-    return;
-  }
-
-  if (isCloudHome(cloud)) {
-    const token = readCloudToken();
-    if (!token) {
-      console.error(
-        "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+      const child = spawn(
+        "docker",
+        ["exec", "-it", res.assistantContainer, "/bin/sh"],
+        { stdio: "inherit", windowsHide: true },
       );
-      process.exit(1);
+      await waitForExit(child);
+      return;
     }
-    await interactiveSession({
-      assistantId: entry.assistantId,
-      token,
-      cloudUrl: getCloudUrl(),
-    });
-    return;
-  }
 
-  if (cloud === "custom") {
-    const host = extractHostFromEntry(entry);
-    const sshTarget = `root@${host}`;
+    if (isCloudHome(cloud)) {
+      const token = readCloudToken();
+      if (!token) {
+        console.error(
+          "Not logged in. Run `cadet login` first to authenticate with Cadet Cloud.",
+        );
+        process.exit(1);
+      }
+      await interactiveSession({
+        assistantId: entry.assistantId,
+        token,
+        cloudUrl: getCloudUrl(),
+      });
+      return;
+    }
 
-    console.log(`🔗 Connecting to ${entry.assistantId} via ssh...\n`);
+    if (cloud === "custom") {
+      const host = extractHostFromEntry(entry);
+      const sshTarget = `root@${host}`;
 
-    const child = spawn("ssh", [...SSH_OPTS, sshTarget], {
-      stdio: "inherit",
-      windowsHide: true,
-    });
-    await waitForExit(child);
-    return;
-  }
+      console.log(`🔗 Connecting to ${entry.assistantId} via ssh...\n`);
 
-  console.error(`Error: Unknown cloud type '${cloud}'.`);
-  process.exit(1);
-},
+      const child = spawn("ssh", [...SSH_OPTS, sshTarget], {
+        stdio: "inherit",
+        windowsHide: true,
+      });
+      await waitForExit(child);
+      return;
+    }
+
+    console.error(`Error: Unknown cloud type '${cloud}'.`);
+    process.exit(1);
+  },
   { description: "Open a terminal into an assistant" },
 );

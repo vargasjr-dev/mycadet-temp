@@ -313,7 +313,9 @@ async function retireInner(): Promise<void> {
   const lookup = lookupAssistantByIdentifier(name);
   if (lookup.status !== "found") {
     console.error(formatAssistantLookupError(name, lookup));
-    console.error(`Run '${cliCommand()} hatch' first, or check the instance name.`);
+    console.error(
+      `Run '${cliCommand()} hatch' first, or check the instance name.`,
+    );
     process.exit(1);
   }
 

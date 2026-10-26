@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 // Lockfile isolation (mirrors backup.test.ts)
 const testDir = mkdtempSync(join(tmpdir(), "cli-debug-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";

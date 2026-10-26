@@ -17,12 +17,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "client-refresh-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { AssistantClient } from "../lib/assistant-client.js";
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { loadGuardianToken, saveGuardianToken } from "../lib/guardian-token.js";
 
 const RUNTIME = "https://gw.example.com";
@@ -91,15 +90,11 @@ function refreshResponse(): Response {
 
 describe("AssistantClient 401 -> refresh -> retry", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
   });
 
   afterEach(() => {
     globalThis.fetch = ORIGINAL_FETCH;
-    if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });

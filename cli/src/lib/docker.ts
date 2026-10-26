@@ -13,11 +13,8 @@ import { dirname, join, resolve } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import {
-  findAssistantByName,
-  saveLockfileAssistant,
-  setActiveAssistant,
-} from "./assistant-config";
+import { findAssistantByName, setActiveAssistant } from "./assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
@@ -1007,6 +1004,7 @@ export async function recreateDockerContainers(
     runtimeUrl: `http://localhost:${gatewayPort}`,
     containerInfo: { ...info, assistantPort },
   });
+
 }
 
 /** The port of the CLI's own runtime url form (`http://localhost:7830`). */
@@ -1803,8 +1801,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (watch && repoRoot) {
-      saveLockfileAssistant({ ...dockerEntry, watcherPid: process.pid });
-
+      saveLockfileAssistant({
+        ...dockerEntry,
+        watcherPid: process.pid,
+      });
       const stopWatcher = startFileWatcher({
         bootstrapSecret,
         cesServiceToken,
@@ -1825,7 +1825,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log("\n🛑 Shutting down...");
           stopWatcher();
           await stopContainers(res);
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
           log("✅ Docker instance stopped.");
           resolve();
         };
@@ -1838,7 +1841,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         // file watchers and let the process terminate.
         process.on("SIGTERM", () => {
           stopWatcher();
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
           resolve();
         });
       });

@@ -231,8 +231,6 @@ describe("buildMessageParts", () => {
       ],
     });
 
-    expect(buildMessageParts(msg)).toEqual([
-      { kind: "text", text: "visible" },
-    ]);
+    expect(buildMessageParts(msg)).toEqual([{ kind: "text", text: "visible" }]);
   });
 });

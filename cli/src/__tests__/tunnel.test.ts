@@ -130,7 +130,6 @@ const { tunnel } = await import("../commands/tunnel.js");
 const originalArgv = [...process.argv];
 const originalFetch = globalThis.fetch;
 const originalConfigHome = process.env.XDG_CONFIG_HOME;
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 const tempDirs: string[] = [];
 
@@ -205,12 +204,17 @@ function writeLockfile(
   const entries = Array.isArray(entryOrEntries)
     ? entryOrEntries
     : [entryOrEntries];
-  const lockfileDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-lockfile-"));
-  tempDirs.push(lockfileDir);
-  process.env.CADET_LOCKFILE_DIR = lockfileDir;
-  mkdirSync(lockfileDir, { recursive: true });
+  // Write into the config home already steering this test when one is set;
+  // otherwise carve out a throwaway config home of our own.
+  let lockfileDir = process.env.XDG_CONFIG_HOME;
+  if (!lockfileDir) {
+    lockfileDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-lockfile-"));
+    tempDirs.push(lockfileDir);
+    process.env.XDG_CONFIG_HOME = lockfileDir;
+  }
+  mkdirSync(join(lockfileDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(lockfileDir, "lockfile.json"),
+    join(lockfileDir, "cadet", "lockfile.json"),
     JSON.stringify(
       {
         activeAssistant: activeAssistant ?? entries[0].assistantId,
@@ -285,15 +289,16 @@ describe("app server targeting", () => {
       "tailscale",
       "--foreground",
     ];
+    // The ngrok config file lives under the XDG config dir; a fresh one per
+    // test keeps the saved-domain state hermetic. Set it before seeding the
+    // lockfile so both land in the same config home.
+    const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
+    tempDirs.push(configHome);
+    process.env.XDG_CONFIG_HOME = configHome;
     writeLockfile(makeLocalEntry());
     globalThis.fetch = withPreconnect(async () => {
       throw new Error("gateway unavailable");
     });
-    // The ngrok config file lives under the XDG config dir; a fresh one per
-    // test keeps the saved-domain state hermetic.
-    const configHome = mkdtempSync(join(tmpdir(), "cadet-tunnel-xdg-"));
-    tempDirs.push(configHome);
-    process.env.XDG_CONFIG_HOME = configHome;
     runCloudflareTunnelMock.mockReset();
     runCloudflareTunnelMock.mockResolvedValue(
       fakeTunnelResult("https://test.example.cloudflare.dev"),
@@ -322,11 +327,6 @@ describe("app server targeting", () => {
       delete process.env.XDG_CONFIG_HOME;
     } else {
       process.env.XDG_CONFIG_HOME = originalConfigHome;
-    }
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
-    } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     if (originalWorkspaceDir === undefined) {
       delete process.env.CADET_WORKSPACE_DIR;
@@ -1188,10 +1188,17 @@ describe("ngrok --domain spawn args", () => {
     assistantId: string,
     fn: () => Promise<T>,
   ): Promise<T> {
-    const lockfileDir = mkdtempSync(join(tmpdir(), "cadet-ngrok-lockfile-"));
-    tempDirs.push(lockfileDir);
+    // Write into the config home already steering this test when one is set;
+    // otherwise carve out a throwaway config home of our own.
+    let lockfileDir = process.env.XDG_CONFIG_HOME;
+    if (!lockfileDir) {
+      lockfileDir = mkdtempSync(join(tmpdir(), "cadet-ngrok-lockfile-"));
+      tempDirs.push(lockfileDir);
+      process.env.XDG_CONFIG_HOME = lockfileDir;
+    }
+    mkdirSync(join(lockfileDir, "cadet"), { recursive: true });
     writeFileSync(
-      join(lockfileDir, "lockfile.json"),
+      join(lockfileDir, "cadet", "lockfile.json"),
       JSON.stringify({
         activeAssistant: assistantId,
         assistants: [
@@ -1199,14 +1206,7 @@ describe("ngrok --domain spawn args", () => {
         ],
       }),
     );
-    const previous = process.env.CADET_LOCKFILE_DIR;
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
-    try {
-      return await fn();
-    } finally {
-      if (previous === undefined) delete process.env.CADET_LOCKFILE_DIR;
-      else process.env.CADET_LOCKFILE_DIR = previous;
-    }
+    return await fn();
   }
 
   const unrelatedPortTunnel: StubTunnel = {
@@ -1855,11 +1855,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       delete process.env.XDG_CONFIG_HOME;
     } else {
       process.env.XDG_CONFIG_HOME = originalConfigHome;
-    }
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
-    } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
     }
     if (originalWorkspaceDir === undefined) {
       delete process.env.CADET_WORKSPACE_DIR;

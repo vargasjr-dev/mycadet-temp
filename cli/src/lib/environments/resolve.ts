@@ -61,8 +61,6 @@ export function environmentFromVersion(version: string): string {
  *   - `CADET_CLOUD_URL` overrides `cloudUrl`
  *   - `CADET_WEB_URL` overrides `webUrl`
  *   - `CADET_ASSISTANT_PLATFORM_URL` overrides `assistantCloudUrl`
- *   - `CADET_LOCKFILE_DIR` overrides `lockfileDirOverride` (legacy e2e
- *     test hook)
  *
  * This function should be the single entrypoint for environment resolution.
  * No other code should drive off `CADET_ENVIRONMENT` directly.
@@ -114,11 +112,6 @@ export function getCurrentEnvironment(
     process.env.CADET_ASSISTANT_PLATFORM_URL?.trim();
   if (assistantCloudUrlOverride) {
     resolved.assistantCloudUrl = assistantCloudUrlOverride;
-  }
-
-  const lockfileDirOverride = process.env.CADET_LOCKFILE_DIR?.trim();
-  if (lockfileDirOverride) {
-    resolved.lockfileDirOverride = lockfileDirOverride;
   }
 
   return resolved;

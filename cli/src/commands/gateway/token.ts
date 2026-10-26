@@ -5,8 +5,8 @@ import { getGatewayUrl } from "../../lib/runtime-url.js";
 import {
   type LockfileAssistant,
   resolveTargetAssistant,
-  saveLockfileAssistant,
 } from "../../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -124,7 +124,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`cadet gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
+        `Run \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);

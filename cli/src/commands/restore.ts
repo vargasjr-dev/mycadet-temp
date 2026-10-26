@@ -13,8 +13,8 @@ import { basename, dirname, join } from "path";
 import {
   findAssistantByName,
   getLocalInstanceDir,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   generateLocalSecret,
@@ -511,7 +511,6 @@ async function recoverFromArchive(name: string): Promise<void> {
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
   saveLockfileAssistant(entry);
-
   // Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
