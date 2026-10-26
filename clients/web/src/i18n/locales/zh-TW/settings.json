@@ -115,7 +115,6 @@
     "version": "版本"
   },
   "assistantTerminalPanel": {
-    "loadErrorToast": "載入助理資訊失敗",
     "loading": "正在載入終端機...",
     "noAssistant": "找不到助理。孵化一個助理以使用終端機。",
     "subtitle": "助理機器上的互動式 shell 工作階段",

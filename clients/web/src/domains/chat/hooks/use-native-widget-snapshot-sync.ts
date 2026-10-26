@@ -344,11 +344,6 @@ export function useNativeWidgetSnapshotSync(
     conversations,
     isWidgetSnapshotSyncAvailable() && isAssistantActive,
   );
-  // Whether the queries behind the snapshot would fetch if asked: the same two
-  // gates they run under, the caller's assistant gate and the daemon
-  // preconditions the query hooks apply for themselves. What tells a heartbeat
-  // that resolved data is still being kept current rather than merely cached.
-
   // The active assistant's avatar, off the same query and through the same
   // resolvers `RootLayout` publishes from, so the widget can never draw a
   // different face than the app does. Subscribed rather than read back from

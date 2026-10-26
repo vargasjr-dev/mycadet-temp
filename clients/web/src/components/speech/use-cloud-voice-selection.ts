@@ -82,19 +82,19 @@ export function useCloudVoiceSelection(
   // through `useActiveAssistantId()`: the call bar mounts this hook in the
   // root layout, where welcome and onboarding have no assistant yet — the
   // `enabled` option keeps those pre-assistant mounts fetch-free.
-  const shellAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  const enabled = (options.enabled ?? true) && shellAssistantId != null;
+  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const enabled = (options.enabled ?? true) && assistantId != null;
 
   const { data: providerCatalog, isLoading: catalogLoading } = useQuery({
     ...ttsProvidersGetOptions({
-      path: { assistant_id: shellAssistantId ?? "" },
+      path: { assistant_id: assistantId ?? "" },
     }),
     enabled,
     staleTime: Infinity,
     retry: false,
   });
   const { data: daemonConfig, isLoading: configLoading } = useQuery({
-    ...configGetOptions({ path: { assistant_id: shellAssistantId ?? "" } }),
+    ...configGetOptions({ path: { assistant_id: assistantId ?? "" } }),
     enabled,
     staleTime: 30_000,
   });
@@ -148,7 +148,7 @@ export function useCloudVoiceSelection(
     selecting,
     select: selectModel,
   } = useSerializedConfigSelection({
-    assistantId: shellAssistantId,
+    assistantId,
     configuredValue: configuredModel,
     buildPatchBody: buildVoicePatchBody,
     failureMessage: "Couldn't change the voice just now. Try again.",

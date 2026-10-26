@@ -115,7 +115,6 @@
     "version": "Versión"
   },
   "assistantTerminalPanel": {
-    "loadErrorToast": "No se pudo cargar la información del asistente",
     "loading": "Cargando terminal...",
     "noAssistant": "No se encontró ningún asistente. Crea un asistente para usar la terminal.",
     "subtitle": "Sesión de shell interactiva en la máquina de tu asistente",

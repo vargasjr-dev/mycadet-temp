@@ -1,15 +1,10 @@
 import { Terminal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { getAssistant } from "@/assistant/api";
 import { TerminalPanel } from "@/components/terminal-panel";
-import {
-  useActiveAssistantIsCloudHosted,
-  useActiveAssistantIsSelfHosted,
-} from "@/assistant/hosting";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { toast } from "@mycadet/design-library";
 import { Select } from "@mycadet/design-library/components/select";
 
 type TerminalService = "assistant" | "gateway" | "credential-executor";
@@ -20,11 +15,12 @@ export function AssistantTerminalPanel() {
   // against a self-hosted assistant. Once the lifecycle resolves to
   // `self_hosted` early-return null, structurally blocking TerminalPanel
   // from mounting a cloud-routed exec connection against a self-hosted
-  // target.
-  const [assistantId, setAssistantId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // target. The assistant is the shell's — the boot resolution owns the id,
+  // the panel runs its own fetch for nothing.
+  const { state, result } = useAssistantResolution();
+  const assistantId = result?.ok ? result.data.id : null;
+  const loading = state.kind === "loading";
   const [service, setService] = useState<TerminalService>("assistant");
-  const fetchedRef = useRef(false);
 
   const terminalServiceOptions = useMemo(
     () =>
@@ -39,53 +35,14 @@ export function AssistantTerminalPanel() {
     [],
   );
 
-  const fetchAssistant = useCallback(
-    async (force?: boolean) => {
-      if (!force && fetchedRef.current) {
-        return;
-      }
-      if (!force) {
-        setLoading(true);
-      }
-      try {
-        const result = await getAssistant();
-        if (result.ok) {
-          fetchedRef.current = true;
-          setAssistantId(result.data.id);
-        }
-      } catch (error) {
-        captureError(error, { context: "fetch_assistant_for_terminal" });
-        toast.error(t("assistantTerminalPanel.loadErrorToast"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [t],
-  );
-
-  // `getAssistant` is a daemon-side call (safe in every lifecycle state
-  // where we have a daemon connection), so fire it eagerly whenever the
-  // gate is open. The cloud-routed exec connection — the actual
-  // Trap-5 concern — lives inside `<TerminalPanel>` and is structurally
-  // blocked from mounting in two ways: the gate flips to `"gated"` and
-  // returns null when the lifecycle resolves to self-hosted, and the
-  // `showLoading` branch covers the fetch in flight. When disabled we
-  // render the panel chrome plus a Notice without firing the fetch.
-  const isSelfHosted = useActiveAssistantIsSelfHosted();
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
-
-  useEffect(() => {
-    if (!isCloudHosted) {
-      return;
-    }
-    void fetchAssistant();
-  }, [fetchAssistant, isCloudHosted]);
-
-  if (isSelfHosted) {
+  // The cloud-routed exec connection — the actual Trap-5 concern — lives
+  // inside `<TerminalPanel>` and is structurally blocked from mounting: the
+  // gate flips to `"gated"` and returns null when the lifecycle resolves to
+  // self-hosted.
+  if (useActiveAssistantIsSelfHosted()) {
     return null;
   }
 
-  const showLoading = loading;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex shrink-0 items-center justify-between gap-3">
@@ -112,7 +69,7 @@ export function AssistantTerminalPanel() {
         )}
       </div>
 
-      {showLoading ? (
+      {loading ? (
         <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />
           {t("assistantTerminalPanel.loading")}
