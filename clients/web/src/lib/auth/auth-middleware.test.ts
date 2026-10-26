@@ -61,35 +61,6 @@ mock.module("@/routes", () => ({
   },
 }));
 
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-const resolutionListeners = new Set<() => void>();
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-  for (const listener of resolutionListeners) {
-    listener();
-  }
-}
-
-// The guard awaits the boot resolution's probe for the roster projection —
-// the middleware's only import from queries. The default probe projects
-// nothing (an empty roster stays empty).
-const probeBootResolutionMock = mock(async () => {});
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({
-    state: useSyncExternalStore(
-      (cb) => {
-        resolutionListeners.add(cb);
-        return () => resolutionListeners.delete(cb);
-      },
-      () => resolutionState,
-    ),
-  }),
-  probeBootResolution: () => probeBootResolutionMock(),
-}));
-
-import type { AssistantResolutionState } from "@/assistant/types";
-import { useSyncExternalStore } from "react";
-
 import { authMiddleware } from "./auth-middleware";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -144,14 +115,11 @@ beforeEach(() => {
     assistants: [],
     activeAssistantId: null,
   });
-  setResolutionState({ kind: "error", message: "no assistant" });
-  probeBootResolutionMock.mockClear();
-  probeBootResolutionMock.mockImplementation(async () => {});
 });
 
 afterEach(async () => {
-  // Settle the probe so a re-run armed by a timed-out wait fires and detaches
-  // here instead of in the next test, then drain its lazy router import.
+  // Let a re-run armed by a timed-out wait fire and detach here instead of
+  // in the next test, then drain its lazy router import.
   useAuthStore.setState({ cloudSession: "absent" });
   await tick();
   useAuthStore.setState(initialAuthState, true);
@@ -194,7 +162,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
-  test("a probe that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
+  test("a cloud session that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
     // Same #523 split: the guard deciding on a settled-absent session (rather
     // than re-entering the wait) is the no-loop guarantee; where the user goes
     // next is the app bundle's call, not web's redirect.
@@ -255,39 +223,6 @@ describe("authMiddleware — app-access admit gate", () => {
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
-  });
-
-  test("the guard holds its decision until the boot resolution reports", async () => {
-    // Cold boot, roster fetch in flight: the served arm's pre-decision
-    // await must not decide (a premature hatching bounce would strand a
-    // served user), then decides exactly once on the projected roster —
-    // empty, so hatching.
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "present" });
-    useResolvedAssistantsStore.setState({ assistants: [] });
-    let releaseProbe: (() => void) | null = null;
-    probeBootResolutionMock.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          releaseProbe = () => resolve();
-        }),
-    );
-
-    let settled: { admitted: boolean } | null = null;
-    const pending = runMiddlewareOutcome(routes.identity).then((outcome) => {
-      settled = outcome;
-    });
-
-    await tick();
-    expect(settled).toBeNull();
-
-    releaseProbe!();
-    await pending;
-    expect(settled!.admitted).toBe(true);
-    expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(
-      true,
-    );
-    expect(probeBootResolutionMock).toHaveBeenCalledTimes(1);
   });
 
   test("research proceeds without waiting for web consent or assistant hydration", async () => {

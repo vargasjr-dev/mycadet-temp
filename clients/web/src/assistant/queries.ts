@@ -281,30 +281,6 @@ export function useAssistantResolution(): AssistantResolutionResult {
 }
 
 /**
- * The boot resolution's probe for imperative callers that must block on it —
- * the route guard's wait step. One `getAssistant` fetch, the same call the
- * boot query runs: a successful result projects into the roster exactly as
- * the boot effect's would, so the guard's next read (`hasAssistants`)
- * decides on the real answer rather than a clock. Gateway-auth mode
- * resolves locally with no fetch.
- */
-export async function probeBootResolution(): Promise<void> {
-  if (isGatewaySessionLive()) {
-    return;
-  }
-  const selectedCloudAssistantId = resolveSelectedCloudAssistantId() ?? null;
-  const result = await getAssistant(selectedCloudAssistantId ?? undefined).then(
-    (r) => r,
-    // A transport failure projects nothing — the roster stays empty and the
-    // guard decides on that.
-    () => undefined,
-  );
-  if (result?.ok) {
-    projectAssistantResult(result);
-  }
-}
-
-/**
  * The boot resolution: the shared read plus the projection effects. Mounted
  * once per running surface (the app root, and standalone windows like the
  * command palette that bypass it) — the effects are idempotent so an extra

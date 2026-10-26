@@ -246,11 +246,12 @@ function requireAssistant(state: NavigationState): NavigationDecision | null {
     return { action: "redirect", to: routes.welcome };
   }
 
-  // Off the local arm the middleware has already awaited the boot resolution
-  // (every "wait" decision passes through that probe), so the roster is as
-  // resolved as it is going to get: a served account with nothing to
-  // resolve funnels to onboarding. Waiting here would loop — the hydration
-  // flag this used to wait on has no writer off the local arm.
+  // The served store is never cold in production — the serving shell owns
+  // loaded-ness before this bundle loads (#573), and the app's own boot
+  // effect maintains the roster thereafter. An empty roster here means a
+  // served account with nothing to resolve: funnel to onboarding. Waiting
+  // here would loop — the hydration flag this used to wait on has no
+  // writer off the local arm.
   return { action: "redirect", to: routes.onboarding.hatching };
 }
 

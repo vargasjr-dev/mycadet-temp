@@ -36,7 +36,6 @@ const {
   assistantQueryKey,
   pollIntervalFor,
   POLL_INTERVAL_MS,
-  probeBootResolution,
 } = await import("@/assistant/queries");
 import type { Assistant, GetAssistantResult } from "@/assistant/api";
 
@@ -141,66 +140,3 @@ describe("useAssistantQuery polling cadence", () => {
 // read (`hasAssistants`) decides on the projected roster rather than a
 // clock. These pins drive the real chain — `probeBootResolution` (the
 // middleware's await) projects ok results into the roster.
-describe("probeBootResolution", () => {
-  test("a live session projects into the roster", async () => {
-    getAssistantMock.mockImplementation(() =>
-      Promise.resolve(okResult("active")),
-    );
-    await probeBootResolution();
-
-    // The projection is the load-bearing half: the guard's next read
-    // (`hasAssistants`) sees the roster the boot effect would have built.
-    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(1);
-    expect(useResolvedAssistantsStore.getState().activeAssistantId).toBe(
-      "asst-1",
-    );
-  });
-
-  test("a 401 projects nothing", async () => {
-    // A rejection answers no roster rows — the guard decides on the empty
-    // roster, and session death belongs to the resolution's reconnecting UI.
-    getAssistantMock.mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        status: 401,
-        error: {},
-      } as GetAssistantResult),
-    );
-    await probeBootResolution();
-
-    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(0);
-  });
-
-  test("a 404 (signed in, nothing to resolve) projects nothing — the guard funnels to onboarding", async () => {
-    getAssistantMock.mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        status: 404,
-        error: {},
-      } as GetAssistantResult),
-    );
-    await probeBootResolution();
-
-    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(0);
-  });
-
-  test("a transport failure projects nothing", async () => {
-    // A fetch that never got an HTTP answer says nothing about the roster;
-    // the guard decides on the empty roster.
-    getAssistantMock.mockImplementation(() =>
-      Promise.reject(new TypeError("fetch failed")),
-    );
-    await probeBootResolution();
-
-    expect(useResolvedAssistantsStore.getState().assistants).toHaveLength(0);
-  });
-
-  test("gateway-auth mode probes nothing", () => {
-    // The gateway issued the session itself — nothing to probe.
-    mockGatewaySessionLive = true;
-
-    return probeBootResolution().then(() => {
-      expect(getAssistantMock).not.toHaveBeenCalled();
-    });
-  });
-});
