@@ -146,7 +146,6 @@ mock.module(
 );
 
 const { useAuthStore } = await import("@/stores/auth-store");
-const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const { useAssistantIdentityStore } =
@@ -162,7 +161,6 @@ const {
 const { avatarQueryKey } = await import("@/hooks/use-assistant-avatar");
 
 const initialAuthState = useAuthStore.getState();
-const initialOrganizationState = useOrganizationStore.getState();
 const { chooserRowAvatarCacheQueryKey, persistLastSeenAvatar } =
   await import("@/lib/persist-last-seen-avatar");
 const { cloudAvatarUrlsQueryKey } =
@@ -193,6 +191,7 @@ const cloudRow = (
   isCloudHosted: true,
   isPaired: false,
   runtimeVersion: "0.9.0",
+  organizationId: "org-1",
   ...overrides,
 });
 
@@ -249,11 +248,6 @@ beforeEach(() => {
   selfHostedIngressUrl = null;
   hostAvailable = false;
   signInToPlatform();
-  useOrganizationStore.setState({
-    currentOrganizationId: "org-1",
-    persistedOrganizationId: "org-1",
-    status: "ready",
-  });
   useResolvedAssistantsStore.getState().setActiveAssistantId("active");
   // useAssistantAvatar gates its own path on the identity store's version.
   useAssistantIdentityStore.getState().setIdentity("active", MIN_VERSION);
@@ -278,7 +272,6 @@ afterEach(() => {
   listAssistants.mockReset();
   listAssistants.mockResolvedValue({ ok: true, status: 200, data: [] });
   useAuthStore.setState(initialAuthState, true);
-  useOrganizationStore.setState(initialOrganizationState, true);
   readAssistantAvatarHost.mockResolvedValue({ ok: true, avatar: null });
   readLastSeenAvatar.mockResolvedValue(null);
   fetchAvatarState.mockResolvedValue(characterState);

@@ -44,14 +44,15 @@ import { routes } from "@app/utils/routes";
 import { formatRelativeDate } from "@app/utils/format-date";
 
 /**
- * The chooser's rows come from the origin's own list endpoint, so the hosting
- * label follows the build's injected `remote` field — where the cadet comes
- * from (the values `cadet hatch --remote` records): the cloud's rows on a
- * cloud build, the machine's own rows on every other remote. The serving
- * origin can't answer this for the mobile shells: the capacitor bundle's
- * origin is the webview's (`capacitor://localhost`), not the assistant's.
- * Web's other branches (paired, local lockfile entries) arrive with their own
- * transports (chooser roadmap steps 4-5).
+ * The chooser's rows come from the origin's own list endpoint, so each row
+ * labels itself: the row's own `remote` field — where that assistant lives
+ * (the values `cadet hatch --remote` records), stamped by the serving
+ * control plane. Rows from servers predating the stamp fall back to the
+ * build's injected `remote`. The serving origin alone can't answer this for
+ * the mobile shells: the capacitor bundle's origin is the webview's
+ * (`capacitor://localhost`), not the assistant's. Web's other branches
+ * (paired, local lockfile entries) arrive with their own transports
+ * (chooser roadmap steps 4-5).
  */
 function assistantSubtitle(
   hostingLabel: string,
@@ -104,11 +105,9 @@ function DashedActionButton({
 export function SelectAssistantScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
-  // The build's stamp (`remote`) says where the cadet comes from: the cloud
-  // build lists the cloud's assistants, every other remote its own host's.
-  // The serving origin can't answer this for the mobile shells — the
-  // capacitor bundle's origin is the webview's, not the assistant's.
-  const hosted = readInjectedConfig()?.remote === "cloud";
+  // Each row labels itself with its own `remote`; servers predating the
+  // stamp fall back to the build's own (`readInjectedConfig()?.remote`).
+  const buildRemote = readInjectedConfig()?.remote;
   const [creating, setCreating] = useState(false);
   const [retireTarget, setRetireTarget] = useState<{
     id: string;
@@ -393,7 +392,7 @@ export function SelectAssistantScreen() {
               }
               title={assistant.name}
               subtitle={assistantSubtitle(
-                hosted
+                (assistant.remote ?? buildRemote) === "cloud"
                   ? t("selectAssistantScreen.cloudHosted")
                   : t("selectAssistantScreen.selfHosted"),
                 assistant.created,

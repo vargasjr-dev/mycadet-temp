@@ -21,12 +21,10 @@ mock.module("@/lib/local-mode", () => ({
   }) => a.cloud !== "cadet" && a.resources?.gatewayPort != null,
   isCadetCloudRemote: () => false,
   getSelfHostedActorToken: () => (mockGatewayTokenPresent ? "gw-token" : null),
-  isGatewaySessionLive: () => mockGatewayAuthMode,
 }));
 
 // Drive the gateway session off a flag (the slot's token is the credential).
 let mockGatewayTokenPresent = false;
-let mockGatewayAuthMode = false;
 
 // Clamp whenStoreState timeouts so hydration-timeout paths are testable
 // without real 5s waits; untimed waits and predicate semantics are the real
@@ -60,30 +58,6 @@ mock.module("@/routes", () => ({
     },
   },
 }));
-
-let resolutionState: AssistantResolutionState = { kind: "loading" };
-const resolutionListeners = new Set<() => void>();
-function setResolutionState(next: AssistantResolutionState) {
-  resolutionState = next;
-  for (const listener of resolutionListeners) {
-    listener();
-  }
-}
-
-mock.module("@/assistant/queries", () => ({
-  useAssistantResolution: () => ({
-    state: useSyncExternalStore(
-      (cb) => {
-        resolutionListeners.add(cb);
-        return () => resolutionListeners.delete(cb);
-      },
-      () => resolutionState,
-    ),
-  }),
-}));
-
-import type { AssistantResolutionState } from "@/assistant/types";
-import { useSyncExternalStore } from "react";
 
 import { authMiddleware } from "./auth-middleware";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -131,7 +105,6 @@ beforeEach(() => {
   hasAssistantsMock.mockImplementation(() => false);
   mockSelectedAssistant = undefined;
   mockGatewayTokenPresent = false;
-  mockGatewayAuthMode = false;
   revalidateMock.mockClear();
   liveRouter = null;
   useAuthStore.setState(initialAuthState, true);
@@ -139,12 +112,11 @@ beforeEach(() => {
     assistants: [],
     activeAssistantId: null,
   });
-  setResolutionState({ kind: "error", message: "no assistant" });
 });
 
 afterEach(async () => {
-  // Settle the probe so a re-run armed by a timed-out wait fires and detaches
-  // here instead of in the next test, then drain its lazy router import.
+  // Let a re-run armed by a timed-out wait fire and detach here instead of
+  // in the next test, then drain its lazy router import.
   useAuthStore.setState({ cloudSession: "absent" });
   await tick();
   useAuthStore.setState(initialAuthState, true);
@@ -152,10 +124,7 @@ afterEach(async () => {
 
 describe("authMiddleware — local-mode onboarding fork", () => {
   test("waits for the cloud-session probe before choosing hosting vs welcome", async () => {
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "unknown",
-    });
+    useAuthStore.setState({ cloudSession: "unknown" });
 
     let settled: { admitted: boolean } | null = null;
     const pending = runMiddlewareOutcome(routes.identity).then((outcome) => {
@@ -181,10 +150,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // The local front door (welcome) moved into the app bundle (#523): web
     // never hosts it, so an authenticated local user whose cloud session is
     // absent is admitted here and the shell steers the onboarding fork.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "absent",
-    });
+    useAuthStore.setState({ cloudSession: "absent" });
 
     // The welcome fork targets the app bundle's front door — a full-page
     // navigation, so the middleware admits and the page URL carries it.
@@ -193,14 +159,11 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
-  test("a probe that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
+  test("a cloud session that never settles admits instead of looping — the app bundle owns the welcome fork", async () => {
     // Same #523 split: the guard deciding on a settled-absent session (rather
     // than re-entering the wait) is the no-loop guarantee; where the user goes
     // next is the app bundle's call, not web's redirect.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "unknown",
-    });
+    useAuthStore.setState({ cloudSession: "unknown" });
 
     // The probe stays "unknown" for the whole (clamped) wait, so the guard
     // decides on a settled-absent session rather than re-entering the wait.
@@ -210,10 +173,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
   });
 
   test("routes to hosting when a resolved platform session exists", async () => {
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
+    useAuthStore.setState({ cloudSession: "present" });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
@@ -238,13 +198,10 @@ describe("authMiddleware — app-access admit gate", () => {
 
   test("admits a local-only user (no platform session) instead of redirecting to login", async () => {
     makeLocalUserReachable();
-    // A local desktop user with no platform identity: the gateway is the sole
-    // session authority (#35152), so the local session is 'authenticated' even
+    // A local desktop user with no platform identity: the boot resolution
+    // answered through the gateway short-circuit — settled and live — even
     // though the cloud probe settled absent.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "absent",
-    });
+    useAuthStore.setState({ cloudSession: "absent" });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
@@ -253,76 +210,22 @@ describe("authMiddleware — app-access admit gate", () => {
   test("a cloud 401 mid-session does not redirect a local user", async () => {
     makeLocalUserReachable();
     // Start admitted as a local user.
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
+    useAuthStore.setState({ cloudSession: "present" });
     expect((await runMiddlewareOutcome(routes.identity)).admitted).toBe(true);
 
     // Platform getSession() returns 401 mid-session: cloudSession flips to
-    // absent, but the local gateway keeps sessionStatus 'authenticated' (the
-    // sole session authority, #35152 — asserted in auth-store.test.ts). So the
-    // user is not evicted.
-    useAuthStore.setState({
-      cloudSession: "absent",
-    });
+    // absent, but the guard has no session input left to react to — the
+    // resolution's reconnecting UI owns session death, not the guard.
+    useAuthStore.setState({ cloudSession: "absent" });
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
   });
 
-  test("still redirects a logged-out platform user with no reachable assistant to login", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    hasAssistantsMock.mockImplementation(() => false);
-    mockSelectedAssistant = undefined;
-    mockGatewayTokenPresent = false;
-    useAuthStore.setState({
-      sessionStatus: "unauthenticated",
-      cloudSession: "absent",
-    });
-
-    const outcome = await runMiddlewareOutcome("/assistant/identity");
-    expect(outcome.admitted).toBe(false);
-    if (!outcome.admitted) {
-      expect(outcome.response.status).toBe(302);
-      expect(outcome.response.headers.get("Location")).toBe(
-        `${routes.remotePair}?returnTo=${encodeURIComponent("/assistant/identity")}`,
-      );
-    }
-  });
-});
-
-describe("authMiddleware — assistant hydration", () => {
-  test("a stalled assistant list settles once and reaches shell hatching", async () => {
-    isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    const previous = useResolvedAssistantsStore.getState().assistantsHydrated;
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: false,
-    });
-    try {
-      const outcome = await runMiddlewareOutcome(routes.identity);
-      expect(outcome.admitted).toBe(true);
-      expect(window.location.href.endsWith(routes.onboarding.hatching)).toBe(true);
-    } finally {
-      useResolvedAssistantsStore.setState({ assistantsHydrated: previous });
-    }
-  });
-
   test("research proceeds without waiting for web consent or assistant hydration", async () => {
     isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-    useResolvedAssistantsStore.setState({
-      assistants: [],
-      assistantsHydrated: false,
-    });
+    useAuthStore.setState({ cloudSession: "present" });
+    useResolvedAssistantsStore.setState({ assistants: [] });
     const href = window.location.href;
     const outcome = await runMiddlewareOutcome(
       `${routes.onboarding.research}?hosting=cadet-cloud`,

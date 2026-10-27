@@ -23,7 +23,6 @@ import {
   type SystemPermissionKind,
   type SystemPermissionStateItem,
 } from "@/runtime/system-permissions";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getDeviceBool,
@@ -248,7 +247,6 @@ export function SystemPermissionsCard({
   const selectedAssistantId =
     useResolvedAssistantsStore.use.selectedAssistantId();
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const requestOrganizationId = useRequestOrganizationId();
 
   const hostOS = detectElectronHostOS();
   const isWindowsHost = hostOS === "windows";
@@ -352,7 +350,6 @@ export function SystemPermissionsCard({
         );
         const scopeId = resolveAssistantAvatarOwnerScopeId(
           assistant,
-          requestOrganizationId,
           getSelfHostedIngressUrl() ??
             (typeof globalThis.location === "undefined"
               ? null

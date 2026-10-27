@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { RemoteSchema } from "@mycadet/local-mode/contract";
+
 function publicUrl(value: string): boolean {
   if (/[\\\u0000-\u0020]/.test(value) || value.startsWith("//")) {
     return false;
@@ -62,6 +64,14 @@ export const AssistantChoiceSchema = z.object({
   avatar_url: z.string().nullish(),
   /** When the cloud hatched the assistant (ISO 8601); null when unknown. */
   created: z.string().nullish(),
+  /**
+   * The assistant's own hosting kind, stamped per row by the serving control
+   * plane — the cloud lists its assistants "cloud", a self-hosted edge
+   * stamps its lockfile cloud. Unknown or absent values (servers predating
+   * the stamp, a hostile row) fall back to undefined; the chooser then uses
+   * the build's own remote.
+   */
+  remote: RemoteSchema.nullish().catch(() => undefined),
 });
 
 export const AssistantResolutionSchema = z.discriminatedUnion("status", [

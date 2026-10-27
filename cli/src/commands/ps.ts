@@ -9,8 +9,7 @@ import {
   TUNNEL_PROVIDERS,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
-import { DEFAULT_TUNNEL_PROVIDER, toLocalTunnelTarget } from "../lib/tunnel.js";
-import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
+import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 
@@ -624,18 +623,6 @@ function detailLine(label: string, value: string | null | undefined): void {
   console.log(`  ${label.padEnd(17)}${value ?? "—"}`);
 }
 
-/** The workspace the edge fronting `assistantId` lives in, or the default. */
-function edgeWorkspaceFor(assistantId: string | undefined): string {
-  if (assistantId) {
-    const result = lookupAssistantByIdentifier(assistantId);
-    if (result.status === "found") {
-      const target = toLocalTunnelTarget(result.entry);
-      if (target) return target.workspaceDir;
-    }
-  }
-  return getDefaultWorkspaceDir();
-}
-
 /**
  * Full info for one CLI-managed process: `cadet ps nginx` / `cadet app status`
  * (the app edge) and `cadet ps ngrok` / `cadet tunnel status` (the tunnel
@@ -659,8 +646,9 @@ export async function printRootProcessDetail(
       return true;
     }
     const alive = isLocalProcessAlive(app.pid);
-    const workspaceDir = edgeWorkspaceFor(app.assistantId);
-    const state = readIngressState(workspaceDir);
+    // The edge's state is machine-level (XDG), so it reads the same record
+    // no matter which assistant the root lockfile names.
+    const state = readIngressState();
     detailLine("Status:", alive ? "running" : "not running");
     detailLine("PID:", String(app.pid));
     detailLine(
@@ -669,13 +657,11 @@ export async function printRootProcessDetail(
     );
     detailLine(
       "Gateway:",
-      state?.gatewayPort !== undefined
-        ? `127.0.0.1:${state.gatewayPort}`
-        : null,
+      state?.gatewayUrl !== undefined ? state.gatewayUrl : null,
     );
     detailLine("Assistant:", assistantLabelFor(app.assistantId));
     detailLine("Started:", app.startedAt);
-    detailLine("Log:", getIngressPaths(workspaceDir).logPath);
+    detailLine("Log:", getIngressPaths().logPath);
     return true;
   }
 

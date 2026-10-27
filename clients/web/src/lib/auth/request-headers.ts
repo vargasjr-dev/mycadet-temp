@@ -21,15 +21,13 @@
  * hand-attaches these headers — the central interceptor handles both
  * modes. This whole file is deleted once that lands.
  */
-import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
+import { getCsrfToken } from "@/lib/auth/csrf";
 import { getSelfHostedActorToken } from "@/lib/self-hosted/connection";
 import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 interface BuildCadetHeadersOptions {
   includeSelfHostedActorToken?: boolean;
-  organizationId?: string;
 }
 
 /**
@@ -49,11 +47,6 @@ export function buildCadetHeaders(
   if (selfHostedToken) {
     headers["Authorization"] = `Bearer ${selfHostedToken}`;
     return headers;
-  }
-  const organizationId =
-    options.organizationId ?? getActiveOrganizationIdForRequests();
-  if (organizationId) {
-    headers["Cadet-Organization-Id"] = organizationId;
   }
   // Electron app provides a session token header. This is no-ops on web.
   const sessionToken = getElectronSessionToken();
@@ -80,7 +73,6 @@ export async function buildCadetMutatingHeaders(
   if (isElectron()) {
     return headers;
   }
-  await ensureCsrfCookie();
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     headers["X-CSRFToken"] = csrfToken;

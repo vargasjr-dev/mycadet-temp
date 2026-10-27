@@ -26,12 +26,9 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 
 const { AppProviders } = await import("@/components/providers");
 const { useAuthStore } = await import("@/stores/auth-store");
-const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
-const ORGANIZATION_ID = "org-abc";
-const STORAGE_KEY = "cadet_active_organization_id";
 const PROBE_KEY = ["org-scoped-probe"];
 const ASSET_FAILURE_OPTIONS = {
   queryKey: appsGetQueryKey({
@@ -60,15 +57,6 @@ function Probe() {
   return null;
 }
 
-/**
- * The persisted organization selection: sessionStorage is where it survives a
- * reload, and the store mirrors it so consumers can subscribe to it.
- */
-function seedPersistedOrganization(organizationId: string) {
-  sessionStorage.setItem(STORAGE_KEY, organizationId);
-  useOrganizationStore.setState({ persistedOrganizationId: organizationId });
-}
-
 function renderProviders() {
   render(
     <AppProviders>
@@ -84,13 +72,6 @@ beforeEach(() => {
   useAuthStore.setState({
     sessionStatus: "authenticated",
     cloudSession: "present",
-  });
-  useOrganizationStore.setState({
-    organizations: [],
-    currentOrganizationId: null,
-    persistedOrganizationId: null,
-    status: "idle",
-    error: null,
   });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-123" });
 });
@@ -177,25 +158,5 @@ describe("AppProviders cache scope", () => {
     });
 
     expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBeUndefined();
-  });
-
-  test("keeps them while the org list confirms the session around the same assistant", () => {
-    seedPersistedOrganization(ORGANIZATION_ID);
-    renderProviders();
-    act(() => {
-      observedClient!.setQueryData(PROBE_KEY, "answer-for-org-abc");
-    });
-
-    act(() => {
-      useOrganizationStore.setState({
-        organizations: [],
-        currentOrganizationId: ORGANIZATION_ID,
-        status: "ready",
-      });
-    });
-
-    expect(observedClient!.getQueryData<string>(PROBE_KEY)).toBe(
-      "answer-for-org-abc",
-    );
   });
 });

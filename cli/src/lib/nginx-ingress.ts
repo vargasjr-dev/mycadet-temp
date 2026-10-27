@@ -29,17 +29,18 @@ import {
   getAssistantDisplayName,
   lookupAssistantByIdentifier,
   readRootProcesses,
+  resolveTargetAssistant,
   stampRootProcess,
   type LockfileAssistant,
 } from "./assistant-config.js";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import type { RemoteHost } from "./constants.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
   loadRawConfig,
-  saveRawConfig,
 } from "./ingress-config.js";
 import { resolveEdgeClientDists } from "./web-dist.js";
 
@@ -75,13 +76,21 @@ export interface IngressPaths {
   logPath: string;
 }
 
-export function getIngressPaths(workspaceDir: string): IngressPaths {
-  const dir = join(workspaceDir, "data", "ingress");
+/**
+ * The app server's own state, under the environment's XDG data dir — never
+ * inside an assistant's workspace: the edge is machine-level (it fronts the
+ * workspace's active assistant for every tunnel and wake path), and assistant
+ * workspaces are the assistants' own to manage. The gateway-facing ingress
+ * contract (publicBaseUrl, enabled, lastTunnel) stays in the workspace
+ * `config.json` the daemon reads; this file is the edge's private record.
+ */
+export function getIngressPaths(): IngressPaths {
+  const dir = join(resolveDataDir(), "ingress");
   return {
     dir,
     confPath: join(dir, "nginx.conf"),
     pidPath: join(dir, "nginx.pid"),
-    logPath: join(workspaceDir, "data", "logs", "nginx-ingress.log"),
+    logPath: join(resolveLogDir(), "nginx-ingress.log"),
   };
 }
 
@@ -99,8 +108,8 @@ function nginxDirPath(dir: string): string {
   return dir.endsWith("/") ? dir : `${dir}/`;
 }
 
-function gatewayProxyBlock(gatewayPort: number, upstreamPath = ""): string {
-  return `      proxy_pass http://127.0.0.1:${gatewayPort}${upstreamPath};
+function gatewayProxyBlock(gatewayUrl: string, upstreamPath = ""): string {
+  return `      proxy_pass ${gatewayUrl}${upstreamPath};
       proxy_http_version 1.1;
       proxy_request_buffering off;
       proxy_buffering off;
@@ -238,17 +247,12 @@ function remoteWebIngressConfig(
 }
 
 /**
- * Part of edge identity: a detached edge is reused only while its recorded
- * fingerprint matches, so this must change whenever the generated index or
- * nginx template does.
- */
-export const EDGE_TEMPLATE_VERSION = 14;
-
-/**
- * Stable fingerprint of the injected SPA config, its source bundles, and the
- * template that renders them. Recorded alongside the edge state so a reuse
- * decision can tell whether a running edge already serves the requested
- * config (see `IngressState.remoteWebConfigHash`).
+ * Stable fingerprint of the injected SPA config and its source bundles,
+ * recorded alongside the edge state so a reuse decision can tell whether a
+ * running edge already serves the requested config (see
+ * `IngressState.remoteWebConfigHash`). The rendered nginx template carries no
+ * independent identity: any template change that matters reaches the running
+ * edge through the config, dist, or version inputs hashed here.
  */
 function remoteWebConfigFingerprint(
   config: Record<string, unknown>,
@@ -259,7 +263,6 @@ function remoteWebConfigFingerprint(
   return createHash("sha256")
     .update(
       JSON.stringify({
-        template: EDGE_TEMPLATE_VERSION,
         config,
         webDistDir,
         version,
@@ -456,6 +459,11 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
     ? {
         id,
         ...(metadata.assistantName ? { name: metadata.assistantName } : {}),
+        // Each assistant carries its own hosting kind (the review follow-up
+        // on #543): the chooser labels rows individually, so the edge stamps
+        // the served assistant's lockfile cloud — the same value the served
+        // SPA config carries. Undefined drops out of the JSON body.
+        remote: edgeServedRemote(lockfileAssistantRemote(id)),
       }
     : undefined;
   const responses = [
@@ -504,14 +512,15 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
 
 /** Build the nginx config for the app server and its public assistant metadata. */
 export function buildIngressNginxConfig(opts: {
-  gatewayPort: number;
+  /** Where the edge proxies gateway traffic — `getGatewayUrl` of the entry the edge fronts. */
+  gatewayUrl: string;
   listenPort: number;
   remoteWebIngress?: RemoteWebIngressOptions;
   /** Emit the `[::1]` listener. Off where the host has no IPv6 loopback,
    *  since nginx exits at startup when it cannot bind a listen address. */
   ipv6Loopback?: boolean;
 }): string {
-  const proxyBlock = gatewayProxyBlock(opts.gatewayPort);
+  const proxyBlock = gatewayProxyBlock(opts.gatewayUrl);
   // A tunnel agent pointed at "localhost" reaches ::1 first on macOS, so an
   // IPv4-only bind refuses whichever share of a burst resolves that way.
   const ipv6Listen = opts.ipv6Loopback
@@ -523,7 +532,7 @@ export function buildIngressNginxConfig(opts: {
     : [];
   const serverLocations = remoteWebIngress
     ? buildRemoteWebIngressLocations({
-        gatewayPort: opts.gatewayPort,
+        gatewayUrl: opts.gatewayUrl,
         webDistDir: remoteWebIngress.webDistDir,
         appDistDir: remoteWebIngress.appDistDir,
         appIndexHtmlPath: remoteWebIngress.appIndexHtmlPath,
@@ -630,8 +639,8 @@ ${serverLocations}
  * matching). The twin is emitted first so /web paths reach it, not the root
  * catch-all; the denylist's exact blocks always win over both.
  */
-function unversionedGatewayForwardLocations(gatewayPort: number): string {
-  const proxyBlock = gatewayProxyBlock(gatewayPort);
+function unversionedGatewayForwardLocations(gatewayUrl: string): string {
+  const proxyBlock = gatewayProxyBlock(gatewayUrl);
   return `    # The unversioned gateway API surface (P7): forwarded verbatim — the
     # gateway's router resolves the /v1 prefix.
     location ~ ^/web/(?!assistant(?:/|$)|v1(?:/|$)) {
@@ -648,8 +657,8 @@ ${proxyBlock}
  * Gateway-facing locations shared by both shell modes: liveness probes and
  * the runtime API surface, all proxied verbatim.
  */
-function gatewayProxyLocations(gatewayPort: number): string {
-  const proxyBlock = gatewayProxyBlock(gatewayPort);
+function gatewayProxyLocations(gatewayUrl: string): string {
+  const proxyBlock = gatewayProxyBlock(gatewayUrl);
   return `    location = /healthz {
 ${proxyBlock}
     }
@@ -734,7 +743,7 @@ function webAssetsLocations(webDistDir: string): string {
 }
 
 function buildRemoteWebIngressLocations(opts: {
-  gatewayPort: number;
+  gatewayUrl: string;
   webDistDir: string;
   appDistDir: string;
   appIndexHtmlPath?: string;
@@ -764,12 +773,12 @@ ${assistantMetadataLocations({
   entryUrl: ASSISTANT_ENTRY_URL,
 })}
 
-${gatewayProxyLocations(opts.gatewayPort)}
+${gatewayProxyLocations(opts.gatewayUrl)}
 
-${unversionedGatewayForwardLocations(opts.gatewayPort)}
+${unversionedGatewayForwardLocations(opts.gatewayUrl)}
 
     location ^~ /web/v1/ {
-${gatewayProxyBlock(opts.gatewayPort, "/v1/")}
+${gatewayProxyBlock(opts.gatewayUrl, "/v1/")}
     }
 
 ${webSpaLocations({
@@ -917,27 +926,28 @@ function isIngressNginxProcess(pid: number, paths: IngressPaths): boolean {
 }
 
 /** The ingress nginx PID when it is recorded and alive, null otherwise. */
-export function getIngressPid(workspaceDir: string): number | null {
-  const paths = getIngressPaths(workspaceDir);
+export function getIngressPid(): number | null {
+  const paths = getIngressPaths();
   const pid = readPidFile(paths.pidPath);
   return pid !== null && isPidAlive(pid) && isIngressNginxProcess(pid, paths)
     ? pid
     : null;
 }
 
-export function isIngressRunning(workspaceDir: string): boolean {
-  return getIngressPid(workspaceDir) !== null;
+export function isIngressRunning(): boolean {
+  return getIngressPid() !== null;
 }
 
 export interface IngressState {
   listenPort: number;
   /**
-   * Gateway port the edge's proxy_pass targets. Undefined in state records
-   * that predate the field; callers treat an unknown port as unverified and
-   * restart the edge so the running config provably targets the requested
-   * port and the state is stamped for future comparisons.
+   * Gateway URL the edge's proxy_pass targets — `getGatewayUrl` of the entry
+   * the edge fronts. Undefined in state records that predate the field;
+   * callers treat an unknown upstream as unverified and restart the edge so
+   * the running config provably targets the requested gateway and the state
+   * is stamped for future comparisons.
    */
-  gatewayPort?: number;
+  gatewayUrl?: string;
   /**
    * Fingerprint of the injected SPA config and its source bundle. Undefined
    * for records that predate the field; an edge without a recorded
@@ -947,47 +957,36 @@ export interface IngressState {
   remoteWebConfigHash?: string;
 }
 
-export function readIngressState(workspaceDir: string): IngressState | null {
-  const config = loadRawConfig(workspaceDir);
-  const ingress = config.ingress as Record<string, unknown> | undefined;
-  const nginx = ingress?.nginx as Record<string, unknown> | undefined;
-  const listenPort = nginx?.listenPort;
+function ingressStatePath(): string {
+  return join(getIngressPaths().dir, "state.json");
+}
+
+export function readIngressState(): IngressState | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(ingressStatePath(), "utf-8"));
+  } catch {
+    return null;
+  }
+  const state = (raw ?? {}) as Record<string, unknown>;
+  const listenPort = state.listenPort;
   if (typeof listenPort !== "number") return null;
-  const gatewayPort = nginx?.gatewayPort;
-  const remoteWebConfigHash = nginx?.remoteWebConfigHash;
+  const gatewayUrl = state.gatewayUrl;
+  const remoteWebConfigHash = state.remoteWebConfigHash;
   return {
     listenPort,
-    ...(typeof gatewayPort === "number" ? { gatewayPort } : {}),
+    ...(typeof gatewayUrl === "string" ? { gatewayUrl } : {}),
     ...(typeof remoteWebConfigHash === "string" ? { remoteWebConfigHash } : {}),
   };
 }
 
-function saveIngressState(workspaceDir: string, state: IngressState): void {
-  const config = loadRawConfig(workspaceDir);
-  const ingress = (config.ingress ?? {}) as Record<string, unknown>;
-  ingress.nginx = {
-    listenPort: state.listenPort,
-    ...(state.gatewayPort !== undefined
-      ? { gatewayPort: state.gatewayPort }
-      : {}),
-    ...(state.remoteWebConfigHash !== undefined
-      ? { remoteWebConfigHash: state.remoteWebConfigHash }
-      : {}),
-  };
-  config.ingress = ingress;
-  saveRawConfig(workspaceDir, config);
+function saveIngressState(state: IngressState): void {
+  mkdirSync(getIngressPaths().dir, { recursive: true });
+  writeFileSync(ingressStatePath(), JSON.stringify(state, null, 2) + "\n");
 }
 
-function clearIngressState(workspaceDir: string): void {
-  const config = loadRawConfig(workspaceDir);
-  const ingress = config.ingress as Record<string, unknown> | undefined;
-  if (!ingress) return;
-  delete ingress.nginx;
-  saveRawConfig(workspaceDir, config);
-}
-
-function clearStoppedIngress(workspaceDir: string, pidPath: string): void {
-  clearIngressState(workspaceDir);
+function clearStoppedIngress(pidPath: string): void {
+  rmSync(ingressStatePath(), { force: true });
   rmSync(pidPath, { force: true });
   // The edge is gone; release the root lockfile's process entry with it.
   // Its built-sha stamp survives (a build-cache fact, not a process fact)
@@ -996,14 +995,15 @@ function clearStoppedIngress(workspaceDir: string, pidPath: string): void {
 }
 
 /**
- * The tunnel URL on record for this workspace (`ingress.publicBaseUrl`, saved
- * when a tunnel established), or undefined when none is — the served config
- * stamps it as `cloudUrl` so tunnel clients' account/auth surfaces stay on
- * the origin they came in on.
+ * The tunnel URL on record (the default workspace's `ingress.publicBaseUrl`,
+ * saved when a tunnel established — the gateway-facing contract the daemon
+ * reads), or undefined when none is — the served config stamps it as
+ * `cloudUrl` so tunnel clients' account/auth surfaces stay on the origin
+ * they came in on.
  */
-function savedPublicBaseUrl(workspaceDir: string): string | undefined {
+function savedPublicBaseUrl(): string | undefined {
   try {
-    const config = loadRawConfig(workspaceDir);
+    const config = loadRawConfig(getDefaultWorkspaceDir());
     const ingress = config.ingress as Record<string, unknown> | undefined;
     const url = ingress?.publicBaseUrl;
     if (typeof url !== "string" || !url.trim()) return undefined;
@@ -1020,14 +1020,13 @@ function savedPublicBaseUrl(workspaceDir: string): string | undefined {
  * the prefix dir.
  */
 export function startIngressNginx(opts: {
-  workspaceDir: string;
-  gatewayPort: number;
+  gatewayUrl: string;
   listenPort: number;
   remoteWebIngress?: RemoteWebIngressOptions;
 }): ChildProcess {
-  const paths = getIngressPaths(opts.workspaceDir);
+  const paths = getIngressPaths();
   mkdirSync(paths.dir, { recursive: true });
-  mkdirSync(join(opts.workspaceDir, "data", "logs"), { recursive: true });
+  mkdirSync(resolveLogDir(), { recursive: true });
   const remoteWebIngress = opts.remoteWebIngress
     ? {
         ...opts.remoteWebIngress,
@@ -1064,7 +1063,7 @@ export function startIngressNginx(opts: {
   writeFileSync(
     paths.confPath,
     buildIngressNginxConfig({
-      gatewayPort: opts.gatewayPort,
+      gatewayUrl: opts.gatewayUrl,
       listenPort: opts.listenPort,
       remoteWebIngress,
       ipv6Loopback: hasIpv6Loopback(),
@@ -1079,9 +1078,9 @@ export function startIngressNginx(opts: {
   );
   closeSync(fd);
 
-  saveIngressState(opts.workspaceDir, {
+  saveIngressState({
     listenPort: opts.listenPort,
-    gatewayPort: opts.gatewayPort,
+    gatewayUrl: opts.gatewayUrl,
     ...(remoteWebIngress
       ? {
           remoteWebConfigHash: remoteWebConfigFingerprint(
@@ -1118,12 +1117,12 @@ async function waitForPidExit(
  * hitting an unrelated process if the OS has reused the PID. SIGTERM is nginx
  * fast shutdown; escalate to SIGKILL if it doesn't exit within the timeout.
  */
-export async function stopIngressNginx(workspaceDir: string): Promise<boolean> {
-  const paths = getIngressPaths(workspaceDir);
+export async function stopIngressNginx(): Promise<boolean> {
+  const paths = getIngressPaths();
 
   const pid = readPidFile(paths.pidPath);
   if (pid === null || !isPidAlive(pid) || !isIngressNginxProcess(pid, paths)) {
-    clearStoppedIngress(workspaceDir, paths.pidPath);
+    clearStoppedIngress(paths.pidPath);
     return false;
   }
 
@@ -1134,7 +1133,7 @@ export async function stopIngressNginx(workspaceDir: string): Promise<boolean> {
         process.kill(pid, "SIGKILL");
       } catch {
         if (!isPidAlive(pid)) {
-          clearStoppedIngress(workspaceDir, paths.pidPath);
+          clearStoppedIngress(paths.pidPath);
           return true;
         }
         return false;
@@ -1145,13 +1144,13 @@ export async function stopIngressNginx(workspaceDir: string): Promise<boolean> {
     }
   } catch {
     if (!isPidAlive(pid)) {
-      clearStoppedIngress(workspaceDir, paths.pidPath);
+      clearStoppedIngress(paths.pidPath);
       return true;
     }
     return false;
   }
 
-  clearStoppedIngress(workspaceDir, paths.pidPath);
+  clearStoppedIngress(paths.pidPath);
   return true;
 }
 
@@ -1189,9 +1188,9 @@ export type StartRemoteWebIngressResult =
       /** Recorded listen port of the running edge (requested port when no state is recorded). */
       listenPort: number;
       /** Recorded gateway upstream; undefined when the record predates the field. */
-      gatewayPort?: number;
+      gatewayUrl?: string;
       /**
-       * Set when the surviving edge matches the requested gateway port but
+       * Set when the surviving edge matches the requested gateway upstream but
        * serves a different injected SPA config than requested (a restart was
        * attempted and failed), so the served index is stale.
        */
@@ -1210,19 +1209,21 @@ export type StartRemoteWebIngressResult =
  * spawned but unreachable or unowned nginx is rolled back so a failed attempt
  * leaves no half-up edge behind.
  *
- * An edge already running against the requested gateway port and serving the
- * requested injected SPA config short-circuits as `already-running`; one
- * against a different gateway port, or serving a drifted SPA config (e.g. a
- * renamed assistant or an updated hub URL), is stopped and restarted with the
- * requested config.
+ * An edge already running against the requested gateway upstream and serving
+ * the requested injected SPA config short-circuits as `already-running`; one
+ * against a different gateway upstream, or serving a drifted SPA config (e.g.
+ * a renamed assistant or an updated hub URL), is stopped and restarted with
+ * the requested config. The edge is assistant-agnostic: it carries no
+ * assistant identity in its options — `getGatewayUrl` of the entry it fronts
+ * is the routing decision, resolved from the lockfile by the caller.
  *
  * Pure mechanism: it performs no console output and never exits the process, so
  * every edge caller (`cadet tunnel`, `nginx-ingress up`, the wake restore
  * path) can share one implementation and map the returned result to its own UX.
  */
 export async function startRemoteWebIngress(opts: {
-  workspaceDir: string;
-  gatewayPort: number;
+  /** Where the edge proxies gateway traffic — `getGatewayUrl` of the fronted entry. */
+  gatewayUrl: string;
   listenPort?: number;
   readyTimeoutMs?: number;
   /**
@@ -1256,8 +1257,8 @@ export async function startRemoteWebIngress(opts: {
     return { status: "nginx-missing" };
   }
 
-  const running = isIngressRunning(opts.workspaceDir);
-  const recorded = running ? readIngressState(opts.workspaceDir) : null;
+  const running = isIngressRunning();
+  const recorded = running ? readIngressState() : null;
   if (
     recorded &&
     opts.listenPort === undefined &&
@@ -1283,7 +1284,7 @@ export async function startRemoteWebIngress(opts: {
     assistantName: opts.assistantName,
     assistantId: opts.assistantId,
     version,
-    cloudUrl: savedPublicBaseUrl(opts.workspaceDir),
+    cloudUrl: savedPublicBaseUrl(),
   };
   const requestedConfigHash = remoteWebConfigFingerprint(
     remoteWebIngressConfig(spaOptions),
@@ -1297,27 +1298,23 @@ export async function startRemoteWebIngress(opts: {
   const alreadyRunning = (): StartRemoteWebIngressResult => ({
     status: "already-running",
     listenPort: recorded?.listenPort ?? listenPort,
-    ...(recorded?.gatewayPort !== undefined
-      ? { gatewayPort: recorded.gatewayPort }
+    ...(recorded?.gatewayUrl !== undefined
+      ? { gatewayUrl: recorded.gatewayUrl }
       : {}),
-    ...(recorded?.gatewayPort === opts.gatewayPort && !configMatches
+    ...(recorded?.gatewayUrl === opts.gatewayUrl && !configMatches
       ? { staleRemoteWebConfig: true as const }
       : {}),
   });
-  // An unknown recorded gateway port is unverified (see IngressState).
-  if (running && recorded?.gatewayPort === opts.gatewayPort && configMatches) {
+  // An unknown recorded gateway upstream is unverified (see IngressState).
+  if (running && recorded?.gatewayUrl === opts.gatewayUrl && configMatches) {
     return alreadyRunning();
   }
 
-  // The running edge targets a different gateway port or injects a stale
+  // The running edge targets a different gateway upstream or injects a stale
   // SPA config; restart it with the requested config. A false stop can mean
   // the old edge exited on its own after the
   // check above, so recheck liveness and only bail when it is still serving.
-  if (
-    running &&
-    !(await stopIngressNginx(opts.workspaceDir)) &&
-    isIngressRunning(opts.workspaceDir)
-  ) {
+  if (running && !(await stopIngressNginx()) && isIngressRunning()) {
     return alreadyRunning();
   }
 
@@ -1341,8 +1338,7 @@ export async function startRemoteWebIngress(opts: {
   opts.onStarting?.({ version: nginxVersion, webDistDir, listenPort });
 
   const child = startIngressNginx({
-    workspaceDir: opts.workspaceDir,
-    gatewayPort: opts.gatewayPort,
+    gatewayUrl: opts.gatewayUrl,
     listenPort,
     remoteWebIngress: {
       webDistDir,
@@ -1365,8 +1361,8 @@ export async function startRemoteWebIngress(opts: {
   const rollback = async (
     status: "port-conflict" | "unreachable",
   ): Promise<StartRemoteWebIngressResult> => {
-    const { logPath } = getIngressPaths(opts.workspaceDir);
-    await stopIngressNginx(opts.workspaceDir);
+    const { logPath } = getIngressPaths();
+    await stopIngressNginx();
     return { status, listenPort, logPath };
   };
   const childExited = (): boolean => exited || child.exitCode !== null;
@@ -1388,7 +1384,7 @@ export async function startRemoteWebIngress(opts: {
     if (childExited()) {
       break;
     }
-    if (getIngressPid(opts.workspaceDir) !== null) {
+    if (getIngressPid() !== null) {
       return {
         status: "started",
         listenPort,
@@ -1430,9 +1426,10 @@ function lockfileAssistantName(assistantId: string): string | undefined {
  * the one it currently fronts.
  *
  * Container topologies share one default-workspace edge (one pidfile, one
- * listen port), so the recorded `gatewayPort` is what attributes it. Without
- * that check this would tear down another assistant's working tunnel; a record
- * with no recorded port cannot be attributed, so it is left alone.
+ * listen port), so the recorded gateway upstream — `getGatewayUrl` of the
+ * entry — is what attributes it. Without that check this would tear down
+ * another assistant's working tunnel; a record with no recorded upstream
+ * cannot be attributed, so it is left alone.
  */
 export async function stopContainerAppServer(
   entry: LockfileAssistant,
@@ -1440,27 +1437,21 @@ export async function stopContainerAppServer(
   if (!isLocalContainerEntry(entry)) {
     return false;
   }
-  const gatewayPort = getLoopbackGatewayPort(entry);
-  if (gatewayPort === undefined) {
+  if (!isIngressRunning()) {
     return false;
   }
-  const workspaceDir = getDefaultWorkspaceDir();
-  if (!isIngressRunning(workspaceDir)) {
+  if (readIngressState()?.gatewayUrl !== getGatewayUrl(entry)) {
     return false;
   }
-  if (readIngressState(workspaceDir)?.gatewayPort !== gatewayPort) {
-    return false;
-  }
-  return stopIngressNginx(workspaceDir);
+  return stopIngressNginx();
 }
 
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
 function stampAppProcessEntry(
-  workspaceDir: string,
   assistantId?: string,
   port = getNginxIngressPort(),
 ): void {
-  const pid = getIngressPid(workspaceDir);
+  const pid = getIngressPid();
   if (pid !== null) {
     // Carry the built-sha stamp forward: it predates this process entry
     // (it survives the edge's own stop) and must not be wiped by the stamp.
@@ -1489,9 +1480,9 @@ export interface AppServer {
  * reporting `already-running`, so the only thing left is the wedged process
  * itself: name its PID and log so the user can clear it by hand.
  */
-function stuckEdgeRecoveryHint(workspaceDir: string): string {
-  const { logPath } = getIngressPaths(workspaceDir);
-  const pid = getIngressPid(workspaceDir);
+function stuckEdgeRecoveryHint(): string {
+  const { logPath } = getIngressPaths();
+  const pid = getIngressPid();
   const target = pid !== null ? `the nginx process (PID ${pid})` : "it";
   return (
     `Cadet could not stop ${target}, even with SIGKILL. ` +
@@ -1504,43 +1495,44 @@ function stuckEdgeRecoveryHint(workspaceDir: string): string {
  * Bring up the nginx edge as the canonical tunnel target and return the listen
  * port a tunnel should front.
  *
+ * The edge is assistant-agnostic: it carries no assistant identity in its
+ * options. The assistant it fronts — and with it the gateway it proxies, via
+ * `getGatewayUrl` — is resolved from the lockfile here (the active assistant,
+ * else the only entry), so every edge caller shares one resolution instead of
+ * threading bespoke ids and ports. Its own state (conf, pidfile, recorded
+ * upstream) lives under the XDG data dir, never an assistant workspace.
+ *
  * The edge always serves the SPA alongside the gateway proxy. It is always
  * delegated to `startRemoteWebIngress`, which reuses a running edge whose
- * gateway port and injected SPA config match and restarts one that drifted in
- * any respect, so the returned port always fronts the requested config.
- * `started` is false when a matching edge was reused; a drifted edge that
- * survives the restart attempt throws rather than reporting the wrong config.
- * Failures throw with actionable install or diagnostic text.
+ * gateway upstream and injected SPA config match and restarts one that
+ * drifted in any respect, so the returned port always fronts the requested
+ * config. `started` is false when a matching edge was reused; a drifted edge
+ * that survives the restart attempt throws rather than reporting the wrong
+ * config. Failures throw with actionable install or diagnostic text.
  */
-export async function ensureAppServer(opts: {
-  assistantId: string | undefined;
-  workspaceDir: string;
-  gatewayPort: number;
-  /** Forwarded to `startRemoteWebIngress` for caller progress output. */
-  onStarting?: (info: {
-    version: string;
-    webDistDir: string;
-    listenPort: number;
-  }) => void;
-}): Promise<AppServer> {
-  const assistantName = opts.assistantId
-    ? lockfileAssistantName(opts.assistantId)
-    : undefined;
+export async function ensureAppServer(
+  opts: {
+    /** Forwarded to `startRemoteWebIngress` for caller progress output. */
+    onStarting?: (info: {
+      version: string;
+      webDistDir: string;
+      listenPort: number;
+    }) => void;
+  } = {},
+): Promise<AppServer> {
+  const entry = resolveTargetAssistant();
+  const assistantName = lockfileAssistantName(entry.assistantId);
+  const gatewayUrl = getGatewayUrl(entry);
   const result = await startRemoteWebIngress({
-    workspaceDir: opts.workspaceDir,
-    gatewayPort: opts.gatewayPort,
+    gatewayUrl,
     ...(assistantName ? { assistantName } : {}),
-    ...(opts.assistantId ? { assistantId: opts.assistantId } : {}),
+    assistantId: entry.assistantId,
     ...(opts.onStarting ? { onStarting: opts.onStarting } : {}),
   });
 
   switch (result.status) {
     case "started":
-      stampAppProcessEntry(
-        opts.workspaceDir,
-        opts.assistantId,
-        result.listenPort,
-      );
+      stampAppProcessEntry(entry.assistantId, result.listenPort);
       return {
         port: result.listenPort,
         started: true,
@@ -1548,29 +1540,21 @@ export async function ensureAppServer(opts: {
     case "already-running": {
       // `already-running` also covers a drifted edge whose restart failed, so
       // trust the recorded state it carries over the requested config.
-      if (result.gatewayPort !== opts.gatewayPort) {
-        const upstream =
-          result.gatewayPort !== undefined
-            ? `still proxying gateway port ${result.gatewayPort}`
-            : "proxying an unknown gateway port";
+      if (result.gatewayUrl !== gatewayUrl) {
         throw new Error(
-          `The nginx edge is ${upstream} ` +
-            `and could not be restarted against port ${opts.gatewayPort}. ` +
-            stuckEdgeRecoveryHint(opts.workspaceDir),
+          `The nginx edge is still proxying ${result.gatewayUrl ?? "an unknown gateway upstream"} ` +
+            `and could not be restarted against ${gatewayUrl}. ` +
+            stuckEdgeRecoveryHint(),
         );
       }
       if (result.staleRemoteWebConfig) {
         throw new Error(
           "The nginx edge is still serving an outdated remote web config " +
             "and could not be restarted with the updated one. " +
-            stuckEdgeRecoveryHint(opts.workspaceDir),
+            stuckEdgeRecoveryHint(),
         );
       }
-      stampAppProcessEntry(
-        opts.workspaceDir,
-        opts.assistantId,
-        result.listenPort,
-      );
+      stampAppProcessEntry(entry.assistantId, result.listenPort);
       return {
         port: result.listenPort,
         started: false,

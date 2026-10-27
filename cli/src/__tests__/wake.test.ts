@@ -614,11 +614,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "local-assistant",
-      workspaceDir: workspaceDirOf(tempDir),
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
@@ -634,11 +630,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "local-assistant",
-      workspaceDir: workspaceDirOf(tempDir),
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
@@ -664,11 +656,7 @@ describe("cadet wake — app server restore", () => {
     try {
       await wake();
 
-      expect(ensureAppServerMock).toHaveBeenCalledWith({
-        assistantId: "docker-1",
-        workspaceDir: defaultWorkspace,
-        gatewayPort: 7930,
-      });
+      expect(ensureAppServerMock).toHaveBeenCalledWith();
       // Container wakes run the same auto-tunnel as local wakes (docker
       // parity); the spawned agent records itself in the root lockfile.
       expect(ngrokRunMock).toHaveBeenCalledWith({
@@ -741,7 +729,7 @@ describe("cadet wake — app server restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
-      gatewayPort: 8030,
+      gatewayUrl: "http://127.0.0.1:8030",
     });
     process.argv = ["bun", "cadet", "wake", "docker-1"];
 
@@ -774,7 +762,7 @@ describe("cadet wake — app server restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7840,
-      gatewayPort: 7930,
+      gatewayUrl: "http://127.0.0.1:7930",
     });
     // Ownership clears the restore, and `ensureAppServer` is what decides the
     // running edge still matches: it reports the reuse rather than a restart.
@@ -787,11 +775,7 @@ describe("cadet wake — app server restore", () => {
     try {
       await wake();
 
-      expect(ensureAppServerMock).toHaveBeenCalledWith({
-        assistantId: "docker-1",
-        workspaceDir: defaultWorkspace,
-        gatewayPort: 7930,
-      });
+      expect(ensureAppServerMock).toHaveBeenCalledWith();
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining("already running on 127.0.0.1:7840"),
       );
@@ -992,11 +976,7 @@ describe("cadet wake — app server restore", () => {
     try {
       await wake();
 
-      expect(ensureAppServerMock).toHaveBeenCalledWith({
-        assistantId: "docker-1",
-        workspaceDir: defaultWorkspace,
-        gatewayPort: 7930,
-      });
+      expect(ensureAppServerMock).toHaveBeenCalledWith();
     } finally {
       if (originalWorkspaceDir === undefined) {
         delete process.env.CADET_WORKSPACE_DIR;
@@ -1067,17 +1047,13 @@ describe("cadet wake — app server restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
     });
 
     await wake();
 
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "local-assistant",
-      workspaceDir: workspaceDirOf(tempDir),
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
@@ -1096,7 +1072,7 @@ describe("cadet wake — app server restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       remoteWebConfigHash: "fingerprint-of-an-older-edge-template",
     });
     ensureAppServerMock.mockRejectedValue(
@@ -1127,7 +1103,7 @@ describe("cadet wake — app server restore", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7845,
-      gatewayPort: 7831,
+      gatewayUrl: "http://127.0.0.1:7831",
     });
     ensureAppServerMock.mockRejectedValue(
       new Error("The nginx edge is still proxying gateway port 7831."),

@@ -12,15 +12,8 @@ import { routes } from "@/utils/routes";
 
 export interface NavigationState {
   isLocalClient: boolean;
-  isRemoteGateway: boolean;
-  remoteGatewayPublicPathPrefix: string;
-  isGatewaySessionLive: boolean;
   hasAssistants: boolean;
-  sessionSettled: boolean;
-  isAuthenticated: boolean;
   cloudSession: CloudSessionStatus;
-  /** Whether the resolved assistants list reflects at least one authoritative load. */
-  assistantsHydrated: boolean;
   /**
    * Whether the user owns ANY assistant past first-run onboarding, i.e. is a
    * returning user. The right question for post-auth and the onboarding
@@ -41,7 +34,6 @@ export interface NavigationState {
 
 export type NavigationQuery =
   | { kind: "route-guard"; pathname: string }
-  | { kind: "hatch-gate" }
   | {
       kind: "post-auth";
       authIntent: "login" | "signup";
@@ -107,8 +99,6 @@ export function resolveNavigation(
   switch (query.kind) {
     case "route-guard":
       return resolveRouteGuard(state, query.pathname);
-    case "hatch-gate":
-      return resolveHatchGate(state);
     case "post-auth":
       return resolvePostAuth(
         state,
@@ -129,12 +119,12 @@ export function resolveNavigation(
 // pass through to the next step. The pipeline terminates with "allow".
 //
 // Conceptual layers:
-//   1. Readiness          — is the session ready?
-//   2. Bypass             — gateway auth skips everything but a paid return
-//   4. Identity           — is the user authenticated?
-//   5. Mode boundary      — is this path valid for the user's mode?
-//   6. Setup exemptions   — onboarding paths are always reachable
-//   7. Assistant required  — user needs at least one assistant
+//   1. Gateway boundary   — a remote gateway's device credential or a live
+//                          gateway session admits; otherwise pair
+//   2. Setup exemptions   — onboarding paths are always reachable
+//   3. Assistant required — the hosting choice (the serving shell never
+//                          loads this bundle for a logged-out visitor, so
+//                          there is no logged-out case to route)
 
 type RouteGuardStep = (
   state: NavigationState,
@@ -143,10 +133,6 @@ type RouteGuardStep = (
 ) => NavigationDecision | null;
 
 const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
-  waitForSession,
-  requireRemoteGatewayPairing,
-  allowGatewayAuth,
-  requireAuth,
   allowSetupRoutes,
   requireAssistant,
 ];
@@ -166,101 +152,6 @@ function resolveRouteGuard(
     }
   }
   return { action: "allow" };
-}
-
-function waitForSession(state: NavigationState): NavigationDecision | null {
-  return state.sessionSettled ? null : { action: "wait" };
-}
-
-/**
- * A gateway session answers for itself, so it skips the rest of the pipeline.
- */
-function allowGatewayAuth(state: NavigationState): NavigationDecision | null {
-  if (!state.isGatewaySessionLive) {
-    return null;
-  }
-  return { action: "allow" };
-}
-
-function stripRemoteGatewayPublicPathPrefix(
-  state: NavigationState,
-  pathnameWithSearch: string,
-): string {
-  const prefix = state.remoteGatewayPublicPathPrefix;
-  if (!state.isRemoteGateway || !prefix) {
-    return pathnameWithSearch;
-  }
-  if (pathnameWithSearch === prefix) {
-    return routes.assistant;
-  }
-  if (pathnameWithSearch.startsWith(`${prefix}/`)) {
-    return pathnameWithSearch.slice(prefix.length);
-  }
-  return pathnameWithSearch;
-}
-
-/**
- * The connection slot's device credential decides, not the auth store: the
- * pairing page's boot settles the store unauthenticated on the public pair
- * route before the approved exchange lands, and the credential the exchange
- * establishes is the same signal `isGatewaySessionLive` reads next.
- */
-function requireRemoteGatewayPairing(
-  state: NavigationState,
-  _path: string,
-  pathnameWithSearch: string,
-): NavigationDecision | null {
-  if (!state.isRemoteGateway || state.isGatewaySessionLive) {
-    return null;
-  }
-
-  const returnTo = stripRemoteGatewayPublicPathPrefix(
-    state,
-    pathnameWithSearch,
-  );
-  return {
-    action: "redirect",
-    to: `${routes.remotePair}?returnTo=${encodeURIComponent(returnTo)}`,
-  };
-}
-
-/**
- * The local-mode chooser, decided the same way for an unauthenticated visit
- * (`requireAuth`) and an authenticated one: an empty lockfile has nothing to
- * choose from, so the visit funnels to hosting.
- *
- * Deciding either way is what keeps the local chooser short-circuiting ahead of
- * the assistant gate: it is itself an onboarding surface,
- * reachable before there is a cloud session to gate on.
- */
-function requireAuth(
-  state: NavigationState,
-  path: string,
-  pathnameWithSearch: string,
-): NavigationDecision | null {
-  if (state.isAuthenticated) {
-    return null;
-  }
-
-  if (state.isLocalClient && isOnboardingPath(path)) {
-    return { action: "allow" };
-  }
-  if (state.isLocalClient && !state.hasAssistants) {
-    return { action: "redirect", to: routes.welcome };
-  }
-  if (state.isLocalClient) {
-    return { action: "redirect", to: routes.assistant };
-  }
-  // No web surface offers cloud login anymore — the unauthenticated bounce
-  // lands on the remote-web pairing page, the same front door
-  // `requireRemoteGatewayPairing` uses, returnTo preserved so a successful
-  // exchange returns the visit to where it was headed.
-  return {
-    action: "redirect",
-    to: `${routes.remotePair}?returnTo=${encodeURIComponent(
-      stripRemoteGatewayPublicPathPrefix(state, pathnameWithSearch),
-    )}`,
-  };
 }
 
 function allowSetupRoutes(
@@ -298,25 +189,13 @@ function requireAssistant(state: NavigationState): NavigationDecision | null {
     return { action: "redirect", to: routes.welcome };
   }
 
-  // The assistant list starts empty while platform boot loads it.
-  if (!state.assistantsHydrated) {
-    return { action: "wait" };
-  }
+  // The served store is never cold in production — the serving shell owns
+  // loaded-ness before this bundle loads (#573), and the app's own boot
+  // effect maintains the roster thereafter. An empty roster here means a
+  // served account with nothing to resolve: funnel to onboarding. Waiting
+  // here would loop — the hydration flag this used to wait on has no
+  // writer off the local arm.
   return { action: "redirect", to: routes.onboarding.hatching };
-}
-
-// ---------------------------------------------------------------------------
-// hatch-gate
-// ---------------------------------------------------------------------------
-
-function resolveHatchGate(state: NavigationState): NavigationDecision {
-  if (!state.sessionSettled) {
-    return { action: "wait" };
-  }
-  if (!state.isAuthenticated && !state.isLocalClient) {
-    return { action: "redirect", to: routes.remotePair };
-  }
-  return { action: "allow" };
 }
 
 // ---------------------------------------------------------------------------

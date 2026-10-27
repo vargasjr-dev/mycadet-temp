@@ -1,5 +1,5 @@
 import type { Flow } from "@/generated/auth/types.gen";
-import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
+import { getCsrfToken } from "@/lib/auth/csrf";
 
 // ---------------------------------------------------------------------------
 // Provider registry
@@ -155,11 +155,12 @@ export function buildProviderRedirectFields(
  * Assert that a CSRF token is present before kicking off a provider redirect.
  *
  * Extracted as a tiny pure helper so the assertion behavior can be unit tested
- * without a DOM environment. `ensureCsrfCookie()` swallows bootstrap failures
- * (see `@/lib/auth/csrf`), so without this guard we would silently POST to
- * `PROVIDER_REDIRECT_PATH` with no token and get a 403 back from the cloud — the
- * user would be stuck on the auth page with no feedback. Failing loudly here
- * surfaces the problem in the browser console instead.
+ * without a DOM environment. The cookie jar can be missing a token (cookie
+ * custody lives above this bundle and may not have stamped one yet), in which
+ * case we would silently POST to `PROVIDER_REDIRECT_PATH` with no token and get
+ * a 403 back from the cloud — the user would be stuck on the auth page with no
+ * feedback. Failing loudly here surfaces the problem in the browser console
+ * instead.
  */
 export function assertCsrfToken(
   token: string | null | undefined,
@@ -182,12 +183,9 @@ export async function startProviderRedirect(
   callbackUrl: string,
   options: ProviderRedirectOptions = {},
 ): Promise<void> {
-  await ensureCsrfCookie();
-
-  // `ensureCsrfCookie()` swallows bootstrap failures, so we must verify a
-  // token is actually available before building the form. Without this
-  // guard, the POST to `PROVIDER_REDIRECT_PATH` would be rejected with 403
-  // and the user would be stuck on the auth page.
+  // The cookie jar can be missing a token; verify before building the
+  // form or the POST to `PROVIDER_REDIRECT_PATH` is rejected with 403 and
+  // the user is stuck on the auth page.
   const csrfToken = getCsrfToken();
   assertCsrfToken(csrfToken);
 

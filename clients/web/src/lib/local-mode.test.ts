@@ -73,8 +73,6 @@ import {
   primeLocalGatewayConnectionWithStartupRetry,
   removePairedAssistantFromLockfile,
   UnresolvedLocalGatewayError,
-  hasGatewayAssistant,
-  isGatewaySessionLive,
 } from "@/lib/local-mode";
 import {
   getSelfHostedActorToken,
@@ -169,7 +167,10 @@ describe("served config synthesis", () => {
   test("a host that stamps no assistant yields the empty lockfile (pre-hatch)", () => {
     window.__CADET_CONFIG__ = { remote: "local" };
 
-    expect(getServedLockfile()).toEqual({ assistants: [], activeAssistant: null });
+    expect(getServedLockfile()).toEqual({
+      assistants: [],
+      activeAssistant: null,
+    });
     expect(hasAssistants()).toBe(false);
   });
 
@@ -180,7 +181,10 @@ describe("served config synthesis", () => {
       assistantId: "not-a-thing",
     };
 
-    expect(getServedLockfile()).toEqual({ assistants: [], activeAssistant: null });
+    expect(getServedLockfile()).toEqual({
+      assistants: [],
+      activeAssistant: null,
+    });
   });
 
   test("names the assistant 'Local Assistant' when the stamp carries no name", () => {
@@ -263,10 +267,9 @@ describe("remote gateway mode", () => {
         name: "cadet-deep-hare-ww1iw1",
       }),
     ]);
-    // The serving edge IS the gateway - but the served-gateway arm's
-    // session vision keys on the runtime, not the entry's port.
+    // The serving edge IS the gateway - but the served-gateway arm keys on
+    // the runtime, not the entry's port.
     expect(hasLocalGateway()).toBe(false);
-    expect(hasGatewayAssistant()).toBe(true);
   });
 });
 
@@ -804,7 +807,6 @@ describe("primeLocalGatewayConnection", () => {
     // directly (packaged-app CSP and browser CORS both block it).
     expect(getSelfHostedIngressUrl()).toBe(window.location.origin);
     expect(getSelfHostedActorToken()).toBeNull();
-    expect(isGatewaySessionLive()).toBe(true);
     // The prime neither reads nor scrubs stored credentials — LS rides out untouched.
     expect(localStorage.getItem(GW_LS_TOKEN_KEY)).toBe(
       "legacy-paired-guardian",
@@ -822,17 +824,14 @@ describe("primeLocalGatewayConnection", () => {
     setSelfHostedConnection({ url: ingressUrl, token: null });
 
     let ingressDuringProbe: string | null | undefined;
-    let authModeDuringProbe: boolean | undefined;
     globalThis.fetch = mock(async () => {
       ingressDuringProbe = getSelfHostedIngressUrl();
-      authModeDuringProbe = isGatewaySessionLive();
       return Response.json({ status: "ok", ready: true });
     }) as unknown as typeof fetch;
 
     await primeLocalGatewayConnection(pairedEntry);
 
     expect(ingressDuringProbe).toBe(ingressUrl);
-    expect(authModeDuringProbe).toBe(true);
     expect(getSelfHostedIngressUrl()).toBe(ingressUrl);
   });
 
@@ -878,8 +877,8 @@ describe("primeLocalGatewayConnection", () => {
     // a failed probe clears it — a connect flow re-primes on retry.
     expect(getSelfHostedIngressUrl()).toBeNull();
     expect(getSelfHostedActorToken()).toBeNull();
-    // The local selection's session signal is topology, not the slot.
-    expect(isGatewaySessionLive()).toBe(true);
+    // The local selection's data-plane signal is topology, not the slot.
+    expect(hasLocalGateway(getActiveAssistant())).toBe(true);
   });
 });
 
@@ -920,38 +919,5 @@ describe("primeLocalGatewayConnectionWithStartupRetry (paired target)", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchGuardianTokenHost).not.toHaveBeenCalled();
-  });
-});
-
-describe("gateway session vision (hasGatewayAssistant / isGatewaySessionLive)", () => {
-  test("a served runtime's session is always live — the cookie is the edge's business", () => {
-    window.__CADET_CONFIG__ = {
-      remote: "docker",
-      assistantId: "edge-1",
-    };
-
-    expect(hasGatewayAssistant()).toBe(true);
-    // Cookie custody: the browser holds no credential in JS, so there is
-    // nothing to read — the edge arbitrates the session per request.
-    expect(isGatewaySessionLive()).toBe(true);
-  });
-
-  test("a paired serve outside local mode has no gateway assistant", () => {
-    window.__CADET_CONFIG__ = { remote: "cloud" };
-    expect(hasGatewayAssistant()).toBe(false);
-    expect(isGatewaySessionLive()).toBe(false);
-  });
-
-  test("a served local selection's session is topology - live without any slot", () => {
-    stampServed({ assistantId: "served-1" });
-    // The host IS the gateway and the synthesis records a resolvable one
-    // (port 0): no prime, no slot, no token - the trusted host owns custody.
-    expect(hasGatewayAssistant()).toBe(true);
-    expect(isGatewaySessionLive()).toBe(true);
-
-    // Nothing stamped (pre-hatch) - no gateway assistant at all.
-    window.__CADET_CONFIG__ = { remote: "local" };
-    expect(hasGatewayAssistant()).toBe(false);
-    expect(isGatewaySessionLive()).toBe(false);
   });
 });

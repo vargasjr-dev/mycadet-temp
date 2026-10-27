@@ -7,7 +7,6 @@ import { useAppTheme } from "@/hooks/use-app-theme";
 import { useDownloadFeedback } from "@/hooks/use-download-feedback";
 import { useEventBusInit } from "@/hooks/use-event-bus-init";
 import { useOpenUrlDirectives } from "@/hooks/use-open-url-directives";
-import { useGuardianRepairRoute } from "@/hooks/use-guardian-repair-route";
 import { useGlobalDeepLinkConsumer } from "@/hooks/use-global-deep-link-consumer";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-open";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
@@ -97,7 +96,6 @@ import { answerDictationOffer } from "@/domains/chat/voice/dictation-offer-actio
 import { answerCompanionPopover } from "@/domains/chat/companion-popover-actions";
 import { toggleCompanionPicker } from "@/domains/chat/companion-popover";
 import { useCompanionPickers } from "@/domains/chat/hooks/use-companion-pickers";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notification-avatar";
 
@@ -140,7 +138,6 @@ export function RootLayout() {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
   const { state: bootState } = useAssistantBootResolution();
-  useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
   // from any route — including setMainView("chat") calls made while the chat
@@ -161,7 +158,6 @@ export function RootLayout() {
   const activeAssistant = assistants.find(
     (assistant) => assistant.id === assistantId,
   );
-  const requestOrganizationId = useRequestOrganizationId();
   const assistantVersion = useAssistantIdentityStore.use.version();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
@@ -171,11 +167,7 @@ export function RootLayout() {
   // The scope is keyed on the resolved assistant — a resolved assistant is
   // the whole fact; there is no separate session question to ask first.
   const notificationScopeId = activeAssistant
-    ? resolveAssistantAvatarOwnerScopeId(
-        activeAssistant,
-        requestOrganizationId,
-        connectionFallback,
-      )
+    ? resolveAssistantAvatarOwnerScopeId(activeAssistant, connectionFallback)
     : null;
   const notificationCloudAssistantId =
     resolveAssistantNotificationCloudId(activeAssistant);
@@ -244,11 +236,7 @@ export function RootLayout() {
       .map((assistant) => {
         const fallback =
           assistant.id === assistantId ? connectionFallback : null;
-        const scopeId = resolveAssistantAvatarOwnerScopeId(
-          assistant,
-          requestOrganizationId,
-          fallback,
-        );
+        const scopeId = resolveAssistantAvatarOwnerScopeId(assistant, fallback);
         return scopeId ? { scopeId, assistantId: assistant.id } : null;
       })
       .filter((owner) => owner !== null);
@@ -258,7 +246,6 @@ export function RootLayout() {
     assistantsHydrated,
     assistantStateKind,
     connectionFallback,
-    requestOrganizationId,
   ]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {

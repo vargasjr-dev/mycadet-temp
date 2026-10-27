@@ -24,7 +24,6 @@ import {
   test,
 } from "bun:test";
 import type * as LocalMode from "@/lib/local-mode";
-import type { LockfileAssistant } from "@/runtime/local-mode-host";
 import type * as CaptureError from "@/lib/error-reporting/capture-error";
 
 const isLocalClientMock = mock(() => false);
@@ -34,21 +33,14 @@ const servedGatewayRuntimeFromConfig = (): boolean => {
   return remote === "docker" || remote === "custom";
 };
 const isServedGatewayRuntimeMock = mock(servedGatewayRuntimeFromConfig);
-let primeGatewayWithRepairImpl: () => Promise<void> = async () => {};
-let localGatewayUrlImpl: () => string | undefined = () => undefined;
-const primeGatewayWithRepairMock = mock(() => primeGatewayWithRepairImpl());
-// The lockfile selection the recovery snapshots; a test moves it to model an
-// assistant switch or logout landing while the re-prime is in flight.
-let selectedAssistantImpl: () => LockfileAssistant | undefined = () =>
-  undefined;
 mock.module(
   "@/lib/local-mode",
   (): Partial<typeof LocalMode> => ({
     getLocalAssistants: () => [],
-    hasLocalGateway: () => localGatewayUrlImpl() !== undefined,
+    hasLocalGateway: () => false,
     getServedLockfile: () => ({ assistants: [], activeAssistant: null }),
     getCloudAssistants: () => [],
-    getActiveAssistant: () => selectedAssistantImpl(),
+    getActiveAssistant: () => undefined,
     hasAssistants: () => false,
     isLocalAssistant: () => false,
     isLocalClient: isLocalClientMock,
@@ -56,46 +48,9 @@ mock.module(
     isCadetCloudRemote: isCadetCloudRemoteMock,
     isServedGatewayRuntime: isServedGatewayRuntimeMock,
     primeLocalGatewayConnection: async () => {},
-    primeLocalGatewayConnectionWithRepair: primeGatewayWithRepairMock,
     retireLocalAssistant: async () => ({ ok: false }),
   }),
 );
-
-// Auth store — mocked so the interceptor's `useAuthStore.getState()` reads a
-// controllable `sessionStatus` + `refreshSession` without pulling in the real
-// store's heavy dependency graph. `subscribe` is a no-op the (unrelated)
-// organization-store binds but never calls in these tests.
-type MockSessionStatus = "initializing" | "authenticated" | "unauthenticated";
-type MockCloudSession = "unknown" | "present" | "absent";
-
-const mockAuthState: {
-  sessionStatus: MockSessionStatus;
-  cloudSession: MockCloudSession;
-  refreshSession: () => Promise<boolean>;
-} = {
-  sessionStatus: "authenticated",
-  cloudSession: "present",
-  refreshSession: async () => true,
-};
-
-// Controls the probe-settle wait the recovery path awaits after
-// `refreshSession`. Defaults to already-settled; a test swaps in a pending
-// promise to model the fire-and-forget probe still being in flight.
-let whenCloudSessionSettledImpl: () => Promise<void> = async () => {};
-const whenCloudSessionSettledMock = mock(() => whenCloudSessionSettledImpl());
-
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    getState: () => mockAuthState,
-    subscribe: () => () => {},
-  },
-  whenCloudSessionSettled: whenCloudSessionSettledMock,
-}));
-
-const hardNavigateMock = mock((_url: string) => {});
-mock.module("@/lib/auth/hard-navigate", () => ({
-  hardNavigate: hardNavigateMock,
-}));
 
 // Error reporting, stubbed so a failed in-place recovery doesn't touch the
 // real client. The failure evidence lives on the durable lifecycle ring.
@@ -117,35 +72,21 @@ mock.module("@/lib/diagnostics", () => ({
   },
 }));
 
-import { client as cloudClient } from "@/generated/api/client.gen";
-import { client as daemonClient } from "@/generated/daemon/client.gen";
-import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import {
   authorizeRemoteGatewayRequest,
   daemonErrorInterceptor,
   daemonRequestInterceptor,
-  localGatewayAuthRecoveryInterceptor,
-  cloudAuthRecoveryInterceptor,
   platformFeaturesGate,
   requestInterceptor,
-  resetGw401RecoveryState,
-  resetCloudAuthRecoveryFlag,
   rewriteForSelfHostedIngress,
 } from "@/lib/api-interceptors";
-import { subscribe } from "@/lib/event-bus";
-import { isGatewaySessionLive } from "@/lib/local-mode";
+
 import { ApiError } from "@/utils/api-errors";
-import {
-  getSelfHostedActorToken,
-  getSelfHostedIngressUrl,
-  setSelfHostedConnection,
-} from "@/lib/self-hosted/connection";
+import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { readInjectedConfig } from "@/lib/injected-config";
 
-const TEST_ORG_ID = "org-test-1234";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 function setCsrfCookie(token: string): void {
@@ -167,7 +108,6 @@ async function intercept(
 
 describe("api-interceptors / requestInterceptor", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -194,11 +134,6 @@ describe("api-interceptors / requestInterceptor", () => {
       expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
       expect(headers.get("X-Cadet-Interface-Id")).toBe("web");
     }
-  });
-
-  test("attaches Cadet-Organization-Id when an active org is set", async () => {
-    const headers = await intercept("GET");
-    expect(headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
   });
 
   test("attaches X-CSRFToken on mutating requests", async () => {
@@ -236,7 +171,6 @@ describe("api-interceptors / requestInterceptor", () => {
 
 describe("api-interceptors / Electron session-token header", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -297,7 +231,7 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // These tests pin the invariants that make that handoff safe:
 //   - URL origin gets swapped to the registered ingress.
-//   - Platform-only headers (Cadet-Organization-Id, X-CSRFToken) are
+//   - Platform-only headers (X-CSRFToken) are
 //     stripped so the user's gateway never sees our session/CSRF state.
 //   - `Authorization: Bearer <token>` is attached when the connection
 //     has a token, and omitted when the token slot is `null` (the
@@ -319,7 +253,6 @@ const RUNTIME_PROXIED_PATH = `/v1/assistants/${SELF_HOSTED_ID}/conversations/`;
 
 describe("api-interceptors / self-hosted rewriting", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -417,7 +350,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
       method: "POST",
     });
     const output = await requestInterceptor(input);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -457,7 +389,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe(INGRESS);
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -472,7 +403,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const input = new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`);
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("Authorization")).toBeNull();
   });
 
@@ -525,8 +455,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       );
       const output = await requestInterceptor(input);
       expect(new URL(output.url).origin).toBe("https://platform.test");
-      // Platform path keeps stamping org + CSRF as before.
-      expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
+      // Platform path keeps stamping CSRF as before.
       expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
       // And never leaks the gateway token onto a cloud-bound
       // request, even when the connection slot is populated.
@@ -565,7 +494,6 @@ const DAEMON_MEMORY_PATH = `/v1/assistants/${SELF_HOSTED_ID}/memory-items/`;
 
 describe("api-interceptors / daemon client self-hosted rewriting", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -590,7 +518,6 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
       expect(outUrl.origin).toBe(INGRESS);
       expect(outUrl.pathname).toBe(path);
       expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-      expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
       expect(output.headers.get("X-CSRFToken")).toBeNull();
     }
   });
@@ -608,7 +535,6 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
     });
     const output = await daemonRequestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
   });
 
@@ -680,7 +606,6 @@ const CONTACT_FLATTEN_CASES = [
 
 describe("api-interceptors / self-hosted contact-family flattening", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -712,7 +637,6 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
         expect(output.headers.get("Authorization")).toBe(
           `Bearer ${ACTOR_TOKEN}`,
         );
-        expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
         expect(output.headers.get("X-CSRFToken")).toBeNull();
       }
     });
@@ -819,7 +743,6 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
 describe("api-interceptors / remote gateway direct requests", () => {
   beforeEach(() => {
     window.__CADET_CONFIG__ = { remote: "docker" };
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -834,16 +757,13 @@ describe("api-interceptors / remote gateway direct requests", () => {
       url: window.location.origin,
       token: ACTOR_TOKEN,
     });
-    const input = new Request(`${window.location.origin}/v1/contacts`, {
-      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
-    });
+    const input = new Request(`${window.location.origin}/v1/contacts`, {});
 
     const output = await daemonRequestInterceptor(input);
 
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(output.headers.get("ngrok-skip-browser-warning")).toBe("true");
     expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
@@ -898,7 +818,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     const path = `/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
-      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
     });
 
     const output = await requestInterceptor(input);
@@ -906,7 +825,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
@@ -1106,922 +1024,6 @@ describe("api-interceptors / daemonErrorInterceptor", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Local gateway 401 auth recovery interceptor
-// ---------------------------------------------------------------------------
-
-// Gateway localStorage keys — referenced by variable so the AST-based
-// no-restricted-syntax rule (which only matches literal key arguments)
-// does not fire in test-only setItem calls.
-const GW_TOKEN_KEYS = [
-  "cadet:gw:token",
-  "cadet:gw:expiresAt",
-  "cadet:gw:tokenSource",
-  "gw:token",
-  "gw:expiresAt",
-  "gw:tokenSource",
-] as const;
-
-function seedGatewayTokens(): void {
-  const values: Record<string, string> = {
-    "cadet:gw:token": "stale-jwt",
-    // generic-examples:ignore-next-line — reason: Unix timestamp for token expiry, not a phone number
-    "cadet:gw:expiresAt": "9999999999",
-    "cadet:gw:tokenSource": "/auth/token",
-    "gw:token": "legacy-jwt",
-    // generic-examples:ignore-next-line — reason: Unix timestamp for token expiry, not a phone number
-    "gw:expiresAt": "9999999999",
-    "gw:tokenSource": "/auth/token",
-  };
-  for (const key of GW_TOKEN_KEYS) {
-    localStorage.setItem(key, values[key]);
-  }
-}
-
-function clearGatewayTokenStorage(): void {
-  for (const key of GW_TOKEN_KEYS) {
-    localStorage.removeItem(key);
-  }
-}
-
-describe("api-interceptors / recovery interceptor registration", () => {
-  // Direct calls to the interceptor prove what it does, not where it runs.
-  // These pin which generated clients actually carry it, so adding or
-  // dropping a registration has to be deliberate.
-  function responseFns(c: {
-    interceptors: { response: unknown };
-  }): readonly unknown[] {
-    const chain = c.interceptors.response as unknown as { fns?: unknown[] };
-    return chain.fns ?? [];
-  }
-
-  test("daemonClient carries the local-gateway 401 recovery", () => {
-    expect(responseFns(daemonClient)).toContain(
-      localGatewayAuthRecoveryInterceptor,
-    );
-  });
-
-  test("gatewayClient carries it too", () => {
-    // Both clients are rewritten to the same ingress, so a stale renderer
-    // token 401s them identically and both must heal in place.
-    expect(responseFns(gatewayClient)).toContain(
-      localGatewayAuthRecoveryInterceptor,
-    );
-  });
-
-  test("the cloud client does not carry it", () => {
-    // Platform 401s are session rejections owned by the cloud recovery,
-    // and gateway-origin responses reaching that client are its own guard's
-    // job to leave alone.
-    expect(responseFns(cloudClient)).not.toContain(
-      localGatewayAuthRecoveryInterceptor,
-    );
-  });
-});
-
-describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
-  const GATEWAY_URL = "http://localhost:9090";
-  const GW_401_RECOVERY_AT_KEY = "cadet:gw:401-reload-at";
-  const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
-  const GW_401_MAX_ATTEMPTS = 3;
-
-  function makeResponse(status: number, url: string): Response {
-    const response = new Response(null, { status });
-    Object.defineProperty(response, "url", { value: url });
-    return response;
-  }
-
-  function gatewayResponse(status: number): Response {
-    return makeResponse(
-      status,
-      GATEWAY_URL + "/v1/assistants/123/conversations",
-    );
-  }
-
-  /** A gateway-bound GET whose (empty) body is always replayable. */
-  /**
-   * A gateway-bound GET that went out with the bearer the slot holds now
-   * and came back 401: the shape that needs a recovery.
-   */
-  function gatewayGet(): Request {
-    return new Request(GATEWAY_URL + "/v1/assistants/123/conversations", {
-      headers: { Authorization: "Bearer tok" },
-    });
-  }
-
-  /**
-   * A gateway-bound GET built before the slot moved on: its bearer no
-   * longer matches, so it is replayable without a recovery.
-   */
-  function staleBearerGet(): Request {
-    return new Request(GATEWAY_URL + "/v1/assistants/123/conversations", {
-      headers: { Authorization: "Bearer superseded-tok" },
-    });
-  }
-
-  /**
-   * A gateway-bound POST whose body fetch has already consumed, the shape
-   * of the chat send the moment its 401 reaches this interceptor.
-   */
-  async function consumedPost(): Promise<Request> {
-    const request = new Request(
-      GATEWAY_URL + "/v1/assistants/123/conversations/abc/messages",
-      {
-        method: "POST",
-        body: "hello",
-        headers: { Authorization: "Bearer tok" },
-      },
-    );
-    await request.text();
-    return request;
-  }
-
-  let originalReload: typeof window.location.reload;
-  let reloadCalls: number;
-  // Publishes of the guardian-repair handoff during the test that is running.
-  let repairRequests: number;
-  let unsubscribeRepairRequests: () => void;
-  let originalFetch: typeof globalThis.fetch;
-  let replayedRequests: Request[];
-
-  beforeEach(() => {
-    reloadCalls = 0;
-    repairRequests = 0;
-    unsubscribeRepairRequests = subscribe(
-      "gateway.guardian-repair-required",
-      () => {
-        repairRequests += 1;
-      },
-    );
-    originalReload = window.location.reload;
-    Object.defineProperty(window.location, "reload", {
-      configurable: true,
-      value: mock(() => {
-        reloadCalls += 1;
-      }),
-    });
-    isLocalClientMock.mockImplementation(() => true);
-    setSelfHostedConnection({ url: GATEWAY_URL, token: "tok" });
-    sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
-    sessionStorage.removeItem(GW_401_ATTEMPTS_KEY);
-    clearGatewayTokenStorage();
-    resetGw401RecoveryState();
-    primeGatewayWithRepairMock.mockClear();
-    captureErrorMock.mockClear();
-    // Model the real prime: a fresh token lands in the connection slot.
-    primeGatewayWithRepairImpl = async () => {
-      setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
-    };
-    replayedRequests = [];
-    originalFetch = globalThis.fetch;
-    // The replay is a bare fetch by design (no client under it), so fetch
-    // is the boundary here; the built Request is captured so its headers
-    // can still be asserted.
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
-      replayedRequests.push(input as Request);
-      return new Response("{}", { status: 200 });
-    }) as unknown as typeof globalThis.fetch;
-  });
-
-  afterEach(() => {
-    unsubscribeRepairRequests();
-    globalThis.fetch = originalFetch;
-    Object.defineProperty(window.location, "reload", {
-      configurable: true,
-      value: originalReload,
-    });
-    isLocalClientMock.mockImplementation(() => false);
-    isCadetCloudRemoteMock.mockImplementation(() => false);
-    isServedGatewayRuntimeMock.mockImplementation(
-      servedGatewayRuntimeFromConfig,
-    );
-    setSelfHostedConnection(null);
-    sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
-    sessionStorage.removeItem(GW_401_ATTEMPTS_KEY);
-    clearGatewayTokenStorage();
-    resetGw401RecoveryState();
-    primeGatewayWithRepairImpl = async () => {};
-    localGatewayUrlImpl = () => undefined;
-    selectedAssistantImpl = () => undefined;
-  });
-
-  test("recovers the session in place on 401, never reloading the page", async () => {
-    /**
-     * Validates the core auth recovery: a rejected gateway token triggers
-     * an in-place forced re-mint. Reloading here would eat the in-flight
-     * mutation and the composer state with no error shown, so the page
-     * must never reload.
-     */
-
-    // GIVEN gateway tokens are stored in localStorage
-    seedGatewayTokens();
-
-    // WHEN the daemon receives a 401 from the local gateway
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(response);
-
-    // THEN the session is re-primed in place (a tokenless re-prime — the
-    // trusted host owns the bearer)
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledWith();
-
-    // AND the page never reloads; without a replayable request the 401
-    // flows back to the caller's error path
-    expect(reloadCalls).toBe(0);
-    expect(result).toBe(response);
-  });
-
-  test("the connection stays primed and the session predicate reads true across the recovery", async () => {
-    /**
-     * A recovery must not unprime the slot while the prime is in flight:
-     * `isGatewaySessionLive()` reads it, and a session refresh or a lifecycle
-     * pass landing in that window would take the cloud branch and could
-     * log a local-gateway user out. The renderer holds no bearer in this
-     * mode — the trusted host mints and injects — so the slot's null token
-     * is steady state, not a logged-out signal.
-     */
-
-    // GIVEN a local selection (the topology the predicate reads) and a
-    // prime that inspects the connection mid-flight
-    localGatewayUrlImpl = () => "http://127.0.0.1:9090";
-    let ingressDuringPrime: string | null | undefined;
-    let authModeDuringPrime: boolean | undefined;
-    primeGatewayWithRepairImpl = async () => {
-      ingressDuringPrime = getSelfHostedIngressUrl();
-      authModeDuringPrime = isGatewaySessionLive();
-      setSelfHostedConnection({ url: GATEWAY_URL, token: null });
-    };
-
-    // WHEN a 401 triggers recovery
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN the slot was still primed and the predicate read true throughout
-    expect(ingressDuringPrime).toBe(GATEWAY_URL);
-    expect(authModeDuringPrime).toBe(true);
-  });
-
-  test("replays a request whose bearer the slot has already moved past, without recovering", async () => {
-    /**
-     * A 401 whose request carries a superseded bearer was built before a
-     * recovery (or any re-prime) that has since completed. The session is
-     * already healthy, so it replays straight away: no recovery, no budget.
-     */
-
-    // WHEN a superseded-bearer GET's 401 reaches the interceptor
-    const result = await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      staleBearerGet(),
-    );
-
-    // THEN it is replayed with the slot's current bearer, with no recovery
-    expect(replayedRequests).toHaveLength(1);
-    expect(replayedRequests[0].headers.get("Authorization")).toBe("Bearer tok");
-    expect(result.status).toBe(200);
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-
-    // AND no budget was spent
-    expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBeNull();
-  });
-
-  test("a straggler that 401s after the recovery settled is replayed, not refused", async () => {
-    // GIVEN a recovery that has already run and moved the slot to a fresh
-    // token, writing the cooldown timestamp as it went
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-    expect(getSelfHostedActorToken()).toBe("fresh-tok");
-    replayedRequests = [];
-
-    // WHEN a request that went out with the old token comes back 401
-    const straggler = new Request(
-      GATEWAY_URL + "/v1/assistants/123/conversations",
-      { headers: { Authorization: "Bearer tok" } },
-    );
-    const result = await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      straggler,
-    );
-
-    // THEN it rides the healthy session instead of hitting the cooldown
-    expect(result.status).toBe(200);
-    expect(replayedRequests[0].headers.get("Authorization")).toBe(
-      "Bearer fresh-tok",
-    );
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("remote-gateway mode boots into pairing on a 401 — no in-page recovery", async () => {
-    /**
-     * The served browser holds no credential in JS: the session lives in
-     * HttpOnly cookies the gateway minted at pairing. A 401 is therefore
-     * terminal for the page lifecycle: navigate into the pairing flow, no
-     * replay.
-     */
-
-    // GIVEN remote-gateway mode
-    isCadetCloudRemoteMock.mockImplementation(() => false);
-    isServedGatewayRuntimeMock.mockImplementation(() => true);
-    const assign = mock((_url: string) => {});
-    const originalAssign = window.location.assign;
-    Object.defineProperty(window.location, "assign", {
-      configurable: true,
-      value: assign,
-    });
-
-    try {
-      // WHEN a gateway GET's 401 reaches the interceptor
-      const response = gatewayResponse(401);
-      const result = await localGatewayAuthRecoveryInterceptor(
-        response,
-        gatewayGet(),
-      );
-
-      // THEN the browser navigates to the pair page, returnTo preserved,
-      // and the 401 flows back without a replay
-      expect(assign).toHaveBeenCalledTimes(1);
-      expect(assign.mock.calls[0][0]).toBe("/assistant/pair?returnTo=%2F");
-      expect(replayedRequests).toHaveLength(0);
-      expect(result).toBe(response);
-      expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    } finally {
-      Object.defineProperty(window.location, "assign", {
-        configurable: true,
-        value: originalAssign,
-      });
-    }
-  });
-
-  test("replays a bodyless request with the re-primed bearer", async () => {
-    /**
-     * Validates that a background read never surfaces the transient 401:
-     * after recovery the request is re-issued with the fresh token and the
-     * fresh response is returned in its place.
-     */
-
-    // WHEN a gateway GET's 401 reaches the interceptor
-    const result = await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-
-    // THEN the request is replayed carrying the re-primed bearer
-    expect(replayedRequests).toHaveLength(1);
-    expect(replayedRequests[0].headers.get("Authorization")).toBe(
-      "Bearer fresh-tok",
-    );
-
-    // AND the replay's response is returned in place of the 401
-    expect(result.status).toBe(200);
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("a replayed 2xx restores the budget", async () => {
-    /**
-     * The replay's success is a real 2xx from the ingress, but it returns
-     * from inside this interceptor and never re-enters the chain, so it
-     * must restore the budget itself. Otherwise a quiet app accrues one
-     * spent attempt per recovered episode and eventually stops recovering.
-     */
-
-    // WHEN a 401 recovers and the replay succeeds
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-
-    // THEN the attempt spent on the recovery is restored
-    expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBeNull();
-    expect(sessionStorage.getItem(GW_401_RECOVERY_AT_KEY)).toBeNull();
-  });
-
-  test("hands the 401 back when the replay itself fails to complete", async () => {
-    // GIVEN the network drops between recovery and replay
-    globalThis.fetch = mock(async () => {
-      throw new TypeError("network down");
-    }) as unknown as typeof globalThis.fetch;
-
-    // WHEN a replayable request's 401 reaches the interceptor
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      gatewayGet(),
-    );
-
-    // THEN the caller gets the original 401, not a new failure shape
-    expect(result).toBe(response);
-  });
-
-  test("hands the 401 back for a request whose body is consumed", async () => {
-    /**
-     * The chat send POST cannot be replayed here (fetch consumed its body),
-     * so its 401 must flow back to the send path, whose failure handling
-     * surfaces the error and keeps the message retryable. Recovery still
-     * runs so that retry rides the fresh token.
-     */
-
-    // WHEN a consumed POST's 401 reaches the interceptor
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      await consumedPost(),
-    );
-
-    // THEN recovery ran, but the 401 is handed back without a replay
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(replayedRequests).toHaveLength(0);
-    expect(result).toBe(response);
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("hands the 401 back when recovery fails, and captures the failure", async () => {
-    // GIVEN the gateway rejects the fresh mint too
-    primeGatewayWithRepairImpl = async () => {
-      throw new Error("mint rejected");
-    };
-
-    // WHEN a 401 reaches the interceptor
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      gatewayGet(),
-    );
-
-    // THEN the 401 flows to the error path, without replay or reload, and
-    // the failure lands on the lifecycle ring with the error attached.
-    expect(result).toBe(response);
-    expect(replayedRequests).toHaveLength(0);
-    expect(reloadCalls).toBe(0);
-    const recorded = lifecycleDiagnosticCalls.at(-1);
-    expect(recorded?.[0]).toBe("gw_401_recovery");
-    expect(recorded?.[1]).toEqual({
-      outcome: "failed",
-      error: "mint rejected",
-    });
-  });
-
-  test("a failed recovery hands the 401 back without a repair handoff", async () => {
-    /**
-     * A gateway whose host-side mint keeps failing (a revoked or spent
-     * guardian token) 401s every data request and this recovery cannot fix
-     * it — only a guardian re-provision clears that, and it must never run
-     * silently. The failure is recorded and the 401 flows to the caller's
-     * error path; the budget bounds the retries.
-     */
-
-    // GIVEN a prime that keeps failing
-    primeGatewayWithRepairImpl = async () => {
-      throw new Error("readyz failed");
-    };
-
-    // WHEN a 401 reaches the interceptor
-    const response = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      response,
-      gatewayGet(),
-    );
-
-    // THEN the failure is recorded on the lifecycle ring, and no repair is
-    // asked for.
-    const recorded = lifecycleDiagnosticCalls.at(-1);
-    expect(recorded?.[0]).toBe("gw_401_recovery");
-    expect(recorded?.[1]?.outcome).toBe("failed");
-    expect(repairRequests).toBe(0);
-    // AND the 401 still flows to the caller's error path, no reload
-    expect(result).toBe(response);
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("a failed recovery from a superseded assistant routes nobody anywhere", async () => {
-    /**
-     * The wake and its retries take seconds, and a switch or a logout can
-     * land inside that window. The verdict is then about an assistant
-     * nobody is connected to, so acting on it would clear the connection
-     * the newly selected one is using and route the user away from it.
-     */
-
-    // GIVEN a recovery for one assistant, and a switch mid-prime
-    selectedAssistantImpl = () => ({ assistantId: "asst-a", cloud: "local" });
-    primeGatewayWithRepairImpl = async () => {
-      selectedAssistantImpl = () => ({ assistantId: "asst-b", cloud: "local" });
-      throw new Error("readyz failed");
-    };
-
-    // WHEN the superseded recovery fails
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-
-    // THEN no repair handoff fires
-    expect(repairRequests).toBe(0);
-  });
-
-  test("re-arms recovery once a reconnect installs a fresh bearer", async () => {
-    /**
-     * The local path never reloads, so a completed repair reconnects inside
-     * the same page lifecycle. A latch that outlived the bearer it was set
-     * for would leave the repaired session with no recovery at all for as
-     * long as the app stays open.
-     */
-
-    // GIVEN a recovery that failed
-    primeGatewayWithRepairImpl = async () => {
-      throw new Error("readyz failed");
-    };
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-
-    // WHEN the repair reconnects with a fresh bearer and the gateway serves it
-    setSelfHostedConnection({ url: GATEWAY_URL, token: "repaired-tok" });
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(200));
-    primeGatewayWithRepairImpl = async () => {
-      setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
-    };
-
-    // AND that later session is rejected in its turn
-    await localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      new Request(GATEWAY_URL + "/v1/assistants/123/conversations", {
-        headers: { Authorization: "Bearer repaired-tok" },
-      }),
-    );
-
-    // THEN recovery runs for it instead of staying latched off
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(2);
-  });
-
-  test("a recovery whose replay still 401s does not refund the budget", async () => {
-    /**
-     * A gateway whose host-side mint keeps failing rejects the replay too.
-     * A recovery that "succeeds" (the prime ran) but whose replay 401s has
-     * not demonstrated anything, so the budget stays spent and the
-     * cooldown spaces the next attempt instead of the health poll
-     * re-priming every few seconds for the life of the session.
-     */
-
-    // GIVEN the replay is rejected like every other proxied request
-    globalThis.fetch = mock(async (input: RequestInfo | URL) => {
-      replayedRequests.push(input as Request);
-      return new Response("{}", { status: 401 });
-    }) as unknown as typeof globalThis.fetch;
-
-    // WHEN a 401 is recovered (the prime runs, the replay 401s) and another
-    // 401 arrives inside the cooldown, on the bearer the slot holds now
-    const response = gatewayResponse(401);
-    await localGatewayAuthRecoveryInterceptor(response, gatewayGet());
-    const second = gatewayResponse(401);
-    const result = await localGatewayAuthRecoveryInterceptor(
-      second,
-      new Request(GATEWAY_URL + "/v1/assistants/123/conversations", {
-        headers: { Authorization: "Bearer fresh-tok" },
-      }),
-    );
-
-    // THEN the recovery ran once and the second 401 flowed back untouched
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(result).toBe(second);
-  });
-
-  test("a failed recovery restores the connection slot the prime nulled", async () => {
-    /**
-     * The paired branch of primeLocalGatewayConnection clears the slot
-     * when its readyz probe fails. Without the restore, a failed recovery
-     * strands the renderer with no ingress route, and this interceptor
-     * (which matches on the ingress URL) could never fire again.
-     */
-
-    // GIVEN a prime that dies after clearing the slot, as the paired
-    // branch does when the readyz probe fails
-    primeGatewayWithRepairImpl = async () => {
-      setSelfHostedConnection(null);
-      throw new Error("readyz failed");
-    };
-
-    // WHEN a 401 reaches the interceptor and recovery fails
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN the pre-recovery connection is back in the slot
-    expect(getSelfHostedIngressUrl()).toBe(GATEWAY_URL);
-    expect(getSelfHostedActorToken()).toBe("tok");
-  });
-
-  test("a failed recovery leaves the slot alone once the selection has moved", async () => {
-    /**
-     * A switch to a cloud assistant, or a logout, clears the slot
-     * legitimately while the re-prime is in flight. Restoring the old
-     * ingress then would route the new selection's requests to the old
-     * local gateway, so the restore is gated on the selection the
-     * recovery started for.
-     */
-
-    // GIVEN the recovery started for assistant A
-    selectedAssistantImpl = () => ({ assistantId: "asst-a", cloud: "local" });
-
-    // AND, mid-prime, the selection moves to a cloud assistant and the
-    // lifecycle clears the slot, then the prime fails
-    primeGatewayWithRepairImpl = async () => {
-      selectedAssistantImpl = () => ({
-        assistantId: "asst-platform",
-        cloud: "cloud",
-      });
-      setSelfHostedConnection(null);
-      throw new Error("readyz failed");
-    };
-
-    // WHEN a 401 reaches the interceptor and recovery fails
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN the old assistant's ingress is NOT put back
-    expect(getSelfHostedIngressUrl()).toBeNull();
-    expect(getSelfHostedActorToken()).toBeNull();
-  });
-
-  test("does not recover on non-401 status codes", async () => {
-    /**
-     * Validates that only 401 triggers recovery: other error codes
-     * (like 502/503 handled by the unreachable interceptor) pass through.
-     */
-
-    // GIVEN a gateway token is stored
-    const tokenKey = GW_TOKEN_KEYS[0];
-    localStorage.setItem(tokenKey, "valid-jwt");
-
-    // WHEN the daemon receives a 502 from the gateway
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(502));
-
-    // THEN gateway tokens are untouched and no recovery runs
-    expect(localStorage.getItem(tokenKey)).toBe("valid-jwt");
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("does not recover when not in local mode", async () => {
-    /**
-     * Validates that 401s from cloud-hosted assistants are ignored;
-     * they are handled by the auth store / allauth instead.
-     */
-
-    // GIVEN platform mode is active
-    isLocalClientMock.mockImplementation(() => false);
-
-    // WHEN the daemon receives a 401
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN no recovery runs
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("does not recover when no self-hosted ingress URL is configured", async () => {
-    /**
-     * Validates that 401s without a gateway connection configured
-     * are ignored; they are handled by the auth store instead.
-     */
-
-    // GIVEN no ingress URL is configured
-    setSelfHostedConnection(null);
-
-    // WHEN the daemon receives a 401
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN no recovery runs
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("does not recover when 401 originates from the cloud, not the gateway", async () => {
-    /**
-     * Validates that daemon requests which were NOT rewritten to the
-     * gateway (e.g. non-assistant paths) don't trigger recovery.
-     */
-
-    // GIVEN the response URL does not match the gateway ingress
-    const platformResponse = makeResponse(
-      401,
-      "https://cloud.mycadet.ai/v1/some-platform-endpoint",
-    );
-
-    // WHEN the interceptor processes the 401
-    await localGatewayAuthRecoveryInterceptor(platformResponse);
-
-    // THEN no recovery runs
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-    expect(reloadCalls).toBe(0);
-  });
-
-  test("cooldown prevents recovery storms", async () => {
-    /**
-     * Validates that a recent recovery attempt within the cooldown window
-     * suppresses a second one to prevent mint storms against a gateway
-     * that rejects every token.
-     */
-
-    // GIVEN a recovery attempt already happened recently
-    sessionStorage.setItem(GW_401_RECOVERY_AT_KEY, String(Date.now()));
-
-    // WHEN the daemon receives another 401
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN no additional recovery runs
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-  });
-
-  test("cooldown expires and allows a fresh recovery", async () => {
-    /**
-     * Validates that once the cooldown window expires, a subsequent
-     * 401 triggers another recovery attempt.
-     */
-
-    // GIVEN a recovery attempt happened over 10 minutes ago
-    sessionStorage.setItem(
-      GW_401_RECOVERY_AT_KEY,
-      String(Date.now() - 700_000),
-    );
-    // WHEN the daemon receives a 401
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN the session recovers again
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("skips recovery when sessionStorage is unavailable", async () => {
-    /**
-     * Validates that when sessionStorage throws (e.g. in a sandboxed
-     * iframe or when storage quota is exceeded), the interceptor skips
-     * recovery rather than entering an unbounded loop without cooldown.
-     */
-
-    // GIVEN sessionStorage is unavailable
-    const originalGetItem = sessionStorage.getItem;
-    Object.defineProperty(sessionStorage, "getItem", {
-      configurable: true,
-      value: () => {
-        throw new DOMException("unavailable");
-      },
-    });
-
-    // WHEN the daemon receives a 401 from the gateway
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    // THEN no recovery runs (cooldown cannot be enforced)
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-
-    // cleanup
-    Object.defineProperty(sessionStorage, "getItem", {
-      configurable: true,
-      value: originalGetItem,
-    });
-  });
-
-  test("a concurrent burst funds one recovery and replays every bodyless request", async () => {
-    /**
-     * Validates the single-flight slot: when multiple in-flight requests
-     * all return 401 concurrently, one recovery runs, every caller rides
-     * it, and each replayable request is re-issued afterwards.
-     */
-
-    // GIVEN a recovery that stays in flight until released
-    let releasePrime!: () => void;
-    primeGatewayWithRepairImpl = () =>
-      new Promise<void>((resolve) => {
-        releasePrime = () => {
-          setSelfHostedConnection({ url: GATEWAY_URL, token: "fresh-tok" });
-          resolve();
-        };
-      });
-
-    // WHEN two 401s arrive while the recovery is still in flight
-    const first = localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-    const second = localGatewayAuthRecoveryInterceptor(
-      gatewayResponse(401),
-      gatewayGet(),
-    );
-    releasePrime();
-    const [firstResult, secondResult] = await Promise.all([first, second]);
-
-    // THEN one recovery ran and both requests were replayed against it
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-    expect(replayedRequests).toHaveLength(2);
-    expect(firstResult.status).toBe(200);
-    expect(secondResult.status).toBe(200);
-  });
-
-  test("stops recovering once the attempt budget is spent", async () => {
-    // Each round models the cooldown having elapsed, so only the budget
-    // can stop the attempts.
-    for (let i = 0; i < GW_401_MAX_ATTEMPTS; i++) {
-      sessionStorage.setItem(
-        GW_401_RECOVERY_AT_KEY,
-        String(Date.now() - 700_000),
-      );
-      await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-    }
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(
-      GW_401_MAX_ATTEMPTS,
-    );
-
-    sessionStorage.setItem(
-      GW_401_RECOVERY_AT_KEY,
-      String(Date.now() - 700_000),
-    );
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(
-      GW_401_MAX_ATTEMPTS,
-    );
-  });
-
-  test("hands the 401 back unchanged once the budget is spent", async () => {
-    sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
-    const response = gatewayResponse(401);
-
-    expect(await localGatewayAuthRecoveryInterceptor(response)).toBe(response);
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-  });
-
-  test("a quiet gap alone does not restore the budget", async () => {
-    // A gateway that is still rejecting every token must not earn a fresh
-    // budget out of a lull in traffic, or it retries forever in bursts.
-    sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
-    sessionStorage.setItem(
-      GW_401_RECOVERY_AT_KEY,
-      String(Date.now() - 86_400_000),
-    );
-
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-  });
-
-  test("a successful gateway response restores the budget", async () => {
-    sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
-    sessionStorage.setItem(
-      GW_401_RECOVERY_AT_KEY,
-      String(Date.now() - 700_000),
-    );
-
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(200));
-
-    expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBeNull();
-    expect(sessionStorage.getItem(GW_401_RECOVERY_AT_KEY)).toBeNull();
-  });
-
-  test("recovery, then a later failure episode, gets a full budget", async () => {
-    // Episode one exhausts the budget.
-    for (let i = 0; i < GW_401_MAX_ATTEMPTS + 1; i++) {
-      sessionStorage.setItem(
-        GW_401_RECOVERY_AT_KEY,
-        String(Date.now() - 700_000),
-      );
-      await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-    }
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(
-      GW_401_MAX_ATTEMPTS,
-    );
-
-    // The gateway starts working again.
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(200));
-
-    // A genuinely new episode later gets its own budget.
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(
-      GW_401_MAX_ATTEMPTS + 1,
-    );
-  });
-
-  test("a non-gateway 2xx does not restore the budget", async () => {
-    sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
-
-    await localGatewayAuthRecoveryInterceptor(
-      makeResponse(200, "https://cloud.mycadet.ai/v1/whatever"),
-    );
-
-    expect(sessionStorage.getItem(GW_401_ATTEMPTS_KEY)).toBe(
-      String(GW_401_MAX_ATTEMPTS),
-    );
-  });
-
-  test("a fresh renderer session grants a new budget", async () => {
-    sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(GW_401_MAX_ATTEMPTS));
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-    expect(primeGatewayWithRepairMock).not.toHaveBeenCalled();
-
-    // Quitting and reopening the app ends the renderer session, which is
-    // what clearing sessionStorage models here.
-    sessionStorage.removeItem(GW_401_ATTEMPTS_KEY);
-    sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
-    resetGw401RecoveryState();
-    await localGatewayAuthRecoveryInterceptor(gatewayResponse(401));
-
-    expect(primeGatewayWithRepairMock).toHaveBeenCalledTimes(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Local-mode body buffering — large uploads must not stall
 // ---------------------------------------------------------------------------
 //
@@ -2038,7 +1040,6 @@ describe("api-interceptors / localGatewayAuthRecoveryInterceptor", () => {
 describe("api-interceptors / local-mode body buffering", () => {
   beforeAll(() => {
     isLocalClientMock.mockImplementation(() => true);
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
   });
 
   afterAll(() => {
@@ -2093,520 +1094,3 @@ describe("api-interceptors / local-mode body buffering", () => {
     }
   });
 });
-
-// ---------------------------------------------------------------------------
-// Platform session mid-use expiry recovery interceptor
-// ---------------------------------------------------------------------------
-//
-// When a cookie-authenticated request comes back 401/403/410 while the app
-// still believes it is signed in, the interceptor re-verifies the session via
-// `refreshSession` and, when it is truly gone, hard-navigates to login.
-// Self-hosted / remote-gateway bearer 401s are left to
-// `localGatewayAuthRecoveryInterceptor`.
-
-describe("api-interceptors / cloudAuthRecoveryInterceptor", () => {
-  const PLATFORM_URL = "https://platform.test/v1/assistants/123/messages";
-  const PAIR_URL = "/assistant/pair";
-
-  function makeResponse(status: number, url: string): Response {
-    const response = new Response(null, { status });
-    Object.defineProperty(response, "url", { value: url });
-    return response;
-  }
-
-  // The interceptor kicks off recovery fire-and-forget; flush the microtask
-  // queue so the async `refreshSession` + redirect settle before asserting.
-  const flush = (): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, 0));
-
-  const PLATFORM_AUTH_REDIRECT_KEY = "cadet:platform:auth-redirect-attempts";
-  const PLATFORM_AUTH_MAX_REDIRECTS = 3;
-  const PLATFORM_RECOVERY_AT_KEY = "cadet:platform:recovery-attempt-at";
-  const PLATFORM_RECOVERY_ATTEMPTS_KEY = "cadet:platform:recovery-attempts";
-  const PLATFORM_RECOVERY_PATH_KEY = "cadet:platform:recovery-path";
-  const PLATFORM_RECOVERY_MAX_ATTEMPTS = 3;
-
-  /**
-   * Backdate the recovery cooldown so the next rejection is outside the
-   * window. Tests that exercise the latch or the redirect budget across
-   * multiple cycles use this to keep the cooldown out of the picture.
-   */
-  function expireRecoveryCooldown(): void {
-    sessionStorage.setItem(
-      PLATFORM_RECOVERY_AT_KEY,
-      String(Date.now() - 700_000),
-    );
-  }
-
-  /**
-   * refreshSession that never confirms the session live (the probe lands on
-   * "unknown"), so the claim it answers is not refunded.
-   */
-  function armUnrefundedRefresh() {
-    const refreshSession = mock(async () => {
-      mockAuthState.cloudSession = "unknown";
-      return true;
-    });
-    mockAuthState.refreshSession = refreshSession;
-    return refreshSession;
-  }
-
-  beforeEach(() => {
-    resetCloudAuthRecoveryFlag();
-    setSelfHostedConnection(null);
-    sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_AT_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    mockAuthState.sessionStatus = "authenticated";
-    mockAuthState.cloudSession = "present";
-    mockAuthState.refreshSession = mock(async () => true);
-    whenCloudSessionSettledImpl = async () => {};
-    hardNavigateMock.mockClear();
-  });
-
-  afterEach(() => {
-    resetCloudAuthRecoveryFlag();
-    setSelfHostedConnection(null);
-    sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_AT_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    whenCloudSessionSettledImpl = async () => {};
-  });
-
-  /** Drive one full rejection→recovery round trip against a dead session. */
-  const rejectOnce = async (): Promise<void> => {
-    mockAuthState.sessionStatus = "authenticated";
-    mockAuthState.refreshSession = mock(async () => {
-      mockAuthState.sessionStatus = "unauthenticated";
-      return false;
-    });
-    // Keep the recovery cooldown and budget out of redirect-budget tests:
-    // each round models a fresh, allowed recovery cycle.
-    expireRecoveryCooldown();
-    sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
-    await flush();
-  };
-
-  test("401 while authenticated re-verifies; a dead session bounces to the pairing page", async () => {
-    const refreshSession = mock(async () => {
-      mockAuthState.sessionStatus = "unauthenticated";
-      return false;
-    });
-    mockAuthState.refreshSession = refreshSession;
-
-    const response = makeResponse(401, PLATFORM_URL);
-    expect(cloudAuthRecoveryInterceptor(response)).toBe(response);
-    await flush();
-
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock.mock.calls[0][0]).toBe(PAIR_URL);
-  });
-
-  test("cloud-auth mode claims a proxied-gateway 401 (bearer-path exclusion does not apply)", async () => {
-    isCadetCloudRemoteMock.mockImplementation(() => true);
-    // The slot points at the cloud's own same-origin proxy, whose URL
-    // prefixes the cloud URL exactly as /web/<v> does in production —
-    // under the bearer-path exclusion this rejection would be skipped.
-    setSelfHostedConnection({
-      url: "https://test-cloud.mycadet.io",
-      token: "tok",
-    });
-    const refreshSession = mock(async () => {
-      mockAuthState.sessionStatus = "unauthenticated";
-      return false;
-    });
-    mockAuthState.refreshSession = refreshSession;
-
-    const response = makeResponse(401, PLATFORM_URL);
-    expect(cloudAuthRecoveryInterceptor(response)).toBe(response);
-    await flush();
-
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock.mock.calls[0][0]).toBe(PAIR_URL);
-    isCadetCloudRemoteMock.mockImplementation(() => false);
-  });
-
-  test("403 that leaves the session live does not redirect and reopens the latch", async () => {
-    const refreshSession = mock(async () => true); // session stays authenticated
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-
-    // Latch reopened → a later genuine rejection (outside the cooldown
-    // window) triggers another re-probe.
-    expireRecoveryCooldown();
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(2);
-  });
-
-  test("non-rejection statuses (200, 502) are no-ops", async () => {
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    cloudAuthRecoveryInterceptor(makeResponse(502, PLATFORM_URL));
-    await flush();
-
-    expect(refreshSession).not.toHaveBeenCalled();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-  });
-
-  test("does nothing when the app is not authenticated at entry", async () => {
-    const refreshSession = mock(async () => false);
-    mockAuthState.refreshSession = refreshSession;
-
-    for (const status of ["initializing", "unauthenticated"] as const) {
-      mockAuthState.sessionStatus = status;
-      cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
-    }
-    await flush();
-
-    expect(refreshSession).not.toHaveBeenCalled();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-  });
-
-  test("ignores a self-hosted gateway 401 — deferred to the gateway handler", async () => {
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    const refreshSession = mock(async () => false);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(
-      makeResponse(401, `${INGRESS}/v1/assistants/123/messages`),
-    );
-    await flush();
-
-    expect(refreshSession).not.toHaveBeenCalled();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-  });
-
-  test("a second rejection while recovery is in-flight is a no-op (one refreshSession)", async () => {
-    let resolveRefresh: (value: boolean) => void = () => {};
-    const refreshSession = mock(
-      () =>
-        new Promise<boolean>((resolve) => {
-          resolveRefresh = resolve;
-        }),
-    );
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
-    cloudAuthRecoveryInterceptor(makeResponse(401, PLATFORM_URL));
-
-    // Latch set synchronously on the first hit → the second short-circuits.
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    resolveRefresh(true);
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-  });
-
-  test("stops redirecting to login once the budget is spent", async () => {
-    // The redirect is a full page load, so the in-memory latch cannot count
-    // round trips and a bouncing destination would drive them without bound.
-    for (let i = 0; i < PLATFORM_AUTH_MAX_REDIRECTS; i++) {
-      await rejectOnce();
-    }
-    expect(hardNavigateMock).toHaveBeenCalledTimes(PLATFORM_AUTH_MAX_REDIRECTS);
-
-    await rejectOnce();
-    expect(hardNavigateMock).toHaveBeenCalledTimes(PLATFORM_AUTH_MAX_REDIRECTS);
-  });
-
-  test("a cloud 2xx on a confirmed session restores the redirect budget", async () => {
-    sessionStorage.setItem(
-      PLATFORM_AUTH_REDIRECT_KEY,
-      String(PLATFORM_AUTH_MAX_REDIRECTS),
-    );
-
-    await rejectOnce();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-
-    mockAuthState.cloudSession = "present";
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    expect(sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY)).toBeNull();
-
-    await rejectOnce();
-    expect(hardNavigateMock).toHaveBeenCalledTimes(1);
-  });
-
-  test("a 2xx without a cloud session does not restore the budget", async () => {
-    // The cloud serves some routes to anonymous visitors, and the login
-    // screen loads one: `AccountLayout` syncs client feature flags. Treating
-    // that as proof of a live session would refill the budget on every bounce.
-    mockAuthState.cloudSession = "absent";
-    sessionStorage.setItem(
-      PLATFORM_AUTH_REDIRECT_KEY,
-      String(PLATFORM_AUTH_MAX_REDIRECTS),
-    );
-
-    cloudAuthRecoveryInterceptor(
-      makeResponse(200, "https://platform.test/v1/feature-flags/"),
-    );
-
-    expect(sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY)).toBe(
-      String(PLATFORM_AUTH_MAX_REDIRECTS),
-    );
-  });
-
-  test("a self-hosted gateway 2xx does not restore the cloud budget", async () => {
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    mockAuthState.cloudSession = "present";
-    sessionStorage.setItem(
-      PLATFORM_AUTH_REDIRECT_KEY,
-      String(PLATFORM_AUTH_MAX_REDIRECTS),
-    );
-
-    cloudAuthRecoveryInterceptor(
-      makeResponse(200, `${INGRESS}/v1/assistants/123/messages`),
-    );
-
-    expect(sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY)).toBe(
-      String(PLATFORM_AUTH_MAX_REDIRECTS),
-    );
-  });
-
-  test("holds the latch until the cloud probe settles", async () => {
-    // `refreshSession` in gateway-auth mode fire-and-forgets the cloud
-    // probe, whose own requests 403 against a half-dead cookie. Those
-    // rejections arrive after `refreshSession` resolved; if the latch were
-    // already released, each would start the next recovery cycle.
-    let settleProbe: () => void = () => {};
-    whenCloudSessionSettledImpl = () =>
-      new Promise((resolve) => {
-        settleProbe = resolve;
-      });
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // A probe-spawned 403 during the settle window must not recover again.
-    expireRecoveryCooldown();
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // Once the probe settles the latch reopens for a later genuine cycle.
-    whenCloudSessionSettledImpl = async () => {};
-    settleProbe();
-    await flush();
-    expireRecoveryCooldown();
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(2);
-  });
-
-  test("a settled-absent platform session never triggers recovery", async () => {
-    mockAuthState.cloudSession = "absent";
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-
-    expect(refreshSession).not.toHaveBeenCalled();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-  });
-
-  test("an unsettled (unknown) platform session does not recover", async () => {
-    // While cloudSession is "unknown" the boot probe is already evaluating
-    // this same rejection evidence, so spending a claim here would only nest
-    // a redundant refreshSession cycle on every dead-cookie boot.
-    mockAuthState.cloudSession = "unknown";
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-
-    expect(refreshSession).not.toHaveBeenCalled();
-    expect(hardNavigateMock).not.toHaveBeenCalled();
-  });
-
-  test("a second rejection inside the cooldown window does not recover", async () => {
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // Latch is reopened, but the attempt timestamp is fresh.
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-  });
-
-  test("stops recovering once the attempt budget is spent", async () => {
-    // The cap's defended scenario: re-probes that repeatedly fail to confirm
-    // the session live never refund the count, so the budget binds. Each
-    // cycle claims while the session still reads "present".
-    const refreshSession = armUnrefundedRefresh();
-
-    // Each round expires the cooldown so only the budget can stop it.
-    for (let i = 0; i < PLATFORM_RECOVERY_MAX_ATTEMPTS + 1; i++) {
-      mockAuthState.cloudSession = "present";
-      expireRecoveryCooldown();
-      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-      await flush();
-    }
-    expect(refreshSession).toHaveBeenCalledTimes(
-      PLATFORM_RECOVERY_MAX_ATTEMPTS,
-    );
-  });
-
-  test("a live-confirmed recovery refunds the count but keeps the cooldown", async () => {
-    // cloudSession stays "present" (beforeEach default): the probe keeps
-    // confirming the session is live, so a route-level permission 403 must
-    // not eat the budget a later real expiry needs.
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-
-    for (let i = 0; i < PLATFORM_RECOVERY_MAX_ATTEMPTS + 2; i++) {
-      expireRecoveryCooldown();
-      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-      await flush();
-    }
-
-    // Every cycle recovered: the count was refunded each time.
-    expect(refreshSession).toHaveBeenCalledTimes(
-      PLATFORM_RECOVERY_MAX_ATTEMPTS + 2,
-    );
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
-    // The refund also drops the remembered pathname; a leftover key would
-    // re-seed the outstanding flag after a reload and let a heal clear the
-    // retained cooldown.
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY)).toBeNull();
-
-    // The cooldown survives the refund: an immediate rejection stays paced.
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(
-      PLATFORM_RECOVERY_MAX_ATTEMPTS + 2,
-    );
-
-    // With no remembered pathname, a later 2xx on that route cannot clear
-    // the cooldown the refund kept.
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
-  });
-
-  test("a 2xx on the rejected route restores the recovery budget", async () => {
-    // Unrefunded claims keep the budget spent, so only the heal can clear it.
-    const refreshSession = armUnrefundedRefresh();
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // Inside the cooldown a rejection cannot recover.
-    mockAuthState.cloudSession = "present";
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // The same route succeeding is proof it healed; the cooldown clears and
-    // the next rejection may recover immediately.
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).toBeNull();
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(2);
-  });
-
-  test("an unrelated platform 2xx leaves an outstanding claim; the rejected route's clears it", async () => {
-    const refreshSession = armUnrefundedRefresh();
-
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(refreshSession).toHaveBeenCalledTimes(1);
-
-    // A route the cloud serves without the session (feature-flag polling)
-    // keeps succeeding; it must not clear the cooldown or the count.
-    cloudAuthRecoveryInterceptor(
-      makeResponse(200, "https://platform.test/v1/client-feature-flags/"),
-    );
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBe("1");
-
-    // The rejected route healing clears the whole bound.
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).toBeNull();
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY)).toBeNull();
-  });
-
-  test("a refund resets the outstanding claim, so a later matching 2xx keeps the cooldown", async () => {
-    // Default refreshSession confirms the session live, so the claim is
-    // refunded and no heal is outstanding.
-    cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-    await flush();
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBeNull();
-
-    // The matching 2xx must not clear the retained cooldown that paces
-    // re-probing while the permission 403 persists.
-    cloudAuthRecoveryInterceptor(makeResponse(200, PLATFORM_URL));
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY)).not.toBeNull();
-  });
-
-  test("a self-hosted gateway 2xx does not restore the recovery budget", async () => {
-    setSelfHostedConnection({ url: INGRESS, token: ACTOR_TOKEN });
-    sessionStorage.setItem(
-      PLATFORM_RECOVERY_ATTEMPTS_KEY,
-      String(PLATFORM_RECOVERY_MAX_ATTEMPTS),
-    );
-
-    cloudAuthRecoveryInterceptor(
-      makeResponse(200, `${INGRESS}/v1/assistants/123/messages`),
-    );
-
-    expect(sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY)).toBe(
-      String(PLATFORM_RECOVERY_MAX_ATTEMPTS),
-    );
-  });
-
-  test("skips recovery when sessionStorage is unavailable", async () => {
-    // Without storage neither the cooldown nor the budget can be enforced,
-    // so recovery fails closed rather than looping uncountably.
-    const refreshSession = mock(async () => true);
-    mockAuthState.refreshSession = refreshSession;
-    const originalGetItem = sessionStorage.getItem;
-    Object.defineProperty(sessionStorage, "getItem", {
-      configurable: true,
-      value: () => {
-        throw new DOMException("unavailable");
-      },
-    });
-
-    try {
-      cloudAuthRecoveryInterceptor(makeResponse(403, PLATFORM_URL));
-      await flush();
-    } finally {
-      Object.defineProperty(sessionStorage, "getItem", {
-        configurable: true,
-        value: originalGetItem,
-      });
-    }
-
-    expect(refreshSession).not.toHaveBeenCalled();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Post-resume request counting
-// ---------------------------------------------------------------------------

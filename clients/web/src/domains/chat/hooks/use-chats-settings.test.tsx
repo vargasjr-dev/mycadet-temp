@@ -15,7 +15,6 @@ import type {
 let supported: boolean | undefined = true;
 let capabilityError = false;
 const retryCapability = mock(() => {});
-let organizationId = "org-1";
 let loadFailure = false;
 let saveFailure = false;
 let savedConfig: ConfigGetResponse;
@@ -59,9 +58,6 @@ mock.module("@/hooks/use-assistant-capability", () => ({
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
 }));
-mock.module("@/stores/organization-store", () => ({
-  getActiveOrganizationIdForRequests: () => organizationId,
-}));
 mock.module("@/generated/daemon/@tanstack/react-query.gen", () => ({
   configGetOptions: ({ path }: ConfigPatchData) => ({
     queryKey: configKey(path.assistant_id),
@@ -85,7 +81,6 @@ beforeEach(() => {
   supported = true;
   capabilityError = false;
   retryCapability.mockClear();
-  organizationId = "org-1";
   loadFailure = false;
   saveFailure = false;
   deferSave = false;
@@ -317,27 +312,4 @@ test("config invalidation refreshes values without hiding ready data", async () 
     client.invalidateQueries({ queryKey: configKey("assistant-1") }),
   );
   expect(hook.result.current.state.status).toBe("ready");
-});
-
-test("organization changes block stale saves and responses before unmount", async () => {
-  const hook = mount();
-  await waitFor(() => expect(hook.result.current.state.status).toBe("ready"));
-  deferSave = true;
-  let saving: Promise<void> | undefined;
-  act(() => {
-    saving = hook.result.current.save(changes);
-  });
-  await waitFor(() => expect(patchConfig).toHaveBeenCalledTimes(1));
-  organizationId = "org-2";
-  client.clear();
-  await act(async () => {
-    finishSave?.();
-    await saving;
-  });
-  expect(
-    client.getQueryData<ConfigGetResponse>(configKey("assistant-1")),
-  ).toBeUndefined();
-  expect(onSaved).not.toHaveBeenCalled();
-  await act(() => hook.result.current.save(changes));
-  expect(patchConfig).toHaveBeenCalledTimes(1);
 });

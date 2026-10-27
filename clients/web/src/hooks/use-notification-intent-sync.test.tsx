@@ -31,7 +31,6 @@ import {
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -48,6 +47,7 @@ const PLATFORM_ASSISTANT: ResolvedAssistant = {
   isLocal: false,
   isCloudHosted: true,
   isPaired: false,
+  organizationId: "org-1",
 };
 
 const postedArgs: PostLocalNotificationArgs[] = [];
@@ -222,7 +222,6 @@ function expectNotified() {
 function platformScopeId(): string {
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     PLATFORM_ASSISTANT,
-    "org-1",
     window.location.href,
   );
   if (!scopeId) {
@@ -247,10 +246,6 @@ beforeEach(() => {
   useAuthStore.setState({
     sessionStatus: "authenticated",
     cloudSession: "present",
-  });
-  useOrganizationStore.setState({
-    currentOrganizationId: "org-1",
-    persistedOrganizationId: "org-1",
   });
   useResolvedAssistantsStore.setState({
     assistants: [PLATFORM_ASSISTANT],
@@ -440,10 +435,6 @@ describe("useNotificationIntentSync", () => {
     useAuthStore.setState({
       sessionStatus: "authenticated",
     });
-    useOrganizationStore.setState({
-      currentOrganizationId: null,
-      persistedOrganizationId: null,
-    });
     useResolvedAssistantsStore.setState({
       assistants: [assistantA, assistantB],
       activeAssistantId: assistantA.id,
@@ -463,7 +454,6 @@ describe("useNotificationIntentSync", () => {
     expect(originA).toMatchObject({
       scopeId: resolveAssistantAvatarOwnerScopeId(
         assistantA,
-        null,
         window.location.href,
       ),
       assistantId: assistantA.id,

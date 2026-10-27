@@ -30,37 +30,23 @@ import { client as authClient } from "@/generated/auth/client.gen";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
 import { client as gatewayClient } from "@/generated/gateway/client.gen";
 import { getCloudRuntimeUrl } from "@/lib/cloud-runtime-url";
-import { ensureCsrfCookie, getCsrfToken } from "@/lib/auth/csrf";
+import { getCsrfToken } from "@/lib/auth/csrf";
 import { ApiError, toApiError } from "@/utils/api-errors";
 import { FLATTENED_FIRST_SEGMENTS } from "@mycadet/local-mode/contract";
 import {
-  getActiveAssistant,
   isLocalClient,
   isCadetCloudRemote,
   isServedGatewayRuntime,
-  primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
-import { recordLifecycleDiagnostic } from "@/lib/diagnostics";
 import {
   getSelfHostedActorToken,
   getSelfHostedIngressUrl,
-  setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
 import { currentLocale } from "@/i18n";
 import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
 import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
-import { hardNavigate } from "@/lib/auth/hard-navigate";
-import { remoteGatewayPublicPathPrefix } from "@/lib/auth/remote-gateway-session";
-import { useAuthStore, whenCloudSessionSettled } from "@/stores/auth-store";
-import {
-  hasLiveCloudSession,
-  isAuthenticated,
-  isSettledSessionRejection,
-} from "@/stores/session-status";
-import { routes } from "@/utils/routes";
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
@@ -165,11 +151,6 @@ function applySelfHostedBearer(headers: Headers): void {
   } else {
     headers.delete("Authorization");
   }
-}
-
-/** True when the request went out with the bearer the slot holds now. */
-function carriesCurrentBearer(request: Request): boolean {
-  return request.headers.get("Authorization") === currentSelfHostedBearer();
 }
 
 function isPlatformPushPath(url: string): boolean {
@@ -428,11 +409,6 @@ function createInterceptor({
       );
     }
 
-    const organizationId = getActiveOrganizationIdForRequests();
-    if (organizationId) {
-      newRequest.headers.set("Cadet-Organization-Id", organizationId);
-    }
-
     const deviceId = getDeviceId();
     if (deviceId) {
       newRequest.headers.set("Cadet-Device-Id", deviceId);
@@ -447,7 +423,6 @@ function createInterceptor({
     // Clients authenticating via session cookie need to pass CSRF checks.
     // Electron authenticates via a session token header.
     if (!isElectron() && MUTATING_METHODS.has(request.method)) {
-      await ensureCsrfCookie();
       const csrfToken = getCsrfToken();
       if (csrfToken) {
         newRequest.headers.set("X-CSRFToken", csrfToken);
@@ -475,549 +450,6 @@ const gatewayRequestInterceptor = createInterceptor({
   isDaemonClient: true,
   allowRemoteGatewayDirect: true,
 });
-
-/**
- * Daemon response interceptor for local gateway 401 recovery.
- *
- * When the gateway rejects a request with 401, re-establishes the session
- * **in place**. Local and paired assistants re-run
- * {@link primeLocalGatewayConnectionWithRepair}, which re-probes the
- * gateway through the host-routed readyz route (waking a stopped local
- * assistant when the probe failure is repairable) and re-seeds the
- * self-hosted connection slot the request interceptor reads. Remote-gateway
- * (paired browser) sessions hold no refreshable credential in JS, so a 401
- * there navigates into the pairing flow.
- * Neither path clears anything first: the slot's token is null in this mode
- * — bearer custody lives in the trusted host, whose forward already forces
- * one re-mint and retry of its own before a 401 can reach this interceptor
- * at all — so predicates such as `isGatewaySessionLive()` (topology-based
- * here) hold steady across the recovery. A session refresh or lifecycle
- * pass that fires mid-recovery therefore keeps taking the gateway branch.
- *
- * Requests whose body is still readable are then replayed against the
- * recovered session: a 401 means the gateway never executed the request,
- * so the replay cannot double an effect. A request whose bearer no longer
- * matches the slot (issued before a recovery that has since completed)
- * is replayed directly, without recovering or spending budget. Bodied
- * requests (the chat send POST, uploads) cannot be replayed, because
- * fetch consumed their body, so their 401 flows back to the caller, whose
- * own failure path surfaces the error and keeps the message retryable.
- *
- * Never reload the page for a recoverable session: a reload eats the
- * in-flight mutation and the composer state with no error shown. The one
- * reload left is the remote-gateway session whose refresh cookie is
- * itself rejected, a session nothing in the renderer can revive; there
- * the page reloads under the same budget and boot lands on the pairing
- * flow.
- *
- * A local session's dead end is a gateway whose host-side mint keeps
- * failing (a revoked or spent guardian token): every data request 401s
- * through the forward and this recovery cannot fix it — only a guardian
- * re-provision (the tray's re-pair action) clears that, and it must never
- * run silently, so past the budget the 401 is handed back untouched and
- * the normal error path surfaces it.
- *
- * A sessionStorage cooldown spaces the attempts, and a sessionStorage
- * attempt budget stops them. The cooldown alone only paces a gateway
- * that rejects every token (a mismatched signing key, say); past the
- * budget the 401 is handed back untouched, so the normal error path
- * surfaces it and the tray's re-pair action stays available.
- *
- * The budget is spent permanently until the gateway demonstrates that it
- * works: a 2xx from the ingress origin clears it. Elapsed time deliberately
- * does not, because a gateway that is still rejecting every token would
- * otherwise earn a fresh budget out of every quiet spell and retry forever
- * in bursts. A recovery that genuinely fixed the session produces that 2xx
- * on the replay or on its next request, so a transient rejection is not
- * charged for recovering.
- *
- * Both keys live in sessionStorage, so quitting and reopening the app also
- * grants a fresh budget.
- *
- * Installed on `daemonClient` and `gatewayClient`, the two clients whose
- * requests are rewritten to the local gateway; see the registrations at
- * the bottom of this file. Platform-client 401s belong to
- * {@link cloudAuthRecoveryInterceptor}.
- */
-const GW_401_RECOVERY_AT_KEY = "cadet:gw:401-reload-at";
-const GW_401_ATTEMPTS_KEY = "cadet:gw:401-reload-attempts";
-const GW_401_COOLDOWN_MS = 600_000;
-const GW_401_MAX_ATTEMPTS = 3;
-
-// In-memory latch: once the pair redirect fires, later 401s in this lifecycle are no-ops.
-let gw401RecoveryFired = false;
-
-// Single-flight slot: a burst of concurrent 401s (a resume refetch, say)
-// funds one in-place recovery; every caller awaits the same attempt and
-// then makes its own replay decision. Nulled when the attempt settles so
-// a later, unrelated staleness event can recover again.
-let gw401RecoveryInFlight: Promise<boolean> | null = null;
-
-/** @internal Exposed for test teardown only. */
-export function resetGw401RecoveryState(): void {
-  gw401RecoveryFired = false;
-  gw401RecoveryInFlight = null;
-}
-
-function remoteGatewayPairUrl(): string {
-  const prefix = remoteGatewayPublicPathPrefix();
-  const pathnameWithSearch = `${window.location.pathname}${window.location.search}`;
-  const returnTo =
-    prefix && pathnameWithSearch.startsWith(prefix)
-      ? pathnameWithSearch.slice(prefix.length)
-      : pathnameWithSearch;
-  return `${prefix}${routes.remotePair}?returnTo=${encodeURIComponent(returnTo)}`;
-}
-
-async function recoverRemoteGatewaySessionInPlace(): Promise<boolean> {
-  // A 401 means the cookie no longer authenticates — route the device into the pairing flow.
-  recordLifecycleDiagnostic("gw_401_recovery", { outcome: "pair-redirect" });
-  gw401RecoveryFired = true;
-  window.location.assign(remoteGatewayPairUrl());
-  return false;
-}
-
-async function recoverLocalGatewaySessionInPlace(): Promise<boolean> {
-  // The prime clears the connection slot when its readyz probe fails, so a
-  // failed recovery would otherwise leave the renderer with no ingress
-  // route and this interceptor with no ingress to match, disabling every
-  // future attempt. Snapshot the slot and put it back only if the prime
-  // dies having nulled it for the assistant it was recovering: a switch or
-  // a logout mid-recovery clears the slot legitimately (and moves the
-  // selection), and restoring then would route the new selection's
-  // requests to the old gateway. A concurrent re-prime to another local
-  // assistant leaves the slot non-null and is likewise left alone.
-  const previous = {
-    url: getSelfHostedIngressUrl(),
-    token: getSelfHostedActorToken(),
-  };
-  const recoveringFor = getActiveAssistant()?.assistantId ?? null;
-  try {
-    await primeLocalGatewayConnectionWithRepair();
-    recordLifecycleDiagnostic("gw_401_recovery", { outcome: "recovered" });
-    return true;
-  } catch (err) {
-    const stillRecoveringForSelection =
-      (getActiveAssistant()?.assistantId ?? null) === recoveringFor;
-    if (
-      getSelfHostedIngressUrl() === null &&
-      previous.url !== null &&
-      stillRecoveringForSelection
-    ) {
-      setSelfHostedConnection(previous);
-    }
-    // A selection that moved while the wake and its retries ran makes this
-    // the verdict on an assistant nobody is connected to any more, so it
-    // says nothing about the one that is: routing to the chooser would act
-    // on a session this never touched.
-    recordLifecycleDiagnostic("gw_401_recovery", {
-      outcome: "failed",
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return false;
-  }
-}
-
-function recoverGatewaySessionInPlace(): Promise<boolean> {
-  gw401RecoveryInFlight ??= (
-    isServedGatewayRuntime()
-      ? recoverRemoteGatewaySessionInPlace()
-      : recoverLocalGatewaySessionInPlace()
-  ).finally(() => {
-    gw401RecoveryInFlight = null;
-  });
-  return gw401RecoveryInFlight;
-}
-
-function clearGw401Budget(): void {
-  try {
-    sessionStorage.removeItem(GW_401_ATTEMPTS_KEY);
-    sessionStorage.removeItem(GW_401_RECOVERY_AT_KEY);
-  } catch {
-    // sessionStorage unavailable; the budget check fails closed anyway.
-  }
-}
-
-/**
- * Replay a request against the just-recovered session, swapping in the
- * re-primed bearer. Only callable when the request's body is unconsumed
- * (`bodyUsed === false`); `new Request(used)` throws. A replayed 2xx is a
- * real success from the ingress, so it restores the budget just like one
- * that flowed through the interceptor chain. Returns `null` when the
- * replay itself fails to complete (network drop, caller aborted), so the
- * caller hands back the original 401 instead of a new failure shape.
- *
- * Issued with bare `fetch` rather than through the generated client on
- * purpose: the request is already rewritten to the ingress and carries
- * its bearer, and re-entering the chain would run the cloud-path
- * rewrite over an ingress URL. The silent catch is deliberate for the
- * same reason: a failed replay is not a new error to report, it is the
- * original 401 flowing on to the caller, whose error path reports it.
- */
-async function replayWithRecoveredSession(
-  request: Request,
-): Promise<Response | null> {
-  const headers = new Headers(request.headers);
-  applySelfHostedBearer(headers);
-  try {
-    const replayed = await fetch(new Request(request, { headers }));
-    if (replayed.ok) {
-      clearGw401Budget();
-    }
-    return replayed;
-  } catch {
-    return null;
-  }
-}
-
-export async function localGatewayAuthRecoveryInterceptor(
-  response: Response,
-  request?: Request,
-): Promise<Response> {
-  if (!isLocalClient()) {
-    return response;
-  }
-  const ingressUrl = getSelfHostedIngressUrl();
-  if (!ingressUrl) {
-    return response;
-  }
-
-  // Only act on responses that originated from the local gateway. Daemon
-  // requests that don't match ASSISTANT_PATH_RE are not rewritten and hit
-  // the cloud instead; their 401s are handled elsewhere.
-  if (!response.url.startsWith(ingressUrl)) {
-    return response;
-  }
-
-  // The gateway answering a request is the only evidence that the token it
-  // was rejecting has been replaced by a working one, so it is the only
-  // thing that restores the budget. `/readyz` probes use a bare `fetch`
-  // rather than this client, so an unauthenticated liveness check cannot
-  // stand in for a real one.
-  if (response.ok) {
-    clearGw401Budget();
-    return response;
-  }
-
-  if (response.status !== 401) {
-    return response;
-  }
-  if (gw401RecoveryFired) {
-    // The remote-gateway pair redirect has fired this page lifecycle; every 401
-    // until the navigation lands is a no-op.
-    return response;
-  }
-
-  const replayable = request !== undefined && !request.bodyUsed;
-
-  // A bearer that no longer matches the slot means the request was built
-  // before a recovery (or any other re-prime) that has since completed.
-  // The session is already healthy, so replay straight away: no recovery,
-  // no budget spent.
-  if (replayable && !carriesCurrentBearer(request)) {
-    return (await replayWithRecoveredSession(request)) ?? response;
-  }
-
-  // A recovery already in flight is ridden rather than charged to the
-  // budget, so every request in the burst that can replay does. Only a
-  // fresh attempt spends an attempt.
-  let recovery = gw401RecoveryInFlight;
-  if (!recovery) {
-    try {
-      const stored = Number(sessionStorage.getItem(GW_401_ATTEMPTS_KEY) ?? "0");
-      const attempts = Number.isFinite(stored) ? stored : 0;
-
-      // A spent budget means recovering has not made this gateway work, and
-      // nothing since has shown that it does; let the 401 through to the
-      // error path.
-      if (attempts >= GW_401_MAX_ATTEMPTS) {
-        return response;
-      }
-      const lastAttempt = sessionStorage.getItem(GW_401_RECOVERY_AT_KEY);
-      if (
-        lastAttempt &&
-        Date.now() - Number(lastAttempt) < GW_401_COOLDOWN_MS
-      ) {
-        return response;
-      }
-      sessionStorage.setItem(GW_401_RECOVERY_AT_KEY, String(Date.now()));
-      sessionStorage.setItem(GW_401_ATTEMPTS_KEY, String(attempts + 1));
-    } catch {
-      // sessionStorage unavailable: cannot enforce cooldown or budget, skip
-      // recovery to avoid infinite recovery loops.
-      return response;
-    }
-
-    recovery = recoverGatewaySessionInPlace();
-  }
-
-  const recovered = await recovery;
-  if (recovered && replayable) {
-    return (await replayWithRecoveredSession(request)) ?? response;
-  }
-  return response;
-}
-
-// In-memory latch so a burst of concurrent session rejections triggers only
-// one recovery. Reset in the recovery's `finally` so a genuine expiry after a
-// permission-403 that left the session live is still caught later.
-let cloudAuthRecoveryFired = false;
-
-/**
- * Caps the login redirects below. The redirect is a full page load, so the
- * in-memory latch cannot count round trips and a destination that bounces back
- * and rejects again would drive them without bound. Only a confirmed platform
- * session restores the budget; sessionStorage means a relaunch grants a fresh
- * one.
- */
-const PLATFORM_AUTH_REDIRECT_KEY = "cadet:platform:auth-redirect-attempts";
-const PLATFORM_AUTH_MAX_REDIRECTS = 3;
-
-/** @internal Exposed for test teardown only. */
-export function resetCloudAuthRecoveryFlag(): void {
-  cloudAuthRecoveryFired = false;
-  platformRecoveryOutstanding = false;
-}
-
-/**
- * Spend one redirect. False when the budget is exhausted, or when
- * sessionStorage is unavailable so an uncountable environment fails closed.
- */
-function claimCloudAuthRedirect(): boolean {
-  try {
-    const stored = Number(
-      sessionStorage.getItem(PLATFORM_AUTH_REDIRECT_KEY) ?? "0",
-    );
-    const attempts = Number.isFinite(stored) ? stored : 0;
-    if (attempts >= PLATFORM_AUTH_MAX_REDIRECTS) {
-      return false;
-    }
-    sessionStorage.setItem(PLATFORM_AUTH_REDIRECT_KEY, String(attempts + 1));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Restore the budget. Gated on a confirmed platform session by the caller: the
- * platform serves some routes (client feature flags) to anonymous visitors, so
- * a 2xx alone does not mean the session works.
- */
-function clearCloudAuthRedirectBudget(): void {
-  try {
-    sessionStorage.removeItem(PLATFORM_AUTH_REDIRECT_KEY);
-  } catch {
-    // sessionStorage unavailable; the claim above already fails closed.
-  }
-}
-
-/**
- * Cooldown + attempt budget for the recovery re-probe, mirroring the
- * local-gateway 401 pattern above. The cooldown spaces cycles and the budget
- * stops them; with the refund below, the cap binds when re-probes repeatedly
- * fail to settle (refreshSession throwing on a flaky network while the API
- * keeps rejecting). Quitting the app grants a fresh budget (sessionStorage).
- */
-const PLATFORM_RECOVERY_AT_KEY = "cadet:platform:recovery-attempt-at";
-const PLATFORM_RECOVERY_ATTEMPTS_KEY = "cadet:platform:recovery-attempts";
-const PLATFORM_RECOVERY_PATH_KEY = "cadet:platform:recovery-path";
-const PLATFORM_RECOVERY_COOLDOWN_MS = 600_000;
-const PLATFORM_RECOVERY_MAX_ATTEMPTS = 3;
-
-// Skips the ok-branch heal check until a claim is made. Seeded from storage:
-// a claim from this page's earlier life may still be awaiting its heal.
-let platformRecoveryOutstanding = (() => {
-  try {
-    return sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY) !== null;
-  } catch {
-    return false;
-  }
-})();
-
-/**
- * Spend one recovery attempt for a rejection on `pathname`; false when the
- * budget or cooldown blocks it, or when sessionStorage is unavailable (fails
- * closed). Only that pathname's later success restores the budget.
- */
-function claimPlatformRecoveryAttempt(pathname: string): boolean {
-  try {
-    const stored = Number(
-      sessionStorage.getItem(PLATFORM_RECOVERY_ATTEMPTS_KEY) ?? "0",
-    );
-    const attempts = Number.isFinite(stored) ? stored : 0;
-    if (attempts >= PLATFORM_RECOVERY_MAX_ATTEMPTS) {
-      return false;
-    }
-    const lastAttempt = sessionStorage.getItem(PLATFORM_RECOVERY_AT_KEY);
-    if (
-      lastAttempt &&
-      Date.now() - Number(lastAttempt) < PLATFORM_RECOVERY_COOLDOWN_MS
-    ) {
-      return false;
-    }
-    sessionStorage.setItem(PLATFORM_RECOVERY_AT_KEY, String(Date.now()));
-    sessionStorage.setItem(
-      PLATFORM_RECOVERY_ATTEMPTS_KEY,
-      String(attempts + 1),
-    );
-    sessionStorage.setItem(PLATFORM_RECOVERY_PATH_KEY, pathname);
-    platformRecoveryOutstanding = true;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Restore the budget only when the last-rejected route succeeds: anonymously
- * served routes (client feature flags) must not re-arm it every poll.
- */
-function clearPlatformRecoveryBudgetIfHealed(pathname: string): void {
-  try {
-    if (sessionStorage.getItem(PLATFORM_RECOVERY_PATH_KEY) !== pathname) {
-      return;
-    }
-    sessionStorage.removeItem(PLATFORM_RECOVERY_AT_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
-    sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-    platformRecoveryOutstanding = false;
-  } catch {
-    // sessionStorage unavailable; the claim above already fails closed.
-  }
-}
-
-/**
- * Refund the attempt count but keep the cooldown: a permission 403 on a live
- * session must not eat the budget a later real expiry needs.
- */
-function refundPlatformRecoveryAttempt(): void {
-  try {
-    sessionStorage.removeItem(PLATFORM_RECOVERY_ATTEMPTS_KEY);
-    // Drop the remembered pathname too: a leftover key would re-seed the
-    // outstanding flag after a reload, letting a heal clear the cooldown
-    // this refund deliberately keeps.
-    sessionStorage.removeItem(PLATFORM_RECOVERY_PATH_KEY);
-  } catch {
-    // sessionStorage unavailable; the claim already fails closed.
-  }
-  platformRecoveryOutstanding = false;
-}
-
-/** The response URL's pathname, or null for an unparseable URL. */
-function responsePathname(response: Response): string | null {
-  try {
-    return new URL(response.url).pathname;
-  } catch {
-    return null;
-  }
-}
-
-async function recoverFromCloudSessionRejection(): Promise<void> {
-  try {
-    // Authoritative re-probe. `refreshSession` calls `getSession()` and only
-    // ends the session on a genuine settled rejection, so an ambiguous
-    // permission-403 on a still-live session does not log anyone out. In
-    // local/gateway mode a cloud rejection only drops `cloudSession`
-    // and keeps `sessionStatus` authenticated, so the redirect below is
-    // skipped there.
-    await useAuthStore.getState().refreshSession();
-    // refreshSession may fire-and-forget the cloud probe; hold the latch
-    // until it settles so the probe's own rejections cannot re-enter.
-    await whenCloudSessionSettled();
-    if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
-      refundPlatformRecoveryAttempt();
-    }
-    if (
-      !isAuthenticated(useAuthStore.getState().sessionStatus) &&
-      claimCloudAuthRedirect()
-    ) {
-      hardNavigate(routes.remotePair);
-    }
-  } finally {
-    cloudAuthRecoveryFired = false;
-  }
-}
-
-/**
- * Response interceptor for a cloud session that expires mid-use.
- *
- * A cookie-authenticated request that comes back 401/403/410 while the app
- * still believes it is signed in means the cloud session may have ended.
- * Nothing else notices this between boot and app-resume, so the rejection
- * would otherwise surface only as a generic chat error. This re-verifies the
- * session and, when it is truly gone, routes to login via a full reload.
- *
- * No-ops unless the rejection is settled, the app currently reads as
- * authenticated (excludes boot probes and the already-logged-out login flow,
- * and prevents a redirect loop), and the response did not come from the
- * self-hosted / remote-gateway bearer path — those 401s are recovered by
- * {@link localGatewayAuthRecoveryInterceptor}. Recovery claims only for a
- * platform session currently believed live: the boot probe owns unsettled
- * evidence, and a settled-absent session has nothing to recover. Each cycle
- * spends from the cooldown-spaced attempt budget above.
- *
- * A success on the route whose rejection last consumed a recovery attempt
- * restores the recovery budget; a success against a confirmed session also
- * restores the redirect budget.
- */
-export function cloudAuthRecoveryInterceptor(response: Response): Response {
-  const ingressUrl = getSelfHostedIngressUrl();
-  // For a cloud remote the self-hosted slot points at the cloud's own
-  // same-origin proxy, so a rejection from that path IS a cloud session
-  // rejection — the bearer-path exclusion below must not apply.
-  const fromSelfHostedGateway =
-    !isServedGatewayRuntime() &&
-    !!ingressUrl &&
-    response.url.startsWith(ingressUrl);
-
-  if (response.ok) {
-    // A working self-hosted gateway says nothing about the cloud session.
-    if (!fromSelfHostedGateway) {
-      if (platformRecoveryOutstanding) {
-        const pathname = responsePathname(response);
-        if (pathname !== null) {
-          clearPlatformRecoveryBudgetIfHealed(pathname);
-        }
-      }
-      if (hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
-        clearCloudAuthRedirectBudget();
-      }
-    }
-    return response;
-  }
-
-  if (
-    !isSettledSessionRejection({ ok: response.ok, status: response.status })
-  ) {
-    return response;
-  }
-  if (cloudAuthRecoveryFired) {
-    return response;
-  }
-  const { sessionStatus, cloudSession } = useAuthStore.getState();
-  if (!isAuthenticated(sessionStatus)) {
-    return response;
-  }
-  if (fromSelfHostedGateway) {
-    return response;
-  }
-  if (!hasLiveCloudSession(cloudSession)) {
-    return response;
-  }
-  const rejectedPathname = responsePathname(response);
-  if (
-    rejectedPathname === null ||
-    !claimPlatformRecoveryAttempt(rejectedPathname)
-  ) {
-    return response;
-  }
-
-  cloudAuthRecoveryFired = true;
-  void recoverFromCloudSessionRejection();
-
-  return response;
-}
 
 /**
  * Normalizes HeyAPI's raw thrown errors into {@link ApiError} instances
@@ -1064,23 +496,12 @@ export function daemonErrorInterceptor(
 // cannot give that guarantee.
 
 daemonClient.interceptors.request.use(daemonRequestInterceptor);
-if (!isCadetCloudRemote()) {
-  daemonClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
-} else {
-  daemonClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
-}
 daemonClient.interceptors.error.use(daemonErrorInterceptor);
 
 // Gateway client uses the same routing as daemon: all gateway endpoints
-// are proxied through the same self-hosted ingress / platform gateway path,
-// so a stale renderer token 401s both clients identically and the same
-// in-place recovery applies. Gateway-only responses do not prove daemon readiness.
+// are proxied through the same self-hosted ingress / platform gateway path.
+// Gateway-only responses do not prove daemon readiness.
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
-if (!isCadetCloudRemote()) {
-  gatewayClient.interceptors.response.use(localGatewayAuthRecoveryInterceptor);
-} else {
-  gatewayClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
-}
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
 // Force JSON body parsing for all three generated clients. The default
@@ -1114,9 +535,7 @@ for (const apiClient of [authClient, cloudClient]) {
 
 // A chat send in cloud mode goes through the daemon client; other platform
 // calls go through the cloud client. Not installed on `authClient` — the
-// allauth session endpoints manage their own 401 semantics, and adding it
-// there risks re-entrancy with the `getSession()` inside `refreshSession`.
-cloudClient.interceptors.response.use(cloudAuthRecoveryInterceptor);
+// allauth session endpoints manage their own 401 semantics.
 
 /**
  * What {@link platformFeaturesGate} does with a request. A deny carries the

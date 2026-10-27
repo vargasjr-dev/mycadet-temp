@@ -109,11 +109,7 @@ describe("cadet app", () => {
     await app();
 
     expect(ensureNginxForEdgeMock).toHaveBeenCalled();
-    expect(ensureAppServerMock).toHaveBeenCalledWith({
-      assistantId: "assistant-1",
-      workspaceDir,
-      gatewayPort: 7830,
-    });
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(stdout.join("\n")).toContain(
       "Started the app edge on 127.0.0.1:7841",
     );
@@ -122,7 +118,7 @@ describe("cadet app", () => {
   test("start reports a reused edge and the stop command", async () => {
     resolveLocalTunnelTargetMock.mockReturnValue({
       entry: LOCAL_ENTRY,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
       workspaceDir: join(testDir, "workspace"),
     } as never);
     ensureAppServerMock.mockResolvedValue({ port: 7841, started: false });
@@ -139,7 +135,7 @@ describe("cadet app", () => {
     isIngressRunningMock.mockReturnValue(true);
     readIngressStateMock.mockReturnValue({
       listenPort: 7841,
-      gatewayPort: 7830,
+      gatewayUrl: "http://127.0.0.1:7830",
     });
     process.argv = ["bun", "cadet", "app", "stop"];
 

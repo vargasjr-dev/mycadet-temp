@@ -24,7 +24,7 @@ describe("postChatMessage onboarding payload", () => {
     // `conversationKey` path. Individual tests that exercise the new
     // `conversationId` path opt in explicitly via `setIdentity(...)`.
     useAssistantIdentityStore.getState().clearIdentity();
-    // The cadet-api client request interceptor calls ensureCsrfCookie() on
+    // The cadet-api client request interceptor reads the CSRF cookie on
     // mutating requests, which reads `document.cookie`. Stub a minimal
     // `document` so the bun test (Node) environment doesn't throw.
     originalDocument = (globalThis as { document?: unknown }).document;

@@ -423,46 +423,6 @@ export function hasPairedGateway(
 }
 
 /**
- * Whether this client's data plane is a gateway: the served-gateway browser,
- * or a local client whose selected assistant carries a local or paired
- * gateway. The session vision's device side — such clients authenticate by
- * device (the trusted host's injected bearer, or the pairing slot's token),
- * never by user session.
- */
-export function hasGatewayAssistant(): boolean {
-  if (isServedGatewayRuntime()) {
-    return true;
-  }
-  if (!isLocalClient()) {
-    return false;
-  }
-  const assistant = getActiveAssistant();
-  return hasLocalGateway(assistant) || hasPairedGateway(assistant);
-}
-
-/**
- * Whether the gateway session is live: on a served runtime always yes (the
- * cookie is the session and the edge arbitrates it per request); on a local
- * client the trusted host owns bearer custody, so topology decides.
- */
-export function isGatewaySessionLive(): boolean {
-  if (!hasGatewayAssistant()) {
-    return false;
-  }
-  if (!isServedGatewayRuntime()) {
-    const selectedAssistant = getActiveAssistant();
-    if (hasPairedGateway(selectedAssistant)) {
-      // The paired prime seeds the shared same-origin data-plane slot.
-      return getSelfHostedIngressUrl() != null;
-    }
-    // The local signal is topology — a resolvable gateway — not token
-    // presence: the trusted host owns bearer custody in this mode.
-    return hasLocalGateway(selectedAssistant);
-  }
-  return true;
-}
-
-/**
  * Whether a readyz body reports ready: the gateway answers `status: "ok"`
  * with no `ready: false`.
  */

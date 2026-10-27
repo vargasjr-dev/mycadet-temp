@@ -163,8 +163,9 @@ test("rows render the cloud's synced avatar when the list carries one", async ()
 });
 
 test("rows on a cloud build render the cloud-hosted subtitle with a relative creation date", async () => {
-  // The build's stamp (`remote`) places the rows: a cloud build lists the
-  // cloud's assistants, whatever origin serves the bundle.
+  // The build's stamp (`remote`) is only the FALLBACK: these rows carry no
+  // per-assistant remote (a server predating the stamp), so they inherit the
+  // build's own — a cloud build lists the cloud's assistants.
   setup(undefined, false, undefined, { ...host, remote: "cloud" });
   request.mockResolvedValueOnce(
     Response.json({
@@ -200,6 +201,29 @@ test("rows on a non-cloud remote render the self-hosted subtitle", async () => {
   setup();
   const row = await screen.findByRole("radio", { name: /^One/ });
   expect(row.textContent).toContain("Self-hosted");
+});
+
+test("each row labels itself with its own remote", async () => {
+  // The review follow-up on #543: the hosting kind is per assistant — a
+  // self-hosted build's list can hold a cloud assistant (and vice versa) —
+  // and a hostile row value falls back to the build's remote, never fails
+  // the list.
+  setup(undefined, false, undefined, { ...host, remote: "local" });
+  request.mockResolvedValueOnce(
+    Response.json({
+      results: [
+        { id: "assistant-1", name: "Cloud one", remote: "cloud" },
+        { id: "assistant-2", name: "Own one", remote: "custom" },
+        { id: "assistant-3", name: "Fallback", remote: "skynet" },
+      ],
+    }),
+  );
+  const cloud = await screen.findByRole("radio", { name: /^Cloud one/ });
+  expect(cloud.textContent).toContain("Cloud-hosted");
+  const own = screen.getByRole("radio", { name: /^Own one/ });
+  expect(own.textContent).toContain("Self-hosted");
+  const fallback = screen.getByRole("radio", { name: /^Fallback/ });
+  expect(fallback.textContent).toContain("Self-hosted");
 });
 
 test("arrow keys move focus across cards without selecting", async () => {
