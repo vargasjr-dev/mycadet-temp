@@ -67,27 +67,18 @@ mock.module("@/hooks/use-chooser-row-avatar", () => ({
 const queryClient = new QueryClient();
 
 mock.module("@/lib/navigation/navigation-resolver", () => ({
-  resolveNavigation: (
-    state: Record<string, unknown>,
-    query: { kind: string },
-  ) => {
+  resolveNavigation: (query: { kind: string }) => {
     if (query.kind !== "post-retire") {
       return { action: "allow" };
     }
-    if (state.hasAssistants) {
+    if (storeAssistants.length > 0) {
       return { action: "redirect", to: "/assistant" };
     }
-    if (!state.isLocalClient) {
+    if (!isLocalClientValue) {
       return { action: "redirect", to: "/assistant/onboarding/privacy" };
     }
     return { action: "redirect", to: "/account/onboarding/hosting" };
   },
-}));
-mock.module("@/lib/navigation/build-state", () => ({
-  buildNavigationState: () => ({
-    isLocalClient: isLocalClientValue,
-    hasAssistants: storeAssistants.length > 0,
-  }),
 }));
 
 const removeMock = mock((assistantId: string) => {

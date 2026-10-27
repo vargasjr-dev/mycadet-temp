@@ -4,27 +4,7 @@ import {
   onboardingDestinationAfterConsent,
 } from "@/lib/navigation/onboarding-destination";
 import { routes } from "@/utils/routes";
-
-// ---------------------------------------------------------------------------
-// State — every variable that can influence a routing decision
-// ---------------------------------------------------------------------------
-
-export interface NavigationState {
-  isLocalClient: boolean;
-  hasAssistants: boolean;
-  /**
-   * Whether the user owns ANY assistant past first-run onboarding, i.e. is a
-   * returning user. The right question for post-auth and the onboarding
-   * intercept, where the assistant they will land in is not yet known.
-   */
-  userHasOnboardedAssistant: boolean;
-  /**
-   * Whether the SELECTED assistant is past first-run onboarding. False when
-   * nothing is selected. The right question for the privacy funnel, which is
-   * always about one assistant.
-   */
-  selectedAssistantOnboarded: boolean;
-}
+import { buildNavigationState, type NavigationState } from "./build-state";
 
 // ---------------------------------------------------------------------------
 // Query — what the caller wants to know
@@ -81,9 +61,9 @@ function extractPathname(destination: string): string {
 // ---------------------------------------------------------------------------
 
 export function resolveNavigation(
-  state: NavigationState,
   query: NavigationQuery,
 ): NavigationDecision {
+  const state = buildNavigationState();
   switch (query.kind) {
     case "route-guard":
       return resolveRouteGuard(state, query.pathname);

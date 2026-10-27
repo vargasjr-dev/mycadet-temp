@@ -46,8 +46,6 @@ interface AuthActions {
   }) => Promise<void>;
 }
 
-type AuthStore = AuthActions;
-
 let broadcastChannel: BroadcastChannel | null = null;
 
 /**
@@ -64,7 +62,7 @@ async function endSession(): Promise<void> {
   await clearWidgetSnapshot();
 }
 
-const useAuthStoreBase = create<AuthStore>()(() => ({
+export const useAuthStore = create<AuthActions>()(() => ({
   initSession: async () => {
     // The public pair page establishes its session through the pairing flow
     // itself; any retained session state is stale.
@@ -151,8 +149,6 @@ const useAuthStoreBase = create<AuthStore>()(() => ({
     }
   },
 }));
-
-export const useAuthStore = useAuthStoreBase;
 
 /**
  * Subscribe to app-resume signals on the layout-scoped event bus and to

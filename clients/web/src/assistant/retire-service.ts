@@ -12,7 +12,6 @@ import {
   retireLocalAssistant,
 } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
-import { buildNavigationState } from "@/lib/navigation/build-state";
 import { forgetAssistantOnboarded } from "@/assistant/onboarded-assistant-record";
 import { removeLocalSetting } from "@/utils/local-settings";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -41,9 +40,7 @@ export type RetireOutcome =
  * before this runs), then delegates to the navigation resolver.
  */
 async function getPostRetireRoute(): Promise<string> {
-  const decision = resolveNavigation(buildNavigationState(), {
-    kind: "post-retire",
-  });
+  const decision = resolveNavigation({ kind: "post-retire" });
   return decision.action === "redirect" ? decision.to : routes.welcome;
 }
 

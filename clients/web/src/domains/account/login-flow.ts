@@ -109,16 +109,12 @@ export function resolvePostAuthDestination({
   destination: string;
   requiresFullPageNavigation: boolean;
 } {
-  const decision = resolveNavigation(
-    // The provider callback page just established the platform session.
-    buildNavigationState(),
-    {
-      kind: "post-auth",
-      authIntent,
-      returnTo,
-      fallback,
-    },
-  );
+  const decision = resolveNavigation({
+    kind: "post-auth",
+    authIntent,
+    returnTo,
+    fallback,
+  });
   const destination = decision.action === "redirect" ? decision.to : fallback;
   return {
     destination,

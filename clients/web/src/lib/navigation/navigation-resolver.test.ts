@@ -1,10 +1,6 @@
-import { beforeEach, describe, test, expect } from "bun:test";
+import { beforeEach, describe, test, expect, mock } from "bun:test";
 import { NEW_ASSISTANT_PARAM } from "@/lib/navigation/onboarding-destination";
-import {
-  resolveNavigation,
-  type NavigationState,
-  type NavigationDecision,
-} from "./navigation-resolver";
+import type { NavigationState } from "./build-state";
 
 const base: NavigationState = {
   isLocalClient: false,
@@ -16,15 +12,34 @@ const s = (overrides: Partial<NavigationState>): NavigationState => ({
   ...base,
   ...overrides,
 });
+
+// The resolver builds its own state; the mock hands it the synthetic state
+// each test installs.
+let state: NavigationState = base;
+mock.module("./build-state", () => ({
+  buildNavigationState: () => state,
+}));
+
+const { resolveNavigation } = await import("./navigation-resolver");
+type NavigationDecision = Awaited<
+  ReturnType<typeof resolveNavigation>
+>;
+
 const ALLOW: NavigationDecision = { action: "allow" };
 const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
 const consentCarry = () =>
   `/account/consent?returnTo=${encodeURIComponent("/assistant/onboarding/research")}`;
 
 describe("resolveNavigation", () => {
+  beforeEach(() => {
+    state = { ...base };
+  });
+
   describe("route-guard", () => {
-    const guard = (state: NavigationState, pathname = "/assistant") =>
-      resolveNavigation(state, { kind: "route-guard", pathname });
+    const guard = (next: NavigationState, pathname = "/assistant") => {
+      state = next;
+      return resolveNavigation({ kind: "route-guard", pathname });
+    };
 
     test("empty local clients route to hosting, which settles the account question itself", () => {
       expect(guard(s({ isLocalClient: true, hasAssistants: false }))).toEqual({
@@ -68,8 +83,10 @@ describe("resolveNavigation", () => {
   });
 
   describe("post-retire", () => {
-    const postRetire = (state: NavigationState) =>
-      resolveNavigation(state, { kind: "post-retire" });
+    const postRetire = (next: NavigationState) => {
+      state = next;
+      return resolveNavigation({ kind: "post-retire" });
+    };
 
     test("redirects to the assistant in local mode when other assistants remain", () => {
       expect(
@@ -121,7 +138,7 @@ describe("resolveNavigation", () => {
       returnTo: string | null,
       fallback = "/assistant",
     ) =>
-      resolveNavigation(base, {
+      resolveNavigation({
         kind: "post-auth",
         authIntent,
         returnTo,
@@ -184,8 +201,9 @@ describe("resolveNavigation", () => {
     });
 
     test("signup skips privacy when the assistant is already onboarded", () => {
+      state = s({ userHasOnboardedAssistant: true });
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: true }), {
+        resolveNavigation({
           kind: "post-auth",
           authIntent: "signup",
           returnTo: "/assistant/identity",
@@ -195,8 +213,9 @@ describe("resolveNavigation", () => {
     });
 
     test("login keeps an onboarding returnTo when already onboarded", () => {
+      state = s({ userHasOnboardedAssistant: true });
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: true }), {
+        resolveNavigation({
           kind: "post-auth",
           authIntent: "login",
           returnTo: HATCHING_FUNNEL_URL,
@@ -206,8 +225,9 @@ describe("resolveNavigation", () => {
     });
 
     test("login skips a research returnTo when already onboarded", () => {
+      state = s({ userHasOnboardedAssistant: true });
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: true }), {
+        resolveNavigation({
           kind: "post-auth",
           authIntent: "login",
           returnTo: "/assistant/onboarding/research",
@@ -215,7 +235,7 @@ describe("resolveNavigation", () => {
         }),
       ).toEqual({ action: "redirect", to: "/assistant" });
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: true }), {
+        resolveNavigation({
           kind: "post-auth",
           authIntent: "login",
           returnTo: "/assistant/onboarding/research?hosting=cadet-cloud",
@@ -226,8 +246,9 @@ describe("resolveNavigation", () => {
 
     test("login keeps a new-assistant returnTo when already onboarded", () => {
       const returnTo = `/assistant/onboarding/research?${NEW_ASSISTANT_PARAM}=1`;
+      state = s({ userHasOnboardedAssistant: true });
       expect(
-        resolveNavigation(s({ userHasOnboardedAssistant: true }), {
+        resolveNavigation({
           kind: "post-auth",
           authIntent: "login",
           returnTo,
@@ -237,16 +258,14 @@ describe("resolveNavigation", () => {
     });
 
     test("signup still goes to consent for a freshly hatched assistant", () => {
+      state = s({ userHasOnboardedAssistant: false, hasAssistants: true });
       expect(
-        resolveNavigation(
-          s({ userHasOnboardedAssistant: false, hasAssistants: true }),
-          {
-            kind: "post-auth",
-            authIntent: "signup",
-            returnTo: "/assistant/identity",
-            fallback: "/assistant",
-          },
-        ),
+        resolveNavigation({
+          kind: "post-auth",
+          authIntent: "signup",
+          returnTo: "/assistant/identity",
+          fallback: "/assistant",
+        }),
       ).toEqual({
         action: "redirect",
         to: `/account/consent?returnTo=${encodeURIComponent(
