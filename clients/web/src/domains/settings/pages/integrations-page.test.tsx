@@ -49,7 +49,7 @@ let seededTools: {
   tools: { name: string; description: string; estimatedTokens: number }[];
 }[] = [];
 const setupConversation = mock(() => "draft-conversation");
-const startLogin = mock(async () => {});
+const hardNavigate = mock((_url: string) => {});
 const managedConnect = mock((..._args: unknown[]) => {});
 const managedDismiss = mock(() => {});
 const installedPluginNames: string[] = [];
@@ -174,13 +174,8 @@ mock.module("@/hooks/use-cloud-assistant-id", () => ({
 mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
-mock.module("@/hooks/use-onboarding-login", () => ({
-  useOnboardingLogin: () => ({
-    loading: false,
-    error: null,
-    login: startLogin,
-    cancel: () => {},
-  }),
+mock.module("@/lib/auth/hard-navigate", () => ({
+  hardNavigate,
 }));
 mock.module("@/hooks/use-cloud-oauth-connect", () => ({
   useCloudOAuthConnect: () => ({
@@ -407,7 +402,7 @@ afterEach(() => {
   disconnectedConnectionIds.length = 0;
   authStarts.length = 0;
   setupConversation.mockClear();
-  startLogin.mockClear();
+  hardNavigate.mockClear();
   managedConnect.mockClear();
   managedDismiss.mockClear();
   getAssistant.mockClear();

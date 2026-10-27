@@ -145,16 +145,12 @@ export const routes = {
     systemEvents: r("/assistant/logs/system-events"),
   },
   account: {
-    // Triage: every key here still has a live consumer in this bundle, and
-    // The tier's PAGES are deleted from this bundle (their maintained ports
-    // live in the app bundle — these paths fall through to the NotFound
-    // splat when web serves at root), but the URL strings stay until their
-    // web consumers do: `root` + `providerCallback` feed the auth-logic
-    // tier (login-flow, native-auth, install-referrer). They die with the
-    // auth store. The integration-connect relay's key left with the
-    // managed-OAuth removal.
-    root: r("/account"),
-    providerCallback: r("/account/provider/callback"),
+    // The tier's PAGES live in the app bundle; these paths are cross-bundle
+    // hand-off targets — the menu's Log In / Log Out commands land there and
+    // the app bundle owns everything behind them (login, credential
+    // revocation). They fall through to the app bundle through the shell.
+    login: r("/account/login"),
+    logout: r("/logout"),
   },
 
   // The local front door renders in the app bundle; this constant stays for

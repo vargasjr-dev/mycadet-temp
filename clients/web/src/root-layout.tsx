@@ -30,7 +30,6 @@ import {
 } from "@/domains/chat/watch/watch-retro";
 import { subscribe } from "@/lib/event-bus";
 import { handleLogout } from "@/lib/auth/handle-logout";
-import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import { getSession } from "@/lib/auth/allauth-client";
@@ -90,6 +89,7 @@ import { GlobalPushToTalkBridge } from "@/domains/chat/voice/global-push-to-talk
 import { TimezoneSync } from "@/components/timezone-sync";
 import { RoutePendingIndicator } from "@/components/route-pending-indicator";
 import { UpdateToast } from "@/components/update-toast";
+import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { hardNavigateIfCrossBundle } from "@/lib/navigation/shell-consent-bounce";
 import { retireAssistant } from "@/assistant/retire-service";
 import { RetireConfirmDialog } from "@/components/retire-confirm-dialog";
@@ -379,14 +379,12 @@ export function RootLayout() {
   // the retire can run without first routing the user to settings.
   const [retireId, setRetireId] = useState<string | null>(null);
   const [retirePending, setRetirePending] = useState(false);
-  const { login } = useOnboardingLogin();
-
   useCadetCommands({
     openSettings: () => {
       void navigate(routes.settings.root);
     },
     login: () => {
-      void login();
+      hardNavigate(routes.account.login);
     },
     logout: () => {
       void handleLogout();

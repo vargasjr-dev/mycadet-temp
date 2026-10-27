@@ -24,13 +24,13 @@ import { type Assistant, getAssistant } from "@/assistant/api";
 import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { assistantsOauthConnectionsListOptions } from "@/generated/api/@tanstack/react-query.gen";
 import { oauthProvidersGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
 import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { usePluginsList } from "@/hooks/use-plugins-list";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { openExternalUrl } from "@/runtime/browser";
+import { hardNavigate } from "@/lib/auth/hard-navigate";
 import { routes } from "@/utils/routes";
 
 import { IntegrationConnectModal } from "../components/integration-connect-modal";
@@ -159,11 +159,15 @@ function IntegrationsPanelInner({
   }, [mcpAssistantId]);
 
   // Returns to this page with its query intact so a deep-linked provider
-  // survives the round trip.
-  const { login } = useOnboardingLogin(
-    `${location.pathname}${location.search}${location.hash}`,
-  );
-  const startLogin = useCallback(() => void login(), [login]);
+  // survives the round trip. The login flow itself lives in the app bundle's
+  // account tier — this is a hand-off, not an in-bundle flow.
+  const startLogin = useCallback(() => {
+    hardNavigate(
+      `${routes.account.login}?returnTo=${encodeURIComponent(
+        `${location.pathname}${location.search}${location.hash}`,
+      )}`,
+    );
+  }, [location.pathname, location.search, location.hash]);
 
   const dismissConnectModal = connect.closeModal;
   const cancelAttempt = connect.cancel;

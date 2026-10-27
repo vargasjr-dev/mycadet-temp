@@ -259,8 +259,9 @@ async function upsertToken({
 
 /**
  * Retire the registration when the session ends — or when the user logs out,
- * which `@/lib/auth/session-teardown` calls before clearing the session cookie
- * so the platform delete is still authenticated.
+ * which the logout path (`@/lib/auth/handle-logout`) calls before the
+ * hand-off that revokes the session, so the platform delete is still
+ * authenticated.
  *
  * Best-effort by nature — the session may be ending precisely because the app
  * is going away, and this request may never leave. The cloud therefore

@@ -26,9 +26,13 @@ import {
   setBiometricEnabled,
   storeBiometricToken,
 } from "@/runtime/native-biometric";
+import { buildNavigationState } from "@/lib/navigation/build-state";
 import { routes } from "@/utils/routes";
 
-import { nativeAuthReturningUser } from "@/domains/account/login-flow";
+// The login page's post-auth query reads only `userHasOnboardedAssistant`;
+// no session has been probed on this plane yet.
+const nativeAuthReturningUser = (): boolean =>
+  buildNavigationState().userHasOnboardedAssistant;
 
 /**
  * JS ↔ native bridge for the `NativeAuth` Capacitor plugin registered by the

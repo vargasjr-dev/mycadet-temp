@@ -7,7 +7,8 @@
  * suspended, where the local-notification path cannot reach the device).
  *
  * No-ops outside native mobile. Token deletion on logout is handled in
- * `@/lib/auth/session-teardown` (before the session cookie is cleared), not here —
+ * the logout path (`@/lib/auth/handle-logout`, before the hand-off that clears the
+ * session), not here —
  * the assistant-id change on logout races session teardown, so the cloud
  * delete must run while the session is still valid.
  *

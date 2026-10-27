@@ -25,7 +25,6 @@ import {
   establishGatewayConnection,
   watchGatewayConnectionOnResume,
 } from "@/lib/gateway-connection-lifecycle";
-import { watchCrossTabSessionEnd } from "@/lib/auth/session-teardown";
 import { createBrowserRouter } from "react-router";
 
 type Router = ReturnType<typeof createBrowserRouter>;
@@ -86,7 +85,6 @@ async function boot(router: Router) {
     void establishGatewayConnection();
   }
   watchGatewayConnectionOnResume();
-  watchCrossTabSessionEnd();
   // Local mode awaits `initSession()` above, so this separates "session was
   // the boot cost" from "the app tree was".
 

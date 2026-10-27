@@ -14,7 +14,7 @@ import {
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
-import { endSession } from "@/lib/auth/session-teardown";
+import { endSession } from "@/lib/auth/session-hygiene";
 
 /**
  * Whether the app booted on the public `/assistant/pair` route (prefix-
