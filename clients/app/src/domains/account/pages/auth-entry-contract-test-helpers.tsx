@@ -19,7 +19,7 @@ import * as authStore from "@app/stores/auth-store";
 import { routes } from "@app/utils/routes";
 
 /** Session lifecycle verdict the auth store carries (the app's shape). */
-type SessionStatus = "initializing" | "authenticated" | "unauthenticated";
+type CloudSessionStatus = "unknown" | "absent" | "present";
 
 export const CHECKOUT = "/assistant/checkout?package=super";
 const HOSTILE_DESTINATION = "https://evil.example";
@@ -47,9 +47,12 @@ export const mockAuthStore = () => ({
   ...authStore,
   useIsAuthenticated: () => authEntry.authenticated,
   useIsSessionInitializing: () => authEntry.initializing,
+  // The app store reads an external snapshot owned by the cloud-session
+  // source; tests drive the cloud-session dimension through the snapshot
+  // below so the gate scenarios can settle it without the real probe.
   useAuthStore: (
-    selector: (state: { sessionStatus: SessionStatus }) => unknown,
-  ) => selector({ sessionStatus: authStoreState.sessionStatus }),
+    selector: (state: { cloudSession: CloudSessionStatus }) => unknown,
+  ) => selector({ cloudSession: authStoreState.cloudSession }),
 });
 
 export const mockNativeAuth = () => ({
@@ -77,14 +80,14 @@ export const mockHardNavigate = () => ({
   },
 });
 
-function setSessionStatus(sessionStatus: SessionStatus) {
-  authStoreState.sessionStatus = sessionStatus;
+function setCloudSession(cloudSession: CloudSessionStatus) {
+  authStoreState.cloudSession = cloudSession;
 }
 
 /** The app's auth store exposes selectors, not zustand's setState — tests
  * write through the module-level snapshot the mocked selectors read. */
-const authStoreState: { sessionStatus: SessionStatus } = {
-  sessionStatus: "authenticated",
+const authStoreState: { cloudSession: CloudSessionStatus } = {
+  cloudSession: "present",
 };
 
 /** Registers the per-scenario reset and teardown the helpers below assume. */
@@ -96,7 +99,7 @@ export function setupAuthEntry() {
     authEntry.authFlowCalls = [];
     authEntry.hardNavigateCalls = [];
     authEntry.nativeLoginError = null;
-    setSessionStatus("authenticated");
+    setCloudSession("present");
   });
 
   afterEach(cleanup);
@@ -163,7 +166,7 @@ export function describeAuthEntryContract(
 
     test("a cloud-dependent returnTo without a cloud session still signs in", () => {
       authEntry.authenticated = true;
-      setSessionStatus("unauthenticated");
+      setCloudSession("absent");
       // /account is the cloud-only surface: a gateway identity can't reach it,
       // so the absent cloud session falls through to the auth screen.
       const entry = entryUrl(route, routes.account.root);
@@ -177,7 +180,7 @@ export function describeAuthEntryContract(
       // Checkout left the cloud-only list: an assistant identity reaches it,
       // so the short-circuit lands there instead of bouncing to the auth sheet.
       authEntry.authenticated = true;
-      setSessionStatus("unauthenticated");
+      setCloudSession("absent");
       renderEntry(entryUrl(route, CHECKOUT));
 
       expect(currentLocation()).toBe(CHECKOUT);
@@ -186,7 +189,7 @@ export function describeAuthEntryContract(
 
     test("a cloud-dependent returnTo waits out the cloud-session probe", () => {
       authEntry.authenticated = true;
-      setSessionStatus("initializing");
+      setCloudSession("unknown");
       const entry = entryUrl(route, routes.account.root);
       renderEntry(entry);
 

@@ -1,4 +1,4 @@
-import { useAuthStore } from "@app/stores/auth-store";
+import { useAccountCloudSession } from "@app/lib/auth/account-session";
 import {
   accountCloudGate,
   type AccountCloudGate,
@@ -12,7 +12,7 @@ export function useAccountCloudGate(
   settleTimeoutMs = ACCOUNT_SESSION_SETTLE_TIMEOUT_MS,
 ): AccountCloudGate {
   const gate = accountCloudGate({
-    sessionStatus: useAuthStore((state) => state.sessionStatus),
+    session: useAccountCloudSession(),
   });
   const timedOut = useDeadlinePassed(gate === "pending", settleTimeoutMs);
   return gate === "pending" && timedOut ? "disabled" : gate;

@@ -75,7 +75,7 @@ test("account hooks share initialization and observe their own cloud user", asyn
 test("rejected cloud sessions show signed-out account UI and logout actions retain cleanup", async () => {
   const { result } = renderHook(() => ({
     authenticated: useIsAuthenticated(),
-    session: useAuthStore((state) => state.sessionStatus),
+    cloud: useAuthStore((state) => state.cloudSession),
     logout: useAuthStore.use.logout(),
   }));
   await act(async () => {
@@ -83,7 +83,7 @@ test("rejected cloud sessions show signed-out account UI and logout actions reta
   });
   expect(result.current).toMatchObject({
     authenticated: false,
-    session: "unauthenticated",
+    cloud: "absent",
   });
   await act(async () => {
     await result.current.logout();

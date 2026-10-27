@@ -2,10 +2,10 @@ export type AccountCloudGate = "pending" | "disabled" | "full";
 
 /** Account login can establish a platform session regardless of assistant hosting. */
 export function accountCloudGate({
-  sessionStatus,
+  session,
 }: {
-  sessionStatus: "initializing" | "authenticated" | "unauthenticated";
+  session: "unknown" | "absent" | "present";
 }): AccountCloudGate {
-  if (sessionStatus === "authenticated") return "full";
-  return sessionStatus === "initializing" ? "pending" : "disabled";
+  if (session === "present") return "full";
+  return session === "unknown" ? "pending" : "disabled";
 }

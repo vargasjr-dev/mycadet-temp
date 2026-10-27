@@ -61,7 +61,8 @@ function useHostingOptions(hasCloudSession: boolean): HostingOption[] {
 export function HostingScreen() {
   const { t } = useTranslation("account");
   const navigate = useNavigate();
-  const hasCloudSession = useAuthStore((s) => s.sessionStatus === "authenticated");
+  // The resolver's funnel fork reads the same verdict: a live cloud session.
+  const hasCloudSession = useAuthStore((s) => s.cloudSession === "present");
   const options = useHostingOptions(hasCloudSession);
   const cloudDisabled = options.find((o) => o.mode === "cadet-cloud")?.disabled;
   const [selected, setSelected] = useState<HostingMode>(

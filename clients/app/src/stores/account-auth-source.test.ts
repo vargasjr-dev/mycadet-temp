@@ -67,8 +67,8 @@ test("resume listeners are shared, respect desktop OAuth and stop after the last
 test("explicit account refresh and logout use account-owned requests", async () => {
   await accountAuthSource.getSnapshot().refreshSession();
   expect(getSession).toHaveBeenCalledTimes(1);
-  expect(accountAuthSource.getSnapshot().sessionStatus).toBe("authenticated");
+  expect(accountAuthSource.getSnapshot().cloudSession).toBe("present");
   await accountAuthSource.getSnapshot().logout();
   expect(revokeSession).toHaveBeenCalledTimes(1);
-  expect(accountAuthSource.getSnapshot().sessionStatus).toBe("unauthenticated");
+  expect(accountAuthSource.getSnapshot().cloudSession).toBe("absent");
 });

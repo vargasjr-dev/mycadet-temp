@@ -55,6 +55,7 @@ test("post-auth refresh supersedes the boot probe, deduplicates explicit refresh
   expect(source.getSnapshot()).toMatchObject({
     user,
     sessionStatus: "authenticated",
+    cloudSession: "present",
   });
   expect(write).toHaveBeenCalledWith(user);
 });
@@ -66,6 +67,7 @@ for (const status of [401, 403, 410])
     expect(source.getSnapshot()).toMatchObject({
       user: null,
       sessionStatus: "unauthenticated",
+      cloudSession: "absent",
     });
     expect(clear).toHaveBeenCalledTimes(1);
   });
@@ -77,6 +79,7 @@ for (const status of [undefined, 429, 502])
     expect(source.getSnapshot()).toMatchObject({
       user,
       sessionStatus: "authenticated",
+      cloudSession: "present",
     });
     await source.observeSession();
     expect(source.getSnapshot().user).toEqual(user);
@@ -89,6 +92,7 @@ test("a gateway-only snapshot cannot sign into the cloud account", async () => {
   expect(source.getSnapshot()).toMatchObject({
     user: null,
     sessionStatus: "unauthenticated",
+    cloudSession: "unknown",
   });
 });
 test("logout supersedes an in-flight success and blocks probes during cleanup", async () => {
@@ -99,7 +103,7 @@ test("logout supersedes an in-flight success and blocks probes during cleanup", 
   logout.mockImplementationOnce(() => cleanup.promise);
   const refresh = source.getSnapshot().refreshSession();
   const signOut = source.getSnapshot().logout();
-  expect(source.getSnapshot().sessionStatus).toBe("unauthenticated");
+  expect(source.getSnapshot().cloudSession).toBe("absent");
   expect(await source.observeSession()).toBe(false);
   probe.resolve(success);
   expect(await refresh).toBe(false);
@@ -118,6 +122,7 @@ test("a successful anonymous response clears a cached cloud account", async () =
   expect(source.getSnapshot()).toMatchObject({
     user: null,
     sessionStatus: "unauthenticated",
+    cloudSession: "absent",
   });
   expect(clear).toHaveBeenCalledTimes(1);
 });
@@ -141,5 +146,6 @@ test("stalled account probes abort and restore only a last-known cloud account",
   expect(source.getSnapshot()).toMatchObject({
     user,
     sessionStatus: "authenticated",
+    cloudSession: "present",
   });
 });

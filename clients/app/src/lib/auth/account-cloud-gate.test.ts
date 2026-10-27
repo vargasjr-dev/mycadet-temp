@@ -2,12 +2,12 @@ import { expect, test } from "bun:test";
 import { accountCloudGate } from "./account-cloud-gate";
 
 const cases = [
-  ["initializing", "pending"],
-  ["unauthenticated", "disabled"],
-  ["authenticated", "full"],
+  ["unknown", "pending"],
+  ["absent", "disabled"],
+  ["present", "full"],
 ] as const;
-for (const [sessionStatus, expected] of cases) {
-  test(`account gate: sessionStatus=${sessionStatus}`, () => {
-    expect(accountCloudGate({ sessionStatus })).toBe(expected);
+for (const [session, expected] of cases) {
+  test(`account gate: session=${session}`, () => {
+    expect(accountCloudGate({ session })).toBe(expected);
   });
 }

@@ -50,6 +50,7 @@ export function createAccountSessionSource(
     publish({
       user: null,
       sessionStatus: "unauthenticated",
+      cloudSession: "absent",
     });
     let finished = false;
     return () => {
@@ -88,6 +89,7 @@ export function createAccountSessionSource(
         publish({
           user,
           sessionStatus: "authenticated",
+          cloudSession: "present",
         });
         return true;
       }
@@ -96,6 +98,7 @@ export function createAccountSessionSource(
         publish({
           user: null,
           sessionStatus: "unauthenticated",
+          cloudSession: "absent",
         });
         return false;
       }
@@ -108,6 +111,7 @@ export function createAccountSessionSource(
         publish({
           user: cached,
           sessionStatus: cached ? "authenticated" : "unauthenticated",
+          cloudSession: cached ? "present" : "unknown",
         });
       }
       return state.sessionStatus === "authenticated";
@@ -123,6 +127,7 @@ export function createAccountSessionSource(
   state = {
     user: null,
     sessionStatus: "initializing",
+    cloudSession: "unknown",
     initSession() {
       initialization ??= observeSession().then(() => {});
       return initialization;
