@@ -17,7 +17,6 @@ mock.module("@/lib/local-mode", () => ({
 
 const { buildNavigationState } = await import("./build-state");
 const { useAuthStore } = await import("@/stores/auth-store");
-const { useOrganizationStore } = await import("@/stores/organization-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const { clearSelectedAssistantId, writeSelectedAssistantId } =
@@ -30,10 +29,6 @@ beforeEach(() => {
   mockIsCloudRemote = false;
   mockGatewaySessionLive = false;
   useAuthStore.setState(initialAuthState, true);
-  useOrganizationStore.setState({
-    currentOrganizationId: null,
-    persistedOrganizationId: null,
-  });
   globalThis.sessionStorage?.clear();
   useResolvedAssistantsStore.setState({
     assistants: [],

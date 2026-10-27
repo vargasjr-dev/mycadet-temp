@@ -129,16 +129,6 @@ export function isConnectableFromThisDevice(a: ResolvedAssistant): boolean {
  * entries with no org (`organizationId == null`), and platform entries owned
  * by the active org. Cross-org platform entries are dropped.
  */
-export function assistantsValidForOrg(
-  assistants: ResolvedAssistant[],
-  activeOrgId: string | null,
-): ResolvedAssistant[] {
-  return assistants.filter(
-    (a) =>
-      a.isLocal || a.organizationId == null || a.organizationId === activeOrgId,
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Store definition
 // ---------------------------------------------------------------------------

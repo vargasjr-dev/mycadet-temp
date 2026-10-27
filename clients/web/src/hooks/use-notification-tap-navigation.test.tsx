@@ -41,7 +41,6 @@ import {
   type NotificationTapPayload,
 } from "@/runtime/notification-taps";
 import { useAuthStore } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -53,6 +52,7 @@ const ASSISTANT_A: ResolvedAssistant = {
   isLocal: false,
   isCloudHosted: true,
   isPaired: false,
+  organizationId: "org-1",
 };
 const ASSISTANT_B: ResolvedAssistant = {
   id: "assistant-b",
@@ -103,11 +103,9 @@ const { useNotificationTapNavigation } =
 
 function platformIdentity(
   assistant: ResolvedAssistant = ASSISTANT_A,
-  organizationId = "org-1",
 ): NotificationIdentity {
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
-    organizationId,
     window.location.href,
   );
   const identity = scopeId
@@ -158,11 +156,6 @@ beforeEach(() => {
   useAuthStore.setState({
     sessionStatus: "authenticated",
     cloudSession: "present",
-  });
-  useOrganizationStore.setState({
-    currentOrganizationId: "org-1",
-    persistedOrganizationId: "org-1",
-    status: "ready",
   });
   useResolvedAssistantsStore.setState({
     assistants: [ASSISTANT_A, ASSISTANT_B],

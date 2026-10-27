@@ -26,7 +26,6 @@ import {
   commitLocalSession,
   probeCloudSessionForConnect,
 } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 
 /**
  * Connect to a specific local assistant. Primes its gateway connection,
@@ -81,14 +80,6 @@ export async function connectCloudAssistant(
 ): Promise<void> {
   const result = await getSession();
   if (!result.ok || !result.data.user) {
-    throw new Error("Platform authentication required");
-  }
-  // Hydrate the organizations to avoid race conditions from lazy fetch; a
-  // settled rejection fails the connect before the assistant selection and
-  // session commit below, so a caller that catches the error keeps its
-  // current selection.
-  const orgOutcome = await useOrganizationStore.getState().fetchOrganizations();
-  if (!orgOutcome.ok && orgOutcome.kind === "rejected") {
     throw new Error("Platform authentication required");
   }
   await commitCloudSession(assistantId);

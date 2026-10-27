@@ -14,7 +14,6 @@ import { createGenerationGuard } from "@/lib/generation-guard";
 import { persistLastSeenAvatar } from "@/lib/persist-last-seen-avatar";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { resolveNotificationIdentityScope } from "@/runtime/notification-avatar";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -98,16 +97,17 @@ export function releaseAssistantAvatarUrl(assistantId: string): void {
  */
 export function resolveAssistantAvatarOwnerScopeId(
   assistant: ResolvedAssistant | null | undefined,
-  organizationId: string | null,
   connectionFallback: string | null,
 ): string | null {
   if (!assistant) {
     return null;
   }
+  // The org rides the resolved row — a served/lockfile fact, not a store
+  // web would manage.
   return assistant.isCloudHosted
     ? resolveNotificationIdentityScope({
         kind: "account",
-        organizationId,
+        organizationId: assistant.organizationId ?? null,
       })
     : resolveNotificationIdentityScope({
         kind: "connection",
@@ -394,7 +394,6 @@ export function useAssistantAvatar(
   const activeSupportsManifest = useSupportsAvatarStateManifest();
   const supportsManifest = options?.supportsManifest ?? activeSupportsManifest;
   const assistants = useResolvedAssistantsStore.use.assistants();
-  const organizationId = useRequestOrganizationId();
   const assistant =
     options?.ownerAssistant === undefined
       ? assistants.find((candidate) => candidate.id === assistantId)
@@ -408,7 +407,6 @@ export function useAssistantAvatar(
       : globalThis.location.href);
   const canonicalScopeId = resolveAssistantAvatarOwnerScopeId(
     assistant,
-    organizationId,
     connectionFallback,
   );
   const scopeId =

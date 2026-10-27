@@ -51,10 +51,6 @@ import { listAssistants } from "@/assistant/api";
 import { deleteBiometricToken } from "@/runtime/native-biometric";
 import { unregisterLiveActivityPushToken } from "@/domains/chat/voice/live-voice/live-activity-push-registration";
 import { unregisterFromRemotePush } from "@/runtime/push-registration";
-import {
-  clearOrganization,
-  useOrganizationStore,
-} from "@/stores/organization-store";
 import { clearUserScopedStorage } from "@/lib/auth/session-cleanup";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -315,33 +311,10 @@ function broadcastAuthChange(): void {
  * leave cached lockfile data standing. Loading the cloud assistants list
  * is a separate concern outside this evidence rule.
  */
-async function reconcileCloudAssistants(
-  syncIsCurrent?: () => boolean,
-  sessionIsCurrent?: () => boolean,
-): Promise<boolean> {
+async function reconcileCloudAssistants(): Promise<boolean> {
   try {
-    // `sessionIsCurrent` is the looser gate: it stays true past the probe's
-    // race timeout as long as no newer probe superseded this one, letting a
-    // slow-but-successful org fetch for the still-active session commit
-    // instead of stranding readiness. Destructive writes stay on the strict
-    // `syncIsCurrent`.
-    const orgOutcome = await useOrganizationStore
-      .getState()
-      .fetchOrganizations(syncIsCurrent, sessionIsCurrent);
-    if (!orgOutcome.ok && orgOutcome.kind === "rejected") {
-      return true;
-    }
     const apiAssistants = await listAssistants();
     if (isSettledSessionRejection(apiAssistants)) {
-      // The org fetch self-clears on its own rejection; an assistants-only
-      // rejection must clear the org state too, or the request interceptor
-      // keeps stamping the rejected account's Cadet-Organization-Id. The
-      // currency guard matches the sync below: a timed-out or superseded
-      // probe settled "present" from cached data, and its dangling call must
-      // not strip the org header out from under that session.
-      if (syncIsCurrent?.() ?? true) {
-        useOrganizationStore.getState().clearOrganization();
-      }
       return true;
     }
   } catch {
@@ -413,20 +386,14 @@ function probeCloudSession(
         // reconciliation to 3s; stale or timed-out probes cannot commit state.
         let sessionRejected = false;
         if (isLocalClient()) {
-          let timedOut = false;
-          const syncIsCurrent = (): boolean => !timedOut && !isStale();
           let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
           try {
             await Promise.race([
               (async () => {
-                sessionRejected = await reconcileCloudAssistants(
-                  syncIsCurrent,
-                  () => !isStale(),
-                );
+                sessionRejected = await reconcileCloudAssistants();
               })(),
               new Promise<never>((_, reject) => {
                 timeoutHandle = setTimeout(() => {
-                  timedOut = true;
                   reject(new Error("sync timeout"));
                 }, 3_000);
               }),
@@ -675,7 +642,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       }
     }
 
-    clearOrganization();
     // Only a settled "no session" answer invalidates the snapshot — a
     // revoked session must not be resurrected by a later offline boot.
     // Transport failures keep it (web builds land here too; without a
@@ -775,11 +741,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           if (supersededByLogout()) {
             return abandon();
           }
-          if (!isLocalClient()) {
-            await useOrganizationStore
-              .getState()
-              .fetchOrganizations(() => !supersededByLogout());
-          }
           if (supersededByLogout()) {
             return abandon();
           }
@@ -833,7 +794,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       return wasAuthenticated;
     }
     clearSessionSnapshot();
-    clearOrganization();
     await endSession(set);
     return false;
   },
@@ -855,7 +815,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       useResolvedAssistantsStore.getState().setActiveAssistantId(null);
       setSelfHostedConnection(null);
       await setSelectedAssistant(null);
-      clearOrganization();
       clearUserScopedStorage();
       await endSession(set, { authoritative: true });
       // Bumped again now the session has ended: a refresh that entered partway
@@ -894,7 +853,6 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
       if (options?.cloudAccount && getSelfHostedIngressUrl() != null) {
         setSelfHostedConnection(null);
       }
-      clearOrganization();
       clearUserScopedStorage();
       useResolvedAssistantsStore.getState().setActiveAssistantId(null);
       // Clear the selection slice too — `clearUserScopedStorage` already

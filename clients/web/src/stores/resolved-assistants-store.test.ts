@@ -7,11 +7,7 @@ import {
   setSystemTime,
 } from "bun:test";
 
-import {
-  assistantsValidForOrg,
-  useResolvedAssistantsStore,
-  type ResolvedAssistant,
-} from "@/stores/resolved-assistants-store";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { SELECTED_ASSISTANT_STORAGE_KEY } from "@/assistant/selected-assistant-storage";
 import {
   AVATAR_SUPERSEDE_WINDOW_MS,
@@ -528,53 +524,6 @@ describe("setFromApi connectability", () => {
     const entry = useResolvedAssistantsStore.getState().assistants[0];
     expect(entry.id).toBe("asst-local");
     expect(entry.cloud).toBe("local");
-  });
-});
-
-describe("assistantsValidForOrg", () => {
-  const local: ResolvedAssistant = {
-    id: "local",
-    isLocal: true,
-    isCloudHosted: false,
-    isPaired: false,
-  };
-  const activeOrg: ResolvedAssistant = {
-    id: "active-org",
-    isLocal: false,
-    isCloudHosted: true,
-    isPaired: false,
-    organizationId: "org-1",
-  };
-  const otherOrg: ResolvedAssistant = {
-    id: "other-org",
-    isLocal: false,
-    isCloudHosted: true,
-    isPaired: false,
-    organizationId: "org-2",
-  };
-  const legacy: ResolvedAssistant = {
-    id: "legacy",
-    isLocal: false,
-    isCloudHosted: true,
-    isPaired: false,
-  };
-
-  it("always keeps local entries", () => {
-    expect(assistantsValidForOrg([local], "org-1")).toEqual([local]);
-    expect(assistantsValidForOrg([local], null)).toEqual([local]);
-  });
-
-  it("keeps platform entries only when owned by the active org", () => {
-    const result = assistantsValidForOrg([activeOrg, otherOrg], "org-1");
-    expect(result).toEqual([activeOrg]);
-  });
-
-  it("keeps legacy entries with no org (undefined)", () => {
-    expect(assistantsValidForOrg([legacy], "org-1")).toEqual([legacy]);
-  });
-
-  it("drops cross-org platform entries", () => {
-    expect(assistantsValidForOrg([otherOrg], "org-1")).toEqual([]);
   });
 });
 

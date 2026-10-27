@@ -21,10 +21,6 @@ import {
 import { getDeviceId } from "@/runtime/device-id";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { getElectronSessionToken } from "@/runtime/session-token";
-import {
-  getActiveOrganizationIdForRequests,
-  useOrganizationStore,
-} from "@/stores/organization-store";
 import { isUuid } from "@/utils/uuid";
 
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
@@ -626,23 +622,7 @@ async function resolveOrganizationId(
   statusOrganizationId: string | null,
   assistant: LockfileAssistant,
 ): Promise<string | null> {
-  const existing =
-    statusOrganizationId ??
-    assistant.cloudOrganizationId ??
-    getActiveOrganizationIdForRequests();
-  if (existing) {
-    return existing;
-  }
-
-  await useOrganizationStore
-    .getState()
-    .fetchOrganizations()
-    .catch(() => {});
-  return (
-    getActiveOrganizationIdForRequests() ??
-    assistant.cloudOrganizationId ??
-    null
-  );
+  return statusOrganizationId ?? assistant.cloudOrganizationId ?? null;
 }
 
 async function ensureRegistration(
@@ -686,7 +666,6 @@ async function platformPost<T>(
       },
       {
         includeSelfHostedActorToken: false,
-        organizationId,
       },
     )),
   });

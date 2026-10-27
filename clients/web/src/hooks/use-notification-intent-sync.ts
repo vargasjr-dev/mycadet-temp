@@ -51,7 +51,6 @@ import {
   shouldSuppressFocusedNotificationDelivery,
 } from "@/runtime/notifications";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { IdentityGetResponse } from "@/generated/daemon/types.gen";
 
@@ -67,7 +66,6 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   const { pathname } = useLocation();
   const activeConversationId = useConversationStore.use.activeConversationId();
   const queryClient = useQueryClient();
-  const requestOrganizationId = useRequestOrganizationId();
   const assistants = useResolvedAssistantsStore.use.assistants();
   const assistant = assistants.find(
     (candidate) => candidate.id === assistantId,
@@ -80,11 +78,7 @@ export function useNotificationIntentSync(assistantId: string | null): void {
   // Keyed on the resolved assistant — a resolved assistant is the whole
   // fact; there is no separate session question to ask first.
   const scopeId = assistant
-    ? resolveAssistantAvatarOwnerScopeId(
-        assistant,
-        requestOrganizationId,
-        connectionFallback,
-      )
+    ? resolveAssistantAvatarOwnerScopeId(assistant, connectionFallback)
     : null;
   const cloudAssistantId = resolveAssistantNotificationCloudId(assistant);
   const notificationIdentity = useMemo(

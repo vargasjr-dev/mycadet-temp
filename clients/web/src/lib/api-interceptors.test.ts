@@ -85,10 +85,8 @@ import { ApiError } from "@/utils/api-errors";
 import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 import { getClientId } from "@/lib/client-identity";
 import { __resetForTesting as resetSessionToken } from "@/runtime/session-token";
-import { useOrganizationStore } from "@/stores/organization-store";
 import { readInjectedConfig } from "@/lib/injected-config";
 
-const TEST_ORG_ID = "org-test-1234";
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
 
 function setCsrfCookie(token: string): void {
@@ -110,7 +108,6 @@ async function intercept(
 
 describe("api-interceptors / requestInterceptor", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -137,11 +134,6 @@ describe("api-interceptors / requestInterceptor", () => {
       expect(headers.get("X-Cadet-Client-Id")).toBe(getClientId());
       expect(headers.get("X-Cadet-Interface-Id")).toBe("web");
     }
-  });
-
-  test("attaches Cadet-Organization-Id when an active org is set", async () => {
-    const headers = await intercept("GET");
-    expect(headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
   });
 
   test("attaches X-CSRFToken on mutating requests", async () => {
@@ -179,7 +171,6 @@ describe("api-interceptors / requestInterceptor", () => {
 
 describe("api-interceptors / Electron session-token header", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -240,7 +231,7 @@ describe("api-interceptors / Electron session-token header", () => {
 //
 // These tests pin the invariants that make that handoff safe:
 //   - URL origin gets swapped to the registered ingress.
-//   - Platform-only headers (Cadet-Organization-Id, X-CSRFToken) are
+//   - Platform-only headers (X-CSRFToken) are
 //     stripped so the user's gateway never sees our session/CSRF state.
 //   - `Authorization: Bearer <token>` is attached when the connection
 //     has a token, and omitted when the token slot is `null` (the
@@ -262,7 +253,6 @@ const RUNTIME_PROXIED_PATH = `/v1/assistants/${SELF_HOSTED_ID}/conversations/`;
 
 describe("api-interceptors / self-hosted rewriting", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -360,7 +350,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
       method: "POST",
     });
     const output = await requestInterceptor(input);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -400,7 +389,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe(INGRESS);
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
   });
 
@@ -415,7 +403,6 @@ describe("api-interceptors / self-hosted rewriting", () => {
     const input = new Request(`https://platform.test${RUNTIME_PROXIED_PATH}`);
     const output = await requestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("Authorization")).toBeNull();
   });
 
@@ -468,8 +455,7 @@ describe("api-interceptors / self-hosted rewriting", () => {
       );
       const output = await requestInterceptor(input);
       expect(new URL(output.url).origin).toBe("https://platform.test");
-      // Platform path keeps stamping org + CSRF as before.
-      expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
+      // Platform path keeps stamping CSRF as before.
       expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
       // And never leaks the gateway token onto a cloud-bound
       // request, even when the connection slot is populated.
@@ -508,7 +494,6 @@ const DAEMON_MEMORY_PATH = `/v1/assistants/${SELF_HOSTED_ID}/memory-items/`;
 
 describe("api-interceptors / daemon client self-hosted rewriting", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -533,7 +518,6 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
       expect(outUrl.origin).toBe(INGRESS);
       expect(outUrl.pathname).toBe(path);
       expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-      expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
       expect(output.headers.get("X-CSRFToken")).toBeNull();
     }
   });
@@ -551,7 +535,6 @@ describe("api-interceptors / daemon client self-hosted rewriting", () => {
     });
     const output = await daemonRequestInterceptor(input);
     expect(new URL(output.url).origin).toBe("https://platform.test");
-    expect(output.headers.get("Cadet-Organization-Id")).toBe(TEST_ORG_ID);
     expect(output.headers.get("X-CSRFToken")).toBe("test-csrf-token");
   });
 
@@ -623,7 +606,6 @@ const CONTACT_FLATTEN_CASES = [
 
 describe("api-interceptors / self-hosted contact-family flattening", () => {
   beforeAll(() => {
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -655,7 +637,6 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
         expect(output.headers.get("Authorization")).toBe(
           `Bearer ${ACTOR_TOKEN}`,
         );
-        expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
         expect(output.headers.get("X-CSRFToken")).toBeNull();
       }
     });
@@ -762,7 +743,6 @@ describe("api-interceptors / self-hosted contact-family flattening", () => {
 describe("api-interceptors / remote gateway direct requests", () => {
   beforeEach(() => {
     window.__CADET_CONFIG__ = { remote: "docker" };
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
     setCsrfCookie("test-csrf-token");
   });
 
@@ -777,16 +757,13 @@ describe("api-interceptors / remote gateway direct requests", () => {
       url: window.location.origin,
       token: ACTOR_TOKEN,
     });
-    const input = new Request(`${window.location.origin}/v1/contacts`, {
-      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
-    });
+    const input = new Request(`${window.location.origin}/v1/contacts`, {});
 
     const output = await daemonRequestInterceptor(input);
 
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(output.headers.get("ngrok-skip-browser-warning")).toBe("true");
     expect(output.headers.get("X-Cadet-Client-Id")).toBe(getClientId());
@@ -841,7 +818,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     const path = `/v1/assistants/${SELF_HOSTED_ID}/push-tokens/`;
     const input = new Request(`${window.location.origin}${path}`, {
       method: "POST",
-      headers: { "Cadet-Organization-Id": TEST_ORG_ID },
     });
 
     const output = await requestInterceptor(input);
@@ -849,7 +825,6 @@ describe("api-interceptors / remote gateway direct requests", () => {
     expect(output.url).toBe(input.url);
     expect(output.credentials).toBe("omit");
     expect(output.headers.get("Authorization")).toBe(`Bearer ${ACTOR_TOKEN}`);
-    expect(output.headers.get("Cadet-Organization-Id")).toBeNull();
     expect(output.headers.get("X-CSRFToken")).toBeNull();
     expect(platformFeaturesGate(output).signal.aborted).toBe(false);
   });
@@ -1065,7 +1040,6 @@ describe("api-interceptors / daemonErrorInterceptor", () => {
 describe("api-interceptors / local-mode body buffering", () => {
   beforeAll(() => {
     isLocalClientMock.mockImplementation(() => true);
-    useOrganizationStore.setState({ currentOrganizationId: TEST_ORG_ID });
   });
 
   afterAll(() => {

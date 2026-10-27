@@ -42,7 +42,6 @@ import {
   hasLocalGateway,
   expectsPairedGateway,
 } from "@/lib/local-mode";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
 
@@ -122,9 +121,7 @@ function useSelectedCloudAssistantId(): string | null {
 }
 
 function resolveSelectedCloudAssistantId(): string | null {
-  return toCloudAssistantId(
-    resolveSelectedAssistantId(getActiveOrganizationIdForRequests()),
-  );
+  return toCloudAssistantId(resolveSelectedAssistantId());
 }
 
 /**

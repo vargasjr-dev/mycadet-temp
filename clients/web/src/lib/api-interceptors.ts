@@ -47,8 +47,6 @@ import { getClientRegistrationHeaders } from "@/lib/client-identity";
 import { getDeviceId } from "@/runtime/device-id";
 import { isElectron } from "@/runtime/is-electron";
 import { getElectronSessionToken } from "@/runtime/session-token";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
-
 
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
@@ -411,11 +409,6 @@ function createInterceptor({
       );
     }
 
-    const organizationId = getActiveOrganizationIdForRequests();
-    if (organizationId) {
-      newRequest.headers.set("Cadet-Organization-Id", organizationId);
-    }
-
     const deviceId = getDeviceId();
     if (deviceId) {
       newRequest.headers.set("Cadet-Device-Id", deviceId);
@@ -506,9 +499,8 @@ daemonClient.interceptors.request.use(daemonRequestInterceptor);
 daemonClient.interceptors.error.use(daemonErrorInterceptor);
 
 // Gateway client uses the same routing as daemon: all gateway endpoints
-// are proxied through the same self-hosted ingress / platform gateway path,
-// so a stale renderer token 401s both clients identically and the same
-// in-place recovery applies. Gateway-only responses do not prove daemon readiness.
+// are proxied through the same self-hosted ingress / platform gateway path.
+// Gateway-only responses do not prove daemon readiness.
 gatewayClient.interceptors.request.use(gatewayRequestInterceptor);
 gatewayClient.interceptors.error.use(daemonErrorInterceptor);
 
@@ -543,8 +535,7 @@ for (const apiClient of [authClient, cloudClient]) {
 
 // A chat send in cloud mode goes through the daemon client; other platform
 // calls go through the cloud client. Not installed on `authClient` — the
-// allauth session endpoints manage their own 401 semantics, and adding it
-// there risks re-entrancy with the `getSession()` inside `refreshSession`.
+// allauth session endpoints manage their own 401 semantics.
 
 /**
  * What {@link platformFeaturesGate} does with a request. A deny carries the

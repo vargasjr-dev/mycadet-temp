@@ -13,7 +13,6 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useAssistantCapabilityQuery } from "@/hooks/use-assistant-capability";
 import { captureError } from "@/lib/error-reporting/capture-error";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 interface UseChatsSettingsOptions {
   assistantId: string;
@@ -39,10 +38,8 @@ export function useChatsSettings({
   const queryClient = useQueryClient();
   const mounted = useRef(false);
   const saving = useRef(false);
-  const [organizationId] = useState(getActiveOrganizationIdForRequests);
   const [loadedForSession, setLoadedForSession] = useState(false);
-  const ownsSession = () =>
-    mounted.current && getActiveOrganizationIdForRequests() === organizationId;
+  const ownsSession = () => mounted.current;
   const query = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
     enabled: open && supported,

@@ -289,18 +289,13 @@ describe("useAssistantAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const firstScope = resolveAssistantAvatarOwnerScopeId(
-      assistantOne,
-      null,
-      null,
-    )!;
+    const firstScope = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
     const secondAssistant = {
       ...assistantOne,
       runtimeUrl: "https://second.example.com/runtime",
     };
     const secondScope = resolveAssistantAvatarOwnerScopeId(
       secondAssistant,
-      null,
       null,
     )!;
 
@@ -354,11 +349,7 @@ describe("useAssistantAvatar", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const scopeId = resolveAssistantAvatarOwnerScopeId(
-      assistantOne,
-      null,
-      null,
-    )!;
+    const scopeId = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
 
     const { result } = renderHook(
       () => ({
@@ -532,11 +523,7 @@ describe("useAssistantAvatar", () => {
       customImageUrl: null,
       state: characterState,
     } satisfies AvatarData);
-    const scopeId = resolveAssistantAvatarOwnerScopeId(
-      assistantOne,
-      null,
-      null,
-    )!;
+    const scopeId = resolveAssistantAvatarOwnerScopeId(assistantOne, null)!;
 
     const { result } = renderHook(
       () => useAssistantAvatar("asst-1", { ownerScopeId: scopeId }),
