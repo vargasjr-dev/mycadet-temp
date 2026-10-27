@@ -567,12 +567,12 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_a",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
         {
           assistantId: "asst_org_b_old",
           cloud: "cloud",
-          organizationId: "org_b",
+          cloudOrganizationId: "org_b",
         },
       ],
     });
@@ -582,7 +582,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_b_new",
           cloud: "cloud",
-          organizationId: "org_b",
+          cloudOrganizationId: "org_b",
         },
       ],
       "org_b",
@@ -599,7 +599,7 @@ describe("replaceCloudAssistants", () => {
     writeOnDisk({
       activeAssistant: null,
       assistants: [
-        // Legacy platform entry with no organizationId, same id as the sync.
+        // Legacy platform entry with no cloudOrganizationId, same id as the sync.
         { assistantId: "asst_dup", cloud: "cloud" },
       ],
     });
@@ -609,7 +609,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_dup",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
       ],
       "org_a",
@@ -621,7 +621,7 @@ describe("replaceCloudAssistants", () => {
     expect(assistants).toHaveLength(1);
     expect(assistants[0]).toMatchObject({
       assistantId: "asst_dup",
-      organizationId: "org_a",
+      cloudOrganizationId: "org_a",
     });
   });
 
@@ -632,12 +632,12 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_a",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
         {
           assistantId: "asst_org_b",
           cloud: "cloud",
-          organizationId: "org_b",
+          cloudOrganizationId: "org_b",
         },
       ],
     });
@@ -663,7 +663,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_a",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
       ],
     });
@@ -673,7 +673,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_a_new",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
       ],
       "org_a",
@@ -692,7 +692,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_b_old",
           cloud: "cloud",
-          organizationId: "org_b",
+          cloudOrganizationId: "org_b",
         },
       ],
     });
@@ -702,7 +702,7 @@ describe("replaceCloudAssistants", () => {
         {
           assistantId: "asst_org_a",
           cloud: "cloud",
-          organizationId: "org_a",
+          cloudOrganizationId: "org_a",
         },
       ],
       "org_a",

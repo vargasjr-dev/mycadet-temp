@@ -110,7 +110,7 @@ async function unregisterSelfHostedLocalPlatformRecord(
   await deleteCloudAssistant(cloudAssistantId, {
     token,
     cloudUrl: getCloudUrl(),
-    organizationId: nonEmptyString(entry.organizationId) ?? undefined,
+    organizationId: nonEmptyString(entry.cloudOrganizationId) ?? undefined,
     label: "Platform self-hosted unregister",
     successMessage: "✅ Platform self-hosted registration unregistered.",
     alreadyGoneMessage:

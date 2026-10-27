@@ -17,12 +17,12 @@ import {
 import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
 
 // A platform entry is identified by `cloud === "cloud"` and carries a
-// `organizationId`; a local entry has a non-cadet cloud + gateway port and no org.
+// `cloudOrganizationId`; a local entry has a non-cadet cloud + gateway port and no org.
 const cloudAssistant: LockfileAssistant = {
   assistantId: "asst-platform",
   name: "Platform",
   cloud: "cloud",
-  organizationId: "org-1",
+  cloudOrganizationId: "org-1",
 };
 
 const localAssistant: LockfileAssistant = {

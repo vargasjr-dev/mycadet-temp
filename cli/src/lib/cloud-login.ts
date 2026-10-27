@@ -382,7 +382,7 @@ export async function registerLocalAssistantWithPlatform(
     ...entry,
     cloudAssistantId: registration.assistant.id,
     cloudBaseUrl: cloudUrl,
-    organizationId: orgId,
+    cloudOrganizationId: orgId,
   });
   log(
     `Registered assistant: ${registration.assistant.name} (${registration.assistant.id})`,

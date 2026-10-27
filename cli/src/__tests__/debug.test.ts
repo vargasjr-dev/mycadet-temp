@@ -60,7 +60,7 @@ const LOCAL_ENTRY = {
   hatchedAt: new Date().toISOString(),
   cloudAssistantId: "11111111-2222-3333-4444-555555555555",
   cloudBaseUrl: "https://cloud.mycadet.ai",
-  organizationId: "org-1",
+  cloudOrganizationId: "org-1",
 } satisfies assistantConfig.LockfileAssistant;
 
 let originalFetch: typeof globalThis.fetch;

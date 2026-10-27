@@ -898,7 +898,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
     activeIds.add(assistant.assistantId);
     const fp = port
       ? localFingerprint(port)
-      : cloudFingerprint(gatewayUrl, assistant.organizationId);
+      : cloudFingerprint(gatewayUrl, assistant.cloudOrganizationId);
 
     const existing = connections.get(assistant.assistantId);
     const pending = pendingConnects.get(assistant.assistantId);
@@ -920,7 +920,7 @@ function handleLockfileChange(lockfile: Lockfile): void {
         connectCloudAssistant(
           assistant.assistantId,
           gatewayUrl,
-          assistant.organizationId,
+          assistant.cloudOrganizationId,
         );
       }
     }

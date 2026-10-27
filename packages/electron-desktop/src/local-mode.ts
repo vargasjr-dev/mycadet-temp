@@ -438,8 +438,8 @@ export const installLocalMode = (): void => {
   ipc(
     "cadet:localMode:replaceCloudAssistants",
     z.tuple([z.array(LockfileAssistantSchema), z.string().optional()]),
-    ([list, organizationId]): LockfileWriteResult => {
-      const result = replaceCloudAssistants(list, organizationId);
+    ([list, cloudOrganizationId]): LockfileWriteResult => {
+      const result = replaceCloudAssistants(list, cloudOrganizationId);
       return result.ok
         ? { ok: true, lockfile: result.lockfile }
         : { ok: false, error: result.error };

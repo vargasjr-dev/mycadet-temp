@@ -5,7 +5,6 @@ import {
   LockfileSchema,
   RemoteSchema,
   KNOWN_REMOTES,
-  entryHostingKind,
   parseLockfile,
   stripSensitiveFields,
   SENSITIVE_KEYS,
@@ -24,7 +23,7 @@ describe("parseLockfile", () => {
           hatchedAt: "2026-01-01T00:00:00.000Z",
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
-          organizationId: "org_1",
+          cloudOrganizationId: "org_1",
           resources: { gatewayPort: 7777, daemonPort: 7778 },
         },
         {
@@ -346,28 +345,6 @@ describe("LockfileSchema defaults", () => {
       assistants: [],
       activeAssistant: null,
     });
-  });
-});
-
-describe("entryHostingKind", () => {
-  test("classifies the three hosting topologies", () => {
-    expect(
-      entryHostingKind({
-        assistantId: "a",
-        cloud: "custom",
-        ipAddress: "tunnel.example.com",
-        port: 443,
-      }),
-    ).toBe("paired");
-    expect(entryHostingKind({ assistantId: "a", cloud: "cloud" })).toBe(
-      "cloud",
-    );
-    expect(entryHostingKind({ assistantId: "a", cloud: "local" })).toBe(
-      "local",
-    );
-    expect(entryHostingKind({ assistantId: "a", cloud: "docker" })).toBe(
-      "local",
-    );
   });
 });
 

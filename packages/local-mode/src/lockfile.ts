@@ -78,7 +78,7 @@ export type WriteResult =
   | { ok: false; status: number; error: string };
 
 /** 423 Locked: the cross-process advisory lock could not be acquired. */
-function lockFailure(error: string): WriteResult {
+export function lockFailure(error: string): WriteResult {
   return { ok: false, status: 423, error };
 }
 
@@ -295,7 +295,7 @@ export function isActiveAssistant(assistantId: string): boolean {
 
 export function replaceCloudAssistants(
   cloudAssistants: LockfileAssistant[],
-  organizationId?: string,
+  cloudOrganizationId?: string,
 ): WriteResult {
   if (
     cloudAssistants.some(
@@ -320,7 +320,8 @@ export function replaceCloudAssistants(
     const preserved = existing.filter((a) => {
       if (!isCloudHome(a.cloud)) return true;
       if (syncedIds.has(a.assistantId)) return false;
-      return organizationId != null && a.organizationId !== organizationId;
+      return cloudOrganizationId != null &&
+        a.cloudOrganizationId !== cloudOrganizationId;
     });
     // `onboardedAt` is recorded by the client and unknown to the cloud, so
     // the replacement rows never carry it. Without this it is erased by every
@@ -351,70 +352,6 @@ export function replaceCloudAssistants(
     }
 
     return writeRawLockfile(lockfile);
-  });
-  return locked.ok ? locked.value : lockFailure(locked.error);
-}
-
-/**
- * Remove an assistant entry, never creating one: the removal counterpart of
- * {@link saveLockfileAssistant}. A missing entry refuses (404) and an
- * unreadable on-disk file refuses (409) on the same terms as the update-only
- * patchers, and the active-assistant reassignment mirrors the CLI's
- * removeAssistantEntry so unpairing through the bridge and through
- * `cadet unpair` leave the same active state. The whole read-check-write
- * runs under the shared advisory lock; contention refuses (423) without
- * writing.
- */
-export function removeLockfileAssistant(
-  assistantId: string,
-  options?: {
-    /**
-     * Credential choreography that must land inside the same locked
-     * transaction as the removal, between the read and the write: an unpair
-     * deletes the stored guardian token there, so a failed write leaves the
-     * entry (and its credential) exactly as they were. Return an undo
-     * callback; it runs only when the write fails. A throw aborts the
-     * removal with a 500 carrying the thrown message, the entry untouched.
-     */
-    beforeWrite?: () => (() => void) | undefined;
-  },
-): WriteResult {
-  if (typeof assistantId !== "string" || assistantId === "") {
-    return { ok: false, status: 400, error: "Missing assistantId" };
-  }
-
-  const locked = withLockfileLock((): WriteResult => {
-    const lockfile = readLockfile();
-    if (!lockfile.assistants.some((a) => a.assistantId === assistantId)) {
-      return { ok: false, status: 404, error: "No such assistant" };
-    }
-
-    let undo: (() => void) | undefined;
-    try {
-      undo = options?.beforeWrite?.();
-    } catch (err) {
-      return {
-        ok: false,
-        status: 500,
-        error: err instanceof Error ? err.message : String(err),
-      };
-    }
-
-    lockfile.assistants = lockfile.assistants.filter(
-      (a) => a.assistantId !== assistantId,
-    );
-    if (lockfile.activeAssistant === assistantId) {
-      const next = lockfile.assistants[0]?.assistantId;
-      lockfile.activeAssistant = typeof next === "string" ? next : null;
-    }
-
-    const result = writeRawLockfile(
-      lockfile as unknown as Record<string, unknown>,
-    );
-    if (!result.ok && undo) {
-      undo();
-    }
-    return result;
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

@@ -441,7 +441,7 @@ export interface CadetBridge {
     ): Promise<LockfileWriteResult>;
     replaceCloudAssistants(
       cloudAssistants: Array<Record<string, unknown>>,
-      organizationId?: string,
+      cloudOrganizationId?: string,
     ): Promise<LockfileWriteResult>;
     retire(assistantId: string): Promise<{ ok: boolean; error?: string }>;
     /**

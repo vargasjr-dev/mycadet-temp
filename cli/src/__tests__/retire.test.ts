@@ -244,7 +244,7 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
-      organizationId: "org-123",
+      cloudOrganizationId: "org-123",
     });
     writeLockfile([entry]);
     readCloudTokenMock.mockReturnValue("session-token");
@@ -325,7 +325,7 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
-      organizationId: "org-123",
+      cloudOrganizationId: "org-123",
     });
     writeLockfile([entry]);
     process.env.CADET_PLATFORM_TOKEN = "host-session-token";
@@ -354,7 +354,7 @@ describe("cadet retire", () => {
       assistantId: "assistant-1",
       name: "Example Assistant",
       cloudAssistantId: "cloud-asst-1",
-      organizationId: "org-123",
+      cloudOrganizationId: "org-123",
     });
     writeLockfile([entry]);
     readCloudTokenMock.mockReturnValue("session-token");

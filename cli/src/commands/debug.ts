@@ -82,7 +82,7 @@ export const debug = Object.assign(
       process.exit(1);
     }
     const cloudUrl = entry.cloudBaseUrl?.trim() || getCloudUrl();
-    const organizationId = entry.organizationId?.trim();
+    const organizationId = entry.cloudOrganizationId?.trim();
 
     const accessToken = await daemonAccessToken(entry, reference, false);
     const headers = organizationId

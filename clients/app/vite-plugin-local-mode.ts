@@ -350,7 +350,7 @@ function lockfileMiddleware(): Connect.NextHandleFunction {
         if (body.syncPlatform && Array.isArray(body.cloudAssistants)) {
           result = replaceCloudAssistants(
             body.cloudAssistants as Array<Record<string, unknown>>,
-            body.organizationId as string | undefined,
+            body.cloudOrganizationId as string | undefined,
           );
         } else if (body.rename && typeof body.rename === "object") {
           const rename = body.rename as Record<string, unknown>;

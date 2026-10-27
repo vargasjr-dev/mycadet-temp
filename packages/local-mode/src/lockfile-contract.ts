@@ -137,22 +137,6 @@ export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
 ]);
 
 /**
- * Which of the three hosting topologies an entry rides: a paired custom
- * remote (its gateway lives on another machine), a cloud-hosted row (served
- * through the cloud's runtime proxy), or a local assistant (this machine's
- * daemon). Choosers and trays label from this — never from re-deriving the
- * remote test at each site — and the host to show is the entry's gateway
- * url's hostname ({@link getGatewayUrl}).
- */
-export type EntryHostingKind = "paired" | "cloud" | "local";
-
-export function entryHostingKind(entry: LockfileAssistant): EntryHostingKind {
-  if (isRemoteGatewayEntry(entry)) return "paired";
-  if (entry.cloud === "cloud") return "cloud";
-  return "local";
-}
-
-/**
  * Clouds whose gateway listens on a loopback port of this machine: the
  * on-machine daemon ("local") and local Docker instances ("docker").
  */
@@ -303,7 +287,7 @@ export const LockfileAssistantSchema = z.object({
    * registration and carried by the platform sync (org-scoped readers key
    * on it).
    */
-  organizationId: z.string().optional(),
+  cloudOrganizationId: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
   /** Helper token for cloud assistants' API bearer; host-only secret. */
   bearerToken: z.string().optional(),
