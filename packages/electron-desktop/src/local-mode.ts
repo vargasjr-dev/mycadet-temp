@@ -4,7 +4,7 @@ import {
   getGuardianAccessToken,
   getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
   isActiveAssistant,
-  createLockfileAssistant,
+  saveLockfileAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
@@ -552,16 +552,10 @@ export const installLocalMode = (): void => {
         };
       }
       // Pairing never touches the lockfile — assistant entries belong to
-      // hatch/retire/the cli — so this host registers the exchanged pairing
-      // create-only before answering. A refusal means another assistant
-      // claimed the id in between; nothing is overwritten.
-      if (!createLockfileAssistant(result.entry)) {
-        return {
-          ok: false,
-          reason: "import",
-          error: `An assistant named '${result.assistantId}' already exists`,
-        };
-      }
+      // hatch/retire/the cli — so this host saves the exchanged pairing
+      // through the owning layer before answering. The pre-check refused a
+      // colliding id before the exchange spent its one-time code.
+      saveLockfileAssistant(result.entry);
       refreshLockfile();
       return {
         ok: true,

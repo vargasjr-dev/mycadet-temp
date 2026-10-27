@@ -298,48 +298,6 @@ export function saveLockfileAssistant(
   }
 }
 
-/**
- * Create-only counterpart of {@link saveLockfileAssistant}: registers the
- * entry only when its id is still free, refusing (false) instead of merging
- * into an entry that appeared after the caller's own check. Callers whose
- * write must never update an existing entry — pairing, which may not change
- * an assistant's remote setting — write through this.
- */
-export function createLockfileAssistant(
-  assistant: LockfileAssistantPatch,
-): boolean {
-  if (!assistant || typeof assistant.assistantId !== "string") {
-    throw new Error("Missing assistant.assistantId");
-  }
-  const lockfilePath = resolveLockfilePath();
-
-  const locked = withLockfileLock(lockfilePath, (): WriteResult | false => {
-    const lockfile = readLockfile();
-    const assistantId = assistant.assistantId;
-    if (typeof assistantId !== "string") {
-      throw new Error("Missing assistant.assistantId");
-    }
-    const exists = lockfile.assistants.some(
-      (a) => a.assistantId === assistantId,
-    );
-    if (exists) return false;
-    return writeRawLockfile(lockfilePath, {
-      ...lockfile,
-      assistants: [...lockfile.assistants, { ...assistant, assistantId }],
-    });
-  });
-  if (!locked.ok) {
-    throw new Error(locked.error);
-  }
-  // The id was taken inside the lock: refused, not created.
-  if (locked.value === false) return false;
-  // A failed write itself (disk, serialization) reports like the upsert's.
-  if (!locked.value.ok) {
-    throw new Error(locked.value.error);
-  }
-  return true;
-}
-
 export function isActiveAssistant(
   lockfilePath: string,
   assistantId: string,

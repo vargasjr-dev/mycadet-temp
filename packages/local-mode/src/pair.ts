@@ -80,9 +80,9 @@ export type PairResult =
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
       /**
-       * The lockfile entry to register for this pairing, which the caller
-       * creates through {@link createLockfileAssistant}. Pairing itself
-       * never touches the lockfile.
+       * The lockfile entry to register for this pairing; pairing itself
+       * never touches the lockfile, the caller's import-completion step
+       * saves it through the owning layer.
        */
       entry: LockfileAssistantPatch;
     }
@@ -181,8 +181,8 @@ interface PairedDestination {
  * pre-check and the registration it precedes cannot drift apart.
  *
  * A pre-check is not a reservation: another process can claim the id in
- * between. It closes the common case; the create-only registration the
- * caller runs after the exchange is still what guarantees the id.
+ * between. It closes the common case; the registration the caller runs
+ * after the exchange lands through the owning layer's save.
  */
 function resolvePairedDestination(
   name: string | undefined,
@@ -209,10 +209,9 @@ export function checkPairedAssistantName(name: string): PairRefusal | null {
  * Pair an assistant: validate the pairing credentials and persist its
  * guardian token. Pairing does NOT touch the lockfile — assistant entries
  * belong to hatch/retire/the cli — so the caller registers the returned
- * `entry` create-only via {@link createLockfileAssistant} once the exchange
- * has succeeded. The pre-check below refuses a colliding id BEFORE the
- * exchange spends a one-time pairing code; a collision that races in after
- * it is refused by the caller's create-only write.
+ * `entry` through the owning layer's save once the exchange has succeeded.
+ * The pre-check below refuses a colliding id BEFORE the exchange spends a
+ * one-time pairing code.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -295,9 +294,9 @@ export function pairAssistant(
     accessOnly:
       !credentials.refreshToken ||
       !isConfidentialRefreshUrl(credentials.gatewayUrl),
-    // The entry the caller registers create-only: the bundle's gateway
-    // address as the canonical custom encoding — the one shape every reader
-    // derives from.
+    // The entry the caller saves through the owning layer: the bundle's
+    // gateway address as the canonical custom encoding — the one shape every
+    // reader derives from.
     entry: {
       assistantId: localId,
       // The label, not the bare host: two assistants behind one host differ
@@ -415,8 +414,8 @@ export type PairingPollResult =
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
       /**
-       * The lockfile entry to register for this pairing, which the caller
-       * creates through {@link createLockfileAssistant}.
+       * The lockfile entry to register for this pairing; the caller saves it
+       * through the owning layer once the poll imports.
        */
       entry: LockfileAssistantPatch;
     }
@@ -916,7 +915,8 @@ export interface PairingPollOptions {
  * One device-code exchange attempt for a live session. Still-pending
  * challenges resolve with the cadence to wait before trying again; an approved
  * one has its guardian token persisted through {@link pairAssistant} in the
- * same call, and the caller registers the returned `entry` create-only.
+ * same call, and the caller registers the returned `entry` through the
+ * owning layer's save.
  *
  * A {@link pairingCancel} that lands while the exchange is in flight ends the
  * attempt with nothing persisted, so a dismissed dialog or an interrupted CLI
@@ -1168,7 +1168,7 @@ export type ConnectImportResult =
       ok: true;
       assistantId: string;
       accessOnly: boolean;
-      /** The entry the caller registers create-only. */
+      /** The entry the caller saves through the owning layer. */
       entry: LockfileAssistantPatch;
     }
   | { ok: false; status: number; error: string };

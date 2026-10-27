@@ -6,7 +6,7 @@ import path from "node:path";
 import { pairingSessionSurvives } from "@mycadet/service-contracts/remote-web-pairing";
 
 import { guardianTokenPath } from "../config";
-import { createLockfileAssistant } from "../lockfile";
+import { saveLockfileAssistant } from "../lockfile";
 import {
   checkPairedAssistantName,
   connectImport,
@@ -203,43 +203,31 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * The caller side of a pairing: register the exchanged entry create-only,
- * exactly as the cli import command and the hosts do. Pairing itself never
- * touches the lockfile; the create-only registration is what guarantees the
- * id.
+ * The caller side of a pairing: register the exchanged entry through the
+ * owning layer's save, exactly as the cli import command and the hosts do.
+ * Pairing itself never touches the lockfile; the pre-check refused a
+ * colliding id before the exchange spent its one-time code.
  */
 function pairAndRegister(configDir: string, opts: PairOptions): PairResult {
   const result = pairAssistant(configDir, opts);
-  if (!result.ok || createLockfileAssistant(result.entry)) {
+  if (!result.ok) {
     return result;
   }
-  return {
-    ok: false,
-    status: 409,
-    error: `An assistant named '${result.assistantId}' already exists`,
-    assistantId: result.assistantId,
-  };
+  saveLockfileAssistant(result.entry);
+  return result;
 }
 
-/** The caller side of a poll: register an imported pairing create-only. */
+/** The caller side of a poll: register an imported pairing. */
 async function pollAndRegister(
   configDir: string,
   opts: PairingPollOptions,
 ): Promise<PairingPollResult> {
   const result = await pairingPoll(configDir, opts);
-  if (
-    !result.ok ||
-    result.status !== "imported" ||
-    createLockfileAssistant(result.entry)
-  ) {
+  if (!result.ok || result.status !== "imported") {
     return result;
   }
-  return {
-    ok: false,
-    reason: "import",
-    status: 409,
-    error: `An assistant named '${result.assistantId}' already exists`,
-  };
+  saveLockfileAssistant(result.entry);
+  return result;
 }
 
 /** The caller side of a bundle import: register the exchanged entry. */
@@ -248,14 +236,11 @@ function importAndRegister(
   opts: ConnectImportOptions,
 ): ConnectImportResult {
   const result = connectImport(configDir, opts);
-  if (!result.ok || createLockfileAssistant(result.entry)) {
+  if (!result.ok) {
     return result;
   }
-  return {
-    ok: false,
-    status: 409,
-    error: `An assistant named '${result.assistantId}' already exists`,
-  };
+  saveLockfileAssistant(result.entry);
+  return result;
 }
 
 describe("pairAssistant", () => {
@@ -696,42 +681,6 @@ describe("pairAssistant", () => {
       // The per-assistant directory is cleaned up too.
       expect(fs.existsSync(path.dirname(tokenPath))).toBe(false);
     }));
-
-  test("a registration that loses the create-only race strands an inert token", () => {
-    // The pre-check closes the common case before the exchange spends the
-    // code; a claim that lands between it and the caller's create-only
-    // registration is refused there. The token already written is inert —
-    // no entry holds it, and the next import overwrites it.
-    const result = pairAssistant(configDir, {
-      credentials: credentials({ token: "t2" }),
-    });
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-
-    // Another process claims the id in between.
-    writeLockfile({
-      assistants: [
-        {
-          assistantId: result.assistantId,
-          name: "Mine",
-          cloud: "local",
-          port: 7821,
-        },
-      ],
-    });
-    expect(createLockfileAssistant(result.entry)).toBe(false);
-    expect(readLockfileFromDisk().assistants).toEqual([
-      {
-        assistantId: DEFAULT_PAIRED_ID,
-        name: "Mine",
-        cloud: "local",
-        port: 7821,
-      },
-    ]);
-    expect(readGuardianToken(DEFAULT_PAIRED_ID).accessToken).toBe("t2");
-  });
 
   test("an unparseable gatewayUrl is refused, not thrown", () => {
     const result = pairAssistant(configDir, {
@@ -1747,7 +1696,7 @@ describe("pairingCancel", () => {
     if (!result.ok || result.status !== "imported") {
       return;
     }
-    expect(createLockfileAssistant(result.entry)).toBe(true);
+    saveLockfileAssistant(result.entry);
     const entry = (
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;

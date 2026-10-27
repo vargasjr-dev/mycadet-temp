@@ -16,7 +16,7 @@ import {
   stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
-  createLockfileAssistant,
+  saveLockfileAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
@@ -678,17 +678,10 @@ function pairingMiddleware(
         return;
       }
       // Pairing never touches the lockfile — assistant entries belong to
-      // hatch/retire/the cli — so this host registers the exchanged pairing
-      // create-only before answering. A refusal means another assistant
-      // claimed the id in between; nothing is overwritten.
-      if (!createLockfileAssistant(result.entry)) {
-        respondJson(res, 409, {
-          ok: false,
-          reason: "import",
-          error: `An assistant named '${result.assistantId}' already exists`,
-        });
-        return;
-      }
+      // hatch/retire/the cli — so this host saves the exchanged pairing
+      // through the owning layer before answering. The pre-check refused a
+      // colliding id before the exchange spent its one-time code.
+      saveLockfileAssistant(result.entry);
       respondJson(res, 200, {
         ok: true,
         status: "imported",

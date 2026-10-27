@@ -51,7 +51,6 @@ export {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   saveLockfileAssistant,
-  createLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,

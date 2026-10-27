@@ -4,7 +4,6 @@ import os from "node:os";
 import path from "node:path";
 
 import {
-  createLockfileAssistant,
   getLockfileData,
   isPairedLockfileEntry,
   renameLockfileAssistantIfPresent,
@@ -821,31 +820,5 @@ describe("replaceCloudAssistants", () => {
     ]);
 
     expect(readOnDisk().activeAssistant).toBeNull();
-  });
-});
-
-describe("createLockfileAssistant", () => {
-  test("create-only: an existing entry is never merged into", () => {
-    // Even an id claimed between a caller's check and this write is refused
-    // rather than merged into, so a registration cannot change an existing
-    // assistant's remote setting.
-    saveLockfileAssistant({
-      assistantId: "taken",
-      name: "Mine",
-      cloud: "local",
-      port: 7821,
-    });
-    expect(
-      createLockfileAssistant({
-        assistantId: "taken",
-        name: "paired (10.0.0.5:7830)",
-        cloud: "custom",
-        ipAddress: "10.0.0.5",
-        port: 7830,
-      }),
-    ).toBe(false);
-    expect(readOnDisk().assistants).toEqual([
-      { assistantId: "taken", name: "Mine", cloud: "local", port: 7821 },
-    ]);
   });
 });

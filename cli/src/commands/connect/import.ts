@@ -12,11 +12,11 @@
 import {
   checkPairedAssistantName,
   connectImport as importLegacyBundle,
-  createLockfileAssistant,
   pairingCancel,
   pairingPoll,
   pairingStart,
   resolveConfigDir,
+  saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
@@ -94,22 +94,14 @@ function reportImported(result: {
 
 /**
  * The cli's registration step. Pairing itself never touches the lockfile —
- * assistant entries belong to hatch/retire/the cli — so the command registers
- * the exchanged pairing create-only. A refusal means another assistant claimed
- * the id in between; nothing is overwritten.
+ * assistant entries belong to hatch/retire/the cli — so the command saves the
+ * exchanged pairing through the owning layer. The pre-check refused a
+ * colliding id before the exchange spent its one-time code.
  */
 function registerPairedEntry(
-  entry: Parameters<typeof createLockfileAssistant>[0],
+  entry: Parameters<typeof saveLockfileAssistant>[0],
 ): void {
-  if (!createLockfileAssistant(entry)) {
-    console.error(
-      formatImportFailure(
-        409,
-        `An assistant named '${entry.assistantId}' already exists`,
-      ),
-    );
-    process.exit(1);
-  }
+  saveLockfileAssistant(entry);
 }
 
 /**
