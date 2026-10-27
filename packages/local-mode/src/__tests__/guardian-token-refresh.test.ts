@@ -64,7 +64,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
 
   beforeEach(() => {
     configDir = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-refresh-"));
-    saveGuardianToken(configDir, "asst-1", makeTokenData({}));
+    saveGuardianToken("asst-1", makeTokenData({}));
   });
 
   afterEach(() => {
@@ -72,12 +72,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 503 is an unreachable gateway, not a spent token", async () => {
-    const pending = getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-    );
+    const pending = getGuardianAccessToken("asst-1", invocation, true);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -95,12 +90,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 401 is a spent credential", async () => {
-    const pending = getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-    );
+    const pending = getGuardianAccessToken("asst-1", invocation, true);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -118,12 +108,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("a labeled CLI 403 is a local confidentiality refusal, not a spent credential", async () => {
-    const pending = getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-    );
+    const pending = getGuardianAccessToken("asst-1", invocation, true);
     await tick();
     lastChild.stderr.emit(
       "data",
@@ -141,12 +126,7 @@ describe("getGuardianAccessToken refresh spawn", () => {
   });
 
   test("an unlabeled non-zero CLI exit is a 503, not a 401", async () => {
-    const pending = getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-    );
+    const pending = getGuardianAccessToken("asst-1", invocation, true);
     await tick();
     lastChild.stderr.emit(
       "data",

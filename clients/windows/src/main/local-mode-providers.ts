@@ -2,17 +2,10 @@ import { app } from "electron";
 import path from "node:path";
 
 import type { DesktopCapabilityRegistry } from "@mycadet/electron-desktop/capability-registry";
-import {
-  LOCAL_MODE_CLI,
-  LOCAL_MODE_PATHS,
-  LOCAL_MODE_SESSION,
-} from "@mycadet/electron-desktop/local-mode";
+import { LOCAL_MODE_CLI, LOCAL_MODE_SESSION } from "@mycadet/electron-desktop/local-mode";
 import { getSessionToken } from "@mycadet/electron-desktop/session-token-store";
 import {
-  resolveConfigDir,
   resolveDevCliInvocation,
-  resolveEnvironmentName,
-  resolveLockfilePath,
   type CliInvocation,
 } from "@mycadet/local-mode";
 
@@ -50,10 +43,5 @@ export const installWindowsLocalModeProviders = (
   registry: DesktopCapabilityRegistry,
 ): void => {
   registry.provide(LOCAL_MODE_CLI, { resolveInvocation: resolveCliInvocation });
-  registry.provide(LOCAL_MODE_PATHS, {
-    configDir: resolveConfigDir(),
-    environment: resolveEnvironmentName(),
-    lockfilePath: resolveLockfilePath(),
-  });
   registry.provide(LOCAL_MODE_SESSION, { getToken: getSessionToken });
 };

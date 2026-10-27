@@ -55,8 +55,11 @@ const env = {
   XDG_CONFIG_HOME: tempDir,
   XDG_DATA_HOME: path.join(tempDir, "data-home"),
 };
+// The plugin's paths resolve from the process environment (the same ambient
+// resolution the CLI and the desktop use), so the fixture env must be live.
+Object.assign(process.env, env);
 const configDir = path.join(tempDir, "cadet");
-const lockfilePath = path.join(tempDir, "lockfile.json");
+const lockfilePath = path.join(tempDir, "cadet", "lockfile.json");
 
 // Capture the plugin's middleware chain from a fake dev server so requests
 // can be dispatched through it without booting Vite.
@@ -153,7 +156,7 @@ const FUTURE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const PAST = new Date(Date.now() - 60_000).toISOString();
 
 function writeToken(assistantId: string, over: Record<string, unknown>): void {
-  const tokenPath = guardianTokenPath(configDir, assistantId);
+  const tokenPath = guardianTokenPath(assistantId);
   fs.mkdirSync(path.dirname(tokenPath), { recursive: true });
   fs.writeFileSync(
     tokenPath,
@@ -173,6 +176,7 @@ function writeToken(assistantId: string, over: Record<string, unknown>): void {
 }
 
 function writeLockfile(assistants: Array<Record<string, unknown>>): void {
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
   fs.writeFileSync(
     lockfilePath,
     JSON.stringify({ assistants, activeAssistant: null }),
@@ -317,9 +321,9 @@ describe("paired gateway proxy", () => {
     writeLockfile([
       {
         assistantId: "paired-g",
-        cloud: "paired",
-        paired: true,
-        runtimeUrl: "https://gateway.example.com",
+        cloud: "custom",
+        ipAddress: "gateway.example.com",
+        port: 443,
       },
     ]);
     writeToken("paired-g", {
@@ -335,9 +339,9 @@ describe("paired gateway proxy", () => {
     writeLockfile([
       {
         assistantId: "paired-g",
-        cloud: "paired",
-        paired: true,
-        runtimeUrl: "https://gateway.example.com",
+        cloud: "custom",
+        ipAddress: "gateway.example.com",
+        port: 443,
       },
     ]);
     writeToken("paired-g", {

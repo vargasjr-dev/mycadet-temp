@@ -162,8 +162,9 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
     // the served entry can never classify as paired.
     const pairedTarget = {
       assistantId: "paired-a",
-      cloud: "local",
-      runtimeUrl: "https://gw.example.com",
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
     } as LockfileAssistant;
     probeImpl = probeStatus(404, "token gone");
 

@@ -109,6 +109,7 @@
     "paired": "Emparejado",
     "localAssistant": "En este equipo",
     "cloudHosted": "En la nube",
+    "cloudHostedWithHost": "En la nube · {host}",
     "selfHosted": "Autoalojado"
   },
   "appShell": {

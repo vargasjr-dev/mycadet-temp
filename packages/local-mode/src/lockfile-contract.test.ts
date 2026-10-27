@@ -5,7 +5,7 @@ import {
   LockfileSchema,
   RemoteSchema,
   KNOWN_REMOTES,
-  pairedHostLabel,
+  entryHostingKind,
   parseLockfile,
   stripSensitiveFields,
   SENSITIVE_KEYS,
@@ -24,7 +24,7 @@ describe("parseLockfile", () => {
           hatchedAt: "2026-01-01T00:00:00.000Z",
           cloudAssistantId: "platform-assistant-1",
           cloudBaseUrl: "https://platform.example.com",
-          cloudOrganizationId: "org_1",
+          organizationId: "org_1",
           resources: { gatewayPort: 7777, daemonPort: 7778 },
         },
         {
@@ -349,29 +349,24 @@ describe("LockfileSchema defaults", () => {
   });
 });
 
-describe("pairedHostLabel", () => {
-  test("names the remote host of a custom remote", () => {
+describe("entryHostingKind", () => {
+  test("classifies the three hosting topologies", () => {
     expect(
-      pairedHostLabel({
+      entryHostingKind({
         assistantId: "a",
         cloud: "custom",
         ipAddress: "tunnel.example.com",
         port: 443,
       }),
-    ).toBe("Paired · tunnel.example.com");
-    expect(
-      pairedHostLabel({
-        assistantId: "a",
-        cloud: "custom",
-        ipAddress: "remote-host.example",
-        port: 8443,
-      }),
-    ).toBe("Paired · remote-host.example");
-  });
-
-  test("falls back to plain Paired for a loopback entry", () => {
-    expect(pairedHostLabel({ assistantId: "a", cloud: "local" })).toBe(
-      "Paired",
+    ).toBe("paired");
+    expect(entryHostingKind({ assistantId: "a", cloud: "cloud" })).toBe(
+      "cloud",
+    );
+    expect(entryHostingKind({ assistantId: "a", cloud: "local" })).toBe(
+      "local",
+    );
+    expect(entryHostingKind({ assistantId: "a", cloud: "docker" })).toBe(
+      "local",
     );
   });
 });

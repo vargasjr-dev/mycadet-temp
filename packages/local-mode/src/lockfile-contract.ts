@@ -137,15 +137,19 @@ export const FLATTENED_FIRST_SEGMENTS = new Set<string>([
 ]);
 
 /**
- * User-facing hosting label for a paired entry: "Paired · <hostname>" when
- * the entry is a custom remote, plain "Paired" otherwise. Shared by the
- * macOS tray switcher and the web chooser so their renderings cannot drift.
+ * Which of the three hosting topologies an entry rides: a paired custom
+ * remote (its gateway lives on another machine), a cloud-hosted row (served
+ * through the cloud's runtime proxy), or a local assistant (this machine's
+ * daemon). Choosers and trays label from this — never from re-deriving the
+ * remote test at each site — and the host to show is the entry's gateway
+ * url's hostname ({@link getGatewayUrl}).
  */
-export function pairedHostLabel(entry: LockfileAssistant): string {
-  if (isRemoteGatewayEntry(entry)) {
-    return `Paired · ${new URL(getGatewayUrl(entry)).hostname}`;
-  }
-  return "Paired";
+export type EntryHostingKind = "paired" | "cloud" | "local";
+
+export function entryHostingKind(entry: LockfileAssistant): EntryHostingKind {
+  if (isRemoteGatewayEntry(entry)) return "paired";
+  if (entry.cloud === "cloud") return "cloud";
+  return "local";
 }
 
 /**
@@ -294,11 +298,10 @@ export const LockfileAssistantSchema = z.object({
   cloudAssistantId: z.string().optional(),
   /** Platform base URL used for a self-hosted local assistant registration. */
   cloudBaseUrl: z.string().optional(),
-  /** Platform organization UUID used for a self-hosted local assistant registration. */
-  cloudOrganizationId: z.string().optional(),
   /**
-   * Platform organization the entry's cloud row was synced under (set by the
-   * platform sync; org-scoped readers key on it).
+   * Platform organization the entry belongs to — set by the self-hosted
+   * registration and carried by the platform sync (org-scoped readers key
+   * on it).
    */
   organizationId: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),

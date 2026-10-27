@@ -1,5 +1,7 @@
 import fs from "node:fs";
 
+import { resolveLockfilePath } from "./config";
+
 import type { TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
@@ -276,10 +278,8 @@ function readLockfileAssistantEntries(candidate: string): LockfileEntriesRead {
  * when it yields no targets, so an unpaired or retired assistant can never
  * survive in a stale fallback file's target map.
  */
-export function readGatewayTargets(
-  lockfilePath: string,
-): Map<string, GatewayEntryTarget> {
-  const read = readLockfileAssistantEntries(lockfilePath);
+export function readGatewayTargets(): Map<string, GatewayEntryTarget> {
+  const read = readLockfileAssistantEntries(resolveLockfilePath());
   if (read.kind !== "ok") {
     return new Map<string, GatewayEntryTarget>();
   }

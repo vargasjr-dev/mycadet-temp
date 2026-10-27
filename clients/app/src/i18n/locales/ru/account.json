@@ -109,6 +109,7 @@
     "paired": "Сопряжено",
     "localAssistant": "На этом компьютере",
     "cloudHosted": "Облачный",
+    "cloudHostedWithHost": "В облаке · {host}",
     "selfHosted": "Свой сервер"
   },
   "appShell": {

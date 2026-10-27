@@ -41,30 +41,38 @@ describe("getGuardianAccessToken", () => {
   let configDir: string;
 
   beforeEach(() => {
-    configDir = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-token-test-"));
+    // The token paths resolve from the environment: XDG config home plus the
+    // production environment dir, so the fixture points XDG at the tmp home
+    // and reads back through the same ambient resolution.
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), "guardian-token-test-"));
+    process.env.XDG_CONFIG_HOME = home;
+    configDir = path.join(home, "cadet");
   });
 
   afterEach(() => {
-    fs.rmSync(configDir, { recursive: true, force: true });
+    Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
+    fs.rmSync(path.dirname(configDir), { recursive: true, force: true });
   });
 
   test("returns the stored token while the access token is fresh", async () => {
-    saveGuardianToken(configDir, "asst-1", makeTokenData({}));
+    saveGuardianToken("asst-1", makeTokenData({}));
 
-    expect(
-      await getGuardianAccessToken("asst-1", configDir, invocation, true),
-    ).toEqual({ ok: true, accessToken: "access" });
+    expect(await getGuardianAccessToken("asst-1", invocation, true)).toEqual({
+      ok: true,
+      accessToken: "access",
+    });
   });
 
   test("returns a structured 404 when no token file exists", async () => {
-    expect(
-      await getGuardianAccessToken("missing", configDir, invocation, true),
-    ).toEqual({ ok: false, status: 404, error: "Guardian token not found" });
+    expect(await getGuardianAccessToken("missing", invocation, true)).toEqual({
+      ok: false,
+      status: 404,
+      error: "Guardian token not found",
+    });
   });
 
   test("expired refresh token yields hatch/wake guidance by default", async () => {
     saveGuardianToken(
-      configDir,
       "asst-1",
       makeTokenData({
         accessTokenExpiresAt: PAST,
@@ -72,12 +80,7 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-    );
+    const result = await getGuardianAccessToken("asst-1", invocation, true);
 
     expect(result).toEqual({
       ok: false,
@@ -88,7 +91,6 @@ describe("getGuardianAccessToken", () => {
 
   test("expired refresh token yields re-pair guidance for a paired entry", async () => {
     saveGuardianToken(
-      configDir,
       "asst-1",
       makeTokenData({
         accessTokenExpiresAt: PAST,
@@ -96,16 +98,10 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-      {
-        paired: true,
-        pairedGatewayUrl: "https://gateway.example.com",
-      },
-    );
+    const result = await getGuardianAccessToken("asst-1", invocation, true, {
+      paired: true,
+      pairedGatewayUrl: "https://gateway.example.com",
+    });
 
     expect(result).toEqual({
       ok: false,
@@ -117,7 +113,6 @@ describe("getGuardianAccessToken", () => {
 
   test("an explicit paired: false keeps the hatch/wake guidance", async () => {
     saveGuardianToken(
-      configDir,
       "asst-1",
       makeTokenData({
         accessTokenExpiresAt: PAST,
@@ -125,13 +120,9 @@ describe("getGuardianAccessToken", () => {
       }),
     );
 
-    const result = await getGuardianAccessToken(
-      "asst-1",
-      configDir,
-      invocation,
-      true,
-      { paired: false },
-    );
+    const result = await getGuardianAccessToken("asst-1", invocation, true, {
+      paired: false,
+    });
 
     expect(result.ok).toBe(false);
     if (result.ok) {
@@ -142,62 +133,41 @@ describe("getGuardianAccessToken", () => {
 
   test("returns a paired token only for its stored gateway target", async () => {
     saveGuardianToken(
-      configDir,
       "paired-1",
       makeTokenData({ pairedGatewayUrl: "https://gateway.example.com" }),
     );
 
-    expect(
-      await getGuardianAccessToken("paired-1", configDir, invocation, true),
-    ).toEqual({
+    expect(await getGuardianAccessToken("paired-1", invocation, true)).toEqual({
       ok: false,
       status: 403,
       error: PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
     });
     expect(
-      await getGuardianAccessToken(
-        "paired-1",
-        configDir,
-        invocation,
-        true,
-        {
-          paired: true,
-          pairedGatewayUrl: "https://attacker.example.com",
-        },
-      ),
+      await getGuardianAccessToken("paired-1", invocation, true, {
+        paired: true,
+        pairedGatewayUrl: "https://attacker.example.com",
+      }),
     ).toEqual({
       ok: false,
       status: 403,
       error: PAIRED_GUARDIAN_TARGET_MISMATCH_ERROR,
     });
     expect(
-      await getGuardianAccessToken(
-        "paired-1",
-        configDir,
-        invocation,
-        true,
-        {
-          paired: true,
-          pairedGatewayUrl: "https://gateway.example.com",
-        },
-      ),
+      await getGuardianAccessToken("paired-1", invocation, true, {
+        paired: true,
+        pairedGatewayUrl: "https://gateway.example.com",
+      }),
     ).toEqual({ ok: true, accessToken: "access" });
   });
 
   test("binds a legacy paired token before returning it", async () => {
-    saveGuardianToken(configDir, "paired-1", makeTokenData({}));
+    saveGuardianToken("paired-1", makeTokenData({}));
 
     expect(
-      await getGuardianAccessToken(
-        "paired-1",
-        configDir,
-        invocation,
-        true,
-        {
-          paired: true,
-          pairedGatewayUrl: "https://gateway.example.com",
-        },
-      ),
+      await getGuardianAccessToken("paired-1", invocation, true, {
+        paired: true,
+        pairedGatewayUrl: "https://gateway.example.com",
+      }),
     ).toEqual({ ok: true, accessToken: "access" });
 
     const stored = JSON.parse(

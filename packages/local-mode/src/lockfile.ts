@@ -50,7 +50,8 @@ export type LockfileResult =
  * this stays package-internal (never re-exported from the index) — everything
  * else reads through {@link readLockfile}.
  */
-export function getLockfileData(lockfilePath: string): LockfileResult {
+export function getLockfileData(): LockfileResult {
+  const lockfilePath = resolveLockfilePath();
   let raw: string;
   try {
     raw = fs.readFileSync(lockfilePath, "utf-8");
@@ -72,19 +73,6 @@ export function getLockfileData(lockfilePath: string): LockfileResult {
   return { ok: true, data: parseLockfile(data), raw: data };
 }
 
-/**
- * Whether this assistant is a paired (connect-imported) entry — derived from
- * its remote addressing, never a stored flag. Paired entries have no local
- * daemon, so guardian-token failure guidance must say re-pair rather than
- * hatch/wake.
- */
-export function isPairedLockfileEntry(assistantId: string): boolean {
-  return readLockfile().assistants.some(
-    (assistant) =>
-      assistant.assistantId === assistantId && isRemoteGatewayEntry(assistant),
-  );
-}
-
 export type WriteResult =
   | { ok: true; lockfile: Lockfile }
   | { ok: false; status: number; error: string };
@@ -104,9 +92,8 @@ export type RawLockfileReadResult =
  * empty registry. Use for writes that must never replace a registry they
  * could not actually read.
  */
-export function readRawLockfileStrict(
-  lockfilePath: string,
-): RawLockfileReadResult {
+function readRawLockfileStrict(): RawLockfileReadResult {
+  const lockfilePath = resolveLockfilePath();
   let raw: string;
   try {
     raw = fs.readFileSync(lockfilePath, "utf-8");
@@ -146,10 +133,9 @@ function toWireLockfile(lockfile: Record<string, unknown>): Lockfile {
  * validated, sensitive-field-stripped view of what was written.
  */
 export function writeRawLockfile(
-  lockfilePath: string,
   lockfile: Record<string, unknown>,
 ): WriteResult {
-  const writePath = lockfilePath;
+  const writePath = resolveLockfilePath();
   try {
     const dir = path.dirname(writePath);
     fs.mkdirSync(dir, { recursive: true });
@@ -178,14 +164,13 @@ export function writeRawLockfile(
  * refuses (423) without writing.
  */
 export function renameLockfileAssistantIfPresent(
-  lockfilePath: string,
   assistantId: string,
   name: string,
 ): WriteResult {
   if (typeof name !== "string" || name === "") {
     return { ok: false, status: 400, error: "Missing name" };
   }
-  return patchLockfileAssistantIfPresent(lockfilePath, assistantId, { name });
+  return patchLockfileAssistantIfPresent(assistantId, { name });
 }
 
 /**
@@ -195,7 +180,6 @@ export function renameLockfileAssistantIfPresent(
  * move it.
  */
 export function stampLockfileAssistantOnboardedIfPresent(
-  lockfilePath: string,
   assistantId: string,
   onboardedAt: string,
 ): WriteResult {
@@ -203,7 +187,6 @@ export function stampLockfileAssistantOnboardedIfPresent(
     return { ok: false, status: 400, error: "Missing onboardedAt" };
   }
   return patchLockfileAssistantIfPresent(
-    lockfilePath,
     assistantId,
     { onboardedAt },
     (entry) =>
@@ -217,7 +200,6 @@ export function stampLockfileAssistantOnboardedIfPresent(
  * a successful no-op for a field whose current value should win.
  */
 function patchLockfileAssistantIfPresent(
-  lockfilePath: string,
   assistantId: string,
   patch: Record<string, unknown>,
   skip?: (entry: Record<string, unknown>) => boolean,
@@ -226,8 +208,8 @@ function patchLockfileAssistantIfPresent(
     return { ok: false, status: 400, error: "Missing assistantId" };
   }
 
-  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
-    const read = readRawLockfileStrict(lockfilePath);
+  const locked = withLockfileLock((): WriteResult => {
+    const read = readRawLockfileStrict();
     if (!read.ok) {
       return { ok: false, status: 409, error: read.error };
     }
@@ -252,7 +234,7 @@ function patchLockfileAssistantIfPresent(
     }
     assistants[idx] = { ...entry, ...patch };
     lockfile.assistants = assistants;
-    return writeRawLockfile(lockfilePath, lockfile);
+    return writeRawLockfile(lockfile);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
@@ -269,9 +251,7 @@ export function saveLockfileAssistant(
   if (typeof assistantId !== "string") {
     throw new Error("Missing assistant.assistantId");
   }
-  const lockfilePath = resolveLockfilePath();
-
-  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
+  const locked = withLockfileLock((): WriteResult => {
     const lockfile = readLockfile();
     const assistants = [...lockfile.assistants];
     const existingIdx = assistants.findIndex(
@@ -291,22 +271,18 @@ export function saveLockfileAssistant(
       lockfile.activeAssistant = activeAssistant;
     }
 
-    return writeRawLockfile(lockfilePath, lockfile);
+    return writeRawLockfile(lockfile);
   });
   if (!locked.ok) {
     throw new Error(locked.error);
   }
 }
 
-export function isActiveAssistant(
-  lockfilePath: string,
-  assistantId: string,
-): boolean {
+export function isActiveAssistant(assistantId: string): boolean {
   try {
-    const data = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as Record<
-      string,
-      unknown
-    >;
+    const data = JSON.parse(
+      fs.readFileSync(resolveLockfilePath(), "utf-8"),
+    ) as Record<string, unknown>;
     if (data.activeAssistant === assistantId) return true;
     const assistants = data.assistants;
     if (!Array.isArray(assistants) || assistants.length !== 1) return false;
@@ -318,8 +294,7 @@ export function isActiveAssistant(
 }
 
 export function replaceCloudAssistants(
-  lockfilePath: string,
-  cloudAssistants: Array<Record<string, unknown>>,
+  cloudAssistants: LockfileAssistant[],
   organizationId?: string,
 ): WriteResult {
   if (
@@ -337,7 +312,7 @@ export function replaceCloudAssistants(
     };
   }
 
-  const locked = withLockfileLock(lockfilePath, (): WriteResult => {
+  const locked = withLockfileLock((): WriteResult => {
     const lockfile = readLockfile();
     const existing = lockfile.assistants;
     const syncedIds = new Set(cloudAssistants.map((a) => a.assistantId));
@@ -360,7 +335,7 @@ export function replaceCloudAssistants(
     lockfile.assistants = [
       ...preserved,
       ...cloudAssistants.map((a) => {
-        const prior = priorOnboardedAt.get(a.assistantId as string);
+        const prior = priorOnboardedAt.get(a.assistantId);
         return a.onboardedAt == null && prior != null
           ? { ...a, onboardedAt: prior }
           : a;
@@ -375,7 +350,71 @@ export function replaceCloudAssistants(
       if (!stillExists) lockfile.activeAssistant = null;
     }
 
-    return writeRawLockfile(lockfilePath, lockfile);
+    return writeRawLockfile(lockfile);
+  });
+  return locked.ok ? locked.value : lockFailure(locked.error);
+}
+
+/**
+ * Remove an assistant entry, never creating one: the removal counterpart of
+ * {@link saveLockfileAssistant}. A missing entry refuses (404) and an
+ * unreadable on-disk file refuses (409) on the same terms as the update-only
+ * patchers, and the active-assistant reassignment mirrors the CLI's
+ * removeAssistantEntry so unpairing through the bridge and through
+ * `cadet unpair` leave the same active state. The whole read-check-write
+ * runs under the shared advisory lock; contention refuses (423) without
+ * writing.
+ */
+export function removeLockfileAssistant(
+  assistantId: string,
+  options?: {
+    /**
+     * Credential choreography that must land inside the same locked
+     * transaction as the removal, between the read and the write: an unpair
+     * deletes the stored guardian token there, so a failed write leaves the
+     * entry (and its credential) exactly as they were. Return an undo
+     * callback; it runs only when the write fails. A throw aborts the
+     * removal with a 500 carrying the thrown message, the entry untouched.
+     */
+    beforeWrite?: () => (() => void) | undefined;
+  },
+): WriteResult {
+  if (typeof assistantId !== "string" || assistantId === "") {
+    return { ok: false, status: 400, error: "Missing assistantId" };
+  }
+
+  const locked = withLockfileLock((): WriteResult => {
+    const lockfile = readLockfile();
+    if (!lockfile.assistants.some((a) => a.assistantId === assistantId)) {
+      return { ok: false, status: 404, error: "No such assistant" };
+    }
+
+    let undo: (() => void) | undefined;
+    try {
+      undo = options?.beforeWrite?.();
+    } catch (err) {
+      return {
+        ok: false,
+        status: 500,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+
+    lockfile.assistants = lockfile.assistants.filter(
+      (a) => a.assistantId !== assistantId,
+    );
+    if (lockfile.activeAssistant === assistantId) {
+      const next = lockfile.assistants[0]?.assistantId;
+      lockfile.activeAssistant = typeof next === "string" ? next : null;
+    }
+
+    const result = writeRawLockfile(
+      lockfile as unknown as Record<string, unknown>,
+    );
+    if (!result.ok && undo) {
+      undo();
+    }
+    return result;
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

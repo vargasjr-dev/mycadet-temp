@@ -312,28 +312,41 @@ describe("gatewayTargetsFromLockfile", () => {
 });
 
 describe("readGatewayTargets", () => {
-  test("reads the id-keyed target map from disk", () => {
+  // The reader resolves its path from the environment; a per-test XDG home
+  // points it at the fixture's cadet dir.
+  const withAmbientLockfile = (
+    write: (lockfilePath: string) => void,
+  ): string => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
-    const lockfile = path.join(dir, "lockfile.json");
-    fs.writeFileSync(
-      lockfile,
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            resources: { gatewayPort: 8080, daemonPort: 8501 },
-          },
-          {
-            assistantId: "def-456",
-            cloud: "custom",
-            ipAddress: "gw.example.com",
-            port: 443,
-          },
-        ],
-      }),
+    process.env.XDG_CONFIG_HOME = dir;
+    const lockfilePath = path.join(dir, "cadet", "lockfile.json");
+    fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
+    write(lockfilePath);
+    return dir;
+  };
+
+  test("reads the id-keyed target map from disk", () => {
+    const dir = withAmbientLockfile((lockfilePath) =>
+      fs.writeFileSync(
+        lockfilePath,
+        JSON.stringify({
+          assistants: [
+            {
+              assistantId: "abc-123",
+              cloud: "local",
+              resources: { gatewayPort: 8080, daemonPort: 8501 },
+            },
+            {
+              assistantId: "def-456",
+              cloud: "custom",
+              ipAddress: "gw.example.com",
+              port: 443,
+            },
+          ],
+        }),
+      ),
     );
-    expect(readGatewayTargets(lockfile)).toEqual(
+    expect(readGatewayTargets()).toEqual(
       targets({
         "abc-123": loopback(8080),
         "def-456": remote("https://gw.example.com"),
@@ -343,21 +356,18 @@ describe("readGatewayTargets", () => {
   });
 
   test("an empty lockfile yields an empty map", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
-    const lockfile = path.join(dir, "first.json");
-    fs.writeFileSync(lockfile, JSON.stringify({ assistants: [] }));
-    expect(readGatewayTargets(lockfile)).toEqual(new Map());
+    const dir = withAmbientLockfile((lockfilePath) =>
+      fs.writeFileSync(lockfilePath, JSON.stringify({ assistants: [] })),
+    );
+    expect(readGatewayTargets()).toEqual(new Map());
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
   test("an unreadable or absent lockfile yields an empty map", () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
-    const unreadable = path.join(dir, "unreadable.json");
-    fs.writeFileSync(unreadable, "{ not json");
-    expect(readGatewayTargets(unreadable)).toEqual(new Map());
-    expect(readGatewayTargets(path.join(dir, "absent.json"))).toEqual(
-      new Map(),
+    const dir = withAmbientLockfile((lockfilePath) =>
+      fs.writeFileSync(lockfilePath, "{ not json"),
     );
+    expect(readGatewayTargets()).toEqual(new Map());
     fs.rmSync(dir, { recursive: true, force: true });
   });
 });

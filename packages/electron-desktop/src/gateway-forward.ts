@@ -171,9 +171,7 @@ export type GatewayForwardFetcher = (
  */
 const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
   const watched = getWatchedLockfileSnapshot();
-  return watched
-    ? gatewayTargetsFromLockfile(watched)
-    : readGatewayTargets(resolveLockfilePath());
+  return watched ? gatewayTargetsFromLockfile(watched) : readGatewayTargets();
 };
 
 export const forwardGatewayRequest = async (

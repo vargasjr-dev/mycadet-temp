@@ -12,17 +12,20 @@ let lockDir: string;
 
 beforeEach(() => {
   dir = fs.mkdtempSync(path.join(os.tmpdir(), "lockfile-lock-test-"));
-  lockfilePath = path.join(dir, "lockfile.json");
+  process.env.XDG_CONFIG_HOME = dir;
+  lockfilePath = path.join(dir, "cadet", "lockfile.json");
   lockDir = `${lockfilePath}.lock`;
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
 });
 
 afterEach(() => {
+  Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
 describe("withLockfileLock", () => {
   test("runs fn, propagates its result, and removes the lock dir", () => {
-    const result = withLockfileLock(lockfilePath, () => {
+    const result = withLockfileLock(() => {
       expect(fs.existsSync(lockDir)).toBe(true);
       return 42;
     });
@@ -30,15 +33,15 @@ describe("withLockfileLock", () => {
     expect(fs.existsSync(lockDir)).toBe(false);
   });
 
-  test("keys the lock to the path", () => {
-    withLockfileLock(lockfilePath, () => {
+  test("keys the lock to the ambient lockfile path", () => {
+    withLockfileLock(() => {
       expect(fs.existsSync(lockDir)).toBe(true);
     });
   });
 
   test("releases the lock when fn throws, rethrowing", () => {
     expect(() =>
-      withLockfileLock(lockfilePath, () => {
+      withLockfileLock(() => {
         throw new Error("boom");
       }),
     ).toThrow("boom");
@@ -46,8 +49,8 @@ describe("withLockfileLock", () => {
   });
 
   test("is reentrant within the process", () => {
-    const result = withLockfileLock(lockfilePath, () => {
-      const inner = withLockfileLock(lockfilePath, () => "inner");
+    const result = withLockfileLock(() => {
+      const inner = withLockfileLock(() => "inner");
       expect(inner).toEqual({ ok: true, value: "inner" });
       // Inner exit must not release the outer hold.
       expect(fs.existsSync(lockDir)).toBe(true);
@@ -61,7 +64,7 @@ describe("withLockfileLock", () => {
     fs.mkdirSync(lockDir);
     let ran = false;
     const start = Date.now();
-    const result = withLockfileLock(lockfilePath, () => {
+    const result = withLockfileLock(() => {
       ran = true;
     });
     expect(Date.now() - start).toBeLessThan(2_000);
@@ -79,7 +82,7 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock(lockfilePath, () => "ran");
+    const result = withLockfileLock(() => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
@@ -92,7 +95,7 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock(lockfilePath, () => "ran");
+    const result = withLockfileLock(() => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
@@ -104,7 +107,7 @@ describe("withLockfileLock", () => {
     fs.utimesSync(lockDir, past, past);
 
     let ran = false;
-    const result = withLockfileLock(lockfilePath, () => {
+    const result = withLockfileLock(() => {
       ran = true;
     });
     expect(ran).toBe(false);
@@ -123,13 +126,13 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 11 * 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock(lockfilePath, () => "ran");
+    const result = withLockfileLock(() => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
 
   test("records this process as the owner while the lock is held", () => {
-    withLockfileLock(lockfilePath, () => {
+    withLockfileLock(() => {
       expect(fs.readFileSync(path.join(lockDir, "owner"), "utf-8")).toBe(
         String(process.pid),
       );
@@ -137,7 +140,7 @@ describe("withLockfileLock", () => {
   });
 
   test("release leaves a lock re-acquired by another owner untouched", () => {
-    const result = withLockfileLock(lockfilePath, () => {
+    const result = withLockfileLock(() => {
       // Simulate a break-and-reacquire while suspended: another process now
       // records itself as the owner of the lock path.
       fs.writeFileSync(path.join(lockDir, "owner"), String(process.pid + 1));
@@ -151,10 +154,18 @@ describe("withLockfileLock", () => {
   });
 
   test("creates a missing parent directory and acquires", () => {
-    const nested = path.join(dir, "a", "b", "lockfile.json");
-    const result = withLockfileLock(nested, () => "ran");
-    expect(result).toEqual({ ok: true, value: "ran" });
-    expect(fs.existsSync(`${nested}.lock`)).toBe(false);
+    // The lock derives from the ambient lockfile path; a nested XDG home
+    // makes the resolver's parent directories missing on purpose.
+    const nestedHome = path.join(dir, "a", "b");
+    process.env.XDG_CONFIG_HOME = nestedHome;
+    try {
+      const result = withLockfileLock(() => "ran");
+      expect(result).toEqual({ ok: true, value: "ran" });
+      expect(
+        fs.existsSync(path.join(nestedHome, "cadet", "lockfile.json.lock")),
+      ).toBe(false);
+    } finally {
+      process.env.XDG_CONFIG_HOME = dir;
+    }
   });
-
 });

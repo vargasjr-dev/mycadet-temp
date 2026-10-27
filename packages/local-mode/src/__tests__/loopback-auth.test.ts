@@ -105,59 +105,65 @@ describe("isActiveAssistant", () => {
 
   test("returns true for the active assistant", () => {
     const dir = makeTempDir();
-    const lockfilePath = path.join(dir, "lockfile.json");
+    process.env.XDG_CONFIG_HOME = dir;
+    fs.mkdirSync(path.join(dir, "cadet"), { recursive: true });
     fs.writeFileSync(
-      lockfilePath,
+      path.join(dir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [{ assistantId: "active" }, { assistantId: "inactive" }],
         activeAssistant: "active",
       }),
     );
-    expect(isActiveAssistant(lockfilePath, "active")).toBe(true);
+    expect(isActiveAssistant("active")).toBe(true);
   });
 
   test("returns true for the sole assistant when activeAssistant is empty", () => {
     const dir = makeTempDir();
-    const lockfilePath = path.join(dir, "lockfile.json");
+    process.env.XDG_CONFIG_HOME = dir;
+    fs.mkdirSync(path.join(dir, "cadet"), { recursive: true });
     fs.writeFileSync(
-      lockfilePath,
+      path.join(dir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [{ assistantId: "only" }],
         activeAssistant: null,
       }),
     );
-    expect(isActiveAssistant(lockfilePath, "only")).toBe(true);
+    expect(isActiveAssistant("only")).toBe(true);
   });
 
   test("returns true for the sole assistant when activeAssistant is stale", () => {
     const dir = makeTempDir();
-    const lockfilePath = path.join(dir, "lockfile.json");
+    process.env.XDG_CONFIG_HOME = dir;
+    fs.mkdirSync(path.join(dir, "cadet"), { recursive: true });
     fs.writeFileSync(
-      lockfilePath,
+      path.join(dir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [{ assistantId: "only" }],
         activeAssistant: "missing",
       }),
     );
-    expect(isActiveAssistant(lockfilePath, "only")).toBe(true);
+    expect(isActiveAssistant("only")).toBe(true);
   });
 
   test("returns false for a non-active assistant", () => {
     const dir = makeTempDir();
-    const lockfilePath = path.join(dir, "lockfile.json");
+    process.env.XDG_CONFIG_HOME = dir;
+    fs.mkdirSync(path.join(dir, "cadet"), { recursive: true });
     fs.writeFileSync(
-      lockfilePath,
+      path.join(dir, "cadet", "lockfile.json"),
       JSON.stringify({
         assistants: [{ assistantId: "active" }, { assistantId: "inactive" }],
         activeAssistant: "active",
       }),
     );
-    expect(isActiveAssistant(lockfilePath, "inactive")).toBe(false);
+    expect(isActiveAssistant("inactive")).toBe(false);
   });
 
   test("returns false when lockfile does not exist", () => {
-    expect(isActiveAssistant("/nonexistent/lockfile.json", "any")).toBe(
-      false,
-    );
+    expect(isActiveAssistant("any")).toBe(false);
+  });
+
+  afterEach(() => {
+    Reflect.deleteProperty(process.env, "XDG_CONFIG_HOME");
   });
 });

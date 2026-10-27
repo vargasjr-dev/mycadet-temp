@@ -217,10 +217,7 @@ export function checkPairedAssistantName(name: string): PairRefusal | null {
  * before forwarding, so the local id never has to match the remote one: the
  * token (validated by signature/audience) is what authorizes requests.
  */
-export function pairAssistant(
-  configDir: string,
-  { credentials, name }: PairOptions,
-): PairResult {
+export function pairAssistant({ credentials, name }: PairOptions): PairResult {
   let label: string;
   try {
     label = gatewayLabel(credentials.gatewayUrl);
@@ -259,7 +256,7 @@ export function pairAssistant(
   // token without an entry is inert and overwritten by the next import.
   const now = Date.now();
   try {
-    saveGuardianToken(configDir, localId, {
+    saveGuardianToken(localId, {
       guardianPrincipalId: "imported",
       accessToken: credentials.token,
       accessTokenExpiresAt:
@@ -911,10 +908,11 @@ export interface PairingPollOptions {
  * attempt with nothing persisted, so a dismissed dialog or an interrupted CLI
  * never leaves credentials for an assistant the user declined to pair.
  */
-export async function pairingPoll(
-  configDir: string,
-  { handle, name, platform }: PairingPollOptions,
-): Promise<PairingPollResult> {
+export async function pairingPoll({
+  handle,
+  name,
+  platform,
+}: PairingPollOptions): Promise<PairingPollResult> {
   const key = typeof handle === "string" ? handle : "";
   const session = pendingPairings.get(key);
   if (!session) {
@@ -1023,7 +1021,7 @@ export async function pairingPoll(
     return unusableGatewayCredentials();
   }
 
-  const result = pairAssistant(configDir, {
+  const result = pairAssistant({
     credentials: {
       gatewayUrl: session.publicBaseUrl,
       token: approved.accessToken,

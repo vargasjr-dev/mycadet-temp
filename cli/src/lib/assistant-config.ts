@@ -94,7 +94,7 @@ function writeLockfileUnlocked(data: Lockfile): void {
  * contract of the write path.
  */
 function withCliLockfileLock<T>(fn: () => T): T {
-  const locked = withLockfileLock(resolveLockfilePath(), fn);
+  const locked = withLockfileLock(fn);
   if (!locked.ok) throw new Error(locked.error);
   return locked.value;
 }
@@ -353,9 +353,7 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
     if (all.length === 1) return all[0];
 
     if (all.length === 0) {
-      console.error(
-        `No assistant found. Run 'cadet hatch' first.`,
-      );
+      console.error(`No assistant found. Run 'cadet hatch' first.`);
     } else {
       console.error(
         `Multiple assistants found. Set an active assistant with 'cadet use <name>'.`,

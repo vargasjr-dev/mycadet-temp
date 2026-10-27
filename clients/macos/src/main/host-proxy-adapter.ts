@@ -57,7 +57,6 @@ export const installHostProxyBridge = (
 
       const result = await getGuardianAccessToken(
         assistantId,
-        configDir,
         invocation,
         true,
       );

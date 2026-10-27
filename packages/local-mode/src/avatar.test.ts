@@ -16,12 +16,13 @@ describe("readLockfileAssistantAvatar", () => {
   let avatarDir: string;
 
   const read = (assistantId = "asst-1") =>
-    readLockfileAssistantAvatar(lockfilePath, assistantId);
+    readLockfileAssistantAvatar(assistantId);
 
   const writeLockfileEntry = (
     resources?: Record<string, unknown>,
     extra: Record<string, unknown> = {},
   ): void => {
+    fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
     fs.writeFileSync(
       lockfilePath,
       JSON.stringify({
@@ -49,13 +50,13 @@ describe("readLockfileAssistantAvatar", () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "local-mode-avatar-"));
     // The path resolvers read process.env directly; the production entry in
     // these tests resolves the unsuffixed `cadet` data dir.
-    savedEnv = ["CADET_ENVIRONMENT", "XDG_DATA_HOME"].map((key) => [
-      key,
-      process.env[key],
-    ]);
+    savedEnv = ["CADET_ENVIRONMENT", "XDG_DATA_HOME", "XDG_CONFIG_HOME"].map(
+      (key) => [key, process.env[key]],
+    );
     process.env.CADET_ENVIRONMENT = "production";
     process.env.XDG_DATA_HOME = path.join(tempDir, "data-home");
-    lockfilePath = path.join(tempDir, "lockfile.json");
+    process.env.XDG_CONFIG_HOME = tempDir;
+    lockfilePath = path.join(tempDir, "cadet", "lockfile.json");
     instanceDir = path.join(tempDir, "instance");
     avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     writeLockfileEntry({ instanceDir, gatewayPort: 1, daemonPort: 2 });

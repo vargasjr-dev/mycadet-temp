@@ -14,7 +14,6 @@ import {
   pairingCancel,
   pairingPoll,
   pairingStart,
-  resolveConfigDir,
   saveLockfileAssistant,
 } from "@mycadet/local-mode";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
@@ -148,8 +147,6 @@ export async function connectImport(): Promise<void> {
     process.exit(1);
   }
 
-  const configDir = resolveConfigDir();
-
   // Refuse a colliding --name BEFORE anything is exchanged. The device code is
   // one-time and the gateway records a device the moment it is spent, so
   // discovering the collision after the exchange would orphan that device and
@@ -204,7 +201,7 @@ export async function connectImport(): Promise<void> {
     let consecutiveFailures = 0;
 
     for (;;) {
-      const result = await pairingPoll(configDir, {
+      const result = await pairingPoll({
         handle: started.handle,
         name: nameFlag,
         platform: "cli",

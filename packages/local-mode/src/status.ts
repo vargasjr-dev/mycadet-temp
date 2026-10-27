@@ -261,10 +261,9 @@ export type LockfileInstanceDirResult =
  * so callers can tell absence from a failed read.
  */
 export function resolveLockfileInstanceDir(
-  lockfilePath: string,
   assistantId: string,
 ): LockfileInstanceDirResult {
-  const result = getLockfileData(lockfilePath);
+  const result = getLockfileData();
   if (!result.ok) {
     return { ok: false };
   }
@@ -405,7 +404,6 @@ async function runtimeStatusForEntry(
 }
 
 export async function getLocalAssistantStatus(
-  lockfilePath: string,
   assistantId: string,
 ): Promise<LocalAssistantStatusResult> {
   try {
@@ -413,7 +411,7 @@ export async function getLocalAssistantStatus(
   } catch {
     return { ok: false, status: 400, error: "Invalid assistant ID" };
   }
-  const result = getLockfileData(lockfilePath);
+  const result = getLockfileData();
   if (!result.ok) {
     return {
       ok: false,

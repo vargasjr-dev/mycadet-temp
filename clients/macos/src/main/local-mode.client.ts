@@ -8,9 +8,6 @@ import {
   installLocalMode,
 } from "@mycadet/electron-desktop/local-mode";
 import {
-  resolveConfigDir,
-  resolveEnvironmentName,
-  resolveLockfilePath,
   type CliInvocation,
 } from "@mycadet/local-mode";
 
@@ -42,11 +39,6 @@ export const resolveCliInvocation = async (): Promise<CliInvocation> => {
 configureLocalMode({
   cli: { resolveInvocation: resolveCliInvocation },
   handle,
-  paths: {
-    configDir: resolveConfigDir(),
-    environment: resolveEnvironmentName(),
-    lockfilePath: resolveLockfilePath(),
-  },
   refreshLockfile: refreshLockfileNow,
   session: { getToken: getSessionToken },
 });

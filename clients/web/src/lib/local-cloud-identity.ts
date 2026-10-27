@@ -622,7 +622,7 @@ async function resolveOrganizationId(
   statusOrganizationId: string | null,
   assistant: LockfileAssistant,
 ): Promise<string | null> {
-  return statusOrganizationId ?? assistant.cloudOrganizationId ?? null;
+  return statusOrganizationId ?? assistant.organizationId ?? null;
 }
 
 async function ensureRegistration(

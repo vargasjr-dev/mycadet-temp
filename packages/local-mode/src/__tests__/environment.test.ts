@@ -217,7 +217,7 @@ describe("Windows path resolution", () => {
       expect(() => resolveInstanceDir(assistantId)).toThrow(
         "Invalid assistant ID",
       );
-      expect(() => guardianTokenPath("C:\\Cadet", assistantId)).toThrow(
+      expect(() => guardianTokenPath(assistantId)).toThrow(
         "Invalid assistant ID",
       );
     }

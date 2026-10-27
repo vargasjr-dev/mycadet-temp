@@ -23,7 +23,7 @@ import {
   pairingPoll,
   pairingStart,
   unpairAssistant,
-  readRawLockfileStrict,
+  LockfileAssistantSchema,
   type CliInvocation,
   type GuardianTokenOptions,
   type LockfileWriteResult,
@@ -87,26 +87,15 @@ export interface LocalModeSessionProvider {
   getToken: () => string | null;
 }
 
-export interface LocalModePlatformPaths {
-  configDir: string;
-  environment: string;
-  lockfilePath: string;
-}
-
 export const LOCAL_MODE_CLI = capabilityToken<LocalModeCliProvider>(
   "desktop.local-mode-cli",
 );
 export const LOCAL_MODE_SESSION = capabilityToken<LocalModeSessionProvider>(
   "desktop.local-mode-session",
 );
-export const LOCAL_MODE_PATHS = capabilityToken<LocalModePlatformPaths>(
-  "desktop.local-mode-paths",
-);
-
 export interface LocalModeRuntime {
   cli: LocalModeCliProvider;
   handle: IpcHandle;
-  paths: LocalModePlatformPaths;
   refreshLockfile: () => void;
   session: LocalModeSessionProvider;
   unavailableError?: string;
@@ -127,7 +116,6 @@ export const configureUnavailableLocalMode = (
       resolveInvocation: async () => ({ command: "unused", baseArgs: [] }),
     },
     handle,
-    paths: { configDir: "", environment: "", lockfilePath: "" },
     refreshLockfile: () => undefined,
     session: { getToken: () => null },
     unavailableError,
@@ -239,11 +227,10 @@ async function wake(
 const upgradingLocalAssistantIds = new Set<string>();
 
 async function upgrade(
-  lockfilePath: string,
   assistantId: string,
   options?: UpgradeOptions,
 ): Promise<UpgradeResult> {
-  if (!isActiveAssistant(lockfilePath, assistantId)) {
+  if (!isActiveAssistant(assistantId)) {
     return { ok: false, error: "Can only upgrade the active local assistant" };
   }
 
@@ -279,7 +266,6 @@ async function upgrade(
 
 async function getHostGuardianAccessToken(
   assistantId: string,
-  configDir: string,
   options: GuardianTokenOptions,
 ): Promise<TokenResult> {
   let invocation: CliInvocation;
@@ -288,13 +274,7 @@ async function getHostGuardianAccessToken(
   } catch (err) {
     return { ok: false, status: 500, error: (err as Error).message };
   }
-  return getGuardianAccessToken(
-    assistantId,
-    configDir,
-    invocation,
-    true,
-    options,
-  );
+  return getGuardianAccessToken(assistantId, invocation, true, options);
 }
 
 /** Read a paired guardian bearer for the trusted main-process proxy. */
@@ -315,7 +295,6 @@ export async function getPairedGuardianAccessToken(
   return getStoredPairedGuardianAccessToken(
     assistantId,
     runtimeUrl,
-    requireRuntime().paths.configDir,
     invocation,
     true,
   );
@@ -325,11 +304,7 @@ export async function getPairedGuardianAccessToken(
 export async function getLocalGuardianAccessToken(
   assistantId: string,
 ): Promise<TokenResult> {
-  return getHostGuardianAccessToken(
-    assistantId,
-    requireRuntime().paths.configDir,
-    { paired: false },
-  );
+  return getHostGuardianAccessToken(assistantId, { paired: false });
 }
 
 // A persisted assistant entry as it crosses the IPC boundary. The
@@ -406,7 +381,6 @@ export const installLocalMode = (): void => {
     });
   };
 
-  const { configDir, lockfilePath } = configured.paths;
   const { refreshLockfile } = configured;
 
   ipc("cadet:localMode:hatch", z.tuple([z.string().optional()]), ([remote]) =>
@@ -429,11 +403,7 @@ export const installLocalMode = (): void => {
       if (!assistantId || !name) {
         return { ok: false, error: "Missing assistantId or name" };
       }
-      const result = renameLockfileAssistantIfPresent(
-        lockfilePath,
-        assistantId,
-        name,
-      );
+      const result = renameLockfileAssistantIfPresent(assistantId, name);
       if (!result.ok) {
         return { ok: false, error: result.error };
       }
@@ -454,7 +424,6 @@ export const installLocalMode = (): void => {
         return { ok: false, error: "Missing assistantId or onboardedAt" };
       }
       const result = stampLockfileAssistantOnboardedIfPresent(
-        lockfilePath,
         assistantId,
         onboardedAt,
       );
@@ -468,9 +437,9 @@ export const installLocalMode = (): void => {
 
   ipc(
     "cadet:localMode:replaceCloudAssistants",
-    z.tuple([z.array(assistantRecord), z.string().optional()]),
+    z.tuple([z.array(LockfileAssistantSchema), z.string().optional()]),
     ([list, organizationId]): LockfileWriteResult => {
-      const result = replaceCloudAssistants(lockfilePath, list, organizationId);
+      const result = replaceCloudAssistants(list, organizationId);
       return result.ok
         ? { ok: true, lockfile: result.lockfile }
         : { ok: false, error: result.error };
@@ -491,7 +460,7 @@ export const installLocalMode = (): void => {
       if (!assistantId) {
         return { ok: false, error: "Missing assistantId" };
       }
-      const result = unpairAssistant(lockfilePath, configDir, assistantId);
+      const result = unpairAssistant(assistantId);
       if (!result.ok) {
         return { ok: false, error: result.error };
       }
@@ -535,7 +504,7 @@ export const installLocalMode = (): void => {
     "cadet:localMode:pairingPoll",
     twoOptionalStringArgs,
     async ([handle, name]): Promise<LocalPairingPollResult> => {
-      const result = await pairingPoll(configDir, {
+      const result = await pairingPoll({
         handle,
         name,
       });
@@ -605,7 +574,7 @@ export const installLocalMode = (): void => {
     if (!assistantId) {
       return { ok: false, error: "Missing assistantId" };
     }
-    return upgrade(lockfilePath, assistantId, options);
+    return upgrade(assistantId, options);
   });
 
   ipc("cadet:localMode:status", assistantIdArgs, ([assistantId]) => {
@@ -615,7 +584,7 @@ export const installLocalMode = (): void => {
     if (upgradingLocalAssistantIds.has(assistantId)) {
       return { ok: true, state: "upgrading" };
     }
-    return getLocalAssistantStatus(lockfilePath, assistantId);
+    return getLocalAssistantStatus(assistantId);
   });
 
   ipc(
@@ -625,7 +594,7 @@ export const installLocalMode = (): void => {
       if (!assistantId) {
         return { ok: false, error: "Missing assistantId" };
       }
-      return readLockfileAssistantAvatar(lockfilePath, assistantId);
+      return readLockfileAssistantAvatar(assistantId);
     },
   );
 };

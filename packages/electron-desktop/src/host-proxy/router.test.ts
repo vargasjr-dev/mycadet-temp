@@ -759,7 +759,7 @@ describe("host-proxy-router", () => {
       expect(conn.fingerprint).toBe("cloud:https://cloud.mycadet.ai:");
     });
 
-    test("stamps cloudOrganizationId from the lockfile into the fingerprint", async () => {
+    test("stamps organizationId from the lockfile into the fingerprint", async () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -767,7 +767,7 @@ describe("host-proxy-router", () => {
           {
             assistantId: "cloud-1",
             cloud: "cloud",
-            cloudOrganizationId: "org-from-lockfile",
+            organizationId: "org-from-lockfile",
           },
         ],
         activeAssistant: "cloud-1",
@@ -779,7 +779,7 @@ describe("host-proxy-router", () => {
       );
     });
 
-    test("reconnects cloud assistant when cloudOrganizationId changes", async () => {
+    test("reconnects cloud assistant when organizationId changes", async () => {
       installHostProxyBridge(testRuntime);
 
       lockfileListener?.({
@@ -787,7 +787,7 @@ describe("host-proxy-router", () => {
           {
             assistantId: "cloud-1",
             cloud: "cloud",
-            cloudOrganizationId: "org-a",
+            organizationId: "org-a",
           },
         ],
         activeAssistant: "cloud-1",
@@ -800,7 +800,7 @@ describe("host-proxy-router", () => {
           {
             assistantId: "cloud-1",
             cloud: "cloud",
-            cloudOrganizationId: "org-b",
+            organizationId: "org-b",
           },
         ],
         activeAssistant: "cloud-1",
@@ -1821,14 +1821,14 @@ describe("host-proxy-router", () => {
       const queued = __testing.presencePostQueues.get("cloud-1");
       expect(queued).toBeDefined();
 
-      // Same endpoint, new cloudOrganizationId: the router rebuilds the connection
+      // Same endpoint, new organizationId: the router rebuilds the connection
       // while the old post is still out against that very daemon.
       lockfileListener?.({
         assistants: [
           {
             assistantId: "cloud-1",
             cloud: "cloud",
-            cloudOrganizationId: "org-b",
+            organizationId: "org-b",
           },
         ],
         activeAssistant: "cloud-1",

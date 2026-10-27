@@ -109,6 +109,7 @@
     "paired": "Paired",
     "localAssistant": "On this computer",
     "cloudHosted": "Cloud-hosted",
+    "cloudHostedWithHost": "Cloud-hosted · {host}",
     "selfHosted": "Self-hosted"
   },
   "appShell": {

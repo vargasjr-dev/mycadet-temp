@@ -5,7 +5,6 @@ import path from "node:path";
 
 import {
   getLockfileData,
-  isPairedLockfileEntry,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
@@ -43,7 +42,7 @@ function readOnDisk(): Record<string, unknown> {
 
 describe("getLockfileData", () => {
   test("returns the empty lockfile when no file exists", () => {
-    const result = getLockfileData(lockfilePath);
+    const result = getLockfileData();
     expect(result).toEqual({
       ok: true,
       data: { assistants: [], activeAssistant: null },
@@ -60,7 +59,7 @@ describe("getLockfileData", () => {
       ],
     });
 
-    const result = getLockfileData(lockfilePath);
+    const result = getLockfileData();
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.assistants).toEqual([
@@ -81,7 +80,7 @@ describe("getLockfileData", () => {
       ],
     });
 
-    const result = getLockfileData(lockfilePath);
+    const result = getLockfileData();
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.assistants).toEqual([
@@ -96,36 +95,8 @@ describe("getLockfileData", () => {
 
   test("fails with status 500 on malformed JSON", () => {
     fs.writeFileSync(lockfilePath, "{ not json");
-    const result = getLockfileData(lockfilePath);
+    const result = getLockfileData();
     expect(result).toEqual({ ok: false, status: 500 });
-  });
-});
-
-// Hosts consult this so an expired pairing gets re-pair guidance instead of
-// hatch/wake; this pins the derivation — a custom remote's addressing,
-// never a stored flag.
-describe("isPairedLockfileEntry", () => {
-  test("classifies custom-remote entries as paired", () => {
-    writeOnDisk({
-      assistants: [
-        {
-          assistantId: "paired-1",
-          cloud: "custom",
-          ipAddress: "h.example.com",
-          port: 443,
-        },
-        { assistantId: "local-1", cloud: "local" },
-      ],
-      activeAssistant: "local-1",
-    });
-
-    expect(isPairedLockfileEntry("paired-1")).toBe(true);
-    expect(isPairedLockfileEntry("local-1")).toBe(false);
-    expect(isPairedLockfileEntry("missing")).toBe(false);
-  });
-
-  test("an absent lockfile never classifies as paired", () => {
-    expect(isPairedLockfileEntry("paired-1")).toBe(false);
   });
 });
 
@@ -242,11 +213,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
   test("stamps the entry preserving its other fields and activeAssistant", () => {
     writeOnDisk({ activeAssistant: "asst_other", assistants: [entry] });
 
-    const result = stampLockfileAssistantOnboardedIfPresent(
-      lockfilePath,
-      "asst_1",
-      AT,
-    );
+    const result = stampLockfileAssistantOnboardedIfPresent("asst_1", AT);
 
     expect(result.ok).toBe(true);
     const onDisk = readOnDisk();
@@ -256,11 +223,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
 
   // Update-only: a completion racing a CLI retire must not resurrect the row.
   test("refuses a missing entry without writing the file", () => {
-    const result = stampLockfileAssistantOnboardedIfPresent(
-      lockfilePath,
-      "asst_gone",
-      AT,
-    );
+    const result = stampLockfileAssistantOnboardedIfPresent("asst_gone", AT);
 
     expect(result).toEqual({
       ok: false,
@@ -274,11 +237,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
     const stamped = { ...entry, onboardedAt: "2026-08-01T00:00:00.000Z" };
     writeOnDisk({ activeAssistant: null, assistants: [stamped] });
 
-    const result = stampLockfileAssistantOnboardedIfPresent(
-      lockfilePath,
-      "asst_1",
-      AT,
-    );
+    const result = stampLockfileAssistantOnboardedIfPresent("asst_1", AT);
 
     expect(result.ok).toBe(true);
     expect(readOnDisk().assistants).toEqual([stamped]);
@@ -287,11 +246,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
   test("refuses a corrupt on-disk file without clobbering it", () => {
     fs.writeFileSync(lockfilePath, "{ not json");
 
-    const result = stampLockfileAssistantOnboardedIfPresent(
-      lockfilePath,
-      "asst_1",
-      AT,
-    );
+    const result = stampLockfileAssistantOnboardedIfPresent("asst_1", AT);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -301,12 +256,10 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
   });
 
   test("rejects a missing id or timestamp", () => {
-    expect(
-      stampLockfileAssistantOnboardedIfPresent(lockfilePath, "", AT).ok,
-    ).toBe(false);
-    expect(
-      stampLockfileAssistantOnboardedIfPresent(lockfilePath, "asst_1", "").ok,
-    ).toBe(false);
+    expect(stampLockfileAssistantOnboardedIfPresent("", AT).ok).toBe(false);
+    expect(stampLockfileAssistantOnboardedIfPresent("asst_1", "").ok).toBe(
+      false,
+    );
     expect(fs.existsSync(lockfilePath)).toBe(false);
   });
 });
@@ -327,11 +280,7 @@ describe("renameLockfileAssistantIfPresent", () => {
       assistants: [entry, { assistantId: "asst_other", cloud: "local" }],
     });
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_1",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_1", "Renamed");
 
     expect(result.ok).toBe(true);
     const onDisk = readOnDisk();
@@ -344,11 +293,7 @@ describe("renameLockfileAssistantIfPresent", () => {
   });
 
   test("refuses a missing entry without writing the file", () => {
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_gone",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_gone", "Renamed");
 
     expect(result).toEqual({
       ok: false,
@@ -362,11 +307,7 @@ describe("renameLockfileAssistantIfPresent", () => {
     writeOnDisk({ activeAssistant: null, assistants: [entry] });
     const before = fs.readFileSync(lockfilePath, "utf-8");
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_retired",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_retired", "Renamed");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -378,11 +319,7 @@ describe("renameLockfileAssistantIfPresent", () => {
   test("refuses a corrupt on-disk file without clobbering it", () => {
     fs.writeFileSync(lockfilePath, "{ not json");
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_1",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_1", "Renamed");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -395,11 +332,7 @@ describe("renameLockfileAssistantIfPresent", () => {
     for (const raw of ["null", "[]", '"text"', "7"]) {
       fs.writeFileSync(lockfilePath, raw);
 
-      const result = renameLockfileAssistantIfPresent(
-        lockfilePath,
-        "asst_1",
-        "Renamed",
-      );
+      const result = renameLockfileAssistantIfPresent("asst_1", "Renamed");
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -417,11 +350,7 @@ describe("renameLockfileAssistantIfPresent", () => {
     );
     const before = fs.readFileSync(lockfilePath, "utf-8");
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_1",
-      "Old Name",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_1", "Old Name");
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -435,12 +364,8 @@ describe("renameLockfileAssistantIfPresent", () => {
     writeOnDisk({ activeAssistant: null, assistants: [entry] });
     const before = fs.readFileSync(lockfilePath, "utf-8");
 
-    expect(renameLockfileAssistantIfPresent(lockfilePath, "", "N").ok).toBe(
-      false,
-    );
-    expect(
-      renameLockfileAssistantIfPresent(lockfilePath, "asst_1", "").ok,
-    ).toBe(false);
+    expect(renameLockfileAssistantIfPresent("", "N").ok).toBe(false);
+    expect(renameLockfileAssistantIfPresent("asst_1", "").ok).toBe(false);
     expect(fs.readFileSync(lockfilePath, "utf-8")).toBe(before);
   });
 });
@@ -463,11 +388,7 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_1",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_1", "Renamed");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -492,8 +413,8 @@ describe("lockfile writers under lock contention", () => {
     const before = fs.readFileSync(lockfilePath, "utf-8");
     holdLock();
 
-    const result = replaceCloudAssistants(lockfilePath, [
-      { assistantId: "asst_p", cloud: "cloud", runtimeUrl: "http://p" },
+    const result = replaceCloudAssistants([
+      { assistantId: "asst_p", cloud: "cloud" },
     ]);
 
     expect(result).toMatchObject({ ok: false, status: 423 });
@@ -503,11 +424,7 @@ describe("lockfile writers under lock contention", () => {
   test("a successful rename leaves no lock dir behind", () => {
     writeOnDisk({ activeAssistant: null, assistants: [entry] });
 
-    const result = renameLockfileAssistantIfPresent(
-      lockfilePath,
-      "asst_1",
-      "Renamed",
-    );
+    const result = renameLockfileAssistantIfPresent("asst_1", "Renamed");
 
     expect(result.ok).toBe(true);
     expect(fs.existsSync(`${lockfilePath}.lock`)).toBe(false);
@@ -515,7 +432,7 @@ describe("lockfile writers under lock contention", () => {
 });
 
 describe("replaceCloudAssistants", () => {
-  test("rejects a renderer sync that tries to create a paired entry", () => {
+  test("rejects a renderer sync that tries to replace a non-platform row", () => {
     writeOnDisk({
       activeAssistant: "asst_local",
       assistants: [
@@ -524,10 +441,10 @@ describe("replaceCloudAssistants", () => {
     });
 
     expect(
-      replaceCloudAssistants(lockfilePath, [
+      replaceCloudAssistants([
         {
           assistantId: "asst_local",
-          paired: true,
+          cloud: "local",
         },
       ]),
     ).toMatchObject({ ok: false, status: 403 });
@@ -554,7 +471,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    const result = replaceCloudAssistants(lockfilePath, [
+    const result = replaceCloudAssistants([
       { assistantId: "asst_p", cloud: "cloud" },
     ]);
 
@@ -580,7 +497,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(lockfilePath, [
+    replaceCloudAssistants([
       {
         assistantId: "asst_p",
         cloud: "cloud",
@@ -606,9 +523,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(lockfilePath, [
-      { assistantId: "asst_b", cloud: "cloud" },
-    ]);
+    replaceCloudAssistants([{ assistantId: "asst_b", cloud: "cloud" }]);
 
     expect(readOnDisk().assistants).toEqual([
       { assistantId: "asst_b", cloud: "cloud" },
@@ -628,7 +543,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    const result = replaceCloudAssistants(lockfilePath, [
+    const result = replaceCloudAssistants([
       {
         assistantId: "asst_new_platform",
         cloud: "cloud",
@@ -663,7 +578,6 @@ describe("replaceCloudAssistants", () => {
     });
 
     replaceCloudAssistants(
-      lockfilePath,
       [
         {
           assistantId: "asst_org_b_new",
@@ -691,7 +605,6 @@ describe("replaceCloudAssistants", () => {
     });
 
     replaceCloudAssistants(
-      lockfilePath,
       [
         {
           assistantId: "asst_dup",
@@ -729,7 +642,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(lockfilePath, [
+    replaceCloudAssistants([
       {
         assistantId: "asst_new",
         cloud: "cloud",
@@ -756,7 +669,6 @@ describe("replaceCloudAssistants", () => {
     });
 
     replaceCloudAssistants(
-      lockfilePath,
       [
         {
           assistantId: "asst_org_a_new",
@@ -786,7 +698,6 @@ describe("replaceCloudAssistants", () => {
     });
 
     replaceCloudAssistants(
-      lockfilePath,
       [
         {
           assistantId: "asst_org_a",
@@ -812,7 +723,7 @@ describe("replaceCloudAssistants", () => {
       ],
     });
 
-    replaceCloudAssistants(lockfilePath, [
+    replaceCloudAssistants([
       {
         assistantId: "asst_new_platform",
         cloud: "cloud",

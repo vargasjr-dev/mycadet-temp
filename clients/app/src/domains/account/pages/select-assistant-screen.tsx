@@ -24,9 +24,9 @@ import {
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
 import {
+  entryHostingKind,
   getGatewayUrl,
   isLoopbackGatewayCloud,
-  isRemoteGatewayEntry,
 } from "@mycadet/local-mode/contract";
 import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
@@ -427,10 +427,21 @@ export function SelectAssistantScreen() {
           />
         )}
         {lockfileEntries.map((entry, index) => {
-          // A connect import: its gateway lives on another machine, reached
-          // through the paired-gateway path.
-          const paired = isRemoteGatewayEntry(entry);
+          // The one hosting classification from the contract: a paired
+          // custom remote, a cloud-hosted row, or this machine's daemon.
+          // Every kind names its own gateway host — the actual remote.
+          const hosting = entryHostingKind(entry);
           const label = entry.name ?? entry.assistantId;
+          const subtitle =
+            hosting === "paired"
+              ? t("selectAssistantScreen.pairedWithHost", {
+                  host: new URL(getGatewayUrl(entry)).hostname,
+                })
+              : hosting === "cloud"
+                ? t("selectAssistantScreen.cloudHostedWithHost", {
+                    host: new URL(getGatewayUrl(entry)).hostname,
+                  })
+                : t("selectAssistantScreen.localAssistant");
           return (
             <ChooserCard
               key={entry.assistantId}
@@ -438,15 +449,9 @@ export function SelectAssistantScreen() {
                 <ChooserAvatarChip avatarUrl={null} name={label} size={48} />
               }
               title={label}
-              subtitle={
-                paired
-                  ? t("selectAssistantScreen.pairedWithHost", {
-                      host: new URL(getGatewayUrl(entry)).hostname,
-                    })
-                  : t("selectAssistantScreen.localAssistant")
-              }
+              subtitle={subtitle}
               removeMenu={
-                paired ? (
+                hosting === "paired" ? (
                   <OriginCardMenu
                     label={label}
                     onRemove={() => setUnpairTarget(entry)}

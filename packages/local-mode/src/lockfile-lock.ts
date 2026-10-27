@@ -1,4 +1,6 @@
 import fs from "node:fs";
+
+import { resolveLockfilePath } from "./config";
 import path from "node:path";
 
 export type LockfileLockResult<T> =
@@ -89,12 +91,8 @@ function releaseLock(lockDir: string): void {
  * never-throw; `fn`'s own exceptions propagate, with the lock released in
  * `finally`.
  */
-export function withLockfileLock<T>(
-  lockfilePath: string,
-  fn: () => T,
-): LockfileLockResult<T> {
-  const writePath = lockfilePath;
-  const lockDir = `${writePath}.lock`;
+export function withLockfileLock<T>(fn: () => T): LockfileLockResult<T> {
+  const lockDir = `${resolveLockfilePath()}.lock`;
 
   if (heldLocks.has(lockDir)) {
     return { ok: true, value: fn() };

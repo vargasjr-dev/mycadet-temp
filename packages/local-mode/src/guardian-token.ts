@@ -42,11 +42,10 @@ export interface GuardianTokenData {
  * mode drifted.
  */
 export function saveGuardianToken(
-  configDir: string,
   assistantId: string,
   data: GuardianTokenData,
 ): void {
-  const tokenPath = guardianTokenPath(configDir, assistantId);
+  const tokenPath = guardianTokenPath(assistantId);
   fs.mkdirSync(path.dirname(tokenPath), { recursive: true, mode: 0o700 });
   fs.writeFileSync(tokenPath, JSON.stringify(data, null, 2) + "\n", {
     mode: 0o600,
@@ -177,7 +176,6 @@ export interface GuardianTokenOptions {
 
 export function getGuardianAccessToken(
   assistantId: string,
-  configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
   options?: GuardianTokenOptions,
@@ -188,7 +186,7 @@ export function getGuardianAccessToken(
 
   let tokenPath: string;
   try {
-    tokenPath = guardianTokenPath(configDir, assistantId);
+    tokenPath = guardianTokenPath(assistantId);
   } catch {
     return Promise.resolve({
       ok: false,
@@ -247,7 +245,7 @@ export function getGuardianAccessToken(
     }
     data = { ...data, pairedGatewayUrl: options.pairedGatewayUrl };
     try {
-      saveGuardianToken(configDir, assistantId, data);
+      saveGuardianToken(assistantId, data);
     } catch {
       return Promise.resolve({
         ok: false,
@@ -288,11 +286,10 @@ export function getGuardianAccessToken(
 export function getPairedGuardianAccessToken(
   assistantId: string,
   pairedGatewayUrl: string,
-  configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
 ): Promise<TokenResult> {
-  return getGuardianAccessToken(assistantId, configDir, invocation, isLoopback, {
+  return getGuardianAccessToken(assistantId, invocation, isLoopback, {
     paired: true,
     pairedGatewayUrl,
   });

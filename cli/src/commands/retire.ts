@@ -110,7 +110,7 @@ async function unregisterSelfHostedLocalPlatformRecord(
   await deleteCloudAssistant(cloudAssistantId, {
     token,
     cloudUrl: getCloudUrl(),
-    organizationId: nonEmptyString(entry.cloudOrganizationId) ?? undefined,
+    organizationId: nonEmptyString(entry.organizationId) ?? undefined,
     label: "Platform self-hosted unregister",
     successMessage: "✅ Platform self-hosted registration unregistered.",
     alreadyGoneMessage:
@@ -373,10 +373,7 @@ async function retireInner(): Promise<void> {
   // the dock label falls back to "Cadet" instead of using the
   // retired assistant's name.
   if (loadAllAssistants().length === 0) {
-    const dockLabelFile = join(
-      resolveConfigDir(),
-      "dock-display-name",
-    );
+    const dockLabelFile = join(resolveConfigDir(), "dock-display-name");
     if (existsSync(dockLabelFile)) {
       try {
         unlinkSync(dockLabelFile);

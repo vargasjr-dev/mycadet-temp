@@ -6,7 +6,6 @@ import {
   configureLocalMode,
   installLocalMode,
   LOCAL_MODE_CLI,
-  LOCAL_MODE_PATHS,
   LOCAL_MODE_SESSION,
 } from "@mycadet/electron-desktop/local-mode";
 import { refreshLockfileNow } from "@mycadet/electron-desktop/lockfile-watcher";
@@ -19,13 +18,11 @@ const localModeFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   install: (capabilities) => {
     installWindowsLocalModeProviders(capabilities);
     const cli = capabilities.require(LOCAL_MODE_CLI);
-    const paths = capabilities.require(LOCAL_MODE_PATHS);
     const session = capabilities.require(LOCAL_MODE_SESSION);
 
     configureLocalMode({
       cli,
       handle,
-      paths,
       refreshLockfile: refreshLockfileNow,
       session,
     });

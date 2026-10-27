@@ -117,11 +117,6 @@ beforeAll(() => {
   configureLocalMode({
     cli: { resolveInvocation },
     handle,
-    paths: {
-      configDir,
-      environment: "production",
-      lockfilePath,
-    },
     refreshLockfile: refreshLockfileNowMock,
     session: { getToken: () => mockSessionToken },
   });
@@ -851,10 +846,10 @@ describe("cadet:localMode:unpair handler", () => {
 
   test("removes a paired entry and deletes its guardian token", () => {
     writePairedLockfileAssistant("paired-1");
-    fs.mkdirSync(path.dirname(guardianTokenPath(configDir, "paired-1")), {
+    fs.mkdirSync(path.dirname(guardianTokenPath("paired-1")), {
       recursive: true,
     });
-    fs.writeFileSync(guardianTokenPath(configDir, "paired-1"), "{}");
+    fs.writeFileSync(guardianTokenPath("paired-1"), "{}");
 
     const result = unpair("paired-1");
 
@@ -864,7 +859,7 @@ describe("cadet:localMode:unpair handler", () => {
     }
     expect(result.lockfile.activeAssistant).toBeNull();
     expect(result.lockfile.assistants).toEqual([]);
-    expect(fs.existsSync(guardianTokenPath(configDir, "paired-1"))).toBe(false);
+    expect(fs.existsSync(guardianTokenPath("paired-1"))).toBe(false);
     expect(spawnArgs).toHaveLength(0);
   });
 
@@ -1004,7 +999,7 @@ describe("cadet:localMode:pairing handlers", () => {
       accessOnly: false,
     });
     expect(refreshLockfileNowMock).toHaveBeenCalledTimes(1);
-    expect(fs.existsSync(guardianTokenPath(configDir, "desk"))).toBe(true);
+    expect(fs.existsSync(guardianTokenPath("desk"))).toBe(true);
     const onDisk = JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as {
       assistants: Array<Record<string, unknown>>;
     };
@@ -1098,7 +1093,7 @@ describe("cadet:localMode:pairing handlers", () => {
     // name.
     expect(polled.reason).toBe("import-precheck");
     expect(polled.error).toContain("already exists");
-    expect(fs.existsSync(guardianTokenPath(configDir, "local-1"))).toBe(false);
+    expect(fs.existsSync(guardianTokenPath("local-1"))).toBe(false);
   });
 });
 

@@ -188,7 +188,6 @@ describe("guardian-token paths are env-scoped", () => {
     const second = getOrCreatePersistedDeviceId();
     expect(first).toBe(second);
   });
-
 });
 
 describe("refreshGuardianToken", () => {
@@ -291,9 +290,7 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const leased = await leaseGuardianToken(
-      makeEntry({ assistantId: "px" }),
-    );
+    const leased = await leaseGuardianToken(makeEntry({ assistantId: "px" }));
 
     expect(leased.accessToken).toBe("access-lease");
     expect(leased.refreshAfter).toBeDefined();
@@ -318,9 +315,7 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const err = await leaseGuardianToken(
-      makeEntry({ assistantId: "px" }),
-    ).then(
+    const err = await leaseGuardianToken(makeEntry({ assistantId: "px" })).then(
       () => null,
       (e: unknown) => e,
     );
@@ -650,35 +645,27 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
   // The CLI's own resolver and the shared @mycadet/local-mode resolver must
   // agree on the config dir for every environment source.
   const expectResolversAgree = () => {
-    expect(resolveConfigDir()).toBe(
-      resolveConfigDir(),
-    );
+    expect(resolveConfigDir()).toBe(resolveConfigDir());
   };
 
   test("unset → production: resolvers agree and saveGuardianToken lands there", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("prod"));
-    expect(
-      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
-    ).toBe(true);
+    expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
   });
 
   test("CADET_ENVIRONMENT=dev: resolvers agree and token lands there", () => {
     process.env.CADET_ENVIRONMENT = "dev";
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("dev"));
-    expect(
-      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
-    ).toBe(true);
+    expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
   });
 
   test("CADET_ENVIRONMENT=local: resolvers agree and token lands there", () => {
     process.env.CADET_ENVIRONMENT = "local";
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("local"));
-    expect(
-      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
-    ).toBe(true);
+    expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
   });
 
   test("stale persisted default env file is ignored — version wins", () => {
@@ -686,8 +673,6 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     writeFileSync(join(tempHome, "cadet", "environment"), "dev\n");
     expect(getCurrentEnvironment().name).toBe("production");
     saveGuardianToken("alpha", makeTokenData("prod"));
-    expect(
-      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
-    ).toBe(true);
+    expect(existsSync(guardianTokenPath("alpha"))).toBe(true);
   });
 });

@@ -71,7 +71,7 @@ function getGuardianTokenPath(assistantId: string): string {
   // Resolve via the shared @mycadet/local-mode resolver — the same one every
   // host-seam reader (`getGuardianAccessToken`) uses — so the token is always
   // written where it's read.
-  return guardianTokenPath(resolveConfigDir(), assistantId);
+  return guardianTokenPath(assistantId);
 }
 
 function getPersistedDeviceIdPath(): string {
@@ -171,7 +171,7 @@ export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
   try {
-    const raw = readFileSync(guardianTokenPath(resolveConfigDir(), assistantId), "utf-8");
+    const raw = readFileSync(guardianTokenPath(assistantId), "utf-8");
     return JSON.parse(raw) as GuardianTokenData;
   } catch {
     return null;
@@ -183,8 +183,8 @@ export function saveGuardianToken(
   data: GuardianTokenData,
 ): void {
   // Delegates to the shared @mycadet/local-mode writer (0700 dir, 0600 file)
-  // with the same env-resolved config dir the path resolver above uses.
-  writeGuardianToken(resolveConfigDir(), assistantId, data);
+  // resolving the same env-driven config dir the path resolver above uses.
+  writeGuardianToken(assistantId, data);
 }
 
 /** Abort the refresh POST if the gateway is slow/unreachable (it's now on the

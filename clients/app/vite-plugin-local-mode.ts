@@ -20,7 +20,6 @@ import {
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
   isActiveAssistant,
-  isPairedLockfileEntry,
   runDevicesList,
   runDevicesRevoke,
   runHatch,
@@ -40,6 +39,7 @@ import {
   authorizePairedForwardHeaders,
   type CliInvocation,
 } from "@mycadet/local-mode";
+import { isRemoteGatewayEntry } from "@mycadet/local-mode/contract";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
 
@@ -76,15 +76,10 @@ function lockfileEntryFor(assistantId: string) {
  * platform-managed (a cloud entry, served by the conductor through the dev
  * `/v1` proxy).
  */
-function isHostManagedEntry(
-  lockfilePaths: string[],
-  assistantId: string,
-): boolean {
+function isHostManagedEntry(assistantId: string): boolean {
   const entry = lockfileEntryFor(assistantId);
   return (
-    entry != null &&
-    entry.cloud !== "cloud" &&
-    !isPairedLockfileEntry(assistantId)
+    entry != null && entry.cloud !== "cloud" && !isRemoteGatewayEntry(entry)
   );
 }
 
@@ -136,38 +131,21 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(loopbackCallbackMiddleware());
       server.middlewares.use(cloudSessionMiddleware());
       server.middlewares.use(configMiddleware(configJson));
-      server.middlewares.use(lockfileMiddleware(config.lockfilePaths));
+      server.middlewares.use(lockfileMiddleware());
       server.middlewares.use(hatchMiddleware(baseDir));
-      server.middlewares.use(retireMiddleware(baseDir, config.lockfilePaths));
-      server.middlewares.use(
-        unpairMiddleware(config.lockfilePaths, config.configDir),
-      );
-      server.middlewares.use(
-        pairingMiddleware(config.lockfilePaths, config.configDir),
-      );
-      server.middlewares.use(sleepMiddleware(baseDir, config.lockfilePaths));
-      server.middlewares.use(wakeMiddleware(baseDir, config.lockfilePaths));
+      server.middlewares.use(retireMiddleware(baseDir));
+      server.middlewares.use(unpairMiddleware());
+      server.middlewares.use(pairingMiddleware());
+      server.middlewares.use(sleepMiddleware(baseDir));
+      server.middlewares.use(wakeMiddleware(baseDir));
       server.middlewares.use(devicesMiddleware(baseDir));
       const upgradingLocalAssistantIds = new Set<string>();
       server.middlewares.use(
-        upgradeMiddleware(
-          baseDir,
-          config.lockfilePaths,
-          upgradingLocalAssistantIds,
-        ),
+        upgradeMiddleware(baseDir, upgradingLocalAssistantIds),
       );
-      server.middlewares.use(
-        statusMiddleware(config.lockfilePaths, upgradingLocalAssistantIds),
-      );
-      server.middlewares.use(avatarMiddleware(config.lockfilePaths, env));
-      server.middlewares.use(
-        gatewayProxyMiddleware(
-          config.lockfilePaths,
-          config.configDir,
-          baseDir,
-          env,
-        ),
-      );
+      server.middlewares.use(statusMiddleware(upgradingLocalAssistantIds));
+      server.middlewares.use(avatarMiddleware(env));
+      server.middlewares.use(gatewayProxyMiddleware(baseDir, env));
       server.middlewares.use(accountSpaFallback(server));
     },
   };
@@ -334,9 +312,7 @@ function accountSpaFallback(server: ViteDevServer): Connect.NextHandleFunction {
   };
 }
 
-function lockfileMiddleware(
-  lockfilePaths: string[],
-): Connect.NextHandleFunction {
+function lockfileMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     // Bare `/v1/assistants/` only: the SDK's list request (query-carrying)
     // passes through to the dev `/v1` proxy and the conductor's list route.
@@ -373,21 +349,18 @@ function lockfileMiddleware(
         let result;
         if (body.syncPlatform && Array.isArray(body.cloudAssistants)) {
           result = replaceCloudAssistants(
-            lockfilePaths,
             body.cloudAssistants as Array<Record<string, unknown>>,
             body.organizationId as string | undefined,
           );
         } else if (body.rename && typeof body.rename === "object") {
           const rename = body.rename as Record<string, unknown>;
           result = renameLockfileAssistantIfPresent(
-            lockfilePaths,
             rename.assistantId as string,
             rename.name as string,
           );
         } else if (body.onboarded && typeof body.onboarded === "object") {
           const onboarded = body.onboarded as Record<string, unknown>;
           result = stampLockfileAssistantOnboardedIfPresent(
-            lockfilePaths,
             onboarded.assistantId as string,
             onboarded.onboardedAt as string,
           );
@@ -487,10 +460,7 @@ function hatchMiddleware(baseDir: string): Connect.NextHandleFunction {
   };
 }
 
-function retireMiddleware(
-  baseDir: string,
-  lockfilePaths: string[],
-): Connect.NextHandleFunction {
+function retireMiddleware(baseDir: string): Connect.NextHandleFunction {
   return (req, res, next) => {
     const match = requestPathname(req).match(LOCAL_RETIRE_PATTERN);
     if (!match) {
@@ -508,10 +478,7 @@ function retireMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (
-      !isHostManagedEntry(lockfilePaths, assistantId) ||
-      !isActiveAssistant(lockfilePaths, assistantId)
-    ) {
+    if (!isHostManagedEntry(assistantId) || !isActiveAssistant(assistantId)) {
       // Paired entries retire behind their recorded gateway address (the
       // gateway proxy forwards), cloud entries through the conductor's own
       // retire route on the dev `/v1` proxy.
@@ -541,10 +508,7 @@ function retireMiddleware(
   };
 }
 
-function unpairMiddleware(
-  lockfilePaths: string[],
-  configDir: string,
-): Connect.NextHandleFunction {
+function unpairMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const match = requestPathname(req).match(LOCAL_UNPAIR_PATTERN);
     if (!match) {
@@ -568,7 +532,7 @@ function unpairMiddleware(
       return next();
     }
 
-    const result = unpairAssistant(lockfilePaths, configDir, assistantId);
+    const result = unpairAssistant(assistantId);
     respondJson(
       res,
       result.ok ? 200 : result.status,
@@ -598,10 +562,7 @@ function pairingRoute(url: string | undefined): string | null {
  * approves, cancel it on the way out. It runs here rather than in the browser,
  * so the device code and the credentials it buys never reach the renderer.
  */
-function pairingMiddleware(
-  lockfilePaths: string[],
-  configDir: string,
-): Connect.NextHandleFunction {
+function pairingMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const route = pairingRoute(req.url);
     if (route === null) {
@@ -655,7 +616,7 @@ function pairingMiddleware(
         return;
       }
 
-      const result = await pairingPoll(configDir, {
+      const result = await pairingPoll({
         handle: body.handle,
         name: body.name,
       });
@@ -689,10 +650,7 @@ function pairingMiddleware(
   };
 }
 
-function sleepMiddleware(
-  baseDir: string,
-  lockfilePaths: string[],
-): Connect.NextHandleFunction {
+function sleepMiddleware(baseDir: string): Connect.NextHandleFunction {
   return (req, res, next) => {
     const match = requestPathname(req).match(LOCAL_SLEEP_PATTERN);
     if (!match) {
@@ -710,7 +668,7 @@ function sleepMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(lockfilePaths, assistantId)) {
+    if (!isHostManagedEntry(assistantId)) {
       return next();
     }
 
@@ -735,10 +693,7 @@ function sleepMiddleware(
   };
 }
 
-function wakeMiddleware(
-  baseDir: string,
-  lockfilePaths: string[],
-): Connect.NextHandleFunction {
+function wakeMiddleware(baseDir: string): Connect.NextHandleFunction {
   return (req, res, next) => {
     const match = requestPathname(req).match(LOCAL_WAKE_PATTERN);
     if (!match) {
@@ -756,7 +711,7 @@ function wakeMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(lockfilePaths, assistantId)) {
+    if (!isHostManagedEntry(assistantId)) {
       // A paired entry's wake rides the gateway proxy to its recorded
       // gateway address (the shell's not-ready panel wakes through it).
       return next();
@@ -859,7 +814,6 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
 
 function upgradeMiddleware(
   baseDir: string,
-  lockfilePaths: string[],
   upgradingLocalAssistantIds: Set<string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -879,7 +833,7 @@ function upgradeMiddleware(
     }
 
     const pathAssistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(lockfilePaths, pathAssistantId)) {
+    if (!isHostManagedEntry(pathAssistantId)) {
       return next();
     }
 
@@ -908,7 +862,7 @@ function upgradeMiddleware(
       }
 
       const assistantId = pathAssistantId;
-      if (!isActiveAssistant(lockfilePaths, assistantId)) {
+      if (!isActiveAssistant(assistantId)) {
         res.statusCode = 403;
         res.setHeader("Content-Type", "application/json");
         res.end(
@@ -968,7 +922,6 @@ function upgradeMiddleware(
 }
 
 function statusMiddleware(
-  lockfilePaths: string[],
   upgradingLocalAssistantIds: Set<string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -988,7 +941,7 @@ function statusMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(lockfilePaths, assistantId)) {
+    if (!isHostManagedEntry(assistantId)) {
       // Paired entries resolve behind their recorded gateway address and
       // cloud entries through the conductor — the id-keyed proxies own those.
       return next();
@@ -1001,7 +954,7 @@ function statusMiddleware(
       return;
     }
 
-    void getLocalAssistantStatus(lockfilePaths, assistantId).then((result) => {
+    void getLocalAssistantStatus(assistantId).then((result) => {
       res.statusCode = result.ok ? 200 : result.status;
       res.setHeader("Content-Type", "application/json");
       res.end(JSON.stringify(result));
@@ -1010,7 +963,6 @@ function statusMiddleware(
 }
 
 function avatarMiddleware(
-  lockfilePaths: string[],
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
   return (req, res, next) => {
@@ -1038,20 +990,16 @@ function avatarMiddleware(
       res.end(JSON.stringify({ ok: false, error: "Malformed assistant ID" }));
       return;
     }
-    if (!isHostManagedEntry(lockfilePaths, assistantId)) {
+    if (!isHostManagedEntry(assistantId)) {
       return next();
     }
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
-    res.end(
-      JSON.stringify(readLockfileAssistantAvatar(lockfilePaths, assistantId)),
-    );
+    res.end(JSON.stringify(readLockfileAssistantAvatar(assistantId)));
   };
 }
 
 function gatewayProxyMiddleware(
-  lockfilePaths: string[],
-  configDir: string,
   baseDir: string,
   env: Record<string, string>,
 ): Connect.NextHandleFunction {
@@ -1069,7 +1017,7 @@ function gatewayProxyMiddleware(
     // dev `/v1` proxy (the cloud), so cloud assistants keep their
     // platform-served routes.
     const decision = resolveGatewayProxyTarget(req.url ?? "", () =>
-      readGatewayTargets(lockfilePaths),
+      readGatewayTargets(),
     );
     if (decision.kind === "pass") {
       return next();
@@ -1092,14 +1040,9 @@ function gatewayProxyMiddleware(
       // from the on-disk guardian token — the browser never holds one.
       const lease = async () => {
         const invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-        return getGuardianAccessToken(
-          decision.assistantId,
-          configDir,
-          invocation,
-          true,
-          env,
-          { paired: false },
-        );
+        return getGuardianAccessToken(decision.assistantId, invocation, true, {
+          paired: false,
+        });
       };
       const mint =
         decision.path !== "/auth/token"
@@ -1165,14 +1108,7 @@ function gatewayProxyMiddleware(
       decision.target.runtimeUrl,
       headers,
       (assistantId, runtimeUrl) =>
-        getPairedGuardianAccessToken(
-          assistantId,
-          runtimeUrl,
-          configDir,
-          invocation,
-          true,
-          env,
-        ),
+        getPairedGuardianAccessToken(assistantId, runtimeUrl, invocation, true),
     ).then((result) => {
       if (!result.ok) {
         res.statusCode = result.status;

@@ -67,7 +67,6 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
         }
         const result = await getGuardianAccessToken(
           assistantId,
-          resolveConfigDir(),
           await cli.resolveInvocation(),
           true,
         );

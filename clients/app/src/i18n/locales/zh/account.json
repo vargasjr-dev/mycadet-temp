@@ -109,6 +109,7 @@
     "paired": "已配对",
     "localAssistant": "在这台电脑上",
     "cloudHosted": "云端托管",
+    "cloudHostedWithHost": "云端托管 · {host}",
     "selfHosted": "自托管"
   },
   "appShell": {

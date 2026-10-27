@@ -36,7 +36,10 @@ export function resolveLockfilePath(): string {
 }
 
 export function resolveConfigDir(): string {
-  return joinLocalPath(resolveConfigHome(), environmentDirectoryName(resolveEnvironmentName()));
+  return joinLocalPath(
+    resolveConfigHome(),
+    environmentDirectoryName(resolveEnvironmentName()),
+  );
 }
 
 export function resolveDataDir(): string {
@@ -67,13 +70,10 @@ export function resolveInstanceDir(assistantId: string): string {
  * writer and every host-seam reader agree — a divergence here is what leaves a
  * freshly leased token unreadable and bricks the connect.
  */
-export function guardianTokenPath(
-  configDir: string,
-  assistantId: string,
-): string {
+export function guardianTokenPath(assistantId: string): string {
   assertSafePathSegment(assistantId, "assistant ID");
   return joinLocalPath(
-    configDir,
+    resolveConfigDir(),
     "assistants",
     assistantId,
     "guardian-token.json",
