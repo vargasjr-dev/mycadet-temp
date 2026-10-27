@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
-import { createLockfileAssistant, readRawLockfile } from "./lockfile";
+import { readLockfile, type LockfileAssistantPatch } from "./lockfile";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -77,10 +77,14 @@ export type PairResult =
       ok: true;
       /** The unique local id the pairing was registered under. */
       assistantId: string;
-      /** True when an existing paired entry was updated in place. */
-      updated: boolean;
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
+      /**
+       * The lockfile entry to register for this pairing, which the caller
+       * creates through {@link createLockfileAssistant}. Pairing itself
+       * never touches the lockfile.
+       */
+      entry: LockfileAssistantPatch;
     }
   | { ok: false; status: number; error: string; assistantId?: string };
 
@@ -132,17 +136,9 @@ function derivePairedAssistantId(name?: string, gatewayUrl?: string): string {
   return `paired-${slugify(label) || nanoid()}`;
 }
 
-/** The raw lockfile entry already holding `localId`, if any. */
-function findRawAssistant(
-  lockfilePath: string,
-  localId: string,
-): Record<string, unknown> | undefined {
-  const rawAssistants = readRawLockfile(lockfilePath).assistants;
-  return (
-    Array.isArray(rawAssistants)
-      ? (rawAssistants as Array<Record<string, unknown>>)
-      : []
-  ).find((a) => a?.assistantId === localId);
+/** Whether `localId` already names a lockfile entry. */
+function assistantIdTaken(localId: string): boolean {
+  return readLockfile().assistants.some((a) => a.assistantId === localId);
 }
 
 /**
@@ -153,7 +149,7 @@ function findRawAssistant(
  */
 function refusePairedAssistantId(
   localId: string,
-  existing: Record<string, unknown> | undefined,
+  taken: boolean,
 ): PairRefusal | null {
   if (!localId) {
     return {
@@ -162,7 +158,7 @@ function refusePairedAssistantId(
       error: "Name must contain at least one alphanumeric character",
     };
   }
-  if (existing) {
+  if (taken) {
     return {
       ok: false,
       status: 409,
@@ -176,8 +172,6 @@ function refusePairedAssistantId(
 /** Where a pairing would land locally, and whether it may. */
 interface PairedDestination {
   localId: string;
-  /** The raw lockfile entry already holding `localId`, if any. */
-  existing: Record<string, unknown> | undefined;
   /** Why the id cannot be used, or null when it is free. */
   refusal: PairRefusal | null;
 }
@@ -187,20 +181,17 @@ interface PairedDestination {
  * pre-check and the registration it precedes cannot drift apart.
  *
  * A pre-check is not a reservation: another process can claim the id in
- * between. It closes the common case; the check inside `pairAssistant` is
- * still what guarantees the id.
+ * between. It closes the common case; the create-only registration the
+ * caller runs after the exchange is still what guarantees the id.
  */
 function resolvePairedDestination(
-  lockfilePath: string,
   name: string | undefined,
   gatewayUrl?: string,
 ): PairedDestination {
   const localId = derivePairedAssistantId(name, gatewayUrl);
-  const existing = findRawAssistant(lockfilePath, localId);
   return {
     localId,
-    existing,
-    refusal: refusePairedAssistantId(localId, existing),
+    refusal: refusePairedAssistantId(localId, assistantIdTaken(localId)),
   };
 }
 
@@ -210,20 +201,18 @@ function resolvePairedDestination(
  * one-time pairing code, which the gateway records a device for even when the
  * local write then fails.
  */
-export function checkPairedAssistantName(
-  lockfilePath: string,
-  name: string,
-): PairRefusal | null {
-  return resolvePairedDestination(lockfilePath, name).refusal;
+export function checkPairedAssistantName(name: string): PairRefusal | null {
+  return resolvePairedDestination(name).refusal;
 }
 
 /**
- * Register a pairing on this machine: persist the guardian token and create
- * a paired lockfile entry (its custom addressing is what marks it paired),
- * the write counterpart of `unpairAssistant`. The write is create-only — the
- * act of pairing never updates an existing entry, so it cannot change an
- * assistant's remote setting; an id claimed between the pre-check and the
- * write is refused, not merged into.
+ * Pair an assistant: validate the pairing credentials and persist its
+ * guardian token. Pairing does NOT touch the lockfile — assistant entries
+ * belong to hatch/retire/the cli — so the caller registers the returned
+ * `entry` create-only via {@link createLockfileAssistant} once the exchange
+ * has succeeded. The pre-check below refuses a colliding id BEFORE the
+ * exchange spends a one-time pairing code; a collision that races in after
+ * it is refused by the caller's create-only write.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -232,7 +221,6 @@ export function checkPairedAssistantName(
  * token (validated by signature/audience) is what authorizes requests.
  */
 export function pairAssistant(
-  lockfilePath: string,
   configDir: string,
   { credentials, name }: PairOptions,
 ): PairResult {
@@ -261,8 +249,7 @@ export function pairAssistant(
     };
   }
 
-  const { localId, existing, refusal } = resolvePairedDestination(
-    lockfilePath,
+  const { localId, refusal } = resolvePairedDestination(
     name,
     credentials.gatewayUrl,
   );
@@ -270,20 +257,9 @@ export function pairAssistant(
     return refusal;
   }
 
-  // Write the token BEFORE committing the lockfile entry, the mirror of
-  // unpair's ordering. A lockfile entry must never exist without its
-  // credential (every read path would 404 on the token), while a token
-  // without an entry is inert and overwritten by the next import. The prior
-  // token contents are kept in memory so a failed lockfile write below can
-  // roll the file back.
-  const tokenPath = guardianTokenPath(configDir, localId);
-  let priorToken: string | null;
-  try {
-    priorToken = fs.readFileSync(tokenPath, "utf-8");
-  } catch {
-    priorToken = null;
-  }
-
+  // The token is pairing's to write (a config-dir credential, not a lockfile
+  // entry). It is written before any registration the caller performs: a
+  // token without an entry is inert and overwritten by the next import.
   const now = Date.now();
   try {
     saveGuardianToken(configDir, localId, {
@@ -310,69 +286,28 @@ export function pairAssistant(
   }
 
   const gateway = new URL(credentials.gatewayUrl);
-  // The entry was not registered, so undo the token write (best-effort; the
-  // reported failure covers the outcome): restore the prior token of a
-  // re-import, or delete the freshly written one.
-  const rollbackToken = () => {
-    try {
-      if (priorToken !== null) {
-        fs.writeFileSync(tokenPath, priorToken, { mode: 0o600 });
-      } else {
-        fs.rmSync(tokenPath, { force: true });
-        fs.rmdirSync(path.dirname(tokenPath));
-      }
-    } catch {
-      // Rollback failed; the reported write error already covers the outcome.
-    }
-  };
-  try {
-    // Create-only: the act of pairing never updates an existing entry, so it
-    // cannot change an assistant's remote setting. An id claimed between the
-    // pre-check above and this write is refused — not merged into.
-    const created = createLockfileAssistant({
-      assistantId: localId,
-      // The label, not the bare host: two assistants behind one host differ
-      // only in their path prefix, and a display name that dropped it would
-      // make them indistinguishable in a chooser.
-      name: name ?? `paired (${label})`,
-      // The bundle's gateway address, recorded as the canonical custom
-      // encoding — the one shape every reader derives from. Seeded once,
-      // on the fresh entry.
-      cloud: "custom",
-      ipAddress: gateway.hostname,
-      port: Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
-      tls: gateway.protocol === "https:" ? true : undefined,
-    });
-    if (!created) {
-      rollbackToken();
-      return {
-        ok: false,
-        status: 409,
-        error: `An assistant named '${localId}' already exists`,
-        assistantId: localId,
-      };
-    }
-  } catch (error) {
-    rollbackToken();
-    return {
-      ok: false,
-      status: 500,
-      error: `Failed to write the lockfile entry: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-    };
-  }
-
   return {
     ok: true,
     assistantId: localId,
-    updated: existing !== undefined,
     // A refresh token is only usable over a confidential channel; with
     // loopback refused above, a plaintext http gateway can never renew, so it
     // is reported access-only and gets the expiry warning.
     accessOnly:
       !credentials.refreshToken ||
       !isConfidentialRefreshUrl(credentials.gatewayUrl),
+    // The entry the caller registers create-only: the bundle's gateway
+    // address as the canonical custom encoding — the one shape every reader
+    // derives from.
+    entry: {
+      assistantId: localId,
+      // The label, not the bare host: two assistants behind one host differ
+      // only in their path prefix, and a display name that dropped it would
+      // make them indistinguishable in a chooser.
+      name: name ?? `paired (${label})`,
+      cloud: "custom",
+      ipAddress: gateway.hostname,
+      port: Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
+    },
   };
 }
 
@@ -477,10 +412,13 @@ export type PairingPollResult =
       status: "imported";
       /** The unique local id the pairing was registered under. */
       assistantId: string;
-      /** True when an existing paired entry was updated in place. */
-      updated: boolean;
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
+      /**
+       * The lockfile entry to register for this pairing, which the caller
+       * creates through {@link createLockfileAssistant}.
+       */
+      entry: LockfileAssistantPatch;
     }
   | PairingFailure;
 
@@ -977,14 +915,14 @@ export interface PairingPollOptions {
 /**
  * One device-code exchange attempt for a live session. Still-pending
  * challenges resolve with the cadence to wait before trying again; an approved
- * one is registered through {@link pairAssistant} in the same call.
+ * one has its guardian token persisted through {@link pairAssistant} in the
+ * same call, and the caller registers the returned `entry` create-only.
  *
  * A {@link pairingCancel} that lands while the exchange is in flight ends the
  * attempt with nothing persisted, so a dismissed dialog or an interrupted CLI
  * never leaves credentials for an assistant the user declined to pair.
  */
 export async function pairingPoll(
-  lockfilePath: string,
   configDir: string,
   { handle, name, platform }: PairingPollOptions,
 ): Promise<PairingPollResult> {
@@ -1009,7 +947,6 @@ export async function pairingPoll(
   // the caller that, distinguishing it from the post-exchange `import`
   // refusal, which does spend the code.
   const { refusal } = resolvePairedDestination(
-    lockfilePath,
     localName,
     session.publicBaseUrl,
   );
@@ -1097,7 +1034,7 @@ export async function pairingPoll(
     return unusableGatewayCredentials();
   }
 
-  const result = pairAssistant(lockfilePath, configDir, {
+  const result = pairAssistant(configDir, {
     credentials: {
       gatewayUrl: session.publicBaseUrl,
       token: approved.accessToken,
@@ -1120,8 +1057,8 @@ export async function pairingPoll(
     ok: true,
     status: "imported",
     assistantId: result.assistantId,
-    updated: result.updated,
     accessOnly: result.accessOnly,
+    entry: result.entry,
   };
 }
 
@@ -1227,18 +1164,23 @@ export interface ConnectImportOptions {
  * respond with (the IPC host ignores it).
  */
 export type ConnectImportResult =
-  | { ok: true; assistantId: string; updated: boolean; accessOnly: boolean }
+  | {
+      ok: true;
+      assistantId: string;
+      accessOnly: boolean;
+      /** The entry the caller registers create-only. */
+      entry: LockfileAssistantPatch;
+    }
   | { ok: false; status: number; error: string };
 
 /**
  * The complete bundle-import host operation: validate the raw bundle value
- * (present, non-empty, within {@link MAX_BUNDLE_LENGTH}), decode it, and
- * register the pairing via {@link pairAssistant}. Hosts keep only
- * transport-specific parsing and pass the untrusted values straight through,
- * so bundle limits, error strings, and the result shape are defined once.
+ * (present, non-empty, within {@link MAX_BUNDLE_LENGTH}), decode it, and pair
+ * it via {@link pairAssistant}. Hosts keep only transport-specific parsing
+ * and pass the untrusted values straight through, so bundle limits, error
+ * strings, and the result shape are defined once.
  */
 export function connectImport(
-  lockfilePath: string,
   configDir: string,
   { bundle, name }: ConnectImportOptions,
 ): ConnectImportResult {
@@ -1252,7 +1194,7 @@ export function connectImport(
   if (!decoded.ok) {
     return { ok: false, status: 400, error: decoded.error };
   }
-  const result = pairAssistant(lockfilePath, configDir, {
+  const result = pairAssistant(configDir, {
     credentials: decoded.credentials,
     name: typeof name === "string" && name ? name : undefined,
   });
@@ -1262,7 +1204,7 @@ export function connectImport(
   return {
     ok: true,
     assistantId: result.assistantId,
-    updated: result.updated,
     accessOnly: result.accessOnly,
+    entry: result.entry,
   };
 }

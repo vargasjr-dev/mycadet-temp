@@ -287,7 +287,7 @@ describe("gatewayTargetsFromLockfile", () => {
       }),
     ).toEqual(
       new Map([
-        ["c", { kind: "remote", runtimeUrl: "http://gw.example.com:7831" }],
+        ["c", { kind: "remote", runtimeUrl: "https://gw.example.com:7831" }],
       ]),
     );
   });

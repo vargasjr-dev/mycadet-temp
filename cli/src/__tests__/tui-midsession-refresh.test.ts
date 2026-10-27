@@ -33,7 +33,6 @@ function seedEntry(kind: "paired" | "local"): void {
           cloud: "custom",
           ipAddress: "gw.example.com",
           port: 443,
-          tls: true,
         }
       : { assistantId: "px", name: "Local", cloud: "local" },
   );

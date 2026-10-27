@@ -31,7 +31,6 @@ function seedEntry(): void {
     cloud: "custom",
     ipAddress: "gw.example.com",
     port: 443,
-    tls: true,
   });
 }
 

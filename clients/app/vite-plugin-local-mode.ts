@@ -16,6 +16,7 @@ import {
   stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
+  createLockfileAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
@@ -72,8 +73,9 @@ function lockfileEntryFor(assistantId: string) {
  * passing the request to the id-keyed gateway proxy: the entry is host-managed
  * (a locally hatched or dockerized assistant — the operation runs on this
  * machine), not paired (the entry's assistant lives behind its recorded
- * runtimeUrl, which the gateway proxy forwards to) and not platform-managed
- * (a cloud entry, served by the conductor through the dev `/v1` proxy).
+ * gateway address, which the gateway proxy forwards to) and not
+ * platform-managed (a cloud entry, served by the conductor through the dev
+ * `/v1` proxy).
  */
 function isHostManagedEntry(
   lockfilePaths: string[],
@@ -83,7 +85,7 @@ function isHostManagedEntry(
   return (
     entry != null &&
     entry.cloud !== "cloud" &&
-    !isPairedLockfileEntry(lockfilePaths, assistantId)
+    !isPairedLockfileEntry(assistantId)
   );
 }
 
@@ -511,9 +513,9 @@ function retireMiddleware(
       !isHostManagedEntry(lockfilePaths, assistantId) ||
       !isActiveAssistant(lockfilePaths, assistantId)
     ) {
-      // Paired entries retire behind their recorded runtimeUrl (the gateway
-      // proxy forwards), cloud entries through the conductor's own retire
-      // route on the dev `/v1` proxy.
+      // Paired entries retire behind their recorded gateway address (the
+      // gateway proxy forwards), cloud entries through the conductor's own
+      // retire route on the dev `/v1` proxy.
       return next();
     }
 
@@ -654,7 +656,7 @@ function pairingMiddleware(
         return;
       }
 
-      const result = await pairingPoll(lockfilePaths, configDir, {
+      const result = await pairingPoll(configDir, {
         handle: body.handle,
         name: body.name,
       });
@@ -666,23 +668,33 @@ function pairingMiddleware(
         });
         return;
       }
-      respondJson(
-        res,
-        200,
-        result.status === "pending"
-          ? {
-              ok: true,
-              status: "pending",
-              expiresAt: result.expiresAt,
-              intervalSeconds: result.intervalSeconds,
-            }
-          : {
-              ok: true,
-              status: "imported",
-              assistantId: result.assistantId,
-              accessOnly: result.accessOnly,
-            },
-      );
+      if (result.status === "pending") {
+        respondJson(res, 200, {
+          ok: true,
+          status: "pending",
+          expiresAt: result.expiresAt,
+          intervalSeconds: result.intervalSeconds,
+        });
+        return;
+      }
+      // Pairing never touches the lockfile — assistant entries belong to
+      // hatch/retire/the cli — so this host registers the exchanged pairing
+      // create-only before answering. A refusal means another assistant
+      // claimed the id in between; nothing is overwritten.
+      if (!createLockfileAssistant(result.entry)) {
+        respondJson(res, 409, {
+          ok: false,
+          reason: "import",
+          error: `An assistant named '${result.assistantId}' already exists`,
+        });
+        return;
+      }
+      respondJson(res, 200, {
+        ok: true,
+        status: "imported",
+        assistantId: result.assistantId,
+        accessOnly: result.accessOnly,
+      });
     });
   };
 }
@@ -756,7 +768,7 @@ function wakeMiddleware(
     const assistantId = decodeURIComponent(match[1]!);
     if (!isHostManagedEntry(lockfilePaths, assistantId)) {
       // A paired entry's wake rides the gateway proxy to its recorded
-      // runtimeUrl (the shell's not-ready panel wakes through it).
+      // gateway address (the shell's not-ready panel wakes through it).
       return next();
     }
 
@@ -987,8 +999,8 @@ function statusMiddleware(
 
     const assistantId = decodeURIComponent(match[1]!);
     if (!isHostManagedEntry(lockfilePaths, assistantId)) {
-      // Paired entries resolve behind their recorded runtimeUrl and cloud
-      // entries through the conductor — the id-keyed proxies own those.
+      // Paired entries resolve behind their recorded gateway address and
+      // cloud entries through the conductor — the id-keyed proxies own those.
       return next();
     }
 
@@ -1042,9 +1054,7 @@ function avatarMiddleware(
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/json");
     res.end(
-      JSON.stringify(
-        readLockfileAssistantAvatar(lockfilePaths, assistantId),
-      ),
+      JSON.stringify(readLockfileAssistantAvatar(lockfilePaths, assistantId)),
     );
   };
 }
@@ -1058,9 +1068,9 @@ function gatewayProxyMiddleware(
   return (req, res, next) => {
     // Gateway data plane. The scoped SDK surface (`/v1/assistants/{id}/*`)
     // rides one id-keyed proxy for every assistant gateway. The lockfile
-    // resolves the id to a loopback port (locally hatched) or a recorded
-    // remote `runtimeUrl` (imported pairing) — that target map is the
-    // allowlist.
+    // resolves the id to a loopback port (locally hatched) or the recorded
+    // gateway address of a custom remote (imported pairing) — that target
+    // map is the allowlist.
     // The host OWNS the Authorization header: it overwrites whatever the
     // renderer sent with the bearer it mints from the on-disk guardian
     // token (401 re-mint retry on bodyless requests); remote hops

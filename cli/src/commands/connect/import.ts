@@ -3,19 +3,20 @@
  *
  * Pair this machine with an assistant running elsewhere and register it
  * locally so `cadet client`/`message`/`events <name>` work against it. The
- * device-code exchange, the lockfile write, and the token write live in
+ * device-code exchange and the token write live in
  * `pairingStart`/`pairingPoll` (`@mycadet/local-mode`); this command owns the
- * argv parsing, the polling cadence, and the output copy.
+ * argv parsing, the polling cadence, the lockfile registration, and the
+ * output copy.
  */
 
 import {
   checkPairedAssistantName,
   connectImport as importLegacyBundle,
+  createLockfileAssistant,
   pairingCancel,
   pairingPoll,
   pairingStart,
   resolveConfigDir,
-  resolveLockfilePath,
 } from "@mycadet/local-mode";
 import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
 
@@ -78,12 +79,9 @@ function formatImportFailure(status: number, error: string): string {
 /** The shared success output of both import paths. */
 function reportImported(result: {
   assistantId: string;
-  updated: boolean;
   accessOnly: boolean;
 }): void {
-  console.log(
-    `${result.updated ? "Updated" : "Imported"} paired assistant '${result.assistantId}'.`,
-  );
+  console.log(`Imported paired assistant '${result.assistantId}'.`);
   console.log("");
   console.log(`  Connect with:  cadet client ${result.assistantId}`);
   console.log("");
@@ -92,6 +90,26 @@ function reportImported(result: {
       ? "Note: the assistant issued an access-only token, so this connection will expire. Run `cadet connect import` again with a fresh pairing link when it does."
       : "Note: this connection includes a refresh credential, so it can renew itself. Re-pair only if it's revoked or the refresh credential expires.",
   );
+}
+
+/**
+ * The cli's registration step. Pairing itself never touches the lockfile —
+ * assistant entries belong to hatch/retire/the cli — so the command registers
+ * the exchanged pairing create-only. A refusal means another assistant claimed
+ * the id in between; nothing is overwritten.
+ */
+function registerPairedEntry(
+  entry: Parameters<typeof createLockfileAssistant>[0],
+): void {
+  if (!createLockfileAssistant(entry)) {
+    console.error(
+      formatImportFailure(
+        409,
+        `An assistant named '${entry.assistantId}' already exists`,
+      ),
+    );
+    process.exit(1);
+  }
 }
 
 /**
@@ -105,12 +123,11 @@ function reportImported(result: {
  * already has instead of a bundle error.
  */
 function importLegacyPairingBundle(
-  lockfilePath: string,
   configDir: string,
   address: string,
   name: string | undefined,
 ): boolean {
-  const result = importLegacyBundle(lockfilePath, configDir, {
+  const result = importLegacyBundle(configDir, {
     bundle: address,
     name,
   });
@@ -128,6 +145,7 @@ function importLegacyPairingBundle(
     "Newer hosts print a pairing link instead: run `cadet pair` there and import that link.",
   );
   console.log("");
+  registerPairedEntry(result.entry);
   reportImported(result);
   return true;
 }
@@ -175,10 +193,7 @@ export async function connectImport(): Promise<void> {
   // reservation: another process can still claim the id in between, which the
   // real check inside the import path catches.
   if (nameFlag) {
-    const conflict = checkPairedAssistantName(
-      resolveLockfilePath(),
-      nameFlag,
-    );
+    const conflict = checkPairedAssistantName(nameFlag);
     if (conflict) {
       console.error(formatImportFailure(conflict.status, conflict.error));
       process.exit(1);
@@ -191,7 +206,7 @@ export async function connectImport(): Promise<void> {
     // deprecated bundle decoder; only an unusable address falls through to it.
     if (
       started.reason === "invalid-address" &&
-      importLegacyPairingBundle(resolveLockfilePath(), configDir, address, nameFlag)
+      importLegacyPairingBundle(configDir, address, nameFlag)
     ) {
       return;
     }
@@ -233,7 +248,7 @@ export async function connectImport(): Promise<void> {
     let consecutiveFailures = 0;
 
     for (;;) {
-      const result = await pairingPoll(resolveLockfilePath(), configDir, {
+      const result = await pairingPoll(configDir, {
         handle: started.handle,
         name: nameFlag,
         platform: "cli",
@@ -275,6 +290,7 @@ export async function connectImport(): Promise<void> {
       consecutiveFailures = 0;
 
       if (result.status === "imported") {
+        registerPairedEntry(result.entry);
         reportImported(result);
         return;
       }

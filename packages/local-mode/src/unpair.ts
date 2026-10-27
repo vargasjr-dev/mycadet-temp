@@ -2,11 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { guardianTokenPath } from "./config";
-import {
-  readRawLockfile,
-  writeRawLockfile,
-  type WriteResult,
-} from "./lockfile";
+import { readLockfile, writeRawLockfile, type WriteResult } from "./lockfile";
 import { withLockfileLock } from "./lockfile-lock";
 
 /**
@@ -39,11 +35,9 @@ function unpairAssistantLocked(
   configDir: string,
   assistantId: string,
 ): WriteResult {
-  const lockfile = readRawLockfile(lockfilePath);
-  const assistants = Array.isArray(lockfile.assistants)
-    ? (lockfile.assistants as Array<Record<string, unknown>>)
-    : [];
-  const entry = assistants.find((a) => a?.assistantId === assistantId);
+  const lockfile = readLockfile();
+  const assistants = lockfile.assistants;
+  const entry = assistants.find((a) => a.assistantId === assistantId);
   if (!entry) {
     return { ok: false, status: 404, error: "No such assistant" };
   }
@@ -77,21 +71,17 @@ function unpairAssistantLocked(
     // Directory not empty or absent.
   }
 
-  const remaining = assistants.filter((a) => a?.assistantId !== assistantId);
+  const remaining = assistants.filter((a) => a.assistantId !== assistantId);
   lockfile.assistants = remaining;
   // Reassign the active assistant like the CLI's removeAssistantEntry does, so
   // unpairing through the bridge and through `cadet unpair` leave the same
-  // active state. Skip tolerated malformed entries (no string assistantId):
-  // parseLockfile drops them from the returned lockfile, so pointing at one
-  // would report no active assistant while valid entries remain.
+  // active state.
   if (lockfile.activeAssistant === assistantId) {
-    const next = remaining.find(
-      (a) => typeof a?.assistantId === "string",
-    )?.assistantId;
+    const next = remaining[0]?.assistantId;
     if (typeof next === "string") {
       lockfile.activeAssistant = next;
     } else {
-      delete lockfile.activeAssistant;
+      lockfile.activeAssistant = null;
     }
   }
 

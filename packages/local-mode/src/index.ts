@@ -51,6 +51,7 @@ export {
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   saveLockfileAssistant,
+  createLockfileAssistant,
   replaceCloudAssistants,
   isActiveAssistant,
   isPairedLockfileEntry,
@@ -64,13 +65,14 @@ export {
   LockfileAssistantSchema,
   parseLockfile,
 } from "./lockfile-contract";
-export { readRawLockfile, readRawLockfileStrict } from "./lockfile";
+export { readRawLockfileStrict } from "./lockfile";
 export type {
   Lockfile,
   LockfileAssistant,
   LocalAssistantResources,
   LockfileWriteResult,
 } from "./lockfile-contract";
+export type { LockfileAssistantPatch } from "./lockfile";
 export { runHatch } from "./hatch";
 export type { HatchResult } from "./hatch";
 export { runRetire } from "./retire";

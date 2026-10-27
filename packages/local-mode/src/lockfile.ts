@@ -3,7 +3,6 @@ import path from "node:path";
 
 import {
   isRemoteGatewayEntry,
-  LockfileAssistantSchema,
   LockfileSchema,
   parseLockfile,
   type Lockfile,
@@ -79,24 +78,11 @@ export function getLockfileData(lockfilePath: string): LockfileResult {
  * daemon, so guardian-token failure guidance must say re-pair rather than
  * hatch/wake.
  */
-export function isPairedLockfileEntry(
-  lockfilePath: string,
-  assistantId: string,
-): boolean {
-  const lockfile = readRawLockfile(lockfilePath);
-  const assistants = Array.isArray(lockfile.assistants)
-    ? (lockfile.assistants as Array<Record<string, unknown>>)
-    : [];
-  return assistants.some((assistant) => {
-    if (assistant?.assistantId !== assistantId) {
-      return false;
-    }
-    const parsed = LockfileAssistantSchema.safeParse(assistant);
-    if (!parsed.success) {
-      return false;
-    }
-    return isRemoteGatewayEntry(parsed.data);
-  });
+export function isPairedLockfileEntry(assistantId: string): boolean {
+  return readLockfile().assistants.some(
+    (assistant) =>
+      assistant.assistantId === assistantId && isRemoteGatewayEntry(assistant),
+  );
 }
 
 export type WriteResult =
@@ -108,30 +94,15 @@ function lockFailure(error: string): WriteResult {
   return { ok: false, status: 423, error };
 }
 
-/**
- * Read the first parseable lockfile as raw JSON (unknown fields intact) for a
- * read-modify-write cycle; an unreadable file yields an empty lockfile.
- */
-export function readRawLockfile(lockfilePath: string): Record<string, unknown> {
-  try {
-    return JSON.parse(fs.readFileSync(lockfilePath, "utf-8")) as Record<
-      string,
-      unknown
-    >;
-  } catch {
-    return { assistants: [], activeAssistant: null };
-  }
-}
-
 export type RawLockfileReadResult =
   | { ok: true; lockfile: Record<string, unknown> }
   | { ok: false; error: string };
 
 /**
- * Like {@link readRawLockfile}, but a file that exists and cannot be read or
- * parsed refuses instead of degrading to the empty registry. Missing or empty
- * files still yield the empty registry. Use for writes that must never
- * replace a registry they could not actually read.
+ * A file that exists but cannot be read or parsed refuses instead of
+ * degrading to the empty registry. Missing or empty files still yield the
+ * empty registry. Use for writes that must never replace a registry they
+ * could not actually read.
  */
 export function readRawLockfileStrict(
   lockfilePath: string,
@@ -294,26 +265,26 @@ export function saveLockfileAssistant(
   assistant: LockfileAssistantPatch,
   activeAssistant?: string,
 ): void {
-  if (!assistant || typeof assistant.assistantId !== "string") {
+  const assistantId = assistant?.assistantId;
+  if (typeof assistantId !== "string") {
     throw new Error("Missing assistant.assistantId");
   }
   const lockfilePath = resolveLockfilePath();
 
   const locked = withLockfileLock(lockfilePath, (): WriteResult => {
-    const lockfile = readRawLockfile(lockfilePath);
-    const assistants = Array.isArray(lockfile.assistants)
-      ? lockfile.assistants
-      : [];
+    const lockfile = readLockfile();
+    const assistants = [...lockfile.assistants];
     const existingIdx = assistants.findIndex(
-      (a: Record<string, unknown>) => a?.assistantId === assistant.assistantId,
+      (a) => a.assistantId === assistantId,
     );
     if (existingIdx >= 0) {
       assistants[existingIdx] = {
         ...assistants[existingIdx]!,
         ...assistant,
-      };
+        assistantId,
+      } as LockfileAssistant;
     } else {
-      assistants.push(assistant);
+      assistants.push({ ...assistant, assistantId } as LockfileAssistant);
     }
     lockfile.assistants = assistants;
     if (activeAssistant !== undefined) {
@@ -343,17 +314,19 @@ export function createLockfileAssistant(
   const lockfilePath = resolveLockfilePath();
 
   const locked = withLockfileLock(lockfilePath, (): WriteResult | false => {
-    const lockfile = readRawLockfile(lockfilePath);
-    const assistants = Array.isArray(lockfile.assistants)
-      ? lockfile.assistants
-      : [];
-    const exists = assistants.some(
-      (a: Record<string, unknown>) => a?.assistantId === assistant.assistantId,
+    const lockfile = readLockfile();
+    const assistantId = assistant.assistantId;
+    if (typeof assistantId !== "string") {
+      throw new Error("Missing assistant.assistantId");
+    }
+    const exists = lockfile.assistants.some(
+      (a) => a.assistantId === assistantId,
     );
     if (exists) return false;
-    assistants.push(assistant);
-    lockfile.assistants = assistants;
-    return writeRawLockfile(lockfilePath, lockfile);
+    return writeRawLockfile(lockfilePath, {
+      ...lockfile,
+      assistants: [...lockfile.assistants, { ...assistant, assistantId }],
+    });
   });
   if (!locked.ok) {
     throw new Error(locked.error);
@@ -407,14 +380,12 @@ export function replaceCloudAssistants(
   }
 
   const locked = withLockfileLock(lockfilePath, (): WriteResult => {
-    const lockfile = readRawLockfile(lockfilePath);
-    const existing = Array.isArray(lockfile.assistants)
-      ? lockfile.assistants
-      : [];
+    const lockfile = readLockfile();
+    const existing = lockfile.assistants;
     const syncedIds = new Set(cloudAssistants.map((a) => a.assistantId));
     // Org-scoped sync preserves other orgs' platform entries; no org full-replaces.
-    const preserved = existing.filter((a: Record<string, unknown>) => {
-      if (!isCloudHome(a?.cloud)) return true;
+    const preserved = existing.filter((a) => {
+      if (!isCloudHome(a.cloud)) return true;
       if (syncedIds.has(a.assistantId)) return false;
       return organizationId != null && a.organizationId !== organizationId;
     });
@@ -422,11 +393,12 @@ export function replaceCloudAssistants(
     // the replacement rows never carry it. Without this it is erased by every
     // routine session sync.
     const priorOnboardedAt = new Map<string, unknown>();
-    for (const a of existing as Array<Record<string, unknown>>) {
-      if (typeof a?.assistantId === "string" && a.onboardedAt != null) {
+    for (const a of existing) {
+      if (a.onboardedAt != null) {
         priorOnboardedAt.set(a.assistantId, a.onboardedAt);
       }
     }
+    // The rows are platform assistants the host boundary already validated.
     lockfile.assistants = [
       ...preserved,
       ...cloudAssistants.map((a) => {
@@ -435,13 +407,13 @@ export function replaceCloudAssistants(
           ? { ...a, onboardedAt: prior }
           : a;
       }),
-    ];
+    ] as LockfileAssistant[];
 
-    const active = lockfile.activeAssistant as string | null;
+    const active = lockfile.activeAssistant;
     if (active) {
-      const stillExists = (
-        lockfile.assistants as Array<Record<string, unknown>>
-      ).some((a) => a.assistantId === active);
+      const stillExists = lockfile.assistants.some(
+        (a) => a.assistantId === active,
+      );
       if (!stillExists) lockfile.activeAssistant = null;
     }
 

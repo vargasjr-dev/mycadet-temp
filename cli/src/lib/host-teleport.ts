@@ -471,25 +471,10 @@ export async function restoreHostTeleportTarget(
   };
   try {
     if (previous) {
-      // The teleport imports the SOURCE's security root — a replayed
-      // destination signing key would shadow it (env → file → generate)
-      // and keep this machine's old identity while the root and the
-      // source's clients say otherwise. The failure-recovery replay below
-      // keeps the captured key: it is this machine's own identity, and an
-      // env-only-era install holds it nowhere else.
-      const withoutDestinationShadow = (env: Record<string, string>) => {
-        const { ACTOR_TOKEN_SIGNING_KEY: _shadow, ...rest } = env;
-        return rest;
-      };
-      await replaceContainers({
-        ...previous,
-        extraAssistantEnv: withoutDestinationShadow(
-          previous.extraAssistantEnv ?? {},
-        ),
-        extraGatewayEnv: withoutDestinationShadow(
-          previous.extraGatewayEnv ?? {},
-        ),
-      });
+      // The captured destination env replays wholesale — including this
+      // machine's ACTOR_TOKEN_SIGNING_KEY, which (env beats file) shadows
+      // the imported root's key. The signing-key-level disposition is open.
+      await replaceContainers(previous);
     }
     await restoreRootBackup(entry, archive, { resume: false });
     await startAndCheck(storageFor(entry));

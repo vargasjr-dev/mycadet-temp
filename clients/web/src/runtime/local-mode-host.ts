@@ -352,7 +352,7 @@ export async function pairingStartHost(
 /**
  * One exchange attempt for a live pairing session. An approved code persists
  * the guardian token and creates a paired (connect-import) lockfile entry in
- * the same call — its remote runtimeUrl is what marks it — the write
+ * the same call — its derived gateway address is what marks it — the write
  * counterpart of {@link unpairAssistantHost}; a still pending one carries the
  * cadence to wait before the next attempt.
  */

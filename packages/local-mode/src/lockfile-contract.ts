@@ -163,9 +163,9 @@ export function isLoopbackGatewayCloud(cloud: Remote): boolean {
  * `resources.gatewayPort`. Entries without one derive the default gateway
  * port through {@link getGatewayUrl}.
  */
-export function getLoopbackGatewayPort(entry: {
-  resources?: { gatewayPort?: number };
-}): number | undefined {
+export function getLoopbackGatewayPort(
+  entry: LockfileAssistant,
+): number | undefined {
   return entry.resources?.gatewayPort;
 }
 
@@ -203,14 +203,10 @@ function getCloudUrl(): string {
  */
 export function getGatewayUrl(entry: LockfileAssistant): string {
   if (entry.cloud === "custom" && entry.ipAddress && entry.port) {
-    // The recorded origin, reproduced: TLS as recorded (a 443 port implies
-    // it for entries written before the flag), with default ports elided
-    // the way a URL prints them.
-    const secure = entry.tls === true || entry.port === 443;
-    const elided = secure ? entry.port === 443 : entry.port === 80;
-    return `${secure ? "https" : "http"}://${entry.ipAddress}${
-      elided ? "" : `:${entry.port}`
-    }`;
+    // Custom remotes speak TLS. Default ports elided the way a URL prints
+    // them.
+    const elided = entry.port === 443;
+    return `https://${entry.ipAddress}${elided ? "" : `:${entry.port}`}`;
   }
   if (isCloudHome(entry.cloud)) {
     return getCloudUrl().replace(/\/+$/, "");
@@ -287,12 +283,6 @@ export const LockfileAssistantSchema = z.object({
   ipAddress: z.string().optional(),
   /** Gateway port on a custom remote (cloud "custom"). */
   port: z.number().optional(),
-  /**
-   * Whether the custom remote's gateway speaks TLS. Absent is plaintext (and
-   * a 443 port implies it either way), so the recorded {ipAddress, port, tls}
-   * triple reproduces the paired origin exactly.
-   */
-  tls: z.boolean().optional(),
   hatchedAt: z.string().optional(),
   /**
    * When this assistant finished first-run onboarding. Absent for entries that
@@ -306,6 +296,11 @@ export const LockfileAssistantSchema = z.object({
   cloudBaseUrl: z.string().optional(),
   /** Platform organization UUID used for a self-hosted local assistant registration. */
   cloudOrganizationId: z.string().optional(),
+  /**
+   * Platform organization the entry's cloud row was synced under (set by the
+   * platform sync; org-scoped readers key on it).
+   */
+  organizationId: z.string().optional(),
   resources: LocalAssistantResourcesSchema.optional(),
   /** Helper token for cloud assistants' API bearer; host-only secret. */
   bearerToken: z.string().optional(),

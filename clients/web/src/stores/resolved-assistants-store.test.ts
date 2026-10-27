@@ -57,7 +57,6 @@ const pairedAssistant: LockfileAssistant = {
   cloud: "custom",
   ipAddress: "desk.example.com",
   port: 443,
-  tls: true,
 };
 
 beforeEach(() => {

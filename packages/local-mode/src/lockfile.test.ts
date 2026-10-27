@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 
 import {
+  createLockfileAssistant,
   getLockfileData,
   isPairedLockfileEntry,
   renameLockfileAssistantIfPresent,
@@ -119,15 +120,13 @@ describe("isPairedLockfileEntry", () => {
       activeAssistant: "local-1",
     });
 
-    expect(isPairedLockfileEntry(lockfilePath, "paired-1")).toBe(true);
-    expect(isPairedLockfileEntry(lockfilePath, "local-1")).toBe(false);
-    expect(isPairedLockfileEntry(lockfilePath, "missing")).toBe(false);
+    expect(isPairedLockfileEntry("paired-1")).toBe(true);
+    expect(isPairedLockfileEntry("local-1")).toBe(false);
+    expect(isPairedLockfileEntry("missing")).toBe(false);
   });
 
   test("an absent lockfile never classifies as paired", () => {
-    expect(
-      isPairedLockfileEntry(path.join(dir, "absent.json"), "paired-1"),
-    ).toBe(false);
+    expect(isPairedLockfileEntry("paired-1")).toBe(false);
   });
 });
 
@@ -138,9 +137,11 @@ describe("saveLockfileAssistant", () => {
     );
   });
 
-  test("preserves unknown on-disk fields written by a newer client", () => {
-    // A newer writer added a top-level field and per-entry fields this build
-    // does not model. Upserting an unrelated assistant must not drop them.
+  test("a newer client's unknown root fields survive; its unknown entry fields do not", () => {
+    // The root is a loose object, so a root key this build does not model
+    // round-trips a read-modify-write. The entry shape is the contract
+    // itself: the parsed write-back drops entry fields outside the schema,
+    // so a newer writer's entry extensions ride the schema or nothing.
     writeOnDisk({
       schemaVersion: 99,
       activeAssistant: "asst_old",
@@ -163,7 +164,7 @@ describe("saveLockfileAssistant", () => {
     expect(onDisk.activeAssistant).toBe("asst_new");
     const assistants = onDisk.assistants as Array<Record<string, unknown>>;
     const old = assistants.find((a) => a.assistantId === "asst_old");
-    expect(old?.futureField).toBe("keep-me");
+    expect(old?.futureField).toBeUndefined();
   });
 
   test("merges fields into an existing entry", () => {
@@ -193,8 +194,11 @@ describe("saveLockfileAssistant", () => {
       assistantId: "asst_1",
       cloud: "local",
       name: "Old Name",
-      resources: { gatewayPort: 7830, daemonPort: 7831, dataDir: "/tmp/x" },
-      signingKey: "sk-on-disk-secret",
+      resources: {
+        instanceDir: "/tmp/x",
+        gatewayPort: 7830,
+        daemonPort: 7831,
+      },
       bearerToken: "bt-on-disk-secret",
       guardianBootstrapSecret: "gb-on-disk-secret",
     };
@@ -817,5 +821,31 @@ describe("replaceCloudAssistants", () => {
     ]);
 
     expect(readOnDisk().activeAssistant).toBeNull();
+  });
+});
+
+describe("createLockfileAssistant", () => {
+  test("create-only: an existing entry is never merged into", () => {
+    // Even an id claimed between a caller's check and this write is refused
+    // rather than merged into, so a registration cannot change an existing
+    // assistant's remote setting.
+    saveLockfileAssistant({
+      assistantId: "taken",
+      name: "Mine",
+      cloud: "local",
+      port: 7821,
+    });
+    expect(
+      createLockfileAssistant({
+        assistantId: "taken",
+        name: "paired (10.0.0.5:7830)",
+        cloud: "custom",
+        ipAddress: "10.0.0.5",
+        port: 7830,
+      }),
+    ).toBe(false);
+    expect(readOnDisk().assistants).toEqual([
+      { assistantId: "taken", name: "Mine", cloud: "local", port: 7821 },
+    ]);
   });
 });

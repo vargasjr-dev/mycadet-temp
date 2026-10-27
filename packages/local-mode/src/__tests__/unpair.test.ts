@@ -12,7 +12,9 @@ let configDir: string;
 
 beforeEach(() => {
   tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-unpair-"));
-  lockfilePath = path.join(tmpDir, "lockfile.json");
+  // The shared read resolves its path from the environment (XDG config home
+  // plus the production env dir), so the fixture writes there.
+  lockfilePath = path.join(tmpDir, "cadet", "lockfile.json");
   configDir = path.join(tmpDir, "config");
   // The save resolves its paths from the environment; tests point it at the
   // per-test tmp dir.
@@ -25,6 +27,7 @@ afterEach(() => {
 });
 
 const writeLockfile = (data: Record<string, unknown>): void => {
+  fs.mkdirSync(path.dirname(lockfilePath), { recursive: true });
   fs.writeFileSync(lockfilePath, JSON.stringify(data));
 };
 
@@ -63,10 +66,11 @@ describe("unpairAssistant", () => {
     ]);
     expect(fs.existsSync(tokenPath)).toBe(false);
 
-    // Unknown fields on the remaining entries survive the rewrite.
+    // The entry shape is the contract: the parsed write-back keeps the
+    // modeled fields and drops anything a newer writer added to an entry.
     const onDisk = readLockfileFromDisk();
     expect(onDisk.assistants).toEqual([
-      { assistantId: "local-1", cloud: "local", futureField: "keep-me" },
+      { assistantId: "local-1", cloud: "local" },
     ]);
     expect(onDisk.activeAssistant).toBe("local-1");
   });

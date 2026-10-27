@@ -58,8 +58,6 @@ export type {
 
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
-export { isRemoteGatewayEntry } from "@mycadet/local-mode/contract";
-
 export function isCadetCloudRemote(): boolean {
   return readInjectedConfig()?.remote === "cloud";
 }
@@ -367,10 +365,6 @@ export function getLockfileAssistant(
     (a) => a.assistantId === assistantId,
   );
 }
-
-// ---------------------------------------------------------------------------
-// Gateway predicates
-// ---------------------------------------------------------------------------
 
 function expectsLocalGateway(
   assistant: LockfileAssistant | undefined,

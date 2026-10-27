@@ -4,7 +4,7 @@ import {
   getGuardianAccessToken,
   getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
   isActiveAssistant,
-  isPairedLockfileEntry,
+  createLockfileAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
@@ -289,7 +289,13 @@ async function getHostGuardianAccessToken(
   } catch (err) {
     return { ok: false, status: 500, error: (err as Error).message };
   }
-  return getGuardianAccessToken(assistantId, configDir, invocation, true, options);
+  return getGuardianAccessToken(
+    assistantId,
+    configDir,
+    invocation,
+    true,
+    options,
+  );
 }
 
 /** Read a paired guardian bearer for the trusted main-process proxy. */
@@ -414,7 +420,7 @@ export const installLocalMode = (): void => {
     return lockfile;
   });
 
-// Rename-if-present: refuses missing entries and unreadable files instead
+  // Rename-if-present: refuses missing entries and unreadable files instead
   // of upserting, so a stale renderer cache never re-creates an entry. Both
   // args stay optional on the wire, keeping the never-reject contract.
   ipc(
@@ -465,11 +471,7 @@ export const installLocalMode = (): void => {
     "cadet:localMode:replaceCloudAssistants",
     z.tuple([z.array(assistantRecord), z.string().optional()]),
     ([list, organizationId]): LockfileWriteResult => {
-      const result = replaceCloudAssistants(
-        lockfilePath,
-        list,
-        organizationId,
-      );
+      const result = replaceCloudAssistants(lockfilePath, list, organizationId);
       return result.ok
         ? { ok: true, lockfile: result.lockfile }
         : { ok: false, error: result.error };
@@ -534,7 +536,7 @@ export const installLocalMode = (): void => {
     "cadet:localMode:pairingPoll",
     twoOptionalStringArgs,
     async ([handle, name]): Promise<LocalPairingPollResult> => {
-      const result = await pairingPoll(lockfilePath, configDir, {
+      const result = await pairingPoll(configDir, {
         handle,
         name,
       });
@@ -547,6 +549,17 @@ export const installLocalMode = (): void => {
           status: "pending",
           expiresAt: result.expiresAt,
           intervalSeconds: result.intervalSeconds,
+        };
+      }
+      // Pairing never touches the lockfile — assistant entries belong to
+      // hatch/retire/the cli — so this host registers the exchanged pairing
+      // create-only before answering. A refusal means another assistant
+      // claimed the id in between; nothing is overwritten.
+      if (!createLockfileAssistant(result.entry)) {
+        return {
+          ok: false,
+          reason: "import",
+          error: `An assistant named '${result.assistantId}' already exists`,
         };
       }
       refreshLockfile();
@@ -626,4 +639,3 @@ export const installLocalMode = (): void => {
     },
   );
 };
-
