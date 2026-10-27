@@ -1,4 +1,4 @@
-import { resolveLockfilePaths } from "@mycadet/local-mode";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import {
   afterAll,
   afterEach,
@@ -15,17 +15,13 @@ import {
   mkdirSync,
   mkdtempSync,
   rmSync,
-  readFileSync,
   writeFileSync,
 } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import * as osModule from "node:os";
 import { basename, join } from "node:path";
 
-import {
-  getLocalInstanceDir,
-  type LockfileAssistant,
-} from "../lib/assistant-config.js";
+import { type LockfileAssistant } from "../lib/assistant-config.js";
 import * as localModule from "../lib/local.js";
 import * as stepRunnerModule from "../lib/step-runner.js";
 import { makeEntry } from "./helpers/lockfile-entry.js";
@@ -33,7 +29,7 @@ import { makeEntry } from "./helpers/lockfile-entry.js";
 // Captured real exports — afterAll restores these so module mocks don't
 // leak into other test files in the same `bun test` run.
 const realLocal = {
-  generateLocalSigningKey: localModule.generateLocalSigningKey,
+  generateLocalSecret: localModule.generateLocalSecret,
   startLocalDaemon: localModule.startLocalDaemon,
   startGateway: localModule.startGateway,
   startCes: localModule.startCes,
@@ -71,7 +67,7 @@ import { restore } from "../commands/restore.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "cli-recover-test-"));
 const originalArgv = [...process.argv];
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 const originalXdgData = process.env.XDG_DATA_HOME;
 
 // Directories that getRetiredDir() will use when XDG_DATA_HOME is overridden
@@ -119,12 +115,12 @@ beforeEach(() => {
   homeSpy = spyOn(osModule, "homedir").mockReturnValue(join(testDir, "home"));
   mkdirSync(homedir(), { recursive: true });
   // Route lockfile and retired archives to the temp directory
-  process.env.CADET_LOCKFILE_DIR = testDir;
+  process.env.XDG_CONFIG_HOME = testDir;
   process.env.XDG_DATA_HOME = testDir;
   // Write an empty lockfile so saveLockfileAssistant has a dir to write to
-  mkdirSync(testDir, { recursive: true });
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    resolveLockfilePaths(process.env)[0]!,
+    resolveLockfilePath(),
     JSON.stringify({ assistants: [] }) + "\n",
   );
 
@@ -143,7 +139,7 @@ beforeEach(() => {
 afterEach(() => {
   homeSpy.mockRestore();
   process.argv = [...originalArgv];
-  process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+  process.env.XDG_CONFIG_HOME = originalConfigHome;
   process.env.XDG_DATA_HOME = originalXdgData;
   consoleLogSpy.mockRestore();
   consoleErrorSpy.mockRestore();
@@ -158,10 +154,10 @@ afterEach(() => {
 afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
   process.argv = [...originalArgv];
-  if (originalLockfileDir !== undefined) {
-    process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+  if (originalConfigHome !== undefined) {
+    process.env.XDG_CONFIG_HOME = originalConfigHome;
   } else {
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   }
   if (originalXdgData !== undefined) {
     process.env.XDG_DATA_HOME = originalXdgData;
@@ -185,103 +181,6 @@ describe("restore --help", () => {
 });
 
 describe("restore error cases", () => {
-  for (const failure of ["missing", "conflict"] as const) {
-    test(`recovery ${failure} leaves destination and registry untouched and permits retry`, async () => {
-      const name = `retry-${failure}`;
-      const instanceDir = join(testDir, "cadet", "assistants", name);
-      const entry = makeEntry({
-        assistantId: name,
-        resources: { instanceDir },
-      });
-      const { archivePath, metadataPath, extractedPath } = writeArchiveFixtures(
-        name,
-        entry,
-        failure === "missing" ? null : "07".repeat(32),
-      );
-      if (failure === "conflict") {
-        for (const [dir, hex] of [
-          ["gateway-security", "ab"],
-          ["workspace/deprecated", "cd"],
-        ]) {
-          mkdirSync(join(extractedPath, dir!), { recursive: true });
-          writeFileSync(
-            join(extractedPath, dir!, "actor-token-signing-key"),
-            Buffer.from(hex!.repeat(32), "hex"),
-          );
-        }
-      }
-      const registry = resolveLockfilePaths(process.env)[0]!;
-      const before = readFileSync(registry, "utf8");
-      process.argv = ["bun", "cadet", "restore", name];
-      await expect(restore()).rejects.toThrow(`signing key ${failure}`);
-      expect(existsSync(instanceDir)).toBe(false);
-      expect(readFileSync(registry, "utf8")).toBe(before);
-      expect(existsSync(archivePath)).toBe(true);
-      expect(existsSync(metadataPath)).toBe(true);
-      expect(startLocalDaemonMock).not.toHaveBeenCalled();
-      expect(startGatewayMock).not.toHaveBeenCalled();
-      // Restore the authoritative identity in the archive's key files and retry.
-      for (const dir of ["gateway-security", "workspace/deprecated"]) {
-        mkdirSync(join(extractedPath, dir!), { recursive: true });
-        writeFileSync(
-          join(extractedPath, dir!, "actor-token-signing-key"),
-          Buffer.from("ab".repeat(32), "hex"),
-        );
-      }
-      await restore();
-      expect(existsSync(instanceDir)).toBe(true);
-      expect(existsSync(archivePath)).toBe(false);
-      expect(startGatewayMock).toHaveBeenCalledTimes(1);
-      rmSync(instanceDir, { recursive: true, force: true });
-    });
-  }
-
-  test("recovers an archived legacy identity from staging", async () => {
-    const name = "legacy-staged";
-    const entry = makeEntry({
-      guardianBootstrapSecret: "existing-bootstrap",
-      assistantId: name,
-      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
-    });
-    const { extractedPath } = writeArchiveFixtures(name, entry, null);
-    const dir = join(extractedPath, "workspace", "deprecated");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, "actor-token-signing-key"),
-      Buffer.from("cd".repeat(32), "hex"),
-    );
-    process.argv = ["bun", "cadet", "restore", name];
-    await restore();
-    expect(startGatewayMock).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({ signingKey: "cd".repeat(32) }),
-      { signingKey: "cd".repeat(32), bootstrapSecret: "existing-bootstrap" },
-    );
-    rmSync(getLocalInstanceDir(entry.resources), {
-      recursive: true,
-      force: true,
-    });
-  });
-
-  test("missing identity preserves the archive and starts no processes", async () => {
-    const name = "missing-key";
-    const entry = makeEntry({
-      assistantId: name,
-      resources: { instanceDir: join(testDir, "cadet", "assistants", name) },
-    });
-    const { archivePath, metadataPath } = writeArchiveFixtures(
-      name,
-      entry,
-      null,
-    );
-    process.argv = ["bun", "cadet", "restore", name];
-    await expect(restore()).rejects.toThrow("signing key missing");
-    expect(existsSync(archivePath)).toBe(true);
-    expect(existsSync(metadataPath)).toBe(true);
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-  });
-
   test("exits 1 when no name is given", async () => {
     process.argv = ["bun", "cadet", "restore"];
     await expect(restore()).rejects.toThrow("process.exit(1)");
@@ -365,8 +264,8 @@ describe("archive-recovery extraction path — named instance (instanceDir !== h
     expect(startGatewayMock).toHaveBeenCalledTimes(1);
     expect(startGatewayMock.mock.calls[0]).toEqual([
       false,
-      expect.objectContaining({ signingKey: "07".repeat(32) }),
-      { signingKey: "07".repeat(32), bootstrapSecret: "existing-bootstrap" },
+      expect.objectContaining({ instanceDir: expect.any(String) }),
+      { bootstrapSecret: "existing-bootstrap" },
     ]);
   });
 

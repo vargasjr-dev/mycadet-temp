@@ -6,10 +6,10 @@
  */
 
 import { lookupAssistantByIdentifier } from "../assistant-config.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "../constants.js";
 import { loadGuardianToken } from "../guardian-token.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
-import { getGatewayUrl } from "../runtime-url.js";
 
 /**
  * Where the gateway for this run's assistant answers. The entry's recorded

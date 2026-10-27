@@ -26,8 +26,7 @@ import {
   loadRawConfig,
   saveIngressUrl,
 } from "../ingress-config.js";
-import { getConfigDir } from "../environments/paths.js";
-import { getCurrentEnvironment } from "../environments/resolve.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -37,14 +36,25 @@ import type {
   TunnelProvider,
   ProviderMeta,
   ProviderTunnelResult,
-  TunnelStartOptions,
 } from "../tunnel.js";
-import { notifyGatewayOfPublicUrl } from "./gateway-notify.js";
 
 const NGROK_DEFAULT_API_ADDR = "127.0.0.1:4040";
 const NGROK_API_URL = `http://${NGROK_DEFAULT_API_ADDR}/api/tunnels`;
 const NGROK_POLL_INTERVAL_MS = 500;
 const NGROK_POLL_TIMEOUT_MS = 15_000;
+
+/**
+ * The spawned agent's output lands in a log file (the detached stdio),
+ * so startup-failure classification reads its tail instead of pipes.
+ */
+function ngrokLogTail(logPath: string): string {
+  try {
+    const contents = readFileSync(logPath, "utf-8");
+    return contents.slice(-4_000);
+  } catch {
+    return "";
+  }
+}
 
 /**
  * Inspection-port band for agents this CLI starts beyond the first. ngrok's
@@ -340,7 +350,7 @@ type NgrokTunnelDef = z.infer<typeof NgrokTunnelDefSchema>;
  * longer records one.
  */
 export function ngrokConfigPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "tunnels", "ngrok.yaml");
+  return join(resolveConfigDir(), "tunnels", "ngrok.yaml");
 }
 
 function readNgrokConfigFile(): NgrokConfigFile {
@@ -408,7 +418,7 @@ type NgrokAgentConfigFile = z.infer<typeof NgrokAgentConfigFileSchema>;
  */
 export function ngrokAgentConfigPath(): string {
   return join(
-    getConfigDir(getCurrentEnvironment()),
+    resolveConfigDir(),
     "tunnels",
     "ngrok-agent.yaml",
   );
@@ -811,135 +821,6 @@ export function hasWebhookIntegrationsConfigured(
   }
 }
 
-/**
- * Check whether a non-ngrok ingress URL is already configured (e.g. custom
- * domain or cloud deployment), meaning ngrok is not needed.
- */
-function hasNonNgrokIngressUrl(workspaceDir: string): boolean {
-  try {
-    const config = loadRawConfig(workspaceDir);
-    const parsed = IngressConfigSchema.safeParse(config.ingress);
-    const publicBaseUrl = parsed.success
-      ? parsed.data.publicBaseUrl
-      : undefined;
-    if (!publicBaseUrl) return false;
-    return !publicBaseUrl.includes("ngrok");
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Auto-start an ngrok tunnel if webhook integrations are configured and no
- * non-ngrok ingress URL is present. Designed to be called during daemon/gateway
- * startup. Non-fatal: if ngrok is unavailable or fails, startup continues.
- *
- * `assistantId` records what the tunnel fronts. Without it, an automatic start
- * would leave `ingress.assistantId` absent or stale from an earlier run.
- *
- * Returns the spawned ngrok child process (for PID tracking) or null.
- */
-export async function maybeStartNgrokTunnel(
-  targetPort: number,
-  workspaceDir: string,
-  assistantId?: string,
-): Promise<ChildProcess | null> {
-  // Managed/containerized deployments route webhooks through the cloud's
-  // callback proxy. ngrok is not needed and would not be reachable from the
-  // platform anyway — skip it entirely.
-  const isContainerized =
-    process.env.IS_CONTAINERIZED === "true" ||
-    process.env.IS_CONTAINERIZED === "1";
-  if (isContainerized) return null;
-  if (!hasWebhookIntegrationsConfigured(workspaceDir)) return null;
-  if (hasNonNgrokIngressUrl(workspaceDir)) return null;
-
-  const version = getNgrokVersion();
-  if (!version) return null;
-
-  const savedDomain = loadNgrokDomain() ?? undefined;
-
-  // Reuse an existing tunnel if one is already running
-  const agents = await discoverNgrokAgents();
-  const adoptable = findAdoptableTunnel(agents, targetPort, savedDomain);
-  if (adoptable && "conflict" in adoptable) {
-    // Spawning a second agent would tunnel the same edge under a different
-    // domain, and saving the mismatched URL would clobber the
-    // reserved-domain intent. Leave the tunnel running but refuse to bless
-    // it in config.
-    console.warn(
-      `   ⚠ Existing ngrok tunnel ${adoptable.conflict} does not match the reserved domain '${savedDomain}'. Ignoring it. Stop the running ngrok agent and run \`${cliCommand()} tunnel start --provider ngrok --domain ${savedDomain}\` to bind the reserved domain.`,
-    );
-    return null;
-  }
-  if (adoptable) {
-    const existingUrl = adoptable.url;
-    console.log(`   Found existing ngrok tunnel: ${existingUrl}`);
-    saveIngressUrl(workspaceDir, existingUrl, assistantId, "ngrok");
-    await notifyGatewayOfPublicUrl(existingUrl, assistantId);
-    // The adopted tunnel belongs to some other agent we do not own a pid for,
-    // so any recorded tunnel process entry would be stale from here on.
-    clearRootProcess("tunnel");
-    return null;
-  }
-
-  // A live agent that tunnels a different local port is not a blocker: ngrok
-  // supports concurrent agents, so start one more for this edge. When that
-  // fresh agent is refused because the free plan's single dev domain is
-  // already online, the spawn failure surfaces it — this daemon context has
-  // no user attached to confirm stopping the other agent.
-  const secondaryAgent =
-    agents.length > 0 ? await planSecondaryAgent(agents) : undefined;
-
-  console.log(`   Starting ngrok tunnel for webhook integrations...`);
-
-  // Spawn ngrok with stdout/stderr redirected to a log file instead of pipes.
-  // This avoids two problems that occur with piped stdio:
-  //   1. If pipe handles are left open, the CLI process hangs after hatch/wake.
-  //   2. If pipe handles are destroyed, SIGPIPE kills ngrok on its next write.
-  // Writing to a log file sidesteps both issues — the file descriptor is
-  // inherited by the detached ngrok process and remains valid after CLI exit.
-  const ngrokLogPath = join(workspaceDir, "data", "logs", "ngrok.log");
-  const ngrokProcess = startNgrokProcess(
-    targetPort,
-    ngrokLogPath,
-    savedDomain,
-    secondaryAgent,
-  );
-  ngrokProcess.unref();
-
-  try {
-    const publicUrl = await waitForNgrokUrl(
-      targetPort,
-      savedDomain,
-      NGROK_POLL_TIMEOUT_MS,
-      secondaryAgent?.apiUrl,
-    );
-    saveIngressUrl(workspaceDir, publicUrl, assistantId, "ngrok");
-    await notifyGatewayOfPublicUrl(publicUrl, assistantId);
-    if (ngrokProcess.pid) {
-      stampRootProcess("tunnel", {
-        pid: ngrokProcess.pid,
-        provider: "ngrok",
-        startedAt: new Date().toISOString(),
-        publicUrl,
-      });
-    }
-    console.log(`   Tunnel established: ${publicUrl}`);
-
-    return ngrokProcess;
-  } catch {
-    console.warn(
-      `   ⚠ Could not start ngrok tunnel. Webhook integrations may not work until you run \`${cliCommand()} tunnel start --provider ngrok\`.`,
-    );
-    if (savedDomain) {
-      console.warn(`   ⚠ ${savedDomainRecoveryHint(savedDomain)}`);
-    }
-    if (!ngrokProcess.killed) ngrokProcess.kill("SIGTERM");
-    clearRootProcess("tunnel");
-    return null;
-  }
-}
 
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
@@ -958,8 +839,11 @@ export interface RunNgrokTunnelOptions {
 /**
  * Run the ngrok tunnel workflow: check installation, find or start a tunnel,
  * and save the public URL to config. Hands the URL back so the tunnel level
- * can notify the gateway of it; `waitForExit` settles when the run ends
- * (process exit, signal, or detach).
+ * can notify the gateway of it. The run is idempotent — it adopts an
+ * already-running matching agent — and host-safe: the agent it starts is
+ * detached with its output in a log file, failures reject instead of
+ * exiting, and no process-level signal handling is registered, so the wake
+ * and upgrade restores can invoke it in-process.
  */
 export async function runNgrokTunnel(
   opts: RunNgrokTunnelOptions = {},
@@ -984,7 +868,10 @@ export async function runNgrokTunnel(
     probe: getNgrokVersion,
   });
   if (!version) {
-    process.exit(1);
+    // A run can be invoked from a host process (the wake/upgrade restore
+    // ensures the recorded tunnel by running this), so failures throw for
+    // the caller to surface — only the command turns them into an exit.
+    throw new Error("ngrok is not installed.");
   }
 
   console.log(`Using ${version}`);
@@ -1009,7 +896,9 @@ export async function runNgrokTunnel(
     console.error(
       "Stop the existing ngrok agent first, then re-run this command to bind the reserved domain.",
     );
-    process.exit(1);
+    throw new Error(
+      `an ngrok tunnel on port ${port} does not match the ${opts.domain ? "requested" : "saved"} domain '${domain}'`,
+    );
   }
   if (adoptable) {
     const existingUrl = adoptable.url;
@@ -1028,14 +917,12 @@ export async function runNgrokTunnel(
     console.log(
       "Adopted agents do not appear in `cadet ps` because this run does not own the process.",
     );
-    console.log("Press Ctrl+C to detach (tunnel stays active).");
+    console.log(`Stop it with \`${cliCommand()} tunnel stop\`.`);
 
-    // Block until SIGINT/SIGTERM
-    const waitForExit = new Promise<void>((resolve) => {
-      process.on("SIGINT", () => resolve());
-      process.on("SIGTERM", () => resolve());
-    });
-    return { publicUrl: existingUrl, waitForExit };
+    // The adopted agent belongs to another process; there is nothing to
+    // await, and no signal handling is registered — a run must be safe to
+    // invoke from a host process (the wake/upgrade restore).
+    return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
   }
 
   // A live agent tunneling a different local port is not a blocker: ngrok
@@ -1053,12 +940,25 @@ export async function runNgrokTunnel(
   console.log(`Starting ngrok tunnel to localhost:${port}...`);
 
   let publicUrl: string | undefined;
-  // Points at the live agent across auth retries; signals and cleanup act on
-  // whichever attempt is current.
+  // Points at the live agent across auth retries; cleanup acts on whichever
+  // attempt is current.
   let currentNgrok: ChildProcess | null = null;
   let authAttempts = 0;
   // Confirm-and-stop rounds spent on the endpoint-online collision.
   let staleAttempts = 0;
+
+  // The agent is spawned detached with its output in a log file instead of
+  // pipes. This avoids two problems that occur with piped stdio:
+  //   1. If pipe handles are left open, the CLI process hangs after
+  //      hatch/wake — a run is also invoked by the restore in those host
+  //      processes, where the CLI must be free to exit.
+  //   2. If pipe handles are destroyed, SIGPIPE kills ngrok on its next
+  //      write. The file descriptor is inherited by the detached ngrok
+  //      process and remains valid after CLI exit.
+  // Startup-failure classification reads the log's tail instead of pipes.
+  const ngrokLogDir = join(workspaceDir, "data", "logs");
+  mkdirSync(ngrokLogDir, { recursive: true });
+  const ngrokLogPath = join(ngrokLogDir, "ngrok.log");
 
   const cleanup = () => {
     if (currentNgrok && !currentNgrok.killed) {
@@ -1071,42 +971,27 @@ export async function runNgrokTunnel(
     }
   };
 
-  process.on("SIGINT", () => {
-    cleanup();
-    process.exit(0);
-  });
-  process.on("SIGTERM", () => {
-    cleanup();
-    process.exit(0);
-  });
-
   while (publicUrl === undefined) {
-    const ngrokProcess = startNgrokProcess(port, undefined, domain, secondary);
+    const ngrokProcess = startNgrokProcess(
+      port,
+      ngrokLogPath,
+      domain,
+      secondary,
+    );
+    ngrokProcess.unref();
     currentNgrok = ngrokProcess;
 
-    // Captured per attempt so an authentication failure can be told apart
-    // from other startup failures and recovered with a pasted-in token.
-    const ngrokOutput: string[] = [];
-
-    ngrokProcess.on("error", (err: Error) => {
-      console.error(`ngrok process error: ${err.message}`);
-      process.exit(1);
-    });
-
-    // Pipe ngrok stdout/stderr to console for visibility
-    ngrokProcess.stdout?.on("data", (data: Buffer) => {
-      const line = data.toString().trim();
-      if (line) {
-        ngrokOutput.push(line);
-        console.log(`[ngrok] ${line}`);
-      }
-    });
-    ngrokProcess.stderr?.on("data", (data: Buffer) => {
-      const line = data.toString().trim();
-      if (line) {
-        ngrokOutput.push(line);
-        console.error(`[ngrok] ${line}`);
-      }
+    // Failures reject these instead of exiting, so a run can be invoked from
+    // a host process (the wake/upgrade restore) and the command can turn
+    // them into an exit:
+    //   - spawnFailure: the agent could not even start (missing binary...);
+    //   - exitFailure: the agent started and died, with the log tail for
+    //     startup-failure classification.
+    const spawnFailure = new Promise<never>((_, reject) => {
+      ngrokProcess.on("error", (err: Error) => {
+        console.error(`ngrok process error: ${err.message}`);
+        reject(new Error(`ngrok process error: ${err.message}`));
+      });
     });
 
     // An agent that exits during startup rejects this instead of leaving
@@ -1114,7 +999,7 @@ export async function runNgrokTunnel(
     const exitFailure = new Promise<never>((_, reject) => {
       ngrokProcess.on("exit", (code: number | null) => {
         if (code !== null && code !== 0) {
-          reject(new NgrokStartupError(code, ngrokOutput.join("\n")));
+          reject(new NgrokStartupError(code, ngrokLogTail(ngrokLogPath)));
         }
       });
     });
@@ -1123,6 +1008,7 @@ export async function runNgrokTunnel(
     try {
       url = await Promise.race([
         waitForNgrokUrl(port, domain, NGROK_POLL_TIMEOUT_MS, secondary?.apiUrl),
+        spawnFailure,
         exitFailure,
       ]);
     } catch (err) {
@@ -1184,7 +1070,10 @@ export async function runNgrokTunnel(
             "Your free ngrok domain is held by another running ngrok agent. Stop that agent (its terminal, or `pkill ngrok`) and re-run, pass a different reserved domain with --domain, or upgrade the ngrok plan.",
           );
         }
-        process.exit(1);
+        cleanup();
+        throw new Error(
+          `the ngrok endpoint is already online: ${endpoint ?? "unknown"}`,
+        );
       }
       if (
         err instanceof NgrokStartupError &&
@@ -1196,7 +1085,8 @@ export async function runNgrokTunnel(
         console.error(
           "Stop another running ngrok agent (see: https://dashboard.ngrok.com/agents) or upgrade the ngrok plan, then re-run this command.",
         );
-        process.exit(1);
+        cleanup();
+        throw new Error("this ngrok account is at its agent session limit");
       }
       if (err instanceof NgrokStartupError && isNgrokAuthError(err.output)) {
         if (authAttempts >= MAX_AUTH_RETRIES) {
@@ -1207,7 +1097,8 @@ export async function runNgrokTunnel(
           console.error(
             "  Get your token at: https://dashboard.ngrok.com/get-started/your-authtoken",
           );
-          process.exit(1);
+          cleanup();
+          throw new Error("ngrok is still unauthenticated");
         }
         console.log("");
         console.log("⚠ ngrok rejected the tunnel: it isn't authenticated.");
@@ -1221,7 +1112,8 @@ export async function runNgrokTunnel(
         ).trim();
         if (!token) {
           console.log("No authtoken entered.");
-          process.exit(1);
+          cleanup();
+          throw new Error("ngrok is unauthenticated");
         }
         authAttempts++;
         if (saveNgrokAuthToken(token)) {
@@ -1257,30 +1149,24 @@ export async function runNgrokTunnel(
     }
     console.log("Ingress URL saved to config.");
     console.log("");
-    console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
+    console.log(
+      `The agent runs detached (log: ${ngrokLogPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
+    );
 
-    // Keep running until the ngrok process exits or we receive a signal
+    // Settles when the detached agent exits. No process-level signal
+    // handling is registered: a run must be safe to invoke from a host
+    // process (the wake/upgrade restore), and the detached agent outlives
+    // the CLI either way.
     const waitForExit = new Promise<void>((resolve) => {
       ngrokProcess.on("exit", () => resolve());
     });
     return { publicUrl, waitForExit };
   }
-  // Unreachable: the loop only exits via return, process.exit, or a throw.
+  // Unreachable: the loop only exits via a return or a throw.
   throw new Error("ngrok tunnel did not start.");
 }
 
 export const NGROK_PROVIDER: TunnelProvider = {
   run: runNgrokTunnel,
   stop: (opts) => stopOwnedTunnelAgent(opts, isNgrokProcess, "ngrok"),
-  /**
-   * The default provider's start piece: the same gates (containerized
-   * deploys, webhook integrations, a saved foreign URL) and detached-spawn
-   * ownership — the ChildProcess is what the root lockfile's pid tracking
-   * records; it saves the URL and notifies the gateway itself, so the spawn
-   * returns nothing to await here.
-   */
-  start: async ({ port, workspaceDir, assistantId }: TunnelStartOptions) => {
-    await maybeStartNgrokTunnel(port, workspaceDir, assistantId);
-    return null;
-  },
 };

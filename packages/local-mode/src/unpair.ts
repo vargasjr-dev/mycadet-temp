@@ -16,7 +16,7 @@ import { withLockfileLock } from "./lockfile-lock";
  * device revocation is `cadet devices`).
  */
 export function unpairAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   assistantId: string,
 ): WriteResult {
@@ -24,9 +24,9 @@ export function unpairAssistant(
   // read-modify-write (e.g. a persona-name rename) cannot restore the entry
   // after its credential is deleted.
   const locked = withLockfileLock(
-    lockfilePaths,
+    lockfilePath,
     (): WriteResult =>
-      unpairAssistantLocked(lockfilePaths, configDir, assistantId),
+      unpairAssistantLocked(lockfilePath, configDir, assistantId),
   );
   if (!locked.ok) {
     return { ok: false, status: 423, error: locked.error };
@@ -35,11 +35,11 @@ export function unpairAssistant(
 }
 
 function unpairAssistantLocked(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   assistantId: string,
 ): WriteResult {
-  const lockfile = readRawLockfile(lockfilePaths);
+  const lockfile = readRawLockfile(lockfilePath);
   const assistants = Array.isArray(lockfile.assistants)
     ? (lockfile.assistants as Array<Record<string, unknown>>)
     : [];
@@ -95,7 +95,7 @@ function unpairAssistantLocked(
     }
   }
 
-  const result = writeRawLockfile(lockfilePaths, lockfile);
+  const result = writeRawLockfile(lockfilePath, lockfile);
   if (!result.ok && savedToken !== null) {
     // The entry is still listed, so put its credential back (best-effort;
     // the write failure itself is what gets reported).

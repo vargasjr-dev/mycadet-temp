@@ -7,6 +7,7 @@ import {
   createTimeoutController,
   isTimeoutError,
   isConnectionError,
+  GATEWAY_SERVICE_IDENTITY,
 } from "../http-client.js";
 
 import { proxyForward } from "../proxy-forward.js";
@@ -105,22 +106,39 @@ describe("stripHopByHop", () => {
 // ---------------------------------------------------------------------------
 
 describe("prepareUpstreamHeaders", () => {
-  test("injects service token as Bearer authorization", () => {
+  test("injects the forwarded identity as x-cadet headers", () => {
     const source = new Headers({ "content-type": "application/json" });
-    const prepared = prepareUpstreamHeaders(source, "test-token-123");
-    expect(prepared.get("authorization")).toBe("Bearer test-token-123");
+    const prepared = prepareUpstreamHeaders(
+      source,
+      GATEWAY_SERVICE_IDENTITY,
+    );
+    expect(prepared.get("x-cadet-subject")).toBe(
+      GATEWAY_SERVICE_IDENTITY.subject,
+    );
+    expect(prepared.get("x-cadet-principal-type")).toBe(
+      GATEWAY_SERVICE_IDENTITY.principalType,
+    );
+    expect(prepared.get("x-cadet-scope-profile")).toBe(
+      GATEWAY_SERVICE_IDENTITY.scopeProfile,
+    );
   });
 
   test("removes incoming host header", () => {
     const source = new Headers({ host: "gateway.example.com" });
-    const prepared = prepareUpstreamHeaders(source, "token");
+    const prepared = prepareUpstreamHeaders(source, GATEWAY_SERVICE_IDENTITY);
     expect(prepared.has("host")).toBe(false);
   });
 
-  test("replaces incoming authorization header", () => {
-    const source = new Headers({ authorization: "Bearer old-edge-token" });
-    const prepared = prepareUpstreamHeaders(source, "new-service-token");
-    expect(prepared.get("authorization")).toBe("Bearer new-service-token");
+  test("a caller-supplied identity header never survives the hop", () => {
+    const source = new Headers({
+      authorization: "Bearer old-edge-token",
+      "x-cadet-subject": "user:attacker",
+    });
+    const prepared = prepareUpstreamHeaders(source, GATEWAY_SERVICE_IDENTITY);
+    expect(prepared.has("authorization")).toBe(false);
+    expect(prepared.get("x-cadet-subject")).toBe(
+      GATEWAY_SERVICE_IDENTITY.subject,
+    );
   });
 
   test("strips hop-by-hop headers from source", () => {
@@ -129,7 +147,7 @@ describe("prepareUpstreamHeaders", () => {
       "keep-alive": "timeout=5",
       "x-custom": "preserved",
     });
-    const prepared = prepareUpstreamHeaders(source, "token");
+    const prepared = prepareUpstreamHeaders(source, GATEWAY_SERVICE_IDENTITY);
     expect(prepared.has("connection")).toBe(false);
     expect(prepared.has("keep-alive")).toBe(false);
     expect(prepared.get("x-custom")).toBe("preserved");
@@ -206,7 +224,6 @@ describe("proxyForward", () => {
     const result = await proxyForward(req, {
       baseUrl: "http://localhost:7821",
       path: "/v1/health",
-      serviceToken: "tok",
       timeoutMs: 5000,
       fetchImpl: () => {
         throw new DOMException("timeout", "TimeoutError");
@@ -222,7 +239,6 @@ describe("proxyForward", () => {
     const result = await proxyForward(req, {
       baseUrl: "http://localhost:7821",
       path: "/v1/health",
-      serviceToken: "tok",
       timeoutMs: 5000,
       fetchImpl: () => {
         throw new Error("ECONNREFUSED");
@@ -238,7 +254,6 @@ describe("proxyForward", () => {
     const result = await proxyForward(req, {
       baseUrl: "http://localhost:7821",
       path: "/v1/data",
-      serviceToken: "tok",
       timeoutMs: 5000,
       fetchImpl: async () =>
         new Response('{"ok":true}', {
@@ -260,7 +275,6 @@ describe("proxyForward", () => {
     const result = await proxyForward(req, {
       baseUrl: "http://localhost:7821",
       path: "/v1/missing",
-      serviceToken: "tok",
       timeoutMs: 5000,
       fetchImpl: async () =>
         new Response("Not Found", { status: 404 }),
@@ -283,7 +297,6 @@ describe("proxyForward", () => {
     await proxyForward(req, {
       baseUrl: "http://localhost:7821",
       path: "/v1/inbound",
-      serviceToken: "tok",
       timeoutMs: 5000,
       fetchImpl: async (_url, init) => {
         capturedHeaders = new Headers(init?.headers as HeadersInit);
@@ -297,7 +310,9 @@ describe("proxyForward", () => {
     expect(capturedHeaders?.get("content-length")).toBe(
       String(JSON.stringify({ message: "hello" }).length),
     );
-    expect(capturedHeaders?.get("authorization")).toBe("Bearer tok");
+    expect(capturedHeaders?.get("x-cadet-subject")).toBe(
+        GATEWAY_SERVICE_IDENTITY.subject,
+      );
     expect(capturedBody).not.toBeNull();
   });
 });
@@ -329,21 +344,19 @@ describe("httpToWs", () => {
 // ---------------------------------------------------------------------------
 
 describe("buildWsUpstreamUrl", () => {
-  test("builds URL with token query parameter", () => {
+  test("builds a clean URL — identity rides headers, not the query", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "http://localhost:7821",
       path: "/v1/browser-relay",
-      serviceToken: "service-jwt-123",
     });
-    expect(result.url).toContain("ws://localhost:7821/v1/browser-relay?");
-    expect(result.url).toContain("token=service-jwt-123");
+    expect(result.url).toBe("ws://localhost:7821/v1/browser-relay");
+    expect(result.logSafeUrl).toBe(result.url);
   });
 
   test("includes extra params in URL", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "http://localhost:7821",
       path: "/v1/browser-relay",
-      serviceToken: "tok",
       extraParams: {
         guardianId: "guardian-abc",
         clientInstanceId: "inst-xyz",
@@ -353,28 +366,23 @@ describe("buildWsUpstreamUrl", () => {
     expect(result.url).toContain("clientInstanceId=inst-xyz");
   });
 
-  test("produces log-safe URL with redacted token", () => {
+  test("produces a log-safe URL — the URL carries no secret to redact", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "http://localhost:7821",
       path: "/v1/calls/media-stream",
-      serviceToken: "secret-jwt-value",
       extraParams: { callSessionId: "sess-1" },
     });
-    expect(result.logSafeUrl).toContain("token=%3Credacted%3E");
-    expect(result.logSafeUrl).not.toContain("secret-jwt-value");
-    expect(result.logSafeUrl).toContain("callSessionId=sess-1");
+    expect(result.logSafeUrl).toBe("ws://localhost:7821/v1/calls/media-stream?callSessionId=sess-1");
   });
 
-  test("ignores token key in extraParams", () => {
+  test("passes a caller token param through untouched", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "http://localhost:7821",
       path: "/v1/stt/stream",
-      serviceToken: "real-token",
-      extraParams: { token: "should-be-ignored", mimeType: "audio/webm" },
+      extraParams: { token: "caller-supplied", mimeType: "audio/webm" },
     });
-    // The token should be the service token, not the extra param
     const url = new URL(result.url);
-    expect(url.searchParams.get("token")).toBe("real-token");
+    expect(url.searchParams.get("token")).toBe("caller-supplied");
     expect(url.searchParams.get("mimeType")).toBe("audio/webm");
   });
 
@@ -382,9 +390,8 @@ describe("buildWsUpstreamUrl", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "http://localhost:7821/",
       path: "/v1/browser-relay",
-      serviceToken: "tok",
     });
-    expect(result.url).toContain("ws://localhost:7821/v1/browser-relay?");
+    expect(result.url).toBe("ws://localhost:7821/v1/browser-relay");
     expect(result.url).not.toContain("//v1");
   });
 
@@ -392,8 +399,7 @@ describe("buildWsUpstreamUrl", () => {
     const result = buildWsUpstreamUrl({
       baseUrl: "https://runtime.example.com",
       path: "/v1/calls/media-stream",
-      serviceToken: "tok",
     });
-    expect(result.url).toStartWith("wss://runtime.example.com/v1/calls/media-stream?");
+    expect(result.url).toStartWith("wss://runtime.example.com/v1/calls/media-stream");
   });
 });

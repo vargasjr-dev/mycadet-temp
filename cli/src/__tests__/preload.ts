@@ -16,9 +16,19 @@ const testDir = realpathSync(
   mkdtempSync(join(tmpdir(), "cadet-cli-test-workspace-")),
 );
 process.env.CADET_WORKSPACE_DIR = testDir;
+// The lockfile writes resolve from the environment (the package's one save);
+// point them at the same temp workspace so no test touches production state.
+process.env.XDG_CONFIG_HOME = testDir;
+
+// Tests run from a source checkout, whose `-local.` stamp would pin the
+// ambient environment to `local`. Pretend to be an installed production
+// copy instead; tests that want another environment set CADET_ENVIRONMENT.
+(globalThis as { __CADET_OWN_VERSION__?: string }).__CADET_OWN_VERSION__ =
+  "0.0.0";
 
 afterAll(() => {
   delete process.env.CADET_WORKSPACE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   try {
     rmSync(testDir, { recursive: true, force: true });
   } catch {

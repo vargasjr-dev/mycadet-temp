@@ -5,14 +5,14 @@ import { useState } from "react";
 import { exportLocalDebugBundle } from "./diagnostic-export";
 import { assistantsDebugBundleUploadUrlCreate } from "@/generated/api/sdk.gen";
 import { useTranslation } from "@/i18n";
-import { hasLocalGateway, getSelectedAssistant } from "@/lib/local-mode";
+import { hasLocalGateway, getActiveAssistant } from "@/lib/local-mode";
 import { Button } from "@mycadet/design-library/components/button";
 import { toast } from "@mycadet/design-library/components/toast";
 
 export function DebugBundleExport({ assistantId }: { assistantId: string }) {
   const { t } = useTranslation("settings");
   const [sentAt, setSentAt] = useState<Date | null>(null);
-  const selectedAssistant = getSelectedAssistant();
+  const selectedAssistant = getActiveAssistant();
   const hasLocalDaemon = hasLocalGateway(selectedAssistant);
   const canExport = hasLocalDaemon;
 

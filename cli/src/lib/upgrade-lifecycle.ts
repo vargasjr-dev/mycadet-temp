@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { spawnSync } from "child_process";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { join } from "path";
@@ -7,7 +8,7 @@ import { join } from "path";
 import cliPkg from "../../package.json";
 
 import type { LockfileAssistant } from "./assistant-config.js";
-import { saveLockfileAssistant } from "./assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { createBackup, pruneOldBackups, restoreBackup } from "./backup-ops.js";
 import { emitCliError } from "./cli-error.js";
 import { getOrCreateHostDeviceId } from "./device-id.js";
@@ -23,8 +24,7 @@ import {
   sleepContainers,
   wakeContainers,
 } from "./docker.js";
-import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
+import { resolveDataDir } from "@mycadet/local-mode";
 import { loadGuardianToken } from "./guardian-token.js";
 import { classifyReadyzResponse } from "./http-client.js";
 import { resolveImageRefs } from "./cloud-releases.js";
@@ -49,7 +49,7 @@ import { loopbackSafeFetch } from "./loopback-fetch.js";
 
 /** XDG-compliant directory for upgrade failure logs, scoped to the current environment. */
 function getUpgradeLogsDir(): string {
-  return join(getStateDir(getCurrentEnvironment()), "upgrade-logs");
+  return join(resolveDataDir(), "upgrade-logs");
 }
 
 /**
@@ -229,7 +229,6 @@ export function buildReplayEnv(
 interface ReplayState {
   bootstrapSecret: string | undefined;
   cesServiceToken: string;
-  signingKey?: string;
   extraAssistantEnv: Record<string, string>;
   extraGatewayEnv: Record<string, string>;
 }
@@ -238,8 +237,8 @@ interface ReplayState {
  * Derive the secrets and replay env for replacement containers from
  * already-captured assistant/gateway envs. GUARDIAN_BOOTSTRAP_SECRET is only
  * set on the gateway; CES_SERVICE_TOKEN can be generated for older instances.
- * An absent signing-key override stays absent so replacements use the persisted
- * gateway root rather than rotate its identity. CADET_DEVICE_ID is
+ * The signing key rides no env — the gateway owns it in its security root
+ * CADET_DEVICE_ID is
  * backfilled on the gateway from the host, and the assistant inherits the
  * gateway's value (captured values win) so the pair always matches.
  */
@@ -257,9 +256,6 @@ export function buildReplayState(
     bootstrapSecret: gatewayEnv["GUARDIAN_BOOTSTRAP_SECRET"],
     cesServiceToken:
       capturedEnv["CES_SERVICE_TOKEN"] || randomBytes(32).toString("hex"),
-    signingKey:
-      gatewayEnv["ACTOR_TOKEN_SIGNING_KEY"] ||
-      capturedEnv["ACTOR_TOKEN_SIGNING_KEY"],
     extraAssistantEnv,
     extraGatewayEnv,
   };
@@ -581,12 +577,7 @@ export async function performDockerRollback(
   entry: LockfileAssistant,
   options: PerformDockerRollbackOptions,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const { targetVersion, backupPath } = options;
 
   if (!targetVersion) {
@@ -695,12 +686,11 @@ export async function performDockerRollback(
   const {
     bootstrapSecret,
     cesServiceToken,
-    signingKey,
     extraAssistantEnv,
     extraGatewayEnv,
   } = await captureReplayState(res);
 
-  // Parse gateway port from entry's runtimeUrl
+  // Derive the gateway port from the entry's canonical fields
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
     const parsed = new URL(gatewayUrl);
@@ -774,7 +764,6 @@ export async function performDockerRollback(
     console.log("Creating stopped containers with the target version...");
     await startContainers(
       {
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
@@ -816,7 +805,6 @@ export async function performDockerRollback(
       },
     };
     saveLockfileAssistant(updatedEntry);
-
     // Notify clients that the rollback succeeded
     await broadcastUpgradeEvent(
       gatewayUrl,
@@ -886,7 +874,6 @@ export async function performDockerRollback(
 
         await startContainers(
           {
-            signingKey,
             bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
@@ -910,7 +897,6 @@ export async function performDockerRollback(
             backupLabel: "pre-rollback",
             res,
             containerOptions: {
-              signingKey,
               bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,
@@ -972,7 +958,6 @@ export async function performDockerRollback(
             },
           };
           saveLockfileAssistant(revertedEntry);
-
           await broadcastUpgradeEvent(
             gatewayUrl,
             entry.assistantId,

@@ -1,4 +1,8 @@
-import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
+import {
+  clearRootProcess,
+  readRootProcesses,
+  stampRootProcess,
+} from "../assistant-config.js";
 import { readProcessCommandLine } from "../process.js";
 import { stopOwnedTunnelAgent } from "./process-lifecycle.js";
 import type {
@@ -8,13 +12,16 @@ import type {
 } from "../tunnel.js";
 
 import { execFileSync, spawn, type ChildProcess } from "node:child_process";
+import { closeSync, mkdirSync, openSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
+import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
 import {
-  clearIngressUrl,
   getDefaultWorkspaceDir,
+  loadRawConfig,
   saveIngressUrl,
 } from "../ingress-config.js";
 
@@ -24,6 +31,62 @@ const CLOUDFLARED_TIMEOUT_MS = 30_000;
 
 // Quick-tunnel hostnames follow the pattern <word>-<word>-<word>.trycloudflare.com
 const QUICK_TUNNEL_URL_RE = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/;
+
+/** Whether the pid runs a cloudflared agent (the stop path's identity check). */
+function isCloudflaredProcess(pid: number): boolean {
+  try {
+    return /(?:^|[\\/\s])cloudflared(?:\.exe)?(?:\s|$)/i.test(
+      readProcessCommandLine(pid),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** The workspace config's saved public base URL, if any. */
+function loadSavedPublicUrl(workspaceDir: string): string | undefined {
+  try {
+    const config = loadRawConfig(workspaceDir);
+    const ingress = config.ingress as Record<string, unknown> | undefined;
+    const url = ingress?.publicBaseUrl;
+    return typeof url === "string" && url.trim() ? url.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Poll the agent's log file for the quick-tunnel URL (the detached agent's
+ * output lands there instead of in pipes).
+ */
+function waitForCloudflareTunnelUrlInLog(
+  logPath: string,
+  timeoutMs: number = CLOUDFLARED_TIMEOUT_MS,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const timer = setInterval(() => {
+      try {
+        const contents = readFileSync(logPath, "utf-8");
+        const match = QUICK_TUNNEL_URL_RE.exec(contents);
+        if (match) {
+          clearInterval(timer);
+          resolve(match[0]);
+        }
+      } catch {
+        // The log file may not exist yet.
+      }
+    }, 250);
+    setTimeout(() => {
+      clearInterval(timer);
+      reject(
+        new Error(
+          `cloudflared tunnel URL did not appear within ${timeoutMs / 1000}s. ` +
+            `Ensure cloudflared is working: try running 'cloudflared tunnel --url http://localhost:7840' manually.`,
+        ),
+      );
+    }, timeoutMs);
+  });
+}
 
 /**
  * Check whether cloudflared is installed and on PATH.
@@ -168,7 +231,10 @@ export async function runCloudflareTunnel(
     probe: getCloudflareTunnelVersion,
   });
   if (!version) {
-    process.exit(1);
+    // A run can be invoked from a host process (the wake/upgrade restore
+    // ensures the recorded tunnel by running this), so failures throw for
+    // the caller to surface — only the command turns them into an exit.
+    throw new Error("cloudflared is not installed.");
   }
 
   console.log(`Using ${version}`);
@@ -176,64 +242,72 @@ export async function runCloudflareTunnel(
   const workspaceDir = opts.workspaceDir ?? getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
+  // Idempotency: the recorded agent may still be alive (a CLI restart, or
+  // the wake/upgrade restore re-running this in-process). Adopt it instead
+  // of stacking a second quick tunnel — a fresh agent mints a NEW
+  // trycloudflare URL and repoints webhook integrations for nothing.
+  const recorded = readRootProcesses().tunnel;
+  if (
+    recorded?.provider === "cloudflare" &&
+    recorded.pid &&
+    isCloudflaredProcess(recorded.pid)
+  ) {
+    const existingUrl = recorded.publicUrl ?? loadSavedPublicUrl(workspaceDir);
+    if (existingUrl) {
+      console.log(`Found existing cloudflare tunnel: ${existingUrl}`);
+      saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "cloudflare");
+      // Not our child process; nothing to await, and no signal handling is
+      // registered — a run must be safe to invoke from a host process.
+      return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
+    }
+  }
+
   console.log(`Starting cloudflared quick tunnel to localhost:${port}...`);
   console.log("No Cloudflare account required — quick tunnels are free.");
   console.log("");
 
-  let publicUrl: string | undefined;
-  const child = startCloudflareTunnelProcess(port);
+  // The agent is spawned detached with its output in a log file instead of
+  // pipes — same rationale as the ngrok agent: a run is invoked by the
+  // wake/upgrade restore in host processes the CLI must be free to exit,
+  // and pipe handles left open hang them. The quick-tunnel URL is read
+  // from the log instead of pipes.
+  const logDir = join(workspaceDir, "data", "logs");
+  mkdirSync(logDir, { recursive: true });
+  const logPath = join(logDir, "cloudflared.log");
+  const logFd = openSync(logPath, "a");
+  const child = spawn(
+    "cloudflared",
+    ["tunnel", "--url", `http://localhost:${port}`, "--no-autoupdate"],
+    { stdio: ["ignore", logFd, logFd], windowsHide: true },
+  );
+  closeSync(logFd);
+  child.unref();
 
-  const cleanup = (): void => {
-    if (!child.killed) child.kill("SIGTERM");
-    if (child.pid) clearRootProcess("tunnel", child.pid);
-    if (publicUrl) {
-      console.log("\nClearing ingress URL from config...");
-      clearIngressUrl(workspaceDir);
-    }
-  };
-
-  process.on("SIGINT", () => {
-    cleanup();
-    process.exit(0);
+  // Failures reject these instead of exiting, so the command can turn them
+  // into an exit and a host-process restore can move on.
+  const spawnFailure = new Promise<never>((_, reject) => {
+    child.on("error", (err: Error) => {
+      console.error(`cloudflared process error: ${err.message}`);
+      reject(new Error(`cloudflared process error: ${err.message}`));
+    });
   });
-  process.on("SIGTERM", () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  child.on("error", (err: Error) => {
-    console.error(`cloudflared process error: ${err.message}`);
-    process.exit(1);
-  });
-
-  child.on("exit", (code) => {
-    if (child.pid) clearRootProcess("tunnel", child.pid);
-    // Always clear the saved ingress URL when the tunnel process ends so
-    // webhook integrations don't keep hitting a dead endpoint.
-    if (publicUrl !== undefined) {
-      clearIngressUrl(workspaceDir);
-    }
-    if (code !== null && code !== 0) {
-      console.error(`\ncloudflared exited with code ${code}.`);
-      process.exit(1);
-    }
+  const exitFailure = new Promise<never>((_, reject) => {
+    child.on("exit", (code) => {
+      clearRootProcess("tunnel");
+      reject(new Error(`cloudflared exited with code ${code}.`));
+    });
   });
 
-  // Forward cloudflared output to the console so the user can see startup
-  // progress and any authentication errors.
-  child.stdout?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[cloudflared] ${line}`);
-  });
-  child.stderr?.on("data", (data: Buffer) => {
-    const line = data.toString().trim();
-    if (line) console.log(`[cloudflared] ${line}`);
-  });
-
+  let publicUrl: string;
   try {
-    publicUrl = await waitForCloudflareTunnelUrl(child);
+    publicUrl = await Promise.race([
+      waitForCloudflareTunnelUrlInLog(logPath),
+      spawnFailure,
+      exitFailure,
+    ]);
   } catch (err) {
-    cleanup();
+    if (!child.killed) child.kill("SIGTERM");
+    clearRootProcess("tunnel");
     throw err;
   }
 
@@ -248,12 +322,16 @@ export async function runCloudflareTunnel(
       pid: child.pid,
       provider: "cloudflare",
       startedAt: new Date().toISOString(),
+      publicUrl,
     });
   console.log("Ingress URL saved to config.");
   console.log("");
-  console.log("Press Ctrl+C to stop the tunnel and clear the ingress URL.");
+  console.log(
+    `The agent runs detached (log: ${logPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,
+  );
 
-  // Keep running until cloudflared exits (e.g., network error or user Ctrl+C)
+  // Settles when the detached agent exits. No process-level signal handling
+  // is registered: the detached agent outlives the CLI either way.
   const waitForExit = new Promise<void>((resolve) => {
     child.on("exit", () => resolve());
   });

@@ -1,36 +1,29 @@
 import { randomBytes } from "crypto";
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  unlinkSync,
-  writeFileSync,
-} from "fs";
+import { mkdirSync, renameSync, unlinkSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 
-import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-import { withLockfileLock } from "@mycadet/local-mode";
 import {
-  LockfileSchema,
+  readLockfile,
+  saveLockfileAssistant,
+  withLockfileLock,
+} from "@mycadet/local-mode";
+import {
   type AppProcessRecord,
   type LocalAssistantResources,
   type Lockfile,
   type LockfileAssistant,
   type TunnelProcessRecord,
+  getGatewayUrl,
 } from "@mycadet/local-mode/contract";
 
 export type { AppProcessRecord, LockfileAssistant, TunnelProcessRecord };
 
-import { crossEnvironmentAssistantHint } from "./environments/detect.js";
 import {
-  getDefaultPorts,
-  getLockfilePath,
-  getLockfilePaths,
-  getMultiInstanceDir,
-  getStateDir,
-} from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
+  resolveAssistantsDir,
+  resolveDataDir,
+  resolveLockfilePath,
+} from "@mycadet/local-mode";
+import { getDefaultPorts } from "./environments/paths.js";
 import { probePort } from "./port-probe.js";
 
 /**
@@ -70,32 +63,15 @@ export type RootProcessKind = keyof RootProcessRecords;
 export function getLocalInstanceDir(
   resources?: LocalAssistantResources,
 ): string {
-  return resources?.instanceDir ?? getStateDir(getCurrentEnvironment());
+  return resources?.instanceDir ?? resolveDataDir();
 }
 
 export function getDaemonPidPath(resources?: LocalAssistantResources): string {
   return join(getLocalInstanceDir(resources), "workspace", "cadet.pid");
 }
 
-function readLockfile(): Lockfile {
-  for (const lockfilePath of getLockfilePaths(getCurrentEnvironment())) {
-    if (!existsSync(lockfilePath)) continue;
-    try {
-      const parsed = LockfileSchema.safeParse(
-        JSON.parse(readFileSync(lockfilePath, "utf-8")),
-      );
-      if (parsed.success) {
-        return parsed.data;
-      }
-    } catch {
-      // Malformed lockfile; try next
-    }
-  }
-  return LockfileSchema.parse({});
-}
-
 function writeLockfileUnlocked(data: Lockfile): void {
-  const lockfilePath = getLockfilePath(getCurrentEnvironment());
+  const lockfilePath = resolveLockfilePath();
   mkdirSync(dirname(lockfilePath), { recursive: true });
   const tmpPath = `${lockfilePath}.${randomBytes(4).toString("hex")}.tmp`;
   try {
@@ -118,10 +94,7 @@ function writeLockfileUnlocked(data: Lockfile): void {
  * contract of the write path.
  */
 function withCliLockfileLock<T>(fn: () => T): T {
-  const locked = withLockfileLock(
-    [getLockfilePath(getCurrentEnvironment())],
-    fn,
-  );
+  const locked = withLockfileLock(resolveLockfilePath(), fn);
   if (!locked.ok) throw new Error(locked.error);
   return locked.value;
 }
@@ -224,14 +197,6 @@ export function loadAllAssistants(): LockfileAssistant[] {
   return readLockfile().assistants;
 }
 
-function writeAssistants(entries: LockfileAssistant[]): void {
-  withCliLockfileLock(() => {
-    const data = readLockfile();
-    data.assistants = entries;
-    writeLockfileUnlocked(data);
-  });
-}
-
 export function loadLatestAssistant(): LockfileAssistant | null {
   const entries = loadAllAssistants();
   if (entries.length === 0) {
@@ -295,7 +260,7 @@ export function formatAssistantLookupError(
     return `Multiple assistants match '${identifier}': ${matches}. Use the assistant ID to disambiguate.`;
   }
 
-  return `No assistant found with name or ID '${identifier}'.${crossEnvironmentAssistantHint() ?? ""}`;
+  return `No assistant found with name or ID '${identifier}'.`;
 }
 
 export function removeLockfileAssistant(assistantId: string): void {
@@ -316,57 +281,6 @@ export function removeLockfileAssistant(assistantId: string): void {
     }
     writeLockfileUnlocked(data);
   });
-}
-
-/**
- * Read the first existing lockfile for an explicitly-provided environment,
- * without applying legacy migrations. This is the cross-env read path used by
- * {@link loadAllAssistantsAcrossEnvs}: it deliberately bypasses
- * {@link readLockfile} (which always resolves the *current* env) so callers
- * can enumerate state from every env without flipping `process.env` or the
- * persisted default. Migrations are skipped because we never want to write
- * to another env's lockfile from the current env's process.
- */
-function readLockfileForEnv(env: EnvironmentDefinition): Lockfile {
-  for (const lockfilePath of getLockfilePaths(env)) {
-    if (!existsSync(lockfilePath)) continue;
-    try {
-      const parsed = LockfileSchema.safeParse(
-        JSON.parse(readFileSync(lockfilePath, "utf-8")),
-      );
-      if (parsed.success) {
-        return parsed.data;
-      }
-    } catch {
-      // Malformed; try next candidate
-    }
-  }
-  return LockfileSchema.parse({});
-}
-
-/**
- * Load assistant entries from every known environment's lockfile.
- *
- * Each {@link SEEDS} entry has its own on-host data layout (config dir,
- * lockfile path, data dir). A running assistant from `dev` is invisible to
- * `loadAllAssistants()` when the current env is `local`, but its host
- * processes (daemon/gateway/qdrant) still show up in `ps ax`. The orphan
- * detector and `cadet clean` need the union of all envs' entries to avoid
- * misclassifying — or worse, killing — another env's running services.
- *
- * Optional `envs` override is provided for testability so call sites can
- * inject a curated env list with `lockfileDirOverride` set, without having
- * to manipulate the global SEEDS table or process.env.
- */
-export function loadAllAssistantsAcrossEnvs(
-  envs?: EnvironmentDefinition[],
-): LockfileAssistant[] {
-  const envList = envs ?? Object.values(SEEDS).map((env) => ({ ...env }));
-  const all: LockfileAssistant[] = [];
-  for (const env of envList) {
-    all.push(...readLockfileForEnv(env).assistants);
-  }
-  return all;
 }
 
 export function getActiveAssistant(): string | null {
@@ -440,7 +354,7 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
 
     if (all.length === 0) {
       console.error(
-        `No assistant found. Run 'cadet hatch' first.${crossEnvironmentAssistantHint() ?? ""}`,
+        `No assistant found. Run 'cadet hatch' first.`,
       );
     } else {
       console.error(
@@ -452,27 +366,17 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
 }
 
 /**
- * Extract the ssh host for a remote-managed entry: the hostname of the
- * entry's recorded runtime URL. One seam so the runtimeUrl death (a later
+ * Extract the remote host for an entry: the hostname of the gateway
+ * address the entry derives. One seam so the runtimeUrl death (a later
  * PR) rewires a single site instead of every ssh flow.
  */
 export function extractHostFromEntry(entry: LockfileAssistant): string {
-  if (!entry.runtimeUrl) return "";
+  const gatewayUrl = getGatewayUrl(entry);
   try {
-    return new URL(entry.runtimeUrl).hostname;
+    return new URL(gatewayUrl).hostname;
   } catch {
-    return entry.runtimeUrl.replace(/^https?:\/\//, "").split(":")[0];
+    return gatewayUrl.replace(/^https?:\/\//, "").split(":")[0];
   }
-}
-
-export function saveLockfileAssistant(entry: LockfileAssistant): void {
-  withCliLockfileLock(() => {
-    const entries = loadAllAssistants().filter(
-      (e) => e.assistantId !== entry.assistantId,
-    );
-    entries.unshift(entry);
-    writeAssistants(entries);
-  });
 }
 
 /**
@@ -522,8 +426,7 @@ async function findAvailablePort(
 export async function allocateLocalResources(
   instanceName: string,
 ): Promise<LocalAssistantResources> {
-  const env = getCurrentEnvironment();
-  const instanceDir = join(getMultiInstanceDir(env), instanceName);
+  const instanceDir = join(resolveAssistantsDir(), instanceName);
   mkdirSync(instanceDir, { recursive: true });
 
   // Collect ports already assigned to other local instances in the lockfile.
@@ -539,7 +442,7 @@ export async function allocateLocalResources(
   // Env-aware bases: non-prod envs sit in their own 1000-port window so
   // running prod and staging assistants side-by-side doesn't collide. See
   // the `@mycadet/environments` `portBlock` layout.
-  const basePorts = getDefaultPorts(env);
+  const basePorts = getDefaultPorts();
   const daemonPort = await findAvailablePort(basePorts.daemon, reservedPorts);
   const gatewayPort = await findAvailablePort(basePorts.gateway, [
     ...reservedPorts,

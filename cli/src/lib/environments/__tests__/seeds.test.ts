@@ -1,12 +1,15 @@
-import { describe, expect, test } from "bun:test";
-
-import { SEEDS } from "@mycadet/environments";
+import { afterEach, describe, expect, test } from "bun:test";
 
 import { getDefaultPorts } from "../paths.js";
 
 describe("SEEDS port blocks", () => {
+  afterEach(() => {
+    delete process.env.CADET_ENVIRONMENT;
+  });
+
   test("production uses the legacy (pre-MVP) port layout", () => {
-    const ports = getDefaultPorts(SEEDS.production!);
+    process.env.CADET_ENVIRONMENT = "production";
+    const ports = getDefaultPorts();
     expect(ports).toEqual({
       daemon: 7821,
       gateway: 7830,
@@ -23,7 +26,8 @@ describe("SEEDS port blocks", () => {
     ["test", 19000],
     ["local", 20000],
   ] as const)("%s block starts at %i with 100-apart services", (name, base) => {
-    const ports = getDefaultPorts(SEEDS[name]!);
+    process.env.CADET_ENVIRONMENT = name;
+    const ports = getDefaultPorts();
     expect(ports).toEqual({
       daemon: base,
       gateway: base + 100,
@@ -39,10 +43,10 @@ describe("SEEDS port blocks", () => {
     // so a block "occupies" base…base+599 from daemon through tcp. Verify no
     // two blocks overlap for any service.
     const blocks = (["staging", "dev", "test", "local"] as const).map(
-      (name) => ({
-        name,
-        ports: getDefaultPorts(SEEDS[name]!),
-      }),
+      (name) => {
+        process.env.CADET_ENVIRONMENT = name;
+        return { name, ports: getDefaultPorts() };
+      },
     );
     const allPorts = new Set<number>();
     for (const { name, ports } of blocks) {
@@ -63,7 +67,8 @@ describe("SEEDS port blocks", () => {
 
   test("non-prod blocks sit below Linux's default ephemeral range (32768)", () => {
     for (const name of ["staging", "dev", "test", "local"] as const) {
-      const ports = getDefaultPorts(SEEDS[name]!);
+      process.env.CADET_ENVIRONMENT = name;
+      const ports = getDefaultPorts();
       for (const port of Object.values(ports)) {
         // Max port we'll ever scan to is base+99 for daemon/gateway/etc.
         expect(port + 99).toBeLessThan(32768);

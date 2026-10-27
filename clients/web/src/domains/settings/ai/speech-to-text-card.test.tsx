@@ -52,15 +52,8 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   Toaster: () => null,
   ToastContent: () => null,
 }));
-// Mutable so the Spoken-language tests can enable the org-gated queries the
-// language hook depends on; the provider tests keep the gate closed.
-let orgReady = false;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
-
 // Controllable daemon config the config-get query resolves to. `initialData`
-// makes it available even though the query is `enabled: isOrgReady` (false),
+// makes it available even though the query is disabled,
 // mirroring how the real query would already be cached. Default `{ services: {} }`
 // leaves the daemon with no stt provider, so the happy-path tests still PATCH it.
 let daemonConfigData: { services: Record<string, unknown> } = { services: {} };
@@ -175,7 +168,6 @@ describe("SpeechToTextCard — macOS Native Dictation option", () => {
     configPatchCalls.length = 0;
     daemonConfigData = { services: {} };
     providerCatalogData = { providers: [] };
-    orgReady = false;
   });
 
   afterEach(() => {
@@ -329,7 +321,6 @@ describe("SpeechToTextCard — Cadet provider", () => {
     configPatchCalls.length = 0;
     daemonConfigData = { services: {} };
     providerCatalogData = { providers: [] };
-    orgReady = false;
   });
 
   afterEach(() => {
@@ -438,9 +429,6 @@ describe("SpeechToTextCard: Spoken language picker", () => {
     configPatchCalls.length = 0;
     daemonConfigData = { services: {} };
     providerCatalogData = { providers: [] };
-    // The language hook's queries are org-gated; open the gate so the
-    // capability probe and config read resolve.
-    orgReady = true;
   });
 
   afterEach(() => {

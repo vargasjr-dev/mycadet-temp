@@ -50,21 +50,6 @@ mock.module("@/domains/account/profile", () => ({
   },
 }));
 
-// Zustand auth-store mock — profile-card only reaches for
-// ``useAuthStore.use.refreshSession()``, so the minimal `.use` selector
-// surface is enough. ``renderToStaticMarkup`` is single-pass and only
-// invokes refreshSession after a save (handle-section's onSaved callback),
-// so it never fires during these tests; the noop is a safety net.
-const noopRefresh = async () => true;
-mock.module("@/stores/auth-store", () => {
-  const store = () => null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (store as any).use = {
-    refreshSession: () => noopRefresh,
-  };
-  return { useAuthStore: store };
-});
-
 // Toast mock needs to satisfy the design-library barrel's re-exports too —
 // `detail-card.tsx` pulls `Card`/`cn` from the barrel index, which itself
 // re-exports `Toaster`/`ToastContent` from this module. Missing exports

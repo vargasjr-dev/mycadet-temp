@@ -28,7 +28,7 @@ import { makeEntry } from "./helpers/lockfile-entry.js";
 const testDir = mkdtempSync(join(tmpdir(), "cli-retire-test-"));
 const originalArgv = [...process.argv];
 const originalExit = process.exit;
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 const originalPlatformToken = process.env.CADET_PLATFORM_TOKEN;
 const originalStdinIsTTY = process.stdin.isTTY;
 const originalStdoutIsTTY = process.stdout.isTTY;
@@ -91,15 +91,15 @@ let consoleErrorSpy: ReturnType<typeof spyOn>;
 let consoleWarnSpy: ReturnType<typeof spyOn>;
 
 function writeLockfile(entries: LockfileAssistant[]): void {
-  mkdirSync(testDir, { recursive: true });
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(testDir, "lockfile.json"),
+    join(testDir, "cadet", "lockfile.json"),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }
 
 function readLockfile(): string {
-  return readFileSync(join(testDir, "lockfile.json"), "utf-8");
+  return readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8");
 }
 
 function setTerminalMode(isTTY: boolean): void {
@@ -148,10 +148,10 @@ function restoreTerminal(): void {
 
 describe("cadet retire", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
+    process.env.XDG_CONFIG_HOME = testDir;
     delete process.env.CADET_PLATFORM_TOKEN;
     for (const name of [
-      "lockfile.json",
+      join("cadet", "lockfile.json"),
       ".cadet.lock.json",
       ".cadet.lockfile.json",
     ]) {
@@ -208,10 +208,10 @@ describe("cadet retire", () => {
     mock.module("../lib/retire-local.js", () => realRetireLocalModule);
     mock.module("../lib/cloud-client.js", () => realCloudClientModule);
     mock.module("../lib/loopback-fetch.js", () => realLoopbackFetchModule);
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
     } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
     }
     if (originalPlatformToken === undefined) {
       delete process.env.CADET_PLATFORM_TOKEN;

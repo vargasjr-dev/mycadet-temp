@@ -63,8 +63,6 @@ export function VoiceLabel({
 }
 
 export interface VoiceListProps {
-  /** Assistant whose voice is being chosen / auditioned. */
-  assistantId: string | null;
   /** Optional section heading (shown above the list, with a top divider). */
   heading?: string;
   className?: string;
@@ -112,7 +110,6 @@ export interface VoiceListProps {
 }
 
 export function VoiceList({
-  assistantId,
   heading,
   className,
   listClassName,
@@ -131,7 +128,7 @@ export function VoiceList({
     defaultModel,
     selectModel,
     selecting,
-  } = useCloudVoiceSelection(assistantId);
+  } = useCloudVoiceSelection();
 
   // Controlled when the parent supplies both value and onChange; otherwise the
   // list owns selection and commits instantly.

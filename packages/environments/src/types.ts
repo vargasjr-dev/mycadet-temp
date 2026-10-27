@@ -62,9 +62,9 @@ export interface EnvironmentDefinition {
   configDirOverride?: string;
 
   /**
-   * Override for the directory containing the lockfile. Populated by the
-   * resolver from `CADET_LOCKFILE_DIR` (an existing e2e test escape hatch)
-   * so path helpers don't read env vars directly.
+   * Override for the directory containing the lockfile. In-memory only —
+   * tests inject curated env lists with it; path helpers never read env
+   * vars to populate it.
    */
   lockfileDirOverride?: string;
 }

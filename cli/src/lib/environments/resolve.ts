@@ -1,8 +1,10 @@
 import { SEEDS, type EnvironmentDefinition } from "@mycadet/environments";
-
-// Direct import — bun embeds this at compile time so it works in compiled binaries.
-import cliPkg from "../../../package.json";
-import { isDevVersion, isLocalVersion, isStagingVersion } from "../version-compat.js";
+import { ownVersion } from "@mycadet/local-mode";
+import {
+  isDevVersion,
+  isLocalVersion,
+  isStagingVersion,
+} from "@mycadet/shared/version";
 
 const DEFAULT_ENVIRONMENT_NAME = "production";
 
@@ -46,8 +48,6 @@ export function environmentFromVersion(version: string): string {
  *   - `CADET_CLOUD_URL` overrides `cloudUrl`
  *   - `CADET_WEB_URL` overrides `webUrl`
  *   - `CADET_ASSISTANT_PLATFORM_URL` overrides `assistantCloudUrl`
- *   - `CADET_LOCKFILE_DIR` overrides `lockfileDirOverride` (legacy e2e
- *     test hook)
  *
  * This function should be the single entrypoint for environment resolution.
  * No other code should drive off `CADET_ENVIRONMENT` directly.
@@ -101,11 +101,6 @@ export function getCurrentEnvironment(
     resolved.assistantCloudUrl = assistantCloudUrlOverride;
   }
 
-  const lockfileDirOverride = process.env.CADET_LOCKFILE_DIR?.trim();
-  if (lockfileDirOverride) {
-    resolved.lockfileDirOverride = lockfileDirOverride;
-  }
-
   return resolved;
 }
 
@@ -122,7 +117,7 @@ export function resolveEnvironmentSource(override?: string): {
     return { name: envVar, source: "env" };
   }
   return {
-    name: environmentFromVersion(cliPkg.version ?? ""),
+    name: environmentFromVersion(ownVersion()),
     source: "version",
   };
 }

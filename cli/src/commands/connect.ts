@@ -14,23 +14,22 @@ function printUsage(): void {
 
 export const connect = Object.assign(
   async function connect(): Promise<void> {
-  const args = process.argv.slice(3);
-  const subcommand = args[0];
+    const args = process.argv.slice(3);
+    const subcommand = args[0];
 
-  if (subcommand === "--help" || subcommand === "-h" || !subcommand) {
+    if (subcommand === "--help" || subcommand === "-h" || !subcommand) {
+      printUsage();
+      process.exit(0);
+    }
+
+    if (subcommand === "import") {
+      await connectImport();
+      return;
+    }
+
+    console.error(`Unknown subcommand: ${subcommand}`);
     printUsage();
-    process.exit(0);
-  }
-
-  if (subcommand === "import") {
-    await connectImport();
-    return;
-  }
-
-  console.error(`Unknown subcommand: ${subcommand}`);
-  printUsage();
-  process.exit(1);
-},
+    process.exit(1);
+  },
   { description: "Pair with an assistant running on another machine [beta]" },
 );
-

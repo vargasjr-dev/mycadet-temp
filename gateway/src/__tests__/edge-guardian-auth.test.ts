@@ -311,3 +311,69 @@ describe("requireEdgeGuardianAuth — actor principal mode", () => {
     expect(res).toBeNull();
   });
 });
+
+describe("browser access-cookie fallback (cookie custody)", () => {
+  /**
+   * The served web UI holds no credential in JS: its access token rides an
+   * HttpOnly cookie the gateway minted at pairing, and a bearer-less
+   * request authenticates through the same pipeline with the cookie
+   * standing in for the header.
+   */
+  test("a bearer-less request with a valid access cookie authenticates", async () => {
+    mockValidateEdgeToken = mock(() => ({
+      ok: true,
+      claims: {
+        sub: `actor:test-assistant:${GUARDIAN_PRINCIPAL}`,
+        scope_profile: "actor_client_v1",
+      },
+    }));
+    mockFindCadetGuardian = mock(async () => ({
+      principalId: GUARDIAN_PRINCIPAL,
+    }));
+    const { requireEdgeGuardianAuth } = makeMiddleware();
+    const req = makeReq({ cookie: "cadet_web_access=fake-jwt" });
+    const res = await requireEdgeGuardianAuth(req);
+    expect(res).toBeNull();
+    expect(mockValidateEdgeToken).toHaveBeenCalledWith("fake-jwt");
+  });
+
+  test("a bearer header wins over the cookie", async () => {
+    mockValidateEdgeToken = mock(() => ({
+      ok: true,
+      claims: {
+        sub: `actor:test-assistant:${GUARDIAN_PRINCIPAL}`,
+        scope_profile: "actor_client_v1",
+      },
+    }));
+    mockFindCadetGuardian = mock(async () => ({
+      principalId: GUARDIAN_PRINCIPAL,
+    }));
+    const { requireEdgeGuardianAuth } = makeMiddleware();
+    const res = await requireEdgeGuardianAuth(
+      makeReq({
+        authorization: "Bearer header-jwt",
+        cookie: "cadet_web_access=cookie-jwt",
+      }),
+    );
+    expect(res).toBeNull();
+    expect(mockValidateEdgeToken).toHaveBeenCalledWith("header-jwt");
+  });
+
+  test("a garbage access cookie records an auth failure and 401s like a bad bearer", async () => {
+    mockValidateEdgeToken = mock(() => ({
+      ok: false,
+      reason: "token_validation_failed",
+    }));
+    const { requireEdgeGuardianAuth } = makeMiddleware();
+    const res = await requireEdgeGuardianAuth(
+      makeReq({ cookie: "cadet_web_access=garbage" }),
+    );
+    expect(res?.status).toBe(401);
+  });
+
+  test("no bearer and no cookie still 401s (missing authorization)", async () => {
+    const { requireEdgeGuardianAuth } = makeMiddleware();
+    const res = await requireEdgeGuardianAuth(makeReq());
+    expect(res?.status).toBe(401);
+  });
+});

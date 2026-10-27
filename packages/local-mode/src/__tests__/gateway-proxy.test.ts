@@ -362,7 +362,7 @@ describe("readGatewayTargets", () => {
         ],
       }),
     );
-    expect(readGatewayTargets([lockfile])).toEqual(
+    expect(readGatewayTargets(lockfile)).toEqual(
       targets({
         "abc-123": loopback(8080),
         "def-456": remote("https://gw.example.com"),
@@ -371,48 +371,20 @@ describe("readGatewayTargets", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  test("the first readable lockfile is authoritative even when it yields no targets", () => {
+  test("an empty lockfile yields an empty map", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
-    const first = path.join(dir, "first.json");
-    const second = path.join(dir, "second.json");
-    fs.writeFileSync(first, JSON.stringify({ assistants: [] }));
-    fs.writeFileSync(
-      second,
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            resources: { gatewayPort: 8080, daemonPort: 8501 },
-          },
-        ],
-      }),
-    );
-    expect(readGatewayTargets([first, second])).toEqual(new Map());
+    const lockfile = path.join(dir, "first.json");
+    fs.writeFileSync(lockfile, JSON.stringify({ assistants: [] }));
+    expect(readGatewayTargets(lockfile)).toEqual(new Map());
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
-  test("unreadable and missing candidates are skipped, absent files yield an empty map", () => {
+  test("an unreadable or absent lockfile yields an empty map", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gateway-proxy-"));
     const unreadable = path.join(dir, "unreadable.json");
-    const good = path.join(dir, "good.json");
     fs.writeFileSync(unreadable, "{ not json");
-    fs.writeFileSync(
-      good,
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "abc-123",
-            cloud: "local",
-            resources: { gatewayPort: 8080, daemonPort: 8501 },
-          },
-        ],
-      }),
-    );
-    expect(readGatewayTargets([unreadable, good])).toEqual(
-      targets({ "abc-123": loopback(8080) })(),
-    );
-    expect(readGatewayTargets([path.join(dir, "absent.json")])).toEqual(
+    expect(readGatewayTargets(unreadable)).toEqual(new Map());
+    expect(readGatewayTargets(path.join(dir, "absent.json"))).toEqual(
       new Map(),
     );
     fs.rmSync(dir, { recursive: true, force: true });

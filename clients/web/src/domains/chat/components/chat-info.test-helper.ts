@@ -21,8 +21,6 @@ import { QueryClient } from "@tanstack/react-query";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 import { MIN_VERSION } from "@/lib/backwards-compat/use-supports-attachment-list";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useAuthStore } from "@/stores/auth-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import {
   type ConversationFileAsset,
   toConversationFileAssets,
@@ -277,23 +275,10 @@ const CHAT_INFO_QUERY_DEFAULTS = {
  * requested. Returns the restore fn.
  */
 export function holdOrgHeaderUnresolved(): () => void {
-  const { cloudSession } = useAuthStore.getState();
-  const { status, currentOrganizationId, persistedOrganizationId } =
-    useOrganizationStore.getState();
-  useAuthStore.setState({ cloudSession: "present" });
-  useOrganizationStore.setState({
-    status: "loading",
-    currentOrganizationId: null,
-    persistedOrganizationId: null,
-  });
-  return () => {
-    useAuthStore.setState({ cloudSession });
-    useOrganizationStore.setState({
-      status,
-      currentOrganizationId,
-      persistedOrganizationId,
-    });
-  };
+  // The Cadet-Organization-Id header (and the store that fed it) is gone, so
+  // there is no org fetch to hold unresolved. Kept as a no-op stub so callers
+  // keep their arrange and restore shape.
+  return () => {};
 }
 
 /** A client that serves what a test seeds and asks the daemon for nothing. */

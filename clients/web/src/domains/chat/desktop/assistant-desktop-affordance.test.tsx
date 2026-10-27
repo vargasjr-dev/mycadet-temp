@@ -29,7 +29,7 @@ mock.module("./use-desktop-setup", () => ({
   useDesktopSetupStatus: () => ({ query: { data: { automationActive } } }),
 }));
 
-mock.module("@/hooks/use-cloud-gate", () => ({
+mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
 

@@ -790,6 +790,15 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
           echo "$CERT_P12" | base64 -D > /tmp/certificate.p12
+          # A PKCS#12 bundle opens with an ASN.1 SEQUENCE (30 82 …). Anything
+          # else means the secret isn't the base64 of an exported .p12 (a
+          # stale or truncated export imports as "Unknown format") — re-export
+          # the Developer ID certificate from Keychain Access as a .p12 and
+          # store it base64-encoded in the secret.
+          if [ "$(xxd -p -l 2 /tmp/certificate.p12)" != "3082" ]; then
+            echo "::error::DEVID_CERTIFICATE_P12 does not decode as a PKCS#12 bundle — re-export the Developer ID certificate as a .p12 and store it base64-encoded in the secret."
+            exit 1
+          fi
           security import /tmp/certificate.p12 \
             -k "$KEYCHAIN_PATH" \
             -P "$CERT_PASSWORD" \
@@ -1128,25 +1137,16 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-      - name: Stamp dev version
-        run: jq --arg v "${{ needs.compute-version.outputs.version }}" '.version = $v' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
       - name: Install package dependencies
         run: |
           if ! bun install --frozen-lockfile --filter=./cli; then
             rm -f bun.lock && rm -rf node_modules && bun install --filter=./cli
           fi
-      - name: Strip bundled deps from the manifest
-        run: bun scripts/strip-bundled-deps.mjs cli
-      - name: Rename the cli bin for the dev channel
-        run: |
-          jq '.bin = { "cadet-dev": .bin.cadet }' cli/package.json > cli/package.json.tmp && mv cli/package.json.tmp cli/package.json
+      # Stamps the dev version into the CLI + bundled manifests (so the
+      # installed local-mode classifies the dev channel), renames the bin to
+      # cadet-dev, packs, and rewrites the bundled deps to file: specifiers.
       - name: Pack tarball
-        run: |
-          cd cli
-          mkdir -p /tmp/npm-dist
-          bun pm pack --destination /tmp/npm-dist
-          mv /tmp/npm-dist/*.tgz /tmp/npm-dist/package.tgz
-          bun ../scripts/strip-bundled-field-from-tarball.mjs /tmp/npm-dist/package.tgz
+        run: bun scripts/pack-npm-cli.ts --version "${{ needs.compute-version.outputs.version }}" --bin cadet-dev --out /tmp/npm-dist
       - name: Publish
         run: |
           PKG_NAME=$(node -p "require('./cli/package.json').name")

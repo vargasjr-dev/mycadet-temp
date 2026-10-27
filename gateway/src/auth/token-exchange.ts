@@ -1,13 +1,11 @@
 /**
  * Token exchange module for the gateway's auth system.
  *
- * The gateway receives edge tokens (aud=cadet-gateway) from external clients
- * and mints short-lived exchange tokens (aud=cadet-daemon) for forwarding
- * to the runtime. This exchange proves gateway origin — only the gateway
- * holds the signing key needed to mint daemon-audience tokens.
- *
- * Exchange tokens have a 60-second TTL and rewrite the sub claim's assistant
- * segment to 'self' (the daemon's internal scope constant).
+ * The gateway receives edge tokens (aud=cadet-gateway) from external
+ * clients and forwards the verified identity to the runtime in
+ * `x-cadet-*` headers — the daemon verifies no tokens. The gateway is
+ * the only signer: it holds the signing key for the edge tokens it
+ * mints (relay dials, browser page tokens) and for nothing else.
  */
 
 import { getLogger } from "../logger.js";
@@ -15,12 +13,10 @@ import { getLogger } from "../logger.js";
 import { CURRENT_POLICY_EPOCH } from "./policy.js";
 import { parseSub } from "./subject.js";
 import { mintToken, verifyToken, type VerifyResult } from "./token-service.js";
+import type { ForwardedIdentity } from "@mycadet/assistant-client";
 import type { ScopeProfile, TokenClaims } from "./types.js";
 
 const log = getLogger("token-exchange");
-
-/** TTL for exchange tokens — short-lived, minted per-request. */
-const EXCHANGE_TOKEN_TTL_SECONDS = 60;
 
 // ---------------------------------------------------------------------------
 // Edge token validation
@@ -43,7 +39,7 @@ export function validateEdgeToken(
 }
 
 // ---------------------------------------------------------------------------
-// Exchange token minting
+// Forwarded identity
 // ---------------------------------------------------------------------------
 
 /**
@@ -72,60 +68,30 @@ export function toDaemonSubject(edgeSub: string): string {
 }
 
 /**
- * Mint a short-lived exchange token (aud=cadet-daemon) from validated
- * edge claims. The sub claim's assistant segment is rewritten to 'self'
- * so the daemon always uses its internal scope constant.
+ * The identity the runtime should see for a verified edge caller: the
+ * sub rewritten to the daemon's internal scope, carrying the profile the
+ * edge token was minted with (the daemon resolves the same profile's
+ * scopes, so its route policies see exactly what the edge admitted).
  */
-export function mintExchangeToken(
+export function forwardedIdentityFromClaims(
   edgeClaims: TokenClaims,
   targetScopeProfile: ScopeProfile,
-): string {
-  return mintToken({
-    aud: "cadet-daemon",
-    sub: toDaemonSubject(edgeClaims.sub),
-    scope_profile: targetScopeProfile,
-    policy_epoch: CURRENT_POLICY_EPOCH,
-    ttlSeconds: EXCHANGE_TOKEN_TTL_SECONDS,
-  });
+): ForwardedIdentity {
+  const subject = toDaemonSubject(edgeClaims.sub);
+  const parsed = parseSub(subject);
+  return {
+    subject,
+    principalType: parsed.ok ? parsed.principalType : "svc_gateway",
+    scopeProfile: targetScopeProfile,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Gateway-minted service tokens
+// Gateway-minted edge tokens
 // ---------------------------------------------------------------------------
 
-/**
- * Mint an ingress exchange token for webhook handlers.
- * Used after platform signature validation (Telegram, Twilio, WhatsApp, Slack)
- * to forward authenticated inbound events to the runtime.
- *
- * sub=svc:gateway:self, scope_profile=gateway_ingress_v1
- */
-export function mintIngressToken(): string {
-  return mintToken({
-    aud: "cadet-daemon",
-    sub: "svc:gateway:self",
-    scope_profile: "gateway_ingress_v1",
-    policy_epoch: CURRENT_POLICY_EPOCH,
-    ttlSeconds: EXCHANGE_TOKEN_TTL_SECONDS,
-  });
-}
-
-/**
- * Mint a service token for gateway-to-runtime service calls.
- * Used for delivery endpoints, control-plane proxies, and other
- * gateway-originated requests to the daemon.
- *
- * sub=svc:gateway:self, scope_profile=gateway_service_v1
- */
-export function mintServiceToken(): string {
-  return mintToken({
-    aud: "cadet-daemon",
-    sub: "svc:gateway:self",
-    scope_profile: "gateway_service_v1",
-    policy_epoch: CURRENT_POLICY_EPOCH,
-    ttlSeconds: EXCHANGE_TOKEN_TTL_SECONDS,
-  });
-}
+/** TTL for the gateway's own short-lived edge tokens. */
+const EXCHANGE_TOKEN_TTL_SECONDS = 60;
 
 /**
  * Mint a relay token for Twilio WebSocket connections.

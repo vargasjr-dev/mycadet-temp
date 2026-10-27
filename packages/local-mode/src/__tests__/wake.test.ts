@@ -35,18 +35,21 @@ describe("runWake", () => {
     expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "wake", "asst-42"]]);
   });
 
-  test("repairGuardian: true appends --repair-guardian to the CLI args", async () => {
+  test("repairGuardian: true chains the gateway's own token re-lease after the wake", async () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: true });
-    lastChild.emit("close", 0);
+    lastChild.emit("close", 0); // wake completes...
+    await Promise.resolve(); // the chain spawns the re-lease
+    expect(spawnArgs[0]).toEqual(["bun", ["run", "cli", "wake", "asst-42"]]);
 
+    lastChild.emit("close", 0); // the re-lease completes
     expect(await pending).toEqual({ ok: true });
-    expect(spawnArgs[0]).toEqual([
+    expect(spawnArgs[1]).toEqual([
       "bun",
-      ["run", "cli", "wake", "asst-42", "--repair-guardian"],
+      ["run", "cli", "gateway", "token", "refresh", "asst-42"],
     ]);
   });
 
-  test("repairGuardian: false omits the flag", async () => {
+  test("repairGuardian: false ends at the wake", async () => {
     const pending = runWake(invocation, "asst-42", { repairGuardian: false });
     lastChild.emit("close", 0);
 
@@ -56,7 +59,10 @@ describe("runWake", () => {
 
   test("a non-zero exit resolves to a failure carrying the CLI's output", async () => {
     const pending = runWake(invocation, "asst-42");
-    lastChild.stderr.emit("data", Buffer.from("no sibling environment to seed from"));
+    lastChild.stderr.emit(
+      "data",
+      Buffer.from("no sibling environment to seed from"),
+    );
     lastChild.emit("close", 1);
 
     expect(await pending).toEqual({

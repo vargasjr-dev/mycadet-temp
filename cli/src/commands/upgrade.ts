@@ -1,5 +1,5 @@
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import { cliCommand } from "../lib/cli-name.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { isCloudHome } from "../lib/cloud-values.js";
 import { spawnSync } from "child_process";
 
@@ -11,9 +11,9 @@ import {
   getActiveAssistant,
   loadAllAssistants,
   lookupAssistantByIdentifier,
-  saveLockfileAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   captureImageRefs,
   GATEWAY_INTERNAL_PORT,
@@ -62,16 +62,16 @@ import {
   UPGRADE_PROGRESS,
   waitForReady,
 } from "../lib/upgrade-lifecycle.js";
+import { isLocalVersion } from "@mycadet/shared/version";
 import {
   compareVersions,
-  isLocalVersion,
   stripVersionPrefix,
   versionsEqual,
 } from "../lib/version-compat.js";
 import { fetchCurrentVersion } from "../lib/http-client.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   ensureLocalRuntime,
   startCes,
   startGateway,
@@ -85,7 +85,6 @@ import {
 import {
   leaseGuardianToken,
   resetGuardianBootstrap,
-  seedGuardianTokenFromSiblingEnv,
 } from "../lib/guardian-token.js";
 
 interface UpgradeArgs {
@@ -264,12 +263,7 @@ async function upgradeDocker(
   version: string | null,
   force: boolean,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const instanceName = entry.assistantId;
   const res = dockerResourceNames(instanceName);
 
@@ -372,7 +366,6 @@ async function upgradeDocker(
   const {
     bootstrapSecret,
     cesServiceToken,
-    signingKey,
     extraAssistantEnv,
     extraGatewayEnv,
   } = await captureReplayState(res);
@@ -418,7 +411,8 @@ async function upgradeDocker(
   }
   console.log("✅ Docker images pulled\n");
 
-  // Parse gateway port from entry's runtimeUrl, fall back to default
+  // Derive the gateway port from the entry's canonical fields, fall back
+  // to default.
   let gatewayPort = GATEWAY_INTERNAL_PORT;
   try {
     const parsed = new URL(gatewayUrl);
@@ -469,7 +463,6 @@ async function upgradeDocker(
   console.log("🚀 Starting upgraded containers...");
   await startContainers(
     {
-      signingKey,
       bootstrapSecret,
       cesServiceToken,
       extraAssistantEnv,
@@ -570,7 +563,6 @@ async function upgradeDocker(
 
         await startContainers(
           {
-            signingKey,
             bootstrapSecret,
             cesServiceToken,
             extraAssistantEnv,
@@ -594,7 +586,6 @@ async function upgradeDocker(
             backupLabel: "pre-upgrade",
             res,
             containerOptions: {
-              signingKey,
               bootstrapSecret,
               cesServiceToken,
               extraAssistantEnv,
@@ -665,7 +656,6 @@ async function upgradeDocker(
             },
           };
           saveLockfileAssistant(rolledBackEntry);
-
           // Notify clients that the upgrade failed and rolled back.
           await broadcastUpgradeEvent(
             gatewayUrl,
@@ -762,16 +752,12 @@ async function ensureGuardianTokenAfterLocalUpgrade(
   gatewayPort: number,
   bootstrapSecret?: string,
 ): Promise<void> {
-  if (seedGuardianTokenFromSiblingEnv(entry.assistantId)) {
-    console.log("   Seeded guardian token from sibling environment.");
-  }
-
   const loopbackUrl = `http://127.0.0.1:${gatewayPort}`;
   const maxAttempts = 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
-      await leaseGuardianToken(loopbackUrl, entry.assistantId, bootstrapSecret);
+      await leaseGuardianToken(entry);
       console.log("   Re-provisioned guardian token.");
       return;
     } catch (err) {
@@ -800,16 +786,7 @@ async function upgradeLocal(
 
   const resources = entry.resources;
 
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    const msg = `Local assistant '${entry.assistantId}' is missing its gateway URL. Re-hatch to fix.`;
-    console.error(msg);
-    emitCliError("UNKNOWN", msg);
-    process.exit(1);
-  }
-
   const originalResources = { ...resources };
-  const signingKey = resolveExistingLocalSigningKey(resources);
 
   const targetVersion = await targetVersionFromCli(version);
   const adminUrl = `http://127.0.0.1:${resources.gatewayPort}`;
@@ -887,7 +864,7 @@ async function upgradeLocal(
   let bootstrapSecret = entry.guardianBootstrapSecret;
   let entryChanged = false;
   if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSigningKey();
+    bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
     entryChanged = true;
   }
@@ -931,8 +908,8 @@ async function upgradeLocal(
       // launches the CES sibling.
       await Promise.all([
         startCes(false, upgradedResources),
-        startLocalDaemon(false, upgradedResources, { signingKey }),
-        startGateway(false, upgradedResources, { signingKey, bootstrapSecret }),
+        startLocalDaemon(false, upgradedResources),
+        startGateway(false, upgradedResources, { bootstrapSecret }),
       ]);
     } finally {
       if (previousAppVersion === undefined) {
@@ -983,8 +960,8 @@ async function upgradeLocal(
         );
       await Promise.all([
         startCes(false, originalResources),
-        startLocalDaemon(false, originalResources, { signingKey }),
-        startGateway(false, originalResources, { signingKey, bootstrapSecret }),
+        startLocalDaemon(false, originalResources),
+        startGateway(false, originalResources, { bootstrapSecret }),
       ]);
       if (!(await waitForReady(adminUrl)))
         throw new Error(
@@ -1058,6 +1035,7 @@ async function waitForPlatformUpgrade(
   pollTarget: string | null,
   initialVersion: string | null,
 ): Promise<void> {
+  const gatewayUrl = getGatewayUrl(entry);
   const timeoutMs = platformUpgradeTimeoutMs();
   const start = Date.now();
   let sawInProgress = false;
@@ -1076,10 +1054,10 @@ async function waitForPlatformUpgrade(
     // The in-progress lock is only needed when we don't know the target
     // version (server resolved "latest" without reporting it).
     const [detail, inProgress] = await Promise.all([
-      fetchAssistantDetail(token, entry.assistantId, entry.runtimeUrl),
+      fetchAssistantDetail(token, entry.assistantId, gatewayUrl),
       pollTarget
         ? Promise.resolve(null)
-        : fetchUpgradeInProgress(token, entry.assistantId, entry.runtimeUrl),
+        : fetchUpgradeInProgress(token, entry.assistantId, gatewayUrl),
     ]);
     if (detail) observedVersion = detail.currentReleaseVersion;
     if (inProgress === true) sawInProgress = true;
@@ -1127,12 +1105,7 @@ async function upgradeCloud(
   version: string | null,
   wait: boolean,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Cloud assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   console.log(
     `🔄 Upgrading cloud-hosted assistant '${entry.assistantId}'...\n`,
   );
@@ -1159,9 +1132,7 @@ async function upgradeCloud(
 
   // Target the same platform as the detail/health/POST calls — the entry's
   // platform may differ from the active lockfile default.
-  const releases = await fetchReleases({
-    cloudUrl: entry.runtimeUrl,
-  });
+  const releases = await fetchReleases();
 
   const resolution = resolveUpgradeTarget({
     explicitVersion: version,
@@ -1313,12 +1284,7 @@ async function upgradePrepare(
   entry: LockfileAssistant,
   version: string | null,
 ): Promise<void> {
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const targetVersion = version ?? "unknown";
   const currentVersion = "unknown";
 
@@ -1392,12 +1358,7 @@ async function upgradeFinalize(
     process.exit(1);
   }
 
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const fromVersion = version;
   const currentVersion = cliPkg.version ? `v${cliPkg.version}` : "unknown";
 
@@ -1548,13 +1509,11 @@ export const upgrade = Object.assign(
       // Best-effort: notify connected clients that the upgrade failed.
       // A `starting` event may have been sent inside upgradeDocker/upgradeCloud
       // before the error was thrown, so we must close with `complete`.
-      if (entry.runtimeUrl) {
-        await broadcastUpgradeEvent(
-          entry.runtimeUrl,
-          entry.assistantId,
-          buildCompleteEvent("unknown", false),
-        );
-      }
+      await broadcastUpgradeEvent(
+        getGatewayUrl(entry),
+        entry.assistantId,
+        buildCompleteEvent("unknown", false),
+      );
       emitCliError(categorizeUpgradeError(err), "Upgrade failed", detail);
       process.exit(1);
     }

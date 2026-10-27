@@ -1,7 +1,3 @@
-import {
-  SigningKeyContinuityError,
-  resolveExistingLocalSigningKey,
-} from "@mycadet/local-mode";
 import { join } from "path";
 import { cliCommand } from "../lib/cli-name.js";
 
@@ -10,8 +6,8 @@ import {
   getLocalInstanceDir,
   loadAllAssistants,
   resolveTargetAssistant,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
   dockerResourceNames,
@@ -19,18 +15,12 @@ import {
   recreateDockerContainers,
   wakeContainers,
 } from "../lib/docker.js";
-import { persistRootSigningKey } from "../lib/root-signing-key.js";
-import {
-  GuardianLeasePermanentError,
-  leaseGuardianToken,
-  resetGuardianBootstrap,
-  seedGuardianTokenFromSiblingEnv,
-} from "../lib/guardian-token.js";
 import {
   probeDaemonReadinessWithRetry,
   waitForDaemonMigrationsReady,
 } from "../lib/http-client.js";
-import { findOpenPort } from "../lib/port-allocator.js";
+import { healConflictedLocalPorts } from "../lib/port-heal.js";
+import { yellow } from "../lib/color.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,
@@ -38,7 +28,7 @@ import {
   stopProcessByPidFile,
 } from "../lib/process";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   isAssistantWatchModeAvailable,
   isGatewayWatchModeAvailable,
   startCes,
@@ -74,24 +64,11 @@ export const wake = Object.assign(
       console.log(
         "  --foreground   Run assistant in foreground with logs printed to terminal",
       );
-      console.log(
-        "  --repair-guardian  Force-re-provision the guardian token (resets the\n" +
-          "                     gateway bootstrap and re-leases — REVOKES other device-bound\n" +
-          "                     tokens; replaces an unrecoverable signing key and restarts services only then.\n" +
-          "                     Clients may need to authenticate again. Use deliberately.)",
-      );
       process.exit(0);
     }
 
     const watch = args.includes("--watch");
     const foreground = args.includes("--foreground");
-    // Re-leasing the guardian token calls guardian/init, which revokes every
-    // other device-bound token (other tabs, other local clients on this machine).
-    // Gate it behind an explicit flag so the automatic connect-repair path
-    // (`runWake` spawns `wake <id>` with no flags) can never revoke a live session
-    // — it only ever restarts + sibling-seeds. A genuine spent-bootstrap brick is
-    // recovered deliberately via `cadet wake <id> --repair-guardian`.
-    const repairGuardian = args.includes("--repair-guardian");
     const nameArg = args.find((a) => !a.startsWith("-"));
     const all = args.includes("--all");
 
@@ -99,10 +76,8 @@ export const wake = Object.assign(
       console.error("Error: --all cannot be combined with an assistant name.");
       process.exit(1);
     }
-    if (all && (foreground || repairGuardian)) {
-      console.error(
-        "Error: --all cannot be combined with --foreground or --repair-guardian.",
-      );
+    if (all && foreground) {
+      console.error("Error: --all cannot be combined with --foreground.");
       process.exit(1);
     }
 
@@ -113,7 +88,7 @@ export const wake = Object.assign(
 
     const entry = resolveTargetAssistant(nameArg);
     try {
-      await wakeAssistant(entry, { watch, foreground, repairGuardian });
+      await wakeAssistant(entry, { watch, foreground });
     } catch (err) {
       if (err instanceof WakeExit) {
         console.error(`Error: ${err.message}`);
@@ -171,7 +146,6 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
       await wakeAssistant(entry, {
         watch: opts.watch,
         foreground: false,
-        repairGuardian: false,
       });
     } catch (err) {
       failures++;
@@ -190,7 +164,6 @@ async function wakeAll(opts: { watch: boolean }): Promise<void> {
 type WakeAssistantOptions = {
   watch: boolean;
   foreground: boolean;
-  repairGuardian: boolean;
 };
 
 /**
@@ -210,7 +183,7 @@ export async function wakeAssistant(
   entry: LockfileAssistant,
   opts: WakeAssistantOptions,
 ): Promise<void> {
-  const { watch, foreground, repairGuardian } = opts;
+  const { watch, foreground } = opts;
 
   if (entry.cloud === "docker") {
     if (watch || foreground) {
@@ -257,59 +230,25 @@ export async function wakeAssistant(
     );
   }
   const resources = entry.resources;
-  let signingKey: string;
-  let replacingSigningKey = false;
-  try {
-    signingKey = resolveExistingLocalSigningKey(resources);
-  } catch (error) {
-    if (!(error instanceof SigningKeyContinuityError)) {
-      throw error;
-    }
-    if (!repairGuardian) {
-      error.message += ` Run cadet wake ${JSON.stringify(entry.assistantId)} --repair-guardian to recover access. Repair may replace the signing key and require all clients to authenticate again.`;
-      throw error;
-    }
-    console.warn(
-      `Repairing authentication for ${entry.assistantId}: signing key ${error.code}. Replacing the signing key; all clients must authenticate again.`,
-    );
-    signingKey = generateLocalSigningKey();
-    replacingSigningKey = true;
-  }
 
-  // A replacement must reach both processes. Stop them before saving it so
-  // retries cannot attach to a surviving process that still uses the old key.
-  if (replacingSigningKey) {
-    for (const [file, label, port] of [
-      [
-        join(getLocalInstanceDir(resources), "gateway.pid"),
-        "gateway",
-        resources.gatewayPort,
-      ],
-      [getDaemonPidPath(resources), "assistant", resources.daemonPort],
-    ] as const) {
-      const stopped = await stopProcessByPidFile(
-        file,
-        label,
-        undefined,
-        DAEMON_STOP_TIMEOUT_MS,
+  // Port auto-heal: a recorded port something else holds (a still-running
+  // vellum assistant on the pre-de-clash ports, a stray listener) used to
+  // kill the daemon on EADDRINUSE — or worse, leave a foreign listener
+  // answering this wake's health probes. Move the entry off foreign-held
+  // ports before anything binds, and say so loudly. Ports held by our own
+  // processes are left for the orphan path to adopt. Local only: docker
+  // ports are published by existing containers and need a recreate, which
+  // the docker path below reports on its own.
+  const portHeal = await healConflictedLocalPorts(entry);
+  if (portHeal) {
+    saveLockfileAssistant(entry);
+    for (const move of portHeal.moves) {
+      console.warn(
+        yellow(
+          `⚠️  ${entry.assistantId}: ${move.field} ${move.from} is held by another process — moved to ${move.to}.`,
+        ),
       );
-      if (!stopped && isProcessAlive(file).alive) {
-        throw new Error(
-          `Cannot repair authentication: ${label} could not be stopped. Stop it and retry the same repair command; no replacement key was saved.`,
-        );
-      }
-      // A missing PID file does not prove the service has released its port.
-      try {
-        await findOpenPort(port, { maxAttempts: 1, host: "127.0.0.1" });
-      } catch {
-        throw new Error(
-          `Cannot repair authentication: could not confirm that ${label} port ${port} is free. Stop any process using it, then retry the same repair command; no replacement key was saved.`,
-        );
-      }
     }
-    // The key file is the identity's home: the replacement persists there so
-    // every later resolve — and the spawned processes' env — agrees with it.
-    persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
   }
 
   const pidFile = getDaemonPidPath(resources);
@@ -379,7 +318,7 @@ export async function wakeAssistant(
   let bootstrapSecret = entry.guardianBootstrapSecret;
   let bootstrapSecretBackfilled = false;
   if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSigningKey();
+    bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
     saveLockfileAssistant(entry);
     bootstrapSecretBackfilled = true;
@@ -395,7 +334,7 @@ export async function wakeAssistant(
     // always launches the CES sibling unconditionally.
     await Promise.all([
       startCes(watch, resources),
-      startLocalDaemon(watch, resources, { foreground, signingKey }),
+      startLocalDaemon(watch, resources, { foreground }),
     ]);
     // A daemon that aborts during startup (an occupied runtime HTTP port, a
     // fatal subsystem failure) leaves no process behind, and readiness alone
@@ -453,7 +392,6 @@ export async function wakeAssistant(
         return false;
       }
       await startGateway(restartWithWatch, resources, {
-        signingKey,
         bootstrapSecret,
       });
       return true;
@@ -491,7 +429,7 @@ export async function wakeAssistant(
         }
       }
     } else {
-      await startGateway(watch, resources, { signingKey, bootstrapSecret });
+      await startGateway(watch, resources, { bootstrapSecret });
       gatewayStarted = true;
     }
   }
@@ -505,11 +443,7 @@ export async function wakeAssistant(
   // 180s host-wrapper SIGTERM (30s headroom kept), since earlier bounded
   // waits may already have consumed most of it. Fast path (gateway already
   // serving, no repair) stays ~1s.
-  if (
-    daemonUnready &&
-    !daemonMigrationsFailed &&
-    (gatewayStarted || repairGuardian)
-  ) {
+  if (daemonUnready && !daemonMigrationsFailed && gatewayStarted) {
     const waitBudgetMs = Math.min(60_000, wakeStartedAt + 150_000 - Date.now());
     if (waitBudgetMs > 0) {
       const readiness = await waitForDaemonMigrationsReady(
@@ -518,62 +452,6 @@ export async function wakeAssistant(
       );
       daemonUnready = readiness !== "ready";
       daemonMigrationsFailed = readiness === "failed";
-    }
-  }
-
-  // Self-heal the guardian token when the current environment's config dir
-  // is missing it. Hatch cross-writes the lockfile across env dirs but the
-  // guardian token is only persisted under the hatch-time env, so a desktop
-  // app built under a different CADET_ENVIRONMENT can't find a bearer and
-  // cascades into 401 → auth-rate-limit → 429. A sibling env copy is cheap
-  // and strictly additive.
-  if (seedGuardianTokenFromSiblingEnv(entry.assistantId)) {
-    console.log("   Seeded guardian token from sibling environment.");
-  }
-
-  // Last-resort recovery (explicit `--repair-guardian` only): force a
-  // re-provision. Token health can't be judged locally — a connect can 401
-  // off a token whose local expiry looks fine (revoked, mis-seeded, wrong
-  // principal) — and the user explicitly confirmed the destructive repair,
-  // so guessing "looks healthy, skip" just recreates the no-op loop. The
-  // single-use bootstrap secret may already be spent — a prior connect can
-  // lease a token that's then lost, or the gateway marks the secret consumed
-  // before the client persists it — which otherwise bricks connect into a
-  // 401 → auth-rate-limit → 429 cascade with no path back short of retire+hatch.
-  // Reset the gateway's bootstrap lock+consumed state (loopback-only, authorized
-  // by the lockfile secret — mirrors the macOS client's forceReBootstrap), then
-  // re-lease. Gated behind the flag because the re-lease revokes other
-  // device-bound tokens; it must never run from the automatic repair path.
-  if (repairGuardian) {
-    const loopbackUrl = `http://127.0.0.1:${resources.gatewayPort}`;
-    const maxAttempts = 3;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      try {
-        await resetGuardianBootstrap(loopbackUrl, bootstrapSecret);
-        await leaseGuardianToken(
-          loopbackUrl,
-          entry.assistantId,
-          bootstrapSecret,
-        );
-        console.log("   Re-provisioned guardian token.");
-        break;
-      } catch (err) {
-        if (
-          attempt < maxAttempts &&
-          !(err instanceof GuardianLeasePermanentError)
-        ) {
-          await new Promise((r) => setTimeout(r, 2000 * 2 ** (attempt - 1)));
-        } else {
-          console.warn(
-            `   Guardian token re-provision failed${err instanceof GuardianLeasePermanentError ? ", not retrying — a malformed 200 will not fix itself" : ` after ${maxAttempts} attempts`}: ${err}`,
-          );
-          // The user explicitly confirmed this destructive repair — a
-          // success exit here would make callers (the web recovery flow)
-          // treat a repair that never ran as done and drop their cached
-          // gateway token. Surface the failure through the exit code.
-          process.exitCode = 1;
-        }
-      }
     }
   }
 

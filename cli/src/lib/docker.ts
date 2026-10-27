@@ -1,4 +1,5 @@
 import { randomBytes } from "crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import {
   chmodSync,
   existsSync,
@@ -13,11 +14,9 @@ import { dirname, join, resolve } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
-import {
-  findAssistantByName,
-  saveLockfileAssistant,
-  setActiveAssistant,
-} from "./assistant-config";
+import { findAssistantByName, setActiveAssistant } from "./assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
+import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils";
 import { printInstanceDetails } from "./instance-details";
@@ -28,7 +27,6 @@ import {
   getDefaultPorts,
 } from "./environments/paths.js";
 import { green, yellow } from "./color.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { leaseGuardianToken } from "./guardian-token";
 import { logHatchNextSteps } from "./hatch-next-steps.js";
 import { isCadetProcess, stopProcess } from "./process";
@@ -39,7 +37,7 @@ import {
   loadImageViaHost,
 } from "./host-image-loader.js";
 import { resolveOwnImageRefs } from "./cloud-releases.js";
-import { isDevVersion } from "./version-compat.js";
+import { isDevVersion } from "@mycadet/shared/version";
 import {
   collectProviderApiKey,
   configureHatchProviderApiKey,
@@ -316,7 +314,7 @@ export interface HatchDockerParams {
    */
   netnsContainer?: string;
   /**
-   * Explicit host port to record as the gateway's `runtimeUrl` instead of
+   * Explicit host port to record as the entry's gatewayPort instead of
    * auto-allocating a free port. Required alongside `netnsContainer`, where
    * the namespace owner — not hatch — owns port allocation and publishing.
    */
@@ -635,9 +633,6 @@ export async function retireDocker(name: string): Promise<void> {
 
   // Future: consider stopping Colima VM when no Docker instances remain.
   // Considerations:
-  // - Use loadAllAssistantsAcrossEnvs() instead of loadAllAssistants() to
-  //   avoid stopping Colima while another CADET_ENVIRONMENT still has a
-  //   running Docker instance.
   // - Track whether Cadet started Colima (vs. the user already had it
   //   running for non-Cadet workloads) \u2014 e.g. via a dedicated Colima
   //   profile (`colima start --profile cadet`) or a sentinel file.
@@ -813,7 +808,6 @@ export const SERVICE_START_ORDER: ServiceName[] = [
 export async function startContainers(
   opts: {
     createOnly?: boolean;
-    signingKey?: string;
     bootstrapSecret?: string;
     cesServiceToken?: string;
     extraAssistantEnv?: Record<string, string>;
@@ -981,8 +975,8 @@ export async function recreateDockerContainers(
   }
 
   const gatewayPort =
-    parseGatewayPort(entry.runtimeUrl ?? "") ??
-    getDefaultPorts(getCurrentEnvironment()).gateway;
+    getLoopbackGatewayPort(entry) ??
+    getDefaultPorts().gateway;
   const assistantPort = info.assistantPort ?? ASSISTANT_INTERNAL_PORT;
   const device = getOrCreateHostDeviceId();
   await startContainers(
@@ -1003,25 +997,19 @@ export async function recreateDockerContainers(
     log,
   );
 
-  // Persist what the recreation decided (the gateway port in the runtime
-  // url, the assistant port when it defaulted) so plain `docker start`
-  // wakes work and clients reach the right endpoints.
+  // Persist what the recreation decided (the gateway port, the assistant
+  // port when it defaulted) so plain `docker start` wakes work and clients
+  // reach the right endpoints.
   saveLockfileAssistant({
     ...entry,
-    runtimeUrl: `http://localhost:${gatewayPort}`,
+    resources: {
+      ...entry.resources,
+      gatewayPort,
+      daemonPort: entry.resources?.daemonPort ?? assistantPort,
+    },
     containerInfo: { ...info, assistantPort },
   });
-}
 
-/** The port of the CLI's own runtime url form (`http://localhost:7830`). */
-function parseGatewayPort(runtimeUrl: string): number | null {
-  try {
-    const port = new URL(runtimeUrl).port;
-    const parsed = parseInt(port, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -1200,7 +1188,6 @@ function affectedServices(
  * rebuild the affected images and restart their containers.
  */
 function startFileWatcher(opts: {
-  signingKey?: string;
   bootstrapSecret?: string;
   cesServiceToken?: string;
   extraAssistantEnv?: Record<string, string>;
@@ -1225,7 +1212,6 @@ function startFileWatcher(opts: {
 
   const configs = serviceImageConfigs(repoRoot, imageTags);
   const runArgs = buildServiceRunArgs({
-    signingKey: opts.signingKey,
     bootstrapSecret: opts.bootstrapSecret,
     cesServiceToken: opts.cesServiceToken,
     extraAssistantEnv: opts.extraAssistantEnv,
@@ -1412,9 +1398,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
       }
       gatewayPort = params.gatewayPort;
     } else {
-      const preferredGatewayPort = getDefaultPorts(
-        getCurrentEnvironment(),
-      ).gateway;
+      const preferredGatewayPort = getDefaultPorts().gateway;
       gatewayPort = await findOpenPort(preferredGatewayPort);
       if (gatewayPort !== preferredGatewayPort) {
         log(
@@ -1434,9 +1418,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     if (params.netnsContainer) {
       assistantPort = ASSISTANT_INTERNAL_PORT;
     } else {
-      const preferredAssistantPort = getDefaultPorts(
-        getCurrentEnvironment(),
-      ).daemon;
+      const preferredAssistantPort = getDefaultPorts().daemon;
       assistantPort = await findOpenPort(preferredAssistantPort, {
         exclude: [gatewayPort],
       });
@@ -1662,9 +1644,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     const cesServiceToken = randomBytes(32).toString("hex");
-    const signingKey = params.initialArchive
-      ? undefined
-      : randomBytes(32).toString("hex");
 
     // When launched by a remote hatch startup script, the env var
     // GUARDIAN_BOOTSTRAP_SECRET is already set with the laptop's secret.
@@ -1698,10 +1677,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     const extraGatewayEnv = {
       CADET_DEVICE_ID: hostDeviceId,
     };
-    const runtimeUrl = `http://localhost:${gatewayPort}`;
+    const gatewayUrl = `http://localhost:${gatewayPort}`;
     const dockerEntry: LockfileAssistant = {
       assistantId: instanceName,
-      runtimeUrl,
+      resources: { gatewayPort, daemonPort: assistantPort },
       cloud: "docker",
       hatchedAt: new Date().toISOString(),
       guardianBootstrapSecret: ownSecret,
@@ -1718,7 +1697,6 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     await startContainers(
       {
         createOnly: !!params.initialArchive,
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
@@ -1758,12 +1736,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           notReadyReason: undefined,
         }
       : await waitForGatewayAndLease({
-          bootstrapSecret: ownSecret,
+          entry: dockerEntry,
           containerName: res.assistantContainer,
           detached: waitDetached,
           instanceName,
           logFd,
-          runtimeUrl,
           containersUpAt,
         });
 
@@ -1801,7 +1778,7 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         provider !== undefined
       ) {
         await configureHatchProviderApiKey({
-          gatewayUrl: runtimeUrl,
+          gatewayUrl,
           provider,
           bearerToken: guardianAccessToken,
           env: process.env,
@@ -1813,10 +1790,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
     }
 
     if (watch && repoRoot) {
-      saveLockfileAssistant({ ...dockerEntry, watcherPid: process.pid });
-
+      saveLockfileAssistant({
+        ...dockerEntry,
+        watcherPid: process.pid,
+      });
       const stopWatcher = startFileWatcher({
-        signingKey,
         bootstrapSecret,
         cesServiceToken,
         extraAssistantEnv,
@@ -1836,7 +1814,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
           log("\n🛑 Shutting down...");
           stopWatcher();
           await stopContainers(res);
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
           log("✅ Docker instance stopped.");
           resolve();
         };
@@ -1849,7 +1830,10 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
         // file watchers and let the process terminate.
         process.on("SIGTERM", () => {
           stopWatcher();
-          saveLockfileAssistant({ ...dockerEntry, watcherPid: undefined });
+          saveLockfileAssistant({
+            ...dockerEntry,
+            watcherPid: undefined,
+          });
           resolve();
         });
       });
@@ -1866,12 +1850,11 @@ export async function hatchDocker(params: HatchDockerParams): Promise<void> {
  * lease a guardian token.
  */
 async function waitForGatewayAndLease(opts: {
-  bootstrapSecret: string;
+  entry: LockfileAssistant;
   containerName: string;
   detached: boolean;
   instanceName: string;
   logFd: number | "ignore";
-  runtimeUrl: string;
   containersUpAt: number;
 }): Promise<{
   ready: boolean;
@@ -1881,14 +1864,14 @@ async function waitForGatewayAndLease(opts: {
   notReadyReason?: "migrations_failed";
 }> {
   const {
-    bootstrapSecret,
+    entry,
     containerName,
     detached,
     instanceName,
     logFd,
-    runtimeUrl,
     containersUpAt,
   } = opts;
+  const gatewayUrl = getGatewayUrl(entry);
 
   const log = (msg: string): void => {
     console.log(msg);
@@ -1906,11 +1889,7 @@ async function waitForGatewayAndLease(opts: {
     let guardianAccessToken: string | undefined;
     while (Date.now() < leaseDeadline) {
       try {
-        const tokenData = await leaseGuardianToken(
-          runtimeUrl,
-          instanceName,
-          bootstrapSecret,
-        );
+        const tokenData = await leaseGuardianToken(entry);
         guardianAccessToken = tokenData.accessToken;
         break;
       } catch {
@@ -1933,7 +1912,7 @@ async function waitForGatewayAndLease(opts: {
     printInstanceDetails(
       {
         name: instanceName,
-        runtime: runtimeUrl,
+        runtime: gatewayUrl,
         container: containerName,
       },
       log,
@@ -1943,11 +1922,11 @@ async function waitForGatewayAndLease(opts: {
   }
 
   log(`  Container: ${containerName}`);
-  log(`  Runtime: ${runtimeUrl}`);
+  log(`  Runtime: ${gatewayUrl}`);
   log("");
   log("Waiting for assistant to become ready...");
 
-  const readyUrl = `${runtimeUrl}/readyz`;
+  const readyUrl = `${gatewayUrl}/readyz`;
   const start = containersUpAt;
   let ready = false;
   let migrationsFailed = false;
@@ -2025,11 +2004,7 @@ async function waitForGatewayAndLease(opts: {
 
   while (Date.now() < leaseDeadline) {
     try {
-      const tokenData = await leaseGuardianToken(
-        runtimeUrl,
-        instanceName,
-        bootstrapSecret,
-      );
+      const tokenData = await leaseGuardianToken(entry);
       guardianAccessToken = tokenData.accessToken;
       leaseSuccess = true;
       break;
@@ -2055,7 +2030,7 @@ async function waitForGatewayAndLease(opts: {
   log("");
   log(green(`\u2705 Docker containers are up and running!`, process.stdout));
   log(`   Name: ${instanceName}`);
-  log(`   Runtime: ${runtimeUrl}`);
+  log(`   Runtime: ${gatewayUrl}`);
   log("");
   return { ready: true, guardianAccessToken };
 }

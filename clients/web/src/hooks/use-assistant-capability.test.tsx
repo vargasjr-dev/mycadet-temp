@@ -7,7 +7,6 @@ let supported: boolean | undefined = true;
 let failed = false;
 let deferred = false;
 let finishHealth: (() => void) | undefined;
-let orgReady = true;
 let assistantId: string | null = "assistant-1";
 const health = mock(async () => {
   if (deferred) {
@@ -24,9 +23,6 @@ const health = mock(async () => {
       };
 });
 mock.module("@/assistant/api", () => ({ getAssistantHealthz: health }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
 mock.module("@/stores/resolved-assistants-store", () => ({
   useResolvedAssistantsStore: { use: { activeAssistantId: () => assistantId } },
 }));
@@ -38,7 +34,6 @@ beforeEach(() => {
   failed = false;
   deferred = false;
   finishHealth = undefined;
-  orgReady = true;
   assistantId = "assistant-1";
   health.mockClear();
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -106,13 +101,9 @@ test("retains confirmed support when a background health refresh fails", async (
   expect(hook.result.current.data).toBe(true);
 });
 
-test("waits for both an assistant and organization readiness", async () => {
-  orgReady = false;
-  const hook = mount();
-  expect(health).not.toHaveBeenCalled();
-  orgReady = true;
+test("waits for an assistant before querying", async () => {
   assistantId = null;
-  hook.rerender();
+  const hook = mount();
   expect(health).not.toHaveBeenCalled();
   assistantId = "assistant-1";
   hook.rerender();

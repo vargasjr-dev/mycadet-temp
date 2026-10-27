@@ -1,12 +1,12 @@
 import { formatGuardianRefreshCliFailure } from "@mycadet/local-mode";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../../lib/cli-name.js";
-import { getGatewayUrl } from "../../lib/runtime-url.js";
 
 import {
   type LockfileAssistant,
   resolveTargetAssistant,
-  saveLockfileAssistant,
 } from "../../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   GuardianLeasePermanentError,
   leaseGuardianToken,
@@ -14,10 +14,12 @@ import {
   refreshGuardianTokenResult,
   resetGuardianBootstrap,
 } from "../../lib/guardian-token.js";
-import { generateLocalSigningKey } from "../../lib/local.js";
+import { generateLocalSecret } from "../../lib/local.js";
 
 function printUsage(): void {
-  console.log(`Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`);
+  console.log(
+    `Usage: ${cliCommand()} gateway token <subcommand> [assistantId]`,
+  );
   console.log("");
   console.log("Manage gateway authentication tokens.");
   console.log("");
@@ -34,10 +36,9 @@ function printUsage(): void {
 
 /**
  * Re-provision the guardian credential in place via the gateway's bootstrap
- * reset — the same machinery `cadet wake --repair-guardian` runs, minus the
- * wake. NEVER points at `cadet hatch`: hatching creates a different assistant.
- * A fresh lease revokes other devices' paired tokens; callers say so on
- * stderr. Returns true on success (the newly leased token is persisted).
+ * reset. NEVER points at `cadet hatch`: hatching creates a different
+ * assistant. A fresh lease revokes other devices' paired tokens; callers say
+ * so on stderr. Returns true on success (the newly leased token is persisted).
  */
 async function repairGuardianCredential(
   entry: LockfileAssistant,
@@ -45,7 +46,7 @@ async function repairGuardianCredential(
 ): Promise<boolean> {
   let bootstrapSecret = entry.guardianBootstrapSecret;
   if (!bootstrapSecret) {
-    bootstrapSecret = generateLocalSigningKey();
+    bootstrapSecret = generateLocalSecret();
     entry.guardianBootstrapSecret = bootstrapSecret;
     saveLockfileAssistant(entry);
   }
@@ -54,7 +55,7 @@ async function repairGuardianCredential(
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await resetGuardianBootstrap(gatewayUrl, bootstrapSecret);
-      await leaseGuardianToken(gatewayUrl, entry.assistantId, bootstrapSecret);
+      await leaseGuardianToken(entry);
       return true;
     } catch (err) {
       if (err instanceof GuardianLeasePermanentError) return false;
@@ -123,7 +124,7 @@ export async function gatewayToken(): Promise<void> {
       }
       console.error("Guardian token could not be re-provisioned.");
       console.error(
-        `Run \`cadet wake ${entry.assistantId} --repair-guardian\` to recover access.`,
+        `Run \`${cliCommand()} gateway token refresh ${entry.assistantId}\` again after restoring gateway connectivity.`,
       );
     }
     console.error(refreshed.error);

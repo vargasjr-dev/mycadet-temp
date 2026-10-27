@@ -21,10 +21,7 @@ import {
   type ManagedExportStep,
 } from "@/domains/settings/teleport/cloud-export";
 import { requestSignedDownloadUrl } from "@/domains/settings/teleport/cloud-migration-client";
-import {
-  useActiveAssistantIsCloudHosted,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 import { copyToClipboard } from "@/lib/copy-to-clipboard";
 import { captureError } from "@/lib/error-reporting/capture-error";
@@ -109,9 +106,7 @@ function CloudAssistantBackups({ assistantId }: { assistantId: string }) {
   // shows while that assistant is still current and exportable, so a switch
   // or sign-out mid-dialog can never export a different assistant.
   const [exportTarget, setExportTarget] = useState<string | null>(null);
-  const isCloudHosted = useActiveAssistantIsCloudHosted();
-  const cloudGate = useCloudGate({ cloudHostedOnly: true });
-  const canExport = isCloudHosted && cloudGate === "full";
+  const canExport = useActiveAssistantIsCloudHosted();
   const confirmingExport = canExport && exportTarget === assistantId;
   if (exportTarget !== null && !confirmingExport) {
     setExportTarget(null);

@@ -100,7 +100,7 @@ describe("slack control-plane proxy", () => {
     ]);
   });
 
-  test("replaces caller auth with service token", async () => {
+  test("asserts the gateway service identity without a caller bearer", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
       async (_input: string | URL | Request, init?: RequestInit) => {
@@ -123,7 +123,13 @@ describe("slack control-plane proxy", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(capturedHeaders?.get("authorization")).toMatch(/^Bearer ey/);
+    // The daemon verifies no tokens — the proxy asserts the gateway's
+    // service identity in x-cadet-* headers, never a bearer.
+    expect(capturedHeaders?.get("authorization")).toBeNull();
+    expect(capturedHeaders?.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(capturedHeaders?.get("x-cadet-scope-profile")).toBe(
+      "gateway_service_v1",
+    );
     expect(capturedHeaders?.has("host")).toBe(false);
   });
 

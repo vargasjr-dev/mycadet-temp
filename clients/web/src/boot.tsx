@@ -11,21 +11,17 @@ import { createRoot } from "react-dom/client";
 import { RouterProvider } from "react-router";
 
 import { AppProviders } from "@/components/providers";
-import {
-  STARTUP_FAILURE_MESSAGE,
-  STARTUP_FAILURE_TITLE,
-  StartupFailure,
-} from "@/components/startup-failure";
+import { StartupFailure } from "@/components/startup-failure";
 import { WindowDragRegion } from "@/components/window-drag-region";
 import { initI18n } from "@/i18n";
 import { setupRemoteGatewayNavBridge } from "@/lib/auth/remote-gateway-nav-bridge";
 import { isChunkLoadError } from "@/lib/chunk-errors";
-import { isLocalClient, loadLockfile } from "@/lib/local-mode";
+import { getServedLockfile, isLocalClient } from "@/lib/local-mode";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { setupAuthListeners, useAuthStore } from "@/stores/auth-store";
-import { setupOrganizationStore } from "@/stores/organization-store";
 import { createBrowserRouter } from "react-router";
 
 type Router = ReturnType<typeof createBrowserRouter>;
@@ -72,21 +68,22 @@ async function boot(router: Router) {
   } catch (error) {
     captureError(error, { context: "restore_pending_native_login" });
   }
-
-  setupOrganizationStore();
   // The cloud host mirrors iframe navigations into the browser URL and
   // drives back/forward back down — register before the first render so the
   // boot route is announced.
   setupRemoteGatewayNavBridge();
   if (isLocalClient()) {
-    await loadLockfile();
+    // The local arm's resolved list IS the served synthesis: the host
+    // stamped the one assistant this surface serves. No roster, no warm-up
+    // fetch - one store write.
+    useResolvedAssistantsStore.getState().setFromLockfile(getServedLockfile());
     await useAuthStore.getState().initSession();
   } else {
     useAuthStore.getState().initSession();
   }
   setupAuthListeners();
-  // Local mode awaits the lockfile read and `initSession()` above, so this
-  // separates "session was the boot cost" from "the app tree was".
+  // Local mode awaits `initSession()` above, so this separates "session was
+  // the boot cost" from "the app tree was".
 
   const rootEl = document.getElementById("root");
   if (!rootEl) {
@@ -128,28 +125,20 @@ function showBootFailure(error: unknown): void {
   }
   void markNativeLaunchScreenReady("system");
 
+  // Render the styled `StartupFailure` through React rather than a hand-rolled
+  // DOM alert: boot failed before the app's own `createRoot` ran, so `#root`
+  // is still empty and a fresh root here is safe. The boolean guards a
+  // double-fire (two awaited stages can both reject).
   try {
-    const root = document.getElementById("root");
-    if (!root) {
+    const rootEl = document.getElementById("root");
+    if (!rootEl || bootFailureRendered) {
       return;
     }
-    const container = document.createElement("main");
-    container.setAttribute("role", "alert");
-    container.style.cssText =
-      "min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,sans-serif";
-    const content = document.createElement("div");
-    const heading = document.createElement("h1");
-    heading.textContent = STARTUP_FAILURE_TITLE;
-    const message = document.createElement("p");
-    message.textContent = STARTUP_FAILURE_MESSAGE;
-    const reload = document.createElement("button");
-    reload.type = "button";
-    reload.textContent = "Reload app";
-    reload.addEventListener("click", () => window.location.reload());
-    content.append(heading, message, reload);
-    container.append(content);
-    root.replaceChildren(container);
+    bootFailureRendered = true;
+    createRoot(rootEl).render(<StartupFailure error={error} />);
   } catch (renderError) {
     console.error("Unable to show the startup error", renderError);
   }
 }
+
+let bootFailureRendered = false;

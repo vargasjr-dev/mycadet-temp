@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import {
-  platformPollJobStatus,
+  cloudPollJobStatus,
   cloudRequestSignedUrl,
   VersionMismatchError,
   type UnifiedJobStatus,
@@ -535,16 +535,12 @@ describe("cloudRequestSignedUrl", () => {
     globalThis.fetch = fetchMock;
 
     await expect(
-      cloudRequestSignedUrl(
-        { operation: "upload" },
-        VAK_TOKEN,
-        PLATFORM_URL,
-      ),
+      cloudRequestSignedUrl({ operation: "upload" }, VAK_TOKEN, PLATFORM_URL),
     ).rejects.toThrow(/temporarily down/);
   });
 });
 
-describe("platformPollJobStatus", () => {
+describe("cloudPollJobStatus", () => {
   test("GET /v1/migrations/jobs/{jobId}/ parses processing", async () => {
     const { calls, fetchMock } = captureFetch(() => {
       return new Response(
@@ -558,7 +554,7 @@ describe("platformPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await platformPollJobStatus(
+    const status = await cloudPollJobStatus(
       "job-1",
       VAK_TOKEN,
       PLATFORM_URL,
@@ -588,7 +584,7 @@ describe("platformPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await platformPollJobStatus(
+    const status = await cloudPollJobStatus(
       "job-2",
       VAK_TOKEN,
       PLATFORM_URL,
@@ -615,7 +611,7 @@ describe("platformPollJobStatus", () => {
     });
     globalThis.fetch = fetchMock;
 
-    const status = await platformPollJobStatus(
+    const status = await cloudPollJobStatus(
       "job-3",
       VAK_TOKEN,
       PLATFORM_URL,
@@ -634,7 +630,7 @@ describe("platformPollJobStatus", () => {
     globalThis.fetch = fetchMock;
 
     await expect(
-      platformPollJobStatus("missing", VAK_TOKEN, PLATFORM_URL),
+      cloudPollJobStatus("missing", VAK_TOKEN, PLATFORM_URL),
     ).rejects.toThrow(/Migration job not found/);
   });
 });

@@ -66,10 +66,6 @@ mock.module("@/hooks/use-is-mobile", () => ({
   useIsMobile: () => mobile,
   MOBILE_MEDIA_QUERY: "(max-width: 767px)",
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useOrgHeaderReadiness: () => "ready",
-  useIsOrgReady: () => true,
-}));
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: mock(() => {}),
 }));

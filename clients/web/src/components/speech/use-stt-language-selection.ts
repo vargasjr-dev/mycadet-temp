@@ -24,7 +24,6 @@ import {
   configGetOptions,
   sttProvidersGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
   MULTI_DEFAULT_DAEMON_PROVIDERS,
   STT_LANGUAGE_DEFAULT_CODE,
@@ -32,6 +31,7 @@ import {
 } from "@/lib/stt/language-catalog";
 
 import { useSerializedConfigSelection } from "@/components/speech/use-serialized-config-selection";
+import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 
 /**
  * How a config value reads on the picker, per provider.
@@ -107,21 +107,18 @@ export interface UseSttLanguageSelection {
   selecting: boolean;
 }
 
-export function useSttLanguageSelection(
-  assistantId: string | null,
-): UseSttLanguageSelection {
-  const isOrgReady = useIsOrgReady();
-  const enabled = isOrgReady && !!assistantId;
+export function useSttLanguageSelection(): UseSttLanguageSelection {
+  // The web bundle serves one assistant, resolved before load; the id is
+  // the shell's, not a per-call argument.
+  const assistantId = useActiveAssistantId();
 
   const { data: providerCatalog } = useQuery({
-    ...sttProvidersGetOptions({ path: { assistant_id: assistantId ?? "" } }),
-    enabled,
+    ...sttProvidersGetOptions({ path: { assistant_id: assistantId } }),
     staleTime: Infinity,
     retry: false,
   });
   const { data: daemonConfig } = useQuery({
-    ...configGetOptions({ path: { assistant_id: assistantId ?? "" } }),
-    enabled,
+    ...configGetOptions({ path: { assistant_id: assistantId } }),
     staleTime: 30_000,
   });
 
@@ -147,7 +144,7 @@ export function useSttLanguageSelection(
 
   // Gated on config having actually arrived: before then the configured
   // provider is a guess, and the control must not flash in and out.
-  const available = enabled && !!daemonConfig && providerAcceptsLanguage;
+  const available = !!daemonConfig && providerAcceptsLanguage;
 
   const configuredCode = configuredCodeForProvider(
     configuredProvider,

@@ -40,7 +40,7 @@ const localMode = await import("@mycadet/local-mode");
 mock.module("@mycadet/local-mode", () => ({
   ...localMode,
   getGuardianAccessToken: getGuardianAccessTokenMock,
-  getLockfileData: () => ({ ok: false, error: "missing" }),
+  readLockfile: () => ({ assistants: [], activeAssistant: null }),
   resolveConfigDir: () => "C:\\Cadet\\config",
   resolveLockfilePaths: () => ["C:\\Cadet\\lockfile.json"],
 }));
@@ -109,3 +109,4 @@ describe("Windows bundle workflow", () => {
     );
   });
 });
+

@@ -92,12 +92,10 @@ const resolveInvocation = async () => {
 // dir. Set before importing the module under test because `installLocalMode`
 // captures the resolved paths once at registration time.
 const previousEnvironment = process.env.CADET_ENVIRONMENT;
-const previousLockfileDir = process.env.CADET_LOCKFILE_DIR;
 const previousConfigHome = process.env.XDG_CONFIG_HOME;
 const lockfileDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-lockfile-"));
 const configHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "cadet-config-"));
 process.env.CADET_ENVIRONMENT = "production";
-process.env.CADET_LOCKFILE_DIR = lockfileDir;
 process.env.XDG_CONFIG_HOME = configHomeDir;
 const lockfilePath = path.join(lockfileDir, ".cadet.lock.json");
 
@@ -122,7 +120,7 @@ beforeAll(() => {
     paths: {
       configDir,
       environment: "production",
-      lockfilePaths: [lockfilePath],
+      lockfilePath,
     },
     refreshLockfile: refreshLockfileNowMock,
     session: { getToken: () => mockSessionToken },
@@ -135,12 +133,6 @@ afterAll(() => {
     delete process.env.CADET_ENVIRONMENT;
   } else {
     process.env.CADET_ENVIRONMENT = previousEnvironment;
-  }
-
-  if (previousLockfileDir === undefined) {
-    delete process.env.CADET_LOCKFILE_DIR;
-  } else {
-    process.env.CADET_LOCKFILE_DIR = previousLockfileDir;
   }
 
   if (previousConfigHome === undefined) {
@@ -459,7 +451,6 @@ describe("lockfile IPC handlers", () => {
     fs.writeFileSync(lockfilePath, "{ not json");
     expect(() => readLockfile()).toThrow();
   });
-
 
   test("renameLockfileAssistant persists the rename and refreshes the watcher", () => {
     seedLockfileAssistant(
@@ -1112,19 +1103,15 @@ describe("cadet:localMode:pairing handlers", () => {
 });
 
 describe("cadet:localMode:wake handler", () => {
-  test("forwards repairGuardian to runWake, appending --repair-guardian", async () => {
+  test("forwards repairGuardian to runWake — the repair rides the wake", async () => {
     const pending = wake("asst-1", { repairGuardian: true });
     await tick();
     expect(spawnArgs[0]).toEqual([
       "bun",
-      [
-        "run",
-        path.join("/repo", "cli", "src", "index.ts"),
-        "wake",
-        "asst-1",
-        "--repair-guardian",
-      ],
+      ["run", path.join("/repo", "cli", "src", "index.ts"), "wake", "asst-1"],
     ]);
+    lastChild.emit("close", 0);
+    await tick(); // the chain spawns the gateway's own re-lease
     lastChild.emit("close", 0);
     expect(await pending).toEqual({ ok: true });
   });

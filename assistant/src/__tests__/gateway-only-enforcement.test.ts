@@ -57,7 +57,6 @@ mock.module("../calls/call-store.js", () => ({
   expirePendingQuestions: () => {},
 }));
 
-import { mintToken } from "../runtime/auth/token-service.js";
 import { isPrivateAddress, RuntimeHttpServer } from "../runtime/http-server.js";
 
 // ---------------------------------------------------------------------------
@@ -66,25 +65,19 @@ import { isPrivateAddress, RuntimeHttpServer } from "../runtime/http-server.js";
 
 /** Legacy shared secret — used only for pairing routes and non-JWT purposes. */
 
-/** Actor JWT for standard authenticated requests. */
-const TEST_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "actor:self:test",
-  scope_profile: "actor_client_v1",
-  policy_epoch: 1,
-  ttlSeconds: 3600,
-});
-const AUTH_HEADERS = { Authorization: `Bearer ${TEST_JWT}` };
+/** Forwarded actor identity for standard authenticated requests. */
+const AUTH_HEADERS = {
+  "x-cadet-subject": "actor:self:test",
+  "x-cadet-principal-type": "actor",
+  "x-cadet-scope-profile": "actor_client_v1",
+};
 
-/** Gateway JWT for routes that require svc_gateway principal type. */
-const GATEWAY_JWT = mintToken({
-  aud: "cadet-daemon",
-  sub: "svc:gateway:self",
-  scope_profile: "gateway_ingress_v1",
-  policy_epoch: 1,
-  ttlSeconds: 3600,
-});
-const GATEWAY_AUTH_HEADERS = { Authorization: `Bearer ${GATEWAY_JWT}` };
+/** Forwarded gateway service identity for routes requiring svc_gateway. */
+const GATEWAY_AUTH_HEADERS = {
+  "x-cadet-subject": "svc:gateway:self",
+  "x-cadet-principal-type": "svc_gateway",
+  "x-cadet-scope-profile": "gateway_ingress_v1",
+};
 
 function makeFormBody(params: Record<string, string>): string {
   return new URLSearchParams(params).toString();
@@ -653,9 +646,10 @@ describe("gateway-only ingress enforcement", () => {
 
     test("rejects upgrade with actor JWT (requires gateway service token)", async () => {
       const res = await fetch(
-        `http://127.0.0.1:${port}/v1/stt/stream?token=${TEST_JWT}&provider=deepgram&mimeType=audio/webm`,
+        `http://127.0.0.1:${port}/v1/stt/stream?provider=deepgram&mimeType=audio/webm`,
         {
           headers: {
+            ...AUTH_HEADERS,
             Upgrade: "websocket",
             Connection: "Upgrade",
             "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
@@ -663,15 +657,16 @@ describe("gateway-only ingress enforcement", () => {
           },
         },
       );
-      // Actor JWTs should be rejected — only gateway service tokens are allowed.
+      // Actor identities are rejected — the dial asserts the gateway service.
       expect(res.status).toBe(401);
     });
 
     test("accepts upgrade with gateway service token from private network", async () => {
       const res = await fetch(
-        `http://127.0.0.1:${port}/v1/stt/stream?token=${GATEWAY_JWT}&provider=deepgram&mimeType=audio/webm`,
+        `http://127.0.0.1:${port}/v1/stt/stream?provider=deepgram&mimeType=audio/webm`,
         {
           headers: {
+            ...GATEWAY_AUTH_HEADERS,
             Upgrade: "websocket",
             Connection: "Upgrade",
             "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
@@ -687,9 +682,10 @@ describe("gateway-only ingress enforcement", () => {
 
     test("succeeds when provider is omitted (config-authoritative)", async () => {
       const res = await fetch(
-        `http://127.0.0.1:${port}/v1/stt/stream?token=${GATEWAY_JWT}&mimeType=audio/webm`,
+        `http://127.0.0.1:${port}/v1/stt/stream?mimeType=audio/webm`,
         {
           headers: {
+            ...GATEWAY_AUTH_HEADERS,
             Upgrade: "websocket",
             Connection: "Upgrade",
             "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
@@ -703,9 +699,10 @@ describe("gateway-only ingress enforcement", () => {
 
     test("returns 400 when mimeType is missing", async () => {
       const res = await fetch(
-        `http://127.0.0.1:${port}/v1/stt/stream?token=${GATEWAY_JWT}&provider=deepgram`,
+        `http://127.0.0.1:${port}/v1/stt/stream?provider=deepgram`,
         {
           headers: {
+            ...GATEWAY_AUTH_HEADERS,
             Upgrade: "websocket",
             Connection: "Upgrade",
             "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
@@ -717,17 +714,15 @@ describe("gateway-only ingress enforcement", () => {
     });
 
     test("returns 400 when both provider and mimeType are missing", async () => {
-      const res = await fetch(
-        `http://127.0.0.1:${port}/v1/stt/stream?token=${GATEWAY_JWT}`,
-        {
-          headers: {
-            Upgrade: "websocket",
-            Connection: "Upgrade",
-            "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
-            "Sec-WebSocket-Version": "13",
-          },
+      const res = await fetch(`http://127.0.0.1:${port}/v1/stt/stream`, {
+        headers: {
+          ...GATEWAY_AUTH_HEADERS,
+          Upgrade: "websocket",
+          Connection: "Upgrade",
+          "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+          "Sec-WebSocket-Version": "13",
         },
-      );
+      });
       expect(res.status).toBe(400);
     });
   });

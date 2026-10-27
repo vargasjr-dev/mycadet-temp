@@ -2,24 +2,6 @@
   "src/domains/assistant-inbox/assistant-inbox.stories.tsx": [
     "chat"
   ],
-  "src/domains/channels/components/email-channel-section.tsx": [
-    "assistant-inbox"
-  ],
-  "src/domains/chat/active-chat-view.tsx": [
-    "onboarding"
-  ],
-  "src/domains/chat/api/messages.ts": [
-    "onboarding"
-  ],
-  "src/domains/chat/hooks/use-onboarding-orchestrator.ts": [
-    "onboarding"
-  ],
-  "src/domains/chat/hooks/use-send-message.ts": [
-    "onboarding"
-  ],
-  "src/domains/onboarding/pages/research-onboarding-route.tsx": [
-    "chat"
-  ],
   "src/domains/schedules/components/schedule-detail-panel.tsx": [
     "settings"
   ],

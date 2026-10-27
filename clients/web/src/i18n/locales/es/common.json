@@ -484,10 +484,6 @@
   "onboardingBackButton": {
     "back": "Atrás"
   },
-  "platformLoginNotice": {
-    "cancel": "Cancelar",
-    "logIn": "Iniciar sesión"
-  },
   "profileCard": {
     "assistantHandleIdleEmpty": "Tu asistente aún no tiene identificador; reclama uno para poder mencionarlo.",
     "assistantHandleLabel": "Identificador del asistente",
@@ -744,7 +740,6 @@
     "stepConnect": "Conectar",
     "stepCreate": "Crear bot"
   },
-  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "Relleno de acento",
     "activeBorder": "Borde activo",

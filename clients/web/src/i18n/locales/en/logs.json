@@ -1,5 +1,8 @@
 {
-  "errorRetryRow": { "retrying": "Retrying…", "retry": "Retry" },
+  "errorRetryRow": {
+    "retrying": "Retrying…",
+    "retry": "Retry"
+  },
   "emailsTab": {
     "inbound": "Inbound",
     "outbound": "Outbound",
@@ -29,11 +32,7 @@
     "loadingOlder": "Loading older events...",
     "loadOlder": "Load older events"
   },
-  "emailsPage": {
-    "platformLoginNotice": "Log in to Cadet Cloud to view emails."
-  },
   "systemEventsPage": {
-    "platformLoginNotice": "Log in to Cadet Cloud to view system events.",
     "notAvailable": "System events aren't available for the current assistant."
   }
 }

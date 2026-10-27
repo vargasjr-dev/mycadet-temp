@@ -7,7 +7,6 @@ const getSession = mock(async () => ({
   data: { user: { id: "user" } },
 }));
 const markSpent = mock(() => {});
-const clearStash = mock((_intent: unknown, _returnTo: unknown) => {});
 let biometric = false;
 const storeToken = mock(async (_token: string) => false);
 const disableBiometric = mock((_enabled: boolean) => {});
@@ -32,9 +31,6 @@ mock.module("@app/runtime/native-biometric", () => ({
 }));
 mock.module("@app/runtime/native-auth-context", () => ({
   nativeAuthContext: { checkout: {} },
-}));
-mock.module("@app/runtime/native-post-auth-destination", () => ({
-  clearStaleNativeCheckoutStash: clearStash,
 }));
 const { startNativeLogin } = await import("./native-login");
 const originalLocation = Object.getOwnPropertyDescriptor(window, "location");
@@ -76,7 +72,6 @@ test("native login waits for the session cookie before navigation and spends att
     loginHint: "person@example.com",
     attribution: { utm_source: "play" },
   });
-  expect(clearStash).toHaveBeenCalledWith("login", "/assistant/identity", {});
   expect(cookies).toHaveLength(2);
   expect(cookies[0]).toContain("sessionid=native-token;");
   expect(cookies[1]).toContain("__Secure-sessionid=native-token;");

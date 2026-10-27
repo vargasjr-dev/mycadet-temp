@@ -1,4 +1,5 @@
 import { rm } from "node:fs/promises";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { z } from "zod";
 import cliPkg from "../../package.json";
 import type { LockfileAssistant } from "./assistant-config.js";
@@ -68,11 +69,11 @@ const defaultOps: HostTeleportOps = {
   sleep: (entry) =>
     sleepAssistant(entry, { force: false, wait: false, waitMs: null }),
   backup: async (entry) => {
-    const archive = entry.runtimeUrl
-      ? await createBackup(entry.runtimeUrl, entry.assistantId, {
-          prefix: `${entry.assistantId}-pre-teleport`,
-        })
-      : undefined;
+    const archive = await createBackup(
+      getGatewayUrl(entry),
+      entry.assistantId,
+      { prefix: `${entry.assistantId}-pre-teleport` },
+    );
     if (!archive) {
       throw new Error(
         `Could not capture '${entry.assistantId}'; teleport aborted.`,
@@ -131,7 +132,7 @@ export async function readHostRuntimeVersion(
 ): Promise<string | undefined> {
   if (entry.cloud !== "docker") {
     return (
-      (entry.runtimeUrl ? await fetchCurrentVersion(entry.runtimeUrl) : undefined) ??
+      (await fetchCurrentVersion(getGatewayUrl(entry))) ??
       entry.resources?.runtimeVersion
     );
   }
@@ -412,12 +413,7 @@ async function dockerReplacementOptions(
     env(res.assistantContainer),
     env(res.gatewayContainer),
   );
-  const gatewayUrl = entry.runtimeUrl;
-  if (!gatewayUrl) {
-    throw new Error(
-      `Docker assistant '${entry.assistantId}' has no recorded gateway URL.`,
-    );
-  }
+  const gatewayUrl = getGatewayUrl(entry);
   const gatewayPort = Number(new URL(gatewayUrl).port);
   const assistantPort = entry.containerInfo?.assistantPort;
   if (!Number.isSafeInteger(gatewayPort) || gatewayPort < 1 || !assistantPort) {
@@ -475,7 +471,7 @@ export async function restoreHostTeleportTarget(
   };
   try {
     if (previous) {
-      await replaceContainers({ ...previous, signingKey: undefined });
+      await replaceContainers({ ...previous });
     }
     await restoreRootBackup(entry, archive, { resume: false });
     await startAndCheck(storageFor(entry));

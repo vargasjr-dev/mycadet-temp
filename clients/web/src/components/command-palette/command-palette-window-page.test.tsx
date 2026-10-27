@@ -3,7 +3,6 @@ import { cleanup, render } from "@testing-library/react";
 
 const authRef = {
   sessionStatus: "authenticated" as const,
-  isSessionInitializing: false,
   hasCloudSession: true,
 };
 const resolvedRef = {
@@ -68,11 +67,11 @@ mock.module("@/lib/local-mode", () => ({
   isServedGatewayRuntime: () => undefined,
   isLocalClient: () => false,
   isGatewaySessionLive: () => false,
-  getSelectedAssistant: () => localSelectedRef.value,
   getActiveAssistant: () =>
-    resolvedRef.activeAssistantId
+    localSelectedRef.value ??
+    (resolvedRef.activeAssistantId
       ? { assistantId: resolvedRef.activeAssistantId }
-      : undefined,
+      : undefined),
   setActiveLockfileAssistant: async () => undefined,
 }));
 
@@ -84,7 +83,6 @@ mock.module("@/stores/auth-store", () => {
   return {
     useAuthStore,
     useHasCloudSession: () => authRef.hasCloudSession,
-    useIsSessionInitializing: () => authRef.isSessionInitializing,
   };
 });
 
@@ -161,7 +159,6 @@ const { CommandPaletteWindowPage } =
 
 beforeEach(() => {
   authRef.sessionStatus = "authenticated";
-  authRef.isSessionInitializing = false;
   authRef.hasCloudSession = true;
   resolvedRef.assistants = [
     {

@@ -38,9 +38,8 @@ let mcpAuthCompletes = false;
 let heldPluginRemoval: (() => void) | null = null;
 let holdPluginRemoval = false;
 let assistantAvailable = true;
-let cloudGate = "full";
-let hydrated = true;
 let cloudHosted = true;
+let hydrated = true;
 let managedStatus: "idle" | "attempting" | "connected" = "attempting";
 let managedError: string | null = null;
 let seededTools: {
@@ -167,15 +166,12 @@ mock.module("@/generated/api/@tanstack/react-query.gen", () => ({
 }));
 mock.module("@/hooks/use-cloud-assistant-id", () => ({
   useCloudAssistantId: () => ({
-    cloudAssistantId: cloudGate === "full" ? "platform-123" : null,
+    cloudAssistantId: cloudHosted ? "platform-123" : null,
     isLoading: false,
     error: null,
   }),
 }));
-const cloudGateActual = await import("@/hooks/use-cloud-gate");
-mock.module("@/hooks/use-cloud-gate", () => ({
-  ...cloudGateActual,
-  useCloudGate: () => cloudGate,
+mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsCloudHosted: () => cloudHosted,
 }));
 mock.module("@/hooks/use-onboarding-login", () => ({
@@ -402,7 +398,6 @@ afterEach(() => {
   holdPluginRemoval = false;
   heldPluginRemoval = null;
   assistantAvailable = true;
-  cloudGate = "full";
   cloudHosted = true;
   managedStatus = "attempting";
   managedError = null;
@@ -866,8 +861,8 @@ describe("IntegrationsPage", () => {
     await screen.findByText("Manage how Cadet connects to Notion.");
   });
 
-  test("MCP connections remain available without platform login", async () => {
-    cloudGate = "disabled";
+  test("MCP connections remain available on a self-hosted assistant", async () => {
+    cloudHosted = false;
     seededServers = [server()];
     render(<IntegrationsPage />, { wrapper: Wrapper });
     await screen.findByText("example-integration");

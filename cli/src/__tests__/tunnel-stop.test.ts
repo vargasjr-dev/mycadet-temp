@@ -18,12 +18,11 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import { tunnel } from "../commands/tunnel.js";
 import {
   readRootProcesses,
-  saveLockfileAssistant,
   stampRootProcess,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 const originalArgv = process.argv;
-const originalLock = process.env.CADET_LOCKFILE_DIR;
 const originalConfig = process.env.XDG_CONFIG_HOME;
 let root = "";
 let workspace = "";
@@ -37,7 +36,6 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "cadet-tunnel-stop-"));
   workspace = join(root, "instance", "workspace");
   mkdirSync(workspace, { recursive: true });
-  process.env.CADET_LOCKFILE_DIR = root;
   process.env.XDG_CONFIG_HOME = root;
   saveLockfileAssistant({
     assistantId: "fixture",
@@ -86,8 +84,6 @@ afterEach(() => {
   identity.mockRestore();
   logs.mockRestore();
   process.argv = originalArgv;
-  if (originalLock === undefined) delete process.env.CADET_LOCKFILE_DIR;
-  else process.env.CADET_LOCKFILE_DIR = originalLock;
   if (originalConfig === undefined) delete process.env.XDG_CONFIG_HOME;
   else process.env.XDG_CONFIG_HOME = originalConfig;
   rmSync(root, { recursive: true, force: true });

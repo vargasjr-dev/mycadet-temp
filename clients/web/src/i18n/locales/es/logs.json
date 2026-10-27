@@ -1,5 +1,8 @@
 {
-  "errorRetryRow": { "retrying": "Reintentando…", "retry": "Reintentar" },
+  "errorRetryRow": {
+    "retrying": "Reintentando…",
+    "retry": "Reintentar"
+  },
   "emailsTab": {
     "inbound": "Entrante",
     "outbound": "Saliente",
@@ -29,11 +32,7 @@
     "loadingOlder": "Cargando eventos anteriores...",
     "loadOlder": "Cargar eventos anteriores"
   },
-  "emailsPage": {
-    "platformLoginNotice": "Inicia sesión en la plataforma de Cadet para ver los correos."
-  },
   "systemEventsPage": {
-    "platformLoginNotice": "Inicia sesión en la plataforma de Cadet para ver los eventos del sistema.",
     "notAvailable": "Los eventos del sistema no están disponibles para el asistente actual."
   }
 }

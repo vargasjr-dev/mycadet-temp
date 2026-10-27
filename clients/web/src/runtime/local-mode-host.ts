@@ -253,7 +253,20 @@ export async function loadLockfileHost(): Promise<Lockfile> {
   if (!res.ok) {
     throw new Error(`lockfile fetch failed: ${res.status}`);
   }
-  return res.json() as Promise<Lockfile>;
+
+  // A same-origin `/v1/assistants/` GET only speaks the local host's lockfile
+  // contract when THIS bundle is actually served by a local host. Any other
+  // same-origin deployment (a cloud hub, a misrouted edge) can answer 200 with
+  // foreign JSON — an auth envelope, an API list — and committing that shape
+  // as the lockfile poisons the cache with `assistants: undefined`, crashing
+  // every reader (`getActiveAssistant`). Validate before trusting: a payload
+  // without an `assistants` array is a host mismatch, raised so `loadLockfile`'s
+  // catch keeps the cached and persisted state instead.
+  // The schema is the lockfile's single parser (`parseLockfile`): it is total
+  // by design, so a foreign same-origin payload (an auth envelope, an API
+  // list — any 200 that isn't the local host's contract) coerces to an empty
+  // lockfile instead of crashing readers with `assistants: undefined`.
+  return parseLockfile(await res.json());
 }
 
 /**

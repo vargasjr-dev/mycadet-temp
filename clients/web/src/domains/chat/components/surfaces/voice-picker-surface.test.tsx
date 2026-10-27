@@ -37,15 +37,9 @@ import {
 import { MemoryRouter } from "react-router";
 
 import type { Surface } from "@/domains/chat/types/types";
-import type { OrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 
 const ASSISTANT_ID = "asst_1";
 
-let orgReadiness: OrgHeaderReadiness = "ready";
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReadiness === "ready",
-  useOrgHeaderReadiness: () => orgReadiness,
-}));
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
@@ -108,6 +102,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { VoicePickerSurface } =
   await import("@/domains/chat/components/surfaces/voice-picker-surface");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 const SURFACE: Surface = {
   surfaceId: "surface-voice-1",
@@ -129,7 +125,12 @@ beforeAll(() => {
 
 const onActionCalls: unknown[][] = [];
 
-function renderSurface(assistantId: string | null = ASSISTANT_ID) {
+function renderSurface({
+  noAssistant = false,
+}: { noAssistant?: boolean } = {}) {
+  useResolvedAssistantsStore.setState({
+    activeAssistantId: noAssistant ? null : ASSISTANT_ID,
+  });
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -141,7 +142,6 @@ function renderSurface(assistantId: string | null = ASSISTANT_ID) {
           onAction={(...args) => {
             onActionCalls.push(args);
           }}
-          assistantId={assistantId}
         />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -183,7 +183,6 @@ function pickZeus() {
 }
 
 beforeEach(() => {
-  orgReadiness = "ready";
   configPending = false;
   configPatchCalls.length = 0;
   onActionCalls.length = 0;
@@ -302,7 +301,7 @@ describe("VoicePickerSurface", () => {
   });
 
   test("no assistant gets a pointer, not an empty card", () => {
-    renderSurface(null);
+    renderSurface({ noAssistant: true });
 
     expect(screen.queryByRole("listbox")).toBeNull();
     expect(screen.getByText(/available for this assistant/)).toBeTruthy();

@@ -20,7 +20,6 @@ import { useTranslation } from "@/i18n";
 import { voiceTraitsLabel } from "@/lib/tts/cloud-voice-catalog";
 
 export interface VoicePickerFieldProps {
-  assistantId: string | null;
   /** Currently-selected model (draft). */
   value: string;
   onChange: (model: string) => void;
@@ -28,7 +27,6 @@ export interface VoicePickerFieldProps {
 }
 
 export function VoicePickerField({
-  assistantId,
   value,
   onChange,
   className,
@@ -39,7 +37,7 @@ export function VoicePickerField({
   // parent-controlled (the Text-to-Speech card decides to show it from its
   // draft provider), so a draft switch to Cadet must reveal the picker before
   // the provider is persisted.
-  const { voices } = useCloudVoiceSelection(assistantId);
+  const { voices } = useCloudVoiceSelection();
 
   if (voices.length === 0) {
     return null;
@@ -68,7 +66,6 @@ export function VoicePickerField({
         className="w-[var(--radix-popover-trigger-width)] p-1"
       >
         <VoiceList
-          assistantId={assistantId}
           value={value}
           onChange={onChange}
           onSelect={() => setOpen(false)}

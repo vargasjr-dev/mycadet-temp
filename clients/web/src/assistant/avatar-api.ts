@@ -109,7 +109,9 @@ export async function fetchCharacterComponents(
  * authoritative answer) apart from "the request failed" (inconclusive).
  */
 export type AvatarFileResult<T> =
-  { status: "found"; value: T } | { status: "absent" } | { status: "failed" };
+  | { status: "found"; value: T }
+  | { status: "absent" }
+  | { status: "failed" };
 
 function parseCharacterTraits(content: string): CharacterTraits | null {
   try {

@@ -127,11 +127,10 @@ function readAvatarImage(
  * applies one size policy and one result shape.
  */
 export function readLockfileAssistantAvatar(
-  lockfilePaths: string[],
+  lockfilePath: string,
   assistantId: string,
-  env: Record<string, string | undefined>,
 ): LockfileAssistantAvatarResult {
-  const resolved = resolveLockfileInstanceDir(lockfilePaths, assistantId, env);
+  const resolved = resolveLockfileInstanceDir(lockfilePath, assistantId);
   if (!resolved.ok) {
     return { ok: false, error: "lockfile unreadable" };
   }

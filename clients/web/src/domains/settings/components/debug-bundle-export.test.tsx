@@ -9,7 +9,7 @@ let exportFails = false;
 let toastErrors: string[] = [];
 
 mock.module("@/lib/local-mode", () => ({
-  getSelectedAssistant: () => selected,
+  getActiveAssistant: () => selected,
   hasLocalGateway: () => selected !== null && gatewayPath !== null,
 }));
 

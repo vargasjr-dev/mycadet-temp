@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
 import { RuntimeHttpServer } from "../http-server.js";
 import {
-  mintGatewayToken,
+  gatewayIdentityHeaders,
   requireHttpAuth,
   upgradeHeaders,
 } from "./runtime-ws-test-utils.js";
@@ -22,8 +22,8 @@ describe("Watch capture target through the shared runtime upgrade", () => {
     };
     const response = runtime["handleWatchStreamUpgrade"](
       new Request(
-        `http://127.0.0.1/v1/watch/stream?token=${mintGatewayToken()}&mimeType=audio/pcm&sampleRate=16000&${params}`,
-        { headers: upgradeHeaders },
+        `http://127.0.0.1/v1/watch/stream?mimeType=audio/pcm&sampleRate=16000&${params}`,
+        { headers: { ...upgradeHeaders, ...gatewayIdentityHeaders } },
       ),
       server as unknown as ReturnType<typeof Bun.serve>,
     );

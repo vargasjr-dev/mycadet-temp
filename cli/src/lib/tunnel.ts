@@ -14,6 +14,10 @@ import {
 import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
 import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import {
+  INGRESS_LAST_TUNNEL_KEY,
+  parseTunnelRecord,
+} from "@mycadet/service-contracts/ingress";
 
 import {
   getDefaultWorkspaceDir,
@@ -178,17 +182,12 @@ export interface ProviderStopOptions {
 export interface TunnelProvider {
   run(opts: ProviderTunnelOptions): Promise<ProviderTunnelResult>;
   stop(opts: ProviderStopOptions): Promise<boolean>;
-  /**
-   * Establish the provider's tunnel at the app server's port, resolving the
-   * established URL — or null when its own gates declined. Absent on a
-   * provider whose runs are foreground-only: the restore ensures nothing.
-   */
-  start?(opts: TunnelStartOptions): Promise<string | null>;
 }
 
 // The entries read the provider modules' bindings at call time (the #489
-// getter lesson): wake/upgrade tests re-mock the provider modules after
-// this module evaluates, and captured objects would bypass the re-mocks.
+// getter lesson): cli/src/__tests__/tunnel.test.ts mock.module's the tunnels
+// modules AFTER this module evaluates, and a directly-captured object would
+// bypass the re-mock — the getter re-reads the live binding per dispatch.
 const providers: Record<TunnelProviderName, TunnelProvider> = {
   get ngrok() {
     return NGROK_PROVIDER;
@@ -688,19 +687,6 @@ export async function restoreAppServerAndAutoTunnel(
   }
 }
 
-/** The app-server-facing start contract each provider's restore piece takes. */
-export interface TunnelStartOptions {
-  port: number;
-  workspaceDir: string;
-  assistantId?: string;
-}
-
-/**
- * A provider's restore-path start piece: establish its tunnel at the app
- * server's port, resolving the established URL — or null when its own gates
- * declined.
- */
-
 /**
  * Ensure the tunnel the lockfile expects is started at the app server.
  *
@@ -722,11 +708,40 @@ async function ensureTunnel(
   if (!expected?.provider) {
     return null;
   }
-  return (
-    (await providers[expected.provider]?.start?.({
+  // The workspace's `lastTunnel` record names the tunnel whose URL the app
+  // server fronts. The restore re-establishes the recorded provider only
+  // when that record agrees: a pairing-only tailscale run deliberately
+  // leaves `lastTunnel` on the older public provider, and re-running the
+  // tailnet's save then would repoint the webhook callback base that run
+  // did not repoint. No record (a rebuilt workspace config) carries no
+  // intent to contradict, so the restore proceeds.
+  try {
+    const ingress = loadRawConfig(workspaceDir).ingress as
+      | Record<string, unknown>
+      | undefined;
+    const lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
+    if (lastTunnel && lastTunnel.provider !== expected.provider) {
+      return null;
+    }
+  } catch {
+    // Unreadable config carries no contradicting record either.
+  }
+  try {
+    const result = await providers[expected.provider]?.run({
       port: targetPort,
       workspaceDir,
       assistantId,
-    })) ?? null
-  );
+    });
+    if (!result) return null;
+    // The run owns nothing in this process — the agent is detached — but an
+    // unhandled rejection from a settling exit promise must not crash the
+    // host (wake/upgrade) either.
+    result.waitForExit.catch(() => {});
+    return result.publicUrl;
+  } catch (err) {
+    console.warn(
+      `   Could not ensure the ${expected.provider} tunnel: ${err instanceof Error ? err.message : String(err)}`,
+    );
+    return null;
+  }
 }

@@ -10,12 +10,10 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { assistantsValidForOrg } from "@/stores/resolved-assistants-store";
 import type { ResolvedAssistant } from "@/stores/resolved-assistants-store";
 import type { LockfileAssistant } from "@/runtime/local-mode-host";
 
 const ORG_A = "org-a";
-const ORG_B = "org-b";
 
 // Mutable fixtures the mocks read so each test can stage its own world.
 let assistants: ResolvedAssistant[] = [];
@@ -25,7 +23,6 @@ let activeLocal: LockfileAssistant | undefined;
 
 const storeSetSelectedAssistantMock = mock((_id: string | null) => {});
 mock.module("@/stores/resolved-assistants-store", () => ({
-  assistantsValidForOrg,
   useResolvedAssistantsStore: {
     getState: () => ({
       assistants,
@@ -38,12 +35,7 @@ mock.module("@/stores/resolved-assistants-store", () => ({
 mock.module("@/lib/local-mode", () => ({
   getActiveAssistant: () => activeLocal,
   isLocalClient: () => false,
-}));
-// Cut the real organization-store off the module graph: it drags in the
-// auth store and the lifecycle service, which subscribe to stores this file
-// replaces with minimal getState()-only mocks.
-mock.module("@/stores/organization-store", () => ({
-  useRequestOrganizationId: () => null,
+  isServedGatewayRuntime: () => false,
 }));
 
 const { resolveSelectedAssistantId, setSelectedAssistant } =
@@ -83,30 +75,20 @@ describe("resolveSelectedAssistantId", () => {
   test("valid selected id passes through", () => {
     assistants = [cloudAssistant("asst-1", ORG_A)];
     selectedAssistantId = "asst-1";
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
-  });
-
-  test("wrong-org selection is dropped and falls back", () => {
-    // asst-b is owned by ORG_B; asst-a is the only valid one for ORG_A.
-    assistants = [
-      cloudAssistant("asst-b", ORG_B),
-      cloudAssistant("asst-a", ORG_A),
-    ];
-    selectedAssistantId = "asst-b";
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-a");
+    expect(resolveSelectedAssistantId()).toBe("asst-1");
   });
 
   test("empty selection falls back to lockfile activeAssistant when valid", () => {
     assistants = [cloudAssistant("asst-1", ORG_A)];
     activeLocal = lockfileAssistant("asst-1");
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
+    expect(resolveSelectedAssistantId()).toBe("asst-1");
   });
 
   test("empty selection + stale active falls back to first valid assistant", () => {
     assistants = [cloudAssistant("asst-1", ORG_A)];
     // active id no longer resolves to a valid entry for this org.
     activeLocal = lockfileAssistant("asst-stale");
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
+    expect(resolveSelectedAssistantId()).toBe("asst-1");
   });
 
   test("unknown selected id passes through while NOT hydrated (pre-load)", () => {
@@ -114,7 +96,7 @@ describe("resolveSelectedAssistantId", () => {
     assistantsHydrated = false;
     assistants = [];
     selectedAssistantId = "asst-unknown";
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-unknown");
+    expect(resolveSelectedAssistantId()).toBe("asst-unknown");
   });
 
   test("unknown selected id is a ghost once hydrated and falls through", () => {
@@ -123,14 +105,14 @@ describe("resolveSelectedAssistantId", () => {
     assistantsHydrated = true;
     assistants = [cloudAssistant("asst-1", ORG_A)];
     selectedAssistantId = "asst-unknown";
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
+    expect(resolveSelectedAssistantId()).toBe("asst-1");
   });
 
   test("hydrated unknown selection with no valid assistants resolves to null", () => {
     assistantsHydrated = true;
     assistants = [];
     selectedAssistantId = "asst-unknown";
-    expect(resolveSelectedAssistantId(ORG_A)).toBeNull();
+    expect(resolveSelectedAssistantId()).toBeNull();
   });
 
   test("a stale lockfile active with no resolved entry is NOT passed through", () => {
@@ -138,7 +120,7 @@ describe("resolveSelectedAssistantId", () => {
     // unknown-id pass-through — otherwise a stale active 404-loops forever.
     assistants = [cloudAssistant("asst-1", ORG_A)];
     activeLocal = lockfileAssistant("asst-stale");
-    expect(resolveSelectedAssistantId(ORG_A)).toBe("asst-1");
+    expect(resolveSelectedAssistantId()).toBe("asst-1");
   });
 });
 

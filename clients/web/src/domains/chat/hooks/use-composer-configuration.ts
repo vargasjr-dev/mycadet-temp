@@ -46,7 +46,6 @@ import {
   assistantCapabilityOptions,
   useAssistantCapabilityQuery,
 } from "@/hooks/use-assistant-capability";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { useSupportsCompleteProfileSnapshots } from "@/lib/backwards-compat/complete-profile-snapshots";
 import {
@@ -73,7 +72,6 @@ export function useComposerConfiguration(
   const { t } = useTranslation("chat");
   const queryClient = useQueryClient();
   const sessionGeneration = useComposerStore.use.sessionGeneration();
-  const orgReady = useIsOrgReady();
   const capability = useAssistantCapabilityQuery("composerSettings");
   const capabilityKnown = capability.data !== undefined;
   const supportsPreferences = capability.data === true;
@@ -93,27 +91,25 @@ export function useComposerConfiguration(
     !findConversation(queryClient, assistantId, conversationId)?.draft;
   const config = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: orgReady,
     staleTime: 30_000,
   });
   const conversation = useQuery({
     ...conversationsByIdGetOptions({
       path: { assistant_id: assistantId, id: conversationId ?? "" },
     }),
-    enabled: orgReady && hasRow,
+    enabled: hasRow,
   });
   const globalThreshold = useQuery({
     ...composerGlobalThresholdOptions(assistantId),
-    enabled: orgReady,
   });
   const threshold = useQuery({
     queryKey: ["conversationThresholdOverride", assistantId, id],
     queryFn: () => getConversationOverride(assistantId, id!),
-    enabled: orgReady && hasRow,
+    enabled: hasRow,
   });
   const settings = useQuery({
     ...composerSettingsGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: orgReady && supportsPreferences,
+    enabled: supportsPreferences,
   });
   const preferences = settings.data?.preferences ?? DEFAULT_PREFERENCES;
   const { profiles, profileOrder } = useStickyProfiles(

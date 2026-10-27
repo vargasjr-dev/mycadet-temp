@@ -16,10 +16,6 @@ const open = mock(() => ({
   setViewOnly: mock(() => {}),
 }));
 mock.module("./desktop-session", () => ({ openDesktopSession: open }));
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
 const listeners = new Map<string, (event: unknown) => void>();
 mock.module("@/hooks/use-bus-subscription", () => ({
   useBusSubscription: (name: string, listener: (event: unknown) => void) => {
@@ -40,7 +36,6 @@ let queryClient: QueryClient;
 beforeEach(() => {
   state = "ready";
   automationActive = false;
-  orgReady = true;
   missingRoute = false;
   postCalls = 0;
   open.mockClear();
@@ -126,24 +121,6 @@ test("a failed readiness request offers a read-only reconnect", async () => {
   expect(open).not.toHaveBeenCalled();
   client.get = get;
   fireEvent.click(retry);
-  await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
-  expect(postCalls).toBe(0);
-});
-
-test("setup waits for organization readiness", async () => {
-  orgReady = false;
-  const panel = mount();
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-  });
-  expect(client.get).not.toHaveBeenCalled();
-  expect(postCalls).toBe(0);
-  orgReady = true;
-  panel.rerender(
-    <QueryClientProvider client={queryClient}>
-      <DesktopPanel assistantId="assistant-123" />
-    </QueryClientProvider>,
-  );
   await waitFor(() => expect(open).toHaveBeenCalledTimes(1));
   expect(postCalls).toBe(0);
 });

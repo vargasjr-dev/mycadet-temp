@@ -11,7 +11,7 @@ import {
   isDevVersion,
   isLocalVersion,
   isStagingVersion,
-} from "../lib/version-compat.js";
+} from "@mycadet/shared/version";
 
 import { CADET_GITHUB_REPOSITORY } from "@mycadet/shared";
 
@@ -56,13 +56,6 @@ describe("fetchReleases", () => {
     const url = String(fetchMock.mock.calls[0][0]);
     expect(url).toContain("/v1/releases/?stable=true");
     expect(url).toContain("limit=100");
-  });
-
-  test("uses the cloudUrl override over the resolved default", async () => {
-    const fetchMock = mockFetchJson([RELEASE]);
-    await fetchReleases({ cloudUrl: "https://other-platform.test" });
-    const url = String(fetchMock.mock.calls[0][0]);
-    expect(url).toContain("https://other-platform.test/v1/releases/");
   });
 
   test("returns null on non-OK response", async () => {

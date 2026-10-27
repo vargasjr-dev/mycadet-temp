@@ -20,10 +20,6 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => "assistant-1",
 }));
 
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
-}));
-
 mock.module("@/lib/backwards-compat/use-supports-debug-database", () => ({
   MIN_VERSION: "0.11.10",
   useSupportsDebugDatabase: () => supportsDebugDatabase,

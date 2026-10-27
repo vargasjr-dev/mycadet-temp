@@ -7,7 +7,6 @@ import { useAppTheme } from "@/hooks/use-app-theme";
 import { useDownloadFeedback } from "@/hooks/use-download-feedback";
 import { useEventBusInit } from "@/hooks/use-event-bus-init";
 import { useOpenUrlDirectives } from "@/hooks/use-open-url-directives";
-import { useGuardianRepairRoute } from "@/hooks/use-guardian-repair-route";
 import { useGlobalDeepLinkConsumer } from "@/hooks/use-global-deep-link-consumer";
 import { useKeyboardOpen } from "@/hooks/use-keyboard-open";
 import { useVisibleViewport } from "@/hooks/use-visible-viewport";
@@ -29,11 +28,7 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import {
-  useAuthStore,
-  useIsSessionInitializing,
-  useHasCloudSession,
-} from "@/stores/auth-store";
+import { useHasCloudSession } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -78,7 +73,6 @@ import { useElectronIconSync } from "@/hooks/use-electron-icon-sync";
 import { useIslandAvatarSource } from "@/hooks/use-island-avatar-source";
 import { useNotificationAvatarSync } from "@/hooks/use-notification-avatar-sync";
 import { useElectronIdentitySync } from "@/hooks/use-electron-identity-sync";
-import { useElectronStatusSync } from "@/hooks/use-electron-status-sync";
 import { subscribeAndroidBackButtonSource } from "@/runtime/event-sources/android-back-button";
 import { isElectron } from "@/runtime/is-electron";
 import { isNativeMobile } from "@/runtime/platform-detection";
@@ -102,7 +96,6 @@ import { answerDictationOffer } from "@/domains/chat/voice/dictation-offer-actio
 import { answerCompanionPopover } from "@/domains/chat/companion-popover-actions";
 import { toggleCompanionPicker } from "@/domains/chat/companion-popover";
 import { useCompanionPickers } from "@/domains/chat/hooks/use-companion-pickers";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
 import { reconcilePreparedNotificationIdentityOwners } from "@/runtime/notification-avatar";
 
@@ -137,8 +130,6 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const isSessionInitializing = useIsSessionInitializing();
   const hasCloudSession = useHasCloudSession();
   // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
@@ -147,7 +138,6 @@ export function RootLayout() {
     void setMenuCloudSession(hasCloudSession);
   }, [hasCloudSession]);
   const { state: bootState } = useAssistantBootResolution();
-  useGuardianRepairRoute();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered
   // from any route — including setMainView("chat") calls made while the chat
@@ -168,27 +158,22 @@ export function RootLayout() {
   const activeAssistant = assistants.find(
     (assistant) => assistant.id === assistantId,
   );
-  const requestOrganizationId = useRequestOrganizationId();
   const assistantVersion = useAssistantIdentityStore.use.version();
   const connectionFallback =
     getSelfHostedIngressUrl() ??
     (typeof globalThis.location === "undefined"
       ? null
       : globalThis.location.href);
-  const notificationScopeId =
-    sessionStatus === "authenticated" && activeAssistant
-      ? resolveAssistantAvatarOwnerScopeId(
-          activeAssistant,
-          requestOrganizationId,
-          connectionFallback,
-        )
-      : null;
+  // The scope is keyed on the resolved assistant — a resolved assistant is
+  // the whole fact; there is no separate session question to ask first.
+  const notificationScopeId = activeAssistant
+    ? resolveAssistantAvatarOwnerScopeId(activeAssistant, connectionFallback)
+    : null;
   const notificationCloudAssistantId =
     resolveAssistantNotificationCloudId(activeAssistant);
   const activeConversationId = useConversationStore.use.activeConversationId();
   const assistantStateKind = bootState.kind;
   const isAssistantActive = assistantStateKind === "active";
-  const companionReady = isAssistantActive && !isSessionInitializing;
   // Hydrate the assistant identity store (name + version) at the app root so
   // the name is ready on every authenticated route — chat, settings, logs —
   // and the Electron window title / tray / About panel (published below by
@@ -237,21 +222,21 @@ export function RootLayout() {
   // (and any future accent-tinted UI) can read it from plain CSS.
   useAvatarAccentVar(avatar.accentHex);
   const retainedNotificationIdentityOwners = useMemo(() => {
-    if (sessionStatus === "authenticated" && !assistantsHydrated) {
+    // Keyed on the boot resolution, not a session flag: retain the previous
+    // owners while the resolution is still loading, drop them when it fails
+    // (there is nothing to key scopes on), and map the resolved assistants
+    // otherwise.
+    if (assistantStateKind === "loading") {
       return null;
     }
-    if (sessionStatus !== "authenticated") {
+    if (assistantStateKind === "error" || !assistantsHydrated) {
       return [];
     }
     return assistants
       .map((assistant) => {
         const fallback =
           assistant.id === assistantId ? connectionFallback : null;
-        const scopeId = resolveAssistantAvatarOwnerScopeId(
-          assistant,
-          requestOrganizationId,
-          fallback,
-        );
+        const scopeId = resolveAssistantAvatarOwnerScopeId(assistant, fallback);
         return scopeId ? { scopeId, assistantId: assistant.id } : null;
       })
       .filter((owner) => owner !== null);
@@ -259,9 +244,8 @@ export function RootLayout() {
     assistantId,
     assistants,
     assistantsHydrated,
+    assistantStateKind,
     connectionFallback,
-    requestOrganizationId,
-    sessionStatus,
   ]);
   useEffect(() => {
     if (!retainedNotificationIdentityOwners) {
@@ -279,8 +263,8 @@ export function RootLayout() {
     avatar.traits,
   );
 
-  // Feed the same avatar to the Electron Dock + menu-bar icons, and publish
-  // the live connection status to the menu-bar dot. Both no-op off Electron.
+  // Feed the same avatar to the Electron Dock + menu-bar icons. No-ops off
+  // Electron.
   useElectronIconSync(
     avatar.customImageUrl,
     avatar.components,
@@ -305,8 +289,7 @@ export function RootLayout() {
       avatarReady: avatar.isSuccess,
     },
   );
-  useElectronStatusSync();
-  useElectronIdentitySync(companionReady);
+  useElectronIdentitySync(isAssistantActive);
 
   // Size the Electron main window to the onboarding layout (440×630
   // default) while on an onboarding step, and back to the main-app size
@@ -634,10 +617,10 @@ export function RootLayout() {
       <TimezoneSync />
       <GlobalPushToTalkBridge
         assistantId={assistantId}
-        enabled={companionReady}
+        enabled={isAssistantActive}
       />
 
-      <CompanionTourEntry avatar={avatar} ready={companionReady} />
+      <CompanionTourEntry avatar={avatar} ready={isAssistantActive} />
 
       {/* The app dimmed while the companion introduces itself over this
           window. Inert off Electron and on the shells with no surface. */}

@@ -7,7 +7,7 @@ import {
   isLoopbackPublicUrl,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import { guardianTokenPath, resolveConfigDirPaths } from "./config";
+import { guardianTokenPath } from "./config";
 import type { CliInvocation } from "./util";
 
 const GUARDIAN_TOKEN_REFRESH_TIMEOUT_MS = 15_000;
@@ -180,22 +180,15 @@ export function getGuardianAccessToken(
   configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
-  env?: Record<string, string>,
   options?: GuardianTokenOptions,
 ): Promise<TokenResult> {
   if (!isLoopback) {
     return Promise.resolve({ ok: false, status: 403, error: "Forbidden" });
   }
 
-  let tokenPaths: string[];
+  let tokenPath: string;
   try {
-    const configDirs = [
-      configDir,
-      ...resolveConfigDirPaths({ ...process.env, ...env }),
-    ];
-    tokenPaths = [...new Set(configDirs)].map((dir) =>
-      guardianTokenPath(dir, assistantId),
-    );
+    tokenPath = guardianTokenPath(configDir, assistantId);
   } catch {
     return Promise.resolve({
       ok: false,
@@ -205,17 +198,12 @@ export function getGuardianAccessToken(
   }
 
   let raw: string | undefined;
-  let resolvedTokenPath: string | undefined;
-  for (const tokenPath of tokenPaths) {
-    try {
-      raw = fs.readFileSync(tokenPath, "utf-8");
-      resolvedTokenPath = tokenPath;
-      break;
-    } catch {
-      // Try the next compatible location.
-    }
+  try {
+    raw = fs.readFileSync(tokenPath, "utf-8");
+  } catch {
+    // Not found at the one canonical location.
   }
-  if (raw === undefined || resolvedTokenPath === undefined) {
+  if (raw === undefined) {
     return Promise.resolve({
       ok: false,
       status: 404,
@@ -283,16 +271,16 @@ export function getGuardianAccessToken(
     });
   }
 
-  const existingRefresh = guardianTokenRefreshes.get(resolvedTokenPath);
+  const existingRefresh = guardianTokenRefreshes.get(tokenPath);
   if (existingRefresh) {
     return existingRefresh;
   }
-  const refresh = refreshToken(assistantId, invocation, env).finally(() => {
-    if (guardianTokenRefreshes.get(resolvedTokenPath) === refresh) {
-      guardianTokenRefreshes.delete(resolvedTokenPath);
+  const refresh = refreshToken(assistantId, invocation).finally(() => {
+    if (guardianTokenRefreshes.get(tokenPath) === refresh) {
+      guardianTokenRefreshes.delete(tokenPath);
     }
   });
-  guardianTokenRefreshes.set(resolvedTokenPath, refresh);
+  guardianTokenRefreshes.set(tokenPath, refresh);
   return refresh;
 }
 
@@ -303,22 +291,16 @@ export function getPairedGuardianAccessToken(
   configDir: string,
   invocation: CliInvocation,
   isLoopback: boolean,
-  env?: Record<string, string>,
 ): Promise<TokenResult> {
-  return getGuardianAccessToken(
-    assistantId,
-    configDir,
-    invocation,
-    isLoopback,
-    env,
-    { paired: true, pairedGatewayUrl },
-  );
+  return getGuardianAccessToken(assistantId, configDir, invocation, isLoopback, {
+    paired: true,
+    pairedGatewayUrl,
+  });
 }
 
 function refreshToken(
   assistantId: string,
   invocation: CliInvocation,
-  env?: Record<string, string>,
 ): Promise<TokenResult> {
   return new Promise((resolve) => {
     const child = spawn(
@@ -327,7 +309,7 @@ function refreshToken(
       {
         stdio: ["ignore", "pipe", "pipe"],
         windowsHide: true,
-        env: { ...process.env, ...env },
+        env: { ...process.env },
       },
     );
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
 import {
@@ -73,12 +74,6 @@ export const debug = Object.assign(
       console.error(`Not logged in. Run '${cliCommand()} login' first.`);
       process.exit(1);
     }
-    if (!entry.runtimeUrl) {
-      console.error(
-        `Error: '${reference}' has no recorded gateway URL to export logs from.`,
-      );
-      process.exit(1);
-    }
     const cloudAssistantId = entry.cloudAssistantId?.trim();
     if (!cloudAssistantId) {
       console.error(
@@ -114,7 +109,7 @@ export const debug = Object.assign(
       .object({ url: z.string().url() })
       .parse(await urlResponse.json());
     const logs = await loopbackSafeFetch(
-      `${entry.runtimeUrl.replace(/\/+$/, "")}/v1/logs/export`,
+      `${getGatewayUrl(entry)}/v1/logs/export`,
       {
         method: "POST",
         signal: AbortSignal.timeout(180_000),
@@ -155,19 +150,8 @@ async function daemonAccessToken(
       return cached.accessToken;
     }
   }
-  if (!entry.runtimeUrl) {
-    throw new Error(
-      `No recorded gateway URL to lease a guardian token from for ${reference}.`,
-    );
-  }
   try {
-    return (
-      await leaseGuardianToken(
-        entry.runtimeUrl,
-        entry.assistantId,
-        entry.guardianBootstrapSecret,
-      )
-    ).accessToken;
+    return (await leaseGuardianToken(entry)).accessToken;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("ECONNREFUSED") || msg.includes("fetch failed")) {

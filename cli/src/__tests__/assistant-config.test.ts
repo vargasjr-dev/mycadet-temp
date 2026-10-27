@@ -1,12 +1,4 @@
-import {
-  describe,
-  test,
-  expect,
-  beforeEach,
-  afterEach,
-  afterAll,
-  spyOn,
-} from "bun:test";
+import { describe, test, expect, beforeEach, afterAll } from "bun:test";
 import {
   existsSync,
   mkdirSync,
@@ -21,7 +13,8 @@ import { join } from "node:path";
 
 // Point lockfile operations at a temp directory
 const testDir = mkdtempSync(join(tmpdir(), "cli-assistant-config-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+const prevConfigHome = process.env.XDG_CONFIG_HOME;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import {
   loadLatestAssistant,
@@ -31,20 +24,24 @@ import {
   lookupAssistantByIdentifier,
   removeLockfileAssistant,
   loadAllAssistants,
-  resolveTargetAssistant,
-  saveLockfileAssistant,
   getActiveAssistant,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 afterAll(() => {
+  if (prevConfigHome === undefined) {
+    delete process.env.XDG_CONFIG_HOME;
+  } else {
+    process.env.XDG_CONFIG_HOME = prevConfigHome;
+  }
   rmSync(testDir, { recursive: true, force: true });
-  delete process.env.CADET_LOCKFILE_DIR;
 });
 
 function writeLockfile(data: unknown): void {
+  mkdirSync(join(testDir, "cadet"), { recursive: true });
   writeFileSync(
-    join(testDir, "lockfile.json"),
+    join(testDir, "cadet", "lockfile.json"),
     JSON.stringify(data, null, 2),
   );
 }
@@ -62,11 +59,10 @@ const makeEntry = (
 
 describe("assistant-config", () => {
   beforeEach(() => {
-    // Reset the canonical lockfile between tests
-    try {
-      rmSync(join(testDir, "lockfile.json"));
-    } catch {
-      // file may not exist
+    // Reset every environment's lockfile between tests — loadAllAssistants
+    // reads the union, so a stale non-prod entry would leak into counts.
+    for (const envDir of ["cadet", "cadet-dev", "cadet-local", "cadet-staging"]) {
+      rmSync(join(testDir, envDir, "lockfile.json"), { force: true });
     }
   });
 
@@ -75,7 +71,8 @@ describe("assistant-config", () => {
   });
 
   test("loadAllAssistants returns empty array for malformed lockfile", () => {
-    writeFileSync(join(testDir, "lockfile.json"), "not json");
+    mkdirSync(join(testDir, "cadet"), { recursive: true });
+    writeFileSync(join(testDir, "cadet", "lockfile.json"), "not json");
     expect(loadAllAssistants()).toEqual([]);
   });
 
@@ -106,12 +103,12 @@ describe("assistant-config", () => {
     saveLockfileAssistant(makeEntry("locked-1"));
     expect(loadAllAssistants()).toHaveLength(1);
     // The shared `${lockfilePath}.lock` key hosts contend on is released.
-    expect(existsSync(join(testDir, "lockfile.json.lock"))).toBe(false);
+    expect(existsSync(join(testDir, "cadet", "lockfile.json.lock"))).toBe(false);
   });
 
   test("saveLockfileAssistant breaks a stale lock and still lands the write", () => {
-    const lockDir = join(testDir, "lockfile.json.lock");
-    mkdirSync(lockDir);
+    const lockDir = join(testDir, "cadet", "lockfile.json.lock");
+    mkdirSync(lockDir, { recursive: true });
     const past = new Date(Date.now() - 60_000);
     utimesSync(lockDir, past, past);
 
@@ -121,8 +118,8 @@ describe("assistant-config", () => {
   });
 
   test("saveLockfileAssistant fails fast without writing when another holder is fresh", () => {
-    const lockDir = join(testDir, "lockfile.json.lock");
-    mkdirSync(lockDir);
+    const lockDir = join(testDir, "cadet", "lockfile.json.lock");
+    mkdirSync(lockDir, { recursive: true });
     try {
       const start = Date.now();
       expect(() => saveLockfileAssistant(makeEntry("contended-1"))).toThrow(
@@ -316,15 +313,12 @@ describe("env-scoped lockfile and migration", () => {
   test("readLockfile/writeLockfile use $XDG_CONFIG_HOME/cadet-<env>/lockfile.json in non-prod", () => {
     // The env package's xdgConfigHome() reads process.env.XDG_CONFIG_HOME
     // fresh on every call, so redirecting via that env var works without
-    // mocking `os`. We temporarily unset CADET_LOCKFILE_DIR so the env
-    // package falls through to getConfigDir(env).
+    // mocking `os`. The env package falls through to the ambient resolver.
     const prevEnv = process.env.CADET_ENVIRONMENT;
     const prevXdgConfig = process.env.XDG_CONFIG_HOME;
-    const prevLockDir = process.env.CADET_LOCKFILE_DIR;
     const xdgConfigHome = mkdtempSync(join(tmpdir(), "cli-xdg-config-"));
     process.env.CADET_ENVIRONMENT = "dev";
     process.env.XDG_CONFIG_HOME = xdgConfigHome;
-    delete process.env.CADET_LOCKFILE_DIR;
     try {
       // WHEN we save an assistant entry (which triggers writeLockfile)
       saveLockfileAssistant({
@@ -354,10 +348,9 @@ describe("env-scoped lockfile and migration", () => {
       } else {
         delete process.env.XDG_CONFIG_HOME;
       }
-      if (prevLockDir !== undefined) {
-        process.env.CADET_LOCKFILE_DIR = prevLockDir;
-      }
       rmSync(xdgConfigHome, { recursive: true, force: true });
+      // The union reader must not see this test's dev entry afterwards.
+      rmSync(join(testDir, "cadet-dev", "lockfile.json"), { force: true });
     }
   });
 
@@ -370,7 +363,7 @@ describe("env-scoped lockfile and migration", () => {
     delete process.env.CADET_ENVIRONMENT;
     try {
       // Clear any existing lockfile from earlier tests
-      rmSync(join(testDir, "lockfile.json"), { force: true });
+      rmSync(join(testDir, "cadet", "lockfile.json"), { force: true });
       rmSync(join(testDir, ".cadet.lock.json"), { force: true });
 
       saveLockfileAssistant({
@@ -379,7 +372,9 @@ describe("env-scoped lockfile and migration", () => {
         cloud: "local",
       });
 
-      const raw = JSON.parse(readFileSync(join(testDir, "lockfile.json"), "utf-8"));
+      const raw = JSON.parse(
+        readFileSync(join(testDir, "cadet", "lockfile.json"), "utf-8"),
+      );
       expect(raw.assistants).toHaveLength(1);
       expect(raw.assistants[0].assistantId).toBe("prod-bot");
       expect(existsSync(join(testDir, ".cadet.lock.json"))).toBe(false);
@@ -388,106 +383,5 @@ describe("env-scoped lockfile and migration", () => {
         process.env.CADET_ENVIRONMENT = prevEnv;
       }
     }
-  });
-});
-
-describe("cross-environment hint on resolution failure", () => {
-  let dataHome: string;
-  let prevXdg: string | undefined;
-  let prevEnv: string | undefined;
-
-  beforeEach(() => {
-    prevXdg = process.env.XDG_DATA_HOME;
-    prevEnv = process.env.CADET_ENVIRONMENT;
-    dataHome = mkdtempSync(join(tmpdir(), "cli-config-xdg-"));
-    process.env.XDG_DATA_HOME = dataHome;
-    // Pin the current env to production so the detector skips it and the hint
-    // copy is deterministic. The current-env lockfile is emptied so resolution
-    // genuinely finds nothing.
-    process.env.CADET_ENVIRONMENT = "production";
-    rmSync(join(testDir, "lockfile.json"), { force: true });
-    rmSync(join(testDir, ".cadet.lock.json"), { force: true });
-    rmSync(join(testDir, ".cadet.lockfile.json"), { force: true });
-  });
-
-  afterEach(() => {
-    if (prevXdg === undefined) {
-      delete process.env.XDG_DATA_HOME;
-    } else {
-      process.env.XDG_DATA_HOME = prevXdg;
-    }
-    if (prevEnv === undefined) {
-      delete process.env.CADET_ENVIRONMENT;
-    } else {
-      process.env.CADET_ENVIRONMENT = prevEnv;
-    }
-    rmSync(dataHome, { recursive: true, force: true });
-  });
-
-  // A dev-env assistant lives under the dev data dir, invisible to this
-  // production CLI — the exact split the hint explains.
-  function seedDevAssistant(): void {
-    mkdirSync(join(dataHome, "cadet-dev", "assistants", "dev-bot"), {
-      recursive: true,
-    });
-  }
-
-  function captureResolveTargetAssistantError(): string {
-    const errors: string[] = [];
-    const errorSpy = spyOn(console, "error").mockImplementation(
-      (...args: unknown[]) => {
-        errors.push(args.join(" "));
-      },
-    );
-    const exitSpy = spyOn(process, "exit").mockImplementation(((
-      _code?: number,
-    ) => {
-      throw new Error("exit");
-    }) as typeof process.exit);
-    try {
-      expect(() => resolveTargetAssistant()).toThrow("exit");
-    } finally {
-      errorSpy.mockRestore();
-      exitSpy.mockRestore();
-    }
-    return errors.join("\n");
-  }
-
-  test("formatAssistantLookupError appends the hint when another env has assistants", () => {
-    seedDevAssistant();
-    const msg = formatAssistantLookupError("ghost", { status: "not_found" });
-    expect(msg).toContain("No assistant found with name or ID 'ghost'.");
-    expect(msg).toContain("Install cadet Command");
-  });
-
-  test("formatAssistantLookupError stays bare when no other env has assistants", () => {
-    // dataHome is empty — detection finds nothing, so the message is intact.
-    const msg = formatAssistantLookupError("ghost", { status: "not_found" });
-    expect(msg).toBe("No assistant found with name or ID 'ghost'.");
-  });
-
-  test("ambiguous lookup never gets the hint", () => {
-    seedDevAssistant();
-    const msg = formatAssistantLookupError("Alice", {
-      status: "ambiguous",
-      matches: [
-        makeEntry("assistant-1", "http://localhost:7821", { name: "Alice" }),
-        makeEntry("assistant-2", "http://localhost:7822", { name: "Alice" }),
-      ],
-    });
-    expect(msg).not.toContain("Install cadet Command");
-  });
-
-  test("resolveTargetAssistant zero-assistants error carries the hint", () => {
-    seedDevAssistant();
-    const combined = captureResolveTargetAssistantError();
-    expect(combined).toContain("No assistant found. Run 'cadet hatch' first.");
-    expect(combined).toContain("Install cadet Command");
-  });
-
-  test("resolveTargetAssistant zero-assistants error stays bare without other envs", () => {
-    const combined = captureResolveTargetAssistantError();
-    expect(combined).toContain("No assistant found. Run 'cadet hatch' first.");
-    expect(combined).not.toContain("Install cadet Command");
   });
 });

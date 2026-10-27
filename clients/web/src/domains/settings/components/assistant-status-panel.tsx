@@ -14,7 +14,6 @@ import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { CapacityBar } from "@/domains/settings/components/capacity-bar";
 import { healthzGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
-import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { t, useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useEnvironmentStore } from "@/stores/environment-store";
@@ -113,11 +112,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     },
     retry: false,
   });
-  /* A platform-mode read needs `Cadet-Organization-Id`, which the org store
-     hydrates after auth. Without this gate the request can go out headerless
-     and be rejected. Ready immediately when there is no platform session, so
-     self-hosted and gateway-only sessions are not held up by it. */
-  const orgReadiness = useOrgHeaderReadiness();
   /* Keyed on the active id rather than on the resolved record, so this read
      and the record's own go out together. The record can only ever report the
      id the hook already holds, so waiting for it would buy nothing and cost a
@@ -135,7 +129,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     refetch: refetchHealthz,
   } = useQuery({
     ...healthzQueryOptions,
-    enabled: orgReadiness === "ready",
     retry: false,
     /* Live readings, so a revisit revalidates rather than serving a frozen
        number. The cache is here to paint the last values immediately, not to
@@ -148,12 +141,6 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     refetchInterval: (query) =>
       resizePollInterval(query.state.data, resizeWatch, Date.now()),
   });
-  /* A disabled query reports `isLoading: false`, so the wait for the org
-     header would otherwise read as a settled "no metrics" and the cards would
-     show their empty dashes on the way to loading. `"resolving"` is that wait
-     and belongs with loading; `"unavailable"` is a decided answer, and holding
-     a spinner on it would spin for as long as the page is open. */
-  const healthzLoading = healthzQueryLoading || orgReadiness === "resolving";
 
   const healthzPolling = resizeWatch !== null;
 
@@ -225,7 +212,7 @@ export function useAssistantWithHealthz(): AssistantWithHealthz {
     assistant,
     assistantLoading,
     healthz,
-    healthzLoading,
+    healthzLoading: healthzQueryLoading,
     healthzFetching,
     healthzPolling,
     refetch,

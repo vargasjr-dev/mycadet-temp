@@ -16,16 +16,16 @@ import { RemoteSchema } from "@mycadet/local-mode/contract";
  */
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
-  remote: RemoteSchema.default("local"),
+  remote: RemoteSchema.catch("local"),
   /** Cloud API base (auth endpoints + assistant API). */
   cloudUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */
   version: z.string().optional(),
-  /** Serving assistant's id (remote-web ingress configs only). */
+  /** Serving assistant's id, stamped by every host that fronts one assistant. */
   assistantId: z.string().optional(),
-  /** Serving assistant's display name (remote-web ingress configs only). */
+  /** Serving assistant's display name, stamped by every host that fronts one assistant. */
   assistantName: z.string().optional(),
   /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
   hubUrl: z.string().optional(),

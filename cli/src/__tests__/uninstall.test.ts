@@ -13,13 +13,10 @@ import { dirname, join } from "path";
 
 import { uninstall } from "../commands/uninstall.js";
 import {
-  getConfigDirs,
   getInputHistoryPath,
-  getLogDir,
   getSharedStateDir,
-  getStateDir,
 } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 // The command reads its argv at call time.
@@ -47,8 +44,7 @@ function redirectXdg(): string {
   process.env.XDG_CONFIG_HOME = join(root, "config");
   process.env.XDG_STATE_HOME = join(root, "state");
   process.env.CADET_ENVIRONMENT = "production";
-  process.env.CADET_LOCKFILE_DIR = join(root, "lockdir");
-  mkdirSync(process.env.CADET_LOCKFILE_DIR, { recursive: true });
+  mkdirSync(join(root, "config", "cadet"), { recursive: true });
   return root;
 }
 
@@ -57,7 +53,6 @@ const RESTORED_ENV_KEYS = [
   "XDG_CONFIG_HOME",
   "XDG_STATE_HOME",
   "CADET_ENVIRONMENT",
-  "CADET_LOCKFILE_DIR",
 ] as const;
 
 function withRestoredEnv(run: () => Promise<void>): Promise<void> {
@@ -106,7 +101,7 @@ describe("cadet uninstall", () => {
       // says so up front (v0.0.10 run feedback: the hard refusal just
       // blocked the uninstall; the fs sweep deletes the archives anyway).
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [makeEntry({ assistantId: "test-assistant" })],
         }) + "\n",
@@ -165,7 +160,7 @@ describe("cadet uninstall", () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [
             {
@@ -200,7 +195,7 @@ describe("cadet uninstall", () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
       writeFileSync(
-        join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+        join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
         JSON.stringify({
           assistants: [
             {
@@ -210,7 +205,7 @@ describe("cadet uninstall", () => {
           ],
         }) + "\n",
       );
-      mkdirSync(getConfigDirs(getCurrentEnvironment())[0]!, {
+      mkdirSync(resolveConfigDir(), {
         recursive: true,
       });
 
@@ -237,18 +232,17 @@ describe("cadet uninstall", () => {
   test("--yes deletes the environment's XDG locations and leaves the source checkout alone", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const env = getCurrentEnvironment();
 
       // Pre-create every target the command should delete, using the SAME
       // path helpers so the test stays honest about what they resolve to.
-      const stateDir = getStateDir(env);
+      const stateDir = resolveDataDir();
       mkdirSync(join(stateDir, "assistants", "some-assistant"), {
         recursive: true,
       });
       mkdirSync(join(stateDir, "retired"), { recursive: true });
-      const configDir = getConfigDirs(env)[0]!;
+      const configDir = resolveConfigDir();
       mkdirSync(configDir, { recursive: true });
-      const logDir = getLogDir(env);
+      const logDir = resolveLogDir();
       mkdirSync(logDir, { recursive: true });
       const historyPath = getInputHistoryPath();
       mkdirSync(dirname(historyPath), { recursive: true });
@@ -285,7 +279,7 @@ describe("cadet uninstall", () => {
   test("--yes lists and removes the Cadet executable itself", async () => {
     await withRestoredEnv(async () => {
       const root = redirectXdg();
-      const configDir = getConfigDirs(getCurrentEnvironment())[0]!;
+      const configDir = resolveConfigDir();
       mkdirSync(configDir, { recursive: true });
 
       // A compiled-binary install: process.execPath IS the install, so the

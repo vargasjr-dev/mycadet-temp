@@ -24,7 +24,7 @@ import type {
 } from "@/generated/api/types.gen";
 import * as daemonSdk from "@/generated/daemon/sdk.gen";
 import * as assistantAvatarMod from "@/hooks/use-assistant-avatar";
-import * as cloudGate from "@/hooks/use-cloud-gate";
+import * as cloudGate from "@/assistant/hosting";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 const ASSISTANT_ID = "assistant-1";
@@ -35,14 +35,10 @@ mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => ASSISTANT_ID,
 }));
 
-mock.module("@/hooks/use-cloud-gate", () => ({
+mock.module("@/assistant/hosting", () => ({
   ...cloudGate,
-  useCloudGate: () => "full",
-  useCloudGateWithPending: () => "full",
-}));
-
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
+  useActiveAssistantIsCloudHosted: () => true,
+  useAssistantHosting: () => "cloud",
 }));
 
 mock.module("@/hooks/use-cloud-assistant-id", () => ({
@@ -100,15 +96,6 @@ function page<T>(results: T[]) {
 
 mock.module("@/generated/api/sdk.gen", () => ({
   ...apiSdk,
-  organizationsBillingSubscriptionRetrieve: () =>
-    Promise.resolve({
-      data: {
-        plan_id: "pro",
-        status: "active",
-        entitlements: { cloud_email: true, phone_number: false },
-      },
-      response: { ok: true },
-    }),
   assistantsList: () =>
     Promise.resolve(
       page([

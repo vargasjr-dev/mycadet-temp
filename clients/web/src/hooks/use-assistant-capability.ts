@@ -2,7 +2,6 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 
 import { getAssistantHealthz } from "@/assistant/api";
 import type { HealthzGetResponse } from "@/generated/daemon/types.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 type AssistantCapability = keyof NonNullable<
@@ -24,11 +23,9 @@ type AssistantCapability = keyof NonNullable<
  */
 export function useAssistantCapabilityQuery(capability: AssistantCapability) {
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
-  // Platform health reads need the organization header hydrated after auth.
-  const isOrgReady = useIsOrgReady();
   return useQuery({
     ...assistantCapabilityOptions(capability, assistantId),
-    enabled: assistantId != null && isOrgReady,
+    enabled: assistantId != null,
   });
 }
 

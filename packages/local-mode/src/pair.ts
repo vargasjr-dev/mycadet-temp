@@ -134,10 +134,10 @@ function derivePairedAssistantId(name?: string, gatewayUrl?: string): string {
 
 /** The raw lockfile entry already holding `localId`, if any. */
 function findRawAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   localId: string,
 ): Record<string, unknown> | undefined {
-  const rawAssistants = readRawLockfile(lockfilePaths).assistants;
+  const rawAssistants = readRawLockfile(lockfilePath).assistants;
   return (
     Array.isArray(rawAssistants)
       ? (rawAssistants as Array<Record<string, unknown>>)
@@ -191,12 +191,12 @@ interface PairedDestination {
  * still what guarantees the id.
  */
 function resolvePairedDestination(
-  lockfilePaths: string[],
+  lockfilePath: string,
   name: string | undefined,
   gatewayUrl?: string,
 ): PairedDestination {
   const localId = derivePairedAssistantId(name, gatewayUrl);
-  const existing = findRawAssistant(lockfilePaths, localId);
+  const existing = findRawAssistant(lockfilePath, localId);
   return {
     localId,
     existing,
@@ -211,10 +211,10 @@ function resolvePairedDestination(
  * local write then fails.
  */
 export function checkPairedAssistantName(
-  lockfilePaths: string[],
+  lockfilePath: string,
   name: string,
 ): PairRefusal | null {
-  return resolvePairedDestination(lockfilePaths, name).refusal;
+  return resolvePairedDestination(lockfilePath, name).refusal;
 }
 
 /**
@@ -229,7 +229,7 @@ export function checkPairedAssistantName(
  * token (validated by signature/audience) is what authorizes requests.
  */
 export function pairAssistant(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { credentials, name }: PairOptions,
 ): PairResult {
@@ -259,7 +259,7 @@ export function pairAssistant(
   }
 
   const { localId, existing, refusal } = resolvePairedDestination(
-    lockfilePaths,
+    lockfilePath,
     name,
     credentials.gatewayUrl,
   );
@@ -306,25 +306,25 @@ export function pairAssistant(
     };
   }
 
-  const writeResult = saveLockfileAssistant(
-    lockfilePaths,
-    {
-      assistantId: localId,
-      // The label, not the bare host: two assistants behind one host differ
-      // only in their path prefix, and a display name that dropped it would
-      // make them indistinguishable in a chooser.
-      name: name ?? `paired (${label})`,
-      runtimeUrl: credentials.gatewayUrl,
-      // No pairing flag is stored: paired-ness derives from this remote
-      // runtimeUrl, so lifecycle/status readers recognize the remote
-      // pairing without one. The cloud id the web resolver cached for an
-      // earlier target is dropped; the upsert merge would otherwise keep it
-      // and the resolver would never re-probe.
-      cloudAssistantId: undefined,
-    },
-    undefined,
-  );
-  if (!writeResult.ok) {
+  try {
+    saveLockfileAssistant(
+      {
+        assistantId: localId,
+        // The label, not the bare host: two assistants behind one host differ
+        // only in their path prefix, and a display name that dropped it would
+        // make them indistinguishable in a chooser.
+        name: name ?? `paired (${label})`,
+        runtimeUrl: credentials.gatewayUrl,
+        // No pairing flag is stored: paired-ness derives from this remote
+        // runtimeUrl, so lifecycle/status readers recognize the remote
+        // pairing without one. The cloud id the web resolver cached for an
+        // earlier target is dropped; the upsert merge would otherwise keep it
+        // and the resolver would never re-probe.
+        cloudAssistantId: undefined,
+      },
+      undefined,
+    );
+  } catch (error) {
     // The entry was not registered, so undo the token write (best-effort;
     // the write failure itself is what gets reported): restore the prior
     // token of a re-import, or delete the freshly written one.
@@ -338,7 +338,13 @@ export function pairAssistant(
     } catch {
       // Rollback failed; the reported write error already covers the outcome.
     }
-    return writeResult;
+    return {
+      ok: false,
+      status: 500,
+      error: `Failed to write the lockfile entry: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    };
   }
 
   return {
@@ -962,7 +968,7 @@ export interface PairingPollOptions {
  * never leaves credentials for an assistant the user declined to pair.
  */
 export async function pairingPoll(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { handle, name, platform }: PairingPollOptions,
 ): Promise<PairingPollResult> {
@@ -987,7 +993,7 @@ export async function pairingPoll(
   // the caller that, distinguishing it from the post-exchange `import`
   // refusal, which does spend the code.
   const { refusal } = resolvePairedDestination(
-    lockfilePaths,
+    lockfilePath,
     localName,
     session.publicBaseUrl,
   );
@@ -1075,7 +1081,7 @@ export async function pairingPoll(
     return unusableGatewayCredentials();
   }
 
-  const result = pairAssistant(lockfilePaths, configDir, {
+  const result = pairAssistant(lockfilePath, configDir, {
     credentials: {
       gatewayUrl: session.publicBaseUrl,
       token: approved.accessToken,
@@ -1216,7 +1222,7 @@ export type ConnectImportResult =
  * so bundle limits, error strings, and the result shape are defined once.
  */
 export function connectImport(
-  lockfilePaths: string[],
+  lockfilePath: string,
   configDir: string,
   { bundle, name }: ConnectImportOptions,
 ): ConnectImportResult {
@@ -1230,7 +1236,7 @@ export function connectImport(
   if (!decoded.ok) {
     return { ok: false, status: 400, error: decoded.error };
   }
-  const result = pairAssistant(lockfilePaths, configDir, {
+  const result = pairAssistant(lockfilePath, configDir, {
     credentials: decoded.credentials,
     name: typeof name === "string" && name ? name : undefined,
   });

@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "fs";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import { join } from "path";
 
@@ -9,7 +10,6 @@ import {
   resolveTargetAssistant,
 } from "../lib/assistant-config.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { dockerResourceNames, sleepContainers } from "../lib/docker.js";
 import {
   drainAssistant,

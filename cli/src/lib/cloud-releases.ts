@@ -51,17 +51,15 @@ const RELEASES_FETCH_LIMIT = 100;
 
 /**
  * Fetch the releases list from Cadet Cloud (stable releases — the server's
- * `stable=true` default). `cloudUrl` overrides the lockfile/env-resolved
- * default — pass the target assistant's platform URL when it may differ
- * from the active one.
+ * `stable=true` default). Releases are a global catalog — what's live
+ * across the platform — so this always targets the environment's own
+ * cloud URL; it never targets a specific assistant's platform.
  * Returns `null` when Cadet Cloud is unreachable or responds non-OK —
  * distinct from `[]` (it answered, no releases).
  */
-export async function fetchReleases(opts?: {
-  cloudUrl?: string;
-}): Promise<ReleaseListItem[] | null> {
+export async function fetchReleases(): Promise<ReleaseListItem[] | null> {
   try {
-    const cloudUrl = opts?.cloudUrl || getCloudUrl();
+    const cloudUrl = getCloudUrl();
     const response = await loopbackSafeFetch(
       `${cloudUrl}/v1/releases/?stable=true&limit=${RELEASES_FETCH_LIMIT}`,
       { signal: AbortSignal.timeout(10_000) },

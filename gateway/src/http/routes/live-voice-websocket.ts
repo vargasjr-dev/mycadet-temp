@@ -1,9 +1,9 @@
-import { buildWsUpstreamUrl } from "@mycadet/assistant-client";
-
 import {
-  validateEdgeToken,
-  mintServiceToken,
-} from "../../auth/token-exchange.js";
+  buildWsUpstreamUrl,
+  forwardedIdentityHeaders,
+} from "@mycadet/assistant-client";
+
+import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { findCadetGuardian } from "../../auth/guardian-bootstrap.js";
 import { parseSub } from "../../auth/subject.js";
@@ -220,7 +220,6 @@ export function getLiveVoiceWebsocketHandlers() {
         buildWsUpstreamUrl({
           baseUrl: config.assistantRuntimeBaseUrl,
           path: "/v1/live-voice",
-          serviceToken: mintServiceToken(),
           // The guardian this socket was admitted for, so the daemon stamps
           // its turns with the identity the admission decision was made
           // against rather than resolving one of its own a moment later.
@@ -241,7 +240,13 @@ export function getLiveVoiceWebsocketHandlers() {
         "Opening upstream live voice WS to runtime",
       );
 
-      const upstream = new WebSocket(upstreamUrl);
+      // The DOM lib's WebSocket declaration shadows Bun's here — it only
+      // knows the subprotocols overload, so the headers-init rides past it
+      // untyped. (Dropping the DOM lib is not a drive-by: the gateway's
+      // tests lean on DOM-typed fetch, ~300 errors.)
+      const upstream = new WebSocket(upstreamUrl, {
+        headers: forwardedIdentityHeaders(),
+      } as never);
       ws.data.upstream = upstream;
 
       upstream.addEventListener("open", () => {

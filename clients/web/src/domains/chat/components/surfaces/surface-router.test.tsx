@@ -45,8 +45,8 @@ mock.module(CARD_SURFACE_MODULE, () => ({
 // provider, and managed-voice queries into a routing test. What matters here is
 // which component the router picks.
 mock.module("@/domains/chat/components/surfaces/voice-picker-surface", () => ({
-  VoicePickerSurface: ({ assistantId }: { assistantId: string | null }) => (
-    <div data-testid="voice-picker-surface">{assistantId ?? "no-assistant"}</div>
+  VoicePickerSurface: () => (
+    <div data-testid="voice-picker-surface">mounted</div>
   ),
 }));
 
@@ -114,7 +114,7 @@ describe("SurfaceRouter error boundary", () => {
 });
 
 describe("SurfaceRouter: voice picker", () => {
-  test("routes surfaceType \"voice_picker\" to the inline picker", () => {
+  test('routes surfaceType "voice_picker" to the inline picker', () => {
     const { getByTestId, container } = render(
       <SurfaceRouter
         surface={makeSurface({
@@ -123,19 +123,18 @@ describe("SurfaceRouter: voice picker", () => {
           title: "Pick a voice",
         })}
         onAction={() => {}}
-        assistantId="asst_1"
       />,
     );
 
     // The acceptance criterion for registering the type: not the fallback card.
     expect(container.textContent).not.toContain("Unsupported surface type");
-    // The owning assistant is threaded through, not read from global state.
-    expect(getByTestId("voice-picker-surface").textContent).toBe("asst_1");
+    // The picker reads the shell's assistant itself — the router threads no id.
+    expect(getByTestId("voice-picker-surface").textContent).toBe("mounted");
   });
 });
 
 describe("SurfaceRouter — visual surfaces", () => {
-  test("routes surfaceType \"visual\" to the sandboxed widget iframe", () => {
+  test('routes surfaceType "visual" to the sandboxed widget iframe', () => {
     const { container } = render(
       // VisualSurface relays widget prompts through useNavigate.
       <MemoryRouter>

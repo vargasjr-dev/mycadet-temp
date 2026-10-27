@@ -15,7 +15,10 @@ import {
   loadOrCreateSigningKey,
   initSigningKey,
 } from "./auth/token-service.js";
-import { validateEdgeToken, mintServiceToken } from "./auth/token-exchange.js";
+import {
+  forwardedIdentityHeaders,
+} from "@mycadet/assistant-client";
+import { validateEdgeToken } from "./auth/token-exchange.js";
 import { findGuardianForChannelActor } from "./auth/guardian-bootstrap.js";
 import { ConfigFileCache } from "./config-file-cache.js";
 import { ConfigFileWatcher } from "./config-file-watcher.js";
@@ -243,11 +246,7 @@ import { initGatewayDb } from "./db/connection.js";
 import { cleanupExpiredInboundEvents } from "./db/inbound-dedup-store.js";
 import { onWebhookIngressRoutesChanged } from "./db/webhook-ingress-route-store.js";
 import { runPostAssistantReady } from "./post-assistant-ready.js";
-import {
-  clearManagedPublicBaseUrl,
-  createTunnelClient,
-  enablePublicIngress,
-} from "./tunnel/client.js";
+import { createTunnelClient, enablePublicIngress } from "./tunnel/client.js";
 import { VERSION_HEADER_NAME, VERSION_HEADER_VALUE } from "./version.js";
 import { isWebsocketUpgradeRequest } from "./http/utils.js";
 
@@ -1989,7 +1988,7 @@ async function main() {
           `${config.assistantRuntimeBaseUrl}/v1/health`,
           {
             signal: AbortSignal.timeout(3000),
-            headers: { authorization: `Bearer ${mintServiceToken()}` },
+            headers: forwardedIdentityHeaders(),
           },
         );
         if (upstream.ok) {
@@ -2798,19 +2797,13 @@ async function main() {
 
   const twilioStartupCredentials =
     await readTwilioCredentialsForTunnelStartup();
-  if (tunnelClient) {
-    await clearManagedPublicBaseUrl(configFileCache).catch((err) => {
-      log.error({ err }, "Failed to clear stale Tunnel public URL");
-    });
-  }
   maybeStartTunnelForTwilio("startup", twilioStartupCredentials);
   // Tunnel is also the browser's ingress for web live voice, so bring the tunnel
   // up at startup for every assistant (not just for Twilio).
   startTunnelForLiveVoice("startup");
 
   // The credential watcher callback handles credential-backed startup side
-  // effects during the initial poll. Stale Tunnel-owned ingress is already
-  // cleared before those side effects can register external callbacks.
+  // effects during the initial poll.
   await credentialWatcher.start();
 
   const configFileWatcher = new ConfigFileWatcher((event) => {

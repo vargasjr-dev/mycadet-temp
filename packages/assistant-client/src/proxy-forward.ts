@@ -4,7 +4,7 @@
  *
  * Encapsulates the common pattern of:
  *  1. Buffering the request body
- *  2. Forwarding to the assistant runtime with service-token auth
+ *  2. Forwarding to the assistant runtime with forwarded-identity headers
  *  3. Mapping timeouts to 504 Gateway Timeout
  *  4. Mapping connection failures to 502 Bad Gateway
  *  5. Sanitizing response headers (hop-by-hop stripping)
@@ -13,6 +13,7 @@
 import {
   buildUpstreamUrl,
   createTimeoutController,
+  GATEWAY_SERVICE_IDENTITY,
   isTimeoutError,
   prepareUpstreamHeaders,
   stripHopByHop,
@@ -29,8 +30,6 @@ export type ProxyForwardOptions = {
   path: string;
   /** Query string to append, including the leading `?` (e.g. `?foo=bar`). */
   search?: string;
-  /** Service token for upstream auth. */
-  serviceToken: string;
   /** Timeout in milliseconds for the upstream request. */
   timeoutMs: number;
   /**
@@ -77,9 +76,11 @@ export async function proxyForward(
 ): Promise<ProxyForwardResult> {
   const upstream = buildUpstreamUrl(opts.baseUrl, opts.path, opts.search);
 
+  // Every proxy route asserts the gateway's service identity — the constant
+  // lives here so no call site repeats it.
   const reqHeaders = prepareUpstreamHeaders(
     new Headers(req.headers),
-    opts.serviceToken,
+    GATEWAY_SERVICE_IDENTITY,
   );
 
   // Buffer the body to get an accurate Content-Length

@@ -40,7 +40,7 @@ const actualLocalMode = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...actualLocalMode,
   hasLocalGateway: () => gatewayPath !== undefined,
-  getSelectedAssistant: () => selectedAssistant,
+  getActiveAssistant: () => selectedAssistant,
 }));
 
 mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({
@@ -49,10 +49,6 @@ mock.module("@/lib/backwards-compat/remote-web-pairing-gate", () => ({
 
 mock.module("@/lib/error-reporting/capture-error", () => ({
   captureError: () => {},
-}));
-
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
 }));
 
 const {

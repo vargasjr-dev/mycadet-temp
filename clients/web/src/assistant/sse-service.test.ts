@@ -325,8 +325,8 @@ describe("sseService.attach — connection lifecycle", () => {
   });
 });
 
-// Locks the wire that drives the menu-bar status dot: `deriveAssistantStatus`
-// reads `useSSEConnectedStore`, which is meaningless unless the SSE service
+// Locks the wire that drives push-notification suppression and the chat UI:
+// the SSE liveness this store carries is meaningless unless the SSE service
 // keeps it in sync with the live stream. Connection is mirrored off the
 // transport's `onStreamOpen` / `onStreamClose` (genuine establish/end), not
 // handle creation — so a failing initial connect and its backoff window read

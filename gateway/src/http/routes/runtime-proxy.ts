@@ -1,15 +1,16 @@
 import {
   buildUpstreamUrl,
+  GATEWAY_SERVICE_IDENTITY,
   prepareUpstreamHeaders,
   createTimeoutController,
   isTimeoutError,
   stripHopByHop,
+  type ForwardedIdentity,
 } from "@mycadet/assistant-client";
 
 import {
   validateEdgeToken,
-  mintExchangeToken,
-  mintServiceToken,
+  forwardedIdentityFromClaims,
 } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import type { TokenClaims } from "../../auth/types.js";
@@ -31,21 +32,23 @@ const log = getLogger("runtime-proxy");
 const WEBHOOK_PATH_RE = /^\/webhooks\//;
 
 /**
- * The daemon-audience token a request the gateway did not have to authenticate
- * carries upstream.
+ * The identity a request the gateway did not have to authenticate carries
+ * upstream.
  *
  * An OAuth passthrough grant stands for itself: the daemon's passthrough route
  * authorizes on the grant's own subject and `oauth.proxy` scope, and a service
- * token names neither, so a minted proxy URL would answer 403 wherever the
+ * identity names neither, so a minted proxy URL would answer 403 wherever the
  * gateway runs without client-facing auth. Every other caller, including one
- * presenting no bearer at all, gets the service token.
+ * presenting no bearer at all, gets the gateway's service identity.
  */
-function mintUnauthenticatedExchangeToken(authHeader: string | null): string {
+function unauthenticatedForwardedIdentity(
+  authHeader: string | null,
+): ForwardedIdentity {
   const grant = presentedProxyGrant(authHeader);
   if (!grant) {
-    return mintServiceToken();
+    return GATEWAY_SERVICE_IDENTITY;
   }
-  return mintExchangeToken(grant, grant.scope_profile);
+  return forwardedIdentityFromClaims(grant, grant.scope_profile);
 }
 
 /**
@@ -129,7 +132,7 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
     // the gateway always authenticates itself to the daemon regardless of the
     // client-facing auth setting.
     //
-    let exchangeToken: string;
+    let forwardedIdentity: ForwardedIdentity;
     const authHeader = req.headers.get("authorization");
 
     if (config.runtimeProxyRequireAuth && req.method !== "OPTIONS") {
@@ -156,12 +159,12 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
         );
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
-      exchangeToken = mintExchangeToken(
+      forwardedIdentity = forwardedIdentityFromClaims(
         result.claims,
         result.claims.scope_profile,
       );
     } else {
-      exchangeToken = mintUnauthenticatedExchangeToken(authHeader);
+      forwardedIdentity = unauthenticatedForwardedIdentity(authHeader);
     }
 
     // The daemon uses flat /v1/... paths. Rewrite any legacy
@@ -182,7 +185,7 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
 
     const reqHeaders = prepareUpstreamHeaders(
       new Headers(req.headers),
-      exchangeToken,
+      forwardedIdentity,
     );
 
     // Inject the real client IP so the runtime can rate-limit per-user,

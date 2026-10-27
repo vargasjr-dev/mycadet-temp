@@ -28,7 +28,7 @@ import {
   setCompanionSurfaceSize,
   setCompanionSurfaceVisible,
 } from "./companion-window";
-import { getWatchedLockfile } from "./lockfile-watcher.client";
+import { getWatchedLockfile } from "@mycadet/electron-desktop/lockfile-watcher";
 import { dispatchToMain } from "./main-window";
 import { menuIcon } from "./menu-icon";
 import { readSetting } from "@mycadet/electron-desktop/settings";

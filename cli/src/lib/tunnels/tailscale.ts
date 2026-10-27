@@ -1,9 +1,5 @@
 import { z } from "zod";
-import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
-} from "@mycadet/service-contracts/ingress";
-import { clearRootProcess, stampRootProcess } from "../assistant-config.js";
+import { stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
   TunnelProvider,
@@ -369,8 +365,10 @@ export function stopTailscaleServe(
 
 /**
  * Run the tailscale tunnel workflow: preflight, serve the local edge over the
- * tailnet, persist the URL, then hold until Ctrl+C to tear the serve down and
- * drop what was persisted.
+ * tailnet, and persist the URL. The run is idempotent — re-running
+ * re-establishes the serve — and host-safe: nothing is held open and no
+ * process-level signal handling is registered, so the wake and upgrade
+ * restores can invoke it in-process.
  *
  * The tailnet URL carries a real LetsEncrypt certificate but is reachable only
  * from devices signed in to the same tailnet: no public exposure.
@@ -379,16 +377,9 @@ export async function runTailscaleTunnel(
   opts: RunTailscaleTunnelOptions = {},
 ): Promise<ProviderTunnelResult> {
   const deps = realTailscaleDeps();
-  // What this run publishes, and therefore what Ctrl+C takes back.
-  const publishedLabel = opts.preserveIngressUrl
-    ? "pairing address"
-    : "ingress URL";
 
   console.log("Setting up tailscale serve...");
-  const { publicUrl, port, binary, workspaceDir } = await startTailscaleServe(
-    opts,
-    deps,
-  );
+  const { publicUrl, port } = await startTailscaleServe(opts, deps);
 
   console.log("");
   console.log(`Tunnel established: ${publicUrl}`);
@@ -407,62 +398,19 @@ export async function runTailscaleTunnel(
   );
   console.log("");
   console.log(
-    "The serve runs in the background (tailscaled) and persists after this",
+    `The serve persists in tailscaled after this command exits. Stop it with \`${cliCommand()} tunnel stop\`.`,
   );
-  console.log(
-    `command exits. Press Ctrl+C to stop serving and clear the ${publishedLabel},`,
-  );
-  console.log("or stop it later with: tailscale serve --https=443 off");
 
   stampRootProcess("tunnel", {
     pid: process.pid,
     provider: "tailscale",
     startedAt: new Date().toISOString(),
   });
-  const teardown = (): void => {
-    console.log(
-      `\nStopping tailscale serve and clearing the ${publishedLabel}...`,
-    );
-    let result: TailscaleCommandResult | null = null;
-    try {
-      result = stopTailscaleServe(binary, deps);
-    } catch (err) {
-      console.error(
-        `Could not stop tailscale serve automatically (${
-          err instanceof Error ? err.message : String(err)
-        }). Run \`tailscale serve --https=443 off\` manually.`,
-      );
-    }
-    if (result && result.status !== 0) {
-      const detail = joinOutput(result);
-      console.error(
-        "Could not stop tailscale serve automatically. Run " +
-          "`tailscale serve --https=443 off` manually." +
-          (detail ? `\n${detail}` : ""),
-      );
-    }
-    if (shouldClearIngressUrl(result)) {
-      clearRootProcess("tunnel", process.pid);
-      retractServeUrl(opts, workspaceDir);
-    } else {
-      console.error(
-        `Keeping the saved ${publishedLabel} since serve may still be active. ` +
-          "After stopping serve manually, clear it with another Ctrl+C run " +
-          "or by re-running the tunnel command.",
-      );
-    }
-  };
 
-  const shutdown = (): void => {
-    teardown();
-    process.exit(0);
-  };
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
-
-  // Hold the process open until a signal fires. The serve itself lives in
-  // tailscaled, so there is no child process to await — the registered signal
-  // listeners keep the event loop alive.
+  // The serve itself lives in tailscaled and persists after this process
+  // exits; no signal handling is registered and nothing is held open — a
+  // run must be safe to invoke from a host process (the wake/upgrade
+  // restore). Stopping is the stop path: `cadet tunnel stop`.
   const waitForExit = new Promise<void>(() => {});
   return { publicUrl, waitForExit };
 }
@@ -529,40 +477,4 @@ export async function stopTailscaleTunnel(
 export const TAILSCALE_PROVIDER: TunnelProvider = {
   run: runTailscaleTunnel,
   stop: stopTailscaleTunnel,
-  /**
-   * The tailnet's start piece. The workspace's `lastTunnel` record names the
-   * tunnel whose URL the app server fronts: a tailnet run re-establishes the
-   * serve at the app server's port and re-saves the URL a gateway start
-   * cleared, which is the whole recovery. A pairing-only tailnet run leaves
-   * `lastTunnel` on the older public provider (that run deliberately did not
-   * repoint it), so nothing re-establishes here. Quiet: a wake without a
-   * running tailscale daemon must not fail the restore.
-   */
-  start: async ({ port, workspaceDir, assistantId }) => {
-    let lastTunnel: ReturnType<typeof parseTunnelRecord> = null;
-    try {
-      const ingress = loadRawConfig(workspaceDir).ingress as
-        | Record<string, unknown>
-        | undefined;
-      lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
-    } catch {
-      lastTunnel = null;
-    }
-    if (lastTunnel?.provider !== "tailscale") {
-      return null;
-    }
-    try {
-      const info = await startTailscaleServe({
-        port,
-        workspaceDir,
-        assistantId,
-      });
-      return info.publicUrl;
-    } catch (err) {
-      console.warn(
-        `   Could not ensure the tailnet tunnel: ${err instanceof Error ? err.message : String(err)}`,
-      );
-      return null;
-    }
-  },
 };

@@ -64,17 +64,6 @@ export const isCloudSessionSettled = (status: CloudSessionStatus): boolean =>
   status !== "unknown";
 
 /**
- * A cloud session a live probe confirmed — `"present"` AND not a believed
- * offline restore (LUM-2412). Stricter than {@link hasLiveCloudSession}:
- * telemetry consent gates on this so it never enables on a restored-offline
- * launch that no live probe has revalidated.
- */
-export const isConfirmedCloudSession = (
-  status: CloudSessionStatus,
-  restoredOffline: boolean,
-): boolean => status === "present" && !restoredOffline;
-
-/**
  * Statuses where the server itself said "no session": allauth's 401 for
  * an unauthenticated probe, a 403, or 410 Gone (session invalidated).
  */

@@ -2,30 +2,29 @@ import { isCloudHome } from "./cloud-values.js";
 import { hostname } from "node:os";
 
 import { getLocalLanIPv4 } from "./lan-ip.js";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
-import { GATEWAY_PORT } from "./constants.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config.js";
 
 /**
  * Resolve the URL for a generic runtime endpoint under `/v1/<subpath>`,
  * taking the assistant's topology into account.
  *
- * - For local/docker assistants, `runtimeUrl` is the loopback gateway and
- *   the runtime serves `/v1/<subpath>` directly.
- * - For cloud-managed (cloud="cadet") assistants the path is rewritten
- *   to the wildcard runtime proxy:
- *   `{cloudUrl}/v1/assistants/<assistantId>/<subpath>`.
+ * - For loopback assistants (local/docker/apple-container), the gateway
+ *   serves `/v1/<subpath>` directly.
+ * - For cloud-managed assistants the path is rewritten to the wildcard
+ *   runtime proxy: `{cloudUrl}/v1/assistants/<assistantId>/<subpath>`.
  *
- * The `subpath` is appended verbatim (e.g. `"identity"`).
+ * The address always derives through {@link getGatewayUrl}; the `subpath`
+ * is appended verbatim (e.g. `"identity"`).
  */
 export function resolveRuntimeUrl(
   entry: LockfileAssistant,
   subpath: string,
 ): string {
   if (isCloudHome(entry.cloud)) {
-    return `${entry.runtimeUrl}/v1/assistants/${entry.assistantId}/${subpath}`;
+    return `${getGatewayUrl(entry)}/v1/assistants/${entry.assistantId}/${subpath}`;
   }
-  return `${entry.runtimeUrl}/v1/${subpath}`;
+  return `${getGatewayUrl(entry)}/v1/${subpath}`;
 }
 
 /**
@@ -86,9 +85,10 @@ export function normalizeRuntimeUrl(url: string): string {
  * the selected entry's stored guardian token, so a victim pointed at an
  * attacker-controlled (or poisoned/redirected) URL must NOT cause us to POST the
  * long-lived refreshToken + deviceId there. Refresh is permitted only when
- * `candidateUrl` normalizes to the entry's persisted `runtimeUrl`.
+ * `candidateUrl` normalizes to the entry's own gateway address — the one
+ * {@link getGatewayUrl} derives.
  *
- * Returns the persisted URL that the candidate matched — never the
+ * Returns the trusted gateway URL that the candidate matched — never the
  * caller-supplied `candidateUrl` verbatim — so credentials only ever reach a
  * trusted origin even if a caller forgets to use this return value. Returns
  * `null` when the candidate is untrusted (caller must skip the refresh).
@@ -98,19 +98,9 @@ export function trustedRefreshUrl(
   candidateUrl: string,
 ): string | null {
   const candidate = normalizeRuntimeUrl(candidateUrl);
-  const persisted = entry.runtimeUrl;
-  if (persisted && normalizeRuntimeUrl(persisted) === candidate) {
-    return persisted;
+  const trusted = getGatewayUrl(entry);
+  if (normalizeRuntimeUrl(trusted) === candidate) {
+    return trusted;
   }
   return null;
-}
-
-/** The URL to dial an entry's gateway on: its loopback gateway port, else its recorded runtimeUrl, else the default gateway port. */
-export function getGatewayUrl(entry: LockfileAssistant): string {
-  const port = getLoopbackGatewayPort(entry);
-  if (port) return `http://127.0.0.1:${port}`;
-  return (entry.runtimeUrl || `http://127.0.0.1:${GATEWAY_PORT}`).replace(
-    /\/+$/,
-    "",
-  );
 }

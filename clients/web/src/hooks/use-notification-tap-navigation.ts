@@ -1,26 +1,17 @@
 import { useEffect } from "react";
 
+import {
+  connectCloudAssistant,
+  connectLocalAssistant,
+  connectPairedAssistant,
+} from "@/assistant/connect-assistant";
 import { useAssistantResolution } from "@/assistant/queries";
 import type { AssistantResolutionState } from "@/assistant/types";
 
-import {
-  resolveAssistantAvatarOwnerScopeId,
-  resolveAssistantNotificationCloudId,
-} from "@/hooks/use-assistant-avatar";
 import { publish } from "@/lib/event-bus";
 import { isLocalClient } from "@/lib/local-mode";
-import { getSelfHostedIngressUrl } from "@/lib/self-hosted/connection";
-import {
-  createNotificationIdentity,
-  sameNotificationIdentity,
-} from "@/runtime/notification-avatar";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  getActiveOrganizationIdForRequests,
-  useOrganizationStore,
-} from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -28,7 +19,8 @@ import {
 
 const TAP_ACTIVATION_TIMEOUT_MS = 15_000;
 
-/* Mirrored from useAssistantResolution so a terminal error settles wedged activation waiters. */
+/* Mirrored from useAssistantResolution so a terminal error releases wedged
+ * activation waiters. */
 let currentResolutionState: AssistantResolutionState = { kind: "loading" };
 const activationWaiters = new Set<() => void>();
 function wakeActivationWaiters() {
@@ -37,59 +29,27 @@ function wakeActivationWaiters() {
   }
 }
 
-function tapResolutionIsSettled(payload: NotificationTapPayload): boolean {
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus === "unauthenticated") {
-    return true;
-  }
-  const assistantsState = useResolvedAssistantsStore.getState();
-  if (
-    auth.sessionStatus !== "authenticated" ||
-    !assistantsState.assistantsHydrated
-  ) {
-    return false;
-  }
-  const assistant = assistantsState.assistants.find(
-    (candidate) => candidate.id === payload.identity?.assistantId,
-  );
-  if (!assistant || !assistant.isCloudHosted) {
-    return true;
-  }
-  if (auth.user?.kind !== "platform" || !auth.user.id) {
-    return true;
-  }
-  const organization = useOrganizationStore.getState();
-  return (
-    getActiveOrganizationIdForRequests() !== null ||
-    organization.status === "ready" ||
-    organization.status === "error"
-  );
-}
-
-function waitForTapResolutionReadiness(
+/**
+ * The assistant a tap targets, if it is still in the roster. The roster is
+ * the serving shell's own resolution projected into web — org-scoped by
+ * construction and stamped before the first render — so a row's presence
+ * already answers every "may this tap route" question the old session and
+ * organization gates re-derived by hand: no session, no rows; a stale org's
+ * assistant isn't in a current-org roster. What survives is the lookup.
+ */
+function resolveCurrentTapAssistant(
   payload: NotificationTapPayload,
-): Promise<void> {
-  if (tapResolutionIsSettled(payload)) {
-    return Promise.resolve();
+): ResolvedAssistant | null {
+  const identity = payload.identity;
+  if (!identity) {
+    return null;
   }
-  return new Promise<void>((resolve) => {
-    let unsubscribeAuth = () => {};
-    let unsubscribeOrganization = () => {};
-    let unsubscribeAssistants = () => {};
-    const settleIfReady = () => {
-      if (!tapResolutionIsSettled(payload)) {
-        return;
-      }
-      unsubscribeAuth();
-      unsubscribeOrganization();
-      unsubscribeAssistants();
-      resolve();
-    };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfReady);
-    unsubscribeOrganization = useOrganizationStore.subscribe(settleIfReady);
-    unsubscribeAssistants = useResolvedAssistantsStore.subscribe(settleIfReady);
-    settleIfReady();
-  });
+  return (
+    useResolvedAssistantsStore
+      .getState()
+      .assistants.find((candidate) => candidate.id === identity.assistantId) ??
+    null
+  );
 }
 
 function waitForActiveTapAssistant(
@@ -97,9 +57,6 @@ function waitForActiveTapAssistant(
   assistantId: string,
 ): Promise<boolean> {
   const readOutcome = (): boolean | null => {
-    if (useAuthStore.getState().sessionStatus !== "authenticated") {
-      return false;
-    }
     if (!resolveCurrentTapAssistant(payload)) {
       return false;
     }
@@ -110,6 +67,8 @@ function waitForActiveTapAssistant(
     if (assistantsState.activeAssistantId === assistantId) {
       return true;
     }
+    // A terminal resolution error means activation is wedged — release the
+    // waiter instead of burning the timeout.
     const resolution = currentResolutionState;
     if (resolution.kind === "error" && !resolution.transient) {
       return false;
@@ -121,13 +80,9 @@ function waitForActiveTapAssistant(
     return Promise.resolve(immediate);
   }
   return new Promise<boolean>((resolve) => {
-    let unsubscribeAuth = () => {};
-    let unsubscribeOrganization = () => {};
     let unsubscribeAssistants = () => {};
     let cancellationTimer: ReturnType<typeof setTimeout> | null = null;
     const finish = (outcome: boolean) => {
-      unsubscribeAuth();
-      unsubscribeOrganization();
       unsubscribeAssistants();
       activationWaiters.delete(settleIfComplete);
       if (cancellationTimer) {
@@ -142,8 +97,6 @@ function waitForActiveTapAssistant(
       }
       finish(outcome);
     };
-    unsubscribeAuth = useAuthStore.subscribe(settleIfComplete);
-    unsubscribeOrganization = useOrganizationStore.subscribe(settleIfComplete);
     unsubscribeAssistants =
       useResolvedAssistantsStore.subscribe(settleIfComplete);
     cancellationTimer = setTimeout(() => {
@@ -154,50 +107,19 @@ function waitForActiveTapAssistant(
   });
 }
 
-function resolveCurrentTapAssistant(
-  payload: NotificationTapPayload,
-): ResolvedAssistant | null {
-  const identity = payload.identity;
-  if (!identity) {
-    return null;
-  }
-  const auth = useAuthStore.getState();
-  if (auth.sessionStatus !== "authenticated") {
-    return null;
-  }
-  const assistant = useResolvedAssistantsStore
-    .getState()
-    .assistants.find((candidate) => candidate.id === identity.assistantId);
-  if (!assistant) {
-    return null;
-  }
-  const scopeId = resolveAssistantAvatarOwnerScopeId(
-    assistant,
-    getActiveOrganizationIdForRequests(),
-    getSelfHostedIngressUrl() ??
-      (typeof globalThis.location === "undefined"
-        ? null
-        : globalThis.location.href),
-  );
-  const currentIdentity = scopeId
-    ? createNotificationIdentity(
-        scopeId,
-        assistant.id,
-        resolveAssistantNotificationCloudId(assistant),
-      )
-    : null;
-  return currentIdentity && sameNotificationIdentity(identity, currentIdentity)
-    ? assistant
-    : null;
-}
-
 /**
  * Routes notification taps to the originating conversation. Mounted at
- * `RootLayout` so a tap arriving on any authenticated route navigates.
+ * `RootLayout` so a tap arriving on any route navigates.
  *
- * Publishes `deeplink.openThread` rather than navigating directly so
- * taps share the `cadet://thread/...` deep-link path; one wiring
- * covers all three tap paths in `runtime/notifications.ts`.
+ * The tap's inputs are the payload and the assistant roster — nothing from
+ * the session world. The serving shell resolved the assistant before web
+ * loaded, so a tap has no session question to ask; a target that is gone
+ * fails the roster lookup, and the connect path re-validates the platform
+ * session itself, exactly as it does for every non-tap entry into the app.
+ * The thread open publishes `deeplink.openThread` rather than navigating
+ * directly so taps share the `cadet://thread/...` deep-link path — the same
+ * channel, with the same server-side validity handling; no client-side
+ * pre-validation a deep link never had.
  *
  * No effect cleanup: `setNotificationTapHandler` swaps the handler
  * reference in place and registers the cloud listeners only once
@@ -225,7 +147,6 @@ export function useNotificationTapNavigation(): void {
         publish("deeplink.openThread", { threadId: payload.conversationId });
         return;
       }
-      await waitForTapResolutionReadiness(payload);
       const assistant = resolveCurrentTapAssistant(payload);
       if (!assistant) {
         return;
@@ -235,18 +156,10 @@ export function useNotificationTapNavigation(): void {
         assistantSelection.selectedAssistantId === assistant.id &&
         assistantSelection.activeAssistantId === assistant.id
       ) {
-        if (!resolveCurrentTapAssistant(payload)) {
-          return;
-        }
         publish("deeplink.openThread", { threadId: payload.conversationId });
         return;
       }
       try {
-        const {
-          connectPairedAssistant,
-          connectLocalAssistant,
-          connectCloudAssistant,
-        } = useAuthStore.getState();
         if (assistant.isPaired) {
           await connectPairedAssistant(assistant.id);
         } else if (assistant.isLocal && isLocalClient()) {
@@ -258,14 +171,6 @@ export function useNotificationTapNavigation(): void {
         return;
       }
       if (!(await waitForActiveTapAssistant(payload, assistant.id))) {
-        return;
-      }
-      const activeSelection = useResolvedAssistantsStore.getState();
-      if (
-        activeSelection.selectedAssistantId !== assistant.id ||
-        activeSelection.activeAssistantId !== assistant.id ||
-        !resolveCurrentTapAssistant(payload)
-      ) {
         return;
       }
       publish("deeplink.openThread", { threadId: payload.conversationId });

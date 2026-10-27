@@ -10,15 +10,11 @@
  *     key — there is one selection, validated for whichever org is active.
  *
  * Population:
- *  - Local mode: assistant list auto-syncs with the lockfile store via
- *    subscription, so every hatch / sync / retire is reflected.
+ *  - Local mode: the list IS the served synthesis - the host stamps the one
+ *    assistant this surface serves, populated once at module load.
  *  - Platform mode: not populated by this bundle — the app bundle's
  *    assistant chooser owns the cloud assistant list.
  *
- * Do NOT confuse with `lockfile-store.ts`, which is the raw on-disk
- * lockfile cache used internally by `lib/local-mode.ts` for host IPC.
- *
- * @see lockfile-store.ts — raw lockfile cache (internal to local-mode)
  * @see lib/navigation/build-state.ts — derives `hasAssistants` from here
  */
 
@@ -28,27 +24,27 @@ import { z } from "zod";
 import { createSelectors } from "@/utils/create-selectors";
 import { isAvatarSuperseded } from "@/lib/avatar-supersede";
 import {
-  isLocalClient,
+  getServedLockfile,
   isLocalAssistant,
   isCloudAssistant,
 } from "@/lib/local-mode";
 import {
-  isLoopbackGatewayCloud,
+  getGatewayUrl,
   isUsableRuntimeUrl,
   type LockfileAssistant,
 } from "@mycadet/local-mode/contract";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 
 /**
- * Whether the entry's gateway lives on another machine (a connect import):
- * the paired transport's eligibility, derived from the addressing.
+ * Whether the entry's gateway lives on another machine: a custom remote.
+ * Mirrors the lib predicate so the store and the lib cannot drift.
  */
 function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  return (
-    isLoopbackGatewayCloud(entry.cloud) &&
-    isUsableRuntimeUrl(entry.runtimeUrl) &&
-    !isLoopbackPublicUrl(entry.runtimeUrl)
-  );
+  if (entry.cloud !== "custom") {
+    return false;
+  }
+  const gatewayUrl = getGatewayUrl(entry);
+  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
 }
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
@@ -56,7 +52,6 @@ import {
   readSelectedAssistantId,
   writeSelectedAssistantId,
 } from "@/assistant/selected-assistant-storage";
-import { useLockfileStore } from "@/stores/lockfile-store";
 import type { Lockfile } from "@/runtime/local-mode-host";
 import type { Assistant } from "@/generated/api/types.gen";
 
@@ -134,16 +129,6 @@ export function isConnectableFromThisDevice(a: ResolvedAssistant): boolean {
  * entries with no org (`organizationId == null`), and platform entries owned
  * by the active org. Cross-org platform entries are dropped.
  */
-export function assistantsValidForOrg(
-  assistants: ResolvedAssistant[],
-  activeOrgId: string | null,
-): ResolvedAssistant[] {
-  return assistants.filter(
-    (a) =>
-      a.isLocal || a.organizationId == null || a.organizationId === activeOrgId,
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Store definition
 // ---------------------------------------------------------------------------
@@ -214,7 +199,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         isLocal: isLocalAssistant(a),
         isCloudHosted: isCloudAssistant(a),
         isPaired: isRemoteGatewayEntry(a),
-        runtimeUrl: a.runtimeUrl,
+        runtimeUrl: isRemoteGatewayEntry(a) ? getGatewayUrl(a) : a.runtimeUrl,
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
       }));
@@ -409,11 +394,10 @@ function getLockfileFields(assistantId: string): {
   isPaired?: boolean;
   isActiveLockfileAssistant?: boolean;
 } {
-  const lockfile = useLockfileStore.getState().lockfile;
-  const entry = lockfile?.assistants.find((a) => a.assistantId === assistantId);
-  const activeLockfileAssistantId = lockfile
-    ? getEffectiveActiveLockfileAssistantId(lockfile)
-    : null;
+  const lockfile = getServedLockfile();
+  const entry = lockfile.assistants.find((a) => a.assistantId === assistantId);
+  const activeLockfileAssistantId =
+    getEffectiveActiveLockfileAssistantId(lockfile);
   return {
     cloud: entry?.cloud,
     // The renderer-safe lockfile contract carries the org under its
@@ -421,7 +405,10 @@ function getLockfileFields(assistantId: string): {
     organizationId: entry?.cloudOrganizationId,
     onboardedAt: entry?.onboardedAt,
     runtimeVersion: entry?.resources?.runtimeVersion,
-    runtimeUrl: entry?.runtimeUrl,
+    runtimeUrl:
+      entry && isRemoteGatewayEntry(entry)
+        ? getGatewayUrl(entry)
+        : entry?.runtimeUrl,
     cloudAssistantId: entry?.cloudAssistantId,
     isPaired: entry ? isRemoteGatewayEntry(entry) : undefined,
     isActiveLockfileAssistant: lockfile
@@ -449,18 +436,6 @@ function getEffectiveActiveLockfileAssistantId(
 // ---------------------------------------------------------------------------
 // Subscriptions
 // ---------------------------------------------------------------------------
-
-// In local mode, keep the resolved list in sync with the lockfile. Only
-// committed lockfiles count: the empty placeholder written when nothing has
-// loaded (e.g. a failed host read at boot) must not mark the list hydrated
-// and reconcile away a still-valid selection.
-if (isLocalClient()) {
-  useLockfileStore.subscribe((state) => {
-    if (state.lockfile && state.committed) {
-      useResolvedAssistantsStoreBase.getState().setFromLockfile(state.lockfile);
-    }
-  });
-}
 
 const SelectionChangeSchema = z.object({
   key: z.literal(SELECTED_ASSISTANT_STORAGE_KEY),

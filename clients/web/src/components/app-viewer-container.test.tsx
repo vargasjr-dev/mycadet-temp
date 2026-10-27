@@ -25,7 +25,8 @@ let capturedOptions:
     }
   | undefined;
 let capturedBridgeOptions:
-  { fetch?: boolean; route?: string; relayAppRoutes?: boolean } | undefined;
+  | { fetch?: boolean; route?: string; relayAppRoutes?: boolean }
+  | undefined;
 mock.module("@/hooks/use-sandbox-fetch-proxy", () => ({
   useSandboxFetchProxy: (
     _ref: unknown,

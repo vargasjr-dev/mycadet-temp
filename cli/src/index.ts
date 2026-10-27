@@ -3,18 +3,13 @@
 import { join } from "path";
 import { readFileSync } from "node:fs";
 
-import {
-  resolveConfigDir,
-  SigningKeyContinuityError,
-} from "@mycadet/local-mode";
+import { resolveConfigDir } from "@mycadet/local-mode";
 
-import { emitCliError } from "./lib/cli-error.js";
 import { stampedVersion } from "@mycadet/shared/version";
 
 import cliPkg from "../package.json";
 import { backup } from "./commands/backup";
 import { app } from "./commands/app";
-import { clean } from "./commands/clean";
 import { client } from "./commands/client";
 import { completeCadet, completions } from "./commands/completions";
 import { confirm } from "./commands/confirm";
@@ -45,14 +40,13 @@ import { voice } from "./commands/voice";
 import { wake } from "./commands/wake";
 import { red } from "./lib/color";
 import { resolveAssistant, setActiveAssistant } from "./lib/assistant-config";
-import { getGatewayUrl } from "./lib/runtime-url.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { loadGuardianToken } from "./lib/guardian-token";
 import { checkHealth } from "./lib/health-check";
 
 const commands = {
   backup,
   app,
-  clean,
   client,
   completions,
   confirm,
@@ -133,7 +127,7 @@ function applyNoColorFlags(argv: string[]): void {
  * Values may be quoted with single or double quotes.
  */
 function loadConfigDotenv(): void {
-  const configDir = resolveConfigDir(process.env);
+  const configDir = resolveConfigDir();
   const envPath = join(configDir, ".env");
 
   let content: string;
@@ -252,9 +246,6 @@ async function main() {
   try {
     await command();
   } catch (error) {
-    if (error instanceof SigningKeyContinuityError) {
-      emitCliError("AUTH_IDENTITY_UNAVAILABLE", error.message, error.code);
-    }
     console.error(
       red(`Error: ${error instanceof Error ? error.message : error}`),
     );

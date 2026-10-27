@@ -224,12 +224,11 @@ describe("document navigation header handoff", () => {
     },
   );
 
-  test.each(["auth", "self-hosted-error", "first-message"])(
+  // Session auth is the app shell's concern; web no longer renders an auth
+  // phase, so only web-owned pre-mount guards remain.
+  test.each(["self-hosted-error", "first-message"])(
     "keeps navigation before the document host mounts during %s",
     (guard) => {
-      if (guard === "auth") {
-        useAuthStore.setState({ sessionStatus: "initializing" });
-      }
       if (guard.startsWith("self-hosted")) {
         setResolutionState({ kind: "self_hosted" });
       }

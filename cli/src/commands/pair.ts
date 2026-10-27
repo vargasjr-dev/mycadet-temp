@@ -17,6 +17,7 @@
 // Call `qrcodeTerminal.generate` as a method — the library reads its default
 // error-correction level off `this`, so a destructured import renders nothing.
 import qrcodeTerminal from "qrcode-terminal";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
   buildRemoteWebPairingUrl,
@@ -35,7 +36,6 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { loopbackSafeFetch } from "../lib/loopback-fetch.js";
 import { dockerResourceNames } from "../lib/docker.js";
 import { gatewayCliInvocation } from "../lib/local.js";
@@ -237,9 +237,7 @@ async function mintPairingChallengeOrExit(
   try {
     challenge = JSON.parse(lastLine) as RemoteWebPairingChallengeResponse;
   } catch {
-    console.error(
-      "Error: could not parse the gateway's pairing mint output.",
-    );
+    console.error("Error: could not parse the gateway's pairing mint output.");
     process.exit(1);
   }
   if (!challenge.deviceCode || !challenge.userCode) {
@@ -270,8 +268,7 @@ async function mintPairingChallengeOverLoopbackOrExit(
     "/v1/remote-web/pairing-challenge",
     {},
   );
-  const challenge: RemoteWebPairingChallengeResponse =
-    await response.json();
+  const challenge: RemoteWebPairingChallengeResponse = await response.json();
   await gatewayPostOrExit(mintUrl, "/v1/remote-web/pairing-verification", {
     userCode: challenge.userCode,
   } satisfies RemoteWebPairingVerificationRequest);
@@ -297,196 +294,197 @@ async function postPairingVerification(
 
 export const pair = Object.assign(
   async function pair(): Promise<void> {
-  const rawArgs = process.argv.slice(3);
+    const rawArgs = process.argv.slice(3);
 
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    return;
-  }
-
-  const jsonOutput = rawArgs.includes("--json");
-  const webApproval = rawArgs.includes("--web-approve");
-  const appVariant = rawArgs.includes("--app");
-  // `--qr` is accepted and ignored: QR output is unconditional, and iOS
-  // Settings copy in the field names `cadet pair --qr`. Out of --help as a
-  // compatibility shim, not part of the command's surface.
-  let args = rawArgs.filter(
-    (a) => a !== "--json" && a !== "--app" && a !== "--qr",
-  );
-
-  const [label, afterLabel] = extractFlag(args, "--label");
-  const [webApproveCode, afterWebApprove] = extractFlag(
-    afterLabel,
-    "--web-approve",
-  );
-  const [appSchemeOverride, afterAppScheme] = extractFlag(
-    afterWebApprove,
-    "--app-scheme",
-  );
-  args = afterAppScheme;
-
-  // Any `--`-prefixed token left after known-flag extraction is an option this
-  // CLI version doesn't support. Fail loud before any network call rather than
-  // letting it fall through: an unknown flag would otherwise be silently
-  // dropped and the command would run the wrong flow. Positional names never
-  // start with `--`, so multi-word assistant targets are unaffected.
-  const unknownFlag = args.find((a) => a.startsWith("--"));
-  if (unknownFlag) {
-    console.error(`Error: unknown option '${unknownFlag}'.`);
-    console.error("Run `cadet pair --help` to see available options.");
-    console.error(
-      `If this option is from newer docs, ${STALE_CLI_UPDATE_HINT}`,
-    );
-    process.exit(1);
-  }
-
-  if (webApproval && !webApproveCode) {
-    console.error("Error: --web-approve requires a pairing code.");
-    process.exit(1);
-  }
-  if ((appVariant || appSchemeOverride) && webApproveCode) {
-    console.error(
-      "Error: --app and --app-scheme don't apply to --web-approve, which " +
-        "approves a code the other device already has.",
-    );
-    process.exit(1);
-  }
-  // A scheme only names the app link, so accepting it without --app would
-  // print the https QR and drop the scheme without saying so.
-  if (appSchemeOverride && !appVariant) {
-    console.error(
-      "Error: --app-scheme names the scheme for the app link, so it needs " +
-        "--app. Re-run with both, or drop --app-scheme for the https link.",
-    );
-    process.exit(1);
-  }
-
-  // Resolve the target. An explicit argument is matched by display name OR id
-  // (with the standard ambiguity error); no argument falls back to the active
-  // assistant. Join positional tokens so multi-word display names work even
-  // unquoted (e.g. `cadet pair My Assistant`).
-  const assistantName = parseAssistantTargetArg(args);
-  let entry: LockfileAssistant | null;
-  if (assistantName) {
-    const result = lookupAssistantByIdentifier(assistantName);
-    if (result.status !== "found") {
-      console.error(formatAssistantLookupError(assistantName, result));
-      process.exit(1);
-    }
-    entry = result.entry;
-  } else {
-    entry = resolveAssistant();
-    if (!entry) {
-      console.error("No assistant instance found. Run `cadet hatch` first.");
-      process.exit(1);
-    }
-  }
-
-  // Minting requires host presence on this machine. Native and docker
-  // topologies qualify (the latter via docker exec); an assistant this
-  // machine only knows through `connect import` has no host presence here
-  // at all, and its mint fails on the loopback gate below.
-
-  // Mint over loopback (the derived port avoids mDNS for same-machine calls),
-  // but advertise a REACHABLE url in the link, since the loopback url would
-  // point the other device at its own localhost: the public https address
-  // `cadet tunnel start` recorded for this assistant.
-  const mintUrl = getGatewayUrl(entry);
-
-  if (webApproveCode) {
-    // Rejections are diagnosed here rather than by exitOnHttpError: a
-    // rejected code must name the gateway that was asked, or an
-    // assistant/environment mismatch is indistinguishable from a typo.
-    const response = await postPairingVerification(mintUrl, webApproveCode);
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "");
-      const diagnostic = formatWebApproveFailure(
-        mintUrl,
-        getAssistantDisplayName(entry),
-        getCurrentEnvironment().name,
-        parseGatewayErrorCode(errorBody),
-      );
-      console.error(
-        diagnostic ??
-          `Error: HTTP ${response.status}: ${errorBody || response.statusText}`,
-      );
-      process.exit(1);
-    }
-    const result =
-      (await response.json()) as RemoteWebPairingVerificationResponse;
-    if (jsonOutput) {
-      console.log(JSON.stringify(result, null, 2));
+    if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
+      printUsage();
       return;
     }
-    console.log("Remote web pairing approved.");
-    console.log(`Expires: ${result.expiresAt}`);
-    return;
-  }
 
-  // The gateway owns the advertised address: it self-sources the public URL
-  // the tunnel recorded (and refuses honestly when none is), so this command
-  // never reads the workspace's ingress state.
-  const challenge = await mintPairingChallengeOrExit(entry);
-  const pairUrl = buildRemoteWebPairingUrl(challenge);
-  const displayName = assistantDisplayName(entry);
-  const appUrl = appVariant
-    ? buildAppConnectUrl(
-        appSchemeOverride ?? DEFAULT_APP_CONNECT_SCHEME,
-        challenge.publicBaseUrl,
-        challenge.deviceCode,
-        label || displayName,
-      )
-    : null;
-
-  if (jsonOutput) {
-    console.log(
-      JSON.stringify(
-        {
-          pairUrl,
-          ...(appUrl ? { appUrl } : {}),
-          deviceCode: challenge.deviceCode,
-          expiresAt: challenge.expiresAt,
-          expiresInSeconds: challenge.expiresInSeconds,
-        },
-        null,
-        2,
-      ),
+    const jsonOutput = rawArgs.includes("--json");
+    const webApproval = rawArgs.includes("--web-approve");
+    const appVariant = rawArgs.includes("--app");
+    // `--qr` is accepted and ignored: QR output is unconditional, and iOS
+    // Settings copy in the field names `cadet pair --qr`. Out of --help as a
+    // compatibility shim, not part of the command's surface.
+    let args = rawArgs.filter(
+      (a) => a !== "--json" && a !== "--app" && a !== "--qr",
     );
-    return;
-  }
 
-  console.log(
-    label
-      ? `Scan to pair "${label}" with ${displayName}:`
-      : `Scan to pair a device with ${displayName}:`,
-  );
-  console.log("");
-  qrcodeTerminal.generate(appUrl ?? pairUrl, { small: true }, (qr) => {
-    console.log(qr);
-  });
-  console.log("");
-  console.log("Or enter this code on the pairing page:");
-  console.log("");
-  console.log(`  ${challenge.deviceCode}`);
-  console.log("");
-  if (appUrl) {
-    console.log("The QR opens the Cadet app. App link:");
+    const [label, afterLabel] = extractFlag(args, "--label");
+    const [webApproveCode, afterWebApprove] = extractFlag(
+      afterLabel,
+      "--web-approve",
+    );
+    const [appSchemeOverride, afterAppScheme] = extractFlag(
+      afterWebApprove,
+      "--app-scheme",
+    );
+    args = afterAppScheme;
+
+    // Any `--`-prefixed token left after known-flag extraction is an option this
+    // CLI version doesn't support. Fail loud before any network call rather than
+    // letting it fall through: an unknown flag would otherwise be silently
+    // dropped and the command would run the wrong flow. Positional names never
+    // start with `--`, so multi-word assistant targets are unaffected.
+    const unknownFlag = args.find((a) => a.startsWith("--"));
+    if (unknownFlag) {
+      console.error(`Error: unknown option '${unknownFlag}'.`);
+      console.error("Run `cadet pair --help` to see available options.");
+      console.error(
+        `If this option is from newer docs, ${STALE_CLI_UPDATE_HINT}`,
+      );
+      process.exit(1);
+    }
+
+    if (webApproval && !webApproveCode) {
+      console.error("Error: --web-approve requires a pairing code.");
+      process.exit(1);
+    }
+    if ((appVariant || appSchemeOverride) && webApproveCode) {
+      console.error(
+        "Error: --app and --app-scheme don't apply to --web-approve, which " +
+          "approves a code the other device already has.",
+      );
+      process.exit(1);
+    }
+    // A scheme only names the app link, so accepting it without --app would
+    // print the https QR and drop the scheme without saying so.
+    if (appSchemeOverride && !appVariant) {
+      console.error(
+        "Error: --app-scheme names the scheme for the app link, so it needs " +
+          "--app. Re-run with both, or drop --app-scheme for the https link.",
+      );
+      process.exit(1);
+    }
+
+    // Resolve the target. An explicit argument is matched by display name OR id
+    // (with the standard ambiguity error); no argument falls back to the active
+    // assistant. Join positional tokens so multi-word display names work even
+    // unquoted (e.g. `cadet pair My Assistant`).
+    const assistantName = parseAssistantTargetArg(args);
+    let entry: LockfileAssistant | null;
+    if (assistantName) {
+      const result = lookupAssistantByIdentifier(assistantName);
+      if (result.status !== "found") {
+        console.error(formatAssistantLookupError(assistantName, result));
+        process.exit(1);
+      }
+      entry = result.entry;
+    } else {
+      entry = resolveAssistant();
+      if (!entry) {
+        console.error("No assistant instance found. Run `cadet hatch` first.");
+        process.exit(1);
+      }
+    }
+
+    // Minting requires host presence on this machine. Native and docker
+    // topologies qualify (the latter via docker exec); an assistant this
+    // machine only knows through `connect import` has no host presence here
+    // at all, and its mint fails on the loopback gate below.
+
+    // Mint over loopback (the derived port avoids mDNS for same-machine calls),
+    // but advertise a REACHABLE url in the link, since the loopback url would
+    // point the other device at its own localhost: the public https address
+    // `cadet tunnel start` recorded for this assistant.
+    const mintUrl = getGatewayUrl(entry);
+
+    if (webApproveCode) {
+      // Rejections are diagnosed here rather than by exitOnHttpError: a
+      // rejected code must name the gateway that was asked, or an
+      // assistant/environment mismatch is indistinguishable from a typo.
+      const response = await postPairingVerification(mintUrl, webApproveCode);
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "");
+        const diagnostic = formatWebApproveFailure(
+          mintUrl,
+          getAssistantDisplayName(entry),
+          getCurrentEnvironment().name,
+          parseGatewayErrorCode(errorBody),
+        );
+        console.error(
+          diagnostic ??
+            `Error: HTTP ${response.status}: ${errorBody || response.statusText}`,
+        );
+        process.exit(1);
+      }
+      const result =
+        (await response.json()) as RemoteWebPairingVerificationResponse;
+      if (jsonOutput) {
+        console.log(JSON.stringify(result, null, 2));
+        return;
+      }
+      console.log("Remote web pairing approved.");
+      console.log(`Expires: ${result.expiresAt}`);
+      return;
+    }
+
+    // The gateway owns the advertised address: it self-sources the public URL
+    // the tunnel recorded (and refuses honestly when none is), so this command
+    // never reads the workspace's ingress state.
+    const challenge = await mintPairingChallengeOrExit(entry);
+    const pairUrl = buildRemoteWebPairingUrl(challenge);
+    const displayName = assistantDisplayName(entry);
+    const appUrl = appVariant
+      ? buildAppConnectUrl(
+          appSchemeOverride ?? DEFAULT_APP_CONNECT_SCHEME,
+          challenge.publicBaseUrl,
+          challenge.deviceCode,
+          label || displayName,
+        )
+      : null;
+
+    if (jsonOutput) {
+      console.log(
+        JSON.stringify(
+          {
+            pairUrl,
+            ...(appUrl ? { appUrl } : {}),
+            deviceCode: challenge.deviceCode,
+            expiresAt: challenge.expiresAt,
+            expiresInSeconds: challenge.expiresInSeconds,
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+
+    console.log(
+      label
+        ? `Scan to pair "${label}" with ${displayName}:`
+        : `Scan to pair a device with ${displayName}:`,
+    );
     console.log("");
-    console.log(`  ${appUrl}`);
+    qrcodeTerminal.generate(appUrl ?? pairUrl, { small: true }, (qr) => {
+      console.log(qr);
+    });
     console.log("");
-    console.log("No app on the device? Open this URL in its browser instead:");
-  } else {
-    console.log("Or open this URL on the device:");
-  }
-  console.log("");
-  console.log(`  ${pairUrl}`);
-  console.log("");
-  console.log("Or on another computer, run:");
-  console.log("");
-  console.log(`  cadet connect import "${pairUrl}"`);
-  console.log("");
-  console.log(`Expires: ${challenge.expiresAt}`);
-},
+    console.log("Or enter this code on the pairing page:");
+    console.log("");
+    console.log(`  ${challenge.deviceCode}`);
+    console.log("");
+    if (appUrl) {
+      console.log("The QR opens the Cadet app. App link:");
+      console.log("");
+      console.log(`  ${appUrl}`);
+      console.log("");
+      console.log(
+        "No app on the device? Open this URL in its browser instead:",
+      );
+    } else {
+      console.log("Or open this URL on the device:");
+    }
+    console.log("");
+    console.log(`  ${pairUrl}`);
+    console.log("");
+    console.log("Or on another computer, run:");
+    console.log("");
+    console.log(`  cadet connect import "${pairUrl}"`);
+    console.log("");
+    console.log(`Expires: ${challenge.expiresAt}`);
+  },
   { description: "Print a pairing link and QR code for another device" },
 );
-

@@ -3,7 +3,8 @@ import { setSelectedAssistant } from "@/assistant/selection";
 import { extractErrorMessage } from "@/utils/api-errors";
 
 export type CreateCloudAssistantResult =
-  { ok: true; id: string } | { ok: false; error: string };
+  | { ok: true; id: string }
+  | { ok: false; error: string };
 
 /**
  * Create a new managed (cloud-hosted) assistant and switch to it.

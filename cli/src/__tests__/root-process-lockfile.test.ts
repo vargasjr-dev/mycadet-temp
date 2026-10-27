@@ -13,18 +13,18 @@ import {
   stampRootProcess,
 } from "../lib/assistant-config.js";
 
-// Create a temp directory and set CADET_LOCKFILE_DIR so the real lockfile
+// Create a temp directory and set XDG_CONFIG_HOME so the real lockfile
 // helpers resolve inside it (the sleep.test.ts fixture pattern).
 let testDir: string;
 
 beforeEach(() => {
   testDir = mkdtempSync(join(tmpdir(), "cadet-root-process-test-"));
   mkdirSync(join(testDir, "config"), { recursive: true });
-  process.env.CADET_LOCKFILE_DIR = join(testDir, "config");
+  process.env.XDG_CONFIG_HOME = join(testDir, "config");
 });
 
 afterEach(() => {
-  delete process.env.CADET_LOCKFILE_DIR;
+  delete process.env.XDG_CONFIG_HOME;
   rmSync(testDir, { recursive: true, force: true });
 });
 
@@ -76,7 +76,7 @@ describe("root process lockfile entries", () => {
       .parse(
         JSON.parse(
           readFileSync(
-            join(process.env.CADET_LOCKFILE_DIR!, "lockfile.json"),
+            join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json"),
             "utf-8",
           ),
         ),

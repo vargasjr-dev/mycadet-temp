@@ -3,7 +3,9 @@ import fs from "node:fs";
 import type { TokenResult } from "./guardian-token";
 import {
   FLATTENED_FIRST_SEGMENTS,
+  getGatewayUrl,
   getLoopbackGatewayPort,
+  isCloudHome,
   isLoopbackGatewayCloud,
   isUsableRuntimeUrl,
   LockfileAssistantSchema,
@@ -209,18 +211,24 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (!parsed.success) {
       continue;
     }
-    const { assistantId, cloud, resources, runtimeUrl } = parsed.data;
+    const { assistantId } = parsed.data;
     if (!assistantId) {
       continue;
     }
-    if (isUsableRuntimeUrl(runtimeUrl) && !isLoopbackPublicUrl(runtimeUrl)) {
-      targets.set(assistantId, { kind: "remote", runtimeUrl });
+    const gatewayUrl = getGatewayUrl(parsed.data);
+    // Cloud assistants are driven through the platform session, never
+    // forwarded over this machine's proxy.
+    if (isCloudHome(parsed.data.cloud)) {
       continue;
     }
-    if (!isLoopbackGatewayCloud(cloud)) {
+    if (isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
+      targets.set(assistantId, { kind: "remote", runtimeUrl: gatewayUrl });
       continue;
     }
-    const port = getLoopbackGatewayPort({ resources, runtimeUrl });
+    if (!isLoopbackGatewayCloud(parsed.data.cloud)) {
+      continue;
+    }
+    const port = getLoopbackGatewayPort(parsed.data);
     if (port != null && port >= MIN_GATEWAY_PORT && port <= MAX_GATEWAY_PORT) {
       targets.set(assistantId, { kind: "loopback", port });
     }
@@ -268,16 +276,13 @@ function readLockfileAssistantEntries(candidate: string): LockfileEntriesRead {
  * survive in a stale fallback file's target map.
  */
 export function readGatewayTargets(
-  lockfilePaths: string[],
+  lockfilePath: string,
 ): Map<string, GatewayEntryTarget> {
-  for (const candidate of lockfilePaths) {
-    const read = readLockfileAssistantEntries(candidate);
-    if (read.kind !== "ok") {
-      continue;
-    }
-    return gatewayTargetsFromLockfile({ assistants: read.assistants });
+  const read = readLockfileAssistantEntries(lockfilePath);
+  if (read.kind !== "ok") {
+    return new Map<string, GatewayEntryTarget>();
   }
-  return new Map<string, GatewayEntryTarget>();
+  return gatewayTargetsFromLockfile({ assistants: read.assistants });
 }
 
 /**

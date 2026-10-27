@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { execSync } from "node:child_process";
+import type { LockfileAssistant } from "./assistant-config.js";
 import {
-  chmodSync,
   closeSync,
   existsSync,
   mkdirSync,
@@ -15,7 +16,6 @@ import {
 import { hostname, platform } from "os";
 import { dirname, join } from "path";
 
-import { SEEDS } from "@mycadet/environments";
 import {
   guardianTokenPath,
   isConfidentialRefreshUrl,
@@ -24,8 +24,6 @@ import {
   type GuardianTokenData,
 } from "@mycadet/local-mode";
 
-import { getConfigDir, getConfigDirs } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
 
@@ -72,14 +70,12 @@ export type { GuardianTokenData };
 function getGuardianTokenPath(assistantId: string): string {
   // Resolve via the shared @mycadet/local-mode resolver — the same one every
   // host-seam reader (`getGuardianAccessToken`) uses — so the token is always
-  // written where it's read. Must stay in lockstep with `getConfigDir(
-  // getCurrentEnvironment())`; the parity test in guardian-token.test.ts guards
-  // against drift.
-  return guardianTokenPath(resolveConfigDir(process.env), assistantId);
+  // written where it's read.
+  return guardianTokenPath(resolveConfigDir(), assistantId);
 }
 
 function getPersistedDeviceIdPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "device-id");
+  return join(resolveConfigDir(), "device-id");
 }
 
 function hashWithSalt(input: string): string {
@@ -174,15 +170,12 @@ export function computeDeviceId(): string {
 export function loadGuardianToken(
   assistantId: string,
 ): GuardianTokenData | null {
-  for (const dir of getConfigDirs(getCurrentEnvironment())) {
-    try {
-      const raw = readFileSync(guardianTokenPath(dir, assistantId), "utf-8");
-      return JSON.parse(raw) as GuardianTokenData;
-    } catch {
-      // Try the next compatible location.
-    }
+  try {
+    const raw = readFileSync(guardianTokenPath(resolveConfigDir(), assistantId), "utf-8");
+    return JSON.parse(raw) as GuardianTokenData;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function saveGuardianToken(
@@ -191,7 +184,7 @@ export function saveGuardianToken(
 ): void {
   // Delegates to the shared @mycadet/local-mode writer (0700 dir, 0600 file)
   // with the same env-resolved config dir the path resolver above uses.
-  writeGuardianToken(resolveConfigDir(process.env), assistantId, data);
+  writeGuardianToken(resolveConfigDir(), assistantId, data);
 }
 
 /** Abort the refresh POST if the gateway is slow/unreachable (it's now on the
@@ -587,10 +580,13 @@ function describeJsonType(value: unknown): string {
 }
 
 export async function leaseGuardianToken(
-  gatewayUrl: string,
-  assistantId: string,
-  bootstrapSecret?: string,
+  entry: LockfileAssistant,
 ): Promise<GuardianTokenData> {
+  // The gateway address derives from the entry's topology; assistantId and
+  // the bootstrap secret ride the entry too.
+  const gatewayUrl = getGatewayUrl(entry);
+  const assistantId = entry.assistantId;
+  const bootstrapSecret = entry.guardianBootstrapSecret;
   // The gateway 503s every non-probe route ({status: "starting"}) while its
   // post-assistant-ready backfills run — exactly the window that burned the
   // caller's lease-retry budget. Poll /readyz (body-aware: it is the probe
@@ -690,68 +686,4 @@ export async function resetGuardianBootstrap(
       `guardian/reset-bootstrap failed (${response.status}): ${body}`,
     );
   }
-}
-
-/**
- * Copy a guardian token from a sibling environment's config directory into
- * the current environment's dir when the current one is missing it.
- *
- * The CLI's per-environment config layout (`~/.config/cadet{-env}/`) scopes
- * the lockfile and the guardian token by CADET_ENVIRONMENT. Lockfiles are
- * cross-written at hatch time, but a guardian token is only written under
- * the env the assistant was hatched in. If the user later wakes the same
- * assistant under a different env (e.g. a freshly built desktop app ships
- * with CADET_ENVIRONMENT=local while the original hatch was under dev),
- * the app cannot locate a bearer token and falls into a 401 → auth-rate-
- * limit → 429 cascade against the local gateway.
- *
- * Returns true if a token was seeded, false if a token was already present
- * or no sibling env had one to copy.
- */
-export function seedGuardianTokenFromSiblingEnv(assistantId: string): boolean {
-  if (loadGuardianToken(assistantId) !== null) return false;
-
-  const currentEnvName = getCurrentEnvironment().name;
-  const destPath = getGuardianTokenPath(assistantId);
-
-  const candidates: { path: string; mtimeMs: number }[] = [];
-  for (const env of Object.values(SEEDS)) {
-    if (env.name === currentEnvName) continue;
-    const sibling = join(
-      getConfigDir(env),
-      "assistants",
-      assistantId,
-      "guardian-token.json",
-    );
-    try {
-      const stat = statSync(sibling);
-      candidates.push({ path: sibling, mtimeMs: stat.mtimeMs });
-    } catch {
-      continue;
-    }
-  }
-  candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
-
-  const now = Date.now();
-  for (const { path: sibling } of candidates) {
-    try {
-      const raw = readFileSync(sibling);
-      const parsed = parseGuardianTokenFields(
-        JSON.parse(raw.toString("utf-8")),
-      );
-      if (parsed.refreshTokenExpiresAt == null) continue;
-      const refreshExpiry = new Date(parsed.refreshTokenExpiresAt).getTime();
-      if (!Number.isFinite(refreshExpiry) || refreshExpiry <= now) continue;
-      const dir = dirname(destPath);
-      if (!existsSync(dir)) {
-        mkdirSync(dir, { recursive: true, mode: 0o700 });
-      }
-      writeFileSync(destPath, raw, { mode: 0o600 });
-      chmodSync(destPath, 0o600);
-      return true;
-    } catch {
-      continue;
-    }
-  }
-  return false;
 }

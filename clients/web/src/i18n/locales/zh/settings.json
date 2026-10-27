@@ -93,14 +93,6 @@
     "typeScheduled": "计划",
     "cliOnly": "对于本地或 Docker 安装，请在终端中使用 cadet backup 和 cadet restore。"
   },
-  "assistantPicker": {
-    "active": "活跃",
-    "subtitle": "选择此账户的活跃助手。",
-    "switch": "切换",
-    "switchedToast": "已切换活跃助手。",
-    "title": "切换助手",
-    "unnamed": "未命名"
-  },
   "assistantStatusPanel": {
     "assistantId": "助手 ID",
     "cpuUsage": "CPU 使用率",
@@ -123,9 +115,7 @@
     "version": "版本"
   },
   "assistantTerminalPanel": {
-    "loadErrorToast": "加载助手信息失败",
     "loading": "正在加载终端...",
-    "loginNotice": "登录 Cadet 平台以打开终端会话。",
     "noAssistant": "未找到助手。孵化一个助手以使用终端。",
     "subtitle": "助手机器上的交互式 shell 会话",
     "targetContainer": "目标容器",
@@ -154,23 +144,6 @@
   "autoTopUpPaymentMethodModal": {
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
-  },
-  "inferenceUsageChart": {
-    "empty": "此期间无使用数据"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "返回所有使用情况",
-    "chartMetricAria": "图表指标",
-    "eventsLabel": "事件",
-    "llmDimensionAria": "LLM支出维度",
-    "llmSpend": "LLM支出",
-    "loadError": "加载使用数据失败。",
-    "metricEvents": "事件",
-    "metricSpend": "支出 ($)",
-    "oauthSpend": "OAuth支出",
-    "spendLabel": "支出",
-    "subtitle": "您的消费习惯概览。",
-    "title": "积分使用情况"
   },
   "biometricSettingsCard": {
     "description": "当您的会话过期时，使用 {label} 进行验证，而无需再次登录。",
@@ -348,7 +321,6 @@
     "backups": "备份",
     "loadFailedToast": "加载助手信息失败",
     "loading": "正在加载助手信息...",
-    "loginNotice": "登录 Cadet 平台以管理备份。",
     "noAssistant": "未找到助手。孵化一个助手以访问调试控制。",
     "restartDescription": "重启助手机器。重启期间它将暂时不可用。",
     "restartTitle": "重启助手",
@@ -415,9 +387,6 @@
   },
   "generalPage": {
     "chooseAssistant": "选择助手",
-    "computeResourcesLoginNotice": "登录 Cadet 平台以管理计算资源。",
-    "computeResourcesSubtitle": "监控资源使用情况并管理助手的计算配置文件。",
-    "computeResourcesTitle": "计算与资源",
     "current": "当前",
     "customize": "自定义",
     "preferencesSubtitle": "自定义 Cadet 在此设备上的外观和行为。",
@@ -425,7 +394,6 @@
     "switchAssistantSubtitle": "选择此设备连接的助手。",
     "switchAssistantTitle": "切换助手",
     "updateWindow": "更新窗口",
-    "updatesLoginNotice": "登录 Cadet 平台以管理软件更新。",
     "versionSubtitle": "管理助手的软件版本和更新。",
     "versionTitle": "版本"
   },
@@ -1492,8 +1460,6 @@
     "usage": "用量",
     "community": "社区",
     "debug": "调试",
-    "logout": "退出登录",
-    "login": "登录",
     "title": "设置"
   },
   "debugPage": {

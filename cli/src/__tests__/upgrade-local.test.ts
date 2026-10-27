@@ -8,12 +8,7 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -23,6 +18,7 @@ import {
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
 import * as assistantConfig from "../lib/assistant-config.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as backupOps from "../lib/backup-ops.js";
 import type { GuardianTokenData } from "../lib/guardian-token.js";
 import * as guardianToken from "../lib/guardian-token.js";
@@ -32,6 +28,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as upgradeLifecycle from "../lib/upgrade-lifecycle.js";
 
 const realAssistantConfig = { ...assistantConfig };
+const realLocalMode = { ...localModeModule };
 const realBackupOps = { ...backupOps };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
@@ -50,8 +47,13 @@ const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
 const saveLockfileAssistantMock = mock<
-  typeof assistantConfig.saveLockfileAssistant
->(() => {});
+  typeof localModeModule.saveLockfileAssistant
+>(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
+
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
+}));
 
 mock.module("../lib/assistant-config", () => ({
   ...realAssistantConfig,
@@ -59,7 +61,6 @@ mock.module("../lib/assistant-config", () => ({
   lookupAssistantByIdentifier: lookupAssistantByIdentifierMock,
   getActiveAssistant: getActiveAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  saveLockfileAssistant: saveLockfileAssistantMock,
 }));
 
 const createBackupMock = mock<typeof backupOps.createBackup>(
@@ -101,18 +102,14 @@ const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
 const resetGuardianBootstrapMock = mock<
   typeof guardianToken.resetGuardianBootstrap
 >(async () => {});
-const seedGuardianTokenFromSiblingEnvMock = mock<
-  typeof guardianToken.seedGuardianTokenFromSiblingEnv
->(() => false);
 
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
   leaseGuardianToken: leaseGuardianTokenMock,
   resetGuardianBootstrap: resetGuardianBootstrapMock,
-  seedGuardianTokenFromSiblingEnv: seedGuardianTokenFromSiblingEnvMock,
 }));
 
-const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
+const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
   () => "generated-local-secret",
 );
 const ensureLocalRuntimeMock = mock<typeof local.ensureLocalRuntime>(
@@ -134,7 +131,7 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/local.js", () => ({
   ...realLocal,
-  generateLocalSigningKey: generateLocalSigningKeyMock,
+  generateLocalSigningKey: generateLocalSecretMock,
   ensureLocalRuntime: ensureLocalRuntimeMock,
   startLocalDaemon: startLocalDaemonMock,
   startGateway: startGatewayMock,
@@ -161,13 +158,20 @@ mock.module("../lib/loopback-fetch.js", () => ({
   loopbackSafeFetch: loopbackSafeFetchMock,
 }));
 
-const maybeStartNgrokTunnelMock = mock<typeof ngrok.maybeStartNgrokTunnel>(
-  async () => null,
-);
+const runNgrokTunnelMock = mock<typeof ngrok.runNgrokTunnel>(async () => {
+  return {
+    publicUrl: "https://tunnel.example.com",
+    waitForExit: Promise.resolve(),
+  } as never;
+});
 
 mock.module("../lib/tunnels/ngrok.js", () => ({
   ...realNgrok,
-  maybeStartNgrokTunnel: maybeStartNgrokTunnelMock,
+  runNgrokTunnel: runNgrokTunnelMock,
+  NGROK_PROVIDER: {
+    ...realNgrok.NGROK_PROVIDER,
+    run: runNgrokTunnelMock,
+  },
 }));
 
 const broadcastUpgradeEventMock = mock<
@@ -253,6 +257,10 @@ beforeEach(() => {
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([entry]);
   saveLockfileAssistantMock.mockReset();
+  saveLockfileAssistantMock.mockImplementation(() => ({
+    ok: true,
+    lockfile: { assistants: [], activeAssistant: null },
+  }));
   createBackupMock.mockReset();
   createBackupMock.mockResolvedValue("/tmp/local-pre-upgrade.tar.gz");
   pruneOldBackupsMock.mockReset();
@@ -263,10 +271,8 @@ beforeEach(() => {
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianToken({ isNew: true }));
   resetGuardianBootstrapMock.mockReset();
   resetGuardianBootstrapMock.mockResolvedValue(undefined);
-  seedGuardianTokenFromSiblingEnvMock.mockReset();
-  seedGuardianTokenFromSiblingEnvMock.mockReturnValue(false);
-  generateLocalSigningKeyMock.mockReset();
-  generateLocalSigningKeyMock.mockReturnValue("generated-local-secret");
+  generateLocalSecretMock.mockReset();
+  generateLocalSecretMock.mockReturnValue("generated-local-secret");
   ensureLocalRuntimeMock.mockReset();
   ensureLocalRuntimeMock.mockImplementation((resources, version) => ({
     version,
@@ -291,8 +297,14 @@ beforeEach(() => {
       },
     }),
   } as Response);
-  maybeStartNgrokTunnelMock.mockReset();
-  maybeStartNgrokTunnelMock.mockResolvedValue(null);
+  runNgrokTunnelMock.mockReset();
+  runNgrokTunnelMock.mockImplementation(
+    async () =>
+      ({
+        publicUrl: "https://tunnel.example.com",
+        waitForExit: Promise.resolve(),
+      }) as never,
+  );
   broadcastUpgradeEventMock.mockReset();
   broadcastUpgradeEventMock.mockResolvedValue(undefined);
   commitWorkspaceViaGatewayMock.mockReset();
@@ -313,6 +325,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config", () => realAssistantConfig);
   mock.module("../lib/backup-ops.js", () => realBackupOps);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
@@ -323,18 +336,6 @@ afterAll(() => {
 });
 
 describe("cadet upgrade local", () => {
-  test("missing identity refuses without backup, installation, restart or repair", async () => {
-    rmSync(join(tempDir, "gateway-security", "actor-token-signing-key"));
-    await expect(upgrade()).rejects.toThrow("process.exit(1)");
-    expect(createBackupMock).not.toHaveBeenCalled();
-    expect(ensureLocalRuntimeMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
-    expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
-  });
-
   test("uses explicit target versions as-is", async () => {
     const resolveLatest = mock(async () => "v0.9.9");
 
@@ -414,7 +415,6 @@ describe("cadet upgrade local", () => {
         instanceDir: tempDir,
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
-      { signingKey: "ab".repeat(32) },
     );
     expect(startGatewayMock).toHaveBeenCalledWith(
       false,
@@ -423,27 +423,24 @@ describe("cadet upgrade local", () => {
         runtimeVersion: cliPkg.version ? `v${cliPkg.version}` : "v0.8.12",
       }),
       {
-        signingKey: "ab".repeat(32),
         bootstrapSecret: "existing-bootstrap-secret",
       },
-    );
-    expect(seedGuardianTokenFromSiblingEnvMock).toHaveBeenCalledWith(
-      "local-assistant",
     );
     expect(resetGuardianBootstrapMock).toHaveBeenCalledWith(
       "http://127.0.0.1:7830",
       "existing-bootstrap-secret",
     );
     expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "local-assistant",
-      "existing-bootstrap-secret",
+      expect.objectContaining({
+        assistantId: "local-assistant",
+        guardianBootstrapSecret: "existing-bootstrap-secret",
+      }),
     );
-    expect(maybeStartNgrokTunnelMock).toHaveBeenCalledWith(
-      7830,
-      join(tempDir, "workspace"),
-      "local-assistant",
-    );
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: 7830,
+      workspaceDir: join(tempDir, "workspace"),
+      assistantId: "local-assistant",
+    });
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
     expect(commitWorkspaceViaGatewayMock).toHaveBeenCalledWith(
       "http://127.0.0.1:7830",

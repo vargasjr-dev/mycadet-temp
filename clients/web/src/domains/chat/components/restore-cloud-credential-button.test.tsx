@@ -11,26 +11,9 @@ import { MemoryRouter } from "react-router";
 import * as identity from "@/lib/local-cloud-identity";
 import * as actualToast from "@mycadet/design-library/components/toast";
 
-import type { CloudGateState } from "@/hooks/use-cloud-gate";
-
-let cloudGate: CloudGateState = "full";
 const recoverMock = mock(async () => {});
-const loginMock = mock(async () => {});
 const toastSuccess = mock((_message: string) => {});
 const toastError = mock((_message: string) => {});
-
-mock.module("@/hooks/use-cloud-gate", () => ({
-  useCloudGate: () => cloudGate,
-}));
-
-mock.module("@/hooks/use-onboarding-login", () => ({
-  useOnboardingLogin: () => ({
-    loading: false,
-    error: null,
-    login: loginMock,
-    cancel: mock(() => {}),
-  }),
-}));
 
 mock.module("@/lib/local-cloud-identity", () => ({
   ...identity,
@@ -61,10 +44,8 @@ function renderButton(onRestored = mock(() => {})) {
 }
 
 beforeEach(() => {
-  cloudGate = "full";
   recoverMock.mockReset();
   recoverMock.mockImplementation(async () => {});
-  loginMock.mockClear();
   toastSuccess.mockClear();
   toastError.mockClear();
 });
@@ -83,20 +64,6 @@ describe("RestoreCloudCredentialButton", () => {
     expect(recoverMock).toHaveBeenCalledTimes(1);
     expect(toastSuccess).toHaveBeenCalledTimes(1);
     expect(toastError).not.toHaveBeenCalled();
-  });
-
-  // The repair rotates the credential through the cloud, so without a
-  // session it would fail after the press. The slot asks for the sign-in
-  // first instead of offering a repair that cannot run.
-  test("without a cloud session, the slot offers the sign-in and never starts the repair", async () => {
-    cloudGate = "disabled";
-    const { onRestored, button } = renderButton();
-
-    fireEvent.click(button);
-
-    await waitFor(() => expect(loginMock).toHaveBeenCalledTimes(1));
-    expect(recoverMock).not.toHaveBeenCalled();
-    expect(onRestored).not.toHaveBeenCalled();
   });
 
   // A failed repair leaves the banner in place to try again, and the reader

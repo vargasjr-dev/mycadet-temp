@@ -7,7 +7,6 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
 import { useEdgeSwipeBack } from "@/hooks/use-edge-swipe-back";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import { useTranslation } from "@/i18n";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -58,7 +57,6 @@ export function DocumentViewerPage() {
   const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const assistantsHydrated =
     useResolvedAssistantsStore.use.assistantsHydrated();
-  const readiness = useOrgHeaderReadiness();
   const returnTo = documentReturnPath(
     new URLSearchParams(search).get(DOCUMENT_RETURN_PARAM),
   );
@@ -82,15 +80,11 @@ export function DocumentViewerPage() {
     setState({ kind: "loading" });
     preparingRef.current = false;
     setPreparing(false);
-    if (
-      !surfaceId ||
-      (!assistantId && assistantsHydrated) ||
-      readiness === "unavailable"
-    ) {
+    if (!surfaceId || (!assistantId && assistantsHydrated)) {
       setState({ kind: "error" });
       return;
     }
-    if (!assistantId || readiness !== "ready") {
+    if (!assistantId) {
       return;
     }
     const scope = documentRequestScope(assistantId);
@@ -140,7 +134,6 @@ export function DocumentViewerPage() {
     surfaceId,
     assistantId,
     assistantsHydrated,
-    readiness,
     entryMode,
     navigate,
     returnTo,

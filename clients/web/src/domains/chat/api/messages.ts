@@ -7,7 +7,6 @@
  * `deleteQueuedMessage` writes.
  */
 
-import { captureError } from "@/lib/error-reporting/capture-error";
 import type {
   BackgroundToolCompletion,
   ConversationContentBlock,
@@ -36,8 +35,7 @@ import { assertHasResponse, extractErrorMessage } from "@/utils/api-errors";
 import {
   normalizePreChatOnboardingContext,
   type PreChatOnboardingContext,
-} from "@/domains/onboarding/prechat";
-import { persistPreChatOnboardingProfile } from "@/domains/onboarding/prechat-profile";
+} from "@/domains/chat/prechat";
 import { mapRuntimeToDisplayMessage } from "@/domains/chat/utils/map-runtime-message";
 import { pickConversationIdWireField } from "@/lib/backwards-compat/conversation-id-wire-field";
 import { getVisibleAppIdForSend } from "@/domains/chat/utils/visible-app-context";
@@ -680,14 +678,6 @@ export async function postChatMessage(
       onboardingDict.title = normalizedOnboarding.title;
     }
     body.onboarding = onboardingDict;
-  }
-  if (normalizedOnboarding) {
-    void persistPreChatOnboardingProfile(
-      assistantId,
-      normalizedOnboarding,
-    ).catch((err) =>
-      captureError(err, { context: "persistPreChatOnboardingProfile" }),
-    );
   }
   const {
     data,

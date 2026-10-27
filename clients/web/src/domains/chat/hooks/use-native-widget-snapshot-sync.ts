@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { useUnreadConversationCount } from "@/hooks/conversation-queries";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useTranslation } from "@/i18n";
 import {
@@ -345,13 +344,6 @@ export function useNativeWidgetSnapshotSync(
     conversations,
     isWidgetSnapshotSyncAvailable() && isAssistantActive,
   );
-  // Whether the queries behind the snapshot would fetch if asked: the same two
-  // gates they run under, the caller's assistant gate and the daemon
-  // preconditions the query hooks apply for themselves. What tells a heartbeat
-  // that resolved data is still being kept current rather than merely cached.
-  const canQueryDaemon = useIsOrgReady();
-  const inputsAreLive = isAssistantActive && canQueryDaemon;
-
   // The active assistant's avatar, off the same query and through the same
   // resolvers `RootLayout` publishes from, so the widget can never draw a
   // different face than the app does. Subscribed rather than read back from
@@ -599,7 +591,7 @@ export function useNativeWidgetSnapshotSync(
     if (
       !isWidgetSnapshotSyncAvailable() ||
       !snapshotResolved ||
-      !inputsAreLive
+      !isAssistantActive
     ) {
       return;
     }
@@ -621,7 +613,7 @@ export function useNativeWidgetSnapshotSync(
   }, [
     assistantId,
     snapshotResolved,
-    inputsAreLive,
+    isAssistantActive,
     avatarSource,
     avatarAccentHex,
     sendSnapshot,

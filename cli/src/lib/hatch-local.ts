@@ -1,4 +1,3 @@
-import { persistRootSigningKey } from "./root-signing-key.js";
 import {
   existsSync,
   lstatSync,
@@ -15,18 +14,18 @@ import { join } from "path";
 // Direct import — bun embeds this at compile time so it works in compiled binaries.
 import cliPkg from "../../package.json";
 
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   allocateLocalResources,
   findAssistantByName,
   getLocalInstanceDir,
-  saveLockfileAssistant,
   setActiveAssistant,
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { green, yellow } from "./color.js";
 import { buildHatchConfigValues, writeInitialConfig } from "./config-utils.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   setStartupLogging,
   startCes,
   startLocalDaemon,
@@ -205,7 +204,7 @@ export async function hatchLocal(
   // prompts sit back-to-back), consumed after the guardian token leases.
   let precollectedApiKey: string | undefined;
 
-  const { resources, runtimeUrl, loopbackUrl, bootstrapSecret } =
+  const { resources, runtimeUrl, loopbackUrl, localEntry } =
     await withLocalHatchLock(async () => {
       reporter.progress(1, 6, "Allocating resources...");
 
@@ -297,21 +296,22 @@ export async function hatchLocal(
       const defaultWorkspaceConfigPath = writeInitialConfig(hatchConfigValues);
 
       reporter.progress(3, 6, "Starting assistant...");
-      const signingKey = params.initialArchive
-        ? await (
-            await import("./root-backup.js")
-          ).initializeRootArchive(
-            {
-              assistantId: instanceName,
-              cloud: "local",
-              runtimeUrl: "",
-              resources,
-            },
-            params.initialArchive,
-          )
-        : generateLocalSigningKey();
-      persistRootSigningKey(getLocalInstanceDir(resources), signingKey);
-      const bootstrapSecret = generateLocalSigningKey();
+      if (params.initialArchive) {
+        // Restores the archived state roots — gateway-security included, so
+        // the gateway boots with the archived signing identity.
+        await (
+          await import("./root-backup.js")
+        ).initializeRootArchive(
+          {
+            assistantId: instanceName,
+            cloud: "local",
+            runtimeUrl: "",
+            resources,
+          },
+          params.initialArchive,
+        );
+      }
+      const bootstrapSecret = generateLocalSecret();
       let runtimeUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       try {
         // Launch the CES sibling alongside the daemon, in parallel — matching the
@@ -323,7 +323,6 @@ export async function hatchLocal(
           startLocalDaemon(watch, resources, {
             defaultWorkspaceConfigPath,
             requireReady: true,
-            signingKey,
           }),
         ]);
         const startupFailure = startupResults.find(
@@ -336,7 +335,6 @@ export async function hatchLocal(
 
         reporter.progress(4, 6, "Starting gateway...");
         runtimeUrl = await startGateway(watch, resources, {
-          signingKey,
           bootstrapSecret,
           requireReady: true,
         });
@@ -351,7 +349,6 @@ export async function hatchLocal(
       const loopbackUrl = `http://127.0.0.1:${resources.gatewayPort}`;
       const localEntry: LockfileAssistant = {
         assistantId: instanceName,
-        runtimeUrl,
         cloud: "local",
         hatchedAt: new Date().toISOString(),
         resources,
@@ -362,23 +359,17 @@ export async function hatchLocal(
       saveLockfileAssistant(localEntry);
       setActiveAssistant(instanceName);
 
-      return { resources, runtimeUrl, loopbackUrl, bootstrapSecret };
+      return { resources, runtimeUrl, loopbackUrl, localEntry };
     });
 
   // Lease a guardian token so the desktop app can import it on first launch
-  // instead of hitting /v1/guardian/init itself. Use loopback to satisfy
-  // the daemon's local-only check — the mDNS runtimeUrl resolves to a LAN
-  // IP which the daemon rejects as non-loopback.
+  // instead of hitting /v1/guardian/init itself.
   reporter.progress(6, 6, "Securing connection...");
   const maxLeaseAttempts = 3;
   let guardianAccessToken: string | undefined;
   for (let attempt = 1; attempt <= maxLeaseAttempts; attempt++) {
     try {
-      const tokenData = await leaseGuardianToken(
-        loopbackUrl,
-        instanceName,
-        bootstrapSecret,
-      );
+      const tokenData = await leaseGuardianToken(localEntry);
       guardianAccessToken = tokenData.accessToken;
       break;
     } catch (err) {

@@ -18,7 +18,6 @@ import {
   shouldClearIngressUrl,
   startTailscaleServe,
   stopTailscaleServe,
-  TAILSCALE_PROVIDER,
   type TailscaleCommandResult,
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";
@@ -119,7 +118,7 @@ function writePreservedConfig(workspaceDir: string, webhookBase: string): void {
   );
 }
 
-const restoreEnv = snapshotEnv(["CADET_LOCKFILE_DIR"]);
+const restoreEnv = snapshotEnv(["XDG_CONFIG_HOME"]);
 
 afterEach(() => {
   restoreEnv();
@@ -358,48 +357,5 @@ describe("shouldClearIngressUrl", () => {
 
   test("keeps the URL when the stop command threw before running", () => {
     expect(shouldClearIngressUrl(null)).toBe(false);
-  });
-});
-
-describe("TAILSCALE_PROVIDER.start — the restore-path start piece", () => {
-  test("a pairing-only tailnet run leaves lastTunnel on the webhook provider, so nothing re-establishes", async () => {
-    const workspaceDir = makeWorkspace();
-    writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify({
-        ingress: {
-          enabled: true,
-          publicBaseUrl: "https://x.ngrok.app",
-          lastTunnel: {
-            provider: "ngrok",
-            publicBaseUrl: "https://x.ngrok.app",
-          },
-        },
-      }),
-    );
-
-    const url = await TAILSCALE_PROVIDER.start?.({
-      port: 7840,
-      workspaceDir,
-      assistantId: "assistant-1",
-    });
-
-    expect(url).toBeNull();
-  });
-
-  test("a workspace whose config never recorded a tunnel declines too", async () => {
-    const workspaceDir = makeWorkspace();
-    writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify({ ingress: { enabled: true } }),
-    );
-
-    const url = await TAILSCALE_PROVIDER.start?.({
-      port: 7840,
-      workspaceDir,
-      assistantId: "assistant-1",
-    });
-
-    expect(url).toBeNull();
   });
 });

@@ -26,13 +26,11 @@ import { useTranslation } from "@/i18n";
 import { MANAGED_VOICE_CREDITS_NOTE } from "@/lib/tts/cloud-voice-catalog";
 
 export interface VoicePickerModalProps {
-  assistantId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 export function VoicePickerModal({
-  assistantId,
   open,
   onOpenChange,
 }: VoicePickerModalProps) {
@@ -43,25 +41,16 @@ export function VoicePickerModal({
             modal is open — hosts keep this mounted across a whole session (the
             voice room parks it outside its popover), and a closed dialog has no
             business holding a React Query subscription. */}
-        <VoicePickerContent
-          assistantId={assistantId}
-          onDone={() => onOpenChange(false)}
-        />
+        <VoicePickerContent onDone={() => onOpenChange(false)} />
       </Modal.Content>
     </Modal.Root>
   );
 }
 
-function VoicePickerContent({
-  assistantId,
-  onDone,
-}: {
-  assistantId: string | null;
-  onDone: () => void;
-}) {
+function VoicePickerContent({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
   const { available, currentModel, selectModel, selecting } =
-    useCloudVoiceSelection(assistantId);
+    useCloudVoiceSelection();
 
   return (
     <>
@@ -76,7 +65,6 @@ function VoicePickerContent({
             upstream source so accent grouping isn't split across providers.
             It hides itself when the catalog has a single provider. */}
         <VoiceList
-          assistantId={assistantId}
           filterBySource
           value={currentModel}
           onChange={selectModel}

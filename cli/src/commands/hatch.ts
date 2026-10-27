@@ -3,17 +3,14 @@ import { isCloudHome } from "../lib/cloud-values.js";
 import { cliCommand } from "../lib/cli-name.js";
 import cliPkg from "../../package.json";
 
-import {
-  saveLockfileAssistant,
-  setActiveAssistant,
-} from "../lib/assistant-config";
+import { setActiveAssistant } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { green } from "../lib/color";
 import { HATCH_ART, HATCHED_EMOJI, VALID_REMOTE_HOSTS } from "../lib/constants";
 import type { RemoteHost } from "../lib/constants";
 import { hatchDocker } from "../lib/docker";
 import { hatchLocal } from "../lib/hatch-local";
 import {
-  getCloudUrl,
   hatchAssistant,
   readCloudToken,
 } from "../lib/cloud-client";
@@ -289,11 +286,8 @@ async function hatchCadetPlatform(): Promise<void> {
 
   const { assistant: result } = await hatchAssistant(token);
 
-  const cloudUrl = getCloudUrl();
-
   saveLockfileAssistant({
     assistantId: result.id,
-    runtimeUrl: cloudUrl,
     cloud: "cloud",
     hatchedAt: new Date().toISOString(),
   });

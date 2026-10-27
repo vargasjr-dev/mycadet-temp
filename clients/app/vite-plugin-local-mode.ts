@@ -11,7 +11,9 @@ import {
   headerHostIsLoopback,
   originIsAllowed,
   hasSameOriginCredentialProof,
-  getLockfileData,
+  readLockfile,
+  servedConfigFromLockfile,
+  stripSensitiveFields,
   getLocalAssistantStatus,
   readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
@@ -61,12 +63,8 @@ function requestPathname(req: http.IncomingMessage): string {
   return (req.url ?? "").split("?")[0]!;
 }
 
-function lockfileEntryFor(lockfilePaths: string[], assistantId: string) {
-  const result = getLockfileData(lockfilePaths);
-  if (!result.ok) {
-    return undefined;
-  }
-  return result.data.assistants.find((a) => a.assistantId === assistantId);
+function lockfileEntryFor(assistantId: string) {
+  return readLockfile().assistants.find((a) => a.assistantId === assistantId);
 }
 
 /**
@@ -81,7 +79,7 @@ function isHostManagedEntry(
   lockfilePaths: string[],
   assistantId: string,
 ): boolean {
-  const entry = lockfileEntryFor(lockfilePaths, assistantId);
+  const entry = lockfileEntryFor(assistantId);
   return (
     entry != null &&
     entry.cloud !== "cloud" &&
@@ -116,19 +114,14 @@ export function isSameOriginProxyRequest(req: http.IncomingMessage): boolean {
 }
 
 export function localModePlugin(env: Record<string, string>): Plugin {
-  const config = resolveLocalConfigFromEnv(env);
+  const config = resolveLocalConfigFromEnv();
   const baseDir = path.resolve(import.meta.dirname, "..", "..");
 
-  // The `/assistant/__config` document, also injected into the index. No
-  // `assistantId`: the dev server fronts every assistant in the lockfile at
-  // once, so it has no single identity to report the way an nginx edge does.
-  // `version` is stamped here the same way `cadet --version` stamps itself,
-  // so the page's version row answers the same thing `cadet-local --version`
-  // does and nothing can override it out of band.
   const configJson = JSON.stringify({
     cloudUrl: config.cloudUrl,
     version: stampedVersion(cliPkg.version),
-  });
+    ...servedConfigFromLockfile(readLockfile()),
+  }).replace(/</g, "\\u003c");
 
   return {
     name: "cadet-local-mode",
@@ -355,14 +348,10 @@ function lockfileMiddleware(
     }
 
     if (req.method === "GET") {
-      const result = getLockfileData(lockfilePaths);
-      if (result.ok) {
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(result.data));
-      } else {
-        res.statusCode = result.status;
-        res.end();
-      }
+      res.setHeader("Content-Type", "application/json");
+      const lockfile = readLockfile();
+      stripSensitiveFields(lockfile);
+      res.end(JSON.stringify(lockfile));
     } else if (req.method === "POST") {
       const chunks: Buffer[] = [];
       req.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -402,7 +391,11 @@ function lockfileMiddleware(
             onboarded.onboardedAt as string,
           );
         } else {
-          result = { ok: false, status: 400, error: "Unknown lockfile mutation" };
+          result = {
+            ok: false,
+            status: 400,
+            error: "Unknown lockfile mutation",
+          };
         }
         res.statusCode = result.ok ? 200 : result.status;
         res.setHeader("Content-Type", "application/json");
@@ -568,7 +561,7 @@ function unpairMiddleware(
     }
 
     const assistantId = decodeURIComponent(match[1]!);
-    if (lockfileEntryFor(lockfilePaths, assistantId) == null) {
+    if (lockfileEntryFor(assistantId) == null) {
       // Not an entry on this machine — the id-keyed proxy resolves the rest
       // (the conductor's routes for a cloud id).
       return next();
@@ -1050,7 +1043,7 @@ function avatarMiddleware(
     res.setHeader("Content-Type", "application/json");
     res.end(
       JSON.stringify(
-        readLockfileAssistantAvatar(lockfilePaths, assistantId, env),
+        readLockfileAssistantAvatar(lockfilePaths, assistantId),
       ),
     );
   };

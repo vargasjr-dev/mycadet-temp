@@ -10,7 +10,6 @@ const ENV_VARS_TO_SAVE = [
   "CADET_ENVIRONMENT",
   "CADET_CLOUD_URL",
   "CADET_ASSISTANT_PLATFORM_URL",
-  "CADET_LOCKFILE_DIR",
 ] as const;
 
 describe("getCurrentEnvironment", () => {
@@ -177,25 +176,6 @@ describe("getCurrentEnvironment", () => {
     } finally {
       stderr.mockRestore();
     }
-  });
-
-  test("CADET_LOCKFILE_DIR populates lockfileDirOverride on the resolved definition", () => {
-    process.env.CADET_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
-    const env = getCurrentEnvironment();
-    expect(env.lockfileDirOverride).toBe("/tmp/test-lockfile-dir");
-  });
-
-  test("lockfileDirOverride is undefined when CADET_LOCKFILE_DIR is unset", () => {
-    const env = getCurrentEnvironment();
-    expect(env.lockfileDirOverride).toBeUndefined();
-  });
-
-  test("lockfileDirOverride applies to non-prod envs too", () => {
-    process.env.CADET_ENVIRONMENT = "dev";
-    process.env.CADET_LOCKFILE_DIR = "/tmp/test-lockfile-dir";
-    const env = getCurrentEnvironment();
-    expect(env.name).toBe("dev");
-    expect(env.lockfileDirOverride).toBe("/tmp/test-lockfile-dir");
   });
 });
 

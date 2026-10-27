@@ -1,12 +1,12 @@
 /**
  * Tests for the tunnel-status query hook and its wire-to-view mapper.
  *
- * `useIsOrgReady` and the generated probe call are the two `mock.module`s
- * here (the probe through the shared `installIngressProbe` harness); the
- * version gate and the active assistant id are driven through their real
- * stores so the gating the hook actually ships with is what gets exercised.
+ * The generated probe call is mocked (through the shared `installIngressProbe`
+ * harness); the version gate and the active assistant id are driven through
+ * their real stores so the gating the hook actually ships with is what gets
+ * exercised.
  */
-import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import type { QueryClient } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
@@ -24,11 +24,6 @@ import {
 const ASSISTANT_ID = "asst-1";
 const PUBLIC_URL = "https://foo.ts.net";
 const CHECKED_AT = "2026-08-21T12:00:00.000Z";
-
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-}));
 
 const {
   probe: probeMock,
@@ -64,7 +59,6 @@ async function settle() {
 }
 
 beforeEach(() => {
-  orgReady = true;
   resetProbe();
   useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
   useAssistantIdentityStore
@@ -93,10 +87,7 @@ describe("toStatusView", () => {
   // would hand the row `undefined` and crash it on `.kind`.
   test("reports unavailable for a state this bundle predates", () => {
     expect(
-      toStatusView(
-        { state: "a-state-from-a-newer-daemon" } as never,
-        false,
-      ),
+      toStatusView({ state: "a-state-from-a-newer-daemon" } as never, false),
     ).toEqual({ kind: "unavailable" });
   });
 
@@ -279,13 +270,6 @@ describe("useTunnelStatus", () => {
     expect(result.current.isRefreshing).toBe(false);
   });
 
-  test("holds the probe until the org is ready", () => {
-    orgReady = false;
-    const { client } = renderStatus();
-
-    expect(probeFetchStatus(client)).toBe("idle");
-  });
-
   test("holds the probe while the caller's own condition is false", () => {
     const { client } = renderStatus(false);
 
@@ -332,16 +316,6 @@ describe("useTunnelStatus · refresh", () => {
     useAssistantIdentityStore
       .getState()
       .setIdentity("Test", VERSION_BELOW_INGRESS_STATUS, ASSISTANT_ID);
-    const { result } = renderStatus();
-
-    act(() => result.current.refresh());
-    await settle();
-
-    expect(probeMock).not.toHaveBeenCalled();
-  });
-
-  test("does not probe while the org is not ready", async () => {
-    orgReady = false;
     const { result } = renderStatus();
 
     act(() => result.current.refresh());

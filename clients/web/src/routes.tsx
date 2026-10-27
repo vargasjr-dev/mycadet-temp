@@ -340,30 +340,6 @@ export const routeTree = [
       {
         ErrorBoundary: RouteErrorBoundary,
         children: [
-          // SPIKE — research-onboarding front door. Placed here (not in the
-          // onboarding funnel block) so it's reachable on demand behind auth
-          // alone, without the onboarding-completed guard bouncing already-
-          // onboarded users away. Visit `/assistant/onboarding/research`.
-          {
-            path: "onboarding/research",
-            lazy: {
-              Component: () =>
-                import("@/domains/onboarding/pages/research-onboarding-route").then(
-                  (m) => m.ResearchOnboardingRoute,
-                ),
-            },
-          },
-          // SPIKE — mock harness for iterating on the research results UI without
-          // running the real job. Static fixtures + local state.
-          {
-            path: "onboarding/research-mock",
-            lazy: {
-              Component: () =>
-                import("@/domains/chat/onboarding-research/research-mock-page").then(
-                  (m) => m.ResearchMockPage,
-                ),
-            },
-          },
           // Settings and logs require a resolved assistant. The gate
           // defers child rendering until the lifecycle reaches active/
           // self_hosted, so route components can use useActiveAssistantId().

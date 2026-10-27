@@ -28,7 +28,7 @@ import { createHostCuExecutor } from "./executors/host-cu-executor";
 import {
   getWatchedLockfile,
   onLockfileChange,
-} from "./lockfile-watcher.client";
+} from "@mycadet/electron-desktop/lockfile-watcher";
 import log from "./logger";
 import { installPresenceMonitor } from "./presence";
 import { getSessionToken } from "./session-token-store.client";
@@ -43,7 +43,7 @@ export const installHostProxyBridge = (
   });
   const runtime: HostProxyRuntime = {
     acquireGuardianToken: async (assistantId) => {
-      const configDir = resolveConfigDir(process.env);
+      const configDir = resolveConfigDir();
       let invocation: CliInvocation;
       try {
         invocation = await resolveCliInvocation();
@@ -60,7 +60,6 @@ export const installHostProxyBridge = (
         configDir,
         invocation,
         true,
-        { CADET_ENVIRONMENT: resolveEnvironmentName(process.env) },
       );
       if (!result.ok) {
         log.warn("[host-proxy-router] failed to obtain guardian token", {

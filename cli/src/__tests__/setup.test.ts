@@ -33,7 +33,6 @@ const originalEnv = {
   xdgConfigHome: process.env.XDG_CONFIG_HOME,
   xdgDataHome: process.env.XDG_DATA_HOME,
   cadetEnvironment: process.env.CADET_ENVIRONMENT,
-  cadetLockfileDir: process.env.CADET_LOCKFILE_DIR,
 };
 
 let testDir = "";
@@ -59,7 +58,7 @@ function guardianTokenFixture(
 }
 
 function writeLockfile(entry: LockfileAssistant): void {
-  const lockfileDir = process.env.CADET_LOCKFILE_DIR!;
+  const lockfileDir = join(process.env.XDG_CONFIG_HOME!, "cadet");
   mkdirSync(lockfileDir, { recursive: true });
   writeFileSync(
     join(lockfileDir, "lockfile.json"),
@@ -158,7 +157,6 @@ describe("setup command", () => {
     process.argv = ["bun", "cadet", "setup"];
     process.env.XDG_CONFIG_HOME = join(testDir, "config");
     process.env.XDG_DATA_HOME = join(testDir, "data");
-    process.env.CADET_LOCKFILE_DIR = join(testDir, "lockfile");
     delete process.env.CADET_ENVIRONMENT;
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.OPENAI_API_KEY;
@@ -175,7 +173,6 @@ describe("setup command", () => {
     setOptionalEnv("XDG_CONFIG_HOME", originalEnv.xdgConfigHome);
     setOptionalEnv("XDG_DATA_HOME", originalEnv.xdgDataHome);
     setOptionalEnv("CADET_ENVIRONMENT", originalEnv.cadetEnvironment);
-    setOptionalEnv("CADET_LOCKFILE_DIR", originalEnv.cadetLockfileDir);
     consoleLogSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     rmSync(testDir, { recursive: true, force: true });

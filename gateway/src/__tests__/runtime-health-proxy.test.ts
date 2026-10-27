@@ -70,7 +70,7 @@ describe("runtime health proxy", () => {
     expect(await res.json()).toEqual({ status: "healthy" });
   });
 
-  test("replaces caller auth with runtime auth", async () => {
+  test("replaces caller auth with the forwarded service identity", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
       async (_input: string | URL | Request, init?: RequestInit) => {
@@ -90,7 +90,8 @@ describe("runtime health proxy", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(capturedHeaders?.get("authorization")).toMatch(/^Bearer ey/);
+    expect(capturedHeaders?.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(capturedHeaders?.get("x-cadet-principal-type")).toBe("svc_gateway");
     expect(capturedHeaders?.has("host")).toBe(false);
   });
 

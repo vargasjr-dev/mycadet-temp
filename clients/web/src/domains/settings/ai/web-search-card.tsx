@@ -39,7 +39,6 @@ import {
 } from "@/generated/daemon/@tanstack/react-query.gen";
 import { useQuery } from "@tanstack/react-query";
 import { useDraftOverride } from "@/hooks/use-draft-override";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
   credentialPresenceQueryKey,
   useStoredCredentialPresence,
@@ -49,11 +48,9 @@ export function WebSearchCard() {
   const { t } = useTranslation("settings");
   const assistantId = useActiveAssistantId();
   const queryClient = useQueryClient();
-  const isOrgReady = useIsOrgReady();
 
   const { data: daemonConfig } = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 30_000,
   });
 

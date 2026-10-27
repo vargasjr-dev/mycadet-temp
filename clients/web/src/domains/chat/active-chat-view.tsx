@@ -35,14 +35,14 @@ import type { TranscriptItem } from "@/domains/chat/transcript/types";
 import type { UIContext } from "@/domains/chat/turn-selectors";
 import { useChatSessionStore } from "@/domains/chat/chat-session-store";
 
-import { peekPendingPreChatContext } from "@/domains/onboarding/prechat";
+import { peekPendingPreChatContext } from "@/domains/chat/prechat";
 
 import { LazyBoundary } from "@/components/lazy-boundary";
 import { useAssistantAvatar } from "@/hooks/use-assistant-avatar";
 import { useDiskPressureMonitor } from "@/assistant/use-disk-pressure-monitor";
 import { getDiskPressureChatBlockReason } from "@/assistant/disk-pressure";
 import { useResourcePressureMonitor } from "@/assistant/use-resource-pressure-monitor";
-import { useActiveAssistantIsCloudHosted } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useComposerStore } from "@/domains/chat/composer-store";
 
 import { useConversationLoader } from "@/domains/chat/hooks/use-conversation-loader";

@@ -115,50 +115,49 @@ export function renderMarkdown(event: AssistantEvent): void {
 
 export const events = Object.assign(
   async function events(): Promise<void> {
-  const rawArgs = process.argv.slice(3);
+    const rawArgs = process.argv.slice(3);
 
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    return;
-  }
-
-  const jsonOutput = rawArgs.includes("--json");
-  let args = rawArgs.filter((a) => a !== "--json");
-
-  const [conversationKey, filteredArgs] = extractFlag(
-    args,
-    "--conversation-key",
-  );
-  args = filteredArgs;
-
-  const assistantId = args[0];
-
-  const client = new AssistantClient({ assistantId });
-
-  // Use an explicit AbortController so we can clean up on SIGINT
-  const controller = new AbortController();
-  process.on("SIGINT", () => {
-    controller.abort();
-    process.exit(0);
-  });
-
-  const query: Record<string, string> = {};
-  if (conversationKey) {
-    query.conversationKey = conversationKey;
-  }
-
-  for await (const event of client.stream<AssistantEvent>("/events", {
-    signal: controller.signal,
-    query,
-    headers: getClientRegistrationHeaders(),
-  })) {
-    if (jsonOutput) {
-      console.log(JSON.stringify(event));
-    } else {
-      renderMarkdown(event);
+    if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
+      printUsage();
+      return;
     }
-  }
-},
+
+    const jsonOutput = rawArgs.includes("--json");
+    let args = rawArgs.filter((a) => a !== "--json");
+
+    const [conversationKey, filteredArgs] = extractFlag(
+      args,
+      "--conversation-key",
+    );
+    args = filteredArgs;
+
+    const assistantId = args[0];
+
+    const client = new AssistantClient({ assistantId });
+
+    // Use an explicit AbortController so we can clean up on SIGINT
+    const controller = new AbortController();
+    process.on("SIGINT", () => {
+      controller.abort();
+      process.exit(0);
+    });
+
+    const query: Record<string, string> = {};
+    if (conversationKey) {
+      query.conversationKey = conversationKey;
+    }
+
+    for await (const event of client.stream<AssistantEvent>("/events", {
+      signal: controller.signal,
+      query,
+      headers: getClientRegistrationHeaders(),
+    })) {
+      if (jsonOutput) {
+        console.log(JSON.stringify(event));
+      } else {
+        renderMarkdown(event);
+      }
+    }
+  },
   { description: "Stream events from a running assistant" },
 );
-

@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { desktopSetupGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import { desktopSetupGet } from "@/generated/daemon/sdk.gen";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { SYNC_TAGS } from "@/lib/sync/types";
 import { toApiError } from "@/utils/api-errors";
 
@@ -32,14 +31,12 @@ export async function fetchDesktopSetup(
 
 export function useDesktopSetupStatus(assistantId: string) {
   const queryClient = useQueryClient();
-  const orgReady = useIsOrgReady();
   const options = desktopSetupGetOptions({
     path: { assistant_id: assistantId },
   });
   const query = useQuery({
     ...options,
     queryFn: ({ signal }) => fetchDesktopSetup(assistantId, signal),
-    enabled: orgReady,
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnMount: (query) =>

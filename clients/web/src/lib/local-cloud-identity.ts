@@ -8,7 +8,6 @@ import { buildCadetMutatingHeaders } from "@/lib/auth/request-headers";
 import { resolveSupportsCredentialVerification } from "@/lib/backwards-compat/credential-verification";
 import {
   getActiveAssistant,
-  getSelectedAssistant,
   isLocalAssistant,
   isLocalClient,
   primeLocalGatewayConnectionWithRepair,
@@ -22,10 +21,6 @@ import {
 import { getDeviceId } from "@/runtime/device-id";
 import { detectElectronHostOS } from "@/runtime/platform-detection";
 import { getElectronSessionToken } from "@/runtime/session-token";
-import {
-  getActiveOrganizationIdForRequests,
-  useOrganizationStore,
-} from "@/stores/organization-store";
 import { isUuid } from "@/utils/uuid";
 
 const ELECTRON_RENDERER_ORIGIN_HEADER = "X-Cadet-Electron-Renderer-Origin";
@@ -218,7 +213,7 @@ export class LocalCloudCredentialRecoveryError extends Error {
 function recoverableLocalAssistant(
   assistantId?: string,
 ): LockfileAssistant | null {
-  const target = assistantId ?? getSelectedAssistant()?.assistantId;
+  const target = assistantId ?? getActiveAssistant()?.assistantId;
   if (!target || !isLocalClient() || isUuid(target)) {
     return null;
   }
@@ -235,7 +230,7 @@ export function canRecoverLocalAssistantCloudCredential(
 export async function recoverLocalAssistantCloudCredential(
   assistantId?: string,
 ): Promise<void> {
-  const target = assistantId ?? getSelectedAssistant()?.assistantId;
+  const target = assistantId ?? getActiveAssistant()?.assistantId;
   if (!target) {
     throw new LocalCloudCredentialRecoveryError(
       "no_assistant",
@@ -341,7 +336,7 @@ export function bootstrapLocalAssistantCloudIdentity(
 
   let targetAssistantId = assistantId;
   if (!targetAssistantId) {
-    const assistant = getSelectedAssistant();
+    const assistant = getActiveAssistant();
     if (!assistant || !isLocalAssistant(assistant)) {
       return;
     }
@@ -404,7 +399,7 @@ function resolveLocalAssistant(
   if (active?.assistantId === assistantId && eligible(active)) {
     return active;
   }
-  const selected = getSelectedAssistant();
+  const selected = getActiveAssistant();
   if (selected?.assistantId === assistantId && eligible(selected)) {
     return selected;
   }
@@ -627,23 +622,7 @@ async function resolveOrganizationId(
   statusOrganizationId: string | null,
   assistant: LockfileAssistant,
 ): Promise<string | null> {
-  const existing =
-    statusOrganizationId ??
-    assistant.cloudOrganizationId ??
-    getActiveOrganizationIdForRequests();
-  if (existing) {
-    return existing;
-  }
-
-  await useOrganizationStore
-    .getState()
-    .fetchOrganizations()
-    .catch(() => {});
-  return (
-    getActiveOrganizationIdForRequests() ??
-    assistant.cloudOrganizationId ??
-    null
-  );
+  return statusOrganizationId ?? assistant.cloudOrganizationId ?? null;
 }
 
 async function ensureRegistration(
@@ -687,7 +666,6 @@ async function platformPost<T>(
       },
       {
         includeSelfHostedActorToken: false,
-        organizationId,
       },
     )),
   });

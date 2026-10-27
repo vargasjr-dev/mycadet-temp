@@ -19,7 +19,7 @@ configureNativeAuth({
     app.focus({ steal: true });
     ensureVisible();
   },
-  getCloudUrl: () => resolveLocalConfigFromEnv(process.env).cloudUrl,
+  getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
   ipc: { handle, handleSync },
   openExternal: (url) => shell.openExternal(url),
   removeCookie: (url, name) => session.defaultSession.cookies.remove(url, name),

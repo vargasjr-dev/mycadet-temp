@@ -1,4 +1,3 @@
-import { persistRootSigningKey } from "./root-signing-key.js";
 import { createHash, randomUUID } from "node:crypto";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { spawn } from "node:child_process";
@@ -9,7 +8,6 @@ import {
   lstat,
   mkdir,
   mkdtemp,
-  readFile,
   readdir,
   rename,
   rm,
@@ -21,15 +19,11 @@ import { pipeline } from "node:stream/promises";
 import * as tar from "tar";
 import { z } from "zod";
 import {
-  resolveExistingLocalSigningKey,
+  saveLockfileAssistant,
   type LocalAssistantResources,
 } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "./assistant-config.js";
-import {
-  getDaemonPidPath,
-  saveLockfileAssistant,
-  getLocalInstanceDir,
-} from "./assistant-config.js";
+import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import { getBackupsDir } from "./backup-ops.js";
 import { dockerResourceNames } from "./docker.js";
 import { execOutput } from "./step-runner.js";
@@ -311,13 +305,11 @@ export class LocalRootStorage implements RootStorage {
       await wakeAssistant(this.entry, {
         watch: false,
         foreground: false,
-        repairGuardian: false,
       });
       await this.checkReady();
       return;
     }
     const resources = this.resources;
-    const signingKey = resolveExistingLocalSigningKey(resources);
     if (
       this.initialRunning?.has("ces") &&
       !isProcessAlive(join(this.root, "ces.pid")).alive
@@ -327,13 +319,12 @@ export class LocalRootStorage implements RootStorage {
       this.initialRunning?.has("assistant") &&
       !isProcessAlive(getDaemonPidPath(resources)).alive
     )
-      await startLocalDaemon(false, resources, { signingKey });
+      await startLocalDaemon(false, resources);
     if (
       this.initialRunning?.has("gateway") &&
       !isProcessAlive(join(this.root, "gateway.pid")).alive
     )
       await startGateway(false, resources, {
-        signingKey,
         bootstrapSecret: this.entry.guardianBootstrapSecret,
       });
     await this.checkReady();
@@ -389,10 +380,6 @@ export class LocalRootStorage implements RootStorage {
           ),
       });
     }
-    // Local wake takes its signing key from the host registry. Make that identity
-    // part of the gateway root too, so the archive is self-contained.
-    const key = resolveExistingLocalSigningKey(this.entry.resources);
-    persistRootSigningKey(target, key);
   }
   async replace(source: string): Promise<void> {
     // All renames stay on the instance's filesystem. A failed install rolls back
@@ -552,7 +539,6 @@ export class DockerRootStorage implements RootStorage {
       await wakeAssistant(this.entry, {
         watch: false,
         foreground: false,
-        repairGuardian: false,
       });
     } else {
       for (const container of new Set(Object.values(this.containers))) {
@@ -630,39 +616,13 @@ export class DockerRootStorage implements RootStorage {
         join(target, root),
       );
     }
-    // A Docker-injected key may never have been persisted by the gateway.
-    const gateway = await this.inspect(this.containers["gateway-security"]);
-    const key = gateway.Config.Env.find((value) =>
-      value.startsWith("ACTOR_TOKEN_SIGNING_KEY="),
-    )?.split("=")[1];
-    if (key) {
-      if (!/^[a-f0-9]{64}$/i.test(key))
-        throw new Error("Invalid injected gateway signing key.");
-      persistRootSigningKey(target, key);
-    }
     // docker cp may retain sockets in its tar stream; remove only process artifacts.
     await pruneTransient(target);
   }
-  private async restoreMounts(source: string) {
-    const key = await readFile(
-      join(source, "gateway-security", "actor-token-signing-key"),
-    );
+  private async restoreMounts(_source: string) {
     const inspections = new Map<string, ContainerInspection>();
     for (const container of new Set(Object.values(this.containers)))
       inspections.set(container, await this.inspect(container));
-    // Container env is immutable. Refuse before changing any volume if it would
-    // override the restored identity. Teleport's provisioning step creates new
-    // containers against the restored roots instead.
-    for (const state of inspections.values()) {
-      const injected = state.Config.Env.find((value) =>
-        value.startsWith("ACTOR_TOKEN_SIGNING_KEY="),
-      )?.slice("ACTOR_TOKEN_SIGNING_KEY=".length);
-      if (injected && injected.toLowerCase() !== key.toString("hex")) {
-        throw new Error(
-          "Destination containers inject a different signing key. Recreate them without ACTOR_TOKEN_SIGNING_KEY before restoring this installation.",
-        );
-      }
-    }
     return STATE_ROOTS.map((root) => {
       const state = inspections.get(this.containers[root])!;
       const mount = state.Mounts.find(
@@ -867,18 +827,15 @@ export async function initializeRootArchive(
   storage: RootStorage = entry.cloud === "docker"
     ? new DockerRootStorage(entry)
     : new LocalRootStorage(entry),
-): Promise<string> {
+): Promise<void> {
   return withRootOperationLock(entry, async () => {
     const stage = await stageRootArchive(file);
     try {
       const source = join(stage, "state");
-      const signingKey = resolveExistingLocalSigningKey({
-        instanceDir: source,
-      });
       await storage.prepareRestore?.(source);
       await assertStopped(storage);
       await storage.replace(source);
-      return signingKey;
+      return undefined;
     } finally {
       await rm(stage, { recursive: true, force: true });
     }
@@ -900,10 +857,6 @@ async function restoreBackup(
   let running = false;
   let recoveryPath: string | undefined;
   try {
-    // Read only gateway identity material; CES ciphertext is never
-    // interpreted. The resolve refuses a missing or conflicting key before
-    // anything is touched.
-    resolveExistingLocalSigningKey({ instanceDir: source });
     await ops.storage.prepareRestore?.(source);
     if (options.dryRun) return undefined;
     running = await ops.storage.running();

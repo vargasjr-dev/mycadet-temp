@@ -66,7 +66,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -87,7 +90,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -95,7 +101,6 @@ describe("getGuardianAccessToken", () => {
       configDir,
       invocation,
       true,
-      undefined,
       {
         paired: true,
         pairedGatewayUrl: "https://gateway.example.com",
@@ -114,7 +119,10 @@ describe("getGuardianAccessToken", () => {
     saveGuardianToken(
       configDir,
       "asst-1",
-      makeTokenData({ accessTokenExpiresAt: PAST, refreshTokenExpiresAt: PAST }),
+      makeTokenData({
+        accessTokenExpiresAt: PAST,
+        refreshTokenExpiresAt: PAST,
+      }),
     );
 
     const result = await getGuardianAccessToken(
@@ -122,7 +130,6 @@ describe("getGuardianAccessToken", () => {
       configDir,
       invocation,
       true,
-      undefined,
       { paired: false },
     );
 
@@ -153,7 +160,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://attacker.example.com",
@@ -170,7 +176,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://gateway.example.com",
@@ -188,7 +193,6 @@ describe("getGuardianAccessToken", () => {
         configDir,
         invocation,
         true,
-        undefined,
         {
           paired: true,
           pairedGatewayUrl: "https://gateway.example.com",
@@ -224,7 +228,10 @@ describe("parseGuardianRefreshCliFailure", () => {
     expect(
       parseGuardianRefreshCliFailure(
         "",
-        formatGuardianRefreshCliFailure(503, "Assistant gateway is unreachable"),
+        formatGuardianRefreshCliFailure(
+          503,
+          "Assistant gateway is unreachable",
+        ),
       ),
     ).toEqual({
       ok: false,

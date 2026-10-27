@@ -1,12 +1,7 @@
 import { describe, test, expect, mock, afterEach } from "bun:test";
 import type { GatewayConfig } from "../config.js";
-import {
-  initSigningKey,
-  mintToken,
-  verifyToken,
-} from "../auth/token-service.js";
+import { initSigningKey, mintToken } from "../auth/token-service.js";
 import { CURRENT_POLICY_EPOCH } from "../auth/policy.js";
-import type { TokenClaims } from "../auth/types.js";
 
 type FetchFn = (
   input: string | URL | Request,
@@ -113,7 +108,7 @@ describe("runtime proxy auth enforcement", () => {
     expect(body.ok).toBe(true);
   });
 
-  test("auth required: replaces client edge token with exchange token for upstream", async () => {
+  test("auth required: forwards the verified identity without the client's edge token", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
       async (_input: string | URL | Request, init?: RequestInit) => {
@@ -131,12 +126,13 @@ describe("runtime proxy auth enforcement", () => {
     });
     await handler(req);
 
-    const upstreamAuth = capturedHeaders!.get("authorization");
-    expect(upstreamAuth).toBeTruthy();
-    // The upstream should receive an exchange token (aud=cadet-daemon),
-    // NOT the original edge token.
-    expect(upstreamAuth).toStartWith("Bearer ");
-    expect(upstreamAuth).not.toBe(`Bearer ${TOKEN}`);
+    // The daemon verifies no tokens — the gateway forwards the verified
+    // identity in x-cadet-* headers, and the client's edge bearer never
+    // survives the hop.
+    const identity = forwardedIdentity(capturedHeaders!);
+    expect(identity.subject).toBe("actor:self:test-user");
+    expect(identity.principalType).toBe("actor");
+    expect(identity.scopeProfile).toBe("actor_client_v1");
   });
 
   test("auth not required: proxies without token", async () => {
@@ -204,13 +200,22 @@ async function forwardedHeaders(
   return captured!;
 }
 
-/** Claims of the daemon-audience token the proxy forwarded. */
-function forwardedClaims(headers: Headers): TokenClaims {
-  const auth = headers.get("authorization") ?? "";
-  expect(auth).toStartWith("Bearer ");
-  const result = verifyToken(auth.slice(7), "cadet-daemon");
-  expect(result.ok).toBe(true);
-  return (result as { ok: true; claims: TokenClaims }).claims;
+/**
+ * The forwarded identity the proxy asserted upstream. The daemon verifies no
+ * tokens — the identity rides in `x-cadet-*` headers, and a caller's bearer
+ * must never survive the hop.
+ */
+function forwardedIdentity(headers: Headers): {
+  subject: string | null;
+  principalType: string | null;
+  scopeProfile: string | null;
+} {
+  expect(headers.get("authorization")).toBeNull();
+  return {
+    subject: headers.get("x-cadet-subject"),
+    principalType: headers.get("x-cadet-principal-type"),
+    scopeProfile: headers.get("x-cadet-scope-profile"),
+  };
 }
 
 describe("runtime proxy without client-facing auth", () => {
@@ -219,20 +224,22 @@ describe("runtime proxy without client-facing auth", () => {
       headers: { authorization: `Bearer ${mintProxyGrant()}` },
     });
 
-    const claims = forwardedClaims(headers);
-    expect(claims.sub).toBe(PROXY_GRANT_SUB);
-    expect(claims.scope_profile).toBe("oauth_proxy_v1");
+    const identity = forwardedIdentity(headers);
+    expect(identity.subject).toBe(PROXY_GRANT_SUB);
+    expect(identity.principalType).toBe("local");
+    expect(identity.scopeProfile).toBe("oauth_proxy_v1");
   });
 
-  test("mints a service token when no bearer is presented", async () => {
+  test("asserts the service identity when no bearer is presented", async () => {
     const headers = await forwardedHeaders(NO_AUTH_CONFIG());
 
-    const claims = forwardedClaims(headers);
-    expect(claims.sub).toBe("svc:gateway:self");
-    expect(claims.scope_profile).toBe("gateway_service_v1");
+    const identity = forwardedIdentity(headers);
+    expect(identity.subject).toBe("svc:gateway:self");
+    expect(identity.principalType).toBe("svc_gateway");
+    expect(identity.scopeProfile).toBe("gateway_service_v1");
   });
 
-  test("mints a service token for a grant this install never signed", async () => {
+  test("asserts the service identity for a grant this install never signed", async () => {
     // The bearer is the shape of a grant and carries no valid signature.
     // Auth being off makes a bearer optional, not an unsigned one credible.
     const forged = `${mintProxyGrant()}tampered`;
@@ -240,12 +247,12 @@ describe("runtime proxy without client-facing auth", () => {
       headers: { authorization: `Bearer ${forged}` },
     });
 
-    const claims = forwardedClaims(headers);
-    expect(claims.sub).toBe("svc:gateway:self");
-    expect(claims.scope_profile).toBe("gateway_service_v1");
+    const identity = forwardedIdentity(headers);
+    expect(identity.subject).toBe("svc:gateway:self");
+    expect(identity.scopeProfile).toBe("gateway_service_v1");
   });
 
-  test("mints a service token for an expired grant", async () => {
+  test("asserts the service identity for an expired grant", async () => {
     const expired = mintToken({
       aud: "cadet-gateway",
       sub: PROXY_GRANT_SUB,
@@ -257,8 +264,9 @@ describe("runtime proxy without client-facing auth", () => {
       headers: { authorization: `Bearer ${expired}` },
     });
 
-    const claims = forwardedClaims(headers);
-    expect(claims.scope_profile).toBe("gateway_service_v1");
+    const identity = forwardedIdentity(headers);
+    expect(identity.subject).toBe("svc:gateway:self");
+    expect(identity.scopeProfile).toBe("gateway_service_v1");
   });
 
   test("leaves a broad edge token on the service-token path", async () => {
@@ -269,26 +277,26 @@ describe("runtime proxy without client-facing auth", () => {
       headers: { authorization: `Bearer ${TOKEN}` },
     });
 
-    const claims = forwardedClaims(headers);
-    expect(claims.sub).toBe("svc:gateway:self");
-    expect(claims.scope_profile).toBe("gateway_service_v1");
+    const identity = forwardedIdentity(headers);
+    expect(identity.subject).toBe("svc:gateway:self");
+    expect(identity.scopeProfile).toBe("gateway_service_v1");
   });
 
   test("exchanges the same grant identically when auth is required", async () => {
     const grant = `Bearer ${mintProxyGrant()}`;
-    const withoutAuth = forwardedClaims(
+    const withoutAuth = forwardedIdentity(
       await forwardedHeaders(NO_AUTH_CONFIG(), {
         headers: { authorization: grant },
       }),
     );
-    const withAuth = forwardedClaims(
+    const withAuth = forwardedIdentity(
       await forwardedHeaders(makeConfig(), {
         headers: { authorization: grant },
       }),
     );
 
-    expect(withoutAuth.sub).toBe(withAuth.sub);
-    expect(withoutAuth.scope_profile).toBe(withAuth.scope_profile);
+    expect(withoutAuth.subject).toBe(withAuth.subject);
+    expect(withoutAuth.scopeProfile).toBe(withAuth.scopeProfile);
   });
 });
 

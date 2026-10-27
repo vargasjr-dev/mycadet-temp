@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { withoutVersionPrefix } from "../http/router.js";
 import {
   TWILIO_MEDIA_STREAM_WEBHOOK_PATH,
   TWILIO_STATUS_WEBHOOK_PATH,
@@ -147,9 +148,11 @@ function findMethodNearPath(
   return null;
 }
 
-/** Deduplicated, sorted list of unique route paths. */
+/** Deduplicated, sorted list of unique route paths (canonical — unversioned). */
 function extractRoutePathsFromSource(): string[] {
-  const paths = new Set(extractRoutesFromSource().map((r) => r.path));
+  const paths = new Set(
+    extractRoutesFromSource().map((r) => withoutVersionPrefix(r.path)),
+  );
   return [...paths].sort();
 }
 
@@ -227,7 +230,10 @@ const EXCLUDED_FROM_SCHEMA = new Set([
   // installed plugins and the guardian's approvals, so there is no fixed set
   // to document. The declaration schema is the contract, not this path.
   "/webhooks/plugins/{param1}/{param2}",
-]);
+  // The entries above are written in the versioned spelling they're excluded
+  // under in the schema; the guard compares canonical (unversioned) paths, so
+  // they normalize once here — P7's optional /v1 prefix.
+].map(withoutVersionPrefix));
 
 // ── Schema paths that don't map to a discrete route definition ──
 // These are documented in the schema but correspond to pre-router logic
@@ -239,7 +245,15 @@ const SCHEMA_ONLY_PATHS = new Set([
 
 describe("route-schema sync guard", () => {
   const schema = buildSchema() as { paths: Record<string, unknown> };
-  const schemaPaths = new Set(Object.keys(schema.paths));
+  // P7 made the /v1 prefix optional on the wire: route definitions read the
+  // unversioned shape and the matcher strips the prefix from either spelling.
+  // The schema keeps the versioned spelling (the public API contract), so
+  // both sides of every comparison below canonicalize through the same
+  // stripper the router itself uses.
+  const schemaKeyByCanonical = new Map(
+    Object.keys(schema.paths).map((k) => [withoutVersionPrefix(k), k] as const),
+  );
+  const schemaPaths = new Set(schemaKeyByCanonical.keys());
   const routePaths = extractRoutePathsFromSource();
 
   test("every route path should have a corresponding schema entry", () => {
@@ -280,7 +294,12 @@ describe("route-schema sync guard", () => {
   });
 
   test("HTTP methods for each path should match between routes and schema", () => {
-    const routes = extractRoutesFromSource();
+    const routes = extractRoutesFromSource().map((r) => ({
+      ...r,
+      // Canonical (unversioned) shape — the matcher strips the optional
+      // /v1 prefix at dispatch, so comparisons read the bare spelling.
+      path: withoutVersionPrefix(r.path),
+    }));
     const HTTP_METHODS = ["get", "post", "put", "patch", "delete"] as const;
     type HttpMethod = (typeof HTTP_METHODS)[number];
 
@@ -309,9 +328,9 @@ describe("route-schema sync guard", () => {
     // For each path that has explicit methods in the route table,
     // verify the schema documents exactly the same set of methods.
     for (const [path, routeMethods] of routeMethodsByPath) {
-      const schemaEntry = (
-        schema.paths as Record<string, Record<string, unknown>>
-      )[path];
+      const schemaEntry = (schema.paths as Record<string, Record<string, unknown>>)[
+        schemaKeyByCanonical.get(path) ?? path
+      ];
       if (!schemaEntry) continue; // path-level mismatch is caught by the other tests
 
       const schemaMethods = new Set(

@@ -230,7 +230,7 @@ describe("runtime proxy handler", () => {
     expect(capturedSignal).toBeInstanceOf(AbortSignal);
   });
 
-  test("replaces client authorization with JWT service token when auth is not required", async () => {
+  test("asserts the service identity without a bearer when auth is not required", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
       async (_input: string | URL | Request, init?: RequestInit) => {
@@ -245,11 +245,16 @@ describe("runtime proxy handler", () => {
     });
     await handler(req);
 
-    // When auth is not required, gateway still mints a JWT service token for the runtime
-    expect(capturedHeaders!.get("authorization")).toMatch(/^Bearer ey/);
+    // The daemon verifies no tokens — the gateway asserts its service
+    // identity in x-cadet-* headers, never a bearer.
+    expect(capturedHeaders!.get("authorization")).toBeNull();
+    expect(capturedHeaders!.get("x-cadet-subject")).toBe("svc:gateway:self");
+    expect(capturedHeaders!.get("x-cadet-scope-profile")).toBe(
+      "gateway_service_v1",
+    );
   });
 
-  test("replaces client authorization with JWT token for upstream", async () => {
+  test("strips the client's bearer and asserts the service identity upstream", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
       async (_input: string | URL | Request, init?: RequestInit) => {
@@ -264,7 +269,8 @@ describe("runtime proxy handler", () => {
     });
     await handler(req);
 
-    expect(capturedHeaders!.get("authorization")).toMatch(/^Bearer ey/);
+    expect(capturedHeaders!.get("authorization")).toBeNull();
+    expect(capturedHeaders!.get("x-cadet-subject")).toBe("svc:gateway:self");
   });
 
   test("truncates long upstream error bodies in logs", async () => {

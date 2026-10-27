@@ -54,7 +54,11 @@ let mockLockfileData: { ok: boolean; data?: LockfileData } = {
   data: { assistants: [], activeAssistant: null },
 };
 mock.module("@mycadet/local-mode", () => ({
-  getLockfileData: () => mockLockfileData,
+  // readLockfile degrades a failed read to the empty registry.
+  readLockfile: () =>
+    mockLockfileData.ok
+      ? mockLockfileData.data!
+      : { assistants: [], activeAssistant: null },
 }));
 
 const { installConnectivityProbe } = await import("./connectivity-probe");
@@ -66,7 +70,7 @@ const { installConnectivityProbe } = await import("./connectivity-probe");
 // installConnectivityProbe has a module-level guard (probeTimer) that prevents
 // double-starting. Call it once and use the returned runProbe to trigger
 // individual probe cycles with different lockfile states.
-const runProbe = installConnectivityProbe(["/mock/lockfile.json"]);
+const runProbe = installConnectivityProbe();
 
 beforeEach(() => {
   backendReachableCalls = [];
@@ -340,3 +344,4 @@ describe("connectivity-probe", () => {
     expect(fetchCalls).toEqual(["http://127.0.0.1:7830/healthz"]);
   });
 });
+

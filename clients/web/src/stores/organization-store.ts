@@ -21,12 +21,7 @@ import { create } from "zustand";
 import { createSelectors } from "@/utils/create-selectors";
 import { organizationsList } from "@/generated/api/sdk.gen";
 import type { OrganizationRead } from "@/generated/api/types.gen";
-import { subscribe } from "@/lib/event-bus";
-import { useAuthStore } from "@/stores/auth-store";
-import {
-  hasLiveCloudSession,
-  isSettledSessionRejection,
-} from "@/stores/session-status";
+import { isSettledSessionRejection } from "@/stores/session-status";
 
 const ACTIVE_ORGANIZATION_STORAGE_KEY = "cadet_active_organization_id";
 
@@ -299,63 +294,4 @@ export function useRequestOrganizationId(): string | null {
  */
 export function clearOrganization(): void {
   useOrganizationStore.getState().clearOrganization();
-}
-
-/**
- * Register all organization store lifecycle listeners. Call once at startup.
- *
- * 1. Auth subscription — fetches orgs when the user logs in or switches
- *    accounts (including cross-tab via BroadcastChannel).
- * 2. App resume — refetches the org list when the user returns to the
- *    tab (visibility / native foreground / online), but only if data is
- *    older than STALE_TIME_MS so rapid resume signals on fresh data
- *    don't trigger redundant fetches. Delivered via the layout-scoped
- *    event bus, which covers the visibility + focus + online surface
- *    behind a single channel.
- */
-export function setupOrganizationStore(): () => void {
-  const STALE_TIME_MS = 10_000;
-  let lastFetchedAt = 0;
-
-  // Track when fetches complete so we can enforce staleTime on resume refetch.
-  const unsubStale = useOrganizationStore.subscribe((state) => {
-    if (state.status === "ready" || state.status === "error") {
-      lastFetchedAt = Date.now();
-    }
-  });
-
-  // 1. Auth transitions — platform session triggers org fetch. Orgs are a
-  //    platform concept; skip the fetch when there's no platform session
-  //    (e.g. self-hosted/local mode with gateway-only auth).
-  const unsubAuth = useAuthStore.subscribe((state, prevState) => {
-    const hasSession = hasLiveCloudSession(state.cloudSession);
-    const hadSession = hasLiveCloudSession(prevState.cloudSession);
-    if (hasSession && (!hadSession || state.user?.id !== prevState.user?.id)) {
-      useOrganizationStore.getState().fetchOrganizations();
-    }
-  });
-
-  // 2. App resume — refetch if stale and platform session is active.
-  const refetchIfStale = () => {
-    if (!hasLiveCloudSession(useAuthStore.getState().cloudSession)) {
-      return;
-    }
-    const { status } = useOrganizationStore.getState();
-    if (
-      (status === "ready" || status === "error") &&
-      Date.now() - lastFetchedAt > STALE_TIME_MS
-    ) {
-      useOrganizationStore.getState().fetchOrganizations();
-    }
-  };
-
-  const unsubResume = subscribe("app.resume", () => {
-    refetchIfStale();
-  });
-
-  return () => {
-    unsubStale();
-    unsubAuth();
-    unsubResume();
-  };
 }

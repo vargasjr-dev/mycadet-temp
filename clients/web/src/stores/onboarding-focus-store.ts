@@ -3,7 +3,7 @@
  *
  * SPIKE — research-onboarding flow.
  *
- * Lives at top-level `stores/` (not `domains/onboarding/`) because it is read
+ * Lives at top-level `stores/` because it is read
  * by the `chat` domain (`ChatLayout`) and written by the `onboarding` domain;
  * cross-domain shared state belongs at the top level per CONVENTIONS.md.
  *

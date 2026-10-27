@@ -1,10 +1,11 @@
-import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
-
 /**
  * What the Assistant Inbox shows for this assistant.
  *
- * - `unavailable`: no platform to ask (local mode, self-hosted assistant,
- *   or no session). Nothing to draw and no rail entry.
+ * - `unavailable`: no managed mailbox for this assistant (not
+ *   cloud-hosted). Nothing to draw and no rail entry. Composed by the
+ *   hook, not by {@link resolveInboxStatus} — email inboxes for
+ *   non-cloud assistants are planned, so the pure decision does not
+ *   read hosting.
  * - `loading`: the reads that decide have not settled.
  * - `setup`: the assistant has no address yet.
  * - `ready`: an address exists; the mailbox can be shown.
@@ -12,9 +13,7 @@ import type { CloudGateStateWithPending } from "@/hooks/use-cloud-gate";
 export type InboxStatus = "unavailable" | "loading" | "setup" | "ready";
 
 export interface InboxStatusInputs {
-  /** The pending-aware gate: `pending` is not yet an answer. */
-  gate: CloudGateStateWithPending;
-  /** The cloud assistant id resolved, or `null` while it has not. */
+  /** The platform id the assistant routes key on; `null` while unresolved. */
   cloudAssistantId: string | null;
   /** `undefined` until the address list has been read once. */
   addressCount: number | undefined;
@@ -25,19 +24,8 @@ export interface InboxStatusInputs {
   domainsSettled: boolean;
 }
 
-/**
- * Pure so the decision can be tested without the hooks that feed it. A
- * pending platform gate is `loading`, never `unavailable`: on a cold load
- * the session has not answered yet, and reading "no session" into that
- * would bounce a signed-in user.
- */
+/** Pure so the decision can be tested without the hooks that feed it. */
 export function resolveInboxStatus(inputs: InboxStatusInputs): InboxStatus {
-  if (inputs.gate === "pending") {
-    return "loading";
-  }
-  if (inputs.gate !== "full") {
-    return "unavailable";
-  }
   if (!inputs.cloudAssistantId || inputs.addressCount === undefined) {
     return "loading";
   }

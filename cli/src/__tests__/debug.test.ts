@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 // Lockfile isolation (mirrors backup.test.ts)
 const testDir = mkdtempSync(join(tmpdir(), "cli-debug-test-"));
-process.env.CADET_LOCKFILE_DIR = testDir;
+process.env.XDG_CONFIG_HOME = testDir;
 
 import * as assistantConfig from "../lib/assistant-config.js";
 import * as guardianToken from "../lib/guardian-token.js";
@@ -29,7 +29,7 @@ const resolveTargetMock = spyOn(
   throw new Error("process.exit:1");
 });
 const readCloudTokenMock = spyOn(cloudClient, "readCloudToken").mockReturnValue(
-  "platform-token",
+  "test-cloud-token",
 );
 const loadGuardianTokenSpy = spyOn(
   guardianToken,
@@ -93,7 +93,7 @@ beforeEach(() => {
   resolveTargetMock.mockReturnValue(LOCAL_ENTRY);
   leaseGuardianTokenSpy.mockClear();
   readCloudTokenMock.mockReset();
-  readCloudTokenMock.mockReturnValue("platform-token");
+  readCloudTokenMock.mockReturnValue("test-cloud-token");
 });
 
 afterEach(() => {

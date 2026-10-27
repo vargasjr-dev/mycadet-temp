@@ -14,7 +14,6 @@ import { configPatch, credentialsSetPost } from "@/generated/daemon/sdk.gen";
 import { useDraftOverride } from "@/hooks/use-draft-override";
 import { useTranslation } from "@/i18n";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { synthesizeTTS } from "@/lib/tts-synthesize";
 import { getLocalSetting, setLocalSetting } from "@/utils/local-settings";
 import { Button } from "@mycadet/design-library/components/button";
@@ -92,14 +91,12 @@ export function TtsProviderForm({
   const assistantId = assistantIdProp ?? activeAssistantId;
   const assistantName =
     useAssistantIdentityStore.use.name() ?? "your assistant";
-  const isOrgReady = useIsOrgReady();
   const queryClient = useQueryClient();
 
   const { data: catalogData } = useQuery({
     ...ttsProvidersGetOptions({
       path: { assistant_id: assistantId },
     }),
-    enabled: isOrgReady,
     staleTime: Infinity,
   });
   const providers = useMemo(() => {
@@ -121,7 +118,6 @@ export function TtsProviderForm({
   // provider configured elsewhere (CLI/other client) when localStorage is stale.
   const { data: daemonConfig } = useQuery({
     ...configGetOptions({ path: { assistant_id: assistantId } }),
-    enabled: isOrgReady,
     staleTime: 30_000,
   });
   // `services.tts` falls under the ConfigGetResponse index signature (`unknown`),
@@ -173,8 +169,7 @@ export function TtsProviderForm({
   const [draftCloudVoice, setDraftCloudVoice] =
     useDraftOverride(serverCloudVoice);
   const selectedCloudVoice =
-    managedVoices.find((v) => v.model === draftCloudVoice) ??
-    managedVoices[0];
+    managedVoices.find((v) => v.model === draftCloudVoice) ?? managedVoices[0];
 
   // Custom-voice entry: a free-text field for a cloud voice id outside the
   // curated catalog. Null override means "not yet toggled by the user" — the
@@ -512,7 +507,6 @@ export function TtsProviderForm({
                (grouped, per-row preview, provider badge). Controlled so the
                pick stays a draft until Save, matching the rest of this form. */
             <VoicePickerField
-              assistantId={assistantId}
               value={draftCloudVoice}
               onChange={setDraftCloudVoice}
             />
@@ -561,9 +555,7 @@ export function TtsProviderForm({
           {!hideSaveButton && (
             <SaveButton onClick={handleSave} disabled={!hasChanges || saving} />
           )}
-          {providerHasKey && !isCloud && (
-            <ResetButton onClick={handleReset} />
-          )}
+          {providerHasKey && !isCloud && <ResetButton onClick={handleReset} />}
         </div>
       </div>
     </div>

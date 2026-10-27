@@ -7,7 +7,6 @@
 
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
-import { mintServiceToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
@@ -20,7 +19,6 @@ export function createRuntimeHealthProxyHandler(config: GatewayConfig) {
     const response = await proxyForwardToResponse(req, {
       baseUrl: config.assistantRuntimeBaseUrl,
       path: "/v1/health",
-      serviceToken: mintServiceToken(),
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

@@ -486,10 +486,6 @@
   "onboardingBackButton": {
     "back": "返回"
   },
-  "platformLoginNotice": {
-    "cancel": "取消",
-    "logIn": "登录"
-  },
   "profileCard": {
     "assistantHandleIdleEmpty": "您的助手尚未设置句柄，请设置一个以便提及。",
     "assistantHandleLabel": "助手句柄",
@@ -746,7 +742,6 @@
     "stepConnect": "连接",
     "stepCreate": "创建机器人"
   },
-  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "强调色填充",
     "activeBorder": "活动边框",

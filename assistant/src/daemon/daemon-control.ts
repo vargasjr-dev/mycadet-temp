@@ -11,7 +11,6 @@ import { resolve } from "node:path";
 
 import { getRuntimeHttpHost, getRuntimeHttpPort } from "../config/env.js";
 import { getIsContainerized } from "../config/env-registry.js";
-import { loadOrCreateSigningKey } from "../runtime/auth/token-service.js";
 import { ensureBun } from "../util/bun-runtime.js";
 import { DaemonError } from "../util/errors.js";
 import {
@@ -366,26 +365,10 @@ async function startDaemonLocked(): Promise<{
   // Spawn the daemon as a detached child process
   const mainPath = resolve(import.meta.dirname ?? __dirname, "main.ts");
 
-  // Pre-load the signing key so the daemon receives it via env var and
-  // never needs to access the protected directory for key material.
-  // Done before opening stderrFd to avoid leaking the file descriptor if
-  // loadOrCreateSigningKey throws.
   const spawnEnv = { ...process.env };
-  if (!spawnEnv.ACTOR_TOKEN_SIGNING_KEY) {
-    try {
-      const key = loadOrCreateSigningKey();
-      spawnEnv.ACTOR_TOKEN_SIGNING_KEY = key.toString("hex");
-    } catch (err) {
-      throw new DaemonError(
-        `Failed to pre-load signing key for daemon: ${
-          err instanceof Error ? err.message : String(err)
-        }`,
-      );
-    }
-  }
 
   // Resolve bun before opening stderrFd to avoid leaking the file
-  // descriptor if ensureBun() throws (same pattern as loadOrCreateSigningKey).
+  // descriptor if ensureBun() throws.
   const bunPath = await ensureBun();
 
   // Redirect the child's stderr to a file instead of piping it back to the

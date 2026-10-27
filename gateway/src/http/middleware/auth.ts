@@ -11,6 +11,7 @@ import {
 } from "../../auth/scopes.js";
 import { parseSub } from "../../auth/subject.js";
 import { validateEdgeToken } from "../../auth/token-exchange.js";
+import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import type { Scope, TokenClaims } from "../../auth/types.js";
 import { AuthFallbackLogThrottle } from "../../auth-fallback-log-throttle.js";
 import type { AuthRateLimiter } from "../../auth-rate-limiter.js";
@@ -624,13 +625,17 @@ function isSingleRouteGrant(claims: TokenClaims): boolean {
   );
 }
 
-/** Extract the raw token from a Bearer Authorization header, or null. */
+/**
+ * Extract the raw token from a Bearer Authorization header, falling back to the
+ * browser access cookie (`cadet_web_access`); null when neither is present.
+ */
 function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
-    return null;
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    return authHeader.slice(7);
   }
-  return authHeader.slice(7);
+  const cookieToken = getRemoteWebAccessCookie(req);
+  return cookieToken || null;
 }
 
 function hasAuthorizationHeader(req: Request): boolean {

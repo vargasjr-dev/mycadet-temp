@@ -7,15 +7,46 @@
  * being silently duplicated.
  */
 
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-import {
+// The real chain (probe → mirror → fact) is exercised below, so only the
+// network call and the gateway-mode flag are mocked — registered before the
+// first queries import so the module binds to them.
+const apiActual = await import("@/assistant/api");
+type AssistantResult = Awaited<ReturnType<typeof apiActual.getAssistant>>;
+const getAssistantMock = mock<(id?: string) => Promise<AssistantResult>>(() =>
+  Promise.reject(new Error("unmocked")),
+);
+mock.module("@/assistant/api", () => ({
+  ...apiActual,
+  getAssistant: (id?: string) => getAssistantMock(id),
+}));
+
+const localModeActual = await import("@/lib/local-mode");
+let mockGatewaySessionLive = false;
+mock.module("@/lib/local-mode", () => ({
+  ...localModeActual,
+  isGatewaySessionLive: () => mockGatewaySessionLive,
+}));
+
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
+
+const {
   ASSISTANT_QUERY_KEY,
   assistantQueryKey,
   pollIntervalFor,
   POLL_INTERVAL_MS,
-} from "@/assistant/queries";
+} = await import("@/assistant/queries");
 import type { Assistant, GetAssistantResult } from "@/assistant/api";
+
+beforeEach(() => {
+  mockGatewaySessionLive = false;
+  getAssistantMock.mockClear();
+  useResolvedAssistantsStore.setState({
+    assistants: [],
+    activeAssistantId: null,
+  });
+});
 
 describe("assistantQueryKey", () => {
   test("returns the base key by reference when nothing is selected (off-path is byte-identical)", () => {
@@ -100,3 +131,12 @@ describe("useAssistantQuery polling cadence", () => {
     expect(pollIntervalFor(errored)).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// The boot resolution's imperative face — the route guard's session facts
+// ---------------------------------------------------------------------------
+//
+// The route guard awaits the boot resolution's probe so the guard's next
+// read (`hasAssistants`) decides on the projected roster rather than a
+// clock. These pins drive the real chain — `probeBootResolution` (the
+// middleware's await) projects ok results into the roster.

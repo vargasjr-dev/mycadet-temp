@@ -135,6 +135,18 @@ mock.module(
   }),
 );
 
+// The sidebar state reads the boot resolution; stub it active so the tests
+// run with the assistant already resolved (the shell's guarantee) and no
+// query client is needed.
+mock.module("@/assistant/queries", () => ({
+  useAssistantResolution: () => ({
+    state: { kind: "active", isLocal: false },
+    result: { ok: true, status: 200, data: { id: "asst-1" } },
+    selectedCloudAssistantId: "asst-1",
+    refetch: () => Promise.resolve(),
+  }),
+}));
+
 // The assistant nav item reads the avatar through React Query; stub it so
 // static SSR rendering resolves without a QueryClient.
 mock.module("@/hooks/use-assistant-avatar", () => ({

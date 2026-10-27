@@ -94,6 +94,7 @@ export function resolveAssistantLifecycleState(
       undefined,
       "Failed to check assistant status.",
     ),
+    status: result.status,
   };
 }
 

@@ -22,12 +22,11 @@ import {
   refreshGuardianToken,
   refreshGuardianTokenResult,
   saveGuardianToken,
-  seedGuardianTokenFromSiblingEnv,
   type GuardianTokenData,
 } from "../lib/guardian-token.js";
-import { getConfigDir } from "../lib/environments/paths.js";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { withPreconnect } from "./helpers/http.js";
+import { makeEntry } from "./helpers/lockfile-entry.js";
 
 function makeTokenData(suffix: string): GuardianTokenData {
   const now = new Date().toISOString();
@@ -190,56 +189,6 @@ describe("guardian-token paths are env-scoped", () => {
     expect(first).toBe(second);
   });
 
-  test("seedGuardianTokenFromSiblingEnv copies a dev token into the current local env", () => {
-    // Write a token under the dev env.
-    process.env.CADET_ENVIRONMENT = "dev";
-    saveGuardianToken("alpha", makeTokenData("dev"));
-
-    // Switch to local env — no token present yet.
-    process.env.CADET_ENVIRONMENT = "local";
-    expect(loadGuardianToken("alpha")).toBeNull();
-
-    const seeded = seedGuardianTokenFromSiblingEnv("alpha");
-    expect(seeded).toBe(true);
-
-    const localPath = join(
-      tempHome,
-      "cadet-local",
-      "assistants",
-      "alpha",
-      "guardian-token.json",
-    );
-    expect(existsSync(localPath)).toBe(true);
-    const loaded = loadGuardianToken("alpha");
-    expect(loaded).not.toBeNull();
-    expect(loaded!.guardianPrincipalId).toBe("principal-dev");
-
-    // Idempotent — second call is a no-op.
-    expect(seedGuardianTokenFromSiblingEnv("alpha")).toBe(false);
-  });
-
-  test("seedGuardianTokenFromSiblingEnv returns false when no sibling token exists", () => {
-    process.env.CADET_ENVIRONMENT = "local";
-    expect(seedGuardianTokenFromSiblingEnv("nonexistent")).toBe(false);
-    expect(loadGuardianToken("nonexistent")).toBeNull();
-  });
-
-  test("seedGuardianTokenFromSiblingEnv does not overwrite an existing token", () => {
-    // Token already present in the current env.
-    process.env.CADET_ENVIRONMENT = "local";
-    saveGuardianToken("alpha", makeTokenData("local"));
-
-    // And a different sibling token in dev.
-    process.env.CADET_ENVIRONMENT = "dev";
-    saveGuardianToken("alpha", makeTokenData("dev"));
-
-    // Back to local — seed should no-op because a token is already present.
-    process.env.CADET_ENVIRONMENT = "local";
-    expect(seedGuardianTokenFromSiblingEnv("alpha")).toBe(false);
-    expect(loadGuardianToken("alpha")!.guardianPrincipalId).toBe(
-      "principal-local",
-    );
-  });
 });
 
 describe("refreshGuardianToken", () => {
@@ -342,7 +291,9 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const leased = await leaseGuardianToken("https://gw.example.com", "px");
+    const leased = await leaseGuardianToken(
+      makeEntry({ assistantId: "px" }),
+    );
 
     expect(leased.accessToken).toBe("access-lease");
     expect(leased.refreshAfter).toBeDefined();
@@ -367,7 +318,9 @@ describe("refreshGuardianToken", () => {
       );
     });
 
-    const err = await leaseGuardianToken("https://gw.example.com", "px").then(
+    const err = await leaseGuardianToken(
+      makeEntry({ assistantId: "px" }),
+    ).then(
       () => null,
       (e: unknown) => e,
     );
@@ -667,7 +620,7 @@ describe("guardianTokenDueForRenewal", () => {
 });
 
 // Drift guard between the guardian-token WRITE path (CLI: getGuardianTokenPath
-// → getConfigDir(getCurrentEnvironment())) and the READ path used by every
+// → resolveConfigDir()) and the READ path used by every
 // host-seam reader (getGuardianAccessToken → resolveConfigDir(env) from
 // @mycadet/local-mode). A divergence here writes a freshly leased token where
 // the connect can't read it, bricking local-assistant connect. saveGuardianToken
@@ -697,8 +650,8 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
   // The CLI's own resolver and the shared @mycadet/local-mode resolver must
   // agree on the config dir for every environment source.
   const expectResolversAgree = () => {
-    expect(getConfigDir(getCurrentEnvironment())).toBe(
-      resolveConfigDir(process.env),
+    expect(resolveConfigDir()).toBe(
+      resolveConfigDir(),
     );
   };
 
@@ -706,7 +659,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("prod"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -715,7 +668,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("dev"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -724,7 +677,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expectResolversAgree();
     saveGuardianToken("alpha", makeTokenData("local"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 
@@ -734,7 +687,7 @@ describe("guardian-token path resolver parity (CLI ↔ shared)", () => {
     expect(getCurrentEnvironment().name).toBe("production");
     saveGuardianToken("alpha", makeTokenData("prod"));
     expect(
-      existsSync(guardianTokenPath(resolveConfigDir(process.env), "alpha")),
+      existsSync(guardianTokenPath(resolveConfigDir(), "alpha")),
     ).toBe(true);
   });
 });

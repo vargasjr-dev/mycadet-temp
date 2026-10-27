@@ -25,13 +25,13 @@ import {
   configGetOptions,
   ttsProvidersGetOptions,
 } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useOrgHeaderReadiness } from "@/hooks/use-is-org-ready";
 import {
   useUnscopedCloudVoices,
   type CloudVoiceOption,
 } from "@/lib/tts/use-cloud-voices";
 
 import { useSerializedConfigSelection } from "@/components/speech/use-serialized-config-selection";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 // Module-level so `select` identity only tracks real state (see
 // `useSerializedConfigSelection`).
@@ -76,13 +76,19 @@ export interface UseCloudVoiceSelection {
 }
 
 export function useCloudVoiceSelection(
-  assistantId: string | null,
+  options: { enabled?: boolean } = {},
 ): UseCloudVoiceSelection {
-  const orgReadiness = useOrgHeaderReadiness();
-  const enabled = orgReadiness === "ready" && !!assistantId;
+  // The id is the shell's, not a per-call argument. Read raw rather than
+  // through `useActiveAssistantId()`: the call bar mounts this hook in the
+  // root layout, where welcome and onboarding have no assistant yet — the
+  // `enabled` option keeps those pre-assistant mounts fetch-free.
+  const assistantId = useResolvedAssistantsStore.use.activeAssistantId();
+  const enabled = (options.enabled ?? true) && assistantId != null;
 
   const { data: providerCatalog, isLoading: catalogLoading } = useQuery({
-    ...ttsProvidersGetOptions({ path: { assistant_id: assistantId ?? "" } }),
+    ...ttsProvidersGetOptions({
+      path: { assistant_id: assistantId ?? "" },
+    }),
     enabled,
     staleTime: Infinity,
     retry: false,
@@ -127,15 +133,9 @@ export function useCloudVoiceSelection(
   const isByok = enabled && !!daemonConfig && !isCloud;
   // "Nothing is in flight, and nothing is waiting to start." Each `isLoading`
   // is false for a query that is disabled or has failed, so the states that
-  // never produce a picker (no assistant, an org that resolved to nothing, an
-  // old daemon, a catalog that failed or came back empty) settle rather than
-  // read as perpetually loading. `"resolving"` is the one wait not expressed as
-  // a query: it disables all three, and they'd otherwise look settled.
-  const settled =
-    orgReadiness !== "resolving" &&
-    !catalogLoading &&
-    !configLoading &&
-    !voicesLoading;
+  // never produce a picker (no assistant, an old daemon, a catalog that
+  // failed or came back empty) settle rather than read as perpetually loading.
+  const settled = !catalogLoading && !configLoading && !voicesLoading;
 
   const configuredModel =
     daemonTts?.providers?.cadet?.model ??

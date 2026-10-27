@@ -19,7 +19,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const testDir = mkdtempSync(join(tmpdir(), "devices-test-"));
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_CONFIG_HOME = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ARGV = [...process.argv];
 const ORIGINAL_FETCH = globalThis.fetch;
@@ -28,7 +27,7 @@ import { createHash } from "node:crypto";
 
 import * as stepRunner from "../lib/step-runner.js";
 import { devices } from "../commands/devices.js";
-import { saveLockfileAssistant } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { computeDeviceId } from "../lib/guardian-token.js";
 
 interface FetchCall {
@@ -96,7 +95,6 @@ function headerKeys(init?: RequestInit): string[] {
 
 describe("cadet devices", () => {
   beforeEach(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
     process.env.XDG_CONFIG_HOME = testDir;
     fetchCalls = [];
     // Default stub: any unexpected call is recorded and 500s.
@@ -167,9 +165,6 @@ describe("cadet devices", () => {
   afterEach(() => {
     process.argv = [...ORIGINAL_ARGV];
     globalThis.fetch = ORIGINAL_FETCH;
-    if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_CONFIG_HOME === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_CONFIG_HOME;
   });

@@ -9,11 +9,7 @@ import {
 } from "../lib/statefulset.js";
 import { PROVIDER_ENV_VAR_NAMES } from "../shared/provider-env-vars.js";
 
-const SECRET_KEYS = [
-  "CES_SERVICE_TOKEN",
-  "ACTOR_TOKEN_SIGNING_KEY",
-  "GUARDIAN_BOOTSTRAP_SECRET",
-];
+const SECRET_KEYS = ["CES_SERVICE_TOKEN", "GUARDIAN_BOOTSTRAP_SECRET"];
 
 describe("getBuilderManagedEnvKeys", () => {
   test("gateway always-set keys cover spec static + secret entries and PATH", () => {

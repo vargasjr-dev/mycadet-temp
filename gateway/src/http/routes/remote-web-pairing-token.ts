@@ -169,6 +169,8 @@ export async function handleRemoteWebPairingToken(
     ).toISOString();
   } else {
     for (const cookie of buildRemoteWebBrowserAuthCookies({
+      accessToken: pair.accessToken,
+      accessTokenExpiresAtMs: pair.accessTokenExpiresAt,
       refreshToken: pair.refreshToken,
       refreshTokenExpiresAtMs: pair.refreshTokenExpiresAt,
     })) {

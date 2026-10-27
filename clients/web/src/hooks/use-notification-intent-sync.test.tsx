@@ -31,7 +31,6 @@ import {
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
-import { useOrganizationStore } from "@/stores/organization-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -48,6 +47,7 @@ const PLATFORM_ASSISTANT: ResolvedAssistant = {
   isLocal: false,
   isCloudHosted: true,
   isPaired: false,
+  organizationId: "org-1",
 };
 
 const postedArgs: PostLocalNotificationArgs[] = [];
@@ -222,7 +222,6 @@ function expectNotified() {
 function platformScopeId(): string {
   const scopeId = resolveAssistantAvatarOwnerScopeId(
     PLATFORM_ASSISTANT,
-    "org-1",
     window.location.href,
   );
   if (!scopeId) {
@@ -246,19 +245,7 @@ beforeEach(() => {
   __resetForTesting();
   useAuthStore.setState({
     sessionStatus: "authenticated",
-    user: {
-      kind: "platform",
-      id: "account-1",
-      username: "user1",
-      email: "user@example.com",
-      isStaff: false,
-      firstName: "Example",
-      lastName: "User",
-    },
-  });
-  useOrganizationStore.setState({
-    currentOrganizationId: "org-1",
-    persistedOrganizationId: "org-1",
+    cloudSession: "present",
   });
   useResolvedAssistantsStore.setState({
     assistants: [PLATFORM_ASSISTANT],
@@ -421,7 +408,11 @@ describe("useNotificationIntentSync", () => {
     const canDeliver = postedArgs[0]?.canDeliver;
     expect(canDeliver?.()).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useResolvedAssistantsStore.setState({
+        assistants: [],
+        activeAssistantId: null,
+        selectedAssistantId: null,
+      });
     });
     expect(canDeliver?.()).toBe(false);
   });
@@ -442,19 +433,7 @@ describe("useNotificationIntentSync", () => {
       runtimeUrl: "https://b.example.com/assistant",
     };
     useAuthStore.setState({
-      user: {
-        kind: "local",
-        id: "gateway-local",
-        username: null,
-        email: null,
-        isStaff: false,
-        firstName: "",
-        lastName: "",
-      },
-    });
-    useOrganizationStore.setState({
-      currentOrganizationId: null,
-      persistedOrganizationId: null,
+      sessionStatus: "authenticated",
     });
     useResolvedAssistantsStore.setState({
       assistants: [assistantA, assistantB],
@@ -475,7 +454,6 @@ describe("useNotificationIntentSync", () => {
     expect(originA).toMatchObject({
       scopeId: resolveAssistantAvatarOwnerScopeId(
         assistantA,
-        null,
         window.location.href,
       ),
       assistantId: assistantA.id,
@@ -637,7 +615,11 @@ describe("useNotificationIntentSync already-watching skip", () => {
     });
     expect(otherTab.isConversationAttended(key)).toBe(true);
     act(() => {
-      useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+      useResolvedAssistantsStore.setState({
+        assistants: [],
+        activeAssistantId: null,
+        selectedAssistantId: null,
+      });
     });
     expect(otherTab.isConversationAttended(key)).toBe(false);
     mounted.unmount();

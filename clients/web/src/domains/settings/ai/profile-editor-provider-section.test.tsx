@@ -8,8 +8,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-mock.module("@/hooks/use-cloud-gate", () => ({
-  useCloudGate: () => "full",
+mock.module("@/assistant/hosting", () => ({
   useActiveAssistantIsSelfHosted: () => false,
 }));
 
@@ -112,7 +111,10 @@ describe("ProfileEditorProviderSection with an openai-compatible connection", ()
   const connection = {
     name: "lm-studio",
     provider: "openai-compatible",
-    auth: { type: "api_key", credential: "credential/openai-compatible/api_key" },
+    auth: {
+      type: "api_key",
+      credential: "credential/openai-compatible/api_key",
+    },
     models: [{ id: "llama-3.1", displayName: "Llama 3.1" }],
   };
 

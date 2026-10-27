@@ -5,7 +5,6 @@ import {
   createRemoteWebPairingChallenge,
   exchangeRemoteWebPairingToken,
   parseRemoteWebPairingParams,
-  refreshRemoteGatewaySession,
   remoteGatewayApiPath,
   remoteGatewayPublicPathPrefix,
   RemoteWebPairingError,
@@ -198,7 +197,7 @@ describe("remote gateway token exchange", () => {
     );
   });
 
-  test("stores approved access tokens in memory and primes self-hosted routing", () => {
+  test("cookie custody: activation primes routing and stores no token in JS", () => {
     window.__CADET_CONFIG__ = { remote: "docker" };
     setLocation("/assistant-123/assistant/pair");
 
@@ -208,83 +207,11 @@ describe("remote gateway token exchange", () => {
       refreshAfter: "2999-01-01T00:00:00.000Z",
     });
 
-    expect(getSelfHostedActorToken()).toBe("access-token");
+    expect(getSelfHostedActorToken()).toBeNull();
     expect(getSelfHostedIngressUrl()).toBe(
       "http://localhost:3000/assistant-123",
     );
-    expect(getSelfHostedActorToken()).toBe("access-token");
     expect(localStorage.getItem("cadet:gw:token")).toBeNull();
   });
 
-  test("does not rotate the refresh cookie before refreshAfter", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    globalThis.fetch = mock(async () =>
-      Response.json({}),
-    ) as unknown as typeof fetch;
-
-    activateRemoteGatewaySession({
-      accessToken: "access-token",
-      accessTokenExpiresAt: "2999-01-01T00:00:00.000Z",
-      refreshAfter: "2999-01-01T00:00:00.000Z",
-    });
-
-    await expect(refreshRemoteGatewaySession()).resolves.toBe(true);
-
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-    expect(getSelfHostedActorToken()).toBe("access-token");
-  });
-
-  test("refreshes from the HttpOnly cookie endpoint", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
-    globalThis.fetch = mock(async (input, init) => {
-      calls.push({ input, init });
-      return Response.json({
-        guardianPrincipalId: "guardian-1",
-        accessToken: "refreshed-access-token",
-        accessTokenExpiresAt: Date.parse("2999-01-01T00:00:00.000Z"),
-        refreshAfter: Date.parse("2999-01-01T00:00:00.000Z"),
-      });
-    }) as unknown as typeof fetch;
-
-    await expect(refreshRemoteGatewaySession()).resolves.toBe(true);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0].input).toBe("/assistant-123/v1/guardian/refresh");
-    expect(calls[0].init?.credentials).toBe("include");
-    expect(calls[0].init?.body).toBe("{}");
-    expect(getSelfHostedActorToken()).toBe("refreshed-access-token");
-  });
-
-  test("shares concurrent same-tab refresh attempts", async () => {
-    window.__CADET_CONFIG__ = { remote: "docker" };
-    setLocation("/assistant-123/assistant/conversations/self");
-    let releaseRefresh!: () => void;
-    const refreshGate = new Promise<void>((resolve) => {
-      releaseRefresh = resolve;
-    });
-    const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
-    globalThis.fetch = mock(async (input, init) => {
-      calls.push({ input, init });
-      await refreshGate;
-      return Response.json({
-        guardianPrincipalId: "guardian-1",
-        accessToken: "shared-access-token",
-        accessTokenExpiresAt: Date.parse("2999-01-01T00:00:00.000Z"),
-        refreshAfter: Date.parse("2999-01-01T00:00:00.000Z"),
-      });
-    }) as unknown as typeof fetch;
-
-    const first = refreshRemoteGatewaySession();
-    const second = refreshRemoteGatewaySession();
-
-    expect(calls).toHaveLength(1);
-    releaseRefresh();
-    await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
-
-    expect(calls).toHaveLength(1);
-    expect(getSelfHostedActorToken()).toBe("shared-access-token");
-  });
 });

@@ -22,7 +22,7 @@ afterEach(() => {
 
 describe("withLockfileLock", () => {
   test("runs fn, propagates its result, and removes the lock dir", () => {
-    const result = withLockfileLock([lockfilePath], () => {
+    const result = withLockfileLock(lockfilePath, () => {
       expect(fs.existsSync(lockDir)).toBe(true);
       return 42;
     });
@@ -30,17 +30,15 @@ describe("withLockfileLock", () => {
     expect(fs.existsSync(lockDir)).toBe(false);
   });
 
-  test("keys the lock to the write path, ignoring fallback paths", () => {
-    const fallback = path.join(dir, "legacy.json");
-    withLockfileLock([lockfilePath, fallback], () => {
+  test("keys the lock to the path", () => {
+    withLockfileLock(lockfilePath, () => {
       expect(fs.existsSync(lockDir)).toBe(true);
-      expect(fs.existsSync(`${fallback}.lock`)).toBe(false);
     });
   });
 
   test("releases the lock when fn throws, rethrowing", () => {
     expect(() =>
-      withLockfileLock([lockfilePath], () => {
+      withLockfileLock(lockfilePath, () => {
         throw new Error("boom");
       }),
     ).toThrow("boom");
@@ -48,8 +46,8 @@ describe("withLockfileLock", () => {
   });
 
   test("is reentrant within the process", () => {
-    const result = withLockfileLock([lockfilePath], () => {
-      const inner = withLockfileLock([lockfilePath], () => "inner");
+    const result = withLockfileLock(lockfilePath, () => {
+      const inner = withLockfileLock(lockfilePath, () => "inner");
       expect(inner).toEqual({ ok: true, value: "inner" });
       // Inner exit must not release the outer hold.
       expect(fs.existsSync(lockDir)).toBe(true);
@@ -63,7 +61,7 @@ describe("withLockfileLock", () => {
     fs.mkdirSync(lockDir);
     let ran = false;
     const start = Date.now();
-    const result = withLockfileLock([lockfilePath], () => {
+    const result = withLockfileLock(lockfilePath, () => {
       ran = true;
     });
     expect(Date.now() - start).toBeLessThan(2_000);
@@ -81,7 +79,7 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock([lockfilePath], () => "ran");
+    const result = withLockfileLock(lockfilePath, () => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
@@ -94,7 +92,7 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock([lockfilePath], () => "ran");
+    const result = withLockfileLock(lockfilePath, () => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
@@ -106,7 +104,7 @@ describe("withLockfileLock", () => {
     fs.utimesSync(lockDir, past, past);
 
     let ran = false;
-    const result = withLockfileLock([lockfilePath], () => {
+    const result = withLockfileLock(lockfilePath, () => {
       ran = true;
     });
     expect(ran).toBe(false);
@@ -125,13 +123,13 @@ describe("withLockfileLock", () => {
     const past = new Date(Date.now() - 11 * 60_000);
     fs.utimesSync(lockDir, past, past);
 
-    const result = withLockfileLock([lockfilePath], () => "ran");
+    const result = withLockfileLock(lockfilePath, () => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(lockDir)).toBe(false);
   });
 
   test("records this process as the owner while the lock is held", () => {
-    withLockfileLock([lockfilePath], () => {
+    withLockfileLock(lockfilePath, () => {
       expect(fs.readFileSync(path.join(lockDir, "owner"), "utf-8")).toBe(
         String(process.pid),
       );
@@ -139,7 +137,7 @@ describe("withLockfileLock", () => {
   });
 
   test("release leaves a lock re-acquired by another owner untouched", () => {
-    const result = withLockfileLock([lockfilePath], () => {
+    const result = withLockfileLock(lockfilePath, () => {
       // Simulate a break-and-reacquire while suspended: another process now
       // records itself as the owner of the lock path.
       fs.writeFileSync(path.join(lockDir, "owner"), String(process.pid + 1));
@@ -154,12 +152,9 @@ describe("withLockfileLock", () => {
 
   test("creates a missing parent directory and acquires", () => {
     const nested = path.join(dir, "a", "b", "lockfile.json");
-    const result = withLockfileLock([nested], () => "ran");
+    const result = withLockfileLock(nested, () => "ran");
     expect(result).toEqual({ ok: true, value: "ran" });
     expect(fs.existsSync(`${nested}.lock`)).toBe(false);
   });
 
-  test("refuses an empty path list", () => {
-    expect(withLockfileLock([], () => "never").ok).toBe(false);
-  });
 });

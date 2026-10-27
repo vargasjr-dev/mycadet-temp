@@ -9,9 +9,8 @@ import {
   assistantsListQueryKey,
 } from "@/generated/api/@tanstack/react-query.gen";
 import type { Assistant } from "@/generated/api/types.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAssistantId } from "@/hooks/use-cloud-assistant-id";
-import { useCloudGate } from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsCloudHosted } from "@/assistant/hosting";
 import { useTranslation } from "@/i18n";
 
 export interface AssistantHandleModalProps {
@@ -86,16 +85,12 @@ export function useAssistantHandleModal(
   assistantId: string | null,
 ): AssistantHandleModalControl {
   const [open, setOpen] = useState(false);
-  const gate = useCloudGate({ cloudHostedOnly: true });
-  const onPlatform = gate === "full" && !!assistantId;
-  const orgReady = useIsOrgReady();
-  const { cloudAssistantId } = useCloudAssistantId(
-    assistantId,
-    onPlatform,
-  );
+  const isCloudHosted = useActiveAssistantIsCloudHosted();
+  const onPlatform = isCloudHosted && !!assistantId;
+  const { cloudAssistantId } = useCloudAssistantId(assistantId, onPlatform);
   const assistantsQuery = useQuery({
     ...assistantsListOptions(),
-    enabled: onPlatform && orgReady,
+    enabled: onPlatform,
   });
   const assistant =
     assistantsQuery.data?.results?.find(

@@ -19,7 +19,6 @@ import { Button } from "@mycadet/design-library/components/button";
 import { Skeleton } from "@mycadet/design-library/components/skeleton";
 
 import { DetailCard } from "@/components/detail-card";
-import { useActiveAssistantId } from "@/assistant/use-active-assistant-id";
 import { ByoVoiceNote } from "@/components/speech/byo-voice-note";
 import { useCloudVoiceSelection } from "@/components/speech/use-cloud-voice-selection";
 import { VoiceLabel } from "@/components/speech/voice-list";
@@ -29,9 +28,7 @@ import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
 
 export function VoicePickerCard() {
   const { t } = useTranslation("settings");
-  const assistantId = useActiveAssistantId();
-  const { available, settled, voices, currentModel } =
-    useCloudVoiceSelection(assistantId);
+  const { available, settled, voices, currentModel } = useCloudVoiceSelection();
   const current = voices.find((v) => v.model === currentModel) ?? voices[0];
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -83,11 +80,7 @@ export function VoicePickerCard() {
             {t("voicePickerCard.changeButton")}
           </Button>
         </div>
-        <VoicePickerModal
-          assistantId={assistantId}
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-        />
+        <VoicePickerModal open={pickerOpen} onOpenChange={setPickerOpen} />
       </DetailCard>
     );
   }

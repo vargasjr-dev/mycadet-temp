@@ -238,7 +238,7 @@ export class TunnelClient {
         this.handleConfigInvalidated();
       },
     );
-    this.startAsync().catch((err) => {
+    this.connect().catch((err) => {
       this.connecting = false;
       log.error({ err }, "Failed to start Tunnel client");
       this.scheduleReconnect();
@@ -268,11 +268,6 @@ export class TunnelClient {
     if (ws) {
       closeWebSocket(ws, 1000, "gateway shutdown");
     }
-  }
-
-  private async startAsync(): Promise<void> {
-    await clearManagedPublicBaseUrl(this.options.configFile);
-    await this.connect();
   }
 
   /**
@@ -800,9 +795,6 @@ export function createTunnelClient(
         "TUNNEL_BASE_URL is not configured on a cloud pod — the assistant tunnel will not be established and inbound webhook delivery will fail",
       );
     }
-    void clearManagedPublicBaseUrl(deps.configFile).catch((err) => {
-      log.error({ err }, "Failed to clear disabled Tunnel public URL");
-    });
     return undefined;
   }
   return new TunnelClient({

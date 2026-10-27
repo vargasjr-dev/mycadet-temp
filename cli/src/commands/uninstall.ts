@@ -14,12 +14,8 @@ import {
   confirmAction,
 } from "../lib/confirm-action.js";
 import { retireDocker } from "../lib/docker.js";
-import {
-  getConfigDirs,
-  getLogDir,
-  getSharedStateDir,
-  getStateDir,
-} from "../lib/environments/paths.js";
+import { getSharedStateDir } from "../lib/environments/paths.js";
+import { resolveConfigDir, resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "../lib/environments/resolve.js";
 import { stopProcessByPidFile } from "../lib/process";
 
@@ -184,18 +180,18 @@ function selfDelete(): void {
   }
 }
 
-function collectDeleteTargets(env = getCurrentEnvironment()): DeleteTarget[] {
+function collectDeleteTargets(): DeleteTarget[] {
   const targets: DeleteTarget[] = [
     {
-      path: getStateDir(env),
+      path: resolveDataDir(),
       description:
         "assistant state, retired archives, and the assistants it holds",
     },
-    ...getConfigDirs(env).map((dir) => ({
-      path: dir,
+    {
+      path: resolveConfigDir(),
       description: "config and lockfile",
-    })),
-    { path: getLogDir(env), description: "logs" },
+    },
+    { path: resolveLogDir(), description: "logs" },
     // Not environment-scoped: deleting it affects every cadet CLI on the
     // machine — called out in the prompt, not hidden.
     {
@@ -238,7 +234,7 @@ export const uninstall = Object.assign(
     const env = getCurrentEnvironment();
     const envLabel = env.name ?? "production";
     const existing = loadAllAssistants();
-    const targets = collectDeleteTargets(env);
+    const targets = collectDeleteTargets();
     const selfTarget = resolveSelfDeleteTarget();
 
     console.log(

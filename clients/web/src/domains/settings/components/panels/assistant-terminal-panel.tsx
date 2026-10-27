@@ -1,38 +1,26 @@
 import { Terminal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { getAssistant } from "@/assistant/api";
-import { CloudLoginNotice } from "@/components/cloud-login-notice";
 import { TerminalPanel } from "@/components/terminal-panel";
-import {
-  useActiveAssistantLifecycleIsLoading,
-  useCloudGate,
-} from "@/hooks/use-cloud-gate";
+import { useActiveAssistantIsSelfHosted } from "@/assistant/hosting";
+import { useAssistantResolution } from "@/assistant/queries";
 import { useTranslation } from "@/i18n";
-import { captureError } from "@/lib/error-reporting/capture-error";
-import { toast } from "@mycadet/design-library";
 import { Select } from "@mycadet/design-library/components/select";
 
 type TerminalService = "assistant" | "gateway" | "credential-executor";
 
 export function AssistantTerminalPanel() {
   const { t } = useTranslation("settings");
-  // The terminal session is a cloud-routed exec channel — `cloudHostedOnly`
-  // flips "gated" when the active assistant is self-hosted, even on a
-  // platform-mode app where the standard gate would still resolve to "full".
-  const cloudGate = useCloudGate({ cloudHostedOnly: true });
-  // Settings routes are NOT mounted under `<ActiveAssistantGate>`, so the
-  // gate intentionally returns "full" during the lifecycle `loading`
-  // window on a deep-link / hard refresh. Pair with the lifecycle-loading
-  // signal so we hold in the loading branch during the race; once the
-  // lifecycle resolves to `self_hosted` the gate flips to `gated` and we
-  // early-return null, structurally blocking TerminalPanel from mounting
-  // a cloud-routed exec connection against a self-hosted target.
-  const isLifecycleLoading = useActiveAssistantLifecycleIsLoading();
-  const [assistantId, setAssistantId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // The terminal session is a cloud-routed exec channel — it has no meaning
+  // against a self-hosted assistant. Once the lifecycle resolves to
+  // `self_hosted` early-return null, structurally blocking TerminalPanel
+  // from mounting a cloud-routed exec connection against a self-hosted
+  // target. The assistant is the shell's — the boot resolution owns the id,
+  // the panel runs its own fetch for nothing.
+  const { state, result } = useAssistantResolution();
+  const assistantId = result?.ok ? result.data.id : null;
+  const loading = state.kind === "loading";
   const [service, setService] = useState<TerminalService>("assistant");
-  const fetchedRef = useRef(false);
 
   const terminalServiceOptions = useMemo(
     () =>
@@ -47,58 +35,13 @@ export function AssistantTerminalPanel() {
     [],
   );
 
-  const fetchAssistant = useCallback(
-    async (force?: boolean) => {
-      if (!force && fetchedRef.current) {
-        return;
-      }
-      if (!force) {
-        setLoading(true);
-      }
-      try {
-        const result = await getAssistant();
-        if (result.ok) {
-          fetchedRef.current = true;
-          setAssistantId(result.data.id);
-        }
-      } catch (error) {
-        captureError(error, { context: "fetch_assistant_for_terminal" });
-        toast.error(t("assistantTerminalPanel.loadErrorToast"));
-      } finally {
-        setLoading(false);
-      }
-    },
-    [t],
-  );
-
-  // `getAssistant` is a daemon-side call (safe in every lifecycle state
-  // where we have a daemon connection), so fire it eagerly whenever the
-  // gate is open. The cloud-routed exec connection — the actual
-  // Trap-5 concern — lives inside `<TerminalPanel>` and is structurally
-  // blocked from mounting in two ways: the gate flips to `"gated"` and
-  // returns null when the lifecycle resolves to self-hosted, and the
-  // `showLoading` branch below covers the lifecycle-loading race window.
-  // When disabled we render the panel chrome plus a Notice without
-  // firing the fetch.
-  useEffect(() => {
-    if (cloudGate !== "full") {
-      return;
-    }
-    void fetchAssistant();
-  }, [fetchAssistant, cloudGate]);
-
-  if (cloudGate === "gated") {
+  // The cloud-routed exec connection — the actual Trap-5 concern — lives
+  // inside `<TerminalPanel>` and is structurally blocked from mounting: the
+  // gate flips to `"gated"` and returns null when the lifecycle resolves to
+  // self-hosted.
+  if (useActiveAssistantIsSelfHosted()) {
     return null;
   }
-
-  // Treat ONLY the genuine lifecycle-loading window as still-resolving.
-  // Already-resolved non-hosted kinds (`retired`, `error`) must
-  // fall through to the existing
-  // "No assistant found" empty state — gating those on `!isCloudHosted`
-  // would stick the panel on the spinner forever because `fetchAssistant`
-  // never clears `loading` for an assistant that doesn't exist.
-  const isResolving = cloudGate === "full" && isLifecycleLoading;
-  const showLoading = loading || isResolving;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
@@ -126,11 +69,7 @@ export function AssistantTerminalPanel() {
         )}
       </div>
 
-      {cloudGate === "disabled" ? (
-        <CloudLoginNotice>
-          {t("assistantTerminalPanel.loginNotice")}
-        </CloudLoginNotice>
-      ) : showLoading ? (
+      {loading ? (
         <div className="flex items-center gap-2 text-body-medium-lighter text-[var(--content-tertiary)]">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--border-element)] border-t-[var(--content-secondary)]" />
           {t("assistantTerminalPanel.loading")}

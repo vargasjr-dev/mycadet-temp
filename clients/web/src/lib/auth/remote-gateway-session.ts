@@ -5,10 +5,7 @@ import type {
   RemoteWebPairingTokenRequest,
 } from "@mycadet/service-contracts/remote-web-pairing";
 
-import {
-  getSelfHostedActorToken,
-  setSelfHostedConnection,
-} from "@/lib/self-hosted/connection";
+import { setSelfHostedConnection } from "@/lib/self-hosted/connection";
 
 export {
   parseRemoteWebPairingParams,
@@ -17,27 +14,7 @@ export {
 
 const PAIRING_TOKEN_PATH = "/v1/remote-web/pairing-token";
 const PAIRING_CHALLENGE_PATH = "/v1/remote-web/pairing-challenge";
-const GUARDIAN_REFRESH_PATH = "/v1/guardian/refresh";
 const DEFAULT_POLL_INTERVAL_SECONDS = 5;
-const REFRESH_EARLY_MS = 5_000;
-const REFRESH_LOCK_KEY = "cadet:remote-gateway:refresh-lock";
-const REFRESH_LOCK_NAME = "cadet-remote-gateway-refresh";
-const REFRESH_LOCK_TTL_MS = 20_000;
-const REFRESH_LOCK_WAIT_MS = 20_000;
-const REFRESH_LOCK_POLL_MS = 100;
-
-type BrowserLocks = {
-  request<T>(name: string, callback: () => Promise<T>): Promise<T>;
-};
-
-type RefreshLockRecord = {
-  owner: string;
-  expiresAt: number;
-};
-
-let remoteGatewayRefreshAfterMs = 0;
-let refreshRemoteGatewaySessionPromise: Promise<boolean> | null = null;
-
 /**
  * Credential fields {@link activateRemoteGatewaySession} consumes. Broader than
  * the pairing-token approved response because the same activation path also
@@ -98,24 +75,6 @@ export function remoteGatewayPublicBaseUrl(): string {
   return `${window.location.origin}${remoteGatewayPublicPathPrefix()}`;
 }
 
-function toEpochMilliseconds(value: string | number): number {
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-  return value > 1_000_000_000_000 ? value : value * 1000;
-}
-
-function shouldRefreshRemoteGatewaySession(): boolean {
-  if (!getSelfHostedActorToken()) {
-    return true;
-  }
-  if (remoteGatewayRefreshAfterMs <= 0) {
-    return true;
-  }
-  return Date.now() >= remoteGatewayRefreshAfterMs - REFRESH_EARLY_MS;
-}
-
 function isApprovedPayload(
   value: unknown,
 ): value is RemoteWebPairingTokenApprovedResponse {
@@ -144,95 +103,14 @@ function isChallengePayload(
   );
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function readRefreshLock(): RefreshLockRecord | null {
-  try {
-    const raw = localStorage.getItem(REFRESH_LOCK_KEY);
-    if (!raw) {
-      return null;
-    }
-    const parsed = JSON.parse(raw) as Partial<RefreshLockRecord>;
-    if (
-      typeof parsed.owner !== "string" ||
-      typeof parsed.expiresAt !== "number"
-    ) {
-      return null;
-    }
-    return { owner: parsed.owner, expiresAt: parsed.expiresAt };
-  } catch {
-    return null;
-  }
-}
-
-function tryAcquireRefreshLock(owner: string): boolean {
-  try {
-    const current = readRefreshLock();
-    if (current && current.expiresAt > Date.now()) {
-      return false;
-    }
-    localStorage.setItem(
-      REFRESH_LOCK_KEY,
-      JSON.stringify({ owner, expiresAt: Date.now() + REFRESH_LOCK_TTL_MS }),
-    );
-    return readRefreshLock()?.owner === owner;
-  } catch {
-    return true;
-  }
-}
-
-function releaseRefreshLock(owner: string): void {
-  try {
-    if (readRefreshLock()?.owner === owner) {
-      localStorage.removeItem(REFRESH_LOCK_KEY);
-    }
-  } catch {
-    // localStorage unavailable
-  }
-}
-
-async function withLocalStorageRefreshLock<T>(
-  fn: () => Promise<T>,
-): Promise<T> {
-  const owner = `${Date.now()}:${Math.random().toString(36).slice(2)}`;
-  const waitUntil = Date.now() + REFRESH_LOCK_WAIT_MS;
-
-  while (!tryAcquireRefreshLock(owner)) {
-    if (Date.now() >= waitUntil) {
-      return fn();
-    }
-    await sleep(REFRESH_LOCK_POLL_MS);
-  }
-
-  try {
-    return await fn();
-  } finally {
-    releaseRefreshLock(owner);
-  }
-}
-
-async function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
-  // Refresh tokens are single-use; serialize cookie refresh so multiple tabs
-  // do not replay the same cookie before the first Set-Cookie lands.
-  const locks =
-    typeof navigator !== "undefined"
-      ? ((navigator as Navigator & { locks?: BrowserLocks }).locks ?? null)
-      : null;
-  if (locks) {
-    return locks.request(REFRESH_LOCK_NAME, fn);
-  }
-  return withLocalStorageRefreshLock(fn);
-}
-
 export function activateRemoteGatewaySession(
   session: RemoteGatewaySessionCredentials,
 ): void {
-  remoteGatewayRefreshAfterMs = toEpochMilliseconds(session.refreshAfter);
+  // Cookie custody: the pairing response minted the HttpOnly cookies; JS holds nothing.
+  void session;
   setSelfHostedConnection({
     url: `${window.location.origin}${remoteGatewayPublicPathPrefix()}`,
-    token: session.accessToken,
+    token: null,
   });
 }
 
@@ -310,53 +188,4 @@ export async function createRemoteWebPairingChallenge(
   }
 
   return body;
-}
-
-async function refreshRemoteGatewaySessionOnce(
-  force: boolean,
-): Promise<boolean> {
-  if (!force && !shouldRefreshRemoteGatewaySession()) {
-    return true;
-  }
-
-  const response = await fetch(remoteGatewayApiPath(GUARDIAN_REFRESH_PATH), {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: "{}",
-  });
-
-  if (!response.ok) {
-    return false;
-  }
-  const body = (await response.json().catch(() => null)) as unknown;
-  if (!isApprovedPayload({ ...(body as object), status: "approved" })) {
-    return false;
-  }
-  activateRemoteGatewaySession({
-    ...(body as Omit<RemoteWebPairingTokenApprovedResponse, "status">),
-    status: "approved",
-  } as RemoteGatewaySessionCredentials);
-  return true;
-}
-
-/**
- * Refresh the paired browser session when it is due. `force` refreshes
- * regardless of the schedule, for a caller whose access token the gateway
- * has just rejected: the schedule is local bookkeeping and cannot see a
- * server-side revocation. Concurrent callers share one in-flight refresh.
- */
-export async function refreshRemoteGatewaySession({
-  force = false,
-}: { force?: boolean } = {}): Promise<boolean> {
-  if (!force && !shouldRefreshRemoteGatewaySession()) {
-    return true;
-  }
-
-  refreshRemoteGatewaySessionPromise ??= withRefreshLock(() =>
-    refreshRemoteGatewaySessionOnce(force),
-  ).finally(() => {
-    refreshRemoteGatewaySessionPromise = null;
-  });
-  return refreshRemoteGatewaySessionPromise;
 }

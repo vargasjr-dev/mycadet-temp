@@ -19,8 +19,6 @@ import { useEffect, useMemo, useRef } from "react";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-
 import type { Conversation } from "@/types/conversation-types";
 
 import {
@@ -38,7 +36,6 @@ export function useActiveConversation(
   enabled: boolean,
 ): Conversation | undefined {
   const queryClient = useQueryClient();
-  const isOrgReady = useIsOrgReady();
   const { conversations: foreground } = useConversationListQuery(
     assistantId,
     enabled,
@@ -72,13 +69,15 @@ export function useActiveConversation(
 
   const fetchedConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!enabled || !assistantId || !conversationId || !isOrgReady) {
+    if (!enabled || !assistantId || !conversationId) {
       return;
     }
     if (activeConversation) {
       return;
     }
-    if (useConversationStore.getState().draftConversationIds.has(conversationId)) {
+    if (
+      useConversationStore.getState().draftConversationIds.has(conversationId)
+    ) {
       return;
     }
     if (fetchedConversationIdRef.current === conversationId) {
@@ -94,14 +93,7 @@ export function useActiveConversation(
         });
       },
     );
-  }, [
-    enabled,
-    assistantId,
-    conversationId,
-    activeConversation,
-    queryClient,
-    isOrgReady,
-  ]);
+  }, [enabled, assistantId, conversationId, activeConversation, queryClient]);
 
   return activeConversation;
 }

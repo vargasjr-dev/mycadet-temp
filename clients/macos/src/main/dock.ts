@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { getLockfileData, resolveLockfilePaths } from "@mycadet/local-mode";
+import { readLockfile } from "@mycadet/local-mode";
 import { app, nativeImage, type NativeImage } from "electron";
 import { z } from "zod";
 
@@ -281,13 +281,11 @@ export const installDock = (): void => {
   // (local-mode / gateway auth). On a flip to signed-out, clear the
   // badge synchronously (ahead of the debounced policy refresh) so a
   // logout can't leave a stale count on the Dock.
-  const lockfilePaths = resolveLockfilePaths(process.env);
   const deriveSignedIn = (): boolean => {
     if (getSessionToken() !== null) {
       return true;
     }
-    const lockfile = getLockfileData(lockfilePaths);
-    return lockfile.ok && lockfile.data.assistants.length > 0;
+    return readLockfile().assistants.length > 0;
   };
   state.signedIn = deriveSignedIn();
   onSessionTokenChange(() => {
@@ -339,3 +337,4 @@ export const __resetForTesting = (): void => {
   dockIconApplied = false;
   bundleIconCache = undefined;
 };
+

@@ -118,10 +118,6 @@ mock.module("@/stores/auth-store", () => ({
   },
 }));
 
-mock.module("@/stores/organization-store", () => ({
-  useRequestOrganizationId: () => "org-abc",
-}));
-
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => null,
 }));
@@ -264,7 +260,6 @@ describe("SystemPermissionsCard", () => {
     });
     expect(resolveAssistantAvatarOwnerScopeId).toHaveBeenCalledWith(
       assistants[0],
-      "org-abc",
       expect.any(String),
     );
     expect(requestSystemPermission).toHaveBeenCalledWith("notifications", {

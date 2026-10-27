@@ -52,7 +52,9 @@ export async function pollingCloudLogin(
       if (response.status === 200)
         return resultSchema.parse(await response.json()).session_token;
       if (response.status === 410)
-        throw new Error(`Login request expired. Run ${cliCommand()} login again.`);
+        throw new Error(
+          `Login request expired. Run ${cliCommand()} login again.`,
+        );
       if (response.status !== 202)
         throw new Error(`Login polling failed (${response.status}).`);
       await new Promise<void>((resolve, reject) => {

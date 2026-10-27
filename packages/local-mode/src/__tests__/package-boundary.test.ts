@@ -28,6 +28,7 @@ const ALLOWED_PACKAGES = new Set([
   "@mycadet/environments",
   "@mycadet/service-contracts",
   "@mycadet/avatar-manifest",
+  "@mycadet/shared",
   "zod",
   "nanoid",
 ]);
@@ -117,6 +118,7 @@ describe("package boundary", () => {
       "@mycadet/avatar-manifest": "workspace:*",
       "@mycadet/environments": "workspace:*",
       "@mycadet/service-contracts": "workspace:*",
+      "@mycadet/shared": "workspace:*",
       nanoid: "5.1.7",
       zod: "4.3.6",
     });

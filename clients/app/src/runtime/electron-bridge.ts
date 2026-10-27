@@ -11,6 +11,13 @@ export interface AppElectronBridge {
   >;
   localMode?: Pick<CadetBridge["localMode"], "readLockfile">;
   menu: { setCloudSession(has: boolean): Promise<void> };
+  /**
+   * Menu-bar (Tray) status dot publishing. Optional for the same
+   * shell/renderer skew reason as `deepLinks`: a newer bundle can run against
+   * an older preload that predates the status channel — degrade to no-op
+   * instead of throwing inside the effect.
+   */
+  status?: Pick<CadetBridge["status"], "setConnection">;
   commands: {
     on(callback: (command: CadetCommand) => void): () => void;
   };

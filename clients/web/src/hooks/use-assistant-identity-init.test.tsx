@@ -28,8 +28,8 @@ mock.module("@/assistant/identity", () => ({
   fetchAssistantIdentity,
 }));
 
-const prechatModule = await import("@/domains/onboarding/prechat");
-mock.module("@/domains/onboarding/prechat", () => ({
+const prechatModule = await import("@/domains/chat/prechat");
+mock.module("@/domains/chat/prechat", () => ({
   ...prechatModule,
   consumePendingAssistantName: () => null,
 }));

@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
-import { useLockfileStore } from "@/stores/lockfile-store";
-import type { Lockfile, LockfileAssistant } from "@/runtime/local-mode-host";
+import type { LockfileAssistant } from "@/runtime/local-mode-host";
 
 // The wrapper under test orchestrates the real connect primitive, so we drive
 // its external seams rather than the primitive itself: the host-routed readyz
@@ -15,13 +14,6 @@ let wakeLocalAssistantHost = mock(async (_id: string) => ({ ok: true }));
 mock.module("@/runtime/local-mode-host", () => ({
   ...host,
   wakeLocalAssistantHost: (id: string) => wakeLocalAssistantHost(id),
-  // The post-wake reload reads back the lockfile; serve the in-store copy so the
-  // retry resolves the selected assistant rather than hitting the real host.
-  loadLockfileHost: async () =>
-    useLockfileStore.getState().lockfile ?? {
-      assistants: [],
-      activeAssistant: null,
-    },
 }));
 
 // The prime's only dial is the host-routed readyz probe; each test installs
@@ -49,19 +41,9 @@ const {
 // Keep the ride-out loops fast: many attempts, no real wait between them.
 LOCAL_GATEWAY_STARTUP_RETRY.intervalMs = 0;
 
-const localAssistant: LockfileAssistant = {
-  assistantId: "local-a",
-  cloud: "local",
-  resources: { gatewayPort: 7830 },
-} as LockfileAssistant;
-
 function selectLocalAssistant(): void {
-  const lockfile: Lockfile = {
-    assistants: [localAssistant],
-    activeAssistant: "local-a",
-  };
-  useLockfileStore.setState({ lockfile });
-  localStorage.setItem("cadet:local:selected-assistant", "local-a");
+  // The host stamps the served assistant; the renderer synthesizes it.
+  window.__CADET_CONFIG__ = { remote: "local", assistantId: "local-a" };
 }
 
 const probeOk = async () => Response.json({ status: "ok", ready: true });
@@ -73,7 +55,6 @@ const probeStatus =
 beforeEach(() => {
   // The prime only dials in local mode; the previous test's afterEach leaves
   // the cloud stamp behind, so restore the local world every test.
-  window.__CADET_CONFIG__ = undefined;
   probeCalls = 0;
   probeImpl = probeOk;
   wakeLocalAssistantHost = mock(async (_id: string) => ({ ok: true }));
@@ -81,7 +62,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  useLockfileStore.setState({ lockfile: null });
   localStorage.clear();
   window.__CADET_CONFIG__ = { remote: "cloud" };
 });
@@ -178,19 +158,16 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
   test("a repairable failure for a paired target never wakes and rethrows", async () => {
     // Wake is cloud:"local"-only (it refuses paired entries), so a paired
     // connect failure must propagate immediately instead of spawning a wake
-    // that is guaranteed to refuse.
-    const paired: LockfileAssistant = {
+    // that is guaranteed to refuse. The paired target arrives explicitly —
+    // the served entry can never classify as paired.
+    const pairedTarget = {
       assistantId: "paired-a",
       cloud: "local",
       runtimeUrl: "https://gw.example.com",
     } as LockfileAssistant;
-    useLockfileStore.setState({
-      lockfile: { assistants: [paired], activeAssistant: "paired-a" },
-    });
-    localStorage.setItem("cadet:local:selected-assistant", "paired-a");
     probeImpl = probeStatus(404, "token gone");
 
-    const err = await primeLocalGatewayConnectionWithRepair().catch(
+    const err = await primeLocalGatewayConnectionWithRepair(pairedTarget).catch(
       (e: unknown) => e,
     );
 
@@ -210,43 +187,6 @@ describe("primeLocalGatewayConnectionWithRepair", () => {
       403,
     );
     expect(wakeLocalAssistantHost).not.toHaveBeenCalled();
-  });
-
-  test("recovers a portless legacy assistant: wakes, reloads the port, then retries", async () => {
-    // The Swift→Electron import case: a legacy entry reaches the renderer with
-    // no recorded gateway port, so the first prime can't resolve a gateway.
-    const portless: LockfileAssistant = {
-      assistantId: "local-a",
-      cloud: "local",
-    } as LockfileAssistant;
-    useLockfileStore.setState({
-      lockfile: { assistants: [portless], activeAssistant: "local-a" },
-    });
-
-    // Wake establishes the daemon + gateway and records the port; model that by
-    // writing the resolved entry back to the store the post-wake reload reads.
-    wakeLocalAssistantHost = mock(async (_id: string) => {
-      useLockfileStore.setState({
-        lockfile: {
-          assistants: [
-            {
-              ...portless,
-              resources: { gatewayPort: 7830, daemonPort: 7831 },
-            },
-          ],
-          activeAssistant: "local-a",
-        },
-      });
-      return { ok: true };
-    });
-
-    await primeLocalGatewayConnectionWithRepair();
-
-    expect(wakeLocalAssistantHost).toHaveBeenCalledTimes(1);
-    expect(wakeLocalAssistantHost).toHaveBeenCalledWith("local-a");
-    // The first attempt fails at gateway resolution, before any probe; the
-    // probe runs only on the retry, once the port resolves.
-    expect(probeCalls).toBe(1);
   });
 
   test("rides out a wake-restarted gateway that is still starting, then reconnects", async () => {

@@ -52,8 +52,8 @@ import { app } from "../commands/app.js";
 // The default-workspace dir is real; the lockfile read inside the command's
 // workspace sweep stays hermetic under a redirected lockfile dir.
 const testDir = mkdtempSync(join(tmpdir(), "cli-app-command-test-"));
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
-process.env.CADET_LOCKFILE_DIR = testDir;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
+process.env.XDG_CONFIG_HOME = testDir;
 
 const originalArgv = process.argv;
 let stdout: string[];
@@ -82,10 +82,10 @@ afterEach(() => {
 });
 
 afterAll(() => {
-  if (originalLockfileDir === undefined) {
-    delete process.env.CADET_LOCKFILE_DIR;
+  if (originalConfigHome === undefined) {
+    delete process.env.XDG_CONFIG_HOME;
   } else {
-    process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+    process.env.XDG_CONFIG_HOME = originalConfigHome;
   }
   rmSync(testDir, { recursive: true, force: true });
 });

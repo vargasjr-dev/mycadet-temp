@@ -79,7 +79,6 @@ import { AssistantSideMenu } from "@/domains/chat/components/assistant-side-menu
 import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useCommandPaletteOrchestrator } from "@/domains/chat/hooks/use-command-palette-orchestrator";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { ResearchResultsOverlay } from "@/domains/chat/onboarding-research/research-results-overlay";
 import { AssistantEmailIntro } from "@/components/feature-intro/assistant-email-intro";
 import { OnboardingAvatarApplier } from "@/components/onboarding-avatar-applier";
 import { VoiceSessionPillHost } from "@/domains/chat/components/voice-session-pill-host";
@@ -154,7 +153,6 @@ export function ChatLayout({
 
   const [isPopout] = useState(() => isPopoutWindow(location.search));
 
-  const isFocused = useOnboardingFocusStore.use.focused();
   const sidebarCollapseRequested =
     useOnboardingFocusStore.use.sidebarCollapseRequested();
   const consumeSidebarCollapse =
@@ -796,7 +794,6 @@ export function ChatLayout({
       />
 
       {}
-      {isFocused ? <ResearchResultsOverlay /> : null}
       {}
       {isMobile ? <VoiceRoom variant="sheet" /> : null}
       {}

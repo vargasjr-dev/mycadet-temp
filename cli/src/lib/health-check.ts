@@ -1,4 +1,5 @@
 import { loopbackSafeFetch } from "./loopback-fetch.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { z } from "zod";
 
@@ -159,14 +160,14 @@ export async function checkHealth(
 }
 
 /**
- * Cadet Cloud process listing for an entry, tolerating a missing recorded
- * gateway URL (cloud entries may never have one).
+ * Cadet Cloud process listing for an entry. The gateway address derives
+ * from the entry's topology — cloud-managed entries resolve through the
+ * environment's cloud URL stack.
  */
 export async function fetchCloudPs(
   entry: LockfileAssistant,
 ): Promise<ManagedPsResponse | null> {
-  if (!entry.runtimeUrl) return null;
-  const runtimeUrl = entry.runtimeUrl;
+  const runtimeUrl = getGatewayUrl(entry);
 
   const { readCloudToken, authHeaders } = await import("./cloud-client.js");
   const token = readCloudToken();
@@ -213,16 +214,14 @@ export async function fetchCloudPs(
 }
 
 /**
- * Cadet Cloud health for an entry, tolerating a missing recorded gateway URL
- * (cloud entries may never have one).
+ * Cadet Cloud health for an entry. The gateway address derives from the
+ * entry's topology — cloud-managed entries resolve through the
+ * environment's cloud URL stack.
  */
 export async function checkCloudHealth(
   entry: LockfileAssistant,
 ): Promise<HealthCheckResult> {
-  if (!entry.runtimeUrl) {
-    return { status: "unknown", detail: "no runtime URL" };
-  }
-  const runtimeUrl = entry.runtimeUrl;
+  const runtimeUrl = getGatewayUrl(entry);
 
   const { readCloudToken } = await import("./cloud-client.js");
   const token = readCloudToken();

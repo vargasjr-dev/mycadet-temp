@@ -1,5 +1,5 @@
 /**
- * @mycadet/local-mode — shared host library for serving the local-assistant
+ * @mycadet/local-mode - shared host library for serving the local-assistant
  * surface (lockfile reads, guardian-token issuance, gateway proxying, and the
  * hatch/retire/wake lifecycle ops) over a loopback HTTP boundary. Consumed by the
  * CLI `client` server and the web app's dev-server middleware so the local
@@ -24,25 +24,30 @@ export {
 } from "./lifecycle-budgets";
 export {
   resolveLocalConfigFromEnv,
-  resolveLockfilePaths,
+  resolveLockfilePath,
   resolveConfigDir,
-  resolveConfigDirPaths,
-  resolveRuntimeDir,
+  resolveDataDir,
   resolveLogDir,
   resolveAssistantsDir,
   resolveInstanceDir,
   guardianTokenPath,
 } from "./config";
 export type { LocalEndpointConfig } from "./config";
-export type { LocalPathOptions } from "./paths";
 export {
   defaultEnvironmentFilePath,
-  defaultEnvironmentFilePaths,
+  ownVersion,
   readDefaultEnvironment,
   resolveEnvironmentName,
 } from "./environment";
 export {
-  getLockfileData,
+  assertSafePathSegment,
+  environmentDirectoryName,
+  joinLocalPath,
+  resolveConfigHome,
+  resolveDataHome,
+} from "./paths";
+export {
+  readLockfile,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   saveLockfileAssistant,
@@ -50,6 +55,7 @@ export {
   isActiveAssistant,
   isPairedLockfileEntry,
 } from "./lockfile";
+export { servedConfigFromLockfile } from "./served-config";
 export type { LockfileResult, WriteResult } from "./lockfile";
 export { withLockfileLock } from "./lockfile-lock";
 export type { LockfileLockResult } from "./lockfile-lock";
@@ -58,7 +64,7 @@ export {
   LockfileAssistantSchema,
   parseLockfile,
 } from "./lockfile-contract";
-export { readRawLockfileStrict } from "./lockfile";
+export { readRawLockfile, readRawLockfileStrict } from "./lockfile";
 export type {
   Lockfile,
   LockfileAssistant,
@@ -148,8 +154,3 @@ export type {
   PairedForwardAuthorizationResult,
   PairedGuardianTokenProvider,
 } from "./gateway-proxy";
-
-export {
-  resolveExistingLocalSigningKey,
-  SigningKeyContinuityError,
-} from "./local-signing-key";

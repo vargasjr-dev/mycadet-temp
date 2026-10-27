@@ -11,11 +11,10 @@ import { join } from "node:path";
 
 const ORIGINAL_XDG = process.env.XDG_CONFIG_HOME;
 const ORIGINAL_ENV = process.env.CADET_ENVIRONMENT;
-const ORIGINAL_LOCKFILE_DIR = process.env.CADET_LOCKFILE_DIR;
 const ORIGINAL_FETCH = globalThis.fetch;
 
 import { maybeRefreshAuthHeaders } from "../components/DefaultMainScreen";
-import { saveLockfileAssistant } from "../lib/assistant-config";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import { saveGuardianToken } from "../lib/guardian-token";
 
 const RUNTIME = "https://gw.example.com";
@@ -80,10 +79,7 @@ describe("maybeRefreshAuthHeaders", () => {
   beforeEach(() => {
     tempHome = mkdtempSync(join(tmpdir(), "tui-midsession-test-"));
     process.env.XDG_CONFIG_HOME = tempHome;
-    // Isolate the lockfile too — saveLockfileAssistant writes the prod lockfile
-    // (~/.cadet.lock.json) unless CADET_LOCKFILE_DIR is set, which would
-    // mutate the real user/CI lockfile.
-    process.env.CADET_LOCKFILE_DIR = tempHome;
+    // saveLockfileAssistant resolves the lockfile from the XDG config home.
     delete process.env.CADET_ENVIRONMENT;
   });
 
@@ -91,9 +87,6 @@ describe("maybeRefreshAuthHeaders", () => {
     globalThis.fetch = ORIGINAL_FETCH;
     if (ORIGINAL_XDG === undefined) delete process.env.XDG_CONFIG_HOME;
     else process.env.XDG_CONFIG_HOME = ORIGINAL_XDG;
-    if (ORIGINAL_LOCKFILE_DIR === undefined)
-      delete process.env.CADET_LOCKFILE_DIR;
-    else process.env.CADET_LOCKFILE_DIR = ORIGINAL_LOCKFILE_DIR;
     if (ORIGINAL_ENV === undefined) delete process.env.CADET_ENVIRONMENT;
     else process.env.CADET_ENVIRONMENT = ORIGINAL_ENV;
     rmSync(tempHome, { recursive: true, force: true });

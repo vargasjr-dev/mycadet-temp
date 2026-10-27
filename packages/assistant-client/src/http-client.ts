@@ -81,24 +81,75 @@ export function buildUpstreamUrl(
 // ---------------------------------------------------------------------------
 
 /**
+ * The identity a dial asserts to the assistant runtime.
+ *
+ * The daemon verifies no tokens — it resolves the caller from these
+ * forwarded headers, so the gateway (the only remote ingress) sets them
+ * from claims it verified itself, and never passes a caller's own
+ * identity headers through.
+ */
+export type ForwardedIdentity = {
+  /** The verified token's `sub` (or the service subject). */
+  subject: string;
+  /** The principal type the subject parses to. */
+  principalType: string;
+  /** The scope profile the verified token carried. */
+  scopeProfile: string;
+};
+
+/** The gateway's own service identity for runtime dials. */
+export const GATEWAY_SERVICE_IDENTITY: ForwardedIdentity = {
+  subject: "svc:gateway:self",
+  principalType: "svc_gateway",
+  scopeProfile: "gateway_service_v1",
+};
+
+/** The gateway's identity for webhook-ingress dials. */
+export const GATEWAY_INGRESS_IDENTITY: ForwardedIdentity = {
+  subject: "svc:gateway:self",
+  principalType: "svc_gateway",
+  scopeProfile: "gateway_ingress_v1",
+};
+
+/**
+ * The `x-cadet-*` headers a forwarded identity travels in. Defaults to the
+ * gateway's service identity — the common case for runtime dials; pass an
+ * explicit identity for the rare ingress assertion.
+ */
+export function forwardedIdentityHeaders(
+  identity: ForwardedIdentity = GATEWAY_SERVICE_IDENTITY,
+): Record<string, string> {
+  return {
+    "x-cadet-subject": identity.subject,
+    "x-cadet-principal-type": identity.principalType,
+    "x-cadet-scope-profile": identity.scopeProfile,
+  };
+}
+
+/**
  * Prepare request headers for an upstream call to the assistant runtime.
  *
  * - Strips hop-by-hop headers from the source
- * - Removes the incoming `host` and `authorization` headers
- * - Injects a `Bearer <serviceToken>` authorization header
- *
- * The caller provides the `serviceToken`; this package is intentionally
- * agnostic to the token minting mechanism so it can be used without
- * importing gateway auth internals.
+ * - Removes the incoming `host` and `authorization` headers — the daemon
+ *   resolves identity from the forwarded `x-cadet-*` headers, never from
+ *   a bearer, and a caller-supplied identity header must never survive
+ * - Injects the forwarded identity headers
  */
 export function prepareUpstreamHeaders(
   source: Headers,
-  serviceToken: string,
+  identity: ForwardedIdentity,
 ): Headers {
   const cleaned = stripHopByHop(source);
   cleaned.delete("host");
   cleaned.delete("authorization");
-  cleaned.set("authorization", `Bearer ${serviceToken}`);
+  cleaned.delete("x-cadet-subject");
+  cleaned.delete("x-cadet-principal-type");
+  cleaned.delete("x-cadet-scope-profile");
+  for (const [name, value] of Object.entries(
+    forwardedIdentityHeaders(identity),
+  )) {
+    cleaned.set(name, value);
+  }
   return cleaned;
 }
 

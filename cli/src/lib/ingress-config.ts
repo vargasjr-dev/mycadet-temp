@@ -10,8 +10,7 @@ import {
 } from "@mycadet/service-contracts/ingress";
 
 import type { LockfileAssistant } from "./assistant-config.js";
-import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
+import { resolveDataDir } from "@mycadet/local-mode";
 
 /**
  * Shared workspace-config helpers for tunnel providers and the nginx ingress
@@ -33,7 +32,7 @@ export function isLocalContainerEntry(entry: LockfileAssistant): boolean {
 export function getDefaultWorkspaceDir(): string {
   return (
     process.env.CADET_WORKSPACE_DIR?.trim() ||
-    join(getStateDir(getCurrentEnvironment()), "workspace")
+    join(resolveDataDir(), "workspace")
   );
 }
 

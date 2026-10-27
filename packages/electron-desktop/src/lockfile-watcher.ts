@@ -1,5 +1,6 @@
 import fs from "node:fs";
 
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import { parseLockfile, type Lockfile } from "@mycadet/local-mode/contract";
 
 /**
@@ -24,8 +25,7 @@ const DEBOUNCE_MS = 100;
 
 const EMPTY_LOCKFILE: Lockfile = { assistants: [], activeAssistant: null };
 
-let lockfileCandidates: string[] = [];
-let resolveCandidates: () => readonly string[] = () => [];
+let lockfilePath: string | null = null;
 let cachedLockfile: Lockfile = EMPTY_LOCKFILE;
 let lastMtimeMs = 0;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -35,12 +35,6 @@ const listeners = new Set<LockfileChangeListener>();
 const isAccessDenied = (error: unknown): boolean => {
   const code = (error as NodeJS.ErrnoException).code;
   return code === "EACCES" || code === "EPERM";
-};
-
-export const configureLockfileWatcher = (
-  resolver: () => readonly string[],
-): void => {
-  resolveCandidates = resolver;
 };
 
 /**
@@ -53,9 +47,9 @@ export const configureLockfileWatcher = (
  * is readable.
  */
 const readAndParse = (): Lockfile | null => {
-  for (const candidate of lockfileCandidates) {
+  if (lockfilePath) {
     try {
-      const raw = fs.readFileSync(candidate, "utf-8");
+      const raw = fs.readFileSync(lockfilePath, "utf-8");
       return parseLockfile(JSON.parse(raw));
     } catch (error) {
       if (isAccessDenied(error)) {
@@ -74,10 +68,10 @@ const notifyListeners = (): void => {
 };
 
 const checkForChanges = (): void => {
-  const canonicalPath = lockfileCandidates[0];
-  if (!canonicalPath) {
+  if (!lockfilePath) {
     return;
   }
+  const canonicalPath = lockfilePath;
 
   let mtimeMs: number;
   try {
@@ -132,7 +126,7 @@ export const getWatchedLockfile = (): Lockfile => cachedLockfile;
  * window where the watcher is not installed yet.
  */
 export const getWatchedLockfileSnapshot = (): Lockfile | null =>
-  lockfileCandidates.length > 0 ? cachedLockfile : null;
+  lockfilePath ? cachedLockfile : null;
 
 /**
  * Re-read the watched lockfile immediately, bypassing the poll interval and
@@ -141,10 +135,10 @@ export const getWatchedLockfileSnapshot = (): Lockfile | null =>
  * than after the next poll. No-op before the watcher is installed.
  */
 export const refreshLockfileNow = (): void => {
-  const canonicalPath = lockfileCandidates[0];
-  if (!canonicalPath) {
+  if (!lockfilePath) {
     return;
   }
+  const canonicalPath = lockfilePath;
   if (debounceTimer) {
     clearTimeout(debounceTimer);
     debounceTimer = null;
@@ -183,10 +177,7 @@ export const onLockfileChange = (
  * has data). Returns a teardown function for `before-quit`.
  */
 export const installLockfileWatcher = (): (() => void) => {
-  // Poll only the canonical (first) path: write helpers always target
-  // candidates[0], so watching a legacy candidate would miss updates once
-  // the canonical file is created.
-  lockfileCandidates = [...resolveCandidates()];
+  lockfilePath = resolveLockfilePath();
 
   // Initial read — synchronous so the tray menu has data from frame one.
   // readAndParse falls back to legacy candidates when the canonical file
@@ -195,7 +186,7 @@ export const installLockfileWatcher = (): (() => void) => {
   cachedLockfile = initial ?? EMPTY_LOCKFILE;
   if (initial) {
     try {
-      lastMtimeMs = fs.statSync(lockfileCandidates[0]!).mtimeMs;
+      lastMtimeMs = fs.statSync(lockfilePath!).mtimeMs;
     } catch {
       lastMtimeMs = 0;
     }
@@ -231,6 +222,5 @@ export const __resetForTesting = (): void => {
   listeners.clear();
   cachedLockfile = EMPTY_LOCKFILE;
   lastMtimeMs = 0;
-  lockfileCandidates = [];
-  resolveCandidates = () => [];
+  lockfilePath = null;
 };

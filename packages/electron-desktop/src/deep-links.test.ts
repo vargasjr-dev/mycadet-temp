@@ -437,7 +437,7 @@ describe("installDeepLinks", () => {
     const entryPoint = process.argv[1];
     const platform = process.platform;
     const expected = resolveRegisteredSchemes(
-      resolveEnvironmentName(process.env),
+      resolveEnvironmentName(),
     );
     process.argv[1] = ".";
     Object.defineProperty(process, "platform", { value: "win32" });
@@ -465,7 +465,7 @@ describe("installDeepLinks", () => {
     installDeepLinks();
 
     const expected = resolveRegisteredSchemes(
-      resolveEnvironmentName(process.env),
+      resolveEnvironmentName(),
     );
     expect(setAsDefaultProtocolClientMock.mock.calls).toEqual(
       expected.map((scheme) => [scheme]),

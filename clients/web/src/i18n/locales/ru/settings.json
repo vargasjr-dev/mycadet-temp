@@ -79,14 +79,6 @@
     "typeScheduled": "По расписанию",
     "cliOnly": "Для локальных установок и Docker используйте cadet backup и cadet restore в терминале."
   },
-  "assistantPicker": {
-    "active": "Активный",
-    "subtitle": "Выбор ассистента, активного для этого аккаунта.",
-    "switch": "Переключить",
-    "switchedToast": "Активный ассистент переключён.",
-    "title": "Сменить ассистента",
-    "unnamed": "Без имени"
-  },
   "assistantStatusPanel": {
     "assistantId": "ID ассистента",
     "cpuUsage": "Загрузка CPU",
@@ -109,9 +101,7 @@
     "version": "Версия"
   },
   "assistantTerminalPanel": {
-    "loadErrorToast": "Не удалось загрузить сведения об ассистенте",
     "loading": "Загрузка терминала...",
-    "loginNotice": "Вход на платформу Cadet для открытия сессии терминала.",
     "noAssistant": "Ассистент не найден. Создание ассистента для терминала.",
     "subtitle": "Интерактивная сессия оболочки на машине ассистента",
     "targetContainer": "Целевой контейнер",
@@ -140,23 +130,6 @@
   "autoTopUpPaymentMethodModal": {
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
-  },
-  "inferenceUsageChart": {
-    "empty": "Нет данных об использовании за этот период"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "Ко всему использованию",
-    "chartMetricAria": "Метрика графика",
-    "eventsLabel": "События",
-    "llmDimensionAria": "Измерение расходов LLM",
-    "llmSpend": "Расход LLM",
-    "loadError": "Не удалось загрузить данные об использовании.",
-    "metricEvents": "События",
-    "metricSpend": "Расход ($)",
-    "oauthSpend": "Расход OAuth",
-    "spendLabel": "Расход",
-    "subtitle": "Обзор расходов.",
-    "title": "Расход кредитов"
   },
   "biometricSettingsCard": {
     "description": "Когда сессия истечёт, подтверди вход через {label}, а не заново.",
@@ -334,7 +307,6 @@
     "backups": "Резервные копии",
     "loadFailedToast": "Не удалось загрузить сведения об ассистенте",
     "loading": "Загрузка сведений об ассистенте...",
-    "loginNotice": "Вход на платформу Cadet для управления резервными копиями.",
     "noAssistant": "Ассистент не найден. Создание ассистента для отладочных элементов.",
     "restartDescription": "Перезапустить машину ассистента. На время перезапуска он будет недоступен.",
     "restartTitle": "Перезапустить ассистента",
@@ -401,9 +373,6 @@
   },
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",
-    "computeResourcesLoginNotice": "Вход на платформу Cadet для управления вычислительными ресурсами.",
-    "computeResourcesSubtitle": "Использование ресурсов и управление вычислительным профилем ассистента.",
-    "computeResourcesTitle": "Вычисления и ресурсы",
     "current": "Текущий",
     "customize": "Настроить",
     "preferencesSubtitle": "Настройка того, как ассистент выглядит на этом устройстве.",
@@ -411,7 +380,6 @@
     "switchAssistantSubtitle": "Выбор ассистента, к которому подключено это устройство.",
     "switchAssistantTitle": "Сменить ассистента",
     "updateWindow": "Окно обновления",
-    "updatesLoginNotice": "Вход на платформу Cadet для управления обновлениями ПО.",
     "versionSubtitle": "Управление версией ПО ассистента и обновлениями.",
     "versionTitle": "Версия"
   },

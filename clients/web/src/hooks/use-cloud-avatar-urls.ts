@@ -1,14 +1,11 @@
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 
 import { listAssistants } from "@/assistant/api";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import {
   isAvatarSuperseded,
   markAvatarSuperseded,
 } from "@/lib/avatar-supersede";
 import { isCadetCloudRemote } from "@/lib/local-mode";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
-import { useRequestOrganizationId } from "@/stores/organization-store";
 import {
   resolveCloudAssistantId,
   useResolvedAssistantsStore,
@@ -22,14 +19,12 @@ const EMPTY_AVATAR_URLS: CloudAvatarUrls = new Map();
 export const CLOUD_AVATAR_URLS_STALE_TIME_MS = 60_000;
 
 /**
- * Keyed by user and organization: a sign-out never serves another account's
- * thumbnails, and an org switch rescopes the list with the request header.
+ * Keyed by the active assistant: cloud data is assistant-scoped, the session
+ * resolves its organization through that selection, and a switch re-scopes
+ * the list with the request header.
  */
-export function cloudAvatarUrlsQueryKey(
-  userId: string | null,
-  organizationId: string | null,
-) {
-  return ["cloudAvatarUrls", userId, organizationId] as const;
+export function cloudAvatarUrlsQueryKey(assistantId: string | null) {
+  return ["cloudAvatarUrls", assistantId ?? "none"] as const;
 }
 
 const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
@@ -42,7 +37,7 @@ const CLOUD_AVATAR_URLS_KEY_PREFIX = ["cloudAvatarUrls"] as const;
  * keeps its siblings and lands without this id; nothing is cancelled. The
  * first refetch after the window restores it.
  */
-export function suppressPlatformAvatarUrl(
+export function suppressCloudAvatarUrl(
   queryClient: QueryClient,
   cloudAssistantId: string,
 ): void {
@@ -70,10 +65,7 @@ export function supersedeCloudAvatar(
 ): void {
   const store = useResolvedAssistantsStore.getState();
   store.clearAvatarUrl(assistantId);
-  suppressPlatformAvatarUrl(
-    queryClient,
-    resolveCloudAssistantId(assistantId),
-  );
+  suppressCloudAvatarUrl(queryClient, resolveCloudAssistantId(assistantId));
 }
 
 /**
@@ -98,21 +90,17 @@ async function fetchCloudAvatarUrls(): Promise<CloudAvatarUrls> {
 /**
  * Platform `avatar_url` by assistant id, read-only. One shared query feeds
  * every chooser row, so the list is fetched once per stale window however
- * many rows mount. Enabled only when a live platform session exists outside
- * the cloud-remote bundle; elsewhere the resolved store already carries
- * `avatarUrl` and this resolves to an empty map. Never writes the resolved
- * store: the API list must not clobber their rows, and this lookup keeps
- * that contract.
+ * many rows mount. Enabled only outside the cloud-remote bundle; elsewhere the
+ * resolved store already carries `avatarUrl` and this resolves to an empty map.
+ * Never writes the resolved store: the API list must not clobber their rows,
+ * and this lookup keeps that contract.
  */
 export function useCloudAvatarUrls(): CloudAvatarUrls {
-  const hasCloudSession = useHasCloudSession();
-  const userId = useAuthStore.use.user()?.id ?? null;
-  const isOrgReady = useIsOrgReady();
-  const organizationId = useRequestOrganizationId();
+  const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const query = useQuery<CloudAvatarUrls>({
-    queryKey: cloudAvatarUrlsQueryKey(userId, organizationId),
+    queryKey: cloudAvatarUrlsQueryKey(activeAssistantId),
     queryFn: fetchCloudAvatarUrls,
-    enabled: hasCloudSession && isOrgReady && !isCadetCloudRemote(),
+    enabled: !isCadetCloudRemote(),
     staleTime: CLOUD_AVATAR_URLS_STALE_TIME_MS,
     // staleTime alone never refetches a chooser that stays mounted, and a
     // sibling's change on another client sends no event here; poll while

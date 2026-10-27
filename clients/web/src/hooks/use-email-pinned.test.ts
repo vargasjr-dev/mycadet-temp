@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { act, renderHook } from "@testing-library/react";
 
-import { useEmailCardDismissed } from "./use-email-card-dismissed";
 import { useEmailPinned } from "./use-email-pinned";
 
 afterEach(() => {
@@ -27,16 +26,5 @@ describe("useEmailPinned", () => {
     act(() => result.current.pin());
     expect(result.current.pinned).toBe(false);
     expect(localStorage.length).toBe(0);
-  });
-});
-
-describe("useEmailCardDismissed", () => {
-  test("remembers the closed card and restores it", () => {
-    const { result } = renderHook(() => useEmailCardDismissed("asst-1"));
-    expect(result.current.dismissed).toBe(false);
-    act(() => result.current.dismiss());
-    expect(result.current.dismissed).toBe(true);
-    act(() => result.current.restore());
-    expect(result.current.dismissed).toBe(false);
   });
 });

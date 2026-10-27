@@ -1,6 +1,6 @@
 import { isCloudHome } from "../lib/cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { existsSync, unlinkSync } from "fs";
 import { join } from "path";
 
@@ -19,8 +19,7 @@ import {
   canPromptForConfirmation,
   confirmAction,
 } from "../lib/confirm-action.js";
-import { getConfigDir } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { printInstanceDetails } from "../lib/instance-details.js";
 import {
   authHeaders,
@@ -153,10 +152,7 @@ async function retireCustom(entry: LockfileAssistant): Promise<void> {
   console.log(`\u2705 Custom instance retired.`);
 }
 
-async function retireCadet(
-  assistantId: string,
-  runtimeUrl?: string,
-): Promise<void> {
+async function retireCloud(entry: LockfileAssistant): Promise<void> {
   console.log("\u{1F5D1}\ufe0f  Retiring Cadet Cloud-hosted instance...\n");
 
   const token = readPlatformRetireToken();
@@ -168,9 +164,9 @@ async function retireCadet(
   }
 
   try {
-    await deleteCloudAssistant(assistantId, {
+    await deleteCloudAssistant(entry.assistantId, {
       token,
-      cloudUrl: runtimeUrl,
+      cloudUrl: getGatewayUrl(entry),
       label: "Platform retire",
       successMessage: "\u2705 Platform-hosted instance retired.",
       alreadyGoneMessage:
@@ -314,7 +310,9 @@ async function retireInner(): Promise<void> {
   const lookup = lookupAssistantByIdentifier(name);
   if (lookup.status !== "found") {
     console.error(formatAssistantLookupError(name, lookup));
-    console.error(`Run '${cliCommand()} hatch' first, or check the instance name.`);
+    console.error(
+      `Run '${cliCommand()} hatch' first, or check the instance name.`,
+    );
     process.exit(1);
   }
 
@@ -362,9 +360,9 @@ async function retireInner(): Promise<void> {
   } else if (cloud === "custom") {
     await retireCustom(entry);
   } else if (isCloudHome(cloud)) {
-    await retireCadet(assistantId, entry.runtimeUrl);
+    await retireCloud(entry);
   } else {
-    console.error(`Error: Unknown cloud type '${cloud}'.`);
+    console.error(`Error: Unknown remote type '${cloud}'.`);
     process.exit(1);
   }
 
@@ -376,7 +374,7 @@ async function retireInner(): Promise<void> {
   // retired assistant's name.
   if (loadAllAssistants().length === 0) {
     const dockLabelFile = join(
-      getConfigDir(getCurrentEnvironment()),
+      resolveConfigDir(),
       "dock-display-name",
     );
     if (existsSync(dockLabelFile)) {

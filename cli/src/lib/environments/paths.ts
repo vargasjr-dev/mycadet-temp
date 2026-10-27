@@ -1,15 +1,8 @@
-import { homedir } from "os";
+import { homedir } from "node:os";
 import { join } from "path";
 
-import type { EnvironmentDefinition, PortMap } from "@mycadet/environments";
-import {
-  resolveAssistantsDir,
-  resolveConfigDirPaths,
-  resolveLockfilePaths,
-  resolveLogDir,
-  resolveRuntimeDir,
-  type LocalPathOptions,
-} from "@mycadet/local-mode";
+import { getCurrentEnvironment } from "./resolve.js";
+import type { PortMap } from "@mycadet/environments";
 
 const DEFAULT_PORTS: Readonly<PortMap> = {
   daemon: 7821,
@@ -21,64 +14,16 @@ const DEFAULT_PORTS: Readonly<PortMap> = {
 };
 
 /**
- * Config directory for an environment.
- * Production preserves the existing `~/.config/cadet/` location;
- * non-production environments use `$XDG_CONFIG_HOME/cadet-<env>/`.
- */
-export function getConfigDir(env: EnvironmentDefinition): string {
-  return getConfigDirs(env)[0]!;
-}
-
-export function getConfigDirs(env: EnvironmentDefinition): string[] {
-  return resolveConfigDirPaths(process.env, localPathOptions(env));
-}
-
-export function getLockfilePaths(env: EnvironmentDefinition): string[] {
-  return resolveLockfilePaths(process.env, localPathOptions(env));
-}
-
-/**
- * Canonical lockfile path for writes — always the config-dir
- * `lockfile.json`.
- */
-export function getLockfilePath(env: EnvironmentDefinition): string {
-  return getLockfilePaths(env)[0]!;
-}
-
-/**
- * Multi-instance root directory for an environment. Production uses
- * `~/.local/share/cadet/assistants/` — the convention already in
- * `cli/src/lib/assistant-config.ts`. Non-production environments use
- * `~/.local/share/cadet-<env>/assistants/`.
- */
-export function getMultiInstanceDir(env: EnvironmentDefinition): string {
-  return resolveAssistantsDir(process.env, localPathOptions(env));
-}
-
-/**
  * Default port set for an environment.
  * Seed entries for non-prod environments come with separate port ranges
  * to avoid collisions in multi-env / multi-instance setups.
  * Longer term, consider allocating ports dynamically at hatch/wake time.
  */
-export function getDefaultPorts(env: EnvironmentDefinition): PortMap {
+export function getDefaultPorts(): PortMap {
   return {
     ...DEFAULT_PORTS,
-    ...(env.portsOverride ?? {}),
+    ...(getCurrentEnvironment().portsOverride ?? {}),
   };
-}
-
-/**
- * Runtime state directory for an environment (upgrade logs, etc.).
- * Production uses `~/.local/share/cadet/`; non-production environments
- * use `~/.local/share/cadet-<env>/`.
- */
-export function getStateDir(env: EnvironmentDefinition): string {
-  return resolveRuntimeDir(process.env, localPathOptions(env));
-}
-
-export function getLogDir(env: EnvironmentDefinition): string {
-  return resolveLogDir(process.env, localPathOptions(env));
 }
 
 /**
@@ -113,16 +58,5 @@ export const ASSISTANT_INTERNAL_PORT = DEFAULT_PORTS.daemon;
 export const GATEWAY_INTERNAL_PORT = DEFAULT_PORTS.gateway;
 
 function xdgStateHome(): string {
-  return (
-    process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state")
-  );
-}
-
-function localPathOptions(env: EnvironmentDefinition): LocalPathOptions {
-  return {
-    homeDir: homedir(),
-    environmentName: env.name,
-    configDirOverride: env.configDirOverride,
-    lockfileDirOverride: env.lockfileDirOverride,
-  };
+  return process.env.XDG_STATE_HOME?.trim() || join(homedir(), ".local", "state");
 }

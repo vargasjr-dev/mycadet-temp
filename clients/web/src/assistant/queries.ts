@@ -29,9 +29,6 @@ import {
   useGatedSelectedAssistantId,
   resolveSelectedAssistantId,
 } from "@/assistant/selection";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
-import { isAuthenticated } from "@/stores/session-status";
-import { useAuthStore, useHasCloudSession } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
   getSelfHostedActorToken,
@@ -39,14 +36,12 @@ import {
 } from "@/lib/self-hosted/connection";
 import {
   getLocalAssistants,
-  isGatewaySessionLive,
-  isLocalClient,
   isServedGatewayRuntime,
-  getSelectedAssistant,
+  isLocalClient,
+  getActiveAssistant,
   hasLocalGateway,
   expectsPairedGateway,
 } from "@/lib/local-mode";
-import { getActiveOrganizationIdForRequests } from "@/stores/organization-store";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
 
@@ -126,41 +121,45 @@ function useSelectedCloudAssistantId(): string | null {
 }
 
 function resolveSelectedCloudAssistantId(): string | null {
-  return toCloudAssistantId(
-    resolveSelectedAssistantId(getActiveOrganizationIdForRequests()),
-  );
+  return toCloudAssistantId(resolveSelectedAssistantId());
 }
 
 /**
  * Gateway-auth mode resolves the assistant locally — the gateway issues the
  * session token directly, so no `/assistant/` fetch happens. Primes the
- * self-hosted connection slots and publishes the active assistant id.
+ * self-hosted connection slots and publishes the active assistant id, and
+ * answers whether this runtime IS a gateway-auth plane: the served-gateway
+ * browser by construction, or a local client whose selected assistant
+ * carries gateway machinery. On the platform plane it touches nothing —
+ * the slots belong to the platform resolution — and answers false.
  */
-export function applyGatewayAuthBoot(): void {
+export function applyGatewayAuthBoot(): boolean {
   let ingressUrl = window.location.origin;
   let resolvedAssistantId = "self";
   let rendererToken = getSelfHostedActorToken();
   if (isServedGatewayRuntime()) {
     ingressUrl = getRemoteGatewayIngressUrl();
   } else {
-    const assistant = getSelectedAssistant();
+    const assistant = getActiveAssistant();
     // The unscoped gateway proxies died with the same-origin fold: a local
     // gateway entry or a paired entry both ride the scoped plane, and the
     // paired arm additionally holds no renderer token.
     if (
-      assistant != null &&
-      (hasLocalGateway(assistant) || expectsPairedGateway(assistant))
+      assistant == null ||
+      !(hasLocalGateway(assistant) || expectsPairedGateway(assistant))
     ) {
-      resolvedAssistantId = assistant.assistantId;
-      if (expectsPairedGateway(assistant)) {
-        rendererToken = null;
-      }
+      return false;
+    }
+    resolvedAssistantId = assistant.assistantId;
+    if (expectsPairedGateway(assistant)) {
+      rendererToken = null;
     }
   }
   setSelfHostedConnection({ url: ingressUrl, token: rendererToken });
   useResolvedAssistantsStore
     .getState()
     .setActiveAssistantId(resolvedAssistantId);
+  return true;
 }
 
 function getRemoteGatewayIngressUrl(): string {
@@ -209,8 +208,7 @@ export async function recheckAssistant(
   queryClient: QueryClient,
   assistantIdOverride?: string,
 ): Promise<GetAssistantResult | undefined> {
-  if (isGatewaySessionLive()) {
-    applyGatewayAuthBoot();
+  if (applyGatewayAuthBoot()) {
     return queryClient.getQueryData(assistantQueryKey(null));
   }
   const selectedId =
@@ -239,36 +237,17 @@ export interface AssistantResolutionResult {
 }
 
 /**
- * Whether to resolve the server-side assistant at all. Gateway-auth
- * mode and "local mode without platform session" short-circuit to local
- * states without ever calling /assistant/. Platform API calls require the
- * Cadet-Organization-Id header; wait for the org store to resolve before
- * firing them.
- */
-function useShouldQueryServer(): boolean {
-  const sessionStatus = useAuthStore.use.sessionStatus();
-  const hasCloudSession = useHasCloudSession();
-  const isOrgReady = useIsOrgReady();
-  return (
-    isAuthenticated(sessionStatus) &&
-    !isGatewaySessionLive() &&
-    (hasCloudSession || !isLocalClient()) &&
-    isOrgReady
-  );
-}
-
-/**
  * The read-only view of the boot resolution. Shared cache — every consumer
- * sees the same answer without issuing its own fetch.
+ * sees the same answer without issuing its own fetch. The resolution runs
+ * unconditionally: the web bundle is served for exactly one assistant, and
+ * by the time it loads that assistant is resolved.
  */
 export function useAssistantResolution(): AssistantResolutionResult {
-  const shouldQueryServer = useShouldQueryServer();
   const selectedCloudAssistantId = useSelectedCloudAssistantId();
 
   const query = useQuery<GetAssistantResult>({
     queryKey: assistantQueryKey(selectedCloudAssistantId),
     queryFn: () => getAssistant(selectedCloudAssistantId ?? undefined),
-    enabled: shouldQueryServer,
     retry: false,
     refetchInterval: (q) => pollIntervalFor(q.state.data),
     refetchOnWindowFocus: false,
@@ -276,11 +255,17 @@ export function useAssistantResolution(): AssistantResolutionResult {
 
   const state = useMemo<AssistantResolutionState>(() => {
     // Gateway-auth mode resolves the assistant locally — the gateway issues
-    // the session token directly and there is nothing to fetch.
-    if (isGatewaySessionLive()) {
+    // the session token directly and there is nothing to fetch. The served
+    // plane answers by construction; a local plane answers from the
+    // lockfile roster the boot hydrated synchronously. The platform plane
+    // derives from the fetch below.
+    if (
+      isServedGatewayRuntime() ||
+      (isLocalClient() && getActiveAssistant() != null)
+    ) {
       return { kind: "active", isLocal: true };
     }
-    if (!shouldQueryServer || query.isPending) {
+    if (query.isPending) {
       return { kind: "loading" };
     }
     if (query.isError) {
@@ -293,7 +278,7 @@ export function useAssistantResolution(): AssistantResolutionResult {
       };
     }
     return resolveAssistantLifecycleState(query.data);
-  }, [query.isPending, query.isError, query.data, shouldQueryServer]);
+  }, [query.isPending, query.isError, query.data]);
 
   return {
     state,
@@ -315,11 +300,9 @@ export function useAssistantBootResolution(): AssistantResolutionResult {
 
   // Gateway-auth mode: prime the connection slots + active id from local
   // state. Re-runs when the selection changes so a newly connected assistant
-  // takes over.
+  // takes over. On the platform plane this touches nothing — the slots
+  // belong to the platform resolution.
   useEffect(() => {
-    if (!isGatewaySessionLive()) {
-      return;
-    }
     applyGatewayAuthBoot();
   }, [selectedId]);
 

@@ -15,9 +15,8 @@ describe("readLockfileAssistantAvatar", () => {
   let instanceDir: string;
   let avatarDir: string;
 
-  const env = { CADET_ENVIRONMENT: "production", XDG_DATA_HOME: "" };
   const read = (assistantId = "asst-1") =>
-    readLockfileAssistantAvatar([lockfilePath], assistantId, env);
+    readLockfileAssistantAvatar(lockfilePath, assistantId);
 
   const writeLockfileEntry = (
     resources?: Record<string, unknown>,
@@ -44,21 +43,32 @@ describe("readLockfileAssistantAvatar", () => {
     fs.writeFileSync(path.join(avatarDir, name), contents);
   };
 
+  let savedEnv: Array<[string, string | undefined]>;
+
   beforeEach(() => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "local-mode-avatar-"));
-    env.XDG_DATA_HOME = path.join(tempDir, "data-home");
+    // The path resolvers read process.env directly; the production entry in
+    // these tests resolves the unsuffixed `cadet` data dir.
+    savedEnv = ["CADET_ENVIRONMENT", "XDG_DATA_HOME"].map((key) => [
+      key,
+      process.env[key],
+    ]);
+    process.env.CADET_ENVIRONMENT = "production";
+    process.env.XDG_DATA_HOME = path.join(tempDir, "data-home");
     lockfilePath = path.join(tempDir, "lockfile.json");
     instanceDir = path.join(tempDir, "instance");
-    avatarDir = path.join(
-      instanceDir,
-      "workspace",
-      "data",
-      "avatar",
-    );
+    avatarDir = path.join(instanceDir, "workspace", "data", "avatar");
     writeLockfileEntry({ instanceDir, gatewayPort: 1, daemonPort: 2 });
   });
 
   afterEach(() => {
+    for (const [key, value] of savedEnv) {
+      if (value === undefined) {
+        Reflect.deleteProperty(process.env, key);
+      } else {
+        process.env[key] = value;
+      }
+    }
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
@@ -140,7 +150,7 @@ describe("readLockfileAssistantAvatar", () => {
   test("entry without an instanceDir reads the default instance dir", () => {
     writeLockfileEntry({ gatewayPort: 1, daemonPort: 2 });
     const defaultAvatarDir = path.join(
-      env.XDG_DATA_HOME,
+      process.env.XDG_DATA_HOME ?? "",
       "cadet",
       "assistants",
       "asst-1",

@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 
 import { secretsReadPost } from "@/generated/daemon/sdk.gen";
 import { shouldRetryDaemonError } from "@/utils/daemon-errors";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 
 // ---------------------------------------------------------------------------
 // Query key factory
@@ -56,8 +55,6 @@ export function useStoredCredentialPresence({
   credentialName,
   enabled = true,
 }: UseStoredCredentialPresenceOptions) {
-  const isOrgReady = useIsOrgReady();
-
   const query = useQuery({
     queryKey: credentialPresenceQueryKey(
       assistantId ?? "",
@@ -72,7 +69,7 @@ export function useStoredCredentialPresence({
       });
       return data.found;
     },
-    enabled: !!assistantId && enabled && isOrgReady,
+    enabled: !!assistantId && enabled,
     retry: shouldRetryDaemonError,
     staleTime: 30_000,
   });

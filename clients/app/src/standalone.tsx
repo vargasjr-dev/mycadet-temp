@@ -13,6 +13,7 @@ import { RootHydrateFallback } from "@app/components/root-hydrate-fallback";
 import { useCadetCommands } from "@app/runtime/cadet-commands";
 import { useDeepLinkConsumer } from "@app/runtime/deep-links";
 import { accountRoute } from "@app/domains/account/account-route";
+import { OnboardingFlowRoute } from "@app/domains/onboarding/pages/onboarding-flow-route";
 import { consentRoute } from "@app/domains/consent/consent-route";
 import { AssistantPage } from "@app/shell/assistant-page";
 import {
@@ -105,6 +106,13 @@ export const router = createBrowserRouter(
         accountRoute,
         consentRoute,
         { path: "/", Component: () => <Navigate to="/assistant" replace /> },
+        {
+          // The onboarding funnel's post-hatch steps — claimed before the
+          // /assistant/* shell catch-all so the funnel renders app-native
+          // (web's research route died with the research turn).
+          path: routes.onboarding.research,
+          Component: OnboardingFlowRoute,
+        },
         { path: "/assistant/*", Component: AssistantPage },
         {
           path: "/logout",

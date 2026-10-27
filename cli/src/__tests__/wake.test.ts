@@ -8,19 +8,12 @@ import {
   spyOn,
   test,
 } from "bun:test";
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import * as assistantConfig from "../lib/assistant-config.js";
+import * as localModeModule from "@mycadet/local-mode";
 import * as docker from "../lib/docker.js";
 import * as guardianToken from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
@@ -35,6 +28,7 @@ import type { LockfileAssistant } from "../lib/assistant-config.js";
 import { makeGuardianTokenData } from "./helpers/guardian-token.js";
 
 const realAssistantConfig = { ...assistantConfig };
+const realLocalMode = { ...localModeModule };
 const realDocker = { ...docker };
 const realGuardianToken = { ...guardianToken };
 const realLocal = { ...local };
@@ -48,21 +42,22 @@ const resolveTargetAssistantMock =
 const loadAllAssistantsMock = mock<typeof assistantConfig.loadAllAssistants>(
   () => [],
 );
-const loadAllAssistantsAcrossEnvsMock = mock<
-  typeof assistantConfig.loadAllAssistantsAcrossEnvs
->(() => []);
 const saveLockfileAssistantMock = mock<
-  typeof assistantConfig.saveLockfileAssistant
->(() => {});
+  typeof localModeModule.saveLockfileAssistant
+>(() => ({ ok: true, lockfile: { assistants: [], activeAssistant: null } }));
 const getDaemonPidPathMock = mock<typeof assistantConfig.getDaemonPidPath>(
   (resources) => join(resources?.instanceDir ?? "missing", "daemon.pid"),
 );
+
+mock.module("@mycadet/local-mode", () => ({
+  ...realLocalMode,
+  saveLockfileAssistant: saveLockfileAssistantMock,
+}));
 
 mock.module("../lib/assistant-config.js", () => ({
   ...realAssistantConfig,
   resolveTargetAssistant: resolveTargetAssistantMock,
   loadAllAssistants: loadAllAssistantsMock,
-  loadAllAssistantsAcrossEnvs: loadAllAssistantsAcrossEnvsMock,
   saveLockfileAssistant: saveLockfileAssistantMock,
   getDaemonPidPath: getDaemonPidPathMock,
 }));
@@ -82,9 +77,6 @@ mock.module("../lib/docker.js", () => ({
   recreateDockerContainers: recreateDockerContainersMock,
 }));
 
-const seedGuardianTokenFromSiblingEnvMock = mock<
-  typeof guardianToken.seedGuardianTokenFromSiblingEnv
->(() => false);
 // Default: a token exists, so the re-provision recovery path is skipped. Tests
 // that exercise recovery override loadGuardianToken to return null.
 const loadGuardianTokenMock = mock<typeof guardianToken.loadGuardianToken>(() =>
@@ -99,7 +91,6 @@ const leaseGuardianTokenMock = mock<typeof guardianToken.leaseGuardianToken>(
 
 mock.module("../lib/guardian-token.js", () => ({
   ...realGuardianToken,
-  seedGuardianTokenFromSiblingEnv: seedGuardianTokenFromSiblingEnvMock,
   loadGuardianToken: loadGuardianTokenMock,
   resetGuardianBootstrap: resetGuardianBootstrapMock,
   leaseGuardianToken: leaseGuardianTokenMock,
@@ -145,7 +136,7 @@ mock.module("../lib/root-signing-key.js", () => ({
   persistRootSigningKey: persistRootSigningKeyMock,
 }));
 
-const generateLocalSigningKeyMock = mock<typeof local.generateLocalSigningKey>(
+const generateLocalSecretMock = mock<typeof local.generateLocalSecret>(
   () => "generated-bootstrap-secret",
 );
 const isAssistantWatchModeAvailableMock = mock<
@@ -164,7 +155,7 @@ const startCesMock = mock<typeof local.startCes>(async () => {});
 
 mock.module("../lib/local", () => ({
   ...realLocal,
-  generateLocalSigningKey: generateLocalSigningKeyMock,
+  generateLocalSecret: generateLocalSecretMock,
   isAssistantWatchModeAvailable: isAssistantWatchModeAvailableMock,
   isGatewayWatchModeAvailable: isGatewayWatchModeAvailableMock,
   startLocalDaemon: startLocalDaemonMock,
@@ -172,19 +163,16 @@ mock.module("../lib/local", () => ({
   startCes: startCesMock,
 }));
 
-const ngrokStartMock = mock<
-  (opts: {
-    port: number;
-    workspaceDir: string;
-    assistantId?: string;
-  }) => Promise<string | null>
->(async () => null);
+const ngrokRunMock = mock<typeof ngrok.runNgrokTunnel>(async () => ({
+  publicUrl: "https://tunnel.example.com",
+  waitForExit: Promise.resolve(),
+}));
 
 mock.module("../lib/tunnels/ngrok", () => ({
   ...realNgrok,
   NGROK_PROVIDER: {
     ...realNgrok.NGROK_PROVIDER,
-    start: ngrokStartMock,
+    run: ngrokRunMock,
   },
 }));
 
@@ -264,16 +252,6 @@ function makeLocalEntry(): LockfileAssistant {
   };
 }
 
-const keyFilePath = () =>
-  join(tempDir, "gateway-security", "actor-token-signing-key");
-const readKeyFile = (): string => readFileSync(keyFilePath()).toString("hex");
-const removeIdentity = (): void => {
-  rmSync(keyFilePath(), { force: true });
-  rmSync(join(tempDir, "workspace", "deprecated", "actor-token-signing-key"), {
-    force: true,
-  });
-};
-
 beforeEach(() => {
   originalArgv = [...process.argv];
   tempDir = "";
@@ -287,9 +265,11 @@ beforeEach(() => {
   resolveTargetAssistantMock.mockReturnValue(localEntry);
   loadAllAssistantsMock.mockReset();
   loadAllAssistantsMock.mockReturnValue([]);
-  loadAllAssistantsAcrossEnvsMock.mockReset();
-  loadAllAssistantsAcrossEnvsMock.mockReturnValue([]);
   saveLockfileAssistantMock.mockReset();
+  saveLockfileAssistantMock.mockImplementation(() => ({
+    ok: true,
+    lockfile: { assistants: [], activeAssistant: null },
+  }));
   getDaemonPidPathMock.mockReset();
   getDaemonPidPathMock.mockImplementation((resources) =>
     join(resources?.instanceDir ?? "missing", "daemon.pid"),
@@ -305,8 +285,8 @@ beforeEach(() => {
   stopProcessByPidFileMock.mockResolvedValue(true);
   findOpenPortMock.mockReset();
   findOpenPortMock.mockImplementation(async (port) => port);
-  generateLocalSigningKeyMock.mockReset();
-  generateLocalSigningKeyMock.mockReturnValue("generated-bootstrap-secret");
+  generateLocalSecretMock.mockReset();
+  generateLocalSecretMock.mockReturnValue("generated-bootstrap-secret");
   isAssistantWatchModeAvailableMock.mockReset();
   isAssistantWatchModeAvailableMock.mockReturnValue(false);
   isGatewayWatchModeAvailableMock.mockReset();
@@ -330,8 +310,6 @@ beforeEach(() => {
   waitForDaemonReadyMock.mockReset();
   waitForDaemonReadyMock.mockImplementation(async () => true);
   waitForDaemonMigrationsReadyMock.mockResolvedValue("ready");
-  seedGuardianTokenFromSiblingEnvMock.mockReset();
-  seedGuardianTokenFromSiblingEnvMock.mockReturnValue(false);
   loadGuardianTokenMock.mockReset();
   loadGuardianTokenMock.mockReturnValue(
     makeGuardianTokenData({ accessToken: "existing" }),
@@ -340,8 +318,11 @@ beforeEach(() => {
   resetGuardianBootstrapMock.mockResolvedValue(undefined);
   leaseGuardianTokenMock.mockReset();
   leaseGuardianTokenMock.mockResolvedValue(makeGuardianTokenData());
-  ngrokStartMock.mockReset();
-  ngrokStartMock.mockResolvedValue(null);
+  ngrokRunMock.mockReset();
+  ngrokRunMock.mockImplementation(async () => ({
+    publicUrl: "https://tunnel.example.com",
+    waitForExit: Promise.resolve(),
+  }));
   loadRawConfigMock.mockReset();
   loadRawConfigMock.mockReturnValue({});
   ensureAppServerMock.mockReset();
@@ -366,6 +347,7 @@ afterEach(() => {
 });
 
 afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
   mock.module("../lib/assistant-config.js", () => realAssistantConfig);
   mock.module("../lib/docker.js", () => realDocker);
   mock.module("../lib/guardian-token.js", () => realGuardianToken);
@@ -380,282 +362,6 @@ afterAll(() => {
 });
 
 describe("cadet wake", () => {
-  test("missing identity refuses before probing, stopping, starting, or repairing", async () => {
-    rmSync(join(tempDir, "gateway-security", "actor-token-signing-key"));
-    await expect(wake()).rejects.toThrow(
-      /signing key missing.*cadet wake.*--repair-guardian/,
-    );
-    expect(resolveProcessStateMock).not.toHaveBeenCalled();
-    expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
-    expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
-  });
-
-  test("recovers the existing deprecated key before process startup", async () => {
-    removeIdentity();
-    localEntry.guardianBootstrapSecret = "existing-bootstrap";
-    const dir = join(tempDir, "workspace", "deprecated");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, "actor-token-signing-key"),
-      Buffer.from("cd".repeat(32), "hex"),
-    );
-    process.argv = ["bun", "cadet", "wake", "local-assistant"];
-    resolveProcessStateMock.mockImplementation(async () => {
-      // The deprecated file is a read-only source — nothing converges it.
-      expect(existsSync(keyFilePath())).toBe(false);
-      return { status: "needs_start", pid: null };
-    });
-    isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
-    await wake();
-    expect(startLocalDaemonMock).toHaveBeenCalledWith(
-      false,
-      localEntry.resources,
-      { foreground: false, signingKey: "cd".repeat(32) },
-    );
-    expect(startGatewayMock).toHaveBeenCalledWith(false, localEntry.resources, {
-      signingKey: "cd".repeat(32),
-      bootstrapSecret: "existing-bootstrap",
-    });
-    expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
-    expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-  });
-
-  test("a conflicting key refuses before any process is stopped", async () => {
-    const legacy = join(tempDir, "workspace", "deprecated");
-    mkdirSync(legacy, { recursive: true });
-    writeFileSync(
-      join(legacy, "actor-token-signing-key"),
-      Buffer.from("ab".repeat(32), "hex"),
-    );
-    const dir = join(tempDir, "gateway-security");
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(
-      join(dir, "actor-token-signing-key"),
-      Buffer.from("cd".repeat(32), "hex"),
-    );
-    await expect(wake()).rejects.toThrow("signing key conflict");
-    expect(resolveProcessStateMock).not.toHaveBeenCalled();
-    expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
-    expect(saveLockfileAssistantMock).not.toHaveBeenCalled();
-  });
-
-  for (const failure of [
-    "missing",
-    "invalid",
-    "conflict",
-    "unreadable",
-  ] as const) {
-    test(`explicit repair recovers ${failure} identity and the next ordinary wake reuses it`, async () => {
-      removeIdentity();
-      localEntry.guardianBootstrapSecret = "existing-bootstrap";
-      const protectedDir = join(tempDir, "gateway-security");
-      const legacyDir = join(tempDir, "workspace", "deprecated");
-      if (failure === "invalid")
-        writeFileSync(keyFilePath(), Buffer.from("bad-key"));
-      if (failure === "unreadable")
-        mkdirSync(join(protectedDir, "actor-token-signing-key"), {
-          recursive: true,
-        });
-      if (failure === "conflict") {
-        mkdirSync(protectedDir, { recursive: true });
-        mkdirSync(legacyDir, { recursive: true });
-        writeFileSync(
-          join(protectedDir, "actor-token-signing-key"),
-          Buffer.from("ab".repeat(32), "hex"),
-        );
-        writeFileSync(
-          join(legacyDir, "actor-token-signing-key"),
-          Buffer.from("cd".repeat(32), "hex"),
-        );
-      }
-      process.argv = [
-        "bun",
-        "cadet",
-        "wake",
-        "local-assistant",
-        "--repair-guardian",
-      ];
-      const replacement = "ef".repeat(32);
-      generateLocalSigningKeyMock.mockReturnValue(replacement);
-      resolveProcessStateMock.mockImplementation(async () => {
-        expect(readKeyFile()).toBe(replacement);
-        expect(stopProcessByPidFileMock).toHaveBeenCalledTimes(2);
-        return { status: "needs_start", pid: null };
-      });
-      isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
-      await wake();
-      expect(startLocalDaemonMock).toHaveBeenCalledWith(
-        false,
-        localEntry.resources,
-        { foreground: false, signingKey: replacement },
-      );
-      expect(startGatewayMock).toHaveBeenCalledWith(
-        false,
-        localEntry.resources,
-        { signingKey: replacement, bootstrapSecret: "existing-bootstrap" },
-      );
-      expect(resetGuardianBootstrapMock).toHaveBeenCalledTimes(1);
-      expect(leaseGuardianTokenMock).toHaveBeenCalledTimes(1);
-      expect(warnSpy.mock.calls.flat().join(" ")).toContain(
-        "all clients must authenticate again",
-      );
-      expect(resolveExistingLocalSigningKey(localEntry.resources)).toBe(
-        replacement,
-      );
-      process.argv = ["bun", "cadet", "wake", "local-assistant"];
-      generateLocalSigningKeyMock.mockClear();
-      resetGuardianBootstrapMock.mockClear();
-      leaseGuardianTokenMock.mockClear();
-      await wake();
-      expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
-      expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-      expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-    });
-  }
-
-  test("explicit repair preserves a recoverable key without restarting healthy services", async () => {
-    localEntry.guardianBootstrapSecret = "existing-bootstrap";
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "local-assistant",
-      "--repair-guardian",
-    ];
-    isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
-    await wake();
-    expect(findOpenPortMock).not.toHaveBeenCalled();
-    expect(generateLocalSigningKeyMock).not.toHaveBeenCalled();
-    expect(stopProcessByPidFileMock).not.toHaveBeenCalled();
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).toHaveBeenCalledTimes(1);
-    expect(readKeyFile()).toBe("ab".repeat(32));
-  });
-
-  test("repair cannot replace the persisted key while a service refuses to stop", async () => {
-    removeIdentity();
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "local-assistant",
-      "--repair-guardian",
-    ];
-    stopProcessByPidFileMock.mockResolvedValue(false);
-    isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
-    await expect(wake()).rejects.toThrow("could not be stopped");
-    expect(existsSync(keyFilePath())).toBe(false);
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-  });
-
-  for (const [portField, label] of [
-    ["daemonPort", "assistant"],
-    ["gatewayPort", "gateway"],
-  ] as const) {
-    test(`repair refuses an untracked ${label} listener before saving a key and can retry after it stops`, async () => {
-      removeIdentity();
-      localEntry.guardianBootstrapSecret = "existing-bootstrap";
-      process.argv = [
-        "bun",
-        "cadet",
-        "wake",
-        "local-assistant",
-        "--repair-guardian",
-      ];
-      const orphan = Bun.serve({
-        hostname: "127.0.0.1",
-        port: 0,
-        fetch: () => new Response("not ready", { status: 503 }),
-      });
-      const port = orphan.port!;
-      localEntry.resources![portField] = port;
-      stopProcessByPidFileMock.mockImplementation(
-        realProcessLib.stopProcessByPidFile,
-      );
-      findOpenPortMock.mockImplementation((candidate, options) =>
-        candidate === port
-          ? realPortAllocator.findOpenPort(candidate, options)
-          : Promise.resolve(candidate),
-      );
-      generateLocalSigningKeyMock.mockReturnValue("ef".repeat(32));
-      resolveProcessStateMock.mockResolvedValue({
-        status: "needs_start",
-        pid: null,
-      });
-      startLocalDaemonMock.mockImplementation(async () => {
-        expect(readKeyFile()).toBe("ef".repeat(32));
-        isProcessAliveMock.mockReturnValue({ alive: true, pid: 123 });
-      });
-      try {
-        await expect(wake()).rejects.toThrow(
-          `could not confirm that ${label} port ${port} is free`,
-        );
-        expect(existsSync(keyFilePath())).toBe(false);
-        expect(startLocalDaemonMock).not.toHaveBeenCalled();
-        expect(startGatewayMock).not.toHaveBeenCalled();
-        expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-        expect(findOpenPortMock).toHaveBeenCalledWith(port, {
-          maxAttempts: 1,
-          host: "127.0.0.1",
-        });
-        expect((await fetch(`http://127.0.0.1:${port}/healthz`)).status).toBe(
-          503,
-        );
-        await orphan.stop(true);
-        await wake();
-        expect(readKeyFile()).toBe("ef".repeat(32));
-        expect(startLocalDaemonMock).toHaveBeenCalledTimes(1);
-        expect(startGatewayMock).toHaveBeenCalledTimes(1);
-        expect(leaseGuardianTokenMock).toHaveBeenCalledTimes(1);
-      } finally {
-        await orphan.stop(true);
-      }
-    });
-  }
-
-  test("repair refuses to save a replacement key when a port cannot be checked", async () => {
-    removeIdentity();
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "local-assistant",
-      "--repair-guardian",
-    ];
-    findOpenPortMock.mockRejectedValue(new Error("EPERM"));
-    await expect(wake()).rejects.toThrow("no replacement key was saved");
-    expect(existsSync(keyFilePath())).toBe(false);
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-  });
-
-  test("repair persistence failure prevents launching with an ephemeral replacement key", async () => {
-    removeIdentity();
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "local-assistant",
-      "--repair-guardian",
-    ];
-    persistRootSigningKeyMock.mockImplementation(() => {
-      throw new Error("key file write failed");
-    });
-    await expect(wake()).rejects.toThrow("key file write failed");
-    expect(startLocalDaemonMock).not.toHaveBeenCalled();
-    expect(startGatewayMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-  });
-
   test("restarts a running gateway without watch mode when backfilling the bootstrap secret", async () => {
     await wake();
 
@@ -672,73 +378,8 @@ describe("cadet wake", () => {
       false,
       expect.objectContaining({ instanceDir: tempDir }),
       {
-        signingKey: "ab".repeat(32),
         bootstrapSecret: "generated-bootstrap-secret",
       },
-    );
-  });
-
-  test("re-provisions the guardian token when missing and --repair-guardian is passed", async () => {
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "--repair-guardian",
-      "local-assistant",
-    ];
-    loadGuardianTokenMock.mockReturnValue(null);
-
-    await wake();
-
-    // Resets the gateway's spent bootstrap state, then re-leases against the
-    // loopback gateway with the lockfile's bootstrap secret.
-    expect(resetGuardianBootstrapMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "generated-bootstrap-secret",
-    );
-    expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "local-assistant",
-      "generated-bootstrap-secret",
-    );
-  });
-
-  test("does NOT re-provision without --repair-guardian, even when the token is missing", async () => {
-    // The automatic connect-repair path spawns `wake <id>` with no flags. A
-    // re-lease here would revoke other device-bound tokens (other tabs / local
-    // clients), so it must never run from auto-repair.
-    process.argv = ["bun", "cadet", "wake", "local-assistant"];
-    loadGuardianTokenMock.mockReturnValue(null);
-
-    await wake();
-
-    expect(resetGuardianBootstrapMock).not.toHaveBeenCalled();
-    expect(leaseGuardianTokenMock).not.toHaveBeenCalled();
-  });
-
-  test("re-provisions even when a guardian token already exists", async () => {
-    // A connect can 401 off a token whose local state looks healthy
-    // (revoked, mis-seeded, wrong principal). The user explicitly confirmed
-    // the destructive repair, so the flag forces a re-lease instead of
-    // guessing from local token state and recreating the no-op loop.
-    process.argv = [
-      "bun",
-      "cadet",
-      "wake",
-      "--repair-guardian",
-      "local-assistant",
-    ];
-    // loadGuardianToken returns a healthy-looking token by default.
-    await wake();
-
-    expect(resetGuardianBootstrapMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "generated-bootstrap-secret",
-    );
-    expect(leaseGuardianTokenMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:7830",
-      "local-assistant",
-      "generated-bootstrap-secret",
     );
   });
 
@@ -940,12 +581,12 @@ describe("cadet wake — app server restore", () => {
     process.argv = ["bun", "cadet", "wake", "local-assistant"];
     // The restore gate reads the root lockfile; keep it off the real one.
     lockfileDir = mkdtempSync(join(tmpdir(), "cadet-wake-lockfile-"));
-    process.env.CADET_LOCKFILE_DIR = lockfileDir;
+    process.env.XDG_CONFIG_HOME = lockfileDir;
   });
 
   afterEach(() => {
     rmSync(lockfileDir, { recursive: true, force: true });
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   });
 
   // The restore flow stamps the `app` entry when it establishes the edge,
@@ -975,7 +616,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -991,7 +632,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1019,7 +660,7 @@ describe("cadet wake — app server restore", () => {
       expect(ensureAppServerMock).toHaveBeenCalledWith();
       // Container wakes run the same auto-tunnel as local wakes (docker
       // parity); the spawned agent records itself in the root lockfile.
-      expect(ngrokStartMock).toHaveBeenCalledWith({
+      expect(ngrokRunMock).toHaveBeenCalledWith({
         port: 7840,
         workspaceDir: defaultWorkspace,
         assistantId: "docker-1",
@@ -1350,40 +991,6 @@ describe("cadet wake — app server restore", () => {
     }
   });
 
-  test("a docker wake respects an ingress claim from another environment", async () => {
-    const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
-    const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
-    process.env.CADET_WORKSPACE_DIR = defaultWorkspace;
-    resolveTargetAssistantMock.mockReturnValue({
-      assistantId: "docker-1",
-      runtimeUrl: "http://localhost:7930",
-      cloud: "docker",
-    });
-    loadAllAssistantsAcrossEnvsMock.mockReturnValue([
-      {
-        assistantId: "docker-2",
-        runtimeUrl: "http://localhost:8030",
-        cloud: "docker",
-      },
-    ]);
-    loadRawConfigMock.mockReturnValue(enabledConfig);
-    isIngressRunningMock.mockReturnValue(false);
-    process.argv = ["bun", "cadet", "wake", "docker-1"];
-
-    try {
-      await wake();
-
-      expect(ensureAppServerMock).not.toHaveBeenCalled();
-    } finally {
-      if (originalWorkspaceDir === undefined) {
-        delete process.env.CADET_WORKSPACE_DIR;
-      } else {
-        process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
-      }
-      rmSync(defaultWorkspace, { recursive: true, force: true });
-    }
-  });
-
   test("a docker wake with no recorded app server leaves the edge alone", async () => {
     const defaultWorkspace = mkdtempSync(join(tmpdir(), "cadet-wake-default-"));
     const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
@@ -1416,7 +1023,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1429,7 +1036,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(ngrokStartMock).not.toHaveBeenCalled();
+    expect(ngrokRunMock).not.toHaveBeenCalled();
   });
 
   test("a running edge is rebuilt through ensureAppServer, never adopted at its recorded port", async () => {
@@ -1451,7 +1058,7 @@ describe("cadet wake — app server restore", () => {
     await wake();
 
     expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1480,7 +1087,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7845,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1508,7 +1115,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1537,7 +1144,7 @@ describe("cadet wake — app server restore", () => {
         "Run `cadet tunnel --help` to rebuild the app server.",
       ),
     );
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1606,7 +1213,7 @@ describe("cadet wake — app server restore", () => {
 
     await wake();
 
-    expect(ngrokStartMock).toHaveBeenCalledWith({
+    expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7841,
       workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
@@ -1751,7 +1358,7 @@ describe("cadet wake — app server restore", () => {
       );
 
       try {
-        for (const flag of ["--foreground", "--repair-guardian"]) {
+        for (const flag of ["--foreground"]) {
           process.argv = ["bun", "cadet", "wake", "--all", flag];
           await expect(wake()).rejects.toThrow("process.exit:1");
         }
@@ -1760,9 +1367,7 @@ describe("cadet wake — app server restore", () => {
       }
 
       expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "--all cannot be combined with --foreground or --repair-guardian",
-        ),
+        expect.stringContaining("--all cannot be combined with --foreground"),
       );
     });
   });

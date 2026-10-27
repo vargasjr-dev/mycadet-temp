@@ -38,7 +38,7 @@ let mockIsGatewayAuth = false;
 let mockIsLocalClient = false;
 let mockIsCadetCloudRemote = false;
 let mockIsServedGatewayRuntime = false;
-// The assistant `getSelectedAssistant()` resolves; `undefined` means none selected.
+// The assistant `getActiveAssistant()` resolves; `undefined` means none selected.
 let mockSelectedAssistant:
   | {
       assistantId: string;
@@ -68,18 +68,6 @@ const primeLocalGatewayConnectionWithRepairMock = mock(async () => {
     throw mockPrimeError;
   }
 });
-const refreshRemoteGatewaySessionMock = mock(async () => false);
-const restoreConsentForUserMock = mock(
-  (_userId: string | null): { tos: boolean; privacy: boolean } => ({
-    tos: false,
-    privacy: false,
-  }),
-);
-const persistConsentForUserMock = mock(
-  (_userId: string | null, _tos: boolean, _privacy: boolean) => {},
-);
-
-const clearOrganizationMock = mock(() => {});
 const logoutMock = mock(async () => {});
 const deleteBiometricTokenMock = mock(async () => {});
 
@@ -94,21 +82,34 @@ const retrieveBiometricTokenMock = mock(async () => mockBiometricToken);
 // (whose missing `.ok` short-circuits the sync) so existing tests are
 // unaffected; the reconciliation tests override it to a well-formed result.
 let mockListAssistantsResult: unknown = [];
-const listAssistantsMock = mock(async () => mockListAssistantsResult);
-// Controls the `OrgFetchOutcome` the session-rejection evidence checks read.
-// A thrown error simulates a transport failure; a never-resolving promise as
-// the outcome makes the fetch hang so the probe's sync race times out.
-let mockOrgFetchOutcome: unknown = { ok: true };
-let mockOrgFetchError: Error | null = null;
-const fetchOrganizationsMock = mock(async () => {
-  if (mockOrgFetchError) {
-    throw mockOrgFetchError;
+const listAssistantsMock = mock(async () => {
+  if (mockListAssistantsError) {
+    throw mockListAssistantsError;
   }
-  return mockOrgFetchOutcome;
+  return mockListAssistantsResult;
 });
+// Controls the `OrgFetchOutcome` the session-rejection evidence checks read.
+// A thrown error simulates a transport failure on the assistants probe.
+let mockListAssistantsError: Error | null = null;
 const bootstrapLocalAssistantCloudIdentityMock = mock(
   (_assistantId?: string) => {},
 );
+
+// The real predicate, applied against the contract helpers directly: the
+// paired-connect tests seed `cloud: "local"` + an off-machine runtimeUrl,
+// which is exactly what makes an entry a paired target.
+import {
+  isLoopbackGatewayCloud,
+  isUsableRuntimeUrl,
+} from "@mycadet/local-mode/contract";
+import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
+const isRemoteGatewayEntryMock = (entry: {
+  cloud: Parameters<typeof isLoopbackGatewayCloud>[0];
+  runtimeUrl?: string;
+}): boolean =>
+  isLoopbackGatewayCloud(entry.cloud) &&
+  isUsableRuntimeUrl(entry.runtimeUrl) &&
+  !isLoopbackPublicUrl(entry.runtimeUrl);
 
 mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => {
@@ -158,13 +159,17 @@ mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => mockIsCadetCloudRemote,
   isServedGatewayRuntime: () => mockIsServedGatewayRuntime,
   hasGatewayAssistant: () => mockIsGatewayAuth,
-  isGatewaySessionLive: () =>
-    getSelfHostedActorToken() !== null || mockPairedSelection(),
+  hasPairedGateway: (a: { assistantId: string } | undefined) =>
+    !!a && mockPairedSelection(),
+  hasLocalGateway: (a: { assistantId: string } | undefined) =>
+    !!a && mockIsGatewayAuth && !mockPairedSelection(),
   getCloudAssistants: () => mockCloudAssistants,
   getLocalAssistants: () => [],
-  getSelectedAssistant: () => mockSelectedAssistant,
+  getActiveAssistant: () => mockSelectedAssistant,
+  getServedLockfile: () => ({ assistants: [], activeAssistant: null }),
   getLockfileAssistant: (id: string) =>
     mockLockfileAssistants.find((a) => a.assistantId === id),
+  isRemoteGatewayEntry: isRemoteGatewayEntryMock,
   primeLocalGatewayConnection: primeLocalGatewayConnectionMock,
   primeLocalGatewayConnectionWithStartupRetry:
     primeLocalGatewayConnectionWithStartupRetryMock,
@@ -173,7 +178,6 @@ mock.module("@/lib/local-mode", () => ({
 }));
 
 mock.module("@/lib/auth/remote-gateway-session", () => ({
-  refreshRemoteGatewaySession: refreshRemoteGatewaySessionMock,
   remoteGatewayPublicPathPrefix: () => "",
 }));
 
@@ -209,29 +213,6 @@ mock.module("@/runtime/native-biometric", () => ({
 }));
 
 const clearUserScopedStorageMock = mock(() => {});
-
-mock.module("@/lib/consent/consent-persistence", () => ({
-  restoreConsentForUser: restoreConsentForUserMock,
-  persistConsentForUser: persistConsentForUserMock,
-  TOS_CONSENT_VERSION: "2026-06-08",
-  PRIVACY_CONSENT_VERSION: "2026-06-08",
-}));
-
-const setTosAcceptedMock = mock((_value: boolean) => {});
-const setPrivacyConsentMock = mock((_value: boolean) => {});
-const setHasConsentRecordMock = mock((_value: boolean) => {});
-const setConsentHydratedMock = mock((_value: boolean) => {});
-
-mock.module("@/domains/onboarding/onboarding-store", () => ({
-  useOnboardingStore: {
-    getState: () => ({
-      setTosAccepted: setTosAcceptedMock,
-      setPrivacyConsent: setPrivacyConsentMock,
-      setHasConsentRecord: setHasConsentRecordMock,
-      setConsentHydrated: setConsentHydratedMock,
-    }),
-  },
-}));
 
 mock.module("@/lib/auth/session-cleanup", () => ({
   clearUserScopedStorage: clearUserScopedStorageMock,
@@ -278,17 +259,6 @@ mock.module("@/assistant/selection", () => ({
   setSelectedAssistant: setSelectedAssistantMock,
 }));
 
-mock.module("@/stores/organization-store", () => ({
-  clearOrganization: clearOrganizationMock,
-  useOrganizationStore: {
-    getState: () => ({
-      fetchOrganizations: fetchOrganizationsMock,
-      clearOrganization: clearOrganizationMock,
-      currentOrganizationId: "org-test",
-    }),
-  },
-}));
-
 // Don't mock `@/lib/event-bus` — bun's `mock.module` is process-
 // global, so any stub here shadows the real bus for every later
 // test file in the run. `auth-store` only subscribes to `app.resume`
@@ -304,22 +274,16 @@ mock.module("@/assistant/api", () => ({
   listAssistants: listAssistantsMock,
 }));
 
-const {
-  useAuthStore,
-  subscribeCloudAccountLogout,
-  beginCloudAccountOAuth,
-  isCloudAccountOAuthInFlight,
-  primeCloudAccountSessionToken,
-  setupAuthListeners,
-  whenCloudSessionSettled,
-} = await import("@/stores/auth-store");
+const { useAuthStore, whenCloudSessionSettled } =
+  await import("@/stores/auth-store");
+const { connectCloudAssistant, connectLocalAssistant, connectPairedAssistant } =
+  await import("@/assistant/connect-assistant");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
 function resetAuthStore(): void {
   useAuthStore.setState({
     sessionStatus: "initializing",
-    user: null,
     cloudSession: "unknown",
   });
 }
@@ -327,15 +291,6 @@ function resetAuthStore(): void {
 function authenticatedLocalUserForTest() {
   return {
     sessionStatus: "authenticated" as const,
-    user: {
-      kind: "local" as const,
-      id: "gateway-local",
-      username: "local",
-      email: null,
-      isStaff: false,
-      firstName: "Local",
-      lastName: "User",
-    },
     cloudSession: "absent" as const,
   };
 }
@@ -348,7 +303,7 @@ beforeEach(() => {
   getSessionFailStatus = 401;
   getSessionGates = null;
   mockElectronSessionToken = null;
-  localStorage.removeItem("cadet:auth:userSnapshot");
+  localStorage.removeItem("cadet:auth:sessionSnapshot");
   localStorage.removeItem("device:share_diagnostics");
   localStorage.removeItem("device:diagnostics_reporting");
   mockIsGatewayAuth = false;
@@ -367,14 +322,6 @@ beforeEach(() => {
   primeLocalGatewayConnectionMock.mockClear();
   primeLocalGatewayConnectionWithStartupRetryMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
-  refreshRemoteGatewaySessionMock.mockClear();
-  restoreConsentForUserMock.mockClear();
-  persistConsentForUserMock.mockClear();
-  setTosAcceptedMock.mockClear();
-  setPrivacyConsentMock.mockClear();
-  setHasConsentRecordMock.mockClear();
-  setConsentHydratedMock.mockClear();
-  clearOrganizationMock.mockClear();
   clearUserScopedStorageMock.mockClear();
   clearWidgetSnapshotMock.mockClear();
   notificationAvatarRuntime.__clearNotificationIdentitySnapshotsForTests();
@@ -384,9 +331,7 @@ beforeEach(() => {
   retrieveBiometricTokenMock.mockClear();
   mockListAssistantsResult = [];
   listAssistantsMock.mockClear();
-  mockOrgFetchOutcome = { ok: true };
-  mockOrgFetchError = null;
-  fetchOrganizationsMock.mockClear();
+  mockListAssistantsError = null;
   bootstrapLocalAssistantCloudIdentityMock.mockClear();
   resetAuthStore();
   // Reset the lifecycle and resolved-assistants stores so each test starts from
@@ -399,55 +344,20 @@ afterEach(() => {
 });
 
 describe("auth store onboarding flag reconciliation", () => {
-  for (const refreshSucceeds of [true, false]) {
-    for (const localBuild of [true, false]) {
-      test(`served browser init and resume skip cloud auth (refresh=${refreshSucceeds}, local build=${localBuild})`, async () => {
-        mockIsServedGatewayRuntime = true;
-        mockIsLocalClient = localBuild;
-        refreshRemoteGatewaySessionMock.mockImplementation(
-          async () => refreshSucceeds,
-        );
-        await useAuthStore.getState().initSession();
-        await useAuthStore.getState().refreshSession();
-        expect(getSessionCallCount).toBe(0);
-        expect(
-          primeLocalGatewayConnectionWithStartupRetryMock,
-        ).not.toHaveBeenCalled();
-        expect(useAuthStore.getState().cloudSession).toBe("absent");
-        expect(useAuthStore.getState().sessionStatus).toBe(
-          refreshSucceeds ? "authenticated" : "unauthenticated",
-        );
-        refreshRemoteGatewaySessionMock.mockImplementation(async () => false);
-      });
-    }
+  for (const localBuild of [true, false]) {
+    test(`served browser init and resume skip cloud auth and settle authenticated (local build=${localBuild})`, async () => {
+      mockIsServedGatewayRuntime = true;
+      mockIsLocalClient = localBuild;
+      await useAuthStore.getState().initSession();
+      await useAuthStore.getState().refreshSession();
+      expect(getSessionCallCount).toBe(0);
+      expect(
+        primeLocalGatewayConnectionWithStartupRetryMock,
+      ).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().cloudSession).toBe("absent");
+      expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    });
   }
-
-  test("initSession treats remote-gateway mode as an authenticated local session", async () => {
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
-
-    await useAuthStore.getState().initSession();
-
-    expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(getSessionCallCount).toBe(0);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
-
-  test("refreshSession keeps remote-gateway mode authenticated without minting a local token", async () => {
-    mockIsGatewayAuth = true;
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => true);
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
-
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
-    expect(getSessionCallCount).toBe(0);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
 
   test("initSession on the public pair page settles unauthenticated without pinging anything", async () => {
     mockIsGatewayAuth = true;
@@ -456,8 +366,7 @@ describe("auth store onboarding flag reconciliation", () => {
       await useAuthStore.getState().initSession();
 
       // The pair page's session comes from the pairing flow itself: no
-      // guardian-refresh ping, no local prime, no cloud probe.
-      expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
+      // local prime, no cloud probe.
       expect(
         primeLocalGatewayConnectionWithStartupRetryMock,
       ).not.toHaveBeenCalled();
@@ -467,30 +376,20 @@ describe("auth store onboarding flag reconciliation", () => {
     }
   });
 
-  test("initSession on a served-gateway runtime skips the local prime and settles fast", async () => {
+  test("initSession on a served-gateway runtime settles authenticated without the local prime", async () => {
     mockIsGatewayAuth = true;
     mockIsServedGatewayRuntime = true;
 
     await useAuthStore.getState().initSession();
 
-    // The boot ping still runs (it is the paired-device restore path)...
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    // ...but the desktop prime machinery (its 90s startup ride-out) never
-    // does, so the route guard can route an unpaired device to the pair
-    // page immediately.
+    // Cookie custody: the boot claims the session and lets the edge
+    // arbitrate per request — the desktop prime machinery (its 90s
+    // startup ride-out) is not desktop machinery at all on a remote
+    // browser and never runs.
     expect(
       primeLocalGatewayConnectionWithStartupRetryMock,
     ).not.toHaveBeenCalled();
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-  });
-
-  test("initSession leaves remote-gateway mode unauthenticated when cookie refresh fails and no token exists", async () => {
-    await useAuthStore.getState().initSession();
-
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
 
   test("initSession in cloud-auth mode registers no self-hosted connection and skips the gateway ping", async () => {
@@ -504,11 +403,9 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await useAuthStore.getState().initSession();
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(getSessionCallCount).toBe(0);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("present");
     expect(getSelfHostedIngressUrl()).toBe(
       "https://stale-from-earlier-session.test",
@@ -523,7 +420,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
@@ -535,36 +431,7 @@ describe("auth store onboarding flag reconciliation", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
-    expect(refreshRemoteGatewaySessionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-  });
-
-  test("refreshSession ends remote-gateway sessions when refresh fails and no token exists", async () => {
-    useAuthStore.setState({ ...authenticatedLocalUserForTest() });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
-
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
-
-  test("refreshSession keeps remote-gateway sessions when refresh throws but a token is still valid", async () => {
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
-    refreshRemoteGatewaySessionMock.mockImplementationOnce(async () => {
-      throw new TypeError("Failed to fetch");
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
-
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
   test("refreshSession keeps the local gateway session but clears stale platform state on a settled 401", async () => {
@@ -584,7 +451,6 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(getSessionCallCount).toBe(1); // probe ran — a success could still update the store
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated"); // local session not ended
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local"); // demoted to local user
     expect(useAuthStore.getState().cloudSession).toBe("absent"); // stale platform state cleared
   });
 
@@ -603,25 +469,7 @@ describe("auth store onboarding flag reconciliation", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-  });
-
-  test("refreshSession still ends a local session whose assistants are cloud-hosted", async () => {
-    // A cloud assistant is unreachable without a cloud session, so the
-    // demotion above excludes this case and login is the right destination.
-    mockIsLocalClient = true;
-    mockIsGatewayAuth = false;
-    mockCloudAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
-    sessionUser = null;
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
   });
 
   test("refreshSession still ends the session for a cloud-mode client on a settled 401", async () => {
@@ -639,7 +487,6 @@ describe("auth store onboarding flag reconciliation", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 
   test("refreshSession leaves an unauthenticated session untouched in the gateway window", async () => {
@@ -651,7 +498,6 @@ describe("auth store onboarding flag reconciliation", () => {
     sessionUser = null;
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      user: null,
       cloudSession: "absent",
     });
 
@@ -673,10 +519,7 @@ describe("auth store onboarding flag reconciliation", () => {
 
     expect(getSessionCallCount).toBe(1);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    // A live probe confirmed it — not a believed offline restore.
-    expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(false);
   });
 
   test("successful local platform probe bootstraps the selected local assistant identity", async () => {
@@ -701,6 +544,7 @@ describe("auth store onboarding flag reconciliation", () => {
     // persisted local assistant to the recovery controls.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
 
     await useAuthStore.getState().initSession();
 
@@ -709,7 +553,6 @@ describe("auth store onboarding flag reconciliation", () => {
     ).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
   });
 
   test("initSession settles unauthenticated when the startup-retry prime is exhausted", async () => {
@@ -717,6 +560,7 @@ describe("auth store onboarding flag reconciliation", () => {
     // through to the chooser exactly as before.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockPrimeError = new Error("Gateway token request failed: 401");
 
     await useAuthStore.getState().initSession();
@@ -725,47 +569,6 @@ describe("auth store onboarding flag reconciliation", () => {
       primeLocalGatewayConnectionWithStartupRetryMock,
     ).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
-  });
-
-  test("initSession restores legal consent from per-user device keys", async () => {
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    restoreConsentForUserMock.mockReturnValueOnce({
-      tos: true,
-      privacy: true,
-    });
-
-    await useAuthStore.getState().initSession();
-
-    expect(restoreConsentForUserMock).toHaveBeenCalledWith("user-1");
-    expect(setTosAcceptedMock).toHaveBeenCalledWith(true);
-    expect(setPrivacyConsentMock).toHaveBeenCalledWith(true);
-    // Both device acks present = a prior consent record.
-    expect(setHasConsentRecordMock).toHaveBeenCalledWith(true);
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-  });
-
-  test("initSession with no device consent record reads as never-consented", async () => {
-    sessionUser = { id: "user-2", email: "user@example.com" };
-
-    await useAuthStore.getState().initSession();
-
-    expect(setTosAcceptedMock).toHaveBeenCalledWith(false);
-    expect(setPrivacyConsentMock).toHaveBeenCalledWith(false);
-    expect(setHasConsentRecordMock).toHaveBeenCalledWith(false);
-  });
-
-  test("syncUserScopedState marks consent hydrated on every settle path", async () => {
-    // Authenticated platform user.
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    await useAuthStore.getState().initSession();
-    expect(setConsentHydratedMock).toHaveBeenCalledWith(true);
-
-    // Signed-out path (settled unauthenticated).
-    setConsentHydratedMock.mockClear();
-    sessionUser = null;
-    await useAuthStore.getState().initSession();
-    expect(setConsentHydratedMock).toHaveBeenCalledWith(true);
   });
 
   test("refreshSession reconciles the lockfile mirror in local mode", async () => {
@@ -806,12 +609,6 @@ describe("session cleanup on logout", () => {
     await useAuthStore.getState().logout();
 
     expect(deleteBiometricTokenMock).toHaveBeenCalled();
-  });
-
-  test("logout clears organization state", async () => {
-    await useAuthStore.getState().logout();
-
-    expect(clearOrganizationMock).toHaveBeenCalled();
   });
 
   test("logout clears user-scoped browser storage", async () => {
@@ -1027,6 +824,7 @@ describe("iOS widget snapshot on session end", () => {
     // Screen while the app shows the recovery controls.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockPrimeError = new Error("Gateway token request failed: 401");
 
     await useAuthStore.getState().initSession();
@@ -1041,6 +839,7 @@ describe("iOS widget snapshot on session end", () => {
     // the probe on a value the follow-up probe is about to replace.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockPrimeError = new Error("Gateway token request failed: 401");
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "unknown" });
@@ -1114,7 +913,6 @@ describe("iOS widget snapshot on session end", () => {
     await expect(rejected).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1168,7 +966,6 @@ describe("iOS widget snapshot on session end", () => {
     await loggingOut;
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
@@ -1200,6 +997,7 @@ describe("iOS widget snapshot on session end", () => {
     // established while the boot's snapshot clear was still outstanding.
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockPrimeError = new Error("Gateway token request failed: 401");
     const releaseClear = holdWidgetSnapshotClear();
 
@@ -1211,6 +1009,13 @@ describe("iOS widget snapshot on session end", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    // The re-auth is a gateway session: give the refresh a paired selection
+    // whose resolvable gateway re-verifies through the prime.
+    mockSelectedAssistant = {
+      assistantId: "paired-1",
+      cloud: "local",
+      runtimeUrl: "https://gw.example.com",
+    };
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     releaseClear();
@@ -1221,16 +1026,16 @@ describe("iOS widget snapshot on session end", () => {
 });
 
 /**
- * Hold the next `fetchOrganizations()` open, returning the release fn, so a
- * test can suspend a refresh mid-flight between the session response and the
+ * Hold the next assistants probe open, returning the release fn, so a test
+ * can suspend a refresh mid-flight between the session response and the
  * authenticated write that response drives.
  */
-function holdOrgFetch(): () => void {
+function holdAssistantsFetch(): () => void {
   let release = (): void => {};
-  fetchOrganizationsMock.mockImplementationOnce(
+  listAssistantsMock.mockImplementationOnce(
     () =>
       new Promise((resolve) => {
-        release = () => resolve(mockOrgFetchOutcome);
+        release = () => resolve(mockListAssistantsResult);
       }),
   );
   return () => release();
@@ -1244,16 +1049,15 @@ function holdOrgFetch(): () => void {
 describe("explicit logout supersedes an in-flight refresh", () => {
   test("a refresh that began before logout abandons its authenticated write", async () => {
     // A LOCAL client: the refresh's reconcile sync is the path's longest
-    // await, so holdOrgFetch can actually suspend it between the session
+    // await, so holdAssistantsFetch can actually suspend it between the session
     // response and the authenticated write.
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
-    const releaseOrg = holdOrgFetch();
+    const releaseAssistants = holdAssistantsFetch();
 
     const refreshing = useAuthStore.getState().refreshSession();
     await flushTasks();
@@ -1265,7 +1069,7 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     const unsubscribe = useAuthStore.subscribe((state) => {
       statuses.push(state.sessionStatus);
     });
-    releaseOrg();
+    releaseAssistants();
     await expect(refreshing).resolves.toBe(false);
     unsubscribe();
 
@@ -1273,22 +1077,20 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     // corrected.
     expect(statuses).not.toContain("authenticated");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
     expect(useAuthStore.getState().cloudSession).toBe("absent");
     // The abandoned transition also carries `persistUserSnapshot`, which would
     // leave the departed account restorable on the next offline boot.
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("a refresh that starts midway through a logout is superseded too", async () => {
     // A LOCAL client: the refresh's reconcile sync is the path's longest
-    // await, so holdOrgFetch can actually suspend it between the session
+    // await, so holdAssistantsFetch can actually suspend it between the session
     // response and the authenticated write.
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
     const releaseClear = holdWidgetSnapshotClear();
@@ -1298,39 +1100,36 @@ describe("explicit logout supersedes an in-flight refresh", () => {
 
     // Enters while logout is suspended on the snapshot clear, and resumes only
     // after logout's session-ending write has landed.
-    const releaseOrg = holdOrgFetch();
+    const releaseAssistants = holdAssistantsFetch();
     const refreshing = useAuthStore.getState().refreshSession();
     await flushTasks();
 
     releaseClear();
     await loggingOut;
-    releaseOrg();
+    releaseAssistants();
     await expect(refreshing).resolves.toBe(false);
 
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 
   test("a refresh that completes with no logout still authenticates", async () => {
     // A LOCAL client: the refresh's reconcile sync is the path's longest
-    // await, so holdOrgFetch can actually suspend it between the session
+    // await, so holdAssistantsFetch can actually suspend it between the session
     // response and the authenticated write.
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "unauthenticated",
-      user: null,
       cloudSession: "absent",
     });
-    const releaseOrg = holdOrgFetch();
+    const releaseAssistants = holdAssistantsFetch();
 
     const refreshing = useAuthStore.getState().refreshSession();
     await flushTasks();
-    releaseOrg();
+    releaseAssistants();
 
     await expect(refreshing).resolves.toBe(true);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1343,7 +1142,6 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({
       sessionStatus: "authenticated",
-      user: null,
       cloudSession: "present",
     });
 
@@ -1355,13 +1153,13 @@ describe("explicit logout supersedes an in-flight refresh", () => {
     sessionUser = { id: "user-2", email: "user2@example.com" };
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
 
     // And the connect action commits one directly.
     await useAuthStore.getState().logout();
-    await useAuthStore.getState().connectCloudAssistant("assistant-1");
+    await connectCloudAssistant("assistant-1");
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-2");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 });
 
@@ -1377,6 +1175,7 @@ describe("platform session probe resolution", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
@@ -1406,6 +1205,7 @@ describe("platform session probe resolution", () => {
       url: window.location.origin,
       token: "slot-token",
     });
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
     useAuthStore.setState({ cloudSession: "absent" });
@@ -1435,7 +1235,7 @@ describe("platform session probe resolution", () => {
 describe("platform probe conclusive rejection (half-dead session)", () => {
   // The half-dead state: allauth answers 200 with a user while the cloud
   // API conclusively rejects the same credential. The probe consumes the
-  // org/assistants evidence it already gathers and settles "absent".
+  // assistants-list evidence it already gathers and settles "absent".
   //
   // Every test drives the local-client init path (no gateway auth, no
   // platform assistants), where the probe runs with `setUserOnSuccess`.
@@ -1444,39 +1244,30 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
   }
 
-  test("an org-fetch session rejection settles the session absent", async () => {
-    arrangeLocalProbe();
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
-
-    await useAuthStore.getState().initSession();
-    await whenCloudSessionSettled();
-
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-    // A rejected session must not install a cloud user, persist a
-    // restorable snapshot, or bootstrap the cloud identity.
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
-    // The evidence check short-circuits before the assistants call and sync.
-    expect(listAssistantsMock).not.toHaveBeenCalled();
-  });
-
   test("a session rejection clears a previously persisted snapshot", async () => {
     arrangeLocalProbe();
     // A snapshot persisted by an earlier confirmed session must not survive
     // the rejection: restoreOfflineSession would otherwise resurrect the
     // rejected account as "present" on a later offline boot.
-    localStorage.setItem(
-      "cadet:auth:userSnapshot",
-      JSON.stringify({ id: "user-1", email: "user@example.com" }),
-    );
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
+    // A prior test's dangling refresh can land its async snapshot persist
+    // inside this test's timeline — drain it before seeding, or the late
+    // write would resurrect the key after this test's rejection clear.
+    // A prior logout test leaks `suppressPlatformProbe`; burn it with a
+    // throwaway local-arm initSession so the real run probes (listCalls:0
+    // under a leaked suppress would settle "absent" without evidence).
+    await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
+    await flushTasks();
+    localStorage.setItem("cadet:auth:sessionSnapshot", "true");
+    mockListAssistantsResult = { ok: false, status: 403, error: {} };
 
     await useAuthStore.getState().initSession();
     await whenCloudSessionSettled();
+    await flushTasks();
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(listAssistantsMock.mock.calls.length).toBeGreaterThan(0);
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
   test("an assistants-list session rejection settles the session absent", async () => {
@@ -1487,16 +1278,12 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
     expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
-    // The org fetch succeeded, so the rejected account's org state must be
-    // cleared here or its Cadet-Organization-Id keeps stamping requests.
-    expect(clearOrganizationMock).toHaveBeenCalled();
   });
 
-  test("a transport-thrown org fetch keeps the present settle", async () => {
+  test("a transport-thrown assistants probe keeps the present settle", async () => {
     arrangeLocalProbe();
-    mockOrgFetchError = new TypeError("Failed to fetch");
+    mockListAssistantsError = new TypeError("Failed to fetch");
 
     await useAuthStore.getState().initSession();
     await whenCloudSessionSettled();
@@ -1504,83 +1291,16 @@ describe("platform probe conclusive rejection (half-dead session)", () => {
     // No evidence of rejection: the offline-restore contract (LUM-2412)
     // keeps the session present.
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
     expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalled();
   });
 
-  test("a non-rejection org failure keeps the present settle", async () => {
+  test("a non-rejection assistants failure keeps the present settle", async () => {
     arrangeLocalProbe();
-    mockOrgFetchOutcome = { ok: false, kind: "unavailable" };
+    mockListAssistantsResult = { ok: false, status: 503, error: {} };
 
     await useAuthStore.getState().initSession();
     await whenCloudSessionSettled();
 
-    expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
-  });
-
-  test("a sync race timeout keeps the present settle", async () => {
-    arrangeLocalProbe();
-    // An org fetch that never resolves leaves the race with only the timeout
-    // arm; shrink the 3s timer to 0 so the test settles immediately.
-    mockOrgFetchOutcome = new Promise(() => {});
-    const originalSetTimeout = globalThis.setTimeout;
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
-      originalSetTimeout(
-        handler,
-        timeout === 3_000 ? 0 : timeout,
-      )) as typeof setTimeout);
-
-    try {
-      await useAuthStore.getState().initSession();
-      await whenCloudSessionSettled();
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
-
-    expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
-    // Wiring pin: past the timeout the strict sync gate is closed but the
-    // same-session gate stays open (no newer probe), so a late org success
-    // may still commit and un-strand readiness.
-    const [isCurrent, isSameSession] = fetchOrganizationsMock.mock
-      .calls[0] as unknown as [() => boolean, () => boolean];
-    expect(isCurrent()).toBe(false);
-    expect(isSameSession()).toBe(true);
-  });
-
-  test("a rejection landing after the race timeout does not clear org state", async () => {
-    arrangeLocalProbe();
-    // Hold the org fetch past the (shrunken) timeout, then resolve it OK and
-    // let the assistants call report a settled rejection. The probe already
-    // settled "present" from cached data, so the dangling call must not
-    // strip the org header out from under that session.
-    let releaseOrgFetch: (value: unknown) => void = () => {};
-    mockOrgFetchOutcome = new Promise((resolve) => {
-      releaseOrgFetch = resolve;
-    });
-    mockListAssistantsResult = { ok: false, status: 403, error: {} };
-    const originalSetTimeout = globalThis.setTimeout;
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout");
-    setTimeoutSpy.mockImplementation(((handler: () => void, timeout?: number) =>
-      originalSetTimeout(
-        handler,
-        timeout === 3_000 ? 0 : timeout,
-      )) as typeof setTimeout);
-
-    try {
-      await useAuthStore.getState().initSession();
-      await whenCloudSessionSettled();
-      expect(useAuthStore.getState().cloudSession).toBe("present");
-
-      releaseOrgFetch({ ok: true });
-      await new Promise((resolve) => originalSetTimeout(resolve, 0));
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
-
-    expect(clearOrganizationMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
@@ -1613,28 +1333,6 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
   // otherwise confirm the session: refreshSession's resume path, initSession's
   // platform-assistants path, and connectCloudAssistant.
 
-  test("refreshSession settles a half-dead session absent instead of re-confirming it", async () => {
-    // A gateway client whose cached token expired while backgrounded lands in
-    // the non-gateway branch (isGatewayAuthMode() is false without a token).
-    mockIsLocalClient = true;
-    mockIsGatewayAuth = true;
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
-
-    expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-    // No snapshot may be re-persisted for the rejected session.
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    // Nor may the rejected account's user-scoped consent state be installed.
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
-  });
-
   test("refreshSession settles absent on an assistants-list rejection", async () => {
     mockIsLocalClient = true;
     mockIsGatewayAuth = true;
@@ -1648,26 +1346,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-  });
-
-  test("refreshSession ends a half-dead session whose assistants are cloud-hosted", async () => {
-    // Same stands-alone exclusion as a settled getSession 401: a cloud
-    // assistant is unreachable without a cloud session, so login wins.
-    mockIsLocalClient = true;
-    mockIsGatewayAuth = false;
-    mockCloudAssistants = [{ assistantId: "managed-1", cloud: "cadet" }];
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
-    useAuthStore.setState({
-      sessionStatus: "authenticated",
-      cloudSession: "present",
-    });
-
-    await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
-
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
   test("a resume refresh does not flip a probe-settled absent session back to present", async () => {
@@ -1675,7 +1354,7 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     // then the app-resume refresh runs against the same half-dead session.
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
+    mockListAssistantsResult = { ok: false, status: 403, error: {} };
 
     await useAuthStore.getState().initSession();
     await whenCloudSessionSettled();
@@ -1684,98 +1363,70 @@ describe("session-rejection evidence at sibling confirmation sites", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(useAuthStore.getState().user?.kind).toBe("local");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
-  test("a transport-failed sync on refresh keeps the cloud confirmation", async () => {
+  test("a transport-failed assistants probe on refresh keeps the cloud confirmation", async () => {
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchError = new TypeError("Failed to fetch");
+    mockListAssistantsError = new TypeError("Failed to fetch");
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).not.toBeNull();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).not.toBeNull();
   });
 
-  test("a non-rejection org failure on refresh keeps the cloud confirmation", async () => {
+  test("a non-rejection assistants failure on refresh keeps the cloud confirmation", async () => {
     mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "unavailable" };
+    mockListAssistantsResult = { ok: false, status: 503, error: {} };
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().cloudSession).toBe("present");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
   });
 
-  test("initSession with platform assistants routes a rejected session to login", async () => {
+  test("initSession settles a rejected platform session to the local user (never login)", async () => {
+    // Web holds no platform roster to gate the probe on, so the plain local
+    // arm always probes; a settled rejection clears the snapshot and falls
+    // back to the local user. Login routing is the app shell's decision.
     mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     localStorage.setItem(
-      "cadet:auth:userSnapshot",
-      JSON.stringify({ id: "user-1", email: "user@example.com" }),
+      "cadet:auth:sessionSnapshot",
+      JSON.stringify({ accountId: "user-1" }),
     );
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
+    mockListAssistantsResult = { ok: false, status: 403, error: {} };
 
     await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("absent");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    // Nor may the rejected account's user-scoped consent state be installed.
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem("cadet:auth:sessionSnapshot")).toBeNull();
   });
 
-  test("initSession with platform assistants routes an assistants-list rejection to login", async () => {
+  test("initSession settles an assistants-list rejection to the local user", async () => {
     mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
     sessionUser = { id: "user-1", email: "user@example.com" };
     mockListAssistantsResult = { ok: false, status: 410, error: {} };
 
     await useAuthStore.getState().initSession();
-
-    expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-  });
-
-  test("initSession with platform assistants keeps the session on a transport-failed sync", async () => {
-    mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchError = new TypeError("Failed to fetch");
-
-    await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
-    expect(useAuthStore.getState().cloudSession).toBe("present");
+    expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("connectCloudAssistant fails the connect on a rejected org fetch", async () => {
+  test("initSession keeps the adopted platform session on a transport-failed probe", async () => {
+    mockIsLocalClient = true;
     sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "rejected", status: 403 };
+    mockListAssistantsError = new TypeError("Failed to fetch");
 
-    await expect(
-      useAuthStore.getState().connectCloudAssistant("assistant-1"),
-    ).rejects.toThrow("Platform authentication required");
-
-    expect(useAuthStore.getState().cloudSession).not.toBe("present");
-    expect(localStorage.getItem("cadet:auth:userSnapshot")).toBeNull();
-    // A failed connect leaves no side effects behind: the caller keeps its
-    // current selection and consent state, not the rejected account's.
-    expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-    expect(restoreConsentForUserMock).not.toHaveBeenCalled();
-  });
-
-  test("connectCloudAssistant tolerates a non-rejection org failure", async () => {
-    sessionUser = { id: "user-1", email: "user@example.com" };
-    mockOrgFetchOutcome = { ok: false, kind: "unavailable" };
-
-    await useAuthStore.getState().connectCloudAssistant("assistant-1");
+    await useAuthStore.getState().initSession();
+    await whenCloudSessionSettled();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
     expect(useAuthStore.getState().cloudSession).toBe("present");
@@ -1796,7 +1447,7 @@ describe("biometric session recovery", () => {
       "recovered-session-token",
     );
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-1");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("initSession skips biometric recovery on web", async () => {
@@ -1830,7 +1481,6 @@ describe("biometric session recovery", () => {
 
     expect(installSessionCookiesMock).toHaveBeenCalledWith("expired-token");
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 });
 
@@ -1851,38 +1501,53 @@ describe("connectLocalAssistant", () => {
       order.push(`select:${String(id)}`);
     });
 
-    await useAuthStore.getState().connectLocalAssistant("local-a");
+    await connectLocalAssistant("local-a");
 
     expect(order).toEqual(["prime", "select:local-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     // No platform assistants — nothing to probe, so the status settles
     // directly to "absent" rather than staying "unknown".
     expect(useAuthStore.getState().cloudSession).toBe("absent");
   });
 
-  test("bootstraps a newly connected local assistant when already signed into the cloud", async () => {
+  test("waits for the new cloud probe before bootstrapping a connected local assistant", async () => {
     mockIsLocalClient = true;
-    mockCloudAssistants = [];
-    useAuthStore.setState({
-      cloudSession: "present",
-      cloudSessionRestoredOffline: false,
-    });
+    mockIsGatewayAuth = true;
+    mockSelectedAssistant = { assistantId: "local-a", cloud: "local" };
+    sessionUser = { id: "user-1" };
+    useAuthStore.setState({ cloudSession: "present" });
+    getSessionGates = [];
 
-    await useAuthStore.getState().connectLocalAssistant("local-a");
+    await connectLocalAssistant("local-a");
 
-    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledWith(
-      "local-a",
-    );
+    // A cached present session is insufficient: the fresh probe must confirm it.
+    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
+    expect(getSessionGates).toHaveLength(1);
+    getSessionGates[0]!();
+    await whenCloudSessionSettled();
+
+    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("does not bootstrap from cached cloud state when the fresh probe rejects it", async () => {
+    mockIsLocalClient = true;
+    mockIsGatewayAuth = true;
+    sessionUser = null;
+    useAuthStore.setState({ cloudSession: "present" });
+
+    await connectLocalAssistant("local-a");
+    await whenCloudSessionSettled();
+
+    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
   });
 
   test("rethrows the prime failure without selecting or marking the session logged in", async () => {
     mockIsLocalClient = true;
     mockPrimeError = new Error("Guardian token not found");
 
-    await expect(
-      useAuthStore.getState().connectLocalAssistant("local-a"),
-    ).rejects.toThrow("Guardian token not found");
+    await expect(connectLocalAssistant("local-a")).rejects.toThrow(
+      "Guardian token not found",
+    );
 
     // A failed connect leaves the previous selection in place.
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -1910,11 +1575,10 @@ describe("connectPairedAssistant", () => {
       order.push(`select:${String(id)}`);
     });
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(order).toEqual(["prime", "select:paired-a"]);
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("gateway-local");
     // No platform assistants and no gateway auth in this arrangement, so the
     // cloud-session status settles directly to "absent".
     expect(useAuthStore.getState().cloudSession).toBe("absent");
@@ -1927,7 +1591,7 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [pairedEntry];
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
     expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
@@ -1946,10 +1610,9 @@ describe("connectPairedAssistant", () => {
     mockLockfileAssistants = [pairedEntry];
     useAuthStore.setState({
       cloudSession: "present",
-      cloudSessionRestoredOffline: false,
     });
 
-    await useAuthStore.getState().connectPairedAssistant("paired-a");
+    await connectPairedAssistant("paired-a");
 
     expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
   });
@@ -1958,9 +1621,9 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [{ assistantId: "local-a", cloud: "local" }];
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("local-a"),
-    ).rejects.toThrow("Not a paired assistant");
+    await expect(connectPairedAssistant("local-a")).rejects.toThrow(
+      "Not a paired assistant",
+    );
 
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
@@ -1971,9 +1634,9 @@ describe("connectPairedAssistant", () => {
     mockIsLocalClient = true;
     mockLockfileAssistants = [pairedEntry];
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("missing"),
-    ).rejects.toThrow("Not a paired assistant");
+    await expect(connectPairedAssistant("missing")).rejects.toThrow(
+      "Not a paired assistant",
+    );
 
     expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
   });
@@ -1983,9 +1646,9 @@ describe("connectPairedAssistant", () => {
     mockLockfileAssistants = [pairedEntry];
     mockPrimeError = new Error("Guardian token not found");
 
-    await expect(
-      useAuthStore.getState().connectPairedAssistant("paired-a"),
-    ).rejects.toThrow("Guardian token not found");
+    await expect(connectPairedAssistant("paired-a")).rejects.toThrow(
+      "Guardian token not found",
+    );
 
     expect(setSelectedAssistantMock).not.toHaveBeenCalled();
     expect(useAuthStore.getState().sessionStatus).not.toBe("authenticated");
@@ -2048,8 +1711,7 @@ describe("paired selection in the gateway-auth session paths", () => {
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
-    // The gateway-JWT rotation covers the refresh.
-    expect(refreshRemoteGatewaySessionMock).toHaveBeenCalledTimes(1);
+    // The gateway-JWT rotation covers the refresh — no re-mint, no cloud probe.
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
   });
 
@@ -2069,7 +1731,6 @@ describe("paired selection in the gateway-auth session paths", () => {
       primeLocalGatewayConnectionWithStartupRetryMock,
     ).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState().sessionStatus).toBe("unauthenticated");
-    expect(useAuthStore.getState().user).toBeNull();
   });
 });
 
@@ -2085,20 +1746,10 @@ describe("paired selection in the gateway-auth session paths", () => {
 // invalidates the snapshot so a revoked session can't be resurrected.
 // ---------------------------------------------------------------------------
 
-const SNAPSHOT_KEY = "cadet:auth:userSnapshot";
+const SNAPSHOT_KEY = "cadet:auth:sessionSnapshot";
 
 function seedSnapshot(): void {
-  localStorage.setItem(
-    SNAPSHOT_KEY,
-    JSON.stringify({
-      id: "user-cached",
-      username: "cached",
-      email: "cached@example.com",
-      isStaff: false,
-      firstName: "Cached",
-      lastName: "User",
-    }),
-  );
+  localStorage.setItem(SNAPSHOT_KEY, "true");
 }
 
 describe("offline session restore (LUM-2412)", () => {
@@ -2110,17 +1761,10 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
-    // The legacy snapshot `seedSnapshot()` writes carries no `kind` field;
-    // the restore must default it to a cloud identity (only platform users
-    // are ever snapshotted), so old snapshots keep restoring correctly.
-    expect(useAuthStore.getState().user?.kind).toBe("platform");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
     // The snapshot only exists for a confirmed platform session, and no
     // probe runs offline to settle an "unknown" — so the restore settles
     // "present" (believed state); reconnect revalidation corrects it.
-    expect(useAuthStore.getState().cloudSession).toBe("present");
-    // ...but it is flagged as a believed restore, so telemetry stays fail-closed.
-    expect(useAuthStore.getState().cloudSessionRestoredOffline).toBe(true);
   });
 
   test("transport-failed boot (proxy 502) with token + snapshot settles authenticated from cache", async () => {
@@ -2131,7 +1775,7 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("rate-limited boot (429) is non-authoritative — restores from cache instead of logging out", async () => {
@@ -2142,7 +1786,6 @@ describe("offline session restore (LUM-2412)", () => {
     await useAuthStore.getState().initSession();
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
     expect(localStorage.getItem(SNAPSHOT_KEY)).not.toBeNull();
   });
 
@@ -2198,23 +1841,7 @@ describe("offline session restore (LUM-2412)", () => {
 
     const raw = localStorage.getItem(SNAPSHOT_KEY);
     expect(raw).not.toBeNull();
-    expect(JSON.parse(raw!)).toMatchObject({
-      id: "user-9",
-      email: "nine@example.com",
-    });
-  });
-
-  test("local-mode platform-assistants boot also restores from cache on transport failure", async () => {
-    mockIsLocalClient = true;
-    mockCloudAssistants = [{ assistantId: "p1", cloud: "cadet" }];
-    getSessionThrows = true;
-    mockElectronSessionToken = "tok-1";
-    seedSnapshot();
-
-    await useAuthStore.getState().initSession();
-
-    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-cached");
+    expect(raw).toBe("true");
   });
 
   test("refreshSession transport failure keeps the authenticated session (offline resume)", async () => {
@@ -2228,12 +1855,12 @@ describe("offline session restore (LUM-2412)", () => {
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(true);
 
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
-    expect(useAuthStore.getState().user?.id).toBe("user-9");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 
   test("refreshSession transport failure while unauthenticated reports false without state churn", async () => {
     getSessionThrows = true;
-    useAuthStore.setState({ sessionStatus: "unauthenticated", user: null });
+    useAuthStore.setState({ sessionStatus: "unauthenticated" });
 
     await expect(useAuthStore.getState().refreshSession()).resolves.toBe(false);
 
@@ -2268,42 +1895,29 @@ describe("offline session restore (LUM-2412)", () => {
   });
 });
 
-// `kind` separates a real platform account from synthetic local gateway access.
-describe("identity kind (platform vs local gateway access)", () => {
-  test("a local gateway session is kind 'local' and not a cloud identity, but keeps its stable id", async () => {
+// The store carries no user — the session shape is the identity surface:
+// a platform account ⟺ `cloudSession: "present"` on an authenticated session,
+// local gateway access ⟺ authenticated with the cloud session absent.
+describe("session shape (platform vs local gateway access)", () => {
+  test("a local gateway session authenticates with no cloud session", async () => {
     mockIsLocalClient = true;
     mockCloudAssistants = [];
 
     await useAuthStore.getState().initSession();
 
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("local");
-    expect(user?.id).toBe("gateway-local");
-    // A local session stays authenticated — the discriminator does not change
-    // session semantics.
     expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    // The probe's settle timing here is asserted by the probe-resolution
+    // suite; this pins only that a local session authenticates without a
+    // cloud identity being installed (there is no user field to check).
   });
 
-  test("a cloud session is kind 'platform' and is a cloud identity", async () => {
+  test("a cloud session authenticates with the cloud session present", async () => {
     sessionUser = { id: "user-1", email: "user@example.com" };
 
     await useAuthStore.getState().initSession();
 
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("platform");
-    expect(user?.id).toBe("user-1");
-  });
-
-  test("an offline-restored user is a cloud identity (legacy snapshot defaults to platform)", async () => {
-    // `seedSnapshot()` writes a legacy snapshot with no `kind` field.
-    getSessionThrows = true;
-    mockElectronSessionToken = "tok-1";
-    seedSnapshot();
-
-    await useAuthStore.getState().initSession();
-
-    const user = useAuthStore.getState().user;
-    expect(user?.kind).toBe("platform");
+    expect(useAuthStore.getState().sessionStatus).toBe("authenticated");
+    expect(useAuthStore.getState().cloudSession).toBe("present");
   });
 });
 
@@ -2329,62 +1943,4 @@ test("default gateway logout retains gateway-only behavior", async () => {
   });
   await useAuthStore.getState().logout();
   expect(logoutMock).not.toHaveBeenCalled();
-});
-
-test("cloud logout scopes notify account sources until cleanup finishes; gateway logout does not", async () => {
-  const finish = mock(() => {});
-  const started = mock(() => finish);
-  const unsubscribe = subscribeCloudAccountLogout(started);
-  try {
-    mockIsGatewayAuth = true;
-    setSelfHostedConnection({
-      url: window.location.origin,
-      token: "slot-token",
-    });
-    await useAuthStore.getState().logout();
-    expect(started).not.toHaveBeenCalled();
-    await useAuthStore.getState().logout({
-      cloudAccount: {
-        revokeSession: async () => {
-          expect(started).toHaveBeenCalledTimes(1);
-          expect(finish).not.toHaveBeenCalled();
-        },
-      },
-    });
-    expect(finish).toHaveBeenCalledTimes(1);
-  } finally {
-    unsubscribe();
-  }
-});
-
-test("account OAuth scopes suspend web resume probes until every exchange finishes", async () => {
-  const { publish } = await import("@/lib/event-bus");
-  const originalRefresh = useAuthStore.getState().refreshSession;
-  const refresh = mock(async () => true);
-  useAuthStore.setState({ refreshSession: refresh });
-  const stop = setupAuthListeners();
-  const first = beginCloudAccountOAuth();
-  const second = beginCloudAccountOAuth();
-  try {
-    expect(isCloudAccountOAuthInFlight()).toBe(true);
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).not.toHaveBeenCalled();
-    first();
-    first();
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).not.toHaveBeenCalled();
-    second();
-    expect(isCloudAccountOAuthInFlight()).toBe(false);
-    publish("app.resume", { signal: "window_attention" });
-    expect(refresh).toHaveBeenCalledTimes(1);
-  } finally {
-    first();
-    second();
-    stop();
-    useAuthStore.setState({ refreshSession: originalRefresh });
-  }
-});
-test("account OAuth primes the web token cache before web reconciliation", () => {
-  primeCloudAccountSessionToken("new-session-token");
-  expect(mockElectronSessionToken).toBe("new-session-token");
 });

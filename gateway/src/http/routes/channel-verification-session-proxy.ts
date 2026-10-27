@@ -11,7 +11,6 @@ import { join } from "node:path";
 import { proxyForwardToResponse } from "@mycadet/assistant-client";
 
 import { bootstrapGuardian } from "../../auth/guardian-bootstrap.js";
-import { mintServiceToken } from "../../auth/token-exchange.js";
 import type { GatewayConfig } from "../../config.js";
 import { getGatewaySecurityDir } from "../../paths.js";
 import { fetchImpl } from "../../fetch.js";
@@ -90,7 +89,6 @@ export function createChannelVerificationSessionProxyHandler(
       baseUrl: config.assistantRuntimeBaseUrl,
       path: upstreamPath,
       search: upstreamSearch || undefined,
-      serviceToken: mintServiceToken(),
       timeoutMs: config.runtimeTimeoutMs,
       fetchImpl,
     });

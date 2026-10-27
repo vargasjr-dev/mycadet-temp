@@ -11,6 +11,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as config from "../lib/assistant-config.js";
+import * as localMode from "@mycadet/local-mode";
 import * as backups from "../lib/backup-ops.js";
 import * as guardian from "../lib/guardian-token.js";
 import { stageRootArchive, STATE_ROOTS } from "../lib/root-backup.js";
@@ -36,8 +37,8 @@ writeFileSync(
 );
 const lookup = spyOn(config, "findAssistantByName").mockReturnValue(entry);
 const location = spyOn(backups, "getBackupsDir").mockReturnValue(backupDir);
-const save = spyOn(config, "saveLockfileAssistant").mockImplementation(
-  () => {},
+const save = spyOn(localMode, "saveLockfileAssistant").mockImplementation(
+  () => ({ ok: true, lockfile: { assistants: [] } as never }),
 );
 const tokens = spyOn(guardian, "loadGuardianToken").mockImplementation(() => {
   throw new Error("no guardian token access allowed");

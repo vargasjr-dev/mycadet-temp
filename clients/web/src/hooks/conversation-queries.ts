@@ -9,7 +9,7 @@
  * Each hook spreads a `queryOptions` factory (`conversationListOptions` in
  * `utils/conversation-list-options.ts` for the list caches; the fetchers
  * module for the sidebar's other reads) and adds runtime concerns
- * (`enabled` gating via `useIsOrgReady()`, `select` transforms). This
+ * (`enabled`, `select` transforms). This
  * co-locates `queryKey` + `queryFn` + `staleTime` in one place so they
  * can be reused across hooks, prefetches, and imperative cache reads.
  *
@@ -36,7 +36,6 @@ import {
 import { groupsGetOptions } from "@/generated/daemon/@tanstack/react-query.gen";
 import type { Options } from "@/generated/daemon/sdk.gen";
 import type { GroupsGetData } from "@/generated/daemon/types.gen";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import type {
   Conversation,
   ConversationGroup,
@@ -144,7 +143,6 @@ function useListQuery(
   filter: ConversationListFilter | null,
   enabled: boolean,
 ): ConversationListQueryResult {
-  const canQuery = useIsOrgReady();
   /* An array, not a tuple, so `useQueries` types the results as a list of
      one query kind whether it holds zero entries or one. */
   const queries: ListQueryOptions[] =
@@ -153,7 +151,7 @@ function useListQuery(
       : [
           {
             ...conversationListOptions(assistantId ?? "", filter),
-            enabled: enabled && Boolean(assistantId) && canQuery,
+            enabled: enabled && Boolean(assistantId),
           },
         ];
   const query: UseQueryResult<ConversationListPage> | undefined = useQueries({
@@ -304,10 +302,9 @@ export function useSidebarSectionsQuery(
   assistantId: string | null,
   enabled: boolean = true,
 ): SidebarIndexSection[] | null {
-  const isOrgReady = useIsOrgReady();
   const query = useQuery({
     ...sidebarSectionsOptions(assistantId!),
-    enabled: enabled && Boolean(assistantId) && isOrgReady,
+    enabled: enabled && Boolean(assistantId),
   });
   return query.data ?? null;
 }
@@ -334,10 +331,9 @@ export function useUnreadConversationCountQuery(
   assistantId: string | null,
   enabled: boolean = true,
 ): number | null {
-  const canQuery = useIsOrgReady();
   const query = useQuery({
     ...unreadConversationCountOptions(assistantId!),
-    enabled: enabled && Boolean(assistantId) && canQuery,
+    enabled: enabled && Boolean(assistantId),
   });
   return query.data ?? null;
 }
@@ -394,13 +390,12 @@ export function useConversationGroupsQuery(
   isPending: boolean;
   isError: boolean;
 } {
-  const canQuery = useIsOrgReady();
   const query = useQuery({
     ...groupsGetOptions({
       path: { assistant_id: assistantId ?? "" },
     } as Options<GroupsGetData>),
     select: (data) => data.groups,
-    enabled: enabled && Boolean(assistantId) && canQuery,
+    enabled: enabled && Boolean(assistantId),
     staleTime: 30_000,
   });
   return {

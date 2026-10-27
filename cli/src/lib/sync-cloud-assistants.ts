@@ -17,8 +17,8 @@ import { isCloudHome } from "./cloud-values.js";
 import {
   loadAllAssistants,
   removeLockfileAssistant,
-  saveLockfileAssistant,
 } from "./assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   fetchCurrentUser,
   fetchCloudAssistants,

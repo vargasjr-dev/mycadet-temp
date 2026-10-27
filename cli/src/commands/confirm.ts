@@ -105,44 +105,43 @@ function exitWithUsage(error: string): never {
 
 export const confirm = Object.assign(
   async function confirm(): Promise<void> {
-  const rawArgs = process.argv.slice(3);
+    const rawArgs = process.argv.slice(3);
 
-  if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
-    printUsage();
-    return;
-  }
+    if (rawArgs.includes("--help") || rawArgs.includes("-h")) {
+      printUsage();
+      return;
+    }
 
-  const parsed = parseConfirmArgs(rawArgs);
-  if (!parsed.ok) {
-    exitWithUsage(parsed.error);
-  }
+    const parsed = parseConfirmArgs(rawArgs);
+    if (!parsed.ok) {
+      exitWithUsage(parsed.error);
+    }
 
-  const { assistantId, requestId, decision, jsonOutput } = parsed.value;
+    const { assistantId, requestId, decision, jsonOutput } = parsed.value;
 
-  const client = new AssistantClient({ assistantId });
+    const client = new AssistantClient({ assistantId });
 
-  const response = await client.post("/confirm", { requestId, decision });
+    const response = await client.post("/confirm", { requestId, decision });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    console.error(
-      `Error: HTTP ${response.status}: ${body || response.statusText}`,
-    );
-    process.exit(1);
-  }
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.error(
+        `Error: HTTP ${response.status}: ${body || response.statusText}`,
+      );
+      process.exit(1);
+    }
 
-  const result = (await response.json()) as { accepted: boolean };
+    const result = (await response.json()) as { accepted: boolean };
 
-  if (jsonOutput) {
-    console.log(JSON.stringify(result, null, 2));
-  } else {
-    console.log(
-      result.accepted
-        ? `Confirmation resolved (${decision})`
-        : `Confirmation not accepted`,
-    );
-  }
-},
+    if (jsonOutput) {
+      console.log(JSON.stringify(result, null, 2));
+    } else {
+      console.log(
+        result.accepted
+          ? `Confirmation resolved (${decision})`
+          : `Confirmation not accepted`,
+      );
+    }
+  },
   { description: "Resolve a pending tool confirmation on an assistant" },
 );
-

@@ -23,7 +23,6 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { useViewerStore } from "@/stores/viewer-store";
 import type { DocumentContent } from "@/types/document-types";
 import { client as daemonClient } from "@/generated/daemon/client.gen";
-import type * as OrgReadiness from "@/hooks/use-is-org-ready";
 import type * as ErrorCapture from "@/lib/error-reporting/capture-error";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
 
@@ -62,12 +61,6 @@ const write = mock(
     saved = { ...saved, ...body };
     return { data: { success: true } };
   },
-);
-mock.module(
-  "@/hooks/use-is-org-ready",
-  (): Partial<typeof OrgReadiness> => ({
-    useOrgHeaderReadiness: () => "ready",
-  }),
 );
 mock.module(
   "@/lib/error-reporting/capture-error",

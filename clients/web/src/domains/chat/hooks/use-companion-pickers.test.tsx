@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
 
-/** The assistant the voice queries were last handed. */
-let voicesAskedFor: (string | null)[] = [];
+/** The options the voice hook was last handed. */
+let voiceHookOptions: ({ enabled?: boolean } | undefined)[] = [];
 let catalogAvailable = true;
 
 mock.module("@/components/speech/use-cloud-voice-selection", () => ({
-  useCloudVoiceSelection: (assistantId: string | null) => {
-    voicesAskedFor.push(assistantId);
+  useCloudVoiceSelection: (options: { enabled?: boolean } = {}) => {
+    voiceHookOptions.push(options);
     return {
-      available: assistantId !== null && catalogAvailable,
+      available: (options.enabled ?? true) && catalogAvailable,
       isByok: false,
       settled: true,
       voices: [],
@@ -31,7 +31,7 @@ const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
 beforeEach(() => {
-  voicesAskedFor = [];
+  voiceHookOptions = [];
   catalogAvailable = true;
   useResolvedAssistantsStore.setState({ activeAssistantId: null });
   useLiveVoiceStore.setState({ state: "idle" });
@@ -51,19 +51,21 @@ describe("useCompanionPickers", () => {
   /** Welcome and onboarding render the root layout with no assistant. */
   test("runs with no assistant selected", () => {
     expect(() => renderHook(() => useCompanionPickers())).not.toThrow();
-    expect(voicesAskedFor.every((id) => id === null)).toBe(true);
+    expect(voiceHookOptions.every((o) => (o?.enabled ?? true) === false)).toBe(
+      true,
+    );
   });
 
   test("asks for voices only during a call, and says whether there are any", () => {
     useResolvedAssistantsStore.setState({ activeAssistantId: "asst-1" });
     renderHook(() => useCompanionPickers());
-    expect(voicesAskedFor.at(-1)).toBeNull();
+    expect(voiceHookOptions.at(-1)?.enabled ?? true).toBe(false);
     expect(useCompanionPopoverStore.getState().voicesPickable).toBe(false);
 
     act(() => {
       useLiveVoiceStore.setState({ state: "listening" });
     });
-    expect(voicesAskedFor.at(-1)).toBe("asst-1");
+    expect(voiceHookOptions.at(-1)?.enabled).toBe(true);
     expect(useCompanionPopoverStore.getState().voicesPickable).toBe(true);
   });
 

@@ -293,8 +293,7 @@ export function estimateItemHeight(
         // Each tool renders as an opening line, a closing line, and (once
         // the result lands) a single finish line — no per-parameter dump.
         lines +=
-          TOOL_CALL_CHROME_LINES +
-          (part.toolCall.result !== undefined ? 1 : 0);
+          TOOL_CALL_CHROME_LINES + (part.toolCall.result !== undefined ? 1 : 0);
       }
     }
     return lines + MESSAGE_SPACING;

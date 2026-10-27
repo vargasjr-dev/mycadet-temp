@@ -30,7 +30,8 @@ export const backup = Object.assign(
     if (!entry) throw new Error(`No assistant found with name '${name}'.`);
     if (isCloudHome(entry.cloud)) {
       const token = readCloudToken();
-      if (!token) throw new Error(`Not logged in. Run '${cliCommand()} login' first.`);
+      if (!token)
+        throw new Error(`Not logged in. Run '${cliCommand()} login' first.`);
       await createPlatformBackup(entry, token);
       console.log("Cloud backup is ready.");
       return;

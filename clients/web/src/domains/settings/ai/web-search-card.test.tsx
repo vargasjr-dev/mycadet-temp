@@ -70,10 +70,6 @@ mock.module("@/domains/settings/ai/use-stored-credential-presence", () => ({
   ],
 }));
 
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => false,
-}));
-
 const { WebSearchCard } = await import("@/domains/settings/ai/web-search-card");
 
 function renderCard() {

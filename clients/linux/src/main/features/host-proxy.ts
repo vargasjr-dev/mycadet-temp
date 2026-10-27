@@ -67,10 +67,9 @@ const installBridge = (capabilities: DesktopCapabilityRegistry): void => {
         }
         const result = await getGuardianAccessToken(
           assistantId,
-          resolveConfigDir(process.env),
+          resolveConfigDir(),
           await cli.resolveInvocation(),
           true,
-          { CADET_ENVIRONMENT: resolveEnvironmentName(process.env) },
         );
         if (!result.ok) {
           log.warn("[host-proxy] failed to obtain guardian token", {

@@ -1,4 +1,5 @@
 import { isCloudHome } from "../lib/cloud-values.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { cliCommand } from "../lib/cli-name.js";
 import {
   existsSync,
@@ -10,15 +11,14 @@ import {
 } from "fs";
 import { basename, dirname, join } from "path";
 
-import { resolveExistingLocalSigningKey } from "@mycadet/local-mode";
 import {
   findAssistantByName,
   getLocalInstanceDir,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
 import {
-  generateLocalSigningKey,
+  generateLocalSecret,
   startCes,
   startLocalDaemon,
   startGateway,
@@ -31,7 +31,7 @@ import {
   platformUploadToSignedUrl,
   platformImportPreflightFromGcs,
   platformImportBundleFromGcs,
-  platformPollJobStatus,
+  cloudPollJobStatus,
 } from "../lib/cloud-client.js";
 import { restoreRootBackup, validateRootArchive } from "../lib/root-backup.js";
 
@@ -172,7 +172,7 @@ async function restorePlatform(
       contentLength: bundleData.length,
     },
     token,
-    entry.runtimeUrl,
+    getGatewayUrl(entry),
   );
   console.log("Uploading bundle...");
   await platformUploadToSignedUrl(uploadUrl, new Uint8Array(bundleData));
@@ -186,7 +186,7 @@ async function restorePlatform(
       preflightResult = await platformImportPreflightFromGcs(
         bundleKey,
         token,
-        entry.runtimeUrl,
+        getGatewayUrl(entry),
       );
     } catch (err) {
       if (err instanceof Error && err.name === "TimeoutError") {
@@ -299,7 +299,7 @@ async function restorePlatform(
     importResult = await platformImportBundleFromGcs(
       bundleKey,
       token,
-      entry.runtimeUrl,
+      getGatewayUrl(entry),
     );
   } catch (err) {
     if (err instanceof Error && err.name === "TimeoutError") {
@@ -363,9 +363,9 @@ async function restorePlatform(
     while (Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
 
-      let status: Awaited<ReturnType<typeof platformPollJobStatus>>;
+      let status: Awaited<ReturnType<typeof cloudPollJobStatus>>;
       try {
-        status = await platformPollJobStatus(jobId, token, entry.runtimeUrl);
+        status = await cloudPollJobStatus(jobId, token, getGatewayUrl(entry));
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("not found")) {
@@ -506,25 +506,19 @@ async function recoverFromArchive(name: string): Promise<void> {
   const extractedPath = join(retiredDir, basename(archivePath) + ".staging");
 
   await exec("tar", ["xzf", archivePath, "-C", retiredDir]);
-  // Validate the staged identity before occupying the destination or updating
-  // the registry. A failed validation leaves the archive available for retry.
-  const signingKey = resolveExistingLocalSigningKey(resources, extractedPath);
   const bootstrapSecret =
-    entry.guardianBootstrapSecret ?? generateLocalSigningKey();
-  const updatedResources = { ...resources, signingKey };
-  entry.resources = updatedResources;
+    entry.guardianBootstrapSecret ?? generateLocalSecret();
   entry.guardianBootstrapSecret = bootstrapSecret;
   mkdirSync(dirname(targetDir), { recursive: true });
   renameSync(extractedPath, targetDir);
   saveLockfileAssistant(entry);
-
   // Start CES sibling + daemon + gateway in parallel, the way the
   // Docker topology brings its sibling processes up together. startCes
   // always launches the CES sibling.
   await Promise.all([
-    startCes(false, updatedResources),
-    startLocalDaemon(false, updatedResources, { signingKey }),
-    startGateway(false, updatedResources, { signingKey, bootstrapSecret }),
+    startCes(false, resources),
+    startLocalDaemon(false, resources),
+    startGateway(false, resources, { bootstrapSecret }),
   ]);
 
   unlinkSync(archivePath);

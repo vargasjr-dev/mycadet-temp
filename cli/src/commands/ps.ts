@@ -1,4 +1,5 @@
 import { getNginxIngressPort } from "../lib/nginx-ingress.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getIngressPaths, readIngressState } from "../lib/nginx-ingress.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { isCloudHome } from "../lib/cloud-values.js";
@@ -10,7 +11,7 @@ import {
 } from "@mycadet/service-contracts/ingress";
 import { DEFAULT_TUNNEL_PROVIDER } from "../lib/tunnel.js";
 import { loadNgrokDomain } from "../lib/tunnels/ngrok.js";
-import { getLogDir } from "../lib/xdg-log.js";
+import { resolveLogDir } from "@mycadet/local-mode";
 
 import {
   extractHostFromEntry,
@@ -25,7 +26,6 @@ import {
   readRootProcesses,
   type LockfileAssistant,
 } from "../lib/assistant-config";
-import { getGatewayUrl } from "../lib/runtime-url.js";
 import { parseAssistantTargetArg } from "../lib/assistant-target-args.js";
 import { resolveEnvironmentSource } from "../lib/environments/resolve";
 import { loadGuardianToken } from "../lib/guardian-token";
@@ -41,11 +41,10 @@ import { dockerResourceNames } from "../lib/docker";
 import { existsSync } from "fs";
 import {
   classifyProcess,
-  detectOrphanedProcesses,
   isPidAlive,
   parseRemotePs,
   readPidFile,
-} from "../lib/orphan-detection";
+} from "../lib/process-utils";
 import { pgrepExact } from "../lib/pgrep";
 import { probePort } from "../lib/port-probe";
 import { withStatusEmoji } from "../lib/status-emoji";
@@ -469,7 +468,7 @@ function locationFor(entry: LockfileAssistant): string {
   if (entry.cloud === "docker") {
     return `docker container ${dockerResourceNames(entry.assistantId).assistantContainer}`;
   }
-  return entry.runtimeUrl ?? "unknown — no runtime URL recorded";
+  return getGatewayUrl(entry);
 }
 
 async function getAssistantProcessRows(
@@ -520,16 +519,14 @@ async function getAssistantProcessRows(
           : "management socket not found",
       },
     ];
-    if (entry.runtimeUrl) {
-      const token = loadGuardianToken(entry.assistantId)?.accessToken;
-      const health = await checkHealth(entry.runtimeUrl, token);
-      rows.push({
-        name: "gateway",
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji(health.status),
-        info: entry.runtimeUrl + (health.detail ? ` | ${health.detail}` : ""),
-      });
-    }
+    const token = loadGuardianToken(entry.assistantId)?.accessToken;
+    const health = await checkHealth(getGatewayUrl(entry), token);
+    rows.push({
+      name: "gateway",
+      type: ASSISTANT_TYPE,
+      status: withStatusEmoji(health.status),
+      info: getGatewayUrl(entry) + (health.detail ? ` | ${health.detail}` : ""),
+    });
     return rows;
   }
 
@@ -697,7 +694,7 @@ export async function printRootProcessDetail(
       detailLine("Reserved domain:", loadNgrokDomain());
     }
     detailLine("Started:", tunnel.startedAt);
-    detailLine("Log:", join(getLogDir(), "tunnel.log"));
+    detailLine("Log:", join(resolveLogDir(), "tunnel.log"));
     return true;
   }
 
@@ -769,11 +766,9 @@ async function getAssistantListHealth(
 
   if (entry.cloud === "apple-container") {
     // Apple containers are managed by the macOS app. Probe the gateway
-    // (runtimeUrl is always written to the lockfile during hatch).
+    // (the macOS app records its loopback port on the entry).
     const token = loadGuardianToken(entry.assistantId)?.accessToken;
-    return entry.runtimeUrl
-      ? checkHealth(entry.runtimeUrl, token)
-      : { status: "unknown", detail: "no runtime URL" };
+    return checkHealth(getGatewayUrl(entry), token);
   }
 
   if (isCloudHome(entry.cloud)) {
@@ -790,7 +785,7 @@ function formatAssistantListRow(
   health: AssistantHealth,
 ): TableRow {
   const infoParts: string[] = [];
-  if (entry.runtimeUrl) infoParts.push(entry.runtimeUrl);
+  infoParts.push(getGatewayUrl(entry));
   if (entry.cloud) infoParts.push(`remote: ${entry.cloud}`);
   if (health.detail) infoParts.push(health.detail);
 
@@ -835,22 +830,6 @@ export async function listAllAssistants(verbose: boolean): Promise<void> {
 
   if (assistants.length === 0) {
     console.log("No assistants found.");
-
-    const orphans = await detectOrphanedProcesses();
-    if (orphans.length > 0) {
-      console.log("\nOrphaned processes detected:\n");
-      const rows: TableRow[] = orphans.map((o) => ({
-        name: o.name,
-        type: ASSISTANT_TYPE,
-        status: withStatusEmoji("running"),
-        info: `PID ${o.pid} (from ${o.source})`,
-      }));
-      printTable(rows);
-      console.log(
-        `\nHint: Run \`cadet clean\` to clean up orphaned processes.`,
-      );
-    }
-
     return;
   }
 

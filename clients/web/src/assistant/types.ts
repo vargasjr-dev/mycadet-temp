@@ -19,4 +19,10 @@ export type AssistantResolutionState =
   | { kind: "self_hosted" }
   | { kind: "active"; isLocal: boolean }
   | { kind: "auto_hatch" }
-  | { kind: "error"; message: string; transient?: boolean };
+  | {
+      kind: "error";
+      message: string;
+      transient?: boolean;
+      /** HTTP status the resolution failed with, when the server answered. */
+      status?: number;
+    };

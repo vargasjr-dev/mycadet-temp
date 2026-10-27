@@ -26,9 +26,6 @@ mock.module("@mycadet/design-library/components/toast", () => ({
   Toaster: () => null,
   ToastContent: () => null,
 }));
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => true,
-}));
 
 const ASSISTANT_ID = "asst-test";
 
@@ -80,12 +77,15 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 
 const { useSttLanguageSelection } =
   await import("@/components/speech/use-stt-language-selection");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 function renderSelection() {
+  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return renderHook(() => useSttLanguageSelection(ASSISTANT_ID), {
+  return renderHook(() => useSttLanguageSelection(), {
     wrapper: ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client: queryClient }, children),
   });

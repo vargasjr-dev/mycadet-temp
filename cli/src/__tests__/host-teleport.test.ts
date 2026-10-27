@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   getLocalInstanceDir,
   type LockfileAssistant,
-  saveLockfileAssistant,
 } from "../lib/assistant-config.js";
+import { saveLockfileAssistant } from "@mycadet/local-mode";
 import {
   teleportHostInstallation,
   TeleportRecoveryError,
@@ -68,8 +68,8 @@ const previousDataHome = process.env.XDG_DATA_HOME;
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "host-teleport-"));
   process.env.XDG_DATA_HOME = directory;
-  previousLockDir = process.env.CADET_LOCKFILE_DIR;
-  process.env.CADET_LOCKFILE_DIR = join(directory, "registry");
+  previousLockDir = process.env.XDG_CONFIG_HOME;
+  process.env.XDG_CONFIG_HOME = join(directory, "registry");
   source = await instance("source", "docker", 7);
   target = await instance("target", "local", 3);
   saveLockfileAssistant(source);
@@ -149,9 +149,9 @@ afterEach(async () => {
   }
   log.mockRestore();
   if (previousLockDir === undefined) {
-    delete process.env.CADET_LOCKFILE_DIR;
+    delete process.env.XDG_CONFIG_HOME;
   } else {
-    process.env.CADET_LOCKFILE_DIR = previousLockDir;
+    process.env.XDG_CONFIG_HOME = previousLockDir;
   }
   await rm(directory, { recursive: true, force: true });
 });

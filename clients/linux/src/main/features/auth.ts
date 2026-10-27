@@ -50,7 +50,7 @@ const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "native-auth",
   install: () => {
     const authScheme = resolveAuthCallbackScheme(
-      resolveEnvironmentName(process.env),
+      resolveEnvironmentName(),
     );
     setSessionTokenLogger(log);
     configureNativeAuth({
@@ -58,7 +58,7 @@ const authFeature: CapabilityModule<DesktopCapabilityRegistry> = {
         app.focus({ steal: true });
         ensureVisible();
       },
-      getCloudUrl: () => resolveLocalConfigFromEnv(process.env).cloudUrl,
+      getCloudUrl: () => resolveLocalConfigFromEnv().cloudUrl,
       ipc: { handle, handleSync },
       openExternal: (url) => shell.openExternal(url),
       removeCookie: (url, name) =>

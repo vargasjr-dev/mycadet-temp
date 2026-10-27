@@ -18,7 +18,6 @@ let foregroundImpl: Conversation[] = [];
 let backgroundImpl: Conversation[] = [];
 let scheduledImpl: Conversation[] = [];
 let archivedImpl: Conversation[] = [];
-let isOrgReadyImpl = true;
 const refreshConversationRowCalls: Array<{
   assistantId: string | null;
   conversationId: string;
@@ -29,10 +28,6 @@ mock.module("@/hooks/conversation-queries", () => ({
   useBackgroundConversationListQuery: () => ({ conversations: backgroundImpl }),
   useScheduledConversationListQuery: () => ({ conversations: scheduledImpl }),
   useArchivedConversationListQuery: () => ({ conversations: archivedImpl }),
-}));
-
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => isOrgReadyImpl,
 }));
 
 mock.module("@/utils/conversation-cache-mutations", () => ({
@@ -68,7 +63,6 @@ beforeEach(() => {
   backgroundImpl = [];
   scheduledImpl = [];
   archivedImpl = [];
-  isOrgReadyImpl = true;
   refreshConversationRowCalls.length = 0;
   useConversationStore.setState({ draftConversationIds: new Set() });
 });
@@ -139,7 +133,6 @@ describe("useActiveConversation", () => {
     expect(refreshConversationRowCalls).toHaveLength(0);
   });
 
-
   test("fetches the single row when the active thread is in neither list", async () => {
     // GIVEN neither list holds the open background/scheduled thread
     foregroundImpl = [makeConversation("fg-1")];
@@ -182,22 +175,6 @@ describe("useActiveConversation", () => {
     });
 
     // THEN no single-row fetch is issued
-    await Promise.resolve();
-    expect(refreshConversationRowCalls).toHaveLength(0);
-  });
-
-  test("does not fetch when org is not ready", async () => {
-    // GIVEN the org store has not hydrated yet
-    isOrgReadyImpl = false;
-    foregroundImpl = [];
-    backgroundImpl = [];
-
-    // WHEN the hook runs with org not ready
-    renderHook(() => useActiveConversation("asst-1", "bg-unloaded", true), {
-      wrapper,
-    });
-
-    // THEN no fetch is issued (prevents 400 org-header errors)
     await Promise.resolve();
     expect(refreshConversationRowCalls).toHaveLength(0);
   });

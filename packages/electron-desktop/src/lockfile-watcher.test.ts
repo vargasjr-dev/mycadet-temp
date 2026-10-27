@@ -1,4 +1,5 @@
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -15,6 +16,8 @@ const CANONICAL_PATH = "/tmp/test-lockfile.json";
 const LEGACY_PATH = "/tmp/test-lockfile-legacy.json";
 let mockPaths = [CANONICAL_PATH];
 
+const realLocalMode = await import("@mycadet/local-mode");
+
 // Passthrough the real parseLockfile, stubbing the @mycadet/local-mode
 // entry above doesn't touch the /contract subpath it lives in.
 const { parseLockfile } = await import("@mycadet/local-mode/contract");
@@ -22,8 +25,19 @@ mock.module("@mycadet/local-mode/contract", () => ({
   parseLockfile,
 }));
 
+// The watcher resolves candidates through @mycadet/local-mode's ambient
+// resolver; point it at the test's temp paths through the module mock.
+mock.module("@mycadet/local-mode", () => ({
+  resolveLockfilePaths: () => mockPaths,
+}));
+
+// Restore the real module once this file finishes so the stub does not leak
+// into other test files in the same `bun test` run.
+afterAll(() => {
+  mock.module("@mycadet/local-mode", () => realLocalMode);
+});
+
 const {
-  configureLockfileWatcher,
   installLockfileWatcher,
   getWatchedLockfile,
   onLockfileChange,
@@ -55,7 +69,6 @@ const removeLockfile = (): void => {
 beforeEach(() => {
   __resetForTesting();
   mockPaths = [CANONICAL_PATH];
-  configureLockfileWatcher(() => mockPaths);
   removeLockfile();
 });
 

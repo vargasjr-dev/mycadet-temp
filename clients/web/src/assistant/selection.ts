@@ -12,31 +12,24 @@
  * client agree.
  */
 
-import { getActiveAssistant, isGatewaySessionLive } from "@/lib/local-mode";
-import { useRequestOrganizationId } from "@/stores/organization-store";
-import {
-  assistantsValidForOrg,
-  useResolvedAssistantsStore,
-} from "@/stores/resolved-assistants-store";
+import { getActiveAssistant, isServedGatewayRuntime } from "@/lib/local-mode";
+import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 /**
- * Resolve the selected assistant id for the active org. There is one selection;
- * the org is only a read-time filter.
+ * Resolve the selected assistant id. There is one selection.
  *
  * Order:
- *   1. The selected id, if valid for the org. An UNKNOWN id (no resolved entry)
+ *   1. The selected id, if valid. An UNKNOWN id (no resolved entry)
  *      passes through only until the list is hydrated — pre-load the list may
  *      simply not have arrived yet. Once hydrated an unknown id is a ghost and
  *      falls through (the store also reconciles it away on lockfile load).
  *   2. Else the lockfile `activeAssistant`, if valid for the org.
  *   3. Else the first valid assistant for the org, or null.
  */
-export function resolveSelectedAssistantId(
-  activeOrgId: string | null,
-): string | null {
+export function resolveSelectedAssistantId(): string | null {
   const { assistants, selectedAssistantId, assistantsHydrated } =
     useResolvedAssistantsStore.getState();
-  const valid = assistantsValidForOrg(assistants, activeOrgId);
+  const valid = assistants;
   const isValid = (id: string): boolean => valid.some((a) => a.id === id);
 
   if (selectedAssistantId !== null) {
@@ -67,21 +60,20 @@ export function resolveSelectedAssistantId(
  * honored on every surface.
  * Gateway-auth mode and a missing org id return null: callers apply their own
  * fallback. The org id comes from the same derivation the
- * `Cadet-Organization-Id` header uses (the resolved selection, or the
- * persisted id standing in for it), so a failed organization fetch cannot
- * drop the user's choice. Subscribes to the org, the selection, the resolved
- * list, and its hydration marker so consumers re-render when any resolution
- * input changes (hydration alone flips an unknown selected id from
- * pass-through to ghost, even when the list itself is unchanged).
+ * the resolved selection, or the persisted id standing in for it.
+ * Subscribes to the selection, the resolved list, and its hydration marker
+ * so consumers re-render when any resolution input changes (hydration alone
+ * flips an unknown selected id from pass-through to ghost, even when the
+ * list itself is unchanged).
  */
 export function useGatedSelectedAssistantId(): string | null {
-  const organizationId = useRequestOrganizationId();
   useResolvedAssistantsStore.use.selectedAssistantId();
   useResolvedAssistantsStore.use.assistants();
   useResolvedAssistantsStore.use.assistantsHydrated();
-  return !isGatewaySessionLive() && organizationId
-    ? resolveSelectedAssistantId(organizationId)
-    : null;
+  // On the served gateway there is nothing to select (one assistant, the
+  // shell's). A local selection never survives the cloud-id filter
+  // downstream (toCloudAssistantId), so no local-plane check is needed here.
+  return !isServedGatewayRuntime() ? resolveSelectedAssistantId() : null;
 }
 
 /**

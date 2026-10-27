@@ -12,7 +12,6 @@ import {
   useAssistantAvatar,
 } from "@/hooks/use-assistant-avatar";
 import { useBusSubscription } from "@/hooks/use-bus-subscription";
-import { useIsOrgReady } from "@/hooks/use-is-org-ready";
 import { useCloudAvatarUrls } from "@/hooks/use-cloud-avatar-urls";
 import {
   deleteLastSeenAvatar,
@@ -342,7 +341,6 @@ export function useChooserRowAvatar(
 ): ChooserRowAvatar {
   const activeAssistantId = useResolvedAssistantsStore.use.activeAssistantId();
   const isConnectedRow = assistant.id === activeAssistantId;
-  const isOrgReady = useIsOrgReady();
 
   const connected = useAssistantAvatar(isConnectedRow ? assistant.id : null, {
     ownerAssistant: isConnectedRow ? assistant : null,
@@ -350,9 +348,7 @@ export function useChooserRowAvatar(
 
   // Keyed by URL so a reload that carries a new thumbnail retries it; a
   // resume retries the same URL, since the failure may have been offline.
-  const [failedCloudUrl, setFailedCloudUrl] = useState<string | null>(
-    null,
-  );
+  const [failedCloudUrl, setFailedCloudUrl] = useState<string | null>(null);
   useBusSubscription("app.resume", () => setFailedCloudUrl(null));
   const syncedUrl =
     assistant.avatarUrl && assistant.avatarUrl !== failedCloudUrl
@@ -371,7 +367,6 @@ export function useChooserRowAvatar(
     enabled:
       !isConnectedRow &&
       !hasSyncedAvatar &&
-      isOrgReady &&
       canFetchRowAvatarViaCloudProxy(assistant),
     staleTime: (query) =>
       isEmptyAvatar(query.state.data) ? EMPTY_AVATAR_STALE_TIME_MS : Infinity,
@@ -428,8 +423,7 @@ export function useChooserRowAvatar(
     canLookUp && lookupId !== null
       ? (cloudAvatarUrls.get(lookupId) ?? null)
       : null;
-  const lookupUrl =
-    lookupCandidate !== failedCloudUrl ? lookupCandidate : null;
+  const lookupUrl = lookupCandidate !== failedCloudUrl ? lookupCandidate : null;
   // Waits out an in-flight host read so a row never flashes the thumbnail
   // before the disk snapshot replaces it.
   const showLookup =

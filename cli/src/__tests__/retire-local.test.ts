@@ -10,18 +10,17 @@ import {
 } from "bun:test";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 import {
   getDaemonPidPath,
   type LockfileAssistant,
 } from "../lib/assistant-config.js";
-import { getLockfilePath } from "../lib/environments/paths.js";
-import { getCurrentEnvironment } from "../lib/environments/resolve.js";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import { makeEntry } from "./helpers/lockfile-entry.js";
 
 const testDir = mkdtempSync(join(tmpdir(), "retire-local-test-"));
-const originalLockfileDir = process.env.CADET_LOCKFILE_DIR;
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
 
 // Snapshot the real modules before mocking so the module-scoped `afterAll`
 // below can restore them. Bun runs every test file in one process with a
@@ -79,15 +78,16 @@ import { getRetireArchiveCommand, retireLocal } from "../lib/retire-local.js";
 const instanceDir = join(testDir, "test-instance");
 
 function writeLockfile(entries: LockfileAssistant[]): void {
+  mkdirSync(dirname(resolveLockfilePath()), { recursive: true });
   writeFileSync(
-    getLockfilePath(getCurrentEnvironment()),
+    resolveLockfilePath(),
     JSON.stringify({ assistants: entries }, null, 2) + "\n",
   );
 }
 
 describe("retireLocal — CES sibling stop", () => {
   beforeAll(() => {
-    process.env.CADET_LOCKFILE_DIR = testDir;
+    process.env.XDG_CONFIG_HOME = testDir;
   });
 
   beforeEach(() => {
@@ -109,10 +109,10 @@ describe("retireLocal — CES sibling stop", () => {
   });
 
   afterAll(() => {
-    if (originalLockfileDir === undefined) {
-      delete process.env.CADET_LOCKFILE_DIR;
+    if (originalConfigHome === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
     } else {
-      process.env.CADET_LOCKFILE_DIR = originalLockfileDir;
+      process.env.XDG_CONFIG_HOME = originalConfigHome;
     }
     rmSync(testDir, { recursive: true, force: true });
   });

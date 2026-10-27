@@ -30,16 +30,6 @@ import {
 import { isValidReleaseVersion } from "@mycadet/local-mode";
 
 /**
- * Bare-metal fallback root for machine-scoped Cadet state: the XDG data
- * home (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
- * production). Spawn paths without an instance entry (watch mode, repair
- * flows) land here instead of the retired `~/.cadet` root.
- */
-function defaultCadetRoot(): string {
-  return getStateDir(getCurrentEnvironment());
-}
-
-/**
  * cwd for every service spawn — the XDG data home
  * (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet`). The spawner
  * picks where services run so their `process.cwd()`-fallback state dirs
@@ -47,7 +37,11 @@ function defaultCadetRoot(): string {
  * containerized deployments set explicit env vars instead.
  */
 function spawnStateRoot(): string {
-  const root = defaultCadetRoot();
+  // Bare-metal fallback root for machine-scoped Cadet state: the XDG data
+  // home (`$XDG_DATA_HOME/cadet[-<env>]`, i.e. `~/.local/share/cadet` in
+  // production). Spawn paths without an instance entry (watch mode, repair
+  // flows) land here instead of the retired `~/.cadet` root.
+  const root = resolveDataDir();
   mkdirSync(root, { recursive: true });
   return root;
 }
@@ -55,8 +49,7 @@ function spawnStateRoot(): string {
 import { getDaemonPidPath, getLocalInstanceDir } from "./assistant-config.js";
 import type { LocalAssistantResources } from "@mycadet/local-mode/contract";
 import { GATEWAY_PORT } from "./constants.js";
-import { getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
+import { resolveDataDir } from "@mycadet/local-mode";
 import {
   type DaemonReadiness,
   httpHealthCheck,
@@ -346,7 +339,7 @@ function applyIpcSocketDirOverride(
   env: Record<string, string | undefined>,
 ): void {
   const workspaceDir =
-    env.CADET_WORKSPACE_DIR || join(defaultCadetRoot(), "workspace");
+    env.CADET_WORKSPACE_DIR || join(resolveDataDir(), "workspace");
   const override = computeIpcSocketDirOverride(workspaceDir);
   if (!override) return;
 
@@ -548,17 +541,11 @@ function resolveDaemonMainPath(assistantIndex: string): string {
 }
 
 /**
- * Generate a fresh signing key for a local hatch session.
- *
- * Both the daemon and gateway must use the same HMAC signing key so JWT
- * tokens minted by one can be verified by the other. The CLI generates
- * a key at hatch and passes it as `ACTOR_TOKEN_SIGNING_KEY` to both
- * processes — the daemon and gateway each persist it on their
- * own terms (the `.cadet/` directory layout is their concern, not the
- * CLI's). Lifecycle resumes resolve the existing identity rather than
- * generating a key.
+ * Generate a fresh random secret for local lifecycle use (e.g. the
+ * guardian bootstrap secret). Not a signing key — the gateway owns the
+ * signing key end-to-end; the CLI never touches it.
  */
-export function generateLocalSigningKey(): string {
+export function generateLocalSecret(): string {
   return randomBytes(32).toString("hex");
 }
 
@@ -566,7 +553,6 @@ type DaemonStartOptions = {
   foreground?: boolean;
   defaultWorkspaceConfigPath?: string;
   requireReady?: boolean;
-  signingKey?: string;
 };
 
 /**
@@ -584,7 +570,7 @@ function resolveCesBootstrapSocketDir(
     return join(getLocalInstanceDir(resources), "ces-data");
   }
   const dataDir =
-    env?.CES_DATA_DIR?.trim() || join(defaultCadetRoot(), "ces-data");
+    env?.CES_DATA_DIR?.trim() || join(resolveDataDir(), "ces-data");
   return dataDir;
 }
 
@@ -612,9 +598,6 @@ function applyDaemonEnvOverrides(
     env.RUNTIME_HTTP_PORT = String(resources.daemonPort);
     env.GATEWAY_PORT = String(resources.gatewayPort);
     delete env.QDRANT_URL;
-  }
-  if (options?.signingKey) {
-    env.ACTOR_TOKEN_SIGNING_KEY = options.signingKey;
   }
   if (options?.defaultWorkspaceConfigPath) {
     env.CADET_DEFAULT_WORKSPACE_CONFIG_PATH =
@@ -1116,7 +1099,7 @@ export async function startCes(
 ): Promise<void> {
   const cadetDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const cesPidFile = join(cadetDir, "ces.pid");
 
   // Kill any existing sibling first — a stale CES holds the socket and would
@@ -1132,13 +1115,13 @@ export async function startCes(
 
   const securityDir = resources
     ? join(getLocalInstanceDir(resources), "ces-security")
-    : join(defaultCadetRoot(), "ces-security");
+    : join(resolveDataDir(), "ces-security");
   const dataDir = resources
     ? join(getLocalInstanceDir(resources), "ces-data")
-    : join(defaultCadetRoot(), "ces-data");
+    : join(resolveDataDir(), "ces-data");
   const workspaceDir = resources
     ? join(getLocalInstanceDir(resources), "workspace")
-    : join(defaultCadetRoot(), "workspace");
+    : join(resolveDataDir(), "workspace");
   const bootstrapDir = resolveCesBootstrapSocketDir(resources);
   mkdirSync(securityDir, { recursive: true });
   mkdirSync(dataDir, { recursive: true });
@@ -1217,7 +1200,7 @@ export async function startCes(
  * Uses `lsof` on macOS/Linux. Returns undefined if no listener is found
  * or the command fails.
  */
-function findPidListeningOnPort(port: number): number | undefined {
+export function findPidListeningOnPort(port: number): number | undefined {
   try {
     const output = execFileSync(
       "lsof",
@@ -1805,7 +1788,6 @@ export async function startGateway(
   watch: boolean = false,
   resources?: LocalAssistantResources,
   options?: {
-    signingKey?: string;
     bootstrapSecret?: string;
     requireReady?: boolean;
   },
@@ -1818,7 +1800,7 @@ export async function startGateway(
   // attempt spawns yet another process that fails with EADDRINUSE.
   const gwPidDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const gwPidFile = join(gwPidDir, "gateway.pid");
   await stopProcessByPidFile(gwPidFile, "gateway");
 
@@ -1836,9 +1818,6 @@ export async function startGateway(
     // Pass gateway operational settings via env vars so the CLI does not
     // need direct access to the workspace config file.
     RUNTIME_PROXY_REQUIRE_AUTH: "true",
-    ...(options?.signingKey
-      ? { ACTOR_TOKEN_SIGNING_KEY: options.signingKey }
-      : {}),
     ...(options?.bootstrapSecret
       ? { GUARDIAN_BOOTSTRAP_SECRET: options.bootstrapSecret }
       : {}),
@@ -1928,7 +1907,7 @@ export async function startGateway(
   if (gateway.pid) {
     const gwPidDir = resources
       ? getLocalInstanceDir(resources)
-      : defaultCadetRoot();
+      : resolveDataDir();
     writeFileSync(join(gwPidDir, "gateway.pid"), String(gateway.pid), "utf-8");
   }
 
@@ -1966,7 +1945,7 @@ export async function stopLocalProcesses(
 ): Promise<void> {
   const cadetDir = resources
     ? getLocalInstanceDir(resources)
-    : defaultCadetRoot();
+    : resolveDataDir();
   const daemonPidFile = getDaemonPidPath(resources);
   await stopProcessByPidFile(
     daemonPidFile,

@@ -52,7 +52,9 @@ function extractVersion(output: string): string | undefined {
   )?.[1];
   if (upgraded) return upgraded;
 
-  return output.match(new RegExp(`\\bAlready on\\s+${versionPattern}`, "i"))?.[1];
+  return output.match(
+    new RegExp(`\\bAlready on\\s+${versionPattern}`, "i"),
+  )?.[1];
 }
 
 /**

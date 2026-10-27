@@ -118,8 +118,9 @@ export const sseService: SseService = {
       current = stream;
     };
     // Mirror *established* live-stream presence into the shared store so
-    // consumers can read SSE liveness reactively — the menu-bar status dot
-    // (`useElectronStatusSync`) and push-notification suppression. Driven by
+    // consumers can read SSE liveness reactively — push-notification
+    // suppression and the chat UI. (The menu-bar status dot is the hosting
+    // app shell's own resolution fact; web reports nothing to it.) Driven by
     // the transport's `onStreamOpen` / `onStreamClose` (which fire when the
     // SSE response actually opens / ends), never by handle creation: keying
     // off the handle would report `connected` throughout a failing initial

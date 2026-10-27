@@ -486,10 +486,6 @@
   "onboardingBackButton": {
     "back": "返回"
   },
-  "platformLoginNotice": {
-    "cancel": "取消",
-    "logIn": "登入"
-  },
   "profileCard": {
     "assistantHandleIdleEmpty": "您的助理尚未設定識別名稱，請設定一個以便提及。",
     "assistantHandleLabel": "助理識別名稱",
@@ -746,7 +742,6 @@
     "stepConnect": "連接",
     "stepCreate": "建立機器人"
   },
-  "terminalPanel": {},
   "themeStagePage": {
     "accentFill": "強調色填充",
     "activeBorder": "啟用邊框",

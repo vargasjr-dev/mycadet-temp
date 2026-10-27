@@ -32,11 +32,6 @@ import {
 
 const ASSISTANT_ID = "asst_1";
 
-let orgReady = true;
-mock.module("@/hooks/use-is-org-ready", () => ({
-  useIsOrgReady: () => orgReady,
-  useOrgHeaderReadiness: () => (orgReady ? "ready" : "resolving"),
-}));
 mock.module("@mycadet/design-library/components/toast", () => ({
   toast: { success: () => {}, error: () => {} },
   Toaster: () => null,
@@ -112,6 +107,8 @@ mock.module("@/generated/daemon/sdk.gen", () => ({
 }));
 
 const { VoiceList } = await import("@/components/speech/voice-list");
+const { useResolvedAssistantsStore } =
+  await import("@/stores/resolved-assistants-store");
 
 beforeAll(() => {
   (
@@ -124,19 +121,19 @@ beforeAll(() => {
   ).pause = () => {};
 });
 
-function renderList(assistantId: string | null = ASSISTANT_ID) {
+function renderList() {
+  useResolvedAssistantsStore.getState().setActiveAssistantId(ASSISTANT_ID);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <VoiceList assistantId={assistantId} />
+      <VoiceList />
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
-  orgReady = true;
   configPatchCalls.length = 0;
   patchGate = null;
   daemonConfigData = { services: { tts: { provider: "cadet" } } };

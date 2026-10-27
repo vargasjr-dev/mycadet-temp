@@ -93,14 +93,6 @@
     "typeScheduled": "Scheduled",
     "cliOnly": "Use cadet backup and cadet restore in a terminal for local or Docker installations."
   },
-  "assistantPicker": {
-    "active": "Active",
-    "subtitle": "Choose which assistant is active for this account.",
-    "switch": "Switch",
-    "switchedToast": "Switched active assistant.",
-    "title": "Switch Assistant",
-    "unnamed": "Unnamed"
-  },
   "assistantStatusPanel": {
     "assistantId": "Assistant ID",
     "cpuUsage": "CPU Usage",
@@ -123,9 +115,7 @@
     "version": "Version"
   },
   "assistantTerminalPanel": {
-    "loadErrorToast": "Failed to load assistant info",
     "loading": "Loading terminal...",
-    "loginNotice": "Log in to Cadet Cloud to open a terminal session.",
     "noAssistant": "No assistant found. Hatch an assistant to use the terminal.",
     "subtitle": "Interactive shell session on your assistant machine",
     "targetContainer": "Target container",
@@ -154,23 +144,6 @@
   "autoTopUpPaymentMethodModal": {
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
-  },
-  "inferenceUsageChart": {
-    "empty": "No usage data for this period"
-  },
-  "inferenceUsagePanel": {
-    "backToAllUsage": "Back to all usage",
-    "chartMetricAria": "Chart metric",
-    "eventsLabel": "Events",
-    "llmDimensionAria": "LLM spend dimension",
-    "llmSpend": "LLM Spend",
-    "loadError": "Failed to load usage data.",
-    "metricEvents": "Events",
-    "metricSpend": "Spend ($)",
-    "oauthSpend": "OAuth Spend",
-    "spendLabel": "Spend",
-    "subtitle": "Overview of your spending habits.",
-    "title": "Credit Usage"
   },
   "biometricSettingsCard": {
     "description": "When your session expires, verify with {label} instead of signing in again.",
@@ -354,7 +327,6 @@
     "backups": "Backups",
     "loadFailedToast": "Failed to load assistant info",
     "loading": "Loading assistant info...",
-    "loginNotice": "Log in to Cadet Cloud to manage backups.",
     "noAssistant": "No assistant found. Hatch an assistant to access debug controls.",
     "restartDescription": "Restart the assistant machine. It will be briefly unavailable during the restart.",
     "restartTitle": "Restart Assistant",
@@ -421,9 +393,6 @@
   },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",
-    "computeResourcesLoginNotice": "Log in to Cadet Cloud to manage compute resources.",
-    "computeResourcesSubtitle": "Monitor resource usage and manage your assistant's compute profile.",
-    "computeResourcesTitle": "Compute & Resources",
     "current": "Current",
     "customize": "Customize",
     "preferencesSubtitle": "Customize how Cadet looks and behaves on this device.",
@@ -431,7 +400,6 @@
     "switchAssistantSubtitle": "Choose which assistant this device is connected to.",
     "switchAssistantTitle": "Switch Assistant",
     "updateWindow": "Update Window",
-    "updatesLoginNotice": "Log in to Cadet Cloud to manage software updates.",
     "versionSubtitle": "Manage your assistant's software version and updates.",
     "versionTitle": "Version"
   },
@@ -1585,8 +1553,6 @@
     "usage": "Usage",
     "community": "Community",
     "debug": "Debug",
-    "logout": "Log Out",
-    "login": "Log In",
     "title": "Settings"
   },
   "debugPage": {

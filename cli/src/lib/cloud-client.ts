@@ -14,7 +14,7 @@ import { join, dirname } from "path";
 import { cliCommand } from "./cli-name.js";
 
 import { getLockfilePlatformBaseUrl } from "./assistant-config.js";
-import { getConfigDir, getConfigDirs } from "./environments/paths.js";
+import { resolveConfigDir } from "@mycadet/local-mode";
 import { getCurrentEnvironment } from "./environments/resolve.js";
 import { loopbackSafeFetch } from "./loopback-fetch.js";
 import { z } from "zod";
@@ -28,12 +28,7 @@ const InProgressResponseSchema = z.object({
 });
 
 function getCloudTokenPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "cloud-token");
-}
-
-/** The pre-rename token filename, read as a fallback for existing installs. */
-function getLegacyCloudTokenPath(): string {
-  return join(getConfigDir(getCurrentEnvironment()), "platform-token");
+  return join(resolveConfigDir(), "cloud-token");
 }
 
 /**
@@ -74,16 +69,11 @@ export function getWebUrl(): string {
 }
 
 export function readCloudToken(): string | null {
-  for (const dir of getConfigDirs(getCurrentEnvironment())) {
-    for (const name of ["cloud-token", "platform-token"]) {
-      try {
-        return readFileSync(join(dir, name), "utf-8").trim();
-      } catch {
-        // Try the next compatible location, then the legacy name.
-      }
-    }
+  try {
+    return readFileSync(getCloudTokenPath(), "utf-8").trim();
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export function saveCloudToken(token: string): void {
@@ -97,12 +87,10 @@ export function saveCloudToken(token: string): void {
 }
 
 export function clearCloudToken(): void {
-  for (const path of [getCloudTokenPath(), getLegacyCloudTokenPath()]) {
-    try {
-      unlinkSync(path);
-    } catch {
-      // already doesn't exist
-    }
+  try {
+    unlinkSync(getCloudTokenPath());
+  } catch {
+    // already doesn't exist
   }
 }
 
@@ -204,7 +192,9 @@ export async function authHeaders(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("401") || msg.includes("403")) {
-      throw new Error(`Authentication failed. Run '${cliCommand()} login' to refresh.`);
+      throw new Error(
+        `Authentication failed. Run '${cliCommand()} login' to refresh.`,
+      );
     }
     throw new Error(`Failed to fetch organization: ${msg}`);
   }
@@ -1244,7 +1234,7 @@ export async function cloudRequestSignedUrl(
  * Poll the unified job-status endpoint on the cloud. Calls
  * `GET /v1/migrations/jobs/{jobId}/` and parses into {@link UnifiedJobStatus}.
  */
-export async function platformPollJobStatus(
+export async function cloudPollJobStatus(
   jobId: string,
   token: string,
   cloudUrl?: string,
