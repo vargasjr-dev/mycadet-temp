@@ -233,7 +233,6 @@ describe("startAuthFlow on Electron", () => {
           },
         ],
       });
-      return true;
     });
 
     await startAuthFlow("workos", "/account/provider/callback", {
