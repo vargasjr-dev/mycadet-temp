@@ -4,7 +4,6 @@ import {
   getGuardianAccessToken,
   getPairedGuardianAccessToken as getStoredPairedGuardianAccessToken,
   isActiveAssistant,
-  saveLockfileAssistant,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   PAIRED_GUARDIAN_TOKEN_HOST_ONLY_ERROR,
@@ -551,12 +550,9 @@ export const installLocalMode = (): void => {
           intervalSeconds: result.intervalSeconds,
         };
       }
-      // Pairing never touches the lockfile — assistant entries belong to
-      // hatch/retire/the cli — so this host saves the exchanged pairing
-      // through the owning layer before answering. The pre-check refused a
-      // colliding id before the exchange spent its one-time code.
-      saveLockfileAssistant(result.entry);
-      refreshLockfile();
+      // Pairing never defines or saves a lockfile entry — imports create
+      // entries; pairs pair with a defined one. The exchange's identity facts
+      // go back to the renderer; creating the entry is the import's burden.
       return {
         ok: true,
         status: "imported",

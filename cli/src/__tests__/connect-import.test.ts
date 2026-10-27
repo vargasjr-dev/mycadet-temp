@@ -350,45 +350,6 @@ describe("connect import", () => {
     expect(fetched).toBe(false);
   });
 
-  test("a legacy base64 bundle still imports, deprecated", async () => {
-    // Rolling upgrade: a host still on the previous CLI mints a bundle. It is
-    // no longer an address, so the import falls back to the deprecated decoder
-    // rather than rejecting a second machine mid-upgrade.
-    process.argv = [
-      "bun",
-      "cadet",
-      "connect",
-      "import",
-      Buffer.from(
-        JSON.stringify({ gatewayUrl: HOST, token: "bundle-tok" }),
-      ).toString("base64"),
-      "--name",
-      "legacy-box",
-    ];
-    let fetched = false;
-    globalThis.fetch = withPreconnect(async () => {
-      fetched = true;
-      return jsonResponse({});
-    });
-    const { logs, restore } = captureLogs();
-    try {
-      await connectImport();
-    } finally {
-      restore();
-    }
-
-    // A bundle carries its own credentials: nothing is exchanged.
-    expect(fetched).toBe(false);
-    const output = logs.join("\n");
-    expect(output).toContain("deprecated");
-    expect(output).toContain("cadet pair");
-    expect(output).toContain("Imported paired assistant 'legacy-box'");
-    expect(findAssistantByName("legacy-box")!.ipAddress).toBe(
-      new URL(HOST).hostname,
-    );
-    expect(loadGuardianToken("legacy-box")?.accessToken).toBe("bundle-tok");
-  });
-
   test("a string that is neither an address nor a bundle keeps the address error", async () => {
     process.argv = ["bun", "cadet", "connect", "import", "not-a-url"];
     let fetched = false;
@@ -400,9 +361,7 @@ describe("connect import", () => {
     const { exited, out } = await runExpectingExit();
 
     expect(exited).toBe(true);
-    // The address error, not a bundle-decoding one.
     expect(out).toContain("pairing link");
-    expect(out).not.toContain("Bundle");
     expect(fetched).toBe(false);
   });
 

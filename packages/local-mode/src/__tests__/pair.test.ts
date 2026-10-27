@@ -9,13 +9,10 @@ import { guardianTokenPath } from "../config";
 import { saveLockfileAssistant } from "../lockfile";
 import {
   checkPairedAssistantName,
-  connectImport,
   pairAssistant,
   pairingCancel,
   pairingPoll,
   pairingStart,
-  type ConnectImportOptions,
-  type ConnectImportResult,
   type PairedAssistantCredentials,
   type PairOptions,
   type PairResult,
@@ -91,9 +88,6 @@ const readGuardianToken = (assistantId: string): Record<string, unknown> =>
   JSON.parse(
     fs.readFileSync(guardianTokenPath(configDir, assistantId), "utf-8"),
   ) as Record<string, unknown>;
-
-const encodeBundle = (obj: Record<string, unknown>): string =>
-  Buffer.from(JSON.stringify(obj)).toString("base64");
 
 const credentials = (
   overrides: Partial<PairedAssistantCredentials> = {},
@@ -203,21 +197,37 @@ const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * The caller side of a pairing: register the exchanged entry through the
- * owning layer's save, exactly as the cli import command and the hosts do.
- * Pairing itself never touches the lockfile; the pre-check refused a
- * colliding id before the exchange spent its one-time code.
+ * The import side of a pairing, mirrored from the cli's connect-import
+ * command: the IMPORT defines the entry from the exchange's identity facts
+ * (the canonical custom encoding every reader derives from) and saves it
+ * through the owning layer. Pairing itself never defines or saves an entry.
  */
+function registerImportedPairing(result: {
+  assistantId: string;
+  name: string;
+  gatewayUrl: string;
+}): void {
+  const gateway = new URL(result.gatewayUrl);
+  saveLockfileAssistant({
+    assistantId: result.assistantId,
+    name: result.name,
+    cloud: "custom",
+    ipAddress: gateway.hostname,
+    port: Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
+  });
+}
+
+/** The import side of a pairing exchange: pair, then register. */
 function pairAndRegister(configDir: string, opts: PairOptions): PairResult {
   const result = pairAssistant(configDir, opts);
   if (!result.ok) {
     return result;
   }
-  saveLockfileAssistant(result.entry);
+  registerImportedPairing(result);
   return result;
 }
 
-/** The caller side of a poll: register an imported pairing. */
+/** The import side of a poll: pair on import, then register. */
 async function pollAndRegister(
   configDir: string,
   opts: PairingPollOptions,
@@ -226,25 +236,12 @@ async function pollAndRegister(
   if (!result.ok || result.status !== "imported") {
     return result;
   }
-  saveLockfileAssistant(result.entry);
-  return result;
-}
-
-/** The caller side of a bundle import: register the exchanged entry. */
-function importAndRegister(
-  configDir: string,
-  opts: ConnectImportOptions,
-): ConnectImportResult {
-  const result = connectImport(configDir, opts);
-  if (!result.ok) {
-    return result;
-  }
-  saveLockfileAssistant(result.entry);
+  registerImportedPairing(result);
   return result;
 }
 
 describe("pairAssistant", () => {
-  test("writes the guardian token and returns the entry to register, with the exact CLI shapes and modes", () => {
+  test("writes the guardian token and returns the pairing's identity facts, defining no entry", () => {
     const result = pairAssistant(configDir, {
       credentials: credentials({ token: jwtWithExp, deviceId: "dev-aaa" }),
     });
@@ -255,22 +252,10 @@ describe("pairAssistant", () => {
     }
     expect(result.assistantId).toBe(DEFAULT_PAIRED_ID);
     expect(result.accessOnly).toBe(true);
-    // The entry comes back for the caller to register create-only; pairing
+    // The identity facts the importing caller defines the entry from; pairing
     // itself never touches the lockfile.
-    expect(result.entry).toEqual({
-      assistantId: DEFAULT_PAIRED_ID,
-      name: "paired (10.0.0.5:7830)",
-      cloud: "custom",
-      ipAddress: "10.0.0.5",
-      port: 7830,
-    });
-    expect(Object.keys(result.entry)).toEqual([
-      "assistantId",
-      "name",
-      "cloud",
-      "ipAddress",
-      "port",
-    ]);
+    expect(result.name).toBe("paired (10.0.0.5:7830)");
+    expect(result.gatewayUrl).toBe("http://10.0.0.5:7830");
     expect(fs.existsSync(lockfilePath)).toBe(false);
 
     // The guardian token matches what `cadet connect import` writes, field
@@ -443,7 +428,7 @@ describe("pairAssistant", () => {
       return;
     }
     expect(result.assistantId).toBe("desk-box");
-    expect(result.entry.name).toBe("Desk Box");
+    expect(result.name).toBe("Desk Box");
   });
 
   test("a name with no alphanumerics is refused with a 400", () => {
@@ -1056,14 +1041,9 @@ describe("pairingPoll", () => {
       ok: true,
       status: "imported",
       assistantId: expect.stringMatching(/^paired-/) as unknown as string,
+      name: "paired (gw.example.com)",
       accessOnly: false,
-      entry: {
-        assistantId: expect.stringMatching(/^paired-/) as unknown as string,
-        name: "paired (gw.example.com)",
-        cloud: "custom",
-        ipAddress: "gw.example.com",
-        port: 443,
-      },
+      gatewayUrl: "https://gw.example.com",
     });
     expect(fetchCalls).toHaveLength(1);
     expect(fetchCalls[0]!.url).toBe(
@@ -1105,14 +1085,9 @@ describe("pairingPoll", () => {
       ok: true,
       status: "imported",
       assistantId: "desk-box",
+      name: "Desk Box",
       accessOnly: true,
-      entry: {
-        assistantId: "desk-box",
-        name: "Desk Box",
-        cloud: "custom",
-        ipAddress: "gw.example.com",
-        port: 443,
-      },
+      gatewayUrl: "https://gw.example.com",
     });
     expect(readGuardianToken("desk-box").refreshToken).toBe("");
   });
@@ -1464,14 +1439,9 @@ describe("pairingPoll", () => {
       ok: true,
       status: "imported",
       assistantId: "old-gateway",
+      name: "Old Gateway",
       accessOnly: true,
-      entry: {
-        assistantId: "old-gateway",
-        name: "Old Gateway",
-        cloud: "custom",
-        ipAddress: "gw.example.com",
-        port: 443,
-      },
+      gatewayUrl: "https://gw.example.com",
     });
     const token = readGuardianToken("old-gateway");
     expect(token.accessToken).toBe("acc-tok");
@@ -1696,7 +1666,7 @@ describe("pairingCancel", () => {
     if (!result.ok || result.status !== "imported") {
       return;
     }
-    saveLockfileAssistant(result.entry);
+    registerImportedPairing(result);
     const entry = (
       readLockfileFromDisk().assistants as Array<Record<string, unknown>>
     )[0]!;
@@ -1759,182 +1729,5 @@ describe("pairingCancel", () => {
     expect(result.status).toBe(404);
     expect(fs.existsSync(lockfilePath)).toBe(false);
     expect(fs.existsSync(path.join(configDir, "assistants"))).toBe(false);
-  });
-});
-
-describe("connectImport", () => {
-  test("registers a valid bundle and returns the wire-shaped success", () => {
-    const result = importAndRegister(configDir, {
-      bundle: ` ${encodeBundle({
-        gatewayUrl: "https://gw.example.com",
-        token: "tok",
-        deviceId: "dev-ci",
-      })} `,
-      name: "Desk Box",
-    });
-
-    expect(result).toEqual({
-      ok: true,
-      assistantId: "desk-box",
-      accessOnly: true,
-      entry: {
-        assistantId: "desk-box",
-        name: "Desk Box",
-        cloud: "custom",
-        ipAddress: "gw.example.com",
-        port: 443,
-      },
-    });
-    expect(fs.existsSync(guardianTokenPath(configDir, "desk-box"))).toBe(true);
-    const entry = (
-      readLockfileFromDisk().assistants as Array<Record<string, unknown>>
-    )[0]!;
-    expect(entry).toMatchObject({
-      assistantId: "desk-box",
-      cloud: "custom",
-      ipAddress: "gw.example.com",
-      port: 443,
-    });
-  });
-
-  test("a legacy id naming another gateway is not adopted", () => {
-    // The device id is untrusted bundle input, so an entry that does not name
-    // the same gateway is left alone rather than repointed at another host.
-    writeLockfile({
-      assistants: [
-        {
-          assistantId: "paired-dev-legacy",
-          cloud: "custom",
-          ipAddress: "other.example.com",
-          port: 443,
-        },
-      ],
-    });
-
-    const result = importAndRegister(configDir, {
-      bundle: encodeBundle({
-        gatewayUrl: "https://gw.example.com",
-        token: "tok-1",
-        deviceId: "dev-legacy",
-      }),
-    });
-
-    expect(result).toMatchObject({ ok: true });
-    const entries = readLockfileFromDisk().assistants as Array<
-      Record<string, unknown>
-    >;
-    expect(entries).toHaveLength(2);
-    expect(
-      entries.find((e) => e.assistantId === "paired-dev-legacy"),
-    ).toMatchObject({ ipAddress: "other.example.com" });
-  });
-
-  test("a missing, empty, or non-string bundle is a 400", () => {
-    for (const value of [undefined, "", 42]) {
-      expect(connectImport(configDir, { bundle: value })).toEqual({
-        ok: false,
-        status: 400,
-        error: "Missing pairing bundle",
-      });
-    }
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("an oversized bundle is refused before decoding", () => {
-    expect(
-      connectImport(configDir, {
-        bundle: "a".repeat(64 * 1024 + 1),
-      }),
-    ).toEqual({
-      ok: false,
-      status: 400,
-      error: "Pairing bundle is too large",
-    });
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("a loopback gatewayUrl keeps pairAssistant's 422 and refusal copy", () => {
-    const result = connectImport(configDir, {
-      bundle: encodeBundle({
-        gatewayUrl: "http://127.0.0.1:5432",
-        token: "tok",
-        deviceId: "dev-loop",
-      }),
-    });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.status).toBe(422);
-    expect(result.error).toContain("non-loopback");
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("a malformed bundle maps the decode error to a 400", () => {
-    const result = connectImport(configDir, {
-      bundle: "not-base64-json!!!",
-    });
-
-    expect(result.ok).toBe(false);
-    if (result.ok) {
-      return;
-    }
-    expect(result.status).toBe(400);
-    expect(result.error).toContain("base64");
-    expect(fs.existsSync(lockfilePath)).toBe(false);
-  });
-
-  test("an overwrite refusal keeps pairAssistant's 409 and error string", () => {
-    writeLockfile({
-      assistants: [
-        {
-          assistantId: "desk",
-          cloud: "local",
-          ipAddress: "127.0.0.1",
-          port: 7830,
-        },
-      ],
-      activeAssistant: "desk",
-    });
-
-    const result = connectImport(configDir, {
-      bundle: encodeBundle({
-        gatewayUrl: "https://gw.example.com",
-        token: "tok",
-      }),
-      name: "desk",
-    });
-
-    expect(result).toEqual({
-      ok: false,
-      status: 409,
-      error: "An assistant named 'desk' already exists",
-    });
-    expect(fs.existsSync(guardianTokenPath(configDir, "desk"))).toBe(false);
-  });
-
-  test("a non-string name is ignored rather than slugified", () => {
-    const result = connectImport(configDir, {
-      bundle: encodeBundle({
-        gatewayUrl: "https://gw.example.com",
-        token: "tok",
-        deviceId: "dev-nn",
-      }),
-      name: 7,
-    });
-
-    expect(result).toEqual({
-      ok: true,
-      assistantId: "paired-gw-example-com",
-      accessOnly: true,
-      entry: {
-        assistantId: "paired-gw-example-com",
-        name: "paired (gw.example.com)",
-        cloud: "custom",
-        ipAddress: "gw.example.com",
-        port: 443,
-      },
-    });
   });
 });

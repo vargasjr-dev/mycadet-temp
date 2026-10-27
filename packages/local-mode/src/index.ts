@@ -83,7 +83,6 @@ export {
   pairingStart,
   pairingPoll,
   pairingCancel,
-  connectImport,
 } from "./pair";
 export type {
   PairedAssistantCredentials,
@@ -96,8 +95,6 @@ export type {
   PairingStartResult,
   PairingPollOptions,
   PairingPollResult,
-  ConnectImportOptions,
-  ConnectImportResult,
 } from "./pair";
 export { runSleep } from "./sleep";
 export type { SleepResult } from "./sleep";

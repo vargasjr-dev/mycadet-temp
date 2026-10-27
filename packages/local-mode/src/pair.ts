@@ -17,7 +17,7 @@ import { nanoid } from "nanoid";
 
 import { guardianTokenPath } from "./config";
 import { isConfidentialRefreshUrl, saveGuardianToken } from "./guardian-token";
-import { readLockfile, type LockfileAssistantPatch } from "./lockfile";
+import { readLockfile } from "./lockfile";
 
 /**
  * The session credentials a pairing exchange yields, in the shape
@@ -77,14 +77,12 @@ export type PairResult =
       ok: true;
       /** The unique local id the pairing was registered under. */
       assistantId: string;
+      /** The resolved display name for this pairing. */
+      name: string;
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
-      /**
-       * The lockfile entry to register for this pairing; pairing itself
-       * never touches the lockfile, the caller's import-completion step
-       * saves it through the owning layer.
-       */
-      entry: LockfileAssistantPatch;
+      /** The exchange's gateway address. */
+      gatewayUrl: string;
     }
   | { ok: false; status: number; error: string; assistantId?: string };
 
@@ -207,11 +205,11 @@ export function checkPairedAssistantName(name: string): PairRefusal | null {
 
 /**
  * Pair an assistant: validate the pairing credentials and persist its
- * guardian token. Pairing does NOT touch the lockfile — assistant entries
- * belong to hatch/retire/the cli — so the caller registers the returned
- * `entry` through the owning layer's save once the exchange has succeeded.
- * The pre-check below refuses a colliding id BEFORE the exchange spends a
- * one-time pairing code.
+ * guardian token. Pairing does NOT touch the lockfile and does NOT define a
+ * lockfile entry — imports create entries; pairs pair with a defined one —
+ * so the importing caller defines and saves the entry from the returned
+ * identity facts. The pre-check below refuses a colliding id BEFORE the
+ * exchange spends a one-time pairing code.
  *
  * The entry is stored under a UNIQUE LOCAL id (not the remote assistant id,
  * which is typically "self" and would collide across hosts). This is safe
@@ -284,29 +282,21 @@ export function pairAssistant(
     };
   }
 
-  const gateway = new URL(credentials.gatewayUrl);
   return {
     ok: true,
     assistantId: localId,
+    // The resolved display name, so the importing caller registers the entry
+    // under the exact identity the token was saved under.
+    name: name ?? `paired (${label})`,
     // A refresh token is only usable over a confidential channel; with
     // loopback refused above, a plaintext http gateway can never renew, so it
     // is reported access-only and gets the expiry warning.
     accessOnly:
       !credentials.refreshToken ||
       !isConfidentialRefreshUrl(credentials.gatewayUrl),
-    // The entry the caller saves through the owning layer: the bundle's
-    // gateway address as the canonical custom encoding — the one shape every
-    // reader derives from.
-    entry: {
-      assistantId: localId,
-      // The label, not the bare host: two assistants behind one host differ
-      // only in their path prefix, and a display name that dropped it would
-      // make them indistinguishable in a chooser.
-      name: name ?? `paired (${label})`,
-      cloud: "custom",
-      ipAddress: gateway.hostname,
-      port: Number(gateway.port) || (gateway.protocol === "https:" ? 443 : 80),
-    },
+    // The exchange's gateway address. Pairing defines no lockfile entry —
+    // imports create entries; pairs pair with a defined one.
+    gatewayUrl: credentials.gatewayUrl,
   };
 }
 
@@ -411,13 +401,12 @@ export type PairingPollResult =
       status: "imported";
       /** The unique local id the pairing was registered under. */
       assistantId: string;
+      /** The resolved display name for this pairing. */
+      name: string;
       /** True when the exchange yielded no usable refresh credential. */
       accessOnly: boolean;
-      /**
-       * The lockfile entry to register for this pairing; the caller saves it
-       * through the owning layer once the poll imports.
-       */
-      entry: LockfileAssistantPatch;
+      /** The exchange's gateway address. */
+      gatewayUrl: string;
     }
   | PairingFailure;
 
@@ -915,8 +904,8 @@ export interface PairingPollOptions {
  * One device-code exchange attempt for a live session. Still-pending
  * challenges resolve with the cadence to wait before trying again; an approved
  * one has its guardian token persisted through {@link pairAssistant} in the
- * same call, and the caller registers the returned `entry` through the
- * owning layer's save.
+ * same call, and the importing caller defines and saves the entry from the
+ * returned identity facts.
  *
  * A {@link pairingCancel} that lands while the exchange is in flight ends the
  * attempt with nothing persisted, so a dismissed dialog or an interrupted CLI
@@ -1057,8 +1046,9 @@ export async function pairingPoll(
     ok: true,
     status: "imported",
     assistantId: result.assistantId,
+    name: result.name,
     accessOnly: result.accessOnly,
-    entry: result.entry,
+    gatewayUrl: result.gatewayUrl,
   };
 }
 
@@ -1084,127 +1074,4 @@ export function pairingCancel(handle: unknown): boolean {
   // whose session crossed its expiry while the gateway was answering.
   sweepExpiredPairings();
   return dropped;
-}
-
-// ── Legacy base64 bundle import ─────────────────────────────────────────────
-//
-// The pre-pairing-link import path. Its one caller is `cadet connect import`
-// (cli/src/commands/connect/import.ts), which falls back to it for a bundle
-// minted by a host on the previous release; nothing mints bundles any more, so
-// this section goes once that release is out of support. It shares
-// `pairAssistant` with the pairing-session flow above and adds only base64
-// decoding.
-
-/** Bounds what an untrusted bundle import can make a host buffer and decode. */
-const MAX_BUNDLE_LENGTH = 64 * 1024;
-
-type DecodedBundle =
-  | { ok: true; credentials: PairedAssistantCredentials }
-  | { ok: false; error: string };
-
-/**
- * Decode and validate a base64 pairing bundle. Total and non-throwing:
- * malformed input yields a typed failure. `gatewayUrl` is persisted as
- * the entry's address and used to build fetch URLs, so it must be an absolute http(s)
- * URL rather than letting an invalid string through (which would crash
- * `new URL(...)` or break later client calls).
- */
-function decodePairBundle(encoded: string): DecodedBundle {
-  let json: unknown;
-  try {
-    json = JSON.parse(Buffer.from(encoded, "base64").toString("utf8"));
-  } catch {
-    return { ok: false, error: "Bundle is not base64-encoded JSON" };
-  }
-  if (typeof json !== "object" || json === null) {
-    return { ok: false, error: "Bundle is not a JSON object" };
-  }
-  const b = json as Record<string, unknown>;
-  if (typeof b.gatewayUrl !== "string" || typeof b.token !== "string") {
-    return { ok: false, error: "Bundle is missing gatewayUrl or token" };
-  }
-  let parsed: URL;
-  try {
-    parsed = new URL(b.gatewayUrl);
-  } catch {
-    return { ok: false, error: "Bundle gatewayUrl is not an absolute URL" };
-  }
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return { ok: false, error: "Bundle gatewayUrl is not an http(s) URL" };
-  }
-  return {
-    ok: true,
-    credentials: {
-      gatewayUrl: b.gatewayUrl,
-      token: b.token,
-      deviceId: typeof b.deviceId === "string" ? b.deviceId : undefined,
-      refreshToken:
-        typeof b.refreshToken === "string" ? b.refreshToken : undefined,
-      refreshTokenExpiresAt:
-        typeof b.refreshTokenExpiresAt === "string" ||
-        typeof b.refreshTokenExpiresAt === "number"
-          ? b.refreshTokenExpiresAt
-          : undefined,
-      refreshAfter:
-        typeof b.refreshAfter === "string" ? b.refreshAfter : undefined,
-    },
-  };
-}
-
-export interface ConnectImportOptions {
-  /** The encoded bundle exactly as received from the transport. */
-  bundle: unknown;
-  /** Optional local name; non-string or empty values are ignored. */
-  name?: unknown;
-}
-
-/**
- * Wire-shaped result of a connect-import: the success members are the response
- * body fields, and `status` on failure is the HTTP status the loopback hosts
- * respond with (the IPC host ignores it).
- */
-export type ConnectImportResult =
-  | {
-      ok: true;
-      assistantId: string;
-      accessOnly: boolean;
-      /** The entry the caller saves through the owning layer. */
-      entry: LockfileAssistantPatch;
-    }
-  | { ok: false; status: number; error: string };
-
-/**
- * The complete bundle-import host operation: validate the raw bundle value
- * (present, non-empty, within {@link MAX_BUNDLE_LENGTH}), decode it, and pair
- * it via {@link pairAssistant}. Hosts keep only transport-specific parsing
- * and pass the untrusted values straight through, so bundle limits, error
- * strings, and the result shape are defined once.
- */
-export function connectImport(
-  configDir: string,
-  { bundle, name }: ConnectImportOptions,
-): ConnectImportResult {
-  if (typeof bundle !== "string" || !bundle) {
-    return { ok: false, status: 400, error: "Missing pairing bundle" };
-  }
-  if (bundle.length > MAX_BUNDLE_LENGTH) {
-    return { ok: false, status: 400, error: "Pairing bundle is too large" };
-  }
-  const decoded = decodePairBundle(bundle.trim());
-  if (!decoded.ok) {
-    return { ok: false, status: 400, error: decoded.error };
-  }
-  const result = pairAssistant(configDir, {
-    credentials: decoded.credentials,
-    name: typeof name === "string" && name ? name : undefined,
-  });
-  if (!result.ok) {
-    return { ok: false, status: result.status, error: result.error };
-  }
-  return {
-    ok: true,
-    assistantId: result.assistantId,
-    accessOnly: result.accessOnly,
-    entry: result.entry,
-  };
 }
