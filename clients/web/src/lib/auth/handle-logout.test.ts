@@ -59,11 +59,10 @@ mock.module("@/runtime/menu", () => ({
   setMenuCloudSession: async () => undefined,
 }));
 
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    getState: () => ({ logout: logoutMock }),
-    setState: () => undefined,
-  },
+mock.module("@/lib/auth/session-teardown", () => ({
+  teardownSession: logoutMock,
+  endSession: async () => {},
+  watchCrossTabSessionEnd: () => () => {},
 }));
 
 const { handleLogout } = await import("./handle-logout");

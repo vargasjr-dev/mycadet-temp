@@ -641,8 +641,8 @@ function SectionDivider() {
  *
  * The handle block renders two independently-saveable sections:
  *
- *   1. **User handle** — fetches ``/v1/user/me/`` on mount. The
- *      auth-store ``username`` lags a session refresh behind a save,
+ *   1. **User handle** — fetches ``/v1/user/me/`` on mount. A cached
+ *      ``username`` read lags a session refresh behind a save,
  *      so we re-read from the server for the editor's initial value.
  *   2. **Assistant handle** — only when an ``assistant`` prop is supplied
  *      (a non-local platform assistant). Lets the user claim a public

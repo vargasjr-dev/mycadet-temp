@@ -7,7 +7,7 @@
  * assistant operation. The selection write IS the session commit — the auth
  * store carries no session state to stamp.
  *
- * Unlike `initSession`, which is the best-effort boot probe and swallows
+ * Unlike the boot-time `establishGatewayConnection`, which swallows
  * failures, these rethrow so the caller can surface the reason — including
  * the typed `GuardianTokenError` from the host seam — and offer recovery
  * instead of dead-ending.

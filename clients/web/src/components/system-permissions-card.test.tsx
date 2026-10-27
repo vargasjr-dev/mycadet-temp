@@ -110,13 +110,6 @@ mock.module("@/stores/resolved-assistants-store", () => ({
   },
 }));
 
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    use: {
-      user: () => ({ kind: "platform", id: "account-123" }),
-    },
-  },
-}));
 
 mock.module("@/lib/self-hosted/connection", () => ({
   getSelfHostedIngressUrl: () => null,

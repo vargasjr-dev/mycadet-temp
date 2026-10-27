@@ -56,15 +56,6 @@ let assistantStub: { assistantId: string | undefined } = {
   assistantId: "asst-1",
 };
 
-interface AuthUserStub {
-  email: string | null;
-  isStaff: boolean;
-}
-
-let authUserStub: AuthUserStub | null = {
-  email: "dev@mycadet.ai",
-  isStaff: false,
-};
 let internalActionsFlagStub = true;
 let flagsHydratedStub = true;
 
@@ -127,14 +118,6 @@ mock.module("react-router", () => ({
 
 mock.module("@/assistant/use-active-assistant-id", () => ({
   useActiveAssistantId: () => assistantStub.assistantId,
-}));
-
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: {
-    use: {
-      user: () => authUserStub,
-    },
-  },
 }));
 
 // Mocked rather than driven via `setState`: zustand v5 serves
@@ -203,7 +186,6 @@ beforeEach(() => {
   paramsStub = { conversationId: "conv-default" };
   searchParamsMap = new Map();
   assistantStub = { assistantId: "asst-1" };
-  authUserStub = { email: "dev@mycadet.ai", isStaff: false };
   // Hydrated, flag-on baseline: most tests exercise the allowed branch;
   // gating tests flip the flag keys off to reach the denial branch.
   internalActionsFlagStub = true;

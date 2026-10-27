@@ -20,8 +20,8 @@
  *     notification permission, registers for APNs or FCM, and upserts the resulting
  *     token to the cloud. Idempotent and safe to call on every mount.
  *   - {@link unregisterFromRemotePush} — call from the logout path BEFORE the
- *     session cookie is cleared (see `stores/auth-store.ts`) so the cloud
- *     delete is authenticated. Removes the token for the bound assistant.
+ *     session cookie is cleared (see `@/lib/auth/session-teardown`) so the
+ *     cloud delete is authenticated. Removes the token for the bound assistant.
  *   - Tap routing — a `pushNotificationActionPerformed` listener publishes
  *     `deeplink.openThread` when the tapped notification carries a
  *     conversation id.

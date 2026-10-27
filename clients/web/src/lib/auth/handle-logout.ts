@@ -8,7 +8,7 @@ import {
 import { clearCompanionWorking } from "@/runtime/companion-surface";
 import { setAssistantName } from "@/runtime/identity";
 import { setMenuCloudSession } from "@/runtime/menu";
-import { useAuthStore } from "@/stores/auth-store";
+import { teardownSession } from "@/lib/auth/session-teardown";
 import { routes } from "@/utils/routes";
 
 export async function handleLogout(): Promise<void> {
@@ -23,7 +23,7 @@ export async function handleLogout(): Promise<void> {
     }
 
     await setMenuCloudSession(false);
-    await useAuthStore.getState().logout();
+    await teardownSession();
     // The same teardown the hosted path does below, and for the companion
     // surface it is not cosmetic: the published name is what tells main there
     // is an assistant to draw, so a name left standing keeps a floating pill
@@ -35,7 +35,7 @@ export async function handleLogout(): Promise<void> {
     // the hosted branch's hard navigation does.
     hardNavigate(routes.welcome);
   } else {
-    await useAuthStore.getState().logout();
+    await teardownSession();
     // Clear the published assistant name before the hard navigation. The hard
     // nav replaces the page synchronously, so no React unmount cleanup runs;
     // without this, Electron main keeps titling the signed-out window, tray,

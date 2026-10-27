@@ -72,16 +72,6 @@ mock.module("@/lib/local-mode", () => ({
   setActiveLockfileAssistant: async () => undefined,
 }));
 
-mock.module("@/stores/auth-store", () => {
-  const useAuthStore = () => null;
-  useAuthStore.use = {
-    sessionStatus: () => authRef.sessionStatus,
-  };
-  return {
-    useAuthStore,
-    useHasCloudSession: () => authRef.hasCloudSession,
-  };
-});
 
 mock.module("@/stores/resolved-assistants-store", () => {
   const useResolvedAssistantsStore = () => null;

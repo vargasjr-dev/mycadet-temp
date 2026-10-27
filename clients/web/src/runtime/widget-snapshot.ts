@@ -172,7 +172,7 @@ export function isWidgetSnapshotSyncAvailable(): boolean {
  *
  * Both calls below are awaited on session-ending paths before the state write
  * that flips the app to its signed-out surfaces (`endSession` in
- * `stores/auth-store.ts`), and before an origin swap hands the shell to
+ * `@/lib/auth/session-teardown`), and before an origin swap hands the shell to
  * another deployment. A bridge that accepts the call and never settles would
  * hang those, so the wait is bounded rather than open. Two seconds is far
  * longer than a UserDefaults write and a widget timeline reload take, and far
