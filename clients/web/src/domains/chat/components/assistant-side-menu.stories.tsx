@@ -216,7 +216,7 @@ function seedViewMode(assistantId: string, mode: SidebarViewMode): void {
   /* `PreferencesMenu` renders nothing for a signed-out user and a story has no
      session of its own, so the sidebar's footer entry only appears in these
      stories once one is seeded. */
-  useAuthStore.setState({ sessionStatus: "authenticated" });
+  useAuthStore.setState({ cloudSession: "present" });
   /* `useAssistantCapability` keys on the active assistant from this store, not
      on the id the story passes as a prop, so the seeded `appPins` answer is
      only found once the store agrees which assistant is active. */

@@ -25,7 +25,8 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 }));
 
 const { AppProviders } = await import("@/components/providers");
-const { useAuthStore } = await import("@/stores/auth-store");
+const { __setSessionActiveForTesting, useAuthStore } =
+  await import("@/stores/auth-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
@@ -69,8 +70,8 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
+  __setSessionActiveForTesting(true);
   useAuthStore.setState({
-    sessionStatus: "authenticated",
     cloudSession: "present",
   });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-123" });
@@ -90,16 +91,16 @@ describe("AppProviders cache scope", () => {
     const previousSession = useAuthStore.getState().cloudSession;
 
     act(() => {
+      __setSessionActiveForTesting(false);
       useAuthStore.setState({
-        sessionStatus: "initializing",
         cloudSession: "unknown",
       });
     });
     expect(assetEvents()).toEqual(previousEvents);
 
     act(() => {
+      __setSessionActiveForTesting(true);
       useAuthStore.setState({
-        sessionStatus: "authenticated",
         cloudSession: previousSession,
       });
     });

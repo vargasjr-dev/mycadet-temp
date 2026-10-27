@@ -16,13 +16,10 @@ import { create } from "zustand";
 import { setSelectedAssistant } from "@/assistant/selection";
 import { createSelectors } from "@/utils/create-selectors";
 import {
-  isAuthenticated,
-  isSessionSettled,
   isSettledSessionRejection,
   hasLiveCloudSession,
   isCloudSessionSettled,
   type CloudSessionStatus,
-  type SessionStatus,
 } from "@/stores/session-status";
 
 import { getSession, logout as allauthLogout } from "@/lib/auth/allauth-client";
@@ -69,9 +66,16 @@ import {
 } from "@/runtime/native-biometric";
 
 interface AuthState {
-  sessionStatus: SessionStatus;
   cloudSession: CloudSessionStatus;
 }
+
+/**
+ * Whether the app is inside an authenticated session (cloud or local-gateway
+ * arm). Module state, not store state: the route guard that reacted to this
+ * died with #579, so no consumer needs reactivity — the store's own flows
+ * read it imperatively while transitioning.
+ */
+let sessionActive = false;
 
 interface AuthActions {
   initSession: () => Promise<void>;
@@ -148,6 +152,7 @@ function enteringAuthenticatedSession(
   patch: Partial<AuthState>,
 ): Partial<AuthState> {
   authEpoch += 1;
+  sessionActive = true;
   return patch;
 }
 
@@ -166,20 +171,19 @@ const authenticatedPlatformSession = (): Partial<AuthState> => {
   // (LUM-2412) without each call site remembering to.
   persistSessionSnapshot();
   return enteringAuthenticatedSession({
-    sessionStatus: "authenticated",
     cloudSession: "present",
   });
 };
 
 const authenticatedLocalUser = (): Partial<AuthState> =>
-  enteringAuthenticatedSession({
-    sessionStatus: "authenticated",
-  });
+  enteringAuthenticatedSession({});
 
-const sessionEnded = (): Partial<AuthState> => ({
-  sessionStatus: "unauthenticated",
-  cloudSession: "absent",
-});
+const sessionEnded = (): Partial<AuthState> => {
+  sessionActive = false;
+  return {
+    cloudSession: "absent",
+  };
+};
 
 /**
  * Apply the {@link sessionEnded} transition. Every path that ends a session
@@ -246,11 +250,10 @@ async function endSession(
   if (!options?.authoritative && epoch !== authEpoch) {
     return;
   }
-  set(
-    options?.keepCloudSession
-      ? { sessionStatus: "unauthenticated" }
-      : sessionEnded(),
-  );
+  set(options?.keepCloudSession ? {} : sessionEnded());
+  if (options?.keepCloudSession) {
+    sessionActive = false;
+  }
 }
 
 /**
@@ -413,11 +416,7 @@ function probeCloudSession(
           // `restoreOfflineSession` cannot resurrect the account. Transport
           // failures and the race timeout never reach here (LUM-2412).
           clearSessionSnapshot();
-          const demotion = isAuthenticated(
-            useAuthStore.getState().sessionStatus,
-          )
-            ? authenticatedLocalUser()
-            : {};
+          const demotion = sessionActive ? authenticatedLocalUser() : {};
           set({
             ...demotion,
             cloudSession: "absent",
@@ -526,12 +525,20 @@ export async function commitCloudSession(assistantId: string): Promise<void> {
   useAuthStoreBase.setState(authenticatedPlatformSession());
 }
 
+/** Test hooks for the module-level session phase (no reactive readers exist). */
+export function __setSessionActiveForTesting(active: boolean): void {
+  sessionActive = active;
+}
+
+export function __isSessionActiveForTesting(): boolean {
+  return sessionActive;
+}
+
 export function probeCloudSessionForConnect(): void {
   probeCloudSessionIfReachable(useAuthStoreBase.setState);
 }
 
-const useAuthStoreBase = create<AuthStore>()((set, get) => ({
-  sessionStatus: "initializing",
+const useAuthStoreBase = create<AuthStore>()((set) => ({
   cloudSession: "unknown",
 
   // Deliberately not guarded by `logoutGeneration`, unlike `refreshSession`.
@@ -664,7 +671,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // Report the session as the store now holds it rather than as this
     // superseded response describes it, mirroring the inconclusive-probe
     // branch below, so no caller reads an abandoned refresh as a verdict.
-    const abandon = (): boolean => isAuthenticated(get().sessionStatus);
+    const abandon = (): boolean => sessionActive;
 
     if (isCadetCloudRemote()) {
       // The cloud cookie is the only credential here: re-verify it
@@ -713,7 +720,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
           // `cloudSession` from the session the logout just ended.
           return abandon();
         }
-        set(enteringAuthenticatedSession({ sessionStatus: "authenticated" }));
+        set(enteringAuthenticatedSession({}));
       } catch {
         await endSession(set);
         return false;
@@ -760,21 +767,21 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // the next resume/online refresh revalidates for real, and a settled
     // "no session" answer below still ends the session normally.
     if (isInconclusiveProbe(result)) {
-      return isAuthenticated(get().sessionStatus);
+      return sessionActive;
     }
     // A settled "no platform session" (401) ends the cloud session, not the
     // local one. Demote an authenticated session to the local user and mark the
     // platform session absent, dropping the stale offline
     // snapshot so platform-gated surfaces stop treating it as signed in, while
-    // keeping `sessionStatus` "authenticated": a 401 must not log a local-only
+    // keeping the session active: a 401 must not log a local-only
     // user out. (The successful probe above still confirms the cloud session, so
     // provider sign-in keeps working.) An unauthenticated session, e.g. mid
     // cold-start hatch, is left for the gateway to settle once its token mints.
     //
-    // Holding `sessionStatus` "authenticated" is load-bearing: in-app consumers
-    // read `useIsAuthenticated()` directly to scope the QueryClient cache and
-    // gate signed-in UI, so ending the session would drop them into the
-    // anonymous cache scope and hide that UI.
+    // Holding the session active is load-bearing: in-app consumers read
+    // `useHasCloudSession()` to scope the QueryClient cache and gate signed-in
+    // UI, so ending the session would drop them into the anonymous cache scope
+    // and hide that UI.
     //
     // The predicate asks whether the local session can stand on its own,
     // mirroring how `initSession` branches: a local gateway answers for itself,
@@ -786,7 +793,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // the store still reads authenticated, which a completed logout has
     // already made false.
     if (isLocalClient()) {
-      const wasAuthenticated = isAuthenticated(get().sessionStatus);
+      const wasAuthenticated = sessionActive;
       if (wasAuthenticated) {
         clearSessionSnapshot();
         set({ ...authenticatedLocalUser(), cloudSession: "absent" });
@@ -805,7 +812,7 @@ const useAuthStoreBase = create<AuthStore>()((set, get) => ({
     // user's snapshot on its way to an authenticated write.
     logoutGeneration += 1;
     if (getSelfHostedIngressUrl() != null && !options?.cloudAccount) {
-      // Clear lifecycle state BEFORE `sessionStatus` leaves `authenticated`
+      // Clear lifecycle state BEFORE the session leaves active
       // so the assistant sync hooks don't observe a stale assistant id in
       // their first re-render, and BEFORE the selection clear so the
       // lifecycle's selection subscription (guarded on `loading`) doesn't
@@ -874,18 +881,12 @@ export const useAuthStore = createSelectors(useAuthStoreBase);
  * Semantic read hooks — the reactive public API for components.
  *
  * Each subscribes to one atomic field and answers a single domain question, so
- * components never re-encode the enum (`sessionStatus === "authenticated"`,
- * `cloudSession === "present"`) and never juggle a pair of booleans. They
+ * components never re-encode the enum (`cloudSession === "present"`) and never
+ * juggle booleans. They
  * compose the pure `session-status` predicates over the atomic selectors
  * generated by `createSelectors`, keeping Zustand's `Object.is` snapshot
  * equality stable.
  */
-export const useIsAuthenticated = (): boolean =>
-  isAuthenticated(useAuthStore.use.sessionStatus());
-
-export const useIsSessionInitializing = (): boolean =>
-  !isSessionSettled(useAuthStore.use.sessionStatus());
-
 export const useHasCloudSession = (): boolean =>
   hasLiveCloudSession(useAuthStore.use.cloudSession());
 

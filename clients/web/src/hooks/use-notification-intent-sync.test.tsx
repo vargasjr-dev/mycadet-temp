@@ -244,7 +244,6 @@ beforeEach(() => {
   });
   __resetForTesting();
   useAuthStore.setState({
-    sessionStatus: "authenticated",
     cloudSession: "present",
   });
   useResolvedAssistantsStore.setState({
@@ -433,8 +432,7 @@ describe("useNotificationIntentSync", () => {
       runtimeUrl: "https://b.example.com/assistant",
     };
     useAuthStore.setState({
-      sessionStatus: "authenticated",
-    });
+      });
     useResolvedAssistantsStore.setState({
       assistants: [assistantA, assistantB],
       activeAssistantId: assistantA.id,

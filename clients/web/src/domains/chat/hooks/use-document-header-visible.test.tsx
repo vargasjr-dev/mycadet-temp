@@ -47,7 +47,7 @@ mock.module("@/assistant/queries", () => ({
 import type * as ConversationQueries from "@/hooks/conversation-queries";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { viewportAxesStub } from "@/hooks/viewport-axes.test-helper";
-import { useAuthStore } from "@/stores/auth-store";
+import { __setSessionActiveForTesting, useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 import type * as ActiveChat from "../active-chat-view";
@@ -181,7 +181,7 @@ function renderPage(
 beforeEach(() => {
   viewport.set({ narrow: true, coarsePointer: true });
   setResolutionState({ kind: "active", isLocal: false });
-  useAuthStore.setState({ sessionStatus: "authenticated" });
+  __setSessionActiveForTesting(true);
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-1" });
   useChatLayoutSlotsStore.setState({ documentHeader: null });
   conversationListError = false;

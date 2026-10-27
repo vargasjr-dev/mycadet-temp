@@ -154,7 +154,6 @@ beforeEach(() => {
   }
   window.history.pushState(null, "", "/");
   useAuthStore.setState({
-    sessionStatus: "authenticated",
     cloudSession: "present",
   });
   useResolvedAssistantsStore.setState({

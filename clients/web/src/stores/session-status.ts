@@ -1,9 +1,9 @@
 /**
  * Cloud-session liveness as a single tri-state.
  *
- * - `"unknown"`: the probe has not settled yet. The local gateway path leaves
- *   `sessionStatus: "authenticated"` before `getSession()` returns, so there is
- *   a window where logged-in status is known but session liveness is not. Imperative
+ * - `"unknown"`: the probe has not settled yet. The local gateway path
+ *   authenticates before `getSession()` returns, so there is a window where
+ *   logged-in status is known but session liveness is not. Imperative
  *   consumers (the onboarding fork) must wait this out before deciding;
  *   reactive consumers treat it as "no session" but a cached cloud
  *   assistant can stand in as a liveness hint.
@@ -17,48 +17,20 @@
 export type CloudSessionStatus = "unknown" | "absent" | "present";
 
 /**
- * Session lifecycle as a single discriminated state, not a pair of booleans.
- *
- * - `"initializing"`: the boot probe has not settled — logged-in status is not
- *   yet known. Reactive consumers should treat this as "not authenticated"
- *   without redirecting; imperative guards wait it out.
- * - `"authenticated"`: a user is signed in (cloud or local gateway).
- * - `"unauthenticated"`: the probe settled with no session.
- *
- * Modeling this as one value makes the contradictory `(isLoggedIn: true,
- * isLoading: true)` state — "logged in but still loading" — unrepresentable,
- * the same illegal-state-elimination this store applies to `cloudSession`.
- */
-export type SessionStatus =
-  | "initializing"
-  | "authenticated"
-  | "unauthenticated";
-
-/**
  * Read predicates — the single place each session-state question is answered.
  *
- * Consumers read meaning (`isAuthenticated(status)` / `hasLiveCloudSession`)
- * instead of re-encoding the enum literals (`=== "authenticated"`,
- * `=== "present"`) at every call site, so the encoding never leaks into readers.
+ * Consumers read meaning (`hasLiveCloudSession`) instead of re-encoding the
+ * enum literals (`=== "present"`) at every call site, so the encoding never
+ * leaks into readers.
  */
-export const isAuthenticated = (status: SessionStatus): boolean =>
-  status === "authenticated";
-
-/** The boot probe has settled — `sessionStatus` left the `initializing` window. */
-export const isSessionSettled = (status: SessionStatus): boolean =>
-  status !== "initializing";
-
-/** A live cloud session has been confirmed by the probe. */
 export const hasLiveCloudSession = (status: CloudSessionStatus): boolean =>
   status === "present";
 
 /**
  * The cloud-session probe has settled — `cloudSession` left the
- * `"unknown"` window and is now a definite `"present"` / `"absent"`. Distinct
- * from {@link isSessionSettled}: the local-gateway path flips `sessionStatus`
- * to `"authenticated"` before `getSession()` resolves `cloudSession`, so a
- * consumer whose behavior turns on cloud-session liveness must wait on this,
- * not on the (earlier) `sessionStatus` settlement.
+ * `"unknown"` window and is now a definite `"present"` / `"absent"`. A
+ * consumer whose behavior turns on cloud-session liveness must wait on this
+ * before deciding.
  */
 export const isCloudSessionSettled = (status: CloudSessionStatus): boolean =>
   status !== "unknown";

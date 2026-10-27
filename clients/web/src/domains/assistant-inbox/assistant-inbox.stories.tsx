@@ -97,7 +97,7 @@ const withInboxQueryCache = withQueryCache((client) => {
 function seedStores(): void {
   saveViewMode(ASSISTANT_ID, "all");
   useSidebarLayoutStore.setState({ assistantId: null });
-  useAuthStore.setState({ sessionStatus: "authenticated" });
+  useAuthStore.setState({ cloudSession: "present" });
   useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
 }
 
