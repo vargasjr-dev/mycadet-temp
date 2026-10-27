@@ -22,12 +22,12 @@ describe("isExpectedDaemonTransientError", () => {
     ).toBe(true);
   });
 
-  test("returns true for 401 auth race", () => {
+  test("does not retry a 401", () => {
     expect(
       isExpectedDaemonTransientError(
         new ApiError(401, "Authentication credentials were not provided."),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("returns true for 400 org-header missing", () => {
@@ -96,13 +96,13 @@ describe("shouldRetryDaemonError", () => {
     );
   });
 
-  test("retries 401 auth race", () => {
+  test("does not retry a 401", () => {
     expect(
       shouldRetryDaemonError(
         0,
         new ApiError(401, "Authentication credentials were not provided."),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("retries 400 org-header missing", () => {

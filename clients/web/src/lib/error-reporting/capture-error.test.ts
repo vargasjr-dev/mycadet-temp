@@ -183,12 +183,12 @@ describe("isExpectedDaemonTransientError", () => {
     ).toBe(true);
   });
 
-  test("returns true for 401 auth race", () => {
+  test("returns false for 401", () => {
     expect(
       isExpectedDaemonTransientError(
         new ApiError(401, "Authentication credentials were not provided."),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   test("returns true for 400 org-header missing", () => {

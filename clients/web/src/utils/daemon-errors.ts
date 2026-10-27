@@ -18,11 +18,10 @@ const MAX_DAEMON_RETRIES = 3;
 
 /**
  * Detects expected transient HTTP errors from daemon API calls that
- * occur during normal startup sequences and auth-session hydration.
+ * occur during normal startup sequences and org-header propagation.
  *
  * - **503** — Daemon still starting up
  * - **502** — Reverse proxy cannot reach the daemon pod yet
- * - **401** — Auth session not yet established (race during login)
  * - **400 with org-header message** — Org store has not hydrated yet
  *
  * Only `ApiError` instances are matched. Other error types (TypeError,
@@ -39,9 +38,6 @@ export function isExpectedDaemonTransientError(error: unknown): boolean {
   if (error.status === 502) {
     return true;
   }
-  if (error.status === 401) {
-    return true;
-  }
   if (
     error.status === 400 &&
     error.message.includes("Organization-Id header")
@@ -55,7 +51,7 @@ export function isExpectedDaemonTransientError(error: unknown): boolean {
  * TanStack Query retry predicate for daemon queries.
  *
  * Retries expected transient errors (503 startup, 502 bad-gateway,
- * 401 auth-race, 400 org-header) up to {@link MAX_DAEMON_RETRIES}
+ * 400 org-header) up to {@link MAX_DAEMON_RETRIES}
  * times with TQ's built-in exponential backoff. Fails fast on
  * unexpected errors (500, data integrity, programming errors).
  *

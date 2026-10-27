@@ -36,6 +36,7 @@ import {
 } from "@/lib/self-hosted/connection";
 import {
   getLocalAssistants,
+  getServedLockfile,
   isServedGatewayRuntime,
   isLocalClient,
   getActiveAssistant,
@@ -135,10 +136,11 @@ function resolveSelectedCloudAssistantId(): string | null {
  */
 export function applyGatewayAuthBoot(): boolean {
   let ingressUrl = window.location.origin;
-  let resolvedAssistantId = "self";
+  let resolvedAssistantId: string | null = null;
   let rendererToken = getSelfHostedActorToken();
   if (isServedGatewayRuntime()) {
     ingressUrl = getRemoteGatewayIngressUrl();
+    resolvedAssistantId = getServedLockfile().assistants[0]?.assistantId ?? null;
   } else {
     const assistant = getActiveAssistant();
     // The unscoped gateway proxies died with the same-origin fold: a local
@@ -156,9 +158,11 @@ export function applyGatewayAuthBoot(): boolean {
     }
   }
   setSelfHostedConnection({ url: ingressUrl, token: rendererToken });
-  useResolvedAssistantsStore
-    .getState()
-    .setActiveAssistantId(resolvedAssistantId);
+  if (resolvedAssistantId != null) {
+    useResolvedAssistantsStore
+      .getState()
+      .setActiveAssistantId(resolvedAssistantId);
+  }
   return true;
 }
 
