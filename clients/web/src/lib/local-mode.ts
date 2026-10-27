@@ -374,16 +374,20 @@ export function getLockfileAssistant(
 // Gateway predicates
 // ---------------------------------------------------------------------------
 /**
- * Whether the entry's gateway lives on another machine: a custom remote.
- * Its recorded host and port are inherently off-machine — a loopback
- * topology's gateway is always on this machine.
+ * Whether the entry's gateway lives on another machine. Two entries do:
+ * a custom remote (its recorded host and port are inherently off-machine),
+ * and a loopback-cloud entry whose addressing was imported from elsewhere —
+ * a connect import records the remote gateway address as the runtimeUrl and
+ * no loopback port, so the derived gateway url points off-machine (#484:
+ * paired-ness derives from topology, not a stored flag).
  */
 export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  if (entry.cloud !== "custom") {
-    return false;
-  }
   const gatewayUrl = getGatewayUrl(entry);
-  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
+  return (
+    isUsableRuntimeUrl(gatewayUrl) &&
+    !isLoopbackPublicUrl(gatewayUrl) &&
+    (entry.cloud === "custom" || isLoopbackGatewayCloud(entry.cloud))
+  );
 }
 
 function expectsLocalGateway(
