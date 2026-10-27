@@ -1891,7 +1891,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    writeEntryWorkspaceConfig(entry, {
       ingress: {
         enabled: true,
         publicBaseUrl: "https://x.ngrok.app",
@@ -1902,11 +1902,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     // The pairing run did not repoint the webhook callback base; the restore
     // must not repoint it either.
@@ -1932,11 +1928,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       ingress: { enabled: true },
     });
 
-    await restoreFlow.restoreAppServerAndAutoTunnel(
-      entry.assistantId,
-      7830,
-      workspaceDir,
-    );
+    await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     // No lastTunnel record contradicts the root record, so the recorded
     // tailnet tunnel is re-established and the URL is saved again.

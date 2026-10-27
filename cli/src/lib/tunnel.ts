@@ -13,7 +13,10 @@ import {
 } from "./assistant-config.js";
 import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
-import { getLoopbackGatewayPort } from "@mycadet/local-mode/contract";
+import {
+  getGatewayUrl,
+  getLoopbackGatewayPort,
+} from "@mycadet/local-mode/contract";
 import {
   INGRESS_LAST_TUNNEL_KEY,
   parseTunnelRecord,
@@ -34,7 +37,6 @@ import {
   type AppServer,
 } from "./nginx-ingress.js";
 import { waitForDaemonReady } from "./http-client.js";
-import { getGatewayUrl } from "./runtime-url.js";
 import {
   confirmStopAnswer,
   isNgrokEndpointOnlineError,

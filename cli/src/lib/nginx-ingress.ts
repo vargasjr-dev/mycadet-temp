@@ -33,7 +33,8 @@ import {
   stampRootProcess,
   type LockfileAssistant,
 } from "./assistant-config.js";
-import { getGatewayUrl } from "./runtime-url.js";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
+import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import type { RemoteHost } from "./constants.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
@@ -41,8 +42,6 @@ import {
   isLocalContainerEntry,
   loadRawConfig,
 } from "./ingress-config.js";
-import { getLogDir, getStateDir } from "./environments/paths.js";
-import { getCurrentEnvironment } from "./environments/resolve.js";
 import { resolveEdgeClientDists } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
@@ -86,12 +85,12 @@ export interface IngressPaths {
  * `config.json` the daemon reads; this file is the edge's private record.
  */
 export function getIngressPaths(): IngressPaths {
-  const dir = join(getStateDir(getCurrentEnvironment()), "ingress");
+  const dir = join(resolveDataDir(), "ingress");
   return {
     dir,
     confPath: join(dir, "nginx.conf"),
     pidPath: join(dir, "nginx.pid"),
-    logPath: join(getLogDir(getCurrentEnvironment()), "nginx-ingress.log"),
+    logPath: join(resolveLogDir(), "nginx-ingress.log"),
   };
 }
 
@@ -1027,7 +1026,7 @@ export function startIngressNginx(opts: {
 }): ChildProcess {
   const paths = getIngressPaths();
   mkdirSync(paths.dir, { recursive: true });
-  mkdirSync(getLogDir(getCurrentEnvironment()), { recursive: true });
+  mkdirSync(resolveLogDir(), { recursive: true });
   const remoteWebIngress = opts.remoteWebIngress
     ? {
         ...opts.remoteWebIngress,
