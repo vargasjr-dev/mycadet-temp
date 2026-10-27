@@ -31,17 +31,13 @@ import {
 } from "@/assistant/selection";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import {
-  getSelfHostedActorToken,
   setSelfHostedConnection,
 } from "@/lib/self-hosted/connection";
 import {
   getLocalAssistants,
-  getServedLockfile,
   isServedGatewayRuntime,
   isLocalClient,
   getActiveAssistant,
-  hasLocalGateway,
-  expectsPairedGateway,
 } from "@/lib/local-mode";
 
 export const ASSISTANT_QUERY_KEY = ["assistant", "current"] as const;
@@ -126,57 +122,7 @@ function resolveSelectedCloudAssistantId(): string | null {
 }
 
 /**
- * Gateway-auth mode resolves the assistant locally — the gateway issues the
- * session token directly, so no `/assistant/` fetch happens. Primes the
- * self-hosted connection slots and publishes the active assistant id, and
- * answers whether this runtime IS a gateway-auth plane: the served-gateway
- * browser by construction, or a local client whose selected assistant
- * carries gateway machinery. On the platform plane it touches nothing —
- * the slots belong to the platform resolution — and answers false.
- */
-export function applyGatewayAuthBoot(): boolean {
-  let ingressUrl = window.location.origin;
-  let resolvedAssistantId: string | null = null;
-  let rendererToken = getSelfHostedActorToken();
-  if (isServedGatewayRuntime()) {
-    ingressUrl = getRemoteGatewayIngressUrl();
-    resolvedAssistantId = getServedLockfile().assistants[0]?.assistantId ?? null;
-  } else {
-    const assistant = getActiveAssistant();
-    // The unscoped gateway proxies died with the same-origin fold: a local
-    // gateway entry or a paired entry both ride the scoped plane, and the
-    // paired arm additionally holds no renderer token.
-    if (
-      assistant == null ||
-      !(hasLocalGateway(assistant) || expectsPairedGateway(assistant))
-    ) {
-      return false;
-    }
-    resolvedAssistantId = assistant.assistantId;
-    if (expectsPairedGateway(assistant)) {
-      rendererToken = null;
-    }
-  }
-  setSelfHostedConnection({ url: ingressUrl, token: rendererToken });
-  if (resolvedAssistantId != null) {
-    useResolvedAssistantsStore
-      .getState()
-      .setActiveAssistantId(resolvedAssistantId);
-  }
-  return true;
-}
-
-function getRemoteGatewayIngressUrl(): string {
-  const match = /\/assistant(?:\/|$)/.exec(window.location.pathname);
-  const prefix =
-    match && match.index > 0
-      ? window.location.pathname.slice(0, match.index).replace(/\/+$/, "")
-      : "";
-  return `${window.location.origin}${prefix}`;
-}
-
-/**
- * Project a resolution into the stores the rest of the bundle reads: the
+ * Fetch a fresh `/assistant/` resolution and project it.
  * resolved-assistants record + active id, and the self-hosted connection
  * slots the request interceptor consults.
  *
@@ -212,9 +158,6 @@ export async function recheckAssistant(
   queryClient: QueryClient,
   assistantIdOverride?: string,
 ): Promise<GetAssistantResult | undefined> {
-  if (applyGatewayAuthBoot()) {
-    return queryClient.getQueryData(assistantQueryKey(null));
-  }
   const selectedId =
     assistantIdOverride ?? resolveSelectedCloudAssistantId() ?? null;
   const result = await queryClient.fetchQuery({
@@ -301,14 +244,6 @@ export function useAssistantResolution(): AssistantResolutionResult {
 export function useAssistantBootResolution(): AssistantResolutionResult {
   const resolution = useAssistantResolution();
   const selectedId = resolution.selectedCloudAssistantId;
-
-  // Gateway-auth mode: prime the connection slots + active id from local
-  // state. Re-runs when the selection changes so a newly connected assistant
-  // takes over. On the platform plane this touches nothing — the slots
-  // belong to the platform resolution.
-  useEffect(() => {
-    applyGatewayAuthBoot();
-  }, [selectedId]);
 
   useEffect(() => {
     const result = resolution.result;

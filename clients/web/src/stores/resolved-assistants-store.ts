@@ -190,7 +190,11 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
       }));
-      set({ assistants, assistantsHydrated: true });
+      set({
+        assistants,
+        assistantsHydrated: true,
+        activeAssistantId: lockfile.activeAssistant,
+      });
       // The lockfile carries every org's entries, so an id absent from it is
       // genuinely gone — safe to prune. (The API list is org-scoped, so
       // `setFromApi` deliberately does NOT reconcile; a cross-org selection
