@@ -10,7 +10,7 @@
  * These helpers exist only for the cases that genuinely need raw `fetch`
  * (streaming SSE, blob downloads with manual progress, etc.).
  *
- * Anything that handles `Cadet-Organization-Id` or `X-CSRFToken` outside
+ * Anything that handles `X-CSRFToken` outside
  * `lib/auth/` and `lib/api-interceptors.ts` should be routed through here.
  * Drift between sites is the failure mode where a request that skips the
  * header is silently rejected upstream, the wrapper returns null, and the
@@ -32,8 +32,7 @@ interface BuildCadetHeadersOptions {
 
 /**
  * Headers for a safe (GET/HEAD) request against an assistant-scoped
- * daemon route. Adds `Cadet-Organization-Id` when an active
- * organization is set.
+ * daemon route.
  */
 export function buildCadetHeaders(
   extra?: Record<string, string>,
@@ -57,9 +56,8 @@ export function buildCadetHeaders(
 }
 
 /**
- * Headers for a mutating (POST/PUT/PATCH/DELETE) request. Adds the org
- * header and, after bootstrapping the CSRF cookie, the `X-CSRFToken`
- * header that the cloud's session auth requires.
+ * Headers for a mutating (POST/PUT/PATCH/DELETE) request. Adds the
+ * `X-CSRFToken` header that the cloud's session auth requires.
  */
 export async function buildCadetMutatingHeaders(
   extra?: Record<string, string>,

@@ -2,7 +2,6 @@
  * Request/response interceptors for the generated HeyAPI clients.
  *
  * For platform-bound requests, attaches:
- *   - `Cadet-Organization-Id` — selects the active org server-side.
  *   - `X-CSRFToken` (mutations only) — required by the cloud's
  *     SessionAuthentication.
  *   - `X-Cadet-Client-Id` + `X-Cadet-Interface-Id` — identify the

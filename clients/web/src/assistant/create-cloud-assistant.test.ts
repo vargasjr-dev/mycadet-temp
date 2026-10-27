@@ -33,11 +33,6 @@ mock.module("@/assistant/selection", () => ({
   setSelectedAssistant: setSelectedAssistantMock,
 }));
 mock.module("@/lib/local-mode", () => ({}));
-mock.module("@/stores/organization-store", () => ({
-  useOrganizationStore: {
-    getState: () => ({ currentOrganizationId: "org-test" }),
-  },
-}));
 mock.module("@/utils/api-errors", () => ({
   extractErrorMessage: (e: unknown, _r: unknown, fallback?: string) =>
     e &&

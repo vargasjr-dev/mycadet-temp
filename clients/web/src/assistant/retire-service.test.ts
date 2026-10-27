@@ -55,11 +55,6 @@ mock.module("@/hooks/use-chooser-row-avatar", () => ({
   forgetAssistantAvatar: forgetAssistantAvatarMock,
 }));
 const queryClient = new QueryClient();
-mock.module("@/stores/organization-store", () => ({
-  useOrganizationStore: {
-    getState: () => ({ currentOrganizationId: "org-test" }),
-  },
-}));
 
 mock.module("@/lib/navigation/navigation-resolver", () => ({
   resolveNavigation: (

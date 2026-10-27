@@ -18,9 +18,6 @@ const resolvedRef = {
   selectedAssistantId: null as string | null,
   assistantsHydrated: true,
 };
-const orgRef = {
-  currentOrganizationId: "org-1" as string | null,
-};
 
 const useAssistantBootResolutionMock = mock(() => ({
   state: { kind: "active" },
@@ -83,24 +80,6 @@ mock.module("@/stores/auth-store", () => {
   return {
     useAuthStore,
     useHasCloudSession: () => authRef.hasCloudSession,
-  };
-});
-
-mock.module("@/stores/organization-store", () => {
-  const useOrganizationStore = () => null;
-  useOrganizationStore.use = {
-    currentOrganizationId: () => orgRef.currentOrganizationId,
-    status: () => "idle",
-  };
-  useOrganizationStore.getState = () => ({
-    currentOrganizationId: orgRef.currentOrganizationId,
-  });
-  return {
-    useOrganizationStore,
-    useRequestOrganizationId: () => orgRef.currentOrganizationId,
-    // API interceptors read the org for request headers through this helper;
-    // same value the mocked store hooks return.
-    getActiveOrganizationIdForRequests: () => orgRef.currentOrganizationId,
   };
 });
 
@@ -171,7 +150,6 @@ beforeEach(() => {
   resolvedRef.activeAssistantId = "assistant-1";
   resolvedRef.selectedAssistantId = null;
   resolvedRef.assistantsHydrated = true;
-  orgRef.currentOrganizationId = "org-1";
   localSelectedRef.value = null;
 
   useAssistantBootResolutionMock.mockClear();

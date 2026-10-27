@@ -50,7 +50,6 @@ const buildCadetMutatingHeadersMock = mock(
   }),
 );
 const primeLocalGatewayConnectionWithRepairMock = mock(async () => {});
-const fetchOrganizationsMock = mock(async () => {});
 mock.module("@/lib/auth/request-headers", () => ({
   buildCadetMutatingHeaders: buildCadetMutatingHeadersMock,
 }));
@@ -102,16 +101,6 @@ Object.defineProperty(window.navigator, "platform", {
 mock.module("@/runtime/session-token", () => ({
   getElectronSessionToken: () => electronSessionToken,
 }));
-
-mock.module("@/stores/organization-store", () => ({
-  getActiveOrganizationIdForRequests: () => ORGANIZATION_ID,
-  useOrganizationStore: {
-    getState: () => ({
-      fetchOrganizations: fetchOrganizationsMock,
-    }),
-  },
-}));
-
 const { MIN_VERSION: VERIFY_ROUTE_MIN_VERSION } =
   await import("@/lib/backwards-compat/credential-verification");
 const { VERSION_RESOLUTION_TIMEOUT_MS } =
@@ -190,7 +179,6 @@ beforeEach(() => {
   navigatorPlatform = "MacIntel";
   buildCadetMutatingHeadersMock.mockClear();
   primeLocalGatewayConnectionWithRepairMock.mockClear();
-  fetchOrganizationsMock.mockClear();
   resetLocalCloudIdentityCacheForTesting();
   useAssistantIdentityStore
     .getState()
