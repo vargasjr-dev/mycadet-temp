@@ -7,7 +7,7 @@
   },
   "servers": [{ "url": "", "description": "Same-origin — the gateway" }],
   "paths": {
-    "/v1/permissions/thresholds": {
+    "/permissions/thresholds": {
       "get": {
         "operationId": "permissionsThresholdsGet",
         "summary": "Get global auto-approve thresholds",
@@ -100,7 +100,7 @@
         }
       }
     },
-    "/v1/permissions/thresholds/conversations/{conversation_id}": {
+    "/permissions/thresholds/conversations/{conversation_id}": {
       "get": {
         "operationId": "conversationThresholdGet",
         "summary": "Get a conversation's threshold override",
@@ -204,7 +204,7 @@
         "responses": { "204": { "description": "Successful response" } }
       }
     },
-    "/v1/channel-admission-policy": {
+    "/channel-admission-policy": {
       "get": {
         "operationId": "channelAdmissionPolicyList",
         "summary": "List per-channel admission floors",
@@ -260,7 +260,7 @@
         }
       }
     },
-    "/v1/channel-admission-policy/{channel_type}": {
+    "/channel-admission-policy/{channel_type}": {
       "put": {
         "operationId": "channelAdmissionPolicySet",
         "summary": "Set a channel's admission floor",
@@ -348,7 +348,7 @@
         }
       }
     },
-    "/v1/channel-ingress": {
+    "/channel-ingress": {
       "get": {
         "operationId": "channelIngressList",
         "summary": "List ingress declarations and their approval state",
@@ -440,7 +440,7 @@
         }
       }
     },
-    "/v1/channel-ingress/{source}/approve": {
+    "/channel-ingress/{source}/approve": {
       "post": {
         "operationId": "channelIngressApprove",
         "summary": "Approve an ingress declaration",
@@ -490,7 +490,7 @@
         }
       }
     },
-    "/v1/channel-ingress/{source}/revoke": {
+    "/channel-ingress/{source}/revoke": {
       "post": {
         "operationId": "channelIngressRevoke",
         "summary": "Revoke an ingress approval",
@@ -525,7 +525,7 @@
         }
       }
     },
-    "/v1/channel-permission-overrides": {
+    "/channel-permission-overrides": {
       "get": {
         "operationId": "channelPermissionOverridesList",
         "summary": "List channel-permission matrix cells",
@@ -849,7 +849,7 @@
         }
       }
     },
-    "/v1/channel-permission-overrides/resolve": {
+    "/channel-permission-overrides/resolve": {
       "post": {
         "operationId": "channelPermissionResolve",
         "summary": "Resolve the effective channel-permission threshold",
@@ -926,7 +926,7 @@
         }
       }
     },
-    "/v1/channel-permission-overrides/delete": {
+    "/channel-permission-overrides/delete": {
       "post": {
         "operationId": "channelPermissionOverrideDelete",
         "summary": "Delete a channel-permission matrix cell",
@@ -1022,7 +1022,7 @@
         }
       }
     },
-    "/v1/contacts": {
+    "/contacts": {
       "post": {
         "operationId": "contactsUpsert",
         "summary": "Create or update a contact",
@@ -1307,7 +1307,7 @@
         }
       }
     },
-    "/v1/contacts/{contact_id}": {
+    "/contacts/{contact_id}": {
       "delete": {
         "operationId": "contactDelete",
         "summary": "Delete a contact",
@@ -1325,7 +1325,7 @@
         "responses": { "204": { "description": "Successful response" } }
       }
     },
-    "/v1/contacts/prompt/submit": {
+    "/contacts/prompt/submit": {
       "post": {
         "operationId": "contactsPromptSubmit",
         "summary": "Submit a contact-prompt address",
@@ -1394,7 +1394,7 @@
         }
       }
     },
-    "/v1/contacts/record/submit": {
+    "/contacts/record/submit": {
       "post": {
         "operationId": "contactsRecordSubmit",
         "summary": "Submit a contact-record form",
@@ -1474,7 +1474,7 @@
         }
       }
     },
-    "/v1/contact-channels/{channel_id}/verify": {
+    "/contact-channels/{channel_id}/verify": {
       "post": {
         "operationId": "contactChannelVerify",
         "summary": "Manually verify a contact channel",
@@ -1576,7 +1576,7 @@
         }
       }
     },
-    "/v1/credential-requests/peek": {
+    "/credential-requests/peek": {
       "post": {
         "operationId": "credential_requests_peek",
         "summary": "Validate a credential-request token without consuming it",
@@ -1643,7 +1643,7 @@
         }
       }
     },
-    "/v1/credential-requests/submit": {
+    "/credential-requests/submit": {
       "post": {
         "operationId": "credential_requests_submit",
         "summary": "Consume a credential-request token and store the value",
@@ -1708,7 +1708,7 @@
         }
       }
     },
-    "/v1/trust-rules": {
+    "/trust-rules": {
       "get": {
         "operationId": "trustRulesList",
         "summary": "List trust rules",
@@ -1887,7 +1887,7 @@
         }
       }
     },
-    "/v1/trust-rules/suggest": {
+    "/trust-rules/suggest": {
       "post": {
         "operationId": "trustRuleSuggest",
         "summary": "Generate a trust-rule suggestion",
@@ -2024,7 +2024,7 @@
         }
       }
     },
-    "/v1/trust-rules/{rule_id}": {
+    "/trust-rules/{rule_id}": {
       "patch": {
         "operationId": "trustRuleUpdate",
         "summary": "Update a trust rule",
@@ -2142,7 +2142,7 @@
         }
       }
     },
-    "/v1/trust-rules/{rule_id}/reset": {
+    "/trust-rules/{rule_id}/reset": {
       "post": {
         "operationId": "trustRuleReset",
         "summary": "Reset a default trust rule",
@@ -2205,6 +2205,213 @@
                     }
                   },
                   "required": ["rule"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/upgrade-policy": {
+      "get": {
+        "operationId": "upgradePolicyGet",
+        "summary": "Get the assistant's automatic-upgrade schedule",
+        "tags": ["settings"],
+        "description": "Returns the stored policy, or the defaults (enabled, weekly, Mon 06:00–08:00 UTC) when none has been saved yet.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "timezone": { "type": "string", "maxLength": 64 },
+                    "schedule": {
+                      "type": "object",
+                      "properties": {
+                        "frequency": {
+                          "type": "string",
+                          "enum": ["daily", "weekly", "monthly"]
+                        },
+                        "days_of_week": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          }
+                        },
+                        "days_of_month": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 31
+                          }
+                        },
+                        "window": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                            },
+                            "end": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                            }
+                          },
+                          "required": ["start", "end"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "frequency",
+                        "days_of_week",
+                        "days_of_month",
+                        "window"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["enabled", "timezone", "schedule"],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "upgradePolicyPut",
+        "summary": "Save the assistant's automatic-upgrade schedule",
+        "tags": ["settings"],
+        "description": "Full replace — the request body is the complete policy.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "timezone": { "type": "string", "maxLength": 64 },
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "frequency": {
+                        "type": "string",
+                        "enum": ["daily", "weekly", "monthly"]
+                      },
+                      "days_of_week": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        }
+                      },
+                      "days_of_month": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 31
+                        }
+                      },
+                      "window": {
+                        "type": "object",
+                        "properties": {
+                          "start": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                          },
+                          "end": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                          }
+                        },
+                        "required": ["start", "end"],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "frequency",
+                      "days_of_week",
+                      "days_of_month",
+                      "window"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["enabled", "timezone", "schedule"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "timezone": { "type": "string", "maxLength": 64 },
+                    "schedule": {
+                      "type": "object",
+                      "properties": {
+                        "frequency": {
+                          "type": "string",
+                          "enum": ["daily", "weekly", "monthly"]
+                        },
+                        "days_of_week": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          }
+                        },
+                        "days_of_month": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 31
+                          }
+                        },
+                        "window": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                            },
+                            "end": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$"
+                            }
+                          },
+                          "required": ["start", "end"],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "frequency",
+                        "days_of_week",
+                        "days_of_month",
+                        "window"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": ["enabled", "timezone", "schedule"],
                   "additionalProperties": false
                 }
               }

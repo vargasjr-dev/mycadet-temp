@@ -5,6 +5,10 @@ import { matchRoutes } from "react-router";
 mock.module("@/generated/gateway/@tanstack/react-query.gen", () => ({
   assistantFeatureFlagsGetOptions: () => ({ queryKey: ["assistant-flags"] }),
   assistantFeatureFlagsGetQueryKey: () => ["assistant-flags"],
+  assistantUpgradePolicyGetOptions: () => ({
+    queryKey: ["assistant-upgrade-policy"],
+  }),
+  assistantUpgradePolicyGetQueryKey: () => ["assistant-upgrade-policy"],
 }));
 
 const originalWarn = console.warn;
