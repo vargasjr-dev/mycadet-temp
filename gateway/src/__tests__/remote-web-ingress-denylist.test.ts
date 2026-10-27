@@ -87,7 +87,7 @@ function assertDeniedBeforeV1Proxy(path: string): void {
   const denyEmit = nginxIngressSource.indexOf("${DENYLIST_LOCATIONS}");
   const appDenyEmit = nginxIngressSource.indexOf("${denylistLocations()}");
   const proxyEmit = nginxIngressSource.indexOf(
-    "${gatewayProxyLocations(opts.gatewayPort)}",
+    "${gatewayProxyLocations(opts.gatewayUrl)}",
   );
   expect(denyEmit).toBeGreaterThanOrEqual(0);
   expect(proxyEmit).toBeGreaterThan(denyEmit);
