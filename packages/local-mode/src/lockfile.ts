@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 
 import {
-  isRemoteGatewayEntry,
   LockfileSchema,
   parseLockfile,
   type Lockfile,
