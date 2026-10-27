@@ -18,6 +18,10 @@ import type { GatewayConfig } from "../../config.js";
 import { fetchImpl } from "../../fetch.js";
 import { getLogger } from "../../logger.js";
 import { isLoopbackAddress } from "../../util/is-loopback-address.js";
+import {
+  extractBearerToken,
+  hasAuthorizationHeader,
+} from "../middleware/auth.js";
 import { tryIpcProxy } from "./ipc-runtime-proxy.js";
 import { rewriteOAuthProxyUpstreamPath } from "./oauth-proxy-path.js";
 
@@ -136,14 +140,24 @@ export function createRuntimeProxyHandler(config: GatewayConfig) {
     const authHeader = req.headers.get("authorization");
 
     if (config.runtimeProxyRequireAuth && req.method !== "OPTIONS") {
-      if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+      // Cookie custody: a served-gateway browser holds no token in JS — its
+      // credential is the cadet_web_access cookie, and the edge middleware
+      // accepts it as the bearer's fallback (extractBearerToken). The proxy
+      // runs the same extraction: a bearer header still wins, the cookie
+      // stands in when the header is absent, and a malformed header is still
+      // a reject. Without the fallback every assistant-scoped route the
+      // catch-all serves 401s for the served web, forever (a fresh pairing
+      // cookie included).
+      const edgeJwt = extractBearerToken(req);
+      if (!edgeJwt) {
         log.warn(
           { method: req.method, path: url.pathname },
-          "Runtime proxy auth rejected: missing or malformed Authorization header",
+          hasAuthorizationHeader(req)
+            ? "Runtime proxy auth rejected: malformed Authorization header"
+            : "Runtime proxy auth rejected: no Authorization header or access cookie",
         );
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
-      const edgeJwt = authHeader.slice(7);
       const result = validateEdgeToken(edgeJwt);
       if (!result.ok) {
         log.warn(

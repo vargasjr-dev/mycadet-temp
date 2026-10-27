@@ -514,6 +514,21 @@ describe("tryIpcProxy", () => {
     expect(validateEdgeTokenMock).toHaveBeenCalledWith("good-token");
   });
 
+  test("authenticates the served browser's access cookie when no header is present", async () => {
+    // Cookie custody (#576): the served web holds no token in JS — the
+    // cadet_web_access cookie is the credential, and the IPC fast-path must
+    // accept it exactly where the HTTP proxy does.
+    const config = makeConfig({ runtimeProxyRequireAuth: true });
+    const req = makeRequest("/v1/health", {
+      headers: {
+        cookie: `cadet_web_access=${encodeURIComponent("cookie-token")}`,
+      },
+    });
+    const result = await tryIpcProxy(req, config);
+    expect(result!.status).toBe(200);
+    expect(validateEdgeTokenMock).toHaveBeenCalledWith("cookie-token");
+  });
+
   test("returns handler error status code from IpcHandlerError", async () => {
     ipcCallAssistantMock.mockImplementation(() => {
       throw new IpcHandlerError("Not found", 404, "NOT_FOUND");

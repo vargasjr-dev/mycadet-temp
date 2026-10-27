@@ -35,6 +35,7 @@ import { validateEdgeToken } from "../../auth/token-exchange.js";
 import { admitActorToken } from "../../auth/actor-token-revocation.js";
 import { parseSub } from "../../auth/subject.js";
 import type { GatewayConfig } from "../../config.js";
+import { getRemoteWebAccessCookie } from "../browser-auth-cookies.js";
 import { isWebsocketUpgradeRequest } from "../utils.js";
 
 /**
@@ -103,7 +104,9 @@ export function authorizeRuntimeAudioStream(
     ? authHeader.toLowerCase().startsWith("bearer ")
       ? authHeader.slice(7)
       : null
-    : queryToken;
+    : // Cookie custody: a served-gateway browser's upgrade carries its
+      // credential as the cadet_web_access cookie and no header.
+      (queryToken ?? getRemoteWebAccessCookie(req));
 
   if (!rawToken) {
     log.warn("audio stream WS: no token provided");

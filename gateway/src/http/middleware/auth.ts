@@ -628,8 +628,13 @@ function isSingleRouteGrant(claims: TokenClaims): boolean {
 /**
  * Extract the raw token from a Bearer Authorization header, falling back to the
  * browser access cookie (`cadet_web_access`); null when neither is present.
+ *
+ * Shared with the runtime-proxy handlers: a served-gateway browser holds no
+ * token in JS (#576 cookie custody), so every consumer-facing auth gate that
+ * the browser's requests reach has to accept the cookie where the edge
+ * middleware does.
  */
-function extractBearerToken(req: Request): string | null {
+export function extractBearerToken(req: Request): string | null {
   const authHeader = req.headers.get("authorization");
   if (authHeader?.toLowerCase().startsWith("bearer ")) {
     return authHeader.slice(7);
@@ -638,6 +643,6 @@ function extractBearerToken(req: Request): string | null {
   return cookieToken || null;
 }
 
-function hasAuthorizationHeader(req: Request): boolean {
+export function hasAuthorizationHeader(req: Request): boolean {
   return Boolean(req.headers.get("authorization")?.trim());
 }

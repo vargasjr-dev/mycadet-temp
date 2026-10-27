@@ -38,6 +38,7 @@ import {
 } from "../../ipc/route-schema-cache.js";
 import { getLogger } from "../../logger.js";
 import { resolveTrustVerdict } from "../../risk/trust-verdict-resolver.js";
+import { extractBearerToken } from "../middleware/auth.js";
 
 const log = getLogger("ipc-runtime-proxy");
 
@@ -78,11 +79,13 @@ export async function tryIpcProxy(
   let claims: TokenClaims | undefined;
 
   if (config.runtimeProxyRequireAuth && req.method !== "OPTIONS") {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
+    // Cookie custody: same extraction the edge middleware and the HTTP
+    // runtime proxy run — the served web's cadet_web_access cookie stands
+    // in when no bearer header is present.
+    const edgeJwt = extractBearerToken(req);
+    if (!edgeJwt) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const edgeJwt = authHeader.slice(7);
     const result = validateEdgeToken(edgeJwt);
     if (!result.ok) {
       log.warn(

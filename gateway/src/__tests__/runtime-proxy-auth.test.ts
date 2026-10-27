@@ -108,6 +108,59 @@ describe("runtime proxy auth enforcement", () => {
     expect(body.ok).toBe(true);
   });
 
+  test("auth required: accepts the served browser's access cookie when no header is present", async () => {
+    // Cookie custody (#576): the served web holds no token in JS — its
+    // credential is the cadet_web_access cookie, and the runtime-proxy
+    // catch-all is where every assistant-scoped route lands. Without the
+    // cookie fallback here the served web 401s forever, a fresh pairing
+    // included.
+    mockUpstream();
+    const handler = createRuntimeProxyHandler(makeConfig());
+    const req = new Request("http://localhost:7830/v1/health", {
+      headers: { cookie: `cadet_web_access=${encodeURIComponent(TOKEN)}` },
+    });
+    const res = await handler(req);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.ok).toBe(true);
+  });
+
+  test("auth required: forwards the cookie's identity like a bearer's", async () => {
+    let capturedHeaders: Headers | undefined;
+    fetchMock = mock(
+      async (_input: string | URL | Request, init?: RequestInit) => {
+        capturedHeaders = init?.headers as unknown as Headers;
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      },
+    );
+
+    const handler = createRuntimeProxyHandler(makeConfig());
+    const req = new Request("http://localhost:7830/v1/health", {
+      headers: { cookie: `cadet_web_access=${encodeURIComponent(TOKEN)}` },
+    });
+    await handler(req);
+
+    const identity = forwardedIdentity(capturedHeaders!);
+    expect(identity.subject).toBe("actor:self:test-user");
+    expect(identity.principalType).toBe("actor");
+    expect(identity.scopeProfile).toBe("actor_client_v1");
+  });
+
+  test("auth required: rejects a non-bearer authorization header with no cookie", async () => {
+    mockUpstream();
+    const handler = createRuntimeProxyHandler(makeConfig());
+    const req = new Request("http://localhost:7830/v1/health", {
+      headers: { authorization: "Basic dXNlcjpwYXNz" },
+    });
+    const res = await handler(req);
+
+    expect(res.status).toBe(401);
+  });
+
   test("auth required: forwards the verified identity without the client's edge token", async () => {
     let capturedHeaders: Headers | undefined;
     fetchMock = mock(
