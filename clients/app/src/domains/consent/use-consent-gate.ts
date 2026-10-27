@@ -21,19 +21,11 @@ export interface ConsentGateState {
  */
 export function useConsentGate(): ConsentGateState {
   const user = useAuthStore.use.user();
-  const sessionStatus = useAuthStore(
-    (state: { sessionStatus: string; cloudSession: string }) =>
-      `${state.sessionStatus}:${state.cloudSession}`,
-  );
+  const sessionStatus = useAuthStore((state) => state.sessionStatus);
 
   return useMemo(() => {
-    const [status, cloudSession] = sessionStatus.split(":") as [
-      string,
-      string,
-    ];
-    const settled =
-      status !== "initializing" && cloudSession !== "unknown";
-    const hasCloudSession = cloudSession === "present";
+    const settled = sessionStatus !== "initializing";
+    const hasCloudSession = sessionStatus === "authenticated";
     const userId = user?.id ?? null;
     return {
       settled,

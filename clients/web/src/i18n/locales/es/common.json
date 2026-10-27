@@ -7,8 +7,6 @@
   },
   "activeAssistantGate": {
     "connecting": "Conectando con tu asistente…",
-    "logIn": "Iniciar sesión",
-    "logOut": "Cerrar sesión",
     "errorTitle": "No pudimos conectarnos con tu asistente",
     "retry": "Reintentar"
   },

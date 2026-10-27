@@ -9,7 +9,6 @@ import {
 const base: NavigationState = {
   isLocalClient: false,
   hasAssistants: true,
-  cloudSession: "present",
   userHasOnboardedAssistant: false,
   selectedAssistantOnboarded: false,
 };
@@ -27,34 +26,10 @@ describe("resolveNavigation", () => {
     const guard = (state: NavigationState, pathname = "/assistant") =>
       resolveNavigation(state, { kind: "route-guard", pathname });
 
-    test("empty local clients route on the awaited probe answer", () => {
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            hasAssistants: false,
-            cloudSession: "present",
-          }),
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/hosting",
-      });
+    test("empty local clients route to hosting, which settles the account question itself", () => {
       expect(guard(s({ isLocalClient: true, hasAssistants: false }))).toEqual({
         action: "redirect",
         to: "/account/onboarding/hosting",
-      });
-      expect(
-        guard(
-          s({
-            isLocalClient: true,
-            hasAssistants: false,
-            cloudSession: "absent",
-          }),
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/welcome",
       });
     });
 
@@ -123,34 +98,13 @@ describe("resolveNavigation", () => {
       });
     });
 
-    test("redirects to hosting in local mode when platform session present", () => {
-      expect(
-        postRetire(
-          s({
-            hasAssistants: false,
-            isLocalClient: true,
-            cloudSession: "present",
-          }),
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/hosting",
-      });
-    });
-
-    test("redirects to welcome in local mode when no platform session", () => {
-      expect(
-        postRetire(
-          s({
-            hasAssistants: false,
-            isLocalClient: true,
-            cloudSession: "absent",
-          }),
-        ),
-      ).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/welcome",
-      });
+    test("redirects to hosting in local mode when no assistants remain", () => {
+      expect(postRetire(s({ hasAssistants: false, isLocalClient: true }))).toEqual(
+        {
+          action: "redirect",
+          to: "/account/onboarding/hosting",
+        },
+      );
     });
   });
 

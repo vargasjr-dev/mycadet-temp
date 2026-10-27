@@ -46,12 +46,6 @@ mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => ({ ok: true, data: { user: { id: "user-1" } } }),
 }));
 
-const refreshSession = mock(async () => {});
-mock.module("@/stores/auth-store", () => ({
-  useAuthStore: { getState: () => ({ refreshSession }) },
-  whenCloudSessionProbed: async () => "present",
-}));
-
 const { resolveNativePostAuthDestination, startAuthFlow, startNativeLogin } =
   await import("./native-auth");
 const { nativeAuthErrorDetail } =
@@ -210,7 +204,7 @@ describe("startAuthFlow on Electron", () => {
     expect(startOAuth).toHaveBeenCalledWith({ intent: "login" });
   });
 
-  test("refreshes the account before choosing the post-login destination", async () => {
+  test("a returning user skips the first-run funnel destination", async () => {
     const startOAuth = mock(() =>
       Promise.resolve({ sessionToken: "session-token" }),
     );
@@ -219,20 +213,18 @@ describe("startAuthFlow on Electron", () => {
       auth: { startOAuth },
       menu: { setCloudSession: async () => {} },
     };
-    refreshSession.mockImplementationOnce(async () => {
-      useResolvedAssistantsStore.setState({
-        assistants: [
-          {
-            id: "asst-1",
-            hatchedAt: new Date(
-              Date.now() - ONBOARDED_HATCH_AGE_MS,
-            ).toISOString(),
-            isLocal: false,
-            isCloudHosted: true,
-            isPaired: false,
-          },
-        ],
-      });
+    useResolvedAssistantsStore.setState({
+      assistants: [
+        {
+          id: "asst-1",
+          hatchedAt: new Date(
+            Date.now() - ONBOARDED_HATCH_AGE_MS,
+          ).toISOString(),
+          isLocal: false,
+          isCloudHosted: true,
+          isPaired: false,
+        },
+      ],
     });
 
     await startAuthFlow("workos", "/account/provider/callback", {
@@ -240,7 +232,6 @@ describe("startAuthFlow on Electron", () => {
       intent: "login",
     });
 
-    expect(refreshSession).toHaveBeenCalledTimes(1);
     expect(window.location.href).toBe(routes.assistant);
   });
 });

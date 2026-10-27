@@ -34,8 +34,9 @@ mock.module("@app/lib/runtime-mode", () => ({
 }));
 
 mock.module("@app/stores/auth-store", () => ({
-  useAuthStore: (selector: (state: { cloudSession: string }) => unknown) =>
-    selector({ cloudSession: "present" }),
+  useAuthStore: (
+    selector: (state: { sessionStatus: string }) => unknown,
+  ) => selector({ sessionStatus: "authenticated" }),
 }));
 
 // The hosting screen's docs link goes through `ExternalAnchor`, whose click

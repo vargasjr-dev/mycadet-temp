@@ -1,13 +1,15 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import { act, cleanup, renderHook } from "@testing-library/react";
-let session: "unknown" | "absent" | "present" = "unknown";
-mock.module("@app/lib/auth/account-session", () => ({
-  useAccountCloudSession: () => session,
+let sessionStatus: "initializing" | "authenticated" | "unauthenticated" =
+  "initializing";
+mock.module("@app/stores/auth-store", () => ({
+  useAuthStore: (selector: (state: { sessionStatus: typeof sessionStatus }) => unknown) =>
+    selector({ sessionStatus }),
 }));
 const { useAccountCloudGate } = await import("./use-account-cloud-gate");
 afterEach(() => {
   cleanup();
-  session = "unknown";
+  sessionStatus = "initializing";
 });
 const delay = () => new Promise((resolve) => setTimeout(resolve, 25));
 test("a stalled probe times out, a confirmed session wins, and a new pending window gets a fresh deadline", async () => {
@@ -17,10 +19,10 @@ test("a stalled probe times out, a confirmed session wins, and a new pending win
     await delay();
   });
   expect(result.current).toBe("disabled");
-  session = "present";
+  sessionStatus = "authenticated";
   rerender();
   expect(result.current).toBe("full");
-  session = "unknown";
+  sessionStatus = "initializing";
   rerender();
   expect(result.current).toBe("pending");
   await act(async () => {
@@ -28,15 +30,15 @@ test("a stalled probe times out, a confirmed session wins, and a new pending win
   });
   expect(result.current).toBe("disabled");
 });
-test("settling as absent cancels the pending timeout", async () => {
+test("settling as unauthenticated cancels the pending timeout", async () => {
   const { result, rerender } = renderHook(() => useAccountCloudGate(10));
-  session = "absent";
+  sessionStatus = "unauthenticated";
   rerender();
   expect(result.current).toBe("disabled");
   await act(async () => {
     await delay();
   });
-  session = "present";
+  sessionStatus = "authenticated";
   rerender();
   expect(result.current).toBe("full");
 });

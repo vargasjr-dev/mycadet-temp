@@ -29,10 +29,11 @@ import {
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
 import { subscribe } from "@/lib/event-bus";
-import { whenCloudSessionProbed } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
+import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
+import { getSession } from "@/lib/auth/allauth-client";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { handleToggleWatchCommand } from "@/runtime/watch-command";
 
@@ -131,26 +132,44 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // Publish cloud-session state to the Electron app menu from this
-  // always-mounted layer so the menu's Log In/Log Out toggle stays correct
-  // on non-chat routes (e.g. Settings) where ChatLayout isn't mounted.
-  // The probe answer is awaited, not subscribed: the boot probe settles
-  // before/with this effect, transitions publish themselves (logout, the
-  // OAuth login), and the app-resume reprobe republishes here.
+  // The Electron menu's Log In/Log Out toggle and the local assistant's
+  // cloud identity are the only session facts this bundle still consumes.
+  // A settled allauth answer publishes both; an inconclusive one (outage,
+  // throw) leaves the last state standing.
   useEffect(() => {
     let cancelled = false;
-    const publish = () => {
-      void whenCloudSessionProbed().then((answer) => {
-        if (!cancelled) {
-          void setMenuCloudSession(answer === "present");
+    const publish = async (): Promise<void> => {
+      let authenticated: boolean;
+      try {
+        const result = await getSession();
+        if (cancelled) {
+          return;
         }
-      });
+        if (result.ok) {
+          authenticated = !!result.data.user;
+        } else if (
+          result.status !== undefined &&
+          [401, 403, 410].includes(result.status)
+        ) {
+          authenticated = false;
+        } else {
+          return;
+        }
+      } catch {
+        return;
+      }
+      void setMenuCloudSession(authenticated);
+      if (authenticated) {
+        bootstrapLocalAssistantCloudIdentity();
+      }
     };
-    publish();
-    const unsubscribe = subscribe("app.resume", publish);
+    void publish();
+    const unsubResume = subscribe("app.resume", () => {
+      void publish();
+    });
     return () => {
       cancelled = true;
-      unsubscribe();
+      unsubResume();
     };
   }, []);
   const { state: bootState } = useAssistantBootResolution();

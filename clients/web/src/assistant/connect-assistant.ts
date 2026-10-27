@@ -21,10 +21,7 @@ import {
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
 import { isRemoteGatewayEntry } from "@mycadet/local-mode/contract";
-import {
-  commitCloudSessionAnswer,
-  probeCloudSessionForConnect,
-} from "@/stores/auth-store";
+import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 
 /**
  * Connect to a specific local assistant. Primes its gateway connection,
@@ -49,8 +46,7 @@ export async function connectLocalAssistant(
   );
   await primeLocalGatewayConnectionWithRepair(target);
   await setSelectedAssistant(assistantId);
-  // The probe bootstraps cloud identity only after validating a live session.
-  probeCloudSessionForConnect();
+  bootstrapLocalAssistantCloudIdentity(assistantId);
 }
 
 /**
@@ -71,7 +67,6 @@ export async function connectPairedAssistant(
   }
   await primeLocalGatewayConnection(target);
   await setSelectedAssistant(assistantId);
-  probeCloudSessionForConnect();
 }
 
 export async function connectCloudAssistant(
@@ -82,6 +77,4 @@ export async function connectCloudAssistant(
     throw new Error("Platform authentication required");
   }
   await setSelectedAssistant(assistantId);
-  // The connect just verified a live platform session — commit that fact.
-  commitCloudSessionAnswer();
 }

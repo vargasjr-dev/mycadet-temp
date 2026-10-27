@@ -5,7 +5,7 @@ import { routes } from "@/utils/routes";
 export function nativeAuthReturningUser(): boolean {
   // The login page's post-auth query reads only `userHasOnboardedAssistant`;
   // no session has been probed on this plane yet.
-  return buildNavigationState("absent").userHasOnboardedAssistant;
+  return buildNavigationState().userHasOnboardedAssistant;
 }
 
 export const PROVIDER_ID = "workos";
@@ -111,7 +111,7 @@ export function resolvePostAuthDestination({
 } {
   const decision = resolveNavigation(
     // The provider callback page just established the platform session.
-    buildNavigationState("present"),
+    buildNavigationState(),
     {
       kind: "post-auth",
       authIntent,

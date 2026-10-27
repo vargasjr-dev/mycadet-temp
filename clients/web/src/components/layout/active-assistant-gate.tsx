@@ -1,18 +1,11 @@
 import { CloudOff, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
 
 import { Typography } from "@mycadet/design-library";
 import { Button } from "@mycadet/design-library/components/button";
 
 import { useAssistantResolution } from "@/assistant/queries";
-import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { useTranslation } from "@/i18n";
-import { handleLogout } from "@/lib/auth/handle-logout";
-import {
-  whenCloudSessionProbed,
-  type CloudSessionAnswer,
-} from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 
 /**
@@ -94,36 +87,8 @@ function RetryButton() {
   );
 }
 
-/**
- * One-shot await of the cloud-session probe's answer. The escape hatch
- * below needs to know whether the platform account stands while the
- * assistant lifecycle is unresolved — the probe answer is the authority,
- * and by the time this gate renders the boot probe has settled (or this
- * resolves the moment it does). Not a subscription: the placeholder is
- * transient, and transitions own their own publishing.
- */
-function useCloudSessionAnswer(): CloudSessionAnswer | null {
-  const [answer, setAnswer] = useState<CloudSessionAnswer | null>(null);
-  useEffect(() => {
-    let cancelled = false;
-    void whenCloudSessionProbed().then((settled) => {
-      if (!cancelled) {
-        setAnswer(settled);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return answer;
-}
-
 function ActiveAssistantPlaceholder() {
   const { t } = useTranslation();
-  // Keep an auth escape hatch reachable while the assistant lifecycle is
-  // unresolved: Log Out with a cloud session, Log In without one.
-  const cloudSession = useCloudSessionAnswer();
-  const { login } = useOnboardingLogin();
 
   return (
     <div
@@ -135,15 +100,6 @@ function ActiveAssistantPlaceholder() {
       <Typography variant="body-medium-default">
         {t("activeAssistantGate.connecting")}
       </Typography>
-      {cloudSession === "present" ? (
-        <Button variant="ghost" onClick={() => void handleLogout()}>
-          {t("activeAssistantGate.logOut")}
-        </Button>
-      ) : (
-        <Button variant="ghost" onClick={() => void login()}>
-          {t("activeAssistantGate.logIn")}
-        </Button>
-      )}
     </div>
   );
 }

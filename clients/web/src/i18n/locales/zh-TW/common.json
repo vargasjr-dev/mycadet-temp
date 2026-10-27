@@ -7,8 +7,6 @@
   },
   "activeAssistantGate": {
     "connecting": "正在連線至您的助理…",
-    "logIn": "登入",
-    "logOut": "登出",
     "errorTitle": "無法連線至您的助理",
     "retry": "重試"
   },

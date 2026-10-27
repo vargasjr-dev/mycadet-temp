@@ -37,15 +37,6 @@ afterEach(() => {
   });
 });
 
-describe("buildNavigationState — the onboarding fork's inputs", () => {
-  test("the awaited cloud-session answer is carried verbatim", () => {
-    // The answer is an input now, not a store read: the middleware awaits the
-    // probe and hands the answer over.
-    expect(buildNavigationState("present").cloudSession).toBe("present");
-    expect(buildNavigationState("absent").cloudSession).toBe("absent");
-  });
-});
-
 describe("buildNavigationState — onboarding scoping", () => {
   const FRESH = new Date().toISOString();
   const WEEK_OLD = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
@@ -63,7 +54,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-fresh");
 
-    const state = buildNavigationState("absent");
+    const state = buildNavigationState();
     expect(state.userHasOnboardedAssistant).toBe(false);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
@@ -74,7 +65,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-old");
 
-    const state = buildNavigationState("absent");
+    const state = buildNavigationState();
     expect(state.userHasOnboardedAssistant).toBe(true);
     expect(state.selectedAssistantOnboarded).toBe(true);
   });
@@ -87,7 +78,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-fresh");
 
-    const state = buildNavigationState("absent");
+    const state = buildNavigationState();
     expect(state.userHasOnboardedAssistant).toBe(true);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
@@ -98,7 +89,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     clearSelectedAssistantId();
 
-    expect(buildNavigationState("absent").selectedAssistantOnboarded).toBe(
+    expect(buildNavigationState().selectedAssistantOnboarded).toBe(
       false,
     );
   });

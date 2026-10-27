@@ -11,7 +11,6 @@ export interface AccountUser {
 export interface AccountAuthSnapshot {
   user: AccountUser | null;
   sessionStatus: "initializing" | "authenticated" | "unauthenticated";
-  cloudSession: "unknown" | "absent" | "present";
   initSession(): Promise<void>;
   refreshSession(): Promise<boolean>;
   logout(): Promise<void>;

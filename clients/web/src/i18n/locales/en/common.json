@@ -7,8 +7,6 @@
   },
   "activeAssistantGate": {
     "connecting": "Connecting to your assistant…",
-    "logIn": "Log In",
-    "logOut": "Log Out",
     "errorTitle": "We couldn't reach your assistant",
     "retry": "Try again"
   },
