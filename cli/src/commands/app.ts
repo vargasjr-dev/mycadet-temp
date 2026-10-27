@@ -35,8 +35,6 @@ async function startAppEdge(): Promise<void> {
 
   let edge: AppServer;
   try {
-    // The edge resolves the assistant it fronts (and the gateway to proxy)
-    // from the lockfile itself — no per-assistant threading here.
     edge = await ensureAppServer();
   } catch (err) {
     console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
