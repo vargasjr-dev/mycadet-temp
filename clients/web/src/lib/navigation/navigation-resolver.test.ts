@@ -27,18 +27,18 @@ describe("resolveNavigation", () => {
     const guard = (state: NavigationState, pathname = "/assistant") =>
       resolveNavigation(state, { kind: "route-guard", pathname });
 
-    test("empty local clients wait for the platform probe before choosing hosting", () => {
+    test("empty local clients route on the awaited probe answer", () => {
       expect(
         guard(
           s({
             isLocalClient: true,
             hasAssistants: false,
-            cloudSession: "unknown",
+            cloudSession: "present",
           }),
         ),
       ).toEqual({
-        action: "wait",
-        waitFor: "cloud-session",
+        action: "redirect",
+        to: "/account/onboarding/hosting",
       });
       expect(guard(s({ isLocalClient: true, hasAssistants: false }))).toEqual({
         action: "redirect",

@@ -46,10 +46,10 @@ mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => ({ ok: true, data: { user: { id: "user-1" } } }),
 }));
 
-const refreshSession = mock(async () => true);
+const refreshSession = mock(async () => {});
 mock.module("@/stores/auth-store", () => ({
   useAuthStore: { getState: () => ({ refreshSession }) },
-  whenCloudSessionSettled: async () => {},
+  whenCloudSessionProbed: async () => "present",
 }));
 
 const { resolveNativePostAuthDestination, startAuthFlow, startNativeLogin } =

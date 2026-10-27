@@ -145,7 +145,6 @@ mock.module(
   }),
 );
 
-const { useAuthStore } = await import("@/stores/auth-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const { useAssistantIdentityStore } =
@@ -160,7 +159,6 @@ const {
 } = await import("@/hooks/use-chooser-row-avatar");
 const { avatarQueryKey } = await import("@/hooks/use-assistant-avatar");
 
-const initialAuthState = useAuthStore.getState();
 const { chooserRowAvatarCacheQueryKey, persistLastSeenAvatar } =
   await import("@/lib/persist-last-seen-avatar");
 const { cloudAvatarUrlsQueryKey } =
@@ -218,13 +216,6 @@ function createWrapper(
   };
 }
 
-/** A signed-in platform account on this device, the state a `cadet login` leaves. */
-function signInToPlatform(): void {
-  useAuthStore.setState({
-    cloudSession: "present",
-  });
-}
-
 const apiAssistant = (id: string, avatar_url: string | null): Assistant =>
   ({ id, avatar_url }) as Assistant;
 
@@ -247,7 +238,6 @@ beforeEach(() => {
   servedGatewayRuntime = false;
   selfHostedIngressUrl = null;
   hostAvailable = false;
-  signInToPlatform();
   useResolvedAssistantsStore.getState().setActiveAssistantId("active");
   // useAssistantAvatar gates its own path on the identity store's version.
   useAssistantIdentityStore.getState().setIdentity("active", MIN_VERSION);
@@ -271,7 +261,6 @@ afterEach(() => {
   readAssistantAvatarHost.mockReset();
   listAssistants.mockReset();
   listAssistants.mockResolvedValue({ ok: true, status: 200, data: [] });
-  useAuthStore.setState(initialAuthState, true);
   readAssistantAvatarHost.mockResolvedValue({ ok: true, avatar: null });
   readLastSeenAvatar.mockResolvedValue(null);
   fetchAvatarState.mockResolvedValue(characterState);
@@ -527,7 +516,6 @@ describe("useChooserRowAvatar", () => {
     beforeEach(() => {
       localClient = true;
       cloudRemote = false;
-      signInToPlatform();
       listAssistants.mockResolvedValue({
         ok: true,
         status: 200,
@@ -682,8 +670,7 @@ describe("useChooserRowAvatar", () => {
       expect(listAssistants).not.toHaveBeenCalled();
     });
 
-    test("a signed-out device still resolves the lookup", async () => {
-      useAuthStore.setState({ cloudSession: "absent" });
+    test("a device with no platform presence still resolves the lookup", async () => {
       const { result } = renderHook(
         () => useChooserRowAvatar(pairedRow("other")),
         { wrapper: createWrapper() },

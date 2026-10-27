@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 
+import type { CloudSessionAnswer } from "@/stores/auth-store";
 import type { LockfileAssistant } from "@/lib/local-mode";
 
 const isLocalClientMock = mock(() => true);
@@ -26,45 +27,33 @@ mock.module("@/lib/local-mode", () => ({
 // Drive the gateway session off a flag (the slot's token is the credential).
 let mockGatewayTokenPresent = false;
 
-// Clamp whenStoreState timeouts so hydration-timeout paths are testable
-// without real 5s waits; untimed waits and predicate semantics are the real
-// implementation's. Bind the real function BEFORE registering the mock —
-// mock.module patches the imported namespace object in place, so a call-time
-// `actual.whenStoreState` lookup would resolve to this wrapper and recurse.
-const WAIT_TIMEOUT_CLAMP_MS = 100;
-const whenStoreStateReal = (await import("@/utils/when-store-state"))
-  .whenStoreState;
-mock.module("@/utils/when-store-state", () => ({
-  whenStoreState: ((store, predicate, options) =>
-    whenStoreStateReal(store, predicate, {
-      ...options,
-      ...(options?.timeoutMs !== undefined
-        ? { timeoutMs: Math.min(options.timeoutMs, WAIT_TIMEOUT_CLAMP_MS) }
-        : {}),
-    })) as typeof whenStoreStateReal,
+// The middleware consumes the cloud-session probe through
+// `whenCloudSessionProbed`. The tests hand it a controlled promise: resolved
+// fixtures decide instantly, a never-resolving one is the in-flight probe.
+let probeAnswer: Promise<CloudSessionAnswer> = new Promise(() => {});
+mock.module("@/stores/auth-store", () => ({
+  whenCloudSessionProbed: (): Promise<CloudSessionAnswer> => probeAnswer,
 }));
 
 // The guard re-runs itself through the router when a timed-out probe reports
-// late. Most cases stub the route tree so the assertion is on the re-run being
-// armed, not on routing. `liveRouter` swaps in a real React Router instance so
-// one case can assert what `revalidate()` actually does to the guard.
+// late; the assertion is on the re-run being armed, not on routing.
 const revalidateMock = mock(() => {});
-let liveRouter: { revalidate: () => Promise<void> } | null = null;
 mock.module("@/routes", () => ({
   router: {
     revalidate: (): Promise<void> => {
       revalidateMock();
-      return liveRouter?.revalidate() ?? Promise.resolve();
+      return Promise.resolve();
     },
   },
 }));
 
-import { authMiddleware } from "./auth-middleware";
+const {
+  authMiddleware,
+  __setProbeWaitTimeoutForTesting,
+  __resetProbeRevalidationForTesting,
+} = await import("./auth-middleware");
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
-import { useAuthStore } from "@/stores/auth-store";
 import { routes } from "@/utils/routes";
-
-const initialAuthState = useAuthStore.getState();
 
 const localAssistant: LockfileAssistant = {
   assistantId: "local-a",
@@ -100,14 +89,30 @@ async function runMiddlewareOutcome(
 
 const tick = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
+/** A probe that is still in flight, with its future answer in hand. */
+function probeInFlight(): {
+  settle: (answer: CloudSessionAnswer) => void;
+} {
+  let settle!: (answer: CloudSessionAnswer) => void;
+  probeAnswer = new Promise((resolve) => {
+    settle = resolve;
+  });
+  return { settle };
+}
+
+function probeSettlesWith(answer: CloudSessionAnswer): void {
+  probeAnswer = Promise.resolve(answer);
+}
+
 beforeEach(() => {
   isLocalClientMock.mockImplementation(() => true);
   hasAssistantsMock.mockImplementation(() => false);
   mockSelectedAssistant = undefined;
   mockGatewayTokenPresent = false;
   revalidateMock.mockClear();
-  liveRouter = null;
-  useAuthStore.setState(initialAuthState, true);
+  probeSettlesWith("absent");
+  __setProbeWaitTimeoutForTesting(5_000);
+  __resetProbeRevalidationForTesting();
   useResolvedAssistantsStore.setState({
     assistants: [],
     activeAssistantId: null,
@@ -115,16 +120,12 @@ beforeEach(() => {
 });
 
 afterEach(async () => {
-  // Let a re-run armed by a timed-out wait fire and detach here instead of
-  // in the next test, then drain its lazy router import.
-  useAuthStore.setState({ cloudSession: "absent" });
   await tick();
-  useAuthStore.setState(initialAuthState, true);
 });
 
 describe("authMiddleware — local-mode onboarding fork", () => {
   test("waits for the cloud-session probe before choosing hosting vs welcome", async () => {
-    useAuthStore.setState({ cloudSession: "unknown" });
+    const { settle } = probeInFlight();
 
     let settled: { admitted: boolean } | null = null;
     const pending = runMiddlewareOutcome(routes.identity).then((outcome) => {
@@ -139,7 +140,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // Probe settles with a live platform session. The hosting fork targets
     // the app bundle — a full-page navigation, so the middleware admits and
     // the page URL carries it.
-    useAuthStore.setState({ cloudSession: "present" });
+    settle("present");
     await pending;
 
     expect(settled!.admitted).toBe(true);
@@ -150,7 +151,7 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // The local front door (welcome) moved into the app bundle (#523): web
     // never hosts it, so an authenticated local user whose cloud session is
     // absent is admitted here and the shell steers the onboarding fork.
-    useAuthStore.setState({ cloudSession: "absent" });
+    probeSettlesWith("absent");
 
     // The welcome fork targets the app bundle's front door — a full-page
     // navigation, so the middleware admits and the page URL carries it.
@@ -163,17 +164,32 @@ describe("authMiddleware — local-mode onboarding fork", () => {
     // Same #523 split: the guard deciding on a settled-absent session (rather
     // than re-entering the wait) is the no-loop guarantee; where the user goes
     // next is the app bundle's call, not web's redirect.
-    useAuthStore.setState({ cloudSession: "unknown" });
+    probeAnswer = new Promise(() => {});
+    __setProbeWaitTimeoutForTesting(50);
 
-    // The probe stays "unknown" for the whole (clamped) wait, so the guard
-    // decides on a settled-absent session rather than re-entering the wait.
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
     expect(window.location.href.endsWith(routes.welcome)).toBe(true);
   });
 
+  test("a late probe result re-runs the guard instead of being lost", async () => {
+    const { settle } = probeInFlight();
+    __setProbeWaitTimeoutForTesting(50);
+
+    await runMiddlewareOutcome(routes.identity);
+    // The wait timed out: the re-run is armed but has not fired.
+    await tick();
+    expect(revalidateMock).not.toHaveBeenCalled();
+
+    // The probe lands late; the armed re-run fires.
+    settle("present");
+    await tick();
+    await tick();
+    expect(revalidateMock).toHaveBeenCalled();
+  });
+
   test("routes to hosting when a resolved platform session exists", async () => {
-    useAuthStore.setState({ cloudSession: "present" });
+    probeSettlesWith("present");
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
@@ -201,30 +217,16 @@ describe("authMiddleware — app-access admit gate", () => {
     // A local desktop user with no platform identity: the boot resolution
     // answered through the gateway short-circuit — settled and live — even
     // though the cloud probe settled absent.
-    useAuthStore.setState({ cloudSession: "absent" });
+    probeSettlesWith("absent");
 
     const outcome = await runMiddlewareOutcome(routes.identity);
     expect(outcome.admitted).toBe(true);
   });
 
-  test("a cloud 401 mid-session does not redirect a local user", async () => {
-    makeLocalUserReachable();
-    // Start admitted as a local user.
-    useAuthStore.setState({ cloudSession: "present" });
-    expect((await runMiddlewareOutcome(routes.identity)).admitted).toBe(true);
-
-    // Platform getSession() returns 401 mid-session: cloudSession flips to
-    // absent, but the guard has no session input left to react to — the
-    // resolution's reconnecting UI owns session death, not the guard.
-    useAuthStore.setState({ cloudSession: "absent" });
-
-    const outcome = await runMiddlewareOutcome(routes.identity);
-    expect(outcome.admitted).toBe(true);
-  });
-
-  test("research proceeds without waiting for web consent or assistant hydration", async () => {
+  test("research proceeds without waiting for the probe, web consent, or assistant hydration", async () => {
     isLocalClientMock.mockImplementation(() => false);
-    useAuthStore.setState({ cloudSession: "present" });
+    // Still in flight: the middleware must not await it on this plane.
+    probeInFlight();
     useResolvedAssistantsStore.setState({ assistants: [] });
     const href = window.location.href;
     const outcome = await runMiddlewareOutcome(

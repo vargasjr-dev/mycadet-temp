@@ -13,6 +13,7 @@ import {
 } from "@/lib/local-mode";
 import { resolveNavigation } from "@/lib/navigation/navigation-resolver";
 import { buildNavigationState } from "@/lib/navigation/build-state";
+import { whenCloudSessionProbed } from "@/stores/auth-store";
 import { forgetAssistantOnboarded } from "@/assistant/onboarded-assistant-record";
 import { removeLocalSetting } from "@/utils/local-settings";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
@@ -38,10 +39,12 @@ export type RetireOutcome =
 /**
  * Resolve where to send the user after a retire. Reads `hasAssistants`
  * from the resolved assistants store (already updated via `remove()`
- * before this runs) and delegates to the navigation resolver.
+ * before this runs) and awaits the cloud-session probe's answer for the
+ * local hosting/welcome fork, then delegates to the navigation resolver.
  */
-function getPostRetireRoute(): string {
-  const decision = resolveNavigation(buildNavigationState(), {
+async function getPostRetireRoute(): Promise<string> {
+  const cloudSession = await whenCloudSessionProbed();
+  const decision = resolveNavigation(buildNavigationState(cloudSession), {
     kind: "post-retire",
   });
   return decision.action === "redirect" ? decision.to : routes.welcome;
@@ -106,7 +109,7 @@ export async function retireAssistant(
     // list fetch resolves — and the plugin install button mistakes the stale
     // name for an existing assistant.
     removeLocalSetting(MARKETING_ASSISTANT_NAME_CACHE_KEY);
-    return { ok: true, nextRoute: getPostRetireRoute() };
+    return { ok: true, nextRoute: await getPostRetireRoute() };
   } catch {
     return { ok: false, error: "Failed to retire assistant." };
   }

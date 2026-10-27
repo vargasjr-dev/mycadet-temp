@@ -1,9 +1,8 @@
 /**
  * The request-scoped QueryClient is keyed on the active assistant — cloud
- * data is assistant-scoped and the session resolves its organization through
- * that selection — so a response fetched for one assistant is never read as
- * the answer for another, and is not thrown away while that assistant still
- * holds.
+ * data is assistant-scoped — so a response fetched for one assistant is
+ * never read as the answer for another, and is not thrown away while that
+ * assistant still holds.
  */
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import type { QueryClient } from "@tanstack/react-query";
@@ -25,8 +24,6 @@ mock.module("@/components/profile-quick-add-provider", () => ({
 }));
 
 const { AppProviders } = await import("@/components/providers");
-const { __setSessionActiveForTesting, useAuthStore } =
-  await import("@/stores/auth-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 
@@ -70,10 +67,6 @@ beforeEach(() => {
   observedClient = null;
   sessionStorage.clear();
   removeLifecycleDiagnostics("asset_query_");
-  __setSessionActiveForTesting(true);
-  useAuthStore.setState({
-    cloudSession: "present",
-  });
   useResolvedAssistantsStore.setState({ activeAssistantId: "assistant-123" });
 });
 
@@ -82,52 +75,6 @@ afterEach(() => {
 });
 
 describe("AppProviders cache scope", () => {
-  test("preserves asset diagnostics across a session blip and the same re-auth", async () => {
-    renderProviders();
-    await expect(
-      observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
-    ).rejects.toThrow();
-    const previousEvents = assetEvents();
-    const previousSession = useAuthStore.getState().cloudSession;
-
-    act(() => {
-      __setSessionActiveForTesting(false);
-      useAuthStore.setState({
-        cloudSession: "unknown",
-      });
-    });
-    expect(assetEvents()).toEqual(previousEvents);
-
-    act(() => {
-      __setSessionActiveForTesting(true);
-      useAuthStore.setState({
-        cloudSession: previousSession,
-      });
-    });
-    // The assistant scope never moved, so the diagnostics were neither
-    // cleared nor re-recorded: the failed query is deduped per scope until
-    // it recovers.
-    expect(assetEvents()).toEqual(previousEvents);
-  });
-
-  test("keeps the diagnostics when the session settles for another account", async () => {
-    renderProviders();
-    await expect(
-      observedClient!.fetchQuery(ASSET_FAILURE_OPTIONS),
-    ).rejects.toThrow();
-    const previousEvents = assetEvents();
-
-    act(() => {
-      // A fresh platform session (cross-tab sign-in as another account) —
-      // still "present", and the assistant selection never moved.
-      useAuthStore.setState({ cloudSession: "unknown" });
-      useAuthStore.setState({ cloudSession: "present" });
-    });
-    // The user is no longer the request identity — the assistant is, and it
-    // did not move.
-    expect(assetEvents()).toEqual(previousEvents);
-  });
-
   test("clears the diagnostics when the active assistant changes", async () => {
     renderProviders();
     await expect(

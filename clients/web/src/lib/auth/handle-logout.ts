@@ -15,8 +15,10 @@ export async function handleLogout(): Promise<void> {
   if (isLocalClient()) {
     const active = getActiveAssistant();
     if (active && isLocalAssistant(active)) {
+      // Signing out of the local assistant only: the cloud account stands,
+      // so the session machinery is left untouched and the menu's
+      // Log In/Log Out toggle is the only state that moves.
       await setMenuCloudSession(false);
-      useAuthStore.setState({ cloudSession: "absent" });
       return;
     }
 

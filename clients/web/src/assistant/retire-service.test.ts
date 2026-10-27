@@ -49,6 +49,16 @@ mock.module("@/lib/local-mode", () => ({
   isLocalClient: () => isLocalClientValue,
   isPairedAssistant: (a: { cloud?: string }) => a.cloud === "paired",
   retireLocalAssistant: retireLocalAssistantMock,
+  // The auth-store graph (imported for the post-retire probe answer) needs
+  // these; no test here exercises the gateway machinery.
+  getActiveAssistant: () => undefined,
+  isServedGatewayRuntime: () => false,
+  isCadetCloudRemote: () => false,
+  hasLocalGateway: () => false,
+  hasPairedGateway: () => false,
+  primeLocalGatewayConnection: async () => {},
+  primeLocalGatewayConnectionWithStartupRetry: async () => {},
+  primeLocalGatewayConnectionWithRepair: async () => {},
 }));
 const forgetAssistantAvatarMock = mock((_qc: QueryClient, _id: string) => {});
 mock.module("@/hooks/use-chooser-row-avatar", () => ({
@@ -98,6 +108,7 @@ mock.module("@/utils/routes", () => ({
   routes: {
     assistant: "/assistant",
     welcome: "/assistant/welcome",
+    account: { providerCallback: "/account/provider-callback" },
     onboarding: {
       hosting: "/account/onboarding/hosting",
       privacy: "/assistant/onboarding/privacy",
@@ -106,8 +117,12 @@ mock.module("@/utils/routes", () => ({
 }));
 
 const { retireAssistant } = await import("./retire-service");
+const { __settleCloudProbeForTesting } = await import("@/stores/auth-store");
 
 beforeEach(() => {
+  // The post-retire fork awaits the cloud-session probe's answer; the real
+  // auth store's boot flow never runs here, so settle its default directly.
+  __settleCloudProbeForTesting("absent");
   isLocalClientValue = false;
   lockfileAssistants = [];
   storeAssistants = [];

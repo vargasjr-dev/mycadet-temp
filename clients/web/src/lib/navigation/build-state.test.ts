@@ -5,30 +5,23 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 // branches on.
 let mockIsLocalClient = true;
 let mockIsCloudRemote = false;
-let mockGatewaySessionLive = false;
 
 const localModeActual = await import("@/lib/local-mode");
 mock.module("@/lib/local-mode", () => ({
   ...localModeActual,
   isLocalClient: () => mockIsLocalClient,
   isCadetCloudRemote: () => mockIsCloudRemote,
-  isGatewaySessionLive: () => mockGatewaySessionLive,
 }));
 
 const { buildNavigationState } = await import("./build-state");
-const { useAuthStore } = await import("@/stores/auth-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const { clearSelectedAssistantId, writeSelectedAssistantId } =
   await import("@/assistant/selected-assistant-storage");
 
-const initialAuthState = useAuthStore.getState();
-
 beforeEach(() => {
   mockIsLocalClient = true;
   mockIsCloudRemote = false;
-  mockGatewaySessionLive = false;
-  useAuthStore.setState(initialAuthState, true);
   globalThis.sessionStorage?.clear();
   useResolvedAssistantsStore.setState({
     assistants: [],
@@ -38,16 +31,18 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  useAuthStore.setState(initialAuthState, true);
+  useResolvedAssistantsStore.setState({
+    assistants: [],
+    activeAssistantId: null,
+  });
 });
 
 describe("buildNavigationState — the onboarding fork's inputs", () => {
-  test("cloudSession is surfaced verbatim for the onboarding fork", () => {
-    // The route fork's onboarding wait keys off cloudSession === 'unknown';
-    // the field is surfaced verbatim from the store.
-    useAuthStore.setState({ cloudSession: "unknown" });
-
-    expect(buildNavigationState().cloudSession).toBe("unknown");
+  test("the awaited cloud-session answer is carried verbatim", () => {
+    // The answer is an input now, not a store read: the middleware awaits the
+    // probe and hands the answer over.
+    expect(buildNavigationState("present").cloudSession).toBe("present");
+    expect(buildNavigationState("absent").cloudSession).toBe("absent");
   });
 });
 
@@ -68,7 +63,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-fresh");
 
-    const state = buildNavigationState();
+    const state = buildNavigationState("absent");
     expect(state.userHasOnboardedAssistant).toBe(false);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
@@ -79,7 +74,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-old");
 
-    const state = buildNavigationState();
+    const state = buildNavigationState("absent");
     expect(state.userHasOnboardedAssistant).toBe(true);
     expect(state.selectedAssistantOnboarded).toBe(true);
   });
@@ -92,7 +87,7 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     writeSelectedAssistantId("asst-fresh");
 
-    const state = buildNavigationState();
+    const state = buildNavigationState("absent");
     expect(state.userHasOnboardedAssistant).toBe(true);
     expect(state.selectedAssistantOnboarded).toBe(false);
   });
@@ -103,6 +98,8 @@ describe("buildNavigationState — onboarding scoping", () => {
     });
     clearSelectedAssistantId();
 
-    expect(buildNavigationState().selectedAssistantOnboarded).toBe(false);
+    expect(buildNavigationState("absent").selectedAssistantOnboarded).toBe(
+      false,
+    );
   });
 });

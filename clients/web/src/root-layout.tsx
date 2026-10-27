@@ -28,7 +28,8 @@ import {
   clearWatchRetro,
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
-import { useHasCloudSession } from "@/stores/auth-store";
+import { subscribe } from "@/lib/event-bus";
+import { whenCloudSessionProbed } from "@/stores/auth-store";
 import { handleLogout } from "@/lib/auth/handle-logout";
 import { useOnboardingLogin } from "@/hooks/use-onboarding-login";
 import { setMenuCloudSession } from "@/runtime/menu";
@@ -130,13 +131,28 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const hasCloudSession = useHasCloudSession();
   // Publish cloud-session state to the Electron app menu from this
   // always-mounted layer so the menu's Log In/Log Out toggle stays correct
   // on non-chat routes (e.g. Settings) where ChatLayout isn't mounted.
+  // The probe answer is awaited, not subscribed: the boot probe settles
+  // before/with this effect, transitions publish themselves (logout, the
+  // OAuth login), and the app-resume reprobe republishes here.
   useEffect(() => {
-    void setMenuCloudSession(hasCloudSession);
-  }, [hasCloudSession]);
+    let cancelled = false;
+    const publish = () => {
+      void whenCloudSessionProbed().then((answer) => {
+        if (!cancelled) {
+          void setMenuCloudSession(answer === "present");
+        }
+      });
+    };
+    publish();
+    const unsubscribe = subscribe("app.resume", publish);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
   const { state: bootState } = useAssistantBootResolution();
   // Channel-setup close auto-notify watcher. Mounted at this always-mounted
   // layer (not the chat layout) so a wizard-visibility transition triggered

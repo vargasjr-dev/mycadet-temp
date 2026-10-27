@@ -40,7 +40,6 @@ import {
   type NotificationTapHandler,
   type NotificationTapPayload,
 } from "@/runtime/notification-taps";
-import { useAuthStore } from "@/stores/auth-store";
 import {
   useResolvedAssistantsStore,
   type ResolvedAssistant,
@@ -153,9 +152,6 @@ beforeEach(() => {
     connectMock.mockReset();
   }
   window.history.pushState(null, "", "/");
-  useAuthStore.setState({
-    cloudSession: "present",
-  });
   useResolvedAssistantsStore.setState({
     assistants: [ASSISTANT_A, ASSISTANT_B],
     assistantsHydrated: true,

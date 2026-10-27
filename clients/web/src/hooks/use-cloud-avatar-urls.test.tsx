@@ -41,7 +41,6 @@ const listAssistants = mock(
 const actualApi = await import("@/assistant/api");
 mock.module("@/assistant/api", () => ({ ...actualApi, listAssistants }));
 
-const { useAuthStore } = await import("@/stores/auth-store");
 const { useResolvedAssistantsStore } =
   await import("@/stores/resolved-assistants-store");
 const {
@@ -52,8 +51,6 @@ const {
 } = await import("@/hooks/use-cloud-avatar-urls");
 const { AVATAR_SUPERSEDE_WINDOW_MS, resetAvatarSupersedeForTests } =
   await import("@/lib/avatar-supersede");
-
-const initialAuthState = useAuthStore.getState();
 
 const apiAssistant = (id: string, avatar_url: string | null): Assistant =>
   ({ id, avatar_url }) as Assistant;
@@ -76,16 +73,9 @@ async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20));
 }
 
-function signIn(): void {
-  useAuthStore.setState({
-    cloudSession: "present",
-  });
-}
-
 beforeEach(() => {
   cloudRemote = false;
   resetAvatarSupersedeForTests();
-  signIn();
   listAssistants.mockResolvedValue({
     ok: true,
     status: 200,
@@ -101,7 +91,6 @@ afterEach(() => {
   cleanup();
   setSystemTime();
   listAssistants.mockReset();
-  useAuthStore.setState(initialAuthState, true);
 });
 
 describe("useCloudAvatarUrls", () => {
@@ -127,8 +116,7 @@ describe("useCloudAvatarUrls", () => {
     expect(listAssistants).not.toHaveBeenCalled();
   });
 
-  test("fetches regardless of the platform session", async () => {
-    useAuthStore.setState({ cloudSession: "absent" });
+  test("fetches with no platform-session seeding at all", async () => {
     const { result } = renderHook(() => useCloudAvatarUrls(), {
       wrapper: createWrapper(),
     });

@@ -2,11 +2,10 @@
  * Assistant connection — the interactive "switch to that assistant"
  * operation, shared by notification taps and runtime upgrades.
  *
- * Priming the target's gateway transport, selecting the assistant, and
- * committing the session the connect establishes live here, one layer out
- * from the session lifecycle itself: connecting is an assistant operation.
- * The session writes go through the auth store's commit seams until session
- * state re-homes to the app bundle.
+ * Priming the target's gateway transport and selecting the assistant live
+ * here, one layer out from the session lifecycle itself: connecting is an
+ * assistant operation. The selection write IS the session commit — the auth
+ * store carries no session state to stamp.
  *
  * Unlike `initSession`, which is the best-effort boot probe and swallows
  * failures, these rethrow so the caller can surface the reason — including
@@ -14,6 +13,7 @@
  * instead of dead-ending.
  */
 import { getSession } from "@/lib/auth/allauth-client";
+import { setSelectedAssistant } from "@/assistant/selection";
 import {
   getLocalAssistants,
   getLockfileAssistant,
@@ -22,8 +22,7 @@ import {
   primeLocalGatewayConnectionWithRepair,
 } from "@/lib/local-mode";
 import {
-  commitCloudSession,
-  commitLocalSession,
+  commitCloudSessionAnswer,
   probeCloudSessionForConnect,
 } from "@/stores/auth-store";
 
@@ -49,7 +48,7 @@ export async function connectLocalAssistant(
     (a) => a.assistantId === assistantId,
   );
   await primeLocalGatewayConnectionWithRepair(target);
-  await commitLocalSession(assistantId);
+  await setSelectedAssistant(assistantId);
   // The probe bootstraps cloud identity only after validating a live session.
   probeCloudSessionForConnect();
 }
@@ -71,7 +70,7 @@ export async function connectPairedAssistant(
     throw new Error("Not a paired assistant");
   }
   await primeLocalGatewayConnection(target);
-  await commitLocalSession(assistantId);
+  await setSelectedAssistant(assistantId);
   probeCloudSessionForConnect();
 }
 
@@ -82,5 +81,7 @@ export async function connectCloudAssistant(
   if (!result.ok || !result.data.user) {
     throw new Error("Platform authentication required");
   }
-  await commitCloudSession(assistantId);
+  await setSelectedAssistant(assistantId);
+  // The connect just verified a live platform session — commit that fact.
+  commitCloudSessionAnswer();
 }

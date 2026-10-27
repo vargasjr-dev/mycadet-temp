@@ -1,4 +1,4 @@
-import type { CloudSessionStatus } from "@/stores/session-status";
+import type { CloudSessionAnswer } from "@/stores/auth-store";
 import { sanitizeReturnTo } from "@/utils/return-to";
 import {
   isNewAssistantFunnel,
@@ -13,7 +13,13 @@ import { routes } from "@/utils/routes";
 export interface NavigationState {
   isLocalClient: boolean;
   hasAssistants: boolean;
-  cloudSession: CloudSessionStatus;
+  /**
+   * The cloud-session probe's answer, awaited by the caller that needs it
+   * (the auth middleware's local fork, the post-retire fork). The resolver
+   * itself never waits — there is no "unknown" to branch on; callers settle
+   * the answer before deciding.
+   */
+  cloudSession: CloudSessionAnswer;
   /**
    * Whether the user owns ANY assistant past first-run onboarding, i.e. is a
    * returning user. The right question for post-auth and the onboarding
@@ -48,17 +54,7 @@ export type NavigationQuery =
 
 export type NavigationDecision =
   | { action: "allow" }
-  | { action: "redirect"; to: string }
-  /**
-   * State the decision depends on has not settled yet.
-   *
-   * `waitFor` names the signal when it is one the caller has to block on
-   * beyond the session itself, so a caller that can await it (the auth
-   * middleware) awaits exactly that signal instead of guessing from the
-   * surrounding state — guessing wrong re-resolves on unchanged state and
-   * spins.
-   */
-  | { action: "wait"; waitFor?: "cloud-session" };
+  | { action: "redirect"; to: string };
 
 // ---------------------------------------------------------------------------
 // Shared predicates & helpers
@@ -180,9 +176,6 @@ function requireAssistant(state: NavigationState): NavigationDecision | null {
   }
 
   if (state.isLocalClient) {
-    if (state.cloudSession === "unknown") {
-      return { action: "wait", waitFor: "cloud-session" };
-    }
     if (state.cloudSession === "present") {
       return { action: "redirect", to: routes.onboarding.hosting };
     }

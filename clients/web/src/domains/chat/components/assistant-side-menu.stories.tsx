@@ -29,7 +29,6 @@ import { PreferencesMenu } from "@/domains/chat/components/preferences-menu";
 import { useSidebarLayoutStore } from "@/domains/chat/sidebar-layout-store";
 import { DRAWER_SURFACE_BACKGROUND } from "@/domains/chat/utils/drawer-surface";
 import { appsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
-import { useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { AppSummary } from "@/types/app-types";
 import {
@@ -213,10 +212,6 @@ const GROUPS: ConversationGroup[] = [
 function seedViewMode(assistantId: string, mode: SidebarViewMode): void {
   saveViewMode(assistantId, mode);
   useSidebarLayoutStore.setState({ assistantId: null });
-  /* `PreferencesMenu` renders nothing for a signed-out user and a story has no
-     session of its own, so the sidebar's footer entry only appears in these
-     stories once one is seeded. */
-  useAuthStore.setState({ cloudSession: "present" });
   /* `useAssistantCapability` keys on the active assistant from this store, not
      on the id the story passes as a prop, so the seeded `appPins` answer is
      only found once the store agrees which assistant is active. */

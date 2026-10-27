@@ -29,7 +29,6 @@ import {
   BrowserNotificationDelivery,
 } from "@/runtime/browser-notification-delivery";
 import { useAssistantIdentityStore } from "@/stores/assistant-identity-store";
-import { useAuthStore } from "@/stores/auth-store";
 import { useConversationStore } from "@/stores/conversation-store";
 import {
   useResolvedAssistantsStore,
@@ -243,9 +242,6 @@ beforeEach(() => {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   __resetForTesting();
-  useAuthStore.setState({
-    cloudSession: "present",
-  });
   useResolvedAssistantsStore.setState({
     assistants: [PLATFORM_ASSISTANT],
     activeAssistantId: "assistant-1",
@@ -431,8 +427,6 @@ describe("useNotificationIntentSync", () => {
       isPaired: true,
       runtimeUrl: "https://b.example.com/assistant",
     };
-    useAuthStore.setState({
-      });
     useResolvedAssistantsStore.setState({
       assistants: [assistantA, assistantB],
       activeAssistantId: assistantA.id,

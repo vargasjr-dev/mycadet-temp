@@ -30,7 +30,6 @@ import { saveViewMode } from "@/domains/chat/utils/sidebar-view-mode";
 import { appsGetQueryKey } from "@/generated/daemon/@tanstack/react-query.gen";
 import { avatarQueryKey } from "@/hooks/use-assistant-avatar";
 import { withQueryCache } from "@/lib/story-query-cache";
-import { useAuthStore } from "@/stores/auth-store";
 import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import type { Conversation } from "@/types/conversation-types";
 import { BUNDLED_COMPONENTS } from "@/utils/avatar-bundled-components";
@@ -97,7 +96,6 @@ const withInboxQueryCache = withQueryCache((client) => {
 function seedStores(): void {
   saveViewMode(ASSISTANT_ID, "all");
   useSidebarLayoutStore.setState({ assistantId: null });
-  useAuthStore.setState({ cloudSession: "present" });
   useResolvedAssistantsStore.setState({ activeAssistantId: ASSISTANT_ID });
 }
 

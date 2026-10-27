@@ -439,10 +439,10 @@ export async function startAuthFlow(
         primeElectronSessionToken(result.sessionToken);
         // Reconcile the account before choosing where login lands. Keep this
         // dynamic because auth-store imports this module.
-        const { useAuthStore, whenCloudSessionSettled } =
+        const { useAuthStore, whenCloudSessionProbed } =
           await import("@/stores/auth-store");
         await useAuthStore.getState().refreshSession();
-        await whenCloudSessionSettled();
+        await whenCloudSessionProbed();
         await setMenuCloudSession(true);
         const destination = sanitizeReturnTo(
           resolveNativePostAuthDestination(options.intent, options.returnTo),
