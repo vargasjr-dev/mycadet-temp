@@ -80,11 +80,12 @@ async function boot(router: Router) {
     // stamped the one assistant this surface serves. No roster, no warm-up
     // fetch - one store write.
     useResolvedAssistantsStore.getState().setFromLockfile(getServedLockfile());
+    // The app bundle establishes the gateway connection on every other
+    // surface; the local client's renderer is the one place the prime still
+    // rides boot — a desktop resume can leave the slot stale.
     await establishGatewayConnection();
-  } else {
-    void establishGatewayConnection();
+    watchGatewayConnectionOnResume();
   }
-  watchGatewayConnectionOnResume();
   // Local mode awaits `initSession()` above, so this separates "session was
   // the boot cost" from "the app tree was".
 

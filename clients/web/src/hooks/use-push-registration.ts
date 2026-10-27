@@ -6,9 +6,8 @@
  * can deliver background notifications (reminders fire while the app is
  * suspended, where the local-notification path cannot reach the device).
  *
- * No-ops outside native mobile. Token deletion on logout is handled in
- * the logout path (`@/lib/auth/handle-logout`, before the hand-off that clears the
- * session), not here —
+ * No-ops outside native mobile. Token deletion on logout is handled by the
+ * app bundle's logout flow (`@app/lib/auth/logout-account`), not here —
  * the assistant-id change on logout races session teardown, so the cloud
  * delete must run while the session is still valid.
  *

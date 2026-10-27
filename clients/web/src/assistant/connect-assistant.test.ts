@@ -142,10 +142,6 @@ mock.module("@/runtime/native-biometric", () => ({
   getBiometricCapability: async () => null,
 }));
 
-mock.module("@/lib/auth/session-cleanup", () => ({
-  clearUserScopedStorage: () => {},
-}));
-
 // Full module surface: `mock.module` is process-global in bun, so a partial
 // shape would shadow the other exports for later test files.
 mock.module("@/runtime/widget-snapshot", () => ({
