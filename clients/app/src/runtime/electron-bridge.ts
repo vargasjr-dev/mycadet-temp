@@ -10,7 +10,6 @@ export interface AppElectronBridge {
     >
   >;
   localMode?: Pick<CadetBridge["localMode"], "readLockfile">;
-  menu: { setCloudSession(has: boolean): Promise<void> };
   /**
    * Menu-bar (Tray) status dot publishing. Optional for the same
    * shell/renderer skew reason as `deepLinks`: a newer bundle can run against

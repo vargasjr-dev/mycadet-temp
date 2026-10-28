@@ -17,6 +17,10 @@ import { installGlobalShortcuts } from "@mycadet/electron-desktop/global-shortcu
 import { installHotkeysIpc } from "@mycadet/electron-desktop/hotkeys";
 import { getName, onNameChange } from "@mycadet/electron-desktop/identity";
 import { installImageContextMenu } from "@mycadet/electron-desktop/image-context-menu";
+import {
+  getSessionToken,
+  onSessionTokenChange,
+} from "@mycadet/electron-desktop/session-token-store";
 import { toggleQuickInput } from "@mycadet/electron-desktop/quick-input-window";
 import { installTextContextMenu } from "@mycadet/electron-desktop/text-context-menu";
 
@@ -26,7 +30,7 @@ import { runInstallCliCommandFlow } from "../cli-path-flow";
 import { handle } from "../ipc.client";
 import log from "../logger";
 import { current, dispatchToMain, ensureVisible } from "../main-window";
-import { installWindowsMenu } from "../menu";
+import { installWindowsMenu, setWindowsHasCloudSession } from "../menu";
 
 const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
   id: "commands",
@@ -78,6 +82,12 @@ const commandsFeature: CapabilityModule<DesktopCapabilityRegistry> = {
       installCli: () => {
         void runInstallCliCommandFlow();
       },
+    });
+    // The menu's Log In/Log Out toggle is main's fact: derived from the same
+    // token store the OAuth flow and sign-out write.
+    setWindowsHasCloudSession(!!getSessionToken());
+    onSessionTokenChange(() => {
+      setWindowsHasCloudSession(!!getSessionToken());
     });
 
     app.on("web-contents-created", (_event, contents) => {

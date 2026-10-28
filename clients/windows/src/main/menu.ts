@@ -18,7 +18,6 @@ import type { IpcHandle } from "@mycadet/electron-desktop/ipc";
 import { readOnboardingActive } from "@mycadet/electron-desktop/window-state";
 import {
   MENU_POPUP,
-  MENU_SET_PLATFORM_SESSION,
   MENU_TITLES,
 } from "@mycadet/ipc-contract";
 
@@ -32,6 +31,17 @@ interface WindowsMenuOptions {
 }
 
 let hasCloudSession = false;
+let applyFn: () => void = () => {};
+
+/**
+ * The Log In/Log Out toggle is this process's fact: the wiring derives it
+ * from the session-token store and publishes here. See features/commands.ts.
+ */
+export function setWindowsHasCloudSession(has: boolean): void {
+  if (hasCloudSession === has) return;
+  hasCloudSession = has;
+  applyFn();
+}
 
 const commandItem = (
   label: string,
@@ -160,13 +170,7 @@ export const installWindowsMenu = (options: WindowsMenuOptions): void => {
   const apply = (): void => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(buildWindowsMenu(options)));
   };
-
-  options.handle(MENU_SET_PLATFORM_SESSION, z.tuple([z.boolean()]), ([has]) => {
-    if (hasCloudSession !== has) {
-      hasCloudSession = has;
-      apply();
-    }
-  });
+  applyFn = apply;
   // The main window hides the native frame (`titleBarStyle: "hidden"`), which
   // hides the OS menu bar with it. The renderer draws the top-level titles in
   // its title bar (localizing them by id) and pops the real native submenus

@@ -7,7 +7,6 @@ import type {
 import { createHotkeysBridge } from "@mycadet/electron-desktop/preload";
 import {
   MENU_POPUP,
-  MENU_SET_PLATFORM_SESSION,
   MENU_TITLES,
   type CadetBridge,
 } from "@mycadet/ipc-contract";
@@ -19,8 +18,6 @@ const commandsFeature: CapabilityModule<
   install: (registry) => {
     registry.contribute("hotkeys", createHotkeysBridge(ipcRenderer));
     registry.contribute("menu", {
-      setCloudSession: (has) =>
-        ipcRenderer.invoke(MENU_SET_PLATFORM_SESSION, has) as Promise<void>,
       titles: () =>
         ipcRenderer.invoke(MENU_TITLES) as Promise<
           Array<{ id: string; label: string }>

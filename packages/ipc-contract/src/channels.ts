@@ -117,7 +117,6 @@ export const LOCAL_MODE_READ_ASSISTANT_AVATAR =
   "cadet:localMode:readAssistantAvatar";
 
 // Menu
-export const MENU_SET_PLATFORM_SESSION = "cadet:menu:setCloudSession";
 export const MENU_TITLES = "cadet:menu:titles";
 export const MENU_POPUP = "cadet:menu:popup";
 
