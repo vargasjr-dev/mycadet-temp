@@ -20,7 +20,7 @@ import { loadGuardianToken } from "../lib/guardian-token.js";
 import {
   stopContainerAppServer,
   stopIngressNginx,
-} from "../lib/nginx-ingress.js";
+} from "../lib/servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   isProcessAlive,

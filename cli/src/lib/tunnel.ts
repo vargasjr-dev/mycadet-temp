@@ -35,7 +35,7 @@ import {
   isIngressRunning,
   readIngressState,
   type AppServer,
-} from "./nginx-ingress.js";
+} from "./servers/nginx.js";
 import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,

@@ -19,7 +19,7 @@ import * as guardianToken from "../lib/guardian-token.js";
 import * as httpClient from "../lib/http-client.js";
 import * as ingressConfig from "../lib/ingress-config.js";
 import * as local from "../lib/local.js";
-import * as nginxIngress from "../lib/nginx-ingress.js";
+import * as nginxIngress from "../lib/servers/nginx.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as processLib from "../lib/process.js";
 import * as portAllocator from "../lib/port-allocator.js";
@@ -196,7 +196,7 @@ const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
   () => null,
 );
 
-mock.module("../lib/nginx-ingress.js", () => ({
+mock.module("../lib/servers/nginx.js", () => ({
   ...realNginxIngress,
   ensureAppServer: ensureAppServerMock,
   isIngressRunning: isIngressRunningMock,
@@ -355,7 +355,7 @@ afterAll(() => {
   mock.module("../lib/local", () => realLocal);
   mock.module("../lib/tunnels/ngrok", () => realNgrok);
   mock.module("../lib/ingress-config.js", () => realIngressConfig);
-  mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
+  mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   mock.module("../lib/http-client.js", () => realHttpClient);
   mock.module("../lib/root-signing-key.js", () => realRootSigningKey);
 });

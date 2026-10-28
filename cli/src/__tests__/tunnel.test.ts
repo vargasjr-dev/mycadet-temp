@@ -28,7 +28,7 @@ import { z } from "zod";
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
 import * as ngrok from "../lib/tunnels/ngrok.js";
-import * as nginxIngress from "../lib/nginx-ingress.js";
+import * as nginxIngress from "../lib/servers/nginx.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
 import { saveIngressUrl } from "../lib/ingress-config.js";
@@ -110,7 +110,7 @@ const readIngressStateMock = mock<typeof nginxIngress.readIngressState>(
 const getNginxVersionMock = mock<typeof nginxIngress.getNginxVersion>(
   () => "nginx version (test)",
 );
-mock.module("../lib/nginx-ingress.js", () => ({
+mock.module("../lib/servers/nginx.js", () => ({
   ...realNginxIngress,
   ensureAppServer: ensureAppServerMock,
   getNginxVersion: getNginxVersionMock,
@@ -331,7 +331,7 @@ describe("app server targeting", () => {
     mock.module("../lib/tunnels/cloudflare.js", () => realCloudflareTunnel);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
-    mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
+    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   });
 
   test("targets the edge port returned by ensureAppServer for ngrok", async () => {
@@ -1532,7 +1532,7 @@ describe("tunnel background mode", () => {
       runNgrokTunnel: runNgrokTunnelMock,
       NGROK_PROVIDER: { ...realNgrok.NGROK_PROVIDER, run: runNgrokTunnelMock },
     }));
-    mock.module("../lib/nginx-ingress.js", () => ({
+    mock.module("../lib/servers/nginx.js", () => ({
       ...realNginxIngress,
       ensureAppServer: ensureAppServerMock,
       getNginxVersion: getNginxVersionMock,
@@ -1546,7 +1546,7 @@ describe("tunnel background mode", () => {
   afterAll(() => {
     mock.module("node:child_process", () => realChildProcess);
     mock.module("../lib/tunnels/ngrok", () => realNgrok);
-    mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
+    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   });
 
   beforeEach(() => {
@@ -1686,7 +1686,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
         run: runTailscaleTunnelMock,
       },
     }));
-    mock.module("../lib/nginx-ingress.js", () => ({
+    mock.module("../lib/servers/nginx.js", () => ({
       ...realNginxIngress,
       ensureAppServer: ensureAppServerMock,
       getNginxVersion: getNginxVersionMock,
@@ -1751,7 +1751,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   // the real ones or the mocks leak into whichever file Bun runs next.
   afterAll(() => {
     mock.module("../lib/tunnels/tailscale.js", () => realTailscaleTunnel);
-    mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
+    mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   });
 
   function seedRecordedTailnetWake(): {

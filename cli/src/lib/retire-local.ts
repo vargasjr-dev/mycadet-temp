@@ -9,7 +9,7 @@ import {
 } from "./assistant-config.js";
 import type { LockfileAssistant } from "./assistant-config.js";
 import { readPidFile } from "./process-utils.js";
-import { stopIngressNginx } from "./nginx-ingress.js";
+import { stopIngressNginx } from "./servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   stopOrphanedDaemonProcesses,

@@ -19,7 +19,7 @@ import { join } from "node:path";
 
 import * as tunnelLib from "../lib/tunnel.js";
 import type { LockfileAssistant } from "../lib/assistant-config.js";
-import * as nginxIngress from "../lib/nginx-ingress.js";
+import * as nginxIngress from "../lib/servers/nginx.js";
 
 const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
 const resolveLocalTunnelTargetMock = mock(tunnelLib.resolveLocalTunnelTarget);
@@ -34,7 +34,7 @@ mock.module("../lib/tunnel.js", () => ({
   ensureNginxForEdge: ensureNginxForEdgeMock,
   resolveLocalTunnelTarget: resolveLocalTunnelTargetMock,
 }));
-mock.module("../lib/nginx-ingress.js", () => ({
+mock.module("../lib/servers/nginx.js", () => ({
   ...nginxIngress,
   ensureAppServer: ensureAppServerMock,
   isIngressRunning: isIngressRunningMock,
@@ -44,7 +44,7 @@ mock.module("../lib/nginx-ingress.js", () => ({
 
 afterAll(() => {
   mock.module("../lib/tunnel.js", () => tunnelLib);
-  mock.module("../lib/nginx-ingress.js", () => nginxIngress);
+  mock.module("../lib/servers/nginx.js", () => nginxIngress);
 });
 
 import { app } from "../commands/app.js";

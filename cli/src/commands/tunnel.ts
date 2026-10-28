@@ -8,7 +8,7 @@ import {
 import { readRootProcesses } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
 import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
-import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
+import { ensureAppServer, type AppServer } from "../lib/servers/nginx.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
   ADOPTED_TUNNEL_RE,

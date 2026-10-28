@@ -5,7 +5,7 @@ import {
   readIngressState,
   stopIngressNginx,
   type AppServer,
-} from "../lib/nginx-ingress.js";
+} from "../lib/servers/nginx.js";
 import { ensureNginxForEdge } from "../lib/tunnel.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";

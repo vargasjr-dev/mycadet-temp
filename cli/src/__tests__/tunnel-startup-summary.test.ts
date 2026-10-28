@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { createServer } from "node:net";
 
-import { findAvailableIngressPort } from "../lib/nginx-ingress";
-import { edgeServedRemote } from "../lib/nginx-ingress";
+import { findAvailableIngressPort } from "../lib/servers/nginx";
+import { edgeServedRemote } from "../lib/servers/nginx";
 import { summarizeStartupFailure } from "../lib/tunnel";
 
 function portOf(server: ReturnType<typeof createServer>): number {

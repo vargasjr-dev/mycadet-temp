@@ -58,7 +58,7 @@ import {
   waitForDaemonMigrationsReady,
   waitForDaemonReady,
 } from "./http-client.js";
-import { stopIngressNginx } from "./nginx-ingress.js";
+import { stopIngressNginx } from "./servers/nginx.js";
 import {
   DAEMON_STOP_TIMEOUT_MS,
   type ProcessState,

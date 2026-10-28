@@ -29,7 +29,7 @@ const originalConfigHome = process.env.XDG_CONFIG_HOME;
 // `test-assistant.*` paths into sibling files (e.g. `recover.test.ts`), which
 // then fail to find their own archives.
 const realProcess = { ...(await import("../lib/process.js")) };
-const realNginxIngress = { ...(await import("../lib/nginx-ingress.js")) };
+const realNginxIngress = { ...(await import("../lib/servers/nginx.js")) };
 const realRetireArchive = { ...(await import("../lib/retire-archive.js")) };
 
 const stopProcessByPidFileMock = mock(
@@ -53,7 +53,7 @@ mock.module("../lib/process.js", () => ({
   stopOrphanedDaemonProcesses: stopOrphanedDaemonProcessesMock,
 }));
 
-mock.module("../lib/nginx-ingress.js", () => ({
+mock.module("../lib/servers/nginx.js", () => ({
   stopIngressNginx: stopIngressNginxMock,
 }));
 
@@ -69,7 +69,7 @@ mock.module("../lib/retire-archive.js", () => ({
 // leak into other test files in the same `bun test` run.
 afterAll(() => {
   mock.module("../lib/process.js", () => realProcess);
-  mock.module("../lib/nginx-ingress.js", () => realNginxIngress);
+  mock.module("../lib/servers/nginx.js", () => realNginxIngress);
   mock.module("../lib/retire-archive.js", () => realRetireArchive);
 });
 
