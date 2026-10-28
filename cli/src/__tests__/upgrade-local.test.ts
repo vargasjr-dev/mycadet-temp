@@ -229,6 +229,9 @@ beforeEach(() => {
     pid: 4321,
     provider: "ngrok",
     startedAt: new Date().toISOString(),
+    // The record's `publicUrl` is the restore's gate: a published run comes
+    // back after the upgrade.
+    publicUrl: "https://tunnel.example.com",
   });
   process.argv = [
     "bun",

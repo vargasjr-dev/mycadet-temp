@@ -1,11 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import {
-  existsSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -14,13 +8,12 @@ import {
   getTailscaleInstallMessage,
   normalizeDnsName,
   resolveServeHostname,
-  retractServeUrl,
-  shouldClearIngressUrl,
   startTailscaleServe,
   stopTailscaleServe,
   type TailscaleCommandResult,
   type TailscaleDeps,
 } from "../lib/tunnels/tailscale.js";
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import { snapshotEnv } from "./helpers/env.js";
 
 describe("Tailscale discovery", () => {
@@ -51,12 +44,14 @@ const tempDirs: string[] = [];
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "cadet-tailscale-test-"));
   tempDirs.push(dir);
-  // The providers resolve the machine-level workspace themselves.
+  // The providers resolve the machine-level workspace themselves, and the
+  // run's lockfile stamp lands in the sandboxed xdg root beside it.
   process.env.CADET_WORKSPACE_DIR = dir;
+  process.env.XDG_CONFIG_HOME = dir;
   return dir;
 }
 
-const TAILNET_URL = "https://my-host.tail-scale.ts.net";
+const restoreEnv = snapshotEnv(["XDG_CONFIG_HOME", "CADET_WORKSPACE_DIR"]);
 
 const RUNNING_STATUS = JSON.stringify({
   BackendState: "Running",
@@ -90,37 +85,7 @@ function makeDeps(opts: {
   return { deps, calls };
 }
 
-interface WorkspaceIngressConfig {
-  ingress: {
-    enabled?: boolean;
-    publicBaseUrl?: string;
-    assistantId?: string;
-    lastTunnel?: { provider: string; publicBaseUrl: string };
-    pairingTunnel?: { provider: string; publicBaseUrl: string };
-  };
-}
 
-function readConfig(workspaceDir: string): WorkspaceIngressConfig {
-  return JSON.parse(
-    readFileSync(join(workspaceDir, "config.json"), "utf-8"),
-  ) as WorkspaceIngressConfig;
-}
-
-/** A workspace whose ingress base URL is a live webhook callback base. */
-function writePreservedConfig(workspaceDir: string, webhookBase: string): void {
-  writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify({
-      ingress: {
-        enabled: true,
-        publicBaseUrl: webhookBase,
-        lastTunnel: { provider: "ngrok", publicBaseUrl: webhookBase },
-      },
-    }),
-  );
-}
-
-const restoreEnv = snapshotEnv(["XDG_CONFIG_HOME"]);
 
 afterEach(() => {
   restoreEnv();
@@ -230,46 +195,15 @@ describe("startTailscaleServe", () => {
     expect(info.port).toBe(7840);
     expect(calls).toContainEqual(["serve", "--bg", "7840"]);
 
-    const config = JSON.parse(
-      readFileSync(join(workspaceDir, "config.json"), "utf-8"),
-    );
-    expect(config.ingress.publicBaseUrl).toBe(
+    // The lockfile record is the save: the tailnet URL is the tunnel's
+    // published base, and the wake restore reads it from there.
+    const lockfile = JSON.parse(
+      readFileSync(resolveLockfilePath(), "utf-8"),
+    ) as { tunnel?: { publicUrl?: string } };
+    expect(lockfile.tunnel?.publicUrl).toBe(
       "https://my-host.tail-scale.ts.net",
     );
-    expect(config.ingress.enabled).toBe(true);
-  });
-
-  test("preserveIngressUrl records a pairing tunnel and leaves the ingress record", async () => {
-    const workspaceDir = makeWorkspace();
-    const webhookBase = "https://existing.ngrok.app";
-    writePreservedConfig(workspaceDir, webhookBase);
-    const { deps } = makeDeps({
-      responses: {
-        "status --json": ok(RUNNING_STATUS),
-        "serve --bg 7840": ok(),
-      },
-    });
-
-    await startTailscaleServe(
-      {
-        port: 7840,
-        assistantId: "ts-1",
-        preserveIngressUrl: true,
-      },
-      deps,
-    );
-
-    // The webhook callback base and the tunnel it names survive untouched...
-    const config = readConfig(workspaceDir);
-    expect(config.ingress.publicBaseUrl).toBe(webhookBase);
-    expect(config.ingress.lastTunnel?.provider).toBe("ngrok");
-    // ...while the tailnet URL is recorded as the address to pair against, in
-    // the workspace config the daemon's status route reads...
-    expect(config.ingress.pairingTunnel).toEqual({
-      provider: "tailscale",
-      publicBaseUrl: TAILNET_URL,
-    });
-    expect(config.ingress.assistantId).toBe("ts-1");
+    expect(existsSync(join(workspaceDir, "config.json"))).toBe(false);
   });
 
   test("surfaces tailscale's enable-URL guidance when serve is not enabled", async () => {
@@ -308,55 +242,15 @@ describe("stopTailscaleServe", () => {
   });
 });
 
-// ── retractServeUrl ───────────────────────────────────────────────────────────
+// ── stopTailscaleServe ────────────────────────────────────────────────────────
 
-describe("retractServeUrl", () => {
-  const PRESERVE_OPTS = { assistantId: "ts-1", preserveIngressUrl: true };
-
-  test("drops the pairing record and leaves the webhook callback base", () => {
-    const workspaceDir = makeWorkspace();
-    writePreservedConfig(workspaceDir, "https://existing.ngrok.app");
-
-    retractServeUrl(PRESERVE_OPTS);
-
-    // The pairing record goes, the webhook callback base stays.
-    const config = readConfig(workspaceDir);
-    expect(config.ingress.pairingTunnel).toBeUndefined();
-    expect(config.ingress.publicBaseUrl).toBe("https://existing.ngrok.app");
-    expect(config.ingress.lastTunnel?.provider).toBe("ngrok");
-  });
-
-  test("clears the ingress URL outright when it owns it", () => {
-    const workspaceDir = makeWorkspace();
-    writeFileSync(
-      join(workspaceDir, "config.json"),
-      JSON.stringify({
-        ingress: { enabled: true, publicBaseUrl: TAILNET_URL },
-      }),
-    );
-
-    retractServeUrl({ assistantId: "ts-1" });
-
-    expect(readConfig(workspaceDir).ingress.publicBaseUrl).toBeUndefined();
-  });
-});
-
-// ── shouldClearIngressUrl ─────────────────────────────────────────────────────
-
-describe("shouldClearIngressUrl", () => {
-  test("clears only after a confirmed successful stop", () => {
-    expect(shouldClearIngressUrl({ status: 0, stdout: "", stderr: "" })).toBe(
-      true,
-    );
-  });
-
-  test("keeps the URL when the stop command fails", () => {
-    expect(
-      shouldClearIngressUrl({ status: 1, stdout: "", stderr: "boom" }),
-    ).toBe(false);
-  });
-
-  test("keeps the URL when the stop command threw before running", () => {
-    expect(shouldClearIngressUrl(null)).toBe(false);
+describe("stopTailscaleServe", () => {
+  test("turns off the HTTPS:443 serve (narrow off form)", () => {
+    const { deps, calls } = makeDeps({
+      responses: { "serve --https=443 off": ok() },
+    });
+    const result = stopTailscaleServe("tailscale", deps);
+    expect(result.status).toBe(0);
+    expect(calls).toContainEqual(["serve", "--https=443", "off"]);
   });
 });

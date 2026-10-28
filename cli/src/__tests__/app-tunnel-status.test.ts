@@ -35,6 +35,7 @@ beforeEach(() => {
 });
 
 afterAll(() => {
+  readRootProcessesMock.mockRestore();
   logMock.mockRestore();
   errorMock.mockRestore();
   rmSync(testDir, { recursive: true, force: true });

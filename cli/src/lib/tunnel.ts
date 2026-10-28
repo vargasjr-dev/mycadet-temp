@@ -3,8 +3,6 @@ import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
-  findTargetAssistant,
-  getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
@@ -20,7 +18,6 @@ import {
 import {
   getDefaultWorkspaceDir,
   isLocalContainerEntry,
-  loadRawConfig,
 } from "./ingress-config.js";
 import {
   ensureAppServer,
@@ -34,7 +31,6 @@ import {
 import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,
-  hasWebhookIntegrations,
   isNgrokEndpointOnlineError,
   ngrokHolderPid,
   ngrokOnlineEndpoint,
@@ -406,28 +402,6 @@ export function summarizeStartupFailure(logText: string): string | null {
   }
   const lastLine = lines.at(-1);
   return lastLine === undefined ? null : cap(lastLine);
-}
-
-export { ADOPTED_TUNNEL_RE } from "./tunnels/ngrok.js";
-export { cadetTunnelComingSoonError } from "./tunnels/cadet.js";
-
-/**
- * Check whether the assistant the edge fronts configures any webhook-based
- * integrations that require a public ingress URL. The assistant comes from
- * the root lockfile — the active entry, the same resolution the app server
- * uses — and its workspace config names the integrations. False when either
- * cannot be read, so an unreadable config never blocks a caller.
- */
-export function hasWebhookIntegrationsConfigured(): boolean {
-  try {
-    const entry = findTargetAssistant();
-    if (!entry) return false;
-    return hasWebhookIntegrations(
-      loadRawConfig(join(getLocalInstanceDir(entry.resources), "workspace")),
-    );
-  } catch {
-    return false;
-  }
 }
 
 /** Matches the Docker hatch path's service-readiness allowance. */

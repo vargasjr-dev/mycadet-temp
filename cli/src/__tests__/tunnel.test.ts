@@ -13,6 +13,7 @@ import * as childProcess from "node:child_process";
 import type { ChildProcess, SpawnOptions } from "node:child_process";
 import {
   appendFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -23,7 +24,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
-import { z } from "zod";
 
 import * as cloudflareTunnel from "../lib/tunnels/cloudflare.js";
 import * as gatewayNotify from "../lib/tunnels/gateway-notify.js";
@@ -31,8 +31,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
-import { saveIngressUrl } from "../lib/ingress-config.js";
-import { stampRootProcess } from "../lib/assistant-config.js";
+import { readRootProcesses, stampRootProcess } from "../lib/assistant-config.js";
 import {
   getLocalInstanceDir,
   type LockfileAssistant,
@@ -229,15 +228,6 @@ function writeLockfile(
     ),
   );
 }
-
-const IngressTestConfigSchema = z.object({
-  ingress: z
-    .looseObject({
-      publicBaseUrl: z.string().optional(),
-      ngrok: z.object({ domain: z.string().optional() }).optional(),
-    })
-    .optional(),
-});
 
 /** Run tunnel() expecting exit(1); returns the joined console.error output. */
 async function runTunnelExpectingExit1(): Promise<{
@@ -612,50 +602,9 @@ describe("app server targeting", () => {
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("--provider tailscale keeps the webhook callback base and says so", async () => {
+  test("--provider tailscale fronts the edge with the lockfile's active assistant", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeEntryWorkspaceConfig(entry, {
-      telegram: { botUsername: "example_bot" },
-    });
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "tailscale",
-      "--foreground",
-    ];
-
-    const warnings: string[] = [];
-    const warnSpy = spyOn(console, "warn").mockImplementation(
-      (...a: unknown[]) => {
-        warnings.push(a.join(" "));
-      },
-    );
-    try {
-      await runTunnelCapturingLogs();
-    } finally {
-      warnSpy.mockRestore();
-    }
-
-    const warned = warnings.join("\n");
-    expect(warned).toContain("reachable only from your own tailnet");
-    expect(warned).toContain("saved ingress base URL stays as it is");
-    // The tunnel publishes a pairing address instead of replacing the URL the
-    // webhook callbacks resolve through.
-    expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "assistant-1",
-      preserveIngressUrl: true,
-    });
-  });
-
-  test("tailscale without webhook integrations still owns the ingress URL", async () => {
-    const entry = makeLocalEntry();
-    writeLockfile(entry);
-    writeEntryWorkspaceConfig(entry, {});
     process.argv = [
       "bun",
       "cadet",
@@ -674,12 +623,9 @@ describe("app server targeting", () => {
     });
   });
 
-  test("a public provider is unaffected by configured webhook integrations", async () => {
+  test("ngrok fronts the edge with the lockfile's active assistant", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeEntryWorkspaceConfig(entry, {
-      telegram: { botUsername: "example_bot" },
-    });
     process.argv = [
       "bun",
       "cadet",
@@ -1054,11 +1000,13 @@ describe("ngrok --domain spawn args", () => {
     });
   }
 
-  function readIngress(ws: string): Record<string, unknown> {
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    return config.ingress ?? {};
+  function readTunnelRecord(): Record<string, unknown> {
+    const path = join(process.env.XDG_CONFIG_HOME!, "cadet", "lockfile.json");
+    if (!existsSync(path)) return {};
+    const lockfile = JSON.parse(readFileSync(path, "utf-8")) as {
+      tunnel?: Record<string, unknown>;
+    };
+    return lockfile.tunnel ?? {};
   }
 
   /** Run `fn` against a throwaway lockfile holding one local entry. */
@@ -1093,7 +1041,7 @@ describe("ngrok --domain spawn args", () => {
   };
 
   test("runNgrokTunnel spawns ngrok with --domain and persists the domain", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     // The pre-spawn listing is empty (any running tunnel would abort the run);
     // post-spawn, only the tunnel matching the target port and domain may be
     // saved even with an unrelated-port tunnel listed first.
@@ -1136,10 +1084,10 @@ describe("ngrok --domain spawn args", () => {
     ]);
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
 
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://foo.ngrok.app",
+    });
   });
 
   function mockTunnelListFetch(publicUrl: string, addr: string): void {
@@ -1155,7 +1103,7 @@ describe("ngrok --domain spawn args", () => {
   }
 
   test("runNgrokTunnel rejects an existing tunnel that mismatches the requested domain", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7831");
 
     const errors: string[] = [];
@@ -1190,15 +1138,12 @@ describe("ngrok --domain spawn args", () => {
     expect(combined).toContain("Stop the existing ngrok agent");
     expect(spawnMock).not.toHaveBeenCalled();
 
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBeUndefined();
-    expect(config.ingress?.ngrok).toBeUndefined();
+    // Nothing is recorded: the rejected agent is not blessed as ours.
+    expect(readTunnelRecord()).toEqual({});
   });
 
   test("runNgrokTunnel adopts an existing tunnel that matches the requested domain", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     mockTunnelListFetch("https://foo.ngrok.app", "localhost:7831");
 
     const run = realNgrok.runNgrokTunnel({
@@ -1222,15 +1167,15 @@ describe("ngrok --domain spawn args", () => {
     }
 
     expect(spawnMock).not.toHaveBeenCalled();
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://foo.ngrok.app",
+    });
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
   test("runNgrokTunnel rejects a mismatched existing tunnel without adopting or spawning", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
@@ -1239,17 +1184,15 @@ describe("ngrok --domain spawn args", () => {
     ).rejects.toThrow("does not match");
 
     expect(spawnMock).not.toHaveBeenCalled();
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    // The mismatched tunnel is not blessed in config…
-    expect(config.ingress?.publicBaseUrl).toBeUndefined();
+
+    // The mismatched tunnel is not recorded as ours…
+    expect(readTunnelRecord()).toEqual({});
     // …and the reserved domain stays saved as standing intent.
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 
-  test("an adopted tunnel records the assistant it fronts", async () => {
-    const ws = makeWorkspace({});
+  test("an adopted tunnel records the url it serves", async () => {
+    makeWorkspace({});
     mockTunnelListFetch("https://adopted.ngrok.app", "localhost:7830");
 
     await withLockfileFor("adopt-assistant", () =>
@@ -1260,18 +1203,14 @@ describe("ngrok --domain spawn args", () => {
     );
 
     expect(spawnMock).not.toHaveBeenCalled();
-    expect(readIngress(ws)).toMatchObject({
-      publicBaseUrl: "https://adopted.ngrok.app",
-      assistantId: "adopt-assistant",
-      lastTunnel: {
-        provider: "ngrok",
-        publicBaseUrl: "https://adopted.ngrok.app",
-      },
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://adopted.ngrok.app",
     });
   });
 
-  test("a spawned tunnel records the assistant it fronts", async () => {
-    const ws = makeWorkspace({});
+  test("a spawned tunnel records the url it serves", async () => {
+    makeWorkspace({});
     mockNgrokApiFetch([
       null,
       {
@@ -1297,18 +1236,14 @@ describe("ngrok --domain spawn args", () => {
       clearInterval(pump);
     }
 
-    expect(readIngress(ws)).toMatchObject({
-      publicBaseUrl: "https://spawned.ngrok.app",
-      assistantId: "spawn-assistant",
-      lastTunnel: {
-        provider: "ngrok",
-        publicBaseUrl: "https://spawned.ngrok.app",
-      },
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://spawned.ngrok.app",
     });
   });
 
   test("runNgrokTunnel starts a second agent when the first tunnels a different port", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     // Discovery sees the stale agent; the poll of the second agent's own API
     // then reports the tunnel for the requested port.
     mockNgrokApiFetch([
@@ -1351,14 +1286,14 @@ describe("ngrok --domain spawn args", () => {
       `--config=${realNgrok.ngrokAgentConfigPath()}`,
     ]);
 
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBe("https://second.ngrok-free.app");
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://second.ngrok-free.app",
+    });
   });
 
   test("runNgrokTunnel without --domain reuses the saved domain and does not delete it", async () => {
-    const ws = makeWorkspace({});
+    makeWorkspace({});
     realNgrok.saveNgrokDomain("foo.ngrok.app");
     mockNgrokApiFetch([
       null,
@@ -1389,10 +1324,10 @@ describe("ngrok --domain spawn args", () => {
       "--domain=foo.ngrok.app",
     ]);
 
-    const config = IngressTestConfigSchema.parse(
-      JSON.parse(readFileSync(join(ws, "config.json"), "utf-8")),
-    );
-    expect(config.ingress?.publicBaseUrl).toBe("https://foo.ngrok.app");
+    expect(readTunnelRecord()).toMatchObject({
+      provider: "ngrok",
+      publicUrl: "https://foo.ngrok.app",
+    });
     expect(realNgrok.loadNgrokDomain()).toBe("foo.ngrok.app");
   });
 });
@@ -1602,9 +1537,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       started: true,
     }));
     runTailscaleTunnelMock.mockReset();
-    runTailscaleTunnelMock.mockImplementation(async (opts) => {
-      const runOpts = opts as { assistantId?: string };
-      saveIngressUrl(TAILNET_URL, runOpts.assistantId, "tailscale");
+    runTailscaleTunnelMock.mockImplementation(async () => {
       // The real run stamps the lockfile record with the URL it published —
       // the wake restore's gate and the edge refresh both read it.
       stampRootProcess("tunnel", {
@@ -1675,8 +1608,8 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     return { entry, workspaceDir };
   }
 
-  test("a recorded tailnet tunnel re-establishes the serve at the app server's port and saves the url to each assistant", async () => {
-    const { entry, workspaceDir } = seedRecordedTailnetWake();
+  test("a recorded tailnet tunnel re-establishes the serve at the app server's port and re-records the url", async () => {
+    const { entry } = seedRecordedTailnetWake();
 
     await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
@@ -1690,15 +1623,12 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: "assistant-1",
     });
     // Step 3: the url rode to every locally-reachable assistant's gateway,
-    // and the workspace config carries it again.
+    // and the lockfile record carries it again.
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(
       TAILNET_URL,
       "assistant-1",
     );
-    const saved = JSON.parse(
-      readFileSync(join(workspaceDir, "config.json"), "utf-8"),
-    ) as { ingress?: { publicBaseUrl?: string } };
-    expect(saved.ingress?.publicBaseUrl).toBe(TAILNET_URL);
+    expect(readRootProcesses().tunnel?.publicUrl).toBe(TAILNET_URL);
   });
 
   test("the fresh url re-ensures the edge so the served config carries it the same wake", async () => {

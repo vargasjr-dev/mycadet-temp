@@ -37,11 +37,7 @@ import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { resolveDataDir, resolveLogDir } from "@mycadet/local-mode";
 import type { RemoteHost } from "./constants.js";
 import { waitForDaemonReady } from "./http-client.js";
-import {
-  getDefaultWorkspaceDir,
-  isLocalContainerEntry,
-  loadRawConfig,
-} from "./ingress-config.js";
+import { isLocalContainerEntry } from "./ingress-config.js";
 import { resolveEdgeClientDists } from "./web-dist.js";
 
 export { findWebDistDir } from "./web-dist.js";
@@ -995,18 +991,15 @@ function clearStoppedIngress(pidPath: string): void {
 }
 
 /**
- * The tunnel URL on record (the default workspace's `ingress.publicBaseUrl`,
- * saved when a tunnel established — the gateway-facing contract the daemon
- * reads), or undefined when none is — the served config stamps it as
- * `cloudUrl` so tunnel clients' account/auth surfaces stay on the origin
- * they came in on.
+ * The tunnel URL on record (the root lockfile's `tunnel.publicUrl`, stamped
+ * by whichever run established the tunnel), or undefined when none is — the
+ * served config stamps it as `cloudUrl` so tunnel clients' account/auth
+ * surfaces stay on the origin they came in on.
  */
 function savedPublicBaseUrl(): string | undefined {
   try {
-    const config = loadRawConfig(getDefaultWorkspaceDir());
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    if (typeof url !== "string" || !url.trim()) return undefined;
+    const url = readRootProcesses().tunnel?.publicUrl;
+    if (!url || !url.trim()) return undefined;
     return url.trim();
   } catch {
     return undefined;

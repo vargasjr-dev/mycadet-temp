@@ -19,7 +19,6 @@ import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
-import { saveIngressUrl } from "../ingress-config.js";
 import { resolveDataDir } from "@mycadet/local-mode";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
@@ -227,7 +226,7 @@ export async function runCloudflareTunnel(
   // Idempotency: the recorded agent may still be alive (a CLI restart, or
   // the wake/upgrade restore re-running this in-process). Adopt it instead
   // of stacking a second quick tunnel — a fresh agent mints a NEW
-  // trycloudflare URL and repoints webhook integrations for nothing.
+  // trycloudflare URL for nothing.
   const recorded = readRootProcesses().tunnel;
   if (
     recorded?.provider === "cloudflare" &&
@@ -237,7 +236,6 @@ export async function runCloudflareTunnel(
     const existingUrl = recorded.publicUrl;
     if (existingUrl) {
       console.log(`Found existing cloudflare tunnel: ${existingUrl}`);
-      saveIngressUrl(existingUrl, opts.assistantId, "cloudflare");
       // Not our child process; nothing to await, and no signal handling is
       // registered — a run must be safe to invoke from a host process.
       return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
@@ -298,7 +296,6 @@ export async function runCloudflareTunnel(
   console.log(`Forwarding to:     localhost:${port}`);
   console.log("");
 
-  saveIngressUrl(publicUrl, opts.assistantId, "cloudflare");
   if (child.pid)
     stampRootProcess("tunnel", {
       pid: child.pid,
@@ -306,7 +303,7 @@ export async function runCloudflareTunnel(
       startedAt: new Date().toISOString(),
       publicUrl,
     });
-  console.log("Ingress URL saved to config.");
+  console.log("Tunnel recorded in the lockfile.");
   console.log("");
   console.log(
     `The agent runs detached (log: ${logPath}). Stop it with \`${cliCommand()} tunnel stop\`.`,

@@ -23,6 +23,7 @@ import {
   test,
 } from "bun:test";
 
+import { resolveLockfilePath } from "@mycadet/local-mode";
 import * as httpClient from "../lib/http-client.js";
 import * as versionModule from "@mycadet/shared/version";
 import * as assistantConfigModule from "../lib/assistant-config.js";
@@ -156,6 +157,11 @@ function installKillMock(): void {
 }
 
 afterEach(() => {
+  if (originalConfigHome === undefined) {
+    delete process.env.XDG_CONFIG_HOME;
+  } else {
+    process.env.XDG_CONFIG_HOME = originalConfigHome;
+  }
   process.kill = originalKill;
   fakePids.clear();
   execFileSyncMock.mockReset();
@@ -186,23 +192,41 @@ afterEach(() => {
   }
 });
 
+const originalConfigHome = process.env.XDG_CONFIG_HOME;
+
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "cadet-ingress-test-"));
   workspaces.push(dir);
-  // The edge reads the tunnel contract (publicBaseUrl) from the default
-  // workspace and keeps its own state under the XDG data dir — pin both so
-  // every test is hermetic.
+  // The edge reads the lockfile's tunnel record and keeps its own state
+  // under the XDG data dir — pin both config and data homes so every test
+  // is hermetic.
   process.env.CADET_WORKSPACE_DIR = dir;
+  process.env.XDG_CONFIG_HOME = dir;
   process.env.XDG_DATA_HOME = dir;
   return dir;
 }
 
-/** Seed the workspace's saved tunnel URL (ingress.publicBaseUrl). */
-function writeWorkspaceIngressUrl(workspaceDir: string, url: string): void {
-  realFs.writeFileSync(
-    join(workspaceDir, "config.json"),
-    JSON.stringify({ ingress: { publicBaseUrl: url } }),
-  );
+/** Stamp the lockfile's tunnel record with a published URL. */
+function stampTunnelRecord(url: string): void {
+  // Resolve exactly as the edge's own read will.
+  const path = resolveLockfilePath();
+  let lockfile: Record<string, unknown> = {};
+  try {
+    lockfile = JSON.parse(realFs.readFileSync(path, "utf-8")) as Record<
+      string,
+      unknown
+    >;
+  } catch {
+    // No lockfile yet: the stamp creates it.
+  }
+  lockfile.tunnel = {
+    pid: 4242,
+    provider: "ngrok",
+    startedAt: new Date().toISOString(),
+    publicUrl: url,
+  };
+  realFs.mkdirSync(join(path, ".."), { recursive: true });
+  realFs.writeFileSync(path, JSON.stringify(lockfile));
 }
 
 describe("buildIngressNginxConfig", () => {
@@ -1712,7 +1736,6 @@ describe("ensureAppServer", () => {
   });
 
   test("threads the lockfile display name and assistant id into the served SPA config", async () => {
-    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1744,7 +1767,6 @@ describe("ensureAppServer", () => {
   });
 
   test("omits the assistant label when the lockfile has no matching entry", async () => {
-    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -1783,7 +1805,6 @@ describe("ensureAppServer", () => {
   });
 
   test("restarts the edge when the lockfile display name changes", async () => {
-    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
@@ -2353,11 +2374,12 @@ describe("the app shell edge", () => {
   });
 
   test("stamps the saved tunnel URL as the served config's cloudUrl", async () => {
-    const ws = makeWorkspace();
+    makeWorkspace();
     mockNginxInstalled();
     mockNginxSpawn();
     mockWebDistPresent();
-    writeWorkspaceIngressUrl(ws, "https://camping.ngrok-free.dev");
+    // The record is the save: the edge reads its cloudUrl from there.
+    stampTunnelRecord("https://camping.ngrok-free.dev");
 
     const result = await startRemoteWebIngress({
       gatewayUrl: "http://127.0.0.1:7830",

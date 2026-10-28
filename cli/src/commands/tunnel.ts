@@ -10,20 +10,19 @@ import { relaunchDetached } from "../lib/detached-process.js";
 import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
-  ADOPTED_TUNNEL_RE,
   DEFAULT_TUNNEL_PROVIDER,
   PROVIDER_META,
   adoptedTunnelStopNotice,
-  cadetTunnelComingSoonError,
   clearReservedDomain,
   ensureNginxForEdge,
-  hasWebhookIntegrationsConfigured,
   offerStopNgrokHolder,
   providerSupportsReservedDomain,
   runProviderTunnel,
   stopTunnelProcess,
   summarizeStartupFailure,
 } from "../lib/tunnel.js";
+import { ADOPTED_TUNNEL_RE } from "../lib/tunnels/ngrok.js";
+import { cadetTunnelComingSoonError } from "../lib/tunnels/cadet.js";
 import { cliCommand } from "../lib/cli-name.js";
 import { printRootProcessDetail } from "./ps.js";
 
@@ -226,30 +225,6 @@ function parseArgs(): TunnelArgs {
 }
 
 /** A tunnelable assistant plus the gateway port and workspace the edge fronts. */
-/**
- * Decide how the tailnet-only tailscale tunnel may treat the saved ingress base
- * URL, which is also the webhook callback base. Returns true when the run must
- * leave that URL in place and record the tailnet address for pairing only.
- *
- * A tailnet address in the callback base would repoint those callbacks at
- * something external services cannot resolve, so no run replaces it while
- * webhook integrations are configured. The choice of tailscale is always the
- * user's own, so it is honored, with what it does and does not record spelled
- * out.
- */
-function guardTailnetOnlyWebhookIngress(): boolean {
-  if (!hasWebhookIntegrationsConfigured()) {
-    return false;
-  }
-  console.warn(
-    "⚠ Webhook integrations are configured, and the tailscale tunnel is reachable only from your own tailnet, " +
-      "so it cannot serve their callbacks. The saved ingress base URL stays as it is and the tailnet URL is " +
-      "recorded for device pairing only. For a tunnel those integrations can reach too, run `${cliCommand()} tunnel start --help` " +
-      "to see the public providers.",
-  );
-  return true;
-}
-
 // Generous cap so a slow provider handshake (e.g. cloudflared's own ~30s
 // quick-tunnel timeout) still counts as a successful, if slow, start.
 const TUNNEL_BACKGROUND_START_TIMEOUT_MS = 35_000;
@@ -416,8 +391,6 @@ export const tunnel = Object.assign(
     // a machine-level edge that resolves whatever it fronts from the lockfile
     // itself. ensureAppServer starts the edge when it is down and reuses it
     // when up; the tunnel fronts the port it reports.
-    const preserveIngressUrl =
-      provider === "tailscale" && guardTailnetOnlyWebhookIngress();
 
     if (clearDomain) {
       clearReservedDomain();
@@ -453,7 +426,6 @@ export const tunnel = Object.assign(
     await runProviderTunnel(provider, {
       ...baseTunnelOpts,
       ...(domain ? { domain } : {}),
-      ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
     });
   },
   { description: "Start or stop a tunnel in front of the app server" },
