@@ -141,10 +141,11 @@ export function SelectAssistantScreen() {
   const lockfile = useLocalLockfileStore.use.lockfile();
 
   // The lockfile arm: every entry whose gateway this machine can address —
-  // the machine's own local assistants and connect imports alike.
+  // the machine's own local assistants and connect imports (custom remotes)
+  // alike.
   const lockfileEntries =
-    lockfile?.assistants.filter((entry) =>
-      isLoopbackGatewayCloud(entry.cloud),
+    lockfile?.assistants.filter(
+      (entry) => isLoopbackGatewayCloud(entry.cloud) || entry.cloud === "custom",
     ) ?? [];
 
   // The lockfile hydrates on mount (Electron only — a no-op elsewhere), so a

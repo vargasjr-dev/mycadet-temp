@@ -624,8 +624,9 @@ describe("remembered origins", () => {
         {
           assistantId: "paired-1",
           name: "Office",
-          cloud: "paired",
-          runtimeUrl: "https://office.example.com",
+          cloud: "custom",
+          ipAddress: "office.example.com",
+          port: 443,
         },
       ],
       activeAssistant: null,
@@ -642,9 +643,8 @@ describe("remembered origins", () => {
       // Hostless surfaces add an origin instead; with a host the dialog owns
       // pairing.
       expect(screen.queryByText("Add a remote assistant")).toBeNull();
-      expect(
-        await screen.findByText("Paired · office.example.com"),
-      ).toBeDefined();
+      // A custom remote's row names the gateway host — the actual remote.
+      expect(await screen.findByText("office.example.com")).toBeDefined();
       fireEvent.click(screen.getByText("Connect a remote assistant"));
       expect(
         await screen.findByText("Connect a Remote Assistant"),
@@ -661,6 +661,9 @@ describe("remembered origins", () => {
             version: "1.2.3",
             url: "web/1.2.3/assistant/",
           });
+        }
+        if (String(url).includes("/v1/assistants")) {
+          return Response.json({ results: [] });
         }
         return iframeDocument.clone();
       });
