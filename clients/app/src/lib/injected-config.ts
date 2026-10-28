@@ -7,25 +7,23 @@ import { RemoteSchema } from "@mycadet/local-mode/contract";
  * is the single shape: readers parse the window through it instead of
  * re-declaring per-file object types.
  *
- * The URL fields are distinct origins in the topology, not synonyms:
- * `cloudUrl` is the cloud backend base — the account session, auth
- * endpoints, and the cloud-hosted assistant list. It is never the API base
- * for a local assistant: the shell resolves assistants same-origin, and the
- * serving origin routes `/v1` to the right control plane (the app server
- * proxies it to the local gateway; the desktop protocol forwards it; the
- * cloud takeover proxies it). The native boot bundle is the one host with
- * no `/v1` router at its origin, so it resolves assistants against
- * `cloudUrl` directly. `hubUrl` is the cloud hub SPA the
- * pairing/settings pages link back to. The cloud login base is
- * deliberately absent: the loopback handoff reads it from the build's
- * environment seed (see startLoopbackAuth), keeping this config to the
- * origins a served bundle can't infer.
+ * Single origin: `baseUrl` is THE origin this bundle should address for API,
+ * auth, and the assistant mount. For every same-origin surface the page
+ * origin is the answer and the field is unset — the desktop `app://` shell,
+ * the web dev server, and the cloud takeover all proxy `/v1` at the page's
+ * own origin. It is stamped only by hosts whose webview origin can't serve
+ * the API (the capacitor shells: the webview holds baked assets while the
+ * API rides the tunnel or cloud URL the build resolved). The native boot
+ * bundle is the one same-origin-less host with no `/v1` router at its
+ * origin, so it resolves assistants against `baseUrl` directly. The cloud
+ * login base is deliberately absent: the loopback handoff reads it from the
+ * build's environment seed (see startLoopbackAuth).
  */
 export const InjectedConfigSchema = z.object({
   /** Nothing injected (SSR) or an unparseable config means the local cadet. */
   remote: RemoteSchema.default("local"),
-  /** Cloud backend base (account session, auth, cloud-hosted assistants). */
-  cloudUrl: z.string().optional(),
+  /** The single origin for API, auth, and the assistant mount (see above). */
+  baseUrl: z.string().optional(),
   /** Device id stamped by the Electron host (device management). */
   deviceId: z.string().optional(),
   /** Version of the shell bundle serving this page (stamped by the host). */
@@ -34,8 +32,6 @@ export const InjectedConfigSchema = z.object({
   assistantId: z.string().optional(),
   /** Serving assistant's display name (remote-web ingress configs only). */
   assistantName: z.string().optional(),
-  /** Cloud web SPA base for this build's environment (remote-web ingress configs only). */
-  hubUrl: z.string().optional(),
 });
 
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;

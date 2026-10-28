@@ -41,7 +41,7 @@ test("the boot bundle resolves assistants against the stamped control plane", as
   // redirect — while the request URL still proves where resolution went.
   fetchSpy.mockResolvedValue(new Response("nope", { status: 500 }));
   isNative = true;
-  stamp({ remote: "local", cloudUrl: "http://localhost:8000" });
+  stamp({ remote: "local", baseUrl: "http://localhost:8000" });
   renderAssistantPage();
   await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
   // Other shell surfaces (consent probe, i18n) may fetch first — find the

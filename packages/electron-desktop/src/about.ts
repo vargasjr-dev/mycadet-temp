@@ -75,6 +75,19 @@ const VERSION: string =
 const COMMIT_SHA: string =
   typeof __CADET_BUILD_SHA__ === "string" ? __CADET_BUILD_SHA__ : "unknown";
 
+declare const __CADET_WEB_VERSION__: string | undefined;
+
+/**
+ * The version of the web bundle the host serves at its `/assistant` mount —
+ * the version the injected config and the synthesized assistant detail
+ * report. Baked at build time from clients/web's package.json (the shell's
+ * own version is a different product; QA expects the served bundle's).
+ */
+export const webBundleVersion = (): string =>
+  typeof __CADET_WEB_VERSION__ === "string" && __CADET_WEB_VERSION__
+    ? __CADET_WEB_VERSION__
+    : getVersionInfo().version;
+
 const COPYRIGHT = (): string => `© ${new Date().getFullYear()} Vargas JR LLC`;
 
 export type { AppVersionInfo };

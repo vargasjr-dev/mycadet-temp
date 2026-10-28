@@ -11,7 +11,7 @@ import { resolveLocalServerUrl } from "./local-server";
  * the shared injected-config shape — the app shell boots from these assets
  * through the same `main.tsx` entry every other host serves, and reads the
  * stamp back through the same `readInjectedConfig()`. Every branch stamps
- * `cloudUrl`: the webview origin serves only baked assets (no `/v1`
+ * `baseUrl`: the webview origin serves only baked assets (no `/v1`
  * router), so every same-origin `/v1` request is resolved by the shell's
  * native scheme handler against this base — same-origin would otherwise
  * request `capacitor://localhost/v1/...` and get the SPA's index HTML back.
@@ -51,13 +51,13 @@ export function capacitorInjectedConfig(): InjectedConfig {
     }
     return InjectedConfigSchema.parse({
       remote: "local",
-      cloudUrl: resolved ?? SEEDS.local.cloudUrl,
+      baseUrl: resolved ?? SEEDS.local.cloudUrl,
     });
   }
   const seed = SEEDS[environment] ?? SEEDS.dev;
   return InjectedConfigSchema.parse({
     remote: "cloud",
-    cloudUrl: seed.webUrl,
+    baseUrl: seed.webUrl,
   });
 }
 

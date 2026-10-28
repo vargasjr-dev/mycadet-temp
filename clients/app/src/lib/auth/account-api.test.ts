@@ -95,7 +95,7 @@ test("Electron mutations carry native token and renderer origin without CSRF", a
   });
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
-    value: { cloudUrl: "https://cloud.example.com" },
+    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockResolvedValueOnce(new Response('{"data":{"user":{}}}'));
   await submitProviderSignup({ email: "a@example.com", username: "ada" });

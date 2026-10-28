@@ -17,7 +17,7 @@ configureAboutRuntime({
   onAssistantNameChange: onNameChange,
 });
 
-export { getVersionInfo, openAboutWindow };
+export { getVersionInfo, openAboutWindow, webBundleVersion } from "@mycadet/electron-desktop/about";
 
 export const installAbout = (): void => {
   installSharedAbout({ handle });

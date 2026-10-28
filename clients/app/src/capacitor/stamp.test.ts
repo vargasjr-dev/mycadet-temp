@@ -40,7 +40,7 @@ describe("capacitorInjectedConfig", () => {
   test("local environment stamps the local backend as the control plane", () => {
     expect(capacitorInjectedConfig()).toEqual({
       remote: "local",
-      cloudUrl: "http://localhost:8000",
+      baseUrl: "http://localhost:8000",
     });
   });
 
@@ -59,7 +59,7 @@ describe("capacitorInjectedConfig", () => {
     );
     expect(capacitorInjectedConfig()).toEqual({
       remote: "local",
-      cloudUrl: "https://tunnel.example.net",
+      baseUrl: "https://tunnel.example.net",
     });
   });
 
@@ -73,7 +73,7 @@ describe("capacitorInjectedConfig", () => {
     );
     expect(capacitorInjectedConfig()).toEqual({
       remote: "local",
-      cloudUrl: "http://127.0.0.1:8000",
+      baseUrl: "http://127.0.0.1:8000",
     });
   });
 
@@ -99,7 +99,7 @@ describe("capacitorInjectedConfig", () => {
     try {
       expect(capacitorInjectedConfig()).toEqual({
         remote: "local",
-        cloudUrl: "http://127.0.0.1:8000",
+        baseUrl: "http://127.0.0.1:8000",
       });
     } finally {
       rmSync(home, { recursive: true, force: true });
@@ -110,17 +110,17 @@ describe("capacitorInjectedConfig", () => {
     process.env.CADET_ENVIRONMENT = "production";
     expect(capacitorInjectedConfig()).toEqual({
       remote: "cloud",
-      cloudUrl: "https://mycadet.ai",
+      baseUrl: "https://mycadet.ai",
     });
     process.env.CADET_ENVIRONMENT = "staging";
     expect(capacitorInjectedConfig()).toEqual({
       remote: "cloud",
-      cloudUrl: "https://staging.mycadet.ai",
+      baseUrl: "https://staging.mycadet.ai",
     });
     process.env.CADET_ENVIRONMENT = "dev";
     expect(capacitorInjectedConfig()).toEqual({
       remote: "cloud",
-      cloudUrl: "https://dev.mycadet.ai",
+      baseUrl: "https://dev.mycadet.ai",
     });
   });
 });
@@ -172,7 +172,7 @@ describe("injectedConfigScript", () => {
     expect(payload.includes("<")).toBe(false);
     expect(JSON.parse(payload)).toEqual({
       remote: "local",
-      cloudUrl:
+      baseUrl:
         "https://assistant.example.com/?a=\u003c/script\u003e\u003cscript\u003ealert(1)\u003c/script\u003e",
     });
   });

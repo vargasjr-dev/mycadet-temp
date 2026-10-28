@@ -31,7 +31,8 @@ mock.module("./local-mode", () => ({
   getLocalGuardianAccessToken,
 }));
 
-const { forwardGatewayRequest } = await import("./gateway-forward");
+const { forwardGatewayRequest, synthesizeLoopbackAssistantDetail } =
+  await import("./gateway-forward");
 const { clearLoopbackGatewayBearerCache } = await import("@mycadet/local-mode");
 
 const request = (path: string, init: RequestInit = {}) =>
@@ -76,8 +77,9 @@ const pairedLockfile = {
   assistants: [
     {
       assistantId: "abc",
-      cloud: "paired",
-      runtimeUrl: "https://gw.example.com",
+      cloud: "custom",
+      ipAddress: "gw.example.com",
+      port: 443,
     },
   ],
 };
@@ -463,4 +465,107 @@ describe("forwardGatewayRequest — remote (paired) forwards", () => {
       }
     },
   );
+});
+
+describe("forwardGatewayRequest — the loopback detail seam", () => {
+  beforeEach(() => {
+    watchedSnapshot = localLockfile;
+  });
+
+  test("synthesizes the scoped detail (trailing slash) without a forward", async () => {
+    const { fetcher, calls } = recorder();
+    const response = await forwardGatewayRequest(
+      request("/v1/assistants/abc/"),
+      fetcher,
+      (assistantId, port) =>
+        synthesizeLoopbackAssistantDetail({
+          assistantId,
+          port,
+          version: "0.13.0-local.202610280000.abc1234",
+          fetcher,
+        }),
+    );
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toEqual({
+      id: "abc",
+      version: "0.13.0-local.202610280000.abc1234",
+      url: "/assistant/",
+      status: "active",
+    });
+    // Only the provider's readyz probe — no scoped forward, no bearer mint.
+    expect(calls.map(({ url }) => new URL(url).pathname)).toEqual(["/readyz"]);
+    expect(getLocalGuardianAccessToken).not.toHaveBeenCalled();
+  });
+
+  test("synthesizes the no-slash detail spelling identically", async () => {
+    const { fetcher, calls } = recorder();
+    const response = await forwardGatewayRequest(
+      request("/v1/assistants/abc"),
+      fetcher,
+      (assistantId, port) =>
+        synthesizeLoopbackAssistantDetail({
+          assistantId,
+          port,
+          version: "v",
+          fetcher,
+        }),
+    );
+    expect(response?.status).toBe(200);
+    expect(calls.map(({ url }) => new URL(url).pathname)).toEqual(["/readyz"]);
+  });
+
+  test("answers 409 when the gateway is not ready, so the shell wakes", async () => {
+    const fetcher: GatewayForwardFetcher = async () => {
+      throw new Error("ECONNREFUSED");
+    };
+    const response = await synthesizeLoopbackAssistantDetail({
+      assistantId: "abc",
+      port: 8080,
+      version: "v",
+      fetcher,
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: "Assistant gateway is not ready.",
+    });
+  });
+
+  test("leaves non-detail scoped paths to the plain forward", async () => {
+    const { fetcher, response, calls } = recorder();
+    let consulted = false;
+    const proxied = await forwardGatewayRequest(
+      request("/v1/assistants/abc/conversations"),
+      fetcher,
+      () => {
+        consulted = true;
+        return null;
+      },
+    );
+    expect(proxied).toBe(response);
+    expect(consulted).toBe(false);
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    expect(forwards).toHaveLength(1);
+  });
+
+  test("never consults the provider for paired (remote) forwards", async () => {
+    watchedSnapshot = pairedLockfile;
+    const { fetcher, response, calls } = recorder();
+    let consulted = false;
+    const proxied = await forwardGatewayRequest(
+      request("/v1/assistants/abc/"),
+      fetcher,
+      () => {
+        consulted = true;
+        return null;
+      },
+    );
+    expect(proxied).toBe(response);
+    expect(consulted).toBe(false);
+    const forwards = calls.filter(
+      ({ url }) => !new URL(url).pathname.endsWith("/auth/token"),
+    );
+    expect(forwards[0]!.url).toBe("https://gw.example.com/v1/assistants/abc/");
+  });
 });

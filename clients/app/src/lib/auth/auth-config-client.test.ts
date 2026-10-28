@@ -48,7 +48,7 @@ test("Electron configuration uses the host cloud origin and current session toke
   });
   Object.defineProperty(window, "__CADET_CONFIG__", {
     configurable: true,
-    value: { cloudUrl: "https://cloud.example.com" },
+    value: { baseUrl: "https://cloud.example.com" },
   });
   fetchSpy.mockImplementation(
     Object.assign(
