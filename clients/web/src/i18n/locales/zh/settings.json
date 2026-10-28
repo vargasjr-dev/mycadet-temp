@@ -145,12 +145,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在加载付款字段"
   },
-  "biometricSettingsCard": {
-    "description": "当您的会话过期时，使用 {label} 进行验证，而无需再次登录。",
-    "descriptionWithPasscode": "当您的会话过期时，使用 {label} 或您的设备密码进行验证，而无需再次登录。",
-    "title": "安全",
-    "useForSignIn": "使用 {label} 登录"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, other {# 个操作当前使用 {profile}}}",
     "applyTo": "{count, plural, other {应用于 # 个操作}}",
@@ -378,12 +372,6 @@
     "startSession": "开始诊断会话",
     "thinking": "正在思考…",
     "title": "诊断助手"
-  },
-  "downgradeReconfirmModal": {
-    "body": "降级将移除以下专业版功能：",
-    "confirm": "确认降级",
-    "keepPro": "保留专业版",
-    "title": "降级到基础版？"
   },
   "generalPage": {
     "chooseAssistant": "选择助手",

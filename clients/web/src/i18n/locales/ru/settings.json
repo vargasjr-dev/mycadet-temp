@@ -131,12 +131,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Загрузка полей оплаты"
   },
-  "biometricSettingsCard": {
-    "description": "Когда сессия истечёт, подтверди вход через {label}, а не заново.",
-    "descriptionWithPasscode": "Когда сессия истечёт, подтверди вход через {label} или код устройства, а не заново.",
-    "title": "Безопасность",
-    "useForSignIn": "Использовать {label} для входа"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# действие сейчас использует {profile}} few {# действия сейчас используют {profile}} many {# действий сейчас используют {profile}} other {# действия сейчас используют {profile}}}",
     "applyTo": "{count, plural, one {Применить к # действию} few {Применить к # действиям} many {Применить к # действиям} other {Применить к # действиям}}",
@@ -364,12 +358,6 @@
     "startSession": "Начать сессию Doctor",
     "thinking": "Думает…",
     "title": "Doctor"
-  },
-  "downgradeReconfirmModal": {
-    "body": "При понижении пропадут эти функции Pro:",
-    "confirm": "Подтвердить понижение",
-    "keepPro": "Оставить Pro",
-    "title": "Перейти на Base?"
   },
   "generalPage": {
     "chooseAssistant": "Выбрать ассистента",

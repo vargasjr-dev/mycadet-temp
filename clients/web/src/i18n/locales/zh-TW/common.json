@@ -310,14 +310,6 @@
     "copied": "已複製",
     "copyFailed": "無法複製到剪貼簿。"
   },
-  "createAssistantDialog": {
-    "cancel": "取消",
-    "create": "建立",
-    "description": "佈建一個新助理。它將在背景啟動。",
-    "namePlaceholder": "助理名稱（選填）",
-    "title": "新助理",
-    "toastSuccess": "新助理已建立。"
-  },
   "dateRangeSelect": {
     "ariaLabel": "日期範圍",
     "lastDays": "{days, plural, other {過去 # 天}}"
@@ -480,9 +472,6 @@
   },
   "nudgeChatBanner": {
     "dismissAria": "關閉"
-  },
-  "onboardingBackButton": {
-    "back": "返回"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "您的助理尚未設定識別名稱，請設定一個以便提及。",

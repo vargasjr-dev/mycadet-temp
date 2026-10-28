@@ -145,12 +145,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Cargando los campos de pago"
   },
-  "biometricSettingsCard": {
-    "description": "Cuando expire tu sesión, verifica con {label} en lugar de iniciar sesión de nuevo.",
-    "descriptionWithPasscode": "Cuando expire tu sesión, verifica con {label} o el código de tu dispositivo en lugar de iniciar sesión de nuevo.",
-    "title": "Seguridad",
-    "useForSignIn": "Usar {label} para iniciar sesión"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# acción usa actualmente {profile}} other {# acciones usan actualmente {profile}}}",
     "applyTo": "{count, plural, one {Aplicar a # acción} other {Aplicar a # acciones}}",
@@ -378,12 +372,6 @@
     "startSession": "Iniciar sesión del Doctor",
     "thinking": "Pensando…",
     "title": "Doctor"
-  },
-  "downgradeReconfirmModal": {
-    "body": "Al bajar de plan se eliminan las siguientes funciones Pro:",
-    "confirm": "Confirmar bajada de plan",
-    "keepPro": "Mantener Pro",
-    "title": "¿Bajar a Base?"
   },
   "generalPage": {
     "chooseAssistant": "Elegir asistente",

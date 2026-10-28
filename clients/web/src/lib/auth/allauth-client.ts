@@ -6,21 +6,8 @@
  *
  * Reference: https://docs.allauth.org/en/latest/headless/openapi-specification/
  */
-import { z } from "zod";
-
-import type {
-  Authenticated,
-  EmailAddress,
-  Flow,
-  ProviderAccount,
-} from "@/generated/auth/types.gen";
-import {
-  deleteAllauthByClientV1AuthSession,
-  getAllauthByClientV1AuthSession,
-  getAllauthByClientV1Config,
-  getAllauthByClientV1AuthProviderSignup,
-  postAllauthByClientV1AuthProviderSignup,
-} from "@/generated/auth/sdk.gen";
+import type { Authenticated, Flow } from "@/generated/auth/types.gen";
+import { getAllauthByClientV1AuthSession } from "@/generated/auth/sdk.gen";
 import { isElectron } from "@/runtime/is-electron";
 
 // Electron authenticates via the session-token header → allauth's "app" client.
@@ -57,92 +44,6 @@ export async function getSession(): Promise<AllauthResult<Authenticated>> {
   const { data, error, response } = await getAllauthByClientV1AuthSession({
     path: { client: allauthClient() },
   });
-
-  if (data) {
-    return { ok: true, data: data.data };
-  }
-
-  return errorResult(error, response?.status);
-}
-
-export async function logout(): Promise<AllauthResult> {
-  const { data, error, response } = await deleteAllauthByClientV1AuthSession({
-    path: { client: allauthClient() },
-  });
-
-  if (data) {
-    return { ok: true, data };
-  }
-
-  if (response?.status === 401) {
-    return { ok: true, data: {} };
-  }
-
-  return errorResult(error, response?.status);
-}
-
-/** The slice of allauth's configuration the app consumes. */
-const AuthConfigurationSchema = z.object({
-  account: z.object({
-    is_open_for_signup: z.boolean(),
-  }),
-});
-
-export type AuthConfiguration = z.infer<typeof AuthConfigurationSchema>;
-
-/**
- * The allauth configuration the cloud exposes to its frontends. Public: no
- * session needed. A payload missing the consumed fields is an error result,
- * never a partial success.
- */
-export async function getAuthConfig(): Promise<
-  AllauthResult<AuthConfiguration>
-> {
-  const { data, error, response } = await getAllauthByClientV1Config({
-    path: { client: allauthClient() },
-  });
-
-  const parsed = AuthConfigurationSchema.safeParse(data?.data);
-  if (parsed.success) {
-    return { ok: true, data: parsed.data };
-  }
-
-  return errorResult(error, response?.status);
-}
-
-export interface ProviderSignupContext {
-  account: ProviderAccount;
-  user: Authenticated["user"];
-  email: Array<EmailAddress>;
-}
-
-export async function getProviderSignup(): Promise<
-  AllauthResult<ProviderSignupContext>
-> {
-  const { data, error, response } =
-    await getAllauthByClientV1AuthProviderSignup({
-      path: { client: allauthClient() },
-    });
-
-  if (data) {
-    return { ok: true, data: data.data as unknown as ProviderSignupContext };
-  }
-
-  return errorResult(error, response?.status);
-}
-
-export async function submitProviderSignup({
-  email,
-  username,
-}: {
-  email: string;
-  username: string;
-}): Promise<AllauthResult<Authenticated>> {
-  const { data, error, response } =
-    await postAllauthByClientV1AuthProviderSignup({
-      path: { client: allauthClient() },
-      body: { email, username },
-    });
 
   if (data) {
     return { ok: true, data: data.data };

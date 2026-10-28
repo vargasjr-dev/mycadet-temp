@@ -145,12 +145,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "正在載入付款欄位"
   },
-  "biometricSettingsCard": {
-    "description": "當您的工作階段過期時，請使用 {label} 驗證，而無需再次登入。",
-    "descriptionWithPasscode": "當您的工作階段過期時，請使用 {label} 或您的裝置密碼驗證，而無需再次登入。",
-    "title": "安全性",
-    "useForSignIn": "使用 {label} 登入"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, other {# 個動作目前使用 {profile}}}",
     "applyTo": "{count, plural, other {套用至 # 個動作}}",
@@ -378,12 +372,6 @@
     "startSession": "啟動助理醫生工作階段",
     "thinking": "正在思考…",
     "title": "助理醫生"
-  },
-  "downgradeReconfirmModal": {
-    "body": "降級將移除以下專業版功能：",
-    "confirm": "確認降級",
-    "keepPro": "保留專業版",
-    "title": "降級到基礎版？"
   },
   "generalPage": {
     "chooseAssistant": "選擇助理",

@@ -308,14 +308,6 @@
     "copied": "Copiado",
     "copyFailed": "No se pudo copiar al portapapeles."
   },
-  "createAssistantDialog": {
-    "cancel": "Cancelar",
-    "create": "Crear",
-    "description": "Provisiona un asistente nuevo. Se iniciará en segundo plano.",
-    "namePlaceholder": "Nombre del asistente (opcional)",
-    "title": "Nuevo asistente",
-    "toastSuccess": "Nuevo asistente creado."
-  },
   "dateRangeSelect": {
     "ariaLabel": "Rango de fechas",
     "lastDays": "{days, plural, one {Último # día} other {Últimos # días}}"
@@ -478,9 +470,6 @@
   },
   "nudgeChatBanner": {
     "dismissAria": "Descartar"
-  },
-  "onboardingBackButton": {
-    "back": "Atrás"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "Tu asistente aún no tiene identificador; reclama uno para poder mencionarlo.",

@@ -310,14 +310,6 @@
     "copied": "Copied",
     "copyFailed": "Could not copy to the clipboard."
   },
-  "createAssistantDialog": {
-    "cancel": "Cancel",
-    "create": "Create",
-    "description": "Provision a new assistant. It will start up in the background.",
-    "namePlaceholder": "Assistant name (optional)",
-    "title": "New Assistant",
-    "toastSuccess": "New assistant created."
-  },
   "dateRangeSelect": {
     "ariaLabel": "Date range",
     "lastDays": "{days, plural, one {Last # day} other {Last # days}}"
@@ -480,9 +472,6 @@
   },
   "nudgeChatBanner": {
     "dismissAria": "Dismiss"
-  },
-  "onboardingBackButton": {
-    "back": "Back"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "Your assistant doesn't have a handle yet - claim one to make it mentionable.",

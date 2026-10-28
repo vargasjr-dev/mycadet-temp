@@ -145,12 +145,6 @@
     "cardOnFileExpiry": "· {month} / {year}",
     "loadingLabel": "Loading payment fields"
   },
-  "biometricSettingsCard": {
-    "description": "When your session expires, verify with {label} instead of signing in again.",
-    "descriptionWithPasscode": "When your session expires, verify with {label} or your device passcode instead of signing in again.",
-    "title": "Security",
-    "useForSignIn": "Use {label} for sign-in"
-  },
   "bulkOverrideSwapModal": {
     "affectedSummary": "{count, plural, one {# action currently uses {profile}} other {# actions currently use {profile}}}",
     "applyTo": "{count, plural, one {Apply to # action} other {Apply to # actions}}",
@@ -384,12 +378,6 @@
     "startSession": "Start Doctor Session",
     "thinking": "Thinking…",
     "title": "Doctor"
-  },
-  "downgradeReconfirmModal": {
-    "body": "Downgrading removes the following Pro features:",
-    "confirm": "Confirm Downgrade",
-    "keepPro": "Keep Pro",
-    "title": "Downgrade to Base?"
   },
   "generalPage": {
     "chooseAssistant": "Choose Assistant",

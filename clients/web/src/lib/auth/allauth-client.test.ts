@@ -19,14 +19,9 @@ function sdkStub(fn: string) {
 
 mock.module("@/generated/auth/sdk.gen", () => ({
   getAllauthByClientV1AuthSession: sdkStub("getSession"),
-  getAllauthByClientV1Config: sdkStub("getAuthConfig"),
-  deleteAllauthByClientV1AuthSession: sdkStub("logout"),
-  getAllauthByClientV1AuthProviderSignup: sdkStub("getProviderSignup"),
-  postAllauthByClientV1AuthProviderSignup: sdkStub("submitProviderSignup"),
 }));
 
-const { getAuthConfig, getSession, logout } =
-  await import("@/lib/auth/allauth-client");
+const { getSession } = await import("@/lib/auth/allauth-client");
 
 function setElectron(): void {
   (window as unknown as { cadet?: unknown }).cadet = { platform: "electron" };
@@ -47,30 +42,6 @@ describe("allauth-client — client selection", () => {
   test("uses the app client in Electron", async () => {
     setElectron();
     await getSession();
-    await logout();
-    await getAuthConfig();
-    expect(calls.map((c) => c.client)).toEqual(["app", "app", "app"]);
-  });
-});
-
-describe("allauth-client getAuthConfig", () => {
-  test("returns the consumed slice of a well-formed configuration", async () => {
-    stubBody.value = {
-      account: { is_open_for_signup: false, login_by_code_enabled: true },
-      socialaccount: { providers: [] },
-    };
-    const result = await getAuthConfig();
-
-    expect(result).toEqual({
-      ok: true,
-      data: { account: { is_open_for_signup: false } },
-    });
-  });
-
-  test("a payload without the account block is an error, not a partial success", async () => {
-    stubBody.value = { socialaccount: { providers: [] } };
-    const result = await getAuthConfig();
-
-    expect(result.ok).toBe(false);
+    expect(calls.map((c) => c.client)).toEqual(["app"]);
   });
 });

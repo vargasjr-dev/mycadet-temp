@@ -310,14 +310,6 @@
     "copied": "已复制",
     "copyFailed": "无法复制到剪贴板。"
   },
-  "createAssistantDialog": {
-    "cancel": "取消",
-    "create": "创建",
-    "description": "配置一个新助手。它将在后台启动。",
-    "namePlaceholder": "助手名称（可选）",
-    "title": "新助手",
-    "toastSuccess": "新助手已创建。"
-  },
   "dateRangeSelect": {
     "ariaLabel": "日期范围",
     "lastDays": "{days, plural, other {过去 # 天}}"
@@ -480,9 +472,6 @@
   },
   "nudgeChatBanner": {
     "dismissAria": "关闭"
-  },
-  "onboardingBackButton": {
-    "back": "返回"
   },
   "profileCard": {
     "assistantHandleIdleEmpty": "您的助手尚未设置句柄，请设置一个以便提及。",
