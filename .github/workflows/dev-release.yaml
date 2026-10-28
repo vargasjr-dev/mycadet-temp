@@ -1430,7 +1430,11 @@ jobs:
         publish-web-dev,
       ]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The shrinkwrap step polls npm's async publish queue for up to 30
+    # minutes by design (DEADLINE_SECONDS in the script) — the job timeout
+    # must exceed that deadline with margin, or it amputates the poll
+    # exactly when the queue is slowest.
+    timeout-minutes: 40
     permissions:
       contents: read
       id-token: write # npm trusted publishing (OIDC) — no NPM_TOKEN

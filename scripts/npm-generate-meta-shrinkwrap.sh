@@ -26,6 +26,17 @@ set -euo pipefail
 DEADLINE_SECONDS="${DEADLINE_SECONDS:-1800}"
 POLL_INTERVAL_SECONDS="${POLL_INTERVAL_SECONDS:-20}"
 
+# Per-attempt npm budgets: a stuck registry connection must fail FAST and let
+# the poll loop below own the waiting. npm's default fetch timeout is five
+# minutes with retries — one hung attempt can eat the job's whole
+# timeout-minutes before the loop ever sees a failure.
+export npm_config_fetch_timeout=30000
+export npm_config_fetch_retries=2
+export npm_config_fetch_retry_mintime=1000
+export npm_config_fetch_retry_maxtime=5000
+export npm_config_audit=false
+export npm_config_fund=false
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT/meta"
 
