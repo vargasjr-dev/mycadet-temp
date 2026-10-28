@@ -53,8 +53,8 @@ mock.module("@/runtime/local-mode-host", () => ({
 
 import {
   getActiveAssistant,
+  hasGatewayAddress,
   hasLocalGateway,
-  hasPairedGateway,
   getLocalAssistants,
   getServedLockfile,
   getCloudAssistants,
@@ -197,10 +197,10 @@ describe("served config synthesis", () => {
     stampServed({ assistantId: "served-1", remote: "local" });
     expect(getServedLockfile().assistants[0]?.cloud).toBe("local");
     // A plain local serve: the renderer holds no transport URL and the host
-    // routes same-origin, so the served entry must classify as a LOCAL
-    // gateway (never as a paired one - the wake repair refuses paired).
+    // routes same-origin, so the served entry carries a LOCAL gateway
+    // address through its recorded port.
     expect(hasLocalGateway()).toBe(true);
-    expect(hasPairedGateway(getActiveAssistant())).toBe(false);
+    expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
 
     stampServed({ assistantId: "served-1", remote: "docker" });
     expect(getServedLockfile().assistants[0]?.cloud).toBe("docker");
@@ -695,42 +695,51 @@ describe("hasLocalGateway", () => {
   });
 });
 
-describe("hasPairedGateway", () => {
-  test("is true for a usable paired entry", () => {
+describe("hasGatewayAddress", () => {
+  test("is true for a custom remote with a usable recorded address", () => {
     enableLocalMode();
-    expect(hasPairedGateway(pairedEntry)).toBe(true);
+    expect(hasGatewayAddress(pairedEntry)).toBe(true);
   });
 
-  test("is false for a loopback entry with no remote address", () => {
+  test("is true for a loopback entry with a recorded gateway port", () => {
+    enableLocalMode();
+    const local = {
+      assistantId: "p",
+      cloud: "local",
+      resources: { gatewayPort: 8787 },
+    } as LockfileAssistant;
+    expect(hasGatewayAddress(local)).toBe(true);
+  });
+
+  test("is false for a loopback entry with no recorded port", () => {
     enableLocalMode();
     const missing = {
       assistantId: "p",
       cloud: "local",
     } as LockfileAssistant;
-    expect(hasPairedGateway(missing)).toBe(false);
+    expect(hasGatewayAddress(missing)).toBe(false);
   });
 
-  test("is false for non-paired entries", () => {
+  test("is false for non-addressable entries", () => {
     enableLocalMode();
-    expect(hasPairedGateway(localA)).toBe(false);
-    expect(hasPairedGateway(platform)).toBe(false);
-    expect(hasPairedGateway(undefined)).toBe(false);
+    expect(hasGatewayAddress(platform)).toBe(false);
+    expect(hasGatewayAddress(undefined)).toBe(false);
   });
 
   test("is false outside local mode", () => {
     disableLocalMode();
-    expect(hasPairedGateway(pairedEntry)).toBe(false);
+    expect(hasGatewayAddress(pairedEntry)).toBe(false);
   });
 
   test("is false in remote-gateway mode", () => {
     enableLocalMode();
     window.__CADET_CONFIG__ = { remote: "docker" };
-    expect(hasPairedGateway(pairedEntry)).toBe(false);
+    expect(hasGatewayAddress(pairedEntry)).toBe(false);
   });
 
-  test("is false for the served entry - a local serve is never a paired one", () => {
+  test("is true for the served entry - a port-0 topology is an address the host resolves", () => {
     stampServed({ assistantId: "served-1" });
-    expect(hasPairedGateway(getActiveAssistant())).toBe(false);
+    expect(hasGatewayAddress(getActiveAssistant())).toBe(true);
   });
 });
 

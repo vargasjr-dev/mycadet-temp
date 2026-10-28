@@ -6,7 +6,6 @@ import { RetireConfirmDialog } from "@app/components/retire-confirm-dialog";
 import { RemoveFromDeviceDialog } from "@app/components/remove-from-device-dialog";
 import { AddRemoteOriginDialog } from "@app/components/account/add-remote-origin-dialog";
 import { ConnectAssistantDialog } from "@app/components/account/connect-assistant-dialog";
-import { ConnectRecoveryDialog } from "@app/components/account/connect-recovery-dialog";
 import { OriginCardMenu } from "@app/components/account/origin-card-menu";
 import { RetireCardMenu } from "@app/components/account/retire-card-menu";
 import { AccountShell } from "@app/components/account/account-shell";
@@ -18,8 +17,6 @@ import { readInjectedConfig } from "@app/lib/injected-config";
 import { switchToOrigin, isCurrentOrigin } from "@app/assistant/switch-origin";
 import {
   isLocalModeHostAvailable,
-  wakeLocalAssistantHost,
-  retireLocalAssistantHost,
   unpairLocalAssistant,
   type LockfileAssistant,
 } from "@app/assistant/local-mode-host";
@@ -28,7 +25,6 @@ import {
   isCloudHome,
   isLoopbackGatewayCloud,
 } from "@mycadet/local-mode/contract";
-import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import {
@@ -133,16 +129,6 @@ export function SelectAssistantScreen() {
   // The connect flow's gate: only a runtime with a local-mode host (the
   // Electron shell) can pair, list the lockfile arm, or wake/retire locals.
   const localModeHostAvailable = isLocalModeHostAvailable();
-  const [connectingEntryId, setConnectingEntryId] = useState<string | null>(
-    null,
-  );
-  // A local assistant whose daemon is down or whose guardian token is gone:
-  // opens the recovery dialog instead of a doomed connect.
-  const [recoveryEntry, setRecoveryEntry] = useState<LockfileAssistant | null>(
-    null,
-  );
-  const [recoveryPending, setRecoveryPending] = useState(false);
-  const [recoveryError, setRecoveryError] = useState<string | null>(null);
   // Target of the paired-entry "remove from this device" (unpair) dialog.
   const [unpairTarget, setUnpairTarget] = useState<LockfileAssistant | null>(
     null,
@@ -230,82 +216,12 @@ export function SelectAssistantScreen() {
   };
 
   /**
-   * Connect a lockfile entry. Paired entries navigate straight away — their
-   * resolution rides the paired-gateway path. A local entry is probed
-   * first: a healthy daemon connects by navigating, anything else opens
-   * the recovery dialog, whose repair re-provisions and retries — the
-   * app-bundle analog of web's connect failing into recovery. The verdict
-   * itself lives in `resolveLockfileEntryConnect` so the shell's assistant
-   * commands (the palette's switch action, re-pair) make the same call.
+   * Connect a lockfile entry: navigate, full stop. Recovery is the app
+   * shell's job — an entry whose gateway can't resolve lands on the
+   * not-ready panel's wake, whatever its remote type.
    */
-  const handleConnectEntry = async (entry: LockfileAssistant) => {
-    if (connectingEntryId != null || recoveryPending) {
-      return;
-    }
-    setConnectingEntryId(entry.assistantId);
-    const verdict = await resolveLockfileEntryConnect(entry);
-    setConnectingEntryId(null);
-    if (verdict === "connect") {
-      connectEntry(entry);
-      return;
-    }
-    setRecoveryEntry(entry);
-  };
-
-  const clearRecoveryState = () => {
-    setRecoveryEntry(null);
-    setRecoveryPending(false);
-    setRecoveryError(null);
-  };
-
-  const handleRecoveryRepair = async () => {
-    // recoveryPending also guards re-entry: a second click can land before
-    // React flushes the pending state into the dialog's disabled buttons.
-    if (!recoveryEntry || recoveryPending) {
-      return;
-    }
-    setRecoveryPending(true);
-    setRecoveryError(null);
-    // try/catch, not just the result branch: a thrown transport error would
-    // otherwise strand recoveryPending=true on a deliberately un-dismissable
-    // pending dialog.
-    try {
-      const result = await wakeLocalAssistantHost(recoveryEntry.assistantId, {
-        repairGuardian: true,
-      });
-      if (result.ok) {
-        const entry = recoveryEntry;
-        clearRecoveryState();
-        void handleConnectEntry(entry);
-        return;
-      }
-      setRecoveryError(result.error || t("connectRecoveryDialog.repairFailed"));
-    } catch (error) {
-      console.error("selectAssistant.recoveryRepair failed", error);
-      setRecoveryError(t("connectRecoveryDialog.repairFailed"));
-    }
-    setRecoveryPending(false);
-  };
-
-  const handleRecoveryRetire = async () => {
-    if (!recoveryEntry || recoveryPending) {
-      return;
-    }
-    setRecoveryPending(true);
-    setRecoveryError(null);
-    try {
-      const result = await retireLocalAssistantHost(recoveryEntry.assistantId);
-      if (result.ok) {
-        clearRecoveryState();
-        void useLocalLockfileStore.load();
-        return;
-      }
-      setRecoveryError(result.error || t("connectRecoveryDialog.retireFailed"));
-    } catch (error) {
-      console.error("selectAssistant.recoveryRetire failed", error);
-      setRecoveryError(t("connectRecoveryDialog.retireFailed"));
-    }
-    setRecoveryPending(false);
+  const handleConnectEntry = (entry: LockfileAssistant) => {
+    connectEntry(entry);
   };
 
   const closeUnpairDialog = () => {
@@ -460,7 +376,7 @@ export function SelectAssistantScreen() {
                 state.assistants.length === 0 &&
                 index === 0
               }
-              onSelect={() => void handleConnectEntry(entry)}
+              onSelect={() => handleConnectEntry(entry)}
             />
           );
         })}
@@ -512,7 +428,7 @@ export function SelectAssistantScreen() {
           <DashedActionButton
             icon={<Link2 className="h-4 w-4" />}
             label={t("selectAssistantScreen.connectRemote")}
-            disabled={connectingEntryId != null || recoveryPending}
+            disabled={false}
             onClick={() => useConnectDialogStore.getState().openConnectDialog()}
           />
         ) : (
@@ -596,19 +512,6 @@ export function SelectAssistantScreen() {
           guidanceKind={connectGuidanceKind ?? undefined}
           onClose={() => useConnectDialogStore.getState().closeConnectDialog()}
           onImported={handleImported}
-        />
-        <ConnectRecoveryDialog
-          open={recoveryEntry != null}
-          assistantName={
-            recoveryEntry
-              ? (recoveryEntry.name ?? recoveryEntry.assistantId)
-              : ""
-          }
-          isPending={recoveryPending}
-          errorMessage={recoveryError ?? undefined}
-          onCancel={clearRecoveryState}
-          onRepair={() => void handleRecoveryRepair()}
-          onRetire={() => void handleRecoveryRetire()}
         />
       </div>
     </AccountShell>

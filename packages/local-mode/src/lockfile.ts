@@ -152,8 +152,7 @@ export function stampLockfileAssistantOnboardedIfPresent(
   return patchLockfileAssistantIfPresent(
     assistantId,
     { onboardedAt },
-    (entry) =>
-      typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
+    (entry) => typeof entry.onboardedAt === "string" && entry.onboardedAt !== "",
   );
 }
 
@@ -164,8 +163,8 @@ export function stampLockfileAssistantOnboardedIfPresent(
  */
 function patchLockfileAssistantIfPresent(
   assistantId: string,
-  patch: Record<string, unknown>,
-  skip?: (entry: Record<string, unknown>) => boolean,
+  patch: LockfileAssistantPatch,
+  skip?: (entry: LockfileAssistant) => boolean,
 ): WriteResult {
   if (typeof assistantId !== "string" || assistantId === "") {
     return { ok: false, status: 400, error: "Missing assistantId" };
@@ -182,16 +181,18 @@ function patchLockfileAssistantIfPresent(
         error: "No lockfile entry for this assistant",
       };
     }
-    const entry = assistants[idx] as unknown as Record<string, unknown>;
+    const entry = assistants[idx]!;
     const converged =
       skip?.(entry) ??
-      Object.entries(patch).every(([key, value]) => entry[key] === value);
+      (Object.entries(patch) as Array<[keyof LockfileAssistant, unknown]>).every(
+        ([key, value]) => entry[key] === value,
+      );
     if (converged) {
       return { ok: true, lockfile };
     }
-    assistants[idx] = { ...entry, ...patch } as LockfileAssistant;
+    assistants[idx] = { ...entry, ...patch };
     lockfile.assistants = assistants;
-    return writeRawLockfile(lockfile as unknown as Record<string, unknown>);
+    return writeRawLockfile(lockfile);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }

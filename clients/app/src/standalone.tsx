@@ -20,7 +20,6 @@ import {
   assistantSelectionState,
   selectedAssistantState,
 } from "@app/assistant/assistant-selection";
-import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useLocalLockfileStore } from "@app/stores/local-lockfile-store";
 import { useTranslation } from "@app/i18n";
 import { routes } from "@app/utils/routes";
@@ -47,14 +46,16 @@ export function DesktopChrome() {
         .lockfile?.assistants.find(
           (candidate) => candidate.assistantId === assistantId,
         );
-      if (entry && (await resolveLockfileEntryConnect(entry)) === "connect") {
+      if (entry) {
+        // The shell owns recovery: an entry whose gateway can't resolve
+        // lands on the not-ready panel's wake, whatever its remote type.
         navigate(routes.assistant, {
           state: assistantSelectionState(entry.assistantId),
         });
         return;
       }
-      // Not a lockfile entry (a cloud id, or no lockfile arm), or a local
-      // daemon that needs repair: the chooser owns the full list.
+      // Not a lockfile entry (a cloud id, or no lockfile arm): the chooser
+      // owns the full list.
       toast.error(t("appShell.assistantSwitchFailed"));
       navigate(routes.account.selectAssistant);
     })();

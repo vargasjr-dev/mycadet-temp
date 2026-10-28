@@ -161,17 +161,6 @@
     "importedTitle": "配對已匯入",
     "importedBody": "此配對僅限存取：它現在可用，但其存取權限會過期且無法自動續訂。過期後，請在助理裝置上產生新的配對連結並貼到此處以重新配對。"
   },
-  "connectRecoveryDialog": {
-    "repairTitle": "修復助理？",
-    "repairBody": "修復會重新配置此助理的驗證憑證。任何連接到此助理的其他裝置或瀏覽器工作階段都將登出，需要重新連接。",
-    "repairConfirm": "修復",
-    "authFailedTitle": "無法驗證助理身分",
-    "authFailedBody": "{name} 的驗證憑證遺失或無法再重新整理，因此無法連接此助理。您可以修復它、停用它或選擇不同的助理。",
-    "wakeAndRepair": "喚醒並修復",
-    "retire": "停用助理",
-    "repairFailed": "修復失敗，請再試一次。",
-    "retireFailed": "移除助理失敗，請再試一次。"
-  },
   "startScreen": {
     "createAssistant": "建立您的助理"
   },

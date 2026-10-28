@@ -9,8 +9,7 @@
 import { subscribe } from "@/lib/event-bus";
 import {
   getActiveAssistant,
-  hasLocalGateway,
-  hasPairedGateway,
+  hasGatewayAddress,
   primeLocalGatewayConnection,
   primeLocalGatewayConnectionWithStartupRetry,
 } from "@/lib/local-mode";
@@ -39,10 +38,7 @@ export async function establishGatewayConnection(): Promise<void> {
     await endSession();
     return;
   }
-  if (
-    hasLocalGateway(getActiveAssistant()) ||
-    hasPairedGateway(getActiveAssistant())
-  ) {
+  if (hasGatewayAddress(getActiveAssistant())) {
     try {
       await primeLocalGatewayConnectionWithStartupRetry();
     } catch {
@@ -58,11 +54,7 @@ export async function establishGatewayConnection(): Promise<void> {
  */
 export async function reverifyGatewayConnection(): Promise<void> {
   const selectedAssistant = getActiveAssistant();
-  if (
-    selectedAssistant &&
-    (hasPairedGateway(selectedAssistant) ||
-      hasLocalGateway(selectedAssistant))
-  ) {
+  if (selectedAssistant && hasGatewayAddress(selectedAssistant)) {
     try {
       await primeLocalGatewayConnection();
     } catch {

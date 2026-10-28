@@ -1,9 +1,13 @@
 import {
+  getGatewayUrl,
   getLoopbackGatewayPort,
   isLoopbackGatewayCloud,
-  isRemoteGatewayEntry,
+  isUsableRuntimeUrl,
 } from "@mycadet/local-mode/contract";
-import { isRetryablePairingReason } from "@mycadet/service-contracts/remote-web-pairing";
+import {
+  isLoopbackPublicUrl,
+  isRetryablePairingReason,
+} from "@mycadet/service-contracts/remote-web-pairing";
 
 import { readInjectedConfig } from "@/lib/injected-config";
 
@@ -393,32 +397,28 @@ export function hasLocalGateway(
 }
 
 /**
- * Whether this runtime should reach `assistant` at a remote paired gateway: a
- * custom-remote entry, in local (non-remote-gateway) mode.
- * Whether the entry's derived address is usable is a separate question
- * answered by `hasPairedGateway`. Deliberately not a type predicate: its
- * false branch must not narrow `assistant` (a local entry also lands there).
+ * Whether the entry carries a gateway address this runtime's host can
+ * resolve: a recorded loopback port for a local assistant, or a usable
+ * non-loopback recorded address for a custom remote. Pairs and locals ask
+ * the same question — the serving host resolves whatever the entry records
+ * on its id-keyed forward; the renderer never fetches a remote origin
+ * itself (the host injects the guardian bearer; the scoped data plane is
+ * plain same-origin `/v1`).
  */
-export function expectsPairedGateway(assistant: LockfileAssistant): boolean {
-  return (
-    isLocalClient() &&
-    !isServedGatewayRuntime() &&
-    isRemoteGatewayEntry(assistant)
-  );
-}
-
-/**
- * Whether the entry is a paired assistant this runtime reaches through the
- * host's forward: paired in local (non-remote-gateway) mode with a derived
- * absolute http(s) gateway address for the host to resolve. The renderer
- * never fetches the remote origin itself — the serving host forwards and
- * injects the guardian bearer; the scoped data plane is plain same-origin
- * `/v1`.
- */
-export function hasPairedGateway(
-  assistant: LockfileAssistant | undefined,
+export function hasGatewayAddress(
+  assistant: LockfileAssistant | undefined = getActiveAssistant(),
 ): boolean {
-  return !!assistant && expectsPairedGateway(assistant);
+  if (!assistant || !isLocalClient() || isServedGatewayRuntime()) {
+    return false;
+  }
+  if (isLoopbackGatewayCloud(assistant.cloud)) {
+    return getLoopbackGatewayPort(assistant) != null;
+  }
+  if (assistant.cloud === "custom") {
+    const gatewayUrl = getGatewayUrl(assistant);
+    return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
+  }
+  return false;
 }
 
 /**
@@ -471,19 +471,6 @@ export class UnresolvedLocalGatewayError extends Error {
 }
 
 /**
- * A paired assistant records no usable `runtimeUrl`, so there is no remote
- * gateway to reach. Deliberately not {@link UnresolvedLocalGatewayError}: that
- * one routes to the wake-recovery dialog in the chooser, and `wake` refuses
- * paired entries (re-pairing from the source machine is the fix).
- */
-export class UnresolvedPairedGatewayError extends Error {
-  constructor(assistantId: string) {
-    super(`Paired assistant ${assistantId} has no usable runtimeUrl`);
-    this.name = "UnresolvedPairedGatewayError";
-  }
-}
-
-/**
  * Prime the self-hosted connection for the given local or paired assistant
  * (default: the selected one). Both arms prove the gateway is reachable by
  * probing the host-routed readyz route, then seed the shared same-origin
@@ -499,11 +486,7 @@ export async function primeLocalGatewayConnection(
   if (!assistant) {
     return;
   }
-  if (expectsPairedGateway(assistant)) {
-    if (!hasPairedGateway(assistant)) {
-      throw new UnresolvedPairedGatewayError(assistant.assistantId);
-    }
-  } else if (!hasLocalGateway(assistant)) {
+  if (!hasGatewayAddress(assistant)) {
     // A local assistant we recognize but can't resolve a gateway for (no
     // port) is recoverable by waking it — surface that instead of
     // silently leaving the session unconnected. Non-local / non-local-

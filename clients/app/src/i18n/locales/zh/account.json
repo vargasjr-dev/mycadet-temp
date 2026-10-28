@@ -164,17 +164,6 @@
     "importedTitle": "配对已导入",
     "importedBody": "此配对仅限访问：它现在可用，但其访问权限会过期且无法自动续订。过期后，请在助手设备上生成新的配对链接并粘贴到此处以重新配对。"
   },
-  "connectRecoveryDialog": {
-    "repairTitle": "修复助手？",
-    "repairBody": "修复会重新配置此助手的身份验证令牌。任何连接到此助手的其他设备或浏览器会话都将被注销，需要重新连接。",
-    "repairConfirm": "修复",
-    "authFailedTitle": "无法验证助手身份",
-    "authFailedBody": "{name} 的身份验证令牌缺失或无法再刷新，因此无法连接此助手。您可以修复它、停用它或选择其他助手。",
-    "wakeAndRepair": "唤醒并修复",
-    "retire": "停用助手",
-    "repairFailed": "修复失败，请重试。",
-    "retireFailed": "移除助手失败，请重试。"
-  },
   "startScreen": {
     "createAssistant": "创建您的助手"
   },

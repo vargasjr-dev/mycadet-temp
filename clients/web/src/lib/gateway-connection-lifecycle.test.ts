@@ -71,9 +71,9 @@ mock.module("@/lib/local-mode", () => ({
   isCadetCloudRemote: () => false,
   isServedGatewayRuntime: () => false,
   hasGatewayAssistant: () => mockIsGatewayAuth,
-  hasPairedGateway: (
-    a: { assistantId: string; runtimeUrl?: string } | undefined,
-  ) => !!a && !!a.runtimeUrl,
+  // The unified address question: every non-null fixture in these scenarios
+  // carries an address; the no-selection case resolves false.
+  hasGatewayAddress: (a: { assistantId: string } | undefined) => !!a,
   hasLocalGateway: (
     a: { assistantId: string; runtimeUrl?: string } | undefined,
   ) => !!a && !a.runtimeUrl,

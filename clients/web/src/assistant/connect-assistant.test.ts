@@ -55,20 +55,6 @@ const bootstrapLocalAssistantCloudIdentityMock = mock(
   (_assistantId?: string) => {},
 );
 
-// The real predicate, applied against the contract helpers directly: the
-// paired-connect tests seed `cloud: "local"` + an off-machine runtimeUrl,
-// which is exactly what makes an entry a paired target.
-import {
-  isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
-} from "@mycadet/local-mode/contract";
-const isRemoteGatewayEntryMock = (entry: {
-  cloud: Parameters<typeof isLoopbackGatewayCloud>[0];
-  runtimeUrl?: string;
-}): boolean =>
-  isLoopbackGatewayCloud(entry.cloud) &&
-  isUsableRuntimeUrl(entry.runtimeUrl);
-
 mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => {
     if (!sessionUser) {
@@ -89,9 +75,7 @@ mock.module("@/lib/local-mode", () => ({
   isCloudAssistant: (a: { cloud?: string }) => a.cloud === "cadet",
   isCadetCloudRemote: () => false,
   isServedGatewayRuntime: () => false,
-  hasPairedGateway: (
-    a: { assistantId: string; runtimeUrl?: string } | undefined,
-  ) => !!a && !!a.runtimeUrl,
+  hasGatewayAddress: (a: { assistantId: string } | undefined) => !!a,
   hasLocalGateway: (
     a: { assistantId: string; runtimeUrl?: string } | undefined,
   ) => !!a && !a.runtimeUrl,
@@ -102,7 +86,6 @@ mock.module("@/lib/local-mode", () => ({
   getServedLockfile: () => ({ assistants: [], activeAssistant: null }),
   getLockfileAssistant: (id: string) =>
     mockLockfileAssistants.find((a) => a.assistantId === id),
-  isRemoteGatewayEntry: isRemoteGatewayEntryMock,
   primeLocalGatewayConnection: primeLocalGatewayConnectionMock,
   primeLocalGatewayConnectionWithStartupRetry:
     primeLocalGatewayConnectionWithStartupRetryMock,

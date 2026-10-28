@@ -164,17 +164,6 @@
     "importedTitle": "Vinculación importada",
     "importedBody": "Esta vinculación es solo de acceso: funciona ahora, pero su acceso caduca y no puede renovarse por sí solo. Cuando caduque, genera un nuevo enlace de vinculación en la máquina del asistente y pégalo aquí para volver a vincular."
   },
-  "connectRecoveryDialog": {
-    "repairTitle": "¿Reparar el asistente?",
-    "repairBody": "Reparar vuelve a aprovisionar el token de autenticación de este asistente. Se cerrará la sesión en cualquier otro dispositivo o navegador conectado y tendrán que volver a conectarse.",
-    "repairConfirm": "Reparar",
-    "authFailedTitle": "No se puede autenticar el asistente",
-    "authFailedBody": "Falta el token de autenticación de {name} o ya no se puede renovar, así que no es posible conectar este asistente. Puedes repararlo, retirarlo o elegir otro asistente.",
-    "wakeAndRepair": "Despertar y reparar",
-    "retire": "Retirar el asistente",
-    "repairFailed": "No se pudo reparar. Inténtalo de nuevo.",
-    "retireFailed": "No se pudo retirar el asistente. Inténtalo de nuevo."
-  },
   "startScreen": {
     "createAssistant": "Crear tu asistente"
   },

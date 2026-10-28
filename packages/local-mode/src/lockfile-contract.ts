@@ -22,7 +22,6 @@
  * on disk; see `lockfile.ts`); the validated value carries only the modeled
  * shape.
  */
-import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import { SEEDS } from "@mycadet/environments";
 import { z } from "zod";
@@ -201,19 +200,6 @@ export function getGatewayUrl(entry: LockfileAssistant): string {
   }
   const port = getLoopbackGatewayPort(entry);
   return `http://127.0.0.1:${port ?? GATEWAY_PORT}`;
-}
-
-/**
- * Whether the entry's gateway lives on another machine: a custom remote.
- * Its recorded host and port are inherently off-machine — a loopback
- * topology's gateway is always on this machine.
- */
-export function isRemoteGatewayEntry(entry: LockfileAssistant): boolean {
-  if (entry.cloud !== "custom") {
-    return false;
-  }
-  const gatewayUrl = getGatewayUrl(entry);
-  return isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl);
 }
 
 /**
