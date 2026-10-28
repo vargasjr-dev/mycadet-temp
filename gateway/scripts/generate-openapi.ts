@@ -29,6 +29,7 @@ import { ROUTES as channelPermissionOverrideRoutes } from "../src/http/routes/ch
 import { ROUTES as contactsControlPlaneRoutes } from "../src/http/routes/contacts-control-plane-routes.js";
 import { ROUTES as credentialRequestRoutes } from "../src/http/routes/credential-requests.js";
 import { ROUTES as trustRuleRoutes } from "../src/http/routes/trust-rules-routes.js";
+import { ROUTES as upgradePolicyRoutes } from "../src/http/routes/upgrade-policy-routes.js";
 
 const ROOT = resolve(import.meta.dir, "..");
 const OUTPUT_PATH = resolve(ROOT, "openapi.json");
@@ -43,6 +44,7 @@ const ALL_ROUTES: GatewayRouteDefinition[] = [
   ...contactsControlPlaneRoutes,
   ...credentialRequestRoutes,
   ...trustRuleRoutes,
+  ...upgradePolicyRoutes,
 ];
 
 // ---------------------------------------------------------------------------

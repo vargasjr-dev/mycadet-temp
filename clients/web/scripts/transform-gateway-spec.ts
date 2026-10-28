@@ -48,12 +48,14 @@ const transformedPaths: Record<string, unknown> = {};
 let included = 0;
 
 for (const [path, methods] of Object.entries(sourcePaths)) {
-  if (!path.startsWith("/v1/")) {
+  // The /v1 version prefix is optional on the gateway (#524) — the spec
+  // emits the unversioned spelling, but tolerate either when consuming.
+  if (!path.startsWith("/")) {
     continue;
   }
 
-  // /v1/{rest} → /v1/assistants/{assistant_id}/{rest}
-  const rest = path.slice("/v1/".length);
+  // {rest} → /v1/assistants/{assistant_id}/{rest}
+  const rest = path.replace(/^\/(?:v1\/)?/, "");
   const newPath = `/v1/assistants/{assistant_id}/${rest}`;
 
   for (const [key, value] of Object.entries(methods)) {

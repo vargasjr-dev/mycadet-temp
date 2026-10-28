@@ -267,6 +267,21 @@ export const conversationThresholdOverrides = sqliteTable(
 );
 
 // ---------------------------------------------------------------------------
+// Upgrade policy (the assistant's automatic-upgrade schedule)
+// ---------------------------------------------------------------------------
+
+// Singleton row (id = 1) holding the assistant's upgrade schedule as the
+// canonical JSON of the UpgradePolicy shape. Absent row → defaults; a corrupt
+// payload answers defaults at read time (validated in the handler).
+export const upgradePolicy = sqliteTable("upgrade_policy", {
+  id: integer("id").primaryKey().default(1),
+  policy: text("policy").notNull(),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
 // Actor tokens (auth — gateway-owned)
 // ---------------------------------------------------------------------------
 

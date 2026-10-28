@@ -3,8 +3,9 @@
  * onboarding", stamped where the research/personality funnel terminates.
  *
  * Device-scoped on purpose. Onboarding completion is a property of the
- * assistant, not of the session, so it must survive the logout sweep in
- * `lib/auth/session-cleanup.ts`, which deletes every `cadet:`-prefixed key.
+ * assistant, not of the session, so it must survive the logout sweep (the
+ * app bundle's logout flow deletes every `cadet:`-prefixed key on this
+ * shared origin).
  *
  * Deliberately depends on nothing but `typed-storage`: the resolved-assistants
  * store reads this module, so pulling `local-mode` in here would drag the

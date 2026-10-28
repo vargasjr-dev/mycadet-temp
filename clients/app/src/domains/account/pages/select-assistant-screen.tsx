@@ -77,7 +77,7 @@ function DashedActionButton({
 }: {
   icon: ReactNode;
   label: string;
-  disabled: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
@@ -209,19 +209,15 @@ export function SelectAssistantScreen() {
     void switchToOrigin(origin, deviceCode ?? undefined);
   };
 
-  const connectEntry = (entry: LockfileAssistant): void => {
-    void navigate(routes.assistant, {
-      state: assistantSelectionState(entry.assistantId),
-    });
-  };
-
   /**
    * Connect a lockfile entry: navigate, full stop. Recovery is the app
    * shell's job — an entry whose gateway can't resolve lands on the
    * not-ready panel's wake, whatever its remote type.
    */
-  const handleConnectEntry = (entry: LockfileAssistant) => {
-    connectEntry(entry);
+  const connectEntry = (entry: LockfileAssistant): void => {
+    void navigate(routes.assistant, {
+      state: assistantSelectionState(entry.assistantId),
+    });
   };
 
   const closeUnpairDialog = () => {
@@ -376,7 +372,7 @@ export function SelectAssistantScreen() {
                 state.assistants.length === 0 &&
                 index === 0
               }
-              onSelect={() => handleConnectEntry(entry)}
+              onSelect={() => connectEntry(entry)}
             />
           );
         })}
@@ -428,14 +424,12 @@ export function SelectAssistantScreen() {
           <DashedActionButton
             icon={<Link2 className="h-4 w-4" />}
             label={t("selectAssistantScreen.connectRemote")}
-            disabled={false}
             onClick={() => useConnectDialogStore.getState().openConnectDialog()}
           />
         ) : (
           <DashedActionButton
             icon={<Globe className="h-4 w-4" />}
             label={t("selectAssistantScreen.addRemote")}
-            disabled={false}
             onClick={() => setAddOriginOpen(true)}
           />
         )}

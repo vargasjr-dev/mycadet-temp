@@ -3,17 +3,20 @@ import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import {
-  assistantsUpgradePolicyDetailReadOptions,
-  assistantsUpgradePolicyDetailReadQueryKey,
-} from "@/generated/api/@tanstack/react-query.gen";
-import { assistantsUpgradePolicyDetailPartialUpdate } from "@/generated/api/sdk.gen";
-import type { FrequencyEnum, UpgradePolicy } from "@/generated/api/types.gen";
+  assistantUpgradePolicyGetOptions,
+  assistantUpgradePolicyGetQueryKey,
+} from "@/generated/gateway/@tanstack/react-query.gen";
+import { assistantUpgradePolicyPut } from "@/generated/gateway/sdk.gen";
+import type { AssistantUpgradePolicyGetResponse } from "@/generated/gateway/types.gen";
 import { useTranslation } from "@/i18n";
 import { Button } from "@mycadet/design-library/components/button";
 import { Input } from "@mycadet/design-library/components/input";
 import { SegmentControl } from "@mycadet/design-library/components/segment-control";
 import { toast } from "@mycadet/design-library/components/toast";
 import { Toggle } from "@mycadet/design-library/components/toggle";
+
+type Frequency = AssistantUpgradePolicyGetResponse["schedule"]["frequency"];
+type UpgradePolicy = AssistantUpgradePolicyGetResponse;
 
 const DAY_BACKEND_INDEXES = [0, 1, 2, 3, 4, 5, 6] as const;
 
@@ -60,7 +63,7 @@ function getLocalTimezoneAbbreviation(): string {
 interface FormState {
   enabled: boolean;
   timezone: string;
-  frequency: FrequencyEnum;
+  frequency: Frequency;
   daysOfWeek: number[];
   daysOfMonth: number[];
   windowStart: string;
@@ -104,8 +107,8 @@ export function UpdateWindowPolicy({ assistantId }: UpdateWindowPolicyProps) {
     isLoading: policyLoading,
     isError: policyError,
   } = useQuery(
-    assistantsUpgradePolicyDetailReadOptions({
-      path: { id: assistantId },
+    assistantUpgradePolicyGetOptions({
+      path: { assistant_id: assistantId },
     }),
   );
 
@@ -120,18 +123,9 @@ export function UpdateWindowPolicy({ assistantId }: UpdateWindowPolicyProps) {
   const displayDaysOfMonthText = daysOfMonthText ?? form.daysOfMonth.join(", ");
 
   const policyUpdate = useMutation({
-    mutationFn: async (body: {
-      enabled?: boolean;
-      timezone?: string;
-      schedule?: {
-        frequency: FrequencyEnum;
-        days_of_week: number[];
-        days_of_month: number[];
-        window: { start: string; end: string };
-      };
-    }) => {
-      const { data } = await assistantsUpgradePolicyDetailPartialUpdate({
-        path: { id: assistantId },
+    mutationFn: async (body: UpgradePolicy) => {
+      const { data } = await assistantUpgradePolicyPut({
+        path: { assistant_id: assistantId },
         body,
         throwOnError: true,
       });
@@ -180,8 +174,8 @@ export function UpdateWindowPolicy({ assistantId }: UpdateWindowPolicyProps) {
       setLocalForm(null);
       setDaysOfMonthText(null);
       queryClient.invalidateQueries({
-        queryKey: assistantsUpgradePolicyDetailReadQueryKey({
-          path: { id: assistantId },
+        queryKey: assistantUpgradePolicyGetQueryKey({
+          path: { assistant_id: assistantId },
         }),
       });
     } catch {
@@ -222,7 +216,7 @@ export function UpdateWindowPolicy({ assistantId }: UpdateWindowPolicyProps) {
               {t("updateWindowPolicy.frequency")}
             </label>
             <div className="max-w-[400px]">
-              <SegmentControl<FrequencyEnum>
+              <SegmentControl<Frequency>
                 ariaLabel={t("updateWindowPolicy.frequency")}
                 value={form.frequency}
                 onChange={(f) => {

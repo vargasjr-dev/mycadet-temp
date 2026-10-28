@@ -171,12 +171,12 @@ export function isWidgetSnapshotSyncAvailable(): boolean {
  * How long a bridge call is given before the caller stops waiting on it.
  *
  * Both calls below are awaited on session-ending paths before the state write
- * that flips the app to its signed-out surfaces (`endSession` in
- * `@/lib/auth/session-hygiene`), and before an origin swap hands the shell to
- * another deployment. A bridge that accepts the call and never settles would
- * hang those, so the wait is bounded rather than open. Two seconds is far
- * longer than a UserDefaults write and a widget timeline reload take, and far
- * shorter than anyone waits on a sign-out.
+ * that flips the app to its signed-out surfaces (the app bundle's logout flow
+ * owns those paths, on this shared origin), and before an origin swap hands
+ * the shell to another deployment. A bridge that accepts the call and never
+ * settles would hang those, so the wait is bounded rather than open. Two
+ * seconds is far longer than a UserDefaults write and a widget timeline
+ * reload take, and far shorter than anyone waits on a sign-out.
  */
 const BRIDGE_TIMEOUT_MS = 2_000;
 

@@ -29,7 +29,6 @@ import {
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
 import { subscribe } from "@/lib/event-bus";
-import { handleLogout } from "@/lib/auth/handle-logout";
 import { setMenuCloudSession } from "@/runtime/menu";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
 import { getSession } from "@/lib/auth/allauth-client";
@@ -387,7 +386,7 @@ export function RootLayout() {
       hardNavigate(routes.account.login);
     },
     logout: () => {
-      void handleLogout();
+      hardNavigate(routes.account.logout);
     },
     shareFeedback: () => setFeedbackOpen(true),
     retireAssistant: (command) => {

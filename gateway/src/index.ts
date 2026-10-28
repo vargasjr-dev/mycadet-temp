@@ -86,6 +86,10 @@ import {
   createConversationThresholdPutHandler,
   createConversationThresholdDeleteHandler,
 } from "./http/routes/auto-approve-thresholds.js";
+import {
+  createUpgradePolicyGetHandler,
+  createUpgradePolicyPutHandler,
+} from "./http/routes/upgrade-policy.js";
 import { createChannelVerificationSessionProxyHandler } from "./http/routes/channel-verification-session-proxy.js";
 import { createTelegramControlPlaneProxyHandler } from "./http/routes/telegram-control-plane-proxy.js";
 import { createTwilioControlPlaneProxyHandler } from "./http/routes/twilio-control-plane-proxy.js";
@@ -686,6 +690,8 @@ async function main() {
     createConversationThresholdPutHandler();
   const handleConversationThresholdDelete =
     createConversationThresholdDeleteHandler();
+  const handleUpgradePolicyGet = createUpgradePolicyGetHandler();
+  const handleUpgradePolicyPut = createUpgradePolicyPutHandler();
   const handleTrustRulesList = createTrustRulesListHandler();
   const handleTrustRulesCreate = createTrustRulesCreateHandler();
   const handleTrustRulesUpdate = createTrustRulesUpdateHandler();
@@ -1472,6 +1478,36 @@ async function main() {
       scope: "settings.write",
       handler: (req, params) =>
         handleConversationThresholdDelete(req, params.slice(1)),
+    },
+
+    // ── Upgrade policy (scope-protected) ──
+    {
+      path: "/upgrade-policy",
+      method: "GET",
+      auth: "edge-scoped",
+      scope: "settings.read",
+      handler: (req) => handleUpgradePolicyGet(req),
+    },
+    {
+      path: /^\/assistants\/([^/]+)\/upgrade-policy\/?$/,
+      method: "GET",
+      auth: "edge-scoped",
+      scope: "settings.read",
+      handler: (req) => handleUpgradePolicyGet(req),
+    },
+    {
+      path: "/upgrade-policy",
+      method: "PUT",
+      auth: "edge-scoped",
+      scope: "settings.write",
+      handler: (req) => handleUpgradePolicyPut(req),
+    },
+    {
+      path: /^\/assistants\/([^/]+)\/upgrade-policy\/?$/,
+      method: "PUT",
+      auth: "edge-scoped",
+      scope: "settings.write",
+      handler: (req) => handleUpgradePolicyPut(req),
     },
 
     // ── Log export ──

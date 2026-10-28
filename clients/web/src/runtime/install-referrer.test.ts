@@ -8,7 +8,16 @@ mock.module("@capacitor/core", () => ({
   registerPlugin: () => ({ read }),
 }));
 
-const { clearUserScopedStorage } = await import("@/lib/auth/session-cleanup");
+// The logout sweep lives in the app bundle's logout flow now (same origin,
+// same `cadet:` prefix contract); the test only needs its shape as a fixture.
+const clearUserScopedStorage = (): void => {
+  for (const key of [...Object.keys(localStorage)]) {
+    if (key.startsWith("cadet:")) {
+      localStorage.removeItem(key);
+    }
+  }
+  sessionStorage.clear();
+};
 const { captureInstallReferrer, markInstallReferrerSpent } =
   await import("./install-referrer");
 

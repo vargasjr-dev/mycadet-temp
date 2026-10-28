@@ -21,10 +21,6 @@ import { useResolvedAssistantsStore } from "@/stores/resolved-assistants-store";
 import { captureError } from "@/lib/error-reporting/capture-error";
 import { installTranslateDomGuard } from "@/lib/translate-dom-guard";
 import { ErrorBoundary } from "@/components/error-boundary";
-import {
-  establishGatewayConnection,
-  watchGatewayConnectionOnResume,
-} from "@/lib/gateway-connection-lifecycle";
 import { createBrowserRouter } from "react-router";
 
 type Router = ReturnType<typeof createBrowserRouter>;
@@ -80,11 +76,7 @@ async function boot(router: Router) {
     // stamped the one assistant this surface serves. No roster, no warm-up
     // fetch - one store write.
     useResolvedAssistantsStore.getState().setFromLockfile(getServedLockfile());
-    await establishGatewayConnection();
-  } else {
-    void establishGatewayConnection();
   }
-  watchGatewayConnectionOnResume();
   // Local mode awaits `initSession()` above, so this separates "session was
   // the boot cost" from "the app tree was".
 
