@@ -3,7 +3,6 @@ import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
-  getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
@@ -155,7 +154,6 @@ export function providerSupportsReservedDomain(provider: string): boolean {
 export interface ProviderTunnelOptions {
   port: number;
   assistantId?: string;
-  workspaceDir: string;
   /** Reserved domain to bind (providers that support one only). */
   domain?: string;
   /** Tailnet-only runs keep the webhook callback base as it is. */
@@ -176,7 +174,6 @@ export interface ProviderTunnelResult {
 export interface ProviderStopOptions {
   record: TunnelProcessRecord;
   assistantId?: string;
-  workspaceDir?: string;
 }
 
 export interface TunnelProvider {
@@ -318,7 +315,7 @@ async function refreshEdgeWithEstablishedUrl(
 ): Promise<void> {
   let savedUrl: string | undefined;
   try {
-    const config = loadRawConfig(opts.workspaceDir);
+    const config = loadRawConfig(getDefaultWorkspaceDir());
     const ingress = config.ingress as Record<string, unknown> | undefined;
     const url = ingress?.publicBaseUrl;
     if (typeof url === "string" && url.trim()) savedUrl = url.trim();
@@ -361,18 +358,13 @@ export function clearReservedDomain(): void {
  * signaling — a stale entry after PID reuse must not kill an unrelated
  * process.
  */
-export async function stopTunnelProcess(
-  workspaceDir?: string,
-): Promise<boolean> {
+export async function stopTunnelProcess(): Promise<boolean> {
   const recorded: TunnelProcessRecord | undefined = readRootProcesses().tunnel;
   if (!recorded) return false;
   const provider = providerNameSchema.parse(
     recorded.provider ?? DEFAULT_TUNNEL_PROVIDER,
   );
-  const stopped = await providers[provider].stop({
-    record: recorded,
-    workspaceDir,
-  });
+  const stopped = await providers[provider].stop({ record: recorded });
   clearRootProcess("tunnel", recorded.pid);
   return stopped;
 }
@@ -452,10 +444,10 @@ function wantsAppServer(): boolean {
  * shell redirection rather than something to paste, so name the provider
  * recorded here; with none recorded, point at the help that lists them.
  */
-function tunnelRestartCommand(workspaceDir: string): string {
+function tunnelRestartCommand(): string {
   try {
     const record = selectRestartTunnelRecord(
-      loadRawConfig(workspaceDir).ingress,
+      loadRawConfig(getDefaultWorkspaceDir()).ingress,
     );
     if (record) {
       return `${cliCommand()} tunnel start --provider ${record.provider}`;
@@ -522,7 +514,7 @@ export async function restoreAppServer(
           ? "Webhooks still work, but the web app is not being served."
           : "The web app and webhook delivery are unavailable until it is rebuilt.";
     console.warn(
-      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand(getDefaultWorkspaceDir())}\` to rebuild the app server.`,
+      `   Could not restore the app server: ${detail} ${impact} Run \`${tunnelRestartCommand()}\` to rebuild the app server.`,
     );
     return survivingPort;
   }
@@ -573,7 +565,6 @@ export async function restoreContainerAppServer(
   if (gatewayPort === undefined) {
     return;
   }
-  const workspaceDir = getDefaultWorkspaceDir();
   if (edgeFrontsAnotherAssistant(entry)) {
     return;
   }
@@ -592,7 +583,7 @@ export async function restoreContainerAppServer(
     !(await waitForDaemonReady(gatewayPort, gatewayReadyTimeoutMs))
   ) {
     console.warn(
-      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the app server was not restored. Run \`${tunnelRestartCommand(workspaceDir)}\` once it is running.`,
+      `   Gateway on 127.0.0.1:${gatewayPort} did not come up, so the app server was not restored. Run \`${tunnelRestartCommand()}\` once it is running.`,
     );
     return;
   }
@@ -612,12 +603,6 @@ export async function restoreAppServerAndAutoTunnel(
   entry: LockfileAssistant,
 ): Promise<void> {
   const gatewayPort = getLoopbackGatewayPort(entry);
-  // The entry names the workspace whose config carries the tunnel contract
-  // (publicBaseUrl, lastTunnel) the daemon reads: container assistants share
-  // the default workspace, local instances their own.
-  const workspaceDir = isLocalContainerEntry(entry)
-    ? getDefaultWorkspaceDir()
-    : join(getLocalInstanceDir(entry.resources), "workspace");
   // 1. Ensure the app server is started.
   const edgePort = await restoreAppServer(entry);
   // 2. Ensure the tunnel is started at it: lockfile.json records which
@@ -625,7 +610,6 @@ export async function restoreAppServerAndAutoTunnel(
   //    own start piece runs — pointed at the app server's port.
   const publicUrl = await ensureTunnel(
     edgePort ?? gatewayPort ?? getNginxIngressPort(),
-    workspaceDir,
     entry.assistantId,
   );
   // 3. Save the ingress url from the tunnel to each assistant.
@@ -634,7 +618,6 @@ export async function restoreAppServerAndAutoTunnel(
     await refreshEdgeWithEstablishedUrl(
       {
         port: edgePort ?? gatewayPort ?? getNginxIngressPort(),
-        workspaceDir,
         assistantId: entry.assistantId,
       },
       publicUrl,
@@ -656,7 +639,6 @@ export async function restoreAppServerAndAutoTunnel(
  */
 async function ensureTunnel(
   targetPort: number,
-  workspaceDir: string,
   assistantId?: string,
 ): Promise<string | null> {
   const expected = readRootProcesses().tunnel;
@@ -671,7 +653,7 @@ async function ensureTunnel(
   // did not repoint. No record (a rebuilt workspace config) carries no
   // intent to contradict, so the restore proceeds.
   try {
-    const ingress = loadRawConfig(workspaceDir).ingress as
+    const ingress = loadRawConfig(getDefaultWorkspaceDir()).ingress as
       | Record<string, unknown>
       | undefined;
     const lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
@@ -684,7 +666,6 @@ async function ensureTunnel(
   try {
     const result = await providers[expected.provider]?.run({
       port: targetPort,
-      workspaceDir,
       assistantId,
     });
     if (!result) return null;

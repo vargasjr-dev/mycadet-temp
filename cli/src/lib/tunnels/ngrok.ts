@@ -605,11 +605,10 @@ export function pidListeningOnPort(port: number): number | null {
 async function stopConfirmedNgrokAgent(
   stale: TunnelProcessRecord,
   assistantId: string | undefined,
-  workspaceDir: string | undefined,
 ): Promise<TunnelProcessRecord | null> {
   try {
     const stopped = await stopOwnedTunnelAgent(
-      { record: stale, assistantId, workspaceDir },
+      { record: stale, assistantId },
       isNgrokProcess,
       "ngrok",
     );
@@ -807,15 +806,13 @@ export function hasWebhookIntegrations(
 }
 
 /**
- * Check whether the workspace at `workspaceDir` configures any webhook-based
+ * Check whether the machine-level workspace configures any webhook-based
  * integrations that require a public ingress URL. False when the config cannot
- * be read, so an unreadable workspace never blocks a caller.
+ * be read, so an unreadable config never blocks a caller.
  */
-export function hasWebhookIntegrationsConfigured(
-  workspaceDir: string,
-): boolean {
+export function hasWebhookIntegrationsConfigured(): boolean {
   try {
-    return hasWebhookIntegrations(loadRawConfig(workspaceDir));
+    return hasWebhookIntegrations(loadRawConfig(getDefaultWorkspaceDir()));
   } catch {
     return false;
   }
@@ -825,8 +822,6 @@ export function hasWebhookIntegrationsConfigured(
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Workspace directory for config read/write. Defaults to ~/.cadet/workspace. */
-  workspaceDir?: string;
   /** Lockfile entry to mirror the ingress URL onto (`ingressUrl`). */
   assistantId?: string;
   /**
@@ -876,7 +871,7 @@ export async function runNgrokTunnel(
 
   console.log(`Using ${version}`);
 
-  const workspaceDir = opts.workspaceDir ?? getDefaultWorkspaceDir();
+  const workspaceDir = getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   // The saved domain is standing intent: a run without --domain reuses it,
@@ -1046,7 +1041,6 @@ export async function runNgrokTunnel(
             const stopped = await stopConfirmedNgrokAgent(
               stale!,
               opts.assistantId,
-              workspaceDir,
             );
             if (stopped) {
               console.log(

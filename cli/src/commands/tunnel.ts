@@ -7,7 +7,6 @@ import {
 
 import { readRootProcesses, resolveTargetAssistant } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
-import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
 import { STALE_CLI_UPDATE_HINT } from "../lib/stale-cli-hint.js";
 import {
@@ -238,8 +237,8 @@ function parseArgs(): TunnelArgs {
  * user's own, so it is honored, with what it does and does not record spelled
  * out.
  */
-function guardTailnetOnlyWebhookIngress(workspaceDir: string): boolean {
-  if (!hasWebhookIntegrationsConfigured(workspaceDir)) {
+function guardTailnetOnlyWebhookIngress(): boolean {
+  if (!hasWebhookIntegrationsConfigured()) {
     return false;
   }
   console.warn(
@@ -349,16 +348,6 @@ async function spawnDetachedTunnel(): Promise<void> {
   }
 }
 
-/**
- * The workspace the tunnel fronts — the machine-level default workspace.
- * The edge is machine-level (it fronts the lockfile's active assistant for
- * every tunnel and wake path), so the tunnel contract lives beside it, not
- * in an assistant workspace.
- */
-function tunnelWorkspace(): string {
-  return getDefaultWorkspaceDir();
-}
-
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
 async function stopTunnelFlow(): Promise<void> {
   const record = readRootProcesses().tunnel;
@@ -368,7 +357,7 @@ async function stopTunnelFlow(): Promise<void> {
     );
     return;
   }
-  const stopped = await stopTunnelProcess(tunnelWorkspace());
+  const stopped = await stopTunnelProcess();
   console.log(
     stopped
       ? "Tunnel stopped. nginx and the saved domain are unchanged."
@@ -427,10 +416,8 @@ export const tunnel = Object.assign(
     // a machine-level edge that resolves whatever it fronts from the lockfile
     // itself. ensureAppServer starts the edge when it is down and reuses it
     // when up; the tunnel fronts the port it reports.
-    const workspaceDir = getDefaultWorkspaceDir();
-
     const preserveIngressUrl =
-      provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
+      provider === "tailscale" && guardTailnetOnlyWebhookIngress();
 
     if (clearDomain) {
       clearReservedDomain();
@@ -461,7 +448,6 @@ export const tunnel = Object.assign(
       // just carries its id. Re-resolution is safe post-edge: ensureAppServer
       // already resolved the same entry (and fails loud when there is none).
       assistantId: resolveTargetAssistant().assistantId,
-      workspaceDir,
     };
 
     await runProviderTunnel(provider, {

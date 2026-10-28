@@ -243,8 +243,6 @@ export function shouldClearIngressUrl(
 export interface RunTailscaleTunnelOptions {
   /** Local edge port to serve. Defaults to the global GATEWAY_PORT. */
   port?: number;
-  /** Workspace directory for config read/write. Defaults to ~/.cadet/workspace. */
-  workspaceDir?: string;
   /** The assistant the records front (`ingress.assistantId`). */
   assistantId?: string;
   /**
@@ -267,9 +265,9 @@ export interface RunTailscaleTunnelOptions {
  */
 function publishServeUrl(
   opts: RunTailscaleTunnelOptions,
-  workspaceDir: string,
   publicUrl: string,
 ): void {
+  const workspaceDir = getDefaultWorkspaceDir();
   if (!opts.preserveIngressUrl) {
     saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "tailscale");
     return;
@@ -285,10 +283,8 @@ function publishServeUrl(
  * Drop what {@link publishServeUrl} recorded, from the same places. Exported
  * for the teardown tests, since the run itself holds until a signal.
  */
-export function retractServeUrl(
-  opts: RunTailscaleTunnelOptions,
-  workspaceDir: string,
-): void {
+export function retractServeUrl(opts: RunTailscaleTunnelOptions): void {
+  const workspaceDir = getDefaultWorkspaceDir();
   if (!opts.preserveIngressUrl) {
     clearIngressUrl(workspaceDir);
     return;
@@ -334,7 +330,7 @@ export async function startTailscaleServe(
   const hostname = resolveServeHostname(statusResult.stdout);
   const publicUrl = `https://${hostname}`;
 
-  const workspaceDir = opts.workspaceDir ?? getDefaultWorkspaceDir();
+  const workspaceDir = getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   const serveResult = deps.run(binary, ["serve", "--bg", String(port)]);
@@ -342,7 +338,7 @@ export async function startTailscaleServe(
     throw new Error(serveFailureMessage(serveResult));
   }
 
-  publishServeUrl(opts, workspaceDir, publicUrl);
+  publishServeUrl(opts, publicUrl);
 
   return {
     publicUrl,
@@ -458,19 +454,14 @@ export async function stopTailscaleTunnel(
   }
   if (supervisor && opts.record.pid !== process.pid)
     await stopProcess(opts.record.pid, "tunnel supervisor");
-  if (opts.workspaceDir) {
-    const state = stoppedTailscaleStateSchema.parse(
-      loadRawConfig(opts.workspaceDir),
-    ).ingress;
-    const assistantId = opts.assistantId;
-    retractServeUrl(
-      {
-        assistantId,
-        preserveIngressUrl: state?.pairingTunnel?.provider === "tailscale",
-      },
-      opts.workspaceDir,
-    );
-  }
+  const workspaceDir = getDefaultWorkspaceDir();
+  const state = stoppedTailscaleStateSchema.parse(
+    loadRawConfig(workspaceDir),
+  ).ingress;
+  retractServeUrl({
+    assistantId: opts.assistantId,
+    preserveIngressUrl: state?.pairingTunnel?.provider === "tailscale",
+  });
   return true;
 }
 

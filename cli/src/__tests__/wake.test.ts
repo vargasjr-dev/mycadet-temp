@@ -573,7 +573,6 @@ describe("cadet wake — app server restore", () => {
   const enabledConfig = {
     ingress: { enabled: true, publicBaseUrl: "https://assistant.example.com" },
   };
-  const workspaceDirOf = (dir: string) => join(dir, "workspace");
   let lockfileDir = "";
 
   beforeEach(() => {
@@ -617,7 +616,6 @@ describe("cadet wake — app server restore", () => {
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
@@ -633,7 +631,6 @@ describe("cadet wake — app server restore", () => {
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
@@ -661,7 +658,6 @@ describe("cadet wake — app server restore", () => {
       // parity); the spawned agent records itself in the root lockfile.
       expect(ngrokRunMock).toHaveBeenCalledWith({
         port: 7840,
-        workspaceDir: defaultWorkspace,
         assistantId: "docker-1",
       });
       expect(logSpy).toHaveBeenCalledWith("Wake complete.");
@@ -1021,7 +1017,6 @@ describe("cadet wake — app server restore", () => {
     expect(ensureAppServerMock).not.toHaveBeenCalled();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
   });
@@ -1056,7 +1051,6 @@ describe("cadet wake — app server restore", () => {
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7840,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
   });
@@ -1085,7 +1079,6 @@ describe("cadet wake — app server restore", () => {
 
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7845,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
     expect(warnSpy).toHaveBeenCalledWith(
@@ -1113,7 +1106,6 @@ describe("cadet wake — app server restore", () => {
 
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
   });
@@ -1142,7 +1134,6 @@ describe("cadet wake — app server restore", () => {
     );
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7830,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
     expect(logSpy).toHaveBeenCalledWith("Wake complete.");
@@ -1211,7 +1202,6 @@ describe("cadet wake — app server restore", () => {
 
     expect(ngrokRunMock).toHaveBeenCalledWith({
       port: 7841,
-      workspaceDir: workspaceDirOf(tempDir),
       assistantId: "local-assistant",
     });
   });
