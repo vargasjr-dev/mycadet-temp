@@ -105,8 +105,6 @@
     "removeFromDevice": "从本设备移除…",
     "unnamedAssistant": "该助手",
     "connectRemote": "连接远程助手",
-    "pairedWithHost": "已配对 · {host}",
-    "paired": "已配对",
     "localAssistant": "在这台电脑上",
     "cloudHosted": "云端托管",
     "cloudHostedWithHost": "云端托管 · {host}",

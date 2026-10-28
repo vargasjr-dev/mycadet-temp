@@ -1,15 +1,10 @@
 import { useEffect } from "react";
 
-import {
-  connectCloudAssistant,
-  connectLocalAssistant,
-  connectPairedAssistant,
-} from "@/assistant/connect-assistant";
+import { connectCloudAssistant } from "@/assistant/connect-assistant";
 import { useAssistantResolution } from "@/assistant/queries";
 import type { AssistantResolutionState } from "@/assistant/types";
 
 import { publish } from "@/lib/event-bus";
-import { isLocalClient } from "@/lib/local-mode";
 import { setNotificationTapHandler } from "@/runtime/notifications";
 import type { NotificationTapPayload } from "@/runtime/notification-taps";
 import {
@@ -160,11 +155,10 @@ export function useNotificationTapNavigation(): void {
         return;
       }
       try {
-        if (assistant.isPaired) {
-          await connectPairedAssistant(assistant.id);
-        } else if (assistant.isLocal && isLocalClient()) {
-          await connectLocalAssistant(assistant.id);
-        } else {
+        // Connecting to lockfile entries is app-only: the app bundle owns
+        // those connections, so a tap on one just opens the thread through
+        // its owning host. Platform rows connect here.
+        if (assistant.isCloudHosted) {
           await connectCloudAssistant(assistant.id);
         }
       } catch {

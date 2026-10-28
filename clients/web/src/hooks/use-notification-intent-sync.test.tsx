@@ -45,7 +45,6 @@ const PLATFORM_ASSISTANT: ResolvedAssistant = {
   cloudAssistantId: PLATFORM_ASSISTANT_ID,
   isLocal: false,
   isCloudHosted: true,
-  isPaired: false,
   organizationId: "org-1",
 };
 
@@ -417,14 +416,12 @@ describe("useNotificationIntentSync", () => {
       id: "local-a",
       isLocal: true,
       isCloudHosted: false,
-      isPaired: true,
       runtimeUrl: "https://a.example.com/assistant",
     };
     const assistantB: ResolvedAssistant = {
       id: "local-b",
       isLocal: true,
       isCloudHosted: false,
-      isPaired: true,
       runtimeUrl: "https://b.example.com/assistant",
     };
     useResolvedAssistantsStore.setState({

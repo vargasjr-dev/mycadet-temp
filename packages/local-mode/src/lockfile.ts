@@ -81,42 +81,6 @@ export function lockFailure(error: string): WriteResult {
   return { ok: false, status: 423, error };
 }
 
-export type RawLockfileReadResult =
-  | { ok: true; lockfile: Record<string, unknown> }
-  | { ok: false; error: string };
-
-/**
- * A file that exists but cannot be read or parsed refuses instead of
- * degrading to the empty registry. Missing or empty files still yield the
- * empty registry. Use for writes that must never replace a registry they
- * could not actually read.
- */
-function readRawLockfileStrict(): RawLockfileReadResult {
-  const lockfilePath = resolveLockfilePath();
-  let raw: string;
-  try {
-    raw = fs.readFileSync(lockfilePath, "utf-8");
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-      return { ok: true, lockfile: { assistants: [], activeAssistant: null } };
-    }
-    return { ok: false, error: `Failed to read lockfile: ${err}` };
-  }
-  if (raw.trim() === "") {
-    return { ok: true, lockfile: { assistants: [], activeAssistant: null } };
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    return { ok: false, error: `Failed to parse lockfile: ${err}` };
-  }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return { ok: false, error: "Lockfile is not a JSON object" };
-  }
-  return { ok: true, lockfile: parsed as Record<string, unknown> };
-}
-
 /** The validated, sensitive-field-stripped wire view of a raw lockfile. */
 function toWireLockfile(lockfile: Record<string, unknown>): Lockfile {
   const stripped = JSON.parse(JSON.stringify(lockfile)) as Record<
@@ -208,14 +172,8 @@ function patchLockfileAssistantIfPresent(
   }
 
   const locked = withLockfileLock((): WriteResult => {
-    const read = readRawLockfileStrict();
-    if (!read.ok) {
-      return { ok: false, status: 409, error: read.error };
-    }
-    const lockfile = read.lockfile;
-    const assistants = Array.isArray(lockfile.assistants)
-      ? (lockfile.assistants as Array<Record<string, unknown>>)
-      : [];
+    const lockfile = readLockfile();
+    const assistants = [...lockfile.assistants];
     const idx = assistants.findIndex((a) => a?.assistantId === assistantId);
     if (idx < 0) {
       return {
@@ -224,16 +182,16 @@ function patchLockfileAssistantIfPresent(
         error: "No lockfile entry for this assistant",
       };
     }
-    const entry = assistants[idx]!;
+    const entry = assistants[idx] as unknown as Record<string, unknown>;
     const converged =
       skip?.(entry) ??
       Object.entries(patch).every(([key, value]) => entry[key] === value);
     if (converged) {
-      return { ok: true, lockfile: toWireLockfile(lockfile) };
+      return { ok: true, lockfile };
     }
-    assistants[idx] = { ...entry, ...patch };
+    assistants[idx] = { ...entry, ...patch } as LockfileAssistant;
     lockfile.assistants = assistants;
-    return writeRawLockfile(lockfile);
+    return writeRawLockfile(lockfile as unknown as Record<string, unknown>);
   });
   return locked.ok ? locked.value : lockFailure(locked.error);
 }
@@ -278,18 +236,12 @@ export function saveLockfileAssistant(
 }
 
 export function isActiveAssistant(assistantId: string): boolean {
-  try {
-    const data = JSON.parse(
-      fs.readFileSync(resolveLockfilePath(), "utf-8"),
-    ) as Record<string, unknown>;
-    if (data.activeAssistant === assistantId) return true;
-    const assistants = data.assistants;
-    if (!Array.isArray(assistants) || assistants.length !== 1) return false;
-    const [onlyAssistant] = assistants as Array<Record<string, unknown>>;
-    return onlyAssistant?.assistantId === assistantId;
-  } catch {
-    return false;
-  }
+  const lockfile = readLockfile();
+  if (lockfile.activeAssistant === assistantId) return true;
+  return (
+    lockfile.assistants.length === 1 &&
+    lockfile.assistants[0]!.assistantId === assistantId
+  );
 }
 
 export function replaceCloudAssistants(

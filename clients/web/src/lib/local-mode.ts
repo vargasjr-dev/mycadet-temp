@@ -373,8 +373,7 @@ function expectsLocalGateway(
     !!assistant &&
     isLocalClient() &&
     !isServedGatewayRuntime() &&
-    isLoopbackGatewayCloud(assistant.cloud) &&
-    !isRemoteGatewayEntry(assistant)
+    isLoopbackGatewayCloud(assistant.cloud)
   );
 }
 
@@ -700,15 +699,11 @@ export async function primeLocalGatewayConnectionWithRepair(
     return;
   } catch (error) {
     // Wake operates only on plain local assistants (see
-    // `isCliWakeableAssistant`): spawning it for a paired or otherwise
-    // non-local target would burn time on a refusal, so their failures
-    // propagate untouched. Paired-ness derives from topology (#484), so the
-    // cloud==="local" check alone no longer excludes a connect import.
-    if (
-      !assistant ||
-      !isLocalAssistant(assistant) ||
-      isRemoteGatewayEntry(assistant)
-    ) {
+    // `isCliWakeableAssistant`): spawning it for a non-local target would
+    // burn time on a refusal, so their failures propagate untouched. The
+    // recovery decision is remote-agnostic — the local-topology check is
+    // the whole gate.
+    if (!assistant || !isLocalAssistant(assistant)) {
       throw error;
     }
     if (!isRepairableConnectError(error)) {

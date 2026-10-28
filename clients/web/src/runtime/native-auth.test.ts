@@ -101,7 +101,6 @@ describe("resolveNativePostAuthDestination", () => {
           ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
-          isPaired: false,
         },
       ],
     });
@@ -124,7 +123,6 @@ describe("resolveNativePostAuthDestination", () => {
           ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
-          isPaired: false,
         },
       ],
     });
@@ -147,7 +145,6 @@ describe("resolveNativePostAuthDestination", () => {
           ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
-          isPaired: false,
         },
       ],
     });
@@ -222,7 +219,6 @@ describe("startAuthFlow on Electron", () => {
           ).toISOString(),
           isLocal: false,
           isCloudHosted: true,
-          isPaired: false,
         },
       ],
     });

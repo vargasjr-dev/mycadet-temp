@@ -320,7 +320,6 @@ describe("supersedeCloudAvatar", () => {
           id: "paired-slug",
           isLocal: false,
           isCloudHosted: false,
-          isPaired: true,
           cloud: "paired",
           cloudAssistantId: PAIRED_UUID,
         },

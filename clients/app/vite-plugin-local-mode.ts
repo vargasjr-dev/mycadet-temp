@@ -14,19 +14,11 @@ import {
   readLockfile,
   servedConfigFromLockfile,
   stripSensitiveFields,
-  getLocalAssistantStatus,
-  readLockfileAssistantAvatar,
   renameLockfileAssistantIfPresent,
   stampLockfileAssistantOnboardedIfPresent,
   replaceCloudAssistants,
-  isActiveAssistant,
   runDevicesList,
   runDevicesRevoke,
-  runHatch,
-  runRetire,
-  runSleep,
-  runUpgrade,
-  runWake,
   pairingCancel,
   pairingPoll,
   pairingStart,
@@ -39,24 +31,15 @@ import {
   authorizePairedForwardHeaders,
   type CliInvocation,
 } from "@mycadet/local-mode";
-import { isRemoteGatewayEntry } from "@mycadet/local-mode/contract";
 import { stampedVersion } from "@mycadet/shared/version";
 import cliPkg from "../../cli/package.json";
 
-// The local host's own routes live at the conductor's /v1 shapes: assistant
-// lifecycle operations at the conductor's assistants paths, pairing under the
-// gateway's remote-web namespace, device management at the gateway's devices
-// routes, and the dev session store at /v1/session. The scoped assistant
-// routes (detail/avatar/retire/wake/sleep) are intercepted before the
-// id-keyed gateway proxy below for host-managed entries; paired and cloud
-// entries pass through to that proxy.
-const LOCAL_STATUS_PATTERN = /^\/v1\/assistants\/([^/]+)\/?$/;
-const LOCAL_AVATAR_PATTERN = /^\/v1\/assistants\/([^/]+)\/avatar\/get$/;
-const LOCAL_UPGRADE_PATTERN = /^\/v1\/assistants\/([^/]+)\/upgrade\/?$/;
-const LOCAL_RETIRE_PATTERN = /^\/v1\/assistants\/([^/]+)\/retire\/?$/;
+// The local host's own routes live at the conductor's /v1 shapes: pairing
+// under the gateway's remote-web namespace, device management at the
+// gateway's devices routes, and the dev session store at /v1/session. The
+// dev server hosts no assistants — every scoped assistant route forwards
+// through the id-keyed gateway proxy below, whatever the entry's remote.
 const LOCAL_UNPAIR_PATTERN = /^\/v1\/assistants\/([^/]+)\/unpair\/?$/;
-const LOCAL_SLEEP_PATTERN = /^\/v1\/assistants\/([^/]+)\/sleep\/?$/;
-const LOCAL_WAKE_PATTERN = /^\/v1\/assistants\/([^/]+)\/wake\/?$/;
 const CLOUD_SESSION_PATTERN = /^\/v1\/session$/;
 
 function requestPathname(req: http.IncomingMessage): string {
@@ -65,22 +48,6 @@ function requestPathname(req: http.IncomingMessage): string {
 
 function lockfileEntryFor(assistantId: string) {
   return readLockfile().assistants.find((a) => a.assistantId === assistantId);
-}
-
-/**
- * Whether the middleware serves a scoped assistant route itself instead of
- * passing the request to the id-keyed gateway proxy: the entry is host-managed
- * (a locally hatched or dockerized assistant — the operation runs on this
- * machine), not paired (the entry's assistant lives behind its recorded
- * gateway address, which the gateway proxy forwards to) and not
- * platform-managed (a cloud entry, served by the conductor through the dev
- * `/v1` proxy).
- */
-function isHostManagedEntry(assistantId: string): boolean {
-  const entry = lockfileEntryFor(assistantId);
-  return (
-    entry != null && entry.cloud !== "cloud" && !isRemoteGatewayEntry(entry)
-  );
 }
 
 // In-memory loopback cloud session token for the dev server. The proxy
@@ -132,19 +99,9 @@ export function localModePlugin(env: Record<string, string>): Plugin {
       server.middlewares.use(cloudSessionMiddleware());
       server.middlewares.use(configMiddleware(configJson));
       server.middlewares.use(lockfileMiddleware());
-      server.middlewares.use(hatchMiddleware(baseDir));
-      server.middlewares.use(retireMiddleware(baseDir));
       server.middlewares.use(unpairMiddleware());
       server.middlewares.use(pairingMiddleware());
-      server.middlewares.use(sleepMiddleware(baseDir));
-      server.middlewares.use(wakeMiddleware(baseDir));
       server.middlewares.use(devicesMiddleware(baseDir));
-      const upgradingLocalAssistantIds = new Set<string>();
-      server.middlewares.use(
-        upgradeMiddleware(baseDir, upgradingLocalAssistantIds),
-      );
-      server.middlewares.use(statusMiddleware(upgradingLocalAssistantIds));
-      server.middlewares.use(avatarMiddleware(env));
       server.middlewares.use(gatewayProxyMiddleware(baseDir, env));
       server.middlewares.use(accountSpaFallback(server));
     },
@@ -382,132 +339,6 @@ function lockfileMiddleware(): Connect.NextHandleFunction {
   };
 }
 
-function hatchMiddleware(baseDir: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    // The conductor's create flow marks itself with `?mode=create` and passes
-    // through to the dev `/v1` proxy; a plain POST hatches locally.
-    if (
-      requestPathname(req) !== "/v1/assistants/hatch" ||
-      (req.url ?? "").includes("mode=create")
-    ) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => {
-      let species = "cadet";
-      let remote: string | undefined;
-      if (chunks.length > 0) {
-        try {
-          const body = JSON.parse(Buffer.concat(chunks).toString()) as {
-            species?: string;
-            remote?: string;
-          };
-          if (body.species) {
-            species = body.species;
-          }
-          if (body.remote) {
-            remote = body.remote;
-          }
-        } catch {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
-          return;
-        }
-      }
-
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        return;
-      }
-
-      runHatch(invocation, species, remote ? { remote } : undefined).then(
-        (result) => {
-          res.statusCode = result.ok ? 200 : result.status;
-          res.setHeader("Content-Type", "application/json");
-          res.end(
-            JSON.stringify(
-              result.ok
-                ? { ok: true, assistantId: result.assistantId }
-                : { ok: false, error: result.error },
-            ),
-          );
-        },
-      );
-    });
-  };
-}
-
-function retireMiddleware(baseDir: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_RETIRE_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "DELETE") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(assistantId) || !isActiveAssistant(assistantId)) {
-      // Paired entries retire behind their recorded gateway address (the
-      // gateway proxy forwards), cloud entries through the conductor's own
-      // retire route on the dev `/v1` proxy.
-      return next();
-    }
-
-    let invocation: CliInvocation;
-    try {
-      invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-    } catch (err) {
-      respondJson(res, 500, {
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      return;
-    }
-
-    void runRetire(invocation, assistantId, {
-      cloudToken: getDevCloudSessionToken() ?? undefined,
-    }).then((result) => {
-      respondJson(
-        res,
-        result.ok ? 200 : result.status,
-        result.ok ? { ok: true } : { ok: false, error: result.error },
-      );
-    });
-  };
-}
-
 function unpairMiddleware(): Connect.NextHandleFunction {
   return (req, res, next) => {
     const match = requestPathname(req).match(LOCAL_UNPAIR_PATTERN);
@@ -650,100 +481,6 @@ function pairingMiddleware(): Connect.NextHandleFunction {
   };
 }
 
-function sleepMiddleware(baseDir: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_SLEEP_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(assistantId)) {
-      return next();
-    }
-
-    let invocation: CliInvocation;
-    try {
-      invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-    } catch (err) {
-      respondJson(res, 500, {
-        ok: false,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      return;
-    }
-
-    void runSleep(invocation, assistantId).then((result) => {
-      respondJson(
-        res,
-        result.ok ? 200 : result.status,
-        result.ok ? { ok: true } : { ok: false, error: result.error },
-      );
-    });
-  };
-}
-
-function wakeMiddleware(baseDir: string): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_WAKE_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(assistantId)) {
-      // A paired entry's wake rides the gateway proxy to its recorded
-      // gateway address (the shell's not-ready panel wakes through it).
-      return next();
-    }
-
-    void readJsonBody(req).then((body) => {
-      const repairGuardian = body?.repairGuardian === true;
-
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        respondJson(res, 500, {
-          ok: false,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        return;
-      }
-
-      void runWake(invocation, assistantId, { repairGuardian }).then(
-        (result) => {
-          respondJson(
-            res,
-            result.ok ? 200 : result.status,
-            result.ok ? { ok: true } : { ok: false, error: result.error },
-          );
-        },
-      );
-    });
-  };
-}
-
 // Paired-device management via the CLI (`cadet devices … --json`). POST-only
 // (the renderer's postLocalCommand always POSTs); run-helper results respond
 // 200 with `ok` discriminating success so all hosts share one wire shape.
@@ -809,193 +546,6 @@ function devicesMiddleware(baseDir: string): Connect.NextHandleFunction {
         respondJson(res, 200, result);
       });
     });
-  };
-}
-
-function upgradeMiddleware(
-  baseDir: string,
-  upgradingLocalAssistantIds: Set<string>,
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_UPGRADE_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "POST") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const pathAssistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(pathAssistantId)) {
-      return next();
-    }
-
-    const chunks: Buffer[] = [];
-    req.on("data", (chunk: Buffer) => chunks.push(chunk));
-    req.on("end", () => {
-      let latest = false;
-      let force = false;
-      let version: string | undefined;
-      if (chunks.length > 0) {
-        try {
-          const body = JSON.parse(Buffer.concat(chunks).toString()) as {
-            latest?: boolean;
-            force?: boolean;
-            version?: string;
-          };
-          latest = body.latest === true;
-          force = body.force === true;
-          version = body.version;
-        } catch {
-          res.statusCode = 400;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok: false, error: "Invalid JSON body" }));
-          return;
-        }
-      }
-
-      const assistantId = pathAssistantId;
-      if (!isActiveAssistant(assistantId)) {
-        res.statusCode = 403;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: "Can only upgrade the active local assistant",
-          }),
-        );
-        return;
-      }
-
-      if (upgradingLocalAssistantIds.has(assistantId)) {
-        res.statusCode = 409;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: "An upgrade is already in progress for this assistant.",
-          }),
-        );
-        return;
-      }
-
-      let invocation: CliInvocation;
-      try {
-        invocation = resolveDevCliInvocation(baseDir, import.meta.url);
-      } catch (err) {
-        res.statusCode = 500;
-        res.setHeader("Content-Type", "application/json");
-        res.end(
-          JSON.stringify({
-            ok: false,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-        return;
-      }
-
-      const options = {
-        ...(latest ? { latest } : {}),
-        ...(version ? { version } : {}),
-        ...(force ? { force } : {}),
-      };
-
-      upgradingLocalAssistantIds.add(assistantId);
-      runUpgrade(invocation, assistantId, options)
-        .then((result) => {
-          res.statusCode = result.ok ? 200 : result.status;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify(result));
-        })
-        .finally(() => {
-          upgradingLocalAssistantIds.delete(assistantId);
-        });
-    });
-  };
-}
-
-function statusMiddleware(
-  upgradingLocalAssistantIds: Set<string>,
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_STATUS_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "GET") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    const assistantId = decodeURIComponent(match[1]!);
-    if (!isHostManagedEntry(assistantId)) {
-      // Paired entries resolve behind their recorded gateway address and
-      // cloud entries through the conductor — the id-keyed proxies own those.
-      return next();
-    }
-
-    if (upgradingLocalAssistantIds.has(assistantId)) {
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: true, state: "upgrading" }));
-      return;
-    }
-
-    void getLocalAssistantStatus(assistantId).then((result) => {
-      res.statusCode = result.ok ? 200 : result.status;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify(result));
-    });
-  };
-}
-
-function avatarMiddleware(
-  env: Record<string, string>,
-): Connect.NextHandleFunction {
-  return (req, res, next) => {
-    const match = requestPathname(req).match(LOCAL_AVATAR_PATTERN);
-    if (!match) {
-      return next();
-    }
-
-    if (rejectUnlessLocalEndpointRequest(req, res)) {
-      return;
-    }
-
-    if (req.method !== "GET") {
-      res.statusCode = 405;
-      res.end();
-      return;
-    }
-
-    let assistantId: string;
-    try {
-      assistantId = decodeURIComponent(match[1]!);
-    } catch {
-      res.statusCode = 400;
-      res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ ok: false, error: "Malformed assistant ID" }));
-      return;
-    }
-    if (!isHostManagedEntry(assistantId)) {
-      return next();
-    }
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    res.end(JSON.stringify(readLockfileAssistantAvatar(assistantId)));
   };
 }
 

@@ -105,8 +105,6 @@
     "removeFromDevice": "從此裝置移除…",
     "unnamedAssistant": "該助理",
     "connectRemote": "連線遠端助理",
-    "pairedWithHost": "已配對 · {host}",
-    "paired": "已配對",
     "localAssistant": "在這部電腦上"
   },
   "appShell": {

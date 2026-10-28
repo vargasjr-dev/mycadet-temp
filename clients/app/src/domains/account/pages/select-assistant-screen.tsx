@@ -27,7 +27,6 @@ import {
   getGatewayUrl,
   isCloudHome,
   isLoopbackGatewayCloud,
-  isRemoteGatewayEntry,
 } from "@mycadet/local-mode/contract";
 import { resolveLockfileEntryConnect } from "@app/assistant/connect-lockfile-entry";
 import { useConnectDialogStore } from "@app/stores/connect-dialog-store";
@@ -428,16 +427,13 @@ export function SelectAssistantScreen() {
           />
         )}
         {lockfileEntries.map((entry, index) => {
-          // The classification asks the entry's own Remote-typed cloud (and
-          // the off-machine gateway test) directly — no intermediate kind to
-          // maintain. Every kind names its own gateway host — the actual
-          // remote.
-          const paired = isRemoteGatewayEntry(entry);
+          // The classification asks the entry's own Remote-typed cloud
+          // directly — no intermediate kind to maintain. Every non-local kind
+          // names its own gateway host — the actual remote.
+          const remoteGateway = entry.cloud === "custom";
           const label = entry.name ?? entry.assistantId;
-          const subtitle = paired
-            ? t("selectAssistantScreen.pairedWithHost", {
-                host: new URL(getGatewayUrl(entry)).hostname,
-              })
+          const subtitle = remoteGateway
+            ? new URL(getGatewayUrl(entry)).hostname
             : isCloudHome(entry.cloud)
               ? t("selectAssistantScreen.cloudHostedWithHost", {
                   host: new URL(getGatewayUrl(entry)).hostname,
@@ -452,7 +448,7 @@ export function SelectAssistantScreen() {
               title={label}
               subtitle={subtitle}
               removeMenu={
-                paired ? (
+                remoteGateway ? (
                   <OriginCardMenu
                     label={label}
                     onRemove={() => setUnpairTarget(entry)}

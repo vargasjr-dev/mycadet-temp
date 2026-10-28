@@ -49,7 +49,6 @@ function cloudAssistant(
     id,
     isLocal: false,
     isCloudHosted: true,
-    isPaired: false,
     organizationId,
   };
 }

@@ -45,7 +45,6 @@ describe("buildNavigationState — onboarding scoping", () => {
     hatchedAt,
     isLocal: false,
     isCloudHosted: true,
-    isPaired: false,
   });
 
   test("false on both when no assistant is a week old", () => {

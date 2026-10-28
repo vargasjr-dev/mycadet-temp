@@ -122,7 +122,6 @@ const assistantOne: ResolvedAssistant = {
   id: "asst-1",
   isLocal: true,
   isCloudHosted: false,
-  isPaired: false,
   runtimeUrl: "https://first.example.com/runtime",
 };
 

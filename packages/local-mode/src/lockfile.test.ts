@@ -206,7 +206,6 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
     assistantId: "asst_1",
     cloud: "local",
     name: "Credence",
-    signingKey: "sk-on-disk-secret",
   };
   const AT = "2026-08-31T00:00:00.000Z";
 
@@ -250,7 +249,7 @@ describe("stampLockfileAssistantOnboardedIfPresent", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.status).toBe(409);
+      expect(result.status).toBe(404);
     }
     expect(fs.readFileSync(lockfilePath, "utf-8")).toBe("{ not json");
   });
@@ -269,8 +268,7 @@ describe("renameLockfileAssistantIfPresent", () => {
     assistantId: "asst_1",
     cloud: "local",
     name: "Old Name",
-    resources: { gatewayPort: 7830, daemonPort: 7831, dataDir: "/tmp/x" },
-    signingKey: "sk-on-disk-secret",
+    resources: { gatewayPort: 7830, daemonPort: 7831 },
     bearerToken: "bt-on-disk-secret",
   };
 
@@ -323,7 +321,7 @@ describe("renameLockfileAssistantIfPresent", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.status).toBe(409);
+      expect(result.status).toBe(404);
     }
     expect(fs.readFileSync(lockfilePath, "utf-8")).toBe("{ not json");
   });
@@ -336,7 +334,7 @@ describe("renameLockfileAssistantIfPresent", () => {
 
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.status).toBe(409);
+        expect(result.status).toBe(404);
       }
       expect(fs.readFileSync(lockfilePath, "utf-8")).toBe(raw);
     }

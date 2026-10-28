@@ -168,8 +168,9 @@ mock.module("@/assistant/selection", () => ({
 // any stub here would shadow the real bus for every later test file in the
 // run.
 
-const { connectCloudAssistant, connectLocalAssistant, connectPairedAssistant } =
-  await import("@/assistant/connect-assistant");
+const { connectCloudAssistant } = await import(
+  "@/assistant/connect-assistant"
+);
 
 beforeEach(() => {
   sessionUser = null;
@@ -187,143 +188,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-});
-
-describe("connectLocalAssistant", () => {
-  test("primes the connection BEFORE selecting the assistant", async () => {
-    mockIsLocalClient = true;
-    // Prime must complete before the selection write becomes observable —
-    // the lifecycle's selection subscription republishes the connection
-    // synchronously on the write, with whatever token is cached.
-    const order: string[] = [];
-    primeLocalGatewayConnectionWithRepairMock.mockImplementationOnce(
-      async () => {
-        order.push("prime");
-      },
-    );
-    setSelectedAssistantMock.mockImplementationOnce(async (id) => {
-      order.push(`select:${String(id)}`);
-    });
-
-    await connectLocalAssistant("local-a");
-
-    expect(order).toEqual(["prime", "select:local-a"]);
-  });
-
-  test("bootstraps the connected local assistant's cloud identity", async () => {
-    mockIsLocalClient = true;
-
-    await connectLocalAssistant("local-a");
-
-    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledTimes(1);
-    expect(bootstrapLocalAssistantCloudIdentityMock).toHaveBeenCalledWith(
-      "local-a",
-    );
-  });
-
-  test("rethrows the prime failure without selecting or bootstrapping", async () => {
-    mockIsLocalClient = true;
-    mockPrimeError = new Error("Guardian token not found");
-
-    await expect(connectLocalAssistant("local-a")).rejects.toThrow(
-      "Guardian token not found",
-    );
-
-    expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("connectPairedAssistant", () => {
-  // The modern connect import: the entry is a canonical custom remote — the
-  // contract classifier's paired shape.
-  const pairedEntry = {
-    assistantId: "paired-a",
-    cloud: "custom",
-    ipAddress: "gw.example.com",
-    port: 443,
-  };
-
-  test("primes the host proxy before selecting", async () => {
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [pairedEntry];
-    const order: string[] = [];
-    primeLocalGatewayConnectionMock.mockImplementationOnce(async () => {
-      order.push("prime");
-    });
-    setSelectedAssistantMock.mockImplementationOnce(async (id) => {
-      order.push(`select:${String(id)}`);
-    });
-
-    await connectPairedAssistant("paired-a");
-
-    expect(order).toEqual(["prime", "select:paired-a"]);
-  });
-
-  test("uses the plain prime for the paired target: no wake-repair variant", async () => {
-    // Wake only runs inside primeLocalGatewayConnectionWithRepair, and it
-    // cannot start or repair an assistant on a remote machine, so a paired
-    // connect must stay on the plain prime.
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [pairedEntry];
-
-    await connectPairedAssistant("paired-a");
-
-    expect(primeLocalGatewayConnectionMock).toHaveBeenCalledTimes(1);
-    expect(primeLocalGatewayConnectionMock).toHaveBeenCalledWith(
-      expect.objectContaining({ assistantId: "paired-a", cloud: "custom" }),
-    );
-    expect(primeLocalGatewayConnectionWithRepairMock).not.toHaveBeenCalled();
-    expect(
-      primeLocalGatewayConnectionWithStartupRetryMock,
-    ).not.toHaveBeenCalled();
-  });
-
-  test("never bootstraps a cloud identity", async () => {
-    // The bootstrap registers a LOCAL assistant with the cloud; a paired
-    // entry is a client-side pairing record, not an assistant to register.
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [pairedEntry];
-
-    await connectPairedAssistant("paired-a");
-
-    expect(bootstrapLocalAssistantCloudIdentityMock).not.toHaveBeenCalled();
-  });
-
-  test("rejects a non-paired id without priming or selecting", async () => {
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [{ assistantId: "local-a", cloud: "local" }];
-
-    await expect(connectPairedAssistant("local-a")).rejects.toThrow(
-      "Not a paired assistant",
-    );
-
-    expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
-    expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-  });
-
-  test("rejects an unknown id", async () => {
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [pairedEntry];
-
-    await expect(connectPairedAssistant("missing")).rejects.toThrow(
-      "Not a paired assistant",
-    );
-
-    expect(primeLocalGatewayConnectionMock).not.toHaveBeenCalled();
-  });
-
-  test("rethrows the prime failure without selecting", async () => {
-    mockIsLocalClient = true;
-    mockLockfileAssistants = [pairedEntry];
-    mockPrimeError = new Error("Guardian token not found");
-
-    await expect(connectPairedAssistant("paired-a")).rejects.toThrow(
-      "Guardian token not found",
-    );
-
-    expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-  });
 });
 
 describe("connectCloudAssistant", () => {

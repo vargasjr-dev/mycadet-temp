@@ -87,9 +87,9 @@ export function useGatedSelectedAssistantId(): string | null {
  * no clear operation, and `activeAssistant` is machine-level tray/CLI state,
  * not session state.
  *
- * Selecting a LOCAL assistant must go through `connectLocalAssistant`, which
- * primes a gateway token for the new gateway — the bare write would leave the
- * lifecycle pointing at it with a token minted for a different gateway.
+ * Selecting a lockfile-entry assistant is app-only: the app bundle owns
+ * those connections and primes the gateway token before the write reaches
+ * this wrapper.
  */
 export async function setSelectedAssistant(id: string | null): Promise<void> {
   useResolvedAssistantsStore.getState().setSelectedAssistant(id);

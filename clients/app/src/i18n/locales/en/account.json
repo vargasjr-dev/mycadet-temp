@@ -105,8 +105,6 @@
     "removeFromDevice": "Remove from this device…",
     "unnamedAssistant": "the assistant",
     "connectRemote": "Connect a remote assistant",
-    "pairedWithHost": "Paired · {host}",
-    "paired": "Paired",
     "localAssistant": "On this computer",
     "cloudHosted": "Cloud-hosted",
     "cloudHostedWithHost": "Cloud-hosted · {host}",

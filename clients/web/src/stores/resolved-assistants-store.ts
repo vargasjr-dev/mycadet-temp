@@ -28,10 +28,7 @@ import {
   isLocalAssistant,
   isCloudAssistant,
 } from "@/lib/local-mode";
-import {
-  getGatewayUrl,
-  isRemoteGatewayEntry,
-} from "@mycadet/local-mode/contract";
+import { getGatewayUrl } from "@mycadet/local-mode/contract";
 
 import {
   SELECTED_ASSISTANT_STORAGE_KEY,
@@ -58,7 +55,6 @@ export interface ResolvedAssistant {
   isActiveLockfileAssistant?: boolean;
   isLocal: boolean;
   isCloudHosted: boolean;
-  isPaired: boolean;
   /** Remote gateway URL for paired entries; only the lockfile carries it. */
   runtimeUrl?: string;
   /** Public ingress registered with the cloud for self-hosted local
@@ -185,7 +181,6 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
         isActiveLockfileAssistant: activeLockfileAssistantId === a.assistantId,
         isLocal: isLocalAssistant(a),
         isCloudHosted: isCloudAssistant(a),
-        isPaired: isRemoteGatewayEntry(a),
         runtimeUrl: getGatewayUrl(a),
         organizationId: a.cloudOrganizationId,
         cloudAssistantId: a.cloudAssistantId,
@@ -229,7 +224,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
               currentReleaseVersion: a.current_release_version,
               isActiveLockfileAssistant:
                 lockfileFields.isActiveLockfileAssistant,
-              ...classifyApiEntry(a.is_local, lockfileFields.isPaired),
+              ...classifyApiEntry(a.is_local),
             };
           })
           .filter(isConnectableFromThisDevice),
@@ -252,11 +247,7 @@ const useResolvedAssistantsStoreBase = create<ResolvedAssistantsStore>(
           ingressUrl: assistant.ingress_url,
           avatarUrl: apiAvatarUrl(assistant),
           currentReleaseVersion: assistant.current_release_version,
-          ...classifyApiEntry(
-            assistant.is_local,
-            lockfileFields.isPaired,
-            prior?.isPaired,
-          ),
+          ...classifyApiEntry(assistant.is_local),
         };
         if (prior) {
           const next = [...state.assistants];
@@ -357,21 +348,16 @@ export const useResolvedAssistantsStore = createSelectors(
 );
 
 /**
- * Classification triplet for an API-shaped entry, honoring the lockfile: a
- * paired entry is neither local nor cloud-hosted, whatever the API's
- * `is_local` claims. `priorIsPaired` carries an already-resolved entry's
- * classification through refreshes where the lockfile is unavailable.
+ * Classification for an API-shaped entry: the API's `is_local` is the
+ * renderer's whole display classification — pairedness is a connection fact
+ * the app bundle manages, not an assistant fact.
  */
 function classifyApiEntry(
   isLocalFromApi: boolean,
-  lockfileIsPaired: boolean | undefined,
-  priorIsPaired?: boolean,
-): Pick<ResolvedAssistant, "isLocal" | "isCloudHosted" | "isPaired"> {
-  const isPaired = lockfileIsPaired ?? priorIsPaired ?? false;
+): Pick<ResolvedAssistant, "isLocal" | "isCloudHosted"> {
   return {
-    isPaired,
-    isLocal: isPaired ? false : isLocalFromApi,
-    isCloudHosted: isPaired ? false : !isLocalFromApi,
+    isLocal: isLocalFromApi,
+    isCloudHosted: !isLocalFromApi,
   };
 }
 
@@ -382,7 +368,6 @@ function getLockfileFields(assistantId: string): {
   runtimeVersion?: string;
   runtimeUrl?: string;
   cloudAssistantId?: string;
-  isPaired?: boolean;
   isActiveLockfileAssistant?: boolean;
 } {
   const lockfile = getServedLockfile();
@@ -398,7 +383,6 @@ function getLockfileFields(assistantId: string): {
     runtimeVersion: entry?.resources?.runtimeVersion,
     runtimeUrl: entry ? getGatewayUrl(entry) : undefined,
     cloudAssistantId: entry?.cloudAssistantId,
-    isPaired: entry ? isRemoteGatewayEntry(entry) : undefined,
     isActiveLockfileAssistant: lockfile
       ? activeLockfileAssistantId === assistantId
       : undefined,

@@ -50,7 +50,6 @@ const ASSISTANT_A: ResolvedAssistant = {
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174000",
   isLocal: false,
   isCloudHosted: true,
-  isPaired: false,
   organizationId: "org-1",
 };
 const ASSISTANT_B: ResolvedAssistant = {
@@ -58,7 +57,6 @@ const ASSISTANT_B: ResolvedAssistant = {
   cloudAssistantId: "123e4567-e89b-12d3-a456-426614174001",
   isLocal: false,
   isCloudHosted: true,
-  isPaired: false,
 };
 
 let capturedHandler: NotificationTapHandler | null = null;
@@ -82,19 +80,13 @@ const connectAssistantMock = () =>
   });
 
 const connectCloudAssistantMock = connectAssistantMock();
-const connectLocalAssistantMock = connectAssistantMock();
-const connectPairedAssistantMock = connectAssistantMock();
 
 mock.module("@/assistant/connect-assistant", () => ({
   connectCloudAssistant: connectCloudAssistantMock,
-  connectLocalAssistant: connectLocalAssistantMock,
-  connectPairedAssistant: connectPairedAssistantMock,
 }));
 
 function expectNoAssistantSwitch() {
   expect(connectCloudAssistantMock).not.toHaveBeenCalled();
-  expect(connectLocalAssistantMock).not.toHaveBeenCalled();
-  expect(connectPairedAssistantMock).not.toHaveBeenCalled();
 }
 
 const { useNotificationTapNavigation } =
@@ -144,13 +136,7 @@ beforeEach(() => {
   capturedHandler = null;
   setNotificationTapHandlerMock.mockClear();
   postLocalNotificationMock.mockClear();
-  for (const connectMock of [
-    connectCloudAssistantMock,
-    connectLocalAssistantMock,
-    connectPairedAssistantMock,
-  ]) {
-    connectMock.mockReset();
-  }
+  connectCloudAssistantMock.mockReset();
   window.history.pushState(null, "", "/");
   useResolvedAssistantsStore.setState({
     assistants: [ASSISTANT_A, ASSISTANT_B],
@@ -159,18 +145,12 @@ beforeEach(() => {
     activeAssistantId: ASSISTANT_B.id,
   });
   setResolutionState({ kind: "active", isLocal: false });
-  for (const connectMock of [
-    connectCloudAssistantMock,
-    connectLocalAssistantMock,
-    connectPairedAssistantMock,
-  ]) {
-    connectMock.mockImplementation(async (assistantId) => {
-      useResolvedAssistantsStore.setState({
-        selectedAssistantId: assistantId,
-        activeAssistantId: assistantId,
-      });
+  connectCloudAssistantMock.mockImplementation(async (assistantId) => {
+    useResolvedAssistantsStore.setState({
+      selectedAssistantId: assistantId,
+      activeAssistantId: assistantId,
     });
-  }
+  });
 });
 
 afterEach(() => {

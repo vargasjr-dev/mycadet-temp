@@ -105,8 +105,6 @@
     "removeFromDevice": "Quitar de este dispositivo…",
     "unnamedAssistant": "el asistente",
     "connectRemote": "Conectar un asistente remoto",
-    "pairedWithHost": "Emparejado · {host}",
-    "paired": "Emparejado",
     "localAssistant": "En este equipo",
     "cloudHosted": "En la nube",
     "cloudHostedWithHost": "En la nube · {host}",

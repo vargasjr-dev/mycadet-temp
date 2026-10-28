@@ -105,8 +105,6 @@
     "removeFromDevice": "Убрать с этого устройства…",
     "unnamedAssistant": "ассистент",
     "connectRemote": "Подключить удалённого ассистента",
-    "pairedWithHost": "Сопряжено · {host}",
-    "paired": "Сопряжено",
     "localAssistant": "На этом компьютере",
     "cloudHosted": "Облачный",
     "cloudHostedWithHost": "В облаке · {host}",
