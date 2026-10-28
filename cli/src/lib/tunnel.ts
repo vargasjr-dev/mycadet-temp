@@ -3,7 +3,6 @@ import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
-  getAssistantDisplayName,
   getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
@@ -11,7 +10,6 @@ import {
   type LockfileAssistant,
   type TunnelProcessRecord,
 } from "./assistant-config.js";
-import { isCloudHome } from "./cloud-values.js";
 import { cliCommand } from "./cli-name.js";
 import {
   getGatewayUrl,
@@ -240,51 +238,6 @@ export function toLocalTunnelTarget(
     }
   }
   return null;
-}
-
-export function describeUntunnelableEntry(entry: LockfileAssistant): string {
-  const reference = getAssistantDisplayName(entry);
-  return isCloudHome(entry.cloud)
-    ? `Assistant '${reference}' runs on Cadet Cloud and needs no tunnel.`
-    : `Assistant '${reference}' has no locally managed runtime to tunnel.`;
-}
-
-/**
- * Resolve the assistant whose gateway and workspace the app server fronts.
- * Tunnels only make sense for assistants with a local gateway; when the
- * active assistant has none (e.g. it is cloud-hosted) fall back to the sole
- * local target, otherwise exit with an error naming the way to pick one.
- */
-export function resolveLocalTunnelTarget(): LocalTunnelTarget {
-  const entry = resolveTargetAssistant();
-
-  const target = toLocalTunnelTarget(entry);
-  if (target) {
-    return target;
-  }
-
-  const localTargets = loadAllAssistants()
-    .map(toLocalTunnelTarget)
-    .filter((local): local is LocalTunnelTarget => local !== null);
-
-  if (localTargets.length === 1) {
-    console.log(
-      `${describeUntunnelableEntry(entry)} Tunneling the local assistant '${getAssistantDisplayName(localTargets[0].entry)}' instead.`,
-    );
-    return localTargets[0];
-  }
-
-  console.error(describeUntunnelableEntry(entry));
-  if (localTargets.length === 0) {
-    console.error(
-      `No local assistant found to tunnel. Run \`${cliCommand()} hatch\` first.`,
-    );
-  } else {
-    console.error(
-      `Multiple local assistants found; set the one to front with \`${cliCommand()} use <name>\`.`,
-    );
-  }
-  process.exit(1);
 }
 
 /**

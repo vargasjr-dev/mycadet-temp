@@ -178,6 +178,21 @@ function writeEntryWorkspaceConfig(
   return workspaceDir;
 }
 
+/**
+ * Pin the default workspace and seed its config. The start flow's
+ * webhook-integration guard reads the machine-level workspace under the
+ * app-server-first contract, so start-flow tests seed there.
+ */
+function writeDefaultWorkspaceConfig(config: Record<string, unknown>): string {
+  const workspaceDir = useTempDefaultWorkspaceDir();
+  mkdirSync(workspaceDir, { recursive: true });
+  writeFileSync(
+    join(workspaceDir, "config.json"),
+    JSON.stringify(config, null, 2),
+  );
+  return workspaceDir;
+}
+
 /** Point the default workspace dir at a temp dir; returns that dir. */
 function useTempDefaultWorkspaceDir(): string {
   const workspaceDir = mkdtempSync(join(tmpdir(), "cadet-tunnel-ws-"));
@@ -347,12 +362,9 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const logs = await runTunnelCapturingLogs();
+    const workspaceDir = useTempDefaultWorkspaceDir();
 
-    const workspaceDir = join(
-      getLocalInstanceDir(entry.resources),
-      "workspace",
-    );
+    const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
@@ -391,10 +403,9 @@ describe("app server targeting", () => {
     );
   });
 
-  test("an active cloud assistant falls back to the sole local entry with a note", async () => {
+  test("an active cloud assistant still tunnels the edge", async () => {
     const cloud = makeCloudEntry();
-    const local = makeLocalEntry();
-    writeLockfile([cloud, local], cloud.assistantId);
+    writeLockfile([cloud, makeLocalEntry()], cloud.assistantId);
     process.argv = [
       "bun",
       "cadet",
@@ -405,25 +416,19 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const logs = await runTunnelCapturingLogs();
+    const workspaceDir = useTempDefaultWorkspaceDir();
 
-    const workspaceDir = join(
-      getLocalInstanceDir(local.resources),
-      "workspace",
-    );
-    expect(logs).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
-        "Tunneling the local assistant 'assistant-1' instead.",
-    );
+    const logs = await runTunnelCapturingLogs();
+    expect(logs).not.toContain("Tunneling the local assistant");
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
-      assistantId: "assistant-1",
+      assistantId: "cloud-1",
       workspaceDir,
     });
   });
 
-  test("a docker assistant set active tunnels on its recorded gateway port", async () => {
+  test("a docker assistant set active tunnels the edge port", async () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile(
@@ -481,34 +486,10 @@ describe("app server targeting", () => {
     });
   });
 
-  test("an active cloud assistant falls back to a sole docker entry with a note", async () => {
-    const workspaceDir = useTempDefaultWorkspaceDir();
-    const cloud = makeCloudEntry();
-    writeLockfile([cloud, makeDockerEntry()], cloud.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const logs = await runTunnelCapturingLogs();
-
-    expect(logs).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
-        "Tunneling the local assistant 'docker-1' instead.",
-    );
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "docker-1",
-      workspaceDir,
-    });
-  });
-
-  test("an active cloud assistant with no local entries exits with an error", async () => {
+  test("an active cloud assistant with no local entries still tunnels the edge", async () => {
+    // The regression shape: nothing locally managed anywhere in the lockfile,
+    // yet the tunnel fronts the app server — the machine-level edge resolves
+    // whatever it fronts, and no assistant classification gates the start.
     writeLockfile(makeCloudEntry());
     process.argv = [
       "bun",
@@ -520,44 +501,16 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const { exited, errors } = await runTunnelExpectingExit1();
+    const workspaceDir = useTempDefaultWorkspaceDir();
 
-    expect(exited).toBe(true);
-    expect(errors).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel.",
-    );
-    expect(errors).toContain("No local assistant found to tunnel");
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
-  });
-
-  test("an active cloud assistant with multiple local entries exits listing them", async () => {
-    const cloud = makeCloudEntry();
-    writeLockfile(
-      [cloud, makeLocalEntry("assistant-a"), makeLocalEntry("assistant-b")],
-      cloud.assistantId,
-    );
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const { exited, errors } = await runTunnelExpectingExit1();
-
-    expect(exited).toBe(true);
-    expect(errors).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel.",
-    );
-    expect(errors).toContain(
-      "Multiple local assistants found; set the one to front with `cadet use <name>`.",
-    );
-    expect(ensureAppServerMock).not.toHaveBeenCalled();
-    expect(runNgrokTunnelMock).not.toHaveBeenCalled();
+    const logs = await runTunnelCapturingLogs();
+    expect(ensureAppServerMock).toHaveBeenCalledWith();
+    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
+      port: EDGE_PORT,
+      assistantId: "cloud-1",
+      workspaceDir,
+    });
+    expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
 
   test("a stray positional errors pointing at the subcommands", async () => {
@@ -582,7 +535,7 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
 
-  test("an apple-container assistant set active tunnels via its runtimeUrl gateway port", async () => {
+  test("an apple-container assistant set active tunnels the edge port", async () => {
     const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile([local, makeAppleContainerEntry()], "apple-1");
@@ -606,37 +559,10 @@ describe("app server targeting", () => {
     });
   });
 
-  test("an active cloud assistant falls back to a sole apple-container entry with a note", async () => {
-    const workspaceDir = useTempDefaultWorkspaceDir();
-    const cloud = makeCloudEntry();
-    writeLockfile([cloud, makeAppleContainerEntry()], cloud.assistantId);
-    process.argv = [
-      "bun",
-      "cadet",
-      "tunnel",
-      "start",
-      "--provider",
-      "ngrok",
-      "--foreground",
-    ];
-
-    const logs = await runTunnelCapturingLogs();
-
-    expect(logs).toContain(
-      "Assistant 'cloud-1' runs on Cadet Cloud and needs no tunnel. " +
-        "Tunneling the local assistant 'apple-1' instead.",
-    );
-    expect(ensureAppServerMock).toHaveBeenCalledWith();
-    expect(runNgrokTunnelMock).toHaveBeenCalledWith({
-      port: EDGE_PORT,
-      assistantId: "apple-1",
-      workspaceDir,
-    });
-  });
-
   test("targets the edge port for cloudflare", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
+    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -652,7 +578,7 @@ describe("app server targeting", () => {
     expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
+      workspaceDir,
     });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
@@ -660,6 +586,7 @@ describe("app server targeting", () => {
   test("targets the edge port for tailscale and notes a reused edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
+    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -679,7 +606,7 @@ describe("app server targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
+      workspaceDir,
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -687,6 +614,7 @@ describe("app server targeting", () => {
   test("a bare invocation tunnels the default provider", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
+    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = ["bun", "cadet", "tunnel", "start", "--foreground"];
 
     const logs = await runTunnelCapturingLogs();
@@ -695,7 +623,7 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
+      workspaceDir,
     });
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -705,7 +633,7 @@ describe("app server targeting", () => {
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    const workspaceDir = writeDefaultWorkspaceConfig({
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -746,7 +674,7 @@ describe("app server targeting", () => {
   test("tailscale without webhook integrations still owns the ingress URL", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {});
+    const workspaceDir = writeDefaultWorkspaceConfig({});
     process.argv = [
       "bun",
       "cadet",
@@ -769,7 +697,7 @@ describe("app server targeting", () => {
   test("a public provider is unaffected by configured webhook integrations", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    const workspaceDir = writeDefaultWorkspaceConfig({
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -869,6 +797,7 @@ describe("app server targeting", () => {
   test("threads --domain through to runNgrokTunnel", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
+    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -886,7 +815,7 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir: join(getLocalInstanceDir(entry.resources), "workspace"),
+      workspaceDir,
       domain: "foo.ngrok.app",
     });
   });
@@ -917,10 +846,7 @@ describe("app server targeting", () => {
   test("--clear-domain drops the saved domain and runs domainless", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = join(
-      getLocalInstanceDir(entry.resources),
-      "workspace",
-    );
+    const workspaceDir = useTempDefaultWorkspaceDir();
     mkdirSync(workspaceDir, { recursive: true });
     realNgrok.saveNgrokDomain("dead.ngrok.app");
     process.argv = [

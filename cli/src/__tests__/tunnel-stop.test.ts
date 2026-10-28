@@ -24,6 +24,7 @@ import { saveLockfileAssistant } from "@mycadet/local-mode";
 
 const originalArgv = process.argv;
 const originalConfig = process.env.XDG_CONFIG_HOME;
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 let root = "";
 let workspace = "";
 let stop: ReturnType<typeof spyOn<typeof processes, "stopProcess">>;
@@ -34,7 +35,10 @@ let logs: ReturnType<typeof spyOn<typeof console, "log">>;
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "cadet-tunnel-stop-"));
-  workspace = join(root, "instance", "workspace");
+  // The stop flow is workspace-agnostic: it clears the machine-level default
+  // workspace's ingress contract — the workspace the start flow wrote.
+  process.env.CADET_WORKSPACE_DIR = join(root, "workspace");
+  workspace = process.env.CADET_WORKSPACE_DIR;
   mkdirSync(workspace, { recursive: true });
   process.env.XDG_CONFIG_HOME = root;
   saveLockfileAssistant({
@@ -85,6 +89,8 @@ afterEach(() => {
   process.argv = originalArgv;
   if (originalConfig === undefined) delete process.env.XDG_CONFIG_HOME;
   else process.env.XDG_CONFIG_HOME = originalConfig;
+  if (originalWorkspaceDir === undefined) delete process.env.CADET_WORKSPACE_DIR;
+  else process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   rmSync(root, { recursive: true, force: true });
 });
 

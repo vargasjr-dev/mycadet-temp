@@ -5,7 +5,7 @@ import {
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 
-import { readRootProcesses } from "../lib/assistant-config";
+import { readRootProcesses, resolveTargetAssistant } from "../lib/assistant-config";
 import { relaunchDetached } from "../lib/detached-process.js";
 import { getDefaultWorkspaceDir } from "../lib/ingress-config.js";
 import { ensureAppServer, type AppServer } from "../lib/nginx-ingress.js";
@@ -21,7 +21,6 @@ import {
   hasWebhookIntegrationsConfigured,
   offerStopNgrokHolder,
   providerSupportsReservedDomain,
-  resolveLocalTunnelTarget,
   runProviderTunnel,
   stopTunnelProcess,
   summarizeStartupFailure,
@@ -351,16 +350,13 @@ async function spawnDetachedTunnel(): Promise<void> {
 }
 
 /**
- * The workspace the tunnel fronts — the same resolution the start flow uses
- * (the active, or the sole locally-reachable, assistant). Falls back to the
- * default workspace when nothing resolves locally.
+ * The workspace the tunnel fronts — the machine-level default workspace.
+ * The edge is machine-level (it fronts the lockfile's active assistant for
+ * every tunnel and wake path), so the tunnel contract lives beside it, not
+ * in an assistant workspace.
  */
 function tunnelWorkspace(): string {
-  try {
-    return resolveLocalTunnelTarget().workspaceDir;
-  } catch {
-    return getDefaultWorkspaceDir();
-  }
+  return getDefaultWorkspaceDir();
 }
 
 /** The `cadet tunnel stop` flow: stop the recorded tunnel, keep nginx. */
@@ -427,7 +423,11 @@ export const tunnel = Object.assign(
       throw cadetTunnelComingSoonError(provider);
     }
 
-    const { entry, workspaceDir } = resolveLocalTunnelTarget();
+    // The tunnel is assistant-agnostic: its only concern is the app server —
+    // a machine-level edge that resolves whatever it fronts from the lockfile
+    // itself. ensureAppServer starts the edge when it is down and reuses it
+    // when up; the tunnel fronts the port it reports.
+    const workspaceDir = getDefaultWorkspaceDir();
 
     const preserveIngressUrl =
       provider === "tailscale" && guardTailnetOnlyWebhookIngress(workspaceDir);
@@ -457,7 +457,10 @@ export const tunnel = Object.assign(
 
     const baseTunnelOpts = {
       port: edge.port,
-      assistantId: entry.assistantId,
+      // The edge fronts the lockfile's active assistant; the tunnel record
+      // just carries its id. Re-resolution is safe post-edge: ensureAppServer
+      // already resolved the same entry (and fails loud when there is none).
+      assistantId: resolveTargetAssistant().assistantId,
       workspaceDir,
     };
 
@@ -467,5 +470,5 @@ export const tunnel = Object.assign(
       ...(preserveIngressUrl ? { preserveIngressUrl } : {}),
     });
   },
-  { description: "Start or stop a tunnel for locally hosted assistants" },
+  { description: "Start or stop a tunnel in front of the app server" },
 );

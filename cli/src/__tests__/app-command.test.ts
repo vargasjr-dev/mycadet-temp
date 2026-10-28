@@ -18,12 +18,9 @@ import { join } from "node:path";
 // ---------------------------------------------------------------------------
 
 import * as tunnelLib from "../lib/tunnel.js";
-import type { LockfileAssistant } from "../lib/assistant-config.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 
 const ensureNginxForEdgeMock = mock(tunnelLib.ensureNginxForEdge);
-const resolveLocalTunnelTargetMock = mock(tunnelLib.resolveLocalTunnelTarget);
-
 const ensureAppServerMock = mock(nginxIngress.ensureAppServer);
 const isIngressRunningMock = mock(nginxIngress.isIngressRunning);
 const readIngressStateMock = mock(nginxIngress.readIngressState);
@@ -32,7 +29,6 @@ const stopIngressNginxMock = mock(nginxIngress.stopIngressNginx);
 mock.module("../lib/tunnel.js", () => ({
   ...tunnelLib,
   ensureNginxForEdge: ensureNginxForEdgeMock,
-  resolveLocalTunnelTarget: resolveLocalTunnelTargetMock,
 }));
 mock.module("../lib/nginx-ingress.js", () => ({
   ...nginxIngress,
@@ -67,7 +63,6 @@ beforeEach(() => {
   };
   ensureNginxForEdgeMock.mockReset();
   ensureNginxForEdgeMock.mockResolvedValue("nginx/1.26.3");
-  resolveLocalTunnelTargetMock.mockReset();
   ensureAppServerMock.mockReset();
   isIngressRunningMock.mockReset();
   isIngressRunningMock.mockReturnValue(false);
@@ -90,19 +85,8 @@ afterAll(() => {
   rmSync(testDir, { recursive: true, force: true });
 });
 
-const LOCAL_ENTRY: LockfileAssistant = {
-  assistantId: "assistant-1",
-  cloud: "local",
-};
-
 describe("cadet app", () => {
   test("start brings the edge up for the resolved local assistant", async () => {
-    const workspaceDir = join(testDir, "workspace");
-    resolveLocalTunnelTargetMock.mockReturnValue({
-      entry: LOCAL_ENTRY,
-      gatewayPort: 7830,
-      workspaceDir,
-    });
     ensureAppServerMock.mockResolvedValue({ port: 7841, started: true });
     process.argv = ["bun", "cadet", "app", "start"];
 
@@ -116,11 +100,6 @@ describe("cadet app", () => {
   });
 
   test("start reports a reused edge and the stop command", async () => {
-    resolveLocalTunnelTargetMock.mockReturnValue({
-      entry: LOCAL_ENTRY,
-      gatewayUrl: "http://127.0.0.1:7830",
-      workspaceDir: join(testDir, "workspace"),
-    } as never);
     ensureAppServerMock.mockResolvedValue({ port: 7841, started: false });
     process.argv = ["bun", "cadet", "app", "start"];
 
