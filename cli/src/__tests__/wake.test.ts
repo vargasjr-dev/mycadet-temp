@@ -598,11 +598,15 @@ describe("cadet wake — app server restore", () => {
     });
   }
 
-  function stampRecordedTunnel(provider: "ngrok" | "tailscale"): void {
+  function stampRecordedTunnel(
+    provider: "ngrok" | "tailscale" | "cloudflare",
+    publicUrl: string | null = `https://${provider}.example.test`,
+  ): void {
     assistantConfig.stampRootProcess("tunnel", {
       pid: 4321,
       provider,
       startedAt: new Date().toISOString(),
+      ...(publicUrl ? { publicUrl } : {}),
     });
   }
 
@@ -1125,11 +1129,11 @@ describe("cadet wake — app server restore", () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("https://nginx.org/en/docs/install.html"),
     );
-    // No tunnel is recorded here, so no provider can be named and the advice
-    // points at the help that lists them.
+    // The workspace config records no tunnel, but the lockfile's tunnel
+    // record does — the advice names the record's provider.
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining(
-        "Run `cadet tunnel --help` to rebuild the app server.",
+        "Run `cadet tunnel start --provider ngrok` to rebuild the app server.",
       ),
     );
     expect(ngrokRunMock).toHaveBeenCalledWith({
@@ -1140,16 +1144,9 @@ describe("cadet wake — app server restore", () => {
   });
 
   test("a failed rebuild names the provider that last tunneled here", async () => {
-    loadRawConfigMock.mockReturnValue({
-      ...webhookConfig,
-      ingress: {
-        lastTunnel: {
-          provider: "cloudflare",
-          publicBaseUrl: "https://assistant.example.com",
-        },
-      },
-    });
+    loadRawConfigMock.mockReturnValue(webhookConfig);
     stampRecordedAppServer();
+    stampRecordedTunnel("cloudflare");
     ensureAppServerMock.mockRejectedValue(new Error("edge rebuild failed"));
 
     await wake();
@@ -1161,9 +1158,10 @@ describe("cadet wake — app server restore", () => {
     );
   });
 
-  test("a failed rebuild prefers the pairing tunnel over the public one beside it", async () => {
-    // A tailnet pairing tunnel leaves the older public record in place, so the
-    // advice has to name the tunnel actually in front of this assistant.
+  test("a failed rebuild names the record's tunnel, not the workspace's stale one", async () => {
+    // A tailnet pairing tunnel leaves the older public record in the
+    // workspace, so the advice has to name the tunnel actually in front of
+    // this assistant: the root lockfile's record, never the workspace's.
     loadRawConfigMock.mockReturnValue({
       ...webhookConfig,
       ingress: {
@@ -1171,13 +1169,12 @@ describe("cadet wake — app server restore", () => {
           provider: "cloudflare",
           publicBaseUrl: "https://assistant.example.com",
         },
-        pairingTunnel: {
-          provider: "tailscale",
-          publicBaseUrl: "https://assistant.example.ts.net",
-        },
       },
     });
     stampRecordedAppServer();
+    // A pairing-only run published no ingress base URL — the record shape
+    // that says the tunnel in front is the tailnet serve.
+    stampRecordedTunnel("tailscale", null);
     ensureAppServerMock.mockRejectedValue(new Error("edge rebuild failed"));
 
     await wake();

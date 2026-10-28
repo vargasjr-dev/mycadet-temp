@@ -19,11 +19,8 @@ import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 
 import { GATEWAY_PORT } from "../constants.js";
-import {
-  getDefaultWorkspaceDir,
-  loadRawConfig,
-  saveIngressUrl,
-} from "../ingress-config.js";
+import { saveIngressUrl } from "../ingress-config.js";
+import { resolveDataDir } from "@mycadet/local-mode";
 
 // ── Cloudflare Tunnel ─────────────────────────────────────────────────────────
 
@@ -40,18 +37,6 @@ function isCloudflaredProcess(pid: number): boolean {
     );
   } catch {
     return false;
-  }
-}
-
-/** The workspace config's saved public base URL, if any. */
-function loadSavedPublicUrl(workspaceDir: string): string | undefined {
-  try {
-    const config = loadRawConfig(workspaceDir);
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    return typeof url === "string" && url.trim() ? url.trim() : undefined;
-  } catch {
-    return undefined;
   }
 }
 
@@ -237,7 +222,6 @@ export async function runCloudflareTunnel(
 
   console.log(`Using ${version}`);
 
-  const workspaceDir = getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   // Idempotency: the recorded agent may still be alive (a CLI restart, or
@@ -250,10 +234,10 @@ export async function runCloudflareTunnel(
     recorded.pid &&
     isCloudflaredProcess(recorded.pid)
   ) {
-    const existingUrl = recorded.publicUrl ?? loadSavedPublicUrl(workspaceDir);
+    const existingUrl = recorded.publicUrl;
     if (existingUrl) {
       console.log(`Found existing cloudflare tunnel: ${existingUrl}`);
-      saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "cloudflare");
+      saveIngressUrl(existingUrl, opts.assistantId, "cloudflare");
       // Not our child process; nothing to await, and no signal handling is
       // registered — a run must be safe to invoke from a host process.
       return { publicUrl: existingUrl, waitForExit: Promise.resolve() };
@@ -269,7 +253,7 @@ export async function runCloudflareTunnel(
   // wake/upgrade restore in host processes the CLI must be free to exit,
   // and pipe handles left open hang them. The quick-tunnel URL is read
   // from the log instead of pipes.
-  const logDir = join(workspaceDir, "data", "logs");
+  const logDir = join(resolveDataDir(), "logs");
   mkdirSync(logDir, { recursive: true });
   const logPath = join(logDir, "cloudflared.log");
   const logFd = openSync(logPath, "a");
@@ -314,7 +298,7 @@ export async function runCloudflareTunnel(
   console.log(`Forwarding to:     localhost:${port}`);
   console.log("");
 
-  saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "cloudflare");
+  saveIngressUrl(publicUrl, opts.assistantId, "cloudflare");
   if (child.pid)
     stampRootProcess("tunnel", {
       pid: child.pid,

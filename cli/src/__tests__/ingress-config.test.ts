@@ -15,16 +15,24 @@ import {
 } from "../lib/ingress-config.js";
 
 const tempDirs: string[] = [];
+const originalWorkspaceDir = process.env.CADET_WORKSPACE_DIR;
 
+/** A temp workspace the argless writers resolve via CADET_WORKSPACE_DIR. */
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "ingress-config-ws-"));
   tempDirs.push(dir);
+  process.env.CADET_WORKSPACE_DIR = dir;
   return dir;
 }
 
 afterEach(() => {
   for (const dir of tempDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
+  }
+  if (originalWorkspaceDir === undefined) {
+    delete process.env.CADET_WORKSPACE_DIR;
+  } else {
+    process.env.CADET_WORKSPACE_DIR = originalWorkspaceDir;
   }
 });
 
@@ -37,9 +45,7 @@ describe("last-tunnel record", () => {
   test("saveIngressUrl records the provider, URL, and assistant ID", () => {
     const ws = makeWorkspace();
 
-    saveIngressUrl(
-      ws,
-      "https://a.trycloudflare.com",
+    saveIngressUrl("https://a.trycloudflare.com",
       "ingress-test",
       "cloudflare",
     );
@@ -55,14 +61,12 @@ describe("last-tunnel record", () => {
 
   test("clearIngressUrl drops the URL but keeps the tunnel and assistant records", () => {
     const ws = makeWorkspace();
-    saveIngressUrl(
-      ws,
-      "https://tunnel.example.ts.net",
+    saveIngressUrl("https://tunnel.example.ts.net",
       "ingress-test",
       "tailscale",
     );
 
-    clearIngressUrl(ws);
+    clearIngressUrl();
 
     const ingress = readIngress(ws);
     expect(ingress.publicBaseUrl).toBeUndefined();
@@ -75,9 +79,9 @@ describe("last-tunnel record", () => {
 
   test("saving without a provider leaves an existing lastTunnel untouched", () => {
     const ws = makeWorkspace();
-    saveIngressUrl(ws, "https://one.ngrok.app", undefined, "ngrok");
+    saveIngressUrl("https://one.ngrok.app", undefined, "ngrok");
 
-    saveIngressUrl(ws, "https://two.ngrok.app");
+    saveIngressUrl("https://two.ngrok.app");
 
     const ingress = readIngress(ws);
     expect(ingress.publicBaseUrl).toBe("https://two.ngrok.app");
@@ -90,7 +94,7 @@ describe("last-tunnel record", () => {
   test("saving without a provider records no tunnel", () => {
     const ws = makeWorkspace();
 
-    saveIngressUrl(ws, "https://one.ngrok.app");
+    saveIngressUrl("https://one.ngrok.app");
 
     const ingress = readIngress(ws);
     expect(ingress.lastTunnel).toBeUndefined();
@@ -102,7 +106,7 @@ describe("last-tunnel record", () => {
     // `cadet tunnel` writes has to survive that parse for every provider.
     for (const provider of TUNNEL_PROVIDERS) {
       const ws = makeWorkspace();
-      saveIngressUrl(ws, `https://${provider}.test`, undefined, provider);
+      saveIngressUrl(`https://${provider}.test`, undefined, provider);
       expect(parseTunnelRecord(readIngress(ws).lastTunnel)).toEqual({
         provider,
         publicBaseUrl: `https://${provider}.test`,
@@ -119,11 +123,9 @@ describe("pairing-tunnel record", () => {
 
   test("records the tunnel and the assistant it fronts", () => {
     const ws = makeWorkspace();
-    saveIngressUrl(ws, "https://webhooks.ngrok.app", undefined, "ngrok");
+    saveIngressUrl("https://webhooks.ngrok.app", undefined, "ngrok");
 
-    savePairingTunnel(
-      ws,
-      { provider: "tailscale", publicBaseUrl: "https://host.example.ts.net" },
+    savePairingTunnel({ provider: "tailscale", publicBaseUrl: "https://host.example.ts.net" },
       "ingress-test",
     );
 
@@ -141,13 +143,13 @@ describe("pairing-tunnel record", () => {
 
   test("a null record drops the key and leaves the rest alone", () => {
     const ws = makeWorkspace();
-    saveIngressUrl(ws, "https://webhooks.ngrok.app", undefined, "ngrok");
-    savePairingTunnel(ws, {
+    saveIngressUrl("https://webhooks.ngrok.app", undefined, "ngrok");
+    savePairingTunnel({
       provider: "tailscale",
       publicBaseUrl: "https://host.example.ts.net",
     });
 
-    savePairingTunnel(ws, null);
+    savePairingTunnel(null);
 
     const ingress = readIngress(ws);
     expect(ingress.pairingTunnel).toBeUndefined();
@@ -159,19 +161,19 @@ describe("pairing-tunnel record", () => {
     // A run that owns `publicBaseUrl` publishes the address to pair against,
     // so a record from an earlier tailnet-only run must not outrank it.
     const ws = makeWorkspace();
-    savePairingTunnel(ws, {
+    savePairingTunnel({
       provider: "tailscale",
       publicBaseUrl: "https://host.example.ts.net",
     });
 
-    saveIngressUrl(ws, "https://one.ngrok.app", undefined, "ngrok");
+    saveIngressUrl("https://one.ngrok.app", undefined, "ngrok");
 
     expect(readIngress(ws).pairingTunnel).toBeUndefined();
   });
 
   test("what the CLI writes is what the shared parser accepts", () => {
     const ws = makeWorkspace();
-    savePairingTunnel(ws, {
+    savePairingTunnel({
       provider: "tailscale",
       publicBaseUrl: "https://host.example.ts.net",
     });

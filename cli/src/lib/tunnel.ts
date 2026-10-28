@@ -3,6 +3,8 @@ import { join } from "path";
 import { TUNNEL_PROVIDERS } from "@mycadet/service-contracts/ingress";
 import {
   clearRootProcess,
+  findTargetAssistant,
+  getLocalInstanceDir,
   loadAllAssistants,
   readRootProcesses,
   resolveTargetAssistant,
@@ -14,10 +16,6 @@ import {
   getGatewayUrl,
   getLoopbackGatewayPort,
 } from "@mycadet/local-mode/contract";
-import {
-  INGRESS_LAST_TUNNEL_KEY,
-  parseTunnelRecord,
-} from "@mycadet/service-contracts/ingress";
 
 import {
   getDefaultWorkspaceDir,
@@ -36,6 +34,7 @@ import {
 import { waitForDaemonReady } from "./http-client.js";
 import {
   confirmStopAnswer,
+  hasWebhookIntegrations,
   isNgrokEndpointOnlineError,
   ngrokHolderPid,
   ngrokOnlineEndpoint,
@@ -47,7 +46,6 @@ import {
 import { ensureBinaryInstalled, readLineText } from "./ensure-binary.js";
 import { notifyGatewayOfPublicUrl } from "./tunnels/gateway-notify.js";
 import {
-  selectRestartTunnelRecord,
   type TunnelProviderName,
 } from "@mycadet/service-contracts/ingress";
 import { CADET_PROVIDER, CADET_TUNNEL_META } from "./tunnels/cadet.js";
@@ -297,7 +295,7 @@ export async function runProviderTunnel(
 ): Promise<{ publicUrl: string }> {
   const result = await runProvider(provider, opts);
   await notifyAllLocalGatewaysOfPublicUrl(result.publicUrl);
-  await refreshEdgeWithEstablishedUrl(opts, result.publicUrl);
+  await refreshEdgeWithEstablishedUrl();
   await result.waitForExit;
   return { publicUrl: result.publicUrl };
 }
@@ -305,25 +303,17 @@ export async function runProviderTunnel(
 /**
  * Re-ensure the edge right after a tunnel establishes, so the fresh public
  * URL (saved by the provider run) lands in the served config's `cloudUrl` in
- * the same session that created it. A no-op when the saved URL is not the
- * established one — e.g. a tailscale pairing-only run, which must never
- * repoint the webhook callback base the saved URL stands for.
+ * the same session that created it. A no-op when the run published no public
+ * URL — a tailscale pairing-only run, which must never repoint the webhook
+ * callback base the saved URL stands for.
+ *
+ * The saved URL comes from the root lockfile's `tunnel` record — the run
+ * stamps it with the URL it published — never from a workspace config: the
+ * tunnel layer's own state lives in the lockfile.
  */
-async function refreshEdgeWithEstablishedUrl(
-  opts: ProviderTunnelOptions,
-  publicUrl: string,
-): Promise<void> {
-  let savedUrl: string | undefined;
-  try {
-    const config = loadRawConfig(getDefaultWorkspaceDir());
-    const ingress = config.ingress as Record<string, unknown> | undefined;
-    const url = ingress?.publicBaseUrl;
-    if (typeof url === "string" && url.trim()) savedUrl = url.trim();
-  } catch {
-    return;
-  }
+async function refreshEdgeWithEstablishedUrl(): Promise<void> {
+  const savedUrl = readRootProcesses().tunnel?.publicUrl;
   if (!savedUrl) return;
-  if (savedUrl.replace(/\/+$/, "") !== publicUrl.replace(/\/+$/, "")) return;
   // Only re-ensure an edge that already fronts this assistant's gateway: the
   // app server resolves the assistant it fronts itself (the lockfile's active
   // entry), so an edge pointing elsewhere is left alone rather than
@@ -418,11 +408,27 @@ export function summarizeStartupFailure(logText: string): string | null {
   return lastLine === undefined ? null : cap(lastLine);
 }
 
-export {
-  ADOPTED_TUNNEL_RE,
-  hasWebhookIntegrationsConfigured,
-} from "./tunnels/ngrok.js";
+export { ADOPTED_TUNNEL_RE } from "./tunnels/ngrok.js";
 export { cadetTunnelComingSoonError } from "./tunnels/cadet.js";
+
+/**
+ * Check whether the assistant the edge fronts configures any webhook-based
+ * integrations that require a public ingress URL. The assistant comes from
+ * the root lockfile — the active entry, the same resolution the app server
+ * uses — and its workspace config names the integrations. False when either
+ * cannot be read, so an unreadable config never blocks a caller.
+ */
+export function hasWebhookIntegrationsConfigured(): boolean {
+  try {
+    const entry = findTargetAssistant();
+    if (!entry) return false;
+    return hasWebhookIntegrations(
+      loadRawConfig(join(getLocalInstanceDir(entry.resources), "workspace")),
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Matches the Docker hatch path's service-readiness allowance. */
 export const DOCKER_GATEWAY_READY_TIMEOUT_MS = 5 * 60_000;
@@ -441,19 +447,19 @@ function wantsAppServer(): boolean {
 /**
  * The `cadet tunnel start` invocation that rebuilds this assistant's edge.
  * That command requires `--provider`, and a `<provider>` placeholder would be
- * shell redirection rather than something to paste, so name the provider
- * recorded here; with none recorded, point at the help that lists them.
+ * shell redirection rather than something to paste, so name the provider the
+ * root lockfile's `tunnel` record carries — the tunnel layer's own state of
+ * record, stamped by every run and cleared only by a stop; with none
+ * recorded, point at the help that lists them.
  */
 function tunnelRestartCommand(): string {
   try {
-    const record = selectRestartTunnelRecord(
-      loadRawConfig(getDefaultWorkspaceDir()).ingress,
-    );
-    if (record) {
+    const record = readRootProcesses().tunnel;
+    if (record?.provider) {
       return `${cliCommand()} tunnel start --provider ${record.provider}`;
     }
   } catch {
-    // An unreadable config names no provider; the help pointer still holds.
+    // An unreadable lockfile names no provider; the help pointer still holds.
   }
   return `${cliCommand()} tunnel --help`;
 }
@@ -615,13 +621,7 @@ export async function restoreAppServerAndAutoTunnel(
   // 3. Save the ingress url from the tunnel to each assistant.
   if (publicUrl) {
     await notifyAllLocalGatewaysOfPublicUrl(publicUrl);
-    await refreshEdgeWithEstablishedUrl(
-      {
-        port: edgePort ?? gatewayPort ?? getNginxIngressPort(),
-        assistantId: entry.assistantId,
-      },
-      publicUrl,
-    );
+    await refreshEdgeWithEstablishedUrl();
   }
 }
 
@@ -645,23 +645,12 @@ async function ensureTunnel(
   if (!expected?.provider) {
     return null;
   }
-  // The workspace's `lastTunnel` record names the tunnel whose URL the app
-  // server fronts. The restore re-establishes the recorded provider only
-  // when that record agrees: a pairing-only tailscale run deliberately
-  // leaves `lastTunnel` on the older public provider, and re-running the
-  // tailnet's save then would repoint the webhook callback base that run
-  // did not repoint. No record (a rebuilt workspace config) carries no
-  // intent to contradict, so the restore proceeds.
-  try {
-    const ingress = loadRawConfig(getDefaultWorkspaceDir()).ingress as
-      | Record<string, unknown>
-      | undefined;
-    const lastTunnel = parseTunnelRecord(ingress?.[INGRESS_LAST_TUNNEL_KEY]);
-    if (lastTunnel && lastTunnel.provider !== expected.provider) {
-      return null;
-    }
-  } catch {
-    // Unreadable config carries no contradicting record either.
+  // The record's `publicUrl` marks a run that published the ingress base URL
+  // the app server fronts. A pairing-only tailscale run deliberately stamps
+  // none — re-running its save would repoint the webhook callback base that
+  // run did not repoint — so the restore only re-establishes published runs.
+  if (!expected.publicUrl) {
+    return null;
   }
   try {
     const result = await providers[expected.provider]?.run({

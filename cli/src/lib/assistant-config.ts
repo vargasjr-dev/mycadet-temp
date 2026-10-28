@@ -364,6 +364,22 @@ export function resolveTargetAssistant(nameArg?: string): LockfileAssistant {
 }
 
 /**
+ * Resolve which assistant to target without exiting or printing: the active
+ * assistant, else a sole lockfile entry, else null. The quiet variant of
+ * {@link resolveTargetAssistant} for callers that treat "no one to target"
+ * as an answer rather than a usage error (the tunnel layer's guards).
+ */
+export function findTargetAssistant(): LockfileAssistant | null {
+  const active = getActiveAssistant();
+  if (active) {
+    const result = lookupAssistantByIdentifier(active);
+    if (result.status === "found") return result.entry;
+  }
+  const all = loadAllAssistants();
+  return all.length === 1 ? all[0] : null;
+}
+
+/**
  * Extract the remote host for an entry: the hostname of the gateway
  * address the entry derives. One seam so the runtimeUrl death (a later
  * PR) rewires a single site instead of every ssh flow.

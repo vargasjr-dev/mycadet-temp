@@ -61,17 +61,19 @@ export function saveRawConfig(
 }
 
 /**
- * Persist a public ingress URL to the workspace config and enable ingress.
- * `provider`/`assistantId` also land under `ingress.lastTunnel` and
- * `ingress.assistantId`, the workspace-only records the daemon reads to
- * report tunnel health.
+ * Persist a public ingress URL to the machine-level workspace config and
+ * enable ingress. `provider`/`assistantId` also land under `ingress.lastTunnel`
+ * and `ingress.assistantId`, the workspace-only records the daemon reads to
+ * report tunnel health. The workspace path is named here alone: the daemon
+ * reads this config from its own container mount, so it — not the lockfile —
+ * stays the gateway-facing contract.
  */
 export function saveIngressUrl(
-  workspaceDir: string,
   publicUrl: string,
   assistantId?: string,
   provider?: TunnelProviderName,
 ): void {
+  const workspaceDir = getDefaultWorkspaceDir();
   const config = loadRawConfig(workspaceDir);
   const ingress = (config.ingress ?? {}) as Record<string, unknown>;
   ingress.publicBaseUrl = publicUrl;
@@ -103,10 +105,10 @@ export function saveIngressUrl(
  * from someone else's, and it names the same assistant either record fronts.
  */
 export function savePairingTunnel(
-  workspaceDir: string,
   record: TunnelRecord | null,
   assistantId?: string,
 ): void {
+  const workspaceDir = getDefaultWorkspaceDir();
   const config = loadRawConfig(workspaceDir);
   const ingress = (config.ingress ?? {}) as Record<string, unknown>;
   if (record) {
@@ -121,8 +123,9 @@ export function savePairingTunnel(
   saveRawConfig(workspaceDir, config);
 }
 
-/** Clear the ingress public base URL from the workspace config. */
-export function clearIngressUrl(workspaceDir: string): void {
+/** Clear the ingress public base URL from the machine-level workspace config. */
+export function clearIngressUrl(): void {
+  const workspaceDir = getDefaultWorkspaceDir();
   const config = loadRawConfig(workspaceDir);
   const ingress = (config.ingress ?? {}) as Record<string, unknown>;
   // `lastTunnel`/`assistantId` survive teardown on purpose: readers name the

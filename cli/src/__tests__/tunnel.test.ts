@@ -31,10 +31,7 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
-import {
-  getDefaultWorkspaceDir,
-  saveIngressUrl,
-} from "../lib/ingress-config.js";
+import { saveIngressUrl } from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
 import {
   getLocalInstanceDir,
@@ -618,7 +615,7 @@ describe("app server targeting", () => {
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeDefaultWorkspaceConfig({
+    writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -658,7 +655,7 @@ describe("app server targeting", () => {
   test("tailscale without webhook integrations still owns the ingress URL", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeDefaultWorkspaceConfig({});
+    writeEntryWorkspaceConfig(entry, {});
     process.argv = [
       "bun",
       "cadet",
@@ -680,7 +677,7 @@ describe("app server targeting", () => {
   test("a public provider is unaffected by configured webhook integrations", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeDefaultWorkspaceConfig({
+    writeEntryWorkspaceConfig(entry, {
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -1607,12 +1604,15 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     runTailscaleTunnelMock.mockReset();
     runTailscaleTunnelMock.mockImplementation(async (opts) => {
       const runOpts = opts as { assistantId?: string };
-      saveIngressUrl(
-        getDefaultWorkspaceDir(),
-        TAILNET_URL,
-        runOpts.assistantId,
-        "tailscale",
-      );
+      saveIngressUrl(TAILNET_URL, runOpts.assistantId, "tailscale");
+      // The real run stamps the lockfile record with the URL it published —
+      // the wake restore's gate and the edge refresh both read it.
+      stampRootProcess("tunnel", {
+        pid: process.pid,
+        provider: "tailscale",
+        startedAt: new Date().toISOString(),
+        publicUrl: TAILNET_URL,
+      });
       return { publicUrl: TAILNET_URL, waitForExit: Promise.resolve() };
     });
     isIngressRunningMock.mockReset();
@@ -1663,6 +1663,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       pid: 4321,
       provider: "tailscale",
       startedAt: new Date().toISOString(),
+      publicUrl: TAILNET_URL,
     });
     stampRootProcess("app", {
       pid: 4321,
@@ -1670,12 +1671,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeDefaultWorkspaceConfig({
-      ingress: {
-        enabled: true,
-        lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
-      },
-    });
+    const workspaceDir = writeDefaultWorkspaceConfig({});
     return { entry, workspaceDir };
   }
 
@@ -1685,7 +1681,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
     // Step 1: the edge started even though the gateway had cleared the url —
-    // the lockfile's app entry is why the workspace still wants it.
+    // the lockfile's records are why the wake still wants both back.
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     // Step 2: the tunnel re-established at the app server's port, never the
     // gateway's fallback port.
@@ -1764,6 +1760,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       pid: 4321,
       provider: "cloudflare",
       startedAt: new Date().toISOString(),
+      publicUrl: "https://x.trycloudflare.com",
     });
     stampRootProcess("app", {
       pid: 4321,
@@ -1782,7 +1779,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
-  test("a pairing-only tailnet run leaves lastTunnel on the webhook provider, so the restore re-establishes nothing", async () => {
+  test("a pairing-only tailnet run published no ingress base URL, so the restore re-establishes nothing", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     stampRootProcess("tunnel", {
@@ -1796,14 +1793,13 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
+    // The saved webhook callback base stands (a pairing run leaves it); the
+    // record's missing `publicUrl` is what keeps the restore from repointing
+    // it at the tailnet address.
     writeDefaultWorkspaceConfig({
       ingress: {
         enabled: true,
         publicBaseUrl: "https://x.ngrok.app",
-        lastTunnel: {
-          provider: "ngrok",
-          publicBaseUrl: "https://x.ngrok.app",
-        },
       },
     });
 
@@ -1815,13 +1811,14 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     expect(notifyGatewayOfPublicUrlMock).not.toHaveBeenCalled();
   });
 
-  test("a workspace whose config never recorded a tunnel still re-establishes the recorded one", async () => {
+  test("the record alone drives the restore — no workspace record is consulted", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
     stampRootProcess("tunnel", {
       pid: 4321,
       provider: "tailscale",
       startedAt: new Date().toISOString(),
+      publicUrl: TAILNET_URL,
     });
     stampRootProcess("app", {
       pid: 4321,
@@ -1829,14 +1826,13 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    writeDefaultWorkspaceConfig({
-      ingress: { enabled: true },
-    });
+    // An empty workspace config: nothing in it names a tunnel or a URL.
+    writeDefaultWorkspaceConfig({});
 
     await restoreFlow.restoreAppServerAndAutoTunnel(entry);
 
-    // No lastTunnel record contradicts the root record, so the recorded
-    // tailnet tunnel is re-established and the URL is saved again.
+    // The lockfile's tunnel record published a URL, so the recorded tailnet
+    // tunnel is re-established and the URL is saved again.
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: entry.assistantId,

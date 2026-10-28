@@ -20,13 +20,11 @@ import {
   type TunnelProcessRecord,
 } from "../assistant-config.js";
 import { ensureBinaryInstalled, readLineText } from "../ensure-binary.js";
+import { clearIngressUrl, saveIngressUrl } from "../ingress-config.js";
 import {
-  clearIngressUrl,
-  getDefaultWorkspaceDir,
-  loadRawConfig,
-  saveIngressUrl,
-} from "../ingress-config.js";
-import { resolveConfigDir } from "@mycadet/local-mode";
+  resolveConfigDir,
+  resolveDataDir,
+} from "@mycadet/local-mode";
 import { cliCommand } from "../cli-name.js";
 import { loopbackSafeFetch } from "../loopback-fetch.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
@@ -793,6 +791,11 @@ const TwilioIntegrationSchema = z.object({
   phoneNumber: z.unknown().optional(),
 });
 
+/**
+ * Check whether a workspace configures any webhook-based integrations that
+ * require a public ingress URL. Pure on the given config; the lockfile-driven
+ * wrapper lives in `tunnel.ts` (`hasWebhookIntegrationsConfigured`).
+ */
 export function hasWebhookIntegrations(
   config: Record<string, unknown>,
 ): boolean {
@@ -804,20 +807,6 @@ export function hasWebhookIntegrations(
   }
   return false;
 }
-
-/**
- * Check whether the machine-level workspace configures any webhook-based
- * integrations that require a public ingress URL. False when the config cannot
- * be read, so an unreadable config never blocks a caller.
- */
-export function hasWebhookIntegrationsConfigured(): boolean {
-  try {
-    return hasWebhookIntegrations(loadRawConfig(getDefaultWorkspaceDir()));
-  } catch {
-    return false;
-  }
-}
-
 
 export interface RunNgrokTunnelOptions {
   /** Local edge port to forward. Defaults to the global GATEWAY_PORT. */
@@ -871,7 +860,6 @@ export async function runNgrokTunnel(
 
   console.log(`Using ${version}`);
 
-  const workspaceDir = getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   // The saved domain is standing intent: a run without --domain reuses it,
@@ -898,7 +886,7 @@ export async function runNgrokTunnel(
   if (adoptable) {
     const existingUrl = adoptable.url;
     console.log(`Found existing ngrok tunnel: ${existingUrl}`);
-    saveIngressUrl(workspaceDir, existingUrl, opts.assistantId, "ngrok");
+    saveIngressUrl(existingUrl, opts.assistantId, "ngrok");
     // Not our child process: a recorded entry would be stale or foreign.
     clearRootProcess("tunnel");
     if (opts.domain) {
@@ -951,7 +939,9 @@ export async function runNgrokTunnel(
   //      write. The file descriptor is inherited by the detached ngrok
   //      process and remains valid after CLI exit.
   // Startup-failure classification reads the log's tail instead of pipes.
-  const ngrokLogDir = join(workspaceDir, "data", "logs");
+  // The log lives in the machine's xdg data root — the tunnel is a machine
+  // fact, so its diagnostics are not filed inside any assistant.
+  const ngrokLogDir = join(resolveDataDir(), "logs");
   mkdirSync(ngrokLogDir, { recursive: true });
   const ngrokLogPath = join(ngrokLogDir, "ngrok.log");
 
@@ -962,7 +952,7 @@ export async function runNgrokTunnel(
     clearRootProcess("tunnel");
     if (publicUrl) {
       console.log("\nClearing ingress URL from config...");
-      clearIngressUrl(workspaceDir);
+      clearIngressUrl();
     }
   };
 
@@ -1129,7 +1119,7 @@ export async function runNgrokTunnel(
 
     // The domain is standing intent, not tunnel state: cleanup clears the
     // ingress URL but leaves the domain saved for wake/daemon restores.
-    saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "ngrok");
+    saveIngressUrl(publicUrl, opts.assistantId, "ngrok");
     if (ngrokProcess.pid) {
       stampRootProcess("tunnel", {
         pid: ngrokProcess.pid,

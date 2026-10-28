@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { stampRootProcess } from "../assistant-config.js";
 import { readProcessCommandLine, stopProcess } from "../process.js";
 import type {
@@ -16,8 +15,6 @@ import { cliCommand } from "../cli-name.js";
 import { ensureBinaryInstalled } from "../ensure-binary.js";
 import {
   clearIngressUrl,
-  loadRawConfig,
-  getDefaultWorkspaceDir,
   saveIngressUrl,
   savePairingTunnel,
 } from "../ingress-config.js";
@@ -267,13 +264,11 @@ function publishServeUrl(
   opts: RunTailscaleTunnelOptions,
   publicUrl: string,
 ): void {
-  const workspaceDir = getDefaultWorkspaceDir();
   if (!opts.preserveIngressUrl) {
-    saveIngressUrl(workspaceDir, publicUrl, opts.assistantId, "tailscale");
+    saveIngressUrl(publicUrl, opts.assistantId, "tailscale");
     return;
   }
   savePairingTunnel(
-    workspaceDir,
     { provider: "tailscale", publicBaseUrl: publicUrl },
     opts.assistantId,
   );
@@ -284,19 +279,17 @@ function publishServeUrl(
  * for the teardown tests, since the run itself holds until a signal.
  */
 export function retractServeUrl(opts: RunTailscaleTunnelOptions): void {
-  const workspaceDir = getDefaultWorkspaceDir();
   if (!opts.preserveIngressUrl) {
-    clearIngressUrl(workspaceDir);
+    clearIngressUrl();
     return;
   }
-  savePairingTunnel(workspaceDir, null);
+  savePairingTunnel(null);
 }
 
 export interface TailscaleServeInfo {
   publicUrl: string;
   port: number;
   binary: string;
-  workspaceDir: string;
 }
 
 /**
@@ -330,7 +323,6 @@ export async function startTailscaleServe(
   const hostname = resolveServeHostname(statusResult.stdout);
   const publicUrl = `https://${hostname}`;
 
-  const workspaceDir = getDefaultWorkspaceDir();
   const port = opts.port ?? GATEWAY_PORT;
 
   const serveResult = deps.run(binary, ["serve", "--bg", String(port)]);
@@ -344,7 +336,6 @@ export async function startTailscaleServe(
     publicUrl,
     port,
     binary,
-    workspaceDir,
   };
 }
 
@@ -401,6 +392,10 @@ export async function runTailscaleTunnel(
     pid: process.pid,
     provider: "tailscale",
     startedAt: new Date().toISOString(),
+    // A pairing-only run publishes no ingress base URL — the lockfile
+    // record's missing `publicUrl` is what tells the wake restore (and the
+    // stop path) this tunnel never fronts the webhook callbacks.
+    ...(opts.preserveIngressUrl ? {} : { publicUrl }),
   });
 
   // The serve itself lives in tailscaled and persists after this process
@@ -421,15 +416,6 @@ export const TAILSCALE_TUNNEL_META: ProviderMeta = {
   ],
   supportsReservedDomain: false,
 };
-
-const stoppedTailscaleStateSchema = z.object({
-  ingress: z
-    .object({
-      publicBaseUrl: z.string().optional(),
-      pairingTunnel: z.object({ provider: z.string() }).optional(),
-    })
-    .optional(),
-});
 
 export async function stopTailscaleTunnel(
   opts: ProviderStopOptions,
@@ -454,13 +440,12 @@ export async function stopTailscaleTunnel(
   }
   if (supervisor && opts.record.pid !== process.pid)
     await stopProcess(opts.record.pid, "tunnel supervisor");
-  const workspaceDir = getDefaultWorkspaceDir();
-  const state = stoppedTailscaleStateSchema.parse(
-    loadRawConfig(workspaceDir),
-  ).ingress;
+  // The record snapshot (taken before the lockfile clear) carries the run's
+  // own publish decision: a pairing-only run stamped no `publicUrl`, so its
+  // teardown must leave the webhook callback base alone.
   retractServeUrl({
     assistantId: opts.assistantId,
-    preserveIngressUrl: state?.pairingTunnel?.provider === "tailscale",
+    preserveIngressUrl: opts.record.publicUrl === undefined,
   });
   return true;
 }
