@@ -1,9 +1,1 @@
-{
-  "authErrors": {
-    "genericFailure": "发生错误。请重试。",
-    "signupClosed": "抱歉，Cadet 目前不接受新用户注册。欢迎稍后再试。",
-    "providerSignup": "该登录尚未关联 Cadet 账户。请先注册，然后登录。",
-    "loginIncomplete": "您的账户需要额外步骤才能完成登录。请在网页上登录，然后重试。",
-    "desktopUpdateRequired": "此版本的 Cadet 桌面应用无法登录。请更新应用，然后重试。"
-  }
-}
+{}

@@ -24,10 +24,6 @@ export type AllauthResult<T = unknown> =
       flows?: Array<Flow>;
     };
 
-export function isConflict(result: AllauthResult): boolean {
-  return !result.ok && result.status === 409;
-}
-
 function errorResult(error: unknown, status?: number): AllauthResult<never> {
   const err = error as Record<string, unknown> | undefined;
   if (err && Array.isArray(err.errors)) {
