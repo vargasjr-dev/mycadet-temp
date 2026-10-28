@@ -55,6 +55,7 @@ const bootstrapLocalAssistantCloudIdentityMock = mock(
   (_assistantId?: string) => {},
 );
 
+
 mock.module("@/lib/auth/allauth-client", () => ({
   getSession: async () => {
     if (!sessionUser) {

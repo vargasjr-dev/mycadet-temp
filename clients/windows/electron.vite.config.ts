@@ -1,4 +1,3 @@
-import path from "node:path";
 
 import { createRequire } from "node:module";
 
@@ -40,9 +39,6 @@ const BUILD_DEFINES = {
   // resolveVersion() stamps checkouts `-local.`, so a local build's bundled
   // resolver agrees with the baked __CADET_ENVIRONMENT__ above.
   __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
-  __CADET_WEB_VERSION__: JSON.stringify(
-    resolveVersion(path.resolve(import.meta.dirname, "../web")),
-  ),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(
     process.env.CADET_ENABLE_CHROME_DEVTOOLS === "true" ||
       process.env.CADET_ENABLE_CHROME_DEVTOOLS === "1",

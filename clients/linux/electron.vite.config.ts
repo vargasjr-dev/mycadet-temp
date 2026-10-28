@@ -44,9 +44,6 @@ const BUILD_DEFINES = {
   // resolveVersion() stamps checkouts `-local.`, so a local build's bundled
   // resolver agrees with the baked __CADET_ENVIRONMENT__ above.
   __CADET_OWN_VERSION__: JSON.stringify(resolveVersion()),
-  __CADET_WEB_VERSION__: JSON.stringify(
-    resolveVersion(path.resolve(import.meta.dirname, "../web")),
-  ),
   __CADET_LOCAL_CLI_ENTRY__: JSON.stringify(LOCAL_CLI_ENTRY),
   __CADET_BUN_VERSION__: JSON.stringify(resolveBunVersion()),
   __CADET_ENABLE_CHROME_DEVTOOLS__: JSON.stringify(

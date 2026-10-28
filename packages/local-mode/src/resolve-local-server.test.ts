@@ -1,25 +1,35 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { resolveLocalServerUrl } from "./local-server";
+import { resolveLocalServerUrl } from "./lockfile-contract";
 
 describe("resolveLocalServerUrl", () => {
-  // The house env pattern: point the lockfile lookup at a temp dir per
-  // test, restore the environment afterwards.
+  // The house env pattern: point the config-home resolution at a temp dir
+  // per test (pinned to the local environment so the paths line up), and
+  // restore the environment afterwards.
   let dir: string;
+  let savedEnv: [string, string | undefined][];
 
   function writeLockfile(content: string): void {
-    writeFileSync(join(dir, "lockfile.json"), content);
+    mkdirSync(join(dir, "cadet-local"), { recursive: true });
+    writeFileSync(join(dir, "cadet-local", "lockfile.json"), content);
   }
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), "cadet-local-server-"));
-    process.env.CADET_LOCKFILE_DIR = dir;
+    savedEnv = ["CADET_ENVIRONMENT", "XDG_CONFIG_HOME"].map(
+      (key) => [key, process.env[key]] as [string, string | undefined],
+    );
+    process.env.XDG_CONFIG_HOME = dir;
+    process.env.CADET_ENVIRONMENT = "local";
   });
 
   afterEach(() => {
-    delete process.env.CADET_LOCKFILE_DIR;
+    for (const [key, value] of savedEnv) {
+      if (value === undefined) Reflect.deleteProperty(process.env, key);
+      else process.env[key] = value;
+    }
     rmSync(dir, { recursive: true, force: true });
   });
 
@@ -51,10 +61,10 @@ describe("resolveLocalServerUrl", () => {
     expect(resolveLocalServerUrl()).toBe("http://127.0.0.1:8000");
   });
 
-  test("an unusable tunnel record falls through to the edge port", () => {
+  test("the tunnel's address only counts when it is a usable base URL", () => {
     writeLockfile(
       JSON.stringify({
-        tunnel: { pid: 4321, provider: "cadet", startedAt: "x" },
+        tunnel: { publicUrl: "not a url" },
         app: { pid: 4322, port: 8000 },
         assistants: [],
         activeAssistant: null,
@@ -63,32 +73,9 @@ describe("resolveLocalServerUrl", () => {
     expect(resolveLocalServerUrl()).toBe("http://127.0.0.1:8000");
   });
 
-  test("neither record resolves nothing — the seed default takes over", () => {
+  test("no records resolve to undefined so the caller can fall back", () => {
     writeLockfile(
       JSON.stringify({ assistants: [], activeAssistant: null }),
-    );
-    expect(resolveLocalServerUrl()).toBeUndefined();
-  });
-
-  test("a missing or corrupt lockfile resolves nothing", () => {
-    expect(resolveLocalServerUrl()).toBeUndefined();
-    writeLockfile("{ not json");
-    expect(resolveLocalServerUrl()).toBeUndefined();
-  });
-
-  test("assistant entries play no role in the resolution", () => {
-    writeLockfile(
-      JSON.stringify({
-        assistants: [
-          {
-            assistantId: "a1",
-            cloud: "local",
-            runtimeUrl: "https://paired.example.net",
-            resources: { gatewayPort: 20100, daemonPort: 20000 },
-          },
-        ],
-        activeAssistant: "a1",
-      }),
     );
     expect(resolveLocalServerUrl()).toBeUndefined();
   });

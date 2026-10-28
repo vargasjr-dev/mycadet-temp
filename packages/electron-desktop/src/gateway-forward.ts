@@ -174,102 +174,15 @@ const readForwardTargets = (): Map<string, GatewayEntryTarget> => {
   return watched ? gatewayTargetsFromLockfile(watched) : readGatewayTargets();
 };
 
-/**
- * The host's answer for a loopback assistant's scoped detail request —
- * `GET /v1/assistants/{id}[/]` with an empty tail. The detail is HOST data,
- * not gateway data: the resolution contract's `url` names the web bundle the
- * shell iframes, and in the single-origin desktop that bundle is the host's
- * own `/assistant` mount, which only the serving host knows. The gateway and
- * daemon can't answer it (the runtime proxy's flatten needs a non-empty
- * tail, and the daemon holds no web-mount fact), so a bare forward 404s —
- * the initial-load failure the desktop QA hit. The provider lets a host
- * synthesize the detail from its own lockfile + served bundle; returning
- * `null` falls through to the plain forward (the pre-hook behavior).
- */
-export type LoopbackAssistantDetailProvider = (
-  assistantId: string,
-  port: number,
-) => Promise<Response | null> | Response | null;
-
-const LOOPBACK_DETAIL_PATH = /^\/v1\/assistants\/[^/]+\/?$/;
-
 export const forwardGatewayRequest = async (
   request: Request,
   fetcher: GatewayForwardFetcher,
-  loopbackAssistantDetail?: LoopbackAssistantDetailProvider,
 ): Promise<Response | null> => {
   const plan = await authorizeGatewayForwardPlan(
     planGatewayForward(request, readForwardTargets),
     getPairedGuardianAccessToken,
   );
-  if (
-    loopbackAssistantDetail &&
-    plan.kind === "forward" &&
-    !plan.remote &&
-    LOOPBACK_DETAIL_PATH.test(new URL(plan.url).pathname)
-  ) {
-    const detail = await loopbackAssistantDetail(
-      plan.assistantId,
-      plan.target.port,
-    );
-    if (detail) return detail;
-  }
   return executeGatewayForwardPlan(plan, request, fetcher);
-};
-
-/**
- * The host-side synthesis for a loopback assistant's detail: probe the
- * assistant's gateway `/readyz` (short timeout — the answer must stay fast,
- * it rides the shell's boot), then answer the resolution contract's detail —
- * `{ id, version, url, status }`. Ready → the host's own web mount as a
- * RELATIVE `/assistant/` URL (the detail schema is a public-URL contract:
- * it admits paths, not the `app://` scheme), with the served web bundle's
- * version. Not ready → 409, the resolution's `notReady` state, so the
- * shell's wake flow owns recovery instead of a 404 reading as "no such
- * assistant".
- */
-export const synthesizeLoopbackAssistantDetail = async ({
-  assistantId,
-  port,
-  version,
-  fetcher,
-  readyzTimeoutMs = 2_000,
-}: {
-  assistantId: string;
-  port: number;
-  version: string;
-  fetcher: GatewayForwardFetcher;
-  readyzTimeoutMs?: number;
-}): Promise<Response> => {
-  let ready = false;
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), readyzTimeoutMs);
-    try {
-      const probe = await fetcher(`http://127.0.0.1:${port}/readyz`, {
-        method: "GET",
-        headers: new Headers(),
-        signal: controller.signal,
-      });
-      ready = probe.ok;
-    } finally {
-      clearTimeout(timer);
-    }
-  } catch {
-    ready = false;
-  }
-  const body = ready
-    ? JSON.stringify({
-        id: assistantId,
-        version,
-        url: "/assistant/",
-        status: "active",
-      })
-    : JSON.stringify({ error: "Assistant gateway is not ready." });
-  return new Response(body, {
-    status: ready ? 200 : 409,
-    headers: { "content-type": "application/json" },
-  });
 };
 
 /**

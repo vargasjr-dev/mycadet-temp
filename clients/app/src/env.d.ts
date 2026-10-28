@@ -11,7 +11,6 @@ interface Window {
   /** Raw host-injected config; `readInjectedConfig` is the parse boundary. */
   __CADET_CONFIG__?: unknown;
   /** Feature flag overrides injected by Electron preload or CLI script. */
-  __CADET_FLAG_OVERRIDES__?: Record<string, boolean | string>;
   /** The Electron preload bridge — the shared `@mycadet/ipc-contract` shape. */
   cadet?: import("@mycadet/ipc-contract").CadetBridge;
 }

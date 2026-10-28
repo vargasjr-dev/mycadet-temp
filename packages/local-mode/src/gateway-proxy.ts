@@ -10,7 +10,7 @@ import {
   getLoopbackGatewayPort,
   isCloudHome,
   isLoopbackGatewayCloud,
-  isUsableRuntimeUrl,
+  isUsableBaseUrl,
   LockfileAssistantSchema,
 } from "./lockfile-contract";
 import { isLoopbackPublicUrl } from "@mycadet/service-contracts/remote-web-pairing";
@@ -224,7 +224,7 @@ export function gatewayTargetsFromLockfile(lockfile: {
     if (isCloudHome(parsed.data.cloud)) {
       continue;
     }
-    if (isUsableRuntimeUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
+    if (isUsableBaseUrl(gatewayUrl) && !isLoopbackPublicUrl(gatewayUrl)) {
       targets.set(assistantId, { kind: "remote", runtimeUrl: gatewayUrl });
       continue;
     }

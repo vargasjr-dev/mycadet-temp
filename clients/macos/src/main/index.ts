@@ -9,7 +9,6 @@ import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import { installDictationOverlay } from "@mycadet/electron-desktop/dictation-overlay-window";
 import {
   forwardGatewayRequest,
-  synthesizeLoopbackAssistantDetail,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
@@ -23,11 +22,8 @@ import {
   servedConfigFromLockfile,
 } from "@mycadet/local-mode";
 
-import {
-  installAbout,
-  openAboutWindow,
-  webBundleVersion,
-} from "./about.client";
+import { getVersionInfo, openAboutWindow } from "@mycadet/electron-desktop/about";
+import { installAbout } from "./about.client";
 import { installAutoUpdate } from "./auto-update.client";
 import {
   BUNDLES_DIR_NAME,
@@ -290,7 +286,7 @@ const registerAppProtocol = (): void => {
   const configJson = JSON.stringify({
     baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
     deviceId: getDeviceId() ?? undefined,
-    version: webBundleVersion(),
+    version: getVersionInfo().version,
     ...servedConfigFromLockfile(readLockfile()),
   }).replace(/</g, "\\u003c");
 
@@ -310,19 +306,7 @@ const registerAppProtocol = (): void => {
 
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
     // (mirrors the Vite dev-server proxy).
-    const proxied = await forwardGatewayRequest(
-      request,
-      net.fetch,
-      // The scoped detail is host data: answer it from this host's served
-      // bundle and the gateway's own readiness probe (see gateway-forward).
-      (assistantId, port) =>
-        synthesizeLoopbackAssistantDetail({
-          assistantId,
-          port,
-          version: webBundleVersion(),
-          fetcher: net.fetch,
-        }),
-    );
+    const proxied = await forwardGatewayRequest(request, net.fetch);
     if (proxied) return proxied;
 
     // Cloud API and authentication routes forward through the shared

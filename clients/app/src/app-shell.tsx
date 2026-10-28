@@ -13,7 +13,6 @@ export interface AppShellProps {
   apiBaseUrl?: string;
   assistantId?: string;
   location: string;
-  origin: string;
   mountPath?: string;
   onNavigate(path: string, options: { replace: boolean }): void;
   title?: string;
@@ -66,11 +65,14 @@ function AssistantShell({
   apiBaseUrl = "/",
   assistantId,
   location,
-  origin,
   mountPath = "/assistant",
   onNavigate,
   title,
 }: AppShellProps) {
+  // The shell is same-origin by construction — every host (the desktop
+  // protocol, the web dev server, the cloud takeover) proxies the API at
+  // the page's own origin, and the frame mounts the page's own bundle.
+  const origin = window.location.origin;
   const { t } = useTranslation("account");
   // The wake flow — the user-facing recovery for the not-ready state: the
   // same drive the admin console's Wake button gets (wake the vm; a

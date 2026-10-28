@@ -8,18 +8,17 @@ import {
   BUNDLES_DIR_NAME,
   CADET_PROTOCOL,
 } from "@mycadet/electron-desktop/bundle-platform";
+import { getVersionInfo } from "@mycadet/electron-desktop/about";
 import { installCsp } from "@mycadet/electron-desktop/csp";
 import { getDeviceId } from "@mycadet/electron-desktop/device-id";
 import {
   forwardGatewayRequest,
-  synthesizeLoopbackAssistantDetail,
 } from "@mycadet/electron-desktop/gateway-forward";
 import { installGatewayRequestGuard } from "@mycadet/electron-desktop/gateway-request-guard";
 import { installPermissionHandler } from "@mycadet/electron-desktop/permissions";
 import { forwardCloudRequest } from "@mycadet/electron-desktop/cloud-forward";
 import { registerCadetProtocol } from "@mycadet/electron-desktop/cadet-protocol";
 import { planAppProtocolAssetRequest } from "@mycadet/electron-utils/app-protocol";
-import { webBundleVersion } from "@mycadet/electron-desktop/about";
 import { resolveLocalConfigFromEnv } from "@mycadet/local-mode";
 
 import {
@@ -128,19 +127,7 @@ const registerAppProtocol = (): void => {
   protocol.handle(APP_PROTOCOL, async (request) => {
     // Forward the id-keyed gateway proxy to its lockfile-resolved target
     // (mirrors the Vite dev-server proxy).
-    const proxied = await forwardGatewayRequest(
-      request,
-      net.fetch,
-      // The scoped detail is host data: answer it from this host's served
-      // bundle and the gateway's own readiness probe (see gateway-forward).
-      (assistantId, port) =>
-        synthesizeLoopbackAssistantDetail({
-          assistantId,
-          port,
-          version: webBundleVersion(),
-          fetcher: net.fetch,
-        }),
-    );
+    const proxied = await forwardGatewayRequest(request, net.fetch);
     if (proxied) {
       return proxied;
     }
@@ -180,7 +167,7 @@ const resolvedConfig = resolveLocalConfigFromEnv();
 handleSync("cadet:config:get", () => ({
   baseUrl: `${APP_PROTOCOL}://${APP_HOST}`,
   deviceId: getDeviceId(),
-  version: webBundleVersion(),
+  version: getVersionInfo().version,
 }));
 
 // ---------------------------------------------------------------------------

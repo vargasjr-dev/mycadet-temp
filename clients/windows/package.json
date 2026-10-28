@@ -1,6 +1,6 @@
 {
   "name": "@mycadet/windows",
-  "version": "0.0.1",
+  "version": "0.13.0",
   "private": true,
   "description": "Electron wrapper for the Cadet Windows app.",
   "main": "out/main/index.js",

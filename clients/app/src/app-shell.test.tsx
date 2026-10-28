@@ -11,7 +11,8 @@ import { renderToString } from "react-dom/server";
 import { AppShell } from "@app/app-shell";
 import { changeLocale } from "@app/i18n";
 
-const origin = "https://site.example.com";
+// The shell derives its origin from the page — same-origin by construction.
+const origin = window.location.origin;
 const detail = (id = "assistant-1") => ({
   id,
   status: "active",
@@ -42,7 +43,6 @@ function props(id: string | undefined = "assistant-1") {
     assistantId: id,
     location: "/admin/assistant/conversations/123?tab=files#last",
     mountPath: "/admin/assistant",
-    origin,
     onNavigate: navigate,
   };
 }
@@ -250,7 +250,7 @@ test("changing assistant or API base immediately hides the previous frame", asyn
   expect(screen.queryByTitle("Assistant")).toBeNull();
   await act(async () => {});
   expect(String(request.mock.calls.at(-1)?.[0])).toBe(
-    "https://site.example.com/admin/api/v1/assistants/assistant-2/",
+    `${origin}/admin/api/v1/assistants/assistant-2/`,
   );
   await act(async () => {
     finish(json(detail("assistant-2")));
