@@ -51,6 +51,8 @@ const tempDirs: string[] = [];
 function makeWorkspace(): string {
   const dir = mkdtempSync(join(tmpdir(), "cadet-tailscale-test-"));
   tempDirs.push(dir);
+  // The providers resolve the machine-level workspace themselves.
+  process.env.CADET_WORKSPACE_DIR = dir;
   return dir;
 }
 
@@ -179,7 +181,7 @@ describe("startTailscaleServe", () => {
   test("throws install guidance when the binary is missing", async () => {
     const { deps, calls } = makeDeps({ binary: null });
     await expect(
-      startTailscaleServe({ port: 7840, workspaceDir: makeWorkspace() }, deps),
+      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
     ).rejects.toThrow("Tailscale is not installed");
     expect(calls).toHaveLength(0);
   });
@@ -193,7 +195,7 @@ describe("startTailscaleServe", () => {
       },
     });
     await expect(
-      startTailscaleServe({ port: 7840, workspaceDir: makeWorkspace() }, deps),
+      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
     ).rejects.toThrow("not logged in");
     expect(calls).not.toContainEqual(["serve", "--bg", "7840"]);
   });
@@ -209,7 +211,7 @@ describe("startTailscaleServe", () => {
       },
     });
     await expect(
-      startTailscaleServe({ port: 7840, workspaceDir: makeWorkspace() }, deps),
+      (makeWorkspace(), startTailscaleServe({ port: 7840 }, deps)),
     ).rejects.toThrow("Could not query Tailscale");
   });
 
@@ -222,7 +224,7 @@ describe("startTailscaleServe", () => {
       },
     });
 
-    const info = await startTailscaleServe({ port: 7840, workspaceDir }, deps);
+    const info = await startTailscaleServe({ port: 7840 }, deps);
 
     expect(info.publicUrl).toBe("https://my-host.tail-scale.ts.net");
     expect(info.port).toBe(7840);
@@ -251,7 +253,6 @@ describe("startTailscaleServe", () => {
     await startTailscaleServe(
       {
         port: 7840,
-        workspaceDir,
         assistantId: "ts-1",
         preserveIngressUrl: true,
       },
@@ -286,7 +287,7 @@ describe("startTailscaleServe", () => {
     });
 
     await expect(
-      startTailscaleServe({ port: 7840, workspaceDir }, deps),
+      startTailscaleServe({ port: 7840 }, deps),
     ).rejects.toThrow(enableUrl);
 
     // A failed serve must not persist an ingress URL.
@@ -316,7 +317,7 @@ describe("retractServeUrl", () => {
     const workspaceDir = makeWorkspace();
     writePreservedConfig(workspaceDir, "https://existing.ngrok.app");
 
-    retractServeUrl(PRESERVE_OPTS, workspaceDir);
+    retractServeUrl(PRESERVE_OPTS);
 
     // The pairing record goes, the webhook callback base stays.
     const config = readConfig(workspaceDir);
@@ -334,7 +335,7 @@ describe("retractServeUrl", () => {
       }),
     );
 
-    retractServeUrl({ assistantId: "ts-1" }, workspaceDir);
+    retractServeUrl({ assistantId: "ts-1" });
 
     expect(readConfig(workspaceDir).ingress.publicBaseUrl).toBeUndefined();
   });

@@ -31,7 +31,10 @@ import * as ngrok from "../lib/tunnels/ngrok.js";
 import * as nginxIngress from "../lib/nginx-ingress.js";
 import * as tailscaleTunnel from "../lib/tunnels/tailscale.js";
 import { resolveLogDir } from "@mycadet/local-mode";
-import { saveIngressUrl } from "../lib/ingress-config.js";
+import {
+  getDefaultWorkspaceDir,
+  saveIngressUrl,
+} from "../lib/ingress-config.js";
 import { stampRootProcess } from "../lib/assistant-config.js";
 import {
   getLocalInstanceDir,
@@ -362,14 +365,12 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const workspaceDir = useTempDefaultWorkspaceDir();
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
     expect(runCloudflareTunnelMock).not.toHaveBeenCalled();
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
@@ -416,7 +417,6 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const workspaceDir = useTempDefaultWorkspaceDir();
 
     const logs = await runTunnelCapturingLogs();
     expect(logs).not.toContain("Tunneling the local assistant");
@@ -424,12 +424,10 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "cloud-1",
-      workspaceDir,
     });
   });
 
   test("a docker assistant set active tunnels the edge port", async () => {
-    const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile(
       [
@@ -458,12 +456,10 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "docker-1",
-      workspaceDir,
     });
   });
 
   test("an active docker assistant tunnels on a bare invocation", async () => {
-    const workspaceDir = useTempDefaultWorkspaceDir();
     const docker = makeDockerEntry();
     writeLockfile(docker, docker.assistantId);
     process.argv = [
@@ -482,7 +478,6 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "docker-1",
-      workspaceDir,
     });
   });
 
@@ -501,14 +496,12 @@ describe("app server targeting", () => {
       "--foreground",
     ];
 
-    const workspaceDir = useTempDefaultWorkspaceDir();
 
     const logs = await runTunnelCapturingLogs();
     expect(ensureAppServerMock).toHaveBeenCalledWith();
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "cloud-1",
-      workspaceDir,
     });
     expect(logs).toContain(`Started the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -536,7 +529,6 @@ describe("app server targeting", () => {
   });
 
   test("an apple-container assistant set active tunnels the edge port", async () => {
-    const workspaceDir = useTempDefaultWorkspaceDir();
     const local = makeLocalEntry();
     writeLockfile([local, makeAppleContainerEntry()], "apple-1");
     process.argv = [
@@ -555,14 +547,12 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "apple-1",
-      workspaceDir,
     });
   });
 
   test("targets the edge port for cloudflare", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -578,7 +568,6 @@ describe("app server targeting", () => {
     expect(runCloudflareTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
     expect(runNgrokTunnelMock).not.toHaveBeenCalled();
   });
@@ -586,7 +575,6 @@ describe("app server targeting", () => {
   test("targets the edge port for tailscale and notes a reused edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -606,7 +594,6 @@ describe("app server targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
     expect(logs).toContain(`Reusing the nginx edge on 127.0.0.1:${EDGE_PORT}`);
   });
@@ -614,7 +601,6 @@ describe("app server targeting", () => {
   test("a bare invocation tunnels the default provider", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = ["bun", "cadet", "tunnel", "start", "--foreground"];
 
     const logs = await runTunnelCapturingLogs();
@@ -623,7 +609,6 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
     expect(ensureAppServerMock).toHaveBeenCalled();
     expect(runTailscaleTunnelMock).not.toHaveBeenCalled();
@@ -633,7 +618,7 @@ describe("app server targeting", () => {
   test("--provider tailscale keeps the webhook callback base and says so", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeDefaultWorkspaceConfig({
+    writeDefaultWorkspaceConfig({
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -666,7 +651,6 @@ describe("app server targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
       preserveIngressUrl: true,
     });
   });
@@ -674,7 +658,7 @@ describe("app server targeting", () => {
   test("tailscale without webhook integrations still owns the ingress URL", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeDefaultWorkspaceConfig({});
+    writeDefaultWorkspaceConfig({});
     process.argv = [
       "bun",
       "cadet",
@@ -690,14 +674,13 @@ describe("app server targeting", () => {
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
   });
 
   test("a public provider is unaffected by configured webhook integrations", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = writeDefaultWorkspaceConfig({
+    writeDefaultWorkspaceConfig({
       telegram: { botUsername: "example_bot" },
     });
     process.argv = [
@@ -715,7 +698,6 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
   });
 
@@ -797,7 +779,6 @@ describe("app server targeting", () => {
   test("threads --domain through to runNgrokTunnel", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    const workspaceDir = useTempDefaultWorkspaceDir();
     process.argv = [
       "bun",
       "cadet",
@@ -815,7 +796,6 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
       domain: "foo.ngrok.app",
     });
   });
@@ -869,7 +849,6 @@ describe("app server targeting", () => {
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
       assistantId: "assistant-1",
-      workspaceDir,
     });
   });
 
@@ -1046,6 +1025,8 @@ describe("ngrok --domain spawn args", () => {
 
   function makeWorkspace(config: Record<string, unknown>): string {
     const ws = mkdtempSync(join(tmpdir(), "cadet-ngrok-domain-test-"));
+    // The provider resolves the machine-level workspace itself.
+    process.env.CADET_WORKSPACE_DIR = ws;
     tempDirs.push(ws);
     writeFileSync(join(ws, "config.json"), JSON.stringify(config, null, 2));
     return ws;
@@ -1134,7 +1115,6 @@ describe("ngrok --domain spawn args", () => {
 
     const run = realNgrok.runNgrokTunnel({
       port: 7831,
-      workspaceDir: ws,
       domain: "foo.ngrok.app",
     });
     // runNgrokTunnel blocks until the ngrok process exits; pump exit events
@@ -1197,7 +1177,6 @@ describe("ngrok --domain spawn args", () => {
       await expect(
         realNgrok.runNgrokTunnel({
           port: 7831,
-          workspaceDir: ws,
           domain: "foo.ngrok.app",
         }),
       ).rejects.toThrow("does not match the requested domain 'foo.ngrok.app'");
@@ -1227,7 +1206,6 @@ describe("ngrok --domain spawn args", () => {
 
     const run = realNgrok.runNgrokTunnel({
       port: 7831,
-      workspaceDir: ws,
       domain: "foo.ngrok.app",
     });
     // The adopt path blocks until SIGINT/SIGTERM; pump SIGINT until the
@@ -1260,7 +1238,7 @@ describe("ngrok --domain spawn args", () => {
     mockTunnelListFetch("https://other.ngrok-free.app", "localhost:7830");
 
     await expect(
-      realNgrok.runNgrokTunnel({ port: 7830, workspaceDir: ws }),
+      realNgrok.runNgrokTunnel({ port: 7830 }),
     ).rejects.toThrow("does not match");
 
     expect(spawnMock).not.toHaveBeenCalled();
@@ -1280,7 +1258,6 @@ describe("ngrok --domain spawn args", () => {
     await withLockfileFor("adopt-assistant", () =>
       realNgrok.runNgrokTunnel({
         port: 7830,
-        workspaceDir: ws,
         assistantId: "adopt-assistant",
       }),
     );
@@ -1313,7 +1290,6 @@ describe("ngrok --domain spawn args", () => {
     const run = withLockfileFor("spawn-assistant", () =>
       realNgrok.runNgrokTunnel({
         port: 7830,
-        workspaceDir: ws,
         assistantId: "spawn-assistant",
       }),
     );
@@ -1357,7 +1333,7 @@ describe("ngrok --domain spawn args", () => {
       },
     ]);
 
-    const run = realNgrok.runNgrokTunnel({ port: 18080, workspaceDir: ws });
+    const run = realNgrok.runNgrokTunnel({ port: 18080 });
     // runNgrokTunnel blocks until the ngrok process exits; pump exit events
     // until its final exit listener is registered and the promise settles.
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
@@ -1399,7 +1375,7 @@ describe("ngrok --domain spawn args", () => {
       },
     ]);
 
-    const run = realNgrok.runNgrokTunnel({ port: 7831, workspaceDir: ws });
+    const run = realNgrok.runNgrokTunnel({ port: 7831 });
     const pump = setInterval(() => lastChild?.emit("exit", 0), 10);
     try {
       await run;
@@ -1630,12 +1606,9 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     }));
     runTailscaleTunnelMock.mockReset();
     runTailscaleTunnelMock.mockImplementation(async (opts) => {
-      const runOpts = opts as {
-        workspaceDir: string;
-        assistantId?: string;
-      };
+      const runOpts = opts as { assistantId?: string };
       saveIngressUrl(
-        runOpts.workspaceDir,
+        getDefaultWorkspaceDir(),
         TAILNET_URL,
         runOpts.assistantId,
         "tailscale",
@@ -1697,7 +1670,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    const workspaceDir = writeDefaultWorkspaceConfig({
       ingress: {
         enabled: true,
         lastTunnel: { provider: "tailscale", publicBaseUrl: TAILNET_URL },
@@ -1718,7 +1691,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // gateway's fallback port.
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
-      workspaceDir,
       assistantId: "assistant-1",
     });
     // Step 3: the url rode to every locally-reachable assistant's gateway,
@@ -1774,7 +1746,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
   test("a workspace with no recorded app server wants no edge", async () => {
     const entry = makeLocalEntry();
     writeLockfile(entry);
-    writeEntryWorkspaceConfig(entry, {
+    writeDefaultWorkspaceConfig({
       ingress: { enabled: true },
     });
 
@@ -1799,7 +1771,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    writeEntryWorkspaceConfig(entry, {
+    writeDefaultWorkspaceConfig({
       ingress: { enabled: true },
     });
 
@@ -1824,7 +1796,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    writeEntryWorkspaceConfig(entry, {
+    writeDefaultWorkspaceConfig({
       ingress: {
         enabled: true,
         publicBaseUrl: "https://x.ngrok.app",
@@ -1857,7 +1829,7 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
       assistantId: entry.assistantId,
       startedAt: new Date().toISOString(),
     });
-    const workspaceDir = writeEntryWorkspaceConfig(entry, {
+    writeDefaultWorkspaceConfig({
       ingress: { enabled: true },
     });
 
@@ -1867,7 +1839,6 @@ describe("restoreAppServerAndAutoTunnel — ensure the recorded tunnel", () => {
     // tailnet tunnel is re-established and the URL is saved again.
     expect(runTailscaleTunnelMock).toHaveBeenCalledWith({
       port: EDGE_PORT,
-      workspaceDir,
       assistantId: entry.assistantId,
     });
     expect(notifyGatewayOfPublicUrlMock).toHaveBeenCalledWith(

@@ -437,7 +437,6 @@ describe("cadet upgrade local", () => {
     );
     expect(runNgrokTunnelMock).toHaveBeenCalledWith({
       port: 7830,
-      workspaceDir: join(tempDir, "workspace"),
       assistantId: "local-assistant",
     });
     expect(waitForReadyMock).toHaveBeenCalledWith("http://127.0.0.1:7830");
