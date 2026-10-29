@@ -48,7 +48,20 @@ mock.module("./main-window", () => ({
   onOnboardingChange: () => () => undefined,
 }));
 
-const { buildWindowsMenu, installWindowsMenu } = await import("./menu");
+const { buildWindowsMenu, installWindowsMenu, setWindowsHasCloudSession } =
+  await import("./menu");
+
+test("the Log In/Log Out toggle follows the published session fact", () => {
+  const label = (): string =>
+    (submenu("File").find((item) =>
+      ["Log In", "Log Out"].includes(String(item.label)),
+    )?.label ?? "") as string;
+
+  setWindowsHasCloudSession(true);
+  expect(label()).toBe("Log Out");
+  setWindowsHasCloudSession(false);
+  expect(label()).toBe("Log In");
+});
 
 type MenuOptions = Parameters<typeof buildWindowsMenu>[0];
 
@@ -62,6 +75,7 @@ const submenu = (
 
 const enabled = (menu: string, label: string, options?: MenuOptions): unknown =>
   submenu(menu, options).find((item) => item.label === label)?.enabled;
+
 
 describe("buildWindowsMenu", () => {
   test("uses Windows roles and disables unavailable providers", () => {

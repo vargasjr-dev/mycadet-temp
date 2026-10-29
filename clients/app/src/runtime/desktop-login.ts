@@ -3,7 +3,6 @@ import { beginOAuthFlow } from "@app/runtime/oauth-flow-state";
 import { nativeAuthContext } from "@app/runtime/native-auth-context";
 import { DesktopSessionResponseSchema } from "@app/lib/auth/desktop-session-response";
 import { useAuthStore } from "@app/stores/auth-store";
-import { setMenuCloudSession } from "@app/runtime/menu";
 import { resolveNativePostAuthDestination } from "@app/runtime/native-post-auth-destination";
 import { sanitizeReturnTo } from "@app/utils/return-to";
 import { routes } from "@app/utils/routes";
@@ -38,7 +37,6 @@ export async function startDesktopLogin(
       throw new Error("The desktop auth bridge returned an invalid session.");
     }
     await useAuthStore.getState().refreshSession();
-    await setMenuCloudSession(true);
     const destination = sanitizeReturnTo(
       resolveNativePostAuthDestination(
         options.intent,

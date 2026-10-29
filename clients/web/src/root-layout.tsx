@@ -29,9 +29,7 @@ import {
   useWatchRetroStore,
 } from "@/domains/chat/watch/watch-retro";
 import { subscribe } from "@/lib/event-bus";
-import { setMenuCloudSession } from "@/runtime/menu";
 import { bootstrapLocalAssistantCloudIdentity } from "@/lib/local-cloud-identity";
-import { getSession } from "@/lib/auth/allauth-client";
 import { useCadetCommands } from "@/runtime/cadet-commands";
 import { handleToggleWatchCommand } from "@/runtime/watch-command";
 
@@ -131,43 +129,17 @@ export function RootLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  // The Electron menu's Log In/Log Out toggle and the local assistant's
-  // cloud identity are the only session facts this bundle still consumes.
-  // A settled allauth answer publishes both; an inconclusive one (outage,
-  // throw) leaves the last state standing.
+  // The local assistant's cloud identity registers when the session is
+  // present; the bootstrap owns its own signed-out story (the registration
+  // call fails and stops). The menu's Log In/Log Out toggle is Electron
+  // main's fact now — derived from the same token store the OAuth flow and
+  // sign-out write — so this bundle probes no session state at all.
   useEffect(() => {
-    let cancelled = false;
-    const publish = async (): Promise<void> => {
-      let authenticated: boolean;
-      try {
-        const result = await getSession();
-        if (cancelled) {
-          return;
-        }
-        if (result.ok) {
-          authenticated = !!result.data.user;
-        } else if (
-          result.status !== undefined &&
-          [401, 403, 410].includes(result.status)
-        ) {
-          authenticated = false;
-        } else {
-          return;
-        }
-      } catch {
-        return;
-      }
-      void setMenuCloudSession(authenticated);
-      if (authenticated) {
-        bootstrapLocalAssistantCloudIdentity();
-      }
-    };
-    void publish();
+    bootstrapLocalAssistantCloudIdentity();
     const unsubResume = subscribe("app.resume", () => {
-      void publish();
+      bootstrapLocalAssistantCloudIdentity();
     });
     return () => {
-      cancelled = true;
       unsubResume();
     };
   }, []);

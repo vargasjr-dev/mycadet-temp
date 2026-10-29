@@ -217,10 +217,6 @@ RUN groupadd --system --gid 1001 assistant && \
     useradd --system --uid 1001 --gid assistant --create-home --shell /bin/bash assistant && \
     echo "assistant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Set up assistant home directory for local state (device.json, etc.)
-RUN mkdir -p /home/assistant/.cadet && \
-    chown -R assistant:assistant /home/assistant/.cadet
-
 # Update PATH for assistant user
 ENV PATH="/home/assistant/.bun/bin:${PATH}"
 

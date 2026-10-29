@@ -170,17 +170,8 @@ afterEach(() => {
 });
 
 describe("connectCloudAssistant", () => {
-  test("requires a live platform session", async () => {
+  test("selects the assistant; an unauthenticated write fails server-side", async () => {
     sessionUser = null;
-
-    await expect(connectCloudAssistant("cloud-1")).rejects.toThrow(
-      "Platform authentication required",
-    );
-    expect(setSelectedAssistantMock).not.toHaveBeenCalled();
-  });
-
-  test("selects the assistant when the session is live", async () => {
-    sessionUser = { id: "user-1", email: "user@example.com" };
 
     await connectCloudAssistant("cloud-1");
 

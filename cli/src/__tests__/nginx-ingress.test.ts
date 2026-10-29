@@ -2130,16 +2130,19 @@ describe("assistant metadata API", () => {
   test("lists only this host's assistant and returns its actual UI version and URL", () => {
     const conf = config();
     // Each row carries its own hosting kind — here the test env has no
-    // lockfile entry for the id, so the edge stamps the truthful "custom"
-    // (remote hosting shapes read as "custom"; the cloud serves its own).
+    // lockfile entry for the id, so the remote kind is omitted (unknown
+    // entries invent nothing) and the row reads as the self-hosted
+    // assistant it is.
     expect(body(conf, "/v1/assistants/")).toEqual({
-      results: [{ id: "assistant-1", name: "My assistant", remote: "custom" }],
+      results: [
+        { id: "assistant-1", name: "My assistant", is_local: true },
+      ],
       next: null,
     });
     expect(body(conf, "/v1/assistants/assistant-1/")).toEqual({
       id: "assistant-1",
       name: "My assistant",
-      remote: "custom",
+      is_local: true,
       status: "active",
       version: "1.2.3",
       url: "web/assistant/",
@@ -2185,7 +2188,7 @@ describe("assistant metadata API", () => {
       },
     });
     expect(body(conf, "/v1/assistants/")).toEqual({
-      results: [{ id: "assistant-1", remote: "custom" }],
+      results: [{ id: "assistant-1", is_local: true }],
       next: null,
     });
     for (const path of [

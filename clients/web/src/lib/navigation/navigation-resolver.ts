@@ -11,7 +11,6 @@ import { buildNavigationState, type NavigationState } from "./build-state";
 // ---------------------------------------------------------------------------
 
 export type NavigationQuery =
-  | { kind: "route-guard"; pathname: string }
   | {
       kind: "post-auth";
       authIntent: "login" | "signup";
@@ -31,15 +30,6 @@ export type NavigationDecision =
 // ---------------------------------------------------------------------------
 // Shared predicates & helpers
 // ---------------------------------------------------------------------------
-
-const ONBOARDING_PREFIX = `${routes.assistant}/onboarding`;
-
-function isOnboardingPath(pathname: string): boolean {
-  return (
-    pathname.startsWith(`${ONBOARDING_PREFIX}/`) ||
-    pathname === ONBOARDING_PREFIX
-  );
-}
 
 function extractPathname(destination: string): string {
   if (
@@ -65,8 +55,6 @@ export function resolveNavigation(
 ): NavigationDecision {
   const state = buildNavigationState();
   switch (query.kind) {
-    case "route-guard":
-      return resolveRouteGuard(state, query.pathname);
     case "post-auth":
       return resolvePostAuth(
         state,
@@ -77,89 +65,6 @@ export function resolveNavigation(
     case "post-retire":
       return resolvePostRetire(state);
   }
-}
-
-// ---------------------------------------------------------------------------
-// Route guard — pipeline of steps
-// ---------------------------------------------------------------------------
-//
-// Each step returns a NavigationDecision to short-circuit, or null to
-// pass through to the next step. The pipeline terminates with "allow".
-//
-// Conceptual layers:
-//   1. Gateway boundary   — a remote gateway's device credential or a live
-//                          gateway session admits; otherwise pair
-//   2. Setup exemptions   — onboarding paths are always reachable
-//   3. Assistant required — the hosting choice (the serving shell never
-//                          loads this bundle for a logged-out visitor, so
-//                          there is no logged-out case to route)
-
-type RouteGuardStep = (
-  state: NavigationState,
-  path: string,
-  pathnameWithSearch: string,
-) => NavigationDecision | null;
-
-const ROUTE_GUARD_PIPELINE: RouteGuardStep[] = [
-  allowSetupRoutes,
-  requireAssistant,
-];
-
-function resolveRouteGuard(
-  state: NavigationState,
-  pathnameWithSearch: string,
-): NavigationDecision {
-  const qIdx = pathnameWithSearch.indexOf("?");
-  const path =
-    qIdx >= 0 ? pathnameWithSearch.slice(0, qIdx) : pathnameWithSearch;
-
-  for (const step of ROUTE_GUARD_PIPELINE) {
-    const decision = step(state, path, pathnameWithSearch);
-    if (decision) {
-      return decision;
-    }
-  }
-  return { action: "allow" };
-}
-
-function allowSetupRoutes(
-  _state: NavigationState,
-  path: string,
-  _pathnameWithSearch: string,
-): NavigationDecision | null {
-  // The funnel entries classify by set membership, not the web prefix below —
-  // hatching's app-owned path never matches it.
-  if (!isOnboardingPath(path) && !PROVISIONING_FUNNEL_PATHS.has(path)) {
-    return null;
-  }
-
-  return { action: "allow" };
-}
-
-// These entries own provisioning; consent is enforced by the app shell.
-const PROVISIONING_FUNNEL_PATHS: ReadonlySet<string> = new Set([
-  routes.onboarding.hatching,
-  routes.onboarding.research,
-]);
-
-function requireAssistant(state: NavigationState): NavigationDecision | null {
-  if (state.hasAssistants) {
-    return null;
-  }
-
-  if (state.isLocalClient) {
-    // The hosting screen settles the account question itself (the cloud
-    // card locks behind a login hand-off when there is no session).
-    return { action: "redirect", to: routes.onboarding.hosting };
-  }
-
-  // The served store is never cold in production — the serving shell owns
-  // loaded-ness before this bundle loads (#573), and the app's own boot
-  // effect maintains the roster thereafter. An empty roster here means a
-  // served account with nothing to resolve: funnel to onboarding. Waiting
-  // here would loop — the hydration flag this used to wait on has no
-  // writer off the local arm.
-  return { action: "redirect", to: routes.onboarding.hatching };
 }
 
 // ---------------------------------------------------------------------------

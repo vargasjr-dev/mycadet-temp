@@ -14,9 +14,8 @@ export const WORKSPACE_PATH_TAG = "workspace-path";
 
 /**
  * Absolute paths are only recognized below a `/workspace/` root. The mount
- * point differs by deployment — hosted assistants run with the workspace at
- * `/workspace`, desktop installs use `~/.cadet/workspace` — so we anchor on
- * the last `/workspace/` segment instead of a fixed prefix. An absolute path
+ * point differs by deployment, so we anchor on the last `/workspace/`
+ * segment instead of a fixed prefix. An absolute path
  * with no such segment is a host path and is left alone.
  */
 export const WORKSPACE_ROOT_MARKER = "/workspace/";

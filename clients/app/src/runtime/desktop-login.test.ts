@@ -15,9 +15,6 @@ const refreshSession = mock(async () => {
   calls.push("refresh");
   return true;
 });
-const setMenu = mock(async () => {
-  calls.push("menu");
-});
 mock.module("@app/runtime/electron-bridge", () => ({
   getElectronBridge: () =>
     available ? { auth: { startOAuth } } : { auth: {} },
@@ -25,7 +22,6 @@ mock.module("@app/runtime/electron-bridge", () => ({
 mock.module("@app/stores/auth-store", () => ({
   useAuthStore: { getState: () => ({ refreshSession }) },
 }));
-mock.module("@app/runtime/menu", () => ({ setMenuCloudSession: setMenu }));
 mock.module("@app/runtime/native-auth-context", () => ({
   nativeAuthContext: {
     read: async () => {
@@ -77,8 +73,7 @@ test("desktop login refreshes the account before choosing the post-auth destinat
     intent: "signup",
     loginHint: "person@example.com",
   });
-  expect(setMenu).toHaveBeenCalledWith(true);
-  expect(calls).toEqual(["host", "refresh", "menu", "context"]);
+  expect(calls).toEqual(["host", "refresh", "context"]);
   expect(location.href).toBe("/assistant");
 });
 test("host exchange keeps resume probes suspended until it completes", async () => {

@@ -70,8 +70,7 @@ export function toWorkspacePathFromHref(href: string): string | null {
   let relative: string;
   if (text.startsWith("/")) {
     // The mount point is deployment-specific (hosted assistants run with the
-    // workspace at `/workspace`, desktop installs under
-    // `~/.cadet/.../workspace`), so anchor on the last `/workspace/` segment.
+    // workspace at `/workspace`), so anchor on the last `/workspace/` segment.
     // An absolute path with no such segment lives outside the workspace and
     // the daemon cannot serve it.
     const markerIndex = text.lastIndexOf(WORKSPACE_ROOT_MARKER);

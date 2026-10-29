@@ -21,11 +21,7 @@ mock.module("./build-state", () => ({
 }));
 
 const { resolveNavigation } = await import("./navigation-resolver");
-type NavigationDecision = Awaited<
-  ReturnType<typeof resolveNavigation>
->;
 
-const ALLOW: NavigationDecision = { action: "allow" };
 const HATCHING_FUNNEL_URL = "/account/onboarding/hatching?hosting=cadet-cloud";
 const consentCarry = () =>
   `/account/consent?returnTo=${encodeURIComponent("/assistant/onboarding/research")}`;
@@ -33,53 +29,6 @@ const consentCarry = () =>
 describe("resolveNavigation", () => {
   beforeEach(() => {
     state = { ...base };
-  });
-
-  describe("route-guard", () => {
-    const guard = (next: NavigationState, pathname = "/assistant") => {
-      state = next;
-      return resolveNavigation({ kind: "route-guard", pathname });
-    };
-
-    test("empty local clients route to hosting, which settles the account question itself", () => {
-      expect(guard(s({ isLocalClient: true, hasAssistants: false }))).toEqual({
-        action: "redirect",
-        to: "/account/onboarding/hosting",
-      });
-    });
-
-    test("platform clients route an empty roster to shell hatching — the middleware awaited the boot resolution first", () => {
-      expect(guard(s({ hasAssistants: false }), "/assistant/identity")).toEqual(
-        {
-          action: "redirect",
-          to: "/account/onboarding/hatching",
-        },
-      );
-    });
-
-    test("users with assistants are admitted", () => {
-      expect(guard(base)).toEqual(ALLOW);
-      expect(guard(s({ isLocalClient: true }))).toEqual(ALLOW);
-    });
-
-    test("provisioning entries do not read or wait on web consent", () => {
-      for (const pathname of [
-        "/assistant/onboarding/research?hosting=cadet-cloud",
-        HATCHING_FUNNEL_URL,
-      ]) {
-        for (const isLocalClient of [false, true]) {
-          expect(
-            guard(
-              s({
-                isLocalClient,
-                hasAssistants: false,
-              }),
-              pathname,
-            ),
-          ).toEqual(ALLOW);
-        }
-      }
-    });
   });
 
   describe("post-retire", () => {
