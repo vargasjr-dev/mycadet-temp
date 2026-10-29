@@ -14,11 +14,13 @@ describe("toWorkspaceRelativePath — accepted shapes", () => {
     ).toBe("drafts/v0.10.12-release-notes.md");
   });
 
-  test("absolute path under a desktop ~/.cadet/workspace mount", () => {
+  test("absolute path under a desktop assistant workspace mount", () => {
     // The mount point is deployment-specific, so recognition anchors on the
     // last `/workspace/` segment rather than a fixed prefix.
     expect(
-      toWorkspaceRelativePath("/Users/alice/.cadet/workspace/drafts/notes.md"),
+      toWorkspaceRelativePath(
+        "/Users/alice/.local/share/cadet/assistants/example/workspace/drafts/notes.md",
+      ),
     ).toBe("drafts/notes.md");
   });
 
