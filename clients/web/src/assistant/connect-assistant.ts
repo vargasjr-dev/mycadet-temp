@@ -4,18 +4,14 @@
  *
  * Connecting to lockfile entries is app-only: the app bundle owns those
  * connections (and their pairing/recovery choreography), so the web's only
- * connect is the platform row's session-gated selection. The selection write
- * IS the session commit — the auth store carries no session state to stamp.
+ * connect is the platform row's selection write. There is no session probe:
+ * the write itself is session-scoped, and the server answers an
+ * unauthenticated attempt with 401.
  */
-import { getSession } from "@/lib/auth/allauth-client";
 import { setSelectedAssistant } from "@/assistant/selection";
 
 export async function connectCloudAssistant(
   assistantId: string,
 ): Promise<void> {
-  const result = await getSession();
-  if (!result.ok || !result.data.user) {
-    throw new Error("Platform authentication required");
-  }
   await setSelectedAssistant(assistantId);
 }

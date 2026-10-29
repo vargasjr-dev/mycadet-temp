@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate, useSearchParams } from "react-router";
 
-import { authMiddleware } from "@/lib/auth/auth-middleware";
 import { RootLayout } from "@/root-layout";
 import { ChatLayout } from "@/domains/chat/chat-layout";
 import { ChatPage } from "@/domains/chat/chat-page";
@@ -319,7 +318,6 @@ export const routeTree = [
   // Assistant routes — auth-protected app with layout
   {
     path: "/assistant",
-    middleware: [authMiddleware],
     ErrorBoundary: RouteErrorBoundary,
     HydrateFallback: RootHydrateFallback,
     Component: RootLayout,

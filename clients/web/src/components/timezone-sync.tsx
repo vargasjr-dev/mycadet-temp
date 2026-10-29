@@ -25,7 +25,7 @@
  * queue drains to the latest target, so the final server write is always the
  * newest zone and writes can never overlap or land out of order.
  *
- * Mounted once in `RootLayout` (behind `authMiddleware`). Renders `null`
+ * Mounted once in `RootLayout`. Renders `null`
  * and is silent on error — a failed background sync must never toast.
  */
 import { useCallback, useEffect, useRef } from "react";

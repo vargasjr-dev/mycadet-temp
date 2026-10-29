@@ -47,8 +47,7 @@ export function prefetchRoute(href: string | undefined): void {
   warmed.add(href);
 
   // `routes.tsx` builds the router out of the whole component tree, so a
-  // static import here would be a cycle. The same lazy-import escape hatch
-  // `auth-middleware.ts` uses for the router.
+  // static import here would be a cycle — hence the lazy import.
   void import("@/routes")
     .then(({ routeTree }) => {
       const matches = matchRoutes(routeTree as never, href);
