@@ -1,4 +1,4 @@
-import { getNginxIngressPort } from "../lib/servers/nginx.js";
+import { getNginxServerPort } from "../lib/servers/nginx.js";
 import { getGatewayUrl } from "@mycadet/local-mode/contract";
 import { getIngressPaths, readIngressState } from "../lib/servers/nginx.js";
 import { cliCommand } from "../lib/cli-name.js";
@@ -602,7 +602,7 @@ async function getRootManagedRows(): Promise<RootManagedRow[]> {
   }
   if (app?.pid !== undefined) {
     const alive = isLocalProcessAlive(app.pid);
-    const listenUrl = `http://127.0.0.1:${app.port ?? getNginxIngressPort()}`;
+    const listenUrl = `http://127.0.0.1:${app.port ?? getNginxServerPort()}`;
     const info = [listenUrl, `PID ${app.pid}`].join(" | ");
     rows.push({
       assistantId: app.assistantId,
@@ -653,7 +653,7 @@ export async function printRootProcessDetail(
     detailLine("PID:", String(app.pid));
     detailLine(
       "Listen:",
-      `http://127.0.0.1:${app.port ?? state?.listenPort ?? getNginxIngressPort()}`,
+      `http://127.0.0.1:${app.port ?? state?.listenPort ?? getNginxServerPort()}`,
     );
     detailLine(
       "Gateway:",

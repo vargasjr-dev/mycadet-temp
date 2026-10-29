@@ -59,6 +59,11 @@ export type Remote = z.infer<typeof RemoteSchema>;
  * from the renderer-facing schema below; the CLI's extended type is the only
  * place they are modeled.
  */
+export const SENSITIVE_KEYS = [
+  "bearerToken",
+  "guardianBootstrapSecret",
+] as const;
+
 /**
  * The runtime config a shell injects (`window.__CADET_CONFIG__`). This schema
  * is the single shape: hosts stamp it, served bundles parse the window
@@ -89,11 +94,6 @@ export const InjectedConfigSchema = z.object({
 });
 
 export type InjectedConfig = z.infer<typeof InjectedConfigSchema>;
-
-export const SENSITIVE_KEYS = [
-  "bearerToken",
-  "guardianBootstrapSecret",
-] as const;
 
 /**
  * Strip every `SENSITIVE_KEYS` field from a parsed lockfile, in place: from

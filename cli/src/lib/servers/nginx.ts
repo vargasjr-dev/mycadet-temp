@@ -47,8 +47,14 @@ import { resolveEdgeClientDists } from "../web-dist.js";
 
 export const DEFAULT_NGINX_INGRESS_PORT = 7840;
 
+/** True when the edge's listen port is explicitly pinned via env (a pin
+ *  keeps its port: collision discovery must not move it). */
+export function serverPortPinned(): boolean {
+  return process.env.CADET_NGINX_INGRESS_PORT !== undefined;
+}
+
 /** Listen port for nginx ingress, from CADET_NGINX_INGRESS_PORT. */
-export function getNginxIngressPort(): number {
+export function getNginxServerPort(): number {
   const raw = process.env.CADET_NGINX_INGRESS_PORT;
   if (!raw) return DEFAULT_NGINX_INGRESS_PORT;
   const value = Number(raw);
@@ -364,7 +370,7 @@ async function isPortInUse(
  * probed (the IPv4 loopback always, the IPv6 loopback when the host has one),
  * so the returned port is one nginx can actually take.
  */
-export async function findAvailableIngressPort(
+export async function findAvailableServerPort(
   startPort: number,
   attempts = 20,
 ): Promise<number | null> {
@@ -506,7 +512,7 @@ function assistantMetadataLocations(config: Record<string, unknown>): string {
  *  Not in the module's public surface: production callers go through
  *  `startAppServer`. Exported for tests
  *  (cli/src/__tests__/nginx.test.ts), which assert on the generated text. */
-export function buildIngressNginxConfig(opts: {
+export function buildNginxConfig(opts: {
   /** Where the edge proxies gateway traffic — `getGatewayUrl` of the entry the edge fronts. */
   gatewayUrl: string;
   listenPort: number;
@@ -1146,7 +1152,7 @@ export async function startAppServer(opts: {
    */
   assistantId?: string;
 }): Promise<StartAppServerResult> {
-  let listenPort = getNginxIngressPort();
+  let listenPort = getNginxServerPort();
 
   const nginxVersion = getNginxVersion();
   if (!nginxVersion) {
@@ -1155,7 +1161,7 @@ export async function startAppServer(opts: {
 
   const running = isIngressRunning();
   const recorded = running ? readIngressState() : null;
-  if (recorded && process.env.CADET_NGINX_INGRESS_PORT === undefined) {
+  if (recorded && !serverPortPinned()) {
     listenPort = recorded.listenPort;
   }
   const { webDistDir, appDistDir } = await resolveEdgeClientDists();
@@ -1216,8 +1222,8 @@ export async function startAppServer(opts: {
   // the next free port is invisible to remote clients. An explicit
   // CADET_NGINX_INGRESS_PORT pin keeps its intent and still fails on a
   // collision.
-  if (process.env.CADET_NGINX_INGRESS_PORT === undefined) {
-    const discovered = await findAvailableIngressPort(listenPort);
+  if (!serverPortPinned()) {
+    const discovered = await findAvailableServerPort(listenPort);
     if (discovered !== null && discovered !== listenPort) {
       console.log(`Port ${listenPort} in use; using ${discovered} instead.`);
       listenPort = discovered;
@@ -1240,30 +1246,28 @@ export async function startAppServer(opts: {
     indexHtmlPath: join(paths.dir, "assistant-index.html"),
     appIndexHtmlPath: join(paths.dir, "app-index.html"),
   };
-  {
-    const rawIndexHtml = readFileSync(
-      join(remoteWebIngress.webDistDir, "index.html"),
-      "utf-8",
-    );
-    writeFileSync(
-      remoteWebIngress.indexHtmlPath,
-      buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
-    );
-    // The app shell gets its own injected document: the same remote-web
-    // config, written beside the web one so the generated locations can
-    // alias it internally.
-    const rawAppIndexHtml = readFileSync(
-      join(remoteWebIngress.appDistDir, "index.html"),
-      "utf-8",
-    );
-    writeFileSync(
-      join(paths.dir, "app-index.html"),
-      buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
-    );
-  }
+  const rawIndexHtml = readFileSync(
+    join(remoteWebIngress.webDistDir, "index.html"),
+    "utf-8",
+  );
+  writeFileSync(
+    remoteWebIngress.indexHtmlPath,
+    buildRemoteWebIndexHtml(rawIndexHtml, remoteWebIngress.config),
+  );
+  // The app shell gets its own injected document: the same remote-web
+  // config, written beside the web one so the generated locations can
+  // alias it internally.
+  const rawAppIndexHtml = readFileSync(
+    join(remoteWebIngress.appDistDir, "index.html"),
+    "utf-8",
+  );
+  writeFileSync(
+    join(paths.dir, "app-index.html"),
+    buildRemoteWebIndexHtml(rawAppIndexHtml, remoteWebIngress.config),
+  );
   writeFileSync(
     paths.confPath,
-    buildIngressNginxConfig({
+    buildNginxConfig({
       gatewayUrl: opts.gatewayUrl,
       listenPort,
       remoteWebIngress,
@@ -1390,7 +1394,7 @@ export async function stopContainerAppServer(
 /** Record the running edge's pid in the root lockfile for `cadet ps`. */
 function stampAppProcessEntry(
   assistantId?: string,
-  port = getNginxIngressPort(),
+  port = getNginxServerPort(),
 ): void {
   const pid = getIngressPid();
   if (pid !== null) {

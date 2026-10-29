@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createServer } from "node:net";
 
-import { findAvailableIngressPort } from "../lib/servers/nginx";
+import { findAvailableServerPort } from "../lib/servers/nginx";
 import { edgeServedRemote } from "../lib/servers/nginx";
 import { summarizeStartupFailure } from "../lib/tunnel";
 
@@ -54,7 +54,7 @@ describe("summarizeStartupFailure", () => {
   });
 });
 
-describe("findAvailableIngressPort", () => {
+describe("findAvailableServerPort", () => {
   test("skips a port a foreign listener already holds", async () => {
     const blocker = createServer();
     await new Promise<void>((resolve) => {
@@ -62,7 +62,7 @@ describe("findAvailableIngressPort", () => {
     });
     const occupied = portOf(blocker);
     try {
-      const port = await findAvailableIngressPort(occupied);
+      const port = await findAvailableServerPort(occupied);
       expect(port).toBe(occupied + 1);
     } finally {
       await new Promise<void>((resolve) => blocker.close(() => resolve()));
@@ -84,7 +84,7 @@ describe("findAvailableIngressPort", () => {
       second.listen(base + 1, "127.0.0.1", resolve),
     );
     try {
-      expect(await findAvailableIngressPort(base, 2)).toBeNull();
+      expect(await findAvailableServerPort(base, 2)).toBeNull();
     } finally {
       await new Promise<void>((resolve) => first.close(() => resolve()));
       await new Promise<void>((resolve) => second.close(() => resolve()));

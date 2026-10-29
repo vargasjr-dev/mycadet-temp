@@ -110,7 +110,7 @@ afterAll(() => {
 });
 
 import {
-  buildIngressNginxConfig,
+  buildNginxConfig,
   getIngressPaths,
   hasIpv6Loopback,
   buildRemoteWebIndexHtml,
@@ -228,12 +228,12 @@ function stampTunnelRecord(url: string): void {
   realFs.writeFileSync(path, JSON.stringify(lockfile));
 }
 
-describe("buildIngressNginxConfig", () => {
-  const conf = buildIngressNginxConfig({
+describe("buildNginxConfig", () => {
+  const conf = buildNginxConfig({
     gatewayUrl: "http://127.0.0.1:7830",
     listenPort: 7840,
   });
-  const remoteConf = buildIngressNginxConfig({
+  const remoteConf = buildNginxConfig({
     gatewayUrl: "http://127.0.0.1:7830",
     listenPort: 7840,
     remoteWebIngress: {
@@ -257,7 +257,7 @@ describe("buildIngressNginxConfig", () => {
     // A tunnel agent pointed at "localhost" reaches ::1 first on macOS, so an
     // IPv4-only bind refuses whichever share of a burst resolves that way.
     // Emitting it unconditionally would make nginx exit on an IPv6-less host.
-    const withIpv6 = buildIngressNginxConfig({
+    const withIpv6 = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       ipv6Loopback: true,
@@ -414,7 +414,7 @@ describe("buildIngressNginxConfig", () => {
   });
 
   test("stamps assistantName, assistantId and hubUrl into the served config when provided", () => {
-    const named = buildIngressNginxConfig({
+    const named = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
@@ -1044,7 +1044,7 @@ describe("startAppServer", () => {
 
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
-      buildIngressNginxConfig({
+      buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
@@ -1296,7 +1296,7 @@ describe("startAppServer", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
-      buildIngressNginxConfig({
+      buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
@@ -1337,7 +1337,7 @@ describe("startAppServer", () => {
     expect(edge.killed()).toBe(true);
     expect(spawnMock).toHaveBeenCalledTimes(1);
     expect(realFs.readFileSync(ingressConfPath(), "utf-8")).toBe(
-      buildIngressNginxConfig({
+      buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7900",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
@@ -1530,7 +1530,7 @@ describe("startAppServer", () => {
     expect(spawnMock).toHaveBeenCalledTimes(1);
     const conf = realFs.readFileSync(ingressConfPath(), "utf-8");
     expect(conf).toBe(
-      buildIngressNginxConfig({
+      buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7845,
         ipv6Loopback: hasIpv6Loopback(),
@@ -2045,7 +2045,7 @@ describe("stopContainerAppServer", () => {
 
 describe("assistant metadata API", () => {
   function config(id = "assistant-1") {
-    return buildIngressNginxConfig({
+    return buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
@@ -2109,7 +2109,7 @@ describe("assistant metadata API", () => {
     );
   });
   test("unknown identity yields an empty list without inventing an assistant ID", () => {
-    const conf = buildIngressNginxConfig({
+    const conf = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: { webDistDir: "/tmp/web", appDistDir: "/tmp/app-dist" },
@@ -2117,7 +2117,7 @@ describe("assistant metadata API", () => {
     expect(body(conf, "/v1/assistants/")).toEqual({ results: [], next: null });
   });
   test("a known assistant without a UI bundle returns 409 on both detail paths", () => {
-    const conf = buildIngressNginxConfig({
+    const conf = buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
@@ -2141,7 +2141,7 @@ describe("assistant metadata API", () => {
   });
   test("invalid browser origins fail before nginx starts", () => {
     expect(() =>
-      buildIngressNginxConfig({
+      buildNginxConfig({
         gatewayUrl: "http://127.0.0.1:7830",
         listenPort: 7840,
         remoteWebIngress: {
@@ -2189,7 +2189,7 @@ describe("the app shell edge", () => {
   pinProductionEnvironment();
 
   function appConf() {
-    return buildIngressNginxConfig({
+    return buildNginxConfig({
       gatewayUrl: "http://127.0.0.1:7830",
       listenPort: 7840,
       remoteWebIngress: {
