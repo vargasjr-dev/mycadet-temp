@@ -9,7 +9,8 @@
   "description": "Pre-built web SPA for the Cadet Assistant",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "scripts/postinstall.sh"
   ],
   "scripts": {
     "dev": "echo 'clients/web has no vite dev server. The cadet app server is how app/web assets load by running `cadet-local app start`.' && exit 1",
@@ -20,7 +21,7 @@
     "audit:cross-domain:check": "node scripts/audit-cross-domain-imports.mjs --check",
     "pretypecheck": "bun run openapi-ts",
     "typecheck": "bunx tsgo --noEmit",
-    "postinstall": "[ -f scripts/transform-daemon-spec.ts ] && bun run openapi-ts || true",
+    "postinstall": "bash scripts/postinstall.sh",
     "openapi-ts": "bun run scripts/transform-daemon-spec.ts && bun run scripts/transform-gateway-spec.ts && openapi-ts",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
